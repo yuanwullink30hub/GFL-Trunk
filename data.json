@@ -1,0 +1,42 @@
+{
+  "basics": {
+    "name": "Garden For Life",
+    "label": "Cultivating Green Spaces",
+    "image": "/logo.png",
+    "email": "info@gardenforlife.com",
+    "phone": "+31 (0) 6 1234 5678",
+    "url": "https://www.gardenforlife.com",
+    "summary": "Garden For Life is dedicated to creating beautiful and sustainable green spaces. We help homeowners and businesses transform their outdoor areas into thriving gardens.",
+    "location": {
+      "countryCode": "NL",
+      "address": "Amsterdam 1000, Nederland",
+      "postalCode": "1000",
+      "city": "Amsterdam",
+      "country": "Nederland"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "gardenforlife",
+        "url": "https://www.linkedin.com/company/garden-for-life/"
+      },
+      {
+        "network": "GitHub",
+        "username": "gardenforlife",
+        "url": "https://github.com/gardenforlife"
+      }
+    ],
+    "pages": [
+      {
+        "id": "home",
+        "title": "Welcome to Garden For Life",
+        "content": "Garden For Life is your trusted partner for creating beautiful and sustainable green spaces. Whether you're looking to design a cozy backyard garden, a vibrant community green space, or a commercial landscape, we bring expertise, creativity, and passion to every project. Our team specializes in sustainable gardening practices, landscape design, and personalized garden solutions tailored to your needs and environment."
+      },
+      {
+        "id": "contact",
+        "title": "Contact Us",
+        "content": "Get in touch with our team to discuss your garden dreams. Whether you have questions about our services, need advice on garden design, or want to schedule a consultation, we're here to help. Reach out through any of the contact methods below."
+      }
+    ]
+  }
+}

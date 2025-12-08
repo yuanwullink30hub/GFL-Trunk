@@ -12,22 +12,22 @@ import { BsMoon, BsSun } from 'react-icons/bs';
 const App = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [content, setContent] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadContent = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch('/content.json');
-        const data = await response.json();
-        setContent(data);
+        const dataRes = await fetch('/data.json');
+        const dataJson = await dataRes.json();
+        setData(dataJson);
         setLoading(false);
       } catch (error) {
-        console.error('Error loading content:', error);
+        console.error('Error loading data:', error);
         setLoading(false);
       }
     };
-    loadContent();
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -55,13 +55,12 @@ const App = () => {
     }
   };
 
-
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  const homeTab = content?.tabs?.find(tab => tab.id === 'home');
-  const contactTab = content?.tabs?.find(tab => tab.id === 'contact');
+  const homeTab = data?.basics?.pages?.find(page => page.id === 'home');
+  const contactTab = data?.basics?.pages?.find(page => page.id === 'contact');
 
   return (
     <div className={`min-h-screen transition-all duration-300 ${
@@ -82,7 +81,7 @@ const App = () => {
                 GFL
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
-                Garden For Life
+                {data?.basics?.name}
               </h1>
             </div>
             
@@ -149,7 +148,9 @@ const App = () => {
                 <FaMapMarkerAlt className="text-green-600 text-2xl flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Location</p>
-                  <p className="text-gray-600 dark:text-gray-400">Amsterdam, Netherlands</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {data?.basics?.location?.city}, {data?.basics?.location?.country}
+                  </p>
                 </div>
               </div>
 
@@ -157,8 +158,8 @@ const App = () => {
                 <FaPhone className="text-green-600 text-2xl flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Phone</p>
-                  <a href="tel:+31612345678" className="text-green-600 hover:text-green-500">
-                    +31 (0) 6 1234 5678
+                  <a href={`tel:${data?.basics?.phone}`} className="text-green-600 hover:text-green-500">
+                    {data?.basics?.phone}
                   </a>
                 </div>
               </div>
@@ -167,8 +168,8 @@ const App = () => {
                 <FaEnvelope className="text-green-600 text-2xl flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Email</p>
-                  <a href="mailto:info@gardenforlife.com" className="text-green-600 hover:text-green-500">
-                    info@gardenforlife.com
+                  <a href={`mailto:${data?.basics?.email}`} className="text-green-600 hover:text-green-500">
+                    {data?.basics?.email}
                   </a>
                 </div>
               </div>
@@ -177,15 +178,24 @@ const App = () => {
             <div className="mt-12 pt-8 border-t border-gray-300 dark:border-gray-600">
               <h4 className="text-lg font-semibold mb-6 text-center">Follow Us</h4>
               <div className="flex justify-center space-x-6">
-                <a href="#" className="text-2xl text-blue-600 hover:text-blue-500 transition-colors">
-                  <FaLinkedin />
-                </a>
-                <a href="#" className="text-2xl text-gray-800 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                  <FaGithub />
-                </a>
-                <a href="#" className="text-2xl text-green-600 hover:text-green-500 transition-colors">
-                  <FaGlobe />
-                </a>
+                {data?.basics?.profiles?.map((profile, idx) => {
+                  const icons = {
+                    LinkedIn: <FaLinkedin className="text-blue-600" />,
+                    GitHub: <FaGithub className="text-gray-800 dark:text-white" />,
+                    Website: <FaGlobe className="text-green-600" />
+                  };
+                  return (
+                    <a
+                      key={idx}
+                      href={profile.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-2xl hover:scale-110 transition-transform duration-300"
+                    >
+                      {icons[profile.network] || <FaGlobe />}
+                    </a>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -196,13 +206,13 @@ const App = () => {
       <footer className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-12 mt-20">
         <div className="container mx-auto px-6 text-center">
           <div className="mb-6">
-            <h4 className="text-2xl font-bold mb-2">Garden For Life</h4>
-            <p className="text-gray-400">Building beautiful digital experiences</p>
+            <h4 className="text-2xl font-bold mb-2">{data?.basics?.name}</h4>
+            <p className="text-gray-400">{data?.basics?.label}</p>
           </div>
           
           <div className="border-t border-gray-700 pt-8">
             <p className="text-gray-400">
-              © 2025 Garden For Life. All rights reserved.
+              © 2025 {data?.basics?.name}. All rights reserved.
             </p>
           </div>
         </div>

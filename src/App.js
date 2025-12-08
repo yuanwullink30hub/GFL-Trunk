@@ -10,7 +10,6 @@ import {
 import { BsMoon, BsSun } from 'react-icons/bs';
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
   const [content, setContent] = useState(null);
@@ -49,16 +48,20 @@ const App = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const profileIcons = {
-    LinkedIn: <FaLinkedin className="text-blue-600" />,
-    GitHub: <FaGithub className="text-gray-800 dark:text-white" />,
-    Website: <FaGlobe className="text-green-600" />
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
+
+  const homeTab = content?.tabs?.find(tab => tab.id === 'home');
+  const contactTab = content?.tabs?.find(tab => tab.id === 'contact');
 
   return (
     <div className={`min-h-screen transition-all duration-300 ${
@@ -84,19 +87,18 @@ const App = () => {
             </div>
             
             <nav className="hidden md:flex items-center space-x-8">
-              {content?.tabs?.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`transition-colors duration-300 ${
-                    activeTab === tab.id 
-                      ? 'text-green-600 font-bold' 
-                      : 'hover:text-green-600'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+              <button
+                onClick={() => scrollToSection('home')}
+                className="transition-colors duration-300 hover:text-green-600"
+              >
+                Home
+              </button>
+              <button
+                onClick={() => scrollToSection('contact')}
+                className="transition-colors duration-300 hover:text-green-600"
+              >
+                Contact
+              </button>
             </nav>
 
             <div className="flex items-center space-x-4">
@@ -111,113 +113,84 @@ const App = () => {
         </div>
       </header>
 
-      {/* Tab Navigation for Mobile */}
-      <nav className="md:hidden fixed top-16 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 z-40">
-        <div className="flex overflow-x-auto">
-          {content?.tabs?.map((tab) => (
+      {/* Home Section */}
+      <section id="home" className="pt-32 pb-20 px-6">
+        <div className="container mx-auto max-w-4xl text-center">
+          <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
+            {homeTab?.title}
+          </h2>
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-12 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
+            <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
+              {homeTab?.content}
+            </p>
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 whitespace-nowrap transition-colors duration-300 ${
-                activeTab === tab.id 
-                  ? 'text-green-600 font-bold border-b-2 border-green-600' 
-                  : 'text-gray-600 dark:text-gray-400'
-              }`}
+              onClick={() => scrollToSection('contact')}
+              className="px-8 py-3 bg-gradient-to-r from-green-700 to-green-500 text-white rounded-lg hover:from-green-800 hover:to-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
-              {tab.label}
+              Get In Touch
             </button>
-          ))}
+          </div>
         </div>
-      </nav>
+      </section>
 
-      {/* Content */}
-      <div className={`pt-32 md:pt-24 pb-20 px-6 ${activeTab !== 'home' ? 'md:pt-20' : ''}`}>
+      {/* Contact Section */}
+      <section id="contact" className="py-20 px-6">
         <div className="container mx-auto max-w-4xl">
-          {activeTab === 'home' && (
-            <section className="text-center mb-12">
-              <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
-                Welcome to Garden For Life
-              </h2>
-              <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-12 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
-                {content?.tabs?.find(tab => tab.id === 'home') && (
-                  <div>
-                    <h3 className="text-3xl font-bold text-green-600 mb-6">
-                      {content.tabs.find(tab => tab.id === 'home')?.title}
-                    </h3>
-                    <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-                      {content.tabs.find(tab => tab.id === 'home')?.content}
-                    </p>
-                    <button
-                      onClick={() => setActiveTab('contact')}
-                      className="px-8 py-3 bg-gradient-to-r from-green-700 to-green-500 text-white rounded-lg hover:from-green-800 hover:to-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
-                    >
-                      Get In Touch
-                    </button>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
+          <h2 className="text-4xl font-bold mb-12 text-center bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
+            {contactTab?.title}
+          </h2>
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-12 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
+            <p className="text-lg text-gray-700 dark:text-gray-300 mb-12 text-center">
+              {contactTab?.content}
+            </p>
 
-          {activeTab === 'contact' && (
-            <section>
-              <h2 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
-                {content?.tabs?.find(tab => tab.id === 'contact')?.title}
-              </h2>
-              <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-12 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
-                <p className="text-lg text-gray-700 dark:text-gray-300 mb-12 text-center">
-                  {content?.tabs?.find(tab => tab.id === 'contact')?.content}
-                </p>
-
-                <div className="space-y-6 max-w-md mx-auto">
-                  <div className="flex items-center space-x-4 p-4 bg-white/50 dark:bg-gray-700/50 rounded-lg">
-                    <FaMapMarkerAlt className="text-green-600 text-2xl flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold">Location</p>
-                      <p className="text-gray-600 dark:text-gray-400">Amsterdam, Netherlands</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-4 p-4 bg-white/50 dark:bg-gray-700/50 rounded-lg">
-                    <FaPhone className="text-green-600 text-2xl flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold">Phone</p>
-                      <a href="tel:+31612345678" className="text-green-600 hover:text-green-500">
-                        +31 (0) 6 1234 5678
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-4 p-4 bg-white/50 dark:bg-gray-700/50 rounded-lg">
-                    <FaEnvelope className="text-green-600 text-2xl flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold">Email</p>
-                      <a href="mailto:info@gardenforlife.com" className="text-green-600 hover:text-green-500">
-                        info@gardenforlife.com
-                      </a>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-12 pt-8 border-t border-gray-300 dark:border-gray-600">
-                  <h4 className="text-lg font-semibold mb-6 text-center">Follow Us</h4>
-                  <div className="flex justify-center space-x-6">
-                    <a href="#" className="text-2xl text-blue-600 hover:text-blue-500 transition-colors">
-                      <FaLinkedin />
-                    </a>
-                    <a href="#" className="text-2xl text-gray-800 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                      <FaGithub />
-                    </a>
-                    <a href="#" className="text-2xl text-green-600 hover:text-green-500 transition-colors">
-                      <FaGlobe />
-                    </a>
-                  </div>
+            <div className="space-y-6 max-w-md mx-auto">
+              <div className="flex items-center space-x-4 p-4 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                <FaMapMarkerAlt className="text-green-600 text-2xl flex-shrink-0" />
+                <div>
+                  <p className="font-semibold">Location</p>
+                  <p className="text-gray-600 dark:text-gray-400">Amsterdam, Netherlands</p>
                 </div>
               </div>
-            </section>
-          )}
+
+              <div className="flex items-center space-x-4 p-4 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                <FaPhone className="text-green-600 text-2xl flex-shrink-0" />
+                <div>
+                  <p className="font-semibold">Phone</p>
+                  <a href="tel:+31612345678" className="text-green-600 hover:text-green-500">
+                    +31 (0) 6 1234 5678
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-4 p-4 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                <FaEnvelope className="text-green-600 text-2xl flex-shrink-0" />
+                <div>
+                  <p className="font-semibold">Email</p>
+                  <a href="mailto:info@gardenforlife.com" className="text-green-600 hover:text-green-500">
+                    info@gardenforlife.com
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 pt-8 border-t border-gray-300 dark:border-gray-600">
+              <h4 className="text-lg font-semibold mb-6 text-center">Follow Us</h4>
+              <div className="flex justify-center space-x-6">
+                <a href="#" className="text-2xl text-blue-600 hover:text-blue-500 transition-colors">
+                  <FaLinkedin />
+                </a>
+                <a href="#" className="text-2xl text-gray-800 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                  <FaGithub />
+                </a>
+                <a href="#" className="text-2xl text-green-600 hover:text-green-500 transition-colors">
+                  <FaGlobe />
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
       <footer className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-12 mt-20">

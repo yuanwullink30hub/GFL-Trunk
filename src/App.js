@@ -8,27 +8,11 @@ import {
   FaGlobe
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
+import data from './data.json';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const dataRes = await fetch('/data.json');
-        const dataJson = await dataRes.json();
-        setData(dataJson);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, []);
 
   useEffect(() => {
     if (darkMode) {
@@ -54,10 +38,6 @@ const App = () => {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
 
   const homeTab = data?.basics?.pages?.find(page => page.id === 'home');
   const contactTab = data?.basics?.pages?.find(page => page.id === 'contact');

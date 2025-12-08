@@ -1,0 +1,68 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json",
+  "basics": {
+    "name": "Garden For Life",
+    "label": "Cultivating Green Spaces",
+    "image": "/logo.png",
+    "email": "info@gardenforlife.com",
+    "phone": "+31 (0) 6 1234 5678",
+    "url": "https://www.gardenforlife.com",
+    "summary": "Garden For Life is dedicated to creating beautiful and sustainable green spaces. We help homeowners and businesses transform their outdoor areas into thriving gardens.",
+    "location": {
+      "countryCode": "NL",
+      "address": "Amsterdam 1000, Nederland",
+      "postalCode": "1000",
+      "city": "Amsterdam",
+      "country": "Nederland"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "gardenforlife",
+        "url": "https://www.linkedin.com/company/garden-for-life/"
+      },
+      {
+        "network": "GitHub",
+        "username": "gardenforlife",
+        "url": "https://github.com/gardenforlife"
+      }
+    ]
+  },
+  "work": [],
+  "volunteer": [],
+  "education": [],
+  "awards": [],
+  "certificates": [],
+  "publications": [],
+  "skills": [],
+  "languages": [
+    {
+      "language": "Nederlands",
+      "fluency": "Moedertaal"
+    },
+    {
+      "language": "Engels",
+      "fluency": "Vloeiend"
+    }
+  ],
+  "interests": [
+    {
+      "name": "Home Automation",
+      "keywords": ["Smart Home", "IoT", "Domotica"]
+    },
+    {
+      "name": "Homelab",
+      "keywords": ["Proxmox", "Virtualisatie", "Self-hosting"]
+    },
+    {
+      "name": "Vissen",
+      "keywords": ["Recreatie", "Ontspanning"]
+    }
+  ],
+  "references": [],
+  "projects": [],
+  "meta": {
+    "version": "v1.0.0",
+    "canonical": "https://github.com/jsonresume/resume-schema/blob/v1.0.0/schema.json"
+  }
+}

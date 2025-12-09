@@ -9,6 +9,7 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import data from './data.json';
+import logo from './logo.png';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(true);
@@ -45,8 +46,8 @@ const App = () => {
   return (
     <div className={`min-h-screen transition-all duration-300 ${
       darkMode 
-        ? 'bg-gradient-to-br from-green-950 via-green-900 to-green-800 text-white'
-        : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900'
+        ? 'bg-gradient-to-br from-[#F0431A] via-[#D63110] to-[#B8290A] text-white'
+        : 'bg-gradient-to-br from-[#F0431A] via-[#E85A35] to-[#FF6B4A] text-white'
     }`}>
       {/* Modern Header */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
@@ -57,9 +58,7 @@ const App = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-700 to-green-500 flex items-center justify-center text-white font-bold text-xl">
-                GFL
-              </div>
+              <img src={logo} alt="Garden For Life Logo" className="w-12 h-12 object-contain" />
               <h1 className="text-2xl font-bold bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
                 {data?.basics?.name}
               </h1>

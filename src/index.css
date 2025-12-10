@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Areplos+Text:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,4 +14,10 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+.title-font {
+  font-family: 'Areplos Text', serif;
+  font-weight: 700;
+  font-style: italic;
 }

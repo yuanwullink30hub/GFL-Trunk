@@ -8,27 +8,10 @@ import {
   FaGlobe
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
-import desktopData from './data/desktop/data.json';
-import mobileData from './data/mobile/data.json';
-import logo from './logo.png';
+import logo from '../../images/logo.png';
 
-const App = () => {
-  const [darkMode, setDarkMode] = useState(true);
+const DesktopApp = ({ darkMode, setDarkMode, data }) => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  // Get data based on screen size
-  const data = isMobile ? mobileData : desktopData;
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,14 +19,6 @@ const App = () => {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const scrollToSection = (sectionId) => {
@@ -59,10 +34,10 @@ const App = () => {
   return (
     <div className={`min-h-screen transition-all duration-300 ${
       darkMode 
-        ? 'bg-gradient-to-br from-[#F0431A] via-[#D63110] to-[#B8290A] text-white'
-        : 'bg-gradient-to-br from-[#F0431A] via-[#E85A35] to-[#FF6B4A] text-white'
+        ? 'bg-gradient-to-br from-[#58057D] via-[#9d17db] to-[#B312AB] text-white'
+        : 'bg-gradient-to-br from-[#58057D] via-[#9d17db] to-[#B312AB] text-white'
     }`}>
-      {/* Modern Header */}
+      {/* Desktop Header */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         isScrolled 
           ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg' 
@@ -71,7 +46,18 @@ const App = () => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <img src={logo} alt="Garden For Life Logo" className="w-36 h-36 object-contain" />
+              <button
+                onClick={() => {
+                  const footer = document.querySelector('footer');
+                  if (footer) {
+                    footer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+                className="hover:scale-110 transition-transform duration-300 cursor-pointer"
+                title="Go to footer menu"
+              >
+                <img src={log} alt="Garden For Life Logo" className="w-36 h-36 object-contain" />
+              </button>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
                 {data?.basics?.name}
               </h1>
@@ -97,7 +83,7 @@ const App = () => {
                 onClick={() => setDarkMode(!darkMode)}
                 className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300"
               >
-                {darkMode ? <BsSun className="text-yellow-400" /> : <BsMoon className="text-blue-600" />}
+                {darkMode ? <BsSun style={{color: '#b8860b'}} /> : <BsMoon className="text-blue-600" />}
               </button>
             </div>
           </div>
@@ -194,9 +180,46 @@ const App = () => {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Desktop Footer with Navigation */}
       <footer className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-12 mt-20">
         <div className="container mx-auto px-6 text-center">
+          {/* Footer Navigation */}
+          <div className="flex justify-center items-center space-x-8 mb-8">
+            {/* Clickable Logo */}
+            <button
+              onClick={() => scrollToSection('home')}
+              className="flex-shrink-0 hover:scale-110 transition-transform duration-300"
+              title="Back to top"
+            >
+              <img src={logo} alt="Garden For Life Logo" className="w-12 h-12 object-contain" />
+            </button>
+
+            {/* Navigation Links */}
+            <nav className="flex items-center space-x-6">
+              <button
+                onClick={() => scrollToSection('home')}
+                className="transition-colors duration-300 hover:text-green-600"
+              >
+                Home
+              </button>
+              <button
+                onClick={() => scrollToSection('contact')}
+                className="transition-colors duration-300 hover:text-green-600"
+              >
+                Contact
+              </button>
+            </nav>
+
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors duration-300"
+            >
+              {darkMode ? <BsSun style={{color: '#b8860b'}} /> : <BsMoon className="text-blue-600" />}
+            </button>
+          </div>
+
+          {/* Company Info */}
           <div className="mb-6">
             <h4 className="text-2xl font-bold mb-2">{data?.basics?.name}</h4>
             <p className="text-gray-400">{data?.basics?.label}</p>
@@ -213,4 +236,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default DesktopApp;

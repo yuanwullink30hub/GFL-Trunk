@@ -29,13 +29,55 @@
     "pages": [
       {
         "id": "home",
-        "title": "Welcome to Garden For Life",
-        "content": "Garden For Life is your trusted partner for creating beautiful and sustainable green spaces. Whether you're looking to design a cozy backyard garden, a vibrant community green space, or a commercial landscape, we bring expertise, creativity, and passion to every project. Our team specializes in sustainable gardening practices, landscape design, and personalized garden solutions tailored to your needs and environment."
+        "title": "Welcome to our",
+        "story": [
+          {
+            "type": "bgImage",
+            "src": "https://via.placeholder.com/1080x1920?text=Garden+Background+1",
+            "opacity": 0.2
+          },
+          {
+            "type": "text",
+            "content": "Garden For Life is your trusted partner for creating beautiful and sustainable green spaces."
+          },
+          {
+            "type": "image",
+            "src": "https://via.placeholder.com/400x300?text=Garden+Design",
+            "alt": "Beautiful garden design",
+            "caption": "Transform your outdoor spaces"
+          },
+          {
+            "type": "text",
+            "content": "Whether you're looking to design a cozy backyard garden, a vibrant community green space, or a commercial landscape, we bring expertise, creativity, and passion to every project."
+          },
+          {
+            "type": "video",
+            "src": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "title": "Our Story"
+          },
+          {
+            "type": "text",
+            "content": "Our team specializes in sustainable gardening practices, landscape design, and personalized garden solutions tailored to your needs and environment."
+          },
+          {
+            "type": "link",
+            "text": "View Our Portfolio",
+            "href": "/portfolio",
+            "internal": true
+          },
+          {
+            "type": "cta",
+            "text": "Get Started Today",
+            "href": "/contact",
+            "internal": true,
+            "style": "primary"
+          }
+        ]
       },
       {
         "id": "contact",
         "title": "Contact Us",
-        "content": "Get in touch with our team to discuss your garden dreams. Whether you have questions about our services, need advice on garden design, or want to schedule a consultation, we're here to help. Reach out through any of the contact methods below."
+        "content": "Get in touch with our team to discuss your garden dreams."
       }
     ]
   }

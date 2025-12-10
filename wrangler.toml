@@ -1,22 +1,16 @@
 name = "gfl-trunk"
 type = "javascript"
-main = "src/index.js"
 compatibility_date = "2024-12-10"
-
-[env.production]
-name = "gfl-trunk-production"
+main = "functions/_middleware.js"
 
 [build]
 command = "npm run build"
 cwd = "./"
+watch_paths = ["src/**/*.js", "src/**/*.css"]
 
-[[routes]]
-pattern = "*"
-zone_name = "yuanwullink30.workers.dev"
+[env.production]
+name = "gfl-trunk-production"
 
 [build.upload]
 format = "modules"
-dir = "build"
-
-[env.production.build.upload]
 dir = "build"

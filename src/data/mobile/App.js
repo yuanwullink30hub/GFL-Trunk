@@ -74,7 +74,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
       {/* Gradient container at bottom of img-bg */}
       <div
-        className="w-screen"
+        className="w-full"
         style={{
           height: '2100px',
           background: 'linear-gradient(to bottom, #000000, #26163e, #26163e)',
@@ -85,7 +85,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       >
         {/* Image container in top half */}
         <div
-          className="flex items-center justify-center w-screen"
+          className="flex items-center justify-center w-full"
           style={{
             height: 'auto',
             backgroundColor: 'transparent',
@@ -106,30 +106,39 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               zIndex: 3,
               pointerEvents: 'auto',
               left: 0,
-              top: '20px',
-              width: 'calc(64.8% + 15px)',
+              top: 'clamp(149px, 27.3vh, 249px)',
+              width: 'calc(100% - 40px)',
               height: '67.5%',
               paddingLeft: '20px',
               paddingRight: '20px',
-              marginTop: '-30px'
+              marginTop: 0
             }}
           >
-            <h1 className="text-xs font-bold text-white" style={{
-              marginTop: '3px'
-            }}>Het fundament gebruikt voor deze uiteenzetting is het geloof dat de essentie van alles relationeel is en dus de bron absoluut is te herleiden uit alle relaties.</h1>
+            <h1 className="font-bold text-white text-lg" style={{
+              marginTop: '1px',
+              marginBottom: 'clamp(20px, 5vw, 35px)',
+              fontSize: 'clamp(18px, 4vw, 32px)',
+              fontFamily: 'Figtree',
+              fontWeight: '300',
+              lineHeight: '1.2'
+            }}>De luide stilte <br/>
+               En de intenste kalmte <br/> 
+               Wijzen mij de weg <br/>
+               Van het hart naar het hooofd.           </h1>
+
+            {/* Paragraph inside container */}
+            <p className="text-xxs font-bold text-white" style={{
+              width: '100%',
+              fontSize: 'clamp(14px, 3.5vw, 28px)',
+              fontWeight: 'bold',
+              marginTop: 'clamp(20px, 4vw, 32px)',
+              marginBottom: 0
+            }}>De ontembare chaos uit haar wil door één lied (uni-verse) Allen zijn dus een noot in deze symfonie. Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. Een vlekkeloze perceptie is dus wanneer de wil schoonheid bereikt middels karakter, liefhebben en vergaan, sterven voor eeuwige liefde. Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor nieuw en gezond leven.</p>
+
+Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor nieuw en gezond leven.
           </div>
 
-          {/* Full-width paragraph below text container */}
-          <p className="text-xxs font-bold text-white" style={{
-            position: 'absolute',
-            bottom: '-5px',
-            left: 0,
-            width: '100%',
-            zIndex: 2,
-            paddingLeft: '20px',
-            paddingRight: '20px',
-            textAlign: 'center'
-          }}>Jouw mening over de wereld is ook een opbiechting van je karakter</p>
+          {/* Full-width paragraph below text container - REMOVED */}
         </div>
       </div>
 
@@ -152,7 +161,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               {homeTab.story.map((block, idx) => (
                 <div key={idx}>
                   {block.type === 'text' && (
-                    <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                    <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed" style={{ fontSize: 'clamp(14px, 2vw, 20px)' }}>
                       {block.content}
                     </p>
                   )}
@@ -165,7 +174,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                         className="w-full h-auto"
                       />
                       {block.caption && (
-                        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-3">
+                        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-3" style={{ fontSize: 'clamp(10px, 1.5vw, 14px)' }}>
                           {block.caption}
                         </p>
                       )}
@@ -225,7 +234,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           ) : (
             // Fallback to original layout if no story
             <div className="text-center">
-              <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
+              <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8" style={{ fontSize: 'clamp(14px, 2vw, 20px)' }}>
                 {homeTab?.content}
               </p>
               <button
@@ -248,7 +257,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 <FaMapMarkerAlt className="text-xl flex-shrink-0" style={{color: '#f22b00'}} />
                 <div>
                   <p className="font-semibold text-sm" style={{color: '#f22b00'}}>Location</p>
-                  <p className="text-gray-600 dark:text-gray-400 text-xs">
+                  <p className="text-gray-600 dark:text-gray-400 text-xs" style={{ fontSize: 'clamp(10px, 1.5vw, 14px)' }}>
                     {data?.basics?.location?.city}, {data?.basics?.location?.country}
                   </p>
                 </div>
@@ -258,7 +267,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 <FaPhone className="text-xl flex-shrink-0" style={{color: '#f22b00'}} />
                 <div>
                   <p className="font-semibold text-sm" style={{color: '#f22b00'}}>Phone</p>
-                  <a href={`tel:${data?.basics?.phone}`} className="text-xs" style={{color: '#f22b00'}}>
+                  <a href={`tel:${data?.basics?.phone}`} className="text-xs" style={{color: '#f22b00', fontSize: 'clamp(10px, 1.5vw, 14px)'}}>
                     {data?.basics?.phone}
                   </a>
                 </div>
@@ -268,7 +277,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 <FaEnvelope className="text-xl flex-shrink-0" style={{color: '#f22b00'}} />
                 <div>
                   <p className="font-semibold text-sm" style={{color: '#f22b00'}}>Email</p>
-                  <a href={`mailto:${data?.basics?.email}`} className="text-xs" style={{color: '#f22b00'}}>
+                  <a href={`mailto:${data?.basics?.email}`} className="text-xs" style={{color: '#f22b00', fontSize: 'clamp(10px, 1.5vw, 14px)'}}>
                     {data?.basics?.email}
                   </a>
                 </div>
@@ -276,7 +285,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             </div>
 
             <div className="mt-8 pt-4 border-t border-gray-300 dark:border-gray-600">
-              <h4 className="text-sm font-semibold mb-4 text-center" style={{color: '#f22b00'}}>Follow Us</h4>
+              <h4 className="text-sm font-semibold mb-4 text-center" style={{color: '#f22b00', fontSize: 'clamp(12px, 2vw, 16px)'}}>Follow Us</h4>
               <div className="flex justify-center space-x-4">
                 {data?.basics?.profiles?.map((profile, idx) => {
                   const icons = {
@@ -345,12 +354,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
           {/* Company Info */}
           <div className="mb-3">
-            <h4 className="text-2xl font-bold mb-1">{data?.basics?.name}</h4>
-            <p className="text-gray-400 text-sm">{data?.basics?.label}</p>
+            <h4 className="text-2xl font-bold mb-1" style={{ fontSize: 'clamp(18px, 3vw, 28px)' }}>{data?.basics?.name}</h4>
+            <p className="text-gray-400 text-sm" style={{ fontSize: 'clamp(12px, 2vw, 16px)' }}>{data?.basics?.label}</p>
           </div>
           
           <div className="border-t border-gray-700 pt-4">
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 text-sm" style={{ fontSize: 'clamp(10px, 1.5vw, 14px)' }}>
               © 2025 {data?.basics?.name}. All rights reserved.
             </p>
           </div>

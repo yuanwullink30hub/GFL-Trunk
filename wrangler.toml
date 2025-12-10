@@ -1,0 +1,22 @@
+name = "gfl-trunk"
+type = "javascript"
+main = "src/index.js"
+compatibility_date = "2024-12-10"
+
+[env.production]
+name = "gfl-trunk-production"
+
+[build]
+command = "npm run build"
+cwd = "./"
+
+[[routes]]
+pattern = "*"
+zone_name = "yuanwullink30.workers.dev"
+
+[build.upload]
+format = "modules"
+dir = "build"
+
+[env.production.build.upload]
+dir = "build"

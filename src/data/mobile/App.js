@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -26,7 +26,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   };
 
   const homeTab = data?.basics?.pages?.find(page => page.id === 'home');
-  const contactTab = data?.basics?.pages?.find(page => page.id === 'contact');
 
   return (
     <>

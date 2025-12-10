@@ -9,8 +9,8 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
-import headerBgVid from '../../videos/bg-header-vid.mp4';
-import gradientImg from '../../images/bg-header-footer.jpg';
+import headerBgVid from '../../videos/bgheader-vid.mp4';
+import gradientImg from '../../images/bg-header-footer1.jpg';
 import '../../styles/header.css';
 import '../../styles/poetry.css';
 import '../../styles/text.css';

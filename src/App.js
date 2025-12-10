@@ -13,6 +13,10 @@ import desktopData from './data/desktop/data.json';
 import mobileData from './data/mobile/data.json';
 import MobileAppContent from './data/mobile/App';
 import logo from './images/logo.png';
+import './styles/header.css';
+import './styles/poetry.css';
+import './styles/text.css';
+import './styles/subtitles.css';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(true);
@@ -149,11 +153,11 @@ const App = () => {
       {/* Home Section */}
       <section id="home" className="pt-32 pb-20 px-6">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-5xl font-bold mb-6 title-font" style={{color: '#f22b00', fontSize: 'clamp(32px, 5vw, 56px'}}>
+          <h2 className="header" style={{color: '#f22b00'}}>
             {homeTab?.title}
           </h2>
           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-12 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
-            <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8" style={{ fontSize: 'clamp(14px, 2vw, 20px)' }}>
+            <p className="text mb-8">
               {homeTab?.content}
             </p>
             <button
@@ -169,11 +173,11 @@ const App = () => {
       {/* Contact Section */}
       <section id="contact" className="py-20 px-6">
         <div className="container mx-auto max-w-4xl">
-          <h2 className="text-4xl font-bold mb-12 text-center title-font" style={{color: '#f22b00', fontSize: 'clamp(28px, 4vw, 48px'}}>
+          <h2 className="header subtitles text-center mb-12" style={{color: '#f22b00'}}>
             {contactTab?.title}
           </h2>
           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-12 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
-            <p className="text-lg text-gray-700 dark:text-gray-300 mb-12 text-center" style={{ fontSize: 'clamp(14px, 2vw, 20px)' }}>
+            <p className="text mb-12 text-center">
               {contactTab?.content}
             </p>
 
@@ -182,7 +186,7 @@ const App = () => {
                 <FaMapMarkerAlt className="text-green-600 text-2xl flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Location</p>
-                  <p className="text-gray-600 dark:text-gray-400" style={{ fontSize: 'clamp(10px, 1.5vw, 14px)' }}>
+                  <p className="subtitles">
                     {data?.basics?.location?.city}, {data?.basics?.location?.country}
                   </p>
                 </div>
@@ -192,7 +196,7 @@ const App = () => {
                 <FaPhone className="text-green-600 text-2xl flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Phone</p>
-                  <a href={`tel:${data?.basics?.phone}`} className="text-green-600 hover:text-green-500" style={{ fontSize: 'clamp(10px, 1.5vw, 14px)' }}>
+                  <a href={`tel:${data?.basics?.phone}`} className="subtitles text-green-600 hover:text-green-500">
                     {data?.basics?.phone}
                   </a>
                 </div>
@@ -202,7 +206,7 @@ const App = () => {
                 <FaEnvelope className="text-green-600 text-2xl flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Email</p>
-                  <a href={`mailto:${data?.basics?.email}`} className="text-green-600 hover:text-green-500" style={{ fontSize: 'clamp(10px, 1.5vw, 14px)' }}>
+                  <a href={`mailto:${data?.basics?.email}`} className="subtitles text-green-600 hover:text-green-500">
                     {data?.basics?.email}
                   </a>
                 </div>
@@ -210,7 +214,7 @@ const App = () => {
             </div>
 
             <div className="mt-12 pt-8 border-t border-gray-300 dark:border-gray-600">
-              <h4 className="text-lg font-semibold mb-6 text-center" style={{ fontSize: 'clamp(14px, 2vw, 18px)' }}>Follow Us</h4>
+              <h4 className="subtitles font-semibold mb-6 text-center">Follow Us</h4>
               <div className="flex justify-center space-x-6">
                 {data?.basics?.profiles?.map((profile, idx) => {
                   const icons = {
@@ -240,12 +244,12 @@ const App = () => {
       <footer className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-12 mt-20">
         <div className="container mx-auto px-6 text-center">
           <div className="mb-6">
-            <h4 className="text-2xl font-bold mb-2" style={{ fontSize: 'clamp(18px, 3vw, 28px)' }}>{data?.basics?.name}</h4>
-            <p className="text-gray-400" style={{ fontSize: 'clamp(12px, 2vw, 16px)' }}>{data?.basics?.label}</p>
+            <h4 className="header mb-2">{data?.basics?.name}</h4>
+            <p className="subtitles text-gray-400">{data?.basics?.label}</p>
           </div>
           
           <div className="border-t border-gray-700 pt-8">
-            <p className="text-gray-400" style={{ fontSize: 'clamp(10px, 1.5vw, 14px)' }}>
+            <p className="subtitles text-gray-400">
               © 2025 {data?.basics?.name}. All rights reserved.
             </p>
           </div>

@@ -11,6 +11,10 @@ import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
 import headerBgVid from '../../videos/bg-header-vid.mp4';
 import gradientImg from '../../images/bg-header-footer.jpg';
+import '../../styles/header.css';
+import '../../styles/poetry.css';
+import '../../styles/text.css';
+import '../../styles/subtitles.css';
 
 const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
@@ -106,39 +110,37 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               zIndex: 3,
               pointerEvents: 'auto',
               left: 0,
-              top: 'clamp(149px, 27.3vh, 249px)',
+              top: 'clamp(-40px, -5vh, -20px)',
               width: 'calc(100% - 40px)',
-              height: '67.5%',
+              height: '100%',
               paddingLeft: '20px',
               paddingRight: '20px',
-              marginTop: 0
+              paddingTop: '-30px',
+              justifyContent: 'flex-start'
             }}
           >
-            <h1 className="font-bold text-white text-lg" style={{
-              marginTop: '1px',
+            <h1 className="poetry" style={{
+              marginTop: 0,
               marginBottom: 'clamp(20px, 5vw, 35px)',
-              fontSize: 'clamp(18px, 4vw, 32px)',
-              fontFamily: 'Figtree',
-              fontWeight: '300',
-              lineHeight: '1.2'
+              fontSize: 'clamp(27px, 6vw, 48px)'
             }}>De luide stilte <br/>
-               En de intenste kalmte <br/> 
+               En de intense kalmte <br/> 
                Wijzen mij de weg <br/>
-               Van het hart naar het hooofd.           </h1>
+               Van het hart naar het hooofd           </h1>
 
             {/* Paragraph inside container */}
-            <p className="text-xxs font-bold text-white" style={{
+            <p className="text" style={{
               width: '100%',
               fontSize: 'clamp(14px, 3.5vw, 28px)',
-              fontWeight: 'bold',
               marginTop: 'clamp(20px, 4vw, 32px)',
               marginBottom: 0
-            }}>De ontembare chaos uit haar wil door één lied (uni-verse) Allen zijn dus een noot in deze symfonie. Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. Een vlekkeloze perceptie is dus wanneer de wil schoonheid bereikt middels karakter, liefhebben en vergaan, sterven voor eeuwige liefde. Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor nieuw en gezond leven.</p>
-
-Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor nieuw en gezond leven.
+            }}>De ontembare chaos uit haar wil door één lied (uni-verse) <br />
+             Allen zijn dus een noot in deze symfonie. <br />
+             Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, <br /> 
+             loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
+             Zo ontstaat er ruimte voor het feminiene om te bloeien en te groeien. <br />
+            </p>
           </div>
-
-          {/* Full-width paragraph below text container - REMOVED */}
         </div>
       </div>
 
@@ -161,7 +163,7 @@ Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor 
               {homeTab.story.map((block, idx) => (
                 <div key={idx}>
                   {block.type === 'text' && (
-                    <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed" style={{ fontSize: 'clamp(14px, 2vw, 20px)' }}>
+                    <p className="text leading-relaxed">
                       {block.content}
                     </p>
                   )}
@@ -174,7 +176,7 @@ Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor 
                         className="w-full h-auto"
                       />
                       {block.caption && (
-                        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-3" style={{ fontSize: 'clamp(10px, 1.5vw, 14px)' }}>
+                        <p className="subtitles text-center text-gray-600 dark:text-gray-400 mt-3">
                           {block.caption}
                         </p>
                       )}
@@ -205,7 +207,7 @@ Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor 
                             scrollToSection(block.href.replace('/', ''));
                           }
                         }}
-                        className="inline-block text-lg font-semibold text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors duration-300 underline"
+                        className="inline-block header font-semibold text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors duration-300 underline"
                       >
                         {block.text}
                       </a>
@@ -234,7 +236,7 @@ Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor 
           ) : (
             // Fallback to original layout if no story
             <div className="text-center">
-              <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8" style={{ fontSize: 'clamp(14px, 2vw, 20px)' }}>
+              <p className="text leading-relaxed mb-8">
                 {homeTab?.content}
               </p>
               <button
@@ -267,7 +269,7 @@ Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor 
                 <FaPhone className="text-xl flex-shrink-0" style={{color: '#f22b00'}} />
                 <div>
                   <p className="font-semibold text-sm" style={{color: '#f22b00'}}>Phone</p>
-                  <a href={`tel:${data?.basics?.phone}`} className="text-xs" style={{color: '#f22b00', fontSize: 'clamp(10px, 1.5vw, 14px)'}}>
+                  <a href={`tel:${data?.basics?.phone}`} className="subtitles" style={{color: '#f22b00'}}>
                     {data?.basics?.phone}
                   </a>
                 </div>
@@ -277,7 +279,7 @@ Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor 
                 <FaEnvelope className="text-xl flex-shrink-0" style={{color: '#f22b00'}} />
                 <div>
                   <p className="font-semibold text-sm" style={{color: '#f22b00'}}>Email</p>
-                  <a href={`mailto:${data?.basics?.email}`} className="text-xs" style={{color: '#f22b00', fontSize: 'clamp(10px, 1.5vw, 14px)'}}>
+                  <a href={`mailto:${data?.basics?.email}`} className="subtitles" style={{color: '#f22b00'}}>
                     {data?.basics?.email}
                   </a>
                 </div>
@@ -285,7 +287,7 @@ Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor 
             </div>
 
             <div className="mt-8 pt-4 border-t border-gray-300 dark:border-gray-600">
-              <h4 className="text-sm font-semibold mb-4 text-center" style={{color: '#f22b00', fontSize: 'clamp(12px, 2vw, 16px)'}}>Follow Us</h4>
+              <h4 className="subtitles font-semibold mb-4 text-center" style={{color: '#f22b00'}}>Follow Us</h4>
               <div className="flex justify-center space-x-4">
                 {data?.basics?.profiles?.map((profile, idx) => {
                   const icons = {
@@ -354,12 +356,12 @@ Deze fundering creëert de gepaste ruimte om het mystieke te laten vloeien voor 
 
           {/* Company Info */}
           <div className="mb-3">
-            <h4 className="text-2xl font-bold mb-1" style={{ fontSize: 'clamp(18px, 3vw, 28px)' }}>{data?.basics?.name}</h4>
-            <p className="text-gray-400 text-sm" style={{ fontSize: 'clamp(12px, 2vw, 16px)' }}>{data?.basics?.label}</p>
+            <h4 className="header mb-1">{data?.basics?.name}</h4>
+            <p className="subtitles text-gray-400">{data?.basics?.label}</p>
           </div>
           
           <div className="border-t border-gray-700 pt-4">
-            <p className="text-gray-400 text-sm" style={{ fontSize: 'clamp(10px, 1.5vw, 14px)' }}>
+            <p className="subtitles text-gray-400">
               © 2025 {data?.basics?.name}. All rights reserved.
             </p>
           </div>

@@ -9,6 +9,10 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
+import '../../styles/header.css';
+import '../../styles/poetry.css';
+import '../../styles/text.css';
+import '../../styles/subtitles.css';
 
 const DesktopApp = ({ darkMode, setDarkMode, data }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -93,11 +97,11 @@ const DesktopApp = ({ darkMode, setDarkMode, data }) => {
       {/* Home Section */}
       <section id="home" className="pt-32 pb-20 px-6">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
+          <h2 className="header" style={{color: '#f22b00'}}>
             {homeTab?.title}
           </h2>
           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-12 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
-            <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
+            <p className="text leading-relaxed mb-8">
               {homeTab?.content}
             </p>
             <button
@@ -113,11 +117,11 @@ const DesktopApp = ({ darkMode, setDarkMode, data }) => {
       {/* Contact Section */}
       <section id="contact" className="py-20 px-6">
         <div className="container mx-auto max-w-4xl">
-          <h2 className="text-4xl font-bold mb-12 text-center bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
+          <h2 className="header subtitles text-center mb-12" style={{color: '#f22b00'}}>
             {contactTab?.title}
           </h2>
           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-12 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
-            <p className="text-lg text-gray-700 dark:text-gray-300 mb-12 text-center">
+            <p className="text mb-12 text-center">
               {contactTab?.content}
             </p>
 
@@ -126,7 +130,7 @@ const DesktopApp = ({ darkMode, setDarkMode, data }) => {
                 <FaMapMarkerAlt className="text-green-600 text-2xl flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Location</p>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="subtitles">
                     {data?.basics?.location?.city}, {data?.basics?.location?.country}
                   </p>
                 </div>
@@ -136,7 +140,7 @@ const DesktopApp = ({ darkMode, setDarkMode, data }) => {
                 <FaPhone className="text-green-600 text-2xl flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Phone</p>
-                  <a href={`tel:${data?.basics?.phone}`} className="text-green-600 hover:text-green-500">
+                  <a href={`tel:${data?.basics?.phone}`} className="subtitles text-green-600 hover:text-green-500">
                     {data?.basics?.phone}
                   </a>
                 </div>
@@ -146,7 +150,7 @@ const DesktopApp = ({ darkMode, setDarkMode, data }) => {
                 <FaEnvelope className="text-green-600 text-2xl flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Email</p>
-                  <a href={`mailto:${data?.basics?.email}`} className="text-green-600 hover:text-green-500">
+                  <a href={`mailto:${data?.basics?.email}`} className="subtitles text-green-600 hover:text-green-500">
                     {data?.basics?.email}
                   </a>
                 </div>
@@ -154,7 +158,7 @@ const DesktopApp = ({ darkMode, setDarkMode, data }) => {
             </div>
 
             <div className="mt-12 pt-8 border-t border-gray-300 dark:border-gray-600">
-              <h4 className="text-lg font-semibold mb-6 text-center">Follow Us</h4>
+              <h4 className="subtitles font-semibold mb-6 text-center">Follow Us</h4>
               <div className="flex justify-center space-x-6">
                 {data?.basics?.profiles?.map((profile, idx) => {
                   const icons = {
@@ -221,12 +225,12 @@ const DesktopApp = ({ darkMode, setDarkMode, data }) => {
 
           {/* Company Info */}
           <div className="mb-6">
-            <h4 className="text-2xl font-bold mb-2">{data?.basics?.name}</h4>
-            <p className="text-gray-400">{data?.basics?.label}</p>
+            <h4 className="header mb-2">{data?.basics?.name}</h4>
+            <p className="subtitles text-gray-400">{data?.basics?.label}</p>
           </div>
           
           <div className="border-t border-gray-700 pt-8">
-            <p className="text-gray-400">
+            <p className="subtitles text-gray-400">
               © 2025 {data?.basics?.name}. All rights reserved.
             </p>
           </div>

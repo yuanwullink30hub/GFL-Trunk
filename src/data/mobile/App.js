@@ -286,7 +286,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             </div>
 
             <div className="mt-8 pt-4 border-t border-gray-300 dark:border-gray-600">
-              <h4 className="subtitles font-semibold mb-4 text-center" style={{color: '#f22b00'}}>Follow Us</h4>
+              <h4 className="subtitles font-semibold mb-4 text-center" style={{color: '#f22b00'}}>Follow</h4>
               <div className="flex justify-center space-x-4">
                 {data?.basics?.profiles?.map((profile, idx) => {
                   const icons = {

@@ -139,6 +139,32 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
              loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
              Zo ontstaat er ruimte voor het feminiene om te bloeien en te groeien. <br />
             </p>
+
+            {/* Video Container with 1:1 Aspect Ratio */}
+            <div
+              style={{
+                width: 'clamp(200px, 90vw, 500px)',
+                aspectRatio: '1 / 1',
+                margin: 'clamp(30px, 8vw, 60px) auto',
+                borderRadius: '1rem',
+                overflow: 'hidden',
+                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)'
+              }}
+            >
+              <video
+                width="100%"
+                height="100%"
+                style={{ objectFit: 'cover' }}
+                controls
+                autoPlay
+                loop
+                muted
+                playsInline
+              >
+                <source src={headerBgVid} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
           </div>
         </div>
       </div>
@@ -286,7 +312,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             </div>
 
             <div className="mt-8 pt-4 border-t border-gray-300 dark:border-gray-600">
-              <h4 className="subtitles font-semibold mb-4 text-center" style={{color: '#f22b00'}}>Follow</h4>
+              <h4 className="subtitles font-semibold mb-4 text-center" style={{color: '#f22b00'}}>Follow me</h4>
               <div className="flex justify-center space-x-4">
                 {data?.basics?.profiles?.map((profile, idx) => {
                   const icons = {

@@ -30,11 +30,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   return (
     <>
       {/* Mobile Header - Logo Only (hidden when scrolling down) */}
-      <header className="fixed top-0 w-full bg-transparent" style={{zIndex: 9999}}>
-        <div className="container mx-auto px-6 py-4">
-          <div className={`flex flex-col items-center transition-all duration-300 ${
-            scrollDirection === 'down' ? 'opacity-0 h-0' : 'opacity-100'
-          }`}>
+      <header className="fixed top-0 w-full bg-transparent flex justify-center" style={{zIndex: 9999, paddingLeft: 'clamp(15px, 2vw, 20px)'}}>
+        <div className={`transition-all duration-300 py-4 ${
+          scrollDirection === 'down' ? 'opacity-0 h-0' : 'opacity-100'
+        }`}>
             <button
               onClick={() => {
                 const footer = document.querySelector('footer');
@@ -45,17 +44,16 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               className="hover:scale-110 transition-transform duration-300 cursor-pointer"
               title="Go to footer menu"
             >
-              <img src={logo} alt="Garden For Life Logo" className="w-44 h-44 object-contain" />
+              <img src={logo} alt="Garden For Life Logo" style={{ width: 'clamp(130px, 25vh, 176px)', height: 'clamp(130px, 25vh, 176px)' }} className="object-contain" />
             </button>
           </div>
-        </div>
-      </header>
+        </header>
 
       {/* Full-screen Video Container (scrollable behind logo) */}
       <div 
         className="w-full relative overflow-hidden"
         style={{
-          height: 'calc(100vh + 60px)',
+          height: 'clamp(60vh, 80vh, 100vh)',
           position: 'relative',
           zIndex: 1
         }}
@@ -65,9 +63,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className="absolute inset-0 w-full object-cover pointer-events-none"
           style={{
-            objectFit: 'cover'
+            objectFit: 'cover',
+            height: 'clamp(60vh, 80vh, 100vh)'
           }}
         >
           <source src={headerBgVid} type="video/mp4" />
@@ -110,7 +109,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               pointerEvents: 'auto',
               left: 0,
               top: 'clamp(-40px, -5vh, -20px)',
-              width: 'calc(100% - 40px)',
+              width: '100%',
               height: '100%',
               paddingLeft: '20px',
               paddingRight: '20px',
@@ -120,8 +119,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           >
             <h1 className="poetry" style={{
               marginTop: 0,
-              marginBottom: 'clamp(20px, 5vw, 35px)',
-              fontSize: 'clamp(27px, 6vw, 48px)'
+              marginBottom: 'clamp(26px, 6.5vw, 45.5px)',
+              fontSize: 'clamp(23.4px, 5.2vw, 46.8px)',
+              lineHeight: '1.2',
+              width: '100%',
+              whiteSpace: 'normal',
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word'
             }}>De luide stilte <br/>
                En de intense kalmte <br/> 
                Wijzen mij de weg <br/>
@@ -132,46 +136,50 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               width: '100%',
               fontSize: 'clamp(14px, 3.5vw, 28px)',
               marginTop: 'clamp(20px, 4vw, 32px)',
-              marginBottom: 0
-            }}>De ontembare chaos uit haar wil door één lied (uni-verse) <br />
-             Allen zijn dus een noot in deze symfonie. <br />
-             Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, <br /> 
-             loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
+              marginBottom: '-50px',
+              whiteSpace: 'normal',
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+              lineHeight: '1.4'
+            }}>De ontembare chaos uit haar wil door één lied (uni-verse). Allen zijn dus een noot in deze symfonie. <br />
+             <br />
+             Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
              Zo ontstaat er ruimte voor het feminiene om te bloeien en te groeien. <br />
             </p>
+
+            {/* Knight WebM Video Container - bottom of text */}
+            <div
+              className="w-full"
+              style={{
+                height: 'auto',
+                position: 'relative',
+                zIndex: 10,
+                backgroundColor: 'transparent',
+                overflow: 'visible',
+                marginTop: 'clamp(20px, 4vw, 32px)',
+                width: '100%'
+              }}
+            >
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full object-cover block"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  height: '200px',
+                  mixBlendMode: 'screen',
+                  backgroundColor: 'transparent'
+                }}
+              >
+                <source src="/knightwebm.webm" type="video/webm" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Knight WebM Video Container - over gradient */}
-      <div
-        className="w-full"
-        style={{
-          height: 'auto',
-          position: 'relative',
-          zIndex: 5,
-          backgroundColor: 'transparent',
-          overflow: 'visible',
-          marginTop: '-300px'
-        }}
-      >
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full object-cover block"
-          style={{
-            display: 'block',
-            width: '100%',
-            height: '400px',
-            mixBlendMode: 'screen',
-            backgroundColor: 'transparent'
-          }}
-        >
-          <source src="/knightwebm.webm" type="video/webm" />
-          Your browser does not support the video tag.
-        </video>
       </div>
 
       {/* Matching fade container */}

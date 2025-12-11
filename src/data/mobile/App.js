@@ -55,13 +55,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       <div 
         className="w-full relative overflow-hidden"
         style={{
-          height: 'calc(100vh + 60px)',
-          position: 'relative',
-          zIndex: 1,
-          marginLeft: '-7px',
-          width: 'calc(100% + 10px)',
+          width: '100%',
           aspectRatio: '16 / 9',
-          maxHeight: '100vh'
+          position: 'relative',
+          zIndex: 1
         }}
       >
         <video

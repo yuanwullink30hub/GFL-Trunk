@@ -7,6 +7,12 @@ const PasswordProtect = ({ children }) => {
 
   // Check if already authenticated on mount
   useEffect(() => {
+    // Skip password on localhost
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      setIsAuthenticated(true);
+      return;
+    }
+    
     const stored = localStorage.getItem('gfl_authenticated');
     if (stored) {
       setIsAuthenticated(true);

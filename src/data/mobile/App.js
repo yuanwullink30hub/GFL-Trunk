@@ -30,10 +30,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   return (
     <>
       {/* Mobile Header - Logo Only (hidden when scrolling down) */}
-      <header className="fixed top-0 w-full bg-transparent flex justify-center" style={{zIndex: 9999, paddingLeft: 'clamp(15px, 2vw, 20px)'}}>
-        <div className={`transition-all duration-300 py-4 ${
-          scrollDirection === 'down' ? 'opacity-0 h-0' : 'opacity-100'
-        }`}>
+      <header className="fixed top-0 w-full bg-transparent" style={{zIndex: 9999}}>
+        <div className="container mx-auto px-6 py-4">
+          <div className={`flex flex-col items-center transition-all duration-300 ${
+            scrollDirection === 'down' ? 'opacity-0 h-0' : 'opacity-100'
+          }`}>
             <button
               onClick={() => {
                 const footer = document.querySelector('footer');
@@ -44,18 +45,21 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               className="hover:scale-110 transition-transform duration-300 cursor-pointer"
               title="Go to footer menu"
             >
-              <img src={logo} alt="Garden For Life Logo" style={{ width: 'clamp(130px, 25vh, 176px)', height: 'clamp(130px, 25vh, 176px)' }} className="object-contain" />
+              <img src={logo} alt="Garden For Life Logo" className="w-44 h-44 object-contain" />
             </button>
           </div>
-        </header>
+        </div>
+      </header>
 
       {/* Full-screen Video Container (scrollable behind logo) */}
       <div 
         className="w-full relative overflow-hidden"
         style={{
-          height: 'clamp(60vh, 80vh, 100vh)',
+          height: 'calc(100vh + 60px)',
           position: 'relative',
-          zIndex: 1
+          zIndex: 1,
+          marginLeft: '-7px',
+          width: 'calc(100% + 10px)'
         }}
       >
         <video
@@ -63,10 +67,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full object-cover pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           style={{
-            objectFit: 'cover',
-            height: 'clamp(60vh, 80vh, 100vh)'
+            objectFit: 'cover'
           }}
         >
           <source src={headerBgVid} type="video/mp4" />
@@ -107,9 +110,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             style={{
               zIndex: 3,
               pointerEvents: 'auto',
-              left: 0,
+              left: '10px',
               top: 'clamp(-40px, -5vh, -20px)',
-              width: '100%',
+              width: 'calc(100% - 10px)',
               height: '100%',
               paddingLeft: '20px',
               paddingRight: '20px',
@@ -118,7 +121,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             }}
           >
             <h1 className="poetry" style={{
-              marginTop: 0,
+              marginTop: '-9px',
               marginBottom: 'clamp(26px, 6.5vw, 45.5px)',
               fontSize: 'clamp(23.4px, 5.2vw, 46.8px)',
               lineHeight: '1.2',
@@ -136,11 +139,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               width: '100%',
               fontSize: 'clamp(14px, 3.5vw, 28px)',
               marginTop: 'clamp(20px, 4vw, 32px)',
-              marginBottom: '-50px',
+              marginBottom: '-90px',
               whiteSpace: 'normal',
               wordWrap: 'break-word',
               overflowWrap: 'break-word',
-              lineHeight: '1.4'
+              lineHeight: '1.4',
+              backgroundColor: 'transparent',
+              transform: 'translateY(-49px)'
             }}>De ontembare chaos uit haar wil door één lied (uni-verse). Allen zijn dus een noot in deze symfonie. <br />
              <br />
              Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />

@@ -1,16 +1,17 @@
 name = "gfl-trunk"
 type = "javascript"
+account_id = ""
+workers_dev = true
 compatibility_date = "2024-12-10"
-main = "functions/_middleware.js"
+
+[env.production]
+name = "gfl-trunk-production"
+workers_dev = true
 
 [build]
 command = "npm run build"
 cwd = "./"
-watch_paths = ["src/**/*.js", "src/**/*.css"]
-
-[env.production]
-name = "gfl-trunk-production"
 
 [build.upload]
-format = "modules"
+format = "service-worker"
 dir = "build"

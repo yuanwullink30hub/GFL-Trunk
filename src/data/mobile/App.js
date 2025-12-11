@@ -53,12 +53,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
       {/* Full-screen Video Container (scrollable behind logo) */}
       <div 
-        className="w-full relative overflow-hidden"
+        className="w-screen"
         style={{
-          width: '100%',
-          aspectRatio: '16 / 9',
+          height: '100vh',
           position: 'relative',
-          zIndex: 1
+          zIndex: 1,
+          overflow: 'hidden'
         }}
       >
         <video

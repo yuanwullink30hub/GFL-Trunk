@@ -8,6 +8,7 @@ import {
   FaGlobe
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
+import PasswordProtect from './components/PasswordProtect';
 import generalData from './data.json';
 import desktopData from './data/desktop/data.json';
 import mobileData from './data/mobile/data.json';
@@ -72,13 +73,15 @@ const App = () => {
   // If mobile, render mobile-specific content from mobile/App.js
   if (isMobile) {
     return (
-      <div className={`min-h-screen transition-all duration-300 ${
-        darkMode 
-          ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-          : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-      }`}>
-        <MobileAppContent darkMode={darkMode} setDarkMode={setDarkMode} data={data} scrollDirection={scrollDirection} />
-      </div>
+      <PasswordProtect>
+        <div className={`min-h-screen transition-all duration-300 ${
+          darkMode 
+            ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+            : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+        }`}>
+          <MobileAppContent darkMode={darkMode} setDarkMode={setDarkMode} data={data} scrollDirection={scrollDirection} />
+        </div>
+      </PasswordProtect>
     );
   }
 
@@ -95,11 +98,12 @@ const App = () => {
 
   // Desktop version
   return (
-    <div className={`min-h-screen transition-all duration-300 ${
-      darkMode 
-        ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-        : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-    }`}>
+    <PasswordProtect>
+      <div className={`min-h-screen transition-all duration-300 ${
+        darkMode 
+          ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+          : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+      }`}>
       {/* Desktop Header - Side-by-side Layout */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         isScrolled 
@@ -255,7 +259,8 @@ const App = () => {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </PasswordProtect>
   );
 };
 

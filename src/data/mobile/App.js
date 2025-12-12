@@ -28,9 +28,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const homeTab = data?.basics?.pages?.find(page => page.id === 'home');
 
   return (
-    <>
+    <div style={{overflow: 'hidden', width: '100%', maxWidth: '100vw'}}>
       {/* Mobile Header - Logo Only (hidden when scrolling down) */}
-      <header className="fixed top-0 w-full bg-transparent" style={{zIndex: 9999}}>
+      <header className="fixed top-0 w-full bg-transparent" style={{zIndex: 9999, overflow: 'hidden', width: '100vw', maxWidth: '100%'}}>
         <div className="container mx-auto px-6 py-4">
           <div className={`flex flex-col items-center transition-all duration-300 ${
             scrollDirection === 'down' ? 'opacity-0 h-0' : 'opacity-100'
@@ -53,12 +53,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
       {/* Full-screen Video Container (scrollable behind logo) */}
       <div 
-        className="w-screen"
+        className="w-full overflow-hidden"
         style={{
           height: '100vh',
           position: 'relative',
           zIndex: 1,
-          overflow: 'hidden'
+          overflow: 'hidden',
+          maxWidth: '100%'
         }}
       >
         <video
@@ -82,7 +83,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         style={{
           minHeight: '2100px',
           background: 'linear-gradient(to bottom, #000000, #26163e, #26163e)',
-          zIndex: 2,
+          zIndex: 1,
           position: 'relative',
           paddingTop: '100px'
         }}
@@ -91,7 +92,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         <div
           className="flex flex-col items-start justify-start w-full"
           style={{
-            zIndex: 3,
+            zIndex: 2,
             pointerEvents: 'auto',
             paddingLeft: '20px',
             paddingRight: '20px',
@@ -143,38 +144,102 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               alignItems: 'flex-start',
               gap: 'clamp(10px, 2vw, 20px)',
               marginTop: 'clamp(20px, 4vw, 32px)',
+              marginLeft: '-4.5%',
               position: 'relative',
-              zIndex: 10
+              zIndex: 10,
+              overflow: 'visible',
+              width: '100%',
+              maxWidth: 'clamp(400px, 90vw, 1200px)',
+              margin: '0 auto'
             }}>
-              {/* Image Container - Left Side */}
+              {/* Image Container - Triangle 1 */}
               <div
                 style={{
                   width: 'clamp(160px, 30vw, 300px)',
                   height: 'clamp(160px, 30vw, 300px)',
                   backgroundColor: 'transparent',
                   border: 'none',
-                  overflow: 'hidden',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  position: 'relative',
+                  position: 'absolute',
                   flexShrink: 0,
-                  marginTop: '-30px',
-                  transform: 'rotate(15deg)'
+                  transform: 'rotate(15deg) rotate(-30deg)',
+                  zIndex: 1,
+                  left: '-7%',
+                  top: '7.8%'
                 }}
               >
                 <img
                   src={triangleOrange}
-                  alt="Decorative Triangle"
+                  alt="Decorative Triangle 1"
                   style={{
-                    width: '90%',
-                    height: '90%',
+                    width: 'calc(clamp(160px, 30vw, 300px) * 0.7)',
+                    height: 'calc(clamp(160px, 30vw, 300px) * 0.7)',
                     objectFit: 'contain'
                   }}
                 />
               </div>
 
-              {/* WebM Video - Moved 100px left */}
+              {/* Image Container - Triangle 2 */}
+              <div
+                style={{
+                  width: 'clamp(160px, 30vw, 300px)',
+                  height: 'clamp(160px, 30vw, 300px)',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'absolute',
+                  flexShrink: 0,
+                  transform: 'rotate(15deg) rotate(30deg)',
+                  zIndex: 2,
+                  left: '14%',
+                  top: '-10%'
+                }}
+              >
+                <img
+                  src={triangleOrange}
+                  alt="Decorative Triangle 2"
+                  style={{
+                    width: 'calc(clamp(160px, 30vw, 300px) * 0.7)',
+                    height: 'calc(clamp(160px, 30vw, 300px) * 0.7)',
+                    objectFit: 'contain'
+                  }}
+                />
+              </div>
+
+              {/* Image Container - Triangle 3 */}
+              <div
+                style={{
+                  width: 'clamp(160px, 30vw, 300px)',
+                  height: 'clamp(160px, 30vw, 300px)',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'absolute',
+                  flexShrink: 0,
+                  transform: 'rotate(15deg) rotate(30deg) scaleX(-1)',
+                  zIndex: 3,
+                  left: '1%',
+                  top: '34%'
+                }}
+              >
+                <img
+                  src={triangleOrange}
+                  alt="Decorative Triangle 3"
+                  style={{
+                    width: 'calc(clamp(160px, 30vw, 300px) * 0.7)',
+                    height: 'calc(clamp(160px, 30vw, 300px) * 0.7)',
+                    objectFit: 'contain'
+                  }}
+                />
+              </div>
+
+              {/* WebM Video - Right of triangles */}
               <video
                 autoPlay
                 loop
@@ -186,10 +251,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   height: 'auto',
                   mixBlendMode: 'screen',
                   backgroundColor: 'transparent',
-                  transform: 'scale(0.81) translate(-45px, -50px)',
+                  transform: 'scale(0.81) translate(calc(clamp(30px, 7vw, 80px) + 8%), -10%)',
                   transformOrigin: 'top left',
-                  marginLeft: '-45px',
-                  position: 'relative'
+                  marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
+                  position: 'relative',
+                  zIndex: 4
                 }}
               >
                 <source src="/knightwebm.webm" type="video/webm" />
@@ -422,7 +488,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 };
 

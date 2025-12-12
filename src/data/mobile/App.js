@@ -178,15 +178,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             </div>
 
             {/* CTA Button - Get Started Today */}
-            <div className="text-center mt-8" style={{display: 'grid', gridTemplateColumns: 'auto auto auto', gap: 'clamp(20px, 5vw, 60px)', width: 'clamp(200px, 90vw, 1200px)', height: 'auto', position: 'relative', zIndex: 10, alignItems: 'center', justifyItems: 'center', overflow: 'visible', margin: '0 auto', marginTop: 'calc(-500px + 20vh)'}}>
+            <div className="text-center mt-8" style={{display: 'grid', gridTemplateColumns: 'auto auto auto', gap: 'clamp(20px, 5vw, 60px)', width: 'auto', height: 'auto', position: 'relative', zIndex: 10, alignItems: 'center', justifyItems: 'center', overflow: 'visible', maxWidth: '100vw', margin: '0 auto', marginTop: 'calc(-500px + 20vh)'}}>
               {/* Top Middle - Button 3 */}
-              <div style={{gridColumn: '2', gridRow: '1', transform: 'translate(-31.3vw, 10vh) rotate(40.5deg)', width: 'clamp(120px, 30vw, 300px)', height: 'clamp(120px, 30vw, 300px)'}}>
+              <div style={{gridColumn: '2', gridRow: '1', transform: 'translate(-31.3vw, 10vh) rotate(40.5deg)'}}>
               <svg 
                 className="triangleButton3"
-                width="clamp(120px, 30vw, 300px)" 
-                height="clamp(120px, 30vw, 300px)" 
+                width="clamp(60px, 28vw, 220px)" 
+                height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                style={{width: '100%', height: '100%', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                style={{width: 'clamp(60px, 28vw, 220px)', height: 'clamp(60px, 28vw, 220px)', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
               >
                 {/* Invisible filled hit area - same shape as triangle */}
                 <path 
@@ -228,13 +228,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               </div>
 
               {/* Middle Left - Button 2 */}
-              <div style={{gridColumn: '1', gridRow: '2', transform: 'translate(-9.5vw, -3.5vh) rotate(-18.5deg)', width: 'clamp(120px, 30vw, 300px)', height: 'clamp(120px, 30vw, 300px)'}}>
+              <div style={{gridColumn: '1', gridRow: '2', transform: 'translate(-9.5vw, -3.5vh) rotate(-18.5deg)'}}>
               <svg 
                 className="triangleButton2"
-                width="clamp(120px, 30vw, 300px)" 
-                height="clamp(120px, 30vw, 300px)" 
+                width="clamp(60px, 28vw, 220px)" 
+                height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                style={{width: '100%', height: '100%', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                style={{width: 'clamp(60px, 28vw, 220px)', height: 'clamp(60px, 28vw, 220px)', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
               >
                 {/* Invisible filled hit area - same shape as triangle */}
                 <path 
@@ -276,13 +276,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               </div>
 
               {/* Bottom Middle - Button 1 */}
-              <div style={{gridColumn: '2', gridRow: '3', transform: 'translate(-38.4vw, -13.8vh) rotate(40deg)', width: 'clamp(120px, 30vw, 300px)', height: 'clamp(120px, 30vw, 300px)'}}>
+              <div style={{gridColumn: '2', gridRow: '3', transform: 'translate(-38.4vw, -13.8vh) rotate(40deg)'}}>
               <svg 
                 className="triangleButton1"
-                width="clamp(120px, 30vw, 300px)" 
-                height="clamp(120px, 30vw, 300px)" 
+                width="clamp(60px, 28vw, 220px)" 
+                height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                style={{width: '100%', height: '100%', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                style={{width: 'clamp(60px, 28vw, 220px)', height: 'clamp(60px, 28vw, 220px)', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
               >
                 {/* Invisible filled hit area - same shape as triangle */}
                 <path 

@@ -9,6 +9,7 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
+import triangleOrange from '../../images/triangle-shape-orange.png';
 import headerBgVid from '../../videos/120header.mp4';
 import '../../styles/header.css';
 import '../../styles/poetry.css';
@@ -104,6 +105,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             }}>
               <h1 className="poetry" style={{
                 marginTop: '0',
+                marginLeft: '-10px',
                 marginBottom: 'clamp(26px, 6.5vw, 45.5px)',
                 fontSize: 'clamp(23.4px, 5.2vw, 46.8px)',
                 lineHeight: '1.2',
@@ -135,33 +137,59 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               </p>
             </div>
 
-            {/* Knight WebM Video Container - bottom of text */}
-            <div
-              className="w-full"
-              style={{
-                height: 'auto',
-                position: 'relative',
-                zIndex: 10,
-                backgroundColor: 'transparent',
-                overflow: 'visible',
-                marginTop: 'clamp(20px, 4vw, 32px)',
-                width: '100%',
-                transform: 'scale(0.81) translate(110px, -50px)',
-                transformOrigin: 'top left'
-              }}
-            >
+            {/* Media Container - Image and WebM side by side */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 'clamp(10px, 2vw, 20px)',
+              marginTop: 'clamp(20px, 4vw, 32px)',
+              position: 'relative',
+              zIndex: 10
+            }}>
+              {/* Image Container - Left Side */}
+              <div
+                style={{
+                  width: 'clamp(160px, 30vw, 300px)',
+                  height: 'clamp(160px, 30vw, 300px)',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  flexShrink: 0,
+                  marginTop: '-30px',
+                  transform: 'rotate(15deg)'
+                }}
+              >
+                <img
+                  src={triangleOrange}
+                  alt="Decorative Triangle"
+                  style={{
+                    width: '90%',
+                    height: '90%',
+                    objectFit: 'contain'
+                  }}
+                />
+              </div>
+
+              {/* WebM Video - Moved 100px left */}
               <video
                 autoPlay
                 loop
                 muted
                 playsInline
-                className="w-full object-cover block"
                 style={{
                   display: 'block',
-                  width: '100%',
+                  width: 'auto',
                   height: 'auto',
                   mixBlendMode: 'screen',
-                  backgroundColor: 'transparent'
+                  backgroundColor: 'transparent',
+                  transform: 'scale(0.81) translate(-45px, -50px)',
+                  transformOrigin: 'top left',
+                  marginLeft: '-45px',
+                  position: 'relative'
                 }}
               >
                 <source src="/knightwebm.webm" type="video/webm" />

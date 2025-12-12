@@ -14,8 +14,8 @@ cmd = [
     'ffmpeg',
     '-i', input_video,
     '-c:v', 'libx264',
-    '-crf', '28',  # Quality (18-28, lower = better quality)
-    '-preset', 'medium',  # Speed/quality tradeoff
+    '-crf', '18',  # Quality (18-28, lower = better quality)
+    '-preset', 'slow',  # Speed/quality tradeoff
     '-c:a', 'aac',
     '-b:a', '96k',  # Lower audio bitrate
     '-y',  # Overwrite output

@@ -9,7 +9,7 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
-import headerBgVid from '../../videos/Header-impression.mp4';
+import headerBgVid from '../../videos/120header.mp4';
 import '../../styles/header.css';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
@@ -99,7 +99,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         >
             {/* Text content wrapper - move as a unit */}
             <div style={{
-              marginTop: 'calc(-9px - 200px + 75px)',
+              marginTop: 'calc(-9px - 200px + 75px - 100px + 25px)',
               width: '100%'
             }}>
               <h1 className="poetry" style={{
@@ -110,7 +110,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width: '100%',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
-                overflowWrap: 'break-word'
+                overflowWrap: 'break-word',
+                textAlign: 'right'
               }}>De luide stilte <br/>
                  En de intense kalmte <br/> 
                  Wijzen mij de weg <br/>
@@ -144,7 +145,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 backgroundColor: 'transparent',
                 overflow: 'visible',
                 marginTop: 'clamp(20px, 4vw, 32px)',
-                width: '100%'
+                width: '100%',
+                transform: 'scale(0.81) translate(110px, -50px)',
+                transformOrigin: 'top left'
               }}
             >
               <video
@@ -156,7 +159,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 style={{
                   display: 'block',
                   width: '100%',
-                  height: '200px',
+                  height: 'auto',
                   mixBlendMode: 'screen',
                   backgroundColor: 'transparent'
                 }}

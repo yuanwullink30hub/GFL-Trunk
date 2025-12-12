@@ -10,7 +10,6 @@ import {
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
 import headerBgVid from '../../videos/bgheader-vid.mp4';
-import gradientImg from '../../images/bg-header-footer1.jpg';
 import '../../styles/header.css';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
@@ -76,80 +75,64 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </video>
       </div>
 
-      {/* Gradient container at bottom of img-bg */}
+      {/* Text content container */}
       <div
-        className="w-full"
+        className="w-full relative"
         style={{
-          height: '2100px',
+          minHeight: '2100px',
           background: 'linear-gradient(to bottom, #000000, #26163e, #26163e)',
           zIndex: 2,
           position: 'relative',
-          marginTop: '-60px'
+          paddingTop: '100px'
         }}
       >
-        {/* Image container in top half */}
+        {/* Text container over image */}
         <div
-          className="flex items-center justify-center w-full"
+          className="flex flex-col items-start justify-start w-full"
           style={{
-            height: 'auto',
-            backgroundColor: 'transparent',
-            marginTop: '-40px',
-            position: 'relative',
-            zIndex: 2
+            zIndex: 3,
+            pointerEvents: 'auto',
+            paddingLeft: '20px',
+            paddingRight: '20px',
+            position: 'relative'
           }}
         >
-          <img src={gradientImg} alt="" className="w-full h-auto object-cover" style={{
-            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,1))',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,1))'
-          }} />
-          
-          {/* Text container over image */}
-          <div
-            className="absolute flex flex-col items-start justify-center"
-            style={{
-              zIndex: 3,
-              pointerEvents: 'auto',
-              left: '10px',
-              top: 'clamp(-40px, -5vh, -20px)',
-              width: 'calc(100% - 10px)',
-              height: '100%',
-              paddingLeft: '20px',
-              paddingRight: '20px',
-              paddingTop: '-30px',
-              justifyContent: 'flex-start'
-            }}
-          >
-            <h1 className="poetry" style={{
-              marginTop: '-9px',
-              marginBottom: 'clamp(26px, 6.5vw, 45.5px)',
-              fontSize: 'clamp(23.4px, 5.2vw, 46.8px)',
-              lineHeight: '1.2',
-              width: '100%',
-              whiteSpace: 'normal',
-              wordWrap: 'break-word',
-              overflowWrap: 'break-word'
-            }}>De luide stilte <br/>
-               En de intense kalmte <br/> 
-               Wijzen mij de weg <br/>
-               Van het hart naar het hooofd           </h1>
+            {/* Text content wrapper - move as a unit */}
+            <div style={{
+              marginTop: 'calc(-9px - 200px + 75px)',
+              width: '100%'
+            }}>
+              <h1 className="poetry" style={{
+                marginTop: '0',
+                marginBottom: 'clamp(26px, 6.5vw, 45.5px)',
+                fontSize: 'clamp(23.4px, 5.2vw, 46.8px)',
+                lineHeight: '1.2',
+                width: '100%',
+                whiteSpace: 'normal',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
+              }}>De luide stilte <br/>
+                 En de intense kalmte <br/> 
+                 Wijzen mij de weg <br/>
+                 Van het hart naar het hooofd           </h1>
 
-            {/* Paragraph inside container */}
-            <p className="text" style={{
-              width: '100%',
-              fontSize: 'clamp(14px, 3.5vw, 28px)',
-              marginTop: 'clamp(20px, 4vw, 32px)',
-              marginBottom: '-90px',
-              whiteSpace: 'normal',
-              wordWrap: 'break-word',
-              overflowWrap: 'break-word',
-              lineHeight: '1.4',
-              backgroundColor: 'transparent',
-              transform: 'translateY(-49px)'
-            }}>De ontembare chaos uit haar wil door één lied (uni-verse). Allen zijn dus een noot in deze symfonie. <br />
-             <br />
-             Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
-             Zo ontstaat er ruimte voor het feminiene om te bloeien en te groeien. <br />
-            </p>
+              {/* Paragraph inside container */}
+              <p className="text" style={{
+                width: '100%',
+                fontSize: 'clamp(14px, 3.5vw, 28px)',
+                marginTop: 'clamp(20px, 4vw, 32px)',
+                marginBottom: '0',
+                whiteSpace: 'normal',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                lineHeight: '1.4',
+                backgroundColor: 'transparent'
+              }}>De ontembare chaos uit haar wil door één lied (uni-verse). Allen zijn dus een noot in deze symfonie. <br />
+               <br />
+               Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
+               Zo ontstaat er ruimte voor het feminiene om te bloeien en te groeien. <br />
+              </p>
+            </div>
 
             {/* Knight WebM Video Container - bottom of text */}
             <div
@@ -182,7 +165,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 Your browser does not support the video tag.
               </video>
             </div>
-          </div>
         </div>
       </div>
 
@@ -191,7 +173,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         className="w-full"
         style={{
           height: '150px',
-          background: 'linear-gradient(to bottom, rgba(40, 12, 74, 0.5), rgb(38, 22, 62))',
+          background: 'linear-gradient(to bottom, #120923, rgb(38, 22, 62))',
           zIndex: 1
         }}
       />

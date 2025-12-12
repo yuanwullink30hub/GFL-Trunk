@@ -540,6 +540,9 @@ video {
 .visible{
   visibility: visible;
 }
+.static{
+  position: static;
+}
 .fixed{
   position: fixed;
 }
@@ -626,15 +629,6 @@ video {
 .h-0{
   height: 0px;
 }
-.h-20{
-  height: 5rem;
-}
-.h-36{
-  height: 9rem;
-}
-.h-44{
-  height: 11rem;
-}
 .h-auto{
   height: auto;
 }
@@ -644,20 +638,8 @@ video {
 .min-h-screen{
   min-height: 100vh;
 }
-.w-20{
-  width: 5rem;
-}
-.w-36{
-  width: 9rem;
-}
-.w-44{
-  width: 11rem;
-}
 .w-full{
   width: 100%;
-}
-.w-screen{
-  width: 100vw;
 }
 .max-w-2xl{
   max-width: 42rem;
@@ -828,9 +810,6 @@ video {
 }
 .to-green-500{
   --tw-gradient-to: #22c55e var(--tw-gradient-to-position);
-}
-.object-contain{
-  object-fit: contain;
 }
 .object-cover{
   object-fit: cover;

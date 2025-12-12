@@ -71,6 +71,13 @@
             "href": "/contact",
             "internal": true,
             "style": "primary"
+          },
+          {
+            "type": "cta",
+            "text": "Get Started Today",
+            "href": "/contact",
+            "internal": true,
+            "style": "primary"
           }
         ]
       },

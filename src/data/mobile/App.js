@@ -9,7 +9,6 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
-import templateButtonHeader from '../../images/template Button link header.png';
 import headerBgVid from '../../videos/120header.mp4';
 import '../../styles/header.css';
 import '../../styles/poetry.css';
@@ -139,117 +138,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               </p>
             </div>
 
-            {/* Template Button Header Image - Scales with viewport and content relation */}
-            <img
-              src={templateButtonHeader}
-              alt="Template Button Link Header"
-              style={{
-                display: 'block',
-                width: 'clamp(100px, 50vw, 900px)',
-                height: 'auto',
-                position: 'absolute',
-                zIndex: 5,
-                mixBlendMode: 'screen',
-                backgroundColor: 'transparent',
-                transform: 'scale(1.38) translate(calc(50vw * 0.35 - 25% - 18%), calc(75% - 10% - 40%))',
-                transformOrigin: 'top left'
-              }}
-            />
-
-            {/* Text Container on Template Image */}
-            <div
-              style={{
-                position: 'absolute',
-                zIndex: 6,
-                top: 'calc(75% - 10% - 40% + 75% - 40% + 15% - 4% - 1.5% + 0.3% + 0.1% + 0.1%)',
-                left: 'calc(50vw * 0.35 - 25% - 18% + 25% + 2% + 0.1% + 0.1% + 0.2%)',
-                width: 'clamp(100px, 50vw, 900px)',
-                height: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'auto'
-              }}
-            >
-              <button
-                onClick={() => scrollToSection('contact')}
-                className="header"
-                style={{
-                  padding: 'clamp(8px, 2vw, 16px) clamp(16px, 4vw, 32px)',
-                  backgroundColor: 'transparent',
-                  color: '#ef8616',
-                  border: 'none',
-                  borderRadius: 'clamp(4px, 1vw, 8px)',
-                  fontSize: 'clamp(24px, 6vw, 36px)',
-                  fontWeight: '900',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 0 0 0 rgba(239, 134, 22, 0.7)',
-                  animation: 'breathColor 3.33s infinite',
-                  lineHeight: '0.9',
-                  transform: 'rotate(-55deg)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.boxShadow = '0 0 20px rgba(239, 134, 22, 0.8)';
-                  e.target.style.transform = 'rotate(-55deg) scale(1.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.boxShadow = '0 0 0 0 rgba(239, 134, 22, 0.7)';
-                  e.target.style.transform = 'rotate(-55deg)';
-                }}
-              >
-                ARC
-              </button>
-            </div>
-
-            {/* Duplicate Interactive Button */}
-            <div
-              style={{
-                position: 'absolute',
-                zIndex: 6,
-                top: 'calc(75% - 10% - 40% + 75% - 40% + 15% - 4% - 1.5% + 0.3% + 0.1% + 0.1%)',
-                left: 'calc(50vw * 0.35 - 25% - 18% + 25% + 2% + 0.1% + 0.1% + 0.2%)',
-                width: 'clamp(100px, 50vw, 900px)',
-                height: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'auto'
-              }}
-            >
-              <button
-                onClick={() => scrollToSection('contact')}
-                className="header"
-                style={{
-                  padding: 'clamp(8px, 2vw, 16px) clamp(16px, 4vw, 32px)',
-                  backgroundColor: 'transparent',
-                  color: '#ef8616',
-                  border: 'none',
-                  borderRadius: 'clamp(4px, 1vw, 8px)',
-                  fontSize: 'clamp(24px, 6vw, 36px)',
-                  fontWeight: '900',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 0 0 0 rgba(239, 134, 22, 0.7)',
-                  animation: 'breathColor 3.33s infinite',
-                  lineHeight: '0.9',
-                  transform: 'rotate(-55deg)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.boxShadow = '0 0 20px rgba(239, 134, 22, 0.8)';
-                  e.target.style.transform = 'rotate(-55deg) scale(1.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.boxShadow = '0 0 0 0 rgba(239, 134, 22, 0.7)';
-                  e.target.style.transform = 'rotate(-55deg)';
-                }}
-              >
-                ARC
-              </button>
-            </div>
-
             {/* Media Container - Image and WebM side by side */}
             <div style={{
               display: 'flex',
@@ -290,63 +178,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             </div>
 
             {/* CTA Button - Get Started Today */}
-            <div className="text-center mt-8" style={{display: 'grid', gridTemplateColumns: 'auto auto auto', gap: 'clamp(20px, 5vw, 60px)', width: 'auto', height: 'auto', position: 'relative', zIndex: 10, alignItems: 'center', justifyItems: 'center', overflow: 'visible', maxWidth: '100vw', margin: '0 auto', marginTop: 'calc(-500px + 20vh)'}}>
+            <div className="text-center mt-8" style={{display: 'grid', gridTemplateColumns: 'auto auto auto', gap: 'clamp(20px, 5vw, 60px)', width: 'clamp(200px, 90vw, 1200px)', height: 'auto', position: 'relative', zIndex: 10, alignItems: 'center', justifyItems: 'center', overflow: 'visible', margin: '0 auto', marginTop: 'calc(-500px + 20vh)'}}>
               {/* Top Middle - Button 3 */}
-              <div style={{gridColumn: '2', gridRow: '1', transform: 'translate(-40vw, -5vh) rotate(45deg)'}}>
+              <div style={{gridColumn: '2', gridRow: '1', transform: 'translate(-31.3vw, 10vh) rotate(40.5deg)', width: 'clamp(120px, 30vw, 300px)', height: 'clamp(120px, 30vw, 300px)'}}>
               <svg 
                 className="triangleButton3"
                 width="clamp(120px, 30vw, 300px)" 
                 height="clamp(120px, 30vw, 300px)" 
                 viewBox="0 0 300 300" 
-                style={{width: 'clamp(120px, 30vw, 300px)', height: 'clamp(120px, 30vw, 300px)', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                style={{width: '100%', height: '100%', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
               >
                 {/* Invisible filled hit area - same shape as triangle */}
                 <path 
-                  d="M 140 70 Q 150 69 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="rgba(0,0,0,0.001)"
-                  pointerEvents="all"
-                  style={{cursor: 'pointer'}}
-                  onClick={() => scrollToSection('contact')}
-                  onMouseEnter={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                    e.target.parentElement.parentElement.style.transform = 'scale(1.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                    e.target.parentElement.parentElement.style.transform = 'scale(1)';
-                  }}
-                />
-                {/* Visible stroke path */}
-                <path 
-                  d="M 140 70 Q 150 69 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="none" 
-                  stroke="#22c55e" 
-                  strokeWidth="clamp(8px, 2vw, 15px)" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  pointerEvents="none"
-                  className="breathingStroke"
-                  style={{transition: 'stroke 0.3s ease'}}
-                />
-                {/* Text label */}
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>3</text>
-              </svg>
-              </div>
-
-              {/* Middle Left - Button 2 */}
-              <div style={{gridColumn: '1', gridRow: '2', transform: 'translate(-9.5vw, -3.5vh) rotate(-18.5deg)'}}>
-              <svg 
-                className="triangleButton2"
-                width="clamp(120px, 30vw, 300px)" 
-                height="clamp(120px, 30vw, 300px)" 
-                viewBox="0 0 300 300" 
-                style={{width: 'clamp(120px, 30vw, 300px)', height: 'clamp(120px, 30vw, 300px)', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
-              >
-                {/* Invisible filled hit area - same shape as triangle */}
-                <path 
-                  d="M 140 70 Q 150 69 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                   fill="rgba(0,0,0,0.001)"
                   pointerEvents="all"
                   style={{cursor: 'pointer'}}
@@ -368,7 +212,55 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 />
                 {/* Visible stroke path */}
                 <path 
-                  d="M 140 70 Q 150 69 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                  fill="none" 
+                  stroke="#22c55e" 
+                  strokeWidth="clamp(8px, 2vw, 15px)" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  pointerEvents="none"
+                  className="breathingStroke"
+                  style={{transition: 'stroke 0.3s ease'}}
+                />
+                {/* Text label */}
+                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>3</text>
+              </svg>
+              </div>
+
+              {/* Middle Left - Button 2 */}
+              <div style={{gridColumn: '1', gridRow: '2', transform: 'translate(-9.5vw, -3.5vh) rotate(-18.5deg)', width: 'clamp(120px, 30vw, 300px)', height: 'clamp(120px, 30vw, 300px)'}}>
+              <svg 
+                className="triangleButton2"
+                width="clamp(120px, 30vw, 300px)" 
+                height="clamp(120px, 30vw, 300px)" 
+                viewBox="0 0 300 300" 
+                style={{width: '100%', height: '100%', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+              >
+                {/* Invisible filled hit area - same shape as triangle */}
+                <path 
+                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                  fill="rgba(0,0,0,0.001)"
+                  pointerEvents="all"
+                  style={{cursor: 'pointer'}}
+                  onClick={() => scrollToSection('contact')}
+                  onMouseEnter={(e) => {
+                    const visiblePath = e.target.nextElementSibling;
+                    if(visiblePath) visiblePath.style.stroke = '#16a34a';
+                    const parentDiv = e.target.parentElement.parentElement;
+                    const currentTransform = parentDiv.style.transform;
+                    parentDiv.style.transform = currentTransform + ' scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const visiblePath = e.target.nextElementSibling;
+                    if(visiblePath) visiblePath.style.stroke = '#22c55e';
+                    const parentDiv = e.target.parentElement.parentElement;
+                    const currentTransform = parentDiv.style.transform.replace(' scale(1.05)', '');
+                    parentDiv.style.transform = currentTransform;
+                  }}
+                />
+                {/* Visible stroke path */}
+                <path 
+                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                   fill="none" 
                   stroke="#22c55e" 
                   strokeWidth="clamp(8px, 2vw, 15px)" 
@@ -384,17 +276,17 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               </div>
 
               {/* Bottom Middle - Button 1 */}
-              <div style={{gridColumn: '2', gridRow: '3', transform: 'translate(-40vw, 0)'}}>
+              <div style={{gridColumn: '2', gridRow: '3', transform: 'translate(-38.4vw, -13.8vh) rotate(40deg)', width: 'clamp(120px, 30vw, 300px)', height: 'clamp(120px, 30vw, 300px)'}}>
               <svg 
                 className="triangleButton1"
                 width="clamp(120px, 30vw, 300px)" 
                 height="clamp(120px, 30vw, 300px)" 
                 viewBox="0 0 300 300" 
-                style={{width: 'clamp(120px, 30vw, 300px)', height: 'clamp(120px, 30vw, 300px)', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                style={{width: '100%', height: '100%', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
               >
                 {/* Invisible filled hit area - same shape as triangle */}
                 <path 
-                  d="M 140 70 Q 150 69 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                   fill="rgba(0,0,0,0.001)"
                   pointerEvents="all"
                   style={{cursor: 'pointer'}}
@@ -402,17 +294,21 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   onMouseEnter={(e) => {
                     const visiblePath = e.target.nextElementSibling;
                     if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                    e.target.parentElement.parentElement.style.transform = 'scale(1.05)';
+                    const parentDiv = e.target.parentElement.parentElement;
+                    const currentTransform = parentDiv.style.transform;
+                    parentDiv.style.transform = currentTransform + ' scale(1.05)';
                   }}
                   onMouseLeave={(e) => {
                     const visiblePath = e.target.nextElementSibling;
                     if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                    e.target.parentElement.parentElement.style.transform = 'scale(1)';
+                    const parentDiv = e.target.parentElement.parentElement;
+                    const currentTransform = parentDiv.style.transform.replace(' scale(1.05)', '');
+                    parentDiv.style.transform = currentTransform;
                   }}
                 />
                 {/* Visible stroke path */}
                 <path 
-                  d="M 140 70 Q 150 69 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                   fill="none" 
                   stroke="#22c55e" 
                   strokeWidth="clamp(8px, 2vw, 15px)" 

@@ -73,9 +73,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{
-            objectFit: 'cover'
-          }}
         >
           <source src={headerBgVid} type="video/mp4" />
           Your browser does not support the video tag.
@@ -130,6 +127,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
                 marginTop: '0',
                 marginBottom: '0',
+                paddingBottom: '35px',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
@@ -158,14 +156,18 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="none"
-                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="xMidYMid meet"
+                style={{
+                  display: 'block',
+                  transition: 'all 0.3s ease',
+                  pointerEvents: 'none',
+                    transform: 'scale(1.2) rotate(-21deg) translateY(18px) translateX(-21px)'
+                }}
               >
                 <path 
                   d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                   fill="rgba(0,0,0,0.001)"
                   pointerEvents="all"
-                  style={{cursor: 'pointer'}}
                   onClick={() => scrollToSection('contact')}
                   onMouseEnter={(e) => {
                     const visiblePath = e.target.nextElementSibling;
@@ -195,8 +197,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="none"
-                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="xMidYMid meet"
+                  style={{
+                    display: 'block',
+                    transition: 'all 0.3s ease',
+                    pointerEvents: 'none',
+                    transform: 'scale(1.2) rotate(40deg) translateX(-50px) translateY(15px)'
+                  }}
               >
                 <path 
                   d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
@@ -232,8 +239,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="none"
-                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="xMidYMid meet"
+                  style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none', transform: 'scale(1.2) rotate(40deg) translateX(-77px) translateY(185px)'}}
               >
                 <path 
                   d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
@@ -295,7 +302,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
               position: 'absolute',
-              top: '-150px',
+              top: '-130px',
               left: 0,
               right: 0,
               zIndex: 4

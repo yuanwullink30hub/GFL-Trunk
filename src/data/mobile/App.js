@@ -124,7 +124,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               <p className="text" style={{
                 width: '100%',
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
-                marginTop: 'clamp(20px, 4vw, 32px)',
+                marginTop: '0',
                 marginBottom: '0',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
@@ -136,107 +136,27 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
                Zo ontstaat er ruimte voor het feminiene om te bloeien en te groeien. <br />
               </p>
-            </div>
-
-            {/* Media Container - Image and WebM side by side */}
+            {/* Button container moved directly after <p> text */}
             <div style={{
               display: 'flex',
-              alignItems: 'flex-start',
-              gap: 'clamp(10px, 2vw, 20px)',
-              marginTop: 'clamp(20px, 4vw, 32px)',
-              marginLeft: '-4.5%',
-              position: 'relative',
-              zIndex: 10,
-              overflow: 'visible',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 'clamp(20px, 5vw, 60px)',
               width: '100%',
               maxWidth: 'clamp(400px, 90vw, 1200px)',
-              margin: '0 auto'
+              margin: '0 auto',
+              marginTop: '0'
             }}>
-
-              {/* WebM Video - Right of triangles */}
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                style={{
-                  display: 'block',
-                  width: 'auto',
-                  height: 'auto',
-                  mixBlendMode: 'screen',
-                  backgroundColor: 'transparent',
-                  transform: 'scale(0.81) translate(calc(clamp(30px, 7vw, 80px) + 8%), -10%)',
-                  transformOrigin: 'top left',
-                  marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
-                  position: 'relative',
-                  zIndex: 4
-                }}
-              >
-                <source src="/knightwebm.webm" type="video/webm" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-
-            {/* CTA Button - Get Started Today */}
-            <div className="text-center mt-8" style={{display: 'grid', gridTemplateColumns: 'auto auto auto', gap: 'clamp(20px, 5vw, 60px)', width: 'auto', height: 'auto', position: 'relative', zIndex: 10, alignItems: 'center', justifyItems: 'center', overflow: 'visible', maxWidth: '100vw', margin: '0 auto', marginTop: 'calc(-500px + 20vh)'}}>
-              {/* Top Middle - Button 3 */}
-              <div style={{gridColumn: '2', gridRow: '1', transform: 'translate(-31.3vw, 10vh) rotate(40.5deg)'}}>
-              <svg 
-                className="triangleButton3"
-                width="clamp(60px, 28vw, 220px)" 
-                height="clamp(60px, 28vw, 220px)" 
-                viewBox="0 0 300 300" 
-                style={{width: 'clamp(60px, 28vw, 220px)', height: 'clamp(60px, 28vw, 220px)', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
-              >
-                {/* Invisible filled hit area - same shape as triangle */}
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="rgba(0,0,0,0.001)"
-                  pointerEvents="all"
-                  style={{cursor: 'pointer'}}
-                  onClick={() => scrollToSection('contact')}
-                  onMouseEnter={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                    const parentDiv = e.target.parentElement.parentElement;
-                    const currentTransform = parentDiv.style.transform;
-                    parentDiv.style.transform = currentTransform + ' scale(1.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                    const parentDiv = e.target.parentElement.parentElement;
-                    const currentTransform = parentDiv.style.transform.replace(' scale(1.05)', '');
-                    parentDiv.style.transform = currentTransform;
-                  }}
-                />
-                {/* Visible stroke path */}
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="none" 
-                  stroke="#22c55e" 
-                  strokeWidth="clamp(8px, 2vw, 15px)" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  pointerEvents="none"
-                  className="breathingStroke"
-                  style={{transition: 'stroke 0.3s ease'}}
-                />
-                {/* Text label */}
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>3</text>
-              </svg>
-              </div>
-
-              {/* Middle Left - Button 2 */}
-              <div style={{gridColumn: '1', gridRow: '2', transform: 'translate(-9.5vw, -3.5vh) rotate(-18.5deg)'}}>
+              {/* Button 2 */}
               <svg 
                 className="triangleButton2"
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                style={{width: 'clamp(60px, 28vw, 220px)', height: 'clamp(60px, 28vw, 220px)', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="none"
+                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
               >
-                {/* Invisible filled hit area - same shape as triangle */}
                 <path 
                   d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                   fill="rgba(0,0,0,0.001)"
@@ -246,19 +166,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   onMouseEnter={(e) => {
                     const visiblePath = e.target.nextElementSibling;
                     if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                    const parentDiv = e.target.parentElement.parentElement;
-                    const currentTransform = parentDiv.style.transform;
-                    parentDiv.style.transform = currentTransform + ' scale(1.05)';
                   }}
                   onMouseLeave={(e) => {
                     const visiblePath = e.target.nextElementSibling;
                     if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                    const parentDiv = e.target.parentElement.parentElement;
-                    const currentTransform = parentDiv.style.transform.replace(' scale(1.05)', '');
-                    parentDiv.style.transform = currentTransform;
                   }}
                 />
-                {/* Visible stroke path */}
                 <path 
                   d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                   fill="none" 
@@ -270,21 +183,54 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   className="breathingStroke"
                   style={{transition: 'stroke 0.3s ease'}}
                 />
-                {/* Text label */}
                 <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>2</text>
               </svg>
-              </div>
-
-              {/* Bottom Middle - Button 1 */}
-              <div style={{gridColumn: '2', gridRow: '3', transform: 'translate(-38.4vw, -13.8vh) rotate(40deg)'}}>
+              {/* Button 3 */}
+              <svg 
+                className="triangleButton3"
+                width="clamp(60px, 28vw, 220px)" 
+                height="clamp(60px, 28vw, 220px)" 
+                viewBox="0 0 300 300" 
+                preserveAspectRatio="none"
+                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+              >
+                <path 
+                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                  fill="rgba(0,0,0,0.001)"
+                  pointerEvents="all"
+                  style={{cursor: 'pointer'}}
+                  onClick={() => scrollToSection('contact')}
+                  onMouseEnter={(e) => {
+                    const visiblePath = e.target.nextElementSibling;
+                    if(visiblePath) visiblePath.style.stroke = '#16a34a';
+                  }}
+                  onMouseLeave={(e) => {
+                    const visiblePath = e.target.nextElementSibling;
+                    if(visiblePath) visiblePath.style.stroke = '#22c55e';
+                  }}
+                />
+                <path 
+                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                  fill="none" 
+                  stroke="#22c55e" 
+                  strokeWidth="clamp(8px, 2vw, 15px)" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  pointerEvents="none"
+                  className="breathingStroke"
+                  style={{transition: 'stroke 0.3s ease'}}
+                />
+                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>3</text>
+              </svg>
+              {/* Button 1 */}
               <svg 
                 className="triangleButton1"
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                style={{width: 'clamp(60px, 28vw, 220px)', height: 'clamp(60px, 28vw, 220px)', display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="none"
+                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
               >
-                {/* Invisible filled hit area - same shape as triangle */}
                 <path 
                   d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                   fill="rgba(0,0,0,0.001)"
@@ -294,19 +240,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   onMouseEnter={(e) => {
                     const visiblePath = e.target.nextElementSibling;
                     if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                    const parentDiv = e.target.parentElement.parentElement;
-                    const currentTransform = parentDiv.style.transform;
-                    parentDiv.style.transform = currentTransform + ' scale(1.05)';
                   }}
                   onMouseLeave={(e) => {
                     const visiblePath = e.target.nextElementSibling;
                     if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                    const parentDiv = e.target.parentElement.parentElement;
-                    const currentTransform = parentDiv.style.transform.replace(' scale(1.05)', '');
-                    parentDiv.style.transform = currentTransform;
                   }}
                 />
-                {/* Visible stroke path */}
                 <path 
                   d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                   fill="none" 
@@ -318,13 +257,50 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   className="breathingStroke"
                   style={{transition: 'stroke 0.3s ease'}}
                 />
-                {/* Text label */}
                 <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>1</text>
               </svg>
-              </div>
-            </div>
-        </div>
-      </div>
+            </div>{/* End button container */}
+          </div>{/* End text content wrapper */}
+        </div>{/* End text container over image */}
+
+        {/* Media Container - Image and WebM side by side */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 'clamp(10px, 2vw, 20px)',
+          marginTop: '-130px',
+          marginLeft: '-4.5%',
+          position: 'relative',
+          zIndex: 8,
+          overflow: 'visible',
+          width: '100%',
+          maxWidth: 'clamp(400px, 90vw, 1200px)',
+          margin: '0 auto'
+        }}>
+          {/* WebM Video - Right of triangles */}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              display: 'block',
+              width: 'auto',
+              height: 'auto',
+              mixBlendMode: 'screen',
+              backgroundColor: 'transparent',
+              transform: 'scale(0.81) translate(calc(clamp(30px, 7vw, 80px) + 8%), -10%)',
+              transformOrigin: 'top left',
+              marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
+              position: 'relative',
+              zIndex: 4
+            }}
+          >
+            <source src="/knightwebm.webm" type="video/webm" />
+            Your browser does not support the video tag.
+          </video>
+        </div>{/* End media container */}
+      </div>{/* End text content container */}
 
       {/* Matching fade container */}
       <div
@@ -551,6 +527,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       </footer>
     </div>
   );
-};
+}
 
 export default MobileAppContent;

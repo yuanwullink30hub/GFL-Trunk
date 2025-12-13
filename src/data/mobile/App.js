@@ -133,10 +133,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 overflowWrap: 'break-word',
                 lineHeight: '1.4',
                 backgroundColor: 'transparent'
-              }}>De ontembare chaos uit haar wil door één lied (uni-verse). Allen zijn dus een noot in deze symfonie. <br />
-               <br />
-               Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
-               Zo ontstaat er ruimte voor het feminiene om te bloeien en te groeien. <br />
+              }}>De ontembare chaos uit haar wil in het uni-verse. <br />
+  
+               Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
+<br/> <br/> <span className="subtitles">Stap aan boord en ontdek hoe prachtige chaos groeit.</span>
+
               </p>
             {/* Button container moved directly after <p> text */}
             <div style={{
@@ -189,7 +190,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   className="breathingStroke"
                   style={{transition: 'stroke 0.3s ease'}}
                 />
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>2</text>
+                <defs>
+                  <clipPath id="triangle2-clip">
+                    <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
+                  </clipPath>
+                </defs>
+                <image 
+                  href={require('../../images/logo.png')} 
+                  x="55" y="100" width="150" height="140" 
+                  clipPath="url(#triangle2-clip)" 
+                  preserveAspectRatio="xMidYMid slice"
+                  style={{pointerEvents: 'none'}}
+                  transform="rotate(21 80 230)"
+                />
               </svg>
               {/* Button 3 */}
               <svg 
@@ -231,7 +244,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   className="breathingStroke"
                   style={{transition: 'stroke 0.3s ease'}}
                 />
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>3</text>
+                <defs>
+                  <clipPath id="triangle3-clip">
+                    <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
+                  </clipPath>
+                </defs>
+                <image 
+                  href={require('../../images/logo.png')} 
+                  x="55" y="100" width="150" height="140" 
+                  clipPath="url(#triangle3-clip)" 
+                  preserveAspectRatio="xMidYMid slice"
+                  style={{pointerEvents: 'none'}}
+                  transform="rotate(-40 180 160)"
+                />
               </svg>
               {/* Button 1 */}
               <svg 
@@ -268,7 +293,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   className="breathingStroke"
                   style={{transition: 'stroke 0.3s ease'}}
                 />
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>1</text>
+                <defs>
+                  <clipPath id="triangle1-clip">
+                    <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
+                  </clipPath>
+                </defs>
+                <image 
+                  href={require('../../images/logo.png')} 
+                  x="55" y="100" width="150" height="140" 
+                  clipPath="url(#triangle1-clip)" 
+                  preserveAspectRatio="xMidYMid slice"
+                  style={{pointerEvents: 'none'}}
+                  transform="rotate(-40 185 165)"
+                />
               </svg>
             </div>{/* End button container */}
           </div>{/* End text content wrapper */}

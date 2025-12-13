@@ -1,8 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Mega:wght@500&display=swap');
 /* filepath: c:\Users\yuanw\github\GFL-Trunk\src\styles/subtitles.css */
 .subtitles {
-  font-family: 'Figtree', sans-serif;
+  font-family: 'Lexend Mega', Arial, Helvetica, sans-serif;
   font-weight: 500;
   line-height: 1.4;
   color: #e0e0e0;
-  font-size: clamp(16px, 3vw, 28px);
+  font-size: clamp(13px, 2vw, 20px);
 }

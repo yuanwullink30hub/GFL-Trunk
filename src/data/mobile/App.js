@@ -136,7 +136,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               }}>De ontembare chaos uit haar wil in het uni-verse. <br />
   
                Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
-<br/> <br/> <span className="subtitles">Stap aan boord en ontdek hoe prachtige chaos groeit.</span>
+<br/> <br/> <span className="subtitles">DUIK DIEP EN ONTDEK HOE BEHEERSTE CHAOS GROEIT.</span>
 
               </p>
             {/* Button container moved directly after <p> text */}

@@ -28,7 +28,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const homeTab = data?.basics?.pages?.find(page => page.id === 'home');
 
   return (
-    <div style={{overflow: 'hidden', width: '100%', maxWidth: '100vw'}}>
+    <div style={{
+      overflow: 'hidden',
+      width: '100%',
+      maxWidth: '100vw',
+        backgroundColor: 'rgb(38, 22, 62)',
+    }}>
       {/* Mobile Header - Logo Only (hidden when scrolling down) */}
       <header className="fixed top-0 w-full bg-transparent" style={{zIndex: 9999, overflow: 'hidden', width: '100vw', maxWidth: '100%'}}>
         <div className="container mx-auto px-6 py-4">
@@ -81,8 +86,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       <div
         className="w-full relative"
         style={{
-          minHeight: '2100px',
-          background: 'linear-gradient(to bottom, #000000, #26163e, #26163e)',
+          background: 'linear-gradient(to bottom, #000000, #26163e, #26163eff)',
           zIndex: 1,
           position: 'relative',
           paddingTop: '100px'
@@ -268,8 +272,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           display: 'flex',
           alignItems: 'flex-start',
           gap: 'clamp(10px, 2vw, 20px)',
-          marginTop: '-130px',
-          marginLeft: '-4.5%',
           position: 'relative',
           zIndex: 8,
           overflow: 'visible',
@@ -292,7 +294,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               transform: 'scale(0.81) translate(calc(clamp(30px, 7vw, 80px) + 8%), -10%)',
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
-              position: 'relative',
+              position: 'absolute',
+              top: '-150px',
+              left: 0,
+              right: 0,
               zIndex: 4
             }}
           >
@@ -307,7 +312,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         className="w-full"
         style={{
           height: '150px',
-          background: 'linear-gradient(to bottom, #120923, rgb(38, 22, 62))',
+          background: 'linear-gradient(to bottom, #26163eff, rgb(38, 22, 62))',
           zIndex: 1
         }}
       />

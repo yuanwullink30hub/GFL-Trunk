@@ -301,6 +301,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               zIndex: 4
             }}
           >
+            <source src="/knightapple.mp4" type="video/mp4; codecs=hvc1" />
             <source src="/knightwebm.webm" type="video/webm" />
             Your browser does not support the video tag.
           </video>

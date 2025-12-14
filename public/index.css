@@ -728,6 +728,9 @@ video {
 .overflow-hidden{
   overflow: hidden;
 }
+.overflow-x-auto{
+  overflow-x: auto;
+}
 .rounded-2xl{
   border-radius: 1rem;
 }
@@ -891,6 +894,9 @@ video {
 .pb-20{
   padding-bottom: 5rem;
 }
+.pb-4{
+  padding-bottom: 1rem;
+}
 .pt-32{
   padding-top: 8rem;
 }
@@ -942,6 +948,9 @@ video {
 }
 .font-semibold{
   font-weight: 600;
+}
+.italic{
+  font-style: italic;
 }
 .leading-relaxed{
   line-height: 1.625;

@@ -73,6 +73,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          style={{
+            objectFit: 'cover'
+          }}
         >
           <source src={headerBgVid} type="video/mp4" />
           Your browser does not support the video tag.
@@ -127,17 +130,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
                 marginTop: '0',
                 marginBottom: '0',
-                paddingBottom: '35px',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
                 lineHeight: '1.4',
                 backgroundColor: 'transparent'
-              }}>De ontembare chaos uit haar wil in het uni-versum. <br />
-  
-               Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
-<br/> <br/> <span className="subtitles">DUIK DIEP EN ONTDEK HOE BEHEERSTE CHAOS GROEIT.</span>
-
+              }}>De ontembare chaos uit haar wil door één lied (uni-verse). Allen zijn dus een noot in deze symfonie. <br />
+               <br />
+               Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
+               Zo ontstaat er ruimte voor het feminiene om te bloeien en te groeien. <br />
               </p>
             {/* Button container moved directly after <p> text */}
             <div style={{
@@ -157,18 +158,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="xMidYMid meet"
-                style={{
-                  display: 'block',
-                  transition: 'all 0.3s ease',
-                  pointerEvents: 'none',
-                    transform: 'scale(1.2) rotate(-21deg) translateY(18px) translateX(-21px)'
-                }}
+                preserveAspectRatio="none"
+                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
               >
                 <path 
                   d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                   fill="rgba(0,0,0,0.001)"
                   pointerEvents="all"
+                  style={{cursor: 'pointer'}}
                   onClick={() => scrollToSection('contact')}
                   onMouseEnter={(e) => {
                     const visiblePath = e.target.nextElementSibling;
@@ -190,19 +187,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   className="breathingStroke"
                   style={{transition: 'stroke 0.3s ease'}}
                 />
-                <defs>
-                  <clipPath id="triangle2-clip">
-                    <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
-                  </clipPath>
-                </defs>
-                <image 
-                  href={require('../../images/logo.png')} 
-                  x="55" y="100" width="150" height="140" 
-                  clipPath="url(#triangle2-clip)" 
-                  preserveAspectRatio="xMidYMid slice"
-                  style={{pointerEvents: 'none'}}
-                  transform="rotate(21 80 230)"
-                />
+                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>2</text>
               </svg>
               {/* Button 3 */}
               <svg 
@@ -210,13 +195,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="xMidYMid meet"
-                  style={{
-                    display: 'block',
-                    transition: 'all 0.3s ease',
-                    pointerEvents: 'none',
-                    transform: 'scale(1.2) rotate(40deg) translateX(-50px) translateY(15px)'
-                  }}
+                preserveAspectRatio="none"
+                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
               >
                 <path 
                   d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
@@ -244,19 +224,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   className="breathingStroke"
                   style={{transition: 'stroke 0.3s ease'}}
                 />
-                <defs>
-                  <clipPath id="triangle3-clip">
-                    <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
-                  </clipPath>
-                </defs>
-                <image 
-                  href={require('../../images/logo.png')} 
-                  x="55" y="100" width="150" height="140" 
-                  clipPath="url(#triangle3-clip)" 
-                  preserveAspectRatio="xMidYMid slice"
-                  style={{pointerEvents: 'none'}}
-                  transform="rotate(-40 180 160)"
-                />
+                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>3</text>
               </svg>
               {/* Button 1 */}
               <svg 
@@ -264,8 +232,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="xMidYMid meet"
-                  style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none', transform: 'scale(1.2) rotate(40deg) translateX(-77px) translateY(185px)'}}
+                preserveAspectRatio="none"
+                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
               >
                 <path 
                   d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
@@ -293,19 +261,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   className="breathingStroke"
                   style={{transition: 'stroke 0.3s ease'}}
                 />
-                <defs>
-                  <clipPath id="triangle1-clip">
-                    <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
-                  </clipPath>
-                </defs>
-                <image 
-                  href={require('../../images/logo.png')} 
-                  x="55" y="100" width="150" height="140" 
-                  clipPath="url(#triangle1-clip)" 
-                  preserveAspectRatio="xMidYMid slice"
-                  style={{pointerEvents: 'none'}}
-                  transform="rotate(-40 185 165)"
-                />
+                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>1</text>
               </svg>
             </div>{/* End button container */}
           </div>{/* End text content wrapper */}
@@ -339,40 +295,16 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
               position: 'absolute',
-              top: '-130px',
+              top: '-150px',
               left: 0,
               right: 0,
               zIndex: 4
             }}
           >
-              <source src="/knightapple.mp4" type="video/mp4; codecs=hvc1" />
             <source src="/knightwebm.webm" type="video/webm" />
             Your browser does not support the video tag.
           </video>
         </div>{/* End media container */}
-
-      {/* New Content Container Below Video */}
-      <div className="w-full flex flex-col items-center py-12 px-4" style={{ background: 'rgba(38,22,62,0.95)', zIndex: 2 }}>
-        {/* Header */}
-        <h2 className="text-3xl font-bold mb-4">Header</h2>
-        {/* Styled Text */}
-        <p className="import text-lg text-center mb-8" style={{ fontFamily: 'Areplos Text, serif', fontStyle: 'italic' }}>
-          This is a styled text using the 'import' style.
-        </p>
-        {/* Slide Container with Images */}
-        <div className="w-full max-w-2xl overflow-x-auto flex space-x-4 pb-4" style={{scrollSnapType: 'x mandatory'}}>
-          {/* Example images, replace src as needed */}
-          <div className="flex-shrink-0 w-44 h-44 rounded-2xl overflow-hidden bg-gray-200" style={{scrollSnapAlign: 'start'}}>
-            <img src={require('../../images/logo.png')} alt="Header" className="w-full h-full object-contain" />
-          </div>
-          <div className="flex-shrink-0 w-44 h-44 rounded-2xl overflow-hidden bg-gray-200" style={{scrollSnapAlign: 'start'}}>
-            <img src="/images/sample1.jpg" alt="Sample 1" className="w-full h-full object-cover" />
-          </div>
-          <div className="flex-shrink-0 w-44 h-44 rounded-2xl overflow-hidden bg-gray-200" style={{scrollSnapAlign: 'start'}}>
-            <img src="/images/sample2.jpg" alt="Sample 2" className="w-full h-full object-cover" />
-          </div>
-        </div>
-      </div>
       </div>{/* End text content container */}
 
       {/* Matching fade container */}

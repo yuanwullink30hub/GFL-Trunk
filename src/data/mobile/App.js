@@ -29,10 +29,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
   return (
     <div style={{
-      overflow: 'hidden',
+      overflow: 'visible',
       width: '100%',
       maxWidth: '100vw',
-        backgroundColor: 'rgb(38, 22, 62)',
+        backgroundColor: '#10071dff',
     }}>
       {/* Mobile Header - Logo Only (hidden when scrolling down) */}
       <header className="fixed top-0 w-full bg-transparent" style={{zIndex: 9999, overflow: 'hidden', width: '100vw', maxWidth: '100%'}}>
@@ -73,9 +73,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{
-            objectFit: 'cover'
-          }}
         >
           <source src={headerBgVid} type="video/mp4" />
           Your browser does not support the video tag.
@@ -86,7 +83,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       <div
         className="w-full relative"
         style={{
-          background: 'linear-gradient(to bottom, #000000, #26163e, #26163eff)',
+          background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #10071dff)',
           zIndex: 1,
           position: 'relative',
           paddingTop: '100px'
@@ -130,15 +127,17 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
                 marginTop: '0',
                 marginBottom: '0',
+                paddingBottom: '35px',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
                 lineHeight: '1.4',
                 backgroundColor: 'transparent'
-              }}>De ontembare chaos uit haar wil door één lied (uni-verse). Allen zijn dus een noot in deze symfonie. <br />
-               <br />
-               Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
-               Zo ontstaat er ruimte voor het feminiene om te bloeien en te groeien. <br />
+              }}>De ontembare chaos uit haar wil in het uni-versum. <br />
+  
+               Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
+<br/> <br/> <span className="subtitles">DUIK DIEP EN ONTDEK HOE BEHEERSTE CHAOS GROEIT.</span>
+
               </p>
             {/* Button container moved directly after <p> text */}
             <div style={{
@@ -150,7 +149,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               width: '100%',
               maxWidth: 'clamp(400px, 90vw, 1200px)',
               margin: '0 auto',
-              marginTop: '0'
+              marginTop: '0',
+              position: 'relative',
+              zIndex: 10,
+              overflow: 'visible'
             }}>
               {/* Button 2 */}
               <svg 
@@ -158,36 +160,55 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="none"
-                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="xMidYMid meet"
+                pointerEvents="none"
+                style={{
+                  display: 'block',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1.2) rotate(-21deg) translateY(18px) translateX(-21px)',
+                  cursor: 'pointer'
+                }}
               >
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="rgba(0,0,0,0.001)"
-                  pointerEvents="all"
-                  style={{cursor: 'pointer'}}
-                  onClick={() => scrollToSection('contact')}
-                  onMouseEnter={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                  }}
-                  onMouseLeave={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                  }}
-                />
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="none" 
-                  stroke="#22c55e" 
-                  strokeWidth="clamp(8px, 2vw, 15px)" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  pointerEvents="none"
-                  className="breathingStroke"
-                  style={{transition: 'stroke 0.3s ease'}}
-                />
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>2</text>
+                <g>
+                  <path 
+                    d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z" 
+                    fill="rgba(0,0,0,0.001)"
+                    pointerEvents="all"
+                    onClick={() => scrollToSection('contact')}
+                    onMouseEnter={(e) => {
+                      const visiblePath = e.target.nextElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      const visiblePath = e.target.nextElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                  />
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
+                    stroke="#0c0418ff" 
+                    strokeWidth="clamp(8px, 2vw, 15px)" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    className="breathingStroke"
+                    style={{transition: 'stroke 0.3s ease'}}
+                  />
+                  <defs>
+                    <clipPath id="triangle2-clip">
+                      <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
+                    </clipPath>
+                  </defs>
+                  <image 
+                    href={require('../../images/logo.png')} 
+                    x="55" y="100" width="150" height="140" 
+                    clipPath="url(#triangle2-clip)" 
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{pointerEvents: 'none'}}
+                    transform="rotate(21 80 230)"
+                  />
+                </g>
               </svg>
               {/* Button 3 */}
               <svg 
@@ -195,36 +216,56 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="none"
-                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="xMidYMid meet"
+                pointerEvents="none"
+                  style={{
+                    display: 'block',
+                    transition: 'all 0.3s ease',
+                    transform: 'scale(1.2) rotate(40deg) translateX(-50px) translateY(15px)',
+                    cursor: 'pointer'
+                  }}
               >
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="rgba(0,0,0,0.001)"
-                  pointerEvents="all"
-                  style={{cursor: 'pointer'}}
-                  onClick={() => scrollToSection('contact')}
-                  onMouseEnter={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                  }}
-                  onMouseLeave={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                  }}
-                />
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="none" 
-                  stroke="#22c55e" 
-                  strokeWidth="clamp(8px, 2vw, 15px)" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  pointerEvents="none"
-                  className="breathingStroke"
-                  style={{transition: 'stroke 0.3s ease'}}
-                />
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>3</text>
+                <g>
+                  <path 
+                    d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
+                    fill="rgba(0,0,0,0.001)"
+                    pointerEvents="all"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => scrollToSection('contact')}
+                    onMouseEnter={(e) => {
+                      const visiblePath = e.target.nextElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      const visiblePath = e.target.nextElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                  />
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
+                    stroke="#22c55e" 
+                    strokeWidth="clamp(8px, 2vw, 15px)" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    className="breathingStroke"
+                    style={{transition: 'stroke 0.3s ease'}}
+                  />
+                  <defs>
+                    <clipPath id="triangle3-clip">
+                      <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
+                    </clipPath>
+                  </defs>
+                  <image 
+                    href={require('../../images/logo.png')} 
+                    x="55" y="100" width="150" height="140" 
+                    clipPath="url(#triangle3-clip)" 
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{pointerEvents: 'none'}}
+                    transform="rotate(-40 180 160)"
+                  />
+                </g>
               </svg>
               {/* Button 1 */}
               <svg 
@@ -232,36 +273,55 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="none"
-                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="xMidYMid meet"
+                pointerEvents="none"
+                style={{
+                  display: 'block',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1.2) rotate(40deg) translateX(-77px) translateY(185px)',
+                  cursor: 'pointer'
+                }}
               >
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="rgba(0,0,0,0.001)"
-                  pointerEvents="all"
-                  style={{cursor: 'pointer'}}
-                  onClick={() => scrollToSection('contact')}
-                  onMouseEnter={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                  }}
-                  onMouseLeave={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                  }}
-                />
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="none" 
-                  stroke="#22c55e" 
-                  strokeWidth="clamp(8px, 2vw, 15px)" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  pointerEvents="none"
-                  className="breathingStroke"
-                  style={{transition: 'stroke 0.3s ease'}}
-                />
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>1</text>
+                <g>
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
+                    stroke="#22c55e" 
+                    strokeWidth="clamp(8px, 2vw, 15px)" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    className="breathingStroke"
+                    style={{transition: 'stroke 0.3s ease'}}
+                  />
+                  <path 
+                    d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
+                    fill="rgba(0,0,0,0.001)"
+                    pointerEvents="all"
+                    onClick={() => scrollToSection('contact')}
+                    onMouseEnter={(e) => {
+                      const visiblePath = e.target.previousElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      const visiblePath = e.target.previousElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                  />
+                  <defs>
+                    <clipPath id="triangle1-clip">
+                      <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
+                    </clipPath>
+                  </defs>
+                  <image 
+                    href={require('../../images/logo.png')} 
+                    x="55" y="100" width="150" height="140" 
+                    clipPath="url(#triangle1-clip)" 
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{pointerEvents: 'none'}}
+                    transform="rotate(-40 185 165)"
+                  />
+                </g>
               </svg>
             </div>{/* End button container */}
           </div>{/* End text content wrapper */}
@@ -295,10 +355,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
               position: 'absolute',
-              top: '-150px',
+              top: '-130px',
               left: 0,
               right: 0,
-              zIndex: 4
+              zIndex: 4,
+              pointerEvents: 'none'
             }}
           >
             <source src="/knightapple.mp4" type="video/mp4; codecs=hvc1" />
@@ -308,15 +369,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>{/* End media container */}
       </div>{/* End text content container */}
 
-      {/* Matching fade container */}
-      <div
-        className="w-full"
-        style={{
-          height: '150px',
-          background: 'linear-gradient(to bottom, #26163eff, rgb(38, 22, 62))',
-          zIndex: 1
-        }}
-      />
+      
 
       {/* Home Section */}
       <section id="home" className="pt-52 pb-20 px-6">
@@ -514,7 +567,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               onClick={() => setDarkMode(!darkMode)}
               className="p-2 rounded-lg hover:bg-gray-700 transition-colors duration-300"
             >
-              {darkMode ? <BsSun className="text-5xl" style={{color: '#b8860b'}} /> : <BsMoon className="text-blue-600 text-5xl" />}
+              {darkMode ? <BsSun className="text-5xl" style={{color: '#eb7e09ff'}} /> : <BsMoon className="text-blue-600 text-5xl" />}
             </button>
           </div>
 

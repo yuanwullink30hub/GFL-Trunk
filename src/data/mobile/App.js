@@ -350,6 +350,29 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             Your browser does not support the video tag.
           </video>
         </div>{/* End media container */}
+
+      {/* New Content Container Below Video */}
+      <div className="w-full flex flex-col items-center py-12 px-4" style={{ background: 'rgba(38,22,62,0.95)', zIndex: 2 }}>
+        {/* Header */}
+        <h2 className="text-3xl font-bold mb-4">Header</h2>
+        {/* Styled Text */}
+        <p className="import text-lg text-center mb-8" style={{ fontFamily: 'Areplos Text, serif', fontStyle: 'italic' }}>
+          This is a styled text using the 'import' style.
+        </p>
+        {/* Slide Container with Images */}
+        <div className="w-full max-w-2xl overflow-x-auto flex space-x-4 pb-4" style={{scrollSnapType: 'x mandatory'}}>
+          {/* Example images, replace src as needed */}
+          <div className="flex-shrink-0 w-44 h-44 rounded-2xl overflow-hidden bg-gray-200" style={{scrollSnapAlign: 'start'}}>
+            <img src={require('../../images/logo.png')} alt="Header" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex-shrink-0 w-44 h-44 rounded-2xl overflow-hidden bg-gray-200" style={{scrollSnapAlign: 'start'}}>
+            <img src="/images/sample1.jpg" alt="Sample 1" className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-shrink-0 w-44 h-44 rounded-2xl overflow-hidden bg-gray-200" style={{scrollSnapAlign: 'start'}}>
+            <img src="/images/sample2.jpg" alt="Sample 2" className="w-full h-full object-cover" />
+          </div>
+        </div>
+      </div>
       </div>{/* End text content container */}
 
       {/* Matching fade container */}

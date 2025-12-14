@@ -101,6 +101,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           }}
         >
             {/* Text content wrapper - move as a unit */}
+            {/* 
+              POSITIONING PRINCIPLE: Use calc() with multiple components to create
+              precise, maintainable positioning. Components should be:
+              - Video/element offset adjustments
+              - Section padding adjustments
+              - Header padding adjustments
+              - Breathing room for responsiveness
+              
+              When creating new text wrappers:
+              - Set width: '100%' for full responsiveness
+              - Use calc() for dynamic margins involving multiple layout layers
+              - Ensure marginTop/marginBottom use clamp() for responsive adjustment
+            */}
             <div style={{
               marginTop: 'calc(-9px - 200px + 75px - 100px + 25px)',
               width: '100%'
@@ -140,6 +153,58 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
               </p>
             {/* Button container moved directly after <p> text */}
+            {/* 
+              ============================================================================
+              UNIVERSAL LAYOUT & SCALE PRINCIPLES FOR ALL CONTAINERS
+              ============================================================================
+              
+              1. TEXT CONTAINERS (Headers & Paragraphs):
+                 - Font sizing: clamp(MIN, VIEWPORT%, MAX)
+                 - Responsive spacing: clamp(MIN, VW%, MAX)
+                 - Line height: 1.2 (headers), 1.4 (body text)
+                 - Width: 100% for full responsiveness
+                 - Margins use clamp() for flexible spacing
+                 Example: fontSize: 'clamp(23.4px, 5.2vw, 46.8px)'
+              
+              2. MEDIA CONTAINERS (Images/Videos):
+                 - Max-width constraint: clamp(400px, 90vw, 1200px)
+                 - Responsive gap: clamp(10px, 2vw, 20px) or clamp(20px, 5vw, 60px)
+                 - Display: flex, centered alignment, relative positioning
+                 - Video scale factor: 0.81 (65% of button scale 1.2)
+                 - Transform origin: top left (for absolute positioning)
+                 Example: transform: 'scale(0.81) translate(calc(clamp(30px, 7vw, 80px) + 8%), -10%)'
+              
+              3. SVG BUTTON CONTAINERS:
+                 - Base scale: scale(1.2) ALWAYS applied first
+                 - Size: clamp(60px, 28vw, 220px) for both width and height
+                 - Parent container gap: clamp(20px, 5vw, 60px)
+                 - Each button: unique rotation + translation offsets
+                 - Transition: 'all 0.3s ease'
+                 - Stroke width: clamp(8px, 2vw, 15px)
+                 Example: transform: 'scale(1.2) rotate(XXdeg) translateX(XXpx) translateY(XXpx)'
+              
+              4. CONTENT SECTIONS:
+                 - Container: max-width-4xl with mx-auto
+                 - Spacing: space-y-6 between blocks
+                 - Image containers: overflow-hidden, rounded-2xl
+                 - Aspect ratio for videos: aspect-video
+                 - All full-width images: w-full h-auto
+              
+              5. RESPONSIVE SPACING HIERARCHY:
+                 - Tight: clamp(10px, 2vw, 20px)
+                 - Medium: clamp(20px, 5vw, 60px)
+                 - Large: clamp(30px, 7vw, 80px)
+                 - Padding: typically 20px left/right for mobile
+                 - Section padding: pt-52 pb-20 px-6
+              
+              APPLYING PRINCIPLES TO NEW CONTAINERS:
+              - Use clamp() for ANY size/spacing that changes with viewport
+              - Apply scale(1.2) to SVG containers as base transform
+              - Use 100% width for flexible content blocks
+              - Maintain max-width constraints for readability
+              - Keep responsive gap between flex items
+              - Use flex centering for alignment consistency
+            */}
             <div style={{
               display: 'flex',
               flexDirection: 'row',
@@ -312,6 +377,22 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>{/* End text container over image */}
 
         {/* Media Container - Image and WebM side by side */}
+        {/* 
+          MEDIA CONTAINER PRINCIPLES:
+          - Layout: flex row with flex-start alignment (top-aligned)
+          - Gap: clamp(10px, 2vw, 20px) for tight responsive spacing
+          - Width: 100% for viewport responsiveness
+          - Max-width: clamp(400px, 90vw, 1200px) for readability/constraints
+          - Positioning: relative + absolute children for layering
+          - Overflow: visible to allow absolutely positioned items to show
+          - zIndex: 8 (layer between background and content)
+          
+          When adding new media containers:
+          - Use same responsive gap pattern
+          - Apply max-width constraint for consistency
+          - Use flex centering for alignment
+          - Margin 0 auto for horizontal centering
+        */}
         <div style={{
           display: 'flex',
           alignItems: 'flex-start',
@@ -324,6 +405,22 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           margin: '0 auto'
         }}>
           {/* WebM Video - Right of triangles */}
+          {/* 
+            VIDEO POSITIONING PRINCIPLES:
+            - Scale: 0.81 (proportion to button scale 1.2: 0.81/1.2 ≈ 0.675)
+            - Transform origin: top left (for predictable scaling/positioning)
+            - Positioning: absolute with top/left/right for overlay
+            - Translation: calc(clamp(TIGHT, VW%, WIDE) + OFFSET%)
+            - Display: block, width/height auto to maintain aspect ratio
+            - Blend mode: screen (additive blending for visual effect)
+            - Background: transparent for overlay appearance
+            
+            When adding video containers:
+            - Use scale(0.81) for consistency with existing video sizing
+            - Apply calc() with clamp() for responsive translation offsets
+            - Use transform origin for predictable transformations
+            - Keep mixBlendMode: 'screen' for light/overlay effect
+          */}
           <video
             autoPlay
             loop

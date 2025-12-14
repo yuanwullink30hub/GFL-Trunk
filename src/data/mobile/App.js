@@ -133,7 +133,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 overflowWrap: 'break-word',
                 lineHeight: '1.4',
                 backgroundColor: 'transparent'
-              }}>De ontembare chaos uit haar wil in het uni-verse. <br />
+              }}>De ontembare chaos uit haar wil in het uni-versum. <br />
   
                Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
 <br/> <br/> <span className="subtitles">DUIK DIEP EN ONTDEK HOE BEHEERSTE CHAOS GROEIT.</span>
@@ -345,7 +345,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               zIndex: 4
             }}
           >
-            <source src="/knightapple.mp4" type="video/mp4" />
+            <source src="/knightapple.mp4" type="video/mp4; codecs=hevc" />
             <source src="/knightwebm.webm" type="video/webm" />
             Your browser does not support the video tag.
           </video>

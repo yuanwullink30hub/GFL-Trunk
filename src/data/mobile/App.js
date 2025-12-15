@@ -25,7 +25,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     }
   };
 
+  const [currentSlide, setCurrentSlide] = React.useState(0);
+
   const homeTab = data?.basics?.pages?.find(page => page.id === 'home');
+  
+  const slides = [
+    { header: 'Slide 1', image: '/images/placeholder1.jpg', bgColor: 'rgba(34, 197, 94, 0.15)' },
+    { header: 'Slide 2', image: '/images/placeholder2.jpg', bgColor: 'rgba(59, 130, 246, 0.15)' },
+    { header: 'Slide 3', image: '/images/placeholder3.jpg', bgColor: 'rgba(168, 85, 247, 0.15)' }
+  ];
 
   return (
     <div style={{
@@ -150,81 +158,124 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               width: '100%',
               maxWidth: 'clamp(400px, 90vw, 1200px)',
               margin: '0 auto',
-              marginTop: '0'
+              marginTop: '0',
+              position: 'relative',
+              zIndex: 10,
+              overflow: 'visible',
+              pointerEvents: 'none'
             }}>
-              {/* Button 2 */}
+            {/* Button 2 */}
               <svg 
                 className="triangleButton2"
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="none"
-                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="xMidYMid meet"
+                pointerEvents="none"
+                style={{
+                  display: 'block',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1.2) rotate(-21deg) translateY(18px) translateX(-21px)',
+                  cursor: 'pointer'
+                }}
               >
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="rgba(0,0,0,0.001)"
-                  pointerEvents="all"
-                  style={{cursor: 'pointer'}}
-                  onClick={() => scrollToSection('contact')}
-                  onMouseEnter={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                  }}
-                  onMouseLeave={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                  }}
-                />
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="none" 
-                  stroke="#22c55e" 
-                  strokeWidth="clamp(8px, 2vw, 15px)" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  pointerEvents="none"
-                  className="breathingStroke"
-                  style={{transition: 'stroke 0.3s ease'}}
-                />
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>2</text>
+                <g>
+                  <path 
+                    d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z" 
+                    fill="rgba(0,0,0,0.001)"
+                    pointerEvents="all"
+                    onClick={() => scrollToSection('contact')}
+                    onMouseEnter={(e) => {
+                      const visiblePath = e.target.nextElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      const visiblePath = e.target.nextElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                  />
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
+                    stroke="#0c0418ff" 
+                    strokeWidth="clamp(8px, 2vw, 15px)" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    className="breathingStroke"
+                    style={{transition: 'stroke 0.3s ease'}}
+                  />
+                  <defs>
+                    <clipPath id="triangle2-clip">
+                      <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
+                    </clipPath>
+                  </defs>
+                  <image 
+                    href={require('../../images/logo.png')} 
+                    x="55" y="100" width="150" height="140" 
+                    clipPath="url(#triangle2-clip)" 
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{pointerEvents: 'none'}}
+                    transform="rotate(21 80 230)"
+                  />
+                </g>
               </svg>
-              {/* Button 3 */}
+             {/* Button 3 */}
               <svg 
                 className="triangleButton3"
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="none"
-                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="xMidYMid meet"
+                pointerEvents="none"
+                  style={{
+                    display: 'block',
+                    transition: 'all 0.3s ease',
+                    transform: 'scale(1.2) rotate(40deg) translateX(-50px) translateY(15px)',
+                    cursor: 'pointer'
+                  }}
               >
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="rgba(0,0,0,0.001)"
-                  pointerEvents="all"
-                  style={{cursor: 'pointer'}}
-                  onClick={() => scrollToSection('contact')}
-                  onMouseEnter={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                  }}
-                  onMouseLeave={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                  }}
-                />
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="none" 
-                  stroke="#22c55e" 
-                  strokeWidth="clamp(8px, 2vw, 15px)" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  pointerEvents="none"
-                  className="breathingStroke"
-                  style={{transition: 'stroke 0.3s ease'}}
-                />
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>3</text>
+                <g>
+                  <path 
+                    d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
+                    fill="rgba(0,0,0,0.001)"
+                    pointerEvents="all"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => scrollToSection('contact')}
+                    onMouseEnter={(e) => {
+                      const visiblePath = e.target.nextElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      const visiblePath = e.target.nextElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                  />
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
+                    stroke="#22c55e" 
+                    strokeWidth="clamp(8px, 2vw, 15px)" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    className="breathingStroke"
+                    style={{transition: 'stroke 0.3s ease'}}
+                  />
+                  <defs>
+                    <clipPath id="triangle3-clip">
+                      <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
+                    </clipPath>
+                  </defs>
+                  <image 
+                    href={require('../../images/logo.png')} 
+                    x="55" y="100" width="150" height="140" 
+                    clipPath="url(#triangle3-clip)" 
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{pointerEvents: 'none'}}
+                    transform="rotate(-40 180 160)"
+                  />
+                </g>
               </svg>
               {/* Button 1 */}
               <svg 
@@ -232,36 +283,55 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
-                preserveAspectRatio="none"
-                style={{display: 'block', transition: 'all 0.3s ease', pointerEvents: 'none'}}
+                preserveAspectRatio="xMidYMid meet"
+                pointerEvents="none"
+                style={{
+                  display: 'block',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1.2) rotate(40deg) translateX(-77px) translateY(185px)',
+                  cursor: 'pointer'
+                }}
               >
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="rgba(0,0,0,0.001)"
-                  pointerEvents="all"
-                  style={{cursor: 'pointer'}}
-                  onClick={() => scrollToSection('contact')}
-                  onMouseEnter={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#16a34a';
-                  }}
-                  onMouseLeave={(e) => {
-                    const visiblePath = e.target.nextElementSibling;
-                    if(visiblePath) visiblePath.style.stroke = '#22c55e';
-                  }}
-                />
-                <path 
-                  d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                  fill="none" 
-                  stroke="#22c55e" 
-                  strokeWidth="clamp(8px, 2vw, 15px)" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  pointerEvents="none"
-                  className="breathingStroke"
-                  style={{transition: 'stroke 0.3s ease'}}
-                />
-                <text x="150" y="170" textAnchor="middle" fontSize="clamp(48px, 15vw, 80px)" fontWeight="900" fill="#22c55e" pointerEvents="none" className="breathingNumber" style={{transition: 'fill 0.3s ease', fontFamily: 'inherit'}}>1</text>
+                <g>
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
+                    stroke="#22c55e" 
+                    strokeWidth="clamp(8px, 2vw, 15px)" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    className="breathingStroke"
+                    style={{transition: 'stroke 0.3s ease'}}
+                  />
+                  <path 
+                    d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
+                    fill="rgba(0,0,0,0.001)"
+                    pointerEvents="all"
+                    onClick={() => scrollToSection('contact')}
+                    onMouseEnter={(e) => {
+                      const visiblePath = e.target.previousElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      const visiblePath = e.target.previousElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                  />
+                  <defs>
+                    <clipPath id="triangle1-clip">
+                      <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
+                    </clipPath>
+                  </defs>
+                  <image 
+                    href={require('../../images/logo.png')} 
+                    x="55" y="100" width="150" height="140" 
+                    clipPath="url(#triangle1-clip)" 
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{pointerEvents: 'none'}}
+                    transform="rotate(-40 185 165)"
+                  />
+                </g>
               </svg>
             </div>{/* End button container */}
           </div>{/* End text content wrapper */}
@@ -277,7 +347,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           overflow: 'visible',
           width: '100%',
           maxWidth: 'clamp(400px, 90vw, 1200px)',
-          margin: '0 auto'
+          margin: '0 auto',
+          pointerEvents: 'none',
+          paddingBottom: '180px'
         }}>
           {/* WebM Video - Right of triangles */}
           <video
@@ -306,6 +378,142 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             Your browser does not support the video tag.
           </video>
         </div>{/* End media container */}
+
+        {/* Header Container */}
+        <div style={{
+          position: 'absolute',
+          width: '100%',
+          maxWidth: 'clamp(400px, 90vw, 1200px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          fontSize: 'clamp(23.4px, 5.2vw, 46.8px)',
+          fontWeight: 'bold',
+          lineHeight: '1.2',
+          marginBottom: 'clamp(20px, 5vw, 60px)',
+          whiteSpace: 'normal',
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word'
+        }}>
+          Section Header
+        </div>
+
+        {/* Text Container */}
+        <div style={{
+          position: 'absolute',
+          width: '100%',
+          maxWidth: 'clamp(400px, 90vw, 1200px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          fontSize: 'clamp(14px, 3.5vw, 28px)',
+          lineHeight: '1.4',
+          marginTop: 'clamp(30px, 7vw, 80px)',
+          whiteSpace: 'normal',
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word'
+        }}>
+          Text content goes here
+        </div>
+
+        {/* Scrollable Slideshow Container */}
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: 'clamp(100px, 90vw, 1200px)',
+          margin: `clamp(80px, 15vw, 160px) auto 0 auto`
+        }}>
+          {/* Horizontal Scroll Gallery */}
+          <div style={{
+            display: 'flex',
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            gap: 'clamp(6px, 2vw, 20px)',
+            paddingLeft: 'clamp(6px, 2vw, 20px)',
+            paddingRight: 'clamp(6px, 2vw, 20px)',
+            paddingBottom: 'clamp(8px, 1.5vw, 12px)',
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch',
+            scrollSnapType: 'x mandatory'
+          }}>
+            {slides.map((slide, index) => (
+              <div
+                key={index}
+                style={{
+                  flex: '0 0 clamp(160px, 50.4vw, 403px)',
+                  height: 'clamp(220px, 70vw, 550px)',
+                  position: 'relative',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  backgroundColor: '#000000',
+                  border: '1px solid #ef8616',
+                  scrollSnapAlign: 'start',
+                  transition: 'transform 0.2s ease',
+                  cursor: 'grab',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                }}
+              >
+                {/* Header */}
+                {slide.header && (
+                  <div style={{
+                    position: 'relative',
+                    fontSize: 'clamp(12px, 2.5vw, 16px)',
+                    fontWeight: 'bold',
+                    padding: 'clamp(6px, 1vw, 12px)',
+                    backgroundColor: '#ef8616',
+                    color: '#22c55e',
+                    zIndex: 1,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {slide.header}
+                  </div>
+                )}
+
+                {/* Image Spacing Wrapper */}
+                <div style={{
+                  paddingTop: 'clamp(8px, 2vw, 20px)',
+                  paddingBottom: 'clamp(8px, 2vw, 25px)',
+                  paddingLeft: 'clamp(3px, 1vw, 10px)',
+                  paddingRight: 'clamp(3px, 1vw, 10px)'
+                }}>
+                  {/* Image Circle */}
+                  <div style={{
+                    position: 'relative',
+                    width: 'clamp(156px, 39vw, 273px)',
+                    height: 'clamp(156px, 39vw, 273px)',
+                    margin: '0 auto',
+                    overflow: 'hidden',
+                    backgroundColor: '#ebe7e1',
+                    borderRadius: '50%',
+                    zIndex: 2
+                  }}>
+                    <img
+                      src={slide.image}
+                      alt={slide.header}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Text Subtitle */}
+                <div style={{
+                  backgroundColor: '#333',
+                  padding: 'clamp(6px, 1vw, 12px)',
+                  fontSize: 'clamp(10px, 2vw, 14px)',
+                  color: '#fff',
+                  flex: 1
+                }}>
+                  Subtitle text here
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>{/* End text content container */}
 
       {/* Matching fade container */}
@@ -318,132 +526,45 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         }}
       />
 
-      {/* Home Section */}
-      <section id="home" className="pt-52 pb-20 px-6">
-        <div className="container mx-auto max-w-4xl">
-          {homeTab?.story ? (
-            // Storytelling layout
-            <div className="space-y-6">
-              {homeTab.story.map((block, idx) => (
-                <div key={idx}>
-                  {block.type === 'text' && (
-                    <p className="text leading-relaxed">
-                      {block.content}
-                    </p>
-                  )}
-                  
-                  {block.type === 'image' && (
-                    <div className="overflow-hidden rounded-2xl">
-                      <img 
-                        src={block.src} 
-                        alt={block.alt} 
-                        className="w-full h-auto"
-                      />
-                      {block.caption && (
-                        <p className="subtitles text-center text-gray-600 dark:text-gray-400 mt-3">
-                          {block.caption}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  
-                  {block.type === 'video' && (
-                    <div className="overflow-hidden rounded-2xl">
-                      <div className="aspect-video">
-                        <iframe
-                          src={block.src}
-                          title={block.title}
-                          className="w-full h-full"
-                          allowFullScreen
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {block.type === 'link' && (
-                    <div className="text-center">
-                      <a
-                        href={block.href}
-                        onClick={(e) => {
-                          if (block.internal) {
-                            e.preventDefault();
-                            scrollToSection(block.href.replace('/', ''));
-                          }
-                        }}
-                        className="inline-block header font-semibold text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors duration-300 underline"
-                      >
-                        {block.text}
-                      </a>
-                    </div>
-                  )}
-                  
-                  {block.type === 'cta' && (
-                    <div className="text-center">
-                      <button
-                        onClick={() => {
-                          if (block.internal) {
-                            scrollToSection(block.href.replace('/', ''));
-                          } else {
-                            window.location.href = block.href;
-                          }
-                        }}
-                        className="px-8 py-4 bg-gradient-to-r from-green-700 to-green-500 text-white text-lg font-semibold rounded-lg hover:from-green-800 hover:to-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
-                      >
-                        {block.text}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            // Fallback to original layout if no story
-            <div className="text-center">
-              <p className="text leading-relaxed mb-8">
-                {homeTab?.content}
-              </p>
-              <button
-                onClick={() => scrollToSection('contact')}
-                className="px-8 py-3 bg-gradient-to-r from-green-700 to-green-500 text-white rounded-lg hover:from-green-800 hover:to-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
-              >
-                Get In Touch
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* Contact Section */}
-      <section id="contact" className="py-20 px-6">
+      <section id="contact" style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: 'clamp(400px, 90vw, 1200px)',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        padding: 'clamp(35px, 7vw, 70px)',
+        marginTop: 'clamp(400px, 80vw, 800px)',
+        marginBottom: 'clamp(35px, 7vw, 70px)'
+      }}>
         <div className="container mx-auto max-w-2xl">
           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
             <div className="space-y-4 max-w-md mx-auto">
               <div className="flex items-center space-x-3 p-2 bg-white/50 dark:bg-gray-700/50 rounded-lg">
-                <FaMapMarkerAlt className="text-xl flex-shrink-0" style={{color: '#f22b00'}} />
+                <FaMapMarkerAlt style={{color: '#f22b00', fontSize: 'clamp(16px, 6vw, 32px)'}} />
                 <div>
-                  <p className="font-semibold text-sm" style={{color: '#f22b00'}}>Location</p>
-                  <p className="text-gray-600 dark:text-gray-400 text-xs" style={{ fontSize: 'clamp(10px, 1.5vw, 14px)' }}>
+                  <p className="font-semibold" style={{color: '#f22b00', fontSize: 'clamp(12px, 4vw, 20px)'}}>Location</p>
+                  <p className="text-gray-600 dark:text-gray-400" style={{ fontSize: 'clamp(10px, 3vw, 18px)' }}>
                     {data?.basics?.location?.city}, {data?.basics?.location?.country}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-3 p-2 bg-white/50 dark:bg-gray-700/50 rounded-lg">
-                <FaPhone className="text-xl flex-shrink-0" style={{color: '#f22b00'}} />
+                <FaPhone style={{color: '#f22b00', fontSize: 'clamp(16px, 6vw, 32px)'}} />
                 <div>
-                  <p className="font-semibold text-sm" style={{color: '#f22b00'}}>Phone</p>
-                  <a href={`tel:${data?.basics?.phone}`} className="subtitles" style={{color: '#f22b00'}}>
+                  <p className="font-semibold" style={{color: '#f22b00', fontSize: 'clamp(12px, 4vw, 20px)'}}>Phone</p>
+                  <a href={`tel:${data?.basics?.phone}`} style={{color: '#f22b00', fontSize: 'clamp(10px, 3vw, 18px)'}}>
                     {data?.basics?.phone}
                   </a>
                 </div>
               </div>
 
               <div className="flex items-center space-x-3 p-2 bg-white/50 dark:bg-gray-700/50 rounded-lg">
-                <FaEnvelope className="text-xl flex-shrink-0" style={{color: '#f22b00'}} />
+                <FaEnvelope style={{color: '#f22b00', fontSize: 'clamp(16px, 6vw, 32px)'}} />
                 <div>
-                  <p className="font-semibold text-sm" style={{color: '#f22b00'}}>Email</p>
-                  <a href={`mailto:${data?.basics?.email}`} className="subtitles" style={{color: '#f22b00'}}>
+                  <p className="font-semibold" style={{color: '#f22b00', fontSize: 'clamp(12px, 4vw, 20px)'}}>Email</p>
+                  <a href={`mailto:${data?.basics?.email}`} style={{color: '#f22b00', fontSize: 'clamp(10px, 3vw, 18px)'}}>
                     {data?.basics?.email}
                   </a>
                 </div>
@@ -451,13 +572,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             </div>
 
             <div className="mt-8 pt-4 border-t border-gray-300 dark:border-gray-600">
-              <h4 className="subtitles font-semibold mb-4 text-center" style={{color: '#f22b00'}}>Follow me</h4>
+              <h4 className="subtitles font-semibold mb-4 text-center" style={{color: '#f22b00', fontSize: 'clamp(14px, 4.5vw, 26px)'}}>Follow me</h4>
               <div className="flex justify-center space-x-4">
                 {data?.basics?.profiles?.map((profile, idx) => {
                   const icons = {
-                    LinkedIn: <FaLinkedin style={{color: '#f22b00'}} />,
-                    GitHub: <FaGithub style={{color: '#f22b00'}} />,
-                    Website: <FaGlobe style={{color: '#f22b00'}} />
+                    LinkedIn: <FaLinkedin style={{color: '#f22b00', fontSize: 'clamp(20px, 7vw, 42px)'}} />,
+                    GitHub: <FaGithub style={{color: '#f22b00', fontSize: 'clamp(20px, 7vw, 42px)'}} />,
+                    Website: <FaGlobe style={{color: '#f22b00', fontSize: 'clamp(20px, 7vw, 42px)'}} />
                   };
                   return (
                     <a
@@ -465,7 +586,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                       href={profile.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-2xl hover:scale-110 transition-transform duration-300"
+                      className="hover:scale-110 transition-transform duration-300"
+                      style={{fontSize: 'clamp(20px, 7vw, 42px)', display: 'flex'}}
                     >
                       {icons[profile.network] || <FaGlobe style={{color: '#f22b00'}} />}
                     </a>
@@ -478,7 +600,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       </section>
 
       {/* Mobile Footer with Navigation */}
-      <footer className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-6 -mt-5">
+      <footer style={{
+        position: 'relative',
+        width: '100%',
+        background: 'linear-gradient(to right, rgb(31, 41, 55), rgb(17, 24, 39))',
+        color: 'white',
+        padding: 'clamp(24px, 6vw, 48px)',
+        marginTop: 'clamp(35px, 7vw, 70px)'
+      }}>
         <div className="container mx-auto px-6 text-center">
           {/* Footer Navigation */}
           <div className="flex justify-center items-center space-x-4 mb-4">

@@ -25,9 +25,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     }
   };
 
-  const [currentSlide, setCurrentSlide] = React.useState(0);
 
-  const homeTab = data?.basics?.pages?.find(page => page.id === 'home');
   
   const slides = [
     { header: 'Slide 1', image: '/images/placeholder1.jpg', bgColor: 'rgba(34, 197, 94, 0.15)' },
@@ -339,7 +337,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           height: '0',
           zIndex: 8,
           overflow: 'visible',
-          width: '100%',
           maxWidth: 'clamp(400px, 90vw, 1200px)',
            margin: '0 auto',
           pointerEvents: 'none',

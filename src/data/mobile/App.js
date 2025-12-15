@@ -37,10 +37,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
   return (
     <div style={{
-      overflow: 'hidden',
+      overflow: 'visible',
       width: '100%',
       maxWidth: '100vw',
-        backgroundColor: 'rgb(38, 22, 62)',
+        backgroundColor: '#10071dff',
     }}>
       {/* Mobile Header - Logo Only (hidden when scrolling down) */}
       <header className="fixed top-0 w-full bg-transparent" style={{zIndex: 9999, overflow: 'hidden', width: '100vw', maxWidth: '100%'}}>
@@ -81,9 +81,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{
-            objectFit: 'cover'
-          }}
         >
           <source src={headerBgVid} type="video/mp4" />
           Your browser does not support the video tag.
@@ -94,7 +91,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       <div
         className="w-full relative"
         style={{
-          background: 'linear-gradient(to bottom, #000000, #26163e, #26163eff)',
+          background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #10071dff)',
           zIndex: 1,
           position: 'relative',
           paddingTop: '100px'
@@ -138,15 +135,17 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
                 marginTop: '0',
                 marginBottom: '0',
+                paddingBottom: '35px',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
                 lineHeight: '1.4',
                 backgroundColor: 'transparent'
-              }}>De ontembare chaos uit haar wil door één lied (uni-verse). Allen zijn dus een noot in deze symfonie. <br />
-               <br />
-               Het is de eer aan het masculiene om op een harmonieuze wijze mee te stromen met de natuurlijke kracht, loslaten van gebroken fundering en in vertrouwde chaos een nieuwe vorm op te laten stijgen. <br />
-               Zo ontstaat er ruimte voor het feminiene om te bloeien en te groeien. <br />
+              }}>De ontembare chaos uit haar wil in het uni-versum. <br />
+  
+               Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
+<br/> <br/> <span className="subtitles">DUIK DIEP EN ONTDEK HOE BEHEERSTE CHAOS GROEIT.</span>
+
               </p>
             {/* Button container moved directly after <p> text */}
             <div style={{
@@ -158,11 +157,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               width: '100%',
               maxWidth: 'clamp(400px, 90vw, 1200px)',
               margin: '0 auto',
-              marginTop: '0',
-              position: 'relative',
-              zIndex: 10,
-              overflow: 'visible',
-              pointerEvents: 'none'
+              marginTop: '0'
             }}>
             {/* Button 2 */}
               <svg 
@@ -339,17 +334,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
         {/* Media Container - Image and WebM side by side */}
         <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 'clamp(10px, 2vw, 20px)',
           position: 'relative',
+          width: '100%',
+          height: '0',
           zIndex: 8,
           overflow: 'visible',
           width: '100%',
           maxWidth: 'clamp(400px, 90vw, 1200px)',
-          margin: '0 auto',
-          pointerEvents: 'none',
-          paddingBottom: '180px'
+          margin: '0 auto'
         }}>
           {/* WebM Video - Right of triangles */}
           <video
@@ -367,10 +359,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
               position: 'absolute',
-              top: '-150px',
+              top: '-130px',
               left: 0,
               right: 0,
-              zIndex: 4
+              zIndex: 4,
+              pointerEvents: 'none'
             }}
           >
             <source src="/knightapple.mp4" type="video/mp4; codecs=hvc1" />
@@ -526,6 +519,102 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         }}
       />
 
+      {/* Home Section */}
+      <section id="home" className="pt-52 pb-20 px-6">
+        <div className="container mx-auto max-w-4xl">
+          {homeTab?.story ? (
+            // Storytelling layout
+            <div className="space-y-6">
+              {homeTab.story.map((block, idx) => (
+                <div key={idx}>
+                  {block.type === 'text' && (
+                    <p className="text leading-relaxed">
+                      {block.content}
+                    </p>
+                  )}
+                  
+                  {block.type === 'image' && (
+                    <div className="overflow-hidden rounded-2xl">
+                      <img 
+                        src={block.src} 
+                        alt={block.alt} 
+                        className="w-full h-auto"
+                      />
+                      {block.caption && (
+                        <p className="subtitles text-center text-gray-600 dark:text-gray-400 mt-3">
+                          {block.caption}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {block.type === 'video' && (
+                    <div className="overflow-hidden rounded-2xl">
+                      <div className="aspect-video">
+                        <iframe
+                          src={block.src}
+                          title={block.title}
+                          className="w-full h-full"
+                          allowFullScreen
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {block.type === 'link' && (
+                    <div className="text-center">
+                      <a
+                        href={block.href}
+                        onClick={(e) => {
+                          if (block.internal) {
+                            e.preventDefault();
+                            scrollToSection(block.href.replace('/', ''));
+                          }
+                        }}
+                        className="inline-block header font-semibold text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors duration-300 underline"
+                      >
+                        {block.text}
+                      </a>
+                    </div>
+                  )}
+                  
+                  {block.type === 'cta' && (
+                    <div className="text-center">
+                      <button
+                        onClick={() => {
+                          if (block.internal) {
+                            scrollToSection(block.href.replace('/', ''));
+                          } else {
+                            window.location.href = block.href;
+                          }
+                        }}
+                        className="px-8 py-4 bg-gradient-to-r from-green-700 to-green-500 text-white text-lg font-semibold rounded-lg hover:from-green-800 hover:to-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                      >
+                        {block.text}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Fallback to original layout if no story
+            <div className="text-center">
+              <p className="text leading-relaxed mb-8">
+                {homeTab?.content}
+              </p>
+              <button
+                onClick={() => scrollToSection('contact')}
+                className="px-8 py-3 bg-gradient-to-r from-green-700 to-green-500 text-white rounded-lg hover:from-green-800 hover:to-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
+              >
+                Get In Touch
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Contact Section */}
       <section id="contact" style={{
         position: 'relative',
@@ -643,7 +732,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               onClick={() => setDarkMode(!darkMode)}
               className="p-2 rounded-lg hover:bg-gray-700 transition-colors duration-300"
             >
-              {darkMode ? <BsSun className="text-5xl" style={{color: '#b8860b'}} /> : <BsMoon className="text-blue-600 text-5xl" />}
+              {darkMode ? <BsSun className="text-5xl" style={{color: '#eb7e09ff'}} /> : <BsMoon className="text-blue-600 text-5xl" />}
             </button>
           </div>
 

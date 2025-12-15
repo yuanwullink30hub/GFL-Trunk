@@ -341,7 +341,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           overflow: 'visible',
           width: '100%',
           maxWidth: 'clamp(400px, 90vw, 1200px)',
-          margin: '0 auto'
+           margin: '0 auto',
+          pointerEvents: 'none',
+          paddingBottom: '180px'
         }}>
           {/* WebM Video - Right of triangles */}
           <video
@@ -359,7 +361,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
               position: 'absolute',
-              top: '-130px',
+              top: '-150px',
               left: 0,
               right: 0,
               zIndex: 4,
@@ -372,7 +374,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </video>
         </div>{/* End media container */}
 
-        {/* Header Container */}
+     {/* Header Container */}
         <div style={{
           position: 'absolute',
           width: '100%',
@@ -509,111 +511,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>
       </div>{/* End text content container */}
 
-      {/* Matching fade container */}
-      <div
-        className="w-full"
-        style={{
-          height: '150px',
-          background: 'linear-gradient(to bottom, #26163eff, rgb(38, 22, 62))',
-          zIndex: 1
-        }}
-      />
-
-      {/* Home Section */}
-      <section id="home" className="pt-52 pb-20 px-6">
-        <div className="container mx-auto max-w-4xl">
-          {homeTab?.story ? (
-            // Storytelling layout
-            <div className="space-y-6">
-              {homeTab.story.map((block, idx) => (
-                <div key={idx}>
-                  {block.type === 'text' && (
-                    <p className="text leading-relaxed">
-                      {block.content}
-                    </p>
-                  )}
-                  
-                  {block.type === 'image' && (
-                    <div className="overflow-hidden rounded-2xl">
-                      <img 
-                        src={block.src} 
-                        alt={block.alt} 
-                        className="w-full h-auto"
-                      />
-                      {block.caption && (
-                        <p className="subtitles text-center text-gray-600 dark:text-gray-400 mt-3">
-                          {block.caption}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  
-                  {block.type === 'video' && (
-                    <div className="overflow-hidden rounded-2xl">
-                      <div className="aspect-video">
-                        <iframe
-                          src={block.src}
-                          title={block.title}
-                          className="w-full h-full"
-                          allowFullScreen
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {block.type === 'link' && (
-                    <div className="text-center">
-                      <a
-                        href={block.href}
-                        onClick={(e) => {
-                          if (block.internal) {
-                            e.preventDefault();
-                            scrollToSection(block.href.replace('/', ''));
-                          }
-                        }}
-                        className="inline-block header font-semibold text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors duration-300 underline"
-                      >
-                        {block.text}
-                      </a>
-                    </div>
-                  )}
-                  
-                  {block.type === 'cta' && (
-                    <div className="text-center">
-                      <button
-                        onClick={() => {
-                          if (block.internal) {
-                            scrollToSection(block.href.replace('/', ''));
-                          } else {
-                            window.location.href = block.href;
-                          }
-                        }}
-                        className="px-8 py-4 bg-gradient-to-r from-green-700 to-green-500 text-white text-lg font-semibold rounded-lg hover:from-green-800 hover:to-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
-                      >
-                        {block.text}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            // Fallback to original layout if no story
-            <div className="text-center">
-              <p className="text leading-relaxed mb-8">
-                {homeTab?.content}
-              </p>
-              <button
-                onClick={() => scrollToSection('contact')}
-                className="px-8 py-3 bg-gradient-to-r from-green-700 to-green-500 text-white rounded-lg hover:from-green-800 hover:to-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
-              >
-                Get In Touch
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
+   
 
       {/* Contact Section */}
       <section id="contact" style={{

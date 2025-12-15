@@ -329,15 +329,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
         {/* Media Container - Image and WebM side by side */}
         <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 'clamp(10px, 2vw, 20px)',
           position: 'relative',
+          width: '100%',
+          height: '0',
           zIndex: 8,
           overflow: 'visible',
-          width: '100%',
-          maxWidth: 'clamp(400px, 90vw, 1200px)',
-          margin: '0 auto'
+          pointerEvents: 'none'
         }}>
           {/* WebM Video - Right of triangles */}
           <video

@@ -9,13 +9,26 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
-import headerBgVid from '../../videos/120header.mp4';
+import headerBgVid from '../../videos/compressed/HDheader_1.mp4';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
 import '../../styles/subtitles.css';
 import '../../styles/buttons.css';
 
 const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
+
+  const [currentSlide, setCurrentSlide] = React.useState(0);
+  const galleryRef = React.useRef(null);
+
+  const handleScroll = () => {
+    if (!galleryRef.current) return;
+    const gallery = galleryRef.current;
+    const scrollLeft = gallery.scrollLeft;
+    const slideWidth = gallery.children[0]?.offsetWidth || 0;
+    const gap = parseInt(window.getComputedStyle(gallery).gap) || 6;
+    const newIndex = Math.round(scrollLeft / (slideWidth + gap));
+    setCurrentSlide(newIndex);
+  };
 
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
@@ -24,8 +37,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     }
   };
 
-
-  
   const slides = [
     { header: 'Slide 1', image: '/images/placeholder1.jpg', bgColor: 'rgba(34, 197, 94, 0.15)' },
     { header: 'Slide 2', image: '/images/placeholder2.jpg', bgColor: 'rgba(59, 130, 246, 0.15)' },
@@ -36,7 +47,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     <div style={{
       width: '100%',
       overflow: 'hidden',
-      backgroundColor: '#10071dff',
+      backgroundColor: '#150a24ff',
     }}>
       {/* Mobile Header - Logo Only (hidden when scrolling down) */}
       <header className="fixed top-0 left-0 right-0 bg-transparent" style={{zIndex: 9999, overflow: 'hidden'}}>
@@ -87,7 +98,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       <div
         className="w-full relative"
         style={{
-          background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #10071dff)',
+          background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff',
           zIndex: 1,
           position: 'relative',
           paddingTop: '100px'
@@ -408,28 +419,33 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         <div style={{
           position: 'relative',
           width: '100%',
-          maxWidth: 'clamp(100px, 90vw, 1200px)',
-          margin: `clamp(80px, 15vw, 160px) auto 0 auto`
+          maxWidth: 'calc(100% - 60px)',
+          margin: `clamp(80px, 15vw, 160px) auto 0 auto`,
+          padding: '30px'
         }}>
           {/* Horizontal Scroll Gallery */}
-          <div style={{
-            display: 'flex',
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            gap: 'clamp(6px, 2vw, 20px)',
-            paddingLeft: 'clamp(6px, 2vw, 20px)',
-            paddingRight: 'clamp(6px, 2vw, 20px)',
-            paddingBottom: 'clamp(8px, 1.5vw, 12px)',
-            scrollBehavior: 'smooth',
-            WebkitOverflowScrolling: 'touch',
-            scrollSnapType: 'x mandatory'
-          }}>
+          <div
+            ref={galleryRef}
+            onScroll={handleScroll}
+            style={{
+              display: 'flex',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              gap: 'clamp(6px, 2vw, 20px)',
+              paddingLeft: 'clamp(6px, 2vw, 20px)',
+              paddingRight: 'clamp(6px, 2vw, 20px)',
+              paddingBottom: 'clamp(8px, 1.5vw, 12px)',
+              margin: '0 -30px -30px -30px',
+              scrollBehavior: 'smooth',
+              WebkitOverflowScrolling: 'touch',
+              scrollSnapType: 'x mandatory'
+            }}>
             {slides.map((slide, index) => (
               <div
                 key={index}
                 style={{
-                  flex: '0 0 clamp(160px, 50.4vw, 403px)',
-                  height: 'clamp(220px, 70vw, 550px)',
+                  flex: '0 0 calc(100vw - 60px)',
+                  height: 'calc((100vw - 60px) * 0.8)',
                   position: 'relative',
                   borderRadius: '8px',
                   overflow: 'hidden',
@@ -501,6 +517,28 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   Subtitle text here
                 </div>
               </div>
+            ))}
+          </div>
+          {/* Slide Indicators */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 'clamp(8px, 2vw, 16px)',
+            marginTop: 'clamp(16px, 3vw, 24px)',
+            paddingBottom: 'clamp(10px, 2vw, 20px)'
+          }}>
+            {slides.map((_, index) => (
+              <div
+                key={index}
+                style={{
+                  width: 'clamp(8px, 1.5vw, 14px)',
+                  height: 'clamp(8px, 1.5vw, 14px)',
+                  borderRadius: '50%',
+                  backgroundColor: index === currentSlide ? '#ef8616' : '#666',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+              />
             ))}
           </div>
         </div>

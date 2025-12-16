@@ -45,7 +45,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     setCurrentSlide(newIndex);
     
     // Seamless loop: jump to second copy when you reach end of third copy
-    const thirdCopyStart = totalSlides * 2 * scrollOffset;
     const thirdCopyEnd = totalSlides * 3 * scrollOffset;
     
     if (scrollLeft > thirdCopyEnd - scrollOffset) {
@@ -106,7 +105,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     centerSlides();
     setTimeout(centerSlides, 100);
     setTimeout(centerSlides, 300);
-  }, []);
+  }, [slides.length]);
 
   return (
     <div style={{

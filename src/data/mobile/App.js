@@ -65,9 +65,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   };
 
   const slides = [
-    { header: 'KARMAN EVENTS', subtitle: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings. Nights defined by music, energy, and togetherness.', image: karmanevents, bgColor: 'rgba(34, 197, 94, 0.15)' },
+    { header: 'KARMAN', subtitle: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings. Nights defined by music, energy, and togetherness.', image: karmanevents, bgColor: 'rgba(34, 197, 94, 0.15)' },
     { header: 'CODE 49', subtitle: 'De nr.1 Businessclub voor MKB-ondernemers die willen doorschalen in een AI-first economie', image: club49logo, bgColor: 'rgba(59, 130, 246, 0.15)' },
-    { header: 'Slide 3', subtitle: 'Our focus goes beyond body art; we channel personal stories into spiritual expressions, utilizing fine line tattoos and the ancient stick and poke technique to transform your skin into a canvas of meaning.', image: logo1111, bgColor: 'rgba(168, 85, 247, 0.15)' },
+    { header: 'TATTOO SHOP ', subtitle: 'Our focus goes beyond body art; we channel personal stories into spiritual expressions, utilizing fine line tattoos and the ancient stick and poke technique to transform your skin into a canvas of meaning.', image: logo1111, bgColor: 'rgba(168, 85, 247, 0.15)' },
     { header: 'Slide 4', subtitle: 'Description', image: placeholder4, bgColor: 'rgba(249, 115, 22, 0.15)' },
     { header: 'Slide 5', subtitle: 'Description', image: placeholder5, bgColor: 'rgba(236, 72, 153, 0.15)' },
     { header: 'Slide 6', subtitle: 'Description', image: placeholder6, bgColor: 'rgba(139, 92, 246, 0.15)' },
@@ -471,12 +471,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           style={{
             position: 'relative',
             width: '100%',
-            maxWidth: 'clamp(400px, 90vw, 1200px)',
-            margin: `clamp(20px, 3vw, 40px) auto 0 auto`,
+            maxWidth: 'clamp(280px, 90vw, 1200px)',
+            margin: `clamp(15px, 3vw, 40px) auto 0 auto`,
             display: 'flex',
             overflowX: 'auto',
             overflowY: 'hidden',
-            gap: 'clamp(20px, 5vw, 60px)',
+            gap: 'clamp(12px, 5vw, 60px)',
             backgroundColor: 'transparent',
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch'
@@ -485,80 +485,92 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             <div
               key={index}
               style={{
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                backgroundColor: 'transparent',
-                flex: '0 0 clamp(202.8px, 50.7vw, 354.9px)',
-                height: 'auto'
+                flex: '0 0 clamp(120px, 43.095vw, 301.665px)',
+                backgroundColor: 'transparent'
               }}
             >
-              {/* Image Circle */}
-              <div 
-                className="breathingBorder" 
-                onClick={() => window.location.href = '/gardeners'}
+              {/* Slide Container - Wraps Image, Header, and Subtitle */}
+              <div
                 style={{
                   position: 'relative',
-                  width: 'clamp(202.8px, 50.7vw, 354.9px)',
-                  height: 'clamp(202.8px, 50.7vw, 354.9px)',
-                  margin: '0 auto',
-                  padding: 'clamp(15px, 4vw, 30px)',
-                  overflow: 'hidden',
-                  borderRadius: '50%',
-                  border: '3px solid rgba(239, 134, 22, 0.5)',
-                  boxSizing: 'border-box',
-                  zIndex: 2,
-                  flexShrink: 0,
-                  cursor: 'pointer',
-                  transition: 'transform 0.3s ease'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  backgroundColor: 'transparent',
+                  height: '100%'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
               >
-                <img
-                  src={slide.image}
-                  alt={slide.header}
+                {/* Image Circle */}
+                <div 
+                  className="breathingBorder" 
+                  onClick={() => window.location.href = '/gardeners'}
                   style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    display: 'block',
-                    transform: index % 9 === 0 ? 'scale(1.3)' : index % 9 === 1 ? 'scale(0.85)' : index % 9 === 2 ? 'scale(1.375)' : index % 9 === 8 ? 'scale(1.32)' : 'scale(1)'
+                    position: 'relative',
+                    width: 'clamp(100px, 38.7855vw, 271.4985px)',
+                    height: 'clamp(100px, 38.7855vw, 271.4985px)',
+                    margin: '0 auto',
+                    padding: 'clamp(8px, 3.06vw, 22.95px)',
+                    overflow: 'hidden',
+                    borderRadius: '50%',
+                    border: '3px solid rgba(239, 134, 22, 0.5)',
+                    boxSizing: 'border-box',
+                    zIndex: 2,
+                    flexShrink: 0,
+                    cursor: 'pointer',
+                    transition: 'transform 0.3s ease'
                   }}
-                />
-              </div>
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <img
+                    src={slide.image}
+                    alt={slide.header}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                      transform: index % 9 === 0 ? 'scale(1.3)' : index % 9 === 1 ? 'scale(0.85)' : index % 9 === 2 ? 'scale(1.375)' : index % 9 === 8 ? 'scale(1.32)' : 'scale(1)'
+                    }}
+                  />
+                </div>
 
-              {/* Header */}
-              <div style={{
-                marginTop: 'clamp(12px, 2vw, 18px)',
-                fontSize: 'clamp(15.4px, 3.85vw, 30.8px)',
-                fontWeight: '500',
-                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                lineHeight: '1.4',
-                color: '#ef8616',
-                backgroundColor: 'transparent',
-                textAlign: 'center'
-              }}>
-                {slide.header}
-              </div>
+                {/* Header */}
+                <div style={{
+                  marginTop: 'clamp(12px, 2vw, 18px)',
+                  fontSize: 'clamp(15.4px, 3.85vw, 30.8px)',
+                  fontWeight: '500',
+                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                  lineHeight: '1.4',
+                  color: '#ef8616',
+                  backgroundColor: 'transparent',
+                  textAlign: 'center',
+                  maxWidth: 'clamp(120px, 43.095vw, 301.665px)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {slide.header}
+                </div>
 
-              {/* Text Subtitle */}
-              <div style={{
-                marginTop: 'clamp(4px, 0.5vw, 6px)',
-                fontSize: 'clamp(14px, 3.5vw, 28px)',
-                color: '#FFFEF0',
-                backgroundColor: 'transparent',
-                textAlign: 'center',
-                maxHeight: 'clamp(60px, 15vw, 120px)',
-                overflow: 'hidden',
-                lineHeight: '1.4',
-                display: '-webkit-box',
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: 'vertical',
-                textOverflow: 'ellipsis'
-              }}>
-                {slide.subtitle}
+                {/* Text Subtitle */}
+                <div style={{
+                  marginTop: 'clamp(4px, 0.5vw, 6px)',
+                  fontSize: 'clamp(14px, 3.5vw, 28px)',
+                  color: '#FFFEF0',
+                  backgroundColor: 'transparent',
+                  textAlign: 'center',
+                  maxHeight: 'clamp(60px, 15vw, 120px)',
+                  maxWidth: 'clamp(120px, 43.095vw, 301.665px)',
+                  overflow: 'hidden',
+                  lineHeight: '1.4',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {slide.subtitle}
+                </div>
               </div>
             </div>
           ))}

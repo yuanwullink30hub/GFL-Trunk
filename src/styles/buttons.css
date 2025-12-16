@@ -18,10 +18,10 @@
 
 @keyframes breathBorder {
   0%, 100% {
-    border-color: #ef8616;
+    border-color: rgba(239, 134, 22, 0.5);
   }
   50% {
-    border-color: rgb(167, 59, 198);
+    border-color: rgba(167, 59, 198, 0.5);
   }
 }
 

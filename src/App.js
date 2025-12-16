@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -13,10 +14,12 @@ import generalData from './data.json';
 import desktopData from './data/desktop/data.json';
 import mobileData from './data/mobile/data.json';
 import MobileAppContent from './data/mobile/App';
+import Gardeners from './pages/Gardeners';
 import logo from './images/logo.png';
 import './styles/poetry.css';
 import './styles/text.css';
 import './styles/subtitles.css';
+import './styles/logo.css';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(true);
@@ -72,29 +75,39 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // If mobile, render mobile-specific content from mobile/App.js
-  if (isMobile) {
-    return (
-      <PasswordProtect>
-        <div className={`min-h-screen transition-all duration-300 ${
-          darkMode 
-            ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-            : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-        }`}>
-          <MobileAppContent darkMode={darkMode} setDarkMode={setDarkMode} data={data} scrollDirection={scrollDirection} />
-        </div>
-      </PasswordProtect>
-    );
-  }
-
-  // Desktop version continues below
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
+  return (
+    <Routes>
+      <Route 
+        path="/" 
+        element={
+          isMobile ? (
+            <PasswordProtect>
+              <div className={`min-h-screen transition-all duration-300 ${
+                darkMode 
+                  ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+                  : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+              }`}>
+                <MobileAppContent darkMode={darkMode} setDarkMode={setDarkMode} data={data} scrollDirection={scrollDirection} />
+              </div>
+            </PasswordProtect>
+          ) : (
+            <DesktopContent darkMode={darkMode} setDarkMode={setDarkMode} data={data} scrollToSection={scrollToSection} isScrolled={isScrolled} />
+          )
+        } 
+      />
+      <Route path="/gardeners" element={<Gardeners />} />
+    </Routes>
+  );
+};
+
+const DesktopContent = ({ darkMode, setDarkMode, data, scrollToSection, isScrolled }) => {
   const homeTab = data?.basics?.pages?.find(page => page.id === 'home');
   const contactTab = data?.basics?.pages?.find(page => page.id === 'contact');
 

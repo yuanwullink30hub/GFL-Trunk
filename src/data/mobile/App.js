@@ -9,20 +9,21 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
-import karmanevents from '../../images/karmaneventsPNG.png';
-import placeholder2 from '../../images/placeholder2.svg';
-import placeholder3 from '../../images/placeholder3.svg';
-import placeholder4 from '../../images/placeholder4.svg';
-import placeholder5 from '../../images/placeholder5.svg';
-import placeholder6 from '../../images/placeholder6.svg';
-import placeholder7 from '../../images/placeholder7.svg';
-import placeholder8 from '../../images/placeholder8.svg';
-import placeholder9 from '../../images/placeholder9.svg';
+import karmanevents from '../../images/slideshow images/karmaneventsPNG.png';
+import club49logo from '../../images/slideshow images/club49-logo.png';
+import logo1111 from '../../images/slideshow images/1111logo.png';
+import placeholder4 from '../../images/slideshow images/placeholder4.svg';
+import placeholder5 from '../../images/slideshow images/placeholder5.svg';
+import placeholder6 from '../../images/slideshow images/placeholder6.svg';
+import placeholder7 from '../../images/slideshow images/placeholder7.svg';
+import placeholder8 from '../../images/slideshow images/placeholder8.svg';
+import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
 import '../../styles/subtitles.css';
 import '../../styles/buttons.css';
 import '../../styles/mobile-header.css';
+import '../../styles/logo.css';
 
 const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
@@ -65,14 +66,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
   const slides = [
     { header: 'KARMAN EVENTS', subtitle: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings. Nights defined by music, energy, and togetherness.', image: karmanevents, bgColor: 'rgba(34, 197, 94, 0.15)' },
-    { header: 'Slide 2', subtitle: 'dit is een test', image: placeholder2, bgColor: 'rgba(59, 130, 246, 0.15)' },
-    { header: 'Slide 3', subtitle: 'dit is ook een test maar dan veel langer, blijkbaar niet lang genoeg, daarom plak ik er gewoon wat random woordjes aan vast. alhoewel, is dit random? volgens mij niet ', image: placeholder3, bgColor: 'rgba(168, 85, 247, 0.15)' },
+    { header: 'CODE 49', subtitle: 'De nr.1 Businessclub voor MKB-ondernemers die willen doorschalen in een AI-first economie', image: club49logo, bgColor: 'rgba(59, 130, 246, 0.15)' },
+    { header: 'Slide 3', subtitle: 'Our focus goes beyond body art; we channel personal stories into spiritual expressions, utilizing fine line tattoos and the ancient stick and poke technique to transform your skin into a canvas of meaning.', image: logo1111, bgColor: 'rgba(168, 85, 247, 0.15)' },
     { header: 'Slide 4', subtitle: 'Description', image: placeholder4, bgColor: 'rgba(249, 115, 22, 0.15)' },
     { header: 'Slide 5', subtitle: 'Description', image: placeholder5, bgColor: 'rgba(236, 72, 153, 0.15)' },
     { header: 'Slide 6', subtitle: 'Description', image: placeholder6, bgColor: 'rgba(139, 92, 246, 0.15)' },
     { header: 'Slide 7', subtitle: 'Description', image: placeholder7, bgColor: 'rgba(14, 165, 233, 0.15)' },
     { header: 'Slide 8', subtitle: 'Description', image: placeholder8, bgColor: 'rgba(34, 197, 94, 0.15)' },
-    { header: 'Slide 9', subtitle: 'Description', image: placeholder9, bgColor: 'rgba(251, 146, 60, 0.15)' }
+    { header: 'RENGI FOODS', subtitle: 'Rengi Foods captures the vibrant spirit of Korean street food, offering authentic and affordable flavors from Seoul\'s streets to your local market. The focus on affordability ensures everyone can enjoy bold Korean tastes without compromise.', image: rengiLogo, bgColor: 'rgba(251, 146, 60, 0.15)' }
   ];
 
   React.useEffect(() => {
@@ -125,10 +126,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           <div className="flex flex-col items-center">
             <button
               onClick={() => scrollToSection('footer-menu')}
-              className="hover:scale-110 transition-transform duration-300 cursor-pointer"
+              className="logo-btn"
               title="Go to footer menu"
             >
-              <img src={logo} alt="Garden For Life Logo" className="w-44 h-44 object-contain" />
+              <img src={logo} alt="Garden For Life Logo" className="logo-img logo-lg" />
             </button>
           </div>
         </div>
@@ -414,7 +415,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           maxWidth: 'clamp(400px, 90vw, 1200px)',
           margin: 'clamp(60px, 15vw, 120px) auto 0 auto',
           pointerEvents: 'none',
-          paddingBottom: '180px'
+          paddingBottom: '210px'
         }}>
           {/* WebM Video - Right of triangles */}
           <video
@@ -505,7 +506,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   padding: 'clamp(15px, 4vw, 30px)',
                   overflow: 'hidden',
                   borderRadius: '50%',
-                  border: '3px solid #ef8616',
+                  border: '3px solid rgba(239, 134, 22, 0.5)',
                   boxSizing: 'border-box',
                   zIndex: 2,
                   flexShrink: 0,
@@ -523,7 +524,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     height: '100%',
                     objectFit: 'cover',
                     display: 'block',
-                    transform: index % 9 === 0 ? 'scale(1.3)' : 'scale(1)'
+                    transform: index % 9 === 0 ? 'scale(1.3)' : index % 9 === 1 ? 'scale(0.85)' : index % 9 === 2 ? 'scale(1.375)' : index % 9 === 8 ? 'scale(1.32)' : 'scale(1)'
                   }}
                 />
               </div>
@@ -551,7 +552,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 textAlign: 'center',
                 maxHeight: 'clamp(60px, 15vw, 120px)',
                 overflow: 'hidden',
-                lineHeight: '1.4'
+                lineHeight: '1.4',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                textOverflow: 'ellipsis'
               }}>
                 {slide.subtitle}
               </div>
@@ -573,7 +578,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               onClick={() => {
                 const slideWidth = galleryRef.current.children[0]?.offsetWidth || 0;
                 const gap = parseInt(window.getComputedStyle(galleryRef.current).gap) || 6;
-                const scrollPosition = index * (slideWidth + gap);
+                const scrollPosition = (slides.length + index) * (slideWidth + gap);
                 galleryRef.current.scrollLeft = scrollPosition;
               }}
               style={{
@@ -718,10 +723,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth', duration: 1000 });
               }}
-              className="flex-shrink-0 hover:scale-110 transition-transform duration-300"
+              className="logo-btn flex-shrink-0"
               title="Back to top"
             >
-              <img src={logo} alt="Garden For Life Logo" className="w-20 h-20 object-contain" />
+              <img src={logo} alt="Garden For Life Logo" className="logo-img logo-sm" />
             </button>
 
             {/* Navigation Links */}

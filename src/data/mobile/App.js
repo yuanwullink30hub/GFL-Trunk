@@ -188,7 +188,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 marginTop: '0',
              
                 marginBottom: 'clamp(26px, 6.5vw, 45.5px)',
-                fontSize: 'clamp(14.63px, 2.438vw, 30.31px)',
+                fontSize: 'clamp(0.85rem, 4.05vw, 2.5rem)',
                 lineHeight: '1.2',
                 width: '100%',
                 whiteSpace: 'normal',
@@ -217,7 +217,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
                 <br/>
                  <br/>
-<br/> <br/> <span className="subtitles">DUIK DIEP EN ONTDEK HOE BEHEERSTE CHAOS GROEIT.</span>
+<br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)'}}>DUIK DIEP EN ONTDEK HOE <br/>BEHEERSTE CHAOS GROEIT.</span>
 
               </p>
             {/* Button container moved directly after <p> text */}
@@ -230,7 +230,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               width: '100%',
               maxWidth: 'clamp(400px, 90vw, 1200px)',
               margin: '0 auto',
-              marginTop: '0'
+              marginTop: '25px',
+              pointerEvents: 'none'
             }}>
             {/* Button 2 */}
               <svg 
@@ -243,7 +244,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 style={{
                   display: 'block',
                   transition: 'all 0.3s ease',
-                  transform: 'scale(1.2) rotate(-21deg) translateY(18px) translateX(-21px)',
+                  transform: 'scale(1.2) rotate(-21deg) translateY(clamp(0.5rem, 1.5vw, 1.125rem)) translateX(clamp(-1.3rem, -1.8vw, -0.8rem))',
                   cursor: 'pointer'
                 }}
               >
@@ -296,12 +297,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 viewBox="0 0 300 300" 
                 preserveAspectRatio="xMidYMid meet"
                 pointerEvents="none"
-                  style={{
-                    display: 'block',
-                    transition: 'all 0.3s ease',
-                    transform: 'scale(1.2) rotate(40deg) translateX(-50px) translateY(15px)',
-                    cursor: 'pointer'
-                  }}
+                style={{
+                  display: 'block',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1.2) rotate(40deg) translateX(clamp(-6rem, -10vw, -4.5rem)) translateY(clamp(-0.5rem, 0.2vw, 0.5rem))',
+                  cursor: 'pointer'
+                }}
               >
                 <g>
                   <path 
@@ -348,15 +349,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               {/* Button 1 */}
               <svg 
                 className="triangleButton1"
-                width="clamp(60px, 28vw, 220px)" 
-                height="clamp(60px, 28vw, 220px)" 
+                width="clamp(40px, 28vw, 220px)" 
+                height="clamp(40px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
                 preserveAspectRatio="xMidYMid meet"
                 pointerEvents="none"
                 style={{
                   display: 'block',
                   transition: 'all 0.3s ease',
-                  transform: 'scale(1.2) rotate(40deg) translateX(-77px) translateY(185px)',
+                  transform: 'scale(1.2) rotate(40deg) translateX(clamp(-9rem, -21vw, -3rem)) translateY(clamp(7rem, 45vw, 37rem))',
                   cursor: 'pointer'
                 }}
               >
@@ -412,10 +413,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           height: '0',
           zIndex: 8,
           overflow: 'visible',
-          maxWidth: 'clamp(400px, 90vw, 1200px)',
-          margin: 'clamp(60px, 15vw, 120px) auto 0 auto',
+          maxWidth: 'clamp(25rem, 90vw, 75rem)',
+          margin: 'clamp(3.75rem, 15vw, 7.5rem) auto 0 auto',
           pointerEvents: 'none',
-          paddingBottom: '210px'
+          paddingBottom: '9.375rem'
         }}>
           {/* WebM Video - Right of triangles */}
           <video
@@ -433,7 +434,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
               position: 'absolute',
-              top: '-150px',
+              top: '-220px',
               left: 0,
               right: 0,
               zIndex: 4,
@@ -450,15 +451,16 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         <div className="subtitles" style={{
           position: 'relative',
           width: '100%',
-          maxWidth: 'clamp(400px, 90vw, 1200px)',
-          margin: '0 auto clamp(20px, 5vw, 60px) auto',
-          fontSize: 'clamp(16.4px, 3.64vw, 32.8px)',
+          maxWidth: 'clamp(25rem, 90vw, 75rem)',
+          margin: '0 auto clamp(1.25rem, 5vw, 3.75rem) auto',
+          fontSize: 'clamp(0.72rem, 4.5vw, 2rem)',
           color: 'rgb(167, 59, 198)',
           lineHeight: '1.2',
           textAlign: 'center',
           whiteSpace: 'normal',
           wordWrap: 'break-word',
-          overflowWrap: 'break-word'
+          overflowWrap: 'break-word',
+          backgroundColor: 'transparent'
         }}>
           GARDENS
         </div>
@@ -472,11 +474,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             position: 'relative',
             width: '100vw',
             maxWidth: '100vw',
-            margin: `clamp(15px, 3vw, 40px) 0 0 0`,
+            margin: `clamp(0.9375rem, 3vw, 2.5rem) 0 0 0`,
             display: 'flex',
             overflowX: 'auto',
             overflowY: 'visible',
-            gap: 'clamp(12px, 5vw, 60px)',
+            gap: 'clamp(0.75rem, 5vw, 3.75rem)',
             backgroundColor: 'transparent',
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',

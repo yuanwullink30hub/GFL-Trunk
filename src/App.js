@@ -49,13 +49,16 @@ const App = () => {
       const currentScrollY = window.scrollY;
       setIsScrolled(currentScrollY > 50);
       
-      // Track scroll direction for mobile
-      if (currentScrollY > lastScrollY) {
-        setScrollDirection('down');
-      } else {
-        setScrollDirection('up');
+      // Track scroll direction for mobile (with 50px threshold to avoid sensitivity)
+      const scrollDifference = Math.abs(currentScrollY - lastScrollY);
+      if (scrollDifference >= 50) {
+        if (currentScrollY > lastScrollY) {
+          setScrollDirection('down');
+        } else {
+          setScrollDirection('up');
+        }
+        setLastScrollY(currentScrollY);
       }
-      setLastScrollY(currentScrollY);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);

@@ -9,7 +9,7 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
-import rrrIcon from '../../images/RRR icon png.png';
+import karmanevents from '../../images/karmaneventsPNG.png';
 import placeholder2 from '../../images/placeholder2.svg';
 import placeholder3 from '../../images/placeholder3.svg';
 import placeholder4 from '../../images/placeholder4.svg';
@@ -64,15 +64,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   };
 
   const slides = [
-    { header: 'Slide 1', image: rrrIcon, bgColor: 'rgba(34, 197, 94, 0.15)' },
-    { header: 'Slide 2', image: placeholder2, bgColor: 'rgba(59, 130, 246, 0.15)' },
-    { header: 'Slide 3', image: placeholder3, bgColor: 'rgba(168, 85, 247, 0.15)' },
-    { header: 'Slide 4', image: placeholder4, bgColor: 'rgba(249, 115, 22, 0.15)' },
-    { header: 'Slide 5', image: placeholder5, bgColor: 'rgba(236, 72, 153, 0.15)' },
-    { header: 'Slide 6', image: placeholder6, bgColor: 'rgba(139, 92, 246, 0.15)' },
-    { header: 'Slide 7', image: placeholder7, bgColor: 'rgba(14, 165, 233, 0.15)' },
-    { header: 'Slide 8', image: placeholder8, bgColor: 'rgba(34, 197, 94, 0.15)' },
-    { header: 'Slide 9', image: placeholder9, bgColor: 'rgba(251, 146, 60, 0.15)' }
+    { header: 'KARMAN EVENTS', subtitle: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings. Nights defined by music, energy, and togetherness.', image: karmanevents, bgColor: 'rgba(34, 197, 94, 0.15)' },
+    { header: 'Slide 2', subtitle: 'dit is een test', image: placeholder2, bgColor: 'rgba(59, 130, 246, 0.15)' },
+    { header: 'Slide 3', subtitle: 'dit is ook een test maar dan veel langer, blijkbaar niet lang genoeg, daarom plak ik er gewoon wat random woordjes aan vast. alhoewel, is dit random? volgens mij niet ', image: placeholder3, bgColor: 'rgba(168, 85, 247, 0.15)' },
+    { header: 'Slide 4', subtitle: 'Description', image: placeholder4, bgColor: 'rgba(249, 115, 22, 0.15)' },
+    { header: 'Slide 5', subtitle: 'Description', image: placeholder5, bgColor: 'rgba(236, 72, 153, 0.15)' },
+    { header: 'Slide 6', subtitle: 'Description', image: placeholder6, bgColor: 'rgba(139, 92, 246, 0.15)' },
+    { header: 'Slide 7', subtitle: 'Description', image: placeholder7, bgColor: 'rgba(14, 165, 233, 0.15)' },
+    { header: 'Slide 8', subtitle: 'Description', image: placeholder8, bgColor: 'rgba(34, 197, 94, 0.15)' },
+    { header: 'Slide 9', subtitle: 'Description', image: placeholder9, bgColor: 'rgba(251, 146, 60, 0.15)' }
   ];
 
   React.useEffect(() => {
@@ -83,11 +83,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     
     if (!galleryRef.current) return;
     const gallery = galleryRef.current;
+    const totalSlides = 9; // Fixed number of slides
     
     // Force center on mount and on every refresh
     const centerSlides = () => {
       // Get the first slide element from the second copy
-      const firstSlideInSecondCopy = gallery.children[slides.length];
+      const firstSlideInSecondCopy = gallery.children[totalSlides];
       
       if (firstSlideInSecondCopy) {
         // Scroll to center this element
@@ -105,7 +106,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     centerSlides();
     setTimeout(centerSlides, 100);
     setTimeout(centerSlides, 300);
-  }, [slides.length]);
+  }, []);
 
   return (
     <div style={{
@@ -458,7 +459,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           wordWrap: 'break-word',
           overflowWrap: 'break-word'
         }}>
-          GARDENERS
+          GARDENS
         </div>
 
         {/* Slideshow Grid Container */}
@@ -521,20 +522,38 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
-                    display: 'block'
+                    display: 'block',
+                    transform: index % 9 === 0 ? 'scale(1.3)' : 'scale(1)'
                   }}
                 />
               </div>
 
-              {/* Text Subtitle */}
+              {/* Header */}
               <div style={{
-                marginTop: 'clamp(16px, 3vw, 24px)',
-                fontSize: 'clamp(14px, 3.5vw, 28px)',
-                color: '#FFFEF0',
+                marginTop: 'clamp(12px, 2vw, 18px)',
+                fontSize: 'clamp(15.4px, 3.85vw, 30.8px)',
+                fontWeight: '500',
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                lineHeight: '1.4',
+                color: '#ef8616',
                 backgroundColor: 'transparent',
                 textAlign: 'center'
               }}>
                 {slide.header}
+              </div>
+
+              {/* Text Subtitle */}
+              <div style={{
+                marginTop: 'clamp(4px, 0.5vw, 6px)',
+                fontSize: 'clamp(14px, 3.5vw, 28px)',
+                color: '#FFFEF0',
+                backgroundColor: 'transparent',
+                textAlign: 'center',
+                maxHeight: 'clamp(60px, 15vw, 120px)',
+                overflow: 'hidden',
+                lineHeight: '1.4'
+              }}>
+                {slide.subtitle}
               </div>
             </div>
           ))}

@@ -186,7 +186,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             }}>
               <h1 className="poetry" style={{
                 marginTop: '0',
-                marginLeft: '-10px',
+                marginRight: '-10px',
                 marginBottom: 'clamp(26px, 6.5vw, 45.5px)',
                 fontSize: 'clamp(16.4px, 3.64vw, 32.8px)',
                 lineHeight: '1.2',
@@ -194,7 +194,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
-                textAlign: 'right'
+                textAlign: 'right',
+                
               }}>DE LUIDE STILTE <br/>
                  EN DE INTENSE KALMTE <br/> 
                  WIJZEN MIJ DE WEG <br/>
@@ -470,23 +471,25 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           onScroll={handleScroll}
           style={{
             position: 'relative',
-            width: '100%',
-            maxWidth: 'clamp(280px, 90vw, 1200px)',
-            margin: `clamp(15px, 3vw, 40px) auto 0 auto`,
+            width: '100vw',
+            maxWidth: '100vw',
+            margin: `clamp(15px, 3vw, 40px) 0 0 0`,
             display: 'flex',
             overflowX: 'auto',
-            overflowY: 'hidden',
+            overflowY: 'visible',
             gap: 'clamp(12px, 5vw, 60px)',
             backgroundColor: 'transparent',
             scrollBehavior: 'smooth',
-            WebkitOverflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch',
+            alignItems: 'flex-start'
           }}>
           {[...slides, ...slides, ...slides].map((slide, index) => (
             <div
               key={index}
               style={{
                 flex: '0 0 clamp(120px, 43.095vw, 301.665px)',
-                backgroundColor: 'transparent'
+                backgroundColor: 'transparent',
+                overflow: 'visible'
               }}
             >
               {/* Slide Container - Wraps Image, Header, and Subtitle */}
@@ -497,7 +500,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   flexDirection: 'column',
                   alignItems: 'center',
                   backgroundColor: 'transparent',
-                  height: '100%'
+                  height: '100%',
+                  overflow: 'visible'
                 }}
               >
                 {/* Image Circle */}

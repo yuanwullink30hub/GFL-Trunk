@@ -16,6 +16,15 @@
   }
 }
 
+@keyframes breathBorder {
+  0%, 100% {
+    border-color: #ef8616;
+  }
+  50% {
+    border-color: rgb(167, 59, 198);
+  }
+}
+
 @keyframes breath {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(242, 43, 0, 0.7);
@@ -31,6 +40,20 @@
 
 .breathingStroke {
   animation: breathStroke 3.33s infinite;
+}
+
+.breathingBorder {
+  animation: breathBorder 3.33s infinite;
+}
+
+/* Hide scrollbar while maintaining scroll functionality */
+.hideScrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hideScrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
 }
 
 /* Staggered animations for cycling effect */

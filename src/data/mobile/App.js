@@ -9,6 +9,15 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
+import rrrIcon from '../../images/RRR icon png.png';
+import placeholder2 from '../../images/placeholder2.svg';
+import placeholder3 from '../../images/placeholder3.svg';
+import placeholder4 from '../../images/placeholder4.svg';
+import placeholder5 from '../../images/placeholder5.svg';
+import placeholder6 from '../../images/placeholder6.svg';
+import placeholder7 from '../../images/placeholder7.svg';
+import placeholder8 from '../../images/placeholder8.svg';
+import placeholder9 from '../../images/placeholder9.svg';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
 import '../../styles/subtitles.css';
@@ -26,8 +35,26 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     const scrollLeft = gallery.scrollLeft;
     const slideWidth = gallery.children[0]?.offsetWidth || 0;
     const gap = parseInt(window.getComputedStyle(gallery).gap) || 6;
-    const newIndex = Math.round(scrollLeft / (slideWidth + gap));
+    const scrollOffset = slideWidth + gap;
+    const totalSlides = slides.length;
+    
+    // Calculate current index within one cycle
+    let newIndex = Math.round(scrollLeft / scrollOffset) % totalSlides;
+    if (newIndex < 0) newIndex += totalSlides;
+    
     setCurrentSlide(newIndex);
+    
+    // Seamless loop: jump to second copy when you reach end of third copy
+    const thirdCopyStart = totalSlides * 2 * scrollOffset;
+    const thirdCopyEnd = totalSlides * 3 * scrollOffset;
+    
+    if (scrollLeft > thirdCopyEnd - scrollOffset) {
+      gallery.scrollLeft = totalSlides * scrollOffset;
+    }
+    // Jump to third copy when you scroll back before second copy
+    if (scrollLeft < scrollOffset) {
+      gallery.scrollLeft = totalSlides * 2 * scrollOffset;
+    }
   };
 
   const scrollToSection = (sectionId) => {
@@ -38,10 +65,48 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   };
 
   const slides = [
-    { header: 'Slide 1', image: '/images/placeholder1.jpg', bgColor: 'rgba(34, 197, 94, 0.15)' },
-    { header: 'Slide 2', image: '/images/placeholder2.jpg', bgColor: 'rgba(59, 130, 246, 0.15)' },
-    { header: 'Slide 3', image: '/images/placeholder3.jpg', bgColor: 'rgba(168, 85, 247, 0.15)' }
+    { header: 'Slide 1', image: rrrIcon, bgColor: 'rgba(34, 197, 94, 0.15)' },
+    { header: 'Slide 2', image: placeholder2, bgColor: 'rgba(59, 130, 246, 0.15)' },
+    { header: 'Slide 3', image: placeholder3, bgColor: 'rgba(168, 85, 247, 0.15)' },
+    { header: 'Slide 4', image: placeholder4, bgColor: 'rgba(249, 115, 22, 0.15)' },
+    { header: 'Slide 5', image: placeholder5, bgColor: 'rgba(236, 72, 153, 0.15)' },
+    { header: 'Slide 6', image: placeholder6, bgColor: 'rgba(139, 92, 246, 0.15)' },
+    { header: 'Slide 7', image: placeholder7, bgColor: 'rgba(14, 165, 233, 0.15)' },
+    { header: 'Slide 8', image: placeholder8, bgColor: 'rgba(34, 197, 94, 0.15)' },
+    { header: 'Slide 9', image: placeholder9, bgColor: 'rgba(251, 146, 60, 0.15)' }
   ];
+
+  React.useEffect(() => {
+    // Prevent browser scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    
+    if (!galleryRef.current) return;
+    const gallery = galleryRef.current;
+    
+    // Force center on mount and on every refresh
+    const centerSlides = () => {
+      // Get the first slide element from the second copy
+      const firstSlideInSecondCopy = gallery.children[slides.length];
+      
+      if (firstSlideInSecondCopy) {
+        // Scroll to center this element
+        const slideLeft = firstSlideInSecondCopy.offsetLeft;
+        const slideWidth = firstSlideInSecondCopy.offsetWidth;
+        const galleryWidth = gallery.offsetWidth;
+        const centerScroll = slideLeft - (galleryWidth - slideWidth) / 2;
+        
+        gallery.scrollLeft = centerScroll;
+      }
+      setCurrentSlide(0);
+    };
+    
+    // Try multiple times to ensure it sticks
+    centerSlides();
+    setTimeout(centerSlides, 100);
+    setTimeout(centerSlides, 300);
+  }, []);
 
   return (
     <div style={{
@@ -59,12 +124,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         <div className="container mx-auto px-6 py-4">
           <div className="flex flex-col items-center">
             <button
-              onClick={() => {
-                const footer = document.querySelector('footer');
-                if (footer) {
-                  footer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }}
+              onClick={() => scrollToSection('footer-menu')}
               className="hover:scale-110 transition-transform duration-300 cursor-pointer"
               title="Go to footer menu"
             >
@@ -109,7 +169,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       >
         {/* Text container over image */}
         <div
-          className="flex flex-col items-start justify-start w-full"
+          className="flex flex-col items-center justify-start w-full"
           style={{
             zIndex: 2,
             pointerEvents: 'auto',
@@ -127,17 +187,17 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 marginTop: '0',
                 marginLeft: '-10px',
                 marginBottom: 'clamp(26px, 6.5vw, 45.5px)',
-                fontSize: 'clamp(23.4px, 5.2vw, 46.8px)',
+                fontSize: 'clamp(16.4px, 3.64vw, 32.8px)',
                 lineHeight: '1.2',
                 width: '100%',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
                 textAlign: 'right'
-              }}>De luide stilte <br/>
-                 En de intense kalmte <br/> 
-                 Wijzen mij de weg <br/>
-                 Van het hart naar het hooofd           </h1>
+              }}>DE LUIDE STILTE <br/>
+                 EN DE INTENSE KALMTE <br/> 
+                 WIJZEN MIJ DE WEG <br/>
+                 VAN HET HART NAAR HET HOOOFD           </h1>
 
               {/* Paragraph inside container */}
               <p className="text" style={{
@@ -191,7 +251,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z" 
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
-                    onClick={() => scrollToSection('contact')}
+                    onClick={() => window.location.href = '/gardeners'}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -248,7 +308,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
                     style={{cursor: 'pointer'}}
-                    onClick={() => scrollToSection('contact')}
+                    onClick={() => window.location.href = '/gardeners'}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -315,7 +375,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
-                    onClick={() => scrollToSection('contact')}
+                    onClick={() => window.location.href = '/gardeners'}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.previousElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -352,7 +412,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           zIndex: 8,
           overflow: 'visible',
           maxWidth: 'clamp(400px, 90vw, 1200px)',
-           margin: '0 auto',
+          margin: 'clamp(60px, 15vw, 120px) auto 0 auto',
           pointerEvents: 'none',
           paddingBottom: '180px'
         }}>
@@ -391,7 +451,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           width: '100%',
           maxWidth: 'clamp(400px, 90vw, 1200px)',
           margin: '0 auto clamp(20px, 5vw, 60px) auto',
-          fontSize: 'clamp(14px, 3.5vw, 28px)',
+          fontSize: 'clamp(16.4px, 3.64vw, 32.8px)',
+          color: 'rgb(167, 59, 198)',
           lineHeight: '1.2',
           textAlign: 'center',
           whiteSpace: 'normal',
@@ -401,150 +462,150 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           GARDENERS
         </div>
 
-        {/* Text Container */}
-        <div style={{
-          position: 'absolute',
-          width: '100%',
-          maxWidth: 'clamp(400px, 90vw, 1200px)',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontSize: 'clamp(14px, 3.5vw, 28px)',
-          lineHeight: '1.4',
-          marginTop: 'clamp(30px, 7vw, 80px)',
-          whiteSpace: 'normal',
-          wordWrap: 'break-word',
-          overflowWrap: 'break-word'
-        }}>
-          Text content goes here
-        </div>
-
-        {/* Scrollable Slideshow Container */}
-        <div style={{
-          position: 'relative',
-          width: '100%',
-          maxWidth: 'calc(100% - 60px)',
-          margin: `clamp(80px, 15vw, 160px) auto 0 auto`,
-          padding: '30px'
-        }}>
-          {/* Horizontal Scroll Gallery */}
-          <div
-            ref={galleryRef}
-            onScroll={handleScroll}
-            style={{
-              display: 'flex',
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              gap: 'clamp(6px, 2vw, 20px)',
-              paddingLeft: 'clamp(6px, 2vw, 20px)',
-              paddingRight: 'clamp(6px, 2vw, 20px)',
-              paddingBottom: 'clamp(8px, 1.5vw, 12px)',
-              margin: '0 -30px -30px -30px',
-              scrollBehavior: 'smooth',
-              WebkitOverflowScrolling: 'touch',
-              scrollSnapType: 'x mandatory'
-            }}>
-            {slides.map((slide, index) => (
-              <div
-                key={index}
-                style={{
-                  flex: '0 0 calc(100vw - 60px)',
-                  height: 'calc((100vw - 60px) * 0.8)',
-                  position: 'relative',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  backgroundColor: '#000000',
-                  border: '1px solid #ef8616',
-                  scrollSnapAlign: 'start',
-                  transition: 'transform 0.2s ease',
-                  cursor: 'grab',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-                }}
-              >
-                {/* Header */}
-                {slide.header && (
-                  <div style={{
-                    position: 'relative',
-                    fontSize: 'clamp(12px, 2.5vw, 16px)',
-                    fontWeight: 'bold',
-                    padding: 'clamp(6px, 1vw, 12px)',
-                    backgroundColor: '#ef8616',
-                    color: '#22c55e',
-                    zIndex: 1,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
-                    {slide.header}
-                  </div>
-                )}
-
-                {/* Image Spacing Wrapper */}
-                <div style={{
-                  paddingTop: 'clamp(8px, 2vw, 20px)',
-                  paddingBottom: 'clamp(8px, 2vw, 25px)',
-                  paddingLeft: 'clamp(3px, 1vw, 10px)',
-                  paddingRight: 'clamp(3px, 1vw, 10px)'
-                }}>
-                  {/* Image Circle */}
-                  <div style={{
-                    position: 'relative',
-                    width: 'clamp(156px, 39vw, 273px)',
-                    height: 'clamp(156px, 39vw, 273px)',
-                    margin: '0 auto',
-                    overflow: 'hidden',
-                    backgroundColor: '#ebe7e1',
-                    borderRadius: '50%',
-                    zIndex: 2
-                  }}>
-                    <img
-                      src={slide.image}
-                      alt={slide.header}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block'
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Text Subtitle */}
-                <div style={{
-                  backgroundColor: '#333',
-                  padding: 'clamp(6px, 1vw, 12px)',
-                  fontSize: 'clamp(10px, 2vw, 14px)',
-                  color: '#fff',
-                  flex: 1
-                }}>
-                  Subtitle text here
-                </div>
-              </div>
-            ))}
-          </div>
-          {/* Slide Indicators */}
-          <div style={{
+        {/* Slideshow Grid Container */}
+        <div 
+          className="hideScrollbar"
+          ref={galleryRef}
+          onScroll={handleScroll}
+          style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: 'clamp(400px, 90vw, 1200px)',
+            margin: `clamp(20px, 3vw, 40px) auto 0 auto`,
             display: 'flex',
-            justifyContent: 'center',
-            gap: 'clamp(8px, 2vw, 16px)',
-            marginTop: 'clamp(16px, 3vw, 24px)',
-            paddingBottom: 'clamp(10px, 2vw, 20px)'
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            gap: 'clamp(20px, 5vw, 60px)',
+            backgroundColor: 'transparent',
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch'
           }}>
-            {slides.map((_, index) => (
-              <div
-                key={index}
+          {[...slides, ...slides, ...slides].map((slide, index) => (
+            <div
+              key={index}
+              style={{
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                backgroundColor: 'transparent',
+                flex: '0 0 clamp(202.8px, 50.7vw, 354.9px)',
+                height: 'auto'
+              }}
+            >
+              {/* Image Circle */}
+              <div 
+                className="breathingBorder" 
+                onClick={() => window.location.href = '/gardeners'}
                 style={{
-                  width: 'clamp(8px, 1.5vw, 14px)',
-                  height: 'clamp(8px, 1.5vw, 14px)',
+                  position: 'relative',
+                  width: 'clamp(202.8px, 50.7vw, 354.9px)',
+                  height: 'clamp(202.8px, 50.7vw, 354.9px)',
+                  margin: '0 auto',
+                  padding: 'clamp(15px, 4vw, 30px)',
+                  overflow: 'hidden',
                   borderRadius: '50%',
-                  backgroundColor: index === currentSlide ? '#ef8616' : '#666',
+                  border: '3px solid #ef8616',
+                  boxSizing: 'border-box',
+                  zIndex: 2,
+                  flexShrink: 0,
                   cursor: 'pointer',
-                  transition: 'all 0.3s ease'
+                  transition: 'transform 0.3s ease'
                 }}
-              />
-            ))}
-          </div>
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <img
+                  src={slide.image}
+                  alt={slide.header}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block'
+                  }}
+                />
+              </div>
+
+              {/* Text Subtitle */}
+              <div style={{
+                marginTop: 'clamp(16px, 3vw, 24px)',
+                fontSize: 'clamp(14px, 3.5vw, 28px)',
+                color: '#FFFEF0',
+                backgroundColor: 'transparent',
+                textAlign: 'center'
+              }}>
+                {slide.header}
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* Slide Indicators */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 'clamp(8px, 2vw, 16px)',
+          marginTop: 'clamp(20px, 3vw, 30px)',
+          marginBottom: 'clamp(20px, 3vw, 30px)'
+        }}>
+          {slides.map((_, index) => (
+            <div
+              key={index}
+              onClick={() => {
+                const slideWidth = galleryRef.current.children[0]?.offsetWidth || 0;
+                const gap = parseInt(window.getComputedStyle(galleryRef.current).gap) || 6;
+                const scrollPosition = index * (slideWidth + gap);
+                galleryRef.current.scrollLeft = scrollPosition;
+              }}
+              style={{
+                width: 'clamp(8px, 2vw, 14px)',
+                height: 'clamp(8px, 2vw, 14px)',
+                borderRadius: '50%',
+                backgroundColor: currentSlide === index ? '#ef8616' : '#FFFEF0',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                opacity: 1
+              }}
+            />
+          ))}
+        </div>
+
+        {/* See More Button */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginBottom: 'clamp(40px, 10vw, 80px)'
+        }}>
+          <button
+            className="breathingBorder"
+            onClick={() => window.location.href = '/gardeners'}
+            style={{
+              padding: 'clamp(7.5px, 1.5vw, 12px) clamp(18px, 3.75vw, 30px)',
+              fontSize: 'clamp(10.5px, 2.25vw, 13.5px)',
+              backgroundColor: 'transparent',
+              color: '#FAF9F6',
+              border: '2px solid #FFFEF0',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              transition: 'all 0.3s ease',
+              textTransform: 'uppercase',
+              letterSpacing: '1px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#f08827';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#ef8616';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            Zie Meer
+          </button>
+        </div>
+
       </div>{/* End text content container */}
 
    
@@ -623,11 +684,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       </section>
 
       {/* Mobile Footer with Navigation */}
-      <footer style={{
+      <footer id="footer-menu" style={{
         position: 'relative',
         width: '100%',
         background: 'linear-gradient(to right, rgb(31, 41, 55), rgb(17, 24, 39))',
-        color: 'white',
+        color: '#FAF9F6',
         padding: 'clamp(24px, 6vw, 48px)',
         marginTop: 'clamp(35px, 7vw, 70px)'
       }}>
@@ -648,13 +709,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             {/* Navigation Links */}
             <nav className="flex items-center space-x-3">
               <button
-                onClick={() => scrollToSection('home')}
+                onClick={() => window.location.href = '/gardeners'}
                 className="transition-colors duration-300 hover:text-green-600"
               >
                 Home
               </button>
               <button
-                onClick={() => scrollToSection('contact')}
+                onClick={() => window.location.href = '/gardeners'}
                 className="transition-colors duration-300 hover:text-green-600"
               >
                 Contact

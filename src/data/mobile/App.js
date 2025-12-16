@@ -186,20 +186,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             }}>
               <h1 className="poetry" style={{
                 marginTop: '0',
-                marginRight: '-10px',
+             
                 marginBottom: 'clamp(26px, 6.5vw, 45.5px)',
-                fontSize: 'clamp(16.4px, 3.64vw, 32.8px)',
+                fontSize: 'clamp(14.63px, 2.438vw, 30.31px)',
                 lineHeight: '1.2',
                 width: '100%',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
-                textAlign: 'right',
-                
+                textAlign: 'right'
               }}>DE LUIDE STILTE <br/>
                  EN DE INTENSE KALMTE <br/> 
                  WIJZEN MIJ DE WEG <br/>
-                 VAN HET HART NAAR HET HOOOFD           </h1>
+                 VAN HET HART NAAR HET HOOFD           </h1>
 
               {/* Paragraph inside container */}
               <p className="text" style={{

@@ -14,7 +14,6 @@ import desktopData from './data/desktop/data.json';
 import mobileData from './data/mobile/data.json';
 import MobileAppContent from './data/mobile/App';
 import logo from './images/logo.png';
-import './styles/header.css';
 import './styles/poetry.css';
 import './styles/text.css';
 import './styles/subtitles.css';

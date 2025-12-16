@@ -10,7 +10,6 @@ import {
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
 import headerBgVid from '../../videos/120header.mp4';
-import '../../styles/header.css';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
 import '../../styles/subtitles.css';
@@ -35,13 +34,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
   return (
     <div style={{
-      overflow: 'visible',
       width: '100%',
-      maxWidth: '100vw',
-        backgroundColor: '#10071dff',
+      overflow: 'hidden',
+      backgroundColor: '#10071dff',
     }}>
       {/* Mobile Header - Logo Only (hidden when scrolling down) */}
-      <header className="fixed top-0 w-full bg-transparent" style={{zIndex: 9999, overflow: 'hidden', width: '100vw', maxWidth: '100%'}}>
+      <header className="fixed top-0 left-0 right-0 bg-transparent" style={{zIndex: 9999, overflow: 'hidden'}}>
         <div className="container mx-auto px-6 py-4">
           <div className={`flex flex-col items-center transition-all duration-300 ${
             scrollDirection === 'down' ? 'opacity-0 h-0' : 'opacity-100'
@@ -372,21 +370,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>{/* End media container */}
 
      {/* Header Container */}
-        <div style={{
-          position: 'absolute',
+        <div className="subtitles" style={{
+          position: 'relative',
           width: '100%',
           maxWidth: 'clamp(400px, 90vw, 1200px)',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontSize: 'clamp(23.4px, 5.2vw, 46.8px)',
-          fontWeight: 'bold',
+          margin: '0 auto clamp(20px, 5vw, 60px) auto',
+          fontSize: 'clamp(14px, 3.5vw, 28px)',
           lineHeight: '1.2',
-          marginBottom: 'clamp(20px, 5vw, 60px)',
+          textAlign: 'center',
           whiteSpace: 'normal',
           wordWrap: 'break-word',
           overflowWrap: 'break-word'
         }}>
-          Section Header
+          GARDENERS
         </div>
 
         {/* Text Container */}

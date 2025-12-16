@@ -9,11 +9,11 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
-import headerBgVid from '../../videos/compressed/HDheader_1.mp4';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
 import '../../styles/subtitles.css';
 import '../../styles/buttons.css';
+import '../../styles/mobile-header.css';
 
 const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
@@ -50,11 +50,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       backgroundColor: '#150a24ff',
     }}>
       {/* Mobile Header - Logo Only (hidden when scrolling down) */}
-      <header className="fixed top-0 left-0 right-0 bg-transparent" style={{zIndex: 9999, overflow: 'hidden'}}>
+      <header className={`fixed top-0 left-0 right-0 bg-transparent mobile-header ${
+        scrollDirection === 'down' ? 'mobile-header-hidden' : 'mobile-header-visible'
+      }`} style={{
+        zIndex: 9999, 
+        overflow: 'hidden'
+      }}>
         <div className="container mx-auto px-6 py-4">
-          <div className={`flex flex-col items-center transition-all duration-300 ${
-            scrollDirection === 'down' ? 'opacity-0 h-0' : 'opacity-100'
-          }`}>
+          <div className="flex flex-col items-center">
             <button
               onClick={() => {
                 const footer = document.querySelector('footer');
@@ -89,7 +92,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           playsInline
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         >
-          <source src={headerBgVid} type="video/mp4" />
+          <source src="/videos/HDheader_1.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       </div>
@@ -376,8 +379,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               pointerEvents: 'none'
             }}
           >
-            <source src="/knightapple.mp4" type="video/mp4; codecs=hvc1" />
-            <source src="/knightwebm.webm" type="video/webm" />
+            <source src="/videos/kightHD-IOS.mp4" type="video/mp4; codecs=hvc1" />
+            <source src="/videos/KnightHD.webm" type="video/webm" />
             Your browser does not support the video tag.
           </video>
         </div>{/* End media container */}

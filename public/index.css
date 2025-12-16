@@ -617,9 +617,6 @@ video {
 .hidden{
   display: none;
 }
-.h-0{
-  height: 0px;
-}
 .h-20{
   height: 5rem;
 }
@@ -954,12 +951,6 @@ video {
 .text-yellow-400{
   --tw-text-opacity: 1;
   color: rgb(250 204 21 / var(--tw-text-opacity, 1));
-}
-.opacity-0{
-  opacity: 0;
-}
-.opacity-100{
-  opacity: 1;
 }
 .shadow-lg{
   --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);

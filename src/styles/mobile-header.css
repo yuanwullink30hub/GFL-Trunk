@@ -1,0 +1,13 @@
+.mobile-header {
+  transition: opacity 333ms ease-in-out;
+}
+
+.mobile-header-hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.mobile-header-visible {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}

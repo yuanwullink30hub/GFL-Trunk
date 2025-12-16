@@ -129,7 +129,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               <p className="text" style={{
                 width: '100%',
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
-                marginTop: '0',
+                marginTop: '-15px',
                 marginBottom: '0',
                 paddingBottom: '35px',
                 whiteSpace: 'normal',
@@ -138,8 +138,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 lineHeight: '1.4',
                 backgroundColor: 'transparent'
               }}>De ontembare chaos uit haar wil in het uni-versum. <br />
-  
+ 
                Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
+                <br/>
+                 <br/>
 <br/> <br/> <span className="subtitles">DUIK DIEP EN ONTDEK HOE BEHEERSTE CHAOS GROEIT.</span>
 
               </p>

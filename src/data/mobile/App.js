@@ -189,9 +189,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             }}>
               <h1 className="poetry" style={{
                 marginTop: '0',
-             
-                marginBottom: 'clamp(26px, 6.5vw, 45.5px)',
-                fontSize: 'clamp(0.85rem, 4.05vw, 2.5rem)',
+                marginBottom: 'clamp(25.44px, 6.36vw, 44.5px)',
+                fontSize: 'clamp(0.8317rem, 3.9655vw, 2.446rem)',
                 lineHeight: '1.2',
                 width: '100%',
                 whiteSpace: 'normal',

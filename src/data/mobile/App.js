@@ -188,7 +188,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               width: '100%'
             }}>
               <h1 className="poetry" style={{
-                marginTop: '30px',
+                marginTop: '45px',
                 marginBottom: 'clamp(24.65px, 6.163vw, 43.12px)',
                 fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)',
                 lineHeight: '1.2',
@@ -206,9 +206,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               <p className="text" style={{
                 width: '100%',
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
-                marginTop: '30px',
+                marginTop: '60px',
                 marginBottom: '0',
-                paddingBottom: '30px',
+                paddingbottom: '30px',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
@@ -218,7 +218,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
  
                Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
                <br/> <br/> <br/>
-<br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)', marginTop: '5rem', display: 'block'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID.</span>
+<br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)', marginTop: '3rem', display: 'block'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID.</span>
 
               </p>
           </div>{/* End text content wrapper */}
@@ -246,7 +246,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           zIndex: 8,
           overflow: 'visible',
           maxWidth: 'clamp(25rem, 90vw, 75rem)',
-          margin: 'clamp(1rem, 5vw, 3rem) auto 0 auto',
+          margin: 'clamp(1rem + 2rem, 5vw + 2rem, 3rem + 2rem) auto 0 auto',
           pointerEvents: 'none'
         }}>
           {/* Button container - absolute inside media container */}

@@ -217,9 +217,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               }}>De ontembare chaos uit haar wil in het uni-versum. <br />
  
                Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
-                <br/>
-                 <br/>
-<br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)'}}>DUIK DIEP EN ONTDEK HOE <br/>BEHEERSTE CHAOS GROEIT.</span>
+<br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID.</span>
 
               </p>
             {/* Button container moved directly after <p> text */}
@@ -436,7 +434,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
               position: 'absolute',
-              top: '-220px',
+              top: '-250px',
               left: 0,
               right: 0,
               zIndex: 4,

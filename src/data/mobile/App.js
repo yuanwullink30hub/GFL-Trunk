@@ -188,7 +188,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               width: '100%'
             }}>
               <h1 className="poetry" style={{
-                marginTop: '15px',
+                marginTop: '30px',
                 marginBottom: 'clamp(24.65px, 6.163vw, 43.12px)',
                 fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)',
                 lineHeight: '1.2',
@@ -208,7 +208,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
                 marginTop: '30px',
                 marginBottom: '0',
-                paddingBottom: '35px',
+                paddingBottom: '30px',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
@@ -218,12 +218,26 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
  
                Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
                <br/> <br/> <br/>
-<br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID.</span>
+<br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)', marginTop: '5rem', display: 'block'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID.</span>
 
               </p>
           </div>{/* End text content wrapper */}
         </div>{/* End text container over image */}
 
+    {/* Full Screen Gradient Container */}
+      <div style={{
+        position: 'absolute',
+        top: 'clamp(-60px, 10vw, -20px)',
+        width: '100vw',
+        height: '900px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.8) 12%, rgba(14, 7, 19, 0.6) 22%, rgba(45, 10, 68, 0.5) 33%, rgba(71, 3, 110, 0.6) 50%, rgba(39, 7, 61, 0.5) 67%, rgba(21, 10, 36, 0) 100%)',
+        overflow: 'visible',
+        zIndex: 0,
+        pointerEvents: 'none'
+      }}>
+      </div>
         {/* Media Container - Buttons and Video together */}
         <div style={{
           position: 'relative',
@@ -460,6 +474,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             width: '100%',
             maxWidth: 'clamp(25rem, 90vw, 75rem)',
             margin: '0 auto clamp(1.25rem, 5vw, 3.75rem) auto',
+            marginTop: 'clamp(1.25rem + 30px, 5vw + 30px, 3.75rem + 30px)',
             fontSize: 'clamp(0.72rem, 4.5vw, 2rem)',
             color: 'rgb(167, 59, 198)',
             lineHeight: '1.2',
@@ -662,7 +677,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
       </div>{/* End text content container */}
 
-   
+  
 
       {/* Contact Section */}
       <section id="contact" style={{

@@ -284,11 +284,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     </clipPath>
                   </defs>
                   <image 
-                    href={soul} 
-                    x="55" y="100" width="150" height="140" 
+                    href={body} 
+                    x="29.25" y="85.3" width="181.5" height="169.4" 
                     preserveAspectRatio="xMidYMid slice"
                     style={{pointerEvents: 'none'}}
-                    transform="rotate(21 80 230)"
+                    transform="rotate(2 -300 1000)"
                   />
                 </g>
               </svg>
@@ -342,10 +342,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   </defs>
                   <image 
                     href={mind} 
-                    x="55" y="100" width="150" height="140" 
+                    x="37" y="84" width="180" height="168" 
                     preserveAspectRatio="xMidYMid slice"
                     style={{pointerEvents: 'none'}}
-                    transform="rotate(-40 180 160)"
+                    transform="rotate(-55 175 165)"
                   />
                 </g>
               </svg>
@@ -397,11 +397,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     </clipPath>
                   </defs>
                   <image 
-                    href={body} 
-                    x="55" y="100" width="150" height="140" 
+                    href={soul} 
+                    x="23" y="67.2" width="198" height="184.8" 
                     preserveAspectRatio="xMidYMid slice"
                     style={{pointerEvents: 'none'}}
-                    transform="rotate(-40 185 165)"
+                    transform="rotate(-40 200 145)"
                   />
                 </g>
               </svg>

@@ -18,6 +18,9 @@ import placeholder6 from '../../images/slideshow images/placeholder6.svg';
 import placeholder7 from '../../images/slideshow images/placeholder7.svg';
 import placeholder8 from '../../images/slideshow images/placeholder8.svg';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
+import soul from '../../images/soulpng.png';
+import body from '../../images/bodypng.png';
+import mind from '../../images/mindpng.png';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
 import '../../styles/subtitles.css';
@@ -240,6 +243,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
                 preserveAspectRatio="xMidYMid meet"
+                overflow="visible"
                 pointerEvents="none"
                 style={{
                   display: 'block',
@@ -248,7 +252,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   cursor: 'pointer'
                 }}
               >
-                <g>
+                <g style={{overflow: 'visible'}}>
                   <path 
                     d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z" 
                     fill="rgba(0,0,0,0.001)"
@@ -280,9 +284,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     </clipPath>
                   </defs>
                   <image 
-                    href={require('../../images/logo.png')} 
+                    href={soul} 
                     x="55" y="100" width="150" height="140" 
-                    clipPath="url(#triangle2-clip)" 
                     preserveAspectRatio="xMidYMid slice"
                     style={{pointerEvents: 'none'}}
                     transform="rotate(21 80 230)"
@@ -296,6 +299,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
                 preserveAspectRatio="xMidYMid meet"
+                overflow="visible"
                 pointerEvents="none"
                 style={{
                   display: 'block',
@@ -304,7 +308,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   cursor: 'pointer'
                 }}
               >
-                <g>
+                <g style={{overflow: 'visible'}}>
                   <path 
                     d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
                     fill="rgba(0,0,0,0.001)"
@@ -337,9 +341,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     </clipPath>
                   </defs>
                   <image 
-                    href={require('../../images/logo.png')} 
+                    href={mind} 
                     x="55" y="100" width="150" height="140" 
-                    clipPath="url(#triangle3-clip)" 
                     preserveAspectRatio="xMidYMid slice"
                     style={{pointerEvents: 'none'}}
                     transform="rotate(-40 180 160)"
@@ -353,6 +356,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 height="clamp(40px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
                 preserveAspectRatio="xMidYMid meet"
+                overflow="visible"
                 pointerEvents="none"
                 style={{
                   display: 'block',
@@ -361,7 +365,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   cursor: 'pointer'
                 }}
               >
-                <g>
+                <g style={{overflow: 'visible'}}>
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="none" 
@@ -393,9 +397,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     </clipPath>
                   </defs>
                   <image 
-                    href={require('../../images/logo.png')} 
+                    href={body} 
                     x="55" y="100" width="150" height="140" 
-                    clipPath="url(#triangle1-clip)" 
                     preserveAspectRatio="xMidYMid slice"
                     style={{pointerEvents: 'none'}}
                     transform="rotate(-40 185 165)"

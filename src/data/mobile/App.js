@@ -68,15 +68,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   };
 
   const slides = [
-    { header: 'KARMAN', subtitle: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings. Nights defined by music, energy, and togetherness.', image: karmanevents, bgColor: 'rgba(34, 197, 94, 0.15)' },
-    { header: 'CODE 49', subtitle: 'De nr.1 Businessclub voor MKB-ondernemers die willen doorschalen in een AI-first economie', image: club49logo, bgColor: 'rgba(59, 130, 246, 0.15)' },
-    { header: 'TATTOO SHOP ', subtitle: 'Our focus goes beyond body art; we channel personal stories into spiritual expressions, utilizing fine line tattoos and the ancient stick and poke technique to transform your skin into a canvas of meaning.', image: logo1111, bgColor: 'rgba(168, 85, 247, 0.15)' },
-    { header: 'Slide 4', subtitle: 'Description', image: placeholder4, bgColor: 'rgba(249, 115, 22, 0.15)' },
-    { header: 'Slide 5', subtitle: 'Description', image: placeholder5, bgColor: 'rgba(236, 72, 153, 0.15)' },
-    { header: 'Slide 6', subtitle: 'Description', image: placeholder6, bgColor: 'rgba(139, 92, 246, 0.15)' },
-    { header: 'Slide 7', subtitle: 'Description', image: placeholder7, bgColor: 'rgba(14, 165, 233, 0.15)' },
-    { header: 'Slide 8', subtitle: 'Description', image: placeholder8, bgColor: 'rgba(34, 197, 94, 0.15)' },
-    { header: 'RENGI FOODS', subtitle: 'Rengi Foods captures the vibrant spirit of Korean street food, offering authentic and affordable flavors from Seoul\'s streets to your local market. The focus on affordability ensures everyone can enjoy bold Korean tastes without compromise.', image: rengiLogo, bgColor: 'rgba(251, 146, 60, 0.15)' }
+    { header: 'KARMAN', subtitle: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings. Nights defined by music, energy, and togetherness.', image: karmanevents, bgColor: 'rgba(34, 197, 94, 0.15)', route: '/karman' },
+    { header: 'CODE 49', subtitle: 'De nr.1 Businessclub voor MKB-ondernemers die willen doorschalen in een AI-first economie', image: club49logo, bgColor: 'rgba(59, 130, 246, 0.15)', route: '/code49' },
+    { header: 'TATTOO SHOP ', subtitle: 'Our focus goes beyond body art; we channel personal stories into spiritual expressions, utilizing fine line tattoos and the ancient stick and poke technique to transform your skin into a canvas of meaning.', image: logo1111, bgColor: 'rgba(168, 85, 247, 0.15)', route: '/tattooshop' },
+    { header: 'Slide 4', subtitle: 'Description', image: placeholder4, bgColor: 'rgba(249, 115, 22, 0.15)', route: '/slide4' },
+    { header: 'Slide 5', subtitle: 'Description', image: placeholder5, bgColor: 'rgba(236, 72, 153, 0.15)', route: '/slide5' },
+    { header: 'Slide 6', subtitle: 'Description', image: placeholder6, bgColor: 'rgba(139, 92, 246, 0.15)', route: '/slide6' },
+    { header: 'Slide 7', subtitle: 'Description', image: placeholder7, bgColor: 'rgba(14, 165, 233, 0.15)', route: '/slide7' },
+    { header: 'Slide 8', subtitle: 'Description', image: placeholder8, bgColor: 'rgba(34, 197, 94, 0.15)', route: '/slide8' },
+    { header: 'RENGI FOODS', subtitle: 'Rengi Foods captures the vibrant spirit of Korean street food, offering authentic and affordable flavors from Seoul\'s streets to your local market. The focus on affordability ensures everyone can enjoy bold Korean tastes without compromise.', image: rengiLogo, bgColor: 'rgba(251, 146, 60, 0.15)', route: '/rengifoods' }
   ];
 
   React.useEffect(() => {
@@ -188,7 +188,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               width: '100%'
             }}>
               <h1 className="poetry" style={{
-                marginTop: '0',
+                marginTop: '15px',
                 marginBottom: 'clamp(24.65px, 6.163vw, 43.12px)',
                 fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)',
                 lineHeight: '1.2',
@@ -206,7 +206,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               <p className="text" style={{
                 width: '100%',
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
-                marginTop: '-15px',
+                marginTop: '30px',
                 marginBottom: '0',
                 paddingBottom: '35px',
                 whiteSpace: 'normal',
@@ -217,6 +217,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               }}>De ontembare chaos uit haar wil in het uni-versum. <br />
  
                Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
+               <br/> <br/> <br/>
 <br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID.</span>
 
               </p>
@@ -328,7 +329,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
                     style={{cursor: 'pointer'}}
-                    onClick={() => window.location.href = '/gardeners'}
+                    onClick={() => window.location.href = '/mind'}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -398,7 +399,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
-                    onClick={() => window.location.href = '/gardeners'}
+                    onClick={() => window.location.href = '/soul'}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.previousElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -453,15 +454,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </video>
         </div>{/* End media container */}
 
-     {/* Header and Slideshow Wrapper */}
-        <div style={{
-          position: 'absolute',
-          top: 'clamp(100px, 110vw, 900px)',
-          width: '100%',
-          minHeight: 'clamp(30rem, 70vw, 60rem)',
-          zIndex: 7
-        }}>
-          {/* Header Container */}
+     {/* Header Container */}
           <div className="subtitles" style={{
             position: 'relative',
             width: '100%',
@@ -480,19 +473,16 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             GARDENS
           </div>
 
-          {/* Slideshow Grid Container - Absolutely positioned within wrapper */}
+          {/* Slideshow Grid Container */}
           <div 
             className="hideScrollbar"
             ref={galleryRef}
             onScroll={handleScroll}
             style={{
-              position: 'absolute',
-              top: 'clamp(3rem, 7vw, 5rem)',
-              left: '0',
-              right: '0',
+              position: 'relative',
               width: '100vw',
               maxWidth: '100vw',
-              margin: '0',
+              margin: 'clamp(1.5rem, 3.5vw, 2.5rem) 0 0 0',
               display: 'flex',
               overflowX: 'auto',
               overflowY: 'visible',
@@ -527,7 +517,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 {/* Image Circle */}
                 <div 
                   className="breathingBorder" 
-                  onClick={() => window.location.href = '/gardeners'}
+                  onClick={() => window.location.href = slides[index % 9].route}
                   style={{
                     position: 'relative',
                     width: 'clamp(100px, 38.7855vw, 271.4985px)',
@@ -607,10 +597,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           gap: 'clamp(8px, 2vw, 16px)',
           marginTop: 'clamp(20px, 3vw, 30px)',
           marginBottom: 'clamp(20px, 3vw, 30px)',
-          position: 'absolute',
-          top: 'clamp(19.5rem, 32vw, 37.5rem)',
-          left: '0',
-          right: '0',
+          position: 'relative',
           width: '100%'
         }}>
           {slides.map((_, index) => (
@@ -639,11 +626,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          position: 'absolute',
-          top: 'clamp(22rem, 36vw, 40rem)',
-          left: '0',
-          right: '0',
+          position: 'relative',
           width: '100%',
+          marginTop: 'clamp(20px, 3vw, 30px)',
           marginBottom: 'clamp(40px, 10vw, 80px)'
         }}>
           <button
@@ -674,7 +659,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             ZIE MEER
           </button>
         </div>
-        </div>{/* End header and slideshow wrapper */}
 
       </div>{/* End text content container */}
 

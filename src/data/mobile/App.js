@@ -189,8 +189,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             }}>
               <h1 className="poetry" style={{
                 marginTop: '0',
-                marginBottom: 'clamp(25.44px, 6.36vw, 44.5px)',
-                fontSize: 'clamp(0.8317rem, 3.9655vw, 2.446rem)',
+                marginBottom: 'clamp(24.65px, 6.163vw, 43.12px)',
+                fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)',
                 lineHeight: '1.2',
                 width: '100%',
                 whiteSpace: 'normal',
@@ -220,19 +220,30 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 <br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID.</span>
 
               </p>
-            {/* Button container moved directly after <p> text */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: 'clamp(20px, 5vw, 60px)',
-              width: '100%',
-              maxWidth: 'clamp(400px, 90vw, 1200px)',
-              margin: '0 auto',
-              marginTop: '25px',
-              pointerEvents: 'none'
-            }}>
+          </div>{/* End text content wrapper */}
+        </div>{/* End text container over image */}
+
+        {/* Media Container - Buttons and Video together */}
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          height: 'clamp(300px, 80vw, 600px)',
+          zIndex: 8,
+          overflow: 'visible',
+          maxWidth: 'clamp(25rem, 90vw, 75rem)',
+          margin: 'clamp(1rem, 5vw, 3rem) auto 0 auto',
+          pointerEvents: 'none'
+        }}>
+          {/* Button container - absolute inside media container */}
+          <div style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            top: 0,
+            left: 0,
+            pointerEvents: 'none',
+            zIndex: 5
+          }}>
             {/* Button 2 */}
               <svg 
                 className="triangleButton2"
@@ -245,7 +256,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 style={{
                   display: 'block',
                   transition: 'all 0.3s ease',
-                  transform: 'scale(1.2) rotate(-21deg) translateY(clamp(0.5rem, 1.5vw, 1.125rem)) translateX(clamp(-1.3rem, -1.8vw, -0.8rem))',
+                  position: 'absolute',
+                  left: 'clamp(-6%, -1vw, 9%)',
+                  top: 'clamp(-3%, 2vw, 7%)',
+                  transform: 'scale(1.2) rotate(-21deg)',
                   cursor: 'pointer'
                 }}
               >
@@ -254,7 +268,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z" 
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
-                    onClick={() => window.location.href = '/gardeners'}
+                    onClick={() => window.location.href = '/teachers'}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -301,7 +315,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 style={{
                   display: 'block',
                   transition: 'all 0.3s ease',
-                  transform: 'scale(1.2) rotate(40deg) translateX(clamp(-6rem, -10vw, -4.5rem)) translateY(clamp(-0.5rem, 0.2vw, 0.5rem))',
+                  position: 'absolute',
+                  left: 'clamp(13%, 18vw, 28%)',
+                  top: 'clamp(-19.5%, -14.5vw, -9.5%)',
+                  transform: 'scale(1.2) rotate(40deg)',
                   cursor: 'pointer'
                 }}
               >
@@ -349,8 +366,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               {/* Button 1 */}
               <svg 
                 className="triangleButton1"
-                width="clamp(40px, 28vw, 220px)" 
-                height="clamp(40px, 28vw, 220px)" 
+                width="clamp(60px, 28vw, 220px)" 
+                height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
                 preserveAspectRatio="xMidYMid meet"
                 overflow="visible"
@@ -358,7 +375,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 style={{
                   display: 'block',
                   transition: 'all 0.3s ease',
-                  transform: 'scale(1.2) rotate(40deg) translateX(clamp(-9rem, -21vw, -3rem)) translateY(clamp(7rem, 45vw, 37rem))',
+                  position: 'absolute',
+                  left: 'clamp(8%, 11vw, 18%)',
+                  top: 'clamp(19%, 24vw, 59%)',
+                  transform: 'scale(1.2) rotate(40deg)',
                   cursor: 'pointer'
                 }}
               >
@@ -403,22 +423,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 </g>
               </svg>
             </div>{/* End button container */}
-          </div>{/* End text content wrapper */}
-        </div>{/* End text container over image */}
 
-        {/* Media Container - Image and WebM side by side */}
-        <div style={{
-          position: 'relative',
-          width: '100%',
-          height: '0',
-          zIndex: 8,
-          overflow: 'visible',
-          maxWidth: 'clamp(25rem, 90vw, 75rem)',
-          margin: 'clamp(3.75rem, 15vw, 7.5rem) auto 0 auto',
-          pointerEvents: 'none',
-          paddingBottom: '9.375rem'
-        }}>
-          {/* WebM Video - Right of triangles */}
+          {/* WebM Video - alongside buttons */}
           <video
             autoPlay
             loop
@@ -434,7 +440,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
               position: 'absolute',
-              top: '-250px',
+              top: 'clamp(-150px, -20vw, -50px)',
               left: 0,
               right: 0,
               zIndex: 4,
@@ -447,43 +453,56 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </video>
         </div>{/* End media container */}
 
-     {/* Header Container */}
-        <div className="subtitles" style={{
-          position: 'relative',
+     {/* Header and Slideshow Wrapper */}
+        <div style={{
+          position: 'absolute',
+          top: 'clamp(100px, 110vw, 900px)',
           width: '100%',
-          maxWidth: 'clamp(25rem, 90vw, 75rem)',
-          margin: '0 auto clamp(1.25rem, 5vw, 3.75rem) auto',
-          fontSize: 'clamp(0.72rem, 4.5vw, 2rem)',
-          color: 'rgb(167, 59, 198)',
-          lineHeight: '1.2',
-          textAlign: 'center',
-          whiteSpace: 'normal',
-          wordWrap: 'break-word',
-          overflowWrap: 'break-word',
-          backgroundColor: 'transparent'
+          minHeight: 'clamp(30rem, 70vw, 60rem)',
+          zIndex: 7
         }}>
-          GARDENS
-        </div>
-
-        {/* Slideshow Grid Container */}
-        <div 
-          className="hideScrollbar"
-          ref={galleryRef}
-          onScroll={handleScroll}
-          style={{
+          {/* Header Container */}
+          <div className="subtitles" style={{
             position: 'relative',
-            width: '100vw',
-            maxWidth: '100vw',
-            margin: `clamp(0.9375rem, 3vw, 2.5rem) 0 0 0`,
-            display: 'flex',
-            overflowX: 'auto',
-            overflowY: 'visible',
-            gap: 'clamp(0.75rem, 5vw, 3.75rem)',
+            width: '100%',
+            maxWidth: 'clamp(25rem, 90vw, 75rem)',
+            margin: '0 auto clamp(1.25rem, 5vw, 3.75rem) auto',
+            fontSize: 'clamp(0.72rem, 4.5vw, 2rem)',
+            color: 'rgb(167, 59, 198)',
+            lineHeight: '1.2',
+            textAlign: 'center',
+            whiteSpace: 'normal',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
             backgroundColor: 'transparent',
-            scrollBehavior: 'smooth',
-            WebkitOverflowScrolling: 'touch',
-            alignItems: 'flex-start'
+            zIndex: 10
           }}>
+            GARDENS
+          </div>
+
+          {/* Slideshow Grid Container - Absolutely positioned within wrapper */}
+          <div 
+            className="hideScrollbar"
+            ref={galleryRef}
+            onScroll={handleScroll}
+            style={{
+              position: 'absolute',
+              top: 'clamp(3rem, 7vw, 5rem)',
+              left: '0',
+              right: '0',
+              width: '100vw',
+              maxWidth: '100vw',
+              margin: '0',
+              display: 'flex',
+              overflowX: 'auto',
+              overflowY: 'visible',
+              gap: 'clamp(0.75rem, 5vw, 3.75rem)',
+              backgroundColor: 'transparent',
+              scrollBehavior: 'smooth',
+              WebkitOverflowScrolling: 'touch',
+              alignItems: 'flex-start',
+              zIndex: 9
+            }}>
           {[...slides, ...slides, ...slides].map((slide, index) => (
             <div
               key={index}
@@ -580,14 +599,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             </div>
           ))}
         </div>
-
+        
         {/* Slide Indicators */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
           gap: 'clamp(8px, 2vw, 16px)',
           marginTop: 'clamp(20px, 3vw, 30px)',
-          marginBottom: 'clamp(20px, 3vw, 30px)'
+          marginBottom: 'clamp(20px, 3vw, 30px)',
+          position: 'absolute',
+          top: 'clamp(19.5rem, 32vw, 37.5rem)',
+          left: '0',
+          right: '0',
+          width: '100%'
         }}>
           {slides.map((_, index) => (
             <div
@@ -610,11 +634,16 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             />
           ))}
         </div>
-
+        
         {/* See More Button */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
+          position: 'absolute',
+          top: 'clamp(22rem, 36vw, 40rem)',
+          left: '0',
+          right: '0',
+          width: '100%',
           marginBottom: 'clamp(40px, 10vw, 80px)'
         }}>
           <button
@@ -634,17 +663,18 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               letterSpacing: '1px'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f08827';
-              e.currentTarget.style.transform = 'scale(1.05)';
+              e.target.style.backgroundColor = '#ef8616';
+              e.target.style.borderColor = '#ef8616';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ef8616';
-              e.currentTarget.style.transform = 'scale(1)';
+              e.target.style.backgroundColor = 'transparent';
+              e.target.style.borderColor = '#FFFEF0';
             }}
           >
-            Zie Meer
+            ZIE MEER
           </button>
         </div>
+        </div>{/* End header and slideshow wrapper */}
 
       </div>{/* End text content container */}
 

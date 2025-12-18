@@ -284,7 +284,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   // Calculate opacity for KWEEK KRACHTIGE text and media container
   const calculateMediaOpacity = React.useMemo(() => {
     return () => {
-      const topMargin = 120;
+      const topMargin = 210;
       const bottomMargin = 120;
       try {
         if (mediaContainerRef?.current) {

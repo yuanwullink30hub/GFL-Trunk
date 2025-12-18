@@ -1,4 +1,6 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -28,9 +30,39 @@ import '../../styles/buttons.css';
 import '../../styles/mobile-header.css';
 import '../../styles/logo.css';
 
-const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
+// Preload functions - these will start loading the page components immediately
+const preloadMap = {
+  '/soul': () => import('../../pages/Soul'),
+  '/mind': () => import('../../pages/Mind'),
+  '/teachers': () => import('../../pages/Teachers'),
+  '/gardeners': () => import('../../pages/Gardeners'),
+  '/karman': () => import('../../pages/Karman'),
+  '/code49': () => import('../../pages/Code49'),
+  '/tattooshop': () => import('../../pages/TattooShop'),
+  '/rengifoods': () => import('../../pages/RengiFoods'),
+  '/slide4': () => import('../../pages/Slide4'),
+  '/slide5': () => import('../../pages/Slide5'),
+  '/slide6': () => import('../../pages/Slide6'),
+  '/slide7': () => import('../../pages/Slide7'),
+  '/slide8': () => import('../../pages/Slide8'),
+};
 
+const preloadPage = (path) => {
+  const preloader = preloadMap[path];
+  if (preloader) {
+    preloader(); // Start loading the component
+  }
+};
+
+const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
+  const navigate = useNavigate();
+  
   const [currentSlide, setCurrentSlide] = React.useState(0);
+  const [clickedSlide, setClickedSlide] = React.useState(null);
+  const [clickedButton, setClickedButton] = React.useState(null);
+  const [isNavigating, setIsNavigating] = React.useState(false);
+  const [showOverlay, setShowOverlay] = React.useState(false);
+  const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
@@ -117,7 +149,101 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     setTimeout(centerSlides, 300);
   }, []);
 
+  // Calculate button center position for zoom origin relative to the full document
+  // Accounts for button rotation and triangle centroid
+  const calculateButtonCenter = (buttonName) => {
+    // Get all SVG elements with the button class
+    const svgClass = `triangleButton${buttonName === 'button1' ? '1' : buttonName === 'button2' ? '2' : '3'}`;
+    const allSvgElements = document.querySelectorAll(`.${svgClass}`);
+    
+    if (allSvgElements.length === 0) return { x: '50%', y: '50%' };
+    
+    // Get the SVG element
+    const svgElement = allSvgElements[allSvgElements.length - 1];
+    const rect = svgElement.getBoundingClientRect();
+    
+    // The triangle path vertices in viewBox coordinates (0-300):
+    // Apex: (150, 55), Bottom-left: (30, 275), Bottom-right: (270, 275)
+    // Centroid = ((x1+x2+x3)/3, (y1+y2+y3)/3) = ((150+30+270)/3, (55+275+275)/3) = (150, 201.67)
+    // In normalized coords (0-1): centroid is at (0.5, 0.672)
+    
+    // Get button rotation angle
+    const rotationDeg = buttonName === 'button2' ? -16 : 45;
+    const rotationRad = (rotationDeg * Math.PI) / 180;
+    
+    // SVG bounding box center
+    const svgCenterX = (rect.left + rect.right) / 2;
+    const svgCenterY = (rect.top + rect.bottom) / 2;
+    
+    // The centroid offset from SVG center (centroid is at 0.672 vertically, center is at 0.5)
+    // So centroid is 0.172 * height below center in unrotated state
+    const centroidOffsetY = 0.172 * rect.height;
+    
+    // Apply rotation to the centroid offset
+    // When rotated, the offset shifts: 
+    // newX = offsetX * cos(θ) - offsetY * sin(θ)
+    // newY = offsetX * sin(θ) + offsetY * cos(θ)
+    // Since offsetX = 0 (centroid is horizontally centered):
+    const rotatedOffsetX = -centroidOffsetY * Math.sin(rotationRad);
+    const rotatedOffsetY = centroidOffsetY * Math.cos(rotationRad);
+    
+    // Calculate the actual visual center of the triangle
+    let triangleCenterX = svgCenterX + rotatedOffsetX;
+    let triangleCenterY = svgCenterY + rotatedOffsetY;
+    
+    // Manual offset adjustments for specific buttons
+    if (buttonName === 'button2') {
+      // Move button 2's zoom eye up and left
+      triangleCenterX -= 15; // left
+      triangleCenterY -= 40; // up
+    }
+    if (buttonName === 'button3') {
+      // ove button 3 (mind) zoom eye right and up
+      triangleCenterX += 5; // right
+      triangleCenterY -= 9; // up
+    }
+    
+    // Convert to percentage of viewport for X
+    const centerXPercent = (triangleCenterX / window.innerWidth) * 100;
+    
+    // For Y, account for scroll position
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const documentHeight = document.documentElement.scrollHeight;
+    const absoluteY = triangleCenterY + scrollTop;
+    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
+    
+    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
+  };
 
+  // Handle button navigation with animation
+  const handleButtonNavigate = (buttonName, path) => {
+    // Start preloading the destination page immediately
+    preloadPage(path);
+    
+    // Calculate button center immediately
+    const center = calculateButtonCenter(buttonName);
+    setButtonCenter(center);
+    
+    setClickedButton(buttonName);
+    
+    // Start fade out at 0.3s (shortly after zoom starts)
+    setTimeout(() => {
+      setIsNavigating(true);
+    }, 300);
+    
+    // Navigate at 2.4s with zoom state - new page will zoom out from same point
+    setTimeout(() => {
+      navigate(path, { 
+        state: { 
+          fromZoom: true,
+          zoomOrigin: center
+        }
+      });
+      setClickedButton(null);
+      setIsNavigating(false);
+      setButtonCenter({ x: '50%', y: '50%' });
+    }, 2400);
+  };
 
   // Calculate slideshow opacity based on scroll position (instant fade in within 9px above, instant fade out within 9px below)
   const calculateSlideshowOpacity = React.useMemo(() => {
@@ -237,11 +363,39 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   }, []);
 
   return (
-    <div style={{
-      width: '100%',
-      overflow: 'hidden',
-      backgroundColor: '#150a24ff',
-    }}>
+    <>
+    {/* Transition overlay - holds dark screen during navigation */}
+    {showOverlay && (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: '#150a24ff',
+          zIndex: 99999,
+          pointerEvents: 'none'
+        }}
+      />
+    )}
+    <motion.div 
+      style={{
+        width: '100%',
+        overflow: 'hidden',
+        backgroundColor: '#150a24ff',
+        transformOrigin: `${buttonCenter.x} ${buttonCenter.y}`,
+        willChange: 'transform, opacity'
+      }}
+      animate={{ 
+        opacity: isNavigating ? 0 : 1,
+        scale: clickedButton ? 60 : 1
+      }}
+      transition={{ 
+        scale: { duration: 3, ease: [0.4, 0, 0.2, 1] },
+        opacity: { duration: 2, ease: [0.4, 0, 0.2, 1] }
+      }}
+    >
       {/* Mobile Header - Logo Only (hidden when scrolling down) */}
       <header className={`fixed top-0 left-0 right-0 bg-transparent mobile-header ${
         scrollDirection === 'down' ? 'mobile-header-hidden' : 'mobile-header-visible'
@@ -402,6 +556,17 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             zIndex: 5
           }}>
             {/* Button 2 */}
+              <motion.div
+                animate={clickedButton === 'button2' ? { scale: 0.9 } : { scale: 1 }}
+                transition={{ duration: 1.5, ease: 'easeInOut' }}
+                style={{
+                  position: 'absolute',
+                  left: 'calc(clamp(0%, 5vw, 15%) - 0.3rem)',
+                  top: 'clamp(-22%, -17vw, -12%)',
+                  transformOrigin: 'center',
+                  zIndex: clickedButton === 'button2' ? 1001 : 5
+                }}
+              >
               <svg 
                 className="triangleButton2"
                 width="clamp(60px, 28vw, 220px)" 
@@ -425,7 +590,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z" 
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
-                    onClick={() => window.location.href = '/teachers'}
+                    onClick={() => handleButtonNavigate('button2', '/teachers')}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -460,7 +625,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   />
                 </g>
               </svg>
+              </motion.div>
              {/* Button 3 */}
+              <motion.div
+                animate={clickedButton === 'button3' ? { scale: 0.9 } : { scale: 1 }}
+                transition={{ duration: 1.5, ease: 'easeInOut' }}
+                style={{
+                  position: 'absolute',
+                  left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem)',
+                  top: 'clamp(-40.5%, -35.5vw, -30.5%)',
+                  transformOrigin: 'center',
+                  zIndex: clickedButton === 'button3' ? 1001 : 5
+                }}
+              >
               <svg 
                 className="triangleButton3"
                 width="clamp(60px, 28vw, 220px)" 
@@ -485,7 +662,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
                     style={{cursor: 'pointer'}}
-                    onClick={() => window.location.href = '/mind'}
+                    onClick={() => handleButtonNavigate('button3', '/mind')}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -520,7 +697,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   />
                 </g>
               </svg>
+              </motion.div>
               {/* Button 1 */}
+              <motion.div
+                animate={clickedButton === 'button1' ? { scale: 0.9 } : { scale: 1 }}
+                transition={{ duration: 1.5, ease: 'easeInOut' }}
+                style={{
+                  position: 'absolute',
+                  left: 'calc(clamp(18%, 21.5vw, 28%) - 0.3rem)',
+                  top: 'clamp(6%, 11vw, 46%)',
+                  transformOrigin: 'center',
+                  zIndex: clickedButton === 'button1' ? 1001 : 5
+                }}
+              >
               <svg 
                 className="triangleButton1"
                 width="clamp(60px, 28vw, 220px)" 
@@ -555,7 +744,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
-                    onClick={() => window.location.href = '/soul'}
+                    onClick={() => handleButtonNavigate('button1', '/soul')}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.previousElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -579,6 +768,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   />
                 </g>
               </svg>
+              </motion.div>
             </div>{/* End button container */}
 
           {/* WebM Video - alongside buttons */}
@@ -682,9 +872,29 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 }}
               >
                 {/* Image Circle */}
-                <div 
+                <motion.div 
                   className="breathingBorder" 
-                  onClick={() => window.location.href = slides[index % 9].route}
+                  onClick={() => {
+                    // Start preloading destination page immediately
+                    preloadPage(slides[index % 9].route);
+                    setClickedSlide(index);
+                    // Navigate after animation completes
+                    setTimeout(() => {
+                      window.location.href = slides[index % 9].route;
+                    }, 600);
+                  }}
+                  animate={clickedSlide === index ? {
+                    scale: 5,
+                    x: '100vw',
+                    y: '100vh',
+                    borderRadius: '0%'
+                  } : {
+                    scale: 1,
+                    x: 0,
+                    y: 0,
+                    borderRadius: '50%'
+                  }}
+                  transition={{ duration: 0.6, ease: 'easeInOut' }}
                   style={{
                     position: 'relative',
                     width: 'clamp(100px, 38.7855vw, 271.4985px)',
@@ -695,10 +905,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     borderRadius: '50%',
                     border: '3px solid rgba(239, 134, 22, 0.5)',
                     boxSizing: 'border-box',
-                    zIndex: 2,
+                    zIndex: clickedSlide === index ? 1000 : 2,
                     flexShrink: 0,
                     cursor: 'pointer',
-                    transition: 'transform 0.3s ease'
+                    transformOrigin: 'center'
                   }}
                 >
                   <img
@@ -712,7 +922,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                       transform: index % 9 === 0 ? 'scale(1.3)' : index % 9 === 1 ? 'scale(0.85)' : index % 9 === 2 ? 'scale(1.375)' : index % 9 === 8 ? 'scale(1.32)' : 'scale(1)'
                     }}
                   />
-                </div>
+                </motion.div>
 
                 {/* Header */}
                 <div style={{
@@ -970,7 +1180,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </div>
         </div>
       </footer>
-    </div>
+    </motion.div>
+    </>
   );
 }
 

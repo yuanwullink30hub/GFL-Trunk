@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import logo from '../images/logo.png';
 import placeholder5 from '../images/slideshow images/placeholder5.svg';
 import '../styles/logo.css';
+import FadeInWrapper from '../components/FadeInWrapper';
 
 const Slide5 = () => {
   const navigate = useNavigate();
 
   return (
+    <FadeInWrapper>
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)',
@@ -87,8 +89,7 @@ const Slide5 = () => {
           Back to Home
         </button>
       </div>
-    </div>
-  );
+    </div>    </FadeInWrapper>  );
 };
 
 export default Slide5;

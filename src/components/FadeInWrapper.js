@@ -14,7 +14,10 @@ const FadeInWrapper = ({ children }) => {
       <motion.div
         style={{
           transformOrigin: `${zoomOrigin.x} ${zoomOrigin.y}`,
-          willChange: 'transform, opacity'
+          willChange: 'transform, opacity',
+          width: '100%',
+          minHeight: '100vh',
+          overflow: 'hidden'
         }}
         initial={{ scale: 60, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

@@ -284,7 +284,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   // Calculate opacity for KWEEK KRACHTIGE text and media container
   const calculateMediaOpacity = React.useMemo(() => {
     return () => {
-      const topMargin = 39;
+      const topMargin = 120;
       const bottomMargin = 120;
       try {
         if (mediaContainerRef?.current) {
@@ -362,24 +362,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   }, []);
 
   return (
-    <motion.div 
-      style={{
-        width: '100%',
-        overflow: 'hidden',
-        backgroundColor: '#150a24ff',
-        transformOrigin: `${buttonCenter.x} ${buttonCenter.y}`,
-        willChange: 'transform, opacity'
-      }}
-      animate={{ 
-        opacity: isNavigating ? 0 : 1,
-        scale: clickedButton ? 60 : 1
-      }}
-      transition={{ 
-        scale: { duration: 3, ease: [0.4, 0, 0.2, 1] },
-        opacity: { duration: 2, ease: [0.4, 0, 0.2, 1] }
-      }}
-    >
-      {/* Mobile Header - Logo Only (hidden when scrolling down) */}
+    <>
+      {/* Mobile Header - Logo Only (hidden when scrolling down) - Outside motion.div to prevent animation interference */}
       <header className={`fixed top-0 left-0 right-0 bg-transparent mobile-header ${
         scrollDirection === 'down' ? 'mobile-header-hidden' : 'mobile-header-visible'
       }`} style={{
@@ -399,10 +383,28 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>
       </header>
 
-      {/* Full-screen Video Container (scrollable behind logo) */}
-      <div 
-        ref={videoHeaderRef}
-        className="w-full overflow-hidden"
+      <motion.div 
+        style={{
+          width: '100%',
+          overflow: 'hidden',
+          backgroundColor: '#150a24ff',
+          transformOrigin: `${buttonCenter.x} ${buttonCenter.y}`,
+          willChange: 'transform, opacity'
+        }}
+        animate={{ 
+          opacity: isNavigating ? 0 : 1,
+          scale: clickedButton ? 60 : 1
+        }}
+        transition={{ 
+          scale: { duration: 3, ease: [0.4, 0, 0.2, 1] },
+          opacity: { duration: 2, ease: [0.4, 0, 0.2, 1] }
+        }}
+      >
+
+        {/* Full-screen Video Container (scrollable behind logo) */}
+        <div 
+          ref={videoHeaderRef}
+          className="w-full overflow-hidden"
         style={{
           height: '100vh',
           position: 'relative',
@@ -1164,6 +1166,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>
       </footer>
     </motion.div>
+    </>
   );
 }
 

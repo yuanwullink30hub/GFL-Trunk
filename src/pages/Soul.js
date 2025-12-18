@@ -6,6 +6,7 @@ import '../styles/logo.css';
 
 const Soul = () => {
   const navigate = useNavigate();
+  
 
   return (
     <FadeInWrapper>

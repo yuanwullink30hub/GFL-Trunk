@@ -31,12 +31,10 @@ import '../../styles/logo.css';
 const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
   const [currentSlide, setCurrentSlide] = React.useState(0);
-  const [scrollY, setScrollY] = React.useState(0);
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
   const videoHeaderRef = React.useRef(null);
-  const kweekTextRef = React.useRef(null);
   const mediaContainerRef = React.useRef(null);
   const textContentWrapperRef = React.useRef(null);
 
@@ -119,14 +117,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     setTimeout(centerSlides, 300);
   }, []);
 
-  React.useEffect(() => {
-    const handleWindowScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    
-    window.addEventListener('scroll', handleWindowScroll);
-    return () => window.removeEventListener('scroll', handleWindowScroll);
-  }, []);
+
 
   // Calculate slideshow opacity based on scroll position (instant fade in within 9px above, instant fade out within 9px below)
   const calculateSlideshowOpacity = React.useMemo(() => {
@@ -163,30 +154,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         return 1;
       }
     };
-  }, [scrollY]);
-
-  // Calculate opacity for video header
-  const calculateVideoHeaderOpacity = React.useMemo(() => {
-    return () => {
-      const visibilityMargin = 9;
-      try {
-        if (videoHeaderRef?.current) {
-          const rect = videoHeaderRef.current.getBoundingClientRect();
-          const containerTop = rect.top;
-          const containerBottom = rect.bottom;
-          const viewportHeight = window.innerHeight;
-          
-          if (containerTop < 0 && containerTop > -visibilityMargin) return 1;
-          if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) return 0;
-          if (containerTop >= 0 && containerBottom <= viewportHeight) return 1;
-          return 0;
-        }
-        return 1;
-      } catch (e) {
-        return 1;
-      }
-    };
-  }, [scrollY]);
+  }, []);
 
   // Calculate opacity for KWEEK KRACHTIGE text and media container
   const calculateMediaOpacity = React.useMemo(() => {
@@ -210,7 +178,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         return 1;
       }
     };
-  }, [scrollY]);
+  }, []);
 
   // Calculate opacity for text content (h1 and paragraph)
   const calculateTextContentOpacity = React.useMemo(() => {
@@ -233,7 +201,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         return 1;
       }
     };
-  }, [scrollY]);
+  }, []);
 
   React.useEffect(() => {
     // Prevent browser scroll restoration
@@ -446,7 +414,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   display: 'block',
                   transition: 'all 0.3s ease',
                   position: 'absolute',
-                  left: 'calc(clamp(0%, 5vw, 15%) - 1.35rem)',
+                  left: 'calc(clamp(0%, 5vw, 15%) - 0.3rem)',
                   top: 'clamp(-22%, -17vw, -12%)',
                   transform: 'scale(1.5) rotate(-16deg)',
                   cursor: 'pointer'
@@ -505,7 +473,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   display: 'block',
                   transition: 'all 0.3s ease',
                   position: 'absolute',
-                  left: 'calc(clamp(29%, 34vw, 44%) - 1.35rem)',
+                  left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem)',
                   top: 'clamp(-40.5%, -35.5vw, -30.5%)',
                   transform: 'scale(1.5) rotate(45deg)',
                   cursor: 'pointer'
@@ -565,7 +533,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   display: 'block',
                   transition: 'all 0.3s ease',
                   position: 'absolute',
-                  left: 'calc(clamp(18%, 21.5vw, 28%) - 1.35rem)',
+                  left: 'calc(clamp(18%, 21.5vw, 28%) - 0.3rem)',
                   top: 'clamp(6%, 11vw, 46%)',
                   transform: 'scale(1.5) rotate(45deg)',
                   cursor: 'pointer'
@@ -626,9 +594,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
               opacity: 1,
-              transform: 'scale(0.81) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 1.35rem), -10%)',
+              transform: 'scale(0.81) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
               transformOrigin: 'top left',
-              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 1.35rem)',
+              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem)',
               position: 'absolute',
               top: 'clamp(-9.375rem, -20vw, -3.125rem)',
               left: 0,

@@ -225,12 +225,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     
     setClickedButton(buttonName);
     
-    // Start fade out at 0.3s (shortly after zoom starts)
+    // Start fade out at 0.2s (shortly after zoom starts)
     setTimeout(() => {
       setIsNavigating(true);
-    }, 300);
+    }, 200);
     
-    // Navigate at 2.4s with zoom state - new page will zoom out from same point
+    // Navigate at 1.0s with zoom state - new page will zoom out from same point
     setTimeout(() => {
       navigate(path, { 
         state: { 
@@ -241,7 +241,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       setClickedButton(null);
       setIsNavigating(false);
       setButtonCenter({ x: '50%', y: '50%' });
-    }, 2400);
+    }, 1000);
   };
 
   // Calculate slideshow opacity based on scroll position (instant fade in within 9px above, instant fade out within 9px below)
@@ -393,11 +393,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         }}
         animate={{ 
           opacity: isNavigating ? 0 : 1,
-          scale: clickedButton ? 60 : 1
+          scale: clickedButton ? 30 : 1
         }}
         transition={{ 
-          scale: { duration: 3, ease: [0.4, 0, 0.2, 1] },
-          opacity: { duration: 2, ease: [0.4, 0, 0.2, 1] }
+          scale: { duration: 2.1, ease: [0.4, 0, 0.2, 1] },
+          opacity: { duration: 1.8, ease: [0.4, 0, 0.2, 1] }
         }}
       >
 

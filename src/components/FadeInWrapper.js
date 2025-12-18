@@ -19,11 +19,11 @@ const FadeInWrapper = ({ children }) => {
           minHeight: '100vh',
           overflow: 'hidden'
         }}
-        initial={{ scale: 60, opacity: 0 }}
+        initial={{ scale: 15, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ 
-          scale: { duration: 1.2, ease: [0.2, 0, 0.2, 1] },
-          opacity: { duration: 0.45, ease: 'easeOut' }
+          scale: { duration: 0.6, ease: [0.2, 0, 0.2, 1] },
+          opacity: { duration: 0.3, ease: 'easeOut' }
         }}
       >
         {children}

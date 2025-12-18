@@ -67,6 +67,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const seeMoreButtonRef = React.useRef(null);
   const videoHeaderRef = React.useRef(null);
   const mediaContainerRef = React.useRef(null);
+  const innerMediaContainerRef = React.useRef(null);
   const textContentWrapperRef = React.useRef(null);
 
   const handleScroll = () => {
@@ -244,88 +245,100 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     }, 2400);
   };
 
-  // Calculate slideshow opacity based on scroll position (instant fade in within 9px above, instant fade out within 9px below)
-  const calculateSlideshowOpacity = React.useMemo(() => {
-    return () => {
-      const visibilityMargin = 39;
-      
-      try {
-        if (slideshowContainerRef?.current) {
-          const rect = slideshowContainerRef.current.getBoundingClientRect();
-          const containerTop = rect.top;
-          const containerBottom = rect.bottom;
-          const viewportHeight = window.innerHeight;
-          
-          // Instant fade in: from 9px above viewport top to top of viewport
-          if (containerTop < 0 && containerTop > -visibilityMargin) {
-            return 1;
-          }
-          
-          // Instant fade out: from bottom of viewport to 9px below viewport bottom
-          if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) {
-            return 0;
-          }
-          
-          // Fully visible if within viewport
-          if (containerTop >= 0 && containerBottom <= viewportHeight) {
-            return 1;
-          }
-          
-          // Fully hidden if beyond margins
+  // Calculate slideshow opacity based on scroll position (instant fade in within 39px above, instant fade out within 39px below)
+  const calculateSlideshowOpacity = () => {
+    const visibilityMargin = 39;
+    
+    try {
+      if (slideshowContainerRef?.current) {
+        const rect = slideshowContainerRef.current.getBoundingClientRect();
+        const containerTop = rect.top;
+        const containerBottom = rect.bottom;
+        const viewportHeight = window.innerHeight;
+        
+        // Instant fade in: from 39px above viewport top to top of viewport
+        if (containerTop < 0 && containerTop > -visibilityMargin) {
+          return 1;
+        }
+        
+        // Instant fade out: from bottom of viewport to 39px below viewport bottom
+        if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) {
           return 0;
         }
-        return 1;
-      } catch (e) {
-        return 1;
+        
+        // Fully visible if within viewport
+        if (containerTop >= 0 && containerBottom <= viewportHeight) {
+          return 1;
+        }
+        
+        // Fully hidden if beyond margins
+        return 0;
       }
-    };
-  }, []);
+      return 1;
+    } catch (e) {
+      return 1;
+    }
+  };
 
-  // Calculate opacity for KWEEK KRACHTIGE text and media container
-  const calculateMediaOpacity = React.useMemo(() => {
-    return () => {
-      const visibilityMargin = 39;
-      try {
-        if (mediaContainerRef?.current) {
-          const rect = mediaContainerRef.current.getBoundingClientRect();
-          const containerTop = rect.top;
-          const containerBottom = rect.bottom;
-          const viewportHeight = window.innerHeight;
-          
-          if (containerTop < 0 && containerTop > -visibilityMargin) return 1;
-          if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) return 0;
-          if (containerTop >= 0 && containerBottom <= viewportHeight) return 1;
+  // Calculate opacity for KWEEK KRACHTIGE text and media container (based on content visibility, not extended hitbox)
+  const calculateMediaOpacity = () => {
+    const visibilityMargin = 60;
+    
+    try {
+      if (innerMediaContainerRef?.current) {
+        const rect = innerMediaContainerRef.current.getBoundingClientRect();
+        const containerTop = rect.top;
+        const containerBottom = rect.bottom;
+        const viewportHeight = window.innerHeight;
+        
+        // Content starts at 175px within container, so adjust positions
+        const contentTop = containerTop + 175;
+        const contentBottom = containerBottom - 175; // Subtract the 75px empty space at bottom
+        
+        // Instant fade in: start fading in well before content enters viewport
+        if (contentTop < 0 && contentTop > -visibilityMargin) {
+          return 1;
+        }
+        
+        // Instant fade out: from bottom of viewport onwards
+        if (contentBottom > viewportHeight && contentBottom < viewportHeight + visibilityMargin) {
           return 0;
         }
-        return 1;
-      } catch (e) {
-        return 1;
+        
+        // Fully visible if content is within viewport
+        if (contentTop >= 0 && contentBottom <= viewportHeight) {
+          return 1;
+        }
+        
+        // Fully hidden if beyond margins
+        return 0;
       }
-    };
-  }, []);
+      return 1;
+    } catch (e) {
+      return 1;
+    }
+  };
 
   // Calculate opacity for text content (h1 and paragraph)
-  const calculateTextContentOpacity = React.useMemo(() => {
-    return () => {
-      const visibilityMargin = 120;
-      try {
-        if (textContentWrapperRef?.current) {
-          const rect = textContentWrapperRef.current.getBoundingClientRect();
-          const containerTop = rect.top;
-          const containerBottom = rect.bottom;
-          const viewportHeight = window.innerHeight;
-          
-          if (containerTop < 0 && containerTop > -visibilityMargin) return 1;
-          if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) return 0;
-          if (containerTop >= 0 && containerBottom <= viewportHeight) return 1;
-          return 0;
-        }
-        return 1;
-      } catch (e) {
-        return 1;
+  const calculateTextContentOpacity = () => {
+    const visibilityMargin = 120;
+    try {
+      if (textContentWrapperRef?.current) {
+        const rect = textContentWrapperRef.current.getBoundingClientRect();
+        const containerTop = rect.top;
+        const containerBottom = rect.bottom;
+        const viewportHeight = window.innerHeight;
+        
+        if (containerTop < 0 && containerTop > -visibilityMargin) return 1;
+        if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) return 0;
+        if (containerTop >= 0 && containerBottom <= viewportHeight) return 1;
+        return 0;
       }
-    };
-  }, []);
+      return 1;
+    } catch (e) {
+      return 1;
+    }
+  };
 
   React.useEffect(() => {
     // Prevent browser scroll restoration
@@ -358,6 +371,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     centerSlides();
     setTimeout(centerSlides, 100);
     setTimeout(centerSlides, 300);
+
+    // Add scroll listener to trigger re-renders for opacity calculations
+    const handlePageScroll = () => {
+      // Passive listener - opacity functions recalculate based on getBoundingClientRect()
+    };
+    
+    window.addEventListener('scroll', handlePageScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handlePageScroll);
   }, []);
 
   return (
@@ -520,24 +541,38 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         <div ref={mediaContainerRef} style={{
           position: 'relative',
           width: '100%',
-          height: 'clamp(300px, 80vw, 600px)',
+          height: 'calc(clamp(300px, 80vw, 600px) + 175px)',
           zIndex: 8,
           overflow: 'visible',
           maxWidth: 'clamp(25rem, 90vw, 75rem)',
-          margin: 'clamp(4rem + 2rem + 30px, 5vw + 2rem + 30px, 6rem + 2rem + 30px) auto 0 auto',
-          pointerEvents: 'none',
-          opacity: calculateMediaOpacity(),
-          transition: 'opacity 0.6s ease'
+          margin: 'calc(clamp(4rem + 2rem + 30px, 5vw + 2rem + 30px, 6rem + 2rem + 30px) - 175px) auto 0 auto',
+          pointerEvents: 'none'
         }}>
-          {/* Button container - absolute inside media container */}
+          {/* Inner Media Container - Height reduced by 75px at bottom - for visual layout only */}
+          <div ref={innerMediaContainerRef} style={{
+            position: 'absolute',
+            width: '100%',
+            height: 'calc(clamp(300px, 80vw, 600px) + 175px - 75px)',
+            overflow: 'visible',
+            opacity: calculateMediaOpacity(),
+            transition: 'opacity 0.6s ease',
+            top: 0,
+            left: 0,
+            zIndex: 4,
+            pointerEvents: 'none'
+          }}></div>
+          
+          {/* Button container - absolute inside outer media container */}
           <div style={{
             position: 'absolute',
             width: '100%',
-            height: '100%',
-            top: 0,
+            height: 'calc(100% - 175px)',
+            top: '175px',
             left: 0,
             pointerEvents: 'none',
-            zIndex: 5
+            zIndex: 5,
+            opacity: calculateMediaOpacity(),
+            transition: 'opacity 0.6s ease'
           }}>
             {/* Button 2 */}
               <motion.div
@@ -616,7 +651,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 transition={{ duration: 1.5, ease: 'easeInOut' }}
                 style={{
                   position: 'absolute',
-                  left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem)',
+                  left: 'calc(clamp(29%, 34vw, 43%) - 0.3rem)',
                   top: 'clamp(-40.5%, -35.5vw, -30.5%)',
                   transformOrigin: 'center',
                   zIndex: clickedButton === 'button3' ? 1001 : 5
@@ -636,7 +671,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   position: 'absolute',
                   left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem)',
                   top: 'clamp(-40.5%, -35.5vw, -30.5%)',
-                  transform: 'scale(1.5) rotate(45deg)',
+                  transform: 'scale(1.5) rotate(44deg)',
                   cursor: 'pointer'
                 }}
               >
@@ -708,7 +743,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   position: 'absolute',
                   left: 'calc(clamp(18%, 21.5vw, 28%) - 0.3rem)',
                   top: 'clamp(6%, 11vw, 46%)',
-                  transform: 'scale(1.5) rotate(45deg)',
+                  transform: 'scale(1.5) rotate(44deg)',
                   cursor: 'pointer'
                 }}
               >
@@ -767,16 +802,17 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               height: 'auto',
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
-              opacity: 1,
               transform: 'scale(0.7776) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 0.8rem)',
               position: 'absolute',
-              top: 'clamp(-10.875rem, -20vw, -4.625rem)',
+              top: 'calc(clamp(-10.875rem, -20vw, -4.625rem) + 175px)',
               left: 0,
               right: 0,
               zIndex: 6,
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              opacity: calculateMediaOpacity(),
+              transition: 'opacity 0.6s ease'
             }}
           >
             <source src="/videos/KnightHD_2.mp4" type="video/mp4; codecs=hvc1" />

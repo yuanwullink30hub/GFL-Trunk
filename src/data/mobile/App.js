@@ -61,7 +61,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [clickedSlide, setClickedSlide] = React.useState(null);
   const [clickedButton, setClickedButton] = React.useState(null);
   const [isNavigating, setIsNavigating] = React.useState(false);
-  const [showOverlay, setShowOverlay] = React.useState(false);
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
@@ -363,22 +362,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   }, []);
 
   return (
-    <>
-    {/* Transition overlay - holds dark screen during navigation */}
-    {showOverlay && (
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: '#150a24ff',
-          zIndex: 99999,
-          pointerEvents: 'none'
-        }}
-      />
-    )}
     <motion.div 
       style={{
         width: '100%',
@@ -1181,7 +1164,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>
       </footer>
     </motion.div>
-    </>
   );
 }
 

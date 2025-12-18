@@ -122,7 +122,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   // Calculate slideshow opacity based on scroll position (instant fade in within 9px above, instant fade out within 9px below)
   const calculateSlideshowOpacity = React.useMemo(() => {
     return () => {
-      const visibilityMargin = 9;
+      const visibilityMargin = 39;
       
       try {
         if (slideshowContainerRef?.current) {
@@ -159,8 +159,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   // Calculate opacity for KWEEK KRACHTIGE text and media container
   const calculateMediaOpacity = React.useMemo(() => {
     return () => {
-      const topMargin = 9;
-      const bottomMargin = 90;
+      const topMargin = 39;
+      const bottomMargin = 120;
       try {
         if (mediaContainerRef?.current) {
           const rect = mediaContainerRef.current.getBoundingClientRect();
@@ -183,7 +183,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   // Calculate opacity for text content (h1 and paragraph)
   const calculateTextContentOpacity = React.useMemo(() => {
     return () => {
-      const visibilityMargin = 90;
+      const visibilityMargin = 120;
       try {
         if (textContentWrapperRef?.current) {
           const rect = textContentWrapperRef.current.getBoundingClientRect();

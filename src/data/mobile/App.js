@@ -281,7 +281,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           playsInline
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         >
-          <source src="/videos/HDheader_1.mp4" type="video/mp4" />
+          <source src="/videos/Landingpagevid1.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       </div>
@@ -594,19 +594,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
               opacity: 1,
-              transform: 'scale(0.81) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
+              transform: 'scale(0.648) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
               transformOrigin: 'top left',
-              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem)',
+              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 3.5rem)',
               position: 'absolute',
-              top: 'clamp(-9.375rem, -20vw, -3.125rem)',
+              top: 'clamp(-14.675rem, -20vw, -8.425rem)',
               left: 0,
               right: 0,
               zIndex: 6,
               pointerEvents: 'none'
             }}
           >
-            <source src="/videos/kightHD-IOS.mp4" type="video/mp4; codecs=hvc1" />
-            <source src="/videos/KnightHD.webm" type="video/webm" />
+            <source src="/videos/Knight(edited)IOS.mp4" type="video/mp4; codecs=hvc1" />
+            <source src="/videos/Knight(edited).webm" type="video/webm" />
             Your browser does not support the video tag.
           </video>
         </div>{/* End media container */}
@@ -764,8 +764,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           gap: 'clamp(8px, 2vw, 16px)',
           marginTop: 'clamp(20px, 3vw, 30px)',
           marginBottom: 'clamp(20px, 3vw, 30px)',
+          paddingTop: 'clamp(4px, 1vw, 8px)',
+          paddingBottom: 'clamp(4px, 1vw, 8px)',
           position: 'relative',
           width: '100%',
+          overflow: 'visible',
           opacity: calculateSlideshowOpacity(),
           transition: 'opacity 0.375s ease'
         }}>

@@ -361,7 +361,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           position: 'relative',
           zIndex: 2
         }}>
-          <span className="subtitles" style={{fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)', marginTop: '3rem', display: 'block', fontWeight: '500', opacity: calculateMediaOpacity(), transition: 'opacity 0.5s ease'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID</span>
+          <span className="subtitles" style={{fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)', marginTop: '3rem', display: 'block', fontWeight: '500', lineHeight: '1.2', opacity: calculateMediaOpacity(), transition: 'opacity 0.5s ease'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID</span>
         </div>
 
     {/* Full Screen Gradient Container */}
@@ -594,19 +594,19 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
               opacity: 1,
-              transform: 'scale(0.648) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
+              transform: 'scale(0.7776) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
               transformOrigin: 'top left',
-              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 3.5rem)',
+              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 0.8rem)',
               position: 'absolute',
-              top: 'clamp(-14.675rem, -20vw, -8.425rem)',
+              top: 'clamp(-10.875rem, -20vw, -4.625rem)',
               left: 0,
               right: 0,
               zIndex: 6,
               pointerEvents: 'none'
             }}
           >
-            <source src="/videos/Knight(edited)IOS.mp4" type="video/mp4; codecs=hvc1" />
-            <source src="/videos/Knight(edited).webm" type="video/webm" />
+            <source src="/videos/KnightHD_2.mp4" type="video/mp4; codecs=hvc1" />
+            <source src="/videos/KnightHD_1.webm" type="video/webm" />
             Your browser does not support the video tag.
           </video>
         </div>{/* End media container */}

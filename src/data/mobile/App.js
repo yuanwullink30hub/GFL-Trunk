@@ -206,9 +206,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               <p className="text" style={{
                 width: '100%',
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
-                marginTop: '60px',
+                marginTop: '45px',
                 marginBottom: '0',
-                paddingbottom: '30px',
+                paddingBottom: '15px',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
@@ -217,7 +217,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               }}>De ontembare chaos uit haar wil in het uni-versum. <br />
  
                Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
-               <br/> <br/> <br/>
+               <br/> <br/> 
 <br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)', marginTop: '3rem', display: 'block'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID.</span>
 
               </p>
@@ -227,7 +227,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     {/* Full Screen Gradient Container */}
       <div style={{
         position: 'absolute',
-        top: 'clamp(-60px, 10vw, -20px)',
+        top: 'clamp(-55px, 10vw, -15px)',
         width: '100vw',
         height: '900px',
         left: '50%',
@@ -246,7 +246,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           zIndex: 8,
           overflow: 'visible',
           maxWidth: 'clamp(25rem, 90vw, 75rem)',
-          margin: 'clamp(1rem + 2rem, 5vw + 2rem, 3rem + 2rem) auto 0 auto',
+          margin: 'clamp(4rem + 2rem, 5vw + 2rem, 6rem + 2rem) auto 0 auto',
           pointerEvents: 'none'
         }}>
           {/* Button container - absolute inside media container */}
@@ -272,9 +272,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   display: 'block',
                   transition: 'all 0.3s ease',
                   position: 'absolute',
-                  left: 'clamp(-6%, -1vw, 9%)',
-                  top: 'clamp(-3%, 2vw, 7%)',
-                  transform: 'scale(1.2) rotate(-21deg)',
+                  left: 'clamp(0%, 5vw, 15%)',
+                  top: 'clamp(-22%, -17vw, -12%)',
+                  transform: 'scale(1.5) rotate(-16deg)',
                   cursor: 'pointer'
                 }}
               >
@@ -331,9 +331,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   display: 'block',
                   transition: 'all 0.3s ease',
                   position: 'absolute',
-                  left: 'clamp(13%, 18vw, 28%)',
-                  top: 'clamp(-19.5%, -14.5vw, -9.5%)',
-                  transform: 'scale(1.2) rotate(40deg)',
+                  left: 'clamp(29%, 34vw, 44%)',
+                  top: 'clamp(-40.5%, -35.5vw, -30.5%)',
+                  transform: 'scale(1.5) rotate(45deg)',
                   cursor: 'pointer'
                 }}
               >
@@ -391,9 +391,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   display: 'block',
                   transition: 'all 0.3s ease',
                   position: 'absolute',
-                  left: 'clamp(8%, 11vw, 18%)',
-                  top: 'clamp(19%, 24vw, 59%)',
-                  transform: 'scale(1.2) rotate(40deg)',
+                  left: 'clamp(18%, 21.5vw, 28%)',
+                  top: 'clamp(6%, 11vw, 46%)',
+                  transform: 'scale(1.5) rotate(45deg)',
                   cursor: 'pointer'
                 }}
               >
@@ -451,11 +451,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               height: 'auto',
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
-              transform: 'scale(0.81) translate(calc(clamp(30px, 7vw, 80px) + 8%), -10%)',
+              transform: 'scale(0.81) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem), -10%)',
               transformOrigin: 'top left',
-              marginLeft: 'calc(clamp(30px, 7vw, 80px) + 8%)',
+              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem)',
               position: 'absolute',
-              top: 'clamp(-150px, -20vw, -50px)',
+              top: 'clamp(-9.375rem, -20vw, -3.125rem)',
               left: 0,
               right: 0,
               zIndex: 4,

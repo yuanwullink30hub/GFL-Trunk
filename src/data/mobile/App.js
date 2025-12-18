@@ -31,7 +31,14 @@ import '../../styles/logo.css';
 const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
   const [currentSlide, setCurrentSlide] = React.useState(0);
+  const [scrollY, setScrollY] = React.useState(0);
   const galleryRef = React.useRef(null);
+  const slideshowContainerRef = React.useRef(null);
+  const seeMoreButtonRef = React.useRef(null);
+  const videoHeaderRef = React.useRef(null);
+  const kweekTextRef = React.useRef(null);
+  const mediaContainerRef = React.useRef(null);
+  const textContentWrapperRef = React.useRef(null);
 
   const handleScroll = () => {
     if (!galleryRef.current) return;
@@ -112,6 +119,155 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     setTimeout(centerSlides, 300);
   }, []);
 
+  React.useEffect(() => {
+    const handleWindowScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    
+    window.addEventListener('scroll', handleWindowScroll);
+    return () => window.removeEventListener('scroll', handleWindowScroll);
+  }, []);
+
+  // Calculate slideshow opacity based on scroll position (instant fade in within 9px above, instant fade out within 9px below)
+  const calculateSlideshowOpacity = React.useMemo(() => {
+    return () => {
+      const visibilityMargin = 9;
+      
+      try {
+        if (slideshowContainerRef?.current) {
+          const rect = slideshowContainerRef.current.getBoundingClientRect();
+          const containerTop = rect.top;
+          const containerBottom = rect.bottom;
+          const viewportHeight = window.innerHeight;
+          
+          // Instant fade in: from 9px above viewport top to top of viewport
+          if (containerTop < 0 && containerTop > -visibilityMargin) {
+            return 1;
+          }
+          
+          // Instant fade out: from bottom of viewport to 9px below viewport bottom
+          if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) {
+            return 0;
+          }
+          
+          // Fully visible if within viewport
+          if (containerTop >= 0 && containerBottom <= viewportHeight) {
+            return 1;
+          }
+          
+          // Fully hidden if beyond margins
+          return 0;
+        }
+        return 1;
+      } catch (e) {
+        return 1;
+      }
+    };
+  }, [scrollY]);
+
+  // Calculate opacity for video header
+  const calculateVideoHeaderOpacity = React.useMemo(() => {
+    return () => {
+      const visibilityMargin = 9;
+      try {
+        if (videoHeaderRef?.current) {
+          const rect = videoHeaderRef.current.getBoundingClientRect();
+          const containerTop = rect.top;
+          const containerBottom = rect.bottom;
+          const viewportHeight = window.innerHeight;
+          
+          if (containerTop < 0 && containerTop > -visibilityMargin) return 1;
+          if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) return 0;
+          if (containerTop >= 0 && containerBottom <= viewportHeight) return 1;
+          return 0;
+        }
+        return 1;
+      } catch (e) {
+        return 1;
+      }
+    };
+  }, [scrollY]);
+
+  // Calculate opacity for KWEEK KRACHTIGE text and media container
+  const calculateMediaOpacity = React.useMemo(() => {
+    return () => {
+      const topMargin = 9;
+      const bottomMargin = 90;
+      try {
+        if (mediaContainerRef?.current) {
+          const rect = mediaContainerRef.current.getBoundingClientRect();
+          const containerTop = rect.top;
+          const containerBottom = rect.bottom;
+          const viewportHeight = window.innerHeight;
+          
+          if (containerTop < 0 && containerTop > -topMargin) return 1;
+          if (containerBottom > viewportHeight && containerBottom < viewportHeight + bottomMargin) return 0;
+          if (containerTop >= 0 && containerBottom <= viewportHeight) return 1;
+          return 0;
+        }
+        return 1;
+      } catch (e) {
+        return 1;
+      }
+    };
+  }, [scrollY]);
+
+  // Calculate opacity for text content (h1 and paragraph)
+  const calculateTextContentOpacity = React.useMemo(() => {
+    return () => {
+      const visibilityMargin = 90;
+      try {
+        if (textContentWrapperRef?.current) {
+          const rect = textContentWrapperRef.current.getBoundingClientRect();
+          const containerTop = rect.top;
+          const containerBottom = rect.bottom;
+          const viewportHeight = window.innerHeight;
+          
+          if (containerTop < 0 && containerTop > -visibilityMargin) return 1;
+          if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) return 0;
+          if (containerTop >= 0 && containerBottom <= viewportHeight) return 1;
+          return 0;
+        }
+        return 1;
+      } catch (e) {
+        return 1;
+      }
+    };
+  }, [scrollY]);
+
+  React.useEffect(() => {
+    // Prevent browser scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    
+    if (!galleryRef.current) return;
+    const gallery = galleryRef.current;
+    const totalSlides = 9; // Fixed number of slides
+    
+    // Force center on mount and on every refresh
+    const centerSlides = () => {
+      // Get the first slide element from the second copy
+      const firstSlideInSecondCopy = gallery.children[totalSlides];
+      
+      if (firstSlideInSecondCopy) {
+        // Scroll to center this element
+        const slideLeft = firstSlideInSecondCopy.offsetLeft;
+        const slideWidth = firstSlideInSecondCopy.offsetWidth;
+        const galleryWidth = gallery.offsetWidth;
+        const centerScroll = slideLeft - (galleryWidth - slideWidth) / 2;
+        
+        gallery.scrollLeft = centerScroll;
+      }
+      setCurrentSlide(0);
+    };
+    
+    // Try multiple times to ensure it sticks
+    centerSlides();
+    setTimeout(centerSlides, 100);
+    setTimeout(centerSlides, 300);
+  }, []);
+
   return (
     <div style={{
       width: '100%',
@@ -140,6 +296,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
       {/* Full-screen Video Container (scrollable behind logo) */}
       <div 
+        ref={videoHeaderRef}
         className="w-full overflow-hidden"
         style={{
           height: '100vh',
@@ -183,9 +340,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           }}
         >
             {/* Text content wrapper - move as a unit */}
-            <div style={{
+            <div ref={textContentWrapperRef} style={{
               marginTop: 'calc(-9px - 200px + 75px - 100px + 25px)',
-              width: '100%'
+              width: '100%',
+              opacity: calculateTextContentOpacity(),
+              transition: 'opacity 0.5s ease',
+              position: 'relative',
+              zIndex: 2
             }}>
               <h1 className="poetry" style={{
                 marginTop: '45px',
@@ -208,7 +369,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
                 marginTop: '45px',
                 marginBottom: '0',
-                paddingBottom: '15px',
+                paddingBottom: '25px',
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
@@ -217,12 +378,23 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               }}>De ontembare chaos uit haar wil in het uni-versum. <br />
  
                Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
-               <br/> <br/> 
-<br/> <br/> <span className="subtitles" style={{fontSize: 'clamp(0.79rem, 3.15vw, 1.58rem)', marginTop: '3rem', display: 'block'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID.</span>
 
               </p>
           </div>{/* End text content wrapper */}
         </div>{/* End text container over image */}
+
+        {/* KWEEK KRACHTIGE text - fades with media container */}
+        <div style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'left',
+          paddingLeft: '20px',
+          paddingRight: '20px',
+          position: 'relative',
+          zIndex: 2
+        }}>
+          <span className="subtitles" style={{fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)', marginTop: '3rem', display: 'block', fontWeight: '500', opacity: calculateMediaOpacity(), transition: 'opacity 0.5s ease'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID</span>
+        </div>
 
     {/* Full Screen Gradient Container */}
       <div style={{
@@ -239,15 +411,17 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       }}>
       </div>
         {/* Media Container - Buttons and Video together */}
-        <div style={{
+        <div ref={mediaContainerRef} style={{
           position: 'relative',
           width: '100%',
           height: 'clamp(300px, 80vw, 600px)',
           zIndex: 8,
           overflow: 'visible',
           maxWidth: 'clamp(25rem, 90vw, 75rem)',
-          margin: 'clamp(4rem + 2rem, 5vw + 2rem, 6rem + 2rem) auto 0 auto',
-          pointerEvents: 'none'
+          margin: 'clamp(4rem + 2rem + 30px, 5vw + 2rem + 30px, 6rem + 2rem + 30px) auto 0 auto',
+          pointerEvents: 'none',
+          opacity: calculateMediaOpacity(),
+          transition: 'opacity 0.6s ease'
         }}>
           {/* Button container - absolute inside media container */}
           <div style={{
@@ -272,7 +446,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   display: 'block',
                   transition: 'all 0.3s ease',
                   position: 'absolute',
-                  left: 'clamp(0%, 5vw, 15%)',
+                  left: 'calc(clamp(0%, 5vw, 15%) - 1.35rem)',
                   top: 'clamp(-22%, -17vw, -12%)',
                   transform: 'scale(1.5) rotate(-16deg)',
                   cursor: 'pointer'
@@ -331,7 +505,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   display: 'block',
                   transition: 'all 0.3s ease',
                   position: 'absolute',
-                  left: 'clamp(29%, 34vw, 44%)',
+                  left: 'calc(clamp(29%, 34vw, 44%) - 1.35rem)',
                   top: 'clamp(-40.5%, -35.5vw, -30.5%)',
                   transform: 'scale(1.5) rotate(45deg)',
                   cursor: 'pointer'
@@ -391,7 +565,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   display: 'block',
                   transition: 'all 0.3s ease',
                   position: 'absolute',
-                  left: 'clamp(18%, 21.5vw, 28%)',
+                  left: 'calc(clamp(18%, 21.5vw, 28%) - 1.35rem)',
                   top: 'clamp(6%, 11vw, 46%)',
                   transform: 'scale(1.5) rotate(45deg)',
                   cursor: 'pointer'
@@ -451,14 +625,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               height: 'auto',
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
-              transform: 'scale(0.81) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem), -10%)',
+              opacity: 1,
+              transform: 'scale(0.81) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 1.35rem), -10%)',
               transformOrigin: 'top left',
-              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem)',
+              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 1.35rem)',
               position: 'absolute',
               top: 'clamp(-9.375rem, -20vw, -3.125rem)',
               left: 0,
               right: 0,
-              zIndex: 4,
+              zIndex: 6,
               pointerEvents: 'none'
             }}
           >
@@ -473,9 +648,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             position: 'relative',
             width: '100%',
             maxWidth: 'clamp(25rem, 90vw, 75rem)',
-            margin: '0 auto clamp(1.25rem, 5vw, 3.75rem) auto',
-            marginTop: 'clamp(1.25rem + 30px, 5vw + 30px, 3.75rem + 30px)',
-            fontSize: 'clamp(0.72rem, 4.5vw, 2rem)',
+            margin: '0 auto 0 auto',
+            marginTop: 'clamp(0.25rem + 6px, 1vw + 6px, 0.75rem + 6px)',
+            marginBottom: 'clamp(1.25rem, 5vw, 3.75rem)',
+            fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)',
             color: 'rgb(167, 59, 198)',
             lineHeight: '1.2',
             textAlign: 'center',
@@ -483,7 +659,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
             backgroundColor: 'transparent',
-            zIndex: 10
+            zIndex: 10,
+            opacity: calculateSlideshowOpacity(),
+            transition: 'opacity 0.6s ease'
           }}>
             GARDENS
           </div>
@@ -491,7 +669,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           {/* Slideshow Grid Container */}
           <div 
             className="hideScrollbar"
-            ref={galleryRef}
+            ref={(el) => {
+              galleryRef.current = el;
+              slideshowContainerRef.current = el;
+            }}
             onScroll={handleScroll}
             style={{
               position: 'relative',
@@ -506,8 +687,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               scrollBehavior: 'smooth',
               WebkitOverflowScrolling: 'touch',
               alignItems: 'flex-start',
-              zIndex: 9
-            }}>
+              zIndex: 9,
+              opacity: calculateSlideshowOpacity(),
+              transition: 'opacity 0.5s ease'
+            }}
+          >
           {[...slides, ...slides, ...slides].map((slide, index) => (
             <div
               key={index}
@@ -613,7 +797,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           marginTop: 'clamp(20px, 3vw, 30px)',
           marginBottom: 'clamp(20px, 3vw, 30px)',
           position: 'relative',
-          width: '100%'
+          width: '100%',
+          opacity: calculateSlideshowOpacity(),
+          transition: 'opacity 0.375s ease'
         }}>
           {slides.map((_, index) => (
             <div
@@ -638,13 +824,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>
         
         {/* See More Button */}
-        <div style={{
+        <div ref={seeMoreButtonRef} style={{
           display: 'flex',
           justifyContent: 'center',
           position: 'relative',
           width: '100%',
           marginTop: 'clamp(20px, 3vw, 30px)',
-          marginBottom: 'clamp(40px, 10vw, 80px)'
+          marginBottom: 'clamp(40px, 10vw, 80px)',
+          opacity: calculateSlideshowOpacity(),
+          transition: 'opacity 0.6s ease'
         }}>
           <button
             className="breathingBorder"

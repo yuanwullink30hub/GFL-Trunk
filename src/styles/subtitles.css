@@ -2,8 +2,8 @@
 /* filepath: c:\Users\yuanw\github\GFL-Trunk\src\styles/subtitles.css */
 .subtitles {
   font-family: 'Lexend Mega', Arial, Helvetica, sans-serif;
-  font-weight: 500;
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 0.9;
   color: #FFFEF0;
-  font-size: clamp(13px, 2vw, 20px);
+  font-size: clamp(0.8059rem, 3.842vw, 2.370rem);
 }

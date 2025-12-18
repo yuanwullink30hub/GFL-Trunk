@@ -16,12 +16,48 @@
   }
 }
 
-@keyframes breathBorder {
+@keyframes breathStrokeButton2 {
   0%, 100% {
-    border-color: rgba(239, 134, 22, 0.5);
+    stroke: rgba(239, 134, 22, 0.75);
   }
   50% {
-    border-color: rgba(167, 59, 198, 0.5);
+    stroke: rgba(167, 59, 198, 0.75);
+  }
+}
+
+@keyframes breathStrokeButton3 {
+  0%, 100% {
+    stroke: rgba(239, 134, 22, 0.45);
+  }
+  50% {
+    stroke: rgba(167, 59, 198, 0.45);
+  }
+}
+
+@keyframes breathBorder {
+  0%, 100% {
+    border-color: rgba(239, 134, 22, 1);
+  }
+  50% {
+    border-color: rgba(167, 59, 198, 1);
+  }
+}
+
+@keyframes breathBorderButton2 {
+  0%, 100% {
+    border-color: rgba(239, 134, 22, 0.75);
+  }
+  50% {
+    border-color: rgba(167, 59, 198, 0.75);
+  }
+}
+
+@keyframes breathBorderButton3 {
+  0%, 100% {
+    border-color: rgba(239, 134, 22, 0.45);
+  }
+  50% {
+    border-color: rgba(167, 59, 198, 0.45);
   }
 }
 
@@ -46,6 +82,14 @@
   animation: breathBorder 3.33s infinite;
 }
 
+.triangleButton2 .breathingBorder {
+  animation: breathBorderButton2 3.33s infinite;
+}
+
+.triangleButton3 .breathingBorder {
+  animation: breathBorderButton3 3.33s infinite;
+}
+
 /* Hide scrollbar while maintaining scroll functionality */
 .hideScrollbar {
   -ms-overflow-style: none;  /* IE and Edge */
@@ -62,12 +106,20 @@
   animation-delay: -2.22s;
 }
 
-.triangleButton2 .breathingStroke,
+.triangleButton2 .breathingStroke {
+  animation-delay: -1.11s;
+  animation: breathStrokeButton2 3.33s infinite;
+}
+
 .triangleButton2 .breathingNumber {
   animation-delay: -1.11s;
 }
 
-.triangleButton3 .breathingStroke,
+.triangleButton3 .breathingStroke {
+  animation-delay: 0s;
+  animation: breathStrokeButton3 3.33s infinite;
+}
+
 .triangleButton3 .breathingNumber {
   animation-delay: 0s;
 }

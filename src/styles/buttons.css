@@ -88,6 +88,42 @@
   }
 }
 
+@keyframes pulseGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 0px rgba(239, 134, 22, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(239, 134, 22, 0.6));
+  }
+}
+
+@keyframes pulseGlowButton1 {
+  0%, 100% {
+    filter: drop-shadow(0 0 0px rgba(239, 134, 22, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(239, 134, 22, 0.8));
+  }
+}
+
+@keyframes pulseGlowButton2 {
+  0%, 100% {
+    filter: drop-shadow(0 0 0px rgba(239, 134, 22, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(239, 134, 22, 0.6));
+  }
+}
+
+@keyframes pulseGlowButton3 {
+  0%, 100% {
+    filter: drop-shadow(0 0 0px rgba(239, 134, 22, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(239, 134, 22, 0.35));
+  }
+}
+
 .breathingNumber {
   animation: breathColor 3.33s infinite;
 }
@@ -96,20 +132,9 @@
   animation: breathStroke 3.33s infinite;
 }
 
+/* Pulsating glow effect for all circles */
 .breathingBorder {
-  animation: breathBorder 3.33s infinite;
-}
-
-.triangleButton1 .breathingBorder {
-  animation: breathBorderButton1 3.33s infinite;
-}
-
-.triangleButton2 .breathingBorder {
-  animation: breathBorderButton2 3.33s infinite;
-}
-
-.triangleButton3 .breathingBorder {
-  animation: breathBorderButton3 3.33s infinite;
+  animation: breathBorder 3.33s infinite, pulseGlow 3.33s infinite;
 }
 
 /* Hide scrollbar while maintaining scroll functionality */
@@ -124,8 +149,8 @@
 
 /* Staggered animations for cycling effect */
 .triangleButton1 .breathingStroke {
+  animation: breathStrokeButton1 3.33s infinite, pulseGlowButton1 3.33s infinite;
   animation-delay: -2.22s;
-  animation: breathStrokeButton1 3.33s infinite;
 }
 
 .triangleButton1 .breathingNumber {
@@ -133,8 +158,8 @@
 }
 
 .triangleButton2 .breathingStroke {
+  animation: breathStrokeButton2 3.33s infinite, pulseGlowButton2 3.33s infinite;
   animation-delay: -1.11s;
-  animation: breathStrokeButton2 3.33s infinite;
 }
 
 .triangleButton2 .breathingNumber {
@@ -142,8 +167,8 @@
 }
 
 .triangleButton3 .breathingStroke {
+  animation: breathStrokeButton3 3.33s infinite, pulseGlowButton3 3.33s infinite;
   animation-delay: 0s;
-  animation: breathStrokeButton3 3.33s infinite;
 }
 
 .triangleButton3 .breathingNumber {

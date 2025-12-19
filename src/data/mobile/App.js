@@ -451,26 +451,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     };
   }, []);
 
-  // Calculate if content is visually behind the mini logo (at footer/bottom)
-  const isContentBehindLogo = (element, scrollPos) => {
-    if (!miniLogoRef.current || !element) return false;
-    
-    const miniLogoRect = miniLogoRef.current.getBoundingClientRect();
-    const elementRect = element.getBoundingClientRect();
-    
-    // Mini logo is visible if it's in viewport
-    const isLogoVisible = miniLogoRect.top < window.innerHeight && miniLogoRect.bottom > 0;
-    
-    if (!isLogoVisible || scrollDirection !== 'up') return false;
-    
-    // Check if element overlaps with mini logo area
-    // Element is behind if it overlaps with the mini logo's viewport position
-    const behindHorizontally = !(elementRect.right < miniLogoRect.left || elementRect.left > miniLogoRect.right);
-    const behindVertically = !(elementRect.bottom < miniLogoRect.top || elementRect.top > miniLogoRect.bottom);
-    
-    return behindHorizontally && behindVertically;
-  };
-
   React.useEffect(() => {
     // Prevent browser scroll restoration
     if ('scrollRestoration' in window.history) {

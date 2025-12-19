@@ -151,19 +151,19 @@
 }
 
 .triangleButton2 .breathingStroke {
-  animation-delay: 0.5s;
+  animation-delay: 1.33s;
   animation: breathStrokeButton2 4s infinite ease-in-out;
 }
 
 .triangleButton2 .breathingNumber {
-  animation-delay: 0.5s;
+  animation-delay: 1.33s;
 }
 
 .triangleButton3 .breathingStroke {
-  animation-delay: 1s;
+  animation-delay: 2.67s;
   animation: breathStrokeButton3 4s infinite ease-in-out;
 }
 
 .triangleButton3 .breathingNumber {
-  animation-delay: 1s;
+  animation-delay: 2.67s;
 }

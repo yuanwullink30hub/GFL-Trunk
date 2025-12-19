@@ -929,8 +929,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             width: '100%',
             maxWidth: 'clamp(25rem, 90vw, 75rem)',
             margin: '0 auto 0 auto',
-            marginTop: 'clamp(0.25rem + 6px, 1vw + 6px, 0.75rem + 6px)',
-            marginBottom: 'clamp(1.25rem, 5vw, 3.75rem)',
+            marginTop: 'clamp(-1.75rem + 2px, -1.5vw + 2px, -1.5rem + 2px)',
+            marginBottom: 'clamp(0.75rem, 3vw, 2rem)',
             fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)',
             color: 'rgb(167, 59, 198)',
             lineHeight: '1.2',
@@ -958,7 +958,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               position: 'relative',
               width: '100vw',
               maxWidth: '100vw',
-              margin: 'clamp(1.5rem, 3.5vw, 2.5rem) 0 0 0',
+              margin: 'clamp(-1.25rem, -0.5vw, -0.75rem) 0 0 0',
+              paddingTop: 'clamp(5px, 1.5vw, 15px)',
               display: 'flex',
               overflowX: 'auto',
               overflowY: 'visible',
@@ -1000,12 +1001,23 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   animate={clickedSlide === index ? {
                     scale: [1, 1.2, 1.5],
                     opacity: [1, 0.5, 0]
-                  } : {}}
+                  } : {
+                    scale: [1, 1.08, 1]
+                  }}
                   transition={clickedSlide === index ? {
                     duration: 1.5,
                     ease: 'easeInOut',
                     times: [0, 0.4, 1]
-                  } : { duration: 0.6, ease: 'easeInOut' }}
+                  } : {
+                    scale: {
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                      delay: (index % 9) * (3 / 9)
+                    },
+                    duration: 0.6,
+                    ease: 'easeInOut'
+                  }}
                   style={{
                     position: 'relative',
                     width: 'clamp(100px, 38.7855vw, 271.4985px)',
@@ -1020,7 +1032,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     flexShrink: 0,
                     cursor: 'pointer',
                     transformOrigin: slideCenter,
-                    pointerEvents: isAnimating ? 'none' : 'auto'
+                    pointerEvents: isAnimating ? 'none' : 'auto',
+                    animationDelay: `${(index % 9) * (4 / 9)}s`
                   }}
                 >
                   <img
@@ -1140,12 +1153,22 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             animate={clickedButton === 'seeMore' ? {
               scale: [1, 1.2, 1.5],
               opacity: [1, 0.5, 0]
-            } : {}}
+            } : {
+              scale: [1, 1.08, 1]
+            }}
             transition={clickedButton === 'seeMore' ? {
               duration: 1.5,
               ease: 'easeInOut',
               times: [0, 0.4, 1]
-            } : { duration: 0.3 }}
+            } : {
+              scale: {
+                duration: 4,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: 3
+              },
+              duration: 0.3
+            }}
             style={{
               padding: 'clamp(7.5px, 1.5vw, 12px) clamp(18px, 3.75vw, 30px)',
               fontSize: 'clamp(10.5px, 2.25vw, 13.5px)',
@@ -1159,7 +1182,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               textTransform: 'uppercase',
               letterSpacing: '1px',
               transformOrigin: buttonCenter,
-              pointerEvents: isAnimating ? 'none' : 'auto'
+              pointerEvents: isAnimating ? 'none' : 'auto',
+              animationDelay: '3s'
             }}
             onMouseEnter={(e) => {
               e.target.style.backgroundColor = '#ef8616';

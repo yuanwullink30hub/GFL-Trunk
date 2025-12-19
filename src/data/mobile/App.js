@@ -42,6 +42,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const [slideCenter, setSlideCenter] = React.useState({ x: '50%', y: '50%' });
   const [entryCenter, setEntryCenter] = React.useState({ x: '50%', y: '50%' }); // Triangle center on content page
+  const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false);
+  const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
@@ -346,13 +348,47 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     }
   }, [activeView]);
 
+  // Track scroll position relative to video header center
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (videoHeaderRef?.current) {
+        const videoRect = videoHeaderRef.current.getBoundingClientRect();
+        const videoCenter = videoRect.height / 2;
+        // Check if user has scrolled past the center of the video header
+        setIsScrolledPastH1(videoRect.top < -videoCenter);
+      }
+      
+      // Update slideshow opacity based on scroll position
+      if (slideshowContainerRef?.current) {
+        const rect = slideshowContainerRef.current.getBoundingClientRect();
+        const containerTop = rect.top;
+        const containerBottom = rect.bottom;
+        
+        // Fully hidden if top of container is 120px above viewport top
+        if (containerTop <= -120) {
+          setSlideshowOpacity(0);
+          return;
+        }
+        
+        // Fully visible if top is within 750px
+        if (containerTop < 750) {
+          setSlideshowOpacity(1);
+          return;
+        }
+        
+        // Fully hidden otherwise
+        setSlideshowOpacity(0);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
 
   // Calculate slideshow opacity based on scroll position (instant fade in within 9px above, instant fade out within 9px below)
   const calculateSlideshowOpacity = React.useMemo(() => {
     return () => {
-      const visibilityMargin = 39;
-      
       try {
         if (slideshowContainerRef?.current) {
           const rect = slideshowContainerRef.current.getBoundingClientRect();
@@ -360,22 +396,17 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           const containerBottom = rect.bottom;
           const viewportHeight = window.innerHeight;
           
-          // Instant fade in: from 9px above viewport top to top of viewport
-          if (containerTop < 0 && containerTop > -visibilityMargin) {
-            return 1;
-          }
-          
-          // Instant fade out: from bottom of viewport to 9px below viewport bottom
-          if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) {
+          // Fully hidden if bottom of container is 100px above viewport top
+          if (containerBottom <= -100) {
             return 0;
           }
           
-          // Fully visible if within viewport
-          if (containerTop >= 0 && containerBottom <= viewportHeight) {
+          // Fully visible if bottom is within 200px above viewport OR top is within 75px below viewport top
+          if (containerBottom > -200 && containerTop < 75) {
             return 1;
           }
           
-          // Fully hidden if beyond margins
+          // Fully hidden otherwise
           return 0;
         }
         return 1;
@@ -546,23 +577,31 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : (slideCenter.x + ' ' + slideCenter.y)
         }}
       >
-      {/* Mobile Header - Logo Only (hidden when scrolling down) */}
-      <header className={`fixed top-0 left-0 right-0 bg-transparent mobile-header ${
-        scrollDirection === 'down' ? 'mobile-header-hidden' : 'mobile-header-visible'
-      }`} style={{
+      {/* Mobile Header - Logo Only (centered above h1, bottom-center below) */}
+      <header className={`fixed bg-transparent mobile-header ${
+        isScrolledPastH1 ? 'mobile-header-visible' : 'mobile-header-hidden'
+      } ${scrollDirection === 'down' ? 'logo-fade-out' : 'logo-fade-in'}`} style={{
         zIndex: activeView ? 1 : 9999, 
-        overflow: 'hidden'
+        overflow: 'hidden',
+        top: isScrolledPastH1 ? 'auto' : '0',
+        bottom: isScrolledPastH1 ? '30px' : 'auto',
+        left: isScrolledPastH1 ? '0' : '0',
+        right: isScrolledPastH1 ? '0' : '0',
+        width: '100vw'
       }}>
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex flex-col items-center">
-            <button
-              onClick={() => scrollToSection('footer-menu')}
-              className="logo-btn"
-              title="Go to footer menu"
-            >
-              <img src={logo} alt="Garden For Life Logo" className="logo-img logo-lg" />
-            </button>
-          </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: isScrolledPastH1 ? '0.75rem 1rem' : '1rem 1.5rem'
+        }}>
+          <button
+            onClick={() => scrollToSection('footer-menu')}
+            className="logo-btn"
+            title="Go to footer menu"
+          >
+            <img src={logo} alt="Garden For Life Logo" className="logo-img logo-lg" />
+          </button>
         </div>
       </header>
 
@@ -940,7 +979,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             overflowWrap: 'break-word',
             backgroundColor: 'transparent',
             zIndex: 10,
-            opacity: calculateSlideshowOpacity(),
+            opacity: slideshowOpacity,
             transition: 'opacity 0.6s ease'
           }}>
             GARDENS
@@ -969,7 +1008,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               WebkitOverflowScrolling: 'touch',
               alignItems: 'flex-start',
               zIndex: 9,
-              opacity: calculateSlideshowOpacity(),
+              opacity: slideshowOpacity,
               transition: 'opacity 0.5s ease'
             }}
           >
@@ -1102,7 +1141,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           position: 'relative',
           width: '100%',
           overflow: 'visible',
-          opacity: calculateSlideshowOpacity(),
+          opacity: slideshowOpacity,
           transition: 'opacity 0.375s ease'
         }}>
           {slides.map((_, index) => (
@@ -1135,7 +1174,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           width: '100%',
           marginTop: 'clamp(20px, 3vw, 30px)',
           marginBottom: 'clamp(40px, 10vw, 80px)',
-          opacity: calculateSlideshowOpacity(),
+          opacity: slideshowOpacity,
           transition: 'opacity 0.6s ease'
         }}>
           <motion.button
@@ -1292,7 +1331,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth', duration: 1000 });
               }}
-              className="logo-btn flex-shrink-0"
+              className={`logo-btn flex-shrink-0 footer-logo ${scrollDirection === 'down' ? 'logo-fade-out' : 'logo-fade-in'}`}
               title="Back to top"
             >
               <img src={logo} alt="Garden For Life Logo" className="logo-img logo-sm" />

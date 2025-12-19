@@ -53,9 +53,9 @@ const App = () => {
       const currentScrollY = window.scrollY;
       setIsScrolled(currentScrollY > 50);
       
-      // Track scroll direction for mobile (with 50px threshold to avoid sensitivity)
+      // Track scroll direction for mobile (with minimal threshold for instant detection)
       const scrollDifference = Math.abs(currentScrollY - lastScrollY);
-      if (scrollDifference >= 50) {
+      if (scrollDifference >= 2) {
         if (currentScrollY > lastScrollY) {
           setScrollDirection('down');
         } else {

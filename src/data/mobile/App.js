@@ -133,7 +133,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     setTimeout(() => {
       setActiveView(path);
       setClickedButton(null);
-      setIsNavigating(false);
       setButtonCenter({ x: '50%', y: '50%' });
     }, 1500);
   };
@@ -183,16 +182,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     { header: 'Slide 8', subtitle: 'Description', image: placeholder8, bgColor: 'rgba(34, 197, 94, 0.15)', route: '/slide8' },
     { header: 'RENGI FOODS', subtitle: 'Rengi Foods captures the vibrant spirit of Korean street food, offering authentic and affordable flavors from Seoul\'s streets to your local market. The focus on affordability ensures everyone can enjoy bold Korean tastes without compromise.', image: rengiLogo, bgColor: 'rgba(251, 146, 60, 0.15)', route: '/rengifoods' }
   ];
-
-  // Preload all content after initial page load
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      slides.forEach(slide => {
-        setPreloadStatus(prev => ({ ...prev, [slide.route]: true }));
-      });
-    }, 1000); // Start preloading 1 second after page load
-    return () => clearTimeout(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle slide click - zoom animation then show content
   const handleSlideClick = (index, route) => {

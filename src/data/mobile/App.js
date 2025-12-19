@@ -36,9 +36,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [clickedSlide, setClickedSlide] = React.useState(null);
   const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
   const [isAnimating, setIsAnimating] = React.useState(false);
-  const [preloadStatus, setPreloadStatus] = React.useState({}); // Track preload status
   const [clickedButton, setClickedButton] = React.useState(null);
-  const [isNavigating, setIsNavigating] = React.useState(false);
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const [slideCenter, setSlideCenter] = React.useState({ x: '50%', y: '50%' });
   const galleryRef = React.useRef(null);

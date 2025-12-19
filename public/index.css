@@ -993,6 +993,11 @@ body {
   font-family: 'Ubuntu', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #150a24;
+}
+
+html {
+  background-color: #150a24;
 }
 
 code {

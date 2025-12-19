@@ -1,6 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -29,46 +28,117 @@ import '../../styles/subtitles.css';
 import '../../styles/buttons.css';
 import '../../styles/mobile-header.css';
 import '../../styles/logo.css';
-
-// Preload functions - these will start loading the page components immediately
-const preloadMap = {
-  '/soul': () => import('../../pages/Soul'),
-  '/mind': () => import('../../pages/Mind'),
-  '/teachers': () => import('../../pages/Teachers'),
-  '/gardeners': () => import('../../pages/Gardeners'),
-  '/karman': () => import('../../pages/Karman'),
-  '/code49': () => import('../../pages/Code49'),
-  '/tattooshop': () => import('../../pages/TattooShop'),
-  '/rengifoods': () => import('../../pages/RengiFoods'),
-  '/slide4': () => import('../../pages/Slide4'),
-  '/slide5': () => import('../../pages/Slide5'),
-  '/slide6': () => import('../../pages/Slide6'),
-  '/slide7': () => import('../../pages/Slide7'),
-  '/slide8': () => import('../../pages/Slide8'),
-};
-
-const preloadPage = (path) => {
-  const preloader = preloadMap[path];
-  if (preloader) {
-    preloader(); // Start loading the component
-  }
-};
+import { slideContentMap } from './slides';
 
 const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
-  const navigate = useNavigate();
-  
+
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [clickedSlide, setClickedSlide] = React.useState(null);
+  const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
+  const [isAnimating, setIsAnimating] = React.useState(false);
+  const [preloadStatus, setPreloadStatus] = React.useState({}); // Track preload status
   const [clickedButton, setClickedButton] = React.useState(null);
   const [isNavigating, setIsNavigating] = React.useState(false);
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
+  const [slideCenter, setSlideCenter] = React.useState({ x: '50%', y: '50%' });
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
   const videoHeaderRef = React.useRef(null);
   const mediaContainerRef = React.useRef(null);
-  const innerMediaContainerRef = React.useRef(null);
   const textContentWrapperRef = React.useRef(null);
+
+  // Calculate button center position for zoom origin relative to the full document
+  // Accounts for button rotation and triangle centroid
+  const calculateButtonCenter = (buttonName) => {
+    const svgClass = `triangleButton${buttonName === 'button1' ? '1' : buttonName === 'button2' ? '2' : '3'}`;
+    const allSvgElements = document.querySelectorAll(`.${svgClass}`);
+    
+    if (allSvgElements.length === 0) return { x: '50%', y: '50%' };
+    
+    const svgElement = allSvgElements[allSvgElements.length - 1];
+    const rect = svgElement.getBoundingClientRect();
+    
+    // Centroid = (150, 201.67) in viewBox (0-300), normalized to (0.5, 0.672)
+    const rotationDeg = buttonName === 'button2' ? -16 : 45;
+    const rotationRad = (rotationDeg * Math.PI) / 180;
+    
+    const svgCenterX = (rect.left + rect.right) / 2;
+    const svgCenterY = (rect.top + rect.bottom) / 2;
+    
+    // Centroid offset from SVG center (0.172 * height)
+    const centroidOffsetY = 0.172 * rect.height;
+    
+    // Apply rotation to centroid offset
+    const rotatedOffsetX = -centroidOffsetY * Math.sin(rotationRad);
+    const rotatedOffsetY = centroidOffsetY * Math.cos(rotationRad);
+    
+    let triangleCenterX = svgCenterX + rotatedOffsetX;
+    let triangleCenterY = svgCenterY + rotatedOffsetY;
+    
+    // Manual adjustments per button
+    if (buttonName === 'button2') {
+      triangleCenterX -= 15;
+      triangleCenterY -= 40;
+    }
+    if (buttonName === 'button3') {
+      triangleCenterX += 5;
+      triangleCenterY -= 9;
+    }
+    
+    const centerXPercent = (triangleCenterX / window.innerWidth) * 100;
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const documentHeight = document.documentElement.scrollHeight;
+    const absoluteY = triangleCenterY + scrollTop;
+    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
+    
+    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
+  };
+
+  // Calculate slide center position for zoom origin
+  const calculateSlideCenter = (slideIndex) => {
+    // Get the breathing border element for this slide
+    const allBreathingBorders = document.querySelectorAll('.breathingBorder');
+    
+    if (allBreathingBorders.length === 0) return { x: '50%', y: '50%' };
+    
+    // Find the correct breathing border for this slide (accounting for 3 copies of slides)
+    const borderElement = allBreathingBorders[slideIndex];
+    
+    if (!borderElement) return { x: '50%', y: '50%' };
+    
+    const rect = borderElement.getBoundingClientRect();
+    
+    // Get center of the breathing border circle
+    const circleCenterX = (rect.left + rect.right) / 2;
+    const circleCenterY = (rect.top + rect.bottom) / 2;
+    
+    // Convert to percentage of viewport
+    const centerXPercent = (circleCenterX / window.innerWidth) * 100;
+    
+    // For Y, account for scroll position
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const documentHeight = document.documentElement.scrollHeight;
+    const absoluteY = circleCenterY + scrollTop;
+    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
+    
+    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
+  };
+
+  // Handle button click with zoom and fade
+  const handleButtonClick = (buttonName, path) => {
+    const center = calculateButtonCenter(buttonName);
+    setButtonCenter(center);
+    setClickedButton(buttonName);
+    
+    // Navigate at 1.5s (total animation duration)
+    setTimeout(() => {
+      setActiveView(path);
+      setClickedButton(null);
+      setIsNavigating(false);
+      setButtonCenter({ x: '50%', y: '50%' });
+    }, 1500);
+  };
 
   const handleScroll = () => {
     if (!galleryRef.current) return;
@@ -116,6 +186,50 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     { header: 'RENGI FOODS', subtitle: 'Rengi Foods captures the vibrant spirit of Korean street food, offering authentic and affordable flavors from Seoul\'s streets to your local market. The focus on affordability ensures everyone can enjoy bold Korean tastes without compromise.', image: rengiLogo, bgColor: 'rgba(251, 146, 60, 0.15)', route: '/rengifoods' }
   ];
 
+  // Preload all content after initial page load
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      slides.forEach(slide => {
+        setPreloadStatus(prev => ({ ...prev, [slide.route]: true }));
+      });
+    }, 1000); // Start preloading 1 second after page load
+    return () => clearTimeout(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle slide click - zoom animation then show content
+  const handleSlideClick = (index, route) => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setClickedSlide(index);
+    
+    // Calculate the center of the clicked slide
+    const center = calculateSlideCenter(index);
+    setSlideCenter(center);
+    
+    // Use same timing as button black hole effect: 1.5s total
+    setTimeout(() => {
+      setActiveView(route);
+      setIsAnimating(false);
+      setClickedSlide(null);
+      window.scrollTo(0, 0);
+    }, 1500);
+  };
+
+  // Handle back - fade out content, return to landing
+  const handleBack = () => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    
+    setTimeout(() => {
+      setActiveView(null);
+      setIsAnimating(false);
+      window.scrollTo(0, 0);
+    }, 400);
+  };
+
+  // Get content component for active view
+  const ActiveContent = activeView ? slideContentMap[activeView] : null;
+
   React.useEffect(() => {
     // Prevent browser scroll restoration
     if ('scrollRestoration' in window.history) {
@@ -149,196 +263,109 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     setTimeout(centerSlides, 300);
   }, []);
 
-  // Calculate button center position for zoom origin relative to the full document
-  // Accounts for button rotation and triangle centroid
-  const calculateButtonCenter = (buttonName) => {
-    // Get all SVG elements with the button class
-    const svgClass = `triangleButton${buttonName === 'button1' ? '1' : buttonName === 'button2' ? '2' : '3'}`;
-    const allSvgElements = document.querySelectorAll(`.${svgClass}`);
-    
-    if (allSvgElements.length === 0) return { x: '50%', y: '50%' };
-    
-    // Get the SVG element
-    const svgElement = allSvgElements[allSvgElements.length - 1];
-    const rect = svgElement.getBoundingClientRect();
-    
-    // The triangle path vertices in viewBox coordinates (0-300):
-    // Apex: (150, 55), Bottom-left: (30, 275), Bottom-right: (270, 275)
-    // Centroid = ((x1+x2+x3)/3, (y1+y2+y3)/3) = ((150+30+270)/3, (55+275+275)/3) = (150, 201.67)
-    // In normalized coords (0-1): centroid is at (0.5, 0.672)
-    
-    // Get button rotation angle
-    const rotationDeg = buttonName === 'button2' ? -16 : 45;
-    const rotationRad = (rotationDeg * Math.PI) / 180;
-    
-    // SVG bounding box center
-    const svgCenterX = (rect.left + rect.right) / 2;
-    const svgCenterY = (rect.top + rect.bottom) / 2;
-    
-    // The centroid offset from SVG center (centroid is at 0.672 vertically, center is at 0.5)
-    // So centroid is 0.172 * height below center in unrotated state
-    const centroidOffsetY = 0.172 * rect.height;
-    
-    // Apply rotation to the centroid offset
-    // When rotated, the offset shifts: 
-    // newX = offsetX * cos(θ) - offsetY * sin(θ)
-    // newY = offsetX * sin(θ) + offsetY * cos(θ)
-    // Since offsetX = 0 (centroid is horizontally centered):
-    const rotatedOffsetX = -centroidOffsetY * Math.sin(rotationRad);
-    const rotatedOffsetY = centroidOffsetY * Math.cos(rotationRad);
-    
-    // Calculate the actual visual center of the triangle
-    let triangleCenterX = svgCenterX + rotatedOffsetX;
-    let triangleCenterY = svgCenterY + rotatedOffsetY;
-    
-    // Manual offset adjustments for specific buttons
-    if (buttonName === 'button2') {
-      // Move button 2's zoom eye up and left
-      triangleCenterX -= 15; // left
-      triangleCenterY -= 40; // up
-    }
-    if (buttonName === 'button3') {
-      // ove button 3 (mind) zoom eye right and up
-      triangleCenterX += 5; // right
-      triangleCenterY -= 9; // up
-    }
-    
-    // Convert to percentage of viewport for X
-    const centerXPercent = (triangleCenterX / window.innerWidth) * 100;
-    
-    // For Y, account for scroll position
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const documentHeight = document.documentElement.scrollHeight;
-    const absoluteY = triangleCenterY + scrollTop;
-    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
-    
-    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
-  };
 
-  // Handle button navigation with animation
-  const handleButtonNavigate = (buttonName, path) => {
-    // Start preloading the destination page immediately
-    preloadPage(path);
-    
-    // Calculate button center immediately
-    const center = calculateButtonCenter(buttonName);
-    setButtonCenter(center);
-    
-    setClickedButton(buttonName);
-    
-    // Start fade out at 0.3s (shortly after zoom starts)
-    setTimeout(() => {
-      setIsNavigating(true);
-    }, 300);
-    
-    // Navigate at 2.4s with zoom state - new page will zoom out from same point
-    setTimeout(() => {
-      navigate(path, { 
-        state: { 
-          fromZoom: true,
-          zoomOrigin: center
-        }
-      });
-      setClickedButton(null);
-      setIsNavigating(false);
-      setButtonCenter({ x: '50%', y: '50%' });
-    }, 2400);
-  };
 
-  // Calculate slideshow opacity based on scroll position (instant fade in within 39px above, instant fade out within 39px below)
-  const calculateSlideshowOpacity = () => {
-    const visibilityMargin = 39;
-    
-    try {
-      if (slideshowContainerRef?.current) {
-        const rect = slideshowContainerRef.current.getBoundingClientRect();
-        const containerTop = rect.top;
-        const containerBottom = rect.bottom;
-        const viewportHeight = window.innerHeight;
-        
-        // Instant fade in: from 39px above viewport top to top of viewport
-        if (containerTop < 0 && containerTop > -visibilityMargin) {
-          return 1;
-        }
-        
-        // Instant fade out: from bottom of viewport to 39px below viewport bottom
-        if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) {
+  // Calculate slideshow opacity based on scroll position (instant fade in within 9px above, instant fade out within 9px below)
+  const calculateSlideshowOpacity = React.useMemo(() => {
+    return () => {
+      const visibilityMargin = 39;
+      
+      try {
+        if (slideshowContainerRef?.current) {
+          const rect = slideshowContainerRef.current.getBoundingClientRect();
+          const containerTop = rect.top;
+          const containerBottom = rect.bottom;
+          const viewportHeight = window.innerHeight;
+          
+          // Instant fade in: from 9px above viewport top to top of viewport
+          if (containerTop < 0 && containerTop > -visibilityMargin) {
+            return 1;
+          }
+          
+          // Instant fade out: from bottom of viewport to 9px below viewport bottom
+          if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) {
+            return 0;
+          }
+          
+          // Fully visible if within viewport
+          if (containerTop >= 0 && containerBottom <= viewportHeight) {
+            return 1;
+          }
+          
+          // Fully hidden if beyond margins
           return 0;
         }
-        
-        // Fully visible if within viewport
-        if (containerTop >= 0 && containerBottom <= viewportHeight) {
-          return 1;
-        }
-        
-        // Fully hidden if beyond margins
-        return 0;
+        return 1;
+      } catch (e) {
+        return 1;
       }
-      return 1;
-    } catch (e) {
-      return 1;
-    }
-  };
+    };
+  }, []);
 
   // Calculate opacity for KWEEK KRACHTIGE text and media container (based on content visibility, not extended hitbox)
-  const calculateMediaOpacity = () => {
-    const visibilityMargin = 60;
-    
-    try {
-      if (innerMediaContainerRef?.current) {
-        const rect = innerMediaContainerRef.current.getBoundingClientRect();
-        const containerTop = rect.top;
-        const containerBottom = rect.bottom;
-        const viewportHeight = window.innerHeight;
-        
-        // Content starts at 175px within container, so adjust positions
-        const contentTop = containerTop + 175;
-        const contentBottom = containerBottom - 175; // Subtract the 75px empty space at bottom
-        
-        // Instant fade in: start fading in well before content enters viewport
-        if (contentTop < 0 && contentTop > -visibilityMargin) {
-          return 1;
-        }
-        
-        // Instant fade out: from bottom of viewport onwards
-        if (contentBottom > viewportHeight && contentBottom < viewportHeight + visibilityMargin) {
+  const calculateMediaOpacity = React.useMemo(() => {
+    return () => {
+      const visibilityMargin = 30;
+      
+      try {
+        if (mediaContainerRef?.current) {
+          const rect = mediaContainerRef.current.getBoundingClientRect();
+          const containerTop = rect.top;
+          const containerBottom = rect.bottom;
+          const viewportHeight = window.innerHeight;
+          
+          // Content starts at 175px within container, so adjust positions
+          // The buttons/video are placed higher than container bounds
+          const contentTop = containerTop - 15;
+          const contentBottom = containerBottom - 175; // Subtract empty space at bottom
+          
+          // Instant fade in: start fading in well before content enters viewport
+          if (contentTop < 0 && contentTop > -visibilityMargin) {
+            return 1;
+          }
+          
+          // Instant fade out: from bottom of viewport onwards
+          if (contentBottom > viewportHeight && contentBottom < viewportHeight + visibilityMargin) {
+            return 0;
+          }
+          
+          // Fully visible if content is within viewport
+          if (contentTop >= 0 && contentBottom <= viewportHeight) {
+            return 1;
+          }
+          
+          // Fully hidden if beyond margins
           return 0;
         }
-        
-        // Fully visible if content is within viewport
-        if (contentTop >= 0 && contentBottom <= viewportHeight) {
-          return 1;
-        }
-        
-        // Fully hidden if beyond margins
-        return 0;
+        return 1;
+      } catch (e) {
+        return 1;
       }
-      return 1;
-    } catch (e) {
-      return 1;
-    }
-  };
+    };
+  }, []);
 
   // Calculate opacity for text content (h1 and paragraph)
-  const calculateTextContentOpacity = () => {
-    const visibilityMargin = 120;
-    try {
-      if (textContentWrapperRef?.current) {
-        const rect = textContentWrapperRef.current.getBoundingClientRect();
-        const containerTop = rect.top;
-        const containerBottom = rect.bottom;
-        const viewportHeight = window.innerHeight;
-        
-        if (containerTop < 0 && containerTop > -visibilityMargin) return 1;
-        if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) return 0;
-        if (containerTop >= 0 && containerBottom <= viewportHeight) return 1;
-        return 0;
+  const calculateTextContentOpacity = React.useMemo(() => {
+    return () => {
+      const visibilityMargin = 120;
+      try {
+        if (textContentWrapperRef?.current) {
+          const rect = textContentWrapperRef.current.getBoundingClientRect();
+          const containerTop = rect.top;
+          const containerBottom = rect.bottom;
+          const viewportHeight = window.innerHeight;
+          
+          if (containerTop < 0 && containerTop > -visibilityMargin) return 1;
+          if (containerBottom > viewportHeight && containerBottom < viewportHeight + visibilityMargin) return 0;
+          if (containerTop >= 0 && containerBottom <= viewportHeight) return 1;
+          return 0;
+        }
+        return 1;
+      } catch (e) {
+        return 1;
       }
-      return 1;
-    } catch (e) {
-      return 1;
-    }
-  };
+    };
+  }, []);
 
   React.useEffect(() => {
     // Prevent browser scroll restoration
@@ -371,23 +398,65 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     centerSlides();
     setTimeout(centerSlides, 100);
     setTimeout(centerSlides, 300);
-
-    // Add scroll listener to trigger re-renders for opacity calculations
-    const handlePageScroll = () => {
-      // Passive listener - opacity functions recalculate based on getBoundingClientRect()
-    };
-    
-    window.addEventListener('scroll', handlePageScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handlePageScroll);
   }, []);
 
   return (
-    <>
-      {/* Mobile Header - Logo Only (hidden when scrolling down) - Outside motion.div to prevent animation interference */}
+    <div style={{
+      width: '100%',
+      overflow: 'hidden',
+      backgroundColor: '#150a24ff',
+    }}>
+      {/* Content Overlay - Shows when a slide is active */}
+      <AnimatePresence>
+        {activeView && ActiveContent && (
+          <motion.div
+            key="content-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 2000,
+              overflow: 'auto'
+            }}
+          >
+            <ActiveContent onBack={handleBack} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Page content wrapper - fades when button or slide is clicked */}
+      <motion.div
+        animate={{
+          opacity: (clickedButton || isAnimating) ? 0 : 1,
+          scale: (clickedButton || isAnimating) ? 15 : 1
+        }}
+        transition={{ 
+          scale: {
+            duration: 1.5,
+            delay: 0,
+            ease: 'easeInOut'
+          },
+          opacity: {
+            duration: 1.0,
+            delay: 0.5,
+            ease: 'easeInOut'
+          }
+        }}
+        style={{
+          transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : (slideCenter.x + ' ' + slideCenter.y)
+        }}
+      >
+      {/* Mobile Header - Logo Only (hidden when scrolling down) */}
       <header className={`fixed top-0 left-0 right-0 bg-transparent mobile-header ${
         scrollDirection === 'down' ? 'mobile-header-hidden' : 'mobile-header-visible'
       }`} style={{
-        zIndex: 9999, 
+        zIndex: activeView ? 1 : 9999, 
         overflow: 'hidden'
       }}>
         <div className="container mx-auto px-6 py-4">
@@ -403,28 +472,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>
       </header>
 
-      <motion.div 
-        style={{
-          width: '100%',
-          overflow: 'hidden',
-          backgroundColor: '#150a24ff',
-          transformOrigin: `${buttonCenter.x} ${buttonCenter.y}`,
-          willChange: 'transform, opacity'
-        }}
-        animate={{ 
-          opacity: isNavigating ? 0 : 1,
-          scale: clickedButton ? 30 : 1
-        }}
-        transition={{ 
-          scale: { duration: 3, ease: [0.4, 0, 0.2, 1] },
-          opacity: { duration: 1.5, ease: [0.4, 0, 0.2, 1] }
-        }}
-      >
-
-        {/* Full-screen Video Container (scrollable behind logo) */}
-        <div 
-          ref={videoHeaderRef}
-          className="w-full overflow-hidden"
+      {/* Full-screen Video Container (scrollable behind logo) */}
+      <div 
+        ref={videoHeaderRef}
+        className="w-full overflow-hidden"
         style={{
           height: '100vh',
           position: 'relative',
@@ -538,55 +589,32 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       }}>
       </div>
         {/* Media Container - Buttons and Video together */}
-        <div ref={mediaContainerRef} style={{
-          position: 'relative',
-          width: '100%',
-          height: 'calc(clamp(300px, 80vw, 600px) + 175px)',
-          zIndex: 8,
-          overflow: 'visible',
-          maxWidth: 'clamp(25rem, 90vw, 75rem)',
-          margin: 'calc(clamp(4rem + 2rem + 30px, 5vw + 2rem + 30px, 6rem + 2rem + 30px) - 175px) auto 0 auto',
-          pointerEvents: 'none'
-        }}>
-          {/* Inner Media Container - Height reduced by 75px at bottom - for visual layout only */}
-          <div ref={innerMediaContainerRef} style={{
-            position: 'absolute',
+        <div 
+          ref={mediaContainerRef} 
+          style={{
+            position: 'relative',
             width: '100%',
-            height: 'calc(clamp(300px, 80vw, 600px) + 175px - 75px)',
+            height: 'clamp(300px, 80vw, 600px)',
+            zIndex: 8,
             overflow: 'visible',
-            opacity: calculateMediaOpacity(),
-            transition: 'opacity 0.6s ease',
-            top: 0,
-            left: 0,
-            zIndex: 4,
-            pointerEvents: 'none'
-          }}></div>
-          
-          {/* Button container - absolute inside outer media container */}
-          <div style={{
-            position: 'absolute',
-            width: '100%',
-            height: 'calc(100% - 175px)',
-            top: '175px',
-            left: 0,
+            maxWidth: 'clamp(25rem, 90vw, 75rem)',
+            margin: 'clamp(4rem + 2rem + 30px, 5vw + 2rem + 30px, 6rem + 2rem + 30px) auto 0 auto',
             pointerEvents: 'none',
-            zIndex: 5,
             opacity: calculateMediaOpacity(),
             transition: 'opacity 0.6s ease'
           }}>
+          {/* Button container - absolute inside media container */}
+          <div style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            top: 0,
+            left: 0,
+            pointerEvents: 'none',
+            zIndex: 5
+          }}>
             {/* Button 2 */}
-              <motion.div
-                animate={clickedButton === 'button2' ? { scale: 0.9 } : { scale: 1 }}
-                transition={{ duration: 1.5, ease: 'easeInOut' }}
-                style={{
-                  position: 'absolute',
-                  left: 'calc(clamp(0%, 5vw, 15%) - 0.3rem)',
-                  top: 'clamp(-22%, -17vw, -12%)',
-                  transformOrigin: 'center',
-                  zIndex: clickedButton === 'button2' ? 1001 : 5
-                }}
-              >
-              <svg 
+              <motion.svg 
                 className="triangleButton2"
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
@@ -594,13 +622,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 preserveAspectRatio="xMidYMid meet"
                 overflow="visible"
                 pointerEvents="none"
+                animate={{}}
+                transition={{ duration: 2.1, ease: 'easeInOut' }}
                 style={{
                   display: 'block',
-                  transition: 'all 0.3s ease',
                   position: 'absolute',
                   left: 'calc(clamp(0%, 5vw, 15%) - 0.3rem)',
                   top: 'clamp(-22%, -17vw, -12%)',
-                  transform: 'scale(1.5) rotate(-16deg)',
+                  scale: 1.5,
+                  rotate: '-16deg',
                   cursor: 'pointer'
                 }}
               >
@@ -609,7 +639,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z" 
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
-                    onClick={() => handleButtonNavigate('button2', '/teachers')}
+                    onClick={() => handleButtonClick('button2', '/teachers')}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -643,21 +673,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     transform="rotate(2 -300 1000)"
                   />
                 </g>
-              </svg>
-              </motion.div>
+              </motion.svg>
              {/* Button 3 */}
-              <motion.div
-                animate={clickedButton === 'button3' ? { scale: 0.9 } : { scale: 1 }}
-                transition={{ duration: 1.5, ease: 'easeInOut' }}
-                style={{
-                  position: 'absolute',
-                  left: 'calc(clamp(29%, 34vw, 43%) - 0.3rem)',
-                  top: 'clamp(-40.5%, -35.5vw, -30.5%)',
-                  transformOrigin: 'center',
-                  zIndex: clickedButton === 'button3' ? 1001 : 5
-                }}
-              >
-              <svg 
+              <motion.svg 
                 className="triangleButton3"
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
@@ -665,13 +683,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 preserveAspectRatio="xMidYMid meet"
                 overflow="visible"
                 pointerEvents="none"
+                animate={{}}
+                transition={{ duration: 2.1, ease: 'easeInOut' }}
                 style={{
                   display: 'block',
-                  transition: 'all 0.3s ease',
                   position: 'absolute',
                   left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem)',
                   top: 'clamp(-40.5%, -35.5vw, -30.5%)',
-                  transform: 'scale(1.5) rotate(44deg)',
+                  scale: 1.5,
+                  rotate: '44deg',
                   cursor: 'pointer'
                 }}
               >
@@ -681,7 +701,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
                     style={{cursor: 'pointer'}}
-                    onClick={() => handleButtonNavigate('button3', '/mind')}
+                    onClick={() => handleButtonClick('button3', '/mind')}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -715,21 +735,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     transform="rotate(-55 175 165)"
                   />
                 </g>
-              </svg>
-              </motion.div>
+              </motion.svg>
               {/* Button 1 */}
-              <motion.div
-                animate={clickedButton === 'button1' ? { scale: 0.9 } : { scale: 1 }}
-                transition={{ duration: 1.5, ease: 'easeInOut' }}
-                style={{
-                  position: 'absolute',
-                  left: 'calc(clamp(18%, 21.5vw, 28%) - 0.3rem)',
-                  top: 'clamp(6%, 11vw, 46%)',
-                  transformOrigin: 'center',
-                  zIndex: clickedButton === 'button1' ? 1001 : 5
-                }}
-              >
-              <svg 
+              <motion.svg 
                 className="triangleButton1"
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
@@ -737,13 +745,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 preserveAspectRatio="xMidYMid meet"
                 overflow="visible"
                 pointerEvents="none"
+                animate={{}}
+                transition={{ duration: 2.1, ease: 'easeInOut' }}
                 style={{
                   display: 'block',
-                  transition: 'all 0.3s ease',
                   position: 'absolute',
                   left: 'calc(clamp(18%, 21.5vw, 28%) - 0.3rem)',
                   top: 'clamp(6%, 11vw, 46%)',
-                  transform: 'scale(1.5) rotate(44deg)',
+                  scale: 1.5,
+                  rotate: '44deg',
                   cursor: 'pointer'
                 }}
               >
@@ -763,7 +773,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
-                    onClick={() => handleButtonNavigate('button1', '/soul')}
+                    onClick={() => handleButtonClick('button1', '/soul')}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.previousElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -786,8 +796,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     transform="rotate(-40 200 145)"
                   />
                 </g>
-              </svg>
-              </motion.div>
+              </motion.svg>
             </div>{/* End button container */}
 
           {/* WebM Video - alongside buttons */}
@@ -802,17 +811,16 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               height: 'auto',
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
+              opacity: 1,
               transform: 'scale(0.7776) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 0.8rem)',
               position: 'absolute',
-              top: 'calc(clamp(-10.875rem, -20vw, -4.625rem) + 175px)',
+              top: 'clamp(-10.875rem, -20vw, -4.625rem)',
               left: 0,
               right: 0,
               zIndex: 6,
-              pointerEvents: 'none',
-              opacity: calculateMediaOpacity(),
-              transition: 'opacity 0.6s ease'
+              pointerEvents: 'none'
             }}
           >
             <source src="/videos/KnightHD_2.mp4" type="video/mp4; codecs=hvc1" />
@@ -894,26 +902,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 {/* Image Circle */}
                 <motion.div 
                   className="breathingBorder" 
-                  onClick={() => {
-                    // Start preloading destination page immediately
-                    preloadPage(slides[index % 9].route);
-                    setClickedSlide(index);
-                    // Navigate after animation completes
-                    setTimeout(() => {
-                      window.location.href = slides[index % 9].route;
-                    }, 600);
-                  }}
-                  animate={clickedSlide === index ? {
-                    scale: 5,
-                    x: '100vw',
-                    y: '100vh',
-                    borderRadius: '0%'
-                  } : {
-                    scale: 1,
-                    x: 0,
-                    y: 0,
-                    borderRadius: '50%'
-                  }}
+                  onClick={() => handleSlideClick(index, slides[index % 9].route)}
+                  animate={{}}
                   transition={{ duration: 0.6, ease: 'easeInOut' }}
                   style={{
                     position: 'relative',
@@ -1200,8 +1190,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </div>
         </div>
       </footer>
-    </motion.div>
-    </>
+      </motion.div>
+    </div>
   );
 }
 

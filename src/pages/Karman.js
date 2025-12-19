@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import FadeInWrapper from '../components/FadeInWrapper';
 import logo from '../images/logo.png';
 import karmanevents from '../images/slideshow images/karmaneventsPNG.png';
 import '../styles/logo.css';
@@ -9,7 +8,6 @@ const Karman = () => {
   const navigate = useNavigate();
 
   return (
-    <FadeInWrapper>
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)',
@@ -89,7 +87,8 @@ const Karman = () => {
           Back to Home
         </button>
       </div>
-    </div>    </FadeInWrapper>  );
+    </div>
+  );
 };
 
 export default Karman;

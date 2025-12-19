@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import FadeInWrapper from '../components/FadeInWrapper';
 import logo from '../images/logo.png';
 import '../styles/logo.css';
 
@@ -8,7 +7,6 @@ const Mind = () => {
   const navigate = useNavigate();
 
   return (
-    <FadeInWrapper>
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)',
@@ -133,7 +131,8 @@ const Mind = () => {
           Back to Home
         </button>
       </div>
-    </div>    </FadeInWrapper>  );
+    </div>
+  );
 };
 
 export default Mind;

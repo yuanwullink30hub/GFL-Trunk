@@ -14,24 +14,13 @@ import generalData from './data.json';
 import desktopData from './data/desktop/data.json';
 import mobileData from './data/mobile/data.json';
 import MobileAppContent from './data/mobile/App';
-import Gardeners from './pages/Gardeners';
-import Teachers from './pages/Teachers';
-import Mind from './pages/Mind';
-import Soul from './pages/Soul';
-import Karman from './pages/Karman';
-import Code49 from './pages/Code49';
-import TattooShop from './pages/TattooShop';
-import Slide4 from './pages/Slide4';
-import Slide5 from './pages/Slide5';
-import Slide6 from './pages/Slide6';
-import Slide7 from './pages/Slide7';
-import Slide8 from './pages/Slide8';
-import RengiFoods from './pages/RengiFoods';
 import logo from './images/logo.png';
 import './styles/poetry.css';
 import './styles/text.css';
 import './styles/subtitles.css';
 import './styles/logo.css';
+
+
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(true);
@@ -114,19 +103,7 @@ const App = () => {
           )
         } 
       />
-      <Route path="/gardeners" element={<Gardeners />} />
-      <Route path="/teachers" element={<Teachers />} />
-      <Route path="/mind" element={<Mind />} />
-      <Route path="/soul" element={<Soul />} />
-      <Route path="/karman" element={<Karman />} />
-      <Route path="/code49" element={<Code49 />} />
-      <Route path="/tattooshop" element={<TattooShop />} />
-      <Route path="/slide4" element={<Slide4 />} />
-      <Route path="/slide5" element={<Slide5 />} />
-      <Route path="/slide6" element={<Slide6 />} />
-      <Route path="/slide7" element={<Slide7 />} />
-      <Route path="/slide8" element={<Slide8 />} />
-      <Route path="/rengifoods" element={<RengiFoods />} />
+
     </Routes>
   );
 };

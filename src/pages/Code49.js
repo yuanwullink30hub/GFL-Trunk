@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import logo from '../images/logo.png';
 import club49logo from '../images/slideshow images/club49-logo.png';
 import '../styles/logo.css';
-import FadeInWrapper from '../components/FadeInWrapper';
 
 const Code49 = () => {
   const navigate = useNavigate();
 
   return (
-    <FadeInWrapper>
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)',
@@ -89,7 +87,8 @@ const Code49 = () => {
           Back to Home
         </button>
       </div>
-    </div>    </FadeInWrapper>  );
+    </div>
+  );
 };
 
 export default Code49;

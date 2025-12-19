@@ -88,6 +88,15 @@
   }
 }
 
+@keyframes pulsating {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
 .breathingNumber {
   animation: breathColor 3.33s infinite;
 }
@@ -148,4 +157,8 @@
 
 .triangleButton3 .breathingNumber {
   animation-delay: 0s;
+}
+
+button {
+  animation: pulsating 2s infinite;
 }

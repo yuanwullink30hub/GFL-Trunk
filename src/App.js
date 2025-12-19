@@ -19,6 +19,7 @@ import './styles/poetry.css';
 import './styles/text.css';
 import './styles/subtitles.css';
 import './styles/logo.css';
+import './styles/buttons.css';
 
 
 

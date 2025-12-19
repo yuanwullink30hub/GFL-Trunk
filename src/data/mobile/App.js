@@ -362,7 +362,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       if (slideshowContainerRef?.current) {
         const rect = slideshowContainerRef.current.getBoundingClientRect();
         const containerTop = rect.top;
-        const containerBottom = rect.bottom;
         
         // Fully hidden if top of container is 120px above viewport top
         if (containerTop <= -120) {
@@ -383,37 +382,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-
-  // Calculate slideshow opacity based on scroll position (instant fade in within 9px above, instant fade out within 9px below)
-  const calculateSlideshowOpacity = React.useMemo(() => {
-    return () => {
-      try {
-        if (slideshowContainerRef?.current) {
-          const rect = slideshowContainerRef.current.getBoundingClientRect();
-          const containerTop = rect.top;
-          const containerBottom = rect.bottom;
-          const viewportHeight = window.innerHeight;
-          
-          // Fully hidden if bottom of container is 100px above viewport top
-          if (containerBottom <= -100) {
-            return 0;
-          }
-          
-          // Fully visible if bottom is within 200px above viewport OR top is within 75px below viewport top
-          if (containerBottom > -200 && containerTop < 75) {
-            return 1;
-          }
-          
-          // Fully hidden otherwise
-          return 0;
-        }
-        return 1;
-      } catch (e) {
-        return 1;
-      }
-    };
   }, []);
 
   // Calculate opacity for KWEEK KRACHTIGE text and media container (based on content visibility, not extended hitbox)
@@ -614,7 +582,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           position: 'relative',
           zIndex: 1,
           overflow: 'hidden',
-          maxWidth: '100%'
+          maxWidth: '100%',
+          opacity: scrollDirection === 'up' ? 0 : 1,
+          transition: 'opacity 0.5s ease',
+          pointerEvents: scrollDirection === 'up' ? 'none' : 'auto'
         }}
       >
         <video
@@ -636,7 +607,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff',
           zIndex: 1,
           position: 'relative',
-          paddingTop: '100px'
+          paddingTop: '100px',
+          opacity: scrollDirection === 'up' ? 0 : 1,
+          transition: 'opacity 0.5s ease',
+          pointerEvents: scrollDirection === 'up' ? 'none' : 'auto'
         }}
       >
         {/* Text container over image */}

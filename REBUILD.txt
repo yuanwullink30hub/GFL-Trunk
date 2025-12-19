@@ -1,0 +1,18 @@
+To fix the stale bundle issue:
+
+1. Delete node_modules cache:
+   rm -rf node_modules/.cache
+   
+2. Delete build cache:
+   rm -rf node_modules/.cache/webpack
+
+3. Clear npm cache:
+   npm cache clean --force
+
+4. Restart the development server:
+   npm start
+
+Or for a clean rebuild:
+   rm -rf node_modules package-lock.json
+   npm install
+   npm start

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import logo from '../images/logo.png';
 import logo1111 from '../images/slideshow images/1111logo.png';
 import '../styles/logo.css';
@@ -59,8 +60,10 @@ const TattooShop = () => {
         </p>
 
         {/* Back Button */}
-        <button
+        <motion.button
           onClick={() => navigate('/')}
+          animate={{ borderColor: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           style={{
             marginTop: '60px',
             padding: '15px 40px',
@@ -85,7 +88,7 @@ const TattooShop = () => {
           }}
         >
           Back to Home
-        </button>
+        </motion.button>
       </div>
     </div>
   );

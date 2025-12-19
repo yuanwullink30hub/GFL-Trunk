@@ -61,6 +61,7 @@ const Karman = () => {
         {/* Back Button */}
         <button
           onClick={() => navigate('/')}
+          className="breathBorderAnimation"
           style={{
             marginTop: '60px',
             padding: '15px 40px',
@@ -85,7 +86,7 @@ const Karman = () => {
           }}
         >
           Back to Home
-        </button>
+        </motion.button>
       </div>
     </div>
   );

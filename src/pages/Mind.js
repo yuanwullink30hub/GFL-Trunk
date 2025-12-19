@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import logo from '../images/logo.png';
 import '../styles/logo.css';
 
@@ -103,8 +104,10 @@ const Mind = () => {
         </div>
 
         {/* Back Button */}
-        <button
+        <motion.button
           onClick={() => navigate('/')}
+          animate={{ borderColor: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           style={{
             marginTop: '60px',
             padding: '15px 40px',
@@ -129,7 +132,7 @@ const Mind = () => {
           }}
         >
           Back to Home
-        </button>
+        </motion.button>
       </div>
     </div>
   );

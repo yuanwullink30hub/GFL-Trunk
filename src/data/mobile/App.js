@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { flushSync } from 'react-dom';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -36,9 +37,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [clickedSlide, setClickedSlide] = React.useState(null);
   const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
   const [isAnimating, setIsAnimating] = React.useState(false);
+  const [isAnimatingBackward, setIsAnimatingBackward] = React.useState(false);
   const [clickedButton, setClickedButton] = React.useState(null);
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const [slideCenter, setSlideCenter] = React.useState({ x: '50%', y: '50%' });
+  const [entryCenter, setEntryCenter] = React.useState({ x: '50%', y: '50%' }); // Triangle center on content page
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
@@ -123,22 +126,91 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
   };
 
+  // Calculate triangle header center on content page for entry point
+  const calculateContentTriangleCenter = () => {
+    // Find the SVG triangle on the content page (first one found)
+    const triangleSvg = document.querySelector('svg[viewBox="0 0 300 300"]');
+    
+    if (!triangleSvg) return { x: '50%', y: '50%' };
+    
+    const rect = triangleSvg.getBoundingClientRect();
+    
+    // Simple center calculation - no rotation offsets
+    let triangleCenterX = (rect.left + rect.right) / 2;
+    let triangleCenterY = (rect.top + rect.bottom) / 2;
+    
+    // Determine which button this is from content
+    const headerText = document.querySelector('h1')?.textContent?.trim();
+    
+    // Manual adjustments per button (same as landing page)
+    if (headerText === 'TEACHERS') {
+      triangleCenterX -= 15;
+      triangleCenterY -= 40;
+    }
+    if (headerText === 'MIND') {
+      triangleCenterX += 5;
+      triangleCenterY -= 9;
+    }
+    
+    // Convert to percentage coordinates
+    const centerXPercent = (triangleCenterX / window.innerWidth) * 100;
+    
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const documentHeight = document.documentElement.scrollHeight;
+    const absoluteY = triangleCenterY + scrollTop;
+    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
+    
+    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
+  };
+
   // Handle button click with zoom and fade
   const handleButtonClick = (buttonName, path) => {
     const center = calculateButtonCenter(buttonName);
-    setButtonCenter(center);
-    setClickedButton(buttonName);
     
-    // Navigate at 1.5s (total animation duration)
+    // Force synchronous state updates to minimize animation delay
+    flushSync(() => {
+      setButtonCenter(center);
+      setClickedButton(buttonName);
+    });
+    
+    // Navigate at 1.5s (total animation duration) but keep clickedButton set for reverse animation
     setTimeout(() => {
-      setActiveView(path);
-      setClickedButton(null);
-      setButtonCenter({ x: '50%', y: '50%' });
+      flushSync(() => {
+        setActiveView(path);
+        setButtonCenter({ x: '50%', y: '50%' });
+      });
+    }, 1500);
+  };
+
+  // Handle back to button with reverse zoom animation
+  const handleBackToButton = (buttonName) => {
+    if (isAnimating) return;
+    
+    // Start reverse animation: content fades out while landing page scales back
+    flushSync(() => {
+      setIsAnimating(true);
+      setIsAnimatingBackward(true);
+      setActiveView(null); // Unmount content immediately
+    });
+    
+    // After content fade (0.9s), clear clickedButton to complete the scale animation and fade in landing
+    setTimeout(() => {
+      flushSync(() => {
+        setClickedButton(null);
+      });
+    }, 900);
+    
+    // Reset all animation states after total duration (0.9s + 0.6s = 1.5s)
+    setTimeout(() => {
+      flushSync(() => {
+        setIsAnimating(false);
+        setIsAnimatingBackward(false);
+        setButtonCenter({ x: '50%', y: '50%' });
+      });
     }, 1500);
   };
 
   const handleScroll = () => {
-    if (!galleryRef.current) return;
     const gallery = galleryRef.current;
     const scrollLeft = gallery.scrollLeft;
     const slideWidth = gallery.children[0]?.offsetWidth || 0;
@@ -214,6 +286,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     }, 400);
   };
 
+  // Handle close slide - same as handleBack for slide content pages
+  const handleCloseSlide = () => {
+    handleBack();
+  };
+
   // Get content component for active view
   const ActiveContent = activeView ? slideContentMap[activeView] : null;
 
@@ -249,6 +326,25 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     setTimeout(centerSlides, 100);
     setTimeout(centerSlides, 300);
   }, []);
+
+  // Calculate entry point when content page loads
+  React.useEffect(() => {
+    if (activeView) {
+      // Multiple attempts to ensure calculation is correct
+      const calculateAndSet = () => {
+        const center = calculateContentTriangleCenter();
+        setEntryCenter(center);
+      };
+      
+      calculateAndSet();
+      setTimeout(calculateAndSet, 100);
+      setTimeout(calculateAndSet, 200);
+      setTimeout(calculateAndSet, 400);
+    } else {
+      // Reset entry center when returning to landing
+      setEntryCenter({ x: '50%', y: '50%' });
+    }
+  }, [activeView]);
 
 
 
@@ -392,6 +488,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       width: '100%',
       overflow: 'hidden',
       backgroundColor: '#150a24ff',
+      display: activeView ? 'block' : 'block' // Content pages hidden via AnimatePresence
     }}>
       {/* Content Overlay - Shows when a slide is active */}
       <AnimatePresence>
@@ -401,7 +498,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{
+              opacity: {
+                type: 'tween',
+                duration: 0.9,
+                ease: 'easeInOut'
+              }
+            }}
             style={{
               position: 'fixed',
               top: 0,
@@ -409,10 +512,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               right: 0,
               bottom: 0,
               zIndex: 2000,
-              overflow: 'auto'
+              overflow: 'auto',
+              transformOrigin: activeView ? (entryCenter.x + ' ' + entryCenter.y) : (clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : (slideCenter.x + ' ' + slideCenter.y)),
+              display: activeView ? 'block' : 'none'
             }}
           >
-            <ActiveContent onBack={handleBack} />
+            <ActiveContent onBack={handleBack} onBackToButton={handleBackToButton} onCloseSlide={handleCloseSlide} activeView={activeView} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -420,18 +525,20 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       {/* Page content wrapper - fades when button or slide is clicked */}
       <motion.div
         animate={{
-          opacity: (clickedButton || isAnimating) ? 0 : 1,
-          scale: (clickedButton || isAnimating) ? 15 : 1
+          opacity: isAnimatingBackward ? 1 : (clickedButton ? 0 : 1),
+          scale: clickedButton && !isAnimatingBackward ? 15 : 1
         }}
         transition={{ 
           scale: {
+            type: 'tween',
             duration: 1.5,
             delay: 0,
             ease: 'easeInOut'
           },
           opacity: {
-            duration: 1.0,
-            delay: 0.5,
+            type: 'tween',
+            duration: 0.3,
+            delay: isAnimatingBackward ? 0.6 : (activeView ? 0 : 0.6),
             ease: 'easeInOut'
           }
         }}
@@ -609,8 +716,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 preserveAspectRatio="xMidYMid meet"
                 overflow="visible"
                 pointerEvents="none"
-                animate={{}}
-                transition={{ duration: 2.1, ease: 'easeInOut' }}
+                animate={{ scale: [1.5, 1.62, 1.5] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
                 style={{
                   display: 'block',
                   position: 'absolute',
@@ -623,7 +730,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               >
                 <g style={{overflow: 'visible'}}>
                   <path 
-                    d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z" 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
                     onClick={() => handleButtonClick('button2', '/teachers')}
@@ -670,8 +777,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 preserveAspectRatio="xMidYMid meet"
                 overflow="visible"
                 pointerEvents="none"
-                animate={{}}
-                transition={{ duration: 2.1, ease: 'easeInOut' }}
+                animate={{ scale: [1.5, 1.62, 1.5] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
                 style={{
                   display: 'block',
                   position: 'absolute',
@@ -684,7 +791,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               >
                 <g style={{overflow: 'visible'}}>
                   <path 
-                    d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
                     style={{cursor: 'pointer'}}
@@ -732,8 +839,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 preserveAspectRatio="xMidYMid meet"
                 overflow="visible"
                 pointerEvents="none"
-                animate={{}}
-                transition={{ duration: 2.1, ease: 'easeInOut' }}
+                animate={{ scale: [1.5, 1.62, 1.5] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
                 style={{
                   display: 'block',
                   position: 'absolute',
@@ -757,7 +864,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     style={{transition: 'stroke 0.3s ease'}}
                   />
                   <path 
-                    d="M 140 80 Q 143 70 147 80 L 255 255 Q 255 270 250 270 L 50 255 Q 45 270 45 260 L 140 80 Z"
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
                     onClick={() => handleButtonClick('button1', '/soul')}
@@ -890,8 +997,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 <motion.div 
                   className="breathingBorder" 
                   onClick={() => handleSlideClick(index, slides[index % 9].route)}
-                  animate={{}}
-                  transition={{ duration: 0.6, ease: 'easeInOut' }}
+                  animate={clickedSlide === index ? {
+                    scale: [1, 1.2, 1.5],
+                    opacity: [1, 0.5, 0]
+                  } : {}}
+                  transition={clickedSlide === index ? {
+                    duration: 1.5,
+                    ease: 'easeInOut',
+                    times: [0, 0.4, 1]
+                  } : { duration: 0.6, ease: 'easeInOut' }}
                   style={{
                     position: 'relative',
                     width: 'clamp(100px, 38.7855vw, 271.4985px)',
@@ -905,7 +1019,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     zIndex: clickedSlide === index ? 1000 : 2,
                     flexShrink: 0,
                     cursor: 'pointer',
-                    transformOrigin: 'center'
+                    transformOrigin: slideCenter,
+                    pointerEvents: isAnimating ? 'none' : 'auto'
                   }}
                 >
                   <img
@@ -1010,9 +1125,27 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           opacity: calculateSlideshowOpacity(),
           transition: 'opacity 0.6s ease'
         }}>
-          <button
+          <motion.button
             className="breathingBorder"
-            onClick={() => window.location.href = '/gardeners'}
+            onClick={() => {
+              if (isAnimating) return;
+              setIsAnimating(true);
+              setClickedButton('seeMore');
+              const center = calculateButtonCenter('button1');
+              setButtonCenter(center);
+              setTimeout(() => {
+                window.location.href = '/gardeners';
+              }, 1500);
+            }}
+            animate={clickedButton === 'seeMore' ? {
+              scale: [1, 1.2, 1.5],
+              opacity: [1, 0.5, 0]
+            } : {}}
+            transition={clickedButton === 'seeMore' ? {
+              duration: 1.5,
+              ease: 'easeInOut',
+              times: [0, 0.4, 1]
+            } : { duration: 0.3 }}
             style={{
               padding: 'clamp(7.5px, 1.5vw, 12px) clamp(18px, 3.75vw, 30px)',
               fontSize: 'clamp(10.5px, 2.25vw, 13.5px)',
@@ -1024,7 +1157,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               fontWeight: '600',
               transition: 'all 0.3s ease',
               textTransform: 'uppercase',
-              letterSpacing: '1px'
+              letterSpacing: '1px',
+              transformOrigin: buttonCenter,
+              pointerEvents: isAnimating ? 'none' : 'auto'
             }}
             onMouseEnter={(e) => {
               e.target.style.backgroundColor = '#ef8616';
@@ -1036,7 +1171,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             }}
           >
             ZIE MEER
-          </button>
+          </motion.button>
         </div>
 
       </div>{/* End text content container */}

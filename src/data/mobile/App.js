@@ -42,14 +42,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const [slideCenter, setSlideCenter] = React.useState({ x: '50%', y: '50%' });
   const [entryCenter, setEntryCenter] = React.useState({ x: '50%', y: '50%' }); // Triangle center on content page
-  const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false);
-  const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
   const videoHeaderRef = React.useRef(null);
   const mediaContainerRef = React.useRef(null);
+  const textContentContainerRef = React.useRef(null);
   const textContentWrapperRef = React.useRef(null);
+  const miniLogoRef = React.useRef(null);
 
   // Calculate button center position for zoom origin relative to the full document
   // Accounts for button rotation and triangle centroid
@@ -449,6 +449,36 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     };
   }, []);
 
+  // Calculate if content is visually behind the mini logo (at footer/bottom)
+  const isContentBehindLogo = (element, scrollPos) => {
+    if (!miniLogoRef.current || !element) return false;
+    
+    const miniLogoRect = miniLogoRef.current.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    
+    // Mini logo is visible if it's in viewport
+    const isLogoVisible = miniLogoRect.top < window.innerHeight && miniLogoRect.bottom > 0;
+    
+    if (!isLogoVisible || scrollDirection !== 'up') return false;
+    
+    // Check if element overlaps with mini logo area
+    // Element is behind if it overlaps with the mini logo's viewport position
+    const behindHorizontally = !(elementRect.right < miniLogoRect.left || elementRect.left > miniLogoRect.right);
+    const behindVertically = !(elementRect.bottom < miniLogoRect.top || elementRect.top > miniLogoRect.bottom);
+    
+    return behindHorizontally && behindVertically;
+  };
+
+  // Add scroll listener to track scroll position
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   React.useEffect(() => {
     // Prevent browser scroll restoration
     if ('scrollRestoration' in window.history) {
@@ -582,10 +612,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           position: 'relative',
           zIndex: 1,
           overflow: 'hidden',
-          maxWidth: '100%',
-          opacity: scrollDirection === 'up' ? 0 : 1,
-          transition: 'opacity 0.5s ease',
-          pointerEvents: scrollDirection === 'up' ? 'none' : 'auto'
+          maxWidth: '100%'
         }}
       >
         <video
@@ -602,15 +629,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
       {/* Text content container */}
       <div
+        ref={textContentContainerRef}
         className="w-full relative"
         style={{
           background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff',
           zIndex: 1,
           position: 'relative',
-          paddingTop: '100px',
-          opacity: scrollDirection === 'up' ? 0 : 1,
-          transition: 'opacity 0.5s ease',
-          pointerEvents: scrollDirection === 'up' ? 'none' : 'auto'
+          paddingTop: '100px'
         }}
       >
         {/* Text container over image */}
@@ -1300,8 +1325,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         <div className="container mx-auto px-6 text-center">
           {/* Footer Navigation */}
           <div className="flex justify-center items-center space-x-4 mb-4">
-            {/* Clickable Logo */}
+           {/* Clickable Logo */}
             <button
+              ref={miniLogoRef}
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth', duration: 1000 });
               }}

@@ -552,12 +552,6 @@ video {
 .inset-0{
   inset: 0px;
 }
-.left-0{
-  left: 0px;
-}
-.right-0{
-  right: 0px;
-}
 .right-4{
   right: 1rem;
 }
@@ -610,6 +604,9 @@ video {
 }
 .block{
   display: block;
+}
+.inline-block{
+  display: inline-block;
 }
 .flex{
   display: flex;
@@ -986,6 +983,9 @@ video {
 }
 .duration-300{
   transition-duration: 300ms;
+}
+.ease-in-out{
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {

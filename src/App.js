@@ -9,7 +9,6 @@ import {
   FaGlobe
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
-import PasswordProtect from './components/PasswordProtect';
 import generalData from './data.json';
 import desktopData from './data/desktop/data.json';
 import mobileData from './data/mobile/data.json';
@@ -89,15 +88,13 @@ const App = () => {
         path="/" 
         element={
           isMobile ? (
-            <PasswordProtect>
-              <div className={`min-h-screen transition-all duration-300 ${
-                darkMode 
-                  ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-                  : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-              }`}>
-                <MobileAppContent darkMode={darkMode} setDarkMode={setDarkMode} data={data} scrollDirection={scrollDirection} />
-              </div>
-            </PasswordProtect>
+            <div className={`min-h-screen transition-all duration-300 ${
+              darkMode 
+                ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+                : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+            }`}>
+              <MobileAppContent darkMode={darkMode} setDarkMode={setDarkMode} data={data} scrollDirection={scrollDirection} />
+            </div>
           ) : (
             <DesktopContent darkMode={darkMode} setDarkMode={setDarkMode} data={data} scrollToSection={scrollToSection} isScrolled={isScrolled} />
           )
@@ -114,12 +111,11 @@ const DesktopContent = ({ darkMode, setDarkMode, data, scrollToSection, isScroll
 
   // Desktop version
   return (
-    <PasswordProtect>
-      <div className={`min-h-screen transition-all duration-300 ${
-        darkMode 
-          ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-          : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-      }`}>
+    <div className={`min-h-screen transition-all duration-300 ${
+      darkMode 
+        ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+        : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+    }`}>
       {/* Desktop Header - Side-by-side Layout */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         isScrolled 
@@ -262,10 +258,14 @@ const DesktopContent = ({ darkMode, setDarkMode, data, scrollToSection, isScroll
 
       {/* Footer */}
       <footer className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-12 mt-20">
-        <div className="container mx-auto px-6 text-center">
-          <div className="mb-6">
-            <h4 className="header mb-2">{data?.basics?.name}</h4>
-            <p className="subtitles text-gray-400">{data?.basics?.label}</p>
+        <div className="container mx-auto px-6">
+          <div className="flex items-center justify-between gap-6 mb-6">
+            <img src={logo} alt="Logo" className="h-12 w-12 object-contain" />
+            <div className="flex-1 text-center">
+              <h4 className="header mb-2">{data?.basics?.name}</h4>
+              <p className="subtitles text-gray-400">{data?.basics?.label}</p>
+            </div>
+            <div className="w-12"></div>
           </div>
           
           <div className="border-t border-gray-700 pt-8">
@@ -276,7 +276,6 @@ const DesktopContent = ({ darkMode, setDarkMode, data, scrollToSection, isScroll
         </div>
       </footer>
       </div>
-    </PasswordProtect>
   );
 };
 

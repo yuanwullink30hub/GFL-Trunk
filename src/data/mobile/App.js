@@ -42,6 +42,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const [slideCenter, setSlideCenter] = React.useState({ x: '50%', y: '50%' });
   const [entryCenter, setEntryCenter] = React.useState({ x: '50%', y: '50%' }); // Triangle center on content page
+  const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false);
+  const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
@@ -468,16 +470,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     
     return behindHorizontally && behindVertically;
   };
-
-  // Add scroll listener to track scroll position
-  React.useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   React.useEffect(() => {
     // Prevent browser scroll restoration
@@ -1331,7 +1323,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth', duration: 1000 });
               }}
-              className={`logo-btn flex-shrink-0 footer-logo ${scrollDirection === 'down' ? 'logo-fade-out' : 'logo-fade-in'}`}
+              className="logo-btn flex-shrink-0"
               title="Back to top"
             >
               <img src={logo} alt="Garden For Life Logo" className="logo-img logo-sm" />

@@ -388,11 +388,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   // Track scroll position relative to video header bottom minus 150px
   React.useEffect(() => {
     const handleScroll = () => {
-      // Check if scrolled past 150px above the bottom of video header
+      // Check if scrolled past 350px above the bottom of video header (150px + 200px up)
       if (videoHeaderRef?.current) {
         const videoRect = videoHeaderRef.current.getBoundingClientRect();
-        // Show small logo when scrolled past 150px above video bottom
-        setIsScrolledPastH1(videoRect.bottom - 150 < 0);
+        // Show small logo when scrolled past 350px above video bottom
+        setIsScrolledPastH1(videoRect.bottom - 350 < 0);
       }
       
       // Update slideshow opacity based on scroll position

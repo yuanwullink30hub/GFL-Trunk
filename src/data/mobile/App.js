@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
+import sun2 from '../../images/sun2.PNG';
 import karmanevents from '../../images/slideshow images/karmaneventsPNG.png';
 import club49logo from '../../images/slideshow images/club49-logo.png';
 import logo1111 from '../../images/slideshow images/1111logo.png';
@@ -621,11 +622,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginLeft: !isScrolledPastH1 ? '-58px' : '0',
-              ...(!isScrolledPastH1 && { position: 'fixed', right: '1.52rem', top: '2.21rem', transform: 'scale(0.97)' })
+              ...(isScrolledPastH1 ? { position: 'relative' } : { position: 'fixed', right: '1.52rem', top: '1.9rem', transform: 'scale(0.97)' })
             }}
           >
-            {darkMode ? <BsSun className="text-3xl" style={{color: '#eb7e09ff'}} /> : <BsMoon className="text-3xl" style={{color: '#1e90ff'}} />}
+            <img src={sun2} alt="Sun" style={{ width: '40px', height: '40px' }} />
           </button>
         </div>
       </header>

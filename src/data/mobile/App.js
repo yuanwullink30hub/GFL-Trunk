@@ -422,6 +422,27 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Prevent backspace and return key from leaving the site
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      const activeElement = document.activeElement;
+      const isTextInput = activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA';
+      
+      // Prevent backspace from navigating back (unless in text field)
+      if (e.key === 'Backspace' && !isTextInput) {
+        e.preventDefault();
+      }
+      
+      // Prevent return key from triggering default behavior outside text fields
+      if (e.key === 'Enter' && !isTextInput) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Calculate opacity for KWEEK KRACHTIGE text and media container (based on content visibility, not extended hitbox)
   const calculateMediaOpacity = React.useMemo(() => {
     return () => {

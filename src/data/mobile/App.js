@@ -167,6 +167,42 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
   };
 
+  // Calculate media container center for zoom effect when returning from button content
+  const calculateMediaContainerCenter = () => {
+    if (!mediaContainerRef?.current) return { x: '50%', y: '50%' };
+    
+    const rect = mediaContainerRef.current.getBoundingClientRect();
+    const containerCenterX = (rect.left + rect.right) / 2;
+    const containerCenterY = (rect.top + rect.bottom) / 2;
+    
+    const centerXPercent = (containerCenterX / window.innerWidth) * 100;
+    
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const documentHeight = document.documentElement.scrollHeight;
+    const absoluteY = containerCenterY + scrollTop;
+    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
+    
+    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
+  };
+
+  // Calculate carousel/slider container center for zoom effect when returning from slide content
+  const calculateCarouselCenter = () => {
+    if (!galleryRef?.current) return { x: '50%', y: '50%' };
+    
+    const rect = galleryRef.current.getBoundingClientRect();
+    const containerCenterX = (rect.left + rect.right) / 2;
+    const containerCenterY = (rect.top + rect.bottom) / 2;
+    
+    const centerXPercent = (containerCenterX / window.innerWidth) * 100;
+    
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const documentHeight = document.documentElement.scrollHeight;
+    const absoluteY = containerCenterY + scrollTop;
+    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
+    
+    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
+  };
+
   // Handle button click with zoom and fade
   const handleButtonClick = (buttonName, path) => {
     const center = calculateButtonCenter(buttonName);
@@ -195,6 +231,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       setIsAnimating(true);
       setIsAnimatingBackward(true);
       setActiveView(null); // Unmount content immediately
+      // Center on media container when returning from button click
+      setButtonCenter(calculateMediaContainerCenter());
     });
     
     // After content fade (0.9s), clear clickedButton to complete the scale animation and fade in landing
@@ -283,9 +321,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     if (isAnimating) return;
     setIsAnimating(true);
     
+    // Center on carousel when returning from slide click
+    setSlideCenter(calculateCarouselCenter());
+    
     setTimeout(() => {
       setActiveView(null);
       setIsAnimating(false);
+      setSlideCenter({ x: '50%', y: '50%' });
       window.scrollTo(0, 0);
     }, 400);
   };
@@ -350,14 +392,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     }
   }, [activeView]);
 
-  // Track scroll position relative to video header center
+  // Track scroll position relative to video header bottom minus 150px
   React.useEffect(() => {
     const handleScroll = () => {
+      // Check if scrolled past 150px above the bottom of video header
       if (videoHeaderRef?.current) {
         const videoRect = videoHeaderRef.current.getBoundingClientRect();
-        const videoCenter = videoRect.height / 2;
-        // Check if user has scrolled past the center of the video header
-        setIsScrolledPastH1(videoRect.top < -videoCenter);
+        // Show small logo when scrolled past 150px above video bottom
+        setIsScrolledPastH1(videoRect.bottom - 150 < 0);
       }
       
       // Update slideshow opacity based on scroll position
@@ -547,30 +589,50 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : (slideCenter.x + ' ' + slideCenter.y)
         }}
       >
-      {/* Mobile Header - Logo Only (centered above h1, bottom-center below) */}
-      <header className={`fixed bg-transparent mobile-header ${
-        isScrolledPastH1 ? 'mobile-header-visible' : 'mobile-header-hidden'
-      } ${scrollDirection === 'down' ? 'logo-fade-out' : 'logo-fade-in'}`} style={{
+      {/* Mobile Header - Logo (normal size centered, small size top-right) */}
+      <header className={`fixed bg-transparent mobile-header ${scrollDirection === 'down' ? 'logo-fade-out' : 'logo-fade-in'}`} style={{
         zIndex: activeView ? 1 : 9999, 
         overflow: 'hidden',
-        top: isScrolledPastH1 ? 'auto' : '0',
-        bottom: isScrolledPastH1 ? '30px' : 'auto',
-        left: isScrolledPastH1 ? '0' : '0',
-        right: isScrolledPastH1 ? '0' : '0',
-        width: '100vw'
+        top: isScrolledPastH1 ? '1rem' : '0',
+        right: isScrolledPastH1 ? '1rem' : 'auto',
+        bottom: isScrolledPastH1 ? 'auto' : 'auto',
+        left: isScrolledPastH1 ? 'auto' : '0',
+        width: isScrolledPastH1 ? 'auto' : '100vw'
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          padding: isScrolledPastH1 ? '0.75rem 1rem' : '1rem 1.5rem'
+          justifyContent: isScrolledPastH1 ? 'center' : 'center',
+          padding: isScrolledPastH1 ? '0.5rem' : '1rem 1.5rem',
+          gap: isScrolledPastH1 ? '0.75rem' : '0',
+          backgroundColor: isScrolledPastH1 ? 'rgba(0, 0, 0, 0.9)' : 'transparent',
+          borderRadius: isScrolledPastH1 ? '50px' : '0'
         }}>
           <button
-            onClick={() => scrollToSection('footer-menu')}
+            onClick={() => {
+              const footerMenu = document.getElementById('footer-menu');
+              if (footerMenu) footerMenu.scrollIntoView({ behavior: 'smooth' });
+            }}
             className="logo-btn"
-            title="Go to footer menu"
+            title="Go to menu"
+            style={{ marginRight: isScrolledPastH1 ? '-10px' : '0' }}
           >
-            <img src={logo} alt="Garden For Life Logo" className="logo-img logo-lg" />
+            <img src={logo} alt="Garden For Life Logo" className="logo-img" style={{ width: isScrolledPastH1 ? '48px' : '176px', height: isScrolledPastH1 ? '48px' : '176px' }} />
+          </button>
+          
+          <button
+            onClick={() => window.location.href = '/login'}
+            className="p-2 hover:bg-gray-700 transition-colors duration-300"
+            title="Go to login"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginLeft: !isScrolledPastH1 ? '-58px' : '0',
+              ...(!isScrolledPastH1 && { position: 'fixed', right: '1.52rem', top: '2.21rem', transform: 'scale(0.97)' })
+            }}
+          >
+            {darkMode ? <BsSun className="text-3xl" style={{color: '#eb7e09ff'}} /> : <BsMoon className="text-3xl" style={{color: '#1e90ff'}} />}
           </button>
         </div>
       </header>

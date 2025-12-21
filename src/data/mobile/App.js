@@ -20,7 +20,6 @@ import placeholder6 from '../../images/slideshow images/placeholder6.svg';
 import placeholder7 from '../../images/slideshow images/placeholder7.svg';
 import placeholder8 from '../../images/slideshow images/placeholder8.svg';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
-import knight from '../../images/knightpng.png';
 import soul from '../../images/soulpng.png';
 import body from '../../images/bodypng.png';
 import mind from '../../images/mindpng.png';
@@ -258,7 +257,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       if (videoHeaderRef?.current) {
         const videoRect = videoHeaderRef.current.getBoundingClientRect();
         // Show small logo when at middle of video container
-        setIsScrolledPastH1(videoRect.bottom - 400 < 0);
+        setIsScrolledPastH1(videoRect.bottom - 480 < 0);
       }
       
       // Update slideshow opacity based on scroll position

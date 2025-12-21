@@ -76,6 +76,17 @@ const App = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Handle phone back button to prevent leaving the site
+  useEffect(() => {
+    const handlePopState = (event) => {
+      // Prevent navigation away from the site
+      window.history.pushState({ page: 'app' }, null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {

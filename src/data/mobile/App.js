@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { flushSync } from 'react-dom';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -35,13 +34,10 @@ import { slideContentMap } from './slides';
 const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
   const [currentSlide, setCurrentSlide] = React.useState(0);
-  const [clickedSlide, setClickedSlide] = React.useState(null);
   const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
   const [isAnimating, setIsAnimating] = React.useState(false);
   const [clickedButton, setClickedButton] = React.useState(null);
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
-  const [slideCenter, setSlideCenter] = React.useState({ x: '50%', y: '50%' });
-  const [entryCenter, setEntryCenter] = React.useState({ x: '50%', y: '50%' }); // Triangle center on content page
   const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false);
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
@@ -101,73 +97,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
   };
 
-  // Calculate slide center position for zoom origin
-  const calculateSlideCenter = (slideIndex) => {
-    // Get the breathing border element for this slide
-    const allBreathingBorders = document.querySelectorAll('.breathingBorder');
-    
-    if (allBreathingBorders.length === 0) return { x: '50%', y: '50%' };
-    
-    // Find the correct breathing border for this slide (accounting for 3 copies of slides)
-    const borderElement = allBreathingBorders[slideIndex];
-    
-    if (!borderElement) return { x: '50%', y: '50%' };
-    
-    const rect = borderElement.getBoundingClientRect();
-    
-    // Get center of the breathing border circle
-    const circleCenterX = (rect.left + rect.right) / 2;
-    const circleCenterY = (rect.top + rect.bottom) / 2;
-    
-    // Convert to percentage of viewport
-    const centerXPercent = (circleCenterX / window.innerWidth) * 100;
-    
-    // For Y, account for scroll position
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const documentHeight = document.documentElement.scrollHeight;
-    const absoluteY = circleCenterY + scrollTop;
-    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
-    
-    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
-  };
-
-  // Calculate triangle header center on content page for entry point
-  const calculateContentTriangleCenter = () => {
-    // Find the SVG triangle on the content page (first one found)
-    const triangleSvg = document.querySelector('svg[viewBox="0 0 300 300"]');
-    
-    if (!triangleSvg) return { x: '50%', y: '50%' };
-    
-    const rect = triangleSvg.getBoundingClientRect();
-    
-    // Simple center calculation - no rotation offsets
-    let triangleCenterX = (rect.left + rect.right) / 2;
-    let triangleCenterY = (rect.top + rect.bottom) / 2;
-    
-    // Determine which button this is from content
-    const headerText = document.querySelector('h1')?.textContent?.trim();
-    
-    // Manual adjustments per button (same as landing page)
-    if (headerText === 'TEACHERS') {
-      triangleCenterX -= 15;
-      triangleCenterY -= 40;
-    }
-    if (headerText === 'MIND') {
-      triangleCenterX += 5;
-      triangleCenterY -= 9;
-    }
-    
-    // Convert to percentage coordinates
-    const centerXPercent = (triangleCenterX / window.innerWidth) * 100;
-    
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const documentHeight = document.documentElement.scrollHeight;
-    const absoluteY = triangleCenterY + scrollTop;
-    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
-    
-    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
-  };
-
   // Handle button click with zoom and fade - landing page
   const handleButtonClick = (buttonName, path) => {
     if (isAnimating) return;
@@ -191,13 +120,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const handleBackToButton = () => {
     // Start the exit animation
     setIsDetailPageExiting(true);
+    setIsScrolledPastH1(false);
     
     // Keep detail page visible while overlay fades, then hide it
     setTimeout(() => {
       setActiveView(null);
-    }, 900); // When overlay is fully black
+    }, 300); // When overlay is fully black (0.3s)
     
-    // After detail page fades out (0.9s) + landing page fades in (0.6s), scroll to media container
+    // After detail page fades out (0.3s) + landing page fades in (1.2s), scroll to media container
     setTimeout(() => {
       if (mediaContainerRef?.current) {
         const rect = mediaContainerRef.current.getBoundingClientRect();
@@ -208,7 +138,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         window.scrollTo(0, scrollTarget);
       }
       setIsDetailPageExiting(false);
-    }, 1500);
+    }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
   };
 
   const handleScroll = () => {
@@ -258,16 +188,18 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   // Handle back - direct navigation to landing
   const handleBack = () => {
     setIsDetailPageExiting(true);
+    setIsScrolledPastH1(false);
     
     // Keep detail page visible while overlay fades, then hide it
     setTimeout(() => {
       setActiveView(null);
-    }, 900); // When overlay is fully black
+      window.scrollTo(0, 0);
+    }, 300); // When overlay is fully black (0.3s)
     
-    // Reset exit flag after animations complete (0.9s fade out + 0.6s fade in = 1.5s)
+    // Reset exit flag after animations complete (0.3s detail hide + 1.2s landing fade in + buffer = 1.8s)
     setTimeout(() => {
       setIsDetailPageExiting(false);
-    }, 1500);
+    }, 1800);
   };
 
   // Handle close slide - same as handleBack for slide content pages
@@ -310,25 +242,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     setTimeout(centerSlides, 100);
     setTimeout(centerSlides, 300);
   }, []);
-
-  // Calculate entry point when content page loads
-  React.useEffect(() => {
-    if (activeView) {
-      // Multiple attempts to ensure calculation is correct
-      const calculateAndSet = () => {
-        const center = calculateContentTriangleCenter();
-        setEntryCenter(center);
-      };
-      
-      calculateAndSet();
-      setTimeout(calculateAndSet, 100);
-      setTimeout(calculateAndSet, 200);
-      setTimeout(calculateAndSet, 400);
-    } else {
-      // Reset entry center when returning to landing
-      setEntryCenter({ x: '50%', y: '50%' });
-    }
-  }, [activeView]);
 
   // Track scroll position relative to video header bottom minus 150px
   React.useEffect(() => {
@@ -497,7 +410,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               bottom: 0,
               zIndex: 2000,
               overflow: 'auto',
-              transformOrigin: activeView ? (entryCenter.x + ' ' + entryCenter.y) : (clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : (slideCenter.x + ' ' + slideCenter.y)),
+              transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : '50% 50%',
               display: activeView ? 'block' : 'none'
             }}
           >
@@ -517,7 +430,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             transition={{
               opacity: {
                 type: 'tween',
-                duration: 0.9,
+                duration: 0.6,
                 ease: 'easeInOut'
               }
             }}
@@ -557,7 +470,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         }}
         key={`content-${isDetailPageExiting}`}
         style={{
-          transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : (slideCenter.x + ' ' + slideCenter.y)
+          transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : '50% 50%'
         }}
       >
       {/* Mobile Header - Logo (normal size centered, small size top-right) */}
@@ -1041,18 +954,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 <motion.div 
                   className="breathingBorder" 
                   onClick={() => handleSlideClick(index, slides[index % 9].route)}
-                  animate={clickedSlide === index ? {
-                    scale: [1, 1.2, 1.5],
-                    opacity: [1, 0.5, 0]
-                  } : {
+                  animate={{
                     scale: [1, 1.08, 1],
                     borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)']
                   }}
-                  transition={clickedSlide === index ? {
-                    duration: 1.5,
-                    ease: 'easeInOut',
-                    times: [0, 0.4, 1]
-                  } : {
+                  transition={{
                     scale: {
                       duration: 3,
                       repeat: Infinity,
@@ -1078,10 +984,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     borderRadius: '50%',
                     border: '3px solid rgba(239, 134, 22, 0.5)',
                     boxSizing: 'border-box',
-                    zIndex: clickedSlide === index ? 1000 : 2,
+                    zIndex: 2,
                     flexShrink: 0,
                     cursor: 'pointer',
-                    transformOrigin: slideCenter,
+                    transformOrigin: '50% 50%',
                     pointerEvents: isAnimating ? 'none' : 'auto',
                     animationDelay: `${(index % 9) * (4 / 9)}s`
                   }}

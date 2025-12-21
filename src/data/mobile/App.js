@@ -20,6 +20,7 @@ import placeholder6 from '../../images/slideshow images/placeholder6.svg';
 import placeholder7 from '../../images/slideshow images/placeholder7.svg';
 import placeholder8 from '../../images/slideshow images/placeholder8.svg';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
+import knight from '../../images/knightpng.png';
 import soul from '../../images/soulpng.png';
 import body from '../../images/bodypng.png';
 import mind from '../../images/mindpng.png';
@@ -402,7 +403,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             transition={{
               opacity: {
                 type: 'tween',
-                duration: 0.9,
+                duration: isDetailPageExiting ? 0.6 : 0.9,
                 ease: 'easeInOut'
               }
             }}
@@ -448,7 +449,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               right: 0,
               bottom: 0,
               zIndex: 1999,
-              backgroundColor: '#000000',
+              backgroundColor: '#150a24ff',
               pointerEvents: 'none'
             }}
           />

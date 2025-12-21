@@ -1,18 +1,8 @@
 // Slide content components - all content lives here for single-page experience
 import React from 'react';
 import { motion } from 'framer-motion';
-import soul from '../../../images/soulpng.png';
-import body from '../../../images/bodypng.png';
-import mind from '../../../images/mindpng.png';
-import karmanevents from '../../../images/slideshow images/karmaneventsPNG.png';
-import club49logo from '../../../images/slideshow images/club49-logo.png';
-import logo1111 from '../../../images/slideshow images/1111logo.png';
-import placeholder4 from '../../../images/slideshow images/placeholder4.svg';
-import placeholder5 from '../../../images/slideshow images/placeholder5.svg';
-import placeholder6 from '../../../images/slideshow images/placeholder6.svg';
-import placeholder7 from '../../../images/slideshow images/placeholder7.svg';
-import placeholder8 from '../../../images/slideshow images/placeholder8.svg';
-import rengiLogo from '../../../images/slideshow images/Rengi-logo.png';
+import knight from '../../../images/knightpng.png';
+import logo from '../../../images/logo.png';
 
 // Shared back button component
 export const BackButton = ({ onBack }) => (
@@ -62,7 +52,7 @@ export const KarmanContent = ({ onBack, onCloseSlide }) => (
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
       >
-        <img src={karmanevents} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={logo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </motion.div>
     </div>
     <div style={{ position: 'absolute', top: 'calc(clamp(3rem, 10vw, 8.5rem) + clamp(70px, 30vw, 220px) + 3rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2 }}>
@@ -93,7 +83,7 @@ export const Code49Content = ({ onBack, onCloseSlide }) => (
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
       >
-        <img src={club49logo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={logo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </motion.div>
     </div>
     <div style={{ position: 'absolute', top: 'calc(clamp(3rem, 10vw, 8.5rem) + clamp(70px, 30vw, 220px) + 3rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2 }}>
@@ -124,7 +114,7 @@ export const TattooShopContent = ({ onBack, onCloseSlide }) => (
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
       >
-        <img src={logo1111} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={logo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </motion.div>
     </div>
     <div style={{ position: 'absolute', top: 'calc(clamp(3rem, 10vw, 8.5rem) + clamp(70px, 30vw, 220px) + 3rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2 }}>
@@ -155,7 +145,7 @@ export const Slide4Content = ({ onBack, onCloseSlide }) => (
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
       >
-        <img src={placeholder4} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={logo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </motion.div>
     </div>
     <div style={{ position: 'absolute', top: 'calc(clamp(3rem, 10vw, 8.5rem) + clamp(70px, 30vw, 220px) + 3rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2 }}>
@@ -184,7 +174,7 @@ export const Slide5Content = ({ onBack, onCloseSlide }) => (
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
       >
-        <img src={placeholder5} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={logo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </motion.div>
     </div>
     <div style={{ position: 'absolute', top: 'calc(clamp(3rem, 10vw, 8.5rem) + clamp(70px, 30vw, 220px) + 3rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2 }}>
@@ -213,7 +203,7 @@ export const Slide6Content = ({ onBack, onCloseSlide }) => (
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
       >
-        <img src={placeholder6} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={logo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </motion.div>
     </div>
     <div style={{ position: 'absolute', top: 'calc(clamp(3rem, 10vw, 8.5rem) + clamp(70px, 30vw, 220px) + 3rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2 }}>
@@ -242,7 +232,7 @@ export const Slide7Content = ({ onBack, onCloseSlide }) => (
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
       >
-        <img src={placeholder7} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={logo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </motion.div>
     </div>
     <div style={{ position: 'absolute', top: 'calc(clamp(3rem, 10vw, 8.5rem) + clamp(70px, 30vw, 220px) + 3rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2 }}>
@@ -271,7 +261,7 @@ export const Slide8Content = ({ onBack, onCloseSlide }) => (
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
       >
-        <img src={placeholder8} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={logo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </motion.div>
     </div>
     <div style={{ position: 'absolute', top: 'calc(clamp(3rem, 10vw, 8.5rem) + clamp(70px, 30vw, 220px) + 3rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2 }}>
@@ -300,7 +290,7 @@ export const RengiFoodsContent = ({ onBack, onCloseSlide }) => (
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
       >
-        <img src={rengiLogo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={logo} alt="Close" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </motion.div>
     </div>
     <div style={{ position: 'absolute', top: 'calc(clamp(3rem, 10vw, 8.5rem) + clamp(70px, 30vw, 220px) + 3rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2 }}>
@@ -336,7 +326,7 @@ export const TeachersContent = ({ onBack, onBackToButton, activeView }) => (
                 <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
               </clipPath>
             </defs>
-            <image href={body} x="36" y="79" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-teachers-clip)" style={{pointerEvents: 'none'}} />
+            <image href={knight} x="36" y="79" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-teachers-clip)" style={{pointerEvents: 'none'}} />
           </g>
         </motion.svg>
       </div>
@@ -372,7 +362,7 @@ export const MindContent = ({ onBack, onBackToButton, activeView }) => (
                 <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
               </clipPath>
             </defs>
-            <image href={mind} x="32" y="119" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-mind-clip)" style={{pointerEvents: 'none'}} />
+            <image href={knight} x="32" y="119" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-mind-clip)" style={{pointerEvents: 'none'}} />
           </g>
         </motion.svg>
       </div>
@@ -408,7 +398,7 @@ export const SoulContent = ({ onBack, onBackToButton, activeView }) => (
                 <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
               </clipPath>
             </defs>
-            <image href={soul} x="30" y="90" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-soul-clip)" style={{pointerEvents: 'none'}} />
+            <image href={knight} x="30" y="90" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-soul-clip)" style={{pointerEvents: 'none'}} />
           </g>
         </motion.svg>
       </div>

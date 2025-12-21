@@ -168,7 +168,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
   };
 
-  // Handle button click with zoom and fade
+  // Handle button click with zoom and fade - landing page
   const handleButtonClick = (buttonName, path) => {
     if (isAnimating) return;
     setIsAnimating(true);
@@ -187,17 +187,17 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     }, 1500);
   };
 
-  // Handle back to button - simple scroll to media container
+  // Detail page triangle button - fade transition back to media container
   const handleBackToButton = () => {
-    if (isAnimating) return;
-    setIsAnimating(true);
+    // Start the exit animation
+    setIsDetailPageExiting(true);
     
-    flushSync(() => {
-      setActiveView(null);                            // Unmount detail page
-      setButtonCenter({ x: '50%', y: '50%' });        // Reset animation center
-    });
+    // Keep detail page visible while overlay fades, then hide it
+    setTimeout(() => {
+      setActiveView(null);
+    }, 900); // When overlay is fully black
     
-    // After DOM reflow, scroll to center the media container
+    // After detail page fades out (0.9s) + landing page fades in (0.6s), scroll to media container
     setTimeout(() => {
       if (mediaContainerRef?.current) {
         const rect = mediaContainerRef.current.getBoundingClientRect();
@@ -205,13 +205,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         const elementHeight = rect.height;
         const viewportHeight = window.innerHeight;
         const scrollTarget = Math.max(0, elementTop - (viewportHeight - elementHeight) / 2);
-        window.scrollTo(0, scrollTarget);  // Center media container in viewport
+        window.scrollTo(0, scrollTarget);
       }
-    }, 100);
-    
-    setTimeout(() => {
-      setIsAnimating(false);
-    }, 400);
+      setIsDetailPageExiting(false);
+    }, 1500);
   };
 
   const handleScroll = () => {
@@ -252,51 +249,23 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     { header: 'RENGI FOODS', subtitle: 'Rengi Foods captures the vibrant spirit of Korean street food, offering authentic and affordable flavors from Seoul\'s streets to your local market. The focus on affordability ensures everyone can enjoy bold Korean tastes without compromise.', image: rengiLogo, bgColor: 'rgba(251, 146, 60, 0.15)', route: '/rengifoods' }
   ];
 
-  // Handle slide click - zoom animation then show content
+  // Handle slide click - direct navigation to detail page
   const handleSlideClick = (index, route) => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    setClickedSlide(index);
-    
-    // Calculate the center of the clicked slide
-    const center = calculateSlideCenter(index);
-    setSlideCenter(center);
-    
-    // Use same timing as button black hole effect: 1.5s total
-    setTimeout(() => {
-      setActiveView(route);
-      setIsAnimating(false);
-      setClickedSlide(null);
-      window.scrollTo(0, 0);
-    }, 1500);
+    setActiveView(route);
+    window.scrollTo(0, 0);
   };
 
-  // Handle back - simple scroll to gallery container
+  // Handle back - direct navigation to landing
   const handleBack = () => {
-    if (isAnimating) return;
-    setIsAnimating(true);
     setIsDetailPageExiting(true);
     
-    flushSync(() => {
+    // Keep detail page visible while overlay fades, then hide it
+    setTimeout(() => {
       setActiveView(null);
-      setSlideCenter({ x: '50%', y: '50%' });
-    });
+    }, 900); // When overlay is fully black
     
-    // After DOM reflow, scroll to center the gallery
+    // Reset exit flag after animations complete (0.9s fade out + 0.6s fade in = 1.5s)
     setTimeout(() => {
-      if (galleryRef?.current) {
-        const rect = galleryRef.current.getBoundingClientRect();
-        const elementTop = rect.top + window.scrollY;
-        const elementHeight = rect.height;
-        const viewportHeight = window.innerHeight;
-        const scrollTarget = Math.max(0, elementTop - (viewportHeight - elementHeight) / 2);
-        window.scrollTo(0, scrollTarget);
-      }
-    }, 100);
-    
-    // Reset exit flag after the fade out animation completes (0.9s) plus fade in (0.6s)
-    setTimeout(() => {
-      setIsAnimating(false);
       setIsDetailPageExiting(false);
     }, 1500);
   };
@@ -537,7 +506,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         )}
       </AnimatePresence>
 
-      {/* Exit overlay - Blocks landing page during detail page fade out */}
+      {/* Exit overlay - Black screen during transition */}
       <AnimatePresence>
         {isDetailPageExiting && (
           <motion.div
@@ -565,32 +534,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           />
         )}
       </AnimatePresence>
-
-      {/* Landing page fade-in after detail page exit */}
-      {isDetailPageExiting && (
-        <motion.div
-          key="return-fade"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{
-            opacity: {
-              type: 'tween',
-              duration: 0.6,
-              delay: 0.9,
-              ease: 'easeInOut'
-            }
-          }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 1,
-            pointerEvents: 'none'
-          }}
-        />
-      )}
 
       {/* Page content wrapper - fades when button or slide is clicked */}
       <motion.div
@@ -625,7 +568,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         right: isScrolledPastH1 ? '1rem' : 'auto',
         bottom: isScrolledPastH1 ? 'auto' : 'auto',
         left: isScrolledPastH1 ? 'auto' : '0',
-        width: isScrolledPastH1 ? 'auto' : '100vw'
+        width: isScrolledPastH1 ? 'auto' : '100vw',
+        display: activeView || isDetailPageExiting ? 'none' : 'block'
       }}>
         <div style={{
           display: 'flex',
@@ -1391,29 +1335,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </div>
         </div>
       </section>
-
-      {/* Debug Calculator - Shows animation state */}
-      <div style={{
-        position: 'fixed',
-        bottom: '20px',
-        left: '20px',
-        backgroundColor: 'rgba(0, 0, 0, 0.95)',
-        border: '2px solid #00ff00',
-        borderRadius: '8px',
-        padding: '12px',
-        fontSize: '12px',
-        fontFamily: 'monospace',
-        color: '#00ff00',
-        zIndex: 10000,
-        maxWidth: '250px',
-        lineHeight: '1.5'
-      }}>
-        <div><strong>Return Animation Debug</strong></div>
-        <div>isAnimating: <span style={{color: isAnimating ? '#ff0000' : '#00ff00'}}>{String(isAnimating)}</span></div>
-        <div>isDetailPageExiting: <span style={{color: isDetailPageExiting ? '#ff0000' : '#00ff00'}}>{String(isDetailPageExiting)}</span></div>
-        <div>activeView: <span style={{color: activeView ? '#ff0000' : '#00ff00'}}>{activeView || 'null'}</span></div>
-        <div>clickedButton: <span style={{color: clickedButton ? '#ff0000' : '#00ff00'}}>{clickedButton || 'null'}</span></div>
-      </div>
 
       {/* Mobile Footer with Navigation */}
       <footer id="footer-menu" style={{

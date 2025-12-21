@@ -87,7 +87,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             className="poetry active:scale-95"
             style={{
               position: 'absolute',
-              animation: 'breathColor 4s ease-in-out infinite, breathBorder 4s ease-in-out infinite, pulsate 4s ease-in-out infinite',
+              animation: 'breathColor 4s ease-in-out infinite 0.3s, breathBorder 4s ease-in-out infinite 0.3s, pulsate 4s ease-in-out infinite 0.3s',
               border: '2px solid',
               borderRadius: '50%',
               backgroundColor: 'transparent',
@@ -115,8 +115,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             }}
             animate={{ scale: [1, 1.08, 1], rotate: 360 }}
             transition={{
-              rotate: { duration: 9, repeat: Infinity, ease: 'linear', delay: 0 },
-              scale: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0 }
+              rotate: { duration: 9, repeat: Infinity, ease: 'linear', delay: 0.3 },
+              scale: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }
             }}
           >
             <path
@@ -134,7 +134,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               strokeLinejoin="round"
               pointerEvents="none"
               animate={{ stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
             />
           </motion.svg>
 
@@ -144,7 +144,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             className="poetry active:scale-95"
             style={{
               position: 'absolute',
-              animation: 'breathColor 4s ease-in-out infinite, breathBorder 4s ease-in-out infinite, pulsate 4s ease-in-out infinite',
+              animation: 'breathColor 4s ease-in-out infinite 0.3s, breathBorder 4s ease-in-out infinite 0.3s, pulsate 4s ease-in-out infinite 0.3s',
               border: '2px solid',
               borderRadius: '0',
               backgroundColor: 'transparent',

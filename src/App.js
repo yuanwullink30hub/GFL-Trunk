@@ -13,6 +13,7 @@ import generalData from './data.json';
 import desktopData from './data/desktop/data.json';
 import mobileData from './data/mobile/data.json';
 import MobileAppContent from './data/mobile/App';
+import IntroPage from './pages/IntroPage';
 import logo from './images/logo.png';
 import './styles/poetry.css';
 import './styles/text.css';
@@ -84,8 +85,15 @@ const App = () => {
 
   return (
     <Routes>
+      {/* Intro Page - First page users see */}
       <Route 
         path="/" 
+        element={<IntroPage darkMode={darkMode} setDarkMode={setDarkMode} />}
+      />
+
+      {/* Landing Page - Main content after clicking intro button */}
+      <Route 
+        path="/landing" 
         element={
           isMobile ? (
             <div className={`min-h-screen transition-all duration-300 ${

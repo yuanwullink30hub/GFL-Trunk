@@ -57,7 +57,7 @@ export const KarmanContent = ({ onBack, onCloseSlide }) => (
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
       <motion.div
-        animate={{ scale: [1, 1.08, 1] }}
+        animate={{ scale: [1, 1.08, 1], borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)'] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
@@ -88,7 +88,7 @@ export const Code49Content = ({ onBack, onCloseSlide }) => (
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
       <motion.div
-        animate={{ scale: [1, 1.08, 1] }}
+        animate={{ scale: [1, 1.08, 1], borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)'] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
@@ -119,7 +119,7 @@ export const TattooShopContent = ({ onBack, onCloseSlide }) => (
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
       <motion.div
-        animate={{ scale: [1, 1.08, 1] }}
+        animate={{ scale: [1, 1.08, 1], borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)'] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
@@ -150,7 +150,7 @@ export const Slide4Content = ({ onBack, onCloseSlide }) => (
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
       <motion.div
-        animate={{ scale: [1, 1.08, 1] }}
+        animate={{ scale: [1, 1.08, 1], borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)'] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
@@ -179,7 +179,7 @@ export const Slide5Content = ({ onBack, onCloseSlide }) => (
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
       <motion.div
-        animate={{ scale: [1, 1.08, 1] }}
+        animate={{ scale: [1, 1.08, 1], borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)'] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
@@ -208,7 +208,7 @@ export const Slide6Content = ({ onBack, onCloseSlide }) => (
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
       <motion.div
-        animate={{ scale: [1, 1.08, 1] }}
+        animate={{ scale: [1, 1.08, 1], borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)'] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
@@ -237,7 +237,7 @@ export const Slide7Content = ({ onBack, onCloseSlide }) => (
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
       <motion.div
-        animate={{ scale: [1, 1.08, 1] }}
+        animate={{ scale: [1, 1.08, 1], borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)'] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
@@ -266,7 +266,7 @@ export const Slide8Content = ({ onBack, onCloseSlide }) => (
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
       <motion.div
-        animate={{ scale: [1, 1.08, 1] }}
+        animate={{ scale: [1, 1.08, 1], borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)'] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
@@ -295,7 +295,7 @@ export const RengiFoodsContent = ({ onBack, onCloseSlide }) => (
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
       <motion.div
-        animate={{ scale: [1, 1.08, 1] }}
+        animate={{ scale: [1, 1.08, 1], borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)'] }}
         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         onClick={onCloseSlide}
         style={{ display: 'inline-block', width: 'clamp(70px, 30vw, 220px)', height: 'clamp(70px, 30vw, 220px)', borderRadius: '50%', border: '3px solid rgba(239, 134, 22, 0.5)', overflow: 'hidden', cursor: 'pointer' }}
@@ -324,7 +324,10 @@ export const TeachersContent = ({ onBack, onBackToButton, activeView }) => (
       zIndex: 2
     }}>
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'clamp(1.5rem, 3vw, 2.5rem)' }}>
-        <svg width="clamp(115px, 36vw, 216px)" height="clamp(115px, 36vw, 216px)" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible', width: 'clamp(115px, 36vw, 216px)', height: 'clamp(115px, 36vw, 216px)', pointerEvents: 'none' }}>
+        <motion.svg 
+          animate={{ scale: [1.5, 1.62, 1.5] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+          width="clamp(80.5px, 25.2vw, 151.2px)" height="clamp(80.5px, 25.2vw, 151.2px)" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible', width: 'clamp(80.5px, 25.2vw, 151.2px)', height: 'clamp(80.5px, 25.2vw, 151.2px)', pointerEvents: 'none', scale: 1.5 }}>
           <g style={{ overflow: 'visible', pointerEvents: 'none' }}>
             <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="rgba(0,0,0,0.001)" pointerEvents="all" onClick={() => onBackToButton && onBackToButton('button2')} style={{ cursor: 'pointer' }} />
             <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="none" stroke="rgba(239, 134, 22, 0.75)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" className="breathStrokeButton2" style={{animation: 'breathStrokeButton2 2.5s ease-in-out infinite'}} />
@@ -335,13 +338,13 @@ export const TeachersContent = ({ onBack, onBackToButton, activeView }) => (
             </defs>
             <image href={body} x="36" y="79" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-teachers-clip)" style={{pointerEvents: 'none'}} />
           </g>
-        </svg>
+        </motion.svg>
       </div>
-      <h1 style={{ fontSize: 'clamp(32px, 8vw, 64px)', marginTop: 0, marginBottom: 'clamp(1rem, 2vw, 1.5rem)', color: '#0c0418ff', textAlign: 'center' }}>TEACHERS</h1>
-      <p style={{ fontSize: 'clamp(16px, 4vw, 24px)', margin: 0, lineHeight: '1.6', textAlign: 'center' }}>
-        Empowering educators to inspire the next generation.
-      </p>
     </div>
+    <h1 style={{ fontSize: 'clamp(32px, 8vw, 64px)', marginTop: 0, marginBottom: 'clamp(1rem, 2vw, 1.5rem)', color: '#0c0418ff', textAlign: 'center' }}>TEACHERS</h1>
+    <p style={{ fontSize: 'clamp(16px, 4vw, 24px)', margin: 0, lineHeight: '1.6', textAlign: 'center' }}>
+      Empowering educators to inspire the next generation.
+    </p>
   </div>
 );
 
@@ -357,7 +360,10 @@ export const MindContent = ({ onBack, onBackToButton, activeView }) => (
       zIndex: 2
     }}>
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'clamp(1.5rem, 3vw, 2.5rem)' }}>
-        <svg width="clamp(115px, 36vw, 216px)" height="clamp(115px, 36vw, 216px)" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible', width: 'clamp(115px, 36vw, 216px)', height: 'clamp(115px, 36vw, 216px)', pointerEvents: 'none' }}>
+        <motion.svg 
+          animate={{ scale: [1.5, 1.62, 1.5] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          width="clamp(80.5px, 25.2vw, 151.2px)" height="clamp(80.5px, 25.2vw, 151.2px)" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible', width: 'clamp(80.5px, 25.2vw, 151.2px)', height: 'clamp(80.5px, 25.2vw, 151.2px)', pointerEvents: 'none', scale: 1.5 }}>
           <g style={{ overflow: 'visible', pointerEvents: 'none' }}>
             <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="rgba(0,0,0,0.001)" pointerEvents="all" onClick={() => onBackToButton && onBackToButton('button3')} style={{ cursor: 'pointer' }} />
             <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="none" stroke="rgba(34, 197, 94, 0.75)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" className="breathStrokeButton3" style={{animation: 'breathStrokeMind 2.5s ease-in-out infinite'}} />
@@ -368,13 +374,13 @@ export const MindContent = ({ onBack, onBackToButton, activeView }) => (
             </defs>
             <image href={mind} x="32" y="119" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-mind-clip)" style={{pointerEvents: 'none'}} />
           </g>
-        </svg>
+        </motion.svg>
       </div>
-      <h1 style={{ fontSize: 'clamp(32px, 8vw, 64px)', marginTop: 0, marginBottom: 'clamp(1rem, 2vw, 1.5rem)', color: '#22c55e', textAlign: 'center' }}>MIND</h1>
-      <p style={{ fontSize: 'clamp(16px, 4vw, 24px)', margin: 0, lineHeight: '1.6', textAlign: 'center' }}>
-        Nurturing mental growth and consciousness.
-      </p>
     </div>
+    <h1 style={{ fontSize: 'clamp(32px, 8vw, 64px)', marginTop: 0, marginBottom: 'clamp(1rem, 2vw, 1.5rem)', color: '#22c55e', textAlign: 'center' }}>MIND</h1>
+    <p style={{ fontSize: 'clamp(16px, 4vw, 24px)', margin: 0, lineHeight: '1.6', textAlign: 'center' }}>
+      Nurturing mental growth and consciousness.
+    </p>
   </div>
 );
 
@@ -390,7 +396,10 @@ export const SoulContent = ({ onBack, onBackToButton, activeView }) => (
       zIndex: 2
     }}>
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'clamp(1.5rem, 3vw, 2.5rem)' }}>
-        <svg width="clamp(115px, 36vw, 216px)" height="clamp(115px, 36vw, 216px)" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible', width: 'clamp(115px, 36vw, 216px)', height: 'clamp(115px, 36vw, 216px)', pointerEvents: 'none' }}>
+        <motion.svg 
+          animate={{ scale: [1.5, 1.62, 1.5] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
+          width="clamp(80.5px, 25.2vw, 151.2px)" height="clamp(80.5px, 25.2vw, 151.2px)" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible', width: 'clamp(80.5px, 25.2vw, 151.2px)', height: 'clamp(80.5px, 25.2vw, 151.2px)', pointerEvents: 'none', scale: 1.5 }}>
           <g style={{ overflow: 'visible', pointerEvents: 'none' }}>
             <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="rgba(0,0,0,0.001)" pointerEvents="all" onClick={() => onBackToButton && onBackToButton('button1')} style={{ cursor: 'pointer' }} />
             <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="none" stroke="rgba(245, 158, 11, 0.75)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" className="breathStrokeButton1" style={{animation: 'breathStrokeSoul 2.5s ease-in-out infinite'}} />
@@ -401,13 +410,13 @@ export const SoulContent = ({ onBack, onBackToButton, activeView }) => (
             </defs>
             <image href={soul} x="30" y="90" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-soul-clip)" style={{pointerEvents: 'none'}} />
           </g>
-        </svg>
+        </motion.svg>
       </div>
-      <h1 style={{ fontSize: 'clamp(32px, 8vw, 64px)', marginTop: 0, marginBottom: 'clamp(1rem, 2vw, 1.5rem)', color: '#f59e0b', textAlign: 'center' }}>SOUL</h1>
-      <p style={{ fontSize: 'clamp(16px, 4vw, 24px)', margin: 0, lineHeight: '1.6', textAlign: 'center' }}>
-        Connecting with deeper purpose and meaning.
-      </p>
     </div>
+    <h1 style={{ fontSize: 'clamp(32px, 8vw, 64px)', marginTop: 0, marginBottom: 'clamp(1rem, 2vw, 1.5rem)', color: '#f59e0b', textAlign: 'center' }}>SOUL</h1>
+    <p style={{ fontSize: 'clamp(16px, 4vw, 24px)', margin: 0, lineHeight: '1.6', textAlign: 'center' }}>
+      Connecting with deeper purpose and meaning.
+    </p>
   </div>
 );
 

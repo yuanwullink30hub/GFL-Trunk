@@ -38,13 +38,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [clickedSlide, setClickedSlide] = React.useState(null);
   const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
   const [isAnimating, setIsAnimating] = React.useState(false);
-  const [isAnimatingBackward, setIsAnimatingBackward] = React.useState(false);
   const [clickedButton, setClickedButton] = React.useState(null);
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const [slideCenter, setSlideCenter] = React.useState({ x: '50%', y: '50%' });
   const [entryCenter, setEntryCenter] = React.useState({ x: '50%', y: '50%' }); // Triangle center on content page
   const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false);
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
+  const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
@@ -168,89 +168,50 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
   };
 
-  // Calculate media container center for zoom effect when returning from button content
-  const calculateMediaContainerCenter = () => {
-    if (!mediaContainerRef?.current) return { x: '50%', y: '50%' };
-    
-    const rect = mediaContainerRef.current.getBoundingClientRect();
-    const containerCenterX = (rect.left + rect.right) / 2;
-    const containerCenterY = (rect.top + rect.bottom) / 2;
-    
-    const centerXPercent = (containerCenterX / window.innerWidth) * 100;
-    
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const documentHeight = document.documentElement.scrollHeight;
-    const absoluteY = containerCenterY + scrollTop;
-    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
-    
-    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
-  };
-
-  // Calculate carousel/slider container center for zoom effect when returning from slide content
-  const calculateCarouselCenter = () => {
-    if (!galleryRef?.current) return { x: '50%', y: '50%' };
-    
-    const rect = galleryRef.current.getBoundingClientRect();
-    const containerCenterX = (rect.left + rect.right) / 2;
-    const containerCenterY = (rect.top + rect.bottom) / 2;
-    
-    const centerXPercent = (containerCenterX / window.innerWidth) * 100;
-    
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const documentHeight = document.documentElement.scrollHeight;
-    const absoluteY = containerCenterY + scrollTop;
-    const yPercentOfDocument = (absoluteY / documentHeight) * 100;
-    
-    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
-  };
-
   // Handle button click with zoom and fade
   const handleButtonClick = (buttonName, path) => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setClickedButton(buttonName);
+    
+    // Calculate the center of the clicked button
     const center = calculateButtonCenter(buttonName);
+    setButtonCenter(center);
     
-    // Force synchronous state updates to minimize animation delay
-    flushSync(() => {
-      setButtonCenter(center);
-      setClickedButton(buttonName);
-    });
-    
-    // Navigate at 1.5s (total animation duration) but keep clickedButton set for reverse animation
+    // Use same timing as slide effect: 1.5s total
     setTimeout(() => {
-      flushSync(() => {
-        setActiveView(path);
-        setButtonCenter({ x: '50%', y: '50%' });
-      });
+      setActiveView(path);
+      setIsAnimating(false);
+      setClickedButton(null);
+      window.scrollTo(0, 0);  // Scroll to top of detail page
     }, 1500);
   };
 
-  // Handle back to button with reverse zoom animation
-  const handleBackToButton = (buttonName) => {
+  // Handle back to button - simple scroll to media container
+  const handleBackToButton = () => {
     if (isAnimating) return;
+    setIsAnimating(true);
     
-    // Start reverse animation: content fades out while landing page scales back
     flushSync(() => {
-      setIsAnimating(true);
-      setIsAnimatingBackward(true);
-      setActiveView(null); // Unmount content immediately
-      // Center on media container when returning from button click
-      setButtonCenter(calculateMediaContainerCenter());
+      setActiveView(null);                            // Unmount detail page
+      setButtonCenter({ x: '50%', y: '50%' });        // Reset animation center
     });
     
-    // After content fade (0.9s), clear clickedButton to complete the scale animation and fade in landing
+    // After DOM reflow, scroll to center the media container
     setTimeout(() => {
-      flushSync(() => {
-        setClickedButton(null);
-      });
-    }, 900);
+      if (mediaContainerRef?.current) {
+        const rect = mediaContainerRef.current.getBoundingClientRect();
+        const elementTop = rect.top + window.scrollY;
+        const elementHeight = rect.height;
+        const viewportHeight = window.innerHeight;
+        const scrollTarget = Math.max(0, elementTop - (viewportHeight - elementHeight) / 2);
+        window.scrollTo(0, scrollTarget);  // Center media container in viewport
+      }
+    }, 100);
     
-    // Reset all animation states after total duration (0.9s + 0.6s = 1.5s)
     setTimeout(() => {
-      flushSync(() => {
-        setIsAnimating(false);
-        setIsAnimatingBackward(false);
-        setButtonCenter({ x: '50%', y: '50%' });
-      });
-    }, 1500);
+      setIsAnimating(false);
+    }, 400);
   };
 
   const handleScroll = () => {
@@ -310,20 +271,34 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     }, 1500);
   };
 
-  // Handle back - fade out content, return to landing
+  // Handle back - simple scroll to gallery container
   const handleBack = () => {
     if (isAnimating) return;
     setIsAnimating(true);
+    setIsDetailPageExiting(true);
     
-    // Center on carousel when returning from slide click
-    setSlideCenter(calculateCarouselCenter());
-    
-    setTimeout(() => {
+    flushSync(() => {
       setActiveView(null);
-      setIsAnimating(false);
       setSlideCenter({ x: '50%', y: '50%' });
-      window.scrollTo(0, 0);
-    }, 400);
+    });
+    
+    // After DOM reflow, scroll to center the gallery
+    setTimeout(() => {
+      if (galleryRef?.current) {
+        const rect = galleryRef.current.getBoundingClientRect();
+        const elementTop = rect.top + window.scrollY;
+        const elementHeight = rect.height;
+        const viewportHeight = window.innerHeight;
+        const scrollTarget = Math.max(0, elementTop - (viewportHeight - elementHeight) / 2);
+        window.scrollTo(0, scrollTarget);
+      }
+    }, 100);
+    
+    // Reset exit flag after the fade out animation completes (0.9s) plus fade in (0.6s)
+    setTimeout(() => {
+      setIsAnimating(false);
+      setIsDetailPageExiting(false);
+    }, 1500);
   };
 
   // Handle close slide - same as handleBack for slide content pages
@@ -420,27 +395,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Prevent backspace and return key from leaving the site
-  React.useEffect(() => {
-    const handleKeyDown = (e) => {
-      const activeElement = document.activeElement;
-      const isTextInput = activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA';
-      
-      // Prevent backspace from navigating back (unless in text field)
-      if (e.key === 'Backspace' && !isTextInput) {
-        e.preventDefault();
-      }
-      
-      // Prevent return key from triggering default behavior outside text fields
-      if (e.key === 'Enter' && !isTextInput) {
-        e.preventDefault();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // Calculate opacity for KWEEK KRACHTIGE text and media container (based on content visibility, not extended hitbox)
@@ -549,7 +503,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       display: activeView ? 'block' : 'block' // Content pages hidden via AnimatePresence
     }}>
       {/* Content Overlay - Shows when a slide is active */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {activeView && ActiveContent && (
           <motion.div
             key="content-overlay"
@@ -562,6 +516,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 duration: 0.9,
                 ease: 'easeInOut'
               }
+            }}
+            onExitComplete={() => {
+              setIsDetailPageExiting(false);
             }}
             style={{
               position: 'fixed',
@@ -580,11 +537,66 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         )}
       </AnimatePresence>
 
+      {/* Exit overlay - Blocks landing page during detail page fade out */}
+      <AnimatePresence>
+        {isDetailPageExiting && (
+          <motion.div
+            key="exit-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{
+              opacity: {
+                type: 'tween',
+                duration: 0.9,
+                ease: 'easeInOut'
+              }
+            }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1999,
+              backgroundColor: '#000000',
+              pointerEvents: 'none'
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Landing page fade-in after detail page exit */}
+      {isDetailPageExiting && (
+        <motion.div
+          key="return-fade"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{
+            opacity: {
+              type: 'tween',
+              duration: 0.6,
+              delay: 0.9,
+              ease: 'easeInOut'
+            }
+          }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1,
+            pointerEvents: 'none'
+          }}
+        />
+      )}
+
       {/* Page content wrapper - fades when button or slide is clicked */}
       <motion.div
         animate={{
-          opacity: isAnimatingBackward ? 1 : (clickedButton ? 0 : 1),
-          scale: clickedButton && !isAnimatingBackward ? 15 : 1
+          opacity: !isAnimating ? 1 : (clickedButton ? 0 : 1),
+          scale: clickedButton && isAnimating ? 15 : 1
         }}
         transition={{ 
           scale: {
@@ -596,10 +608,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           opacity: {
             type: 'tween',
             duration: 0.3,
-            delay: isAnimatingBackward ? 0.6 : (activeView ? 0 : 0.6),
+            delay: !isAnimating ? 0.6 : (activeView ? 0 : 0.6),
             ease: 'easeInOut'
           }
         }}
+        key={`content-${isDetailPageExiting}`}
         style={{
           transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : (slideCenter.x + ' ' + slideCenter.y)
         }}
@@ -1088,7 +1101,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     scale: [1, 1.2, 1.5],
                     opacity: [1, 0.5, 0]
                   } : {
-                    scale: [1, 1.08, 1]
+                    scale: [1, 1.08, 1],
+                    borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)']
                   }}
                   transition={clickedSlide === index ? {
                     duration: 1.5,
@@ -1100,6 +1114,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                       repeat: Infinity,
                       ease: 'easeInOut',
                       delay: (index % 9) * (3 / 9)
+                    },
+                    borderColor: {
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                      delay: (index % 9) * (4 / 9)
                     },
                     duration: 0.6,
                     ease: 'easeInOut'
@@ -1136,22 +1156,33 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 </motion.div>
 
                 {/* Header */}
-                <div style={{
-                  marginTop: 'clamp(12px, 2vw, 18px)',
-                  fontSize: 'clamp(15.4px, 3.85vw, 30.8px)',
-                  fontWeight: '500',
-                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                  lineHeight: '1.4',
-                  color: '#ef8616',
-                  backgroundColor: 'transparent',
-                  textAlign: 'center',
-                  maxWidth: 'clamp(120px, 43.095vw, 301.665px)',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>
+                <motion.div 
+                  animate={{
+                    color: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616']
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                    delay: (index % 9) * (4 / 9)
+                  }}
+                  style={{
+                    marginTop: 'clamp(12px, 2vw, 18px)',
+                    fontSize: 'clamp(15.4px, 3.85vw, 30.8px)',
+                    fontWeight: '500',
+                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                    lineHeight: '1.4',
+                    color: '#ef8616',
+                    backgroundColor: 'transparent',
+                    textAlign: 'center',
+                    maxWidth: 'clamp(120px, 43.095vw, 301.665px)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {slide.header}
-                </div>
+                </motion.div>
 
                 {/* Text Subtitle */}
                 <div style={{
@@ -1360,6 +1391,29 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </div>
         </div>
       </section>
+
+      {/* Debug Calculator - Shows animation state */}
+      <div style={{
+        position: 'fixed',
+        bottom: '20px',
+        left: '20px',
+        backgroundColor: 'rgba(0, 0, 0, 0.95)',
+        border: '2px solid #00ff00',
+        borderRadius: '8px',
+        padding: '12px',
+        fontSize: '12px',
+        fontFamily: 'monospace',
+        color: '#00ff00',
+        zIndex: 10000,
+        maxWidth: '250px',
+        lineHeight: '1.5'
+      }}>
+        <div><strong>Return Animation Debug</strong></div>
+        <div>isAnimating: <span style={{color: isAnimating ? '#ff0000' : '#00ff00'}}>{String(isAnimating)}</span></div>
+        <div>isDetailPageExiting: <span style={{color: isDetailPageExiting ? '#ff0000' : '#00ff00'}}>{String(isDetailPageExiting)}</span></div>
+        <div>activeView: <span style={{color: activeView ? '#ff0000' : '#00ff00'}}>{activeView || 'null'}</span></div>
+        <div>clickedButton: <span style={{color: clickedButton ? '#ff0000' : '#00ff00'}}>{clickedButton || 'null'}</span></div>
+      </div>
 
       {/* Mobile Footer with Navigation */}
       <footer id="footer-menu" style={{

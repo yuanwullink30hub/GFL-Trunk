@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import '../styles/poetry.css';
 import '../styles/buttons.css';
 import sun2 from '../images/sun2.PNG';
-import dealButton from '../images/Dealbuttonpng.png';
 
 const IntroPage = ({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();

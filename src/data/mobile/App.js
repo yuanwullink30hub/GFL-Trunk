@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { gpuAccel } from '../../config/animationStyles';
+import { gpuAccel, ANIMATION_TIMINGS, ANIMATION_EASING } from '../../config/animationStyles';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -38,10 +38,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
   const [isAnimating, setIsAnimating] = React.useState(false);
   const [clickedButton, setClickedButton] = React.useState(null);
+  const [clickedSlideIndex, setClickedSlideIndex] = React.useState(null); // Track which slide was clicked
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false);
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
+  const [isSlideView, setIsSlideView] = React.useState(false); // Track if came from slide click
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
@@ -50,6 +52,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const textContentContainerRef = React.useRef(null);
   const textContentWrapperRef = React.useRef(null);
   const miniLogoRef = React.useRef(null);
+  const slideRefs = React.useRef([]); // Refs for slide circles
 
   // Calculate button center position for zoom origin relative to the full document
   // Accounts for button rotation and triangle centroid
@@ -188,25 +191,66 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
   // Handle slide click - direct navigation to detail page
   const handleSlideClick = (index, route) => {
-    setActiveView(route);
-    window.scrollTo(0, 0);
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setClickedSlideIndex(index);
+    setIsSlideView(true);
+    
+    // Calculate center of clicked slide circle
+    const slideElement = slideRefs.current[index];
+    if (slideElement) {
+      const rect = slideElement.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const centerXPercent = (centerX / window.innerWidth) * 100;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const documentHeight = document.documentElement.scrollHeight;
+      const absoluteY = centerY + scrollTop;
+      const yPercentOfDocument = (absoluteY / documentHeight) * 100;
+      setButtonCenter({ x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` });
+    }
+    
+    // Same timing as triangle buttons: 1.5s zoom then show detail
+    setTimeout(() => {
+      setActiveView(route);
+      setIsAnimating(false);
+      setClickedSlideIndex(null);
+      window.scrollTo(0, 0);
+    }, 1500);
   };
 
   // Handle back - direct navigation to landing
   const handleBack = () => {
     setIsDetailPageExiting(true);
     setIsScrolledPastH1(false);
+    const wasSlideView = isSlideView; // Capture before reset
     
     // Keep detail page visible while overlay fades, then hide it
     setTimeout(() => {
       setActiveView(null);
-      window.scrollTo(0, 0);
     }, 300); // When overlay is fully black (0.3s)
+    
+    // After detail page fades out (0.3s) + landing page fades in (1.2s), scroll to slideshow container
+    setTimeout(() => {
+      if (wasSlideView && slideshowContainerRef?.current) {
+        // Scroll to center slideshow container
+        const rect = slideshowContainerRef.current.getBoundingClientRect();
+        const elementTop = rect.top + window.scrollY;
+        const elementHeight = rect.height;
+        const viewportHeight = window.innerHeight;
+        const scrollTarget = Math.max(0, elementTop - (viewportHeight - elementHeight) / 2);
+        window.scrollTo(0, scrollTarget);
+      } else {
+        window.scrollTo(0, 0);
+      }
+      setIsScrolledPastH1(false);
+    }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
     
     // Reset exit animation state after full animation completes
     setTimeout(() => {
       setIsDetailPageExiting(false);
       setIsScrolledPastH1(false);
+      setIsSlideView(false); // Reset slide view flag
     }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
   };
 
@@ -461,8 +505,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       {/* Page content wrapper - fades when button or slide is clicked */}
       <motion.div
         animate={{
-          opacity: !isAnimating ? 1 : (clickedButton ? 0 : 1),
-          scale: clickedButton && isAnimating ? 15 : 1
+          opacity: !isAnimating ? 1 : ((clickedButton || clickedSlideIndex !== null) ? 0 : 1),
+          scale: (clickedButton || clickedSlideIndex !== null) && isAnimating ? 15 : 1
         }}
         transition={{ 
           scale: {
@@ -480,7 +524,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         }}
         key={`content-${isDetailPageExiting}`}
         style={{
-          transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : '50% 50%',
+          transformOrigin: (clickedButton || clickedSlideIndex !== null) ? (buttonCenter.x + ' ' + buttonCenter.y) : '50% 50%',
           visibility: isDetailPageExiting ? 'hidden' : 'visible',
           pointerEvents: isDetailPageExiting ? 'none' : 'auto',
           ...(isAnimating ? gpuAccel.heavy : { willChange: 'auto' })
@@ -916,13 +960,23 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </div>
 
           {/* Slideshow Grid Container */}
-          <div 
+          <motion.div 
             className="hideScrollbar"
             ref={(el) => {
               galleryRef.current = el;
               slideshowContainerRef.current = el;
             }}
             onScroll={handleScroll}
+            animate={{
+              scale: activeView ? 15 : 1,
+              ...(activeView ? gpuAccel.heavy : { willChange: 'auto' })
+            }}
+            transition={{
+              scale: {
+                duration: ANIMATION_TIMINGS.PAGE_ZOOM,
+                ease: ANIMATION_EASING.SMOOTH
+              }
+            }}
             style={{
               position: 'relative',
               width: '100vw',
@@ -939,7 +993,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               alignItems: 'flex-start',
               zIndex: 9,
               opacity: slideshowOpacity,
-              transition: 'opacity 0.5s ease'
+              transition: 'opacity 0.5s ease',
+              transformOrigin: 'center center'
             }}
           >
           {[...slides, ...slides, ...slides].map((slide, index) => (
@@ -965,6 +1020,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               >
                 {/* Image Circle */}
                 <motion.div 
+                  ref={(el) => slideRefs.current[index] = el}
                   className="breathingBorder" 
                   onClick={() => handleSlideClick(index, slides[index % 9].route)}
                   animate={{
@@ -973,16 +1029,16 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   }}
                   transition={{
                     scale: {
-                      duration: 3,
+                      duration: ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE,
                       repeat: Infinity,
-                      ease: 'easeInOut',
-                      delay: (index % 9) * (3 / 9)
+                      ease: ANIMATION_EASING.SMOOTH,
+                      delay: (index % 9) * (ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE / 9)
                     },
                     borderColor: {
-                      duration: 4,
+                      duration: ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE,
                       repeat: Infinity,
-                      ease: 'easeInOut',
-                      delay: (index % 9) * (4 / 9)
+                      ease: ANIMATION_EASING.SMOOTH,
+                      delay: (index % 9) * (ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE / 9)
                     },
                     duration: 0.6,
                     ease: 'easeInOut'
@@ -1024,10 +1080,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     color: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616']
                   }}
                   transition={{
-                    duration: 4,
+                    duration: ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE,
                     repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: (index % 9) * (4 / 9)
+                    ease: ANIMATION_EASING.SMOOTH,
+                    delay: (index % 9) * (ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE / 9)
                   }}
                   style={{
                     marginTop: 'clamp(12px, 2vw, 18px)',
@@ -1068,7 +1124,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               </div>
             </div>
           ))}
-        </div>
+        </motion.div>
         
         {/* Slide Indicators */}
         <div style={{

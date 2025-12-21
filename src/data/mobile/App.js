@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { gpuAccel } from '../../config/animationStyles';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -418,7 +419,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               zIndex: 2000,
               overflow: 'auto',
               transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : '50% 50%',
-              display: activeView ? 'block' : 'none'
+              display: activeView ? 'block' : 'none',
+              ...gpuAccel.opacityOnly
             }}
           >
             <ActiveContent onBack={handleBack} onBackToButton={handleBackToButton} onCloseSlide={handleCloseSlide} activeView={activeView} />
@@ -449,7 +451,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               bottom: 0,
               zIndex: 1999,
               backgroundColor: '#150a24ff',
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              ...gpuAccel.light
             }}
           />
         )}
@@ -479,7 +482,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         style={{
           transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : '50% 50%',
           visibility: isDetailPageExiting ? 'hidden' : 'visible',
-          pointerEvents: isDetailPageExiting ? 'none' : 'auto'
+          pointerEvents: isDetailPageExiting ? 'none' : 'auto',
+          ...(isAnimating ? gpuAccel.heavy : { willChange: 'auto' })
         }}
       >
       {/* Mobile Header - Logo (normal size centered, small size top-right) */}

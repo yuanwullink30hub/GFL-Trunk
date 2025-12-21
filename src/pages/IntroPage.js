@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import '../styles/poetry.css';
 import '../styles/buttons.css';
 import sun2 from '../images/sun2.PNG';
@@ -68,27 +69,97 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           </p>
         </div>
 
-        {/* New Button */}
-        <button
-          onClick={handleEnterSite}
-          className="poetry active:scale-95"
+        {/* Circle Button with Triangle Inside */}
+        <div
           style={{
-            animation: 'breathColor 4s ease-in-out infinite, breathBorder 4s ease-in-out infinite, pulsate 4s ease-in-out infinite',
-            border: '2px solid',
-            borderRadius: '8px',
-            backgroundColor: 'transparent',
-            cursor: 'pointer',
+            position: 'relative',
+            width: 'clamp(4.2rem, 21vw, 15.75rem)',
+            height: 'clamp(4.2rem, 21vw, 15.75rem)',
+            marginTop: 'calc(20px - 3rem)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            overflow: 'visible',
-            width: 'clamp(120px, 24vw, 360px)',
-            height: 'clamp(60px, 12vw, 180px)',
-            marginTop: 'calc(20px - 3rem)'
+            border: 'transparent'
           }}
         >
-          <img src={dealButton} alt="Deal" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </button>
+          {/* Circle Button */}
+          <button
+            onClick={handleEnterSite}
+            className="poetry active:scale-95"
+            style={{
+              position: 'absolute',
+              animation: 'breathColor 4s ease-in-out infinite, breathBorder 4s ease-in-out infinite, pulsate 4s ease-in-out infinite',
+              border: '2px solid',
+              borderRadius: '50%',
+              backgroundColor: 'transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'visible',
+              width: '100%',
+              height: '100%'
+            }}
+          >
+          </button>
+
+          {/* Triangle Inside Container */}
+          <motion.svg
+            width="107%"
+            height="107%"
+            viewBox="1 50 300 300"
+            preserveAspectRatio="xMidYMid meet"
+            style={{
+              display: 'block',
+              cursor: 'pointer',
+              position: 'absolute'
+            }}
+            animate={{ scale: [1, 1.08, 1], rotate: 360 }}
+            transition={{
+              rotate: { duration: 9, repeat: Infinity, ease: 'linear', delay: 0 },
+              scale: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0 }
+            }}
+          >
+            <path
+              d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
+              fill="rgba(0,0,0,0.001)"
+              pointerEvents="all"
+              onClick={handleEnterSite}
+              style={{ cursor: 'pointer' }}
+            />
+            <motion.path
+              d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
+              fill="none"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              pointerEvents="none"
+              animate={{ stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
+            />
+          </motion.svg>
+
+          {/* Square Button */}
+          <button
+            onClick={handleEnterSite}
+            className="poetry active:scale-95"
+            style={{
+              position: 'absolute',
+              animation: 'breathColor 4s ease-in-out infinite, breathBorder 4s ease-in-out infinite, pulsate 4s ease-in-out infinite',
+              border: '2px solid',
+              borderRadius: '0',
+              backgroundColor: 'transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'visible',
+              width: '100%',
+              height: '100%'
+            }}
+          >
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -319,22 +319,18 @@ export const TeachersContent = ({ onBack, onBackToButton, activeView }) => (
           transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
           width="clamp(80.5px, 25.2vw, 151.2px)" height="clamp(80.5px, 25.2vw, 151.2px)" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible', width: 'clamp(80.5px, 25.2vw, 151.2px)', height: 'clamp(80.5px, 25.2vw, 151.2px)', pointerEvents: 'none', scale: 1.5 }}>
           <g style={{ overflow: 'visible', pointerEvents: 'none' }}>
-            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="rgba(0,0,0,0.001)" pointerEvents="all" onClick={() => onBackToButton && onBackToButton('button2')} style={{ cursor: 'pointer' }} />
-            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="none" stroke="rgba(239, 134, 22, 0.75)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" className="breathStrokeButton2" style={{animation: 'breathStrokeButton2 2.5s ease-in-out infinite'}} />
             <defs>
               <clipPath id="triangle-teachers-clip">
                 <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
               </clipPath>
             </defs>
-            <image href={knight} x="36" y="79" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-teachers-clip)" style={{pointerEvents: 'none'}} />
+            <image href={knight} x="36" y="89.5" width="232" height="204" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-teachers-clip)" style={{pointerEvents: 'none'}} />
+            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="rgba(0,0,0,0.001)" pointerEvents="all" onClick={() => onBackToButton && onBackToButton('button2')} style={{ cursor: 'pointer' }} />
+            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="none" stroke="rgba(239, 134, 22, 0.75)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" className="breathStrokeButton2" style={{animation: 'breathStrokeButton2 2.5s ease-in-out infinite'}} />
           </g>
         </motion.svg>
       </div>
     </div>
-    <h1 style={{ fontSize: 'clamp(32px, 8vw, 64px)', marginTop: 0, marginBottom: 'clamp(1rem, 2vw, 1.5rem)', color: '#0c0418ff', textAlign: 'center' }}>TEACHERS</h1>
-    <p style={{ fontSize: 'clamp(16px, 4vw, 24px)', margin: 0, lineHeight: '1.6', textAlign: 'center' }}>
-      Empowering educators to inspire the next generation.
-    </p>
   </div>
 );
 
@@ -355,22 +351,18 @@ export const MindContent = ({ onBack, onBackToButton, activeView }) => (
           transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
           width="clamp(80.5px, 25.2vw, 151.2px)" height="clamp(80.5px, 25.2vw, 151.2px)" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible', width: 'clamp(80.5px, 25.2vw, 151.2px)', height: 'clamp(80.5px, 25.2vw, 151.2px)', pointerEvents: 'none', scale: 1.5 }}>
           <g style={{ overflow: 'visible', pointerEvents: 'none' }}>
-            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="rgba(0,0,0,0.001)" pointerEvents="all" onClick={() => onBackToButton && onBackToButton('button3')} style={{ cursor: 'pointer' }} />
-            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="none" stroke="rgba(34, 197, 94, 0.75)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" className="breathStrokeButton3" style={{animation: 'breathStrokeMind 2.5s ease-in-out infinite'}} />
             <defs>
               <clipPath id="triangle-mind-clip">
                 <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
               </clipPath>
             </defs>
-            <image href={knight} x="32" y="119" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-mind-clip)" style={{pointerEvents: 'none'}} />
+            <image href={knight} x="32" y="129.5" width="232" height="204" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-mind-clip)" style={{pointerEvents: 'none'}} />
+            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="rgba(0,0,0,0.001)" pointerEvents="all" onClick={() => onBackToButton && onBackToButton('button3')} style={{ cursor: 'pointer' }} />
+            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="none" stroke="rgba(34, 197, 94, 0.75)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" className="breathStrokeButton3" style={{animation: 'breathStrokeMind 2.5s ease-in-out infinite'}} />
           </g>
         </motion.svg>
       </div>
     </div>
-    <h1 style={{ fontSize: 'clamp(32px, 8vw, 64px)', marginTop: 0, marginBottom: 'clamp(1rem, 2vw, 1.5rem)', color: '#22c55e', textAlign: 'center' }}>MIND</h1>
-    <p style={{ fontSize: 'clamp(16px, 4vw, 24px)', margin: 0, lineHeight: '1.6', textAlign: 'center' }}>
-      Nurturing mental growth and consciousness.
-    </p>
   </div>
 );
 
@@ -391,22 +383,18 @@ export const SoulContent = ({ onBack, onBackToButton, activeView }) => (
           transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
           width="clamp(80.5px, 25.2vw, 151.2px)" height="clamp(80.5px, 25.2vw, 151.2px)" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible', width: 'clamp(80.5px, 25.2vw, 151.2px)', height: 'clamp(80.5px, 25.2vw, 151.2px)', pointerEvents: 'none', scale: 1.5 }}>
           <g style={{ overflow: 'visible', pointerEvents: 'none' }}>
-            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="rgba(0,0,0,0.001)" pointerEvents="all" onClick={() => onBackToButton && onBackToButton('button1')} style={{ cursor: 'pointer' }} />
-            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="none" stroke="rgba(245, 158, 11, 0.75)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" className="breathStrokeButton1" style={{animation: 'breathStrokeSoul 2.5s ease-in-out infinite'}} />
             <defs>
               <clipPath id="triangle-soul-clip">
                 <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
               </clipPath>
             </defs>
-            <image href={knight} x="30" y="90" width="290" height="255" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-soul-clip)" style={{pointerEvents: 'none'}} />
+            <image href={knight} x="30" y="100.5" width="232" height="204" preserveAspectRatio="xMidYMid slice" clipPath="url(#triangle-soul-clip)" style={{pointerEvents: 'none'}} />
+            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="rgba(0,0,0,0.001)" pointerEvents="all" onClick={() => onBackToButton && onBackToButton('button1')} style={{ cursor: 'pointer' }} />
+            <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" fill="none" stroke="rgba(245, 158, 11, 0.75)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" className="breathStrokeButton1" style={{animation: 'breathStrokeSoul 2.5s ease-in-out infinite'}} />
           </g>
         </motion.svg>
       </div>
     </div>
-    <h1 style={{ fontSize: 'clamp(32px, 8vw, 64px)', marginTop: 0, marginBottom: 'clamp(1rem, 2vw, 1.5rem)', color: '#f59e0b', textAlign: 'center' }}>SOUL</h1>
-    <p style={{ fontSize: 'clamp(16px, 4vw, 24px)', margin: 0, lineHeight: '1.6', textAlign: 'center' }}>
-      Connecting with deeper purpose and meaning.
-    </p>
   </div>
 );
 

@@ -104,7 +104,7 @@ const App = () => {
 
       {/* Landing Page - Main content after clicking intro button */}
       <Route 
-        path="/landing" 
+        path="/welcome" 
         element={
           isMobile ? (
             <div className={`min-h-screen transition-all duration-300 ${

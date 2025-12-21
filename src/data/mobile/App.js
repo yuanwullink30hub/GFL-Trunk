@@ -137,8 +137,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         const scrollTarget = Math.max(0, elementTop - (viewportHeight - elementHeight) / 2);
         window.scrollTo(0, scrollTarget);
       }
-      setIsDetailPageExiting(false);
+      setIsScrolledPastH1(false); // Ensure header state stays reset
     }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
+    
+    // Reset exit animation state after full animation completes
+    setTimeout(() => {
+      setIsDetailPageExiting(false);
+      setIsScrolledPastH1(false);
+    }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
   };
 
   const handleScroll = () => {
@@ -196,10 +202,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       window.scrollTo(0, 0);
     }, 300); // When overlay is fully black (0.3s)
     
-    // Reset exit flag after animations complete (0.3s detail hide + 1.2s landing fade in + buffer = 1.8s)
+    // Reset exit animation state after full animation completes
     setTimeout(() => {
       setIsDetailPageExiting(false);
-    }, 1800);
+      setIsScrolledPastH1(false);
+    }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
   };
 
   // Handle close slide - same as handleBack for slide content pages
@@ -246,11 +253,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   // Track scroll position relative to video header bottom minus 150px
   React.useEffect(() => {
     const handleScroll = () => {
-      // Check if scrolled past 350px above the bottom of video header (150px + 200px up)
+      // Check if scrolled to middle of video header
       if (videoHeaderRef?.current) {
         const videoRect = videoHeaderRef.current.getBoundingClientRect();
-        // Show small logo when scrolled past 350px above video bottom
-        setIsScrolledPastH1(videoRect.bottom - 350 < 0);
+        // Show small logo when at middle of video container
+        setIsScrolledPastH1(videoRect.bottom - 400 < 0);
       }
       
       // Update slideshow opacity based on scroll position
@@ -463,14 +470,16 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           },
           opacity: {
             type: 'tween',
-            duration: 0.3,
+            duration: isDetailPageExiting ? 1 : 0.3,
             delay: !isAnimating ? 0.6 : (activeView ? 0 : 0.6),
             ease: 'easeInOut'
           }
         }}
         key={`content-${isDetailPageExiting}`}
         style={{
-          transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : '50% 50%'
+          transformOrigin: clickedButton ? (buttonCenter.x + ' ' + buttonCenter.y) : '50% 50%',
+          visibility: isDetailPageExiting ? 'hidden' : 'visible',
+          pointerEvents: isDetailPageExiting ? 'none' : 'auto'
         }}
       >
       {/* Mobile Header - Logo (normal size centered, small size top-right) */}
@@ -482,7 +491,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         bottom: isScrolledPastH1 ? 'auto' : 'auto',
         left: isScrolledPastH1 ? 'auto' : '0',
         width: isScrolledPastH1 ? 'auto' : '100vw',
-        display: activeView || isDetailPageExiting ? 'none' : 'block'
+        display: activeView || isDetailPageExiting || isAnimating ? 'none' : 'block'
       }}>
         <div style={{
           display: 'flex',

@@ -37,9 +37,13 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       <div className="w-full max-w-2xl px-6 text-center" style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
         {/* Header */}
         <h1 className="poetry text-2xl md:text-3xl mb-8" style={{
-          color: '#FFFEF0'
+          background: 'linear-gradient(to bottom, #772905ff, #360464ff 50%, #56056eff)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          filter: 'brightness(1.8)'
         }}>
-          <span style={{ fontSize: '0.72em', display: 'inline-block' }}>GEBOUWD OP HET</span> <br/><span>WARE LEVEN!</span>
+          GEBOUWD OP HET WARE LEVEN!
         </h1>
 
         {/* Text Container */}

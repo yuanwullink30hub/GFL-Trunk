@@ -6,4 +6,5 @@
   line-height: 0.9;
   color: #FFFEF0;
   font-size: clamp(0.8059rem, 3.842vw, 2.370rem);
+  filter: brightness(0.9);
 }

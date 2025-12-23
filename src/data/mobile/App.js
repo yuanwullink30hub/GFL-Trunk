@@ -643,7 +643,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
                 textAlign: 'right',
-                color: '#FFFEF0'
+                color: '#FFFEF0',
+                filter: 'brightness(0.9)'
               }}>DE LUIDE STILTE <br/>
                  EN DE INTENSE KALMTE <br/> 
                  WIJZEN MIJ DE WEG <br/>
@@ -679,7 +680,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           position: 'relative',
           zIndex: 2
         }}>
-          <span className="subtitles" style={{fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)', marginTop: '3rem', display: 'block', fontWeight: '500', lineHeight: '1.2', opacity: calculateMediaOpacity(), transition: 'opacity 0.5s ease'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID</span>
+          <span className="subtitles" style={{fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)', marginTop: '3rem', display: 'block', fontWeight: '500', lineHeight: '1.2', opacity: calculateMediaOpacity(), transition: 'opacity 0.5s ease', filter: 'brightness(0.9)'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID</span>
         </div>
 
     {/* Full Screen Gradient Container */}
@@ -955,7 +956,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             backgroundColor: 'transparent',
             zIndex: 10,
             opacity: slideshowOpacity,
-            transition: 'opacity 0.6s ease'
+            transition: 'opacity 0.6s ease',
+            filter: 'brightness(0.9)'
           }}>
             GARDENS
           </div>

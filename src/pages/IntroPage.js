@@ -15,9 +15,12 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   return (
     <div className={`w-full h-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-300 ${
       darkMode 
-        ? 'bg-[#26163e] text-white'
-        : 'bg-[#f5f5f5] text-[#26163e]'
-    }`}>
+        ? 'text-white'
+        : 'text-[#26163e]'
+    }`}
+    style={{
+      background: 'linear-gradient(to bottom, #1d0900ff, #250c3aff, #1d072bff, #0e0718ff)'
+    }}>
       {/* Login Button */}
       <button
         onClick={() => window.location.href = '/login'}

@@ -43,18 +43,24 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           backgroundClip: 'text',
           filter: 'brightness(1.8)'
         }}>
-          <span style={{ transform: 'scale(0.7)', display: 'inline-block', transformOrigin: 'center center' }}>GEBOUWD OP HET</span> <br/><span>WARE LEVEN!</span>
+          <span style={{ transform: 'scale(0.72)', display: 'inline-block', transformOrigin: 'center center' }}>GEBOUWD OP HET</span> <br/><span>WARE LEVEN!</span>
         </h1>
 
         {/* Text Container */}
-        <div className={`mb-12 space-y-4`}>
+        <div className={`mb-12 space-y-4`} style={{
+          width: '100%',
+          fontSize: 'clamp(0.795rem, 3.634vw, 1.704rem)',
+          whiteSpace: 'nowrap',
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word'
+        }}>
           <p className="text" style={{
             width: '100%',
-            fontSize: 'clamp(14px, 3.5vw, 28px)',
+            fontSize: 'clamp(0.795rem, 3.634vw, 1.704rem)',
             marginTop: '9px',
             marginBottom: '0',
             paddingBottom: '25px',
-            whiteSpace: 'normal',
+            whiteSpace: 'nowrap',
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
             lineHeight: '1.4',
@@ -64,11 +70,10 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           </p>
           <p className="text" style={{
             width: '100%',
-            fontSize: 'clamp(14px, 3.5vw, 28px)',
-            marginTop: '0',
+            fontSize: 'clamp(0.795rem, 3.634vw, 1.704rem)',
             marginBottom: '0',
             paddingBottom: '25px',
-            whiteSpace: 'normal',
+            whiteSpace: 'nowrap',
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
             lineHeight: '1.4',

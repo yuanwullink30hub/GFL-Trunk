@@ -43,7 +43,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           backgroundClip: 'text',
           filter: 'brightness(1.8)'
         }}>
-          GEBOUWD OP HET <br/>WARE LEVEN!
+          <span style={{ transform: 'scale(0.7)', display: 'inline-block', transformOrigin: 'center center' }}>GEBOUWD OP HET</span> <br/><span>WARE LEVEN!</span>
         </h1>
 
         {/* Text Container */}
@@ -74,7 +74,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             lineHeight: '1.4',
             backgroundColor: 'transparent'
           }}>
-           Wij nemen volledige verantwoordelijkheid voor onze content en verzekeren dat de tijd die je hier spendeert waardevol is.
+           Wij nemen volledige verantwoordelijkheid voor onze <br/> content en verzekeren dat de tijd die je hier spendeert waardevol is.
           </p>
         </div>
 

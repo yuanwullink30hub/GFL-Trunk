@@ -120,14 +120,26 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             }}
           >
             <path
-              d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
+              d="M 141 71 Q 151 56 161 71 L 272 263 Q 272 277 257 277 L 45 277 Q 30 277 30 263 L 141 71 Z"
               fill="rgba(0,0,0,0.001)"
               pointerEvents="all"
               onClick={handleEnterSite}
               style={{ cursor: 'pointer' }}
             />
             <motion.path
-              d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
+              d="M 141 71 Q 151 56 161 71 L 272 263 Q 272 277 257 277 L 45 277 Q 30 277 30 263 L 141 71 Z"
+              fill="none"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              pointerEvents="none"
+              animate={{ stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+            />
+
+            {/* Letter W inside triangle */}
+            <motion.path
+              d="M 269 261 L 215 168 L 151 273 L 87 168 L 34 261"
               fill="none"
               strokeWidth="3"
               strokeLinecap="round"
@@ -137,27 +149,6 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
             />
           </motion.svg>
-
-          {/* Square Button */}
-          <button
-            onClick={handleEnterSite}
-            className="poetry active:scale-95"
-            style={{
-              position: 'absolute',
-              animation: 'breathColor 4s ease-in-out infinite 0.3s, breathBorder 4s ease-in-out infinite 0.3s, pulsate 4s ease-in-out infinite 0.3s',
-              border: '2px solid',
-              borderRadius: '0',
-              backgroundColor: 'transparent',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'visible',
-              width: '100%',
-              height: '100%'
-            }}
-          >
-          </button>
         </div>
       </div>
     </div>

@@ -74,7 +74,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             lineHeight: '1.4',
             backgroundColor: 'transparent'
           }}>
-           Wij nemen volledige verantwoordelijkheid voor onze <br/> content en verzekeren dat de tijd die je hier spendeert waardevol is.
+           Wij nemen volledige verantwoordelijkheid voor onze <br/> content en verzekeren dat de tijd die je hier spendeert <br/> waardevol is.
           </p>
         </div>
 

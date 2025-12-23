@@ -43,7 +43,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           backgroundClip: 'text',
           filter: 'brightness(1.8)'
         }}>
-          GEBOUWD OP HET WARE LEVEN!
+          GEBOUWD OP HET <br/>WARE LEVEN!
         </h1>
 
         {/* Text Container */}
@@ -51,7 +51,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           <p className="text" style={{
             width: '100%',
             fontSize: 'clamp(14px, 3.5vw, 28px)',
-            marginTop: '30px',
+            marginTop: '9px',
             marginBottom: '0',
             paddingBottom: '25px',
             whiteSpace: 'normal',

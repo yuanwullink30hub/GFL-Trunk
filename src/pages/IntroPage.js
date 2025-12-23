@@ -29,7 +29,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         style={{ top: 'calc(1.5rem + 0.4rem)' }}
         title="Go to login"
       >
-        <span className="text-sm md:text-base font-medium" style={{ transform: 'translateY(0.3rem) translateX(0.6rem)' }}>aanmelden</span>
+        <span className="text-sm md:text-base font-medium" style={{ transform: 'translateY(0.3rem) translateX(0.6rem)', color: '#FFFEF0' }}>aanmelden</span>
         <img src={sun2} alt="Login" style={{ width: '40px', height: '40px' }} />
       </button>
 
@@ -37,12 +37,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       <div className="w-full max-w-2xl px-6 text-center" style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
         {/* Header */}
         <h1 className="poetry text-2xl md:text-3xl mb-8" style={{
-          background: 'linear-gradient(to bottom, #772905ff, #360464ff 50%, #56056eff)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          color: '#a73bc6',
-          filter: 'brightness(1.8)'
+          color: '#FFFEF0'
         }}>
           <span style={{ fontSize: '0.72em', display: 'inline-block' }}>GEBOUWD OP HET</span> <br/><span>WARE LEVEN!</span>
         </h1>
@@ -64,7 +59,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
             lineHeight: '1.4',
-            backgroundColor: 'transparent'
+            backgroundColor: 'transparent',
+            color: '#FFFEF0'
           }}>
             De externe terugknop is uitgeschakeld. <br/> Bij ons dus alleen voorwaartse beweging. <br/> Gebruik de interne software om te navigeren.
           </p>
@@ -77,7 +73,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
             lineHeight: '1.4',
-            backgroundColor: 'transparent'
+            backgroundColor: 'transparent',
+            color: '#FFFEF0'
           }}>
            Wij nemen volledige verantwoordelijkheid voor onze <br/> content en verzekeren dat de tijd die je hier spendeert <br/> waardevol is.
           </p>
@@ -104,6 +101,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               position: 'absolute',
               animation: 'breathColor 4s ease-in-out infinite 0.3s, breathBorder 4s ease-in-out infinite 0.3s, pulsate 4s ease-in-out infinite 0.3s',
               border: '2px solid',
+              borderColor: '#ef8616',
               borderRadius: '50%',
               backgroundColor: 'transparent',
               cursor: 'pointer',
@@ -144,6 +142,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             <motion.path
               d="M 141 71 Q 151 56 161 71 L 272 263 Q 272 277 257 277 L 45 277 Q 30 277 30 263 L 141 71 Z"
               fill="none"
+              stroke="#ef8616"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -156,6 +155,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             <motion.path
               d="M 269 261 L 215 168 L 151 273 L 87 168 L 34 261"
               fill="none"
+              stroke="#ef8616"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"

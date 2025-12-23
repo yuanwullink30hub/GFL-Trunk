@@ -642,7 +642,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 whiteSpace: 'normal',
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
-                textAlign: 'right'
+                textAlign: 'right',
+                color: '#FFFEF0'
               }}>DE LUIDE STILTE <br/>
                  EN DE INTENSE KALMTE <br/> 
                  WIJZEN MIJ DE WEG <br/>
@@ -945,7 +946,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             marginTop: 'calc(clamp(-1.75rem + 2px, -1.5vw + 2px, -1.5rem + 2px) + 1.5rem)',
             marginBottom: 'calc(clamp(0.75rem, 3vw, 2rem) + 1rem)',
             fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)',
-            color: 'rgb(167, 59, 198)',
+            color: '#FFFEF0',
             lineHeight: '1.2',
             textAlign: 'center',
             whiteSpace: 'normal',

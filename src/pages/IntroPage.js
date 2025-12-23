@@ -37,7 +37,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       <div className="w-full max-w-2xl px-6 text-center" style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
         {/* Header */}
         <h1 className="poetry text-2xl md:text-3xl mb-8" style={{
-          background: 'linear-gradient(to bottom, #772905ff, #360464ff 50%, #630580ff)',
+          background: 'linear-gradient(to bottom, #772905ff, #360464ff 50%, #56056eff)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
@@ -51,7 +51,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           <p className="text" style={{
             width: '100%',
             fontSize: 'clamp(14px, 3.5vw, 28px)',
-            marginTop: '45px',
+            marginTop: '30px',
             marginBottom: '0',
             paddingBottom: '25px',
             whiteSpace: 'normal',

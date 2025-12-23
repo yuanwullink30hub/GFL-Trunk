@@ -50,7 +50,6 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         <div className={`mb-12 space-y-4`} style={{
           width: '100%',
           fontSize: 'clamp(0.795rem, 3.634vw, 1.704rem)',
-          whiteSpace: 'nowrap',
           wordWrap: 'break-word',
           overflowWrap: 'break-word'
         }}>

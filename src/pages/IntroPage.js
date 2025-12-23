@@ -41,9 +41,10 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
+          color: '#a73bc6',
           filter: 'brightness(1.8)'
         }}>
-          <span style={{ transform: 'scale(0.72)', display: 'inline-block', transformOrigin: 'center center' }}>GEBOUWD OP HET</span> <br/><span>WARE LEVEN!</span>
+          <span style={{ fontSize: '0.72em', display: 'inline-block' }}>GEBOUWD OP HET</span> <br/><span>WARE LEVEN!</span>
         </h1>
 
         {/* Text Container */}

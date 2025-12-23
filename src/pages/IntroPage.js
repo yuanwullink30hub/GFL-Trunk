@@ -19,7 +19,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         : 'text-[#26163e]'
     }`}
     style={{
-      background: 'linear-gradient(to bottom, #1d0900ff, #250c3aff, #1d072bff, #0e0718ff)'
+      background: 'linear-gradient(to bottom, #1d0900ff, #0a0504ff, #0d0811ff, #2b0c3dff, #170720ff)',
+      overflow: 'hidden'
     }}>
       {/* Login Button */}
       <button
@@ -35,8 +36,14 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       {/* Content Container */}
       <div className="w-full max-w-2xl px-6 text-center" style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
         {/* Header */}
-        <h1 className="poetry text-2xl md:text-3xl mb-8">
-          GEBASEERD OP HET WARE LEVEN!
+        <h1 className="poetry text-2xl md:text-3xl mb-8" style={{
+          background: 'linear-gradient(to bottom, #772905ff, #360464ff 50%, #630580ff)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          filter: 'brightness(1.8)'
+        }}>
+          GEBOUWD OP HET WARE LEVEN!
         </h1>
 
         {/* Text Container */}

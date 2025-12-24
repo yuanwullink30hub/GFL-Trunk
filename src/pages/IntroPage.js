@@ -43,7 +43,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           backgroundClip: 'text',
           filter: 'brightness(1.8)'
         }}>
-          GEBOUWD OP HET WARE LEVEN!
+          <span style={{ display: 'block', fontSize: '0.72em' }}>GEBOUWD OP HET</span>
+          <span>WARE LEVEN!</span>
         </h1>
 
         {/* Text Container */}

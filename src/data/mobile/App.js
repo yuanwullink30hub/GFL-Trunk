@@ -956,11 +956,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
               opacity: 1,
-              transform: 'scale(0.7776) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
+              transform: 'scale(0.69984) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
               transformOrigin: 'top left',
-              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 0.8rem)',
+              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 0.8rem + 1.8rem)',
               position: 'absolute',
-              top: 'clamp(-10.875rem, -20vw, -4.625rem)',
+              top: 'clamp(-15.875rem, calc(-20vw - 5rem), -9.625rem)',
               left: 0,
               right: 0,
               zIndex: 6,
@@ -968,7 +968,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             }}
           >
             <source src="/videos/KnightHD_2.mp4" type="video/mp4; codecs=hvc1" />
-            <source src="/videos/KnightHD_1.webm" type="video/webm" />
+            <source src="/videos/holographicknightwebkit .webm" type="video/webm" />
             Your browser does not support the video tag.
           </video>
         </div>{/* End media container */}

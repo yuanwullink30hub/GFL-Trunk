@@ -603,7 +603,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           left: 0,
           right: 0,
           width: '100vw',
-          height: '70vh',
+          height: '85vh',
           marginTop: 'calc(150px - 3rem)',
           zIndex: 1,
           marginLeft: 'calc(-50vw + 50%)'

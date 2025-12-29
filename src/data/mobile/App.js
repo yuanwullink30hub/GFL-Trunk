@@ -968,7 +968,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             }}
           >
             <source src="/videos/KnightHD_2.mp4" type="video/mp4; codecs=hvc1" />
-            <source src="/videos/holographicknightwebkit .webm" type="video/webm" />
+            <source src="/videos/hologramknightwebkit .webm" type="video/webm" />
             Your browser does not support the video tag.
           </video>
         </div>{/* End media container */}

@@ -697,7 +697,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           paddingLeft: '20px',
           paddingRight: '20px',
           position: 'relative',
-          zIndex: 2
+          zIndex: 9
         }}>
           <span className="subtitles" style={{fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)', marginTop: '3rem', display: 'block', fontWeight: '500', lineHeight: '1.2', opacity: calculateMediaOpacity(), transition: 'opacity 0.5s ease', filter: 'brightness(0.9)'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID</span>
         </div>
@@ -739,7 +739,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             top: 0,
             left: 0,
             pointerEvents: 'none',
-            zIndex: 5
+            zIndex: 1
           }}>
             {/* Button 2 */}
               <motion.svg 
@@ -955,15 +955,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               height: 'auto',
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
-              opacity: 1,
-              transform: 'scale(0.69984) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
+              opacity: 0.9,
+              transform: 'scaleX(0.715392) scaleY(0.7362208) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
               transformOrigin: 'top left',
-              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 0.8rem + 1.8rem)',
+              marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 0.8rem + 1rem + 1rem)',
               position: 'absolute',
-              top: 'clamp(-15.875rem, calc(-20vw - 5rem), -9.625rem)',
+              top: 'clamp(-21.375rem, calc(-20vw - 10.5rem), -15.125rem)',
               left: 0,
               right: 0,
-              zIndex: 6,
+              zIndex: 4,
               pointerEvents: 'none'
             }}
           >

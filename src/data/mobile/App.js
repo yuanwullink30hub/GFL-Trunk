@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
-import sun2 from '../../images/sun2.PNG';
+import sun2 from '../../images/illustrativesun.png';
 import karmanevents from '../../images/slideshow images/karmaneventsPNG.png';
 import club49logo from '../../images/slideshow images/club49-logo.png';
 import logo1111 from '../../images/slideshow images/1111logo.png';
@@ -21,9 +21,9 @@ import placeholder6 from '../../images/slideshow images/placeholder6.svg';
 import placeholder7 from '../../images/slideshow images/placeholder7.svg';
 import placeholder8 from '../../images/slideshow images/placeholder8.svg';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
-import soul from '../../images/soulpng.png';
-import body from '../../images/bodypng.png';
-import mind from '../../images/mindpng.png';
+import soul from '../../images/Holographichearth.png';
+import body from '../../images/holographicbody.png';
+import mind from '../../images/Holographicmind.PNG';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
 import '../../styles/subtitles.css';
@@ -573,21 +573,40 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               ...(isScrolledPastH1 ? { position: 'relative' } : { position: 'fixed', right: '1.52rem', top: '1.9rem', transform: 'scale(0.97)' })
             }}
           >
-            <img src={sun2} alt="Sun" style={{ width: '40px', height: '40px' }} />
+            <img src={sun2} alt="Sun" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block' }} />
           </button>
         </div>
       </header>
 
+      {/* Black wallpaper container */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          width: '100vw',
+          height: 'calc(150px - 3rem)',
+          backgroundColor: '#000000',
+          zIndex: 0,
+          marginLeft: 'calc(-50vw + 50%)'
+        }}
+      />
+
       {/* Full-screen Video Container (scrollable behind logo) */}
       <div 
         ref={videoHeaderRef}
-        className="w-full overflow-hidden"
+        className="overflow-visible"
         style={{
-          height: '100vh',
           position: 'relative',
+          top: 0,
+          left: 0,
+          right: 0,
+          width: '100vw',
+          height: '70vh',
+          marginTop: 'calc(150px - 3rem)',
           zIndex: 1,
-          overflow: 'hidden',
-          maxWidth: '100%'
+          marginLeft: 'calc(-50vw + 50%)'
         }}
       >
         <video
@@ -597,7 +616,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           playsInline
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         >
-          <source src="/videos/LandingpageVID1.mp4" type="video/mp4" />
+          <source src="/videos/Holographicheader.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       </div>
@@ -776,10 +795,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   </defs>
                   <image 
                     href={body} 
-                    x="29.25" y="85.3" width="181.5" height="169.4" 
+                    x="45" y="86.32" width="187.99" height="175.34" 
                     preserveAspectRatio="xMidYMid slice"
                     style={{pointerEvents: 'none'}}
-                    transform="rotate(2 -300 1000)"
+                    transform="rotate(1 -300 1000)"
                   />
                 </g>
               </motion.svg>
@@ -838,7 +857,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   </defs>
                   <image 
                     href={mind} 
-                    x="37" y="84" width="180" height="168" 
+                    x="55.67" y="110.90" width="154.08" height="143.81" 
                     preserveAspectRatio="xMidYMid slice"
                     style={{pointerEvents: 'none'}}
                     transform="rotate(-55 175 165)"
@@ -899,9 +918,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   </defs>
                   <image 
                     href={soul} 
-                    x="23" y="67.2" width="198" height="184.8" 
+                    x="45.69" y="90.52" width="169.49" height="158.19" 
                     preserveAspectRatio="xMidYMid slice"
-                    style={{pointerEvents: 'none'}}
+                    style={{pointerEvents: 'none', filter: 'brightness(0.97)'}}
                     transform="rotate(-40 200 145)"
                   />
                 </g>

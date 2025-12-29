@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import '../styles/poetry.css';
 import '../styles/buttons.css';
-import sun2 from '../images/sun2.PNG';
+import sun2 from '../images/illustrativesun.png';
 
 const IntroPage = ({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         title="Go to login"
       >
         <span className="text-sm md:text-base font-medium" style={{ transform: 'translateY(0.3rem) translateX(0.6rem)', color: '#FFFEF0' }}>aanmelden</span>
-        <img src={sun2} alt="Login" style={{ width: '40px', height: '40px' }} />
+        <img src={sun2} alt="Login" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block' }} />
       </button>
 
       {/* Content Container */}

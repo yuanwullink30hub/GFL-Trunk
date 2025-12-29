@@ -115,7 +115,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               justifyContent: 'center',
               overflow: 'visible',
               width: '100%',
-              height: '100%'
+              height: '100%',
+              boxShadow: '0 0 20px rgba(239, 134, 22, 0.6), inset 0 0 20px rgba(239, 134, 22, 0.2), 0 0 40px rgba(167, 59, 198, 0.3)'
             }}
           >
           </button>
@@ -148,12 +149,15 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               d="M 141 71 Q 151 56 161 71 L 272 263 Q 272 277 257 277 L 45 277 Q 30 277 30 263 L 141 71 Z"
               fill="none"
               stroke="#ef8616"
-              strokeWidth="3"
+              strokeWidth="4"
               strokeLinecap="round"
               strokeLinejoin="round"
               pointerEvents="none"
               animate={{ stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(239, 134, 22, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'
+              }}
             />
 
             {/* Letter W inside triangle */}
@@ -161,12 +165,15 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               d="M 269 261 L 215 168 L 151 273 L 87 168 L 34 261"
               fill="none"
               stroke="#ef8616"
-              strokeWidth="3"
+              strokeWidth="4"
               strokeLinecap="round"
               strokeLinejoin="round"
               pointerEvents="none"
               animate={{ stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(239, 134, 22, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'
+              }}
             />
           </motion.svg>
         </div>

@@ -780,13 +780,23 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="none" 
-                    stroke="#0c0418ff" 
+                    stroke="rgba(167, 59, 198, 0.4)" 
+                    strokeWidth="clamp(14px, 3.5vw, 24px)" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'}}
+                  />
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
+                    stroke="rgba(167, 59, 198, 0.5)" 
                     strokeWidth="clamp(8px, 2vw, 15px)" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                     pointerEvents="none"
                     className="breathingStroke"
-                    style={{transition: 'stroke 0.3s ease'}}
+                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'}}
                   />
                   <defs>
                     <clipPath id="triangle2-clip">
@@ -797,7 +807,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     href={body} 
                     x="45" y="86.32" width="187.99" height="175.34" 
                     preserveAspectRatio="xMidYMid slice"
-                    style={{pointerEvents: 'none'}}
+                    style={{pointerEvents: 'none', filter: 'brightness(0.97)'}}
                     transform="rotate(1 -300 1000)"
                   />
                 </g>
@@ -842,13 +852,23 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="none" 
+                    stroke="rgba(167, 59, 198, 0.33)" 
+                    strokeWidth="clamp(14px, 3.5vw, 24px)" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.88)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.44))'}}
+                  />
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
                     stroke="#22c55e" 
                     strokeWidth="clamp(8px, 2vw, 15px)" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                     pointerEvents="none"
                     className="breathingStroke"
-                    style={{transition: 'stroke 0.3s ease'}}
+                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.88)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.44))'}}
                   />
                   <defs>
                     <clipPath id="triangle3-clip">
@@ -889,27 +909,23 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="none" 
+                    stroke="rgba(167, 59, 198, 0.3)" 
+                    strokeWidth="clamp(14px, 3.5vw, 24px)" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'}}
+                  />
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
                     stroke="#22c55e" 
                     strokeWidth="clamp(8px, 2vw, 15px)" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                     pointerEvents="none"
                     className="breathingStroke"
-                    style={{transition: 'stroke 0.3s ease'}}
-                  />
-                  <path 
-                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
-                    fill="rgba(0,0,0,0.001)"
-                    pointerEvents="all"
-                    onClick={() => handleButtonClick('button1', '/soul')}
-                    onMouseEnter={(e) => {
-                      const visiblePath = e.target.previousElementSibling;
-                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
-                    }}
-                    onMouseLeave={(e) => {
-                      const visiblePath = e.target.previousElementSibling;
-                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
-                    }}
+                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'}}
                   />
                   <defs>
                     <clipPath id="triangle1-clip">

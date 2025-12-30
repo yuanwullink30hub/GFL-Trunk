@@ -1,3 +1,17 @@
+/* High-quality image rendering during animations */
+img {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  -ms-interpolation-mode: nearest-neighbor;
+}
+
+svg img {
+  image-rendering: auto;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
 @keyframes breathColor {
   0%, 100% {
     color: #ef8616;

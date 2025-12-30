@@ -40,6 +40,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [clickedButton, setClickedButton] = React.useState(null);
   const [clickedSlideIndex, setClickedSlideIndex] = React.useState(null); // Track which slide was clicked
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
+  const [zoomScale, setZoomScale] = React.useState(15);
   const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false);
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
@@ -52,15 +53,17 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const textContentContainerRef = React.useRef(null);
   const textContentWrapperRef = React.useRef(null);
   const miniLogoRef = React.useRef(null);
+  const knightVideoRef = React.useRef(null);
   const slideRefs = React.useRef([]); // Refs for slide circles
 
   // Calculate button center position for zoom origin relative to the full document
   // Accounts for button rotation and triangle centroid
+  // Also calculates the zoom scale based on button size and viewport position
   const calculateButtonCenter = (buttonName) => {
     const svgClass = `triangleButton${buttonName === 'button1' ? '1' : buttonName === 'button2' ? '2' : '3'}`;
     const allSvgElements = document.querySelectorAll(`.${svgClass}`);
     
-    if (allSvgElements.length === 0) return { x: '50%', y: '50%' };
+    if (allSvgElements.length === 0) return { x: '50%', y: '50%', zoom: 15 };
     
     const svgElement = allSvgElements[allSvgElements.length - 1];
     const rect = svgElement.getBoundingClientRect();
@@ -82,6 +85,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     let triangleCenterX = svgCenterX + rotatedOffsetX;
     let triangleCenterY = svgCenterY + rotatedOffsetY;
     
+    // Uniform adjustment to move up by 3 rem (48px)
+    const uniformUpwardAdjustment = 48;
+    triangleCenterY -= uniformUpwardAdjustment;
+    
     // Manual adjustments per button
     if (buttonName === 'button2') {
       triangleCenterX -= 15;
@@ -91,6 +98,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       triangleCenterX += 5;
       triangleCenterY -= 9;
     }
+    if (buttonName === 'button1') {
+      // button1 also needs adjustment
+      triangleCenterY += 0; // Will be adjusted if needed
+    }
     
     const centerXPercent = (triangleCenterX / window.innerWidth) * 100;
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
@@ -98,7 +109,21 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     const absoluteY = triangleCenterY + scrollTop;
     const yPercentOfDocument = (absoluteY / documentHeight) * 100;
     
-    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` };
+    // Calculate zoom scale based on button size and viewport
+    // Zoom should fill the viewport with the button at its current position
+    const buttonWidth = rect.width;
+    const buttonHeight = rect.height;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Calculate scale needed to fit button to viewport with some padding
+    const scaleX = viewportWidth / buttonWidth;
+    const scaleY = viewportHeight / buttonHeight;
+    
+    // Use the smaller scale to ensure button fits in viewport, with 0.9 factor for padding
+    const calculatedZoom = Math.min(scaleX, scaleY) * 0.9;
+    
+    return { x: `${centerXPercent}%`, y: `${yPercentOfDocument}%`, zoom: Math.max(calculatedZoom, 10) };
   };
 
   // Handle button click with zoom and fade - landing page
@@ -107,9 +132,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     setIsAnimating(true);
     setClickedButton(buttonName);
     
-    // Calculate the center of the clicked button
+    // Calculate the center of the clicked button and zoom scale
     const center = calculateButtonCenter(buttonName);
     setButtonCenter(center);
+    setZoomScale(center.zoom);
     
     // Use same timing as slide effect: 1.5s total
     setTimeout(() => {
@@ -429,13 +455,39 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     setTimeout(centerSlides, 300);
   }, []);
 
+  // Reset knight video when it goes out of view
+  React.useEffect(() => {
+    const videoElement = knightVideoRef.current;
+    if (!videoElement) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            // Video is out of view - reset it
+            videoElement.currentTime = 0;
+          }
+        });
+      },
+      { threshold: 0 }
+    );
+
+    observer.observe(videoElement);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div style={{
-      width: '100%',
-      overflow: 'hidden',
-      backgroundColor: '#150a24ff',
-      display: activeView ? 'block' : 'block' // Content pages hidden via AnimatePresence
-    }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5, ease: 'easeInOut' }}
+      style={{
+        width: '100%',
+        overflow: 'hidden',
+        backgroundColor: '#150a24ff',
+        display: activeView ? 'block' : 'block' // Content pages hidden via AnimatePresence
+      }}
+    >
       {/* Content Overlay - Shows when a slide is active */}
       <AnimatePresence mode="wait">
         {activeView && ActiveContent && (
@@ -506,7 +558,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       <motion.div
         animate={{
           opacity: !isAnimating ? 1 : ((clickedButton || clickedSlideIndex !== null) ? 0 : 1),
-          scale: (clickedButton || clickedSlideIndex !== null) && isAnimating ? 15 : 1
+          scale: (clickedButton || clickedSlideIndex !== null) && isAnimating ? zoomScale : 1
         }}
         transition={{ 
           scale: {
@@ -527,6 +579,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           transformOrigin: (clickedButton || clickedSlideIndex !== null) ? (buttonCenter.x + ' ' + buttonCenter.y) : '50% 50%',
           visibility: isDetailPageExiting ? 'hidden' : 'visible',
           pointerEvents: isDetailPageExiting ? 'none' : 'auto',
+          imageRendering: 'auto',
+          backfaceVisibility: 'hidden',
+          WebkitFontSmoothing: 'antialiased',
+          WebkitTextSizeAdjust: '100%',
           ...(isAnimating ? gpuAccel.heavy : { willChange: 'auto' })
         }}
       >
@@ -559,7 +615,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             title="Go to menu"
             style={{ marginRight: isScrolledPastH1 ? '-10px' : '0' }}
           >
-            <img src={logo} alt="Garden For Life Logo" className="logo-img" style={{ width: isScrolledPastH1 ? '48px' : '176px', height: isScrolledPastH1 ? '48px' : '176px' }} />
+            <img src={logo} alt="Garden For Life Logo" className="logo-img" style={{ width: isScrolledPastH1 ? '48px' : '176px', height: isScrolledPastH1 ? '48px' : '176px', imageRendering: 'auto' }} />
           </button>
           
           <button
@@ -573,7 +629,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               ...(isScrolledPastH1 ? { position: 'relative' } : { position: 'fixed', right: '1.52rem', top: '1.9rem', transform: 'scale(0.97)' })
             }}
           >
-            <img src={sun2} alt="Sun" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block' }} />
+            <img src={sun2} alt="Sun" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block', imageRendering: 'auto' }} />
           </button>
         </div>
       </header>
@@ -759,7 +815,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   top: 'clamp(-22%, -17vw, -12%)',
                   scale: 1.5,
                   rotate: '-16deg',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transformOrigin: 'center center',
+                  ...gpuAccel.triangleButton
                 }}
               >
                 <g style={{overflow: 'visible'}}>
@@ -780,23 +838,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="none" 
-                    stroke="rgba(167, 59, 198, 0.4)" 
-                    strokeWidth="clamp(14px, 3.5vw, 24px)" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    pointerEvents="none"
-                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'}}
-                  />
-                  <path 
-                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                    fill="none" 
                     stroke="rgba(167, 59, 198, 0.5)" 
                     strokeWidth="clamp(8px, 2vw, 15px)" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                     pointerEvents="none"
                     className="breathingStroke"
-                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'}}
                   />
                   <defs>
                     <clipPath id="triangle2-clip">
@@ -807,7 +854,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     href={body} 
                     x="45" y="86.32" width="187.99" height="175.34" 
                     preserveAspectRatio="xMidYMid slice"
-                    style={{pointerEvents: 'none', filter: 'brightness(0.97)'}}
+                    style={{pointerEvents: 'none', imageRendering: 'auto'}}
                     transform="rotate(1 -300 1000)"
                   />
                 </g>
@@ -830,7 +877,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   top: 'clamp(-40.5%, -35.5vw, -30.5%)',
                   scale: 1.5,
                   rotate: '44deg',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transformOrigin: 'center center',
+                  ...gpuAccel.triangleButton
                 }}
               >
                 <g style={{overflow: 'visible'}}>
@@ -852,23 +901,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="none" 
-                    stroke="rgba(167, 59, 198, 0.33)" 
-                    strokeWidth="clamp(14px, 3.5vw, 24px)" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    pointerEvents="none"
-                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.88)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.44))'}}
-                  />
-                  <path 
-                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                    fill="none" 
                     stroke="#22c55e" 
                     strokeWidth="clamp(8px, 2vw, 15px)" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                     pointerEvents="none"
                     className="breathingStroke"
-                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.88)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.44))'}}
                   />
                   <defs>
                     <clipPath id="triangle3-clip">
@@ -879,7 +917,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     href={mind} 
                     x="55.67" y="110.90" width="154.08" height="143.81" 
                     preserveAspectRatio="xMidYMid slice"
-                    style={{pointerEvents: 'none'}}
+                    style={{pointerEvents: 'none', imageRendering: 'auto'}}
                     transform="rotate(-55 175 165)"
                   />
                 </g>
@@ -902,19 +940,26 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   top: 'clamp(6%, 11vw, 46%)',
                   scale: 1.5,
                   rotate: '44deg',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transformOrigin: 'center center',
+                  ...gpuAccel.triangleButton
                 }}
               >
                 <g style={{overflow: 'visible'}}>
                   <path 
-                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                    fill="none" 
-                    stroke="rgba(167, 59, 198, 0.3)" 
-                    strokeWidth="clamp(14px, 3.5vw, 24px)" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    pointerEvents="none"
-                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'}}
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
+                    fill="rgba(0,0,0,0.001)"
+                    pointerEvents="all"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => handleButtonClick('button1', '/soul')}
+                    onMouseEnter={(e) => {
+                      const visiblePath = e.target.nextElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      const visiblePath = e.target.nextElementSibling;
+                      if(visiblePath) visiblePath.style.stroke = 'rgba(167, 59, 198, 0.3)';
+                    }}
                   />
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
@@ -925,7 +970,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     strokeLinejoin="round" 
                     pointerEvents="none"
                     className="breathingStroke"
-                    style={{transition: 'stroke 0.3s ease', filter: 'drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'}}
                   />
                   <defs>
                     <clipPath id="triangle1-clip">
@@ -936,7 +980,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     href={soul} 
                     x="45.69" y="90.52" width="169.49" height="158.19" 
                     preserveAspectRatio="xMidYMid slice"
-                    style={{pointerEvents: 'none', filter: 'brightness(0.97)'}}
+                    style={{pointerEvents: 'none', imageRendering: 'auto'}}
                     transform="rotate(-40 200 145)"
                   />
                 </g>
@@ -945,26 +989,33 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
           {/* WebM Video - alongside buttons */}
           <video
+            ref={knightVideoRef}
             autoPlay
             loop
             muted
             playsInline
+            preload="auto"
+            decoding="async"
             style={{
               display: 'block',
               width: 'auto',
               height: 'auto',
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
-              opacity: 0.9,
-              transform: 'scaleX(0.715392) scaleY(0.7362208) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
+              opacity: 0.75,
+              transform: 'scaleX(0.6796024) scaleY(0.69940976) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 0.8rem + 1rem + 1rem)',
               position: 'absolute',
-              top: 'clamp(-21.375rem, calc(-20vw - 10.5rem), -15.125rem)',
-              left: 0,
+              top: 'clamp(-20.775rem, calc(-20vw - 9.9rem), -14.525rem)',
+              left: '0.5rem',
               right: 0,
               zIndex: 4,
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              willChange: 'transform',
+              backfaceVisibility: 'hidden',
+              perspective: '1000px',
+              WebkitAcceleratedCompositing: 'true'
             }}
           >
             <source src="/videos/KnightHD_2.mp4" type="video/mp4; codecs=hvc1" />
@@ -1412,7 +1463,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>
       </footer>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
 

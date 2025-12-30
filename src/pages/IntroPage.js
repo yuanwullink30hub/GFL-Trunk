@@ -7,9 +7,47 @@ import sun2 from '../images/illustrativesun.png';
 
 const IntroPage = ({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();
+  const [isTransitioning, setIsTransitioning] = React.useState(false);
+
+  React.useEffect(() => {
+    // Preload main app assets for faster transition
+    const preloadAssets = () => {
+      // Preload key images
+      const imagesToPreload = [
+        '/images/Holographichearth.png',
+        '/images/holographicbody.png',
+        '/images/Holographicmind.PNG'
+      ];
+
+      imagesToPreload.forEach((src) => {
+        const img = new Image();
+        img.src = src;
+      });
+
+      // Preload videos
+      const videosToPreload = [
+        '/videos/KnightHD_2.mp4',
+        '/videos/hologramknightwebkit .webm',
+        '/videos/Holographicheader.mp4'
+      ];
+
+      videosToPreload.forEach((src) => {
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.as = 'video';
+        link.href = src;
+        document.head.appendChild(link);
+      });
+    };
+
+    preloadAssets();
+  }, []);
 
   const handleEnterSite = () => {
-    navigate('/welcome');
+    setIsTransitioning(true);
+    setTimeout(() => {
+      navigate('/welcome');
+    }, 500);
   };
 
   return (
@@ -20,8 +58,26 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
     }`}
     style={{
       background: 'linear-gradient(to bottom, #1d0900ff, #0a0504ff, #0d0811ff, #2b0c3dff, #170720ff)',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      position: 'relative'
     }}>
+      {/* Transition Overlay */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isTransitioning ? 1 : 0 }}
+        transition={{ duration: 0.5, ease: 'easeInOut' }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: '#000000',
+          zIndex: 9999,
+          pointerEvents: 'none'
+        }}
+      />
+
       {/* Login Button */}
       <button
         onClick={() => window.location.href = '/login'}
@@ -41,7 +97,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
-          filter: 'brightness(1.8)'
+          filter: 'brightness(1.62)'
         }}>
           <span style={{ display: 'block', fontSize: '0.72em' }}>GEBOUWD OP HET</span>
           <span>WARE LEVEN!</span>

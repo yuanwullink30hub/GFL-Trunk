@@ -484,7 +484,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       style={{
         width: '100%',
         overflow: 'hidden',
-        backgroundColor: '#150a24ff',
+        background: 'linear-gradient(180deg, #000000ff 0%, #06020aff 6%, #06010cff 13%, #160329ff 19%, #0f021dff 26%, #11061aff 33%, #23092eff 39%, #390c4bff 42%, #1e0429ff 53%, #15021dff 60%, #15021dff 67%, #15021dff 73%, #15021dff 80%, #0a0515ff 87%, #000000ff 100%)',
         display: activeView ? 'block' : 'block' // Content pages hidden via AnimatePresence
       }}
     >
@@ -634,21 +634,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         </div>
       </header>
 
-      {/* Black wallpaper container */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          width: '100vw',
-          height: 'calc(150px - 3rem)',
-          backgroundColor: '#000000',
-          zIndex: 0,
-          marginLeft: 'calc(-50vw + 50%)'
-        }}
-      />
-
       {/* Full-screen Video Container (scrollable behind logo) */}
       <div 
         ref={videoHeaderRef}
@@ -672,7 +657,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           playsInline
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         >
-          <source src="/videos/Holographicheader.mp4" type="video/mp4" />
+          <source src="/videos/HolographicHeader1IOS.mp4" type="video/mp4; codecs=hvc1" />
+          <source src="/videos/HolographicHeader1.webm" type="video/webm" />
           Your browser does not support the video tag.
         </video>
       </div>
@@ -682,7 +668,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         ref={textContentContainerRef}
         className="w-full relative"
         style={{
-          background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff',
           zIndex: 1,
           position: 'relative',
           paddingTop: '100px'
@@ -758,20 +743,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           <span className="subtitles" style={{fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)', marginTop: '3rem', display: 'block', fontWeight: '500', lineHeight: '1.2', opacity: calculateMediaOpacity(), transition: 'opacity 0.5s ease', filter: 'brightness(0.9)'}}>KWEEK KRACHTIGE <br/>KWETSBAARHEID</span>
         </div>
 
-    {/* Full Screen Gradient Container */}
-      <div style={{
-        position: 'absolute',
-        top: 'clamp(-55px, 10vw, -15px)',
-        width: '100vw',
-        height: '900px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.8) 12%, rgba(14, 7, 19, 0.6) 22%, rgba(45, 10, 68, 0.5) 33%, rgba(71, 3, 110, 0.6) 50%, rgba(39, 7, 61, 0.5) 67%, rgba(21, 10, 36, 0) 100%)',
-        overflow: 'visible',
-        zIndex: 0,
-        pointerEvents: 'none'
-      }}>
-      </div>
         {/* Media Container - Buttons and Video together */}
         <div 
           ref={mediaContainerRef} 

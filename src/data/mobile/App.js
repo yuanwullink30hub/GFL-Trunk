@@ -371,8 +371,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           
           // Content starts at 175px within container, so adjust positions
           // The buttons/video are placed higher than container bounds
+          // Increased offset to make content visible earlier when scrolling down
           const contentTop = containerTop - 15;
-          const contentBottom = containerBottom - 175; // Subtract empty space at bottom
+          const contentBottom = containerBottom - 275; // Subtract empty space at bottom
           
           // Instant fade in: start fading in well before content enters viewport
           if (contentTop < 0 && contentTop > -visibilityMargin) {
@@ -714,7 +715,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               <p className="text" style={{
                 width: '100%',
                 fontSize: 'clamp(14px, 3.5vw, 28px)',
-                marginTop: '45px',
+                marginTop: '60px',
                 marginBottom: '0',
                 paddingBottom: '25px',
                 whiteSpace: 'normal',
@@ -753,7 +754,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             zIndex: 8,
             overflow: 'visible',
             maxWidth: 'clamp(25rem, 90vw, 75rem)',
-            margin: 'clamp(4rem + 2rem + 30px, 5vw + 2rem + 30px, 6rem + 2rem + 30px) auto 0 auto',
+            margin: 'calc(clamp(4rem + 2rem + 30px, 5vw + 2rem + 30px, 6rem + 2rem + 30px) + 100px) auto 0 auto',
             pointerEvents: 'none',
             opacity: calculateMediaOpacity(),
             transition: 'opacity 0.6s ease'
@@ -777,15 +778,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 preserveAspectRatio="xMidYMid meet"
                 overflow="visible"
                 pointerEvents="none"
-                animate={{ scale: [1.5, 1.62, 1.5] }}
+                animate={{ scale: [1.841, 1.99, 1.841] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
                 style={{
                   display: 'block',
                   position: 'absolute',
-                  left: 'calc(clamp(0%, 5vw, 15%) - 0.3rem)',
-                  top: 'clamp(-22%, -17vw, -12%)',
-                  scale: 1.5,
-                  rotate: '-16deg',
+                  left: 'calc(clamp(0%, 5vw, 15%) - 0.3rem + 2.3rem)',
+                  top: 'calc(clamp(-22%, -17vw, -12%) - 4.5rem)',
+                  scale: 1.841,
+                  rotate: '-6deg',
                   cursor: 'pointer',
                   transformOrigin: 'center center',
                   ...gpuAccel.triangleButton
@@ -830,24 +831,24 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   />
                 </g>
               </motion.svg>
-             {/* Button 3 */}
+             {/* Button 1 */}
               <motion.svg 
-                className="triangleButton3"
+                className="triangleButton1"
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
                 preserveAspectRatio="xMidYMid meet"
                 overflow="visible"
                 pointerEvents="none"
-                animate={{ scale: [1.5, 1.62, 1.5] }}
+                animate={{ scale: [1.841, 1.99, 1.841] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
                 style={{
                   display: 'block',
                   position: 'absolute',
-                  left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem)',
-                  top: 'clamp(-40.5%, -35.5vw, -30.5%)',
-                  scale: 1.5,
-                  rotate: '44deg',
+                  left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem + 4.5rem)',
+                  top: 'calc(clamp(-40.5%, -35.5vw, -30.5%) - 6rem)',
+                  scale: 1.841,
+                  rotate: '54deg',
                   cursor: 'pointer',
                   transformOrigin: 'center center',
                   ...gpuAccel.triangleButton
@@ -859,7 +860,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
                     style={{cursor: 'pointer'}}
-                    onClick={() => handleButtonClick('button3', '/mind')}
+                    onClick={() => handleButtonClick('button1', '/mind')}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -880,7 +881,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     className="breathingStroke"
                   />
                   <defs>
-                    <clipPath id="triangle3-clip">
+                    <clipPath id="triangle1-clip">
                       <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
                     </clipPath>
                   </defs>
@@ -893,24 +894,24 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   />
                 </g>
               </motion.svg>
-              {/* Button 1 */}
+              {/* Button 3 */}
               <motion.svg 
-                className="triangleButton1"
+                className="triangleButton3"
                 width="clamp(60px, 28vw, 220px)" 
                 height="clamp(60px, 28vw, 220px)" 
                 viewBox="0 0 300 300" 
                 preserveAspectRatio="xMidYMid meet"
                 overflow="visible"
                 pointerEvents="none"
-                animate={{ scale: [1.5, 1.62, 1.5] }}
+                animate={{ scale: [1.841, 1.99, 1.841] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
                 style={{
                   display: 'block',
                   position: 'absolute',
-                  left: 'calc(clamp(18%, 21.5vw, 28%) - 0.3rem)',
-                  top: 'clamp(6%, 11vw, 46%)',
-                  scale: 1.5,
-                  rotate: '44deg',
+                  left: 'calc(clamp(18%, 21.5vw, 28%) - 0.3rem + 0.5rem)',
+                  top: 'calc(clamp(6%, 11vw, 46%) - 1rem)',
+                  scale: 1.841,
+                  rotate: '54deg',
                   cursor: 'pointer',
                   transformOrigin: 'center center',
                   ...gpuAccel.triangleButton
@@ -922,7 +923,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
                     style={{cursor: 'pointer'}}
-                    onClick={() => handleButtonClick('button1', '/soul')}
+                    onClick={() => handleButtonClick('button3', '/soul')}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -943,7 +944,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     className="breathingStroke"
                   />
                   <defs>
-                    <clipPath id="triangle1-clip">
+                    <clipPath id="triangle3-clip">
                       <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
                     </clipPath>
                   </defs>
@@ -978,8 +979,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 0.8rem + 1rem + 1rem)',
               position: 'absolute',
-              top: 'clamp(-18.275rem, calc(-20vw - 7.4rem), -12.025rem)',
-              left: '2.3rem',
+              top: 'calc(-12rem - 15vw + 9rem)',
+              left: 'calc(clamp(1rem, 5vw, 3rem) - 1rem)',
               right: 0,
               zIndex: 4,
               pointerEvents: 'none',
@@ -995,13 +996,104 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </video>
         </div>{/* End media container */}
 
+        {/* News Container */}
+        <div 
+          style={{
+            position: 'relative',
+            width: 'calc(100% - clamp(2rem, 6vw, 4rem))',
+            maxWidth: 'clamp(25rem, 90vw, 75rem)',
+            margin: 'calc(clamp(3rem, 5vw, 6rem) - 50px) auto clamp(3rem, 5vw, 6rem) auto',
+            aspectRatio: '2 / 1',
+            backgroundColor: 'rgba(15, 2, 29, 1)',
+            borderRadius: 'clamp(12px, 2vw, 20px)',
+            display: 'flex',
+            alignItems: 'center',
+            padding: 'clamp(1rem, 3vw, 2rem)',
+            paddingBottom: '100px',
+            gap: 'clamp(1rem, 3vw, 2rem)',
+            cursor: 'pointer',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            zIndex: 9
+          }}
+        >
+          {/* Image placeholder */}
+          <div style={{
+            width: 'clamp(60px, 15vw, 120px)',
+            height: 'clamp(60px, 15vw, 120px)',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(167, 59, 198, 0.3)',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '2px solid rgba(167, 59, 198, 0.5)'
+          }}>
+            <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 'clamp(10px, 2vw, 14px)' }}>IMG</span>
+          </div>
+          
+          {/* Text content */}
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'clamp(0.5rem, 1.5vw, 1rem)'
+          }}>
+            <span style={{
+              color: 'rgb(167, 59, 198)',
+              fontSize: 'clamp(14px, 3.5vw, 24px)',
+              fontWeight: '600',
+              fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"
+            }}>
+              NEWS
+            </span>
+            <span style={{
+              color: '#FFFEF0',
+              fontSize: 'clamp(12px, 2.5vw, 18px)',
+              lineHeight: '1.4'
+            }}>
+              Your latest news and updates go here.
+            </span>
+          </div>
+
+          {/* Zie meer button */}
+          <button
+            style={{
+              position: 'absolute',
+              bottom: 'clamp(0.75rem, 2vw, 1.5rem)',
+              right: 'clamp(0.75rem, 2vw, 1.5rem)',
+              padding: 'clamp(6px, 1.2vw, 10px) clamp(14px, 3vw, 24px)',
+              fontSize: 'clamp(10px, 2vw, 12px)',
+              backgroundColor: 'transparent',
+              color: '#FFFEF0',
+              border: '2px solid rgba(167, 59, 198, 0.5)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = 'rgb(167, 59, 198)';
+              e.target.style.borderColor = 'rgb(167, 59, 198)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+              e.target.style.borderColor = 'rgba(167, 59, 198, 0.5)';
+            }}
+          >
+            Zie meer
+          </button>
+        </div>
+
      {/* Header Container */}
           <div className="subtitles" style={{
             position: 'relative',
             width: '100%',
             maxWidth: 'clamp(25rem, 90vw, 75rem)',
             margin: '0 auto 0 auto',
-            marginTop: 'calc(clamp(-1.75rem + 2px, -1.5vw + 2px, -1.5rem + 2px) + 1.5rem)',
+            marginTop: 'calc(clamp(3rem, 8vw, 6rem) + 6rem)',
             marginBottom: 'calc(clamp(0.75rem, 3vw, 2rem) + 1rem)',
             fontSize: 'clamp(0.8059rem, 3.842vw, 2.370rem)',
             color: '#FFFEF0',

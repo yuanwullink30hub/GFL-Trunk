@@ -32,6 +32,86 @@ import '../../styles/mobile-header.css';
 import '../../styles/logo.css';
 import { slideContentMap } from './slides';
 
+// Triangle Particles Component - particles scatter on breathe out
+const TriangleParticles = ({ delay = 0, color = 'rgba(167, 59, 198, 0.8)' }) => {
+  const [particles, setParticles] = React.useState([]);
+  const particleCount = 12;
+  
+  React.useEffect(() => {
+    // Generate particles along triangle edges
+    const generateParticles = () => {
+      const newParticles = [];
+      for (let i = 0; i < particleCount; i++) {
+        // Position particles along the three edges of triangle
+        const edge = i % 3;
+        let x, y, vx, vy;
+        
+        if (edge === 0) { // Left edge
+          const t = Math.random();
+          x = 30 + (150 - 30) * t;
+          y = 260 - (260 - 70) * t;
+          vx = -Math.random() * 2 - 1;
+          vy = -Math.random() * 1.5;
+        } else if (edge === 1) { // Right edge
+          const t = Math.random();
+          x = 150 + (270 - 150) * t;
+          y = 70 + (260 - 70) * t;
+          vx = Math.random() * 2 + 1;
+          vy = -Math.random() * 1.5;
+        } else { // Bottom edge
+          const t = Math.random();
+          x = 30 + (270 - 30) * t;
+          y = 260 + Math.random() * 15;
+          vx = (Math.random() - 0.5) * 2;
+          vy = Math.random() * 2 + 1;
+        }
+        
+        newParticles.push({
+          id: i,
+          startX: x,
+          startY: y,
+          vx,
+          vy,
+          size: Math.random() * 4 + 2,
+          delay: Math.random() * 0.5
+        });
+      }
+      setParticles(newParticles);
+    };
+    
+    generateParticles();
+  }, []);
+  
+  return (
+    <g style={{ overflow: 'visible' }}>
+      {particles.map((particle) => (
+        <motion.circle
+          key={particle.id}
+          cx={particle.startX}
+          cy={particle.startY}
+          r={particle.size}
+          fill={color}
+          initial={{ opacity: 0, x: 0, y: 0, scale: 0 }}
+          animate={{
+            opacity: [0, 0.8, 0.6, 0],
+            x: [0, particle.vx * 15, particle.vx * 30, particle.vx * 45],
+            y: [0, particle.vy * 15, particle.vy * 30, particle.vy * 45],
+            scale: [0, 1, 0.8, 0]
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: 'easeOut',
+            delay: delay + particle.delay,
+            times: [0, 0.15, 0.35, 0.5]
+          }}
+          style={{ filter: 'blur(1px)' }}
+        />
+      ))}
+    </g>
+  );
+};
+
 const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
 
   const [currentSlide, setCurrentSlide] = React.useState(0);
@@ -850,7 +930,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   scale: 1.841,
                   rotate: '54deg',
                   cursor: 'pointer',
-                  transformOrigin: 'center center',
+                  transformOrigin: '50% 60%',
                   ...gpuAccel.triangleButton
                 }}
               >
@@ -990,8 +1070,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               WebkitAcceleratedCompositing: 'true'
             }}
           >
-            <source src="/videos/KnightHD_2.mp4" type="video/mp4; codecs=hvc1" />
-            <source src="/videos/hologramknightwebkit .webm" type="video/webm" />
+            <source src="/videos/hologramknightIOS.mp4" type="video/mp4; codecs=hvc1" />
+            <source src="/videos/hologramknight.webm" type="video/webm" />
             Your browser does not support the video tag.
           </video>
         </div>{/* End media container */}

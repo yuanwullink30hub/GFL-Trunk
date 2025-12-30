@@ -41,55 +41,55 @@ svg img {
 
 @keyframes breathStroke {
   0%, 100% {
-    stroke: #ef8616;
+    stroke: rgba(167, 59, 198, 0.5);
   }
   50% {
-    stroke: rgb(167, 59, 198);
+    stroke: rgba(167, 59, 198, 0.5);
   }
 }
 
 @keyframes breathStrokeButton2 {
   0%, 100% {
-    stroke: rgba(239, 134, 22, 0.75);
+    stroke: rgba(68, 9, 92, 0.5);
   }
   50% {
-    stroke: rgba(167, 59, 198, 0.75);
+    stroke: rgba(117, 11, 187, 0.5);
   }
 }
 
 @keyframes breathStrokeButton1 {
   0%, 100% {
-    stroke: rgba(239, 134, 22, 1);
+    stroke: rgba(68, 9, 92, 0.5);
   }
   50% {
-    stroke: rgba(167, 59, 198, 1);
+    stroke: rgba(117, 11, 187, 0.5);
   }
 }
 
 @keyframes breathStrokeButton3 {
   0%, 100% {
-    stroke: rgba(239, 134, 22, 0.45);
+    stroke: rgba(68, 9, 92, 0.5);
   }
   50% {
-    stroke: rgba(167, 59, 198, 0.45);
+    stroke: rgba(117, 11, 187, 0.5);
   }
 }
 
 @keyframes breathStrokeMind {
   0%, 100% {
-    stroke: rgba(239, 134, 22, 0.75);
+    stroke: rgba(68, 9, 92, 0.5);
   }
   50% {
-    stroke: rgba(167, 59, 198, 0.75);
+    stroke: rgba(117, 11, 187, 0.5);
   }
 }
 
 @keyframes breathStrokeSoul {
   0%, 100% {
-    stroke: rgba(239, 134, 22, 0.75);
+    stroke: rgba(167, 59, 198, 0.5);
   }
   50% {
-    stroke: rgba(167, 59, 198, 0.75);
+    stroke: rgba(117, 11, 187, 0.5);
   }
 }
 

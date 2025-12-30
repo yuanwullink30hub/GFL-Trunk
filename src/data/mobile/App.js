@@ -484,7 +484,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       style={{
         width: '100%',
         overflow: 'hidden',
-        background: 'linear-gradient(180deg, #000000ff 0%, #06020aff 6%, #06010cff 13%, #160329ff 19%, #0f021dff 26%, #11061aff 33%, #23092eff 39%, #390c4bff 42%, #1e0429ff 53%, #15021dff 60%, #15021dff 67%, #15021dff 73%, #15021dff 80%, #0a0515ff 87%, #000000ff 100%)',
+        background: 'linear-gradient(180deg, #000000ff 0%, #09030fff 6%, #0f021dff 13%, #1a0331ff 19%, #110218ff 26%, #110218ff 33%, #1a0722ff 39%, #250731ff 42%, #1e0429ff 53%, #15021dff 60%, #15021dff 67%, #15021dff 73%, #15021dff 80%, #0a0515ff 87%, #000000ff 100%)',
         display: activeView ? 'block' : 'block' // Content pages hidden via AnimatePresence
       }}
     >
@@ -973,13 +973,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               height: 'auto',
               mixBlendMode: 'screen',
               backgroundColor: 'transparent',
-              opacity: 0.75,
-              transform: 'scaleX(0.6796024) scaleY(0.69940976) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
+              opacity: 0.95,
+              transform: 'scaleX(0.6252502) scaleY(0.6434250) translate(calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem), -10%)',
               transformOrigin: 'top left',
               marginLeft: 'calc(clamp(1.875rem, 7vw, 5rem) + 8% + 1.3rem - 0.85rem + 0.8rem + 1rem + 1rem)',
               position: 'absolute',
-              top: 'clamp(-20.775rem, calc(-20vw - 9.9rem), -14.525rem)',
-              left: '0.5rem',
+              top: 'clamp(-18.275rem, calc(-20vw - 7.4rem), -12.025rem)',
+              left: '2.3rem',
               right: 0,
               zIndex: 4,
               pointerEvents: 'none',
@@ -1084,17 +1084,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   className="breathingBorder" 
                   onClick={() => handleSlideClick(index, slides[index % 9].route)}
                   animate={{
-                    scale: [1, 1.08, 1],
-                    borderColor: ['rgba(239, 134, 22, 0.5)', 'rgba(167, 59, 198, 0.5)', 'rgba(239, 134, 22, 0.5)']
+                    scale: [1, 1.08, 1]
                   }}
                   transition={{
                     scale: {
-                      duration: ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE,
-                      repeat: Infinity,
-                      ease: ANIMATION_EASING.SMOOTH,
-                      delay: (index % 9) * (ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE / 9)
-                    },
-                    borderColor: {
                       duration: ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE,
                       repeat: Infinity,
                       ease: ANIMATION_EASING.SMOOTH,
@@ -1111,7 +1104,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     padding: 'clamp(8px, 3.06vw, 22.95px)',
                     overflow: 'hidden',
                     borderRadius: '50%',
-                    border: '3px solid rgba(239, 134, 22, 0.5)',
+                    border: '3px solid rgba(167, 59, 198, 0.5)',
                     boxSizing: 'border-box',
                     zIndex: 2,
                     flexShrink: 0,
@@ -1135,23 +1128,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                 </motion.div>
 
                 {/* Header */}
-                <motion.div 
-                  animate={{
-                    color: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616']
-                  }}
-                  transition={{
-                    duration: ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE,
-                    repeat: Infinity,
-                    ease: ANIMATION_EASING.SMOOTH,
-                    delay: (index % 9) * (ANIMATION_TIMINGS.WELCOME_TRIANGLE_PULSE / 9)
-                  }}
+                <div
                   style={{
                     marginTop: 'clamp(12px, 2vw, 18px)',
                     fontSize: 'clamp(15.4px, 3.85vw, 30.8px)',
                     fontWeight: '500',
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                     lineHeight: '1.4',
-                    color: '#ef8616',
+                    color: 'rgb(167, 59, 198)',
                     backgroundColor: 'transparent',
                     textAlign: 'center',
                     maxWidth: 'clamp(120px, 43.095vw, 301.665px)',
@@ -1161,7 +1145,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   }}
                 >
                   {slide.header}
-                </motion.div>
+                </div>
 
                 {/* Text Subtitle */}
                 <div style={{

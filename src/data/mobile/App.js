@@ -485,7 +485,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       style={{
         width: '100%',
         overflow: 'hidden',
-        background: 'linear-gradient(180deg, #000000ff 0%, #09030fff 6%, #0f021dff 13%, #1a0331ff 19%, #110218ff 26%, #110218ff 33%, #1a0722ff 39%, #250731ff 42%, #1e0429ff 53%, #15021dff 60%, #15021dff 67%, #15021dff 73%, #15021dff 80%, #0a0515ff 87%, #000000ff 100%)',
+        background: 'linear-gradient(180deg, #000000ff 0%, #09030fff 6%, #0f021dff 13%, #160329ff 19%, #110218ff 26%, #110218ff 33%, #1a0722ff 39%, #250731ff 42%, #1e0429ff 53%, #15021dff 60%, #15021dff 67%, #15021dff 73%, #15021dff 80%, #0a0515ff 87%, #000000ff 100%)',
         display: activeView ? 'block' : 'block' // Content pages hidden via AnimatePresence
       }}
     >
@@ -658,8 +658,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           playsInline
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         >
-          <source src="/videos/HolographicHeader1IOS.mp4" type="video/mp4; codecs=hvc1" />
-          <source src="/videos/HolographicHeader1.webm" type="video/webm" />
+          <source src="/videos/HolographicHeader33.mp4" type="video/mp4; codecs=hvc1" />
+          <source src="/videos/HolographicHeader33.webm" type="video/webm" />
           Your browser does not support the video tag.
         </video>
       </div>

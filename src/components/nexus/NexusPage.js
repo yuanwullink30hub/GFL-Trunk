@@ -57,7 +57,7 @@ export const NexusPage = ({ onBack }) => {
   }, [timezone]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden flex flex-col font-mono text-cyan-400 selection:bg-cyan-500/30 touch-none">
+    <div className="relative h-screen w-screen overflow-hidden flex flex-col font-mono text-cyan-400 selection:bg-cyan-500/30 touch-none">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap');
         
@@ -118,8 +118,9 @@ export const NexusPage = ({ onBack }) => {
       )}
       
       {/* Main Unified Holographic Container */}
-      <div className="nexus-container relative flex-1 border border-white/10 z-20 flex flex-col overflow-hidden bg-black/20" style={{
-        margin: 'clamp(0.5rem, 1.5vw, 1.5rem)'
+      <div className="nexus-container relative flex-1 border border-white/10 z-20 flex flex-col overflow-hidden bg-black/20 h-full" style={{
+        margin: 'clamp(0.5rem, 1.5vw, 1.5rem)',
+        touchAction: 'manipulation'
       }}>
         {/* Corner Brackets */}
         <div className="absolute top-0 left-0 border-t-2 border-l-2 border-white/20 pointer-events-none" style={{

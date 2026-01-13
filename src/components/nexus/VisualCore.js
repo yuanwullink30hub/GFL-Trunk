@@ -203,22 +203,6 @@ export const VisualCore = () => {
         <SchematicLabel top="calc(50% + 50px + 5.5rem)" left="calc(4% - 1rem)" label="SYNC_ALIGN" value="0.0002" />
         <SchematicLabel top="calc(50% + 20px + 3rem)" right="4%" label="RADIUS" value="182.0_PX" align="right" />
       </div>
-
-      {/* Floating Particles */}
-      <div className="absolute inset-0 pointer-events-none opacity-40">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div 
-            key={i} 
-            className="absolute w-0.5 h-0.5 bg-purple-400/30 rounded-full animate-pulse"
-            style={{ 
-              top: `${Math.random() * 100}%`, 
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${3 + Math.random() * 3}s`
-            }}
-          />
-        ))}
-      </div>
     </div>
   );
 };

@@ -2,26 +2,46 @@ import React, { useMemo, useEffect, useState } from 'react';
 import '../../styles/text.css';
 
 const MetricRow = ({ id, title, subtext, children, colorClass = "text-cyan-400" }) => (
-  <div className="group relative flex flex-col gap-2 p-3 border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-300">
+  <div className="group relative flex flex-col border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-300" style={{
+    gap: 'clamp(0.25rem, 1vw, 0.75rem)',
+    padding: 'clamp(0.5rem, 2vw, 1rem)'
+  }}>
     {/* Modular Text Container */}
-    <div className="flex justify-between items-start border-b border-white/5 pb-2">
+    <div className="flex justify-between items-start border-b border-white/5" style={{
+      paddingBottom: 'clamp(0.25rem, 0.75vw, 0.5rem)'
+    }}>
       <div className="flex flex-col">
-        <span className={`text-[9px] font-bold ${colorClass} tracking-tighter`}>{id}</span>
-        <span className="text-[11px] font-bold text-white uppercase tracking-wider">{title}</span>
+        <span className={`font-bold ${colorClass} tracking-tighter`} style={{
+          fontSize: 'clamp(0.5rem, 0.75vw, 0.65rem)'
+        }}>{id}</span>
+        <span className="font-bold text-white uppercase tracking-wider" style={{
+          fontSize: 'clamp(0.6rem, 1vw, 0.8rem)'
+        }}>{title}</span>
       </div>
       <div className="text-right">
-        <span className="text-[7px] text-white/30 uppercase block leading-none">{subtext}</span>
-        <span className="text-[8px] text-cyan-500 font-mono">STATUS: OK</span>
+        <span className="text-white/30 uppercase block leading-none" style={{
+          fontSize: 'clamp(0.4rem, 0.5vw, 0.5rem)'
+        }}>{subtext}</span>
+        <span className="text-cyan-500 font-mono" style={{
+          fontSize: 'clamp(0.45rem, 0.6vw, 0.55rem)'
+        }}>STATUS: OK</span>
       </div>
     </div>
 
     {/* Modular Content/Visual Container */}
-    <div className="h-20 relative flex items-center justify-center bg-black/20 overflow-hidden">
+    <div className="relative flex items-center justify-center bg-black/20 overflow-hidden" style={{
+      height: 'clamp(3rem, 8vh, 6rem)'
+    }}>
       {children}
     </div>
 
     {/* Accent Details */}
-    <div className="absolute right-1 bottom-1 w-1 h-1 bg-white/20" />
+    <div className="absolute bg-white/20" style={{
+      right: 'clamp(0.25rem, 1vw, 0.5rem)',
+      bottom: 'clamp(0.25rem, 1vw, 0.5rem)',
+      width: 'clamp(0.5rem, 1vw, 0.75rem)',
+      height: 'clamp(0.5rem, 1vw, 0.75rem)'
+    }} />
   </div>
 );
 
@@ -54,15 +74,29 @@ export const WaveAnalysis = () => {
   return (
     <div className="flex flex-col h-full w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-1 shrink-0">
-        <div className="px-2 py-0.5 border-l-2 border-purple-500 bg-purple-500/10">
-          <span className="text-[10px] font-bold text-white uppercase tracking-[0.2em]">Telemetry_Stream</span>
+      <div className="flex items-center justify-between shrink-0" style={{
+        marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+      }}>
+        <div className="border-l-2 border-purple-500 bg-purple-500/10" style={{
+          padding: 'clamp(0.2rem, 0.5vw, 0.375rem) clamp(0.5rem, 1vw, 0.75rem)'
+        }}>
+          <span className="font-bold text-white uppercase tracking-[0.2em]" style={{
+            fontSize: 'clamp(0.6rem, 0.75vw, 0.7rem)'
+          }}>Telemetry_Stream</span>
         </div>
-        <div className="text-[8px] text-white/30">ID: X7-009</div>
+        <div className="text-white/30" style={{
+          fontSize: 'clamp(0.5rem, 0.6vw, 0.6rem)'
+        }}>ID: X7-009</div>
       </div>
 
       {/* Metrics Container */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-3 scrollbar-custom pb-4">
+      <div className="flex-1 overflow-y-auto scrollbar-custom" style={{
+        gap: 'clamp(0.75rem, 2vw, 1.5rem)',
+        paddingRight: 'clamp(0.5rem, 1vw, 1rem)',
+        paddingBottom: 'clamp(0.75rem, 2vw, 1.5rem)',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         {/* Signal Flux */}
         <MetricRow id="01_FLX" title="Signal Flux" subtext="MOD_WAVE_PRIMARY" colorClass="text-cyan-400">
           <svg viewBox="0 0 200 40" className="w-full h-full opacity-60">

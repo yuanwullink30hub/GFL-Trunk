@@ -3,73 +3,68 @@ import '../../styles/text.css';
 
 export const Header = ({ timestamp }) => {
   return (
-    <header className="relative z-30 border-b border-cyan-500/10 pb-3 md:pb-4">
-      {/* Top Row - System Identification */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Logo/Identifier */}
-          <div className="flex items-center gap-2">
-            <div className="relative w-6 h-6 md:w-8 md:h-8">
-              <div className="absolute inset-0 border border-cyan-500/40 transform rotate-45" />
-              <div className="absolute inset-1 border border-amber-500/40 transform rotate-45" />
-              <div className="absolute inset-2 bg-cyan-500/20 transform rotate-45" />
-            </div>
-            <div className="flex flex-col leading-none">
-              <span className="text-[10px] md:text-xs font-bold text-white tracking-[0.3em] uppercase">NEXUS</span>
-              <span className="text-[7px] md:text-[8px] text-cyan-400/60 tracking-[0.2em]">VISUAL_SYS</span>
-            </div>
-          </div>
-          
-          <div className="h-4 w-px bg-cyan-500/20 hidden md:block" />
-          
-          {/* Status Indicator */}
-          <div className="hidden md:flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-[8px] text-green-400/80 uppercase tracking-wider">Online</span>
-          </div>
+    <header className="relative z-30 flex justify-between items-start uppercase tracking-widest text-cyan-500/80 md:pl-0" style={{
+      fontSize: 'clamp(0.795rem, 3.634vw, 1.704rem)',
+      gap: 'clamp(0.25rem, 1vw, 1rem)',
+      marginLeft: '1rem'
+    }}>
+      {/* System Status Container - positioned under back button on mobile */}
+      <div className="absolute left-4 top-14 md:relative md:top-auto md:left-auto flex flex-col" style={{
+        gap: 'clamp(0.25rem, 0.5vw, 0.5rem)',
+        left: 0,
+        top: 'calc(3.5rem + 1rem)'
+      }}>
+        <div className="flex items-center" style={{
+          gap: 'clamp(0.5rem, 1vw, 1.5rem)'
+        }}>
+          <span className="bg-cyan-500/20 border border-cyan-500/40" style={{
+            padding: 'clamp(0.125rem, 0.5vw, 0.375rem) clamp(0.25rem, 1vw, 0.75rem)',
+            fontSize: 'clamp(0.5rem, 1vw, 0.75rem)'
+          }}>SYSTEM STATUS: ACTIVE</span>
+          <span className="opacity-60" style={{
+            fontSize: 'clamp(0.5rem, 1vw, 0.75rem)'
+          }}>X-LEVEL: 78.4</span>
         </div>
-
-        {/* Center Title */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-          <span className="text-[8px] md:text-[10px] text-white/30 uppercase tracking-[0.4em]">Data_Core</span>
-          <span className="text-[6px] md:text-[7px] text-cyan-400/40 font-mono">{timestamp}</span>
-        </div>
-
-        {/* Right Side - Controls */}
-        <div className="flex items-center gap-2 md:gap-4">
-          <div className="hidden md:flex items-center gap-1">
-            {[1, 2, 3].map((i) => (
-              <div 
-                key={i} 
-                className="w-2 h-2 border border-cyan-500/30 flex items-center justify-center"
-              >
-                <div className={`w-0.5 h-0.5 ${i === 1 ? 'bg-green-500' : i === 2 ? 'bg-amber-500' : 'bg-cyan-500'}`} />
-              </div>
-            ))}
-          </div>
-          
-          <div className="flex flex-col items-end leading-none">
-            <span className="text-[7px] md:text-[8px] text-white/40 uppercase">NODE</span>
-            <span className="text-[9px] md:text-[10px] text-cyan-400 font-mono">4.8-P</span>
-          </div>
-        </div>
+        <div className="h-[1px] bg-gradient-to-r from-cyan-500/40 to-transparent" style={{
+          width: 'clamp(4rem, 15vw, 12rem)'
+        }} />
       </div>
 
-      {/* Bottom Row - Navigation/Metrics Bar */}
-      <div className="flex items-center justify-between text-[6px] md:text-[7px] text-white/30 uppercase tracking-[0.15em] mt-2 pt-2 border-t border-white/5">
-        <div className="flex items-center gap-4 md:gap-8">
-          <span className="hover:text-cyan-400 transition-colors cursor-pointer">Overview</span>
-          <span className="hover:text-cyan-400 transition-colors cursor-pointer text-cyan-400">Core_View</span>
-          <span className="hover:text-cyan-400 transition-colors cursor-pointer hidden sm:inline">Analytics</span>
-          <span className="hover:text-cyan-400 transition-colors cursor-pointer hidden md:inline">Config</span>
+      {/* Center: Main Title */}
+      <div className="flex flex-col items-center" style={{
+        gap: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+      }}>
+        <div className="border-b border-r border-cyan-500/50 transform rotate-45" style={{
+          width: 'clamp(1rem, 2vw, 1.5rem)',
+          height: 'clamp(1rem, 2vw, 1.5rem)',
+          transform: 'translate(0, -0.25rem) rotate(45deg)'
+        }} />
+        <h1 className="font-bold tracking-[0.5em] text-white" style={{
+          fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)'
+        }}>DELTA</h1>
+        <div className="h-px bg-gradient-to-r from-cyan-500/40 to-cyan-500/40" style={{
+          width: 'clamp(2rem, 4vw, 4rem)'
+        }} />
+        <h1 className="font-bold tracking-[0.5em] text-white" style={{
+          fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)'
+        }}>WERKEN 4.9</h1>
+      </div>
+
+      {/* Right: Time & Encryption */}
+      <div className="flex flex-col items-end" style={{
+        gap: 'clamp(0.25rem, 0.5vw, 0.5rem)',
+        fontSize: 'clamp(0.5rem, 0.75vw, 0.7rem)'
+      }}>
+        <div className="text-right">
+          <div>TIME_SYNC: {timestamp}</div>
+          <div className="text-amber-500/80 flicker">ENCRYPT: RSA_4096</div>
         </div>
-        <div className="flex items-center gap-2 md:gap-4">
-          <span className="text-amber-500/60">UPLINK: 98.4%</span>
-          <span className="hidden sm:inline">LATENCY: 12ms</span>
-        </div>
+        <div className="h-[1px] bg-gradient-to-l from-cyan-500/40 to-transparent" style={{
+          width: 'clamp(4rem, 15vw, 12rem)'
+        }} />
       </div>
     </header>
   );
-};
+};;
 
 export default Header;

@@ -86,19 +86,142 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         }}
       />
 
-      {/* Login Button */}
-      <button
+      {/* Login Sun Button - Always Visible */}
+      <motion.button
         onClick={() => window.location.href = '/login'}
-        className="absolute right-6 flex items-center gap-2 p-2 hover:opacity-80 transition-opacity duration-300"
-        style={{ top: 'calc(1.5rem + 0.4rem)' }}
+        className="absolute right-6 p-2 hover:opacity-80 transition-opacity duration-300"
+        style={{ top: 'calc(1.5rem + 0.4rem)', zIndex: 9999 }}
         title="Go to login"
+        animate={{ opacity: 1 }}
       >
-        <span className="text-sm md:text-base font-medium" style={{ transform: 'translateY(0.3rem) translateX(0.6rem)', color: '#FFFEF0' }}>aanmelden</span>
         <img src={sun2} alt="Login" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block' }} />
-      </button>
+      </motion.button>
+
+      {/* All Content - Fades Out When Nexus Activated */}
+      <motion.div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          height: '100%'
+        }}
+        animate={{ opacity: showNewContent ? 0 : 1 }}
+        transition={{ duration: 0.8, ease: 'easeInOut' }}
+        pointerEvents={showNewContent ? 'none' : 'auto'}
+      >
+        {/* Login Text - Fades with content */}
+        <div
+          className="absolute text-sm md:text-base font-medium"
+          style={{ 
+            top: 'calc(1.5rem + 0.4rem + 1.5rem)', 
+            right: 'calc(1.5rem + 55px + 0.5rem)', 
+            color: '#FFFEF0',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          aanmelden
+        </div>
 
       {/* Content Container */}
-      <div className="w-full max-w-2xl px-6 text-center" style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+      <div className="w-full max-w-2xl px-6 text-center" style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative', marginTop: '6rem' }}>
+        {/* Duplicate Triangle Container - Key Button - Above Header, Centered */}
+        <div
+          style={{
+            position: 'relative',
+            width: 'clamp(4.2rem, 21vw, 15.75rem)',
+            height: 'clamp(4.2rem, 21vw, 15.75rem)',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: 'transparent'
+          }}
+        >
+          {/* Image Overlay */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              zIndex: 10,
+              width: '37.5%',
+              height: '37.5%',
+              top: 'calc(-37.5% + 2rem)',
+              right: 'calc(-37.5% + 3.1rem)',
+              pointerEvents: 'none'
+            }}
+          >
+            <img
+              src={key}
+              alt="Overlay"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 0 10px rgba(65, 105, 225, 0.6))'
+              }}
+            />
+          </motion.div>
+
+          <motion.svg
+            width="107%"
+            height="107%"
+            viewBox="1 50 300 300"
+            preserveAspectRatio="xMidYMid meet"
+            style={{
+              display: 'block',
+              cursor: 'pointer',
+              position: 'absolute'
+            }}
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{
+              scale: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }
+            }}
+          >
+            <path
+              d="M 141 71 Q 151 56 161 71 L 272 263 Q 272 277 257 277 L 45 277 Q 30 277 30 263 L 141 71 Z"
+              fill="rgba(0,0,0,0.001)"
+              pointerEvents="all"
+              onClick={handleDuplicateButtonClick}
+              style={{ cursor: 'pointer' }}
+            />
+            <motion.path
+              d="M 141 71 Q 151 56 161 71 L 272 263 Q 272 277 257 277 L 45 277 Q 30 277 30 263 L 141 71 Z"
+              fill="none"
+              stroke="#ef8616"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              pointerEvents="none"
+              animate={{ stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(239, 134, 22, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'
+              }}
+            />
+            {/* Letter W inside triangle */}
+            <motion.path
+              d="M 269 261 L 215 168 L 151 273 L 87 168 L 34 261"
+              fill="none"
+              stroke="#ef8616"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              pointerEvents="none"
+              animate={{ stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(239, 134, 22, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'
+              }}
+            />
+          </motion.svg>
+        </div>
+
         {/* Header */}
         <h1 className="poetry text-2xl md:text-3xl mb-8" style={{
           background: 'linear-gradient(to bottom, #772905ff, #360464ff 50%, #56056eff)',
@@ -298,120 +421,27 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           </motion.svg>
         </div>
         </div>
-
-        {/* Duplicate Triangle Container - Static, 5rem below */}
-        <div
-          style={{
-            position: 'relative',
-            width: 'clamp(4.2rem, 21vw, 15.75rem)',
-            height: 'clamp(4.2rem, 21vw, 15.75rem)',
-            marginTop: '5rem',
-            marginLeft: '-12rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: 'transparent'
-          }}
-        >
-          {/* Image Overlay */}
-          <motion.div
-            style={{
-              position: 'absolute',
-              zIndex: 10,
-              width: '37.5%',
-              height: '37.5%',
-              top: 'calc(-37.5% + 2rem)',
-              right: 'calc(-37.5% + 3.1rem)',
-              pointerEvents: 'none'
-            }}
-          >
-            <img
-              src={key}
-              alt="Overlay"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                filter: 'drop-shadow(0 0 10px rgba(65, 105, 225, 0.6))'
-              }}
-            />
-          </motion.div>
-
-          <motion.svg
-            width="107%"
-            height="107%"
-            viewBox="1 50 300 300"
-            preserveAspectRatio="xMidYMid meet"
-            style={{
-              display: 'block',
-              cursor: 'pointer',
-              position: 'absolute'
-            }}
-            animate={{ scale: [1, 1.08, 1] }}
-            transition={{
-              scale: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }
-            }}
-          >
-            <path
-              d="M 141 71 Q 151 56 161 71 L 272 263 Q 272 277 257 277 L 45 277 Q 30 277 30 263 L 141 71 Z"
-              fill="rgba(0,0,0,0.001)"
-              pointerEvents="all"
-              onClick={handleDuplicateButtonClick}
-              style={{ cursor: 'pointer' }}
-            />
-            <motion.path
-              d="M 141 71 Q 151 56 161 71 L 272 263 Q 272 277 257 277 L 45 277 Q 30 277 30 263 L 141 71 Z"
-              fill="none"
-              stroke="#ef8616"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              pointerEvents="none"
-              animate={{ stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
-              style={{
-                filter: 'drop-shadow(0 0 8px rgba(239, 134, 22, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'
-              }}
-            />
-            {/* Letter W inside triangle */}
-            <motion.path
-              d="M 269 261 L 215 168 L 151 273 L 87 168 L 34 261"
-              fill="none"
-              stroke="#ef8616"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              pointerEvents="none"
-              animate={{ stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
-              style={{
-                filter: 'drop-shadow(0 0 8px rgba(239, 134, 22, 0.8)) drop-shadow(0 0 16px rgba(167, 59, 198, 0.4))'
-              }}
-            />
-          </motion.svg>
-        </div>
-
-        {/* New Content - Nexus Visual System */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: showNewContent ? 1 : 0 }}
-          transition={{ duration: 0.8, ease: 'easeInOut' }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'linear-gradient(to bottom, #1d0900ff, #0a0504ff, #0d0811ff, #2b0c3dff, #170720ff)',
-            pointerEvents: showNewContent ? 'auto' : 'none',
-            zIndex: 9998
-          }}
-        >
-          {showNewContent && (
-            <NexusPage onBack={() => setShowNewContent(false)} />
-          )}
-        </motion.div>
       </div>
+      </motion.div>
+
+      {/* New Content - Nexus Visual System */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showNewContent ? 1 : 0 }}
+        transition={{ duration: 0.8, ease: 'easeInOut', delay: showNewContent ? 0.8 : 0 }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(to bottom, #1d0900ff, #0a0504ff, #0d0811ff, #2b0c3dff, #170720ff)',
+          pointerEvents: showNewContent ? 'auto' : 'none',
+          zIndex: 9998
+        }}
+      >
+        <NexusPage onBack={() => setShowNewContent(false)} />
+      </motion.div>
     </div>
 
   );

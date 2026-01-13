@@ -7,13 +7,54 @@ import '../../styles/text.css';
 
 export const NexusPage = ({ onBack }) => {
   const [timestamp, setTimestamp] = useState(new Date().toISOString());
+  const [timezone, setTimezone] = useState(null);
 
   useEffect(() => {
+    // Fetch user's timezone from IP once on mount
+    const fetchTimezone = async () => {
+      try {
+        const response = await fetch('https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyDummy', {
+          method: 'POST'
+        }).catch(() => {
+          // Fallback to ipapi.co if Google fails
+          return fetch('https://ipapi.co/json/');
+        });
+        
+        const data = await response.json();
+        const tz = data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+        setTimezone(tz);
+      } catch (error) {
+        // Use browser's default timezone
+        setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+      }
+    };
+
+    fetchTimezone();
+
+    // Update timestamp every second locally
     const timer = setInterval(() => {
-      setTimestamp(new Date().toISOString());
+      if (timezone) {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: timezone,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+        
+        const now = new Date();
+        const localDateTime = formatter.format(now);
+        setTimestamp(localDateTime);
+      } else {
+        setTimestamp(new Date().toISOString());
+      }
     }, 1000);
+    
     return () => clearInterval(timer);
-  }, []);
+  }, [timezone]);
 
   return (
     <div className="relative h-full w-full overflow-hidden flex flex-col font-mono text-cyan-400 selection:bg-cyan-500/30 touch-none">
@@ -64,36 +105,69 @@ export const NexusPage = ({ onBack }) => {
       {onBack && (
         <button
           onClick={onBack}
-          className="absolute top-4 left-4 z-50 px-3 py-1.5 border border-cyan-500/30 bg-black/60 text-cyan-400 text-[10px] uppercase tracking-wider hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-300"
+          className="absolute z-50 border border-cyan-500/30 bg-black/60 text-cyan-400 uppercase tracking-wider hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-300"
+          style={{
+            top: 'clamp(0.5rem, 1vw, 1rem)',
+            left: 'clamp(0.5rem, 1vw, 1rem)',
+            padding: 'clamp(0.3rem, 0.6vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)',
+            fontSize: 'clamp(0.5rem, 0.75vw, 0.65rem)'
+          }}
         >
           ← Back
         </button>
       )}
       
       {/* Main Unified Holographic Container */}
-      <div className="nexus-container relative flex-1 m-2 md:m-4 border border-white/10 z-20 flex flex-col overflow-hidden bg-black/20">
+      <div className="nexus-container relative flex-1 border border-white/10 z-20 flex flex-col overflow-hidden bg-black/20" style={{
+        margin: 'clamp(0.5rem, 1.5vw, 1.5rem)'
+      }}>
         {/* Corner Brackets */}
-        <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-white/20 pointer-events-none" />
-        <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-white/20 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-white/20 pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-white/20 pointer-events-none" />
+        <div className="absolute top-0 left-0 border-t-2 border-l-2 border-white/20 pointer-events-none" style={{
+          width: 'clamp(1rem, 3vw, 2rem)',
+          height: 'clamp(1rem, 3vw, 2rem)'
+        }} />
+        <div className="absolute top-0 right-0 border-t-2 border-r-2 border-white/20 pointer-events-none" style={{
+          width: 'clamp(1rem, 3vw, 2rem)',
+          height: 'clamp(1rem, 3vw, 2rem)'
+        }} />
+        <div className="absolute bottom-0 left-0 border-b-2 border-l-2 border-white/20 pointer-events-none" style={{
+          width: 'clamp(1rem, 3vw, 2rem)',
+          height: 'clamp(1rem, 3vw, 2rem)'
+        }} />
+        <div className="absolute bottom-0 right-0 border-b-2 border-r-2 border-white/20 pointer-events-none" style={{
+          width: 'clamp(1rem, 3vw, 2rem)',
+          height: 'clamp(1rem, 3vw, 2rem)'
+        }} />
 
-        <div className="p-3 md:p-4 shrink-0">
+        <div className="shrink-0" style={{
+          padding: 'clamp(0.5rem, 1.5vw, 1.5rem)'
+        }}>
           <Header timestamp={timestamp} />
         </div>
 
         {/* Responsive Content Flow */}
-        <div className="flex-1 flex flex-col md:flex-row gap-2 md:gap-4 px-3 md:px-6 pb-1 md:pb-2 overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden" style={{
+          gap: 'clamp(0.5rem, 1.5vw, 1.5rem)',
+          padding: `clamp(2rem, 3vw, 3rem) clamp(0.75rem, 2vw, 2rem) clamp(0.25rem, 0.75vw, 1rem) clamp(0.75rem, 2vw, 2rem)`
+        }}>
           {/* Main Visual Core - Top on Mobile, Left on Desktop */}
-          <div className="flex-[2] md:flex-[3] relative border border-white/5 overflow-hidden flex items-center justify-center min-h-[300px]">
-             <div className="absolute top-2 left-2 px-2 py-0.5 border border-white/10 bg-black/40 text-[7px] md:text-[9px] text-white/40 uppercase tracking-widest z-10">
+          <div className="flex-[2] md:flex-[3] relative border border-white/5 overflow-hidden flex items-center justify-center" style={{
+            minHeight: 'clamp(12rem, 40vh, 30rem)'
+          }}>
+             <div className="absolute top-0 left-0 border border-white/10 bg-black/40 text-white/40 uppercase tracking-widest z-10" style={{
+               padding: 'clamp(0.25rem, 0.5vw, 0.375rem) clamp(0.5rem, 1vw, 0.75rem)',
+               fontSize: 'clamp(0.35rem, 0.55vw, 0.5rem)'
+             }}>
                 Core_Node_View
              </div>
              <VisualCore />
           </div>
 
           {/* Metrics Panel - Bottom on Mobile, Right on Desktop */}
-          <div className="flex-1 min-h-0 flex flex-col border-t md:border-t-0 md:border-l border-white/5 pt-1 md:pt-0 md:pl-4 overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col border-t md:border-t-0 md:border-l border-white/5" style={{
+            paddingTop: 'clamp(0.25rem, 0.75vw, 0.5rem)',
+            paddingLeft: 'clamp(0, 2vw, 1rem)'
+          }}>
              <WaveAnalysis />
           </div>
         </div>

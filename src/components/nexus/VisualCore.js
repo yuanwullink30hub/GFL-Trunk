@@ -9,26 +9,59 @@ const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left'
       transform: 'translateY(-50%)' 
     }}
   >
-    <div className={`flex items-center gap-1 md:gap-2 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
-      <div className="w-1 md:w-1.5 h-1 md:h-1.5 bg-purple-500/80 border border-white/20 transform rotate-45" />
-      <div className="h-[0.5px] w-6 md:w-12 bg-gradient-to-r from-purple-500/50 to-transparent" />
+    <div className={`flex items-center ${align === 'right' ? 'flex-row-reverse' : ''}`} style={{
+      gap: 'clamp(0.625rem, 1.25vw, 1.25rem)'
+    }}>
+      <div className="bg-purple-500/80 border border-white/20 transform rotate-45" style={{
+        width: 'clamp(1.25rem, 2.5vw, 1.875rem)',
+        height: 'clamp(1.25rem, 2.5vw, 1.875rem)'
+      }} />
+      <div className="h-[0.5px] bg-gradient-to-r from-purple-500/50 to-transparent" style={{
+        width: 'clamp(2.5rem, 7.5vw, 7.5rem)'
+      }} />
     </div>
-    <div className="mt-1 border-l border-purple-500/40 bg-black/90 p-1 md:p-1.5 backdrop-blur-md min-w-[70px] md:min-w-[110px] transition-all duration-300 group-hover:bg-purple-900/40 shadow-2xl border-r border-b border-white/5">
-      <div className="text-[5px] md:text-[6px] text-purple-400/60 font-bold uppercase tracking-[0.2em] mb-0.5">{label}</div>
-      <div className="text-[8px] md:text-[10px] text-white font-mono leading-none tracking-tight">{value}</div>
+    <div className="border-l border-purple-500/40 transition-all duration-300 group-hover:bg-purple-900/40 shadow-2xl border-r border-b border-white/5" style={{
+      marginTop: 'clamp(0.625rem, 1.25vw, 1.25rem)',
+      padding: 'clamp(0.625rem, 1.25vw, 1.25rem)',
+      minWidth: 'clamp(7.5rem, 20vw, 17.5rem)'
+    }}>
+      <div className="text-purple-400/60 font-bold uppercase tracking-[0.2em] text-white font-mono leading-none tracking-tight" style={{
+        fontSize: 'clamp(0.75rem, 1.25vw, 1rem)',
+        marginBottom: 'clamp(0.3125rem, 0.625vw, 0.625rem)'
+      }}>{label}</div>
+      <div className="text-white font-mono leading-none tracking-tight" style={{
+        fontSize: 'clamp(1rem, 1.875vw, 1.625rem)'
+      }}>{value}</div>
     </div>
   </div>
 );
 
 const ApexMetric = () => (
-  <div className="absolute top-[2%] md:top-[8%] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50 scale-75 md:scale-100">
-    <div className="text-[6px] md:text-[7px] text-amber-500 font-bold tracking-[0.3em] uppercase mb-1">Apex_Sync</div>
-    <div className="flex items-center gap-2 md:gap-3">
-      <div className="h-[1px] w-8 md:w-12 bg-gradient-to-r from-transparent to-amber-500/50" />
-      <div className="text-sm md:text-xl text-white font-bold font-mono glow-amber tracking-tighter">99.98%</div>
-      <div className="h-[1px] w-8 md:w-12 bg-gradient-to-l from-transparent to-amber-500/50" />
+  <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50" style={{
+    top: 'clamp(1%, 2vh, 8%)',
+    transform: 'translateX(-50%) scale(clamp(0.65, 1vw, 1))'
+  }}>
+    <div className="text-amber-500 font-bold tracking-[0.3em] uppercase" style={{
+      fontSize: 'clamp(0.4rem, 0.75vw, 0.5rem)',
+      marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+    }}>Apex_Sync</div>
+    <div className="flex items-center" style={{
+      gap: 'clamp(0.5rem, 1vw, 1rem)'
+    }}>
+      <div className="h-[1px] bg-gradient-to-r from-transparent to-amber-500/50" style={{
+        width: 'clamp(1rem, 3vw, 3rem)'
+      }} />
+      <div className="text-white font-bold font-mono glow-amber tracking-tighter" style={{
+        fontSize: 'clamp(0.75rem, 2vw, 1.5rem)'
+      }}>99.98%</div>
+      <div className="h-[1px] bg-gradient-to-l from-transparent to-amber-500/50" style={{
+        width: 'clamp(1rem, 3vw, 3rem)'
+      }} />
     </div>
-    <div className="w-px h-10 md:h-16 bg-gradient-to-b from-amber-500/80 to-transparent mt-2" />
+    <div className="w-px bg-gradient-to-b from-amber-500/80 to-transparent" style={{
+      height: 'clamp(2rem, 4vh, 4rem)',
+      marginTop: 'clamp(0.5rem, 1vh, 1rem)'
+    }} />
   </div>
 );
 
@@ -89,18 +122,17 @@ export const VisualCore = () => {
   const middleColor = 'rgb(255, 0, 0)';
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-start pt-2 md:pt-4 bg-transparent overflow-hidden">
+    <div className="relative w-full h-full flex flex-col items-center justify-start bg-transparent overflow-hidden" style={{
+      paddingTop: 'clamp(0.5rem, 1vh, 1rem)'
+    }}>
       <style>{`
         .perspective-container { 
-            perspective: 1500px; 
+            perspective: clamp(500px, 100vw, 2500px); 
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        @media (min-width: 768px) {
-          .perspective-container { perspective: 2500px; }
         }
         .preserve-3d { transform-style: preserve-3d; }
         @keyframes stableRotate {
@@ -113,10 +145,7 @@ export const VisualCore = () => {
         .glow-amber { text-shadow: 0 0 10px rgba(251, 191, 36, 0.7); }
         
         .mobile-scale {
-          transform: scale(0.65);
-        }
-        @media (min-width: 768px) {
-          .mobile-scale { transform: scale(1); }
+          transform: scale(clamp(0.5, 1vw, 1));
         }
       `}</style>
 
@@ -124,7 +153,10 @@ export const VisualCore = () => {
 
       <div className="perspective-container">
         <div className="relative w-full h-full flex items-center justify-center preserve-3d">
-            <div className="relative w-32 md:w-52 h-32 md:h-52 preserve-3d animate-pyramid-stable mobile-scale">
+            <div className="relative preserve-3d animate-pyramid-stable mobile-scale" style={{
+              width: 'clamp(6rem, 25vw, 16rem)',
+              height: 'clamp(6rem, 25vh, 16rem)'
+            }}>
             
             {/* Layer 1: Base */}
             <PyramidSegment 
@@ -169,7 +201,7 @@ export const VisualCore = () => {
       <div className="absolute inset-0 pointer-events-none scale-[0.85] md:scale-100">
         <SchematicLabel top="calc(50% - 25px)" left="4%" label="DATA_LINK" value="L_04" />
         <SchematicLabel top="calc(50% + 20px)" left="4%" label="SYNC_ALIGN" value="0.0002" />
-        <SchematicLabel top="calc(50% + 50px)" right="4%" label="RADIUS" value="182.0_PX" align="right" />
+        <SchematicLabel top="calc(50% + 50px + 5.5rem)" right="4%" label="RADIUS" value="182.0_PX" align="right" />
       </div>
 
       {/* Floating Particles */}

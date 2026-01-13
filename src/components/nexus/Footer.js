@@ -3,42 +3,97 @@ import '../../styles/text.css';
 
 export const Footer = () => {
   return (
-    <footer className="relative z-30 h-16 md:h-20 border-t border-cyan-500/10 flex items-center justify-between px-4 md:px-8 text-[7px] md:text-[9px] text-cyan-400/50 uppercase bg-black/40">
-      <div className="flex items-center gap-2 md:gap-4">
+    <footer className="relative z-30 border-t border-cyan-500/10 flex items-center justify-between text-cyan-400/50 uppercase bg-black/40" style={{
+      height: 'clamp(2rem, 8vh, 6rem)',
+      padding: 'clamp(0.5rem, 1vw, 2rem) clamp(0.75rem, 2vw, 2rem)',
+      fontSize: 'clamp(0.795rem, 3.634vw, 1.704rem)'
+    }}>
+      <div className="flex items-center" style={{
+        gap: 'clamp(0.5rem, 1.5vw, 1.5rem)'
+      }}>
         <div className="flex flex-col leading-tight">
-          <span className="text-white/20 text-[9px] md:text-[11px]">NODE</span>
-          <span className="text-amber-500/80 truncate text-[10px] md:text-[13px]">v4.8-P</span>
+          <span className="text-white/20" style={{
+            fontSize: 'clamp(0.5rem, 0.7vw, 0.7rem)'
+          }}>SCHADUW WERK</span>
+          <span className="text-amber-500/80 truncate" style={{
+            fontSize: 'clamp(0.55rem, 0.8vw, 0.8rem)'
+          }}>FM/MF=MF/FM</span>
         </div>
-        <div className="h-4 w-px bg-cyan-500/10 hidden md:block" />
-        <div className="flex items-center gap-1">
-           <div className="w-1.5 h-1.5 rounded-full bg-green-500/60 animate-pulse" />
-           <span className="tracking-tighter hidden sm:inline text-[9px] md:text-[11px]">SYNC_OK</span>
+        <div className="hidden md:block bg-cyan-500/10" style={{
+          height: 'clamp(0.75rem, 2vh, 1.5rem)',
+          width: '1px'
+        }} />
+        <div className="flex items-center hidden sm:flex" style={{
+          gap: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+        }}>
+           <div className="rounded-full bg-green-500/60 animate-pulse" style={{
+             width: 'clamp(0.5rem, 1vw, 0.75rem)',
+             height: 'clamp(0.5rem, 1vw, 0.75rem)'
+           }} />
+           <span className="tracking-tighter" style={{
+             fontSize: 'clamp(0.5rem, 0.7vw, 0.7rem)'
+           }}>SYNC_OK</span>
         </div>
       </div>
 
       {/* Center Icon */}
-      <div className="hidden md:flex items-center gap-6">
-        <div className="w-6 h-6 border border-cyan-500/20 flex items-center justify-center transform rotate-45">
-           <div className="w-3 h-3 border border-rose-500/30 flex items-center justify-center">
-              <div className="w-1.5 h-1.5 bg-cyan-400/60" />
+      <div className="hidden md:flex items-center" style={{
+        gap: 'clamp(1rem, 3vw, 2.5rem)'
+      }}>
+        <div className="border border-cyan-500/20 flex items-center justify-center" style={{
+          width: 'clamp(1rem, 2.5vw, 1.5rem)',
+          height: 'clamp(1rem, 2.5vw, 1.5rem)',
+          transform: 'rotate(45deg)'
+        }}>
+           <div className="border border-rose-500/30 flex items-center justify-center" style={{
+             width: 'clamp(0.65rem, 1.5vw, 1rem)',
+             height: 'clamp(0.65rem, 1.5vw, 1rem)'
+           }}>
+              <div className="bg-cyan-400/60" style={{
+                width: 'clamp(0.4rem, 0.8vw, 0.6rem)',
+                height: 'clamp(0.4rem, 0.8vw, 0.6rem)'
+              }} />
            </div>
         </div>
         <div className="flex flex-col items-center leading-none">
-          <span className="text-[8px] md:text-[10px] tracking-[0.2em] opacity-40">SECURE_L7</span>
+          <span className="tracking-[0.2em] opacity-40" style={{
+            fontSize: 'clamp(0.45rem, 0.65vw, 0.6rem)'
+          }}>SECURE_L7</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4 text-right">
+      <div className="flex items-center text-right" style={{
+        gap: 'clamp(0.5rem, 1vw, 1rem)'
+      }}>
         <div className="flex flex-col leading-tight">
-          <span className="text-white/20 text-[9px] md:text-[11px]">LOAD</span>
-          <span className="text-cyan-400/70 font-mono text-[10px] md:text-[13px]">1.2 TB/S</span>
+          <span className="text-white/20" style={{
+            fontSize: 'clamp(0.5rem, 0.7vw, 0.7rem)'
+          }}>LOAD</span>
+          <span className="text-cyan-400/70 font-mono" style={{
+            fontSize: 'clamp(0.55rem, 0.8vw, 0.8rem)'
+          }}>1.2 TB/S</span>
         </div>
-        <div className="grid grid-cols-2 gap-0.5 scale-100 md:scale-125">
-          <div className="w-2.5 h-2.5 border border-cyan-500/20 flex items-center justify-center">
-            <div className="w-1 h-1 bg-rose-500/40" />
+        <div className="grid grid-cols-2" style={{
+          gap: 'clamp(0.125rem, 0.3vw, 0.25rem)',
+          transform: 'scale(clamp(0.65, 1.5vw, 1.25))'
+        }}>
+          <div className="border border-cyan-500/20 flex items-center justify-center" style={{
+            width: 'clamp(0.65rem, 1.5vw, 1rem)',
+            height: 'clamp(0.65rem, 1.5vw, 1rem)'
+          }}>
+            <div className="bg-rose-500/40" style={{
+              width: 'clamp(0.3rem, 0.6vw, 0.5rem)',
+              height: 'clamp(0.3rem, 0.6vw, 0.5rem)'
+            }} />
           </div>
-          <div className="w-2.5 h-2.5 border border-cyan-500/20 flex items-center justify-center">
-            <div className="w-1 h-1 bg-amber-500/40" />
+          <div className="border border-cyan-500/20 flex items-center justify-center" style={{
+            width: 'clamp(0.65rem, 1.5vw, 1rem)',
+            height: 'clamp(0.65rem, 1.5vw, 1rem)'
+          }}>
+            <div className="bg-amber-500/40" style={{
+              width: 'clamp(0.3rem, 0.6vw, 0.5rem)',
+              height: 'clamp(0.3rem, 0.6vw, 0.5rem)'
+            }} />
           </div>
         </div>
       </div>

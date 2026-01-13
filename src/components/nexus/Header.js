@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import '../../styles/text.css';
+import { gpuAccel } from '../../config/animationStyles';
+import { throttle } from '../../utils/performanceUtils';
 
-export const Header = ({ timestamp }) => {
+export const Header = ({ timestamp, loginName = 'Onbekend' }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [zoomOrigin, setZoomOrigin] = useState({ x: '50%', y: '50%' });
 
   const handleClose = () => {
     setIsClosing(true);
@@ -11,6 +14,29 @@ export const Header = ({ timestamp }) => {
       setIsModalOpen(false);
       setIsClosing(false);
     }, 1200);
+  };
+
+  // Throttle modal open calculations for performance
+  const throttledModalOpen = React.useMemo(
+    () => throttle((e) => {
+      // Always get the flex container parent that holds both button and arrow
+      const containerElement = e.currentTarget.parentElement;
+      
+      // Calculate from the flex container to ensure consistent origin for both button and arrow
+      const rect = containerElement.getBoundingClientRect();
+      
+      // Calculate center of button group, moved left 4rem and up 1.5rem
+      const centerXPercent = (((rect.left - 64) + rect.width / 2) / window.innerWidth) * 100;
+      const centerYPercent = (((rect.top - 88) + rect.height / 2) / window.innerHeight) * 100;
+      
+      setZoomOrigin({ x: `${centerXPercent}%`, y: `${centerYPercent}%` });
+      setIsModalOpen(true);
+    }, 50),
+    []
+  );
+
+  const handleModalOpen = (e) => {
+    throttledModalOpen(e);
   };
 
   useEffect(() => {
@@ -58,20 +84,25 @@ export const Header = ({ timestamp }) => {
             gap: 'clamp(0.5rem, 1vw, 1.5rem)'
           }}>
             <span 
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleModalOpen}
               className="bg-cyan-500/20 border border-cyan-500/40 cursor-pointer hover:bg-cyan-500/30 hover:border-cyan-500/60 transition-all duration-200" 
               style={{
                 padding: 'clamp(0.125rem, 0.5vw, 0.375rem) clamp(0.25rem, 1vw, 0.75rem)',
                 fontSize: 'clamp(0.5rem, 1vw, 0.75rem)'
               }}
             >
-              LEES INSTRUCTIE
+              GEBRUIKSAANWIJZING
             </span>
-            <div className="border-b border-r border-cyan-500/50 transform rotate-45 pointer-events-none" style={{
-              width: 'clamp(1rem, 2vw, 1.5rem)',
-              height: 'clamp(1rem, 2vw, 1.5rem)',
-              transform: 'translate(0, -0.25rem) rotate(45deg)'
-            }} />
+            <div 
+              onClick={handleModalOpen}
+              className="border-b border-r border-cyan-500/50 transform rotate-45 cursor-pointer hover:border-cyan-500/80 transition-all duration-200" 
+              style={{
+                width: 'clamp(1rem, 2vw, 1.5rem)',
+                height: 'clamp(1rem, 2vw, 1.5rem)',
+                transform: 'translate(0, -0.25rem) rotate(45deg)',
+                padding: 'clamp(0.5rem, 1vw, 0.75rem)'
+              }} 
+            />
           </div>
           <div className="h-[1px] bg-gradient-to-r from-cyan-500/40 to-transparent pointer-events-none" style={{
             width: 'clamp(4rem, 15vw, 12rem)'
@@ -88,7 +119,7 @@ export const Header = ({ timestamp }) => {
         }}>
           <div className="text-right">
             <div>TIME_SYNC: {timestamp}</div>
-            <div className="text-amber-500/80 flicker">ENCRYPT: RSA_4096</div>
+            <div className="text-amber-500/80 flicker">IDENTITEIT: {loginName}</div>
           </div>
         </div>
       </header>
@@ -100,11 +131,12 @@ export const Header = ({ timestamp }) => {
           className="fixed inset-0 flex items-center justify-center"
           style={{
             perspective: '1200px',
-            perspectiveOrigin: '0.45rem 4rem',
+            perspectiveOrigin: `${zoomOrigin.x} ${zoomOrigin.y}`,
             animation: isClosing 
               ? 'zoomBackdropOut 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
               : 'zoomBackdrop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
-            zIndex: 9999
+            zIndex: 9999,
+            ...gpuAccel.heavy
           }}
         >
           <div 
@@ -115,12 +147,13 @@ export const Header = ({ timestamp }) => {
               ? 'zoomOut 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
               : 'zoomIn 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
               transformStyle: 'preserve-3d',
-              transformOrigin: '0.45rem 4rem',
-              zIndex: 10000
+              transformOrigin: `${zoomOrigin.x} ${zoomOrigin.y}`,
+              zIndex: 10000,
+              ...gpuAccel.heavy
             }}
           >
             <div className="text-cyan-400 font-mono space-y-4 text-sm leading-relaxed">
-              <h2 className="text-cyan-300 font-bold text-lg mb-4">INSTRUCTIES</h2>
+              <h2 className="text-cyan-300 font-bold text-lg mb-4">GEBRUIKSAANWIJZING</h2>
               <p>
                 Welkom bij het GFL Nexus systeem. Dit is uw interface naar geavanceerde gegevensvisualisatie en systeemcontrole.
               </p>
@@ -133,8 +166,8 @@ export const Header = ({ timestamp }) => {
               <p>
                 Het rechterpaneel bevat golfanalyse en systeemmetrieken. Monitor deze waarden voor optimale systeemprestaties.
               </p>
-              <div className="text-cyan-500/60 text-xs mt-6 pt-4 border-t border-cyan-500/20">
-                Druk ESC om dit venster te sluiten of klik erbuiten.
+              <div className="text-cyan-500/60 text-xs mt-6 pt-4 border-t border-cyan-500/20 text-center">
+                Klik buiten dit venster om te sluiten.
               </div>
             </div>
           </div>

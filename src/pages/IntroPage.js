@@ -6,12 +6,26 @@ import '../styles/buttons.css';
 import sun2 from '../images/illustrativesun.png';
 import lock from '../images/Lock-PNG-Images.png';
 import key from '../images/KEY-PNG-Images.png';
+import { throttle } from '../utils/performanceUtils';
 import NexusPage from '../components/nexus/NexusPage';
 
 const IntroPage = ({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const [showNewContent, setShowNewContent] = React.useState(false);
+
+  // Throttle scroll events for performance
+  const handleScroll = React.useMemo(
+    () => throttle(() => {
+      // Scroll-based animations handled by CSS/Framer Motion
+    }, 100),
+    []
+  );
+
+  React.useEffect(() => {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   React.useEffect(() => {
     // Preload main app assets for faster transition
@@ -153,8 +167,13 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               height: '37.5%',
               top: 'calc(-37.5% + 2rem)',
               right: 'calc(-37.5% + 3.1rem)',
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              willChange: 'transform',
+              backfaceVisibility: 'hidden',
+              perspective: '1000px'
             }}
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
           >
             <img
               src={key}
@@ -315,14 +334,19 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               scale: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }
             }}
           >
-            <div
+            <motion.div
               style={{
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
-                top: 'calc(-37.5% + 2rem)',
-                right: 'calc(-37.5% + 1.5rem)'
+                top: 'calc(-37.5% + 1.4rem)',
+                right: 'calc(-37.5% + 1.9rem)',
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+                perspective: '1000px'
               }}
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
             >
             <img
               src={lock}
@@ -334,7 +358,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
                 filter: 'drop-shadow(0 0 10px rgba(239, 134, 22, 0.6))'
               }}
             />
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* Circle Button */}

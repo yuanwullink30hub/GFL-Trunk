@@ -36,7 +36,7 @@ const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left'
   </div>
 );
 
-const ApexMetric = () => (
+const ApexMetric = ({ syncPercentage = 0 }) => (
   <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50" style={{
     top: 'clamp(1%, 2vh, 8%)',
     transform: 'translateX(-50%) scale(clamp(0.65, 1vw, 1))'
@@ -53,7 +53,7 @@ const ApexMetric = () => (
       }} />
       <div className="text-white font-bold font-mono glow-amber tracking-tighter" style={{
         fontSize: 'clamp(0.75rem, 2vw, 1.5rem)'
-      }}>99.98%</div>
+      }}>{syncPercentage}%</div>
       <div className="h-[1px] bg-gradient-to-l from-transparent to-amber-500/50" style={{
         width: 'clamp(1rem, 3vw, 3rem)'
       }} />
@@ -112,7 +112,7 @@ const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor,
   );
 };
 
-export const VisualCore = () => {
+export const VisualCore = ({ syncPercentage = 0 }) => {
   const pyramidColor = 'rgba(167, 59, 198, 0.4)';
   const borderColor = '#ef8616';
   const middleColor = 'rgb(255, 0, 0)';
@@ -129,6 +129,7 @@ export const VisualCore = () => {
             display: flex;
             align-items: center;
             justify-content: center;
+            transform: scale(0.8) translateY(-2.5rem);
         }
         .preserve-3d { transform-style: preserve-3d; }
         @keyframes stableRotate {
@@ -145,13 +146,13 @@ export const VisualCore = () => {
         }
       `}</style>
 
-      <ApexMetric />
+      <ApexMetric syncPercentage={syncPercentage} />
 
       <div className="perspective-container">
         <div className="relative w-full h-full flex items-center justify-center preserve-3d">
             <div className="relative preserve-3d animate-pyramid-stable mobile-scale" style={{
-              width: 'clamp(6rem, 25vw, 16rem)',
-              height: 'clamp(6rem, 25vh, 16rem)'
+              width: 'clamp(2.304rem, 9.6vw, 6.144rem)',
+              height: 'clamp(2.304rem, 9.6vh, 6.144rem)'
             }}>
             
             {/* Layer 1: Base */}

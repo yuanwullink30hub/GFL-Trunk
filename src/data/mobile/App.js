@@ -658,8 +658,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           playsInline
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         >
-          <source src="/videos/HolographicHeader33.mp4" type="video/mp4; codecs=hvc1" />
-          <source src="/videos/HolographicHeader33.webm" type="video/webm" />
+           <source src="/videos/HolographicHeader30.mp4" type="video/mp4; codecs=hvc1" />
+         <source src="/videos/HolographicHeader30.webm" type="video/webm" />
           Your browser does not support the video tag.
         </video>
       </div>

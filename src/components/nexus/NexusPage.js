@@ -57,7 +57,7 @@ export const NexusPage = ({ onBack }) => {
   }, [timezone]);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden flex flex-col font-mono text-cyan-400 selection:bg-cyan-500/30 touch-none">
+    <div className="relative h-full w-full overflow-hidden flex flex-col font-mono text-cyan-400 selection:bg-cyan-500/30 touch-none">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap');
         
@@ -101,24 +101,8 @@ export const NexusPage = ({ onBack }) => {
       {/* Visual FX Layers */}
       <div className="scanline" />
       
-      {/* Back Button */}
-      {onBack && (
-        <button
-          onClick={onBack}
-          className="absolute z-50 border border-cyan-500/30 bg-black/60 text-cyan-400 uppercase tracking-wider hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-300"
-          style={{
-            top: 'clamp(0.5rem, 1vw, 1rem)',
-            left: 'clamp(0.5rem, 1vw, 1rem)',
-            padding: 'clamp(0.39rem, 0.78vw, 0.65rem) clamp(0.65rem, 1.3vw, 0.975rem)',
-            fontSize: 'clamp(0.65rem, 0.975vw, 0.845rem)'
-          }}
-        >
-          ← Back
-        </button>
-      )}
-      
       {/* Main Unified Holographic Container */}
-      <div className="nexus-container relative flex-1 border border-white/10 z-20 flex flex-col overflow-hidden bg-black/20 h-full" style={{
+      <div className="nexus-container relative flex-1 border border-white/10 z-20 flex flex-col overflow-hidden bg-black/20" style={{
         margin: 'clamp(0.5rem, 1.5vw, 1.5rem)',
         touchAction: 'manipulation'
       }}>
@@ -149,7 +133,8 @@ export const NexusPage = ({ onBack }) => {
         {/* Responsive Content Flow */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden" style={{
           gap: 'clamp(0.5rem, 1.5vw, 1.5rem)',
-          padding: `clamp(2rem, 3vw, 3rem) clamp(0.75rem, 2vw, 2rem) clamp(0.25rem, 0.75vw, 1rem) clamp(0.75rem, 2vw, 2rem)`
+          padding: `clamp(2rem, 3vw, 3rem) clamp(0.75rem, 2vw, 2rem) clamp(0.25rem, 0.75vw, 1rem) clamp(0.75rem, 2vw, 2rem)`,
+          marginTop: '-5rem'
         }}>
           {/* Main Visual Core - Top on Mobile, Left on Desktop */}
           <div className="flex-[2] md:flex-[3] relative border border-white/5 overflow-hidden flex items-center justify-center" style={{

@@ -58,6 +58,10 @@ const ApexMetric = () => (
         width: 'clamp(1rem, 3vw, 3rem)'
       }} />
     </div>
+    <div className="w-px bg-gradient-to-b from-amber-500/80 to-transparent" style={{
+      height: 'clamp(2rem, 4vh, 4rem)',
+      marginTop: 'clamp(0.5rem, 1vh, 1rem)'
+    }} />
   </div>
 );
 
@@ -181,15 +185,19 @@ export const VisualCore = () => {
                 color={pyramidColor} borderColor={borderColor} 
                 isTip={true}
             />
+
+            {/* Vertical Core Pulse */}
+            <div className="absolute left-1/2 top-1/2 w-[1.5px] h-[240px] bg-gradient-to-t from-transparent via-purple-400/20 to-transparent blur-[2px] transform -translate-x-1/2 -translate-y-1/2 opacity-50" />
+            <div className="absolute left-1/2 top-1/2 w-[1px] h-[240px] bg-purple-400/40 transform -translate-x-1/2 -translate-y-1/2" />
             </div>
         </div>
       </div>
 
-      {/* Responsive Labels */}
-      <div className="absolute inset-0 pointer-events-none scale-[0.85] md:scale-100">
-        <SchematicLabel top="calc(50% - 25px)" left="4%" label="DATA_LINK" value="L_04" />
-        <SchematicLabel top="calc(50% + 50px + 5.5rem)" left="calc(4% - 1rem)" label="SYNC_ALIGN" value="0.0002" />
-        <SchematicLabel top="calc(50% + 20px + 3rem)" right="4%" label="RADIUS" value="182.0_PX" align="right" />
+      {/* Responsive Labels - Independently Positioned */}
+      <div className="absolute inset-0 pointer-events-none">
+        <SchematicLabel top="calc(50% - clamp(1rem, 3vh, 3rem))" left="clamp(1rem, 5vw, 3rem)" label="DATA_LINK" value="L_04" />
+        <SchematicLabel top="calc(50% + clamp(2rem, 4vh, 5rem))" left="clamp(0.5rem, 3vw, 2rem)" label="SYNC_ALIGN" value="0.0002" />
+        <SchematicLabel top="calc(50% + clamp(1rem, 3vh, 3rem))" right="clamp(1rem, 5vw, 3rem)" label="RADIUS" value="182.0_PX" align="right" />
       </div>
     </div>
   );

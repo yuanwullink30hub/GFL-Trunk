@@ -113,7 +113,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           height: '100%'
         }}
         animate={{ opacity: showNewContent ? 0 : 1 }}
-        transition={{ duration: 0.8, ease: 'easeInOut' }}
+        transition={{ duration: 0.8, ease: 'easeInOut', delay: showNewContent ? 0 : 0.8 }}
         pointerEvents={showNewContent ? 'none' : 'auto'}
       >
         {/* Login Text - Fades with content */}

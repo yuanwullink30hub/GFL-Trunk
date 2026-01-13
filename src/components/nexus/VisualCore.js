@@ -58,10 +58,6 @@ const ApexMetric = () => (
         width: 'clamp(1rem, 3vw, 3rem)'
       }} />
     </div>
-    <div className="w-px bg-gradient-to-b from-amber-500/80 to-transparent" style={{
-      height: 'clamp(2rem, 4vh, 4rem)',
-      marginTop: 'clamp(0.5rem, 1vh, 1rem)'
-    }} />
   </div>
 );
 
@@ -73,10 +69,6 @@ const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor,
 
   return (
     <div className="absolute left-1/2 top-1/2 preserve-3d" style={{ transform: `translate(-50%, -50%) translateY(${yPos}px)` }}>
-      {isTip && (
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-20 md:w-32 h-20 md:h-32 bg-amber-500/10 rounded-full blur-3xl animate-pulse pointer-events-none" />
-      )}
-      
       {[0, 90, 180, 270].map((rot) => (
         <div
           key={rot}
@@ -189,10 +181,6 @@ export const VisualCore = () => {
                 color={pyramidColor} borderColor={borderColor} 
                 isTip={true}
             />
-
-            {/* Vertical Core Pulse */}
-            <div className="absolute left-1/2 top-1/2 w-[1.5px] h-[240px] bg-gradient-to-t from-transparent via-purple-400/20 to-transparent blur-[2px] transform -translate-x-1/2 -translate-y-1/2 opacity-50" />
-            <div className="absolute left-1/2 top-1/2 w-[1px] h-[240px] bg-purple-400/40 transform -translate-x-1/2 -translate-y-1/2" />
             </div>
         </div>
       </div>

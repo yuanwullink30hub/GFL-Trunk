@@ -32,8 +32,8 @@ export const Header = ({ timestamp }) => {
 
       {/* Center: Main Title */}
       <div className="flex flex-row items-center" style={{
-        gap: 'clamp(0.5rem, 1vw, 1.5rem)',
-        marginLeft: '3rem'
+        gap: 'clamp(1rem, 1vw, 2rem)',
+        marginLeft: '3.5rem'
       }}>
         <div className="border-b border-r border-cyan-500/50 transform rotate-45" style={{
           width: 'clamp(1rem, 2vw, 1.5rem)',
@@ -70,7 +70,8 @@ export const Header = ({ timestamp }) => {
       <div className="flex flex-col items-end" style={{
         gap: 'clamp(0.25rem, 0.5vw, 0.5rem)',
         fontSize: 'clamp(0.5rem, 0.75vw, 0.7rem)',
-        flexShrink: 0
+        flexShrink: 0,
+        marginLeft: '-1.2rem'
       }}>
         <div className="text-right" style={{
           whiteSpace: 'nowrap'

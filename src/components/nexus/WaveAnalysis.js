@@ -62,9 +62,10 @@ const MetricRow = ({ id, title, subtext, children, colorClass = "text-green-500"
   </div>
 );
 
-export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = () => {} }) => {
+export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = () => {}, onSendLabel = () => {} }) => {
   const [frame, setFrame] = useState(0);
   const [solstice, setSolstice] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const metricsContainerRef = useRef(null);
 
   useEffect(() => {
@@ -129,6 +130,52 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
   // Handle metric value changes
   const handleMetricChange = (metricId, value) => {
     onMetricChange(activeLabel, metricId, value);
+  };
+
+  // Check if all metrics for current label are filled
+  const isCurrentLabelComplete = activeLabel && metricValues[activeLabel] && Object.values(metricValues[activeLabel]).every(v => v.trim() !== '');
+
+  const handleSendLabel = () => {
+    if (isCurrentLabelComplete && !isSending) {
+      setIsSending(true);
+      
+      // Close keyboard by blurring all inputs
+      const activeElement = document.activeElement;
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        activeElement.blur();
+      }
+      
+      // Request fullscreen if not already fullscreen
+      const docElement = document.documentElement;
+      if (!document.fullscreenElement) {
+        if (docElement.requestFullscreen) {
+          docElement.requestFullscreen().catch(() => {
+            // Fullscreen request denied, proceed anyway with just keyboard close
+            setTimeout(() => {
+              onSendLabel(activeLabel);
+              setIsSending(false);
+            }, 300);
+          });
+          // Wait for fullscreen to activate then trigger send
+          setTimeout(() => {
+            onSendLabel(activeLabel);
+            setIsSending(false);
+          }, 300);
+        } else {
+          // Fullscreen not supported, just wait for keyboard to close
+          setTimeout(() => {
+            onSendLabel(activeLabel);
+            setIsSending(false);
+          }, 300);
+        }
+      } else {
+        // Already fullscreen
+        setTimeout(() => {
+          onSendLabel(activeLabel);
+          setIsSending(false);
+        }, 300);
+      }
+    }
   };
 
   return (
@@ -454,6 +501,36 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
           </>
         ) : null}
       </div>
+
+      {/* Send Button - visible only when a label is active */}
+      {activeLabel && (
+        <div style={{
+          padding: 'clamp(0.75rem, 2vw, 1.5rem)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          marginTop: 'auto'
+        }}>
+          <button
+            onClick={handleSendLabel}
+            disabled={!isCurrentLabelComplete || isSending}
+            className="w-full font-bold uppercase tracking-widest transition-all duration-300 poetry"
+            style={{
+              padding: 'clamp(0.5rem, 1vw, 0.75rem)',
+              fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
+              backgroundColor: (isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(21, 179, 21, 0.2)',
+              color: (isCurrentLabelComplete && !isSending) ? '#000' : 'rgba(255, 255, 255, 0.4)',
+              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(255, 255, 255, 0.1)'}`,
+              cursor: (isCurrentLabelComplete && !isSending) ? 'pointer' : 'not-allowed',
+              opacity: (isCurrentLabelComplete && !isSending) ? 1 : 0.5,
+              boxShadow: (isCurrentLabelComplete && !isSending) ? '0 0 15px rgba(21, 179, 21, 0.3)' : 'none',
+              transform: (isCurrentLabelComplete && !isSending) ? 'scale(1)' : 'scale(0.98)',
+              textShadow: (isCurrentLabelComplete && !isSending) ? '0 0 10px rgba(0, 0, 0, 0.5)' : 'none',
+              letterSpacing: isSending ? '0.15em' : '0.2em'
+            }}
+          >
+            {isSending ? 'PROCESSING...' : 'SEND_LABEL'}
+          </button>
+        </div>
+      )}
 
       <style>{`
         .scrollbar-custom::-webkit-scrollbar { width: 3px; }

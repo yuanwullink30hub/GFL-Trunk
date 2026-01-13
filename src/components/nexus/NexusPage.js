@@ -28,7 +28,7 @@ export const NexusPage = ({ onBack }) => {
   const [syncPercentage, setSyncPercentage] = useState(0);
   const [animatingLabel, setAnimatingLabel] = useState(null);
 
-  // Monitor label completions and trigger animations
+  // Monitor label completions for state tracking only (not animation)
   useEffect(() => {
     // Check if a label is complete
     const isLabelComplete = (label) => {
@@ -42,32 +42,16 @@ export const NexusPage = ({ onBack }) => {
       dataLink: isLabelComplete('dataLink')
     };
 
-    // Check if radius just completed
+    // Update completed labels state without triggering animation
+    // Animation will be triggered by handleSendLabel button click instead
     if (newCompleted.radius && !completedLabels.radius) {
       setCompletedLabels(prev => ({ ...prev, radius: true }));
-      setAnimatingLabel('radius');
-      setTimeout(() => {
-        setSyncPercentage(33);
-        setAnimatingLabel(null);
-      }, 1200); // Animation duration
     }
-    // Check if syncAlign just completed
-    else if (newCompleted.syncAlign && !completedLabels.syncAlign && completedLabels.radius) {
+    if (newCompleted.syncAlign && !completedLabels.syncAlign) {
       setCompletedLabels(prev => ({ ...prev, syncAlign: true }));
-      setAnimatingLabel('syncAlign');
-      setTimeout(() => {
-        setSyncPercentage(66);
-        setAnimatingLabel(null);
-      }, 1200);
     }
-    // Check if dataLink just completed
-    else if (newCompleted.dataLink && !completedLabels.dataLink && completedLabels.syncAlign) {
+    if (newCompleted.dataLink && !completedLabels.dataLink) {
       setCompletedLabels(prev => ({ ...prev, dataLink: true }));
-      setAnimatingLabel('dataLink');
-      setTimeout(() => {
-        setSyncPercentage(99);
-        setAnimatingLabel(null);
-      }, 1200);
     }
   }, [metricValues, completedLabels]);
 
@@ -127,6 +111,41 @@ export const NexusPage = ({ onBack }) => {
         [metricId]: value
       }
     }));
+  };
+
+  // Handle sending/confirming a label
+  const handleSendLabel = (label) => {
+    // Trigger animation when button is clicked
+    setAnimatingLabel(label);
+    
+    // Update sync percentage based on which label was sent
+    setTimeout(() => {
+      if (label === 'radius') {
+        setSyncPercentage(33);
+      } else if (label === 'syncAlign') {
+        setSyncPercentage(66);
+      } else if (label === 'dataLink') {
+        setSyncPercentage(99);
+      }
+      setAnimatingLabel(null);
+    }, 1200); // Animation duration
+    
+    // Move to next label
+    const labelOrder = ['radius', 'syncAlign', 'dataLink'];
+    const currentIndex = labelOrder.indexOf(label);
+    
+    if (currentIndex < labelOrder.length - 1) {
+      // Move to next label
+      const nextLabel = labelOrder[currentIndex + 1];
+      setTimeout(() => {
+        setActiveLabel(nextLabel);
+      }, 1200); // Wait for animation to complete
+    } else {
+      // All labels complete - clear active label
+      setTimeout(() => {
+        setActiveLabel(null);
+      }, 1200);
+    }
   };
 
   // Check if all labels are complete
@@ -260,7 +279,7 @@ export const NexusPage = ({ onBack }) => {
             paddingTop: 'clamp(0.25rem, 0.75vw, 0.5rem)',
             paddingLeft: 'clamp(0, 2vw, 1rem)'
           }}>
-             <WaveAnalysis activeLabel={activeLabel} metricValues={metricValues} onMetricChange={handleMetricChange} />
+             <WaveAnalysis activeLabel={activeLabel} metricValues={metricValues} onMetricChange={handleMetricChange} onSendLabel={handleSendLabel} />
           </div>
         </div>
 

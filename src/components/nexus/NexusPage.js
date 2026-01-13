@@ -3,11 +3,73 @@ import { Header } from './Header';
 import { VisualCore } from './VisualCore';
 import { WaveAnalysis } from './WaveAnalysis';
 import { Footer } from './Footer';
+import sun2 from '../../images/illustrativesun.png';
 import '../../styles/text.css';
 
 export const NexusPage = ({ onBack }) => {
   const [timestamp, setTimestamp] = useState(new Date().toISOString());
   const [timezone, setTimezone] = useState(null);
+  const [activeLabel, setActiveLabel] = useState(null);
+  
+  // Track metric values for completion tracking
+  const [metricValues, setMetricValues] = useState({
+    radius: { '01_MSR': '', '02_DEV': '', '03_FLD': '', '04_SYN': '' },
+    syncAlign: { '01_ALN': '', '02_PHS': '', '03_FRQ': '', '04_COH': '' },
+    dataLink: { '01_CHN': '', '02_BND': '', '03_SIG': '', '04_PKT': '' }
+  });
+
+  // Track label completions and sync percentage
+  const [completedLabels, setCompletedLabels] = useState({
+    radius: false,
+    syncAlign: false,
+    dataLink: false
+  });
+  
+  const [syncPercentage, setSyncPercentage] = useState(0);
+  const [animatingLabel, setAnimatingLabel] = useState(null);
+
+  // Monitor label completions and trigger animations
+  useEffect(() => {
+    // Check if a label is complete
+    const isLabelComplete = (label) => {
+      if (!metricValues[label]) return false;
+      return Object.values(metricValues[label]).every(v => v.trim() !== '');
+    };
+
+    const newCompleted = {
+      radius: isLabelComplete('radius'),
+      syncAlign: isLabelComplete('syncAlign'),
+      dataLink: isLabelComplete('dataLink')
+    };
+
+    // Check if radius just completed
+    if (newCompleted.radius && !completedLabels.radius) {
+      setCompletedLabels(prev => ({ ...prev, radius: true }));
+      setAnimatingLabel('radius');
+      setTimeout(() => {
+        setSyncPercentage(33);
+        setAnimatingLabel(null);
+      }, 1200); // Animation duration
+    }
+    // Check if syncAlign just completed
+    else if (newCompleted.syncAlign && !completedLabels.syncAlign && completedLabels.radius) {
+      setCompletedLabels(prev => ({ ...prev, syncAlign: true }));
+      setAnimatingLabel('syncAlign');
+      setTimeout(() => {
+        setSyncPercentage(66);
+        setAnimatingLabel(null);
+      }, 1200);
+    }
+    // Check if dataLink just completed
+    else if (newCompleted.dataLink && !completedLabels.dataLink && completedLabels.syncAlign) {
+      setCompletedLabels(prev => ({ ...prev, dataLink: true }));
+      setAnimatingLabel('dataLink');
+      setTimeout(() => {
+        setSyncPercentage(99);
+        setAnimatingLabel(null);
+      }, 1200);
+    }
+  }, [metricValues, completedLabels]);
 
   useEffect(() => {
     // Fetch user's timezone from IP once on mount
@@ -56,8 +118,34 @@ export const NexusPage = ({ onBack }) => {
     return () => clearInterval(timer);
   }, [timezone]);
 
+  // Handle metric value updates
+  const handleMetricChange = (label, metricId, value) => {
+    setMetricValues(prev => ({
+      ...prev,
+      [label]: {
+        ...prev[label],
+        [metricId]: value
+      }
+    }));
+  };
+
+  // Check if all labels are complete
+  const areAllLabelsComplete = 
+    Object.values(metricValues.radius).every(v => v.trim() !== '') &&
+    Object.values(metricValues.syncAlign).every(v => v.trim() !== '') &&
+    Object.values(metricValues.dataLink).every(v => v.trim() !== '');
+
   return (
-    <div className="relative h-full w-full overflow-hidden flex flex-col font-mono text-cyan-400 selection:bg-cyan-500/30 touch-none">
+    <div className="relative h-full w-full overflow-hidden flex flex-col font-mono touch-none" style={{ color: '#15B315' }}>
+      {/* Sun Logo - Persistent across content */}
+      <button
+        onClick={() => window.location.href = '/login'}
+        className="absolute right-6 p-2 hover:opacity-80 transition-opacity duration-300"
+        style={{ top: 'calc(1.5rem + 0.4rem)', zIndex: 60, filter: 'none', mixBlendMode: 'screen', background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+        title="Go to login"
+      >
+        <img src={sun2} alt="Login" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block', filter: 'none' }} />
+      </button>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap');
         
@@ -65,9 +153,9 @@ export const NexusPage = ({ onBack }) => {
           font-family: 'Figtree', sans-serif;
         }
 
-        .glow-cyan { text-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
-        .glow-amber { text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
-        .border-glow-cyan { box-shadow: 0 0 15px rgba(34, 211, 238, 0.2); }
+        .glow-cyan { text-shadow: 0 0 10px rgba(21, 179, 21, 0.5); }
+        .glow-amber { text-shadow: 0 0 10px rgba(251, 191, 36, 0.7); }
+        .border-glow-cyan { box-shadow: 0 0 15px rgba(21, 179, 21, 0.2); }
         
         .scanline {
             width: 100%;
@@ -95,6 +183,23 @@ export const NexusPage = ({ onBack }) => {
             15% { opacity: 0.6; }
             20% { opacity: 1; }
             100% { opacity: 0.9; }
+        }
+
+        @keyframes flowToApex {
+            0% {
+                transform: translate(-50%, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, calc(-100vh + clamp(1%, 2vh, 8%) + 80px + 25rem)) scale(0.1);
+                opacity: 0;
+            }
+        }
+
+        .floating-wave-analysis {
+            animation: flowToApex 1.2s linear forwards;
+            transform-origin: center center;
+            pointer-events: none;
         }
       `}</style>
 
@@ -137,8 +242,9 @@ export const NexusPage = ({ onBack }) => {
           marginTop: '-5rem'
         }}>
           {/* Main Visual Core - Top on Mobile, Left on Desktop */}
-          <div className="flex-[2] md:flex-[3] relative border border-white/5 overflow-hidden flex items-center justify-center" style={{
-            minHeight: 'clamp(12rem, 40vh, 30rem)'
+          <div className="flex-[2] md:flex-[3] relative overflow-visible flex items-center justify-center" style={{
+            minHeight: 'clamp(8rem, 30vh, 22rem)',
+            marginBottom: '-100px'
           }}>
              <div className="absolute top-0 left-0 border border-white/10 bg-black/40 text-white/40 uppercase tracking-widest z-10" style={{
                padding: 'clamp(0.25rem, 0.5vw, 0.375rem) clamp(0.5rem, 1vw, 0.75rem)',
@@ -146,7 +252,7 @@ export const NexusPage = ({ onBack }) => {
              }}>
                 Core_Node_View
              </div>
-             <VisualCore />
+             <VisualCore activeLabel={activeLabel} onLabelClick={setActiveLabel} metricValues={metricValues} allLabelsComplete={areAllLabelsComplete} syncPercentage={syncPercentage} />
           </div>
 
           {/* Metrics Panel - Bottom on Mobile, Right on Desktop */}
@@ -154,7 +260,7 @@ export const NexusPage = ({ onBack }) => {
             paddingTop: 'clamp(0.25rem, 0.75vw, 0.5rem)',
             paddingLeft: 'clamp(0, 2vw, 1rem)'
           }}>
-             <WaveAnalysis />
+             <WaveAnalysis activeLabel={activeLabel} metricValues={metricValues} onMetricChange={handleMetricChange} />
           </div>
         </div>
 
@@ -162,6 +268,52 @@ export const NexusPage = ({ onBack }) => {
           <Footer />
         </div>
       </div>
+
+      {/* Floating Wave Analysis Animation */}
+      {animatingLabel && (
+        <div 
+          className="floating-wave-analysis fixed left-1/2 pointer-events-none z-40"
+          style={{
+            width: 'clamp(250px, 25vw, 350px)',
+            top: '40%',
+            transformOrigin: 'center center',
+          }}
+        >
+          <div className="relative flex flex-col h-auto w-full border border-green-500/40 bg-gradient-to-b from-black/60 to-black/40 backdrop-blur-sm p-3">
+            {/* Animated Border Glow */}
+            <div className="absolute inset-0 border border-green-500/20 rounded-sm pointer-events-none" />
+            
+            {/* Copy of WaveAnalysis Header */}
+            <div className="flex items-center justify-between shrink-0 mb-3 relative z-10">
+              <div className="border-l-2 border-green-500/60 bg-green-500/5 px-2 py-1">
+                <span className="font-bold text-green-500 uppercase tracking-[0.2em] poetry text-xs">
+                  Telemetry_Stream
+                </span>
+              </div>
+              <span className="text-green-500/40 text-xs">SURGE</span>
+            </div>
+            
+            {/* Simplified metric rows with glow effect */}
+            <div className="flex-1 overflow-hidden space-y-2">
+              {[1, 2, 3, 4].map((idx) => (
+                <div 
+                  key={idx} 
+                  className="border border-green-500/20 bg-green-500/5 p-2 animate-pulse"
+                  style={{
+                    animation: `pulse 0.8s ease-in-out infinite`,
+                    animationDelay: `${idx * 0.1}s`
+                  }}
+                >
+                  <div className="h-2 bg-green-500/30 rounded-full w-full" />
+                </div>
+              ))}
+            </div>
+            
+            {/* Bottom accent */}
+            <div className="mt-2 h-px bg-gradient-to-r from-transparent via-green-500/40 to-transparent" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

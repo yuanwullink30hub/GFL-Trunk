@@ -2,7 +2,7 @@ import React from 'react';
 
 const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left' }) => (
   <div 
-    className="absolute flex flex-col pointer-events-none group z-50 transition-all duration-500"
+    className="absolute flex flex-col pointer-events-none group z-50 transition-all duration-500 overflow-visible"
     style={{ 
       top, left, right, bottom, 
       textAlign: align,
@@ -200,8 +200,8 @@ export const VisualCore = () => {
       {/* Responsive Labels */}
       <div className="absolute inset-0 pointer-events-none scale-[0.85] md:scale-100">
         <SchematicLabel top="calc(50% - 25px)" left="4%" label="DATA_LINK" value="L_04" />
-        <SchematicLabel top="calc(50% + 20px)" left="4%" label="SYNC_ALIGN" value="0.0002" />
-        <SchematicLabel top="calc(50% + 50px + 5.5rem)" right="4%" label="RADIUS" value="182.0_PX" align="right" />
+        <SchematicLabel top="calc(50% + 50px + 5.5rem)" left="calc(4% - 1rem)" label="SYNC_ALIGN" value="0.0002" />
+        <SchematicLabel top="calc(50% + 20px + 3rem)" right="4%" label="RADIUS" value="182.0_PX" align="right" />
       </div>
 
       {/* Floating Particles */}

@@ -90,11 +90,11 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       <motion.button
         onClick={() => window.location.href = '/login'}
         className="absolute right-6 p-2 hover:opacity-80 transition-opacity duration-300"
-        style={{ top: 'calc(1.5rem + 0.4rem)', zIndex: 9999 }}
+        style={{ top: 'calc(1.5rem + 0.4rem)', zIndex: 9999, filter: 'none', mixBlendMode: 'screen' }}
         title="Go to login"
         animate={{ opacity: 1 }}
       >
-        <img src={sun2} alt="Login" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block' }} />
+        <img src={sun2} alt="Login" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block', filter: 'none' }} />
       </motion.button>
 
       {/* All Content - Fades Out When Nexus Activated */}
@@ -437,7 +437,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           bottom: 0,
           background: 'linear-gradient(to bottom, #1d0900ff, #0a0504ff, #0d0811ff, #2b0c3dff, #170720ff)',
           pointerEvents: showNewContent ? 'auto' : 'none',
-          zIndex: 9998
+          zIndex: 9998,
+          mixBlendMode: 'normal'
         }}
       >
         <NexusPage onBack={() => setShowNewContent(false)} />

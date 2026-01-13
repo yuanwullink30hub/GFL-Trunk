@@ -109,8 +109,8 @@ export const NexusPage = ({ onBack }) => {
           style={{
             top: 'clamp(0.5rem, 1vw, 1rem)',
             left: 'clamp(0.5rem, 1vw, 1rem)',
-            padding: 'clamp(0.3rem, 0.6vw, 0.5rem) clamp(0.5rem, 1vw, 0.75rem)',
-            fontSize: 'clamp(0.5rem, 0.75vw, 0.65rem)'
+            padding: 'clamp(0.39rem, 0.78vw, 0.65rem) clamp(0.65rem, 1.3vw, 0.975rem)',
+            fontSize: 'clamp(0.65rem, 0.975vw, 0.845rem)'
           }}
         >
           ← Back

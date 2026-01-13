@@ -59,9 +59,6 @@ export const Header = ({ timestamp }) => {
           <div>TIME_SYNC: {timestamp}</div>
           <div className="text-amber-500/80 flicker">ENCRYPT: RSA_4096</div>
         </div>
-        <div className="h-[1px] bg-gradient-to-l from-cyan-500/40 to-transparent" style={{
-          width: 'clamp(4rem, 15vw, 12rem)'
-        }} />
       </div>
     </header>
   );

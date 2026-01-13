@@ -10,7 +10,7 @@ export const Header = ({ timestamp }) => {
     setTimeout(() => {
       setIsModalOpen(false);
       setIsClosing(false);
-    }, 600);
+    }, 1200);
   };
 
   useEffect(() => {
@@ -102,8 +102,8 @@ export const Header = ({ timestamp }) => {
             perspective: '1200px',
             perspectiveOrigin: '0.45rem 4rem',
             animation: isClosing 
-              ? 'zoomBackdropOut 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
-              : 'zoomBackdrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+              ? 'zoomBackdropOut 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
+              : 'zoomBackdrop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
             zIndex: 9999
           }}
         >
@@ -112,8 +112,8 @@ export const Header = ({ timestamp }) => {
             className="border border-cyan-500/40 bg-black/60 p-8 max-w-2xl max-h-[80vh] overflow-y-auto"
             style={{
               animation: isClosing 
-                ? 'zoomOut 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
-                : 'zoomIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+              ? 'zoomOut 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
+              : 'zoomIn 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
               transformStyle: 'preserve-3d',
               transformOrigin: '0.45rem 4rem',
               zIndex: 10000

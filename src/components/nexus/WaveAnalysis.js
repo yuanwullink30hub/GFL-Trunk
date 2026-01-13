@@ -131,9 +131,6 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
     onMetricChange(activeLabel, metricId, value);
   };
 
-  // Check if all metrics for current label are filled
-  const isLabelComplete = activeLabel && Object.values(metricValues[activeLabel]).every(v => v.trim() !== '');
-
   return (
     <div className="relative flex flex-col h-full w-full">
       {/* Blur Overlay - visible until first label is clicked */}

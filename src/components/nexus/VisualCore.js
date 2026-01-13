@@ -141,7 +141,6 @@ export const VisualCore = ({ syncPercentage = 0, activeLabel = null, onLabelClic
     syncAlign: false,
     radius: false
   });
-  const [isClosing, setIsClosing] = useState(false);
   const [shouldFlash, setShouldFlash] = useState(false);
 
   // Trigger flash when all labels are completed
@@ -189,44 +188,6 @@ export const VisualCore = ({ syncPercentage = 0, activeLabel = null, onLabelClic
         dataLink: !prev.dataLink
       }));
       onLabelClick('dataLink');
-    }
-  };
-
-  const handleCloseModal = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onLabelClick(null);
-      setIsClosing(false);
-    }, 300);
-  };
-
-  const telemetricData = {
-    radius: {
-      title: 'RADIUS ANALYSIS',
-      metrics: [
-        { label: 'MEASUREMENT', value: '182.0_PX', status: 'CALIBRATED' },
-        { label: 'DEVIATION', value: '±0.02_PX', status: 'OPTIMAL' },
-        { label: 'FIELD_DENSITY', value: '94.3%', status: 'STABLE' },
-        { label: 'SYNC_STATUS', value: 'LOCKED', status: 'ACTIVE' }
-      ]
-    },
-    syncAlign: {
-      title: 'SYNC ALIGNMENT ANALYSIS',
-      metrics: [
-        { label: 'ALIGNMENT', value: '0.0002', status: 'PRECISE' },
-        { label: 'PHASE_OFFSET', value: '0.15°', status: 'MINIMAL' },
-        { label: 'FREQUENCY_MATCH', value: '99.98%', status: 'PERFECT' },
-        { label: 'COHERENCE', value: '1.00', status: 'MAXIMUM' }
-      ]
-    },
-    dataLink: {
-      title: 'DATA LINK ANALYSIS',
-      metrics: [
-        { label: 'CHANNEL', value: 'L_04', status: 'ACTIVE' },
-        { label: 'BANDWIDTH', value: '2.4_GHz', status: 'OPTIMAL' },
-        { label: 'SIGNAL_STRENGTH', value: '-42_dBm', status: 'EXCELLENT' },
-        { label: 'PACKET_LOSS', value: '0%', status: 'ZERO' }
-      ]
     }
   };
 

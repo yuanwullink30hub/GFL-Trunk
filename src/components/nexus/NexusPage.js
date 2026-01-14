@@ -10,6 +10,7 @@ export const NexusPage = ({ onBack }) => {
   const [timestamp, setTimestamp] = useState(new Date().toISOString());
   const [timezone, setTimezone] = useState(null);
   const [activeLabel, setActiveLabel] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasReadInstructions, setHasReadInstructions] = useState(false);
   const visualCoreRef = useRef(null);
   

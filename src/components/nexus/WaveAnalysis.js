@@ -130,8 +130,8 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
     
     // On keyboard focus, trigger immediate height calculation
     if (isLocalhost) {
-      // On localhost, set fixed keyboard size of 250px for testing
-      setKeyboardOffset(250);
+      // On localhost, set fixed keyboard size of 325px for testing
+      setKeyboardOffset(325);
       onKeyboardStateChange(true);
     } else {
       const currentHeight = window.innerHeight;
@@ -335,7 +335,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
   return (
     <div className="relative flex flex-col h-full w-full" style={{
       height: '100%',
-      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset + 40}px)` : 'translateY(-40px)',
+      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset}px)` : 'translateY(0px)',
       transition: 'transform 0.3s ease-out',
       zIndex: keyboardOffset > 0 ? 60 : 10,
       position: keyboardOffset > 0 ? 'relative' : 'relative',
@@ -354,7 +354,8 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
             top: 'clamp(2.5rem, 5vh, 4rem)',
             left: '0',
             right: '0',
-            bottom: '0'
+            bottom: '0',
+            marginTop: '-100px'
           }}
         />
       )}
@@ -362,15 +363,31 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       {/* Header */}
       <div className="flex items-center justify-between shrink-0" style={{
         marginBottom: 'clamp(0.1rem, 0.25vw, 0.25rem)',
-        paddingTop: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+        paddingTop: 'clamp(0.25rem, 0.5vw, 0.5rem)',
+        marginTop: '-100px'
       }}>
-        <div className="border-l-2 border-purple-500 bg-purple-500/10" style={{
-          padding: 'clamp(0.2rem, 0.5vw, 0.375rem) clamp(0.5rem, 1vw, 0.75rem)'
+        <div className="flex items-center" style={{
+          gap: 'clamp(1rem, 2vw, 2rem)'
         }}>
-          <span className="font-bold uppercase tracking-[0.2em] poetry" style={{
-            fontSize: 'clamp(0.6rem, 0.75vw, 0.7rem)',
-            color: '#FFFEF0'
-          }}>V4.9</span>
+          <div className="border-l-2 border-purple-500 bg-purple-500/10" style={{
+            padding: 'clamp(0.2rem, 0.5vw, 0.375rem) clamp(0.5rem, 1vw, 0.75rem)'
+          }}>
+            <span className="font-bold uppercase tracking-[0.2em] poetry" style={{
+              fontSize: 'clamp(0.6rem, 0.75vw, 0.7rem)',
+              color: '#FFFEF0'
+            }}>V4.9</span>
+          </div>
+          {/* SCHADUWWERK text moved from footer */}
+          <div className="flex flex-col leading-tight" style={{
+            gap: '0.1rem'
+          }}>
+            <span className="text-white/20 uppercase tracking-[0.1em]" style={{
+              fontSize: 'clamp(0.5rem, 0.7vw, 0.7rem)'
+            }}>SCHADUW WERK</span>
+            <span className="text-amber-500/80 truncate" style={{
+              fontSize: 'clamp(0.55rem, 0.8vw, 0.8rem)'
+            }}>FM/MF=MF/FM</span>
+          </div>
         </div>
         <div className="text-white/30 poetry" style={{
           fontSize: 'clamp(0.5rem, 0.6vw, 0.6rem)',

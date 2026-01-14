@@ -83,20 +83,7 @@ const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left'
 };
 
 const ApexMetric = ({ syncPercentage = 0, isGlowing = false, shouldFlash = false }) => {
-  const [isNumberGlowing, setIsNumberGlowing] = useState(false);
   const prevPercentageRef = React.useRef(syncPercentage);
-
-  // Trigger glow when percentage changes
-  useEffect(() => {
-    if (syncPercentage !== prevPercentageRef.current) {
-      setIsNumberGlowing(true);
-      const timer = setTimeout(() => {
-        setIsNumberGlowing(false);
-      }, 600); // 0.6 seconds glow
-      prevPercentageRef.current = syncPercentage;
-      return () => clearTimeout(timer);
-    }
-  }, [syncPercentage]);
 
   return (
     <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50" style={{
@@ -224,20 +211,11 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
     }
   }, [allLabelsComplete]);
 
-  // Handle when a label is sent from WaveAnalysis
-  const handleLabelSent = (label) => {
-    setCompletedLabels(prev => ({
-      ...prev,
-      [label]: true
-    }));
-    onLabelSent(label);
-  };
-
-  // Helper function to check if all metrics for a label are filled
-  const isLabelComplete = (labelName) => {
-    if (!metricValues[labelName]) return false;
-    return Object.values(metricValues[labelName]).every(v => v.trim() !== '');
-  };
+  // Helper function to check if all metrics for a label are filled (for reference)
+  // const isLabelComplete = (labelName) => {
+  //   if (!metricValues[labelName]) return false;
+  //   return Object.values(metricValues[labelName]).every(v => v.trim() !== '');
+  // };
 
   const pyramidColor = 'rgba(167, 59, 198, 0.4)';
   const borderColor = '#ef8616';

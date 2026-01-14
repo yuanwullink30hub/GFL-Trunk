@@ -117,15 +117,6 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
     setSolstice(currentSolstice);
   }, []);
 
-  const waveformPath = useMemo(() => {
-    const points = [];
-    for (let i = 0; i <= 200; i += 2) {
-      const y = 20 + Math.sin((i + frame) / 8) * 8 + Math.sin((i + frame) / 3) * 4;
-      points.push(`${i},${y}`);
-    }
-    return `M ${points.join(' L ')}`;
-  }, [frame]);
-
   const scatterPoints = useMemo(() => 
     Array.from({ length: 25 }, () => ({
       x: Math.random() * 100,

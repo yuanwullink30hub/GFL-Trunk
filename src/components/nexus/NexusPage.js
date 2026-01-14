@@ -10,7 +10,6 @@ export const NexusPage = ({ onBack }) => {
   const [timestamp, setTimestamp] = useState(new Date().toISOString());
   const [timezone, setTimezone] = useState(null);
   const [activeLabel, setActiveLabel] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasReadInstructions, setHasReadInstructions] = useState(false);
   const visualCoreRef = useRef(null);
   
@@ -178,12 +177,6 @@ export const NexusPage = ({ onBack }) => {
     setHasReadInstructions(true);
     setActiveLabel('radius'); // Show first label forms when blur disappears
   };
-
-  // Check if all labels are complete
-  const areAllLabelsComplete = 
-    Object.values(metricValues.radius).every(v => v.trim() !== '') &&
-    Object.values(metricValues.syncAlign).every(v => v.trim() !== '') &&
-    Object.values(metricValues.dataLink).every(v => v.trim() !== '');
 
   return (
     <div className="relative h-full w-full overflow-hidden flex flex-col font-mono touch-none" style={{ color: '#15B315' }}>

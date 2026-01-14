@@ -50,7 +50,7 @@ export const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange =
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [isModalOpen]);
+  }, [isModalOpen, handleClose]);
 
   return (
     <>

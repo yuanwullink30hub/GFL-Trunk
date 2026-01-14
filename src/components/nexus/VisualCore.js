@@ -53,7 +53,7 @@ const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left'
       }} />
     </div>
     <div 
-      className="transition-all duration-300 shadow-2xl cursor-pointer"
+      className="transition-all duration-300 cursor-pointer"
       onClick={isLocked ? undefined : onSquareClick}
       style={{
         marginTop: 'clamp(0.625rem, 1.25vw, 1.25rem)',

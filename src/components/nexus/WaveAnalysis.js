@@ -334,6 +334,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   return (
     <div className="relative flex flex-col h-full w-full" style={{
+      height: '100%',
       transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset + 40}px)` : 'translateY(-40px)',
       transition: 'transform 0.3s ease-out',
       zIndex: keyboardOffset > 0 ? 60 : 10,
@@ -384,6 +385,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
         paddingBottom: '0',
         display: 'flex',
         flexDirection: 'column',
+        flex: '1 1 auto',
         minHeight: '0',
         scrollbarGutter: 'stable',
         scrollbarWidth: 'thin',

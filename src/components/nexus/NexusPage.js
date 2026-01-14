@@ -305,9 +305,7 @@ export const NexusPage = ({ onBack }) => {
           {/* Metrics Panel - Bottom on Mobile, Right on Desktop */}
           <div className="flex-1 min-h-0 flex flex-col border-t md:border-t-0 md:border-l border-white/5" style={{
             paddingTop: 'clamp(0.25rem, 0.75vw, 0.5rem)',
-            paddingLeft: 'clamp(0, 2vw, 1rem)',
-            marginBottom: '-50px',
-            marginTop: '-50px'
+            paddingLeft: 'clamp(0, 2vw, 1rem)'
           }}>
              <WaveAnalysis activeLabel={activeLabel} metricValues={metricValues} onMetricChange={handleMetricChange} onSendLabel={handleSendLabel} hasReadInstructions={hasReadInstructions} onKeyboardStateChange={setIsKeyboardActive} />
           </div>

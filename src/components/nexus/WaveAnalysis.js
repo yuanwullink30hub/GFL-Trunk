@@ -251,7 +251,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   return (
     <div className="relative flex flex-col h-full w-full" style={{
-      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 3}px)` : 'translateY(0)',
+      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 3 + 40}px)` : 'translateY(-40px)',
       transition: 'transform 0.3s ease-out',
       zIndex: keyboardOffset > 0 ? 60 : 10,
       position: keyboardOffset > 0 ? 'relative' : 'relative'
@@ -259,12 +259,16 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       {/* Blur Overlay - original modal blur */}
       {!hasReadInstructions && (
         <div 
-          className="absolute inset-0 backdrop-blur-lg z-40"
+          className="absolute backdrop-blur-lg z-40"
           style={{
             animation: 'fadeIn 0.5s ease-out',
             backgroundColor: 'rgba(0, 0, 0, 0.3)',
             backdropFilter: 'blur(20px)',
-            pointerEvents: 'auto'
+            pointerEvents: 'auto',
+            top: 'clamp(2.5rem, 5vh, 4rem)',
+            left: '0',
+            right: '0',
+            bottom: '0'
           }}
         />
       )}
@@ -302,7 +306,9 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
         minHeight: '0',
         scrollbarGutter: 'stable',
         scrollbarWidth: 'thin',
-        scrollbarColor: 'rgba(255, 255, 255, 1) transparent'
+        scrollbarColor: 'rgba(255, 255, 255, 1) transparent',
+        filter: keyboardOffset > 0 ? 'blur(15px)' : 'none',
+        transition: 'filter 0.3s ease-out'
       }}>
         {!activeLabel ? (
           <>

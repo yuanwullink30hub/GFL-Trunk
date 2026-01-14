@@ -105,7 +105,7 @@ const ApexMetric = ({ syncPercentage = 0, isGlowing = false, shouldFlash = false
         }} />
         <div className="text-white font-bold poetry tracking-tighter" style={{
           fontSize: 'clamp(1.2rem, 2.8vw, 2rem)',
-          color: syncPercentage === 99 ? '#ff0000' : 'white',
+          color: syncPercentage === 99 ? '#ff0000' : '#FFFEF0',
           transition: 'color 0.1s ease-out',
           textShadow: 'none'
         }}>{syncPercentage}%</div>

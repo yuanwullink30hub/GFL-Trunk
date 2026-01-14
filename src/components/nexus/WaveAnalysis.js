@@ -128,14 +128,17 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       // If height decreased significantly, keyboard likely appeared
       if (heightDifference > 100) {
         setKeyboardOffset(heightDifference);
+        onKeyboardStateChange(true);
       } else {
         setKeyboardOffset(0);
+        onKeyboardStateChange(false);
       }
     };
 
     const handleFocus = (e) => {
-      // On keyboard focus, set a large fixed offset (300px) for significant push-up
-      setKeyboardOffset(100);      onKeyboardStateChange(true);    };
+      // On keyboard focus, just signal the state change, let resize handle the offset
+      onKeyboardStateChange(true);
+    };
 
     const handleBlur = () => {
       setKeyboardOffset(0);
@@ -248,7 +251,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   return (
     <div className="relative flex flex-col h-full w-full" style={{
-      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 3 + 40}px)` : 'translateY(-40px)',
+      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 3}px)` : 'translateY(0)',
       transition: 'transform 0.3s ease-out',
       zIndex: keyboardOffset > 0 ? 60 : 10,
       position: keyboardOffset > 0 ? 'relative' : 'relative'
@@ -276,8 +279,9 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
         <div className="border-l-2 border-purple-500 bg-purple-500/10" style={{
           padding: 'clamp(0.2rem, 0.5vw, 0.375rem) clamp(0.5rem, 1vw, 0.75rem)'
         }}>
-          <span className="font-bold text-white uppercase tracking-[0.2em] poetry" style={{
-            fontSize: 'clamp(0.6rem, 0.75vw, 0.7rem)'
+          <span className="font-bold uppercase tracking-[0.2em] poetry" style={{
+            fontSize: 'clamp(0.6rem, 0.75vw, 0.7rem)',
+            color: '#FFFEF0'
           }}>VERBINDING</span>
         </div>
         <div className="text-white/30 poetry" style={{
@@ -593,7 +597,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
               fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
               backgroundColor: (isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(21, 179, 21, 0.2)',
               color: (isCurrentLabelComplete && !isSending) ? '#000' : 'rgba(255, 255, 255, 0.4)',
-              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? 'white' : 'rgba(255, 255, 255, 0.2)'}`,
+              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? '#FFFEF0' : 'rgba(255, 255, 255, 0.2)'}`,
               cursor: (isCurrentLabelComplete && !isSending) ? 'pointer' : 'not-allowed',
               opacity: (isCurrentLabelComplete && !isSending) ? 1 : 0.5,
               boxShadow: (isCurrentLabelComplete && !isSending) ? '0 0 15px rgba(21, 179, 21, 0.3)' : 'none',
@@ -619,7 +623,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
               fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
               backgroundColor: (isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(21, 179, 21, 0.2)',
               color: (isCurrentLabelComplete && !isSending) ? '#000' : 'rgba(255, 255, 255, 0.4)',
-              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? 'white' : 'rgba(255, 255, 255, 0.2)'}`,
+              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? '#FFFEF0' : 'rgba(255, 255, 255, 0.2)'}`,
               cursor: (isCurrentLabelComplete && !isSending) ? 'pointer' : 'not-allowed',
               opacity: (isCurrentLabelComplete && !isSending) ? 1 : 0.5,
               boxShadow: (isCurrentLabelComplete && !isSending) ? '0 0 15px rgba(21, 179, 21, 0.3)' : 'none',

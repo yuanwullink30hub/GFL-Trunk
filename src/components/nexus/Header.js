@@ -68,14 +68,16 @@ export const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange =
           marginLeft: '0.5rem',
           marginTop: '-3.1rem'
         }}>
-          <h1 className="font-bold tracking-[0.3em] text-white poetry" style={{
-            fontSize: 'clamp(0.9rem, 1.8vw, 1.5rem)'
+          <h1 className="font-bold tracking-[0.3em] poetry" style={{
+            fontSize: 'clamp(0.9rem, 1.8vw, 1.5rem)',
+            color: '#FFFEF0'
           }}>DELTA</h1>
           <div className="h-px" style={{ backgroundImage: 'linear-gradient(to right, rgba(21, 179, 21, 0.4), rgba(21, 179, 21, 0.4))',
             width: 'clamp(2rem, 4vw, 4rem)'
           }} />
-          <h1 className="font-bold tracking-[0.3em] text-white poetry" style={{
-            fontSize: 'clamp(0.9rem, 1.8vw, 1.5rem)'
+          <h1 className="font-bold tracking-[0.3em] poetry" style={{
+            fontSize: 'clamp(0.9rem, 1.8vw, 1.5rem)',
+            color: '#FFFEF0'
           }}>WERKEN 4.9</h1>
         </div>
 

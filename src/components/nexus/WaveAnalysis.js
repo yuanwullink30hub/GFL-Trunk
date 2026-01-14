@@ -579,7 +579,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
               letterSpacing: isSending ? '0.15em' : '0.2em'
             }}
           >
-            {isSending ? 'PROCESSING...' : 'AANBID'}
+            {isSending ? 'PROCESSING...' : 'AANBID1'}
           </button>
         </div>
       ) : null}

@@ -69,7 +69,9 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
   const [solstice, setSolstice] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [signalFluxValue, setSignalFluxValue] = useState('');
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const metricsContainerRef = useRef(null);
+  const initialViewportHeightRef = useRef(window.innerHeight);
 
   // Check if running on localhost (development)
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -115,6 +117,89 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
     }
     
     setSolstice(currentSolstice);
+  }, []);
+
+  // Keyboard detection - adjust content when keyboard appears or input is focused
+  useEffect(() => {
+    const handleResize = () => {
+      const currentHeight = window.innerHeight;
+      const heightDifference = initialViewportHeightRef.current - currentHeight;
+      
+      // If height decreased significantly, keyboard likely appeared
+      if (heightDifference > 100) {
+        setKeyboardOffset(heightDifference);
+      } else {
+        setKeyboardOffset(0);
+      }
+    };
+
+    const handleFocus = (e) => {
+      // Small delay to allow viewport to adjust
+      setTimeout(() => {
+        const currentHeight = window.innerHeight;
+        const heightDifference = initialViewportHeightRef.current - currentHeight;
+        
+        // On mobile with actual keyboard
+        if (heightDifference > 100) {
+          setKeyboardOffset(heightDifference);
+        } else {
+          // On desktop or if keyboard didn't change height, scroll the input into view
+          // Calculate offset based on input position relative to metrics container
+          const input = e.target;
+          const containerRect = metricsContainerRef.current?.getBoundingClientRect();
+          const inputRect = input.getBoundingClientRect();
+          
+          if (containerRect && inputRect) {
+            // If input is near bottom of visible area, scroll it up
+            const visibleBottomY = containerRect.bottom - 100; // Leave 100px buffer
+            if (inputRect.bottom > visibleBottomY) {
+              const scrollAmount = inputRect.bottom - visibleBottomY;
+              setKeyboardOffset(scrollAmount);
+            }
+          }
+        }
+      }, 300);
+    };
+
+    const handleBlur = () => {
+      setKeyboardOffset(0);
+    };
+
+    // Attach listeners to all inputs in metrics container
+    const attachListeners = () => {
+      const inputs = document.querySelectorAll('input[type="text"]');
+      inputs.forEach(input => {
+        input.addEventListener('focus', handleFocus);
+        input.addEventListener('blur', handleBlur);
+      });
+    };
+
+    // Initial attachment
+    attachListeners();
+    
+    // Re-attach when activeLabel changes (new inputs may be added)
+    const observer = new MutationObserver(() => {
+      attachListeners();
+    });
+
+    if (metricsContainerRef.current) {
+      observer.observe(metricsContainerRef.current, { 
+        childList: true, 
+        subtree: true 
+      });
+    }
+
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      const inputs = document.querySelectorAll('input[type="text"]');
+      inputs.forEach(input => {
+        input.removeEventListener('focus', handleFocus);
+        input.removeEventListener('blur', handleBlur);
+      });
+      window.removeEventListener('resize', handleResize);
+      observer.disconnect();
+    };
   }, []);
 
   const scatterPoints = useMemo(() => 
@@ -185,7 +270,10 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
   };
 
   return (
-    <div className="relative flex flex-col h-full w-full">
+    <div className="relative flex flex-col h-full w-full" style={{
+      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 0.8}px)` : 'translateY(0)',
+      transition: 'transform 0.3s ease-out'
+    }}>
       {/* Blur Overlay - one time event: visible until user closes GEBRUIKSAANWIJZING modal */}
       {!hasReadInstructions && (
         <div 
@@ -218,7 +306,10 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
         paddingRight: 'clamp(0.5rem, 1vw, 1rem)',
         paddingBottom: 'clamp(0.75rem, 2vw, 1.5rem)',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        scrollbarGutter: 'stable',
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(255, 255, 255, 1) transparent'
       }}>
         {!activeLabel ? (
           <>
@@ -585,10 +676,26 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       ) : null}
 
       <style>{`
-        .scrollbar-custom::-webkit-scrollbar { width: 3px; }
-        .scrollbar-custom::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
-        .scrollbar-custom::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); }
-        .scrollbar-custom::-webkit-scrollbar-thumb:hover { background: rgba(167, 59, 198, 0.3); }
+        .scrollbar-custom { 
+          scrollbar-gutter: stable;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 1) transparent;
+        }
+        .scrollbar-custom::-webkit-scrollbar { 
+          width: 8px; 
+          background: transparent;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track { 
+          background: transparent; 
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb { 
+          background: rgba(255, 255, 255, 1) !important;
+          border-radius: 4px;
+          min-height: 40px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover { 
+          background: rgba(255, 255, 255, 1) !important;
+        }
       `}</style>
     </div>
   );

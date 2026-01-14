@@ -298,9 +298,7 @@ export const NexusPage = ({ onBack }) => {
              </div>
              <VisualCore ref={visualCoreRef} activeLabel={activeLabel} onLabelClick={setActiveLabel} onLabelSent={onLabelSentCallback} metricValues={metricValues} allLabelsComplete={showCompletionGlow} syncPercentage={syncPercentage} hasReadInstructions={hasReadInstructions} style={{
                filter: isKeyboardActive ? 'blur(15px)' : 'none',
-               transition: 'filter 0.3s ease-out',
-               willChange: 'filter',
-               backfaceVisibility: 'hidden'
+               transition: 'filter 0.3s ease-out'
              }} />
           </div>
 

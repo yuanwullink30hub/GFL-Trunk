@@ -1,13 +1,11 @@
-import React, { useMemo, useEffect, useState, useRef, useCallback, memo } from 'react';
+import React, { useMemo, useEffect, useState, useRef, useCallback } from 'react';
 import '../../styles/text.css';
 import '../../styles/poetry.css';
-import { rafThrottle } from '../../utils/performanceUtils';
 
-const MetricRow = memo(({ id, title, subtext, children, colorClass = "text-green-500", onValueChange, value = '', isCompleted = false, placeholder = "Enter value..." }) => (
+const MetricRow = ({ id, title, subtext, children, colorClass = "text-green-500", onValueChange, value = '', isCompleted = false, placeholder = "Enter value..." }) => (
   <div className="group relative flex flex-col border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-300" style={{
     gap: 'clamp(0.25rem, 1vw, 0.75rem)',
-    padding: 'clamp(0.5rem, 2vw, 1rem)',
-    willChange: 'background-color'
+    padding: 'clamp(0.5rem, 2vw, 1rem)'
   }}>
     {/* Modular Text Container */}
     <div className="flex justify-between items-start border-b border-white/5" style={{
@@ -64,9 +62,7 @@ const MetricRow = memo(({ id, title, subtext, children, colorClass = "text-green
       backgroundColor: isCompleted ? '#15B315' : 'rgba(255, 255, 255, 0.2)'
     }} />
   </div>
-));
-
-MetricRow.displayName = 'MetricRow';
+);
 
 export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = () => {}, onSendLabel = () => {}, hasReadInstructions = false, onKeyboardStateChange = () => {} }) => {
   const [frame, setFrame] = useState(0);
@@ -125,10 +121,22 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   // Keyboard event handlers - defined at component level
   const handleFocus = useCallback(() => {
-    // On keyboard focus, immediately set offset and blur state
-    setKeyboardOffset(100); // Temporary offset, will be updated by resize
-    onKeyboardStateChange(true);
-  }, [onKeyboardStateChange]);
+    // On keyboard focus, trigger immediate height calculation
+    if (isLocalhost) {
+      // On localhost, set fixed keyboard size of 250px for testing
+      setKeyboardOffset(250);
+      onKeyboardStateChange(true);
+    } else {
+      const currentHeight = window.innerHeight;
+      const heightDifference = initialViewportHeightRef.current - currentHeight;
+      
+      if (heightDifference > 50) {
+        // Keyboard is visible - use actual keyboard height
+        setKeyboardOffset(heightDifference);
+        onKeyboardStateChange(true);
+      }
+    }
+  }, [onKeyboardStateChange, isLocalhost]);
 
   const handleBlur = useCallback(() => {
     setKeyboardOffset(0);
@@ -137,24 +145,59 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   // Keyboard detection - adjust content when keyboard appears or input is focused
   useEffect(() => {
-    // Use RAF throttle for smooth resize handling
-    const handleResize = rafThrottle(() => {
-      const currentHeight = window.innerHeight;
-      const heightDifference = initialViewportHeightRef.current - currentHeight;
-      
-      // If height decreased significantly, keyboard likely appeared
-      if (heightDifference > 100) {
-        setKeyboardOffset(heightDifference);
-        onKeyboardStateChange(true);
-      } else {
-        setKeyboardOffset(0);
-        onKeyboardStateChange(false);
+    // Use visualViewport API for more accurate keyboard detection
+    // visualViewport detects the actual visible viewport (excluding keyboard)
+    const handleViewportResize = () => {
+      if (isLocalhost) {
+        // Localhost: doesn't have system keyboard, so detection is handled by focus/blur
+        return;
       }
-    });
+      
+      if (window.visualViewport) {
+        const windowHeight = window.visualViewport.height;
+        const initialHeight = initialViewportHeightRef.current;
+        const keyboardHeight = initialHeight - windowHeight;
+        
+        console.log('Visual viewport height:', windowHeight, 'keyboard height:', keyboardHeight, 'initial:', initialHeight);
+        
+        if (keyboardHeight > 50) {
+          // Keyboard is visible - use actual keyboard height
+          setKeyboardOffset(keyboardHeight);
+          onKeyboardStateChange(true);
+        } else {
+          setKeyboardOffset(0);
+          onKeyboardStateChange(false);
+        }
+      }
+    };
+
+    // Fallback: simple resize handler for browsers without visualViewport
+    const handleResize = () => {
+      if (isLocalhost) {
+        // Localhost: doesn't have system keyboard, so detection is handled by focus/blur
+        return;
+      }
+      
+      if (!window.visualViewport) {
+        const currentHeight = window.innerHeight;
+        const heightDifference = initialViewportHeightRef.current - currentHeight;
+        
+        console.log('Resize detected - height difference:', heightDifference, 'current height:', currentHeight, 'initial:', initialViewportHeightRef.current);
+        
+        if (heightDifference > 50) {
+          setKeyboardOffset(heightDifference);
+          onKeyboardStateChange(true);
+        } else {
+          setKeyboardOffset(0);
+          onKeyboardStateChange(false);
+        }
+      }
+    };
 
     // Attach listeners to all inputs in metrics container
     const attachListeners = () => {
       const inputs = document.querySelectorAll('input[type="text"]');
+      console.log('Attaching listeners to', inputs.length, 'inputs');
       inputs.forEach(input => {
         input.addEventListener('focus', handleFocus);
         input.addEventListener('blur', handleBlur);
@@ -178,6 +221,11 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
     window.addEventListener('resize', handleResize);
     
+    // Add visualViewport listener for better keyboard detection
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportResize);
+    }
+    
     return () => {
       const inputs = document.querySelectorAll('input[type="text"]');
       inputs.forEach(input => {
@@ -185,9 +233,12 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
         input.removeEventListener('blur', handleBlur);
       });
       window.removeEventListener('resize', handleResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportResize);
+      }
       observer.disconnect();
     };
-  }, [onKeyboardStateChange, handleFocus, handleBlur]);
+  }, [onKeyboardStateChange, handleFocus, handleBlur, isLocalhost]);
 
   const scatterPoints = useMemo(() => 
     Array.from({ length: 25 }, () => ({
@@ -258,12 +309,10 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   return (
     <div className="relative flex flex-col h-full w-full" style={{
-      transform: keyboardOffset > 0 ? `translate3d(0, -${keyboardOffset * 3 + 40}px, 0)` : 'translate3d(0, -40px, 0)',
+      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset + 40}px)` : 'translateY(-40px)',
       transition: 'transform 0.3s ease-out',
       zIndex: keyboardOffset > 0 ? 60 : 10,
       position: keyboardOffset > 0 ? 'relative' : 'relative',
-      willChange: 'transform',
-      backfaceVisibility: 'hidden',
       maxWidth: '100%',
       margin: '0 auto'
     }}>
@@ -279,9 +328,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
             top: 'clamp(2.5rem, 5vh, 4rem)',
             left: '0',
             right: '0',
-            bottom: '0',
-            willChange: 'backdrop-filter',
-            backfaceVisibility: 'hidden'
+            bottom: '0'
           }}
         />
       )}

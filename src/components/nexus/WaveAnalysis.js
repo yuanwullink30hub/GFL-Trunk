@@ -72,6 +72,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const metricsContainerRef = useRef(null);
   const initialViewportHeightRef = useRef(window.innerHeight);
+  const blurTimeoutRef = useRef(null);
 
   // Check if running on localhost (development)
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -121,6 +122,12 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   // Keyboard event handlers - defined at component level
   const handleFocus = useCallback(() => {
+    // Cancel any pending blur timeout when focusing
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
+    
     // On keyboard focus, trigger immediate height calculation
     if (isLocalhost) {
       // On localhost, set fixed keyboard size of 250px for testing
@@ -139,9 +146,26 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
   }, [onKeyboardStateChange, isLocalhost]);
 
   const handleBlur = useCallback(() => {
-    setKeyboardOffset(0);
-    onKeyboardStateChange(false);
+    // Delay blur to avoid resetting when switching forms
+    // If a new input gets focused within 100ms, cancel this blur
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+    }
+    
+    blurTimeoutRef.current = setTimeout(() => {
+      setKeyboardOffset(0);
+      onKeyboardStateChange(false);
+      blurTimeoutRef.current = null;
+    }, 100);
   }, [onKeyboardStateChange]);
+  
+  // Keep VisualCore blurred during form switch by maintaining keyboard state
+  useEffect(() => {
+    // If keyboard offset is > 0, ensure blur is active
+    if (keyboardOffset > 0) {
+      onKeyboardStateChange(true);
+    }
+  }, [keyboardOffset, onKeyboardStateChange]);
 
   // Keyboard detection - adjust content when keyboard appears or input is focused
   useEffect(() => {

@@ -65,7 +65,7 @@ const MetricRow = ({ id, title, subtext, children, colorClass = "text-green-500"
 );
 
 export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = () => {}, onSendLabel = () => {}, hasReadInstructions = false, onKeyboardStateChange = () => {} }) => {
-  const [frame, setFrame] = useState(0);
+  const [frame] = useState(0);
   const [solstice, setSolstice] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [signalFluxValue, setSignalFluxValue] = useState('');

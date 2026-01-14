@@ -78,10 +78,8 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setFrame(f => f + 1);
-    }, 50);
-    return () => clearInterval(interval);
+    // Animation disabled - keeping frame at 0 for static metrics
+    return () => {};
   }, []);
 
   // Scroll metrics container to top when label changes

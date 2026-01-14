@@ -177,6 +177,7 @@ export const NexusPage = ({ onBack }) => {
   const handleModalClosed = () => {
     setHasReadInstructions(true);
     setActiveLabel('radius'); // Show first label forms when blur disappears
+    setIsKeyboardActive(false); // Clear any lingering keyboard blur state
   };
 
   return (
@@ -201,21 +202,6 @@ export const NexusPage = ({ onBack }) => {
         .glow-amber { text-shadow: 0 0 10px rgba(251, 191, 36, 0.7); }
         .border-glow-cyan { box-shadow: 0 0 15px rgba(21, 179, 21, 0.2); }
         
-        .scanline {
-            width: 100%;
-            height: 2px;
-            background: rgba(167, 59, 198, 0.1);
-            position: absolute;
-            z-index: 50;
-            pointer-events: none;
-            animation: scanline 8s linear infinite;
-        }
-
-        @keyframes scanline {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
-
         .flicker {
             animation: flicker 2s infinite;
         }
@@ -248,7 +234,6 @@ export const NexusPage = ({ onBack }) => {
       `}</style>
 
       {/* Visual FX Layers */}
-      <div className="scanline" />
       
       {/* Main Unified Holographic Container */}
       <div className="nexus-container relative flex-1 border border-white/10 z-20 flex flex-col overflow-hidden bg-black/20" style={{

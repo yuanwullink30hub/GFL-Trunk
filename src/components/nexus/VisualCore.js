@@ -35,7 +35,7 @@ const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left'
       gap: 'clamp(0.625rem, 1.25vw, 1.25rem)'
     }}>
       <div 
-        className="transform rotate-45 border transition-all duration-300 cursor-pointer"
+        className="transform rotate-45 border transition-all cursor-pointer"
         onClick={isLocked ? undefined : onSquareClick}
         style={{
           width: 'clamp(1.25rem, 2.5vw, 1.875rem)',
@@ -45,7 +45,7 @@ const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left'
           opacity: isLocked || shouldBeTransparent ? 0.4 : 1,
           pointerEvents: isLocked ? 'none' : 'auto',
           boxShadow: isGlowing ? '0 0 30px #E0E30B, 0 0 60px rgba(224, 227, 11, 0.5)' : 'none',
-          transition: 'box-shadow 0.1s ease-out'
+          transition: 'background-color 0.43s ease-out, border-color 0.43s ease-out, box-shadow 0.1s ease-out'
         }} 
       />
       <div className="h-[1px] bg-gradient-to-r from-transparent to-yellow-400" style={{
@@ -73,7 +73,8 @@ const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left'
       <div className="poetry leading-none tracking-tight" style={{
         fontSize: 'clamp(0.8rem, 1.5vw, 1.3rem)',
         color: isCompleted ? '#15B315' : '#ff0000',
-        textShadow: isCompleted ? '0 0 10px #15B315, 0 0 20px rgba(21, 179, 21, 0.5)' : 'none'
+        textShadow: isCompleted ? '0 0 10px #15B315, 0 0 20px rgba(21, 179, 21, 0.5)' : 'none',
+        transition: 'color 0.43s ease-out, text-shadow 0.43s ease-out'
       }}>{value}</div>
     </div>
   </div>
@@ -323,32 +324,32 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
             
             {/* Layer 1: Base */}
             <PyramidSegment 
-                baseWidth={182} topWidth={133} height={35} yPos={23} 
+                baseWidth={182} topWidth={133} height={35} yPos={33} 
                 color={pyramidColor} borderColor={borderColor} 
             />
             
             {/* Layer 2: Lower-Mid */}
             <PyramidSegment 
-                baseWidth={133} topWidth={98} height={32} yPos={-22}
+                baseWidth={133} topWidth={98} height={32} yPos={-12}
                 color={pyramidColor} borderColor={borderColor} 
             />
             
             {/* Layer 3: Middle (RED, SOLID, THINNER) */}
             <PyramidSegment 
-                baseWidth={98} topWidth={70} height={20} yPos={-54} 
+                baseWidth={98} topWidth={70} height={20} yPos={-44} 
                 color={middleColor} borderColor={completedLabels.syncAlign ? borderColor : '#ff0000'} 
                 opacity={1}
             />
             
             {/* Layer 4: Upper-Mid */}
             <PyramidSegment 
-                baseWidth={70} topWidth={42} height={25} yPos={-92}
+                baseWidth={70} topWidth={42} height={25} yPos={-82}
                 color={pyramidColor} borderColor={borderColor} 
             />
             
             {/* Layer 5: Tip (The Glowing Apex) */}
             <PyramidSegment 
-                baseWidth={42} topWidth={0} height={32} yPos={-136} 
+                baseWidth={42} topWidth={0} height={32} yPos={-126} 
                 color={allLabelsComplete ? '#E0E30B' : pyramidColor} 
                 borderColor={allLabelsComplete ? '#E0E30B' : borderColor}
                 isTip={true}
@@ -365,7 +366,7 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
       {/* Responsive Labels - Independently Positioned */}
       <div className="absolute inset-0 pointer-events-none z-50">
         <SchematicLabel 
-          top="calc(50% - clamp(1rem, 3vh, 3rem) - 3rem - 42px)" 
+          top="calc(50% - clamp(1rem, 3vh, 3rem) - 3rem - 32px)" 
           right="calc(clamp(1rem, 5vw, 3rem) + 2.9rem)" 
           label="SCHOONHEID" 
           value="IDEAAL" 
@@ -376,7 +377,7 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
           shouldBeTransparent={!hasReadInstructions || !displayedCompletedLabels.syncAlign}
         />
         <SchematicLabel 
-          top="calc(50% + clamp(2rem, 4vh, 5rem) - 3rem - 42px)" 
+          top="calc(50% + clamp(2rem, 4vh, 5rem) - 3rem - 32px)" 
           left="calc(clamp(0.5rem, 3vw, 2rem) + 1.1rem)" 
           label="WAARHEID" 
           value="INTEGRITEIT"
@@ -386,7 +387,7 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
           shouldBeTransparent={!hasReadInstructions || !displayedCompletedLabels.radius}
         />
         <SchematicLabel 
-          top="calc(50% + clamp(1rem, 3vh, 3rem) + 2rem - 42px)" 
+          top="calc(50% + clamp(1rem, 3vh, 3rem) + 2rem - 32px)" 
           right="clamp(1rem, 5vw, 3rem)" 
           label="GOEDHEID" 
           value="TOELATEN" 

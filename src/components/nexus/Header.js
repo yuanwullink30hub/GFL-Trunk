@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../../styles/text.css';
 import '../../styles/poetry.css';
-import { gpuAccel } from '../../config/animationStyles';
 import { throttle } from '../../utils/performanceUtils';
 
 export const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange = () => {}, onModalClosed = () => {}, showButtonGlow = false }) => {

@@ -271,7 +271,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   return (
     <div className="relative flex flex-col h-full w-full" style={{
-      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 0.8}px)` : 'translateY(0)',
+      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 1}px)` : 'translateY(0)',
       transition: 'transform 0.3s ease-out'
     }}>
       {/* Blur Overlay - one time event: visible until user closes GEBRUIKSAANWIJZING modal */}

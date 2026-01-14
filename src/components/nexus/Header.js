@@ -166,8 +166,7 @@ export const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange =
             animation: isClosing 
               ? 'zoomBackdropOut 0.6s ease-in forwards'
               : 'zoomBackdrop 0.6s ease-out forwards',
-            zIndex: 100,
-            ...gpuAccel.heavy
+            zIndex: 100
           }}
         >
           <div 
@@ -186,8 +185,7 @@ export const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange =
               : 'zoomIn 1.2s ease-out forwards',
               transformStyle: 'preserve-3d',
               transformOrigin: `${zoomOrigin.x} ${zoomOrigin.y}`,
-              zIndex: 10000,
-              ...gpuAccel.heavy
+              zIndex: 10000
             }}
           >
             <div className="text" style={{

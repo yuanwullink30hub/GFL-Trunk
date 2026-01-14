@@ -203,12 +203,6 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
         input.addEventListener('focus', handleFocus);
         input.addEventListener('blur', handleBlur);
       });
-      
-      // If keyboard was active, try to focus the first input to maintain keyboard state
-      if (keyboardOffset > 0 && inputs.length > 0) {
-        console.log('Keyboard was active, focusing first input');
-        inputs[0].focus();
-      }
     };
 
     // Initial attachment
@@ -245,7 +239,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       }
       observer.disconnect();
     };
-  }, [onKeyboardStateChange, handleFocus, handleBlur, isLocalhost, keyboardOffset, activeLabel]);
+  }, [onKeyboardStateChange, handleFocus, handleBlur, isLocalhost]);
 
   const scatterPoints = useMemo(() => 
     Array.from({ length: 25 }, () => ({

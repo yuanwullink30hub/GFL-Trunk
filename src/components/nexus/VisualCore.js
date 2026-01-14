@@ -247,7 +247,7 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
             display: flex;
             align-items: center;
             justify-content: center;
-            transform: scale(0.92) translateY(-2.5rem);
+            transform: scale(0.92) translateY(-4.5rem);
         }
         .preserve-3d { transform-style: preserve-3d; }
         @keyframes stableRotate {
@@ -367,7 +367,7 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
       {/* Responsive Labels - Independently Positioned */}
       <div className="absolute inset-0 pointer-events-none z-50">
         <SchematicLabel 
-          top="calc(50% - clamp(1rem, 3vh, 3rem) - 1rem)" 
+          top="calc(50% - clamp(1rem, 3vh, 3rem) - 3rem)" 
           right="calc(clamp(1rem, 5vw, 3rem) + 2.9rem)" 
           label="SCHOONHEID" 
           value="IDEAAL" 
@@ -378,7 +378,7 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
           shouldBeTransparent={!hasReadInstructions || !displayedCompletedLabels.syncAlign}
         />
         <SchematicLabel 
-          top="calc(50% + clamp(2rem, 4vh, 5rem) - 1rem)" 
+          top="calc(50% + clamp(2rem, 4vh, 5rem) - 3rem)" 
           left="calc(clamp(0.5rem, 3vw, 2rem) + 1.1rem)" 
           label="WAARHEID" 
           value="INTEGRITEIT"
@@ -388,7 +388,7 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
           shouldBeTransparent={!hasReadInstructions || !displayedCompletedLabels.radius}
         />
         <SchematicLabel 
-          top="calc(50% + clamp(1rem, 3vh, 3rem) + 4rem)" 
+          top="calc(50% + clamp(1rem, 3vh, 3rem) + 2rem)" 
           right="clamp(1rem, 5vw, 3rem)" 
           label="GOEDHEID" 
           value="TOELATEN" 

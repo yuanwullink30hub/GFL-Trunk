@@ -305,7 +305,9 @@ export const NexusPage = ({ onBack }) => {
           {/* Metrics Panel - Bottom on Mobile, Right on Desktop */}
           <div className="flex-1 min-h-0 flex flex-col border-t md:border-t-0 md:border-l border-white/5" style={{
             paddingTop: 'clamp(0.25rem, 0.75vw, 0.5rem)',
-            paddingLeft: 'clamp(0, 2vw, 1rem)'
+            paddingLeft: 'clamp(0, 2vw, 1rem)',
+            marginBottom: '-50px',
+            marginTop: '-50px'
           }}>
              <WaveAnalysis activeLabel={activeLabel} metricValues={metricValues} onMetricChange={handleMetricChange} onSendLabel={handleSendLabel} hasReadInstructions={hasReadInstructions} onKeyboardStateChange={setIsKeyboardActive} />
           </div>
@@ -334,7 +336,7 @@ export const NexusPage = ({ onBack }) => {
             <div className="flex items-center justify-between shrink-0 mb-3 relative z-10">
               <div className="border-l-2 border-green-500/60 bg-green-500/5 px-2 py-1">
                 <span className="font-bold text-green-500 uppercase tracking-[0.2em] poetry text-xs">
-                  Telemetry_Stream
+                  VERBINDING
                 </span>
               </div>
               <span className="text-green-500/40 text-xs">SURGE</span>

@@ -248,7 +248,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   return (
     <div className="relative flex flex-col h-full w-full" style={{
-      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 3}px)` : 'translateY(0)',
+      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 3 + 40}px)` : 'translateY(-40px)',
       transition: 'transform 0.3s ease-out',
       zIndex: keyboardOffset > 0 ? 60 : 10,
       position: keyboardOffset > 0 ? 'relative' : 'relative'
@@ -268,27 +268,34 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       
       {/* Header */}
       <div className="flex items-center justify-between shrink-0" style={{
-        marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+        marginBottom: 'clamp(0.1rem, 0.25vw, 0.25rem)',
+        paddingLeft: 'clamp(0.5rem, 1vw, 1rem)',
+        paddingRight: 'clamp(0.5rem, 1vw, 1rem)',
+        paddingTop: 'clamp(0.25rem, 0.5vw, 0.5rem)'
       }}>
         <div className="border-l-2 border-purple-500 bg-purple-500/10" style={{
           padding: 'clamp(0.2rem, 0.5vw, 0.375rem) clamp(0.5rem, 1vw, 0.75rem)'
         }}>
           <span className="font-bold text-white uppercase tracking-[0.2em] poetry" style={{
             fontSize: 'clamp(0.6rem, 0.75vw, 0.7rem)'
-          }}>Telemetry_Stream</span>
+          }}>VERBINDING</span>
         </div>
         <div className="text-white/30 poetry" style={{
-          fontSize: 'clamp(0.5rem, 0.6vw, 0.6rem)'
+          fontSize: 'clamp(0.5rem, 0.6vw, 0.6rem)',
+          marginTop: '1rem'
         }}>{solstice}</div>
       </div>
 
       {/* Metrics Container */}
       <div ref={metricsContainerRef} className="flex-1 overflow-y-auto scrollbar-custom" style={{
         gap: 'clamp(0.75rem, 2vw, 1.5rem)',
+        paddingLeft: 'clamp(0.5rem, 1vw, 1rem)',
         paddingRight: 'clamp(0.5rem, 1vw, 1rem)',
-        paddingBottom: 'clamp(0.75rem, 2vw, 1.5rem)',
+        paddingTop: 'clamp(0.25rem, 0.5vw, 0.5rem)',
+        paddingBottom: '0',
         display: 'flex',
         flexDirection: 'column',
+        minHeight: '0',
         scrollbarGutter: 'stable',
         scrollbarWidth: 'thin',
         scrollbarColor: 'rgba(255, 255, 255, 1) transparent'
@@ -523,15 +530,13 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
             </MetricRow>
           </>
         ) : null}
-      </div>
 
       {/* Send Button - visible only when a label is active */}
       {!activeLabel ? (
         // Show two buttons on the 4th form (after all labels are completed)
         <div style={{
           padding: 'clamp(0.75rem, 2vw, 1.5rem)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-          marginTop: 'auto'
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)'
         }}>
           <div style={{ display: 'flex', gap: 'clamp(0.5rem, 2vw, 1rem)' }}>
             <button
@@ -542,7 +547,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
                 fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
                 backgroundColor: '#15B315',
                 color: '#000',
-                border: '1px solid #15B315',
+                border: '1px solid white',
                 cursor: 'pointer',
                 opacity: 1,
                 boxShadow: '0 0 15px rgba(21, 179, 21, 0.3)',
@@ -561,7 +566,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
                 fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
                 backgroundColor: '#15B315',
                 color: '#000',
-                border: '1px solid #15B315',
+                border: '1px solid white',
                 cursor: 'pointer',
                 opacity: 1,
                 boxShadow: '0 0 15px rgba(21, 179, 21, 0.3)',
@@ -577,8 +582,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       ) : activeLabel === 'radius' ? (
         <div style={{
           padding: 'clamp(0.75rem, 2vw, 1.5rem)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-          marginTop: 'auto'
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)'
         }}>
           <button
             onClick={handleSendLabel}
@@ -589,7 +593,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
               fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
               backgroundColor: (isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(21, 179, 21, 0.2)',
               color: (isCurrentLabelComplete && !isSending) ? '#000' : 'rgba(255, 255, 255, 0.4)',
-              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(255, 255, 255, 0.1)'}`,
+              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? 'white' : 'rgba(255, 255, 255, 0.2)'}`,
               cursor: (isCurrentLabelComplete && !isSending) ? 'pointer' : 'not-allowed',
               opacity: (isCurrentLabelComplete && !isSending) ? 1 : 0.5,
               boxShadow: (isCurrentLabelComplete && !isSending) ? '0 0 15px rgba(21, 179, 21, 0.3)' : 'none',
@@ -604,8 +608,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       ) : activeLabel === 'syncAlign' ? (
         <div style={{
           padding: 'clamp(0.75rem, 2vw, 1.5rem)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-          marginTop: 'auto'
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)'
         }}>
           <button
             onClick={handleSendLabel}
@@ -616,7 +619,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
               fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
               backgroundColor: (isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(21, 179, 21, 0.2)',
               color: (isCurrentLabelComplete && !isSending) ? '#000' : 'rgba(255, 255, 255, 0.4)',
-              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(255, 255, 255, 0.1)'}`,
+              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? 'white' : 'rgba(255, 255, 255, 0.2)'}`,
               cursor: (isCurrentLabelComplete && !isSending) ? 'pointer' : 'not-allowed',
               opacity: (isCurrentLabelComplete && !isSending) ? 1 : 0.5,
               boxShadow: (isCurrentLabelComplete && !isSending) ? '0 0 15px rgba(21, 179, 21, 0.3)' : 'none',
@@ -631,8 +634,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       ) : activeLabel === 'dataLink' ? (
         <div style={{
           padding: 'clamp(0.75rem, 2vw, 1.5rem)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-          marginTop: 'auto'
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)'
         }}>
           <button
             onClick={handleSendLabel}
@@ -656,6 +658,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
           </button>
         </div>
       ) : null}
+      </div>
 
       <style>{`
         .scrollbar-custom { 

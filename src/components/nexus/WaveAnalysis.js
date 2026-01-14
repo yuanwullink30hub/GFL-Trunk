@@ -64,7 +64,7 @@ const MetricRow = ({ id, title, subtext, children, colorClass = "text-green-500"
   </div>
 );
 
-export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = () => {}, onSendLabel = () => {}, hasReadInstructions = false }) => {
+export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = () => {}, onSendLabel = () => {}, hasReadInstructions = false, onKeyboardStateChange = () => {} }) => {
   const [frame, setFrame] = useState(0);
   const [solstice, setSolstice] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -134,35 +134,12 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
     };
 
     const handleFocus = (e) => {
-      // Small delay to allow viewport to adjust
-      setTimeout(() => {
-        const currentHeight = window.innerHeight;
-        const heightDifference = initialViewportHeightRef.current - currentHeight;
-        
-        // On mobile with actual keyboard
-        if (heightDifference > 100) {
-          setKeyboardOffset(heightDifference);
-        } else {
-          // On desktop or if keyboard didn't change height, scroll the input into view
-          // Calculate offset based on input position relative to metrics container
-          const input = e.target;
-          const containerRect = metricsContainerRef.current?.getBoundingClientRect();
-          const inputRect = input.getBoundingClientRect();
-          
-          if (containerRect && inputRect) {
-            // If input is near bottom of visible area, scroll it up
-            const visibleBottomY = containerRect.bottom - 100; // Leave 100px buffer
-            if (inputRect.bottom > visibleBottomY) {
-              const scrollAmount = inputRect.bottom - visibleBottomY;
-              setKeyboardOffset(scrollAmount);
-            }
-          }
-        }
-      }, 300);
-    };
+      // On keyboard focus, set a large fixed offset (300px) for significant push-up
+      setKeyboardOffset(100);      onKeyboardStateChange(true);    };
 
     const handleBlur = () => {
       setKeyboardOffset(0);
+      onKeyboardStateChange(false);
     };
 
     // Attach listeners to all inputs in metrics container
@@ -271,15 +248,20 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   return (
     <div className="relative flex flex-col h-full w-full" style={{
-      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 1}px)` : 'translateY(0)',
-      transition: 'transform 0.3s ease-out'
+      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 3}px)` : 'translateY(0)',
+      transition: 'transform 0.3s ease-out',
+      zIndex: keyboardOffset > 0 ? 60 : 10,
+      position: keyboardOffset > 0 ? 'relative' : 'relative'
     }}>
-      {/* Blur Overlay - one time event: visible until user closes GEBRUIKSAANWIJZING modal */}
+      {/* Blur Overlay - original modal blur */}
       {!hasReadInstructions && (
         <div 
-          className="absolute inset-0 backdrop-blur-lg bg-black/30 z-50"
+          className="absolute inset-0 backdrop-blur-lg z-40"
           style={{
-            animation: 'fadeIn 0.5s ease-out'
+            animation: 'fadeIn 0.5s ease-out',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            backdropFilter: 'blur(20px)',
+            pointerEvents: 'auto'
           }}
         />
       )}

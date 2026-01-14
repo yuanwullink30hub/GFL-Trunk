@@ -168,7 +168,7 @@ const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor,
   );
 };
 
-export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, onLabelClick = () => {}, onLabelSent = () => {}, metricValues = {}, allLabelsComplete = false, hasReadInstructions = false }, ref) => {
+export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, onLabelClick = () => {}, onLabelSent = () => {}, metricValues = {}, allLabelsComplete = false, hasReadInstructions = false, style = {} }, ref) => {
   const [completedLabels, setCompletedLabels] = useState({
     dataLink: false,
     syncAlign: false,
@@ -236,7 +236,8 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-start bg-transparent overflow-visible" style={{
-      paddingTop: 'clamp(0.5rem, 1vh, 1rem)'
+      paddingTop: 'clamp(0.5rem, 1vh, 1rem)',
+      ...style
     }}>
       <style>{`
         .perspective-container { 
@@ -250,8 +251,8 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
         }
         .preserve-3d { transform-style: preserve-3d; }
         @keyframes stableRotate {
-          from { transform: translateY(-5px) rotateX(-20deg) rotateY(0deg); }
-          to { transform: translateY(-5px) rotateX(-20deg) rotateY(360deg); }
+          from { transform: translateY(-5px) rotateX(-20deg) rotateY(360deg); }
+          to { transform: translateY(-5px) rotateX(-20deg) rotateY(0deg); }
         }
         .animate-pyramid-stable {
           animation: stableRotate 15s linear infinite;

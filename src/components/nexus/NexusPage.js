@@ -11,6 +11,7 @@ export const NexusPage = ({ onBack }) => {
   const [timezone, setTimezone] = useState(null);
   const [activeLabel, setActiveLabel] = useState(null);
   const [hasReadInstructions, setHasReadInstructions] = useState(false);
+  const [isKeyboardActive, setIsKeyboardActive] = useState(false);
   const visualCoreRef = useRef(null);
   
   // Track metric values for completion tracking
@@ -295,7 +296,10 @@ export const NexusPage = ({ onBack }) => {
              }}>
                 CORE_NODE_YUGENESIS
              </div>
-             <VisualCore ref={visualCoreRef} activeLabel={activeLabel} onLabelClick={setActiveLabel} onLabelSent={onLabelSentCallback} metricValues={metricValues} allLabelsComplete={showCompletionGlow} syncPercentage={syncPercentage} hasReadInstructions={hasReadInstructions} />
+             <VisualCore ref={visualCoreRef} activeLabel={activeLabel} onLabelClick={setActiveLabel} onLabelSent={onLabelSentCallback} metricValues={metricValues} allLabelsComplete={showCompletionGlow} syncPercentage={syncPercentage} hasReadInstructions={hasReadInstructions} style={{
+               filter: isKeyboardActive ? 'blur(15px)' : 'none',
+               transition: 'filter 0.3s ease-out'
+             }} />
           </div>
 
           {/* Metrics Panel - Bottom on Mobile, Right on Desktop */}
@@ -303,7 +307,7 @@ export const NexusPage = ({ onBack }) => {
             paddingTop: 'clamp(0.25rem, 0.75vw, 0.5rem)',
             paddingLeft: 'clamp(0, 2vw, 1rem)'
           }}>
-             <WaveAnalysis activeLabel={activeLabel} metricValues={metricValues} onMetricChange={handleMetricChange} onSendLabel={handleSendLabel} hasReadInstructions={hasReadInstructions} />
+             <WaveAnalysis activeLabel={activeLabel} metricValues={metricValues} onMetricChange={handleMetricChange} onSendLabel={handleSendLabel} hasReadInstructions={hasReadInstructions} onKeyboardStateChange={setIsKeyboardActive} />
           </div>
         </div>
 

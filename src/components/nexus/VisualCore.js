@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import '../../utils/performanceUtils';
 import '../../styles/poetry.css';
 
 const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left', isCompleted = false, isLocked = false, onSquareClick = () => {}, shouldBeTransparent = false }) => {
@@ -26,8 +27,10 @@ const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left'
     style={{ 
       top, left, right, bottom, 
       textAlign: align,
-      transform: 'translateY(-50%)',
-      width: 'auto'
+      transform: 'translate3d(0, -50%, 0)',
+      width: 'auto',
+      willChange: 'transform',
+      backfaceVisibility: 'hidden'
     }}
   >
     <div className={`flex items-center ${align === 'right' ? 'flex-row-reverse' : ''}`} style={{
@@ -86,10 +89,12 @@ const ApexMetric = ({ syncPercentage = 0, isGlowing = false, shouldFlash = false
   return (
     <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50" style={{
       top: 'clamp(1%, 2vh, 8%)',
-      transform: 'translateX(-50%) scale(clamp(0.65, 1vw, 1))',
+      transform: 'translate3d(-50%, 0, 0) scale(clamp(0.65, 1vw, 1))',
       filter: shouldFlash ? 'drop-shadow(0 0 50px #E0E30B)' : (isGlowing ? 'drop-shadow(0 0 20px #E0E30B)' : 'none'),
       transition: 'filter 0.5s ease-in-out',
-      animation: shouldFlash ? 'apexFlash 3s ease-in-out' : 'none'
+      animation: shouldFlash ? 'apexFlash 3s ease-in-out' : 'none',
+      willChange: 'filter, animation',
+      backfaceVisibility: 'hidden'
     }}>
       <div className="text-amber-500 font-bold tracking-[0.3em] uppercase poetry" style={{
         fontSize: 'clamp(0.6rem, 1.2vw, 1rem)',
@@ -248,14 +253,18 @@ export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = 
             align-items: center;
             justify-content: center;
             transform: scale(0.92) translateY(-4.5rem);
+            will-change: transform;
+            backface-visibility: hidden;
         }
-        .preserve-3d { transform-style: preserve-3d; }
+        .preserve-3d { transform-style: preserve-3d; will-change: transform; }
         @keyframes stableRotate {
           from { transform: translateY(-5px) rotateX(-20deg) rotateY(360deg); }
           to { transform: translateY(-5px) rotateX(-20deg) rotateY(0deg); }
         }
         .animate-pyramid-stable {
           animation: stableRotate 15s linear infinite;
+          will-change: transform;
+          backface-visibility: hidden;
         }
         .glow-amber { text-shadow: 0 0 10px rgba(251, 191, 36, 0.7); }
         

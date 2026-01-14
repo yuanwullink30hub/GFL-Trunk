@@ -1,11 +1,13 @@
-import React, { useMemo, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useEffect, useState, useRef, useCallback, memo } from 'react';
 import '../../styles/text.css';
 import '../../styles/poetry.css';
+import { rafThrottle } from '../../utils/performanceUtils';
 
-const MetricRow = ({ id, title, subtext, children, colorClass = "text-green-500", onValueChange, value = '', isCompleted = false, placeholder = "Enter value..." }) => (
+const MetricRow = memo(({ id, title, subtext, children, colorClass = "text-green-500", onValueChange, value = '', isCompleted = false, placeholder = "Enter value..." }) => (
   <div className="group relative flex flex-col border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-300" style={{
     gap: 'clamp(0.25rem, 1vw, 0.75rem)',
-    padding: 'clamp(0.5rem, 2vw, 1rem)'
+    padding: 'clamp(0.5rem, 2vw, 1rem)',
+    willChange: 'background-color'
   }}>
     {/* Modular Text Container */}
     <div className="flex justify-between items-start border-b border-white/5" style={{
@@ -62,7 +64,9 @@ const MetricRow = ({ id, title, subtext, children, colorClass = "text-green-500"
       backgroundColor: isCompleted ? '#15B315' : 'rgba(255, 255, 255, 0.2)'
     }} />
   </div>
-);
+));
+
+MetricRow.displayName = 'MetricRow';
 
 export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = () => {}, onSendLabel = () => {}, hasReadInstructions = false, onKeyboardStateChange = () => {} }) => {
   const [frame, setFrame] = useState(0);
@@ -119,9 +123,22 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
     setSolstice(currentSolstice);
   }, []);
 
+  // Keyboard event handlers - defined at component level
+  const handleFocus = useCallback(() => {
+    // On keyboard focus, immediately set offset and blur state
+    setKeyboardOffset(100); // Temporary offset, will be updated by resize
+    onKeyboardStateChange(true);
+  }, [onKeyboardStateChange]);
+
+  const handleBlur = useCallback(() => {
+    setKeyboardOffset(0);
+    onKeyboardStateChange(false);
+  }, [onKeyboardStateChange]);
+
   // Keyboard detection - adjust content when keyboard appears or input is focused
   useEffect(() => {
-    const handleResize = () => {
+    // Use RAF throttle for smooth resize handling
+    const handleResize = rafThrottle(() => {
       const currentHeight = window.innerHeight;
       const heightDifference = initialViewportHeightRef.current - currentHeight;
       
@@ -133,17 +150,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
         setKeyboardOffset(0);
         onKeyboardStateChange(false);
       }
-    };
-
-    const handleFocus = (e) => {
-      // On keyboard focus, just signal the state change, let resize handle the offset
-      onKeyboardStateChange(true);
-    };
-
-    const handleBlur = () => {
-      setKeyboardOffset(0);
-      onKeyboardStateChange(false);
-    };
+    });
 
     // Attach listeners to all inputs in metrics container
     const attachListeners = () => {
@@ -251,24 +258,30 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
 
   return (
     <div className="relative flex flex-col h-full w-full" style={{
-      transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset * 3 + 40}px)` : 'translateY(-40px)',
+      transform: keyboardOffset > 0 ? `translate3d(0, -${keyboardOffset * 3 + 40}px, 0)` : 'translate3d(0, -40px, 0)',
       transition: 'transform 0.3s ease-out',
       zIndex: keyboardOffset > 0 ? 60 : 10,
-      position: keyboardOffset > 0 ? 'relative' : 'relative'
+      position: keyboardOffset > 0 ? 'relative' : 'relative',
+      willChange: 'transform',
+      backfaceVisibility: 'hidden',
+      maxWidth: '100%',
+      margin: '0 auto'
     }}>
-      {/* Blur Overlay - original modal blur */}
+      {/* Blur Overlay */}
       {!hasReadInstructions && (
         <div 
           className="absolute backdrop-blur-lg z-40"
           style={{
             animation: 'fadeIn 0.5s ease-out',
             backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            backdropFilter: 'blur(20px)',
+            backdropFilter: 'blur(60px)',
             pointerEvents: 'auto',
             top: 'clamp(2.5rem, 5vh, 4rem)',
             left: '0',
             right: '0',
-            bottom: '0'
+            bottom: '0',
+            willChange: 'backdrop-filter',
+            backfaceVisibility: 'hidden'
           }}
         />
       )}
@@ -276,8 +289,6 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       {/* Header */}
       <div className="flex items-center justify-between shrink-0" style={{
         marginBottom: 'clamp(0.1rem, 0.25vw, 0.25rem)',
-        paddingLeft: 'clamp(0.5rem, 1vw, 1rem)',
-        paddingRight: 'clamp(0.5rem, 1vw, 1rem)',
         paddingTop: 'clamp(0.25rem, 0.5vw, 0.5rem)'
       }}>
         <div className="border-l-2 border-purple-500 bg-purple-500/10" style={{
@@ -286,7 +297,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
           <span className="font-bold uppercase tracking-[0.2em] poetry" style={{
             fontSize: 'clamp(0.6rem, 0.75vw, 0.7rem)',
             color: '#FFFEF0'
-          }}>VERBINDING</span>
+          }}>V4.9</span>
         </div>
         <div className="text-white/30 poetry" style={{
           fontSize: 'clamp(0.5rem, 0.6vw, 0.6rem)',
@@ -297,8 +308,6 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       {/* Metrics Container */}
       <div ref={metricsContainerRef} className="flex-1 overflow-y-auto scrollbar-custom" style={{
         gap: 'clamp(0.75rem, 2vw, 1.5rem)',
-        paddingLeft: 'clamp(0.5rem, 1vw, 1rem)',
-        paddingRight: 'clamp(0.5rem, 1vw, 1rem)',
         paddingTop: 'clamp(0.25rem, 0.5vw, 0.5rem)',
         paddingBottom: '0',
         display: 'flex',
@@ -306,9 +315,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
         minHeight: '0',
         scrollbarGutter: 'stable',
         scrollbarWidth: 'thin',
-        scrollbarColor: 'rgba(255, 255, 255, 1) transparent',
-        filter: keyboardOffset > 0 ? 'blur(15px)' : 'none',
-        transition: 'filter 0.3s ease-out'
+        scrollbarColor: 'rgba(255, 255, 255, 1) transparent'
       }}>
         {!activeLabel ? (
           <>

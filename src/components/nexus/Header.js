@@ -78,7 +78,7 @@ export const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange =
           <h1 className="font-bold tracking-[0.3em] poetry" style={{
             fontSize: 'clamp(0.9rem, 1.8vw, 1.5rem)',
             color: '#FFFEF0'
-          }}>WERKEN 4.9</h1>
+          }}>WERKEN</h1>
         </div>
 
         {/* System Status Container - left aligned */}

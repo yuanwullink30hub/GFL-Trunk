@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './Header';
 import { VisualCore } from './VisualCore';
 import { WaveAnalysis } from './WaveAnalysis';
@@ -298,7 +298,9 @@ export const NexusPage = ({ onBack }) => {
              </div>
              <VisualCore ref={visualCoreRef} activeLabel={activeLabel} onLabelClick={setActiveLabel} onLabelSent={onLabelSentCallback} metricValues={metricValues} allLabelsComplete={showCompletionGlow} syncPercentage={syncPercentage} hasReadInstructions={hasReadInstructions} style={{
                filter: isKeyboardActive ? 'blur(15px)' : 'none',
-               transition: 'filter 0.3s ease-out'
+               transition: 'filter 0.3s ease-out',
+               willChange: 'filter',
+               backfaceVisibility: 'hidden'
              }} />
           </div>
 
@@ -336,7 +338,7 @@ export const NexusPage = ({ onBack }) => {
             <div className="flex items-center justify-between shrink-0 mb-3 relative z-10">
               <div className="border-l-2 border-green-500/60 bg-green-500/5 px-2 py-1">
                 <span className="font-bold text-green-500 uppercase tracking-[0.2em] poetry text-xs">
-                  VERBINDING
+                  V4.9
                 </span>
               </div>
               <span className="text-green-500/40 text-xs">SURGE</span>

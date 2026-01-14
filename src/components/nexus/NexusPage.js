@@ -10,7 +10,6 @@ export const NexusPage = ({ onBack }) => {
   const [timestamp, setTimestamp] = useState(new Date().toISOString());
   const [timezone, setTimezone] = useState(null);
   const [activeLabel, setActiveLabel] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasReadInstructions, setHasReadInstructions] = useState(false);
   const visualCoreRef = useRef(null);
   
@@ -276,7 +275,7 @@ export const NexusPage = ({ onBack }) => {
         <div className="shrink-0" style={{
           padding: 'clamp(0.5rem, 1.5vw, 1.5rem)'
         }}>
-          <Header timestamp={timestamp} onModalStateChange={setIsModalOpen} onModalClosed={handleModalClosed} showButtonGlow={showButtonGlow} />
+          <Header timestamp={timestamp} onModalStateChange={() => {}} onModalClosed={handleModalClosed} showButtonGlow={showButtonGlow} />
         </div>
 
         {/* Responsive Content Flow */}

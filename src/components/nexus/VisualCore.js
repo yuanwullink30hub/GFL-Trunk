@@ -83,8 +83,6 @@ const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left'
 };
 
 const ApexMetric = ({ syncPercentage = 0, isGlowing = false, shouldFlash = false }) => {
-  const prevPercentageRef = React.useRef(syncPercentage);
-
   return (
     <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50" style={{
       top: 'clamp(1%, 2vh, 8%)',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../styles/text.css';
 import '../../styles/poetry.css';
 import { gpuAccel } from '../../config/animationStyles';
@@ -9,7 +9,7 @@ export const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange =
   const [isClosing, setIsClosing] = useState(false);
   const [zoomOrigin, setZoomOrigin] = useState({ x: '50%', y: '50%' });
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
       setIsModalOpen(false);
@@ -17,7 +17,7 @@ export const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange =
       onModalStateChange(false);
       onModalClosed();
     }, 1200);
-  };
+  }, [onModalStateChange, onModalClosed]);
 
   // Throttle modal open calculations for performance
   const throttledModalOpen = React.useMemo(

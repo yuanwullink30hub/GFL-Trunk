@@ -187,7 +187,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       window.removeEventListener('resize', handleResize);
       observer.disconnect();
     };
-  }, [onKeyboardStateChange]);
+  }, [onKeyboardStateChange, handleFocus, handleBlur]);
 
   const scatterPoints = useMemo(() => 
     Array.from({ length: 25 }, () => ({

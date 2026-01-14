@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './Header';
 import { VisualCore } from './VisualCore';
 import { WaveAnalysis } from './WaveAnalysis';

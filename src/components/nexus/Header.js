@@ -4,7 +4,7 @@ import '../../styles/poetry.css';
 import { gpuAccel } from '../../config/animationStyles';
 import { throttle } from '../../utils/performanceUtils';
 
-export const Header = ({ timestamp, loginName = 'Onbekend' }) => {
+export const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange = () => {}, onModalClosed = () => {}, showButtonGlow = false }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [zoomOrigin, setZoomOrigin] = useState({ x: '50%', y: '50%' });
@@ -14,6 +14,8 @@ export const Header = ({ timestamp, loginName = 'Onbekend' }) => {
     setTimeout(() => {
       setIsModalOpen(false);
       setIsClosing(false);
+      onModalStateChange(false);
+      onModalClosed();
     }, 1200);
   };
 
@@ -27,13 +29,15 @@ export const Header = ({ timestamp, loginName = 'Onbekend' }) => {
       const rect = containerElement.getBoundingClientRect();
       
       // Calculate center of button group, moved left 5rem (1rem additional) and up 3.5rem (2rem additional)
-      const centerXPercent = (((rect.left - 80) + rect.width / 2) / window.innerWidth) * 100;
-      const centerYPercent = (((rect.top - 120) + rect.height / 2) / window.innerHeight) * 100;
+      // Moved 2rem (32px) to the right and 1rem (16px) down
+      const centerXPercent = (((rect.left - 32) + rect.width / 2) / window.innerWidth) * 100;
+      const centerYPercent = (((rect.top - 104) + rect.height / 2) / window.innerHeight) * 100;
       
       setZoomOrigin({ x: `${centerXPercent}%`, y: `${centerYPercent}%` });
       setIsModalOpen(true);
+      onModalStateChange(true);
     }, 50),
-    []
+    [onModalStateChange]
   );
 
   const handleModalOpen = (e) => {
@@ -86,12 +90,15 @@ export const Header = ({ timestamp, loginName = 'Onbekend' }) => {
           }}>
             <span 
               onClick={handleModalOpen}
-              className="border cursor-pointer transition-all duration-200"
+              className="border cursor-pointer"
               style={{
                 backgroundColor: 'rgba(21, 179, 21, 0.2)',
                 borderColor: 'rgba(21, 179, 21, 0.4)',
                 padding: 'clamp(0.125rem, 0.5vw, 0.375rem) clamp(0.25rem, 1vw, 0.75rem)',
-                fontSize: 'clamp(0.5rem, 1vw, 0.75rem)'
+                fontSize: 'clamp(0.5rem, 1vw, 0.75rem)',
+                animation: showButtonGlow ? 'buttonGlow 0.8s ease-out' : 'none',
+                transition: showButtonGlow ? 'none' : 'all 0.2s ease',
+                boxShadow: 'none'
               }}
               onMouseEnter={(e) => {
                 e.target.style.backgroundColor = 'rgba(21, 179, 21, 0.3)';
@@ -155,8 +162,8 @@ export const Header = ({ timestamp, loginName = 'Onbekend' }) => {
             perspective: '1200px',
             perspectiveOrigin: `${zoomOrigin.x} ${zoomOrigin.y}`,
             animation: isClosing 
-              ? 'zoomBackdropOut 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
-              : 'zoomBackdrop 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+              ? 'zoomBackdropOut 0.6s ease-in forwards'
+              : 'zoomBackdrop 0.6s ease-out forwards',
             zIndex: 100,
             ...gpuAccel.heavy
           }}
@@ -173,8 +180,8 @@ export const Header = ({ timestamp, loginName = 'Onbekend' }) => {
               maxHeight: '68vh',
               overflowY: 'auto',
               animation: isClosing 
-              ? 'zoomOut 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
-              : 'zoomIn 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+              ? 'zoomOut 1.2s ease-in forwards'
+              : 'zoomIn 1.2s ease-out forwards',
               transformStyle: 'preserve-3d',
               transformOrigin: `${zoomOrigin.x} ${zoomOrigin.y}`,
               zIndex: 10000,
@@ -221,6 +228,17 @@ export const Header = ({ timestamp, loginName = 'Onbekend' }) => {
       )}
 
       <style>{`
+        @keyframes buttonGlow {
+          0% {
+            box-shadow: 0 0 8px rgba(21, 179, 21, 0.4), 0 0 16px rgba(21, 179, 21, 0.2);
+          }
+          50% {
+            box-shadow: 0 0 20px rgba(21, 179, 21, 1), 0 0 40px rgba(21, 179, 21, 0.8), 0 0 60px rgba(21, 179, 21, 0.4);
+          }
+          100% {
+            box-shadow: 0 0 8px rgba(21, 179, 21, 0.4), 0 0 16px rgba(21, 179, 21, 0.2);
+          }
+        }
         @keyframes zoomBackdrop {
           from { 
             background-color: rgba(0, 0, 0, 0);
@@ -244,7 +262,7 @@ export const Header = ({ timestamp, loginName = 'Onbekend' }) => {
         @keyframes zoomIn {
           from { 
             opacity: 0;
-            transform: scale(0.05) rotateX(25deg) translateZ(-1000px);
+            transform: scale(0.1) rotateX(25deg) translateZ(-1000px);
           }
           to { 
             opacity: 1;
@@ -258,7 +276,7 @@ export const Header = ({ timestamp, loginName = 'Onbekend' }) => {
           }
           to { 
             opacity: 0;
-            transform: scale(0.05) rotateX(25deg) translateZ(-1000px);
+            transform: scale(0.1) rotateX(25deg) translateZ(-1000px);
           }
         }
       `}</style>

@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useState, useRef } from 'react';
 import '../../styles/text.css';
 import '../../styles/poetry.css';
 
-const MetricRow = ({ id, title, subtext, children, colorClass = "text-green-500", onValueChange, value = '', isCompleted = false }) => (
+const MetricRow = ({ id, title, subtext, children, colorClass = "text-green-500", onValueChange, value = '', isCompleted = false, placeholder = "Enter value..." }) => (
   <div className="group relative flex flex-col border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-300" style={{
     gap: 'clamp(0.25rem, 1vw, 0.75rem)',
     padding: 'clamp(0.5rem, 2vw, 1rem)'
@@ -41,7 +41,9 @@ const MetricRow = ({ id, title, subtext, children, colorClass = "text-green-500"
         type="text" 
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
-        placeholder="Enter value..."
+        placeholder={placeholder}
+        autoComplete="off"
+        spellCheck="false"
         className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
         style={{
           fontSize: 'clamp(0.6rem, 0.8vw, 0.75rem)'
@@ -62,11 +64,15 @@ const MetricRow = ({ id, title, subtext, children, colorClass = "text-green-500"
   </div>
 );
 
-export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = () => {}, onSendLabel = () => {} }) => {
+export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = () => {}, onSendLabel = () => {}, hasReadInstructions = false }) => {
   const [frame, setFrame] = useState(0);
   const [solstice, setSolstice] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [signalFluxValue, setSignalFluxValue] = useState('');
   const metricsContainerRef = useRef(null);
+
+  // Check if running on localhost (development)
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -145,6 +151,15 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
         activeElement.blur();
       }
       
+      // Skip fullscreen on localhost (development)
+      if (isLocalhost) {
+        setTimeout(() => {
+          onSendLabel(activeLabel);
+          setIsSending(false);
+        }, 1500);
+        return;
+      }
+      
       // Request fullscreen if not already fullscreen
       const docElement = document.documentElement;
       if (!document.fullscreenElement) {
@@ -154,34 +169,34 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
             setTimeout(() => {
               onSendLabel(activeLabel);
               setIsSending(false);
-            }, 300);
+            }, 1500);
           });
-          // Wait for fullscreen to activate then trigger send
+          // Wait for fullscreen to activate then trigger send (0.2s after fullscreen)
           setTimeout(() => {
             onSendLabel(activeLabel);
             setIsSending(false);
-          }, 300);
+          }, 1500);
         } else {
           // Fullscreen not supported, just wait for keyboard to close
           setTimeout(() => {
             onSendLabel(activeLabel);
             setIsSending(false);
-          }, 300);
+          }, 1500);
         }
       } else {
         // Already fullscreen
         setTimeout(() => {
           onSendLabel(activeLabel);
           setIsSending(false);
-        }, 300);
+        }, 1500);
       }
     }
   };
 
   return (
     <div className="relative flex flex-col h-full w-full">
-      {/* Blur Overlay - visible until first label is clicked */}
-      {!activeLabel && (
+      {/* Blur Overlay - one time event: visible until user closes GEBRUIKSAANWIJZING modal */}
+      {!hasReadInstructions && (
         <div 
           className="absolute inset-0 backdrop-blur-lg bg-black/30 z-50"
           style={{
@@ -217,7 +232,7 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
         {!activeLabel ? (
           <>
             {/* Signal Flux */}
-            <MetricRow id="01_FLX" title="Signal Flux" subtext="MOD_WAVE_PRIMARY" colorClass="text-green-500">
+            <MetricRow id="01_FLX" title="Signal Flux" subtext="MOD_WAVE_PRIMARY" colorClass="text-green-500" onValueChange={(val) => setSignalFluxValue(val)} value={signalFluxValue} placeholder="jouw@emailadres">
               <svg viewBox="0 0 200 40" className="w-full h-full opacity-60">
                 <path
                   d={`M 0 20 ${Array.from({length: 10}).map((_, i) => `Q ${i*20 + 10} ${10 + Math.sin((frame/5+i*10)/5)*15}, ${i*20 + 20} 20`).join(' ')}`}
@@ -227,62 +242,6 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
                   className="opacity-60"
                 />
               </svg>
-            </MetricRow>
-
-            {/* Spectral Peak */}
-            <MetricRow id="02_FRQ" title="Spectral Peak" subtext="BANDWIDTH_ALLOC" colorClass="text-amber-500">
-              <svg viewBox="0 0 200 40" className="w-full h-full px-4">
-                <path
-                  d={waveformPath}
-                  fill="none"
-                  stroke="#f59e0b"
-                  strokeWidth="1.5"
-                  className="opacity-80"
-                />
-              </svg>
-            </MetricRow>
-
-            {/* Vector Load */}
-            <MetricRow id="03_VEC" title="Vector Load" subtext="PARALLEL_CALC" colorClass="text-rose-500">
-              <div className="flex gap-8 items-center justify-center w-full h-full">
-                {[0, 1].map((i) => (
-                  <div key={i} className="relative w-10 h-10">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle cx="20" cy="20" r="18" fill="none" stroke="white" strokeOpacity="0.05" strokeWidth="2" />
-                      <circle 
-                        cx="20" cy="20" r="18" fill="none" 
-                        stroke={i === 0 ? "#f43f5e" : "#22d3ee"} 
-                        strokeWidth="2" 
-                        strokeDasharray="113" 
-                        strokeDashoffset={113 - (i === 0 ? 82 : 45) * 1.13} 
-                      />
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white">
-                      {i === 0 ? '82%' : '45%'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </MetricRow>
-
-            {/* Entropy Index */}
-            <MetricRow id="04_ENT" title="Entropy Idx" subtext="CHAOS_MAP" colorClass="text-purple-500">
-               <div className="relative w-full h-full">
-                  {scatterPoints.map((p, i) => (
-                    <div 
-                      key={i} 
-                      className="absolute rounded-full"
-                      style={{
-                        left: `${p.x + Math.sin(frame/10 + i)*2}%`,
-                        top: `${p.y + Math.cos(frame/10 + i)*2}%`,
-                        width: `${p.size}px`,
-                        height: `${p.size}px`,
-                        backgroundColor: '#15B315',
-                        opacity: 0.2 + Math.random() * 0.5
-                      }}
-                    />
-                  ))}
-               </div>
             </MetricRow>
           </>
         ) : activeLabel === 'radius' ? (
@@ -503,7 +462,55 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
       </div>
 
       {/* Send Button - visible only when a label is active */}
-      {activeLabel && (
+      {!activeLabel ? (
+        // Show two buttons on the 4th form (after all labels are completed)
+        <div style={{
+          padding: 'clamp(0.75rem, 2vw, 1.5rem)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          marginTop: 'auto'
+        }}>
+          <div style={{ display: 'flex', gap: 'clamp(0.5rem, 2vw, 1rem)' }}>
+            <button
+              onClick={() => {/* Download handler */}}
+              className="flex-1 font-bold uppercase tracking-widest transition-all duration-300 poetry"
+              style={{
+                padding: 'clamp(0.5rem, 1vw, 0.75rem)',
+                fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
+                backgroundColor: '#15B315',
+                color: '#000',
+                border: '1px solid #15B315',
+                cursor: 'pointer',
+                opacity: 1,
+                boxShadow: '0 0 15px rgba(21, 179, 21, 0.3)',
+                transform: 'scale(1)',
+                textShadow: '0 0 10px rgba(0, 0, 0, 0.5)',
+                letterSpacing: '0.2em'
+              }}
+            >
+              DOWNLOAD
+            </button>
+            <button
+              onClick={() => {/* AANMELDEN handler */}}
+              className="flex-1 font-bold uppercase tracking-widest transition-all duration-300 poetry"
+              style={{
+                padding: 'clamp(0.5rem, 1vw, 0.75rem)',
+                fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
+                backgroundColor: '#15B315',
+                color: '#000',
+                border: '1px solid #15B315',
+                cursor: 'pointer',
+                opacity: 1,
+                boxShadow: '0 0 15px rgba(21, 179, 21, 0.3)',
+                transform: 'scale(1)',
+                textShadow: '0 0 10px rgba(0, 0, 0, 0.5)',
+                letterSpacing: '0.2em'
+              }}
+            >
+              AANMELDEN
+            </button>
+          </div>
+        </div>
+      ) : activeLabel === 'radius' ? (
         <div style={{
           padding: 'clamp(0.75rem, 2vw, 1.5rem)',
           borderTop: '1px solid rgba(255, 255, 255, 0.05)',
@@ -527,10 +534,64 @@ export const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricCh
               letterSpacing: isSending ? '0.15em' : '0.2em'
             }}
           >
-            {isSending ? 'PROCESSING...' : 'SEND_LABEL'}
+            {isSending ? 'PROCESSING...' : 'TOELATEN'}
           </button>
         </div>
-      )}
+      ) : activeLabel === 'syncAlign' ? (
+        <div style={{
+          padding: 'clamp(0.75rem, 2vw, 1.5rem)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          marginTop: 'auto'
+        }}>
+          <button
+            onClick={handleSendLabel}
+            disabled={!isCurrentLabelComplete || isSending}
+            className="w-full font-bold uppercase tracking-widest transition-all duration-300 poetry"
+            style={{
+              padding: 'clamp(0.5rem, 1vw, 0.75rem)',
+              fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
+              backgroundColor: (isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(21, 179, 21, 0.2)',
+              color: (isCurrentLabelComplete && !isSending) ? '#000' : 'rgba(255, 255, 255, 0.4)',
+              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(255, 255, 255, 0.1)'}`,
+              cursor: (isCurrentLabelComplete && !isSending) ? 'pointer' : 'not-allowed',
+              opacity: (isCurrentLabelComplete && !isSending) ? 1 : 0.5,
+              boxShadow: (isCurrentLabelComplete && !isSending) ? '0 0 15px rgba(21, 179, 21, 0.3)' : 'none',
+              transform: (isCurrentLabelComplete && !isSending) ? 'scale(1)' : 'scale(0.98)',
+              textShadow: (isCurrentLabelComplete && !isSending) ? '0 0 10px rgba(0, 0, 0, 0.5)' : 'none',
+              letterSpacing: isSending ? '0.15em' : '0.2em'
+            }}
+          >
+            {isSending ? 'PROCESSING...' : 'LOSLATEN'}
+          </button>
+        </div>
+      ) : activeLabel === 'dataLink' ? (
+        <div style={{
+          padding: 'clamp(0.75rem, 2vw, 1.5rem)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          marginTop: 'auto'
+        }}>
+          <button
+            onClick={handleSendLabel}
+            disabled={!isCurrentLabelComplete || isSending}
+            className="w-full font-bold uppercase tracking-widest transition-all duration-300 poetry"
+            style={{
+              padding: 'clamp(0.5rem, 1vw, 0.75rem)',
+              fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
+              backgroundColor: (isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(21, 179, 21, 0.2)',
+              color: (isCurrentLabelComplete && !isSending) ? '#000' : 'rgba(255, 255, 255, 0.4)',
+              border: `1px solid ${(isCurrentLabelComplete && !isSending) ? '#15B315' : 'rgba(255, 255, 255, 0.1)'}`,
+              cursor: (isCurrentLabelComplete && !isSending) ? 'pointer' : 'not-allowed',
+              opacity: (isCurrentLabelComplete && !isSending) ? 1 : 0.5,
+              boxShadow: (isCurrentLabelComplete && !isSending) ? '0 0 15px rgba(21, 179, 21, 0.3)' : 'none',
+              transform: (isCurrentLabelComplete && !isSending) ? 'scale(1)' : 'scale(0.98)',
+              textShadow: (isCurrentLabelComplete && !isSending) ? '0 0 10px rgba(0, 0, 0, 0.5)' : 'none',
+              letterSpacing: isSending ? '0.15em' : '0.2em'
+            }}
+          >
+            {isSending ? 'PROCESSING...' : 'AANBID'}
+          </button>
+        </div>
+      ) : null}
 
       <style>{`
         .scrollbar-custom::-webkit-scrollbar { width: 3px; }

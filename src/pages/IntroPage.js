@@ -14,6 +14,9 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const [showNewContent, setShowNewContent] = React.useState(false);
 
+  // Check if running on localhost (development)
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
   // Throttle scroll events for performance
   const handleScroll = React.useMemo(
     () => throttle(() => {
@@ -69,7 +72,32 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   };
 
   const handleDuplicateButtonClick = () => {
-    setShowNewContent(true);
+    // Skip fullscreen on localhost (development)
+    if (isLocalhost) {
+      setShowNewContent(true);
+      return;
+    }
+    
+    // Request fullscreen before showing the animation
+    const docElement = document.documentElement;
+    if (!document.fullscreenElement) {
+      if (docElement.requestFullscreen) {
+        docElement.requestFullscreen().catch(() => {
+          // Fullscreen request denied, proceed anyway
+          setShowNewContent(true);
+        });
+        // Wait a bit for fullscreen to activate, then show content
+        setTimeout(() => {
+          setShowNewContent(true);
+        }, 300);
+      } else {
+        // Fullscreen not supported, proceed anyway
+        setShowNewContent(true);
+      }
+    } else {
+      // Already fullscreen
+      setShowNewContent(true);
+    }
   };
 
   return (
@@ -132,15 +160,16 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       >
         {/* Login Text - Fades with content */}
         <div
-          className="absolute text-sm md:text-base font-medium"
+          className="absolute font-medium poetry"
           style={{ 
-            top: 'calc(1.5rem + 0.4rem + 1.5rem)', 
-            right: 'calc(1.5rem + 55px + 0.5rem)', 
+            fontSize: '0.6rem',
+            top: 'calc(1.5rem + 0.4rem + 1.5rem + 0.15rem + 0.2rem + 0.15rem - 0.1rem)', 
+            right: 'calc(1.5rem + 55px + 0.5rem + 0.2rem - 0.7rem)', 
             color: '#FFFEF0',
             whiteSpace: 'nowrap'
           }}
         >
-          aanmelden
+          AANMELDEN
         </div>
 
       {/* Content Container */}

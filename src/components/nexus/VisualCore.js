@@ -1,7 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import '../../styles/poetry.css';
 
-const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left', isCompleted = false, isLocked = false, onSquareClick = () => {} }) => (
+const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left', isCompleted = false, isLocked = false, onSquareClick = () => {}, shouldBeTransparent = false }) => {
+  const [isGlowing, setIsGlowing] = useState(false);
+  const prevCompletedRef = React.useRef(false);
+
+  // Trigger glow when label just became completed
+  useEffect(() => {
+    if (isCompleted && !prevCompletedRef.current) {
+      setIsGlowing(true);
+      const timer = setTimeout(() => {
+        setIsGlowing(false);
+      }, 600); // 0.6 seconds glow
+      prevCompletedRef.current = true;
+      return () => clearTimeout(timer);
+    }
+    if (!isCompleted) {
+      prevCompletedRef.current = false;
+    }
+  }, [isCompleted]);
+
+  return (
   <div 
     className="absolute flex flex-col pointer-events-none group z-50 transition-all duration-500 overflow-visible"
     style={{ 
@@ -20,82 +39,111 @@ const SchematicLabel = ({ top, left, right, bottom, label, value, align = 'left'
         style={{
           width: 'clamp(1.25rem, 2.5vw, 1.875rem)',
           height: 'clamp(1.25rem, 2.5vw, 1.875rem)',
-          backgroundColor: isCompleted ? '#15B315cc' : 'rgba(168, 85, 247, 0.8)',
-          borderColor: isCompleted ? '#15B315' : 'rgba(255, 255, 255, 0.2)',
-          opacity: isLocked ? 0.4 : 1,
-          pointerEvents: isLocked ? 'none' : 'auto'
+          backgroundColor: isCompleted ? '#E0E30B' : 'rgba(168, 85, 247, 0.8)',
+          borderColor: isCompleted ? '#E0E30B' : 'rgba(255, 255, 255, 0.2)',
+          opacity: isLocked || shouldBeTransparent ? 0.4 : 1,
+          pointerEvents: isLocked ? 'none' : 'auto',
+          boxShadow: isGlowing ? '0 0 30px #E0E30B, 0 0 60px rgba(224, 227, 11, 0.5)' : 'none',
+          transition: 'box-shadow 0.1s ease-out'
         }} 
       />
-      <div className="h-[1px] bg-gradient-to-r from-transparent to-purple-500/60" style={{
+      <div className="h-[1px] bg-gradient-to-r from-transparent to-yellow-400" style={{
         width: 'clamp(3rem, 10vw, 8rem)'
       }} />
     </div>
     <div 
-      className="border-l border-purple-500/40 transition-all duration-300 group-hover:bg-purple-900/40 shadow-2xl border-r border-b border-white/5 cursor-pointer"
+      className="border-l transition-all duration-300 shadow-2xl cursor-pointer"
       onClick={isLocked ? undefined : onSquareClick}
       style={{
         marginTop: 'clamp(0.625rem, 1.25vw, 1.25rem)',
         padding: 'clamp(0.625rem, 1.25vw, 1.25rem)',
         minWidth: 'clamp(7.5rem, 20vw, 17.5rem)',
-        opacity: isLocked ? 0.4 : 1,
-        pointerEvents: isLocked ? 'none' : 'auto'
+        opacity: isLocked || shouldBeTransparent ? 0.4 : 1,
+        pointerEvents: isLocked ? 'none' : 'auto',
+        borderColor: '#ef8616',
+        borderRight: '1px solid #ef8616',
+        borderBottom: '1px solid #ef8616',
+        backgroundColor: 'rgba(239, 134, 22, 0.05)'
       }}
     >
-      <div className="text-purple-400/60 font-bold uppercase tracking-[0.2em] text-white poetry leading-none tracking-tight" style={{
+      <div className="font-bold uppercase tracking-[0.2em] poetry leading-none tracking-tight" style={{
         fontSize: 'clamp(0.6rem, 1vw, 0.8rem)',
-        marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+        marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)',
+        color: isGlowing ? '#E0E30B' : '#E0E30B',
+        textShadow: isGlowing ? '0 0 10px #E0E30B' : 'none'
       }}>{label}</div>
-      <div className="text-white poetry leading-none tracking-tight" style={{
-        fontSize: 'clamp(0.8rem, 1.5vw, 1.3rem)'
+      <div className="poetry leading-none tracking-tight" style={{
+        fontSize: 'clamp(0.8rem, 1.5vw, 1.3rem)',
+        color: isCompleted ? '#15B315' : '#ff0000',
+        textShadow: isCompleted ? '0 0 10px #15B315, 0 0 20px rgba(21, 179, 21, 0.5)' : 'none'
       }}>{value}</div>
     </div>
   </div>
-);
+  );
+};
 
-const ApexMetric = ({ syncPercentage = 0, isGlowing = false, shouldFlash = false }) => (
-  <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50" style={{
-    top: 'clamp(1%, 2vh, 8%)',
-    transform: 'translateX(-50%) scale(clamp(0.65, 1vw, 1))',
-    filter: shouldFlash ? 'drop-shadow(0 0 50px #E0E30B)' : (isGlowing ? 'drop-shadow(0 0 20px #E0E30B)' : 'none'),
-    transition: 'filter 0.5s ease-in-out',
-    animation: shouldFlash ? 'apexFlash 3s ease-in-out' : 'none'
-  }}>
-    <div className="text-amber-500 font-bold tracking-[0.3em] uppercase poetry" style={{
-      fontSize: 'clamp(0.6rem, 1.2vw, 1rem)',
-      marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)',
-      color: isGlowing ? '#E0E30B' : '#f59e0b',
-      transition: 'color 0.5s ease-in-out'
-    }}>Apex_Sync</div>
-    <div className="flex items-center" style={{
-      gap: 'clamp(0.5rem, 1vw, 1rem)'
+const ApexMetric = ({ syncPercentage = 0, isGlowing = false, shouldFlash = false }) => {
+  const [isNumberGlowing, setIsNumberGlowing] = useState(false);
+  const prevPercentageRef = React.useRef(syncPercentage);
+
+  // Trigger glow when percentage changes
+  useEffect(() => {
+    if (syncPercentage !== prevPercentageRef.current) {
+      setIsNumberGlowing(true);
+      const timer = setTimeout(() => {
+        setIsNumberGlowing(false);
+      }, 600); // 0.6 seconds glow
+      prevPercentageRef.current = syncPercentage;
+      return () => clearTimeout(timer);
+    }
+  }, [syncPercentage]);
+
+  return (
+    <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-50" style={{
+      top: 'clamp(1%, 2vh, 8%)',
+      transform: 'translateX(-50%) scale(clamp(0.65, 1vw, 1))',
+      filter: shouldFlash ? 'drop-shadow(0 0 50px #E0E30B)' : (isGlowing ? 'drop-shadow(0 0 20px #E0E30B)' : 'none'),
+      transition: 'filter 0.5s ease-in-out',
+      animation: shouldFlash ? 'apexFlash 3s ease-in-out' : 'none'
     }}>
-      <div className="h-[1px] bg-gradient-to-r from-transparent to-amber-500/50" style={{
-        width: 'clamp(1rem, 3vw, 3rem)'
-      }} />
-      <div className="text-white font-bold poetry tracking-tighter" style={{
-        fontSize: 'clamp(1.2rem, 2.8vw, 2rem)',
-        color: isGlowing ? '#E0E30B' : 'white',
+      <div className="text-amber-500 font-bold tracking-[0.3em] uppercase poetry" style={{
+        fontSize: 'clamp(0.6rem, 1.2vw, 1rem)',
+        marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)',
+        color: '#f59e0b',
         transition: 'color 0.5s ease-in-out'
-      }}>{syncPercentage}%</div>
-      <div className="h-[1px] bg-gradient-to-l from-transparent to-amber-500/50" style={{
-        width: 'clamp(1rem, 3vw, 3rem)'
+      }}>Apex_Sync</div>
+      <div className="flex items-center" style={{
+        gap: 'clamp(0.5rem, 1vw, 1rem)'
+      }}>
+        <div className="h-[1px] bg-gradient-to-r from-transparent to-amber-500/50" style={{
+          width: 'clamp(1rem, 3vw, 3rem)'
+        }} />
+        <div className="text-white font-bold poetry tracking-tighter" style={{
+          fontSize: 'clamp(1.2rem, 2.8vw, 2rem)',
+          color: syncPercentage === 99 ? '#ff0000' : 'white',
+          transition: 'color 0.1s ease-out',
+          textShadow: 'none'
+        }}>{syncPercentage}%</div>
+        <div className="h-[1px] bg-gradient-to-l from-transparent to-amber-500/50" style={{
+          width: 'clamp(1rem, 3vw, 3rem)'
+        }} />
+      </div>
+      <div className="w-px bg-gradient-to-b from-amber-500/80 to-transparent" style={{
+        height: 'clamp(2rem, 4vh, 4rem)',
+        marginTop: 'clamp(0.5rem, 1vh, 1rem)'
       }} />
     </div>
-    <div className="w-px bg-gradient-to-b from-amber-500/80 to-transparent" style={{
-      height: 'clamp(2rem, 4vh, 4rem)',
-      marginTop: 'clamp(0.5rem, 1vh, 1rem)'
-    }} />
-  </div>
-);
+  );
+};
 
-const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor, isTip, opacity = 0.8 }) => {
+const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor, isTip, opacity = 0.8, onTipClick = () => {} }) => {
   const halfBase = baseWidth / 2;
   const halfTop = topWidth / 2;
   const sideLength = Math.sqrt(height ** 2 + (halfBase - halfTop) ** 2);
   const angle = Math.atan2(halfBase - halfTop, height) * (180 / Math.PI);
 
   return (
-    <div className="absolute left-1/2 top-1/2 preserve-3d" style={{ transform: `translate(-50%, -50%) translateY(${yPos}px)` }}>
+    <div className="absolute left-1/2 top-1/2 preserve-3d" style={{ transform: `translate(-50%, -50%) translateY(${yPos}px)`, cursor: isTip ? 'pointer' : 'default' }} onClick={isTip ? onTipClick : undefined}>
       {[0, 90, 180, 270].map((rot) => (
         <div
           key={rot}
@@ -135,13 +183,35 @@ const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor,
   );
 };
 
-export const VisualCore = ({ syncPercentage = 0, activeLabel = null, onLabelClick = () => {}, metricValues = {}, allLabelsComplete = false }) => {
+export const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, onLabelClick = () => {}, onLabelSent = () => {}, metricValues = {}, allLabelsComplete = false, hasReadInstructions = false }, ref) => {
   const [completedLabels, setCompletedLabels] = useState({
     dataLink: false,
     syncAlign: false,
     radius: false
   });
+  const [displayedCompletedLabels, setDisplayedCompletedLabels] = useState({
+    dataLink: false,
+    syncAlign: false,
+    radius: false
+  });
   const [shouldFlash, setShouldFlash] = useState(false);
+
+  // Expose markLabelSent method via ref
+  React.useImperativeHandle(ref, () => ({
+    markLabelSent: (label) => {
+      setCompletedLabels(prev => ({
+        ...prev,
+        [label]: true
+      }));
+      // Delay showing green square by 1500ms (animation duration)
+      setTimeout(() => {
+        setDisplayedCompletedLabels(prev => ({
+          ...prev,
+          [label]: true
+        }));
+      }, 1500);
+    }
+  }));
 
   // Trigger flash when all labels are completed
   useEffect(() => {
@@ -154,6 +224,15 @@ export const VisualCore = ({ syncPercentage = 0, activeLabel = null, onLabelClic
     }
   }, [allLabelsComplete]);
 
+  // Handle when a label is sent from WaveAnalysis
+  const handleLabelSent = (label) => {
+    setCompletedLabels(prev => ({
+      ...prev,
+      [label]: true
+    }));
+    onLabelSent(label);
+  };
+
   // Helper function to check if all metrics for a label are filled
   const isLabelComplete = (labelName) => {
     if (!metricValues[labelName]) return false;
@@ -162,31 +241,19 @@ export const VisualCore = ({ syncPercentage = 0, activeLabel = null, onLabelClic
 
   const pyramidColor = 'rgba(167, 59, 198, 0.4)';
   const borderColor = '#ef8616';
-  const middleColor = 'rgb(255, 0, 0)';
+  const middleColor = completedLabels.syncAlign ? pyramidColor : 'rgb(255, 0, 0)';
 
   const handleSquareClick = (labelKey) => {
-    // RADIUS can always be clicked
+    // RADIUS can always be clicked - no prerequisites
     if (labelKey === 'radius') {
-      setCompletedLabels(prev => ({
-        ...prev,
-        radius: !prev.radius
-      }));
       onLabelClick('radius');
     } 
-    // SYNC_ALIGN can be clicked after RADIUS is completed
+    // SYNC_ALIGN can only be clicked after RADIUS is sent/completed
     else if (labelKey === 'syncAlign' && completedLabels.radius) {
-      setCompletedLabels(prev => ({
-        ...prev,
-        syncAlign: !prev.syncAlign
-      }));
       onLabelClick('syncAlign');
     }
-    // DATA_LINK can be clicked after SYNC_ALIGN is completed
+    // DATA_LINK can only be clicked after SYNC_ALIGN is sent/completed
     else if (labelKey === 'dataLink' && completedLabels.syncAlign) {
-      setCompletedLabels(prev => ({
-        ...prev,
-        dataLink: !prev.dataLink
-      }));
       onLabelClick('dataLink');
     }
   };
@@ -293,8 +360,8 @@ export const VisualCore = ({ syncPercentage = 0, activeLabel = null, onLabelClic
             
             {/* Layer 3: Middle (RED, SOLID, THINNER) */}
             <PyramidSegment 
-                baseWidth={98} topWidth={70} height={10} yPos={-12} 
-                color={middleColor} borderColor="#ff0000" 
+                baseWidth={98} topWidth={70} height={20} yPos={-12} 
+                color={middleColor} borderColor={completedLabels.syncAlign ? borderColor : '#ff0000'} 
                 opacity={1}
             />
             
@@ -310,11 +377,12 @@ export const VisualCore = ({ syncPercentage = 0, activeLabel = null, onLabelClic
                 color={allLabelsComplete ? '#E0E30B' : pyramidColor} 
                 borderColor={allLabelsComplete ? '#E0E30B' : borderColor}
                 isTip={true}
+                onTipClick={() => onLabelClick(null)}
             />
 
             {/* Vertical Core Pulse */}
-            <div className="absolute left-1/2 top-1/2 w-[1.5px] h-[240px] bg-gradient-to-t from-transparent via-purple-400/20 to-transparent blur-[2px] transform -translate-x-1/2 -translate-y-1/2 opacity-50" />
-            <div className="absolute left-1/2 top-1/2 w-[1px] h-[240px] bg-purple-400/40 transform -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute left-1/2 top-1/2 w-[2.5px] h-[240px] bg-gradient-to-t from-transparent via-red-500/30 to-transparent blur-[2px] transform -translate-x-1/2 -translate-y-1/2 opacity-50" />
+            <div className="absolute left-1/2 top-1/2 w-[1.5px] h-[240px] bg-red-500/60 transform -translate-x-1/2 -translate-y-1/2" />
             </div>
         </div>
       </div>
@@ -324,31 +392,34 @@ export const VisualCore = ({ syncPercentage = 0, activeLabel = null, onLabelClic
         <SchematicLabel 
           top="calc(50% - clamp(1rem, 3vh, 3rem) - 1rem)" 
           right="calc(clamp(1rem, 5vw, 3rem) + 2.9rem)" 
-          label="DATA_LINK" 
-          value="L_04" 
+          label="SCHOONHEID" 
+          value="IDEAAL" 
           align="right"
-          isCompleted={isLabelComplete('dataLink')}
-          isLocked={!isLabelComplete('syncAlign')}
+          isCompleted={displayedCompletedLabels.dataLink}
+          isLocked={!completedLabels.syncAlign}
           onSquareClick={() => handleSquareClick('dataLink')}
+          shouldBeTransparent={!hasReadInstructions || !displayedCompletedLabels.syncAlign}
         />
         <SchematicLabel 
           top="calc(50% + clamp(2rem, 4vh, 5rem) - 1rem)" 
           left="calc(clamp(0.5rem, 3vw, 2rem) + 1.1rem)" 
-          label="SYNC_ALIGN" 
-          value="0.0002"
-          isCompleted={isLabelComplete('syncAlign')}
-          isLocked={!isLabelComplete('radius')}
+          label="WAARHEID" 
+          value="INTEGRITEIT"
+          isCompleted={displayedCompletedLabels.syncAlign}
+          isLocked={!completedLabels.radius}
           onSquareClick={() => handleSquareClick('syncAlign')}
+          shouldBeTransparent={!hasReadInstructions || !displayedCompletedLabels.radius}
         />
         <SchematicLabel 
           top="calc(50% + clamp(1rem, 3vh, 3rem) + 4rem)" 
           right="clamp(1rem, 5vw, 3rem)" 
-          label="RADIUS" 
-          value="182.0_PX" 
+          label="GOEDHEID" 
+          value="TOELATEN" 
           align="right"
-          isCompleted={isLabelComplete('radius')}
+          isCompleted={displayedCompletedLabels.radius}
           isLocked={false}
           onSquareClick={() => handleSquareClick('radius')}
+          shouldBeTransparent={!hasReadInstructions}
         />
       </div>
 
@@ -386,6 +457,8 @@ export const VisualCore = ({ syncPercentage = 0, activeLabel = null, onLabelClic
       `}</style>
     </div>
   );
-};
+});
+
+VisualCore.displayName = 'VisualCore';
 
 export default VisualCore;

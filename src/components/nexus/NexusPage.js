@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './Header';
 import { VisualCore } from './VisualCore';
 import { WaveAnalysis } from './WaveAnalysis';
@@ -10,6 +10,9 @@ export const NexusPage = ({ onBack }) => {
   const [timestamp, setTimestamp] = useState(new Date().toISOString());
   const [timezone, setTimezone] = useState(null);
   const [activeLabel, setActiveLabel] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hasReadInstructions, setHasReadInstructions] = useState(false);
+  const visualCoreRef = useRef(null);
   
   // Track metric values for completion tracking
   const [metricValues, setMetricValues] = useState({
@@ -27,6 +30,16 @@ export const NexusPage = ({ onBack }) => {
   
   const [syncPercentage, setSyncPercentage] = useState(0);
   const [animatingLabel, setAnimatingLabel] = useState(null);
+  const [showCompletionGlow, setShowCompletionGlow] = useState(false);
+  const [showButtonGlow, setShowButtonGlow] = useState(false);
+
+  // Trigger button glow after fade-in animation completes plus 0.5s delay
+  useEffect(() => {
+    const glowTimer = setTimeout(() => {
+      setShowButtonGlow(true);
+    }, 4100);
+    return () => clearTimeout(glowTimer);
+  }, []);
 
   // Monitor label completions for state tracking only (not animation)
   useEffect(() => {
@@ -118,6 +131,11 @@ export const NexusPage = ({ onBack }) => {
     // Trigger animation when button is clicked
     setAnimatingLabel(label);
     
+    // Mark label as completed in VisualCore
+    if (visualCoreRef.current) {
+      visualCoreRef.current.markLabelSent(label);
+    }
+    
     // Update sync percentage based on which label was sent
     setTimeout(() => {
       if (label === 'radius') {
@@ -128,7 +146,7 @@ export const NexusPage = ({ onBack }) => {
         setSyncPercentage(99);
       }
       setAnimatingLabel(null);
-    }, 1200); // Animation duration
+    }, 1500); // Animation duration
     
     // Move to next label
     const labelOrder = ['radius', 'syncAlign', 'dataLink'];
@@ -139,13 +157,26 @@ export const NexusPage = ({ onBack }) => {
       const nextLabel = labelOrder[currentIndex + 1];
       setTimeout(() => {
         setActiveLabel(nextLabel);
-      }, 1200); // Wait for animation to complete
+      }, 1500); // Wait for animation to complete
     } else {
-      // All labels complete - clear active label
+      // All labels complete - clear active label and show completion glow after animation
       setTimeout(() => {
         setActiveLabel(null);
-      }, 1200);
+        setShowCompletionGlow(true);
+      }, 1500);
     }
+  };
+
+  // Callback for when a label is sent - called by VisualCore
+  const onLabelSentCallback = (label) => {
+    // VisualCore will handle updating its own completedLabels state
+    // This is just a notification hook if needed
+  };
+
+  // Callback for when user closes the GEBRUIKSAANWIJZING modal
+  const handleModalClosed = () => {
+    setHasReadInstructions(true);
+    setActiveLabel('radius'); // Show first label forms when blur disappears
   };
 
   // Check if all labels are complete
@@ -216,7 +247,7 @@ export const NexusPage = ({ onBack }) => {
         }
 
         .floating-wave-analysis {
-            animation: flowToApex 1.2s linear forwards;
+            animation: flowToApex 1s linear forwards;
             transform-origin: center center;
             pointer-events: none;
         }
@@ -251,7 +282,7 @@ export const NexusPage = ({ onBack }) => {
         <div className="shrink-0" style={{
           padding: 'clamp(0.5rem, 1.5vw, 1.5rem)'
         }}>
-          <Header timestamp={timestamp} />
+          <Header timestamp={timestamp} onModalStateChange={setIsModalOpen} onModalClosed={handleModalClosed} showButtonGlow={showButtonGlow} />
         </div>
 
         {/* Responsive Content Flow */}
@@ -269,9 +300,9 @@ export const NexusPage = ({ onBack }) => {
                padding: 'clamp(0.25rem, 0.5vw, 0.375rem) clamp(0.5rem, 1vw, 0.75rem)',
                fontSize: 'clamp(0.35rem, 0.55vw, 0.5rem)'
              }}>
-                Core_Node_View
+                CORE_NODE_YUGENESIS
              </div>
-             <VisualCore activeLabel={activeLabel} onLabelClick={setActiveLabel} metricValues={metricValues} allLabelsComplete={areAllLabelsComplete} syncPercentage={syncPercentage} />
+             <VisualCore ref={visualCoreRef} activeLabel={activeLabel} onLabelClick={setActiveLabel} onLabelSent={onLabelSentCallback} metricValues={metricValues} allLabelsComplete={showCompletionGlow} syncPercentage={syncPercentage} hasReadInstructions={hasReadInstructions} />
           </div>
 
           {/* Metrics Panel - Bottom on Mobile, Right on Desktop */}
@@ -279,7 +310,7 @@ export const NexusPage = ({ onBack }) => {
             paddingTop: 'clamp(0.25rem, 0.75vw, 0.5rem)',
             paddingLeft: 'clamp(0, 2vw, 1rem)'
           }}>
-             <WaveAnalysis activeLabel={activeLabel} metricValues={metricValues} onMetricChange={handleMetricChange} onSendLabel={handleSendLabel} />
+             <WaveAnalysis activeLabel={activeLabel} metricValues={metricValues} onMetricChange={handleMetricChange} onSendLabel={handleSendLabel} hasReadInstructions={hasReadInstructions} />
           </div>
         </div>
 

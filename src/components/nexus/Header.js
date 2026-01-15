@@ -1,75 +1,286 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../../styles/text.css';
+import '../../styles/poetry.css';
+import { throttle } from '../../utils/performanceUtils';
 
-export const Header = ({ timestamp }) => {
-  return (
-    <header className="relative z-30 border-b border-cyan-500/10 pb-3 md:pb-4">
-      {/* Top Row - System Identification */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Logo/Identifier */}
-          <div className="flex items-center gap-2">
-            <div className="relative w-6 h-6 md:w-8 md:h-8">
-              <div className="absolute inset-0 border border-cyan-500/40 transform rotate-45" />
-              <div className="absolute inset-1 border border-amber-500/40 transform rotate-45" />
-              <div className="absolute inset-2 bg-cyan-500/20 transform rotate-45" />
-            </div>
-            <div className="flex flex-col leading-none">
-              <span className="text-[10px] md:text-xs font-bold text-white tracking-[0.3em] uppercase">NEXUS</span>
-              <span className="text-[7px] md:text-[8px] text-cyan-400/60 tracking-[0.2em]">VISUAL_SYS</span>
-            </div>
-          </div>
-          
-          <div className="h-4 w-px bg-cyan-500/20 hidden md:block" />
-          
-          {/* Status Indicator */}
-          <div className="hidden md:flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-[8px] text-green-400/80 uppercase tracking-wider">Online</span>
-          </div>
-        </div>
+export const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange = () => {}, onModalClosed = () => {}, showButtonGlow = false }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [zoomOrigin, setZoomOrigin] = useState({ x: '50%', y: '50%' });
 
-        {/* Center Title */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-          <span className="text-[8px] md:text-[10px] text-white/30 uppercase tracking-[0.4em]">Data_Core</span>
-          <span className="text-[6px] md:text-[7px] text-cyan-400/40 font-mono">{timestamp}</span>
-        </div>
+  const handleClose = useCallback(() => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsModalOpen(false);
+      setIsClosing(false);
+      onModalStateChange(false);
+      onModalClosed();
+    }, 1200);
+  }, [onModalStateChange, onModalClosed]);
 
-        {/* Right Side - Controls */}
-        <div className="flex items-center gap-2 md:gap-4">
-          <div className="hidden md:flex items-center gap-1">
-            {[1, 2, 3].map((i) => (
-              <div 
-                key={i} 
-                className="w-2 h-2 border border-cyan-500/30 flex items-center justify-center"
-              >
-                <div className={`w-0.5 h-0.5 ${i === 1 ? 'bg-green-500' : i === 2 ? 'bg-amber-500' : 'bg-cyan-500'}`} />
-              </div>
-            ))}
-          </div>
-          
-          <div className="flex flex-col items-end leading-none">
-            <span className="text-[7px] md:text-[8px] text-white/40 uppercase">NODE</span>
-            <span className="text-[9px] md:text-[10px] text-cyan-400 font-mono">4.8-P</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Row - Navigation/Metrics Bar */}
-      <div className="flex items-center justify-between text-[6px] md:text-[7px] text-white/30 uppercase tracking-[0.15em] mt-2 pt-2 border-t border-white/5">
-        <div className="flex items-center gap-4 md:gap-8">
-          <span className="hover:text-cyan-400 transition-colors cursor-pointer">Overview</span>
-          <span className="hover:text-cyan-400 transition-colors cursor-pointer text-cyan-400">Core_View</span>
-          <span className="hover:text-cyan-400 transition-colors cursor-pointer hidden sm:inline">Analytics</span>
-          <span className="hover:text-cyan-400 transition-colors cursor-pointer hidden md:inline">Config</span>
-        </div>
-        <div className="flex items-center gap-2 md:gap-4">
-          <span className="text-amber-500/60">UPLINK: 98.4%</span>
-          <span className="hidden sm:inline">LATENCY: 12ms</span>
-        </div>
-      </div>
-    </header>
+  // Throttle modal open calculations for performance
+  const throttledModalOpen = React.useMemo(
+    () => throttle((e) => {
+      // Always get the flex container parent that holds both button and arrow
+      const containerElement = e.currentTarget.parentElement;
+      
+      // Calculate from the flex container to ensure consistent origin for both button and arrow
+      const rect = containerElement.getBoundingClientRect();
+      
+      // Calculate center of button group, moved left 5rem (1rem additional) and up 3.5rem (2rem additional)
+      // Moved 2rem (32px) to the right and 1rem (16px) down
+      const centerXPercent = (((rect.left - 32) + rect.width / 2) / window.innerWidth) * 100;
+      const centerYPercent = (((rect.top - 104) + rect.height / 2) / window.innerHeight) * 100;
+      
+      setZoomOrigin({ x: `${centerXPercent}%`, y: `${centerYPercent}%` });
+      setIsModalOpen(true);
+      onModalStateChange(true);
+    }, 50),
+    [onModalStateChange]
   );
-};
+
+  const handleModalOpen = (e) => {
+    throttledModalOpen(e);
+  };
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isModalOpen) handleClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isModalOpen, handleClose]);
+
+  return (
+    <>
+      <header className="relative z-30 uppercase tracking-widest flex flex-col justify-center" style={{ color: 'rgba(21, 179, 21, 0.8)',
+        fontSize: 'clamp(0.795rem, 3.634vw, 1.704rem)',
+        width: '100%',
+        height: 'clamp(8rem, 12vw, 12rem)',
+        position: 'relative',
+        paddingLeft: 0
+      }}>
+        {/* Main Title - left aligned */}
+        <div className="flex flex-col pointer-events-none" style={{
+          gap: 'clamp(0.25rem, 0.5vw, 0.5rem)',
+          marginBottom: 'clamp(0.5rem, 1vw, 1rem)',
+          marginLeft: '0.5rem',
+          marginTop: '-3.1rem'
+        }}>
+          <h1 className="font-bold tracking-[0.3em] poetry" style={{
+            fontSize: 'clamp(0.9rem, 1.8vw, 1.5rem)',
+            color: '#FFFEF0'
+          }}>DELTA</h1>
+          <div className="h-px" style={{ backgroundImage: 'linear-gradient(to right, rgba(21, 179, 21, 0.4), rgba(21, 179, 21, 0.4))',
+            width: 'clamp(2rem, 4vw, 4rem)'
+          }} />
+          <h1 className="font-bold tracking-[0.3em] poetry" style={{
+            fontSize: 'clamp(0.9rem, 1.8vw, 1.5rem)',
+            color: '#FFFEF0'
+          }}>WERKEN</h1>
+        </div>
+
+        {/* System Status Container - left aligned */}
+        <div className="flex flex-col" style={{
+          gap: 'clamp(0.25rem, 0.5vw, 0.5rem)',
+          marginLeft: '0.45rem',
+          pointerEvents: 'auto'
+        }}>
+          <div className="flex items-center" style={{
+            gap: 'clamp(0.5rem, 1vw, 1.5rem)'
+          }}>
+            <span 
+              onClick={handleModalOpen}
+              className="border cursor-pointer"
+              style={{
+                backgroundColor: 'rgba(21, 179, 21, 0.2)',
+                borderColor: 'rgba(21, 179, 21, 0.4)',
+                padding: 'clamp(0.125rem, 0.5vw, 0.375rem) clamp(0.25rem, 1vw, 0.75rem)',
+                fontSize: 'clamp(0.5rem, 1vw, 0.75rem)',
+                animation: showButtonGlow ? 'buttonGlow 0.8s ease-out' : 'none',
+                transition: showButtonGlow ? 'none' : 'all 0.2s ease',
+                boxShadow: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(21, 179, 21, 0.3)';
+                e.target.style.borderColor = 'rgba(21, 179, 21, 0.6)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(21, 179, 21, 0.2)';
+                e.target.style.borderColor = 'rgba(21, 179, 21, 0.4)';
+              }} 
+            >
+              GEBRUIKSAANWIJZING
+            </span>
+            <div 
+              onClick={handleModalOpen}
+              className="transform rotate-45 cursor-pointer transition-all duration-200"
+              style={{
+                borderBottom: '1px solid rgba(21, 179, 21, 0.5)',
+                borderRight: '1px solid rgba(21, 179, 21, 0.5)',
+                width: 'clamp(1rem, 2vw, 1.5rem)',
+                height: 'clamp(1rem, 2vw, 1.5rem)',
+                transform: 'translate(0, -0.25rem) rotate(45deg)',
+                padding: 'clamp(0.5rem, 1vw, 0.75rem)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(21, 179, 21, 0.8)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(21, 179, 21, 0.5)';
+              }} 
+            />
+          </div>
+          <div className="h-[1px] pointer-events-none" style={{
+            backgroundImage: 'linear-gradient(to right, rgba(21, 179, 21, 0.4), transparent)',
+            width: 'clamp(4rem, 15vw, 12rem)'
+          }} />
+        </div>
+
+        {/* Right: Time & Encryption - absolutely positioned at top right */}
+        <div className="absolute flex flex-col items-end pointer-events-none" style={{
+          position: 'absolute',
+          top: '0.4rem',
+          right: 0,
+          gap: 'clamp(0.25rem, 0.5vw, 0.5rem)',
+          fontSize: 'clamp(0.5rem, 0.75vw, 0.7rem)'
+        }}>
+          <div className="text-right poetry" style={{
+            paddingBottom: 'clamp(0.25rem, 0.5vw, 0.75rem)'
+          }}>
+            <div>TIME_SYNC: {timestamp}</div>
+            <div className="text-amber-500/80 flicker" style={{ marginTop: '0.04rem' }}>IDENTITEIT: {loginName}</div>
+          </div>
+        </div>
+      </header>
+
+      {/* Modal Overlay - Zoom effect like triangles */}
+      {isModalOpen && (
+        <div 
+          onClick={handleClose}
+          className="fixed inset-0 flex items-center justify-center"
+          style={{
+            perspective: '1200px',
+            perspectiveOrigin: `${zoomOrigin.x} ${zoomOrigin.y}`,
+            animation: isClosing 
+              ? 'zoomBackdropOut 0.6s ease-in forwards'
+              : 'zoomBackdrop 0.6s ease-out forwards',
+            zIndex: 100
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              borderColor: 'rgba(21, 179, 21, 0.4)',
+              border: '1px solid rgba(21, 179, 21, 0.4)',
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              padding: '32px',
+              width: '37.8rem',
+              maxWidth: '90vw',
+              maxHeight: '68vh',
+              overflowY: 'auto',
+              animation: isClosing 
+              ? 'zoomOut 1.2s ease-in forwards'
+              : 'zoomIn 1.2s ease-out forwards',
+              transformStyle: 'preserve-3d',
+              transformOrigin: `${zoomOrigin.x} ${zoomOrigin.y}`,
+              zIndex: 10000
+            }}
+          >
+            <div className="text" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              color: '#15B315'
+            }}>
+              <h2 style={{
+                color: '#15B315',
+                fontWeight: 'bold',
+                fontSize: '18px',
+                marginBottom: '16px'
+              }}>GEBRUIKSAANWIJZING</h2>
+              <p>
+                Welkom bij het GFL Nexus systeem. Dit is uw interface naar geavanceerde gegevensvisualisatie en systeemcontrole.
+              </p>
+              <p>
+                Gebruik de interactieve elementen om door de verschillende gegevenstreams te navigeren. Elk component biedt real-time telemetrie en systeemstatus.
+              </p>
+              <p>
+                De centrale piramide visualisatie geeft een grafische weergave van de gegevenshiërarchie weer. Labels geven aanvullende context voor kritieke metrische gegevens.
+              </p>
+              <p>
+                Het rechterpaneel bevat golfanalyse en systeemmetrieken. Monitor deze waarden voor optimale systeemprestaties.
+              </p>
+              <div style={{
+                color: 'rgba(21, 179, 21, 0.6)',
+                fontSize: 'clamp(16px, 4vw, 24px)',
+                marginTop: '24px',
+                paddingTop: '16px',
+                borderTop: '1px solid rgba(21, 179, 21, 0.2)',
+                textAlign: 'center'
+              }}>
+                Klik buiten dit venster om te sluiten.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes buttonGlow {
+          0% {
+            box-shadow: 0 0 8px rgba(21, 179, 21, 0.4), 0 0 16px rgba(21, 179, 21, 0.2);
+          }
+          50% {
+            box-shadow: 0 0 20px rgba(21, 179, 21, 1), 0 0 40px rgba(21, 179, 21, 0.8), 0 0 60px rgba(21, 179, 21, 0.4);
+          }
+          100% {
+            box-shadow: 0 0 8px rgba(21, 179, 21, 0.4), 0 0 16px rgba(21, 179, 21, 0.2);
+          }
+        }
+        @keyframes zoomBackdrop {
+          from { 
+            background-color: rgba(0, 0, 0, 0);
+            backdrop-filter: blur(0px);
+          }
+          to { 
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+          }
+        }
+        @keyframes zoomBackdropOut {
+          from { 
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+          }
+          to { 
+            background-color: rgba(0, 0, 0, 0);
+            backdrop-filter: blur(0px);
+          }
+        }
+        @keyframes zoomIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.1) rotateX(25deg) translateZ(-1000px);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1) rotateX(0deg) translateZ(0px);
+          }
+        }
+        @keyframes zoomOut {
+          from { 
+            opacity: 1;
+            transform: scale(1) rotateX(0deg) translateZ(0px);
+          }
+          to { 
+            opacity: 0;
+            transform: scale(0.1) rotateX(25deg) translateZ(-1000px);
+          }
+        }
+      `}</style>
+    </>
+  );
+};;
 
 export default Header;

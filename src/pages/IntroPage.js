@@ -308,7 +308,6 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             width: 'clamp(4.2rem, 21vw, 15.75rem)',
             height: 'clamp(4.2rem, 21vw, 15.75rem)',
             marginTop: '5rem',
-            marginLeft: '-12rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

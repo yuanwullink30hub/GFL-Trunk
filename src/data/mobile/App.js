@@ -646,15 +646,20 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           left: 0,
           right: 0,
           width: '100vw',
-          height: '85vh',
-          marginTop: 'calc(150px - 3rem)',
+          height: '70vh',
+          marginTop: 'calc(150px + 1rem)',
           zIndex: 1,
-          marginLeft: 'calc(-50vw + 50%)'
+          marginLeft: 'calc(-50vw + 50%)',
+          pointerEvents: 'none',
+          ...gpuAccel.heavy
         }}
       >
         <HoloEarth 
           className="absolute inset-0 w-full h-full"
-          style={{ pointerEvents: 'none' }}
+          style={{ 
+            pointerEvents: 'none',
+            ...gpuAccel.heavy
+          }}
         />
       </div>
 

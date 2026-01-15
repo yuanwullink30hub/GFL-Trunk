@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gpuAccel, ANIMATION_TIMINGS, ANIMATION_EASING } from '../../config/animationStyles';
+import HoloEarth from '../../components/HoloEarth';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -651,17 +652,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           marginLeft: 'calc(-50vw + 50%)'
         }}
       >
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        >
-           <source src="/videos/HolographicHeader30.mp4" type="video/mp4; codecs=hvc1" />
-         <source src="/videos/HolographicHeader30.webm" type="video/webm" />
-          Your browser does not support the video tag.
-        </video>
+        <HoloEarth 
+          className="absolute inset-0 w-full h-full"
+          style={{ pointerEvents: 'none' }}
+        />
       </div>
 
       {/* Text content container */}
@@ -671,7 +665,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         style={{
           zIndex: 1,
           position: 'relative',
-          paddingTop: '100px'
+          paddingTop: 'calc(100px - 1.5rem)'
         }}
       >
         {/* Text container over image */}

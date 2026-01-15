@@ -1442,8 +1442,19 @@ const Footer = () => {
   );
 };
 
+// Helper function to format date and time consistently
+const formatDateTime = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${month}/${day}/${year}, ${hours}:${minutes}:${seconds}`;
+};
+
 export const Deltawerken = ({ onBack }) => {
-  const [timestamp, setTimestamp] = useState(new Date().toISOString());
+  const [timestamp, setTimestamp] = useState(formatDateTime(new Date()));
   const [timezone, setTimezone] = useState(null);
   const [activeLabel, setActiveLabel] = useState(null);
   const [hasReadInstructions, setHasReadInstructions] = useState(false);
@@ -1528,24 +1539,7 @@ export const Deltawerken = ({ onBack }) => {
 
     // Update timestamp every second locally
     const timer = setInterval(() => {
-      if (timezone) {
-        const formatter = new Intl.DateTimeFormat('en-US', {
-          timeZone: timezone,
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false
-        });
-        
-        const now = new Date();
-        const localDateTime = formatter.format(now);
-        setTimestamp(localDateTime);
-      } else {
-        setTimestamp(new Date().toISOString());
-      }
+      setTimestamp(formatDateTime(new Date()));
     }, 1000);
     
     return () => clearInterval(timer);

@@ -93,7 +93,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         style={{ top: 'calc(1.5rem + 0.4rem)' }}
         title="Go to login"
       >
-        <span className="text-sm md:text-base font-medium" style={{ transform: 'translateY(0.3rem) translateX(0.6rem)', color: '#FFFEF0' }}>aanmelden</span>
+        <span className="poetry font-bold tracking-[0.15em] uppercase" style={{ transform: 'translateY(-0.07rem) translateX(1.08rem)', color: '#FFFEF0', fontSize: '0.604rem' }}>aanmelden</span>
         <img src={sun2} alt="Login" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block' }} />
       </button>
 

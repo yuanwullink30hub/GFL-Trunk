@@ -12,14 +12,13 @@ import generalData from '../data.json';
 import mobileData from '../data/mobile/data.json';
 
 const IntroPage = ({ darkMode, setDarkMode }) => {
-  const [isTransitioning, setIsTransitioning] = React.useState(false);
   const [showNewContent, setShowNewContent] = React.useState(false);
   const [showLandingPage, setShowLandingPage] = React.useState(false);
   const [introFadingOut, setIntroFadingOut] = React.useState(false);
   const [contentVisible, setContentVisible] = React.useState(false);
   const [landingPageVisible, setLandingPageVisible] = React.useState(false);
   const [sunButtonVisible, setSunButtonVisible] = React.useState(true);
-  const [scrollDirection, setScrollDirection] = React.useState('up');
+  const [scrollDirection] = React.useState('up');
   const [showQuickMenu, setShowQuickMenu] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 

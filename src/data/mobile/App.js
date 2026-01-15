@@ -12,7 +12,6 @@ import {
 } from 'react-icons/fa';
 import { BsMoon, BsSun } from 'react-icons/bs';
 import logo from '../../images/logo.png';
-import sun2 from '../../images/illustrativesun.png';
 import karmanevents from '../../images/slideshow images/karmaneventsPNG.png';
 import club49logo from '../../images/slideshow images/club49-logo.png';
 import logo1111 from '../../images/slideshow images/1111logo.png';
@@ -46,8 +45,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
   const [isSlideView, setIsSlideView] = React.useState(false); // Track if came from slide click
-  const [showQuickMenu, setShowQuickMenu] = React.useState(false); // Quick menu dropdown
-  const [isFullscreen, setIsFullscreen] = React.useState(false); // Track fullscreen state
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
@@ -352,44 +349,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Track fullscreen state changes
-  React.useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-    };
-  }, []);
-
-  // Toggle fullscreen mode
-  const toggleFullscreen = () => {
-    // Skip fullscreen on localhost (development)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      setShowQuickMenu(false);
-      return;
-    }
-    
-    if (document.fullscreenElement) {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      }
-    } else {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen().catch(() => {});
-      } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-      }
-    }
-    setShowQuickMenu(false);
-  };
 
   // Calculate opacity for KWEEK KRACHTIGE text and media container (based on content visibility, not extended hitbox)
   const calculateMediaOpacity = React.useMemo(() => {

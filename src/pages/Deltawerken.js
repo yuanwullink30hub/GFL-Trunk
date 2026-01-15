@@ -55,19 +55,21 @@ const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange = () => 
 
   return (
     <>
-      <header className="relative z-30 uppercase tracking-widest flex flex-col justify-center" style={{ color: 'rgba(21, 179, 21, 0.8)',
+      <header className="relative z-30 uppercase tracking-widest flex flex-col justify-start items-start" style={{ color: 'rgba(21, 179, 21, 0.8)',
         fontSize: 'clamp(0.795rem, 3.634vw, 1.704rem)',
         width: '100%',
         height: 'clamp(8rem, 12vw, 12rem)',
         position: 'relative',
-        paddingLeft: 0
+        paddingLeft: 0,
+        textAlign: 'left'
       }}>
         {/* Main Title - left aligned */}
         <div className="flex flex-col pointer-events-none" style={{
           gap: 'clamp(0.25rem, 0.5vw, 0.5rem)',
           marginBottom: 'clamp(0.5rem, 1vw, 1rem)',
           marginLeft: '0.5rem',
-          marginTop: '-3.1rem'
+          marginTop: '0.4rem',
+          alignItems: 'flex-start'
         }}>
           <h1 className="font-bold tracking-[0.3em] poetry" style={{
             fontSize: 'clamp(0.9rem, 1.8vw, 1.5rem)',
@@ -1707,11 +1709,13 @@ export const Deltawerken = ({ onBack }) => {
           {/* Main Visual Core - Top on Mobile, Left on Desktop */}
           <div className="flex-[2] md:flex-[3] relative overflow-visible flex items-center justify-center" style={{
             minHeight: 'clamp(8rem, 30vh, 22rem)',
-            marginBottom: '-100px'
+            marginBottom: '-100px',
+            marginTop: '-1rem'
           }}>
              <div className="absolute top-0 left-0 border border-white/10 bg-black/40 text-white/40 uppercase tracking-widest z-10" style={{
                padding: 'clamp(0.25rem, 0.5vw, 0.375rem) clamp(0.5rem, 1vw, 0.75rem)',
-               fontSize: 'clamp(0.35rem, 0.55vw, 0.5rem)'
+               fontSize: 'clamp(0.35rem, 0.55vw, 0.5rem)',
+               marginTop: '0.7rem'
              }}>
                 CORE_NODE_YUGENESIS
              </div>

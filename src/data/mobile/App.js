@@ -42,10 +42,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const [clickedSlideIndex, setClickedSlideIndex] = React.useState(null); // Track which slide was clicked
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const [zoomScale, setZoomScale] = React.useState(15);
-  const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false);
+  const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false); // Track when to hide large logo
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
   const [isSlideView, setIsSlideView] = React.useState(false); // Track if came from slide click
+  const [showQuickMenu, setShowQuickMenu] = React.useState(false); // Quick menu dropdown
+  const [isFullscreen, setIsFullscreen] = React.useState(false); // Track fullscreen state
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
@@ -151,7 +153,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   const handleBackToButton = () => {
     // Start the exit animation
     setIsDetailPageExiting(true);
-    setIsScrolledPastH1(false);
     
     // Keep detail page visible while overlay fades, then hide it
     setTimeout(() => {
@@ -168,13 +169,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
         const scrollTarget = Math.max(0, elementTop - (viewportHeight - elementHeight) / 2);
         window.scrollTo(0, scrollTarget);
       }
-      setIsScrolledPastH1(false); // Ensure header state stays reset
     }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
     
     // Reset exit animation state after full animation completes
     setTimeout(() => {
       setIsDetailPageExiting(false);
-      setIsScrolledPastH1(false);
     }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
   };
 
@@ -249,7 +248,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   // Handle back - direct navigation to landing
   const handleBack = () => {
     setIsDetailPageExiting(true);
-    setIsScrolledPastH1(false);
     const wasSlideView = isSlideView; // Capture before reset
     
     // Keep detail page visible while overlay fades, then hide it
@@ -270,13 +268,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       } else {
         window.scrollTo(0, 0);
       }
-      setIsScrolledPastH1(false);
     }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
     
     // Reset exit animation state after full animation completes
     setTimeout(() => {
       setIsDetailPageExiting(false);
-      setIsScrolledPastH1(false);
       setIsSlideView(false); // Reset slide view flag
     }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
   };
@@ -325,10 +321,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
   // Track scroll position relative to video header bottom minus 150px
   React.useEffect(() => {
     const handleScroll = () => {
-      // Check if scrolled to middle of video header
+      // Track when scrolled past video header to hide large logo
       if (videoHeaderRef?.current) {
         const videoRect = videoHeaderRef.current.getBoundingClientRect();
-        // Show small logo when at middle of video container
         setIsScrolledPastH1(videoRect.bottom - 480 < 0);
       }
       
@@ -357,6 +352,44 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Track fullscreen state changes
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // Toggle fullscreen mode
+  const toggleFullscreen = () => {
+    // Skip fullscreen on localhost (development)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      setShowQuickMenu(false);
+      return;
+    }
+    
+    if (document.fullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } else {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      }
+    }
+    setShowQuickMenu(false);
+  };
 
   // Calculate opacity for KWEEK KRACHTIGE text and media container (based on content visibility, not extended hitbox)
   const calculateMediaOpacity = React.useMemo(() => {
@@ -588,25 +621,21 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           ...(isAnimating ? gpuAccel.heavy : { willChange: 'auto' })
         }}
       >
-      {/* Mobile Header - Logo (normal size centered, small size top-right) */}
+      {/* Mobile Header - Logo (normal size centered, hides when scrolled past threshold) */}
       <header className={`fixed bg-transparent mobile-header ${scrollDirection === 'down' ? 'logo-fade-out' : 'logo-fade-in'}`} style={{
         zIndex: activeView ? 1 : 9999, 
         overflow: 'hidden',
-        top: isScrolledPastH1 ? '1rem' : '0',
-        right: isScrolledPastH1 ? '1rem' : 'auto',
-        bottom: isScrolledPastH1 ? 'auto' : 'auto',
-        left: isScrolledPastH1 ? 'auto' : '0',
-        width: isScrolledPastH1 ? 'auto' : '100vw',
-        display: activeView || isDetailPageExiting || isAnimating ? 'none' : 'block'
+        top: '0',
+        left: '0',
+        width: '100vw',
+        display: activeView || isDetailPageExiting || isAnimating || isScrolledPastH1 ? 'none' : 'block'
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: isScrolledPastH1 ? 'center' : 'center',
-          padding: isScrolledPastH1 ? '0.5rem' : '1rem 1.5rem',
-          gap: isScrolledPastH1 ? '0.75rem' : '0',
-          backgroundColor: isScrolledPastH1 ? 'rgba(0, 0, 0, 0.9)' : 'transparent',
-          borderRadius: isScrolledPastH1 ? '50px' : '0'
+          justifyContent: 'center',
+          padding: '1rem 1.5rem',
+          backgroundColor: 'transparent'
         }}>
           <button
             onClick={() => {
@@ -615,26 +644,123 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
             }}
             className="logo-btn"
             title="Go to menu"
-            style={{ marginRight: isScrolledPastH1 ? '-10px' : '0' }}
           >
-            <img src={logo} alt="Garden For Life Logo" className="logo-img" style={{ width: isScrolledPastH1 ? '48px' : '176px', height: isScrolledPastH1 ? '48px' : '176px', imageRendering: 'auto' }} />
+            <img src={logo} alt="Garden For Life Logo" className="logo-img" style={{ width: '176px', height: '176px', imageRendering: 'auto' }} />
           </button>
-          
+        </div>
+      </header>
+
+      {/* Fixed Quick Menu Button - Always visible, doesn't fade with scroll */}
+      {!activeView && !isDetailPageExiting && !isAnimating && (
+        <div style={{
+          position: 'fixed',
+          right: '1.52rem',
+          top: '1.9rem',
+          zIndex: 10000
+        }}>
           <button
-            onClick={() => window.location.href = '/login'}
-            className="p-2 hover:bg-gray-700 transition-colors duration-300"
-            title="Go to login"
+            onClick={() => setShowQuickMenu(!showQuickMenu)}
+            className="p-2 hover:bg-gray-700/30 transition-colors duration-300 rounded-full"
+            title="Quick menu"
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              ...(isScrolledPastH1 ? { position: 'relative' } : { position: 'fixed', right: '1.52rem', top: '1.9rem', transform: 'scale(0.97)' })
+              transform: 'scale(0.97)'
             }}
           >
-            <img src={sun2} alt="Sun" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block', imageRendering: 'auto' }} />
+            <img src={sun2} alt="Menu" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block', imageRendering: 'auto' }} />
           </button>
+          
+          {/* Quick Menu Dropdown */}
+          <AnimatePresence>
+            {showQuickMenu && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                style={{
+                  position: 'absolute',
+                  top: '65px',
+                  right: '0',
+                  backgroundColor: 'rgba(21, 10, 36, 0.95)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  minWidth: '160px',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+                  border: '1px solid rgba(124, 58, 237, 0.3)'
+                }}
+              >
+                <button
+                  onClick={toggleFullscreen}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                >
+                  <span style={{ fontSize: '18px' }}>{isFullscreen ? '⛶' : '⛶'}</span>
+                  <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const footerMenu = document.getElementById('footer-menu');
+                    if (footerMenu) footerMenu.scrollIntoView({ behavior: 'smooth' });
+                    setShowQuickMenu(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                >
+                  <span style={{ fontSize: '18px' }}>☰</span>
+                  <span>Go to Menu</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* Click outside to close menu */}
+          {showQuickMenu && (
+            <div
+              onClick={() => setShowQuickMenu(false)}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: -1
+              }}
+            />
+          )}
         </div>
-      </header>
+      )}
 
       {/* Full-screen Video Container (scrollable behind logo) */}
       <div 
@@ -646,11 +772,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           left: 0,
           right: 0,
           width: '100vw',
-          height: '70vh',
-          marginTop: 'calc(150px + 1rem)',
+          height: 'calc(70vh + 100px)',
+          marginTop: 'calc(150px + 1rem - 50px)',
           zIndex: 1,
           marginLeft: 'calc(-50vw + 50%)',
           pointerEvents: 'none',
+          overflow: 'visible',
           ...gpuAccel.heavy
         }}
       >
@@ -658,6 +785,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           className="absolute inset-0 w-full h-full"
           style={{ 
             pointerEvents: 'none',
+            overflow: 'visible',
             ...gpuAccel.heavy
           }}
         />

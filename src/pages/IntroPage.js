@@ -184,8 +184,10 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               top: '50%',
               left: '50%',
               transformOrigin: '0 0',
-              pointerEvents: 'none'
+              pointerEvents: 'auto',
+              cursor: 'pointer'
             }}
+            onClick={handleEnterSite}
             animate={{ rotate: 360, scale: [1, 1.08, 1] }}
             transition={{
               rotate: { duration: 9, repeat: Infinity, ease: 'linear', delay: 0.3 },

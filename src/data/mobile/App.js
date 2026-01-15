@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gpuAccel, ANIMATION_TIMINGS, ANIMATION_EASING } from '../../config/animationStyles';
-import HoloEarth from '../../components/HoloEarth';
+import HoloEarth from '../../pages/earthholo';
 import { 
   FaMapMarkerAlt,
   FaPhone,

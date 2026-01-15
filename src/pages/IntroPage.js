@@ -47,7 +47,19 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
     preloadAssets();
   }, []);
 
+  const requestFullscreen = () => {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(() => {});
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+      elem.msRequestFullscreen();
+    }
+  };
+
   const handleEnterSite = () => {
+    requestFullscreen();
     setIsTransitioning(true);
     setTimeout(() => {
       navigate('/welcome');
@@ -55,6 +67,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   };
 
   const handleDuplicateButtonClick = () => {
+    requestFullscreen();
     setShowNewContent(true);
   };
 

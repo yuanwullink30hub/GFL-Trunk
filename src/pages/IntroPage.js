@@ -6,7 +6,7 @@ import '../styles/buttons.css';
 import sun2 from '../images/illustrativesun.png';
 import lock from '../images/Lock-PNG-Images.png';
 import key from '../images/KEY-PNG-Images.png';
-import NexusPage from '../components/nexus/NexusPage';
+import Deltawerken from './Deltawerken';
 
 const IntroPage = ({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();
@@ -408,7 +408,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           }}
         >
           {showNewContent && (
-            <NexusPage onBack={() => setShowNewContent(false)} />
+            <Deltawerken onBack={() => setShowNewContent(false)} />
           )}
         </motion.div>
       </div>

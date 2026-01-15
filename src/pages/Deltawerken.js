@@ -536,6 +536,28 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
           from { transform: translateY(-5px) rotateX(-20deg) rotateY(360deg); }
           to { transform: translateY(-5px) rotateX(-20deg) rotateY(0deg); }
         }
+        @keyframes projectorFlicker {
+          0%, 100% { opacity: 1; }
+          10% { opacity: 0.85; }
+          20% { opacity: 1; }
+          30% { opacity: 0.7; }
+          40% { opacity: 0.95; }
+          50% { opacity: 0.6; }
+          60% { opacity: 1; }
+          70% { opacity: 0.8; }
+          80% { opacity: 0.9; }
+          90% { opacity: 0.75; }
+        }
+        @keyframes projectorScanlineDown {
+          0% { transform: translateY(180px); opacity: 0; }
+          10% { opacity: 0.8; }
+          90% { opacity: 0.8; }
+          100% { transform: translateY(0); opacity: 0; }
+        }
+        @keyframes projectorPulse {
+          0%, 100% { opacity: 0.6; filter: blur(3px); }
+          50% { opacity: 1; filter: blur(2px); }
+        }
         .animate-pyramid-stable {
           animation: stableRotate 15s linear infinite;
         }
@@ -627,6 +649,227 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                 isTip={true}
                 onTipClick={() => onLabelClick(null)}
             />
+
+            {/* Holographic Projector Beam from apex metric */}
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 preserve-3d" style={{ transform: 'translate(-50%, -50%) translateY(calc(-145px + 14rem)) rotateX(180deg)', transformStyle: 'preserve-3d' }}>
+              
+              {/* Volumetric outer glow layers - X and Y rotation for true 3D */}
+              {[0, 45, 90, 135, 180, 225, 270, 315].map((rotation, idx) => (
+                <div 
+                  key={`outer-${idx}`}
+                  className="absolute left-1/2 transform -translate-x-1/2"
+                  style={{
+                    width: '0',
+                    height: '0',
+                    borderLeft: '85px solid transparent',
+                    borderRight: '85px solid transparent',
+                    borderTop: '190px solid rgba(124, 58, 237, 0.03)',
+                    filter: 'blur(6px)',
+                    top: '0',
+                    transform: `translateX(-50%) rotateY(${rotation}deg)`,
+                    transformStyle: 'preserve-3d',
+                    animation: 'projectorFlicker 0.15s ease-in-out infinite'
+                  }}
+                />
+              ))}
+              
+              {/* Cross-axis layers rotated on Z for Y-depth */}
+              {[0, 90, 180, 270].map((rotation, idx) => (
+                <div 
+                  key={`cross-${idx}`}
+                  className="absolute left-1/2 transform -translate-x-1/2"
+                  style={{
+                    width: '0',
+                    height: '0',
+                    borderLeft: '85px solid transparent',
+                    borderRight: '85px solid transparent',
+                    borderTop: '190px solid rgba(124, 58, 237, 0.03)',
+                    filter: 'blur(6px)',
+                    top: '0',
+                    transform: `translateX(-50%) rotateZ(${rotation}deg) rotateY(45deg)`,
+                    transformStyle: 'preserve-3d',
+                    animation: 'projectorFlicker 0.15s ease-in-out infinite'
+                  }}
+                />
+              ))}
+              
+              {/* Mid-layer cones with dual axis rotation */}
+              {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((rotation, idx) => (
+                <div 
+                  key={`mid-${idx}`}
+                  className="absolute left-1/2 transform -translate-x-1/2"
+                  style={{
+                    width: '0',
+                    height: '0',
+                    borderLeft: '55px solid transparent',
+                    borderRight: '55px solid transparent',
+                    borderTop: '175px solid rgba(168, 85, 247, 0.035)',
+                    filter: 'blur(4px)',
+                    top: '0',
+                    transform: `translateX(-50%) rotateY(${rotation}deg)`,
+                    transformStyle: 'preserve-3d',
+                    animation: `projectorFlicker 0.12s ease-in-out infinite`,
+                    animationDelay: `${idx * 0.02}s`
+                  }}
+                />
+              ))}
+              
+              {/* Inner bright core cones - more angles */}
+              {[0, 45, 90, 135, 180, 225, 270, 315].map((rotation, idx) => (
+                <div 
+                  key={`inner-${idx}`}
+                  className="absolute left-1/2 transform -translate-x-1/2"
+                  style={{
+                    width: '0',
+                    height: '0',
+                    borderLeft: '30px solid transparent',
+                    borderRight: '30px solid transparent',
+                    borderTop: '170px solid rgba(192, 132, 252, 0.05)',
+                    filter: 'blur(3px)',
+                    top: '0',
+                    transform: `translateX(-50%) rotateY(${rotation}deg)`,
+                    transformStyle: 'preserve-3d',
+                    animation: 'projectorFlicker 0.2s ease-in-out infinite'
+                  }}
+                />
+              ))}
+              
+              {/* Innermost core with Z-rotated layers */}
+              {[0, 60, 120].map((rotation, idx) => (
+                <div 
+                  key={`core-${idx}`}
+                  className="absolute left-1/2 transform -translate-x-1/2"
+                  style={{
+                    width: '0',
+                    height: '0',
+                    borderLeft: '20px solid transparent',
+                    borderRight: '20px solid transparent',
+                    borderTop: '165px solid rgba(192, 132, 252, 0.08)',
+                    filter: 'blur(2px)',
+                    top: '0',
+                    transform: `translateX(-50%) rotateZ(${rotation}deg) rotateY(30deg)`,
+                    transformStyle: 'preserve-3d',
+                    animation: 'projectorPulse 0.25s ease-in-out infinite'
+                  }}
+                />
+              ))}
+              
+              {/* Central beam core with glow - INVERTED gradient */}
+              <div 
+                className="absolute left-1/2 transform -translate-x-1/2"
+                style={{
+                  width: '8px',
+                  height: '185px',
+                  background: 'linear-gradient(to bottom, rgba(168, 85, 247, 0.7) 0%, rgba(192, 132, 252, 0.4) 30%, rgba(168, 85, 247, 0.15) 70%, transparent 100%)',
+                  filter: 'blur(3px)',
+                  top: '0',
+                  borderRadius: '4px',
+                  animation: 'projectorPulse 0.3s ease-in-out infinite'
+                }}
+              />
+              <div 
+                className="absolute left-1/2 transform -translate-x-1/2"
+                style={{
+                  width: '2px',
+                  height: '185px',
+                  background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.9) 0%, rgba(192, 132, 252, 0.6) 40%, transparent 100%)',
+                  top: '0',
+                  animation: 'projectorFlicker 0.1s ease-in-out infinite'
+                }}
+              />
+              
+              {/* Holographic scanlines moving downward - clipped to pyramid shape */}
+              <div 
+                className="absolute left-1/2 transform -translate-x-1/2" 
+                style={{ 
+                  width: '180px', 
+                  height: '180px', 
+                  top: '0', 
+                  overflow: 'hidden', 
+                  opacity: 0.5,
+                  clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)'
+                }}
+              >
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute"
+                    style={{
+                      width: '100%',
+                      height: '2px',
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(192, 132, 252, 0.5) 30%, rgba(255, 255, 255, 0.7) 50%, rgba(192, 132, 252, 0.5) 70%, transparent 100%)',
+                      top: '0',
+                      left: '0',
+                      animation: `projectorScanlineDown ${1.2 + i * 0.3}s linear infinite`,
+                      animationDelay: `${i * 0.25}s`,
+                      filter: 'blur(1px)'
+                    }}
+                  />
+                ))}
+              </div>
+              
+              {/* Horizontal distortion bands */}
+              {[30, 70, 110, 150].map((yPos, idx) => (
+                <div 
+                  key={idx}
+                  className="absolute left-1/2"
+                  style={{
+                    width: `${80 - (yPos / 3)}px`,
+                    height: '3px',
+                    background: `linear-gradient(90deg, transparent, rgba(192, 132, 252, ${0.25 - idx * 0.04}), transparent)`,
+                    top: `${yPos}px`,
+                    filter: 'blur(1px)',
+                    opacity: 0.6,
+                    transform: 'translateX(-50%)'
+                  }}
+                />
+              ))}
+              
+              {/* Chromatic aberration edge effects */}
+              <div 
+                className="absolute left-1/2 transform -translate-x-1/2"
+                style={{
+                  width: '4px',
+                  height: '180px',
+                  background: 'linear-gradient(to bottom, rgba(255, 100, 100, 0.3) 0%, transparent 60%)',
+                  top: '0',
+                  marginLeft: '-20px',
+                  filter: 'blur(2px)',
+                  animation: 'projectorFlicker 0.08s ease-in-out infinite'
+                }}
+              />
+              <div 
+                className="absolute left-1/2 transform -translate-x-1/2"
+                style={{
+                  width: '4px',
+                  height: '180px',
+                  background: 'linear-gradient(to bottom, rgba(100, 100, 255, 0.3) 0%, transparent 60%)',
+                  top: '0',
+                  marginLeft: '20px',
+                  filter: 'blur(2px)',
+                  animation: 'projectorFlicker 0.08s ease-in-out infinite',
+                  animationDelay: '0.04s'
+                }}
+              />
+              
+              {/* Noise/static overlay for hologram effect */}
+              <div 
+                className="absolute left-1/2 transform -translate-x-1/2"
+                style={{
+                  width: '100px',
+                  height: '185px',
+                  top: '0',
+                  background: `repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(192, 132, 252, 0.03) 2px,
+                    rgba(192, 132, 252, 0.03) 4px
+                  )`,
+                  animation: 'projectorFlicker 0.05s steps(2) infinite'
+                }}
+              />
+            </div>
 
             {/* Vertical Core Pulse */}
             <div className="absolute left-1/2 top-1/2 w-[1.75px] h-[240px] bg-gradient-to-t from-transparent via-red-500/30 to-transparent blur-[2px] transform -translate-x-1/2 -translate-y-1/2 opacity-50" />

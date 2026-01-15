@@ -1,17 +1,71 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import '../styles/poetry.css';
 import '../styles/buttons.css';
 import sun2 from '../images/illustrativesun.png';
 import lock from '../images/Lock-PNG-Images.png';
 import key from '../images/KEY-PNG-Images.png';
 import Deltawerken from './Deltawerken';
+import MobileAppContent from '../data/mobile/App';
+import generalData from '../data.json';
+import mobileData from '../data/mobile/data.json';
 
 const IntroPage = ({ darkMode, setDarkMode }) => {
-  const navigate = useNavigate();
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const [showNewContent, setShowNewContent] = React.useState(false);
+  const [showLandingPage, setShowLandingPage] = React.useState(false);
+  const [introFadingOut, setIntroFadingOut] = React.useState(false);
+  const [contentVisible, setContentVisible] = React.useState(false);
+  const [landingPageVisible, setLandingPageVisible] = React.useState(false);
+  const [sunButtonVisible, setSunButtonVisible] = React.useState(true);
+  const [scrollDirection, setScrollDirection] = React.useState('up');
+  const [showQuickMenu, setShowQuickMenu] = React.useState(false);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+
+  // Track fullscreen state
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // Toggle fullscreen mode
+  const toggleFullscreen = () => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      setShowQuickMenu(false);
+      return;
+    }
+    if (document.fullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } else {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      }
+    }
+    setShowQuickMenu(false);
+  };
+
+  // Merge data for MobileAppContent
+  const data = {
+    basics: {
+      ...generalData.basics,
+      pages: mobileData.basics.pages
+    }
+  };
 
   React.useEffect(() => {
     // Preload main app assets for faster transition
@@ -64,18 +118,32 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
 
   const handleEnterSite = () => {
     requestFullscreen();
-    setIsTransitioning(true);
+    setIntroFadingOut(true);
+    // Wait for intro to fully fade out before showing landing page
     setTimeout(() => {
-      navigate('/welcome');
-    }, 500);
+      setShowLandingPage(true);
+      // Small delay then fade in the content
+      setTimeout(() => {
+        setLandingPageVisible(true);
+      }, 100);
+    }, 600);
   };
 
   const handleDuplicateButtonClick = () => {
     requestFullscreen();
-    setShowNewContent(true);
+    setIntroFadingOut(true);
+    // Wait for intro to fully fade out before showing new content
+    setTimeout(() => {
+      setShowNewContent(true);
+      // Small delay then fade in the content
+      setTimeout(() => {
+        setContentVisible(true);
+      }, 100);
+    }, 600);
   };
 
   return (
+    <>
     <div className={`w-full h-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-300 ${
       darkMode 
         ? 'text-white'
@@ -86,36 +154,140 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       overflow: 'hidden',
       position: 'relative'
     }}>
-      {/* Transition Overlay */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isTransitioning ? 1 : 0 }}
-        transition={{ duration: 0.5, ease: 'easeInOut' }}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: '#000000',
-          zIndex: 9999,
+
+
+      {/* Sun Logo with Quick Menu */}
+      <div style={{
+        position: 'fixed',
+        right: '1.5rem',
+        top: 'calc(1.5rem + 0.4rem)',
+        zIndex: 10000
+      }}>
+        <motion.button
+          onClick={() => setShowQuickMenu(!showQuickMenu)}
+          className="p-2 hover:opacity-80 transition-opacity duration-300"
+          title="Quick menu"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: sunButtonVisible ? 1 : 0 }}
+          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          style={{ pointerEvents: sunButtonVisible ? 'auto' : 'none' }}
+        >
+          <img src={sun2} alt="Menu" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block' }} />
+        </motion.button>
+        
+        {/* Quick Menu Dropdown */}
+        <AnimatePresence>
+          {showQuickMenu && sunButtonVisible && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -10 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              style={{
+                position: 'absolute',
+                top: '65px',
+                right: '0',
+                backgroundColor: 'rgba(21, 10, 36, 0.95)',
+                borderRadius: '12px',
+                padding: '8px',
+                minWidth: '160px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+                border: '1px solid rgba(124, 58, 237, 0.3)'
+              }}
+            >
+              <button
+                onClick={toggleFullscreen}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  width: '100%',
+                  padding: '10px 12px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                <span style={{ fontSize: '18px' }}>⛶</span>
+                <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  window.location.href = '/login';
+                  setShowQuickMenu(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  width: '100%',
+                  padding: '10px 12px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                <span style={{ fontSize: '18px' }}>🔐</span>
+                <span>Aanmelden</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Click outside to close menu */}
+        {showQuickMenu && (
+          <div
+            onClick={() => setShowQuickMenu(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: -1
+            }}
+          />
+        )}
+      </div>
+
+      {/* Aanmelden Text - Fades with intro */}
+      <motion.span
+        className="absolute poetry font-bold tracking-[0.15em] uppercase"
+        style={{ 
+          top: 'calc(1.5rem + 0.4rem + 0.5rem + 1.1rem + 0.45rem)',
+          right: 'calc(1.5rem + 55px + 0.5rem - 0.4rem)',
+          transform: 'translateY(-0.07rem)',
+          color: '#FFFEF0', 
+          fontSize: '0.604rem',
           pointerEvents: 'none'
         }}
-      />
-
-      {/* Login Button */}
-      <button
-        onClick={() => window.location.href = '/login'}
-        className="absolute right-6 flex items-center gap-2 p-2 hover:opacity-80 transition-opacity duration-300"
-        style={{ top: 'calc(1.5rem + 0.4rem)' }}
-        title="Go to login"
+        initial={{ opacity: 1 }}
+        animate={{ opacity: introFadingOut ? 0 : 1 }}
+        transition={{ duration: 0.5, ease: 'easeInOut' }}
       >
-        <span className="poetry font-bold tracking-[0.15em] uppercase" style={{ transform: 'translateY(-0.07rem) translateX(1.08rem)', color: '#FFFEF0', fontSize: '0.604rem' }}>aanmelden</span>
-        <img src={sun2} alt="Login" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block' }} />
-      </button>
+        aanmelden
+      </motion.span>
 
       {/* Content Container */}
-      <div className="w-full max-w-2xl px-6 text-center" style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+      <motion.div 
+        className="w-full max-w-2xl px-6 text-center" 
+        initial={{ opacity: 1 }}
+        animate={{ opacity: introFadingOut ? 0 : 1 }}
+        transition={{ duration: 0.5, ease: 'easeInOut' }}
+        style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
         {/* Header */}
         <h1 className="poetry text-2xl md:text-3xl mb-8" style={{
           background: 'linear-gradient(to bottom, #772905ff, #360464ff 50%, #56056eff)',
@@ -409,10 +581,13 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           </motion.svg>
         </div>
 
-        {/* New Content - Nexus Visual System */}
+      </motion.div>
+
+      {/* New Content - Nexus Visual System */}
+      {showNewContent && (
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: showNewContent ? 1 : 0 }}
+          animate={{ opacity: contentVisible ? 1 : 0 }}
           transition={{ duration: 0.8, ease: 'easeInOut' }}
           style={{
             position: 'fixed',
@@ -421,16 +596,62 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             right: 0,
             bottom: 0,
             background: 'linear-gradient(to bottom, #1d0900ff, #0a0504ff, #0d0811ff, #2b0c3dff, #170720ff)',
-            pointerEvents: showNewContent ? 'auto' : 'none',
+            pointerEvents: 'auto',
             zIndex: 9998
           }}
         >
-          {showNewContent && (
-            <Deltawerken onBack={() => setShowNewContent(false)} />
-          )}
+          <Deltawerken onBack={() => {
+            setContentVisible(false);
+            setTimeout(() => {
+              setShowNewContent(false);
+              setIntroFadingOut(false);
+            }, 500);
+          }} />
         </motion.div>
-      </div>
+      )}
+
     </div>
+
+    {/* Landing Page Content - Portal to document.body for proper scrolling */}
+    {showLandingPage && createPortal(
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: landingPageVisible ? 1 : 0 }}
+        transition={{ duration: 0.8, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          minHeight: '100vh',
+          pointerEvents: landingPageVisible ? 'auto' : 'none',
+          zIndex: 9999
+        }}
+      >
+        <div className={`min-h-screen transition-all duration-300 ${
+          darkMode 
+            ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+            : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+        }`}>
+          <MobileAppContent 
+            darkMode={darkMode} 
+            setDarkMode={setDarkMode} 
+            data={data} 
+            scrollDirection={scrollDirection}
+            onBack={() => {
+              setLandingPageVisible(false);
+              setTimeout(() => {
+                setShowLandingPage(false);
+                setIntroFadingOut(false);
+                setSunButtonVisible(true);
+              }, 500);
+            }}
+          />
+        </div>
+      </motion.div>,
+      document.body
+    )}
+    </>
 
   );
 };

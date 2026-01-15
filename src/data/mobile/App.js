@@ -324,7 +324,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       // Track when scrolled past video header to hide large logo
       if (videoHeaderRef?.current) {
         const videoRect = videoHeaderRef.current.getBoundingClientRect();
-        setIsScrolledPastH1(videoRect.bottom - 480 < 0);
+        setIsScrolledPastH1(videoRect.bottom - 720 < 0);
       }
       
       // Update slideshow opacity based on scroll position
@@ -649,118 +649,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
           </button>
         </div>
       </header>
-
-      {/* Fixed Quick Menu Button - Always visible, doesn't fade with scroll */}
-      {!activeView && !isDetailPageExiting && !isAnimating && (
-        <div style={{
-          position: 'fixed',
-          right: '1.52rem',
-          top: '1.9rem',
-          zIndex: 10000
-        }}>
-          <button
-            onClick={() => setShowQuickMenu(!showQuickMenu)}
-            className="p-2 hover:bg-gray-700/30 transition-colors duration-300 rounded-full"
-            title="Quick menu"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transform: 'scale(0.97)'
-            }}
-          >
-            <img src={sun2} alt="Menu" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block', imageRendering: 'auto' }} />
-          </button>
-          
-          {/* Quick Menu Dropdown */}
-          <AnimatePresence>
-            {showQuickMenu && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                style={{
-                  position: 'absolute',
-                  top: '65px',
-                  right: '0',
-                  backgroundColor: 'rgba(21, 10, 36, 0.95)',
-                  borderRadius: '12px',
-                  padding: '8px',
-                  minWidth: '160px',
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-                  border: '1px solid rgba(124, 58, 237, 0.3)'
-                }}
-              >
-                <button
-                  onClick={toggleFullscreen}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                >
-                  <span style={{ fontSize: '18px' }}>{isFullscreen ? '⛶' : '⛶'}</span>
-                  <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    const footerMenu = document.getElementById('footer-menu');
-                    if (footerMenu) footerMenu.scrollIntoView({ behavior: 'smooth' });
-                    setShowQuickMenu(false);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                >
-                  <span style={{ fontSize: '18px' }}>☰</span>
-                  <span>Go to Menu</span>
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          {/* Click outside to close menu */}
-          {showQuickMenu && (
-            <div
-              onClick={() => setShowQuickMenu(false)}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: -1
-              }}
-            />
-          )}
-        </div>
-      )}
 
       {/* Full-screen Video Container (scrollable behind logo) */}
       <div 

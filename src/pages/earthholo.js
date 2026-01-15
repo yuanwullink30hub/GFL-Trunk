@@ -72,19 +72,19 @@ const HolographicShaderMaterial = {
       float continent = smoothstep(0.48, 0.52, mapValue);
 
       // GOLD BORDER definition - expanded to cover all landmass edges
-      float borderOuter = smoothstep(0.40, 0.48, mapValue);
-      float borderInner = smoothstep(0.52, 0.60, mapValue);
+      float borderOuter = smoothstep(0.25, 0.48, mapValue);
+      float borderInner = smoothstep(0.52, 0.75, mapValue);
       float border = borderOuter * (1.0 - borderInner);
       
       // Additional inner glow on all landmass
-      float landGlow = continent * 0.15;
+      float landGlow = continent * 0.1;
 
       // 7. Color Mixing - uniform brightness for landmass
       vec3 color = uColorCore;
       // Use a base brightness multiplier for landmass to ensure consistency
       float landBrightness = 1.0 + continent * 0.3; // boost land brightness
       color = mix(color, uColorLand * landBrightness, continent * 0.9);
-      color += uColorBorder * border * 1.8;
+      color += uColorBorder * border * 2.5;
       color += uColorBorder * landGlow;
       color *= scanline;
       // Apply fresnel only to rim, not affecting landmass base color

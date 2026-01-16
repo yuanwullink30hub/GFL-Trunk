@@ -116,11 +116,6 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
     setActiveView('landing');
   };
 
-  const handleDuplicateButtonClick = () => {
-    requestFullscreen();
-    setActiveView('deltawerken');
-  };
-
   return (
     <>
     <div className={`w-full h-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-300 ${

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gpuAccel, ANIMATION_TIMINGS, ANIMATION_EASING } from '../../config/animationStyles';
 import HoloEarth from '../../components/earthholo';
+import Mindholo from '../../components/Mindholo';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -23,7 +24,6 @@ import placeholder8 from '../../images/slideshow images/placeholder8.svg';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 import soul from '../../images/Holographichearth.png';
 import body from '../../images/holographicbody.png';
-import mind from '../../images/Holographicmind.PNG';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
 import '../../styles/subtitles.css';
@@ -752,15 +752,25 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
               preserveAspectRatio="xMidYMid meet"
               style={{
                 position: 'absolute',
-                left: 'calc(clamp(0%, 5vw, 15%) - 0.3rem + 2.3rem)',
-                top: 'calc(clamp(-22%, -17vw, -12%) - 4.5rem)',
+                left: 'calc(clamp(0%, 5vw, 15%) - 0.3rem + 2.3rem - 0.03rem)',
+                top: 'calc(clamp(-22%, -17vw, -12%) - 4.5rem - 0.3rem)',
                 transform: 'scale(2.1065) rotate(-6deg)',
                 transformOrigin: 'center center',
                 pointerEvents: 'none'
               }}
             >
+              <defs>
+                <clipPath id="triangle2-placeholder-clip">
+                  <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" />
+                </clipPath>
+                <pattern id="vrGrid2" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(6 150 150)">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="0.5" />
+                </pattern>
+              </defs>
               {/* Background fill */}
               <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="rgba(0,0,0,0.15)" />
+              {/* Grid pattern */}
+              <rect width="300" height="300" fill="url(#vrGrid2)" clipPath="url(#triangle2-placeholder-clip)" />
               {/* Thin connecting line */}
               <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.5" />
               {/* Thick corner segments - top vertex (along left edge to curve to right edge) */}
@@ -779,15 +789,25 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
               preserveAspectRatio="xMidYMid meet"
               style={{
                 position: 'absolute',
-                left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem + 2.8rem)',
-                top: 'calc(clamp(-40.5%, -35.5vw, -30.5%) - 5.7rem)',
+                left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem + 2.8rem + 0.15rem)',
+                top: 'calc(clamp(-40.5%, -35.5vw, -30.5%) - 5.7rem - 0.08rem)',
                 transform: 'scale(2.1065) rotate(54deg)',
                 transformOrigin: '50% 60%',
                 pointerEvents: 'none'
               }}
             >
+              <defs>
+                <clipPath id="triangle1-placeholder-clip">
+                  <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" />
+                </clipPath>
+                <pattern id="vrGrid1" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(-54 150 150)">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="0.5" />
+                </pattern>
+              </defs>
               {/* Background fill */}
               <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="rgba(0,0,0,0.15)" />
+              {/* Grid pattern */}
+              <rect width="300" height="300" fill="url(#vrGrid1)" clipPath="url(#triangle1-placeholder-clip)" />
               {/* Thin connecting line */}
               <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.5" />
               {/* Thick corner segments - top vertex (along left edge to curve to right edge) */}
@@ -806,15 +826,25 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
               preserveAspectRatio="xMidYMid meet"
               style={{
                 position: 'absolute',
-                left: 'calc(clamp(18%, 21.5vw, 28%) - 0.3rem + 0.5rem)',
-                top: 'calc(clamp(6%, 11vw, 46%) - 1.6rem)',
+                left: 'calc(clamp(18%, 21.5vw, 28%) - 0.3rem + 0.5rem + 0.25rem)',
+                top: 'calc(clamp(6%, 11vw, 46%) - 1.6rem - 0.1rem)',
                 transform: 'scale(2.1065) rotate(54deg)',
                 transformOrigin: 'center center',
                 pointerEvents: 'none'
               }}
             >
+              <defs>
+                <clipPath id="triangle3-placeholder-clip">
+                  <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" />
+                </clipPath>
+                <pattern id="vrGrid3" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(-54 150 150)">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="0.5" />
+                </pattern>
+              </defs>
               {/* Background fill */}
               <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="rgba(0,0,0,0.15)" />
+              {/* Grid pattern */}
+              <rect width="300" height="300" fill="url(#vrGrid3)" clipPath="url(#triangle3-placeholder-clip)" />
               {/* Thin connecting line */}
               <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.5" />
               {/* Thick corner segments - top vertex (along left edge to curve to right edge) */}
@@ -965,15 +995,25 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                       <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
                     </clipPath>
                   </defs>
-                  <image 
-                    href={mind} 
-                    x="55.67" y="110.90" width="154.08" height="143.81" 
-                    preserveAspectRatio="xMidYMid slice"
-                    style={{pointerEvents: 'none', imageRendering: 'auto'}}
-                    transform="rotate(-55 175 165)"
-                  />
                 </g>
               </motion.svg>
+              {/* Mindholo positioned outside SVG for proper 3D transforms */}
+              <div style={{
+                position: 'absolute',
+                left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem + 2.8rem - 1rem + 0.2rem)',
+                top: 'calc(clamp(-40.5%, -35.5vw, -30.5%) - 5.7rem + 2rem - 0.5rem - 0.2rem - 0.2rem - 0.2rem)',
+                width: 'clamp(60px, 28vw, 220px)',
+                height: 'clamp(60px, 28vw, 220px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+                overflow: 'visible',
+                transform: 'scale(0.30324)',
+                transformOrigin: 'center center',
+              }}>
+                <Mindholo nodeCount={150} showScanline={false} />
+              </div>
               {/* Button 3 */}
               <motion.svg 
                 className="triangleButton3"

@@ -60,9 +60,9 @@ const HoloButton = ({
   const breatheFilter = {
     animate: {
       filter: [
-        'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))',
-        'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8))',
-        'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))'
+        'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))',
+        'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8)) drop-shadow(0 0 35px rgba(167, 59, 198, 0.4))',
+        'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))'
       ]
     },
     transition: {
@@ -276,7 +276,7 @@ const HoloButton = ({
               rotate: 360
             }}
             transition={{
-              rotate: { duration: 20, repeat: Infinity, ease: 'linear' }
+              rotate: { duration: 12, repeat: Infinity, ease: 'linear' }
             }}
           >
             {/* 2. The Triangle - inscribed, points touch circle */}
@@ -289,9 +289,9 @@ const HoloButton = ({
               animate={{
                 stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'],
                 filter: [
-                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))',
-                  'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8))',
-                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))'
+                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))',
+                  'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8)) drop-shadow(0 0 35px rgba(167, 59, 198, 0.4))',
+                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))'
                 ]
               }}
               transition={{
@@ -312,9 +312,9 @@ const HoloButton = ({
               animate={{
                 stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'],
                 filter: [
-                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))',
-                  'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8))',
-                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))'
+                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))',
+                  'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8)) drop-shadow(0 0 35px rgba(167, 59, 198, 0.4))',
+                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))'
                 ]
               }}
               transition={{

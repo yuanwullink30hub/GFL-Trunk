@@ -1,55 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Holographic Brain</title>
-    <style>
-      :root {
-        --bg-void: #020205;
-      }
-
-      body {
-        margin: 0;
-        padding: 0;
-        background-color: var(--bg-void);
-        font-family: 'Segoe UI', 'Courier New', monospace;
-        color: white;
-        overflow: hidden;
-        height: 100vh;
-        width: 100vw;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      #root {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-    </style>
-    <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
-}
-</script>
-</head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
-</html>
-
-import React, { useState, useEffect, useMemo } from 'react';
-import { createRoot } from 'react-dom/client';
+import React, { useMemo } from 'react';
 
 // --- Geometry & Math Helpers ---
 
@@ -96,7 +45,7 @@ const generateBrainStructure = (count) => {
     // Create a tight cluster in the center
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos((Math.random() * 2) - 1);
-    const r = Math.random() * 25; 
+    const r = 35 + Math.random() * 20; 
     
     const x = r * Math.sin(phi) * Math.cos(theta);
     const y = r * Math.sin(phi) * Math.sin(theta);
@@ -104,8 +53,8 @@ const generateBrainStructure = (count) => {
     
     points.push({
         x, y, z,
-        color: 'hsla(60, 100%, 70%, 1)', // Bright Pure Yellow
-        size: 16,
+        color: 'hsla(32, 89%, 51%, 1)', // Gold color matching Deltawerken (#ef8616)
+        size: 24,
         id: `pineal-${i}`,
         region: 'pineal'
     });
@@ -135,16 +84,16 @@ const generateBrainStructure = (count) => {
       let hue = 270 + Math.random() * 20; 
       let light = 60 + Math.random() * 20; 
       let alpha = 0.8;
-      let size = Math.random() * 4 + 3;
+      let size = Math.random() * 6 + 4.5;
 
       if (region === 'cerebrum') {
-        size = Math.random() * 4 + 4; // Reduced from 8+8 to 4+4
+        size = Math.random() * 6 + 6;
         hue = 265 + Math.random() * 25; 
         light = 55 + Math.random() * 15; 
       } else if (region === 'stem') {
         hue = 260; 
         light = 40;
-        size = 6; 
+        size = 9; 
       }
 
       const color = `hsla(${hue}, 90%, ${light}%, ${alpha})`;
@@ -220,7 +169,7 @@ const generateBrainStructure = (count) => {
   return { points, connections };
 };
 
-const BrainParticle: React.FC<{ x: number; y: number; z: number; color: string; size: number; region: string }> = React.memo(({ x, y, z, color, size, region }) => {
+const BrainParticle = React.memo(({ x, y, z, color, size, region }) => {
   const isPineal = region === 'pineal';
   const isCerebrum = region === 'cerebrum';
 
@@ -252,6 +201,7 @@ const BrainParticle: React.FC<{ x: number; y: number; z: number; color: string; 
         height: `${height}px`,
         transform: `translate3d(${x}px, ${y}px, ${z}px) translate(-50%, -50%)`,
         willChange: 'transform',
+        pointerEvents: 'none',
       }}
     >
       <div style={{
@@ -261,12 +211,13 @@ const BrainParticle: React.FC<{ x: number; y: number; z: number; color: string; 
         background: background,
         boxShadow: boxShadow,
         opacity: opacity,
+        pointerEvents: 'none',
       }} />
     </div>
   );
 });
 
-const NeuralConnection: React.FC<{ p1: any; p2: any }> = React.memo(({ p1, p2 }) => {
+const NeuralConnection = React.memo(({ p1, p2 }) => {
   // Memoize geometry calc
   const { widthVal, transform } = useMemo(() => {
     const dx = p2.x - p1.x;
@@ -342,7 +293,7 @@ const NeuralConnection: React.FC<{ p1: any; p2: any }> = React.memo(({ p1, p2 })
   );
 });
 
-const HemisphereVolume: React.FC<{ xOffset: number; color: string }> = React.memo(({ xOffset, color }) => {
+const HemisphereVolume = React.memo(({ xOffset, color }) => {
   const planes = [
     { rotateX: 0, rotateY: 0, width: 160, height: 260 },    
     { rotateX: 0, rotateY: 90, width: 360, height: 260 },   
@@ -379,8 +330,8 @@ const HemisphereVolume: React.FC<{ xOffset: number; color: string }> = React.mem
   );
 });
 
-const HoloButton = () => {
-  const { points, connections } = useMemo(() => generateBrainStructure(300), []);
+const Mindholo = ({ nodeCount = 300, showScanline = true }) => {
+  const { points, connections } = useMemo(() => generateBrainStructure(nodeCount), [nodeCount]);
 
   return (
     <div
@@ -395,6 +346,7 @@ const HoloButton = () => {
         justifyContent: 'center',
         perspective: '2000px', 
         overflow: 'visible',
+        pointerEvents: 'none',
       }}
     >
       <div
@@ -404,7 +356,8 @@ const HoloButton = () => {
           position: 'absolute',
           transformStyle: 'preserve-3d',
           animation: 'rotator 36s linear infinite', 
-          willChange: 'transform', 
+          willChange: 'transform',
+          pointerEvents: 'none', 
         }}
       >
         <HemisphereVolume xOffset={-75} color="rgba(90, 20, 250, 0.7)" />
@@ -418,19 +371,44 @@ const HoloButton = () => {
             <NeuralConnection key={c.id} p1={c.p1} p2={c.p2} />
         ))}
         
-        {/* SCANLINE - PURPLE COLOR */}
-        <div style={{
-            position: 'absolute',
-            top: '50%', left: '50%',
-            width: '640px', height: '640px', 
-            border: '3px dashed rgba(167, 59, 198, 0.5)', 
-            borderRadius: '50%',
-            transform: 'translate(-50%, -50%) rotateX(90deg)',
-            animation: 'scan-vertical 6s ease-in-out infinite alternate',
-            boxShadow: '0 0 50px rgba(167, 59, 198, 0.5), inset 0 0 20px rgba(167, 59, 198, 0.3)',
-            background: 'radial-gradient(closest-side, rgba(167, 59, 198, 0.1) 0%, transparent 70%)',
-            pointerEvents: 'none',
-        }} />
+        {/* SCANLINE - TRIANGLE SHAPE */}
+        {showScanline && (
+          <svg 
+            style={{
+              position: 'absolute',
+              top: '50%', left: '50%',
+              width: '640px', height: '640px',
+              transform: 'translate(-50%, -50%) rotateX(90deg)',
+              animation: 'scan-vertical 6s ease-in-out infinite alternate',
+              pointerEvents: 'none',
+              overflow: 'visible',
+            }}
+            viewBox="0 0 640 640"
+          >
+            <defs>
+              <linearGradient id="triangleScanGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="rgba(167, 59, 198, 0.6)" />
+                <stop offset="50%" stopColor="rgba(167, 59, 198, 0.3)" />
+                <stop offset="100%" stopColor="rgba(167, 59, 198, 0.6)" />
+              </linearGradient>
+              <filter id="triangleGlow">
+                <feGaussianBlur stdDeviation="15" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            <path 
+              d="M 320 80 L 560 500 L 80 500 Z" 
+              fill="none" 
+              stroke="url(#triangleScanGradient)" 
+              strokeWidth="3" 
+              strokeDasharray="20 10"
+              filter="url(#triangleGlow)"
+            />
+          </svg>
+        )}
       </div>
 
       <style>{`
@@ -449,71 +427,4 @@ const HoloButton = () => {
   );
 };
 
-const App = () => {
-  return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100vh',
-      width: '100vw',
-      overflow: 'hidden'
-    }}>
-      <HoloButton />
-    </div>
-  );
-};
-
-const root = createRoot(document.getElementById('root')!);
-root.render(<App />);
-
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Holographic Brain</title>
-    <style>
-      :root {
-        --bg-void: #020205;
-      }
-
-      body {
-        margin: 0;
-        padding: 0;
-        background-color: var(--bg-void);
-        font-family: 'Segoe UI', 'Courier New', monospace;
-        color: white;
-        overflow: hidden;
-        height: 100vh;
-        width: 100vw;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      #root {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-    </style>
-    <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
-}
-</script>
-</head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
-</html>
+export default Mindholo;

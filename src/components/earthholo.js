@@ -139,7 +139,7 @@ const HoloEarthSphere = () => {
     if (groupRef.current) {
       if (!isDragging.current) {
         // Auto-rotate when not dragging
-        groupRef.current.rotation.y += 0.001;
+        groupRef.current.rotation.y += 0.0016;
         // Apply momentum decay
         rotationVelocity.current.x *= 0.95;
         rotationVelocity.current.y *= 0.95;

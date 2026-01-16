@@ -555,13 +555,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
       {/* Page content wrapper - fades when button or slide is clicked */}
       <motion.div
         animate={{
-          opacity: activeView ? 0 : (!isAnimating ? 1 : ((clickedButton || clickedSlideIndex !== null) ? 0 : 1))
+          opacity: activeView ? 0 : 1
         }}
         transition={{ 
           opacity: {
             type: 'tween',
             duration: 0.5,
-            delay: !isAnimating ? 0.6 : (activeView ? 0 : 0.6),
+            delay: 0,
             ease: 'easeInOut'
           }
         }}

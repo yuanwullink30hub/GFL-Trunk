@@ -61,7 +61,6 @@ const generateBrainStructure = (count) => {
   }
 
   let attempts = 0;
-  let pinealCount = 4; // We already have the 4 required nodes
   
   // Bounds
   const BOUNDS = { x: 450, y: 650, z: 500 };

@@ -9,11 +9,15 @@ body {
   font-family: 'Ubuntu', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #150a24;
+  background: linear-gradient(to bottom, #1d0900ff, #0a0504ff, #0d0811ff, #2b0c3dff, #170720ff);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
 
 html {
-  background-color: #150a24;
+  background: linear-gradient(to bottom, #1d0900ff, #0a0504ff, #0d0811ff, #2b0c3dff, #170720ff);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
 
 code {

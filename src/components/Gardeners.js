@@ -10,7 +10,7 @@ const Gardeners = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)',
+      background: 'transparent',
       color: '#FFFEF0',
       padding: '40px 20px',
       textAlign: 'center'

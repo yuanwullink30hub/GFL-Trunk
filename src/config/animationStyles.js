@@ -86,5 +86,15 @@ export const gpuAccel = {
   opacityOnly: GPU_ACCELERATION.opacityOnly,
   transformOnly: GPU_ACCELERATION.transformOnly,
   heavy: GPU_ACCELERATION.heavy,
-  light: GPU_ACCELERATION.light
+  light: GPU_ACCELERATION.light,
+  // Triangle button specific - optimized for scale/rotate animations
+  triangleButton: {
+    willChange: 'transform, opacity',
+    backfaceVisibility: 'hidden',
+    perspective: '1000px',
+    transform: 'translateZ(0)',
+    WebkitBackfaceVisibility: 'hidden',
+    WebkitPerspective: '1000px',
+    WebkitTransform: 'translateZ(0)'
+  }
 };

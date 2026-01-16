@@ -1246,23 +1246,6 @@ const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = 
       maxWidth: '100%',
       margin: '0 auto'
     }}>
-      {/* Blur Overlay */}
-      {!hasReadInstructions && (
-        <div 
-          className="absolute backdrop-blur-lg z-40"
-          style={{
-            animation: 'fadeIn 0.5s ease-out',
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            backdropFilter: 'blur(60px)',
-            pointerEvents: 'auto',
-            top: 'clamp(2.5rem, 5vh, 4rem)',
-            left: '0',
-            right: '0',
-            bottom: '0',
-            marginTop: '-100px'
-          }}
-        />
-      )}
       
       {/* Header */}
       <div className="flex items-center justify-between shrink-0" style={{
@@ -1298,8 +1281,22 @@ const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = 
         }}>{solstice}</div>
       </div>
 
-      {/* Metrics Container */}
-      <div ref={metricsContainerRef} className="flex-1 overflow-y-auto scrollbar-custom" style={{
+      {/* Metrics Container - wrapped in relative container for blur overlay */}
+      <div className="relative flex-1 min-h-0">
+        {/* Blur Overlay - covers only metrics, not header */}
+        {!hasReadInstructions && (
+          <div 
+            className="absolute inset-0 z-40"
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              backdropFilter: 'blur(120px)',
+              WebkitBackdropFilter: 'blur(150px)',
+              pointerEvents: 'none',
+              borderRadius: '4px'
+            }}
+          />
+        )}
+        <div ref={metricsContainerRef} className="h-full overflow-y-auto scrollbar-custom" style={{
         gap: 'clamp(0.75rem, 2vw, 1.5rem)',
         paddingTop: 'clamp(0.25rem, 0.5vw, 0.5rem)',
         paddingBottom: '0',
@@ -1646,6 +1643,7 @@ const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = 
         </div>
       ) : null}
       </div>
+      </div>
 
       <style>{`
         .scrollbar-custom { 
@@ -1864,6 +1862,7 @@ export const Deltawerken = ({ onBack }) => {
       >
         <img src={sun2} alt="Login" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block', filter: 'none' }} />
       </button>
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap');
         
@@ -1877,6 +1876,11 @@ export const Deltawerken = ({ onBack }) => {
         
         .flicker {
             animation: flicker 2s infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         @keyframes flicker {

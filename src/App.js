@@ -13,7 +13,7 @@ import generalData from './data.json';
 import desktopData from './data/desktop/data.json';
 import mobileData from './data/mobile/data.json';
 import MobileAppContent from './data/mobile/App';
-import IntroPage from './pages/IntroPage';
+import IntroPage from './components/IntroPage';
 import logo from './images/logo.png';
 import './styles/poetry.css';
 import './styles/text.css';

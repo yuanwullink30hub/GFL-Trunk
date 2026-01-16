@@ -42,7 +42,7 @@ export const KarmanContent = ({ onBack, onCloseSlide }) => (
       opacity: { type: 'tween', duration: 0.6, ease: 'easeInOut' },
       scale: { type: 'tween', duration: 0.6, ease: 'easeInOut' }
     }}
-    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}
+    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}
   >
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
@@ -73,7 +73,7 @@ export const Code49Content = ({ onBack, onCloseSlide }) => (
       opacity: { type: 'tween', duration: 0.6, ease: 'easeInOut' },
       scale: { type: 'tween', duration: 0.6, ease: 'easeInOut' }
     }}
-    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}
+    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}
   >
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
@@ -104,7 +104,7 @@ export const TattooShopContent = ({ onBack, onCloseSlide }) => (
       opacity: { type: 'tween', duration: 0.6, ease: 'easeInOut' },
       scale: { type: 'tween', duration: 0.6, ease: 'easeInOut' }
     }}
-    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}
+    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}
   >
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
@@ -135,7 +135,7 @@ export const Slide4Content = ({ onBack, onCloseSlide }) => (
       opacity: { type: 'tween', duration: 0.6, ease: 'easeInOut' },
       scale: { type: 'tween', duration: 0.6, ease: 'easeInOut' }
     }}
-    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}
+    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}
   >
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
@@ -164,7 +164,7 @@ export const Slide5Content = ({ onBack, onCloseSlide }) => (
       opacity: { type: 'tween', duration: 0.6, ease: 'easeInOut' },
       scale: { type: 'tween', duration: 0.6, ease: 'easeInOut' }
     }}
-    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}
+    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}
   >
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
@@ -193,7 +193,7 @@ export const Slide6Content = ({ onBack, onCloseSlide }) => (
       opacity: { type: 'tween', duration: 0.6, ease: 'easeInOut' },
       scale: { type: 'tween', duration: 0.6, ease: 'easeInOut' }
     }}
-    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}
+    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}
   >
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
@@ -222,7 +222,7 @@ export const Slide7Content = ({ onBack, onCloseSlide }) => (
       opacity: { type: 'tween', duration: 0.6, ease: 'easeInOut' },
       scale: { type: 'tween', duration: 0.6, ease: 'easeInOut' }
     }}
-    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}
+    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}
   >
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
@@ -251,7 +251,7 @@ export const Slide8Content = ({ onBack, onCloseSlide }) => (
       opacity: { type: 'tween', duration: 0.6, ease: 'easeInOut' },
       scale: { type: 'tween', duration: 0.6, ease: 'easeInOut' }
     }}
-    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}
+    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}
   >
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
@@ -280,7 +280,7 @@ export const RengiFoodsContent = ({ onBack, onCloseSlide }) => (
       opacity: { type: 'tween', duration: 0.6, ease: 'easeInOut' },
       scale: { type: 'tween', duration: 0.6, ease: 'easeInOut' }
     }}
-    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}
+    style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}
   >
     {/* Close button - circle with image */}
     <div style={{ position: 'absolute', top: 'clamp(3rem, 10vw, 8.5rem)', left: '50%', transform: 'translateX(-50%)', width: 'clamp(16rem, 90vw, 85rem)', zIndex: 2, textAlign: 'center', marginBottom: 'clamp(1rem, 3vw, 3rem)' }}>
@@ -303,7 +303,7 @@ export const RengiFoodsContent = ({ onBack, onCloseSlide }) => (
 );
 
 export const TeachersContent = ({ onBack, onBackToButton, activeView }) => (
-  <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}>
+  <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}>
     {/* Header with triangle border image */}
     <div style={{
       position: 'absolute',
@@ -335,7 +335,7 @@ export const TeachersContent = ({ onBack, onBackToButton, activeView }) => (
 );
 
 export const MindContent = ({ onBack, onBackToButton, activeView }) => (
-  <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}>
+  <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}>
     {/* Header with triangle border image */}
     <div style={{
       position: 'absolute',
@@ -367,7 +367,7 @@ export const MindContent = ({ onBack, onBackToButton, activeView }) => (
 );
 
 export const SoulContent = ({ onBack, onBackToButton, activeView }) => (
-  <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)', color: '#FFFEF0', overflow: 'hidden' }}>
+  <div style={{ position: 'absolute', top: 0, left: 0, width: '100vw', minHeight: '100vh', background: 'transparent', color: '#FFFEF0', overflow: 'hidden' }}>
     {/* Header with triangle border image */}
     <div style={{
       position: 'absolute',

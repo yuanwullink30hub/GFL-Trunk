@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gpuAccel, ANIMATION_TIMINGS, ANIMATION_EASING } from '../../config/animationStyles';
-import HoloEarth from '../../pages/earthholo';
+import HoloEarth from '../../components/earthholo';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -32,7 +32,7 @@ import '../../styles/mobile-header.css';
 import '../../styles/logo.css';
 import { slideContentMap } from './slides';
 
-const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
+const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDeltawerken }) => {
 
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
@@ -477,8 +477,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
       transition={{ duration: 0.5, ease: 'easeInOut' }}
       style={{
         width: '100%',
-        overflow: 'hidden',
-        background: 'linear-gradient(180deg, #000000ff 0%, #09030fff 6%, #0f021dff 13%, #160329ff 19%, #110218ff 26%, #110218ff 33%, #1a0722ff 39%, #250731ff 42%, #1e0429ff 53%, #15021dff 60%, #15021dff 67%, #15021dff 73%, #15021dff 80%, #0a0515ff 87%, #000000ff 100%)',
+        overflowX: 'hidden',
+        overflowY: 'visible',
+        background: 'transparent',
         display: activeView ? 'block' : 'block' // Content pages hidden via AnimatePresence
       }}
     >
@@ -540,7 +541,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               right: 0,
               bottom: 0,
               zIndex: 1999,
-              backgroundColor: '#150a24ff',
+              backgroundColor: 'transparent',
               pointerEvents: 'none',
               ...gpuAccel.light
             }}
@@ -784,12 +785,24 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="none" 
-                    stroke="rgba(167, 59, 198, 0.5)" 
-                    strokeWidth="clamp(8px, 2vw, 15px)" 
+                    stroke="#ef8616" 
+                    strokeWidth="3" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                     pointerEvents="none"
                     className="breathingStroke"
+                    style={{ opacity: 0.9 }}
+                  />
+                  {/* Secondary inner glow layer */}
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
+                    stroke="rgba(239, 134, 22, 0.4)" 
+                    strokeWidth="1" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    className="holoGlow"
                   />
                   <defs>
                     <clipPath id="triangle2-clip">
@@ -847,12 +860,24 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="none" 
-                    stroke="#22c55e" 
-                    strokeWidth="clamp(8px, 2vw, 15px)" 
+                    stroke="#ef8616" 
+                    strokeWidth="3" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                     pointerEvents="none"
                     className="breathingStroke"
+                    style={{ opacity: 0.9 }}
+                  />
+                  {/* Secondary inner glow layer */}
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
+                    stroke="rgba(239, 134, 22, 0.4)" 
+                    strokeWidth="1" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    className="holoGlow"
                   />
                   <defs>
                     <clipPath id="triangle1-clip">
@@ -897,7 +922,28 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     fill="rgba(0,0,0,0.001)"
                     pointerEvents="all"
                     style={{cursor: 'pointer'}}
-                    onClick={() => handleButtonClick('button3', '/soul')}
+                    onClick={() => {
+                      if (onDeltawerken) {
+                        // Apply zoom animation before triggering Deltawerken
+                        if (isAnimating) return;
+                        setIsAnimating(true);
+                        setClickedButton('button3');
+                        
+                        // Calculate the center of the clicked button and zoom scale
+                        const center = calculateButtonCenter('button3');
+                        setButtonCenter(center);
+                        setZoomScale(center.zoom);
+                        
+                        // Use same timing as slide effect: 1.5s total
+                        setTimeout(() => {
+                          setIsAnimating(false);
+                          setClickedButton(null);
+                          onDeltawerken();
+                        }, 1500);
+                      } else {
+                        handleButtonClick('button3', '/soul');
+                      }
+                    }}
                     onMouseEnter={(e) => {
                       const visiblePath = e.target.nextElementSibling;
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
@@ -910,12 +956,24 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="none" 
-                    stroke="#22c55e" 
-                    strokeWidth="clamp(8px, 2vw, 15px)" 
+                    stroke="#ef8616" 
+                    strokeWidth="3" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                     pointerEvents="none"
                     className="breathingStroke"
+                    style={{ opacity: 0.9 }}
+                  />
+                  {/* Secondary inner glow layer */}
+                  <path 
+                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
+                    fill="none" 
+                    stroke="rgba(239, 134, 22, 0.4)" 
+                    strokeWidth="1" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    pointerEvents="none"
+                    className="holoGlow"
                   />
                   <defs>
                     <clipPath id="triangle3-clip">
@@ -1108,7 +1166,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
               width: '100vw',
               maxWidth: '100vw',
               margin: 'clamp(-1.25rem, -0.5vw, -0.75rem) 0 0 0',
-              paddingTop: 'clamp(5px, 1.5vw, 15px)',
+              paddingTop: 'clamp(20px, 3vw, 30px)',
               display: 'flex',
               overflowX: 'auto',
               overflowY: 'visible',
@@ -1170,7 +1228,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection }) => {
                     padding: 'clamp(8px, 3.06vw, 22.95px)',
                     overflow: 'hidden',
                     borderRadius: '50%',
-                    border: '3px solid rgba(167, 59, 198, 0.5)',
+                    border: '3px solid #ef8616',
                     boxSizing: 'border-box',
                     zIndex: 2,
                     flexShrink: 0,

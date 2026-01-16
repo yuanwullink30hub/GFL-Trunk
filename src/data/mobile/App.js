@@ -40,7 +40,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   const [clickedButton, setClickedButton] = React.useState(null);
   const [clickedSlideIndex, setClickedSlideIndex] = React.useState(null); // Track which slide was clicked
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
-  const [zoomScale, setZoomScale] = React.useState(15);
   const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false); // Track when to hide large logo
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
@@ -1033,7 +1032,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                         // Calculate the center of the clicked button and zoom scale
                         const center = calculateButtonCenter('button3');
                         setButtonCenter(center);
-                        setZoomScale(center.zoom);
                         
                         // Use same timing as slide effect: 1.5s total
                         setTimeout(() => {

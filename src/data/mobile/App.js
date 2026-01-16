@@ -132,18 +132,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
     setIsAnimating(true);
     setClickedButton(buttonName);
     
-    // Calculate the center of the clicked button and zoom scale
-    const center = calculateButtonCenter(buttonName);
-    setButtonCenter(center);
-    setZoomScale(center.zoom);
+    // Set the active view immediately - no zoom animation
+    setActiveView(path);
     
-    // Use same timing as slide effect: 1.5s total
+    // Reset animation state after fade completes (0.3s)
     setTimeout(() => {
-      setActiveView(path);
       setIsAnimating(false);
       setClickedButton(null);
       window.scrollTo(0, 0);  // Scroll to top of detail page
-    }, 1500);
+    }, 300);
   };
 
   // Detail page triangle button - fade transition back to media container
@@ -353,6 +350,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   // Calculate opacity for KWEEK KRACHTIGE text and media container (based on content visibility, not extended hitbox)
   const calculateMediaOpacity = React.useMemo(() => {
     return () => {
+      // Hide all landing page content when viewing a content page
+      if (activeView) return 0;
+      
       const visibilityMargin = 30;
       
       try {
@@ -391,11 +391,14 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
         return 1;
       }
     };
-  }, []);
+  }, [activeView]);
 
   // Calculate opacity for text content (h1 and paragraph)
   const calculateTextContentOpacity = React.useMemo(() => {
     return () => {
+      // Hide all landing page content when viewing a content page
+      if (activeView) return 0;
+      
       const visibilityMargin = 120;
       try {
         if (textContentWrapperRef?.current) {
@@ -414,7 +417,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
         return 1;
       }
     };
-  }, []);
+  }, [activeView]);
 
   React.useEffect(() => {
     // Prevent browser scroll restoration
@@ -494,7 +497,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
             transition={{
               opacity: {
                 type: 'tween',
-                duration: isDetailPageExiting ? 0.6 : 0.9,
+                duration: isDetailPageExiting ? 0.5 : 0.6,
+                delay: isDetailPageExiting ? 0 : 0.5,
                 ease: 'easeInOut'
               }
             }}
@@ -552,28 +556,20 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
       {/* Page content wrapper - fades when button or slide is clicked */}
       <motion.div
         animate={{
-          opacity: !isAnimating ? 1 : ((clickedButton || clickedSlideIndex !== null) ? 0 : 1),
-          scale: (clickedButton || clickedSlideIndex !== null) && isAnimating ? zoomScale : 1
+          opacity: activeView ? 0 : (!isAnimating ? 1 : ((clickedButton || clickedSlideIndex !== null) ? 0 : 1))
         }}
         transition={{ 
-          scale: {
-            type: 'tween',
-            duration: 1.5,
-            delay: 0,
-            ease: 'easeInOut'
-          },
           opacity: {
             type: 'tween',
-            duration: isDetailPageExiting ? 1 : 0.3,
+            duration: 0.5,
             delay: !isAnimating ? 0.6 : (activeView ? 0 : 0.6),
             ease: 'easeInOut'
           }
         }}
         key={`content-${isDetailPageExiting}`}
         style={{
-          transformOrigin: (clickedButton || clickedSlideIndex !== null) ? (buttonCenter.x + ' ' + buttonCenter.y) : '50% 50%',
-          visibility: isDetailPageExiting ? 'hidden' : 'visible',
-          pointerEvents: isDetailPageExiting ? 'none' : 'auto',
+          visibility: isDetailPageExiting || activeView ? 'hidden' : 'visible',
+          pointerEvents: isDetailPageExiting || activeView ? 'none' : 'auto',
           imageRendering: 'auto',
           backfaceVisibility: 'hidden',
           WebkitFontSmoothing: 'antialiased',
@@ -865,7 +861,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                 overflow="visible"
                 pointerEvents="none"
                 animate={{ scale: [1.841, 1.99, 1.841] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                 style={{
                   display: 'block',
                   position: 'absolute',
@@ -878,7 +874,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                   ...gpuAccel.triangleButton
                 }}
               >
-                <g style={{overflow: 'visible'}}>
+                <defs>
+                </defs>
+                <g style={{overflow: 'hidden'}}>
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="rgba(0,0,0,0.001)"
@@ -904,17 +902,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                     className="breathingStroke"
                     style={{ opacity: 0.9 }}
                   />
-                  {/* Secondary inner glow layer */}
-                  <path 
-                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                    fill="none" 
-                    stroke="rgba(239, 134, 22, 0.4)" 
-                    strokeWidth="1" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    pointerEvents="none"
-                    className="holoGlow"
-                  />
                   <defs>
                     <clipPath id="triangle2-clip">
                       <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
@@ -939,7 +926,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                 overflow="visible"
                 pointerEvents="none"
                 animate={{ scale: [1.841, 1.99, 1.841] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                 style={{
                   display: 'block',
                   position: 'absolute',
@@ -952,7 +939,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                   ...gpuAccel.triangleButton
                 }}
               >
-                <g style={{overflow: 'visible'}}>
+                <defs>
+                </defs>
+                <g style={{overflow: 'hidden'}}>
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
                     fill="rgba(0,0,0,0.001)"
@@ -978,17 +967,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                     pointerEvents="none"
                     className="breathingStroke"
                     style={{ opacity: 0.9 }}
-                  />
-                  {/* Secondary inner glow layer */}
-                  <path 
-                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                    fill="none" 
-                    stroke="rgba(239, 134, 22, 0.4)" 
-                    strokeWidth="1" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    pointerEvents="none"
-                    className="holoGlow"
                   />
                   <defs>
                     <clipPath id="triangle1-clip">
@@ -1024,7 +1002,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                 overflow="visible"
                 pointerEvents="none"
                 animate={{ scale: [1.841, 1.99, 1.841] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0 }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                 style={{
                   display: 'block',
                   position: 'absolute',
@@ -1037,7 +1015,9 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                   ...gpuAccel.triangleButton
                 }}
               >
-                <g style={{overflow: 'visible'}}>
+                <defs>
+                </defs>
+                <g style={{overflow: 'hidden'}}>
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
                     fill="rgba(0,0,0,0.001)"
@@ -1084,17 +1064,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                     pointerEvents="none"
                     className="breathingStroke"
                     style={{ opacity: 0.9 }}
-                  />
-                  {/* Secondary inner glow layer */}
-                  <path 
-                    d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
-                    fill="none" 
-                    stroke="rgba(239, 134, 22, 0.4)" 
-                    strokeWidth="1" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    pointerEvents="none"
-                    className="holoGlow"
                   />
                   <defs>
                     <clipPath id="triangle3-clip">

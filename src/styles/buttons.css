@@ -39,47 +39,81 @@ svg img {
   }
 }
 
+@keyframes breathGlowFill {
+  0%, 100% {
+    fill: rgba(239, 134, 22, 0.4);
+  }
+  50% {
+    fill: rgba(167, 59, 198, 0.4);
+  }
+}
+
+@keyframes breathGlowStop {
+  0%, 100% {
+    stop-color: rgba(239, 134, 22, 0.5);
+  }
+  50% {
+    stop-color: rgba(167, 59, 198, 0.5);
+  }
+}
+
+.breathingGlowFill {
+  animation: breathGlowFill 4s infinite ease-in-out;
+}
+
+.glowStopInner {
+  animation: breathGlowStop 4s infinite ease-in-out;
+}
+
 @keyframes breathStroke {
   0%, 100% {
     stroke: #ef8616;
-    filter: drop-shadow(0 0 12px #ef8616) drop-shadow(0 0 25px #ef8616);
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px #ef8616) drop-shadow(0 0 4px rgba(239, 134, 22, 0.6));
   }
   50% {
     stroke: rgb(167, 59, 198);
-    filter: drop-shadow(0 0 12px rgb(167, 59, 198)) drop-shadow(0 0 25px rgb(167, 59, 198));
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgb(167, 59, 198)) drop-shadow(0 0 4px rgba(167, 59, 198, 0.6));
   }
 }
 
 @keyframes breathStrokeButton2 {
   0%, 100% {
     stroke: #ef8616;
-    filter: drop-shadow(0 0 12px #ef8616) drop-shadow(0 0 25px #ef8616);
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px #ef8616) drop-shadow(0 0 4px rgba(239, 134, 22, 0.6));
   }
   50% {
     stroke: rgb(167, 59, 198);
-    filter: drop-shadow(0 0 12px rgb(167, 59, 198)) drop-shadow(0 0 25px rgb(167, 59, 198));
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgb(167, 59, 198)) drop-shadow(0 0 4px rgba(167, 59, 198, 0.6));
   }
 }
 
 @keyframes breathStrokeButton1 {
   0%, 100% {
     stroke: #ef8616;
-    filter: drop-shadow(0 0 12px #ef8616) drop-shadow(0 0 25px #ef8616);
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px #ef8616) drop-shadow(0 0 4px rgba(239, 134, 22, 0.6));
   }
   50% {
     stroke: rgb(167, 59, 198);
-    filter: drop-shadow(0 0 12px rgb(167, 59, 198)) drop-shadow(0 0 25px rgb(167, 59, 198));
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgb(167, 59, 198)) drop-shadow(0 0 4px rgba(167, 59, 198, 0.6));
   }
 }
 
 @keyframes breathStrokeButton3 {
   0%, 100% {
     stroke: #ef8616;
-    filter: drop-shadow(0 0 12px #ef8616) drop-shadow(0 0 25px #ef8616);
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px #ef8616) drop-shadow(0 0 4px rgba(239, 134, 22, 0.6));
   }
   50% {
     stroke: rgb(167, 59, 198);
-    filter: drop-shadow(0 0 12px rgb(167, 59, 198)) drop-shadow(0 0 25px rgb(167, 59, 198));
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgb(167, 59, 198)) drop-shadow(0 0 4px rgba(167, 59, 198, 0.6));
   }
 }
 
@@ -246,7 +280,6 @@ svg img {
   .breathingStroke {
     animation: none !important;
     stroke: #ef8616 !important;
-    filter: drop-shadow(0 0 8px #ef8616) !important;
   }
   
   .holoGlow {

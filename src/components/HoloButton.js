@@ -56,14 +56,10 @@ const HoloButton = ({
     }
   };
 
-  // Breathing filter animation (simplified for mobile performance)
+  // Breathing opacity animation (simplified for mobile performance)
   const breatheFilter = {
     animate: {
-      filter: [
-        'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))',
-        'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8)) drop-shadow(0 0 35px rgba(167, 59, 198, 0.4))',
-        'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))'
-      ]
+      opacity: [0.9, 1, 0.9]
     },
     transition: {
       duration: 4,
@@ -260,6 +256,48 @@ const HoloButton = ({
             />
           </motion.svg>
 
+          {/* Outer Glow Gradient - slightly overflows */}
+          <motion.svg
+            viewBox="0 0 100 100"
+            style={{
+              width: '115%',
+              height: '115%',
+              overflow: 'visible',
+              position: 'absolute',
+              top: '-7.5%',
+              left: '-7.5%',
+              ...gpuAccelStyle
+            }}
+            animate={{
+              rotate: 360
+            }}
+            transition={{
+              rotate: { duration: 12, repeat: Infinity, ease: 'linear' }
+            }}
+          >
+            <defs>
+              <radialGradient id="outerGlowGradient" cx="50%" cy="50%" r="50%">
+                <motion.stop
+                  offset="60%"
+                  animate={{
+                    stopColor: ['rgba(239, 134, 22, 0.3)', 'rgba(167, 59, 198, 0.3)', 'rgba(239, 134, 22, 0.3)']
+                  }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <stop offset="100%" stopColor="transparent" />
+              </radialGradient>
+            </defs>
+            <motion.polygon
+              points={points}
+              fill="url(#outerGlowGradient)"
+              strokeWidth="0"
+              style={{ 
+                opacity: 0.6,
+                filter: 'blur(8px)'
+              }}
+            />
+          </motion.svg>
+
           {/* Rotating Triangle + V SVG */}
           <motion.svg
             viewBox="0 0 100 100"
@@ -288,11 +326,7 @@ const HoloButton = ({
               style={{ opacity: 0.9 }}
               animate={{
                 stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'],
-                filter: [
-                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))',
-                  'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8)) drop-shadow(0 0 35px rgba(167, 59, 198, 0.4))',
-                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))'
-                ]
+                opacity: [0.9, 1, 0.9]
               }}
               transition={{
                 duration: 4,
@@ -311,11 +345,7 @@ const HoloButton = ({
               style={{ opacity: 0.9 }}
               animate={{
                 stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'],
-                filter: [
-                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))',
-                  'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8)) drop-shadow(0 0 35px rgba(167, 59, 198, 0.4))',
-                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8)) drop-shadow(0 0 35px rgba(239, 134, 22, 0.4))'
-                ]
+                opacity: [0.9, 1, 0.9]
               }}
               transition={{
                 duration: 4,
@@ -329,7 +359,7 @@ const HoloButton = ({
               points={points}
               strokeWidth="0"
               style={{ 
-                opacity: 0.08,
+                opacity: 0.25,
                 mixBlendMode: 'screen'
               }}
               animate={{
@@ -351,11 +381,7 @@ const HoloButton = ({
               style={{ opacity: 0.3 }}
               animate={{
                 stroke: ['rgba(239, 134, 22, 0.4)', 'rgba(167, 59, 198, 0.4)', 'rgba(239, 134, 22, 0.4)'],
-                filter: [
-                  'drop-shadow(0 0 3px #ef8616)',
-                  'drop-shadow(0 0 3px rgb(167, 59, 198))',
-                  'drop-shadow(0 0 3px #ef8616)'
-                ]
+                opacity: [0.3, 0.5, 0.3]
               }}
               transition={{
                 duration: 4,

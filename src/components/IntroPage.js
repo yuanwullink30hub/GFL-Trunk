@@ -17,6 +17,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   const [scrollDirection] = React.useState('up');
   const [showQuickMenu, setShowQuickMenu] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [landingResetTrigger, setLandingResetTrigger] = React.useState(0);
 
   // Track fullscreen state
   React.useEffect(() => {
@@ -177,8 +178,18 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
                 onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
               >
-                <span style={{ fontSize: '18px' }}>⛶</span>
-                <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ display: 'block' }}>
+                  {/* Open square with gaps on left and right sides */}
+                  <path d="M 2 2 L 7 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 11 2 L 16 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 16 2 L 16 7" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 16 11 L 16 16" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 16 16 L 11 16" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 7 16 L 2 16" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 2 16 L 2 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 2 7 L 2 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                <span>{isFullscreen ? 'Exit' : 'Scherm'}</span>
               </button>
               
               <button
@@ -203,8 +214,47 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
                 onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
               >
-                <span style={{ fontSize: '18px' }}>🔐</span>
-                <span>Aanmelden</span>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ display: 'block' }}>
+                  {/* Open triangle with gaps at corners */}
+                  <path d="M 9 2 L 5 7" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 9 2 L 13 7" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 3 15 L 7 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 11 15 L 15 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 4 10 L 2 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M 14 10 L 16 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                <span>Login</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowQuickMenu(false);
+                  setLandingResetTrigger(prev => prev + 1);
+                  setActiveView('landing');
+                  window.scrollTo(0, 0);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  width: '100%',
+                  padding: '10px 12px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ display: 'block' }}>
+                  {/* Dashed circle */}
+                  <circle cx="9" cy="9" r="7" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="4 3" fill="none" />
+                </svg>
+                <span>Garden</span>
               </button>
             </motion.div>
           )}
@@ -430,7 +480,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: 'easeInOut' }}
+            transition={{ duration: 0.6, delay: 0.5, ease: 'easeInOut' }}
             style={{
               position: 'absolute',
               top: 0,
@@ -446,6 +496,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               style={{ background: 'transparent' }}
             >
               <MobileAppContent 
+                key={`landing-${landingResetTrigger}`}
                 darkMode={darkMode} 
                 setDarkMode={setDarkMode} 
                 data={data} 

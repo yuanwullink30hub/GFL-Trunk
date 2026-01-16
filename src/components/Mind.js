@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import logo from '../images/logo.png';
+import Mindholo from './Mindholo';
 import '../styles/logo.css';
 
 const Mind = () => {
@@ -13,7 +14,8 @@ const Mind = () => {
       background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)',
       color: '#FFFEF0',
       padding: '40px 20px',
-      textAlign: 'center'
+      textAlign: 'center',
+      overflow: 'hidden'
     }}>
       <div style={{
         maxWidth: '1200px',
@@ -23,7 +25,7 @@ const Mind = () => {
         <button
           onClick={() => navigate('/')}
           className="logo-btn"
-          style={{ marginBottom: '40px' }}
+          style={{ marginBottom: '20px' }}
           title="Go to landing page"
         >
           <img src={logo} alt="Garden For Life Logo" className="logo-img logo-md" />
@@ -32,37 +34,66 @@ const Mind = () => {
         <h1 style={{
           fontSize: 'clamp(32px, 8vw, 64px)',
           marginBottom: '20px',
-          color: 'rgb(167, 59, 198)'
+          background: 'linear-gradient(to bottom, #772905ff, #360464ff 50%, #56056eff)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
         }}>
           Mind
         </h1>
 
+        {/* Main Holographic Brain Visualization */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          margin: '20px auto 40px',
+          position: 'relative',
+          width: '100%',
+          maxWidth: '600px',
+          aspectRatio: '1 / 1'
+        }}>
+          <div style={{
+            transform: 'scale(0.75)',
+            transformOrigin: 'center center'
+          }}>
+            <Mindholo nodeCount={200} showScanline={true} />
+          </div>
+        </div>
+
         <p style={{
           fontSize: 'clamp(16px, 4vw, 24px)',
           maxWidth: '800px',
-          margin: '0 auto 60px',
+          margin: '0 auto 40px',
           lineHeight: '1.6',
           color: '#FFFEF0'
         }}>
-          Welcome to the Mind page! Explore the power of mental clarity, focus, and intellectual growth.
+          Explore the power of mental clarity, focus, and intellectual growth.
         </p>
 
         {/* Content Cards */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '40px',
-          marginTop: '60px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '30px',
+          marginTop: '40px'
         }}>
-          {[1, 2, 3].map((item) => (
-            <div
-              key={item}
+          {[
+            { title: 'Meditation', icon: '🧘', desc: 'Cultivate inner peace and awareness' },
+            { title: 'Focus', icon: '🎯', desc: 'Sharpen your concentration and clarity' },
+            { title: 'Growth', icon: '🌱', desc: 'Expand your consciousness and wisdom' }
+          ].map((item, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.2, duration: 0.5 }}
               style={{
                 padding: '30px',
                 background: 'rgba(167, 59, 198, 0.1)',
-                border: '2px solid rgba(34, 197, 94, 0.5)',
+                border: '2px solid rgba(167, 59, 198, 0.3)',
                 borderRadius: '12px',
-                minHeight: '250px',
+                minHeight: '200px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
@@ -71,35 +102,34 @@ const Mind = () => {
             >
               <div
                 style={{
-                  width: '120px',
-                  height: '120px',
+                  width: '80px',
+                  height: '80px',
                   borderRadius: '50%',
-                  background: 'rgba(34, 197, 94, 0.2)',
-                  marginBottom: '20px',
+                  background: 'rgba(167, 59, 198, 0.2)',
+                  marginBottom: '15px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '48px',
-                  color: '#22c55e'
+                  fontSize: '36px'
                 }}
               >
-                🧠
+                {item.icon}
               </div>
               <h3 style={{
-                fontSize: '24px',
+                fontSize: '20px',
                 marginBottom: '10px',
-                color: '#22c55e'
+                color: 'rgb(167, 59, 198)'
               }}>
-                Mind Practice {item}
+                {item.title}
               </h3>
               <p style={{
                 fontSize: '14px',
                 color: '#FFFEF0',
                 opacity: 0.8
               }}>
-                Cultivate awareness and expand your consciousness
+                {item.desc}
               </p>
-            </div>
+            </motion.div>
           ))}
         </div>
 
@@ -107,14 +137,14 @@ const Mind = () => {
         <motion.button
           onClick={() => navigate('/')}
           animate={{ borderColor: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           style={{
-            marginTop: '60px',
+            marginTop: '50px',
             padding: '15px 40px',
             fontSize: '16px',
             backgroundColor: 'transparent',
             color: '#FFFEF0',
-            border: '2px solid #22c55e',
+            border: '2px solid #ef8616',
             borderRadius: '8px',
             cursor: 'pointer',
             fontWeight: '600',
@@ -123,12 +153,10 @@ const Mind = () => {
             letterSpacing: '1px'
           }}
           onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#22c55e';
-            e.target.style.borderColor = '#22c55e';
+            e.target.style.backgroundColor = 'rgba(239, 134, 22, 0.2)';
           }}
           onMouseLeave={(e) => {
             e.target.style.backgroundColor = 'transparent';
-            e.target.style.borderColor = '#22c55e';
           }}
         >
           Back to Home

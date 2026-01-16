@@ -370,7 +370,7 @@ const Mindholo = ({ nodeCount = 300, showScanline = true }) => {
             <NeuralConnection key={c.id} p1={c.p1} p2={c.p2} />
         ))}
         
-        {/* SCANLINE - TRIANGLE SHAPE */}
+        {/* SCANLINE - CIRCLE SHAPE */}
         {showScanline && (
           <svg 
             style={{
@@ -385,12 +385,12 @@ const Mindholo = ({ nodeCount = 300, showScanline = true }) => {
             viewBox="0 0 640 640"
           >
             <defs>
-              <linearGradient id="triangleScanGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <radialGradient id="circleScanGradient" cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stopColor="rgba(167, 59, 198, 0.6)" />
                 <stop offset="50%" stopColor="rgba(167, 59, 198, 0.3)" />
                 <stop offset="100%" stopColor="rgba(167, 59, 198, 0.6)" />
-              </linearGradient>
-              <filter id="triangleGlow">
+              </radialGradient>
+              <filter id="circleGlow">
                 <feGaussianBlur stdDeviation="15" result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
@@ -398,13 +398,15 @@ const Mindholo = ({ nodeCount = 300, showScanline = true }) => {
                 </feMerge>
               </filter>
             </defs>
-            <path 
-              d="M 320 80 L 560 500 L 80 500 Z" 
+            <circle 
+              cx="320" 
+              cy="320" 
+              r="220" 
               fill="none" 
-              stroke="url(#triangleScanGradient)" 
+              stroke="url(#circleScanGradient)" 
               strokeWidth="3" 
               strokeDasharray="20 10"
-              filter="url(#triangleGlow)"
+              filter="url(#circleGlow)"
             />
           </svg>
         )}

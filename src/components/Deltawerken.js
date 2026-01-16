@@ -415,7 +415,11 @@ const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor,
   const angle = Math.atan2(halfBase - halfTop, height) * (180 / Math.PI);
 
   return (
-    <div className="absolute left-1/2 top-1/2 preserve-3d" style={{ transform: `translate(-50%, -50%) translateY(${yPos}px)`, cursor: isTip ? 'pointer' : 'default' }} onClick={isTip ? onTipClick : undefined}>
+    <div className="absolute left-1/2 top-1/2 preserve-3d" style={{ 
+      transform: `translate(-50%, -50%) translateY(${yPos}px)`, 
+      cursor: isTip ? 'pointer' : 'default',
+      willChange: 'transform'
+    }} onClick={isTip ? onTipClick : undefined}>
       {[0, 90, 180, 270].map((rot) => (
         <div
           key={rot}
@@ -430,8 +434,10 @@ const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor,
               ? `polygon(50% 0%, 100% 100%, 0% 100%)` 
               : `polygon(${((halfBase - halfTop) / baseWidth) * 100}% 0%, ${100 - ((halfBase - halfTop) / baseWidth) * 100}% 0%, 100% 100%, 0% 100%)`,
             transform: `translateX(-50%) rotateY(${rot}deg) translateZ(${halfTop}px) rotateX(${angle}deg)`,
-            backfaceVisibility: 'visible',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
             filter: isTip ? `drop-shadow(0 0 10px ${borderColor})` : 'none',
+            willChange: 'transform',
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-10 pointer-events-none" />
@@ -446,8 +452,10 @@ const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor,
             height: topWidth,
             backgroundColor: color,
             border: `1px solid ${borderColor}`,
-            transform: `translate(-50%, -50%) rotateX(90deg)`,
-            opacity: opacity
+            transform: `translate(-50%, -50%) rotateX(90deg) translateZ(0)`,
+            opacity: opacity,
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden'
           }}
         />
       )}
@@ -531,7 +539,10 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
             justify-content: center;
             transform: scale(0.92) translateY(-4.5rem);
         }
-        .preserve-3d { transform-style: preserve-3d; }
+        .preserve-3d { 
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+        }
         @keyframes stableRotate {
           from { transform: translateY(-5px) rotateX(-20deg) rotateY(360deg); }
           to { transform: translateY(-5px) rotateX(-20deg) rotateY(0deg); }
@@ -560,6 +571,9 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
         }
         .animate-pyramid-stable {
           animation: stableRotate 15s linear infinite;
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
         .glow-amber { text-shadow: 0 0 10px rgba(251, 191, 36, 0.7); }
         
@@ -613,7 +627,9 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
         <div className="relative w-full h-full flex items-center justify-center preserve-3d">
             <div className="relative preserve-3d animate-pyramid-stable mobile-scale" style={{
               width: 'clamp(2.304rem, 9.6vw, 6.144rem)',
-              height: 'clamp(2.304rem, 9.6vh, 6.144rem)'
+              height: 'clamp(2.304rem, 9.6vh, 6.144rem)',
+              transformOrigin: 'center center',
+              willChange: 'transform'
             }}>
             
             {/* Layer 1: Base */}

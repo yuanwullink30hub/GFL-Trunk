@@ -118,25 +118,13 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
 
   return (
     <>
-    <div className={`w-full h-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-300 ${
-      darkMode 
-        ? 'text-white'
-        : 'text-[#26163e]'
-    }`}
-    style={{
-      background: 'transparent',
-      overflow: 'hidden',
-      position: 'relative',
-      zIndex: 1
-    }}>
-
-
-      {/* Sun Logo with Quick Menu */}
+    {/* Sun Logo with Quick Menu - Outside main content so it's always accessible */}
+    {createPortal(
       <div style={{
         position: 'fixed',
         right: '1.5rem',
         top: 'calc(1.5rem + 0.4rem)',
-        zIndex: 10000
+        zIndex: 100000
       }}>
         <motion.button
           onClick={() => setShowQuickMenu(!showQuickMenu)}
@@ -236,7 +224,22 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             }}
           />
         )}
-      </div>
+      </div>,
+      document.body
+    )}
+
+    <div className={`w-full h-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-300 ${
+      darkMode 
+        ? 'text-white'
+        : 'text-[#26163e]'
+    }`}
+    style={{
+      background: 'transparent',
+      overflow: 'hidden',
+      position: 'relative',
+      zIndex: 1
+    }}>
+
 
       {/* Aanmelden Text - Fades with intro */}
       <motion.span
@@ -313,14 +316,72 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           </p>
         </div>
 
-        {/* Primary HoloButton (Enter Site) */}
+        {/* Primary HoloButton (Enter Site) with VR Container Frame */}
         <div
           style={{
             marginTop: 'calc(20px - 3rem)',
             width: 'clamp(5.67rem, 28.35vw, 21.26rem)',
-            height: 'clamp(5.67rem, 28.35vw, 21.26rem)'
+            height: 'clamp(5.67rem, 28.35vw, 21.26rem)',
+            position: 'relative'
           }}
         >
+          {/* VR Placeholder Container Frame - Circular */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: '-18%',
+              borderRadius: '50%',
+              pointerEvents: 'none',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Circular border with 6 thick segments at edges, thin connecting lines */}
+            <svg
+              width="100%"
+              height="100%"
+              style={{
+                position: 'absolute',
+                inset: 0
+              }}
+              viewBox="0 0 100 100"
+            >
+              {/* Background fill */}
+              <circle cx="50" cy="50" r="48" fill="rgba(0, 0, 0, 0.2)" />
+              {/* Thin connecting circle */}
+              <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.5" />
+              {/* 6 thick segments at 60-degree intervals */}
+              {[0, 60, 120, 180, 240, 300].map((angle, i) => (
+                <path
+                  key={i}
+                  d={`M ${50 + 48 * Math.cos((angle - 15) * Math.PI / 180)} ${50 + 48 * Math.sin((angle - 15) * Math.PI / 180)} A 48 48 0 0 1 ${50 + 48 * Math.cos((angle + 15) * Math.PI / 180)} ${50 + 48 * Math.sin((angle + 15) * Math.PI / 180)}`}
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.2)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              ))}
+            </svg>
+            {/* Grid Pattern - fills entire circular container */}
+            <svg
+              width="100%"
+              height="100%"
+              style={{
+                position: 'absolute',
+                inset: 0
+              }}
+            >
+              <defs>
+                <pattern id="vrGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.5" />
+                </pattern>
+                <clipPath id="circleClip">
+                  <circle cx="50%" cy="50%" r="50%" />
+                </clipPath>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#vrGrid)" clipPath="url(#circleClip)" />
+            </svg>
+          </div>
+
           <HoloButton
             size="100%"
             rotation={30}

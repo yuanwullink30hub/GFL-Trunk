@@ -744,6 +744,87 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
             pointerEvents: 'none',
             zIndex: 1
           }}>
+            {/* Static VR Placeholder for Button 2 */}
+            <svg
+              width="clamp(60px, 28vw, 220px)"
+              height="clamp(60px, 28vw, 220px)"
+              viewBox="0 0 300 300"
+              preserveAspectRatio="xMidYMid meet"
+              style={{
+                position: 'absolute',
+                left: 'calc(clamp(0%, 5vw, 15%) - 0.3rem + 2.3rem)',
+                top: 'calc(clamp(-22%, -17vw, -12%) - 4.5rem)',
+                transform: 'scale(2.1065) rotate(-6deg)',
+                transformOrigin: 'center center',
+                pointerEvents: 'none'
+              }}
+            >
+              {/* Background fill */}
+              <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="rgba(0,0,0,0.15)" />
+              {/* Thin connecting line */}
+              <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.5" />
+              {/* Thick corner segments - top vertex (along left edge to curve to right edge) */}
+              <path d="M 116 97 L 140 55 Q 150 35 160 55 L 184 97" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" strokeLinecap="round" />
+              {/* Thick corner segments - bottom left (along left edge to curve to bottom edge) */}
+              <path d="M 44 223 L 20 265 Q 15 280 35 285 L 81 285" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" strokeLinecap="round" />
+              {/* Thick corner segments - bottom right (along right edge to curve to bottom edge) */}
+              <path d="M 256 223 L 280 265 Q 285 280 265 285 L 219 285" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+
+            {/* Static VR Placeholder for Button 1 */}
+            <svg
+              width="clamp(60px, 28vw, 220px)"
+              height="clamp(60px, 28vw, 220px)"
+              viewBox="0 0 300 300"
+              preserveAspectRatio="xMidYMid meet"
+              style={{
+                position: 'absolute',
+                left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem + 2.8rem)',
+                top: 'calc(clamp(-40.5%, -35.5vw, -30.5%) - 5.7rem)',
+                transform: 'scale(2.1065) rotate(54deg)',
+                transformOrigin: '50% 60%',
+                pointerEvents: 'none'
+              }}
+            >
+              {/* Background fill */}
+              <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="rgba(0,0,0,0.15)" />
+              {/* Thin connecting line */}
+              <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.5" />
+              {/* Thick corner segments - top vertex (along left edge to curve to right edge) */}
+              <path d="M 116 97 L 140 55 Q 150 35 160 55 L 184 97" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" strokeLinecap="round" />
+              {/* Thick corner segments - bottom left (along left edge to curve to bottom edge) */}
+              <path d="M 44 223 L 20 265 Q 15 280 35 285 L 81 285" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" strokeLinecap="round" />
+              {/* Thick corner segments - bottom right (along right edge to curve to bottom edge) */}
+              <path d="M 256 223 L 280 265 Q 285 280 265 285 L 219 285" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+
+            {/* Static VR Placeholder for Button 3 */}
+            <svg
+              width="clamp(60px, 28vw, 220px)"
+              height="clamp(60px, 28vw, 220px)"
+              viewBox="0 0 300 300"
+              preserveAspectRatio="xMidYMid meet"
+              style={{
+                position: 'absolute',
+                left: 'calc(clamp(18%, 21.5vw, 28%) - 0.3rem + 0.5rem)',
+                top: 'calc(clamp(6%, 11vw, 46%) - 1.6rem)',
+                transform: 'scale(2.1065) rotate(54deg)',
+                transformOrigin: 'center center',
+                pointerEvents: 'none'
+              }}
+            >
+              {/* Background fill */}
+              <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="rgba(0,0,0,0.15)" />
+              {/* Thin connecting line */}
+              <path d="M 140 55 Q 150 35 160 55 L 280 265 Q 285 280 265 285 L 35 285 Q 15 280 20 265 L 140 55 Z" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.5" />
+              {/* Thick corner segments - top vertex (along left edge to curve to right edge) */}
+              <path d="M 116 97 L 140 55 Q 150 35 160 55 L 184 97" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" strokeLinecap="round" />
+              {/* Thick corner segments - bottom left (along left edge to curve to bottom edge) */}
+              <path d="M 44 223 L 20 265 Q 15 280 35 285 L 81 285" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" strokeLinecap="round" />
+              {/* Thick corner segments - bottom right (along right edge to curve to bottom edge) */}
+              <path d="M 256 223 L 280 265 Q 285 280 265 285 L 219 285" fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+
             {/* Button 2 */}
               <motion.svg 
                 className="triangleButton2"

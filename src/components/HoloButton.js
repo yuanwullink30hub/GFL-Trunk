@@ -56,13 +56,13 @@ const HoloButton = ({
     }
   };
 
-  // Breathing filter animation (enhanced with Deltawerken projector glow)
+  // Breathing filter animation (simplified for mobile performance)
   const breatheFilter = {
     animate: {
       filter: [
-        'drop-shadow(0 0 8px #ef8616) drop-shadow(0 0 15px #ef8616) drop-shadow(0 0 25px rgba(239, 134, 22, 0.5))',
-        'drop-shadow(0 0 8px rgb(167, 59, 198)) drop-shadow(0 0 15px rgb(167, 59, 198)) drop-shadow(0 0 25px rgba(167, 59, 198, 0.5))',
-        'drop-shadow(0 0 8px #ef8616) drop-shadow(0 0 15px #ef8616) drop-shadow(0 0 25px rgba(239, 134, 22, 0.5))'
+        'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))',
+        'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8))',
+        'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))'
       ]
     },
     transition: {
@@ -112,42 +112,34 @@ const HoloButton = ({
     }
   };
 
-  // Flicker animation for glitch effect (increased intensity)
+  // Flicker animation for glitch effect (simplified for mobile)
   const flickerAnimation = {
     animate: {
-      opacity: [1, 0.6, 1, 0.4, 1, 0.7, 1, 0.5, 1, 0.8, 1, 0.3, 1],
+      opacity: [1, 0.9, 1, 0.85, 1],
       filter: [
         'brightness(1) contrast(1)',
-        'brightness(1.4) contrast(1.3)',
+        'brightness(1.1) contrast(1.05)',
         'brightness(1) contrast(1)',
-        'brightness(1.5) contrast(1.4)',
-        'brightness(1) contrast(1)',
-        'brightness(1.3) contrast(1.2)',
-        'brightness(1) contrast(1)',
-        'brightness(1.6) contrast(1.5)',
-        'brightness(1) contrast(1)',
-        'brightness(1.2) contrast(1.1)',
-        'brightness(1) contrast(1)',
-        'brightness(1.7) contrast(1.6)',
+        'brightness(1.15) contrast(1.1)',
         'brightness(1) contrast(1)'
       ]
     },
     transition: {
-      duration: 1.5,
+      duration: 3,
       repeat: Infinity,
-      ease: 'linear'
+      ease: 'easeInOut'
     }
   };
 
-  // Projector flicker animation (from Deltawerken pyramid - increased intensity)
+  // Projector flicker animation (visible effect with longer duration)
   const projectorFlicker = {
     animate: {
-      opacity: [1, 0.4, 1, 0.2, 1, 0.6, 1, 0.3, 1, 0.5, 1, 0.1, 1]
+      opacity: [1, 0.6, 1, 0.4, 1, 0.7, 1]
     },
     transition: {
-      duration: 0.1,
+      duration: 4,
       repeat: Infinity,
-      ease: 'linear'
+      ease: 'easeInOut'
     }
   };
 
@@ -297,9 +289,9 @@ const HoloButton = ({
               animate={{
                 stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'],
                 filter: [
-                  'drop-shadow(0 0 8px #ef8616) drop-shadow(0 0 15px #ef8616) drop-shadow(0 0 25px rgba(239, 134, 22, 0.5))',
-                  'drop-shadow(0 0 8px rgb(167, 59, 198)) drop-shadow(0 0 15px rgb(167, 59, 198)) drop-shadow(0 0 25px rgba(167, 59, 198, 0.5))',
-                  'drop-shadow(0 0 8px #ef8616) drop-shadow(0 0 15px #ef8616) drop-shadow(0 0 25px rgba(239, 134, 22, 0.5))'
+                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))',
+                  'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8))',
+                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))'
                 ]
               }}
               transition={{
@@ -320,9 +312,9 @@ const HoloButton = ({
               animate={{
                 stroke: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'],
                 filter: [
-                  'drop-shadow(0 0 8px #ef8616) drop-shadow(0 0 15px #ef8616) drop-shadow(0 0 25px rgba(239, 134, 22, 0.5))',
-                  'drop-shadow(0 0 8px rgb(167, 59, 198)) drop-shadow(0 0 15px rgb(167, 59, 198)) drop-shadow(0 0 25px rgba(167, 59, 198, 0.5))',
-                  'drop-shadow(0 0 8px #ef8616) drop-shadow(0 0 15px #ef8616) drop-shadow(0 0 25px rgba(239, 134, 22, 0.5))'
+                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))',
+                  'drop-shadow(0 0 15px rgba(120, 40, 150, 0.8))',
+                  'drop-shadow(0 0 15px rgba(180, 100, 10, 0.8))'
                 ]
               }}
               transition={{
@@ -350,26 +342,6 @@ const HoloButton = ({
               }}
             />
 
-            {/* Holographic grid effect inside circle - increased visibility */}
-            <defs>
-              <clipPath id="circleClip">
-                <circle cx={cx} cy={cy} r={radius} />
-              </clipPath>
-              <pattern id="gridPattern" patternUnits="userSpaceOnUse" width="6" height="6">
-                <line x1="0" y1="0" x2="6" y2="0" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
-                <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect 
-              x="0" 
-              y="0" 
-              width="100" 
-              height="100" 
-              fill="url(#gridPattern)" 
-              clipPath="url(#circleClip)"
-              style={{ opacity: 0.8 }}
-            />
-
             {/* Secondary inner glow layer */}
             <motion.polygon
               points={points}
@@ -393,39 +365,7 @@ const HoloButton = ({
             />
           </motion.svg>
 
-          {/* Decorative spinning circle SVG */}
-          <motion.svg
-            viewBox="0 0 100 100"
-            style={{
-              width: '100%',
-              height: '100%',
-              overflow: 'visible',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              ...gpuAccelStyle
-            }}
-            animate={{
-              rotate: 360
-            }}
-            transition={{
-              rotate: { duration: 20, repeat: Infinity, ease: 'linear' }
-            }}
-          >
-            {/* 4. Decorative "Tech" details */}
-            <motion.circle
-              cx={cx}
-              cy={cy}
-              r={radius + 4}
-              fill="transparent"
-              strokeWidth="1.5"
-              strokeDasharray="4 6"
-              style={{ opacity: 0.4 }}
-              {...breatheStroke}
-            />
-          </motion.svg>
-
-          {/* Holographic Projector Beam Effect (from Deltawerken pyramid) */}
+          {/* Holographic Projector Beam Effect (simplified for mobile) */}
           <div
             style={{
               position: 'absolute',
@@ -435,8 +375,8 @@ const HoloButton = ({
               ...gpuAccelStyle
             }}
           >
-            {/* Volumetric outer glow layers - creates 3D holographic cone effect */}
-            {[0, 45, 90, 135, 180, 225, 270, 315].map((rotation, idx) => (
+            {/* Volumetric outer glow layers - reduced to 4 for performance */}
+            {[0, 90, 180, 270].map((rotation, idx) => (
               <motion.div
                 key={`holo-cone-${idx}`}
                 style={{
@@ -468,42 +408,38 @@ const HoloButton = ({
               />
             ))}
 
-            {/* Inner radial glow rings */}
-            {[0, 1, 2].map((ring) => (
-              <motion.div
-                key={`holo-ring-${ring}`}
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: '50%',
-                  width: `${70 + ring * 20}%`,
-                  height: `${70 + ring * 20}%`,
-                  borderRadius: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  border: '1px solid transparent',
-                  pointerEvents: 'none'
-                }}
-                animate={{
-                  borderColor: [
-                    `rgba(239, 134, 22, ${0.15 - ring * 0.04})`,
-                    `rgba(167, 59, 198, ${0.15 - ring * 0.04})`,
-                    `rgba(239, 134, 22, ${0.15 - ring * 0.04})`
-                  ],
-                  boxShadow: [
-                    `0 0 ${10 + ring * 5}px rgba(239, 134, 22, ${0.1 - ring * 0.02})`,
-                    `0 0 ${10 + ring * 5}px rgba(167, 59, 198, ${0.1 - ring * 0.02})`,
-                    `0 0 ${10 + ring * 5}px rgba(239, 134, 22, ${0.1 - ring * 0.02})`
-                  ]
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: ring * 0.2
-                }}
-                {...holoPulse}
-              />
-            ))}
+            {/* Inner radial glow ring - simplified to 1 for performance */}
+            <motion.div
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                width: '80%',
+                height: '80%',
+                borderRadius: '50%',
+                transform: 'translate(-50%, -50%)',
+                border: '1px solid transparent',
+                pointerEvents: 'none'
+              }}
+              animate={{
+                borderColor: [
+                  'rgba(239, 134, 22, 0.12)',
+                  'rgba(167, 59, 198, 0.12)',
+                  'rgba(239, 134, 22, 0.12)'
+                ],
+                boxShadow: [
+                  '0 0 12px rgba(239, 134, 22, 0.08)',
+                  '0 0 12px rgba(167, 59, 198, 0.08)',
+                  '0 0 12px rgba(239, 134, 22, 0.08)'
+                ]
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: 'easeInOut'
+              }}
+              {...holoPulse}
+            />
 
             {/* Holographic gradient overlay */}
             <motion.div

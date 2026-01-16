@@ -38,7 +38,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
   const [isAnimating, setIsAnimating] = React.useState(false);
   const [clickedButton, setClickedButton] = React.useState(null);
-  const [clickedSlideIndex, setClickedSlideIndex] = React.useState(null); // Track which slide was clicked
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false); // Track when to hide large logo
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
@@ -212,7 +211,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   const handleSlideClick = (index, route) => {
     if (isAnimating) return;
     setIsAnimating(true);
-    setClickedSlideIndex(index);
     setIsSlideView(true);
     
     // Calculate center of clicked slide circle
@@ -233,7 +231,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
     setTimeout(() => {
       setActiveView(route);
       setIsAnimating(false);
-      setClickedSlideIndex(null);
       window.scrollTo(0, 0);
     }, 1500);
   };

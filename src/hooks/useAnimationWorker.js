@@ -21,7 +21,7 @@ export const useAnimationWorker = () => {
 
       // Handle messages from worker
       workerRef.current.onmessage = (event) => {
-        const { type, data, success, error, callId } = event.data;
+        const { data, success, error, callId } = event.data;
         
         if (callId && callbacksRef.current.has(callId)) {
           const callback = callbacksRef.current.get(callId);

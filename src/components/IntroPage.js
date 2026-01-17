@@ -21,7 +21,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   const [landingResetTrigger, setLandingResetTrigger] = React.useState(0);
 
   // useTransition for deferring non-critical UI updates
-  const [isPending, startTransition] = React.useTransition();
+  const [, startTransition] = React.useTransition();
 
   // Track fullscreen state
   React.useEffect(() => {

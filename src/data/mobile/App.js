@@ -45,7 +45,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   const [isSlideView, setIsSlideView] = React.useState(false); // Track if came from slide click
   
   // useTransition for deferring non-critical state updates during animations
-  const [isPending, startTransition] = React.useTransition();
+  const [, startTransition] = React.useTransition();
   
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
@@ -299,18 +299,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
         type: 'tween',
         duration: activeView ? 0.5 : 0.9,
         delay: activeView ? 0 : 0.5,
-        ease: 'easeInOut'
-      }
-    }
-  }), [activeView]);
-
-  const landingOverlayConfig = React.useMemo(() => ({
-    animate: { opacity: activeView ? 1 : 0 },
-    transition: {
-      opacity: {
-        type: 'tween',
-        duration: 0.6,
-        delay: activeView ? 0.2 : 0,
         ease: 'easeInOut'
       }
     }

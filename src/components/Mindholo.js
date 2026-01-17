@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useAnimationWorker } from '../hooks/useAnimationWorker';
 
 // --- Geometry & Math Helpers ---
 
@@ -330,7 +331,30 @@ const HemisphereVolume = React.memo(({ xOffset, color }) => {
 });
 
 const Mindholo = ({ nodeCount = 300, showScanline = true }) => {
-  const { points, connections } = useMemo(() => generateBrainStructure(nodeCount), [nodeCount]);
+  const { isReady, generateBrain } = useAnimationWorker();
+  const [brainData, setBrainData] = useState(null);
+
+  // Use Web Worker to generate brain structure off main thread
+  useEffect(() => {
+    if (!isReady) return;
+
+    (async () => {
+      try {
+        const data = await generateBrain(nodeCount);
+        setBrainData(data);
+      } catch (error) {
+        console.warn('Worker generation failed, falling back to main thread:', error.message);
+        // Fallback to main thread generation if worker fails
+        setBrainData(generateBrainStructure(nodeCount));
+      }
+    })();
+  }, [nodeCount, isReady, generateBrain]);
+
+  // Fallback to synchronous generation if worker not ready
+  const { points, connections } = useMemo(() => {
+    if (brainData) return brainData;
+    return generateBrainStructure(nodeCount);
+  }, [brainData, nodeCount]);
 
   return (
     <div
@@ -428,4 +452,4 @@ const Mindholo = ({ nodeCount = 300, showScanline = true }) => {
   );
 };
 
-export default Mindholo;
+export default React.memo(Mindholo);

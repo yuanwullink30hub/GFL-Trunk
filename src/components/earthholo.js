@@ -137,15 +137,28 @@ const HoloEarthSphere = () => {
     }
     
     if (groupRef.current) {
-      if (!isDragging.current) {
-        // Auto-rotate when not dragging
-        groupRef.current.rotation.y += 0.0016;
-        // Apply momentum decay
+      const momentumMagnitude = Math.abs(rotationVelocity.current.x) + Math.abs(rotationVelocity.current.y);
+      
+      if (isDragging.current) {
+        // When dragging, don't apply any automatic rotation
+        // Keep current rotation as-is while user has control
+      } else {
+        // Apply momentum decay gradually
         rotationVelocity.current.x *= 0.95;
         rotationVelocity.current.y *= 0.95;
-        groupRef.current.rotation.y += rotationVelocity.current.x;
+        
+        // Apply momentum to rotation
         groupRef.current.rotation.x += rotationVelocity.current.y;
+        groupRef.current.rotation.y += rotationVelocity.current.x;
+        
+        // After momentum dies down, slowly auto-rotate
+        // Only start auto-rotate when momentum is almost gone
+        if (momentumMagnitude < 0.0001) {
+          // Very gentle auto-rotate - 0.1 rad/s (slower than before)
+          groupRef.current.rotation.y += 0.1 / 60; // Normalized to ~60fps
+        }
       }
+      
       // Clamp vertical rotation
       groupRef.current.rotation.x = Math.max(-0.5, Math.min(0.5, groupRef.current.rotation.x));
     }
@@ -279,13 +292,14 @@ const HoloEarth = ({ style, className }) => {
         width: '100%',
         height: '100%',
         background: 'transparent',
+        pointerEvents: 'auto', // Re-enable pointer events for the canvas
         ...style
       }}
     >
       {/* 3D Scene Container */}
       <Canvas 
         camera={{ position: [0, 0, 6], fov: 45 }}
-        style={{ background: 'transparent' }}
+        style={{ background: 'transparent', pointerEvents: 'auto' }}
         gl={{ 
           alpha: true, 
           antialias: true,

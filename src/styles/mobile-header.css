@@ -1,5 +1,5 @@
 .mobile-header {
-  transition: opacity 333ms ease-in-out, top 333ms ease-in-out, bottom 333ms ease-in-out;
+  transition: opacity 1200ms ease-in-out, top 333ms ease-in-out, bottom 333ms ease-in-out;
 }
 
 .mobile-header-hidden {
@@ -30,7 +30,7 @@
 
 /* Footer Logo Fade Effect */
 .footer-logo {
-  transition: opacity 333ms ease-in-out;
+  transition: opacity 1200ms ease-in-out;
 }
 
 .footer-logo-hidden,

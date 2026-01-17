@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useAnimationWorker } from '../hooks/useAnimationWorker';
 import sun2 from '../images/illustrativesun.png';
 import '../styles/text.css';
 import '../styles/poetry.css';
@@ -571,7 +572,6 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
         }
         .animate-pyramid-stable {
           animation: stableRotate 15s linear infinite;
-          will-change: transform;
           backface-visibility: hidden;
           -webkit-backface-visibility: hidden;
         }
@@ -1194,12 +1194,37 @@ const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = 
     };
   }, [onKeyboardStateChange, handleFocus, handleBlur, isLocalhost]);
 
+  const { isReady, generateScatter } = useAnimationWorker();
+  const [scatterData, setScatterData] = useState(null);
+
+  // Generate scatter points using Web Worker
+  useEffect(() => {
+    if (!isReady) return;
+
+    (async () => {
+      try {
+        const data = await generateScatter(25);
+        setScatterData(data);
+      } catch (error) {
+        console.warn('Worker scatter generation failed, falling back:', error.message);
+        // Fallback to inline generation
+        setScatterData(
+          Array.from({ length: 25 }, () => ({
+            x: Math.random() * 100,
+            y: Math.random() * 100,
+            size: 1 + Math.random() * 2,
+          }))
+        );
+      }
+    })();
+  }, [isReady, generateScatter]);
+
   const scatterPoints = useMemo(() => 
-    Array.from({ length: 25 }, () => ({
+    scatterData || Array.from({ length: 25 }, () => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
       size: 1 + Math.random() * 2,
-    })), []);
+    })), [scatterData]);
 
   const handleMetricChange = (metricId, value) => {
     onMetricChange(activeLabel, metricId, value);

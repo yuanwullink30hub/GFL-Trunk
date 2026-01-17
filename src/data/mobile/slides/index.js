@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import knight from '../../../images/knightpng.png';
 import logo from '../../../images/logo.png';
 import Mindholo from '../../../components/Mindholo';
+import Deltawerken from '../../../components/Deltawerken';
 
 // Shared back button component
 export const BackButton = ({ onBack }) => (
@@ -390,6 +391,10 @@ export const SoulContent = ({ onBack, onBackToButton, activeView }) => (
   </div>
 );
 
+export const DeltawerkenContent = ({ onBack, onBackToButton, activeView }) => (
+  <Deltawerken onBack={onBack} />
+);
+
 // Map route to content component
 export const slideContentMap = {
   '/karman': KarmanContent,
@@ -403,5 +408,6 @@ export const slideContentMap = {
   '/rengifoods': RengiFoodsContent,
   '/teachers': TeachersContent,
   '/mind': MindContent,
-  '/soul': SoulContent
+  '/soul': SoulContent,
+  '/deltawerken': DeltawerkenContent
 };

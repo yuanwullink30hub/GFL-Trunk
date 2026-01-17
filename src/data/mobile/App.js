@@ -43,6 +43,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
   const [isSlideView, setIsSlideView] = React.useState(false); // Track if came from slide click
+  
+  // useTransition for deferring non-critical state updates during animations
+  const [isPending, startTransition] = React.useTransition();
+  
   const galleryRef = React.useRef(null);
   const slideshowContainerRef = React.useRef(null);
   const seeMoreButtonRef = React.useRef(null);
@@ -127,18 +131,24 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   // Handle button click with zoom and fade - landing page
   const handleButtonClick = (buttonName, path) => {
     if (isAnimating) return;
-    setIsAnimating(true);
-    setClickedButton(buttonName);
     
-    // Set the active view immediately - no zoom animation
+    // Set view immediately so content can start rendering right away
     setActiveView(path);
     
-    // Reset animation state after fade completes (0.3s)
+    // Use startTransition for non-critical UI updates (animation states)
+    startTransition(() => {
+      setIsAnimating(true);
+      setClickedButton(buttonName);
+    });
+    
+    // Reset animation state after fade out completes (0.5s fade out + 0.5s delay + 0.9s fade in = 1.4s)
     setTimeout(() => {
-      setIsAnimating(false);
-      setClickedButton(null);
+      startTransition(() => {
+        setIsAnimating(false);
+        setClickedButton(null);
+      });
       window.scrollTo(0, 0);  // Scroll to top of detail page
-    }, 300);
+    }, 1400);
   };
 
   // Detail page triangle button - fade transition back to media container
@@ -163,9 +173,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
       }
     }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
     
-    // Reset exit animation state after full animation completes
+    // Reset exit animation state after full animation completes (non-critical, can be deferred)
     setTimeout(() => {
-      setIsDetailPageExiting(false);
+      startTransition(() => {
+        setIsDetailPageExiting(false);
+      });
     }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
   };
 
@@ -229,8 +241,10 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
     
     // Same timing as triangle buttons: 1.5s zoom then show detail
     setTimeout(() => {
-      setActiveView(route);
-      setIsAnimating(false);
+      startTransition(() => {
+        setActiveView(route);
+        setIsAnimating(false);
+      });
       window.scrollTo(0, 0);
     }, 1500);
   };
@@ -260,10 +274,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
       }
     }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
     
-    // Reset exit animation state after full animation completes
+    // Reset exit animation state after full animation completes (non-critical, can be deferred)
     setTimeout(() => {
-      setIsDetailPageExiting(false);
-      setIsSlideView(false); // Reset slide view flag
+      startTransition(() => {
+        setIsDetailPageExiting(false);
+        setIsSlideView(false); // Reset slide view flag
+      });
     }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
   };
 
@@ -274,6 +290,31 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
 
   // Get content component for active view
   const ActiveContent = activeView ? slideContentMap[activeView] : null;
+
+  // Memoize animation configurations to prevent recreation on every render
+  const contentFadeConfig = React.useMemo(() => ({
+    animate: { opacity: activeView ? 0 : 1 },
+    transition: {
+      opacity: {
+        type: 'tween',
+        duration: activeView ? 0.5 : 0.9,
+        delay: activeView ? 0 : 0.5,
+        ease: 'easeInOut'
+      }
+    }
+  }), [activeView]);
+
+  const landingOverlayConfig = React.useMemo(() => ({
+    animate: { opacity: activeView ? 1 : 0 },
+    transition: {
+      opacity: {
+        type: 'tween',
+        duration: 0.6,
+        delay: activeView ? 0.2 : 0,
+        ease: 'easeInOut'
+      }
+    }
+  }), [activeView]);
 
   React.useEffect(() => {
     // Prevent browser scroll restoration
@@ -310,37 +351,67 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
 
   // Track scroll position relative to video header bottom minus 150px
   React.useEffect(() => {
+    let scrollTimeout;
+    let lastScrollTime = 0;
+    const SCROLL_DEBOUNCE_MS = 16; // ~60fps throttle
+    
     const handleScroll = () => {
+      const now = Date.now();
+      
+      // Only update if enough time has passed (debounce)
+      if (now - lastScrollTime < SCROLL_DEBOUNCE_MS) {
+        return;
+      }
+      lastScrollTime = now;
+      
+      // Clear pending timeout
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      
       // Track when scrolled past video header to hide large logo
       if (videoHeaderRef?.current) {
         const videoRect = videoHeaderRef.current.getBoundingClientRect();
         setIsScrolledPastH1(videoRect.bottom - 720 < 0);
       }
       
-      // Update slideshow opacity based on scroll position
-      if (slideshowContainerRef?.current) {
-        const rect = slideshowContainerRef.current.getBoundingClientRect();
-        const containerTop = rect.top;
-        
-        // Fully hidden if top of container is 120px above viewport top
-        if (containerTop <= -120) {
-          setSlideshowOpacity(0);
-          return;
+      // Update slideshow opacity based on scroll position (non-critical, can defer)
+      scrollTimeout = setTimeout(() => {
+        if (slideshowContainerRef?.current) {
+          const rect = slideshowContainerRef.current.getBoundingClientRect();
+          const containerTop = rect.top;
+          
+          // Fully hidden if top of container is 120px above viewport top
+          if (containerTop <= -120) {
+            startTransition(() => {
+              setSlideshowOpacity(0);
+            });
+            return;
+          }
+          
+          // Fully visible if top is within 750px
+          if (containerTop < 750) {
+            startTransition(() => {
+              setSlideshowOpacity(1);
+            });
+            return;
+          }
+          
+          // Fully hidden otherwise
+          startTransition(() => {
+            setSlideshowOpacity(0);
+          });
         }
-        
-        // Fully visible if top is within 750px
-        if (containerTop < 750) {
-          setSlideshowOpacity(1);
-          return;
-        }
-        
-        // Fully hidden otherwise
-        setSlideshowOpacity(0);
-      }
+      }, 50); // Defer non-critical opacity update
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+    };
   }, []);
 
   // Calculate opacity for KWEEK KRACHTIGE text and media container (based on content visibility, not extended hitbox)
@@ -493,7 +564,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
             transition={{
               opacity: {
                 type: 'tween',
-                duration: isDetailPageExiting ? 0.5 : 0.6,
+                duration: isDetailPageExiting ? 0.5 : 0.9,
                 delay: isDetailPageExiting ? 0 : 0.5,
                 ease: 'easeInOut'
               }
@@ -551,20 +622,11 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
 
       {/* Page content wrapper - fades when button or slide is clicked */}
       <motion.div
-        animate={{
-          opacity: activeView ? 0 : 1
-        }}
-        transition={{ 
-          opacity: {
-            type: 'tween',
-            duration: 0.5,
-            delay: 0,
-            ease: 'easeInOut'
-          }
-        }}
+        animate={contentFadeConfig.animate}
+        transition={contentFadeConfig.transition}
         key={`content-${isDetailPageExiting}`}
         style={{
-          visibility: isDetailPageExiting || activeView ? 'hidden' : 'visible',
+          visibility: isDetailPageExiting ? 'hidden' : 'visible',
           pointerEvents: isDetailPageExiting || activeView ? 'none' : 'auto',
           imageRendering: 'auto',
           backfaceVisibility: 'hidden',
@@ -597,13 +659,21 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
             className="logo-btn"
             title="Go to menu"
           >
-            <img src={logo} alt="Garden For Life Logo" className="logo-img" style={{ width: '176px', height: '176px', imageRendering: 'auto' }} />
+            <motion.img 
+              src={logo} 
+              alt="Garden For Life Logo" 
+              className="logo-img" 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1.2, delay: 0.5, ease: 'easeInOut' }}
+              style={{ width: '176px', height: '176px', imageRendering: 'auto' }} 
+            />
           </button>
         </div>
       </header>
 
       {/* Full-screen Video Container (scrollable behind logo) */}
-      <div 
+      <div
         ref={videoHeaderRef}
         className="overflow-visible"
         style={{
@@ -618,6 +688,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
           marginLeft: 'calc(-50vw + 50%)',
           pointerEvents: 'none',
           overflow: 'visible',
+          opacity: 0,
+          animation: 'fadeIn 1.2s ease-in-out 0.5s forwards',
           ...gpuAccel.heavy
         }}
       >
@@ -972,7 +1044,18 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                 </g>
               </motion.svg>
               {/* Mindholo positioned outside SVG for proper 3D transforms */}
-              <div style={{
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: activeView ? 0 : 1 }}
+                transition={{
+                  opacity: {
+                    type: 'tween',
+                    duration: 0.9,
+                    delay: activeView ? 0.2 : 0.7, // 0.2s delay on fade out for render, 0.7s on initial load
+                    ease: 'easeInOut'
+                  }
+                }}
+                style={{
                 position: 'absolute',
                 left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem + 2.8rem - 1rem + 0.2rem)',
                 top: 'calc(clamp(-40.5%, -35.5vw, -30.5%) - 5.7rem + 2rem - 0.5rem - 0.2rem - 0.2rem - 0.2rem)',
@@ -987,7 +1070,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                 transformOrigin: 'center center',
               }}>
                 <Mindholo nodeCount={150} showScanline={false} />
-              </div>
+              </motion.div>
               {/* Button 3 */}
               <motion.svg 
                 className="triangleButton3"
@@ -1021,21 +1104,8 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                     style={{cursor: 'pointer'}}
                     onClick={() => {
                       if (onDeltawerken) {
-                        // Apply zoom animation before triggering Deltawerken
-                        if (isAnimating) return;
-                        setIsAnimating(true);
-                        setClickedButton('button3');
-                        
-                        // Calculate the center of the clicked button and zoom scale
-                        const center = calculateButtonCenter('button3');
-                        setButtonCenter(center);
-                        
-                        // Use same timing as slide effect: 1.5s total
-                        setTimeout(() => {
-                          setIsAnimating(false);
-                          setClickedButton(null);
-                          onDeltawerken();
-                        }, 1500);
+                        // Route to Deltawerken using standard animation
+                        handleButtonClick('button3', '/deltawerken');
                       } else {
                         handleButtonClick('button3', '/soul');
                       }
@@ -1631,4 +1701,4 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   );
 }
 
-export default MobileAppContent;
+export default React.memo(MobileAppContent);

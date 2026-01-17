@@ -192,7 +192,6 @@ svg img {
 
 .breathingBorder {
   animation: breathBorder 4s infinite ease-in-out;
-  will-change: border-color, box-shadow;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   transform: translateZ(0);
@@ -243,7 +242,6 @@ svg img {
 .triangleButton3 .breathingStroke {
   animation-delay: 2.67s;
   animation: breathStrokeButton3 4s infinite ease-in-out;
-  will-change: stroke, filter;
 }
 
 .triangleButton3 .breathingNumber {
@@ -254,7 +252,6 @@ svg img {
 .triangleButton1,
 .triangleButton2,
 .triangleButton3 {
-  will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   transform: translateZ(0);

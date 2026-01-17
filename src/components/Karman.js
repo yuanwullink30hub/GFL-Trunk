@@ -86,7 +86,7 @@ const Karman = () => {
           }}
         >
           Back to Home
-        </motion.button>
+        </button>
       </div>
     </div>
   );

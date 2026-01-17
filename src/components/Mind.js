@@ -166,4 +166,4 @@ const Mind = () => {
   );
 };
 
-export default Mind;
+export default React.memo(Mind);

@@ -9,6 +9,7 @@ import MobileAppContent from '../data/mobile/App';
 import HoloButton from './HoloButton';
 import generalData from '../data.json';
 import mobileData from '../data/mobile/data.json';
+import { preloadAll } from '../utils/preloadUtils';
 
 const IntroPage = ({ darkMode, setDarkMode }) => {
   // Simplified state: only track which view is active, not separate show/visible states
@@ -18,6 +19,9 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   const [showQuickMenu, setShowQuickMenu] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [landingResetTrigger, setLandingResetTrigger] = React.useState(0);
+
+  // useTransition for deferring non-critical UI updates
+  const [isPending, startTransition] = React.useTransition();
 
   // Track fullscreen state
   React.useEffect(() => {
@@ -33,27 +37,6 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   }, []);
 
   // Toggle fullscreen mode
-  const toggleFullscreen = () => {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      setShowQuickMenu(false);
-      return;
-    }
-    if (document.fullscreenElement) {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      }
-    } else {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen().catch(() => {});
-      } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-      }
-    }
-    setShowQuickMenu(false);
-  };
 
   // Merge data for MobileAppContent
   const data = {
@@ -94,7 +77,9 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       });
     };
 
+    // Preload all components and images
     preloadAssets();
+    preloadAll();
   }, []);
 
   const requestFullscreen = () => {
@@ -112,10 +97,74 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
     }
   };
 
-  const handleEnterSite = () => {
+  // Memoized callbacks to prevent unnecessary re-renders
+  const handleEnterSite = React.useCallback(() => {
     requestFullscreen();
     setActiveView('landing');
-  };
+  }, []);
+
+  const handleToggleQuickMenu = React.useCallback(() => {
+    startTransition(() => {
+      setShowQuickMenu(prev => !prev);
+    });
+  }, []);
+
+  const handleCloseQuickMenu = React.useCallback(() => {
+    startTransition(() => {
+      setShowQuickMenu(false);
+    });
+  }, []);
+
+  const handleToggleFullscreen = React.useCallback(() => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      startTransition(() => {
+        setShowQuickMenu(false);
+      });
+      return;
+    }
+    if (document.fullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } else {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      }
+    }
+    startTransition(() => {
+      setShowQuickMenu(false);
+    });
+  }, []);
+
+  const handleLandingFromQuickMenu = React.useCallback(() => {
+    startTransition(() => {
+      setShowQuickMenu(false);
+      setLandingResetTrigger(prev => prev + 1);
+      setActiveView('landing');
+    });
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Memoize landing animation configuration
+  const landingAnimationConfig = React.useMemo(() => ({
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+    transition: { duration: 0.6, delay: 0.2, ease: 'easeInOut' }
+  }), []);
+
+  // Memoize deltawerken animation configuration
+  const deltawerkenAnimationConfig = React.useMemo(() => ({
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+    transition: { duration: 0.6, ease: 'easeInOut' }
+  }), []);
 
   return (
     <>
@@ -128,7 +177,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         zIndex: 100000
       }}>
         <motion.button
-          onClick={() => setShowQuickMenu(!showQuickMenu)}
+          onClick={handleToggleQuickMenu}
           className="p-2 hover:opacity-80 transition-opacity duration-300"
           title="Quick menu"
           initial={{ opacity: 1 }}
@@ -160,7 +209,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               }}
             >
               <button
-                onClick={toggleFullscreen}
+                onClick={handleToggleFullscreen}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -194,8 +243,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               
               <button
                 onClick={() => {
+                  handleCloseQuickMenu();
                   window.location.href = '/login';
-                  setShowQuickMenu(false);
                 }}
                 style={{
                   display: 'flex',
@@ -227,12 +276,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               </button>
               
               <button
-                onClick={() => {
-                  setShowQuickMenu(false);
-                  setLandingResetTrigger(prev => prev + 1);
-                  setActiveView('landing');
-                  window.scrollTo(0, 0);
-                }}
+                onClick={handleLandingFromQuickMenu}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -263,7 +307,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         {/* Click outside to close menu */}
         {showQuickMenu && (
           <div
-            onClick={() => setShowQuickMenu(false)}
+            onClick={handleCloseQuickMenu}
             style={{
               position: 'fixed',
               top: 0,
@@ -450,10 +494,10 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         {activeView === 'deltawerken' && (
           <motion.div
             key="deltawerken"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: 'easeInOut' }}
+            initial={deltawerkenAnimationConfig.initial}
+            animate={deltawerkenAnimationConfig.animate}
+            exit={deltawerkenAnimationConfig.exit}
+            transition={deltawerkenAnimationConfig.transition}
             style={{
               position: 'fixed',
               top: 0,
@@ -474,7 +518,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       </AnimatePresence>
     </div>
     )}
-    </AnimatePresence>    </div>
+    </AnimatePresence>
 
     {/* Landing Page Content - Portal with AnimatePresence for full unmount */}
     {createPortal(
@@ -482,10 +526,10 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         {activeView === 'landing' && (
           <motion.div
             key="landing"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: 'easeInOut' }}
+            initial={landingAnimationConfig.initial}
+            animate={landingAnimationConfig.animate}
+            exit={landingAnimationConfig.exit}
+            transition={landingAnimationConfig.transition}
             style={{
               position: 'absolute',
               top: 0,
@@ -525,4 +569,4 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   );
 };
 
-export default IntroPage;
+export default React.memo(IntroPage);

@@ -278,6 +278,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       document.body
     )}
 
+    <AnimatePresence>
+    {activeView === 'intro' && (
     <div className={`w-full h-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-300 ${
       darkMode 
         ? 'text-white'
@@ -303,7 +305,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           pointerEvents: 'none'
         }}
         initial={{ opacity: 1 }}
-        animate={{ opacity: activeView !== 'intro' ? 0 : 1 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
       >
         aanmelden
@@ -313,7 +316,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       <motion.div 
         className="w-full max-w-2xl px-6 text-center" 
         initial={{ opacity: 1 }}
-        animate={{ opacity: activeView !== 'intro' ? 0 : 1 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
         style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
         {/* Header */}
@@ -468,8 +472,9 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           </motion.div>
         )}
       </AnimatePresence>
-
     </div>
+    )}
+    </AnimatePresence>    </div>
 
     {/* Landing Page Content - Portal with AnimatePresence for full unmount */}
     {createPortal(

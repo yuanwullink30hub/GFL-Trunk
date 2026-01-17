@@ -1,8 +1,22 @@
 // Preload all heavy components and images for better performance
 // This runs when IntroPage loads, so content is ready by the time users navigate
 
+/**
+ * Schedule a task during idle browser time
+ * Polyfill for older browsers
+ */
+const scheduleIdleTask = (callback) => {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(callback, { timeout: 5000 });
+  } else {
+    // Fallback: schedule after current frame
+    setTimeout(callback, 0);
+  }
+};
+
 export const preloadComponents = () => {
   // Preload heavy components - these are imported asynchronously
+  // Spread the preloading across idle frames to avoid blocking main thread
   const componentModules = [
     () => import('../components/earthholo'),
     () => import('../components/Mindholo'),
@@ -21,10 +35,24 @@ export const preloadComponents = () => {
     () => import('../components/Gardeners'),
   ];
 
-  // Load all components in the background
-  componentModules.forEach(loader => {
-    loader().catch(err => console.warn('Component preload failed:', err));
-  });
+  // Load components in batches during idle time
+  let index = 0;
+  const loadNextBatch = () => {
+    if (index >= componentModules.length) return;
+
+    // Load 2 components per idle callback
+    for (let i = 0; i < 2 && index < componentModules.length; i++, index++) {
+      componentModules[index]().catch(err => console.warn('Component preload failed:', err));
+    }
+
+    // Schedule next batch
+    if (index < componentModules.length) {
+      scheduleIdleTask(loadNextBatch);
+    }
+  };
+
+  // Start preloading during idle time
+  scheduleIdleTask(loadNextBatch);
 };
 
 export const preloadImages = () => {

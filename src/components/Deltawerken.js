@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAnimationWorker } from '../hooks/useAnimationWorker';
+import ParticlePool from '../utils/ParticlePool';
 import sun2 from '../images/illustrativesun.png';
 import '../styles/text.css';
 import '../styles/poetry.css';
@@ -1196,35 +1197,53 @@ const WaveAnalysis = ({ activeLabel = null, metricValues = {}, onMetricChange = 
 
   const { isReady, generateScatter } = useAnimationWorker();
   const [scatterData, setScatterData] = useState(null);
+  const particlePoolRef = useRef(new ParticlePool(50)); // Pool of 50 reusable particles
 
-  // Generate scatter points using Web Worker
+  // Generate scatter points using Web Worker and particle pooling
   useEffect(() => {
     if (!isReady) return;
 
     (async () => {
       try {
         const data = await generateScatter(25);
-        setScatterData(data);
+        // Use particle pool to manage scatterPoints
+        particlePoolRef.current.releaseAll();
+        data.forEach(point => {
+          const particle = particlePoolRef.current.acquire();
+          particle.x = point.x;
+          particle.y = point.y;
+          particle.size = point.size;
+          particlePoolRef.current.addToInUse(particle);
+        });
+        setScatterData(particlePoolRef.current.getAll());
       } catch (error) {
         console.warn('Worker scatter generation failed, falling back:', error.message);
-        // Fallback to inline generation
-        setScatterData(
-          Array.from({ length: 25 }, () => ({
-            x: Math.random() * 100,
-            y: Math.random() * 100,
-            size: 1 + Math.random() * 2,
-          }))
-        );
+        // Fallback to particle pool generation
+        particlePoolRef.current.releaseAll();
+        for (let i = 0; i < 25; i++) {
+          const particle = particlePoolRef.current.acquire();
+          particle.x = Math.random() * 100;
+          particle.y = Math.random() * 100;
+          particle.size = 1 + Math.random() * 2;
+          particlePoolRef.current.addToInUse(particle);
+        }
+        setScatterData(particlePoolRef.current.getAll());
       }
     })();
   }, [isReady, generateScatter]);
 
   const scatterPoints = useMemo(() => 
-    scatterData || Array.from({ length: 25 }, () => ({
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: 1 + Math.random() * 2,
-    })), [scatterData]);
+    scatterData || (() => {
+      particlePoolRef.current.releaseAll();
+      for (let i = 0; i < 25; i++) {
+        const particle = particlePoolRef.current.acquire();
+        particle.x = Math.random() * 100;
+        particle.y = Math.random() * 100;
+        particle.size = 1 + Math.random() * 2;
+        particlePoolRef.current.addToInUse(particle);
+      }
+      return particlePoolRef.current.getAll();
+    })(), [scatterData]);
 
   const handleMetricChange = (metricId, value) => {
     onMetricChange(activeLabel, metricId, value);

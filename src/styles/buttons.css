@@ -12,6 +12,14 @@ svg img {
   image-rendering: crisp-edges;
 }
 
+/* SVG Optimization for smoother rendering */
+svg {
+  shape-rendering: geometricPrecision;
+  stroke-linejoin: bevel; /* Cheaper than miter, reduces aliasing */
+  paint-order: stroke fill markers;
+  will-change: transform; /* Enable GPU acceleration for animated SVGs */
+}
+
 @keyframes breathColor {
   0%, 100% {
     color: #ef8616;

@@ -1,7 +1,8 @@
-import React, { Suspense, useRef, useEffect } from 'react';
+import React, { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
 import { Sphere } from '@react-three/drei';
 import * as THREE from 'three';
+import { MotionPredictor } from '../utils/MotionPredictor';
 
 // --- Custom Shader Material for the Holographic Surface ---
 const HolographicShaderMaterial = {
@@ -114,6 +115,7 @@ const HoloEarthSphere = () => {
   const isDragging = useRef(false);
   const previousMouse = useRef({ x: 0, y: 0 });
   const rotationVelocity = useRef({ x: 0, y: 0 });
+  const motionPredictor = useRef(new MotionPredictor());
 
   // Load Earth Specular Map for geographical data
   const earthMap = useLoader(
@@ -183,7 +185,10 @@ const HoloEarthSphere = () => {
     groupRef.current.rotation.y += deltaX;
     groupRef.current.rotation.x += deltaY;
     
-    rotationVelocity.current = { x: deltaX, y: deltaY };
+    // Use motion predictor for smoother momentum decay
+    const motion = motionPredictor.current.updateMotion({ x: deltaX, y: deltaY }, 16);
+    rotationVelocity.current = { x: motion.velocity.x, y: motion.velocity.y };
+    
     previousMouse.current = { x: e.clientX, y: e.clientY };
   };
 
@@ -285,45 +290,71 @@ const HoloEarthSphere = () => {
 
 // Main exported component with Canvas
 const HoloEarth = ({ style, className }) => {
+  const containerRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Use Intersection Observer to pause rendering when off-screen
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1 } // Trigger when 10% visible
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div 
+      ref={containerRef}
       className={`relative overflow-hidden ${className || ''}`}
       style={{
         width: '100%',
         height: '100%',
         background: 'transparent',
-        pointerEvents: 'auto', // Re-enable pointer events for the canvas
+        pointerEvents: 'auto',
         ...style
       }}
     >
-      {/* 3D Scene Container */}
-      <Canvas 
-        camera={{ position: [0, 0, 6], fov: 45 }}
-        style={{ background: 'transparent', pointerEvents: 'auto' }}
-        gl={{ 
-          alpha: true, 
-          antialias: true,
-          powerPreference: 'high-performance'
-        }}
-        onPointerMissed={() => {}}
-        onCreated={({ gl }) => {
-          gl.domElement.style.touchAction = 'none';
-        }}
-      >
-        <Suspense fallback={null}>
-          {/* Ambient light - low for darker mood */}
-          <ambientLight intensity={0.1} />
-          
-          {/* Dynamic accent lights */}
-          <pointLight position={[10, 10, 10]} intensity={1} color="#f97316" />
-          <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4c1d95" />
+      {/* 3D Scene Container - only render if visible */}
+      {isVisible && (
+        <Canvas 
+          camera={{ position: [0, 0, 6], fov: 45 }}
+          style={{ background: 'transparent', pointerEvents: 'auto' }}
+          gl={{ 
+            alpha: true, 
+            antialias: true,
+            powerPreference: 'high-performance'
+          }}
+          onPointerMissed={() => {}}
+          onCreated={({ gl }) => {
+            gl.domElement.style.touchAction = 'none';
+          }}
+        >
+          <Suspense fallback={null}>
+            {/* Ambient light - low for darker mood */}
+            <ambientLight intensity={0.1} />
+            
+            {/* Dynamic accent lights */}
+            <pointLight position={[10, 10, 10]} intensity={1} color="#f97316" />
+            <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4c1d95" />
 
-          {/* Main Hologram - drag interaction is on the sphere itself */}
-          <HoloEarthSphere />
-        </Suspense>
-      </Canvas>
+            {/* Main Hologram - drag interaction is on the sphere itself */}
+            <HoloEarthSphere />
+          </Suspense>
+        </Canvas>
+      )}
     </div>
   );
 };
 
-export default HoloEarth;
+export default React.memo(HoloEarth);

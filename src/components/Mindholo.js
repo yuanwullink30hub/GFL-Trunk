@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAnimationWorker } from '../hooks/useAnimationWorker';
+import ParticlePool from '../utils/ParticlePool';
 
 // --- Geometry & Math Helpers ---
 

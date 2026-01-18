@@ -7,6 +7,7 @@ import sun2 from '../images/illustrativesun.png';
 import Deltawerken from './Deltawerken';
 import MobileAppContent from '../data/mobile/App';
 import HoloButton from './HoloButton';
+import LoginModal from './LoginModal';
 import generalData from '../data.json';
 import mobileData from '../data/mobile/data.json';
 import { preloadAll } from '../utils/preloadUtils';
@@ -18,7 +19,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   const [scrollDirection] = React.useState('up');
   const [showQuickMenu, setShowQuickMenu] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
-  const [landingResetTrigger, setLandingResetTrigger] = React.useState(0);
+  const [landingResetTrigger] = React.useState(0); // eslint-disable-line no-unused-vars
+  const [showLoginModal, setShowLoginModal] = React.useState(false);
   
   // Ref to MobileAppContent for QuickMenu Garden button
   const mobileAppRef = React.useRef(null);
@@ -154,6 +156,20 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       setShowQuickMenu(false);
     });
     
+    // If login modal is open, close it and go to landing
+    if (showLoginModal) {
+      setShowLoginModal(false);
+      // Ensure we're on landing view
+      if (activeView !== 'landing') {
+        setActiveView('landing');
+      }
+      // Scroll to top after modal closes
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+      return;
+    }
+    
     // Check if MobileAppContent is on a detail page
     if (mobileAppRef.current && mobileAppRef.current.getActiveView()) {
       // Use MobileAppContent's back handler to properly return with scroll position
@@ -162,6 +178,20 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       // Not on a detail page, just scroll to top
       window.scrollTo(0, 0);
     }
+  }, [showLoginModal, activeView]);
+
+  const handleOpenLogin = React.useCallback(() => {
+    startTransition(() => {
+      setShowQuickMenu(false);
+    });
+    // Small delay to let quick menu close first
+    setTimeout(() => {
+      setShowLoginModal(true);
+    }, 100);
+  }, []);
+
+  const handleCloseLogin = React.useCallback(() => {
+    setShowLoginModal(false);
   }, []);
 
   // Memoize landing animation configuration
@@ -169,7 +199,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
     exit: { opacity: 0 },
-    transition: { duration: 0.6, delay: 0.2, ease: 'easeInOut' }
+    transition: { duration: 0.6, delay: 0.5, ease: 'easeInOut' }
   }), []);
 
   // Memoize deltawerken animation configuration
@@ -184,27 +214,26 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
     <>
     {/* Sun Logo with Quick Menu - Outside main content so it's always accessible */}
     {createPortal(
-      <div style={{
-        position: 'fixed',
-        right: '1.5rem',
-        top: 'calc(1.5rem + 0.4rem)',
-        zIndex: 100000
-      }}>
-        <motion.button
+      <div 
+        style={{
+          position: 'fixed',
+          right: '1.5rem',
+          top: 'calc(1.5rem + 0.4rem)',
+          zIndex: 100002
+        }}
+      >
+        <button
           onClick={handleToggleQuickMenu}
           className="p-2 hover:opacity-80 transition-opacity duration-300"
           title="Quick menu"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: sunButtonVisible ? 1 : 0 }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
-          style={{ pointerEvents: sunButtonVisible ? 'auto' : 'none' }}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
         >
           <img src={sun2} alt="Menu" style={{ width: '55px', height: '55px', transformOrigin: 'center', rotate: '-30deg', pointerEvents: 'none', display: 'block' }} />
-        </motion.button>
+        </button>
         
         {/* Quick Menu Dropdown */}
         <AnimatePresence>
-          {showQuickMenu && sunButtonVisible && (
+          {showQuickMenu && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -256,10 +285,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               </button>
               
               <button
-                onClick={() => {
-                  handleCloseQuickMenu();
-                  window.location.href = '/login';
-                }}
+                onClick={handleOpenLogin}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -336,9 +362,15 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       document.body
     )}
 
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
     {activeView === 'intro' && (
-    <div className={`w-full h-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-300 ${
+    <motion.div 
+      key="intro"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: showLoginModal ? 0 : 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, ease: 'easeInOut' }}
+      className={`w-full h-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-300 ${
       darkMode 
         ? 'text-white'
         : 'text-[#26163e]'
@@ -347,7 +379,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       background: 'transparent',
       overflow: 'hidden',
       position: 'relative',
-      zIndex: 1
+      zIndex: 1,
+      pointerEvents: showLoginModal ? 'none' : 'auto'
     }}>
 
 
@@ -530,7 +563,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
     )}
     </AnimatePresence>
 
@@ -541,16 +574,18 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           <motion.div
             key="landing"
             initial={landingAnimationConfig.initial}
-            animate={landingAnimationConfig.animate}
+            animate={{ 
+              opacity: showLoginModal ? 0 : 1 
+            }}
             exit={landingAnimationConfig.exit}
-            transition={landingAnimationConfig.transition}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
             style={{
               position: 'absolute',
               top: 0,
               left: 0,
               width: '100%',
               minHeight: '100vh',
-              pointerEvents: 'auto',
+              pointerEvents: showLoginModal ? 'none' : 'auto',
               zIndex: 9999,
               background: 'transparent'
             }}
@@ -577,6 +612,15 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           </motion.div>
         )}
       </AnimatePresence>,
+      document.body
+    )}
+
+    {/* Login Modal Portal - rendered above everything */}
+    {createPortal(
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={handleCloseLogin}
+      />,
       document.body
     )}
     </>

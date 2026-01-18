@@ -42,6 +42,7 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
   const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false); // Track when to hide large logo
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [isSlideView, setIsSlideView] = React.useState(false); // Track if came from slide click
   const [scrollPositionBeforeDetail, setScrollPositionBeforeDetail] = React.useState(0); // Track scroll position before opening detail
   const [lastActiveView, setLastActiveView] = React.useState(null); // Track last clicked button/detail for Garden button return
@@ -229,7 +230,7 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
     },
     getActiveView: () => activeView,
     getScrollPositionBeforeDetail: () => scrollPositionBeforeDetail
-  }), [activeView, scrollPositionBeforeDetail]);
+  }), [activeView, scrollPositionBeforeDetail, handleBackToButton]);
 
   const handleScroll = () => {
     const gallery = galleryRef.current;

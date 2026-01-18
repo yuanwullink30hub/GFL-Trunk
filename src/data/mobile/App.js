@@ -2,7 +2,6 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gpuAccel, ANIMATION_TIMINGS, ANIMATION_EASING } from '../../config/animationStyles';
 import HoloEarth from '../../components/earthholo';
-import Mindholo from '../../components/Mindholo';
 import { 
   FaMapMarkerAlt,
   FaPhone,

@@ -717,6 +717,28 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
             {/* Vertical Core Pulse */}
             <div className="absolute left-1/2 top-1/2 w-[1.75px] h-[240px] bg-gradient-to-t from-transparent via-red-500/30 to-transparent blur-[2px] transform -translate-x-1/2 -translate-y-1/2 opacity-50" />
             <div className="absolute left-1/2 top-1/2 w-[1px] h-[240px] bg-red-500/60 transform -translate-x-1/2 -translate-y-1/2" />
+
+            {/* 8 Inner Radial Beam Faces - triangular planes from apex to base creating 360° beam visual */}
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={`beam-face-${i}`}
+                className="absolute preserve-3d"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  width: '182px',
+                  height: '195px',
+                  transformOrigin: 'center center',
+                  transform: `translate(-50%, -50%) translateY(-29px) rotateY(${i * 45}deg)`,
+                  background: `linear-gradient(to bottom, rgba(192, 132, 252, 0.3) 0%, rgba(168, 85, 247, 0.15) 50%, rgba(192, 132, 252, 0.05) 100%)`,
+                  clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)',
+                  opacity: 0.4,
+                  filter: 'blur(2px)',
+                  backfaceVisibility: 'visible',
+                  WebkitBackfaceVisibility: 'visible',
+                }}
+              />
+            ))}
             </div>
         </div>
       </div>

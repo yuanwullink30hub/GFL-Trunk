@@ -85,21 +85,22 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   const requestFullscreen = () => {
     // Skip fullscreen on localhost (development)
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return;
+      return Promise.resolve();
     }
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch(() => {});
+      return elem.requestFullscreen().catch(() => {});
     } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen();
+      return Promise.resolve(elem.webkitRequestFullscreen());
     } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen();
+      return Promise.resolve(elem.msRequestFullscreen());
     }
+    return Promise.resolve();
   };
 
   // Memoized callbacks to prevent unnecessary re-renders
-  const handleEnterSite = React.useCallback(() => {
-    requestFullscreen();
+  const handleEnterSite = React.useCallback(async () => {
+    await requestFullscreen();
     setActiveView('landing');
   }, []);
 

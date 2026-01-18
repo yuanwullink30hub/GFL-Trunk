@@ -156,8 +156,8 @@ const HoloEarthSphere = () => {
         // After momentum dies down, slowly auto-rotate
         // Only start auto-rotate when momentum is almost gone
         if (momentumMagnitude < 0.0001) {
-          // Very gentle auto-rotate - 0.1 rad/s (slower than before)
-          groupRef.current.rotation.y += 0.1 / 60; // Normalized to ~60fps
+          // Very gentle auto-rotate - 0.11 rad/s (1.1x faster)
+          groupRef.current.rotation.y += 0.11 / 60; // Normalized to ~60fps
         }
       }
       

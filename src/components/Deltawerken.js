@@ -438,7 +438,7 @@ const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor,
             transform: `translateX(-50%) rotateY(${rot}deg) translateZ(${halfTop}px) rotateX(${angle}deg)`,
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
-            filter: isTip ? `drop-shadow(0 0 10px ${borderColor})` : 'none',
+            filter: 'none',
             willChange: 'transform',
           }}
         >
@@ -584,40 +584,34 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
 
         @keyframes apexFlash {
           0% {
-            filter: drop-shadow(0 0 50px #E0E30B);
+            opacity: 1;
           }
           10% {
-            filter: drop-shadow(0 0 80px #FFFF00);
+            opacity: 1;
           }
           20% {
-            filter: drop-shadow(0 0 20px #E0E30B);
+            opacity: 0.8;
           }
           33.33% {
-            filter: drop-shadow(0 0 20px #E0E30B);
-          }
-          33.33% {
-            filter: drop-shadow(0 0 50px #E0E30B);
+            opacity: 0.8;
           }
           43.33% {
-            filter: drop-shadow(0 0 80px #FFFF00);
+            opacity: 1;
           }
           53.33% {
-            filter: drop-shadow(0 0 20px #E0E30B);
+            opacity: 0.8;
           }
           66.67% {
-            filter: drop-shadow(0 0 20px #E0E30B);
-          }
-          66.67% {
-            filter: drop-shadow(0 0 50px #E0E30B);
+            opacity: 0.8;
           }
           76.67% {
-            filter: drop-shadow(0 0 80px #FFFF00);
+            opacity: 1;
           }
           86.67% {
-            filter: drop-shadow(0 0 20px #E0E30B);
+            opacity: 0.8;
           }
           100% {
-            filter: drop-shadow(0 0 20px #E0E30B);
+            opacity: 0.8;
           }
         }
       `}</style>
@@ -842,50 +836,6 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                 />
               ))}
               
-              {/* Chromatic aberration edge effects */}
-              <div 
-                className="absolute left-1/2 transform -translate-x-1/2"
-                style={{
-                  width: '4px',
-                  height: '180px',
-                  background: 'linear-gradient(to bottom, rgba(255, 100, 100, 0.3) 0%, transparent 60%)',
-                  top: '0',
-                  marginLeft: '-20px',
-                  filter: 'blur(2px)',
-                  animation: 'projectorFlicker 0.08s ease-in-out infinite'
-                }}
-              />
-              <div 
-                className="absolute left-1/2 transform -translate-x-1/2"
-                style={{
-                  width: '4px',
-                  height: '180px',
-                  background: 'linear-gradient(to bottom, rgba(100, 100, 255, 0.3) 0%, transparent 60%)',
-                  top: '0',
-                  marginLeft: '20px',
-                  filter: 'blur(2px)',
-                  animation: 'projectorFlicker 0.08s ease-in-out infinite',
-                  animationDelay: '0.04s'
-                }}
-              />
-              
-              {/* Noise/static overlay for hologram effect */}
-              <div 
-                className="absolute left-1/2 transform -translate-x-1/2"
-                style={{
-                  width: '100px',
-                  height: '185px',
-                  top: '0',
-                  background: `repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 2px,
-                    rgba(192, 132, 252, 0.03) 2px,
-                    rgba(192, 132, 252, 0.03) 4px
-                  )`,
-                  animation: 'projectorFlicker 0.05s steps(2) infinite'
-                }}
-              />
             </div>
 
             {/* Vertical Core Pulse */}

@@ -19,6 +19,9 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   const [showQuickMenu, setShowQuickMenu] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [landingResetTrigger, setLandingResetTrigger] = React.useState(0);
+  
+  // Ref to MobileAppContent for QuickMenu Garden button
+  const mobileAppRef = React.useRef(null);
 
   // useTransition for deferring non-critical UI updates
   const [, startTransition] = React.useTransition();
@@ -102,10 +105,10 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   const handleEnterSite = React.useCallback(async () => {
     // Start fade in animation
     setActiveView('landing');
-    // Request fullscreen after content fade completes (0.2s delay + 0.6s duration = 0.8s)
+    // Request fullscreen after content fade completes + 0.3s delay (0.2s delay + 0.6s duration + 0.3s extra = 1.1s)
     setTimeout(() => {
       requestFullscreen();
-    }, 800);
+    }, 1100);
   }, []);
 
   const handleToggleQuickMenu = React.useCallback(() => {
@@ -149,10 +152,16 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
   const handleLandingFromQuickMenu = React.useCallback(() => {
     startTransition(() => {
       setShowQuickMenu(false);
-      setLandingResetTrigger(prev => prev + 1);
-      setActiveView('landing');
     });
-    window.scrollTo(0, 0);
+    
+    // Check if MobileAppContent is on a detail page
+    if (mobileAppRef.current && mobileAppRef.current.getActiveView()) {
+      // Use MobileAppContent's back handler to properly return with scroll position
+      mobileAppRef.current.handleBackToButton();
+    } else {
+      // Not on a detail page, just scroll to top
+      window.scrollTo(0, 0);
+    }
   }, []);
 
   // Memoize landing animation configuration
@@ -550,6 +559,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               style={{ background: 'transparent' }}
             >
               <MobileAppContent 
+                ref={mobileAppRef}
                 key={`landing-${landingResetTrigger}`}
                 darkMode={darkMode} 
                 setDarkMode={setDarkMode} 

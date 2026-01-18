@@ -32,7 +32,7 @@ import '../../styles/mobile-header.css';
 import '../../styles/logo.css';
 import { slideContentMap } from './slides';
 
-const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDeltawerken }) => {
+const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scrollDirection, onDeltawerken }, ref) => {
 
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
@@ -43,6 +43,43 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
   const [isSlideView, setIsSlideView] = React.useState(false); // Track if came from slide click
+  const [scrollPositionBeforeDetail, setScrollPositionBeforeDetail] = React.useState(0); // Track scroll position before opening detail
+  const [lastActiveView, setLastActiveView] = React.useState(null); // Track last clicked button/detail for Garden button return
+  
+  // Helper function to navigate to external page (Garden button) using handleBackToButton logic
+  const navigateToGardeners = () => {
+    // Start the exit animation
+    setIsDetailPageExiting(true);
+    
+    // Keep detail page visible while overlay fades, then hide it
+    setTimeout(() => {
+      if (activeView) {
+        setActiveView(null);
+        setIsScrolledPastH1(false); // Reset H1 visibility when returning to landing
+        window.scrollTo(0, 0); // Scroll to top so H1 is in view
+      }
+    }, 300); // When overlay is fully black (0.3s)
+    
+    // After detail page fades out (0.3s) + landing page fades in (1.2s), save scroll and navigate
+    setTimeout(() => {
+      // Save scroll position to sessionStorage BEFORE navigating
+      // Use scrollPositionBeforeDetail which was saved when entering the detail page
+      const positionToSave = scrollPositionBeforeDetail || (window.scrollY || document.documentElement.scrollTop);
+      
+      sessionStorage.setItem('landingPageScrollPosition', positionToSave.toString());
+      sessionStorage.setItem('lastDetailPage', lastActiveView || '');
+      sessionStorage.setItem('externalNavigation', 'true');
+      
+      // Reset animation state before navigating
+      startTransition(() => {
+        setIsDetailPageExiting(false);
+        setIsSlideView(false); // Reset slide view flag
+      });
+      
+      // Navigate to gardeners
+      window.location.href = '/gardeners';
+    }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
+  };
   
   // useTransition for deferring non-critical state updates during animations
   const [, startTransition] = React.useTransition();
@@ -132,6 +169,12 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   const handleButtonClick = (buttonName, path) => {
     if (isAnimating) return;
     
+    // Save current scroll position before opening detail page
+    setScrollPositionBeforeDetail(window.scrollY || document.documentElement.scrollTop);
+    
+    // Track which button was clicked
+    setLastActiveView(path);
+    
     // Set view immediately so content can start rendering right away
     setActiveView(path);
     
@@ -159,18 +202,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
     // Keep detail page visible while overlay fades, then hide it
     setTimeout(() => {
       setActiveView(null);
+      setIsScrolledPastH1(false); // Reset H1 visibility when returning to landing
+      window.scrollTo(0, 0); // Scroll to top so H1 is in view
     }, 300); // When overlay is fully black (0.3s)
     
-    // After detail page fades out (0.3s) + landing page fades in (1.2s), scroll to media container
+    // After detail page fades out (0.3s) + landing page fades in (1.2s), restore scroll position
     setTimeout(() => {
-      if (mediaContainerRef?.current) {
-        const rect = mediaContainerRef.current.getBoundingClientRect();
-        const elementTop = rect.top + window.scrollY;
-        const elementHeight = rect.height;
-        const viewportHeight = window.innerHeight;
-        const scrollTarget = Math.max(0, elementTop - (viewportHeight - elementHeight) / 2);
-        window.scrollTo(0, scrollTarget);
-      }
+      window.scrollTo(0, scrollPositionBeforeDetail);
     }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
     
     // Reset exit animation state after full animation completes (non-critical, can be deferred)
@@ -180,6 +218,18 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
       });
     }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
   };
+
+  // Expose handleBackToButton to parent via ref for QuickMenu Garden button
+  React.useImperativeHandle(ref, () => ({
+    handleBackToButton: () => {
+      if (activeView) {
+        // If on a detail page, use the same logic as handleBackToButton
+        handleBackToButton();
+      }
+    },
+    getActiveView: () => activeView,
+    getScrollPositionBeforeDetail: () => scrollPositionBeforeDetail
+  }), [activeView, scrollPositionBeforeDetail]);
 
   const handleScroll = () => {
     const gallery = galleryRef.current;
@@ -222,7 +272,15 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
   // Handle slide click - direct navigation to detail page
   const handleSlideClick = (index, route) => {
     if (isAnimating) return;
-    setIsAnimating(true);
+    
+    // Save current scroll position before opening detail page
+    setScrollPositionBeforeDetail(window.scrollY || document.documentElement.scrollTop);
+    
+    // Track which slide was clicked
+    setLastActiveView(route);
+    
+    // Set view immediately so content can start rendering and fading out right away
+    setActiveView(route);
     setIsSlideView(true);
     
     // Calculate center of clicked slide circle
@@ -239,39 +297,35 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
       setButtonCenter({ x: `${centerXPercent}%`, y: `${yPercentOfDocument}%` });
     }
     
-    // Same timing as triangle buttons: 1.5s zoom then show detail
+    // Use startTransition for non-critical UI updates (animation states)
+    startTransition(() => {
+      setIsAnimating(true);
+    });
+    
+    // Reset animation state after fade out completes (0.5s fade out + 0.5s delay + 0.9s fade in = 1.4s)
     setTimeout(() => {
       startTransition(() => {
-        setActiveView(route);
         setIsAnimating(false);
       });
-      window.scrollTo(0, 0);
-    }, 1500);
+      window.scrollTo(0, 0);  // Scroll to top of detail page
+    }, 1400);
   };
 
   // Handle back - direct navigation to landing
   const handleBack = () => {
+    // Start the exit animation
     setIsDetailPageExiting(true);
-    const wasSlideView = isSlideView; // Capture before reset
     
     // Keep detail page visible while overlay fades, then hide it
     setTimeout(() => {
       setActiveView(null);
+      setIsScrolledPastH1(false); // Reset H1 visibility when returning to landing
+      window.scrollTo(0, 0); // Scroll to top so H1 is in view
     }, 300); // When overlay is fully black (0.3s)
     
-    // After detail page fades out (0.3s) + landing page fades in (1.2s), scroll to slideshow container
+    // After detail page fades out (0.3s) + landing page fades in (1.2s), restore scroll position
     setTimeout(() => {
-      if (wasSlideView && slideshowContainerRef?.current) {
-        // Scroll to center slideshow container
-        const rect = slideshowContainerRef.current.getBoundingClientRect();
-        const elementTop = rect.top + window.scrollY;
-        const elementHeight = rect.height;
-        const viewportHeight = window.innerHeight;
-        const scrollTarget = Math.max(0, elementTop - (viewportHeight - elementHeight) / 2);
-        window.scrollTo(0, scrollTarget);
-      } else {
-        window.scrollTo(0, 0);
-      }
+      window.scrollTo(0, scrollPositionBeforeDetail);
     }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
     
     // Reset exit animation state after full animation completes (non-critical, can be deferred)
@@ -303,6 +357,25 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
       }
     }
   }), [activeView]);
+
+  // Restore scroll position when returning from external page (like /gardeners)
+  React.useEffect(() => {
+    const savedScrollPosition = sessionStorage.getItem('landingPageScrollPosition');
+    const isExternalNav = sessionStorage.getItem('externalNavigation') === 'true';
+    
+    if (savedScrollPosition !== null && isExternalNav === true) {
+      const position = parseInt(savedScrollPosition, 10);
+      // Use setTimeout to allow DOM to settle and animations to complete
+      // Delay to match the animation timing - give extra time for full page render
+      setTimeout(() => {
+        window.scrollTo({ top: position, behavior: 'auto' });
+      }, 1500);
+      // Clear after restoring
+      sessionStorage.removeItem('landingPageScrollPosition');
+      sessionStorage.removeItem('externalNavigation');
+      sessionStorage.removeItem('lastDetailPage');
+    }
+  }, []);
 
   React.useEffect(() => {
     // Prevent browser scroll restoration
@@ -1040,7 +1113,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                   opacity: {
                     type: 'tween',
                     duration: 0.9,
-                    delay: activeView ? 0.2 : 0.7, // 0.2s delay on fade out for render, 0.7s on initial load
+                    delay: activeView ? 0.2 : 0, // 0.2s delay on fade out for render, no delay on initial load
                     ease: 'easeInOut'
                   }
                 }}
@@ -1495,7 +1568,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
               const center = calculateButtonCenter('button1');
               setButtonCenter(center);
               setTimeout(() => {
-                window.location.href = '/gardeners';
+                navigateToGardeners();
               }, 1500);
             }}
             animate={clickedButton === 'seeMore' ? {
@@ -1650,13 +1723,13 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
             {/* Navigation Links */}
             <nav className="flex items-center space-x-3">
               <button
-                onClick={() => window.location.href = '/gardeners'}
+                onClick={navigateToGardeners}
                 className="transition-colors duration-300 hover:text-green-600"
               >
                 Home
               </button>
               <button
-                onClick={() => window.location.href = '/gardeners'}
+                onClick={navigateToGardeners}
                 className="transition-colors duration-300 hover:text-green-600"
               >
                 Contact
@@ -1688,6 +1761,6 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
       </motion.div>
     </motion.div>
   );
-}
+});
 
 export default React.memo(MobileAppContent);

@@ -77,12 +77,10 @@ svg {
   0%, 100% {
     stroke: #ef8616;
     stroke-opacity: 0.9;
-    filter: drop-shadow(0 0 4px #ef8616);
   }
   50% {
     stroke: rgb(167, 59, 198);
     stroke-opacity: 0.9;
-    filter: drop-shadow(0 0 4px rgb(167, 59, 198));
   }
 }
 
@@ -90,12 +88,10 @@ svg {
   0%, 100% {
     stroke: #ef8616;
     stroke-opacity: 0.9;
-    filter: drop-shadow(0 0 4px #ef8616);
   }
   50% {
     stroke: rgb(167, 59, 198);
     stroke-opacity: 0.9;
-    filter: drop-shadow(0 0 4px rgb(167, 59, 198));
   }
 }
 
@@ -103,12 +99,10 @@ svg {
   0%, 100% {
     stroke: #ef8616;
     stroke-opacity: 0.9;
-    filter: drop-shadow(0 0 4px #ef8616);
   }
   50% {
     stroke: rgb(167, 59, 198);
     stroke-opacity: 0.9;
-    filter: drop-shadow(0 0 4px rgb(167, 59, 198));
   }
 }
 
@@ -116,12 +110,10 @@ svg {
   0%, 100% {
     stroke: #ef8616;
     stroke-opacity: 0.9;
-    filter: drop-shadow(0 0 4px #ef8616);
   }
   50% {
     stroke: rgb(167, 59, 198);
     stroke-opacity: 0.9;
-    filter: drop-shadow(0 0 4px rgb(167, 59, 198));
   }
 }
 

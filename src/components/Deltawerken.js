@@ -652,25 +652,6 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
             {/* Holographic Projector Beam from apex metric */}
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 preserve-3d" style={{ transform: 'translate(-50%, -50%) translateY(calc(-145px + 14rem)) rotateX(180deg)', transformStyle: 'preserve-3d' }}>
               
-              {/* Volumetric outer glow layers - X and Y rotation for true 3D */}
-              {[0, 45, 90, 135, 180, 225, 270, 315].map((rotation, idx) => (
-                <div 
-                  key={`outer-${idx}`}
-                  className="absolute left-1/2 transform -translate-x-1/2"
-                  style={{
-                    width: '0',
-                    height: '0',
-                    borderLeft: '85px solid transparent',
-                    borderRight: '85px solid transparent',
-                    borderTop: '190px solid rgba(124, 58, 237, 0.03)',
-                    filter: 'blur(6px)',
-                    top: '0',
-                    transform: `translateX(-50%) rotateY(${rotation}deg)`,
-                    transformStyle: 'preserve-3d',
-                  }}
-                />
-              ))}
-              
               {/* Central beam core with glow - INVERTED gradient */}
               <div 
                 className="absolute left-1/2 transform -translate-x-1/2"
@@ -706,8 +687,8 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                       background: 'linear-gradient(90deg, transparent 0%, rgba(192, 132, 252, 0.5) 30%, rgba(255, 255, 255, 0.7) 50%, rgba(192, 132, 252, 0.5) 70%, transparent 100%)',
                       top: '0',
                       left: '0',
-                      animation: `projectorScanlineDown ${1.2 + i * 0.3}s linear infinite`,
-                      animationDelay: `${i * 0.25}s`,
+                      animation: `projectorScanlineDown ${2.4 + i * 0.6}s linear infinite`,
+                      animationDelay: `${i * 0.5}s`,
                       filter: 'blur(1px)'
                     }}
                   />

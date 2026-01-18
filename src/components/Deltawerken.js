@@ -549,18 +549,6 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
           from { transform: translateY(-5px) rotateX(-20deg) rotateY(360deg); }
           to { transform: translateY(-5px) rotateX(-20deg) rotateY(0deg); }
         }
-        @keyframes projectorFlicker {
-          0%, 100% { opacity: 1; }
-          10% { opacity: 0.85; }
-          20% { opacity: 1; }
-          30% { opacity: 0.7; }
-          40% { opacity: 0.95; }
-          50% { opacity: 0.6; }
-          60% { opacity: 1; }
-          70% { opacity: 0.8; }
-          80% { opacity: 0.9; }
-          90% { opacity: 0.75; }
-        }
         @keyframes projectorScanlineDown {
           0% { transform: translateY(180px); opacity: 0; }
           10% { opacity: 0.8; }
@@ -679,88 +667,6 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                     top: '0',
                     transform: `translateX(-50%) rotateY(${rotation}deg)`,
                     transformStyle: 'preserve-3d',
-                    animation: 'projectorFlicker 0.15s ease-in-out infinite'
-                  }}
-                />
-              ))}
-              
-              {/* Cross-axis layers rotated on Z for Y-depth */}
-              {[0, 90, 180, 270].map((rotation, idx) => (
-                <div 
-                  key={`cross-${idx}`}
-                  className="absolute left-1/2 transform -translate-x-1/2"
-                  style={{
-                    width: '0',
-                    height: '0',
-                    borderLeft: '85px solid transparent',
-                    borderRight: '85px solid transparent',
-                    borderTop: '190px solid rgba(124, 58, 237, 0.03)',
-                    filter: 'blur(6px)',
-                    top: '0',
-                    transform: `translateX(-50%) rotateZ(${rotation}deg) rotateY(45deg)`,
-                    transformStyle: 'preserve-3d',
-                    animation: 'projectorFlicker 0.15s ease-in-out infinite'
-                  }}
-                />
-              ))}
-              
-              {/* Mid-layer cones with dual axis rotation */}
-              {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((rotation, idx) => (
-                <div 
-                  key={`mid-${idx}`}
-                  className="absolute left-1/2 transform -translate-x-1/2"
-                  style={{
-                    width: '0',
-                    height: '0',
-                    borderLeft: '55px solid transparent',
-                    borderRight: '55px solid transparent',
-                    borderTop: '175px solid rgba(168, 85, 247, 0.035)',
-                    filter: 'blur(4px)',
-                    top: '0',
-                    transform: `translateX(-50%) rotateY(${rotation}deg)`,
-                    transformStyle: 'preserve-3d',
-                    animation: `projectorFlicker 0.12s ease-in-out infinite`,
-                    animationDelay: `${idx * 0.02}s`
-                  }}
-                />
-              ))}
-              
-              {/* Inner bright core cones - more angles */}
-              {[0, 45, 90, 135, 180, 225, 270, 315].map((rotation, idx) => (
-                <div 
-                  key={`inner-${idx}`}
-                  className="absolute left-1/2 transform -translate-x-1/2"
-                  style={{
-                    width: '0',
-                    height: '0',
-                    borderLeft: '30px solid transparent',
-                    borderRight: '30px solid transparent',
-                    borderTop: '170px solid rgba(192, 132, 252, 0.05)',
-                    filter: 'blur(3px)',
-                    top: '0',
-                    transform: `translateX(-50%) rotateY(${rotation}deg)`,
-                    transformStyle: 'preserve-3d',
-                    animation: 'projectorFlicker 0.2s ease-in-out infinite'
-                  }}
-                />
-              ))}
-              
-              {/* Innermost core with Z-rotated layers */}
-              {[0, 60, 120].map((rotation, idx) => (
-                <div 
-                  key={`core-${idx}`}
-                  className="absolute left-1/2 transform -translate-x-1/2"
-                  style={{
-                    width: '0',
-                    height: '0',
-                    borderLeft: '20px solid transparent',
-                    borderRight: '20px solid transparent',
-                    borderTop: '165px solid rgba(192, 132, 252, 0.08)',
-                    filter: 'blur(2px)',
-                    top: '0',
-                    transform: `translateX(-50%) rotateZ(${rotation}deg) rotateY(30deg)`,
-                    transformStyle: 'preserve-3d',
-                    animation: 'projectorPulse 0.25s ease-in-out infinite'
                   }}
                 />
               ))}
@@ -775,17 +681,6 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                   filter: 'blur(3px)',
                   top: '0',
                   borderRadius: '4px',
-                  animation: 'projectorPulse 0.3s ease-in-out infinite'
-                }}
-              />
-              <div 
-                className="absolute left-1/2 transform -translate-x-1/2"
-                style={{
-                  width: '2px',
-                  height: '185px',
-                  background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.9) 0%, rgba(192, 132, 252, 0.6) 40%, transparent 100%)',
-                  top: '0',
-                  animation: 'projectorFlicker 0.1s ease-in-out infinite'
                 }}
               />
               

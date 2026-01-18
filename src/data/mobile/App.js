@@ -992,6 +992,7 @@ const MobileAppContent = ({ darkMode, setDarkMode, data, scrollDirection, onDelt
                   rotate: '54deg',
                   cursor: 'pointer',
                   transformOrigin: '50% 60%',
+                  zIndex: 10,
                   ...gpuAccel.triangleButton
                 }}
               >

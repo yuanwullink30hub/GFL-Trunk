@@ -677,7 +677,7 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                   clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)'
                 }}
               >
-                {[...Array(4)].map((_, i) => (
+                {[...Array(2)].map((_, i) => (
                   <div
                     key={i}
                     className="absolute"
@@ -687,8 +687,39 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                       background: 'linear-gradient(90deg, transparent 0%, rgba(192, 132, 252, 0.5) 30%, rgba(255, 255, 255, 0.7) 50%, rgba(192, 132, 252, 0.5) 70%, transparent 100%)',
                       top: '0',
                       left: '0',
-                      animation: `projectorScanlineDown ${2.4 + i * 0.6}s linear infinite`,
-                      animationDelay: `${i * 0.5}s`,
+                      animation: `projectorScanlineDown ${5 + i * 1.5}s linear infinite`,
+                      animationDelay: `${i * 2}s`,
+                      filter: 'blur(1px)'
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Cross-axis scanlines - rotated 90 degrees for cross beam effect */}
+              <div 
+                className="absolute left-1/2 transform -translate-x-1/2 preserve-3d" 
+                style={{ 
+                  width: '180px', 
+                  height: '180px', 
+                  top: '0', 
+                  overflow: 'hidden', 
+                  opacity: 0.5,
+                  clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)',
+                  transform: 'translateX(-50%) rotateY(90deg)'
+                }}
+              >
+                {[...Array(2)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute"
+                    style={{
+                      width: '100%',
+                      height: '2px',
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(192, 132, 252, 0.5) 30%, rgba(255, 255, 255, 0.7) 50%, rgba(192, 132, 252, 0.5) 70%, transparent 100%)',
+                      top: '0',
+                      left: '0',
+                      animation: `projectorScanlineDown ${5.5 + i * 1.5}s linear infinite`,
+                      animationDelay: `${i * 2 + 1}s`,
                       filter: 'blur(1px)'
                     }}
                   />
@@ -717,28 +748,6 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
             {/* Vertical Core Pulse */}
             <div className="absolute left-1/2 top-1/2 w-[1.75px] h-[240px] bg-gradient-to-t from-transparent via-red-500/30 to-transparent blur-[2px] transform -translate-x-1/2 -translate-y-1/2 opacity-50" />
             <div className="absolute left-1/2 top-1/2 w-[1px] h-[240px] bg-red-500/60 transform -translate-x-1/2 -translate-y-1/2" />
-
-            {/* 8 Inner Radial Beam Faces - triangular planes from apex to base creating 360° beam visual */}
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={`beam-face-${i}`}
-                className="absolute preserve-3d"
-                style={{
-                  left: '50%',
-                  top: '50%',
-                  width: '182px',
-                  height: '195px',
-                  transformOrigin: 'center center',
-                  transform: `translate(-50%, -50%) translateY(-29px) rotateY(${i * 45}deg)`,
-                  background: `linear-gradient(to bottom, rgba(192, 132, 252, 0.3) 0%, rgba(168, 85, 247, 0.15) 50%, rgba(192, 132, 252, 0.05) 100%)`,
-                  clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)',
-                  opacity: 0.4,
-                  filter: 'blur(2px)',
-                  backfaceVisibility: 'visible',
-                  WebkitBackfaceVisibility: 'visible',
-                }}
-              />
-            ))}
             </div>
         </div>
       </div>

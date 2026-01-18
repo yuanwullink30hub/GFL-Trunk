@@ -185,6 +185,17 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
     startTransition(() => {
       setShowQuickMenu(false);
     });
+    // Request fullscreen if not already (same logic as enter site button)
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      if (!document.fullscreenElement) {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen().catch(() => {});
+        } else if (elem.webkitRequestFullscreen) {
+          elem.webkitRequestFullscreen();
+        }
+      }
+    }
     // Small delay to let quick menu close first
     setTimeout(() => {
       setShowLoginModal(true);

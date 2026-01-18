@@ -560,7 +560,7 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
           50% { opacity: 1; filter: blur(2px); }
         }
         .animate-pyramid-stable {
-          animation: stableRotate 15s linear infinite;
+          animation: stableRotate 30s linear infinite;
           backface-visibility: hidden;
           -webkit-backface-visibility: hidden;
         }

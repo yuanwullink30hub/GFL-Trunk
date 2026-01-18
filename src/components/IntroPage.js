@@ -100,11 +100,10 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
 
   // Memoized callbacks to prevent unnecessary re-renders
   const handleEnterSite = React.useCallback(async () => {
-    await requestFullscreen();
-    // Add 0.5s delay before starting animation
-    setTimeout(() => {
-      setActiveView('landing');
-    }, 500);
+    // Start animation immediately alongside fullscreen request
+    setActiveView('landing');
+    // Request fullscreen in parallel (don't wait)
+    requestFullscreen();
   }, []);
 
   const handleToggleQuickMenu = React.useCallback(() => {

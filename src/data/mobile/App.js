@@ -24,6 +24,7 @@ import placeholder8 from '../../images/slideshow images/placeholder8.svg';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 import soul from '../../images/Holographichearth.png';
 import body from '../../images/holographicbody.png';
+import mind from '../../images/Holographicmind.PNG';
 import '../../styles/poetry.css';
 import '../../styles/text.css';
 import '../../styles/subtitles.css';
@@ -37,14 +38,15 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
   const [isAnimating, setIsAnimating] = React.useState(false);
+  const [showFooterPopup, setShowFooterPopup] = React.useState(false);
   const [clickedButton, setClickedButton] = React.useState(null);
   const [buttonCenter, setButtonCenter] = React.useState({ x: '50%', y: '50%' });
   const [isScrolledPastH1, setIsScrolledPastH1] = React.useState(false); // Track when to hide large logo
   const [slideshowOpacity, setSlideshowOpacity] = React.useState(0);
   const [isDetailPageExiting, setIsDetailPageExiting] = React.useState(false);
+  const [isLandingFadingOut, setIsLandingFadingOut] = React.useState(false); // Track landing fade out for slide clicks
   // eslint-disable-next-line no-unused-vars
   const [isSlideView, setIsSlideView] = React.useState(false); // Track if came from slide click
-  const [scrollPositionBeforeDetail, setScrollPositionBeforeDetail] = React.useState(0); // Track scroll position before opening detail
   const [lastActiveView, setLastActiveView] = React.useState(null); // Track last clicked button/detail for Garden button return
   
   // Helper function to navigate to external page (Garden button) using handleBackToButton logic
@@ -63,11 +65,6 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
     
     // After detail page fades out (0.3s) + landing page fades in (1.2s), save scroll and navigate
     setTimeout(() => {
-      // Save scroll position to sessionStorage BEFORE navigating
-      // Use scrollPositionBeforeDetail which was saved when entering the detail page
-      const positionToSave = scrollPositionBeforeDetail || (window.scrollY || document.documentElement.scrollTop);
-      
-      sessionStorage.setItem('landingPageScrollPosition', positionToSave.toString());
       sessionStorage.setItem('lastDetailPage', lastActiveView || '');
       sessionStorage.setItem('externalNavigation', 'true');
       
@@ -170,9 +167,6 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
   const handleButtonClick = (buttonName, path) => {
     if (isAnimating) return;
     
-    // Save current scroll position before opening detail page
-    setScrollPositionBeforeDetail(window.scrollY || document.documentElement.scrollTop);
-    
     // Track which button was clicked
     setLastActiveView(path);
     
@@ -200,25 +194,16 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
     // Start the exit animation
     setIsDetailPageExiting(true);
     
-    // Keep detail page visible while overlay fades, then hide it
-    setTimeout(() => {
-      setActiveView(null);
-      setIsScrolledPastH1(false); // Reset H1 visibility when returning to landing
-      window.scrollTo(0, 0); // Scroll to top so H1 is in view
-    }, 300); // When overlay is fully black (0.3s)
+    // Immediately reset view and scroll
+    setActiveView(null);
+    setIsScrolledPastH1(false);
+    window.scrollTo(0, 0);
     
-    // After detail page fades out (0.3s) + landing page fades in (1.2s), restore scroll position
+    // Reset exit animation state after fade completes
     setTimeout(() => {
-      window.scrollTo(0, scrollPositionBeforeDetail);
-    }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
-    
-    // Reset exit animation state after full animation completes (non-critical, can be deferred)
-    setTimeout(() => {
-      startTransition(() => {
-        setIsDetailPageExiting(false);
-      });
-    }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
-  }, [scrollPositionBeforeDetail]);
+      setIsDetailPageExiting(false);
+    }, 600); // Match the 0.6s fade duration
+  }, []);
 
   // Expose handleBackToButton to parent via ref for QuickMenu Garden button
   React.useImperativeHandle(ref, () => ({
@@ -228,9 +213,8 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
         handleBackToButton();
       }
     },
-    getActiveView: () => activeView,
-    getScrollPositionBeforeDetail: () => scrollPositionBeforeDetail
-  }), [activeView, scrollPositionBeforeDetail, handleBackToButton]);
+    getActiveView: () => activeView
+  }), [activeView, handleBackToButton]);
 
   const handleScroll = () => {
     const gallery = galleryRef.current;
@@ -274,15 +258,8 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
   const handleSlideClick = (index, route) => {
     if (isAnimating) return;
     
-    // Save current scroll position before opening detail page
-    setScrollPositionBeforeDetail(window.scrollY || document.documentElement.scrollTop);
-    
     // Track which slide was clicked
     setLastActiveView(route);
-    
-    // Set view immediately so content can start rendering and fading out right away
-    setActiveView(route);
-    setIsSlideView(true);
     
     // Calculate center of clicked slide circle
     const slideElement = slideRefs.current[index];
@@ -303,13 +280,22 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
       setIsAnimating(true);
     });
     
-    // Reset animation state after fade out completes (0.5s fade out + 0.5s delay + 0.9s fade in = 1.4s)
+    setIsSlideView(true);
+    setIsLandingFadingOut(true); // Start landing fade out immediately
+    
+    // Wait for landing page to fade out (0.6s), then set activeView to trigger detail page fade-in with 0.5s delay
+    setTimeout(() => {
+      setActiveView(route);
+      window.scrollTo(0, 0);  // Scroll to top of detail page
+    }, 600); // 0.6s landing fade out
+    
+    // Reset animation state after full transition (0.6s fade out + 0.5s delay + 0.6s fade in = 1.7s)
     setTimeout(() => {
       startTransition(() => {
         setIsAnimating(false);
+        setIsLandingFadingOut(false);
       });
-      window.scrollTo(0, 0);  // Scroll to top of detail page
-    }, 1400);
+    }, 1700);
   };
 
   // Handle back - direct navigation to landing
@@ -317,25 +303,18 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
     // Start the exit animation
     setIsDetailPageExiting(true);
     
-    // Keep detail page visible while overlay fades, then hide it
-    setTimeout(() => {
-      setActiveView(null);
-      setIsScrolledPastH1(false); // Reset H1 visibility when returning to landing
-      window.scrollTo(0, 0); // Scroll to top so H1 is in view
-    }, 300); // When overlay is fully black (0.3s)
+    // Immediately reset view and scroll
+    setActiveView(null);
+    setIsScrolledPastH1(false);
+    window.scrollTo(0, 0);
     
-    // After detail page fades out (0.3s) + landing page fades in (1.2s), restore scroll position
-    setTimeout(() => {
-      window.scrollTo(0, scrollPositionBeforeDetail);
-    }, 1800); // 0.3s hide detail + 1.2s landing fade in + buffer
-    
-    // Reset exit animation state after full animation completes (non-critical, can be deferred)
+    // Reset exit animation state after fade completes
     setTimeout(() => {
       startTransition(() => {
         setIsDetailPageExiting(false);
-        setIsSlideView(false); // Reset slide view flag
+        setIsSlideView(false);
       });
-    }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
+    }, 600); // Match the 0.6s fade duration
   };
 
   // Handle close slide - same as handleBack for slide content pages
@@ -347,36 +326,19 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
   const ActiveContent = activeView ? slideContentMap[activeView] : null;
 
   // Memoize animation configurations to prevent recreation on every render
+  // Landing fades out when activeView is set OR when isLandingFadingOut is true (for slide clicks)
+  const shouldLandingFadeOut = activeView || isLandingFadingOut;
   const contentFadeConfig = React.useMemo(() => ({
-    animate: { opacity: activeView ? 0 : 1 },
+    animate: { opacity: shouldLandingFadeOut ? 0 : 1 },
     transition: {
       opacity: {
         type: 'tween',
-        duration: activeView ? 0.5 : 0.9,
-        delay: activeView ? 0 : 0.5,
+        duration: 0.6,
+        delay: shouldLandingFadeOut ? 0 : 0.5, // Fade out instant, fade in with 0.5s delay (matches IntroPage)
         ease: 'easeInOut'
       }
     }
-  }), [activeView]);
-
-  // Restore scroll position when returning from external page (like /gardeners)
-  React.useEffect(() => {
-    const savedScrollPosition = sessionStorage.getItem('landingPageScrollPosition');
-    const isExternalNav = sessionStorage.getItem('externalNavigation') === 'true';
-    
-    if (savedScrollPosition !== null && isExternalNav === true) {
-      const position = parseInt(savedScrollPosition, 10);
-      // Use setTimeout to allow DOM to settle and animations to complete
-      // Delay to match the animation timing - give extra time for full page render
-      setTimeout(() => {
-        window.scrollTo({ top: position, behavior: 'auto' });
-      }, 1500);
-      // Clear after restoring
-      sessionStorage.removeItem('landingPageScrollPosition');
-      sessionStorage.removeItem('externalNavigation');
-      sessionStorage.removeItem('lastDetailPage');
-    }
-  }, []);
+  }), [shouldLandingFadeOut]);
 
   React.useEffect(() => {
     // Prevent browser scroll restoration
@@ -626,8 +588,8 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
             transition={{
               opacity: {
                 type: 'tween',
-                duration: isDetailPageExiting ? 0.5 : 0.9,
-                delay: isDetailPageExiting ? 0 : 0.5,
+                duration: 0.6,
+                delay: isDetailPageExiting ? 0 : 0.5, // Exit instant, enter with 0.5s delay (matches IntroPage)
                 ease: 'easeInOut'
               }
             }}
@@ -1021,6 +983,18 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
                       if(visiblePath) visiblePath.style.stroke = '#0c0418ff';
                     }}
                   />
+                  <defs>
+                    <clipPath id="triangle2-clip">
+                      <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
+                    </clipPath>
+                  </defs>
+                  <image 
+                    href={body} 
+                    x="45" y="91.32" width="187.99" height="175.34" 
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{pointerEvents: 'none', imageRendering: 'auto'}}
+                    transform="rotate(1 -300 1000)"
+                  />
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" 
                     fill="none" 
@@ -1031,18 +1005,6 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
                     pointerEvents="none"
                     className="breathingStroke"
                     style={{ opacity: 0.9 }}
-                  />
-                  <defs>
-                    <clipPath id="triangle2-clip">
-                      <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
-                    </clipPath>
-                  </defs>
-                  <image 
-                    href={body} 
-                    x="45" y="86.32" width="187.99" height="175.34" 
-                    preserveAspectRatio="xMidYMid slice"
-                    style={{pointerEvents: 'none', imageRendering: 'auto'}}
-                    transform="rotate(1 -300 1000)"
                   />
                 </g>
               </motion.svg>
@@ -1070,9 +1032,7 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
                   ...gpuAccel.triangleButton
                 }}
               >
-                <defs>
-                </defs>
-                <g style={{overflow: 'hidden'}}>
+                <g style={{overflow: 'visible'}}>
                   <path 
                     d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z"
                     fill="rgba(0,0,0,0.001)"
@@ -1104,36 +1064,15 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
                       <path d="M 140 70 Q 150 55 160 70 L 270 260 Q 270 275 255 275 L 45 275 Q 30 275 30 260 L 140 70 Z" />
                     </clipPath>
                   </defs>
+                  <image
+                    href={mind}
+                    x="55.67" y="110.90" width="154.08" height="143.81"
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{pointerEvents: 'none', imageRendering: 'auto'}}
+                    transform="rotate(-55 175 165)"
+                  />
                 </g>
               </motion.svg>
-              {/* Mindholo positioned outside SVG for proper 3D transforms */}
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: activeView ? 0 : 1 }}
-                transition={{
-                  opacity: {
-                    type: 'tween',
-                    duration: 0.9,
-                    delay: activeView ? 0.2 : 0, // 0.2s delay on fade out for render, no delay on initial load
-                    ease: 'easeInOut'
-                  }
-                }}
-                style={{
-                position: 'absolute',
-                left: 'calc(clamp(29%, 34vw, 44%) - 0.3rem + 2.8rem - 1rem + 0.2rem)',
-                top: 'calc(clamp(-40.5%, -35.5vw, -30.5%) - 5.7rem + 2rem - 0.5rem - 0.2rem - 0.2rem - 0.2rem)',
-                width: 'clamp(60px, 28vw, 220px)',
-                height: 'clamp(60px, 28vw, 220px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'none',
-                overflow: 'visible',
-                transform: 'scale(0.30324)',
-                transformOrigin: 'center center',
-              }}>
-                <Mindholo nodeCount={150} showScanline={false} />
-              </motion.div>
               {/* Button 3 */}
               <motion.svg 
                 className="triangleButton3"
@@ -1737,13 +1676,42 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
               </button>
             </nav>
 
-            {/* Dark Mode Toggle */}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-lg hover:bg-gray-700 transition-colors duration-300"
-            >
-              {darkMode ? <BsSun className="text-5xl" style={{color: '#eb7e09ff'}} /> : <BsMoon className="text-blue-600 text-5xl" />}
-            </button>
+            {/* Settings Button with Popup */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowFooterPopup(!showFooterPopup)}
+                className="p-2 rounded-lg hover:bg-gray-700 transition-colors duration-300"
+              >
+                {darkMode ? <BsSun className="text-5xl" style={{color: '#eb7e09ff'}} /> : <BsMoon className="text-blue-600 text-5xl" />}
+              </button>
+              <AnimatePresence>
+                {showFooterPopup && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    style={{
+                      position: 'absolute',
+                      bottom: '100%',
+                      right: 0,
+                      marginBottom: '8px',
+                      background: 'rgba(31, 41, 55, 0.95)',
+                      border: '1px solid rgba(239, 134, 22, 0.5)',
+                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      minWidth: '180px',
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                      zIndex: 100
+                    }}
+                  >
+                    <p style={{ fontSize: '14px', color: '#FAF9F6', margin: 0, lineHeight: 1.5 }}>
+                      SIKE, jij bent het licht dus alleen donker thema op deze site! 🌞
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* Company Info */}

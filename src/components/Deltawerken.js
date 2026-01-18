@@ -436,8 +436,8 @@ const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor,
               ? `polygon(50% 0%, 100% 100%, 0% 100%)` 
               : `polygon(${((halfBase - halfTop) / baseWidth) * 100}% 0%, ${100 - ((halfBase - halfTop) / baseWidth) * 100}% 0%, 100% 100%, 0% 100%)`,
             transform: `translateX(-50%) rotateY(${rot}deg) translateZ(${halfTop}px) rotateX(${angle}deg)`,
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
+            backfaceVisibility: 'visible',
+            WebkitBackfaceVisibility: 'visible',
             filter: 'none',
             willChange: 'transform',
           }}
@@ -456,8 +456,8 @@ const PyramidSegment = ({ baseWidth, topWidth, height, yPos, color, borderColor,
             border: `1px solid ${borderColor}`,
             transform: `translate(-50%, -50%) rotateX(90deg) translateZ(0)`,
             opacity: opacity,
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden'
+            backfaceVisibility: 'visible',
+            WebkitBackfaceVisibility: 'visible'
           }}
         />
       )}
@@ -561,8 +561,8 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
         }
         .animate-pyramid-stable {
           animation: stableRotate 30s linear infinite;
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
+          backface-visibility: visible;
+          -webkit-backface-visibility: visible;
         }
         .glow-amber { text-shadow: 0 0 10px rgba(251, 191, 36, 0.7); }
         

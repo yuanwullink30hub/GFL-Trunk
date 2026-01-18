@@ -59,10 +59,6 @@ export const preloadImages = () => {
   // Critical images to preload
   const imagePaths = [
     require('../images/logo.png'),
-    require('../images/knightpng.png'),
-    require('../images/bodypng.png'),
-    require('../images/mindpng.png'),
-    require('../images/soulpng.png'),
     require('../images/Holographichearth.png'),
     require('../images/Holographicmind.PNG'),
     require('../images/holographicbody.png'),

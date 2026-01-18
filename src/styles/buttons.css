@@ -17,7 +17,6 @@ svg {
   shape-rendering: geometricPrecision;
   stroke-linejoin: bevel; /* Cheaper than miter, reduces aliasing */
   paint-order: stroke fill markers;
-  will-change: transform; /* Enable GPU acceleration for animated SVGs */
 }
 
 @keyframes breathColor {
@@ -76,44 +75,44 @@ svg {
 @keyframes breathStroke {
   0%, 100% {
     stroke: #ef8616;
-    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(239, 134, 22, 0.8)) drop-shadow(0 0 20px rgba(239, 134, 22, 0.4));
   }
   50% {
     stroke: rgb(167, 59, 198);
-    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 20px rgba(167, 59, 198, 0.4));
   }
 }
 
 @keyframes breathStrokeButton2 {
   0%, 100% {
     stroke: #ef8616;
-    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(239, 134, 22, 0.8)) drop-shadow(0 0 20px rgba(239, 134, 22, 0.4));
   }
   50% {
     stroke: rgb(167, 59, 198);
-    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 20px rgba(167, 59, 198, 0.4));
   }
 }
 
 @keyframes breathStrokeButton1 {
   0%, 100% {
     stroke: #ef8616;
-    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(239, 134, 22, 0.8)) drop-shadow(0 0 20px rgba(239, 134, 22, 0.4));
   }
   50% {
     stroke: rgb(167, 59, 198);
-    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 20px rgba(167, 59, 198, 0.4));
   }
 }
 
 @keyframes breathStrokeButton3 {
   0%, 100% {
     stroke: #ef8616;
-    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(239, 134, 22, 0.8)) drop-shadow(0 0 20px rgba(239, 134, 22, 0.4));
   }
   50% {
     stroke: rgb(167, 59, 198);
-    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(167, 59, 198, 0.8)) drop-shadow(0 0 20px rgba(167, 59, 198, 0.4));
   }
 }
 
@@ -188,7 +187,6 @@ svg {
 
 .breathingStroke {
   animation: breathStroke 4s infinite ease-in-out;
-  will-change: stroke, stroke-opacity, filter;
 }
 
 .breathingBorder {
@@ -197,7 +195,6 @@ svg {
   -webkit-backface-visibility: hidden;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
-  will-change: box-shadow, border-color;
 }
 
 .triangleButton1 .breathingBorder {

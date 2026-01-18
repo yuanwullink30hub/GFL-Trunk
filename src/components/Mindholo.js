@@ -333,28 +333,37 @@ const HemisphereVolume = React.memo(({ xOffset, color }) => {
 const Mindholo = ({ nodeCount = 300, showScanline = true }) => {
   const { isReady, generateBrain } = useAnimationWorker();
   const [brainData, setBrainData] = useState(null);
+  const hasGeneratedRef = React.useRef(false);
 
   // Use Web Worker to generate brain structure off main thread
+  // Only generate once to prevent position glitch when worker data arrives
   useEffect(() => {
-    if (!isReady) return;
-
-    (async () => {
-      try {
-        const data = await generateBrain(nodeCount);
-        setBrainData(data);
-      } catch (error) {
-        console.warn('Worker generation failed, falling back to main thread:', error.message);
-        // Fallback to main thread generation if worker fails
-        setBrainData(generateBrainStructure(nodeCount));
-      }
-    })();
+    if (hasGeneratedRef.current) return;
+    
+    if (isReady) {
+      hasGeneratedRef.current = true;
+      (async () => {
+        try {
+          const data = await generateBrain(nodeCount);
+          setBrainData(data);
+        } catch (error) {
+          console.warn('Worker generation failed, falling back to main thread:', error.message);
+          // Fallback to main thread generation if worker fails
+          setBrainData(generateBrainStructure(nodeCount));
+        }
+      })();
+    } else {
+      // If worker isn't ready, generate synchronously and mark as done
+      hasGeneratedRef.current = true;
+      setBrainData(generateBrainStructure(nodeCount));
+    }
   }, [nodeCount, isReady, generateBrain]);
 
-  // Fallback to synchronous generation if worker not ready
+  // Use generated data, or empty arrays while waiting
   const { points, connections } = useMemo(() => {
     if (brainData) return brainData;
-    return generateBrainStructure(nodeCount);
-  }, [brainData, nodeCount]);
+    return { points: [], connections: [] };
+  }, [brainData]);
 
   return (
     <div

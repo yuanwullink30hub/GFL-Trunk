@@ -7,7 +7,7 @@ import sun2 from '../images/illustrativesun.png';
 import Deltawerken from './Deltawerken';
 import MobileAppContent from '../data/mobile/App';
 import HoloButton from './HoloButton';
-import LoginModal from './LoginModal';
+import LoginModal from './Login';
 import generalData from '../data.json';
 import mobileData from '../data/mobile/data.json';
 import { preloadAll } from '../utils/preloadUtils';
@@ -370,7 +370,11 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
       initial={{ opacity: 1 }}
       animate={{ opacity: showLoginModal ? 0 : 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.5, ease: 'easeInOut' }}
+      transition={{ 
+        duration: 0.5, 
+        delay: showLoginModal ? 0 : 0.6, // Wait for login modal exit (0.6s duration, instant start)
+        ease: 'easeInOut' 
+      }}
       className={`w-full h-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-300 ${
       darkMode 
         ? 'text-white'
@@ -397,7 +401,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
           pointerEvents: 'none'
         }}
         initial={{ opacity: 1 }}
-        animate={{ opacity: 1 }}
+        animate={{ opacity: showLoginModal ? 0 : 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
       >
@@ -579,7 +583,11 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               opacity: showLoginModal ? 0 : 1 
             }}
             exit={landingAnimationConfig.exit}
-            transition={{ duration: 0.6, ease: 'easeInOut' }}
+            transition={{ 
+              duration: 0.6, 
+              delay: showLoginModal ? 0 : 0.6, // Wait for login modal exit (0.6s duration, instant start)
+              ease: 'easeInOut' 
+            }}
             style={{
               position: 'absolute',
               top: 0,

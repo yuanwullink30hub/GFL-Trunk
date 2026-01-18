@@ -196,7 +196,7 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
   };
 
   // Detail page triangle button - fade transition back to media container
-  const handleBackToButton = () => {
+  const handleBackToButton = React.useCallback(() => {
     // Start the exit animation
     setIsDetailPageExiting(true);
     
@@ -218,7 +218,7 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
         setIsDetailPageExiting(false);
       });
     }, 2000); // Extra buffer to ensure header stays hidden through landing fade-in
-  };
+  }, [scrollPositionBeforeDetail]);
 
   // Expose handleBackToButton to parent via ref for QuickMenu Garden button
   React.useImperativeHandle(ref, () => ({

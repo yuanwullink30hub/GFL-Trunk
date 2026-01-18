@@ -15,6 +15,7 @@ import { preloadAll } from '../utils/preloadUtils';
 const IntroPage = ({ darkMode, setDarkMode }) => {
   // Simplified state: only track which view is active, not separate show/visible states
   const [activeView, setActiveView] = React.useState('intro'); // 'intro' | 'landing' | 'deltawerken'
+  // eslint-disable-next-line no-unused-vars
   const [sunButtonVisible, setSunButtonVisible] = React.useState(true);
   const [scrollDirection] = React.useState('up');
   const [showQuickMenu, setShowQuickMenu] = React.useState(false);

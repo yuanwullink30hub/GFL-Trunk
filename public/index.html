@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#150a24">
+    <meta name="msapplication-navbutton-color" content="#150a24">
+    <meta name="color-scheme" content="dark">
     <title>Garden For Life</title>
     <!-- Preload critical assets for faster landing page transition -->
     <link rel="prefetch" href="/videos/KnightHD_2.mp4" as="video">
@@ -21,6 +27,9 @@
         html, body {
             width: 100%;
             overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {

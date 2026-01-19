@@ -656,12 +656,11 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
               <div 
                 className="absolute left-1/2 transform -translate-x-1/2"
                 style={{
-                  width: '8px',
+                  width: '10px',
                   height: '185px',
-                  background: 'linear-gradient(to bottom, rgba(168, 85, 247, 0.7) 0%, rgba(192, 132, 252, 0.4) 30%, rgba(168, 85, 247, 0.15) 70%, transparent 100%)',
-                  filter: 'blur(3px)',
+                  background: 'linear-gradient(to bottom, rgba(168, 85, 247, 0.5) 0%, rgba(192, 132, 252, 0.3) 30%, rgba(168, 85, 247, 0.1) 70%, transparent 100%)',
                   top: '0',
-                  borderRadius: '4px',
+                  borderRadius: '5px',
                 }}
               />
               
@@ -674,7 +673,8 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                   top: '0', 
                   overflow: 'hidden', 
                   opacity: 0.5,
-                  clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)'
+                  clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)',
+                  willChange: 'transform'
                 }}
               >
                 {[...Array(2)].map((_, i) => (
@@ -689,7 +689,7 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                       left: '0',
                       animation: `projectorScanlineDown ${5 + i * 1.5}s linear infinite`,
                       animationDelay: `${i * 2}s`,
-                      filter: 'blur(1px)'
+                      willChange: 'transform'
                     }}
                   />
                 ))}
@@ -705,7 +705,8 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                   overflow: 'hidden', 
                   opacity: 0.5,
                   clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)',
-                  transform: 'translateX(-50%) rotateY(90deg)'
+                  transform: 'translateX(-50%) rotateY(90deg)',
+                  willChange: 'transform'
                 }}
               >
                 {[...Array(2)].map((_, i) => (
@@ -720,23 +721,22 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
                       left: '0',
                       animation: `projectorScanlineDown ${5.5 + i * 1.5}s linear infinite`,
                       animationDelay: `${i * 2 + 1}s`,
-                      filter: 'blur(1px)'
+                      willChange: 'transform'
                     }}
                   />
                 ))}
               </div>
               
               {/* Horizontal distortion bands */}
-              {[30, 70, 110, 150].map((yPos, idx) => (
+              {[30, 110].map((yPos, idx) => (
                 <div 
                   key={idx}
                   className="absolute left-1/2"
                   style={{
                     width: `${80 - (yPos / 3)}px`,
                     height: '3px',
-                    background: `linear-gradient(90deg, transparent, rgba(192, 132, 252, ${0.25 - idx * 0.04}), transparent)`,
+                    background: `linear-gradient(90deg, transparent, rgba(192, 132, 252, ${0.25 - idx * 0.06}), transparent)`,
                     top: `${yPos}px`,
-                    filter: 'blur(1px)',
                     opacity: 0.6,
                     transform: 'translateX(-50%)'
                   }}

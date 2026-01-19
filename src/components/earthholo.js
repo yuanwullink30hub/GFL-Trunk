@@ -322,7 +322,7 @@ const HoloEarth = ({ style, className }) => {
           }}
           onPointerMissed={() => {}}
           onCreated={({ gl }) => {
-            gl.domElement.style.touchAction = 'none';
+            gl.domElement.style.touchAction = 'auto';
           }}
         >
           <Suspense fallback={null}>

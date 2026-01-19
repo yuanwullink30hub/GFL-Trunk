@@ -8,9 +8,9 @@ import { MotionPredictor } from '../utils/MotionPredictor';
 const HolographicShaderMaterial = {
   uniforms: {
     uTime: { value: 0 },
-    uColorCore: { value: new THREE.Color('#020005') },   // Almost Black Purple (Ocean)
-    uColorLand: { value: new THREE.Color('#4a1d6e') },   // Darker Purple (Land)
-    uColorRim: { value: new THREE.Color('#581c87') },    // Darker Deep Purple (Base Rim)
+    uColorCore: { value: new THREE.Color('#531a6d') },   // Almost Black Purple (Ocean)
+    uColorLand: { value: new THREE.Color('#601c97') },   // Darker Purple (Land)
+    uColorRim: { value: new THREE.Color('#560f72') },    // Darker Deep Purple (Base Rim)
     uColorBorder: { value: new THREE.Color('#FFD700') }, // Bright Gold (Border)
     uMap: { value: null }, // Texture unit
   },
@@ -131,6 +131,14 @@ const HoloEarthSphere = () => {
     }
   }, [earthMap]);
 
+  useEffect(() => {
+    // Set initial rotation to center Saudi Arabia (approx. 45°E)
+    if (groupRef.current) {
+      groupRef.current.rotation.y = -2.4; // -45 degrees in radians
+      groupRef.current.rotation.x = 25;
+    }
+  }, []);
+
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
     
@@ -197,21 +205,25 @@ const HoloEarthSphere = () => {
       ref={groupRef} 
       scale={scale}
       position={[0, 0.45, 0]}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      onPointerMove={handlePointerMove}
     >
-      {/* Main Earth Sphere */}
-      <Sphere ref={meshRef} args={[2.5, 64, 64]}>
+      {/* Main Earth Sphere - restrict pointer events to the core only */}
+      <Sphere 
+        ref={meshRef} 
+        args={[2.5, 64, 64]}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onPointerMove={handlePointerMove}
+      >
         <shaderMaterial
           ref={materialRef}
           attach="material"
           args={[HolographicShaderMaterial]}
           transparent={true}
-          side={THREE.DoubleSide}
+          side={THREE.FrontSide}
           blending={THREE.AdditiveBlending}
-          depthWrite={false}
+          depthWrite={true}
+          opacity={0.5}
         />
       </Sphere>
 
@@ -223,8 +235,8 @@ const HoloEarthSphere = () => {
           blending={THREE.AdditiveBlending}
           depthWrite={false}
           uniforms={{
-            uColor: { value: new THREE.Color('#7c3aed') },
-            uIntensity: { value: 0.08 }
+            uColor: { value: new THREE.Color('#7617a1') },
+            uIntensity: { value: 0.18 }
           }}
           vertexShader={`
             varying vec3 vNormal;
@@ -245,35 +257,7 @@ const HoloEarthSphere = () => {
         />
       </Sphere>
 
-      {/* Second outer glow layer - softer/larger */}
-      <Sphere args={[4.0, 32, 32]}>
-        <shaderMaterial
-          transparent={true}
-          side={THREE.BackSide}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-          uniforms={{
-            uColor: { value: new THREE.Color('#a21caf') },
-            uIntensity: { value: 0.04 }
-          }}
-          vertexShader={`
-            varying vec3 vNormal;
-            void main() {
-              vNormal = normalize(normalMatrix * normal);
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-          `}
-          fragmentShader={`
-            uniform vec3 uColor;
-            uniform float uIntensity;
-            varying vec3 vNormal;
-            void main() {
-              float intensity = pow(0.95 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 7.0);
-              gl_FragColor = vec4(uColor, intensity * uIntensity);
-            }
-          `}
-        />
-      </Sphere>
+      {/* Outer radial glow removed */}
 
       {/* Inner wireframe for tech effect */}
       <Sphere args={[2.45, 24, 24]}>
@@ -347,7 +331,7 @@ const HoloEarth = ({ style, className }) => {
             
             {/* Dynamic accent lights */}
             <pointLight position={[10, 10, 10]} intensity={1} color="#f97316" />
-            <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4c1d95" />
+            <pointLight position={[-10, -10, -10]} intensity={0.5} color="#360642" />
 
             {/* Main Hologram - drag interaction is on the sphere itself */}
             <HoloEarthSphere />

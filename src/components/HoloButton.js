@@ -83,7 +83,7 @@ const HoloButton = ({
   // Breathing background color
   const breatheBg = {
     animate: {
-      backgroundColor: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616']
+      opacity: [0.18, 0.26, 0.18]
     },
     transition: {
       duration: 4,
@@ -256,47 +256,7 @@ const HoloButton = ({
             />
           </motion.svg>
 
-          {/* Outer Glow Gradient - slightly overflows */}
-          <motion.svg
-            viewBox="0 0 100 100"
-            style={{
-              width: '115%',
-              height: '115%',
-              overflow: 'visible',
-              position: 'absolute',
-              top: '-7.5%',
-              left: '-7.5%',
-              ...gpuAccelStyle
-            }}
-            animate={{
-              rotate: 360
-            }}
-            transition={{
-              rotate: { duration: 12, repeat: Infinity, ease: 'linear' }
-            }}
-          >
-            <defs>
-              <radialGradient id="outerGlowGradient" cx="50%" cy="50%" r="50%">
-                <motion.stop
-                  offset="60%"
-                  animate={{
-                    stopColor: ['rgba(239, 134, 22, 0.3)', 'rgba(167, 59, 198, 0.3)', 'rgba(239, 134, 22, 0.3)']
-                  }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <stop offset="100%" stopColor="transparent" />
-              </radialGradient>
-            </defs>
-            <motion.polygon
-              points={points}
-              fill="url(#outerGlowGradient)"
-              strokeWidth="0"
-              style={{ 
-                opacity: 0.6,
-                filter: 'blur(8px)'
-              }}
-            />
-          </motion.svg>
+          {/* Outer glow removed to reduce overall holographic intensity */}
 
           {/* Rotating Triangle + V SVG */}
           <motion.svg

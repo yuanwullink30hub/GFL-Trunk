@@ -246,7 +246,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         {/* Quick Menu Dropdown */}
         <AnimatePresence>
           {showQuickMenu && (
-            <motion.div
+              <motion.div
               initial={{ opacity: 0, scale: 0.9, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: -10 }}
@@ -255,7 +255,7 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
                 position: 'absolute',
                 top: '65px',
                 right: '0',
-                backgroundColor: 'rgba(21, 10, 36, 0.95)',
+                backgroundColor: 'rgba(0, 0, 0, 0.95)',
                 borderRadius: '12px',
                 padding: '8px',
                 minWidth: '160px',
@@ -276,11 +276,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
                   borderRadius: '8px',
                   color: '#fff',
                   fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
+                  cursor: 'pointer'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
               >
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ display: 'block' }}>
                   {/* Open square with gaps on left and right sides */}
@@ -309,11 +306,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
                   borderRadius: '8px',
                   color: '#fff',
                   fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
+                  cursor: 'pointer'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
               >
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ display: 'block' }}>
                   {/* Open triangle with gaps at corners */}
@@ -340,11 +334,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
                   borderRadius: '8px',
                   color: '#fff',
                   fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
+                  cursor: 'pointer'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(124, 58, 237, 0.2)'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
               >
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ display: 'block' }}>
                   {/* Dashed circle */}
@@ -543,11 +534,17 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
             </svg>
           </div>
 
-          <HoloButton
-            size="100%"
-            rotation={30}
-            onClick={handleEnterSite}
-          />
+          <div style={{
+            display: 'inline-block',
+            borderRadius: '50%',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.35), 0 0 80px 24px rgba(167,59,198,0.18)'
+          }}>
+            <HoloButton
+              size="100%"
+              rotation={30}
+              onClick={handleEnterSite}
+            />
+          </div>
         </div>
 
       </motion.div>

@@ -652,80 +652,8 @@ const VisualCore = React.forwardRef(({ syncPercentage = 0, activeLabel = null, o
             {/* Holographic Projector Beam from apex metric */}
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 preserve-3d" style={{ transform: 'translate(-50%, -50%) translateY(calc(-145px + 14rem)) rotateX(180deg)', transformStyle: 'preserve-3d' }}>
               
-              {/* Central beam core with glow - INVERTED gradient */}
-              <div 
-                className="absolute left-1/2 transform -translate-x-1/2"
-                style={{
-                  width: '10px',
-                  height: '185px',
-                  background: 'linear-gradient(to bottom, rgba(168, 85, 247, 0.5) 0%, rgba(192, 132, 252, 0.3) 30%, rgba(168, 85, 247, 0.1) 70%, transparent 100%)',
-                  top: '0',
-                  borderRadius: '5px',
-                }}
-              />
               
-              {/* Holographic scanlines moving downward - clipped to pyramid shape */}
-              <div 
-                className="absolute left-1/2 transform -translate-x-1/2" 
-                style={{ 
-                  width: '180px', 
-                  height: '180px', 
-                  top: '0', 
-                  overflow: 'hidden', 
-                  opacity: 0.5,
-                  clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)',
-                  willChange: 'transform'
-                }}
-              >
-                {[...Array(2)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute"
-                    style={{
-                      width: '100%',
-                      height: '2px',
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(192, 132, 252, 0.5) 30%, rgba(255, 255, 255, 0.7) 50%, rgba(192, 132, 252, 0.5) 70%, transparent 100%)',
-                      top: '0',
-                      left: '0',
-                      animation: `projectorScanlineDown ${5 + i * 1.5}s linear infinite`,
-                      animationDelay: `${i * 2}s`,
-                      willChange: 'transform'
-                    }}
-                  />
-                ))}
-              </div>
 
-              {/* Cross-axis scanlines - rotated 90 degrees for cross beam effect */}
-              <div 
-                className="absolute left-1/2 transform -translate-x-1/2 preserve-3d" 
-                style={{ 
-                  width: '180px', 
-                  height: '180px', 
-                  top: '0', 
-                  overflow: 'hidden', 
-                  opacity: 0.5,
-                  clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)',
-                  transform: 'translateX(-50%) rotateY(90deg)',
-                  willChange: 'transform'
-                }}
-              >
-                {[...Array(2)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute"
-                    style={{
-                      width: '100%',
-                      height: '2px',
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(192, 132, 252, 0.5) 30%, rgba(255, 255, 255, 0.7) 50%, rgba(192, 132, 252, 0.5) 70%, transparent 100%)',
-                      top: '0',
-                      left: '0',
-                      animation: `projectorScanlineDown ${5.5 + i * 1.5}s linear infinite`,
-                      animationDelay: `${i * 2 + 1}s`,
-                      willChange: 'transform'
-                    }}
-                  />
-                ))}
-              </div>
               
               {/* Horizontal distortion bands */}
               {[30, 110].map((yPos, idx) => (

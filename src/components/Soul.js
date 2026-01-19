@@ -10,7 +10,6 @@ const Soul = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)',
       color: '#FFFEF0',
       padding: '40px 20px',
       textAlign: 'center'
@@ -59,7 +58,6 @@ const Soul = () => {
               key={item}
               style={{
                 padding: '30px',
-                background: 'rgba(167, 59, 198, 0.1)',
                 border: '2px solid rgba(34, 197, 94, 0.5)',
                 borderRadius: '12px',
                 minHeight: '250px',
@@ -74,7 +72,6 @@ const Soul = () => {
                   width: '120px',
                   height: '120px',
                   borderRadius: '50%',
-                  background: 'rgba(34, 197, 94, 0.2)',
                   marginBottom: '20px',
                   display: 'flex',
                   alignItems: 'center',
@@ -121,14 +118,6 @@ const Soul = () => {
             transition: 'all 0.3s ease',
             textTransform: 'uppercase',
             letterSpacing: '1px'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#22c55e';
-            e.target.style.borderColor = '#22c55e';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'transparent';
-            e.target.style.borderColor = '#22c55e';
           }}
         >
           Back to Home

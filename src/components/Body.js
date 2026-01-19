@@ -10,7 +10,6 @@ const Body = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)',
       color: '#FFFEF0',
       padding: '40px 20px',
       textAlign: 'center'
@@ -59,7 +58,6 @@ const Body = () => {
               key={item}
               style={{
                 padding: '30px',
-                background: 'rgba(167, 59, 198, 0.1)',
                 border: '2px solid rgba(239, 134, 22, 0.5)',
                 borderRadius: '12px',
                 minHeight: '250px',
@@ -74,7 +72,6 @@ const Body = () => {
                   width: '120px',
                   height: '120px',
                   borderRadius: '50%',
-                  background: 'rgba(239, 134, 22, 0.2)',
                   marginBottom: '20px',
                   display: 'flex',
                   alignItems: 'center',
@@ -121,14 +118,6 @@ const Body = () => {
             transition: 'all 0.3s ease',
             textTransform: 'uppercase',
             letterSpacing: '1px'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#ef8616';
-            e.target.style.borderColor = '#ef8616';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'transparent';
-            e.target.style.borderColor = '#ef8616';
           }}
         >
           Back to Home

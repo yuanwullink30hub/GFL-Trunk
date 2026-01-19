@@ -232,13 +232,13 @@ const HoloButton = ({ children, type = 'button', onClick, variant = 'primary' })
   const variants = {
     primary: {
       color: '#431407',
-      backgroundColor: isHovered ? '#fb923c' : '#f97316',
+      backgroundColor: 'transparent',
       border: '1px solid #fb923c',
       boxShadow: isHovered ? '0 0 20px rgba(249, 115, 22, 0.6)' : 'none'
     },
     secondary: {
       color: isHovered ? '#fed7aa' : '#fb923c',
-      backgroundColor: isHovered ? 'rgba(154, 52, 18, 0.3)' : 'transparent',
+      backgroundColor: 'transparent',
       border: '1px solid ' + (isHovered ? '#fb923c' : '#9a3412'),
       boxShadow: isHovered ? '0 0 15px rgba(249, 115, 22, 0.3)' : 'none'
     }

@@ -9,13 +9,13 @@ body {
   font-family: 'Ubuntu', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(to bottom, #1d0900ff, #0a0504ff, #0d0811ff, #2b0c3dff, #170720ff);
+  background: linear-gradient(to bottom, rgb(29, 10, 1), rgb(12, 5, 4), #0d0811ff, rgb(11, 1, 14), rgb(13, 1, 15), rgb(20, 2, 27));
   background-attachment: fixed;
   min-height: 100vh;
 }
 
 html {
-  background: linear-gradient(to bottom, #1d0900ff, #0a0504ff, #0d0811ff, #2b0c3dff, #170720ff);
+  background: linear-gradient(to bottom, rgb(29, 10, 1), rgb(12, 5, 4), #0d0811ff, rgb(11, 1, 14), rgb(13, 1, 15), rgb(20, 2, 27));
   background-attachment: fixed;
   min-height: 100vh;
 }

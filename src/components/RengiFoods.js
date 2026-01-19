@@ -11,7 +11,6 @@ const RengiFoods = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)',
       color: '#FFFEF0',
       padding: '40px 20px',
       textAlign: 'center'
@@ -77,14 +76,6 @@ const RengiFoods = () => {
             transition: 'all 0.3s ease',
             textTransform: 'uppercase',
             letterSpacing: '1px'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#fb923c';
-            e.target.style.borderColor = '#fb923c';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'transparent';
-            e.target.style.borderColor = '#fb923c';
           }}
         >
           Back to Home

@@ -107,11 +107,7 @@ const App = () => {
         path="/welcome" 
         element={
           isMobile ? (
-            <div className={`min-h-screen transition-all duration-300 ${
-              darkMode 
-                ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-                : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-            }`}>
+            <div className={`min-h-screen transition-all duration-300 text-white`}>
               <MobileAppContent darkMode={darkMode} setDarkMode={setDarkMode} data={data} scrollDirection={scrollDirection} />
             </div>
           ) : (
@@ -132,8 +128,8 @@ const DesktopContent = ({ darkMode, setDarkMode, data, scrollToSection, isScroll
   return (
     <div className={`min-h-screen transition-all duration-300 ${
       darkMode 
-        ? 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
-        : 'bg-gradient-to-br from-[#26163e] via-[#26163e] to-[#26163e] text-white'
+        ? 'min-h-screen transition-all duration-300 text-white'
+        : 'min-h-screen transition-all duration-300 text-white'
     }`}>
       {/* Desktop Header - Side-by-side Layout */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${

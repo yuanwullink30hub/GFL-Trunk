@@ -664,6 +664,7 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
         overflow: 'hidden',
         top: '0',
         left: '0',
+        transform: 'translateY(-1.25rem)',
         width: '100vw',
         display: activeView || isDetailPageExiting || isAnimating || isScrolledPastH1 ? 'none' : 'block'
       }}>
@@ -721,6 +722,7 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
           style={{ 
             pointerEvents: 'none',
             overflow: 'visible',
+            transform: 'translateY(1.25rem)',
             ...gpuAccel.heavy
           }}
         />
@@ -733,7 +735,8 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
         style={{
           zIndex: 1,
           position: 'relative',
-          paddingTop: 'calc(100px - 1.5rem)'
+          paddingTop: 'calc(100px - 1.5rem)',
+          transform: 'translateY(-1.25rem)'
         }}
       >
         {/* Text container over image */}

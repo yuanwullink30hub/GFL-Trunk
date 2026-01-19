@@ -11,7 +11,6 @@ const Mind = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(to bottom, #000000ff, #0a0513ff, #150a24ff)',
       color: '#FFFEF0',
       padding: '40px 20px',
       textAlign: 'center',
@@ -90,7 +89,6 @@ const Mind = () => {
               transition={{ delay: index * 0.2, duration: 0.5 }}
               style={{
                 padding: '30px',
-                background: 'rgba(167, 59, 198, 0.1)',
                 border: '2px solid rgba(167, 59, 198, 0.3)',
                 borderRadius: '12px',
                 minHeight: '200px',
@@ -105,7 +103,6 @@ const Mind = () => {
                   width: '80px',
                   height: '80px',
                   borderRadius: '50%',
-                  background: 'rgba(167, 59, 198, 0.2)',
                   marginBottom: '15px',
                   display: 'flex',
                   alignItems: 'center',
@@ -151,12 +148,6 @@ const Mind = () => {
             transition: 'all 0.3s ease',
             textTransform: 'uppercase',
             letterSpacing: '1px'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = 'rgba(239, 134, 22, 0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'transparent';
           }}
         >
           Back to Home

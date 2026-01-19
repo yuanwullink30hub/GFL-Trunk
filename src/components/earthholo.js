@@ -164,8 +164,8 @@ const HoloEarthSphere = () => {
         // After momentum dies down, slowly auto-rotate
         // Only start auto-rotate when momentum is almost gone
         if (momentumMagnitude < 0.0001) {
-          // Very gentle auto-rotate - 0.11 rad/s (1.1x faster)
-          groupRef.current.rotation.y += 0.11 / 60; // Normalized to ~60fps
+          // Moderate auto-rotate - set to 0.165 rad/s (half of 0.33)
+          groupRef.current.rotation.y += 0.165 / 60; // Normalized to ~60fps
         }
       }
       
@@ -321,9 +321,6 @@ const HoloEarth = ({ style, className }) => {
             powerPreference: 'high-performance'
           }}
           onPointerMissed={() => {}}
-          onCreated={({ gl }) => {
-            gl.domElement.style.touchAction = 'auto';
-          }}
         >
           <Suspense fallback={null}>
             {/* Ambient light - low for darker mood */}

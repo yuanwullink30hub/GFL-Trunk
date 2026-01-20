@@ -1566,8 +1566,6 @@ code {
 
 /* Ensure native overscroll / pull-to-refresh and touch behavior remain enabled */
 html, body {
-  overscroll-behavior-y: auto;
-  -webkit-overflow-scrolling: touch;
   touch-action: auto;
 }
 

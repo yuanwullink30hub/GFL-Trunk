@@ -321,6 +321,9 @@ const HoloEarth = ({ style, className }) => {
             powerPreference: 'high-performance'
           }}
           onPointerMissed={() => {}}
+          onCreated={({ gl }) => {
+            gl.domElement.style.touchAction = 'none';
+          }}
         >
           <Suspense fallback={null}>
             {/* Ambient light - low for darker mood */}

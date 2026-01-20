@@ -377,15 +377,14 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
         delay: showLoginModal ? 0 : 0.6, // Wait for login modal exit (0.6s duration, instant start)
         ease: 'easeInOut' 
       }}
-      className={`w-full h-screen overflow-visible flex flex-col items-center justify-center transition-all duration-300 ${
+      className={`w-full h-screen overflow-hidden flex flex-col items-center justify-center transition-all duration-300 ${
       darkMode 
         ? 'text-white'
         : 'text-[#26163e]'
     }`}
     style={{
       background: 'transparent',
-      overflow: 'visible',
-      touchAction: 'auto',
+      overflow: 'hidden',
       position: 'relative',
       zIndex: 1,
       pointerEvents: showLoginModal ? 'none' : 'auto'

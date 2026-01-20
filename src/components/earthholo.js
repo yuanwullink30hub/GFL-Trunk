@@ -222,8 +222,8 @@ const HoloEarthSphere = () => {
           transparent={true}
           side={THREE.FrontSide}
           blending={THREE.AdditiveBlending}
-          depthWrite={true}
-          opacity={0.5}
+          depthWrite={false}
+          opacity={0.1}
         />
       </Sphere>
 
@@ -263,9 +263,9 @@ const HoloEarthSphere = () => {
       <Sphere args={[2.45, 24, 24]}>
         <meshBasicMaterial 
           color="#f97316" 
-          wireframe={true} 
-          transparent={true} 
-          opacity={0.18}
+           wireframe={true} 
+           transparent={true} 
+           opacity={0.1}
         />
       </Sphere>
     </group>

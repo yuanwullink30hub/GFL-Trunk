@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Activity, CornerDownRight } from 'lucide-react';
+import { CornerDownRight } from 'lucide-react';
 
 // HoloCard - Main content card with purple holographic border effect
 export const HoloCard = ({ children, className = '', title, noPadding = false }) => {

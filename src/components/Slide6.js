@@ -1,8 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import logo from '../images/logo.png';
-import placeholder6 from '../images/slideshow images/placeholder6.svg';
 import '../styles/logo.css';
 
 function Slide6() {

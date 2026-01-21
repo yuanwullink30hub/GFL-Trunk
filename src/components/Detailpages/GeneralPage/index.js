@@ -557,7 +557,7 @@ const GeneralPage = ({ pageId, onBack }) => {
                 </h1>
               </div>
               {/* Missie container right after logo and brand name */}
-              <div className="bg-slate-900/40 p-3 rounded-lg backdrop-blur-sm mb-4" style={{
+              <div className="bg-slate-900/40 p-3 rounded-lg backdrop-blur-sm mb-2" style={{
                 border: '1px solid rgba(168, 85, 247, 0.3)',
                 boxShadow: '0 0 10px rgba(168, 85, 247, 0.1)'
               }}>

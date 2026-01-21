@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gpuAccel, ANIMATION_TIMINGS, ANIMATION_EASING } from '../../config/animationStyles';
 import HoloEarth from '../../components/earthholo';
+import GeneralPage from '../../components/Detailpages/GeneralPage';
 import { 
   FaMapMarkerAlt,
   FaPhone,
@@ -33,9 +34,8 @@ import '../../styles/logo.css';
 import { slideContentMap } from './slides';
 
 const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scrollDirection, onDeltawerken }, ref) => {
-
   const [currentSlide, setCurrentSlide] = React.useState(0);
-  const [activeView, setActiveView] = React.useState(null); // null = landing, or route string
+  const [activeView, setActiveView] = React.useState(null); // null = landing, or pageId for detail pages (e.g., 'karman', 'code49')
   const [isAnimating, setIsAnimating] = React.useState(false);
   const [showFooterPopup, setShowFooterPopup] = React.useState(false);
   const [clickedButton, setClickedButton] = React.useState(null);
@@ -242,20 +242,23 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
   };
 
   const slides = [
-    { header: 'KARMAN', subtitle: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings. Nights defined by music, energy, and togetherness.', image: karmanevents, bgColor: 'rgba(34, 197, 94, 0.15)', route: '/karman' },
-    { header: 'CODE 49', subtitle: 'De nr.1 Businessclub voor MKB-ondernemers die willen doorschalen in een AI-first economie', image: club49logo, bgColor: 'rgba(59, 130, 246, 0.15)', route: '/code49' },
-    { header: 'TATTOO SHOP ', subtitle: 'Our focus goes beyond body art; we channel personal stories into spiritual expressions, utilizing fine line tattoos and the ancient stick and poke technique to transform your skin into a canvas of meaning.', image: logo1111, bgColor: 'rgba(168, 85, 247, 0.15)', route: '/tattooshop' },
-    { header: 'Slide 4', subtitle: 'Description', image: placeholder4, bgColor: 'rgba(249, 115, 22, 0.15)', route: '/slide4' },
-    { header: 'Slide 5', subtitle: 'Description', image: placeholder5, bgColor: 'rgba(236, 72, 153, 0.15)', route: '/slide5' },
-    { header: 'Slide 6', subtitle: 'Description', image: placeholder6, bgColor: 'rgba(139, 92, 246, 0.15)', route: '/slide6' },
-    { header: 'Slide 7', subtitle: 'Description', image: placeholder7, bgColor: 'rgba(14, 165, 233, 0.15)', route: '/slide7' },
-    { header: 'Slide 8', subtitle: 'Description', image: placeholder8, bgColor: 'rgba(34, 197, 94, 0.15)', route: '/slide8' },
-    { header: 'RENGI FOODS', subtitle: 'Rengi Foods captures the vibrant spirit of Korean street food, offering authentic and affordable flavors from Seoul\'s streets to your local market. The focus on affordability ensures everyone can enjoy bold Korean tastes without compromise.', image: rengiLogo, bgColor: 'rgba(251, 146, 60, 0.15)', route: '/rengifoods' }
+    { header: 'KARMAN', subtitle: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings. Nights defined by music, energy, and togetherness.', image: karmanevents, bgColor: 'rgba(34, 197, 94, 0.15)', route: 'karman', detailRoute: '/detail/karman' },
+    { header: 'CODE 49', subtitle: 'De nr.1 Businessclub voor MKB-ondernemers die willen doorschalen in een AI-first economie', image: club49logo, bgColor: 'rgba(59, 130, 246, 0.15)', route: 'code49', detailRoute: '/detail/code49' },
+    { header: 'TATTOO SHOP ', subtitle: 'Our focus goes beyond body art; we channel personal stories into spiritual expressions, utilizing fine line tattoos and the ancient stick and poke technique to transform your skin into a canvas of meaning.', image: logo1111, bgColor: 'rgba(168, 85, 247, 0.15)', route: 'tattooshop', detailRoute: '/detail/tattooshop' },
+    { header: 'Slide 4', subtitle: 'Description', image: placeholder4, bgColor: 'rgba(249, 115, 22, 0.15)', route: 'slide4', detailRoute: '/detail/slide4' },
+    { header: 'Slide 5', subtitle: 'Description', image: placeholder5, bgColor: 'rgba(236, 72, 153, 0.15)', route: 'slide5', detailRoute: '/detail/slide5' },
+    { header: 'Slide 6', subtitle: 'Description', image: placeholder6, bgColor: 'rgba(139, 92, 246, 0.15)', route: 'slide6', detailRoute: '/detail/slide6' },
+    { header: 'Slide 7', subtitle: 'Description', image: placeholder7, bgColor: 'rgba(14, 165, 233, 0.15)', route: 'slide7', detailRoute: '/detail/slide7' },
+    { header: 'Slide 8', subtitle: 'Description', image: placeholder8, bgColor: 'rgba(34, 197, 94, 0.15)', route: 'slide8', detailRoute: '/detail/slide8' },
+    { header: 'RENGI FOODS', subtitle: 'Rengi Foods captures the vibrant spirit of Korean street food, offering authentic and affordable flavors from Seoul\'s streets to your local market. The focus on affordability ensures everyone can enjoy bold Korean tastes without compromise.', image: rengiLogo, bgColor: 'rgba(251, 146, 60, 0.15)', route: 'rengifoods', detailRoute: '/detail/rengifoods' }
   ];
 
   // Handle slide click - direct navigation to detail page
   const handleSlideClick = (index, route) => {
     if (isAnimating) return;
+    
+    const slideData = slides[index % 9];
+    const pageId = slideData.route; // Use route as pageId for inline rendering
     
     // Track which slide was clicked
     setLastActiveView(route);
@@ -282,10 +285,10 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
     setIsSlideView(true);
     setIsLandingFadingOut(true); // Start landing fade out immediately
     
-    // Wait for landing page to fade out (0.6s), then set activeView to trigger detail page fade-in with 0.5s delay
+    // Show detail page after fade out
     setTimeout(() => {
-      setActiveView(route);
-      window.scrollTo(0, 0);  // Scroll to top of detail page
+      setActiveView(pageId); // Show GeneralPage inline with pageId
+      window.scrollTo(0, 0);  // Scroll to top
     }, 600); // 0.6s landing fade out
     
     // Reset animation state after full transition (0.6s fade out + 0.5s delay + 0.6s fade in = 1.7s)
@@ -610,6 +613,17 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
           >
             <ActiveContent onBack={handleBack} onBackToButton={handleBackToButton} onCloseSlide={handleCloseSlide} activeView={activeView} />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Detail Page (GeneralPage) - Shows when a detail page is active */}
+      <AnimatePresence mode="wait">
+        {activeView && !ActiveContent && (
+          <GeneralPage 
+            key={`detail-${activeView}`}
+            pageId={activeView}
+            onBack={handleBack}
+          />
         )}
       </AnimatePresence>
 

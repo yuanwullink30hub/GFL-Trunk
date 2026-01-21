@@ -1758,26 +1758,35 @@ export const Deltawerken = ({ onBack }) => {
       {/* Visual FX Layers */}
       
       {/* Main Unified Holographic Container */}
-      <div className="nexus-container relative flex-1 border border-white/10 z-20 flex flex-col overflow-hidden bg-black/20" style={{
+      <div className="nexus-container relative flex-1 z-20 flex flex-col overflow-hidden bg-black/20" style={{
         margin: 'clamp(0.5rem, 1.5vw, 1.5rem)',
-        touchAction: 'manipulation'
+        touchAction: 'manipulation',
+        border: '1px solid rgba(255, 255, 255, 0.2)'
       }}>
         {/* Corner Brackets */}
-        <div className="absolute top-0 left-0 border-t-2 border-l-2 border-white/20 pointer-events-none" style={{
+        <div className="absolute top-0 left-0 pointer-events-none" style={{
           width: 'clamp(1rem, 3vw, 2rem)',
-          height: 'clamp(1rem, 3vw, 2rem)'
+          height: 'clamp(1rem, 3vw, 2rem)',
+          borderTop: '2px solid #531a6d',
+          borderLeft: '2px solid #531a6d'
         }} />
-        <div className="absolute top-0 right-0 border-t-2 border-r-2 border-white/20 pointer-events-none" style={{
+        <div className="absolute top-0 right-0 pointer-events-none" style={{
           width: 'clamp(1rem, 3vw, 2rem)',
-          height: 'clamp(1rem, 3vw, 2rem)'
+          height: 'clamp(1rem, 3vw, 2rem)',
+          borderTop: '2px solid #531a6d',
+          borderRight: '2px solid #531a6d'
         }} />
-        <div className="absolute bottom-0 left-0 border-b-2 border-l-2 border-white/20 pointer-events-none" style={{
+        <div className="absolute bottom-0 left-0 pointer-events-none" style={{
           width: 'clamp(1rem, 3vw, 2rem)',
-          height: 'clamp(1rem, 3vw, 2rem)'
+          height: 'clamp(1rem, 3vw, 2rem)',
+          borderBottom: '2px solid #531a6d',
+          borderLeft: '2px solid #531a6d'
         }} />
-        <div className="absolute bottom-0 right-0 border-b-2 border-r-2 border-white/20 pointer-events-none" style={{
+        <div className="absolute bottom-0 right-0 pointer-events-none" style={{
           width: 'clamp(1rem, 3vw, 2rem)',
-          height: 'clamp(1rem, 3vw, 2rem)'
+          height: 'clamp(1rem, 3vw, 2rem)',
+          borderBottom: '2px solid #531a6d',
+          borderRight: '2px solid #531a6d'
         }} />
 
         <div className="shrink-0" style={{

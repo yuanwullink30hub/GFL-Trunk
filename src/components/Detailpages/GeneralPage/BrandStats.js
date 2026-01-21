@@ -55,19 +55,19 @@ const SimpleRadarChart = ({ data }) => {
   });
 
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
-      {/* Grid */}
+    <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full" style={{ background: 'transparent' }}>
+      {/* Grid - Green */}
       {gridLevels.map((path, i) => (
         <path
           key={i}
           d={path}
           fill="none"
-          stroke="rgba(0, 243, 255, 0.15)"
+          stroke="#15B315"
           strokeWidth="1"
         />
       ))}
       
-      {/* Axis lines */}
+      {/* Axis lines - Green */}
       {axisLines.map((line, i) => (
         <line
           key={i}
@@ -75,33 +75,34 @@ const SimpleRadarChart = ({ data }) => {
           y1={center}
           x2={line.x2}
           y2={line.y2}
-          stroke="rgba(0, 243, 255, 0.1)"
+          stroke="#15B315"
           strokeWidth="1"
         />
       ))}
       
-      {/* Data polygon */}
+      {/* Data polygon - Purple */}
       <path
         d={pathData}
         fill="rgba(188, 19, 254, 0.3)"
         stroke="#bc13fe"
         strokeWidth="2"
+        style={{ pointerEvents: 'none' }}
       />
       
-      {/* Data points */}
+      {/* Data points - Yellow (rendered after polygon for higher z-index) */}
       {points.map((p, i) => (
         <circle
           key={i}
           cx={p.x}
           cy={p.y}
           r="4"
-          fill="#bc13fe"
+          fill="#E0E30B"
           stroke="white"
           strokeWidth="1"
         />
       ))}
       
-      {/* Labels */}
+      {/* Labels - Orange */}
       {labelPositions.map((pos, i) => (
         <text
           key={i}
@@ -109,7 +110,8 @@ const SimpleRadarChart = ({ data }) => {
           y={pos.y}
           textAnchor="middle"
           dominantBaseline="middle"
-          className="fill-cyan-400 text-[9px] font-mono"
+          className="text-[9px] font-mono"
+          style={{ fill: '#f59e0b' }}
         >
           {pos.label}
         </text>
@@ -118,8 +120,8 @@ const SimpleRadarChart = ({ data }) => {
   );
 };
 
-// Chart data
-const chartData = [
+// Chart data (default fallback)
+const defaultChartData = [
   { subject: 'Innov', A: 120, fullMark: 150 },
   { subject: 'Eco', A: 98, fullMark: 150 },
   { subject: 'Design', A: 130, fullMark: 150 },
@@ -128,14 +130,23 @@ const chartData = [
   { subject: 'Tech', A: 110, fullMark: 150 },
 ];
 
-export const BrandStats = ({ metrics }) => {
+export const BrandStats = ({ metrics, radarData }) => {
   // Handle both array format and object format with dataPoints
   const dataPoints = Array.isArray(metrics) ? metrics : metrics?.dataPoints || [];
+  
+  // Transform radarData to chart format or use defaults
+  const chartData = radarData && radarData.length > 0
+    ? radarData.map(item => ({
+        subject: item.label,
+        A: item.value,
+        fullMark: 150
+      }))
+    : defaultChartData;
   
   return (
     <div className="flex flex-col gap-4">
       {/* Radar Chart */}
-      <HoloCard className="min-h-[250px]">
+      <HoloCard className="min-h-[250px] bg-transparent" style={{ border: '1px solid rgba(168, 85, 247, 0.8)' }}>
         <div className="h-[200px] w-full flex items-center justify-center">
           <SimpleRadarChart data={chartData} />
         </div>
@@ -143,15 +154,27 @@ export const BrandStats = ({ metrics }) => {
 
       {/* Metrics Grid - 2 cols for mobile */}
       <div className="grid grid-cols-2 gap-3">
-        {dataPoints.map((metric, idx) => (
-          <div key={idx} className="bg-slate-900/30 p-3 border border-slate-800 rounded flex flex-col justify-between hover:border-cyan-400/30 transition-colors">
-            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">{metric.label}</span>
-            <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-lg font-bold text-white">{metric.value}</span>
-              {metric.unit && <span className="text-[10px] font-mono text-slate-600">{metric.unit}</span>}
+        {dataPoints.map((metric, idx) => {
+          let valueColor = '#f59e0b'; // orange default
+          
+          // Set colors based on metric label
+          const labelLower = metric.label.toLowerCase();
+          if (labelLower.includes('web') || labelLower === 'web') {
+            valueColor = '#15B315'; // green
+          } else if (labelLower.includes('point') || labelLower === 'points') {
+            valueColor = '#E0E30B'; // yellow
+          }
+          
+          return (
+            <div key={idx} className="p-3 border rounded flex flex-col justify-between" style={{ border: '1px solid #f59e0b' }}>
+              <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: '#f59e0b' }}>{metric.label}</span>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="text-lg font-bold" style={{ color: valueColor }}>{metric.value}</span>
+                {metric.unit && <span className="text-[10px] font-mono" style={{ color: '#f59e0b' }}>{metric.unit}</span>}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -19,50 +19,10 @@ function Slide6() {
         <img src={logo} alt="Garden For Life Logo" className="logo-img logo-md" />
       </button>
 
-                  <div style={{
-                    width: 'clamp(150px, 40vw, 300px)',
-                    height: 'clamp(150px, 40vw, 300px)',
-                    margin: '0 auto 40px',
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    border: '3px solid rgba(139, 92, 246, 0.5)'
-                  }}>
-                    <img src={placeholder6} alt="Slide 6" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-
-                  <h1 style={{
-                    fontSize: 'clamp(32px, 8vw, 64px)',
-                    marginBottom: '20px',
-                    color: 'rgb(167, 59, 198)'
-                  }}>
-                    Slide 6
-                  </h1>
-
-                  <p style={{
-                    fontSize: 'clamp(16px, 4vw, 24px)',
-                    maxWidth: '800px',
-                    margin: '0 auto 60px',
-                    lineHeight: '1.6',
-                    color: '#FFFEF0'
-                  }}>
-                    Description for Slide 6 - Coming soon.
-                  </p>
-
-                  {/* Back Button */}
-                  <motion.button
-                    onClick={() => navigate('/')}
-                    animate={{ borderColor: ['#ef8616', 'rgb(167, 59, 198)', '#ef8616'] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                    style={{
-                      marginTop: '60px',
-                      padding: '15px 40px'
-                    }}
-                  >
-                    Back
-                  </motion.button>
-                </div>
-              );
-            }
+      {/* Content removed for debugging */}
+    </div>
+  );
+}
 
             export default Slide6;
 

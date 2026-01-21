@@ -197,7 +197,7 @@ const Header = ({ timestamp, loginName = 'Onbekend', onModalStateChange = () => 
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',
-              color: '#15B315'
+              color: '#e6ddf0'
             }}>
               <h2 style={{
                 color: '#15B315',

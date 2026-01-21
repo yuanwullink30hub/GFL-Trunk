@@ -2,40 +2,20 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Activity, CornerDownRight } from 'lucide-react';
 
-// HoloCard - Main content card with holographic border effect
+// HoloCard - Main content card with purple holographic border effect
 export const HoloCard = ({ children, className = '', title, noPadding = false }) => {
   return (
-    <div className={`relative group ${className}`}>
-      {/* Glow Backdrop */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-400 to-pink-500 rounded-lg opacity-20 group-hover:opacity-40 blur transition duration-500"></div>
-      
-      {/* Main Content */}
-      <div className="relative h-full bg-slate-900/90 backdrop-blur-xl border border-cyan-400/30 rounded-lg overflow-hidden flex flex-col">
-        {/* Header Bar */}
-        <div className="h-1 w-full bg-gradient-to-r from-cyan-400/50 via-transparent to-pink-500/50"></div>
-        
-        {/* Title Section (Optional) */}
-        {title && (
-          <div className="flex items-center justify-between px-4 py-2 border-b border-cyan-400/20 bg-cyan-400/5">
-             <h3 className="font-mono text-sm uppercase tracking-widest text-cyan-400 font-bold flex items-center gap-2">
-                <Activity size={14} />
-                {title}
-             </h3>
-             <div className="flex gap-1">
-                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse"></div>
-                <div className="w-1.5 h-1.5 bg-pink-500 rounded-full"></div>
-             </div>
-          </div>
-        )}
-
+    <div className={`relative ${className}`}>
+      {/* Main Content - Purple border */}
+      <div className="relative h-full bg-transparent border border-purple-500/40 rounded-lg overflow-hidden flex flex-col">
         {/* Content */}
         <div className={`flex-1 ${noPadding ? '' : 'p-6'}`}>
           {children}
         </div>
 
-        {/* Corner Accents */}
-        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-cyan-400 rounded-tl-md"></div>
-        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-pink-500 rounded-br-md"></div>
+        {/* Corner Accents - Purple */}
+        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-purple-500 rounded-tl-md"></div>
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-purple-500 rounded-br-md"></div>
       </div>
     </div>
   );
@@ -67,20 +47,35 @@ export const GlowButton = ({ children, variant = 'primary', icon, className = ''
 
 // TechBadge - Technology tag display
 export const TechBadge = ({ label }) => (
-  <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-mono font-medium bg-cyan-400/10 text-cyan-400 border border-cyan-400/30 shadow-[0_0_10px_rgba(0,243,255,0.2)]">
+  <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium" style={{
+    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+    color: '#FFFEF0',
+    border: '1px solid rgba(168, 85, 247, 0.6)',
+    boxShadow: '0 0 8px rgba(168, 85, 247, 0.15)'
+  }}>
     {label}
   </span>
 );
 
 // SectionHeader - Styled section title
 export const SectionHeader = ({ title, subtitle }) => (
-  <div className="mb-4 relative pl-4 border-l-4 border-cyan-400">
-    <h2 className="text-lg font-bold text-white uppercase tracking-tighter">
+  <div className="mb-4 relative pl-4 border-l-2" style={{
+    borderLeftColor: 'rgba(168, 85, 247, 0.8)',
+    backgroundImage: 'linear-gradient(to right, rgba(168, 85, 247, 0.1), transparent)',
+    paddingTop: '0.5rem',
+    paddingBottom: '0.5rem',
+    paddingRight: '1rem',
+    transform: 'scale(0.8)',
+    transformOrigin: 'left center'
+  }}>
+    <h2 className="text-lg font-bold uppercase tracking-tighter poetry" style={{
+      color: '#FFFEF0',
+      textShadow: '0 0 10px rgba(168, 85, 247, 0.6)',
+      fontSize: 'clamp(0.9rem, 1.8vw, 1.5rem)'
+    }}>
       {title}
     </h2>
     {subtitle && <p className="text-slate-400 font-mono text-xs mt-1">{subtitle}</p>}
-    <div className="absolute -left-[5px] top-0 w-1.5 h-1.5 bg-white"></div>
-    <div className="absolute -left-[5px] bottom-0 w-1.5 h-1.5 bg-pink-500"></div>
   </div>
 );
 

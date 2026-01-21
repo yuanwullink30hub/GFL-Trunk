@@ -193,15 +193,36 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
     // Start the exit animation
     setIsDetailPageExiting(true);
     
-    // Immediately reset view and scroll
+    // Immediately reset view, scroll, and slideshow
     setActiveView(null);
     setIsScrolledPastH1(false);
+    setCurrentSlide(0);
     window.scrollTo(0, 0);
     
     // Reset exit animation state after fade completes
     setTimeout(() => {
       setIsDetailPageExiting(false);
     }, 600); // Match the 0.6s fade duration
+    
+    // Center slideshow after landing page fades in (needs extra delay for DOM)
+    setTimeout(() => {
+      if (galleryRef.current) {
+        const gallery = galleryRef.current;
+        const totalSlides = 9;
+        const firstSlideInSecondCopy = gallery.children[totalSlides];
+        
+        if (firstSlideInSecondCopy) {
+          // Use calculateButtonCenter to get viewport-aware centering
+          const slideRect = firstSlideInSecondCopy.getBoundingClientRect();
+          const slideWidth = slideRect.width;
+          const slideLeft = slideRect.left + window.scrollX;
+          const galleryWidth = gallery.offsetWidth;
+          const viewportCenterOffset = (window.innerWidth - slideWidth) / 2;
+          const centerScroll = slideLeft - viewportCenterOffset;
+          gallery.scrollLeft = centerScroll;
+        }
+      }
+    }, 800); // Extra delay to ensure gallery is rendered
   }, []);
 
   // Expose handleBackToButton to parent via ref for QuickMenu Garden button
@@ -305,9 +326,10 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
     // Start the exit animation
     setIsDetailPageExiting(true);
     
-    // Immediately reset view and scroll
+    // Immediately reset view, scroll, and slideshow
     setActiveView(null);
     setIsScrolledPastH1(false);
+    setCurrentSlide(0);
     window.scrollTo(0, 0);
     
     // Reset exit animation state after fade completes
@@ -317,6 +339,26 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
         setIsSlideView(false);
       });
     }, 600); // Match the 0.6s fade duration
+    
+    // Center slideshow after landing page fades in (needs extra delay for DOM)
+    setTimeout(() => {
+      if (galleryRef.current) {
+        const gallery = galleryRef.current;
+        const totalSlides = 9;
+        const firstSlideInSecondCopy = gallery.children[totalSlides];
+        
+        if (firstSlideInSecondCopy) {
+          // Use calculateButtonCenter to get viewport-aware centering
+          const slideRect = firstSlideInSecondCopy.getBoundingClientRect();
+          const slideWidth = slideRect.width;
+          const slideLeft = slideRect.left + window.scrollX;
+          const galleryWidth = gallery.offsetWidth;
+          const viewportCenterOffset = (window.innerWidth - slideWidth) / 2;
+          const centerScroll = slideLeft - viewportCenterOffset;
+          gallery.scrollLeft = centerScroll;
+        }
+      }
+    }, 800); // Extra delay to ensure gallery is rendered
   };
 
   // Handle close slide - same as handleBack for slide content pages
@@ -722,9 +764,10 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
           width: '100vw',
           height: 'calc(70vh + 100px)',
           marginTop: 'calc(150px + 1rem - 50px)',
+          marginBottom: '-50px',
           zIndex: 1,
           marginLeft: 'calc(-50vw + 50%)',
-          pointerEvents: 'none',
+          pointerEvents: 'auto',
           overflow: 'visible',
           opacity: 0,
           animation: 'fadeIn 1.2s ease-in-out 0.5s forwards',
@@ -734,7 +777,7 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
         <HoloEarth 
           className="absolute inset-0 w-full h-full"
           style={{ 
-            pointerEvents: 'none',
+            pointerEvents: 'auto',
             overflow: 'visible',
             transform: 'translateY(1.25rem)',
             ...gpuAccel.heavy

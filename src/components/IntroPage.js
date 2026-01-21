@@ -607,8 +607,8 @@ const IntroPage = ({ darkMode, setDarkMode }) => {
               background: 'transparent'
             }}
           >
-            <div className={`min-h-screen transition-all duration-300 text-white`}
-              style={{ background: 'transparent' }}
+            <div className={`transition-all duration-300 text-white`}
+              style={{ background: 'transparent', height: '100%', overflow: 'hidden' }}
             >
               <MobileAppContent 
                 ref={mobileAppRef}

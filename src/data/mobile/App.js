@@ -212,12 +212,11 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
         const firstSlideInSecondCopy = gallery.children[totalSlides];
         
         if (firstSlideInSecondCopy) {
-          // Use calculateButtonCenter to get viewport-aware centering
-          const slideRect = firstSlideInSecondCopy.getBoundingClientRect();
-          const slideWidth = slideRect.width;
-          const slideLeft = slideRect.left + window.scrollX;
-          const viewportCenterOffset = (window.innerWidth - slideWidth) / 2;
-          const centerScroll = slideLeft - viewportCenterOffset;
+          // Use offsetLeft/offsetWidth like initial mount centering
+          const slideLeft = firstSlideInSecondCopy.offsetLeft;
+          const slideWidth = firstSlideInSecondCopy.offsetWidth;
+          const galleryWidth = gallery.offsetWidth;
+          const centerScroll = slideLeft - (galleryWidth - slideWidth) / 2;
           gallery.scrollLeft = centerScroll;
         }
       }
@@ -347,12 +346,11 @@ const MobileAppContent = React.forwardRef(({ darkMode, setDarkMode, data, scroll
         const firstSlideInSecondCopy = gallery.children[totalSlides];
         
         if (firstSlideInSecondCopy) {
-          // Use calculateButtonCenter to get viewport-aware centering
-          const slideRect = firstSlideInSecondCopy.getBoundingClientRect();
-          const slideWidth = slideRect.width;
-          const slideLeft = slideRect.left + window.scrollX;
-          const viewportCenterOffset = (window.innerWidth - slideWidth) / 2;
-          const centerScroll = slideLeft - viewportCenterOffset;
+          // Use offsetLeft/offsetWidth like initial mount centering
+          const slideLeft = firstSlideInSecondCopy.offsetLeft;
+          const slideWidth = firstSlideInSecondCopy.offsetWidth;
+          const galleryWidth = gallery.offsetWidth;
+          const centerScroll = slideLeft - (galleryWidth - slideWidth) / 2;
           gallery.scrollLeft = centerScroll;
         }
       }

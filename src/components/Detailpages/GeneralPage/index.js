@@ -260,7 +260,7 @@ const SocialShareModal = ({ isOpen, onClose, buttonElement, brandData }) => {
             }}
           >
             {/* Share icon and text */}
-            <div className="text-center mb-1">
+            <div className="text-center">
               <div className="inline-flex items-center justify-center mb-1">
                 <Share2 size={28.8} style={{ color: '#E0E30B' }} />
               </div>
@@ -270,7 +270,7 @@ const SocialShareModal = ({ isOpen, onClose, buttonElement, brandData }) => {
             </div>
 
             {/* Social buttons */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 mt-2">
               <button
                 onClick={() => handleSocialClick('Instagram')}
                 className="py-2 rounded transition-all font-bold text-xs uppercase tracking-widest"
@@ -452,6 +452,13 @@ const GeneralPage = ({ pageId, onBack }) => {
         zIndex: 2000
       }}
     >
+      {/* Hide webkit scrollbar */}
+      <style>{`
+        .detail-page-scroll::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
       {/* Scanline Overlay */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
 
@@ -514,15 +521,15 @@ const GeneralPage = ({ pageId, onBack }) => {
       
         {/* Inner scrollable content */}
         <div 
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto detail-page-scroll"
           style={{
             padding: 'clamp(0.5rem, 1.5vw, 1.5rem)',
             paddingTop: 'calc(clamp(0.5rem, 1.5vw, 1.5rem) + 3px)',
             paddingBottom: 'calc(clamp(0.5rem, 1.5vw, 1.5rem) + 3px)',
             paddingLeft: 'calc(clamp(0.5rem, 1.5vw, 1.5rem) + 3px)',
             paddingRight: 'calc(clamp(0.5rem, 1.5vw, 1.5rem) + 3px)',
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(168, 85, 247, 0.6) transparent',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
             minHeight: 0,
             display: 'flex',
             flexDirection: 'column'
@@ -571,7 +578,7 @@ const GeneralPage = ({ pageId, onBack }) => {
             </div>
 
             {/* Content Actions */}
-            <div className="z-40 border-white/5 shadow-lg mb-4">
+            <div className="z-40 border-white/5 shadow-lg mb-2" style={{ marginTop: '-0.5rem' }}>
               <div className="flex gap-2 p-3">
                 <button className="flex-1 !py-2.5 !text-xs !rounded-md font-bold uppercase tracking-widest transition-all" style={{
                   backgroundColor: 'transparent',

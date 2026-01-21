@@ -1760,33 +1760,62 @@ export const Deltawerken = ({ onBack }) => {
       {/* Main Unified Holographic Container */}
       <div className="nexus-container relative flex-1 z-20 flex flex-col overflow-hidden bg-black/20" style={{
         margin: 'clamp(0.5rem, 1.5vw, 1.5rem)',
-        touchAction: 'manipulation',
-        border: '1px solid rgba(255, 255, 255, 0.2)'
+        touchAction: 'manipulation'
       }}>
-        {/* Corner Brackets */}
+        {/* Corner Brackets with connecting lines */}
         <div className="absolute top-0 left-0 pointer-events-none" style={{
           width: 'clamp(1rem, 3vw, 2rem)',
           height: 'clamp(1rem, 3vw, 2rem)',
           borderTop: '2px solid #531a6d',
-          borderLeft: '2px solid #531a6d'
+          borderLeft: '2px solid #531a6d',
+          zIndex: 10
+        }} />
+        <div className="absolute pointer-events-none" style={{
+          top: 'clamp(0.5rem, 1.5vw, 1rem)',
+          inset: '0 0 auto 0',
+          height: '1px',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)'
         }} />
         <div className="absolute top-0 right-0 pointer-events-none" style={{
           width: 'clamp(1rem, 3vw, 2rem)',
           height: 'clamp(1rem, 3vw, 2rem)',
           borderTop: '2px solid #531a6d',
-          borderRight: '2px solid #531a6d'
+          borderRight: '2px solid #531a6d',
+          zIndex: 10
         }} />
+        
         <div className="absolute bottom-0 left-0 pointer-events-none" style={{
           width: 'clamp(1rem, 3vw, 2rem)',
           height: 'clamp(1rem, 3vw, 2rem)',
           borderBottom: '2px solid #531a6d',
-          borderLeft: '2px solid #531a6d'
+          borderLeft: '2px solid #531a6d',
+          zIndex: 10
+        }} />
+        <div className="absolute pointer-events-none" style={{
+          bottom: 'clamp(0.5rem, 1.5vw, 1rem)',
+          inset: 'auto 0 0 0',
+          height: '1px',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)'
         }} />
         <div className="absolute bottom-0 right-0 pointer-events-none" style={{
           width: 'clamp(1rem, 3vw, 2rem)',
           height: 'clamp(1rem, 3vw, 2rem)',
           borderBottom: '2px solid #531a6d',
-          borderRight: '2px solid #531a6d'
+          borderRight: '2px solid #531a6d',
+          zIndex: 10
+        }} />
+
+        <div className="absolute pointer-events-none" style={{
+          left: 'clamp(0.5rem, 1.5vw, 1rem)',
+          inset: '0 auto 0 0',
+          width: '1px',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)'
+        }} />
+        <div className="absolute pointer-events-none" style={{
+          right: 'clamp(0.5rem, 1.5vw, 1rem)',
+          inset: '0 0 0 auto',
+          width: '1px',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)'
         }} />
 
         <div className="shrink-0" style={{

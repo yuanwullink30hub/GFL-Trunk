@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, 
   Share2, 
   Globe, 
   Calendar, 
@@ -16,8 +15,7 @@ import {
   HoloCard, 
   GlowButton, 
   TechBadge, 
-  SectionHeader,
-  LoadingScreen
+  SectionHeader
 } from './SciFiUI';
 import { BrandStats } from './BrandStats';
 import {
@@ -125,59 +123,96 @@ const GeneralPage = ({ pageId, onBack }) => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6, delay: 0.5 }}
-      className="w-full h-screen font-sans text-slate-200 overflow-hidden relative"
-      style={{ background: 'transparent' }}
+      className="fixed inset-0 font-sans text-slate-200"
+      style={{ 
+        background: 'transparent',
+        zIndex: 2000
+      }}
     >
       {/* Scanline Overlay */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
 
-      {/* Main Content Container */}
-      <main className="relative z-10 w-full h-full overflow-hidden" style={{
-        margin: 'clamp(0.5rem, 1.5vw, 1.5rem)'
-      }}>
+      {/* PLACEHOLDER CONTAINER - Fixed to viewport, never scrolls */}
+      <div 
+        className="absolute z-20 flex flex-col overflow-hidden bg-black/20 h-full w-full"
+        style={{
+          top: 'clamp(0.5rem, 1.5vw, 1.5rem)',
+          left: 'clamp(0.5rem, 1.5vw, 1.5rem)',
+          right: 'clamp(0.5rem, 1.5vw, 1.5rem)',
+          bottom: 'clamp(0.5rem, 1.5vw, 1.5rem)',
+          touchAction: 'manipulation',
+          height: 'auto',
+          width: 'auto'
+        }}
+      >
+        {/* Corner Brackets with connecting lines */}
+        <div className="absolute top-0 left-0 pointer-events-none" style={{
+          width: 'clamp(1rem, 3vw, 2rem)',
+          height: 'clamp(1rem, 3vw, 2rem)',
+          borderTop: '2px solid #531a6d',
+          borderLeft: '2px solid #531a6d',
+          zIndex: 50
+        }} />
+        <div className="absolute pointer-events-none" style={{
+          top: 'clamp(0.5rem, 1.5vw, 1rem)',
+          inset: '0 0 auto 0',
+          height: '1px',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)'
+        }} />
+        <div className="absolute top-0 right-0 pointer-events-none" style={{
+          width: 'clamp(1rem, 3vw, 2rem)',
+          height: 'clamp(1rem, 3vw, 2rem)',
+          borderTop: '2px solid #531a6d',
+          borderRight: '2px solid #531a6d',
+          zIndex: 50
+        }} />
         
-        {/* PLACEHOLDER CONTAINER - Deltawerken corner brackets style */}
+        <div className="absolute bottom-0 left-0 pointer-events-none" style={{
+          width: 'clamp(1rem, 3vw, 2rem)',
+          height: 'clamp(1rem, 3vw, 2rem)',
+          borderBottom: '2px solid #531a6d',
+          borderLeft: '2px solid #531a6d',
+          zIndex: 50
+        }} />
+        <div className="absolute pointer-events-none" style={{
+          bottom: 'clamp(0.5rem, 1.5vw, 1rem)',
+          inset: 'auto 0 0 0',
+          height: '1px',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)'
+        }} />
+        <div className="absolute bottom-0 right-0 pointer-events-none" style={{
+          width: 'clamp(1rem, 3vw, 2rem)',
+          height: 'clamp(1rem, 3vw, 2rem)',
+          borderBottom: '2px solid #531a6d',
+          borderRight: '2px solid #531a6d',
+          zIndex: 50
+        }} />
+
+        <div className="absolute pointer-events-none" style={{
+          left: 'clamp(0.5rem, 1.5vw, 1rem)',
+          inset: '0 auto 0 0',
+          width: '1px',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)'
+        }} />
+        <div className="absolute pointer-events-none" style={{
+          right: 'clamp(0.5rem, 1.5vw, 1rem)',
+          inset: '0 0 0 auto',
+          width: '1px',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)'
+        }} />
+      
+        {/* Inner scrollable content */}
         <div 
-          className="relative h-full overflow-hidden"
+          className="flex-1 overflow-y-auto"
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            border: '1px solid rgba(96, 28, 151, 0.6)'
+            padding: 'clamp(0.5rem, 1.5vw, 1.5rem)',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(0, 255, 255, 0.3) transparent',
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
-          {/* Corner Brackets */}
-          <div className="absolute top-0 left-0 pointer-events-none z-50" style={{
-            width: 'clamp(1rem, 3vw, 2rem)',
-            height: 'clamp(1rem, 3vw, 2rem)',
-            borderTop: '2px solid #531a6d',
-            borderLeft: '2px solid #531a6d'
-          }} />
-          <div className="absolute top-0 right-0 pointer-events-none z-50" style={{
-            width: 'clamp(1rem, 3vw, 2rem)',
-            height: 'clamp(1rem, 3vw, 2rem)',
-            borderTop: '2px solid #531a6d',
-            borderRight: '2px solid #531a6d'
-          }} />
-          <div className="absolute bottom-0 left-0 pointer-events-none z-50" style={{
-            width: 'clamp(1rem, 3vw, 2rem)',
-            height: 'clamp(1rem, 3vw, 2rem)',
-            borderBottom: '2px solid #531a6d',
-            borderLeft: '2px solid #531a6d'
-          }} />
-          <div className="absolute bottom-0 right-0 pointer-events-none z-50" style={{
-            width: 'clamp(1rem, 3vw, 2rem)',
-            height: 'clamp(1rem, 3vw, 2rem)',
-            borderBottom: '2px solid #531a6d',
-            borderRight: '2px solid #531a6d'
-          }} />
-        
-          {/* Inner scrollable content - ALL content inside */}
-          <div 
-            className="h-full overflow-y-auto p-4"
-            style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(0, 255, 255, 0.3) transparent'
-            }}
-          >
             {/* Brand Identity - NOW INSIDE PLACEHOLDER */}
             <div className="flex flex-col items-start mb-4">
               <div className="flex items-center gap-3 mb-2">
@@ -197,7 +232,7 @@ const GeneralPage = ({ pageId, onBack }) => {
             </div>
 
             {/* CONTENT ACTIONS */}
-            <div className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur border-b border-white/5 shadow-lg mb-4 -mx-4 px-4">
+            <div className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur border-b border-white/5 shadow-lg mb-4">
               <div className="flex gap-2 p-3">
                 <GlowButton variant="primary" className="flex-1 !py-2.5 !text-xs !rounded-md">Follow System</GlowButton>
                 <GlowButton variant="secondary" className="!px-3 !py-2 !rounded-md" icon={<Share2 size={16} />} />
@@ -231,7 +266,7 @@ const GeneralPage = ({ pageId, onBack }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="space-y-8"
+                  className="space-y-4"
                 >
                          {/* Description */}
                          <div className="bg-slate-900/40 p-4 rounded-lg border border-white/5 backdrop-blur-sm">
@@ -261,15 +296,15 @@ const GeneralPage = ({ pageId, onBack }) => {
                          </div>
 
                          {/* Stats */}
-                         <div className="space-y-3">
+                         <div className="space-y-2">
                             <SectionHeader title="Analytics" />
                             <BrandStats metrics={brandData.metrics} />
                          </div>
 
                          {/* Gallery with Slideshow */}
-                         <div className="space-y-3">
+                         <div className="space-y-2">
                             <SectionHeader title="Visual DB" />
-                            <div className="grid grid-cols-1 gap-4">
+                            <div className="grid grid-cols-1 gap-2">
                                {brandData.gallery.map((item, idx) => (
                                   <HoloCard 
                                     key={item.id || idx} 
@@ -341,7 +376,7 @@ const GeneralPage = ({ pageId, onBack }) => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="flex flex-col items-center justify-center py-16 text-slate-600 border border-dashed border-white/10 rounded-lg bg-slate-900/20"
+                        className="flex flex-col items-center justify-center py-4 text-slate-600 border border-dashed border-white/10 rounded-lg bg-slate-900/20"
                       >
                          <MessageSquare size={24} className="mb-2 opacity-30" />
                          <p className="font-mono text-[10px] uppercase tracking-widest">Signal Lost</p>
@@ -351,17 +386,16 @@ const GeneralPage = ({ pageId, onBack }) => {
                  </AnimatePresence>
 
                  {/* Footer */}
-                 <div className="py-4 text-center opacity-40 hover:opacity-100 transition-opacity">
-                    <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-4"></div>
+                 <div className="py-2 text-center opacity-40 hover:opacity-100 transition-opacity">
+                    <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-2"></div>
                     <p className="text-[9px] font-mono text-cyan-400">
                        SECURE_CONNECTION // {brandData.id}
                     </p>
                  </div>
-          </div>
-          {/* END INNER SCROLLABLE */}
         </div>
-        {/* END PLACEHOLDER CONTAINER */}
-      </main>
+        {/* END INNER SCROLLABLE CONTENT */}
+      </div>
+      {/* END PLACEHOLDER CONTAINER */}
     </motion.div>
   );
 };

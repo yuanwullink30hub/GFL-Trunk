@@ -1,41 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Areplos+Text:wght@400;700&display=swap');
-
-@tailwind base;
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Mega:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&display=swap');
 @tailwind components;
 @tailwind utilities;
 
 body {
   margin: 0;
-  font-family: 'Ubuntu', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  padding: 0;
+  font-family: 'Figtree', sans-serif;
   background: linear-gradient(to bottom, rgb(29, 10, 1), rgb(12, 5, 4), #0d0811ff, rgb(11, 1, 14), rgb(13, 1, 15), rgb(20, 2, 27));
   background-attachment: fixed;
-  min-height: 100vh;
+  color: #FFFEF0;
+  overflow: hidden;
 }
 
-html {
-  background: linear-gradient(to bottom, rgb(29, 10, 1), rgb(12, 5, 4), #0d0811ff, rgb(11, 1, 14), rgb(13, 1, 15), rgb(20, 2, 27));
-  background-attachment: fixed;
-  min-height: 100vh;
+/* Font classes */
+.font-rajdhani {
+  font-family: 'Rajdhani', sans-serif;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.font-lexend-mega {
+  font-family: 'Lexend Mega', Arial, Helvetica, sans-serif;
 }
 
-.title-font {
-  font-family: 'Areplos Text', serif;
-  font-weight: 700;
-  font-style: italic;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.font-figtree {
+  font-family: 'Figtree', sans-serif;
 }

@@ -1,7 +1,0 @@
-.text {
-  font-family: 'Figtree', sans-serif;
-  font-weight: 400;
-  line-height: 1.5;
-  color: #FFFEF0;
-  font-size: clamp(16px, 4vw, 24px);
-}

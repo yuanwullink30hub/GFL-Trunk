@@ -46,7 +46,7 @@ const TimeSync = ({ isMobile }) => {
 
   return (
     <div className={`${isMobile ? 'text-left' : 'text-center'} whitespace-nowrap`}>
-      <div className={`tracking-widest ${isMobile ? 'text-xs' : 'text-sm'}`} style={{color: 'rgba(21, 179, 21, 0.8)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>TIME SYNC // {dateString} // {timeString}</div>
+      <div className={`tracking-widest ${isMobile ? 'text-xs' : 'text-sm'}`} style={{color: 'rgba(21, 179, 21, 0.8)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</div>
     </div>
   );
 };

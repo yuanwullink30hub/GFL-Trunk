@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import HoloEarth from './components/HoloEarth';
-import TechContainer from './components/TechContainer';
 import DesktopLayout from './components/DesktopLayout';
 import MobileLayout from './components/MobileLayout';
 import { ArrowRight } from 'lucide-react';
@@ -22,12 +21,10 @@ const useIsMobile = () => {
 
 const TimeSync = ({ isMobile }) => {
   const [time, setTime] = useState(new Date());
-  const [timezone, setTimezone] = useState('');
 
   useEffect(() => {
     // Get user's timezone
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    setTimezone(tz);
+    Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     // Update time every second
     const timer = setInterval(() => {
@@ -124,7 +121,6 @@ const App = () => {
 
       {/* --- Overlay UI Layer --- */}
       <div className="absolute inset-0 z-20 pointer-events-none">
-        
         {/* Header HUD - Flies up on transition */}
         <header 
           className={`absolute top-0 left-0 w-full flex ${isMobile ? 'justify-start' : 'justify-between'} ${isMobile ? 'items-start' : 'items-center'} pointer-events-auto transition-all duration-1000 ease-in-out`}

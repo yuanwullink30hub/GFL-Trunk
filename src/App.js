@@ -23,9 +23,6 @@ const TimeSync = ({ isMobile }) => {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
-    // Get user's timezone
-    Intl.DateTimeFormat().resolvedOptions().timeZone;
-
     // Update time every second
     const timer = setInterval(() => {
       setTime(new Date());

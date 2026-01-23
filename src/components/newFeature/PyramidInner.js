@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Html, Edges } from '@react-three/drei';
+import { Edges } from '@react-three/drei';
 import * as THREE from 'three';
 import HoloCore from './HoloCore';
 
@@ -253,7 +253,6 @@ const PyramidInner = ({
   const containerShadowSoftRef = useRef(null);
 
   const { gl } = useThree();
-  const portalNode = useMemo(() => ({ current: gl.domElement.parentNode }), [gl]);
 
   const [completedLayerIndex, setCompletedLayerIndex] = useState(0);
   const [isIntroActive, setIsIntroActive] = useState(true);
@@ -459,7 +458,6 @@ const PyramidInner = ({
       const startScale = new THREE.Vector3(0.01, 0.01, 0.01);
       meshChild.scale.lerpVectors(startScale, targetScale, effectiveR);
 
-      const isStructureFormed = effectiveR > 0.9;
       meshChild.visible = effectiveR > 0.05;
     });
   });

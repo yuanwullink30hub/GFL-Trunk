@@ -82,7 +82,6 @@ const App = () => {
   }, []);
 
   // Calculate progress from frame (0-1)
-  const scrollProgress = currentFrame / (TOTAL_FRAMES - 1);
   
   // Total frames needed for all three sections
   const TOTAL_ANIMATION_FRAMES = SECTION_1_FRAMES + SECTION_2_FRAMES + SECTION_3_FRAMES;
@@ -211,7 +210,6 @@ const App = () => {
   
   const section1End = SECTION_1_FRAMES;
   const section2End = SECTION_1_FRAMES + SECTION_2_FRAMES;
-  const section3End = SECTION_1_FRAMES + SECTION_2_FRAMES + SECTION_3_FRAMES;
   
   // SECTION 1: Scroll prompt disappears (0 to section1End)
   const section1Progress = Math.min(1, Math.max(0, currentFrame / section1End));

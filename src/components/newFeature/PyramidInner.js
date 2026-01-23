@@ -252,8 +252,6 @@ const PyramidInner = ({
   const containerShadowHardRef = useRef(null);
   const containerShadowSoftRef = useRef(null);
 
-  const { gl } = useThree();
-
   const [completedLayerIndex, setCompletedLayerIndex] = useState(0);
   const [isIntroActive, setIsIntroActive] = useState(true);
   const [isGoldMode, setIsGoldMode] = useState(false);

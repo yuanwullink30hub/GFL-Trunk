@@ -1,21 +1,25 @@
 import React from 'react';
 import TechContainer from './TechContainer';
 
-const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide }) => {
+const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0 }) => {
+  // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
+  const containerOpacity = Math.max(0, 1 - animationProgress * 2);
+  const translateY = 150 * animationProgress; // pixels to move down
+  const containerScale = 1 - (0.25 * animationProgress);
+
   return (
     <>
       {/* Mobile - Full Width Gardens Slideshow at Bottom */}
       <div 
-        className="absolute transition-all duration-1000 ease-in-out pointer-events-auto"
+        className="absolute pointer-events-auto"
         style={{
           bottom: 'clamp(1rem, 12vh, 12rem)',
           top: 'clamp(40rem, 68vh, 53rem)',
           left: '3vw',
           right: '3vw',
           height: 'auto',
-          transform: !isExploding && mounted ? 'translate(0, 0) scale(1)' : 'translateY(calc(9.375rem + 2vh)) scale(0.75)',
-          opacity: !isExploding && mounted ? 1 : 0,
-          transitionDelay: '200ms'
+          transform: `translateY(${translateY}px) scale(${containerScale})`,
+          opacity: mounted ? containerOpacity : 0
         }}
       >
         <TechContainer title="GARDENS" variant="purple" className="w-full h-full">

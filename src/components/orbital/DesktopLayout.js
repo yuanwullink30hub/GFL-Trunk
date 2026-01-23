@@ -2,15 +2,32 @@ import React from 'react';
 import TechContainer from './TechContainer';
 import { Activity, Database, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide }) => {
+const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0 }) => {
+  // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
+  // animationProgress goes from 0 to 1 as containers fly away
+  const containerOpacity = Math.max(0, 1 - animationProgress * 2); // Fades out quickly
+  
+  // Each container flies in different direction
+  const topLeftX = -250 * animationProgress;
+  const topLeftY = -200 * animationProgress;
+  const bottomLeftX = -250 * animationProgress;
+  const bottomLeftY = 200 * animationProgress;
+  const topRightX = 250 * animationProgress;
+  const topRightY = -200 * animationProgress;
+  const bottomRightX = 250 * animationProgress;
+  const bottomRightY = 200 * animationProgress;
+  const bottomCenterY = 250 * animationProgress;
+  
+  const containerScale = 1 - (0.25 * animationProgress);
+
   return (
     <>
       {/* 1. Top Left - Analytics */}
       <div 
-        className="absolute top-[15%] left-[5%] w-[20vw] h-[25vh] transition-all duration-1000 ease-in-out pointer-events-auto"
+        className="absolute top-[15%] left-[5%] w-[20vw] h-[25vh] pointer-events-auto"
         style={{
-          transform: !isExploding && mounted ? 'translate(0, 0) scale(1)' : 'translate(-250px, -200px) scale(0.75)',
-          opacity: !isExploding && mounted ? 1 : 0
+          transform: `translate(${topLeftX}px, ${topLeftY}px) scale(${containerScale})`,
+          opacity: mounted ? containerOpacity : 0
         }}
       >
         <TechContainer title="SECTOR_ANALYTICS" variant="purple" className="w-full h-full">
@@ -25,11 +42,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide }) 
 
       {/* 2. Bottom Left - Database/Logs */}
       <div 
-        className="absolute bottom-[10%] left-[8%] w-[18vw] h-[35vh] transition-all duration-1000 ease-in-out pointer-events-auto"
+        className="absolute bottom-[10%] left-[8%] w-[18vw] h-[35vh] pointer-events-auto"
         style={{
-          transform: !isExploding && mounted ? 'translate(0, 0) scale(1)' : 'translate(-250px, 200px) scale(0.75)',
-          opacity: !isExploding && mounted ? 1 : 0,
-          transitionDelay: '100ms'
+          transform: `translate(${bottomLeftX}px, ${bottomLeftY}px) scale(${containerScale})`,
+          opacity: mounted ? containerOpacity : 0
         }}
       >
         <TechContainer title="DATA_STREAM" variant="orange" className="w-full h-full">
@@ -46,11 +62,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide }) 
 
       {/* 3. Top Right - Garden For Life Website */}
       <div 
-        className="absolute top-[20%] right-[5%] w-[18vw] h-[20vh] transition-all duration-1000 ease-in-out pointer-events-auto"
+        className="absolute top-[20%] right-[5%] w-[18vw] h-[20vh] pointer-events-auto"
         style={{
-          transform: !isExploding && mounted ? 'translate(0, 0) scale(1)' : 'translate(250px, -200px) scale(0.75)',
-          opacity: !isExploding && mounted ? 1 : 0,
-          transitionDelay: '200ms'
+          transform: `translate(${topRightX}px, ${topRightY}px) scale(${containerScale})`,
+          opacity: mounted ? containerOpacity : 0
         }}
       >
         <TechContainer title="GARDENFORLIFE.NL" variant="orange" className="w-full h-full">
@@ -78,11 +93,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide }) 
 
       {/* 4. Center Right/Bottom - Gardens Slideshow */}
       <div 
-        className="absolute bottom-[15%] right-[10%] w-[22vw] h-[30vh] transition-all duration-1000 ease-in-out pointer-events-auto"
+        className="absolute bottom-[15%] right-[10%] w-[22vw] h-[30vh] pointer-events-auto"
         style={{
-          transform: !isExploding && mounted ? 'translate(0, 0) scale(1)' : 'translate(250px, 200px) scale(0.75)',
-          opacity: !isExploding && mounted ? 1 : 0,
-          transitionDelay: '300ms'
+          transform: `translate(${bottomRightX}px, ${bottomRightY}px) scale(${containerScale})`,
+          opacity: mounted ? containerOpacity : 0
         }}
       >
         <TechContainer title="GARDENS" variant="purple" className="w-full h-full">
@@ -171,11 +185,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide }) 
 
       {/* 5. Center Bottom - Status Strip */}
       <div 
-        className="absolute bottom-[5%] left-0 right-0 flex justify-center transition-all duration-1000 ease-in-out pointer-events-auto"
+        className="absolute bottom-[5%] left-0 right-0 flex justify-center pointer-events-auto"
         style={{
-          transform: !isExploding && mounted ? 'translateY(0) scale(1)' : 'translateY(250px) scale(0.75)',
-          opacity: !isExploding && mounted ? 1 : 0,
-          transitionDelay: '500ms'
+          transform: `translateY(${bottomCenterY}px) scale(${containerScale})`,
+          opacity: mounted ? containerOpacity : 0
         }}
       >
         <div className="w-[30vw] h-[10vh]">

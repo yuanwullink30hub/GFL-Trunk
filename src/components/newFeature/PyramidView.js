@@ -6,7 +6,8 @@ import HoloPyramid from './HoloPyramid';
 import PyramidOverlay from './PyramidOverlay';
 
 // Total frames for animation (discrete scroll points)
-const TOTAL_FRAMES = 180;
+// Doubled to 360 to accommodate 2x slower layer animations (ANIMATION_SPEED_DIVISOR = 2)
+const TOTAL_FRAMES = 360;
 
 // isActive: passed from parent, controls when intro animation starts
 // When true (orbit button visible), the 3s timer starts and layers will float up

@@ -9,15 +9,14 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
 
   return (
     <>
-      {/* Mobile - Full Width Gardens Slideshow at Bottom */}
+      {/* Mobile - Full Width Gardens Slideshow at Bottom (below scroll prompt) */}
       <div 
         className="absolute pointer-events-auto"
         style={{
-          bottom: 'clamp(1rem, 12vh, 12rem)',
-          top: 'clamp(40rem, 68vh, 53rem)',
+          bottom: 'clamp(0.5rem, 3vh, 2rem)',
           left: '3vw',
           right: '3vw',
-          height: 'auto',
+          height: 'clamp(8rem, 18vh, 12rem)',
           transform: `translateY(${translateY}px) scale(${containerScale})`,
           opacity: mounted ? containerOpacity : 0
         }}

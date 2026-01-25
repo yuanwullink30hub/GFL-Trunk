@@ -194,6 +194,9 @@
 .mt-6{
   margin-top: 1.5rem;
 }
+.block{
+  display: block;
+}
 .flex{
   display: flex;
 }
@@ -337,6 +340,9 @@
 }
 .flex-1{
   flex: 1 1 0%;
+}
+.shrink{
+  flex-shrink: 1;
 }
 .origin-left{
   transform-origin: left;

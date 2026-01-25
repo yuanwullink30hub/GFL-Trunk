@@ -4,6 +4,12 @@ import { Edges } from '@react-three/drei';
 import * as THREE from 'three';
 import HoloCore from './HoloCore';
 
+// Smoothstep helper for particle occlusion calculations
+const smoothstep = (edge0, edge1, x) => {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+};
+
 // Pyramid constants - scaled down to fit inside earth
 const TOTAL_LAYERS = 5;
 const PYRAMID_HEIGHT = 2.5; // Smaller to fit in earth core
@@ -81,7 +87,7 @@ const InnerHoloEffect = ({ radiusTop, radiusBottom, height, isGoldMode }) => {
 };
 
 // --- Tech Layer Component (Visual Only) ---
-const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap, insideEarth = false, isAfterFrame15 = false, explosionProgress = 0 }) => {
+const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap, insideEarth = false, isAfterFrame15 = false, explosionProgress = 0, particleOcclusion = 0 }) => {
   const basePurple = "#a855f7";
   const glowPurple = "#6b21a8";
   const edgesRef = useRef(null);
@@ -98,10 +104,15 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
 
     // Keep full opacity during explosion for vibrant pyramid visibility
     // Only reduce during orbital mode when inside earth
-    const targetEdgeOpacity = insideEarth ? 0.15 : 1;
-    const targetGlassOpacity = insideEarth ? 0.07 : 0.35; // Increased from 0.3 for full vibrancy
-    const targetWireOpacity = insideEarth ? 0.04 : 0.15;
-    const targetEmissive = insideEarth ? 0.05 : 0.35; // Increased to maintain vibrant color
+    // Apply particle occlusion - pyramid is behind smokescreen during explosion
+    const occlusionMult = 1.0 - particleOcclusion * 0.85; // Reduce to 15% visibility at peak occlusion
+    
+    // During explosion, use higher opacity to block particles from shining through
+    const isDuringExplosion = explosionProgress > 0.05;
+    const targetEdgeOpacity = (insideEarth && !isDuringExplosion ? 0.15 : 1) * occlusionMult;
+    const targetGlassOpacity = (insideEarth && !isDuringExplosion ? 0.07 : 0.35) * occlusionMult;
+    const targetWireOpacity = (insideEarth && !isDuringExplosion ? 0.04 : 0.15) * occlusionMult;
+    const targetEmissive = (insideEarth ? 0.05 : 0.35) * occlusionMult;
 
     if (edgesRef.current && edgesRef.current.material) {
       const targetColor = isGoldMode ? goldColor : orangeColor;
@@ -416,8 +427,11 @@ const PyramidInner = ({
       mat.color = new THREE.Color("#fb923c");
     }
 
-    // Scroll logic
-    const currentCompleted = Math.floor(scrollProgress * totalMovable + 0.05);
+    // Scroll logic - each layer animates over one scroll segment
+    const currentCompleted = Math.min(
+      Math.floor(scrollProgress * totalMovable + 0.05),
+      totalMovable
+    );
     if (completedLayerIndex !== currentCompleted) {
       setCompletedLayerIndex(currentCompleted);
     }
@@ -433,6 +447,7 @@ const PyramidInner = ({
         return;
       }
 
+      // Range for each layer
       const rangeStart = (i - 1) / totalMovable;
       const rangeEnd = i / totalMovable;
 
@@ -460,24 +475,40 @@ const PyramidInner = ({
     });
   });
 
+  // Calculate pyramid render order - should be behind particles only during smokescreen phase
+  // Lower renderOrder = renders first (behind), Higher = renders later (in front)
+  // After frame 24 (0.26): pyramid uses normal depth for proper 3D sphere effect
+  const pyramidRenderOrder = explosionProgress > 0.1 && explosionProgress < 0.26 ? -10 : 0;
+
   return (
     <group>
-      {/* Rotating Pyramid Layers */}
-      <group ref={groupRef}>
-        {layers.map((layer) => (
-          <group key={layer.index} position={[0, layer.yPos, 0]}>
-            <TechLayer
-              radiusTop={layer.radiusTop}
-              radiusBottom={layer.radiusBottom}
-              height={layer.height}
-              isGoldMode={isGoldMode}
-              showBottomCap={layer.index === 0}
-              insideEarth={!isActive}
-              isAfterFrame15={explosionProgress > 0.4}
-              explosionProgress={explosionProgress}
-            />
-          </group>
-        ))}
+      {/* Rotating Pyramid Layers - renderOrder set to be behind particles during explosion */}
+      <group ref={groupRef} renderOrder={pyramidRenderOrder}>
+        {layers.map((layer) => {
+          // Calculate particle occlusion based on explosion progress
+          // Peak occlusion during mid-explosion (0.2-0.6 range) when particles are densest
+          // Creates a "smokescreen" effect that the pyramid is behind
+          const occlusionRamp = explosionProgress < 0.15 ? 0 :
+            explosionProgress < 0.5 ? smoothstep(0.15, 0.35, explosionProgress) :
+            explosionProgress < 0.7 ? 1.0 - smoothstep(0.5, 0.7, explosionProgress) * 0.6 :
+            0.4 * (1.0 - smoothstep(0.7, 0.85, explosionProgress));
+          
+          return (
+            <group key={layer.index} position={[0, layer.yPos, 0]}>
+              <TechLayer
+                radiusTop={layer.radiusTop}
+                radiusBottom={layer.radiusBottom}
+                height={layer.height}
+                isGoldMode={isGoldMode}
+                showBottomCap={layer.index === 0}
+                insideEarth={!isActive}
+                isAfterFrame15={explosionProgress > 0.4}
+                explosionProgress={explosionProgress}
+                particleOcclusion={occlusionRamp}
+              />
+            </group>
+          );
+        })}
       </group>
 
       {/* Labels are now rendered as pure DOM in App.js - no 3D Html components */}

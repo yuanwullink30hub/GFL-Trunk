@@ -43,7 +43,7 @@ const TimeSync = ({ isMobile }) => {
   });
 
   return (
-    <div className={`${isMobile ? 'text-left' : 'text-center'} whitespace-nowrap`}>
+    <div className={`${isMobile ? 'text-center' : 'text-center'} whitespace-nowrap`}>
       <div className={`tracking-widest ${isMobile ? 'text-xs' : 'text-sm'}`} style={{color: 'rgba(21, 179, 21, 0.8)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</div>
     </div>
   );
@@ -55,10 +55,10 @@ const TOTAL_FRAMES = 180; // Total animation set points (more frames = smoother)
 // ANIMATION SECTION CONFIGURATION
 // Adjust these values to control scroll timing for each phase
 // ============================================
-const SECTION_1_FRAMES = 3;   // Scroll prompt disappears
+const SECTION_1_FRAMES = 6;   // Scroll prompt disappears
 const SECTION_2_FRAMES = 30;  // Earth explosion
 const HEADER_START_FRAME = 9; // Header/containers start vanishing after this frame
-const SECTION_3_FRAMES = 6;   // Pyramid center to bottom (system visible)
+const SECTION_3_FRAMES = 12;  // Pyramid center to bottom (system visible)
 // ============================================
 
 const App = () => {
@@ -103,7 +103,7 @@ const App = () => {
     // If at max frame AND intro is complete, control pyramid scroll instead
     if (currentFrame >= MAX_FRAME && introComplete) {
       setPyramidScrollProgress(prev => {
-        const step = 0.1; // 10% per scroll tick (adjust for sensitivity)
+        const step = 0.05; // 5% per scroll tick - slower for smoother layer animation
         const newProgress = Math.max(0, Math.min(1, prev + (direction * step)));
         // If scrolling up and at 0, allow returning to orbital animation
         if (direction < 0 && prev <= 0) {
@@ -161,7 +161,7 @@ const App = () => {
       // If at max frame AND intro is complete, control pyramid scroll
       if (currentFrame >= MAX_FRAME && introComplete) {
         setPyramidScrollProgress(prev => {
-          const step = 0.1;
+          const step = 0.05; // 5% per scroll tick - slower for smoother layer animation
           const newProgress = Math.max(0, Math.min(1, prev + (direction * step)));
           if (direction < 0 && prev <= 0) {
             setCurrentFrame(prevFrame => Math.max(0, prevFrame - 1));
@@ -339,40 +339,93 @@ const App = () => {
       {/* --- Overlay UI Layer --- */}
       <div className="absolute inset-0 z-20 pointer-events-none">
         {/* Header HUD - Flies up based on scroll progress */}
-        <header 
-          className={`absolute top-0 left-0 w-full flex ${isMobile ? 'justify-start' : 'justify-between'} ${isMobile ? 'items-start' : 'items-center'} pointer-events-auto`}
-          style={{
-            transform: `translateY(${headerY}px) scale(${headerScale})`,
-            opacity: headerOpacity,
-            padding: isMobile ? '0.75rem' : '1.5rem',
-            marginLeft: isMobile ? '-0.6rem' : '3vw'
-          }}
-        >
-          <div className="flex items-center" style={{gap: isMobile ? '0rem' : '1rem', transform: isMobile ? 'translateY(calc(-1 * 0.75rem))' : 'none'}}>
-            <img src="images/landingpage/logo.png" alt="Delta" className="w-full h-full" style={{width: isMobile ? 'clamp(3.3rem, 20vw, 24rem)' : '5rem', height: isMobile ? 'clamp(3.3rem, 20vw, 24rem)' : '5rem'}} />
-            <div>
-              <h1 className="font-bold tracking-[0.2em]" style={{
+        {/* Desktop: Original horizontal layout */}
+        {!isMobile && (
+          <header 
+            className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-auto"
+            style={{
+              transform: `translateY(${headerY}px) scale(${headerScale})`,
+              opacity: headerOpacity,
+              padding: '1.5rem',
+              marginLeft: '3vw'
+            }}
+          >
+            <div className="flex items-center" style={{gap: '1rem'}}>
+              <img src="images/landingpage/logo.png" alt="Delta" className="w-full h-full" style={{width: '5rem', height: '5rem'}} />
+              <div>
+                <h1 className="font-bold tracking-[0.2em]" style={{
+                  color: '#FFFEF0',
+                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                  fontSize: '1.5rem',
+                  lineHeight: '1.1'
+                }}>
+                  DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
+                </h1>
+                <div className="flex gap-2 items-center">
+                  <span className="rounded-full bg-green-500 animate-ping" style={{
+                    width: '0.5rem',
+                    height: '0.5rem',
+                    minWidth: '0.5rem',
+                    minHeight: '0.5rem'
+                  }}></span>
+                  <span className="text-gray-400 tracking-widest" style={{
+                    fontSize: '0.75rem'
+                  }}>SYSTEM ONLINE {'/'}{'/'} V.4.9</span>
+                </div>
+              </div>
+            </div>
+          </header>
+        )}
+        
+        {/* Mobile: Vertical centered layout - Logo, Deltawerken, TimeSync stacked */}
+        {isMobile && (
+          <div 
+            className="absolute top-0 left-0 right-0 flex flex-col items-center pointer-events-auto"
+            style={{
+              transform: `translateY(${headerY}px) scale(${headerScale})`,
+              opacity: headerOpacity,
+              paddingTop: '1rem'
+            }}
+          >
+            {/* Logo - centered, reduced by 0.7 */}
+            <img 
+              src="images/landingpage/logo.png" 
+              alt="Delta" 
+              style={{
+                width: 'clamp(5.6rem, 35vw, 11.2rem)', 
+                height: 'clamp(5.6rem, 35vw, 11.2rem)'
+              }} 
+            />
+            
+            {/* Deltawerken - centered below logo, moved up 1rem */}
+            <div className="flex flex-col items-center" style={{marginTop: '-0.5rem'}}>
+              <h1 className="font-bold tracking-[0.2em] text-center" style={{
                 color: '#FFFEF0',
                 fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontSize: isMobile ? 'clamp(0.9rem, 5.5vw, 2.2rem)' : '1.5rem',
+                fontSize: 'clamp(1.2rem, 6vw, 2.5rem)',
                 lineHeight: '1.1'
               }}>
                 DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
               </h1>
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center justify-center" style={{marginTop: '0.25rem'}}>
                 <span className="rounded-full bg-green-500 animate-ping" style={{
-                  width: isMobile ? 'clamp(0.3rem, 0.5vw, 0.5rem)' : '0.5rem',
-                  height: isMobile ? 'clamp(0.3rem, 0.5vw, 0.5rem)' : '0.5rem',
-                  minWidth: isMobile ? 'clamp(0.3rem, 0.5vw, 0.5rem)' : '0.5rem',
-                  minHeight: isMobile ? 'clamp(0.3rem, 0.5vw, 0.5rem)' : '0.5rem'
+                  width: 'clamp(0.3rem, 0.8vw, 0.5rem)',
+                  height: 'clamp(0.3rem, 0.8vw, 0.5rem)',
+                  minWidth: 'clamp(0.3rem, 0.8vw, 0.5rem)',
+                  minHeight: 'clamp(0.3rem, 0.8vw, 0.5rem)'
                 }}></span>
                 <span className="text-gray-400 tracking-widest" style={{
-                  fontSize: isMobile ? 'clamp(0.5rem, 2vw, 1rem)' : '0.75rem'
+                  fontSize: 'clamp(0.5rem, 2.5vw, 1rem)'
                 }}>SYSTEM ONLINE {'/'}{'/'} V.4.9</span>
               </div>
             </div>
+            
+            {/* TimeSync - centered with equal padding */}
+            <div style={{marginTop: '1rem', width: '100%', display: 'flex', justifyContent: 'center'}}>
+              <TimeSync isMobile={isMobile} />
+            </div>
           </div>
-        </header>
+        )}
         
         {/* Desktop TimeSync - Right positioned */}
         {!isMobile && (
@@ -385,26 +438,13 @@ const App = () => {
           </div>
         )}
         
-        {/* Mobile TimeSync - Left sidebar */}
-        {isMobile && (
-          <div className="absolute pointer-events-auto" style={{
-            left: 'clamp(0.5rem, 3vw, 6.5rem)',
-            top: 'clamp(2rem, 12vh, 4rem)',
-            maxWidth: '85%',
-            overflow: 'visible',
-            whiteSpace: 'nowrap',
-            transform: 'scale(clamp(0.4, 1.6vw, 1.2))',
-            transformOrigin: 'top left'
-          }}>
-            <TimeSync isMobile={isMobile} />
-          </div>
-        )}
+        {/* Mobile TimeSync is now included in the header section above */}
 
         {/* --- Scroll Prompt (Orbital View Only) --- */}
         <div 
           className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50 pointer-events-none"
           style={{
-            bottom: isMobile ? 'clamp(11.5rem, 34.5vh, 19.5rem)' : '20%',
+            bottom: isMobile ? 'clamp(6rem, 20vh, 12rem)' : '20%',
             opacity: promptOpacity,
             transform: promptOpacity > 0 ? 'scale(1)' : 'scale(1.5)'
           }}
@@ -477,7 +517,7 @@ const App = () => {
               style={{
                 border: '1px solid rgba(147, 51, 234, 0.3)',
                 background: 'rgba(10, 5, 16, 0.6)',
-                bottom: isMobile ? '4rem' : '10rem',
+                bottom: isMobile ? '-6rem' : '10rem',
                 left: '50%',
                 transform: 'translateX(-50%)'
               }}
@@ -518,27 +558,26 @@ const App = () => {
               const isRight = layerIndex % 2 === 0;
               
               // Calculate label opacity - smooth fade in based on threshold
-              // Layer 0 visible immediately after intro, others staggered
               const labelOpacity = isVisible ? 1 : 0;
               
-              // Viewport-responsive vertical positioning - tightly aligned with pyramid layers
-              // Center at 50vh with compact spacing
-              const centerVh = 50;
-              const layerHeightVh = 1.8; // Tighter spacing per layer
-              const layerOffset = layerIndex - 2; // Offset from center layer (0-4 -> -2 to 2)
-              let yOffsetVh = centerVh - (layerOffset * layerHeightVh);
+              // Viewport-responsive vertical positioning - aligned with pyramid layers
+              // Each layer positioned at specific heights for different viewports
+              const layerPositions = {
+                0: { desktop: 78, mobile: 78 },   // Base layer at bottom
+                1: { desktop: 58, mobile: 60 },   // Layer 1
+                2: { desktop: 50, mobile: 50 },   // Layer 2 (center)
+                3: { desktop: 42, mobile: 40 },   // Layer 3
+                4: { desktop: 34, mobile: 30 }    // Layer 4 (top)
+              };
+              const position = layerPositions[layerIndex] || { desktop: 50, mobile: 50 };
+              const yOffsetVh = isMobile ? position.mobile : position.desktop;
               
-              // Move layer 0 down by 15rem (approximately 28.5vh)
-              if (layerIndex === 0) {
-                yOffsetVh += 28.5;
-              }
+              // Viewport-responsive horizontal positioning (alternate sides with min distance)
+              const horizontalOffsetVw = isRight ? 'auto' : 'max(5vw, 1.5rem)';
+              const horizontalOffsetVwRight = isRight ? 'max(5vw, 1.5rem)' : 'auto';
               
-              // Viewport-responsive horizontal positioning (alternate sides)
-              const horizontalOffsetVw = isRight ? 'auto' : '6vw';
-              const horizontalOffsetVwRight = isRight ? '6vw' : 'auto';
-              
-              // Viewport-responsive scale using clamp (increased for better visibility)
-              const scaleValue = isMobile ? 'clamp(0.65, 3.5vw, 0.95)' : 'clamp(0.7, 2.5vw, 0.95)';
+              // Viewport-responsive scale (better coverage across devices)
+              const scaleValue = isMobile ? 'clamp(0.65, 3.5vw, 0.95)' : 'clamp(0.75, 2vw, 0.95)';
               
               return (
                 <div

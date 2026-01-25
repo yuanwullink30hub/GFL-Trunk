@@ -390,7 +390,10 @@ const HoloPyramid = ({ scrollProgress = 0, isActive = false, onSendComplete = ()
 
     // 4. Scroll Logic - Use scrollProgress from props (0-1)
     // Only process scroll when intro is complete (isIntroActive = false)
-    const currentCompleted = Math.floor(scrollProgress * totalMovable + 0.05);
+    const currentCompleted = Math.min(
+      Math.floor(scrollProgress * totalMovable + 0.05),
+      totalMovable
+    );
     if (completedLayerIndex !== currentCompleted) {
         setCompletedLayerIndex(currentCompleted);
     }

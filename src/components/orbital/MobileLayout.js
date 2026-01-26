@@ -1,6 +1,6 @@
 import React from 'react';
 import TechContainer from './TechContainer';
-import { Activity, Database, Lock } from 'lucide-react';
+import { Activity, Lock } from 'lucide-react';
 
 // Import garden logos
 import karmanLogo from '../../images/slideshow images/karmaneventsPNG.png';
@@ -393,20 +393,6 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
             >
               ENTER SYSTEM
             </button>
-          </div>
-
-          {/* Data Stream Container */}
-          <div style={{height: 'clamp(12rem, 35vh, 20rem)', marginTop: '1rem'}}>
-            <TechContainer title="DATA_STREAM" variant="orange" className="w-full h-full">
-              <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-50">
-                <Database style={{color: '#f59e0b', width: 'clamp(1.5rem, 4vw, 2rem)', height: 'clamp(1.5rem, 4vw, 2rem)'}} />
-                <div style={{fontFamily: "'Figtree', sans-serif", fontSize: 'clamp(10px, 2.2vw, 13px)', fontWeight: 400, textAlign: 'center', color: '#fed7aa'}}>
-                  packet_loss: 0%<br/>
-                  encryption: AES-256<br/>
-                  latency: 12ms
-                </div>
-              </div>
-            </TechContainer>
           </div>
 
           {/* Bottom spacing */}

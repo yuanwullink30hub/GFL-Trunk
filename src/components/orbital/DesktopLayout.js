@@ -18,12 +18,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   // 250px @ 2560w = 9.77vw, 200px @ 1440h = 13.89vh
   const topLeftX = -9.77 * animationProgress;      // vw
   const topLeftY = -13.89 * animationProgress;     // vh
-  const bottomLeftX = -9.77 * animationProgress;   // vw
-  const bottomLeftY = 13.89 * animationProgress;   // vh
   const topRightX = 9.77 * animationProgress;      // vw
   const topRightY = -13.89 * animationProgress;    // vh
   const bottomRightX = 9.77 * animationProgress;   // vw
   const bottomRightY = 13.89 * animationProgress;  // vh
+  const bottomLeftX = -9.77 * animationProgress;   // vw
+  const bottomLeftY = 13.89 * animationProgress;   // vh
   const bottomCenterY = 17.36 * animationProgress; // vh (250px @ 1440h)
   
   const containerScale = 1 - (0.25 * animationProgress);
@@ -34,8 +34,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       <div 
         className="absolute pointer-events-auto"
         style={{
-          top: '15vh',
-          left: '4.06vw',
+          top: 'calc(15vh + 2.5rem)',
+          left: 'calc(4.06vw - 2.5rem)',
           minHeight: '32.5vh',
           width: '26vw',
           transform: `translate(${topLeftX}vw, ${topLeftY}vh) scale(${containerScale})`,
@@ -47,7 +47,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             {/* Header */}
             <div className="flex flex-col items-center w-full" style={{ gap: '0.4vw' }}>
               <h2 style={{
-                fontSize: 'max(15.6px, 0.85vw)',
+                fontSize: 'max(15px, 1.084vw)',
                 color: 'rgb(196, 181, 253)',
                 margin: 0,
                 fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
@@ -64,7 +64,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
             {/* Content */}
             <div className="flex flex-col items-center justify-center flex-1" style={{ gap: '0.8vw' }}>
-              <Activity style={{ width: '2vw', height: '2vw', color: 'rgb(192, 132, 252)' }} />
+              <Activity style={{ width: '5vw', height: '5vw', color: 'rgb(192, 132, 252)' }} />
               <div style={{ height: '0.1vh', width: '50%', backgroundColor: 'rgba(88, 28, 135, 0.5)', borderRadius: '9999px', overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: '33%', backgroundColor: 'rgb(192, 132, 252)' }} className="animate-pulse"></div>
               </div>
@@ -219,8 +219,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                             alt={`${garden.name} logo`}
                             className="object-contain"
                             style={{
-                              width: '3.5vw',
-                              height: '3.5vw',
+                              width: '7vw',
+                              height: '7vw',
                               marginBottom: '0.5vw',
                               filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))'
                             }}
@@ -231,7 +231,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                             <div style={{
                               fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                               fontWeight: 600,
-                              fontSize: 'max(15px, 0.8vw)',
+                              fontSize: 'max(18px, 0.96vw)',
                               color: garden.accentColor,
                               letterSpacing: '0.1em',
                               marginBottom: '0.2vw'
@@ -317,6 +317,77 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               </div>
             );
           })()}
+        </TechContainer>
+      </div>
+
+      {/* 4. Bottom Left - Data Stream */}
+      <div 
+        className="absolute pointer-events-auto"
+        style={{
+          bottom: 'calc(6vh + 8rem)',
+          left: 'calc(7.5vw + 4.5rem)',
+          width: '18.25vw',
+          height: 'auto',
+          maxHeight: '18vh',
+          transform: `translate(${bottomLeftX}vw, ${bottomLeftY}vh) scale(${containerScale})`,
+          opacity: mounted ? containerOpacity : 0
+        }}
+      >
+        <TechContainer title="DATA_STREAM" variant="cyan" className="w-full h-full">
+          <div className="w-full h-full flex flex-col items-center justify-between" style={{ padding: '0.8vw' }}>
+            {/* Header */}
+            <div className="flex flex-col items-center w-full" style={{ gap: '0.4vw' }}>
+              <h2 style={{
+                fontSize: 'max(13px, 0.7vw)',
+                color: 'rgb(165, 243, 252)',
+                margin: 0,
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                fontWeight: 600,
+                lineHeight: 0.9,
+                filter: 'brightness(0.9)',
+                textAlign: 'center',
+                letterSpacing: '0.05em'
+              }}>
+                LIVE FEED
+              </h2>
+              <div style={{ width: '2vw', height: '0.1vh', background: 'linear-gradient(to right, transparent, rgb(34, 211, 238), transparent)' }}></div>
+            </div>
+
+            {/* Content */}
+            <div className="flex flex-col items-center justify-center flex-1" style={{ gap: '0.8vw' }}>
+              <Database style={{ width: '2vw', height: '2vw', color: 'rgb(165, 243, 252)' }} />
+              <div style={{ height: '0.1vh', width: '50%', backgroundColor: 'rgba(34, 211, 238, 0.3)', borderRadius: '9999px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: '60%', backgroundColor: 'rgb(165, 243, 252)' }} className="animate-pulse"></div>
+              </div>
+              <div style={{
+                fontFamily: "'Figtree', sans-serif",
+                fontWeight: 400,
+                lineHeight: 1.5,
+                color: '#FFFEF0',
+                fontSize: 'max(13px, 0.7vw)',
+                textAlign: 'center'
+              }}>
+                Real-time system metrics <br /> and data streams flowing live
+              </div>
+            </div>
+
+            {/* Button */}
+            <button
+              className="rounded-sm font-bold tracking-widest transition-all duration-300 hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(34, 211, 238, 0.2))',
+                border: '0.05vw solid rgba(34, 211, 238, 0.5)',
+                color: '#a5f3fc',
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                fontSize: 'max(8.5px, 0.45vw)',
+                padding: '0.4vw 0.8vw',
+                width: 'fit-content',
+                borderRadius: '0.1vw'
+              }}
+            >
+              MONITOR
+            </button>
+          </div>
         </TechContainer>
       </div>
 

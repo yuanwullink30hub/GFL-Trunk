@@ -504,19 +504,19 @@ const App = () => {
             <header 
               className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-auto"
               style={{
-                transform: `translateY(${headerY}px) scale(${headerScale})`,
+                transform: `translateY(calc(${headerY}px - 1.5rem)) scale(${headerScale})`,
                 opacity: headerOpacity,
                 padding: '1.5rem',
                 marginLeft: '3vw'
               }}
             >
               <div className="flex items-center" style={{gap: '1rem'}}>
-                <img src="images/landingpage/logo.png" alt="Delta" className="w-full h-full" style={{width: '5rem', height: '5rem'}} />
-                <div>
+                <img src="images/landingpage/logo.png" alt="Delta" className="w-full h-full" style={{width: '12.5rem', height: '12.5rem'}} />
+                <div style={{marginLeft: '-1.5rem'}}>
                   <h1 style={{
                     color: '#FFFEF0',
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                    fontSize: '1.5rem',
+                    fontSize: '2.25rem',
                     fontWeight: 600,
                     lineHeight: 0.9,
                     filter: 'brightness(0.9)',

@@ -76,9 +76,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 fontSize: 'max(13px, 0.7vw)',
                 textAlign: 'center'
               }}>
-                De ontembare chaos uit haar wil <br /> in het uni-versum. <br />
- 
-               Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
+                Man en Vrouw gelijkgesteld <br/> De tuinierder moet zich overgeven aan en overkomen van de doorschijnende passie <br />
               </div>
             </div>
 
@@ -102,45 +100,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         </TechContainer>
       </div>
 
-      {/* 2. Bottom Left - Database/Logs */}
-      <div 
-        className="absolute pointer-events-auto"
-        style={{
-          bottom: '6vh',
-          left: '7.5vw',
-          width: '23.4vw',
-          minHeight: '36.4vh',
-          transform: `translate(${bottomLeftX}vw, ${bottomLeftY}vh) scale(${containerScale})`,
-          opacity: mounted ? containerOpacity : 0
-        }}
-      >
-        <TechContainer title="DATA_STREAM" variant="orange" className="w-full h-full">
-          <div className="w-full h-full flex flex-col items-center justify-center opacity-50" style={{ gap: '0.5vw' }}>
-            <Database style={{ width: '2vw', height: '2vw', color: '#f59e0b' }} />
-            <div style={{
-              fontFamily: "'Figtree', sans-serif",
-              fontWeight: 400,
-              lineHeight: 1.5,
-              color: '#FFFEF0',
-              fontSize: 'max(13px, 0.7vw)',
-              textAlign: 'center'
-            }}>
-              packet_loss: 0%<br/>
-              encryption: AES-256<br/>
-              latency: 12ms
-            </div>
-          </div>
-        </TechContainer>
-      </div>
 
       {/* 3. Top Right - Garden For Life Website */}
       <div 
         className="absolute pointer-events-auto"
         style={{
-          top: '14.44vh',
-          right: '5vw',
-          width: '15.21vw',
-          height: '16.9vh',
+          top: '12.09vh',
+          right: '3.7vw',
+          width: '19.01vw',
+          height: '21.13vh',
           transform: `translate(${topRightX}vw, ${topRightY}vh) scale(${containerScale})`,
           opacity: mounted ? containerOpacity : 0
         }}
@@ -166,7 +134,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   fontWeight: 400,
                   lineHeight: 1.5,
                   color: 'rgba(245, 158, 11, 0.8)',
-                  fontSize: 'max(9.1px, 0.5vw)',
+                  fontSize: 'max(9px, 0.5vw)',
                   letterSpacing: '0.05em'
                 }}>LOCKED</span>
               </div>
@@ -270,8 +238,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                             }}>{garden.name}</div>
                             <div style={{
                               fontFamily: "'Figtree', sans-serif",
-                              fontSize: 'max(10.4px, 0.55vw)',
-                              color: `${garden.accentColor}cc`,
+                              fontWeight: 400,
+                              lineHeight: 1.5,
+                              fontSize: 'max(10px, 0.5vw)',
+                              color: '#FFFEF0',
                               letterSpacing: '0.05em'
                             }}>{garden.tagline}</div>
                           </div>
@@ -281,10 +251,11 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         <div className="h-[30%] bg-black/40 backdrop-blur-sm flex items-center justify-center border-t border-purple-500/20" style={{ padding: '0.4vw 0.8vw' }}>
                           <span style={{
                             fontFamily: "'Figtree', sans-serif",
-                            fontSize: 'max(10.4px, 0.55vw)',
-                            color: '#c4b5fd',
-                            textAlign: 'center',
-                            lineHeight: '1.3'
+                            fontWeight: 400,
+                            lineHeight: 1.5,
+                            color: '#FFFEF0',
+                            fontSize: 'max(10px, 0.5vw)',
+                            textAlign: 'center'
                           }}>
                             {garden.description}
                           </span>

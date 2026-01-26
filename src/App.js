@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import HoloEarth from './components/orbital/HoloEarth';
 import DesktopLayout from './components/orbital/DesktopLayout';
 import MobileLayout from './components/orbital/MobileLayout';
-import HoloLabel from './components/newFeature/HoloLabel';
 
 // Mobile detection hook
 const useIsMobile = () => {
@@ -43,8 +42,8 @@ const TimeSync = ({ isMobile }) => {
   });
 
   return (
-    <div className={`${isMobile ? 'text-center' : 'text-center'} whitespace-nowrap`}>
-      <div className={`tracking-widest ${isMobile ? 'text-xs' : 'text-sm'}`} style={{color: 'rgba(21, 179, 21, 0.8)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</div>
+    <div className="text-center whitespace-nowrap">
+      <div className="tracking-widest" style={{color: 'rgba(21, 179, 21, 0.8)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(13px, 0.7vw)'}}>TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</div>
     </div>
   );
 };
@@ -67,12 +66,14 @@ const App = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [pyramidScrollProgress, setPyramidScrollProgress] = useState(0); // Separate scroll for pyramid layers (0-1)
   const [introComplete, setIntroComplete] = useState(false); // Track when pyramid intro animation is done
+  // eslint-disable-next-line no-unused-vars
   const [layerState, setLayerState] = useState({
     completedLayerIndex: -1,
     isIntroActive: false,
     isGoldMode: false,
     introComplete: false
   }); // Pure DOM label state from PyramidInner
+  // eslint-disable-next-line no-unused-vars
   const [mobileScrollLocked, setMobileScrollLocked] = useState(false); // Track when mobile scroll should be hijacked
   const isMobile = useIsMobile();
   const containerRef = useRef(null);
@@ -405,7 +406,7 @@ const App = () => {
           <div 
             ref={earthSectionRef}
             className="relative w-full h-screen"
-            style={{ background: 'transparent' }}
+            style={{ background: 'transparent', marginTop: '-9rem' }}
           >
             {/* Radial Glow */}
             <div 
@@ -435,15 +436,17 @@ const App = () => {
           </div>
 
           {/* Bottom Section - Button + Data Stream */}
-          <MobileLayout 
-            isExploding={isExploding} 
-            mounted={mounted} 
-            currentSlide={currentSlide} 
-            setCurrentSlide={setCurrentSlide}
-            animationProgress={containerProgress}
-            position="bottom"
-            isMobile={isMobile}
-          />
+          <div style={{marginTop: '-13rem'}}>
+            <MobileLayout 
+              isExploding={isExploding} 
+              mounted={mounted} 
+              currentSlide={currentSlide} 
+              setCurrentSlide={setCurrentSlide}
+              animationProgress={containerProgress}
+              position="bottom"
+              isMobile={isMobile}
+            />
+          </div>
         </div>
       )}
 

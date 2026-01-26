@@ -1,6 +1,12 @@
 import React from 'react';
 import TechContainer from './TechContainer';
-import { Activity, Database, Lock, Play } from 'lucide-react';
+import { Activity, Database, Lock } from 'lucide-react';
+
+// Import garden logos
+import karmanLogo from '../../images/slideshow images/karmaneventsPNG.png';
+import code49Logo from '../../images/slideshow images/club49-logo.png';
+import tattooshopLogo from '../../images/slideshow images/1111logo.png';
+import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 
 const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, position = 'top', isMobile, TimeSync }) => {
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
@@ -114,8 +120,8 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     fontSize: 'clamp(15px, 3.4vw, 20px)',
                     textAlign: 'center'
                   }}>
-                    De ontembare chaos uit haar wil <br/> in het uni-versum. <br />
-                    Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming.
+                   Man en Vrouw gelijkgesteld <br/> De tuinierder moet zich overgeven aan en overkomen van de doorschijnende passie <br />
+                
                   </div>
                 </div>
 
@@ -138,31 +144,33 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
             </TechContainer>
           </div>
 
-          {/* Spacing - 3rem */}
-          <div style={{height: 'clamp(0.5rem, 2.5vw, 1.5rem)'}} />
+          {/* Spacing - reduced by 4rem */}
+          <div style={{height: '0'}} />
 
           {/* 2. GardenForLife */}
-          <div style={{height: 'clamp(10rem, 25vh, 14rem)'}}>
-            <TechContainer title="GARDENFORLIFE.NL" variant="orange" className="w-full h-full">
-              <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-900/30 to-green-800/20 backdrop-blur-sm" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34, 197, 94, 0.1) 2px, rgba(34, 197, 94, 0.1) 4px)'}}></div>
-                <div className="absolute inset-0 flex flex-col justify-start pt-3 px-2 gap-1.5 opacity-40">
-                  <div className="h-1 bg-green-600/40 rounded w-3/4"></div>
-                  <div className="h-0.5 bg-green-500/30 rounded w-1/2"></div>
-                  <div className="h-0.5 bg-green-500/30 rounded w-2/3"></div>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
-                  <div className="flex flex-col items-center gap-2">
-                    <Lock className="w-6 h-6" style={{color: '#f59e0b'}} strokeWidth={1.5} />
-                    <span className="text-[10px] tracking-widest" style={{color: 'rgba(245, 158, 11, 0.8)', fontFamily: "'Figtree', sans-serif"}}>LOCKED</span>
+          <div style={{height: 'clamp(8rem, 18vh, 11rem)', display: 'flex', justifyContent: 'center', paddingLeft: 'clamp(1rem, 4vw, 1.5rem)', paddingRight: 'clamp(1rem, 4vw, 1.5rem)', marginTop: '-3rem'}}>
+            <div style={{width: '80%', height: '100%'}}>
+              <TechContainer title="GARDENFORLIFE.NL" variant="orange" className="w-full h-full">
+                <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-900/30 to-green-800/20 backdrop-blur-sm" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34, 197, 94, 0.1) 2px, rgba(34, 197, 94, 0.1) 4px)'}}></div>
+                  <div className="absolute inset-0 flex flex-col justify-center items-center gap-1.5 opacity-40">
+                    <div className="h-1 bg-green-600/40 rounded" style={{width: '60%'}}></div>
+                    <div className="h-0.5 bg-green-500/30 rounded" style={{width: '40%'}}></div>
+                    <div className="h-0.5 bg-green-500/30 rounded" style={{width: '50%'}}></div>
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-2">
+                      <Lock className="w-6 h-6" style={{color: '#f59e0b'}} strokeWidth={1.5} />
+                      <span style={{fontSize: 'clamp(9px, 2vw, 12px)', tracking: 'widest', color: 'rgba(245, 158, 11, 0.8)', fontFamily: "'Figtree', sans-serif"}}>LOCKED</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </TechContainer>
+              </TechContainer>
+            </div>
           </div>
 
-          {/* Spacing - 4.5rem reduction */}
-          <div style={{height: 'clamp(0, 2vw, 1rem)'}} />
+          {/* Spacing - reduced by 4rem */}
+          <div style={{height: '0'}} />
 
           {/* 3. Gardens Slideshow */}
           <div style={{height: 'clamp(12rem, 26vh, 16rem)'}}>
@@ -175,7 +183,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     tagline: 'Underground Techno Events',
                     description: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings.',
                     accentColor: '#8b5cf6',
-                    logoPlaceholder: 'K'
+                    logo: karmanLogo
                   },
                   {
                     id: 'code49',
@@ -183,7 +191,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     tagline: 'AI Solutions',
                     description: 'Cutting-edge software development company specializing in AI-driven solutions and advanced technology integration.',
                     accentColor: '#06b6d4',
-                    logoPlaceholder: 'C49'
+                    logo: code49Logo
                   },
                   {
                     id: 'tattooshop',
@@ -191,7 +199,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     tagline: 'Artistic Expression & Body Art',
                     description: 'A premier tattoo studio specializing in custom designs, traditional and modern styles.',
                     accentColor: '#ec4899',
-                    logoPlaceholder: 'TS'
+                    logo: tattooshopLogo
                   },
                   {
                     id: 'rengifoods',
@@ -199,7 +207,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     tagline: 'Sustainable Organic Nutrition',
                     description: 'Dedicated to providing the highest quality organic and sustainably-sourced food products.',
                     accentColor: '#10b981',
-                    logoPlaceholder: 'RF'
+                    logo: rengiLogo
                   }
                 ];
                 return (
@@ -216,23 +224,17 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                             style={{transform: `translateX(${translateX}%)`}}
                           >
                             <div className="w-full h-full flex flex-col items-center justify-center" style={{background: `linear-gradient(135deg, ${garden.accentColor}20, ${garden.accentColor}10)`}}>
-                              {/* Logo Placeholder */}
-                              <div 
-                                className="rounded-full flex items-center justify-center mb-2 border"
+                              {/* Logo Image */}
+                              <img 
+                                src={garden.logo} 
+                                alt={`${garden.name} logo`}
+                                className="object-contain mb-2"
                                 style={{
-                                  width: 'clamp(2rem, 8vw, 3rem)',
-                                  height: 'clamp(2rem, 8vw, 3rem)',
-                                  backgroundColor: `${garden.accentColor}30`,
-                                  borderColor: `${garden.accentColor}60`
+                                  width: 'clamp(5rem, 20vw, 7.5rem)',
+                                  height: 'clamp(5rem, 20vw, 7.5rem)',
+                                  filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))'
                                 }}
-                              >
-                                <span style={{
-                                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                                  fontWeight: 600,
-                                  fontSize: 'clamp(0.5rem, 2vw, 0.75rem)',
-                                  color: garden.accentColor
-                                }}>{garden.logoPlaceholder}</span>
-                              </div>
+                              />
                               
                               {/* Header */}
                               <div className="text-center">
@@ -282,8 +284,8 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
             </TechContainer>
           </div>
 
-          {/* Spacing - 6rem */}
-          <div style={{height: 'clamp(4rem, 8vw, 6rem)'}} />
+          {/* Spacing - reduced for media feed */}
+          <div style={{height: '0', marginTop: '-2.5rem'}} />
 
           {/* 4. Plain Image */}
           <img 
@@ -294,12 +296,13 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
               height: 'clamp(14rem, 40vh, 20rem)',
               objectFit: 'cover',
               borderRadius: '0.125rem',
-              border: '1px solid rgba(255, 159, 64, 0.3)'
+              display: 'block',
+              margin: '0 auto'
             }}
           />
 
-          {/* Spacing - 4rem reduction */}
-          <div style={{height: 'clamp(2rem, 4vw, 4rem)'}} />
+          {/* Spacing - reduced for global status */}
+          <div style={{height: '0', marginTop: '-5.5rem'}} />
 
           {/* 5. Global Status */}
           <div style={{height: 'clamp(8rem, 15vh, 10rem)'}}>
@@ -345,11 +348,11 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
             </TechContainer>
           </div>
 
-          {/* Spacing - 6rem */}
-          <div style={{height: 'clamp(4rem, 8vw, 6rem)'}} />
+          {/* Spacing - reduced for TimeSync */}
+          <div style={{height: '0', marginTop: '-5.5rem'}} />
 
           {/* 6. TimeSync */}
-          <div className="flex justify-center" style={{paddingBottom: 'clamp(2rem, 4vw, 3rem)'}}>
+          <div className="flex justify-center" style={{paddingBottom: 'clamp(2rem, 4vw, 3rem)', marginTop: '2.5rem'}}>
             {TimeSync}
           </div>
         </div>
@@ -375,8 +378,8 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
           paddingBottom: 'clamp(2rem, 4vw, 3rem)',
           gap: 'clamp(1.5rem, 3vw, 2.5rem)'
         }}>
-          {/* Action Button */}
-          <div className="flex justify-center">
+          {/* Action Button - moved up 5rem */}
+          <div className="flex justify-center" style={{marginTop: '-4rem'}}>
             <button 
               className="rounded-sm font-bold tracking-widest transition-all duration-300 hover:scale-105"
               style={{
@@ -393,11 +396,11 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
           </div>
 
           {/* Data Stream Container */}
-          <div style={{height: 'clamp(12rem, 35vh, 20rem)'}}>
+          <div style={{height: 'clamp(12rem, 35vh, 20rem)', marginTop: '1rem'}}>
             <TechContainer title="DATA_STREAM" variant="orange" className="w-full h-full">
               <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-50">
                 <Database style={{color: '#f59e0b', width: 'clamp(1.5rem, 4vw, 2rem)', height: 'clamp(1.5rem, 4vw, 2rem)'}} />
-                <div className="text-[10px] font-mono text-center" style={{color: '#fed7aa'}}>
+                <div style={{fontFamily: "'Figtree', sans-serif", fontSize: 'clamp(10px, 2.2vw, 13px)', fontWeight: 400, textAlign: 'center', color: '#fed7aa'}}>
                   packet_loss: 0%<br/>
                   encryption: AES-256<br/>
                   latency: 12ms

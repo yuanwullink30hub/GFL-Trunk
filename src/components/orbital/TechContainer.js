@@ -49,8 +49,9 @@ const TechContainer = ({
           absolute 
           tracking-[0.2em] font-bold 
           ${textColor} opacity-80 select-none
-        `} style={{fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", top: '0.4vw', left: '0.4vw', fontSize: 'max(10.4px, 0.55vw)'}}>
-          {`// ${title}`}
+          left-0 right-0
+        `} style={{fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", top: '0.4vw', fontSize: 'max(13px, 0.7vw)', textAlign: 'center'}}>
+          {title}
         </div>
         
         {/* Inner Content Placeholder */}

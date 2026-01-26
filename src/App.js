@@ -73,13 +73,47 @@ const App = () => {
     isGoldMode: false,
     introComplete: false
   }); // Pure DOM label state from PyramidInner
+  const [mobileScrollLocked, setMobileScrollLocked] = useState(false); // Track when mobile scroll should be hijacked
   const isMobile = useIsMobile();
   const containerRef = useRef(null);
+  const earthSectionRef = useRef(null);
   const isScrolling = useRef(false); // Debounce to prevent multiple triggers per scroll
+  const mobileScrollLockedRef = useRef(false); // Ref for use in event handlers
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Mobile: Lock scroll when earth section is 100% visible, unlock when scrolling out
+  useEffect(() => {
+    if (!isMobile || !earthSectionRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.98) {
+            // Earth section is completely visible - lock scroll for animation control
+            setMobileScrollLocked(true);
+            mobileScrollLockedRef.current = true;
+            document.body.style.overflow = 'hidden';
+          } else if (!entry.isIntersecting || entry.intersectionRatio < 0.5) {
+            // Earth section is mostly out of view - unlock scroll
+            setMobileScrollLocked(false);
+            mobileScrollLockedRef.current = false;
+            document.body.style.overflow = '';
+          }
+        });
+      },
+      { threshold: [0.5, 0.98] }
+    );
+    
+    observer.observe(earthSectionRef.current);
+    
+    return () => {
+      observer.disconnect();
+      document.body.style.overflow = '';
+    };
+  }, [isMobile]);
 
   // Calculate progress from frame (0-1)
   
@@ -92,6 +126,9 @@ const App = () => {
   // Scroll handler - one tick = one frame
   // After intro completes (introComplete=true), scroll controls pyramid layers instead
   const handleWheel = useCallback((e) => {
+    // On mobile, only capture if scroll is locked for animation
+    if (window.innerWidth < 768 && !mobileScrollLockedRef.current) return;
+    
     e.preventDefault();
     
     // Debounce to ensure one scroll tick = one frame
@@ -105,6 +142,15 @@ const App = () => {
       setPyramidScrollProgress(prev => {
         const step = 0.05; // 5% per scroll tick - slower for smoother layer animation
         const newProgress = Math.max(0, Math.min(1, prev + (direction * step)));
+        
+        // Mobile: If scrolling down and at end, unlock scroll to continue page scroll
+        if (window.innerWidth < 768 && direction > 0 && prev >= 1) {
+          setMobileScrollLocked(false);
+          mobileScrollLockedRef.current = false;
+          document.body.style.overflow = '';
+          return 1;
+        }
+        
         // If scrolling up and at 0, allow returning to orbital animation
         if (direction < 0 && prev <= 0) {
           setCurrentFrame(prevFrame => Math.max(0, prevFrame - 1));
@@ -116,6 +162,14 @@ const App = () => {
       // Normal orbital animation scroll
       setCurrentFrame(prev => {
         const newFrame = Math.max(0, Math.min(MAX_FRAME, prev + direction));
+        
+        // Mobile: If scrolling up from frame 0, unlock scroll to return to page scroll
+        if (window.innerWidth < 768 && direction < 0 && prev <= 0) {
+          setMobileScrollLocked(false);
+          mobileScrollLockedRef.current = false;
+          document.body.style.overflow = '';
+        }
+        
         return newFrame;
       });
     }
@@ -147,6 +201,9 @@ const App = () => {
   }, []);
 
   const handleTouchMove = useCallback((e) => {
+    // On mobile, only capture if scroll is locked for animation
+    if (window.innerWidth < 768 && !mobileScrollLockedRef.current) return;
+    
     e.preventDefault();
     const touchY = e.touches[0].clientY;
     const delta = touchStartY.current - touchY;
@@ -163,6 +220,15 @@ const App = () => {
         setPyramidScrollProgress(prev => {
           const step = 0.05; // 5% per scroll tick - slower for smoother layer animation
           const newProgress = Math.max(0, Math.min(1, prev + (direction * step)));
+          
+          // Mobile: If scrolling down and at end, unlock scroll to continue page scroll
+          if (direction > 0 && prev >= 1) {
+            setMobileScrollLocked(false);
+            mobileScrollLockedRef.current = false;
+            document.body.style.overflow = '';
+            return 1;
+          }
+          
           if (direction < 0 && prev <= 0) {
             setCurrentFrame(prevFrame => Math.max(0, prevFrame - 1));
             return 0;
@@ -170,13 +236,24 @@ const App = () => {
           return newProgress;
         });
       } else {
-        setCurrentFrame(prev => Math.max(0, Math.min(MAX_FRAME, prev + direction)));
+        setCurrentFrame(prev => {
+          const newFrame = Math.max(0, Math.min(MAX_FRAME, prev + direction));
+          
+          // Mobile: If scrolling up from frame 0, unlock scroll to return to page scroll
+          if (direction < 0 && prev <= 0) {
+            setMobileScrollLocked(false);
+            mobileScrollLockedRef.current = false;
+            document.body.style.overflow = '';
+          }
+          
+          return newFrame;
+        });
       }
       touchAccumulator.current = 0;
     }
   }, [currentFrame, introComplete, MAX_FRAME]);
 
-  // Attach wheel listener
+  // Attach wheel/touch listeners - also needed on mobile when scroll is locked
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -290,361 +367,271 @@ const App = () => {
   return (
     <main 
       ref={containerRef}
-      className="relative w-screen h-screen overflow-hidden font-figtree" 
-      style={{color: '#FFFEF0', touchAction: 'none'}}
+      className={`relative w-screen font-figtree ${isMobile ? 'min-h-screen' : 'h-screen overflow-hidden'}`}
+      style={{color: '#FFFEF0', touchAction: isMobile ? 'pan-y' : 'none'}}
     >
-      {/* --- Background Elements --- */}
-      <div className="absolute inset-0 z-0" style={{background: 'transparent'}} />
-      
-      {/* --- Grid Background --- */}
-      <div 
-        className="absolute inset-0 z-0 pointer-events-none"
-        style={{
-          opacity: gridOpacity,
-          backgroundImage: `
-            linear-gradient(rgba(201, 160, 240, 0.05) 1px, transparent 1px), 
-            linear-gradient(90deg, rgba(201, 160, 240, 0.05) 1px, transparent 1px)
-          `,
-          backgroundSize: '50px 50px'
-        }}
-      />
-
-      {/* --- Radial Shadow/Glow Behind Earth --- */}
-      <div 
-        className="absolute inset-0 z-5 pointer-events-none" 
-        style={{
-          background: 'radial-gradient(circle at center, rgba(147, 51, 234, 0.03) 0%, transparent 55%)',
-          opacity: isExploding ? Math.max(0, 1 - explosionProgress * 1.5) : 1,
-          transform: isExploding ? `scale(${1 + explosionProgress * 0.5})` : 'scale(1)',
-          transition: 'none',
-          transformOrigin: 'center center'
-        }} 
-      />
-
-      {/* --- Main 3D Scene --- */}
-      <div className="absolute inset-0 z-10 flex items-center justify-center">
-        <HoloEarth 
-          className="w-full h-full" 
-          exploding={isExploding}
-          explosionProgress={explosionProgress}
-          isMobile={isMobile}
-          isActive={isSystem}
-          pyramidScrollProgress={pyramidScrollProgress}
-          showPyramidLabels={isSystem}
-          onIntroComplete={handleIntroComplete}
-          onLayerStateChange={handleLayerStateChange}
-        />
-      </div>
-
-      {/* --- Overlay UI Layer --- */}
-      <div className="absolute inset-0 z-20 pointer-events-none">
-        {/* Header HUD - Flies up based on scroll progress */}
-        {/* Desktop: Original horizontal layout */}
-        {!isMobile && (
-          <header 
-            className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-auto"
-            style={{
-              transform: `translateY(${headerY}px) scale(${headerScale})`,
-              opacity: headerOpacity,
-              padding: '1.5rem',
-              marginLeft: '3vw'
-            }}
-          >
-            <div className="flex items-center" style={{gap: '1rem'}}>
-              <img src="images/landingpage/logo.png" alt="Delta" className="w-full h-full" style={{width: '5rem', height: '5rem'}} />
-              <div>
-                <h1 className="font-bold tracking-[0.2em]" style={{
-                  color: '#FFFEF0',
-                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                  fontSize: '1.5rem',
-                  lineHeight: '1.1'
-                }}>
-                  DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
-                </h1>
-                <div className="flex gap-2 items-center">
-                  <span className="rounded-full bg-green-500 animate-ping" style={{
-                    width: '0.5rem',
-                    height: '0.5rem',
-                    minWidth: '0.5rem',
-                    minHeight: '0.5rem'
-                  }}></span>
-                  <span className="text-gray-400 tracking-widest" style={{
-                    fontSize: '0.75rem'
-                  }}>SYSTEM ONLINE {'/'}{'/'} V.4.9</span>
-                </div>
-              </div>
-            </div>
-          </header>
-        )}
-        
-        {/* Mobile: Vertical centered layout - Logo, Deltawerken, TimeSync stacked */}
-        {isMobile && (
-          <div 
-            className="absolute top-0 left-0 right-0 flex flex-col items-center pointer-events-auto"
-            style={{
-              transform: `translateY(${headerY}px) scale(${headerScale})`,
-              opacity: headerOpacity,
-              paddingTop: '1rem'
-            }}
-          >
-            {/* Logo - centered, reduced by 0.7 */}
-            <img 
-              src="images/landingpage/logo.png" 
-              alt="Delta" 
-              style={{
-                width: 'clamp(5.6rem, 35vw, 11.2rem)', 
-                height: 'clamp(5.6rem, 35vw, 11.2rem)'
-              }} 
-            />
-            
-            {/* Deltawerken - centered below logo, moved up 1rem */}
-            <div className="flex flex-col items-center" style={{marginTop: '-0.5rem'}}>
-              <h1 className="font-bold tracking-[0.2em] text-center" style={{
-                color: '#FFFEF0',
-                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontSize: 'clamp(1.2rem, 6vw, 2.5rem)',
-                lineHeight: '1.1'
-              }}>
-                DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
-              </h1>
-              <div className="flex gap-2 items-center justify-center" style={{marginTop: '0.25rem'}}>
-                <span className="rounded-full bg-green-500 animate-ping" style={{
-                  width: 'clamp(0.3rem, 0.8vw, 0.5rem)',
-                  height: 'clamp(0.3rem, 0.8vw, 0.5rem)',
-                  minWidth: 'clamp(0.3rem, 0.8vw, 0.5rem)',
-                  minHeight: 'clamp(0.3rem, 0.8vw, 0.5rem)'
-                }}></span>
-                <span className="text-gray-400 tracking-widest" style={{
-                  fontSize: 'clamp(0.5rem, 2.5vw, 1rem)'
-                }}>SYSTEM ONLINE {'/'}{'/'} V.4.9</span>
-              </div>
-            </div>
-            
-            {/* TimeSync - centered with equal padding */}
-            <div style={{marginTop: '1rem', width: '100%', display: 'flex', justifyContent: 'center'}}>
-              <TimeSync isMobile={isMobile} />
-            </div>
-          </div>
-        )}
-        
-        {/* Desktop TimeSync - Right positioned */}
-        {!isMobile && (
-          <div className="absolute pointer-events-auto" style={{
-            right: '1.5rem',
-            top: '2.5rem',
-            zIndex: 50
-          }}>
-            <TimeSync isMobile={isMobile} />
-          </div>
-        )}
-        
-        {/* Mobile TimeSync is now included in the header section above */}
-
-        {/* --- Scroll Prompt (Orbital View Only) --- */}
+      {/* Grid Background - spans entire page on mobile */}
+      {isMobile && (
         <div 
-          className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50 pointer-events-none"
+          className="fixed inset-0 z-0 pointer-events-none"
           style={{
-            bottom: isMobile ? 'clamp(6rem, 20vh, 12rem)' : '20%',
-            opacity: promptOpacity,
-            transform: promptOpacity > 0 ? 'scale(1)' : 'scale(1.5)'
+            backgroundImage: `
+              linear-gradient(rgba(201, 160, 240, 0.05) 1px, transparent 1px), 
+              linear-gradient(90deg, rgba(201, 160, 240, 0.05) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px'
           }}
-        >
-          <div className="relative flex flex-col items-center gap-2 bg-black/40 backdrop-blur-md rounded-sm" style={{
-            border: '1px solid rgba(21, 179, 21, 0.4)',
-            padding: isMobile ? 'clamp(0.4rem, 2.5vw, 1.2rem) clamp(0.8rem, 4.5vw, 2.8rem)' : '0.625rem 2rem'
-          }}>
-            <span className="tracking-[0.25em] font-bold" style={{
-              color: 'white', 
-              fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-              fontSize: isMobile ? 'clamp(0.8rem, 3.5vw, 1.8rem)' : '1rem'
-            }}>SCROLL TO SYNCHRONISE</span>
-            
-            <div className="absolute top-0 left-0 border-t border-l" style={{
-              width: isMobile ? 'clamp(0.4rem, 1.2vw, 0.9rem)' : '0.5rem',
-              height: isMobile ? 'clamp(0.4rem, 1.2vw, 0.9rem)' : '0.5rem',
-              borderColor: 'rgba(21, 179, 21, 0.4)'
-            }}></div>
-            <div className="absolute bottom-0 right-0 border-b border-r" style={{
-              width: isMobile ? 'clamp(0.4rem, 1.2vw, 0.9rem)' : '0.5rem',
-              height: isMobile ? 'clamp(0.4rem, 1.2vw, 0.9rem)' : '0.5rem',
-              borderColor: 'rgba(21, 179, 21, 0.4)'
-            }}></div>
-          </div>
-          
-          {/* Animated scroll indicator */}
-          <div className="flex flex-col items-center gap-2 animate-bounce">
-            <div className="w-6 h-10 border-2 rounded-full flex justify-center pt-2" style={{borderColor: 'rgba(245, 158, 11, 0.5)'}}>
-              <div className="w-1 h-2 bg-orange-400 rounded-full animate-pulse"></div>
-            </div>
-          </div>
-        </div>
+        />
+      )}
 
-        {/* --- Floating Containers (Orbital View) --- */}
-        {!isMobile && (
-          <DesktopLayout 
-            isExploding={isExploding} 
-            mounted={mounted} 
-            currentSlide={currentSlide} 
-            setCurrentSlide={setCurrentSlide}
-            animationProgress={containerProgress}
-          />
-        )}
-
-        {isMobile && (
+      {/* =========================== */}
+      {/* MOBILE LAYOUT - Flow based */}
+      {/* =========================== */}
+      {isMobile && (
+        <div className="flex flex-col w-full relative z-10">
+          {/* Tech Containers Section - scrollable */}
           <MobileLayout 
             isExploding={isExploding} 
             mounted={mounted} 
             currentSlide={currentSlide} 
             setCurrentSlide={setCurrentSlide}
             animationProgress={containerProgress}
+            position="top"
+            isMobile={isMobile}
+            TimeSync={<TimeSync isMobile={isMobile} />}
           />
-        )}
-
-        {/* --- SYSTEM INNER CONTENT (Shown after Zoom) --- */}
-        <div 
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
-          style={{
-            opacity: systemOpacity,
-            transform: `scale(${systemScale}) translateY(${systemTranslateY}px)`
-          }}
-        >
-          <div className={`w-[80vw] h-[80vh] flex flex-col items-center justify-center ${isSystem ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-            
-            {/* Back Button - positioned under the pyramid */}
-            <button 
-              onClick={handleReset}
-              className={`absolute group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm ${isMobile ? 'px-3 py-1.5' : 'px-4 py-2'}`}
+          
+          {/* Earth Animation Section */}
+          <div 
+            ref={earthSectionRef}
+            className="relative w-full h-screen"
+            style={{ background: 'transparent' }}
+          >
+            {/* Radial Glow */}
+            <div 
+              className="absolute inset-0 z-5 pointer-events-none" 
               style={{
-                border: '1px solid rgba(147, 51, 234, 0.3)',
-                background: 'rgba(10, 5, 16, 0.6)',
-                bottom: isMobile ? '-6rem' : '10rem',
-                left: '50%',
-                transform: 'translateX(-50%)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.6)';
-                e.currentTarget.style.background = 'rgba(147, 51, 234, 0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.3)';
-                e.currentTarget.style.background = 'rgba(10, 5, 16, 0.6)';
+                background: 'radial-gradient(circle at center, rgba(147, 51, 234, 0.03) 0%, transparent 55%)',
+                opacity: isExploding ? Math.max(0, 1 - explosionProgress * 1.5) : 1,
+                transform: isExploding ? `scale(${1 + explosionProgress * 0.5})` : 'scale(1)',
+                transformOrigin: 'center center'
+              }} 
+            />
+
+            {/* 3D Earth Scene */}
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <HoloEarth 
+                className="w-full h-full" 
+                exploding={isExploding}
+                explosionProgress={explosionProgress}
+                isMobile={isMobile}
+                isActive={isSystem}
+                pyramidScrollProgress={pyramidScrollProgress}
+                showPyramidLabels={isSystem}
+                onIntroComplete={handleIntroComplete}
+                onLayerStateChange={handleLayerStateChange}
+              />
+            </div>
+          </div>
+
+          {/* Bottom Section - Button + Data Stream */}
+          <MobileLayout 
+            isExploding={isExploding} 
+            mounted={mounted} 
+            currentSlide={currentSlide} 
+            setCurrentSlide={setCurrentSlide}
+            animationProgress={containerProgress}
+            position="bottom"
+            isMobile={isMobile}
+          />
+        </div>
+      )}
+
+      {/* =========================== */}
+      {/* DESKTOP LAYOUT - Original absolute positioning */}
+      {/* =========================== */}
+      {!isMobile && (
+        <>
+          {/* --- Background Elements --- */}
+          <div className="absolute inset-0 z-0" style={{background: 'transparent'}} />
+      
+          {/* --- Grid Background --- */}
+          <div 
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              opacity: gridOpacity,
+              backgroundImage: `
+                linear-gradient(rgba(201, 160, 240, 0.05) 1px, transparent 1px), 
+                linear-gradient(90deg, rgba(201, 160, 240, 0.05) 1px, transparent 1px)
+              `,
+              backgroundSize: '50px 50px'
+            }}
+          />
+
+          {/* --- Radial Shadow/Glow Behind Earth --- */}
+          <div 
+            className="absolute inset-0 z-5 pointer-events-none" 
+            style={{
+              background: 'radial-gradient(circle at center, rgba(147, 51, 234, 0.03) 0%, transparent 55%)',
+              opacity: isExploding ? Math.max(0, 1 - explosionProgress * 1.5) : 1,
+              transform: isExploding ? `scale(${1 + explosionProgress * 0.5})` : 'scale(1)',
+              transition: 'none',
+              transformOrigin: 'center center'
+            }} 
+          />
+
+          {/* --- Main 3D Scene --- */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <HoloEarth 
+              className="w-full h-full" 
+              exploding={isExploding}
+              explosionProgress={explosionProgress}
+              isMobile={isMobile}
+              isActive={isSystem}
+              pyramidScrollProgress={pyramidScrollProgress}
+              showPyramidLabels={isSystem}
+              onIntroComplete={handleIntroComplete}
+              onLayerStateChange={handleLayerStateChange}
+            />
+          </div>
+
+          {/* --- Overlay UI Layer --- */}
+          <div className="absolute inset-0 z-20 pointer-events-none">
+            {/* Header HUD - Flies up based on scroll progress */}
+            <header 
+              className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-auto"
+              style={{
+                transform: `translateY(${headerY}px) scale(${headerScale})`,
+                opacity: headerOpacity,
+                padding: '1.5rem',
+                marginLeft: '3vw'
               }}
             >
-              <div className={`flex items-center justify-center ${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} style={{color: 'rgba(147, 51, 234, 0.8)'}}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`group-hover:-translate-x-1 transition-transform ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`}>
-                  <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
+              <div className="flex items-center" style={{gap: '1rem'}}>
+                <img src="images/landingpage/logo.png" alt="Delta" className="w-full h-full" style={{width: '5rem', height: '5rem'}} />
+                <div>
+                  <h1 style={{
+                    color: '#FFFEF0',
+                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                    fontSize: '1.5rem',
+                    fontWeight: 600,
+                    lineHeight: 0.9,
+                    filter: 'brightness(0.9)',
+                    letterSpacing: '0.2em'
+                  }}>
+                    DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
+                  </h1>
+                  <div className="flex gap-2 items-center">
+                    <span className="rounded-full bg-green-500 animate-ping" style={{
+                      width: '0.5rem',
+                      height: '0.5rem',
+                      minWidth: '0.5rem',
+                      minHeight: '0.5rem'
+                    }}></span>
+                    <span className="text-gray-400 tracking-widest" style={{
+                      fontSize: '0.75rem'
+                    }}>SCHADUW WERK {'/'}{'/'} V.4.9</span>
+                  </div>
+                </div>
               </div>
-              <span className={`tracking-[0.2em] uppercase ${isMobile ? 'text-[10px]' : 'text-xs'}`} style={{color: 'rgba(255, 254, 240, 0.7)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>ORBIT</span>
-              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
-              <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
-            </button>
+            </header>
+        
+            {/* Desktop TimeSync */}
+            <div className="absolute pointer-events-auto" style={{
+              right: '1.5rem',
+              top: '2.5rem',
+              zIndex: 50
+            }}>
+              <TimeSync isMobile={false} />
+            </div>
 
-          </div>
-        </div>
+            {/* --- Scroll Prompt (Desktop) --- */}
+            <div 
+              className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50 pointer-events-none"
+              style={{
+                bottom: 'calc(20% - 3rem)',
+                opacity: promptOpacity,
+                transform: promptOpacity > 0 ? 'scale(1)' : 'scale(1.5)'
+              }}
+            >
+              <div className="relative flex flex-col items-center gap-2 bg-black/40 backdrop-blur-md rounded-sm" style={{
+                border: '1px solid rgba(21, 179, 21, 0.4)',
+                padding: '0.625rem 2rem'
+              }}>
+                <span className="tracking-[0.25em] font-bold" style={{
+                  color: 'white', 
+                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                  fontSize: '1rem'
+                }}>SCROLL TO SYNCHRONISE</span>
+                <div className="absolute top-0 left-0 border-t border-l" style={{
+                  width: '0.5rem',
+                  height: '0.5rem',
+                  borderColor: 'rgba(21, 179, 21, 0.4)'
+                }}></div>
+                <div className="absolute bottom-0 right-0 border-b border-r" style={{
+                  width: '0.5rem',
+                  height: '0.5rem',
+                  borderColor: 'rgba(21, 179, 21, 0.4)'
+                }}></div>
+              </div>
+              <div className="flex flex-col items-center gap-2 animate-bounce">
+                <div className="w-6 h-10 border-2 rounded-full flex justify-center pt-2" style={{borderColor: 'rgba(245, 158, 11, 0.5)'}}></div>
+              </div>
+            </div>
 
-        {/* --- Pure DOM Pyramid Labels Overlay --- */}
-        {isSystem && (
-          <div 
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ zIndex: 25 }}
-          >
-            {/* Layer labels - each with separate threshold */}
-            {[0, 1, 2, 3, 4].map((layerIndex) => {
-              // Each label has its own visibility threshold based on layer completion
-              const isVisible = layerState.introComplete && layerIndex <= layerState.completedLayerIndex;
-              const isHighestCompleted = layerIndex === layerState.completedLayerIndex;
-              const showButton = !layerState.isIntroActive && isHighestCompleted && !layerState.isGoldMode;
-              const isRight = layerIndex % 2 === 0;
-              
-              // Calculate label opacity - smooth fade in based on threshold
-              const labelOpacity = isVisible ? 1 : 0;
-              
-              // Viewport-responsive vertical positioning - aligned with pyramid layers
-              // Each layer positioned at specific heights for different viewports
-              const layerPositions = {
-                0: { desktop: 78, mobile: 78 },   // Base layer at bottom
-                1: { desktop: 58, mobile: 60 },   // Layer 1
-                2: { desktop: 50, mobile: 50 },   // Layer 2 (center)
-                3: { desktop: 42, mobile: 40 },   // Layer 3
-                4: { desktop: 34, mobile: 30 }    // Layer 4 (top)
-              };
-              const position = layerPositions[layerIndex] || { desktop: 50, mobile: 50 };
-              const yOffsetVh = isMobile ? position.mobile : position.desktop;
-              
-              // Viewport-responsive horizontal positioning (alternate sides with min distance)
-              const horizontalOffsetVw = isRight ? 'auto' : 'max(5vw, 1.5rem)';
-              const horizontalOffsetVwRight = isRight ? 'max(5vw, 1.5rem)' : 'auto';
-              
-              // Viewport-responsive scale (better coverage across devices)
-              const scaleValue = isMobile ? 'clamp(0.65, 3.5vw, 0.95)' : 'clamp(0.75, 2vw, 0.95)';
-              
-              return (
-                <div
-                  key={`dom-label-${layerIndex}`}
-                  className={`absolute transition-opacity duration-300 pointer-events-auto`}
+            {/* --- Floating Containers (Orbital View) --- */}
+            <DesktopLayout 
+              isExploding={isExploding} 
+              mounted={mounted} 
+              currentSlide={currentSlide} 
+              setCurrentSlide={setCurrentSlide}
+              animationProgress={containerProgress}
+            />
+
+            {/* --- SYSTEM INNER CONTENT (Shown after Zoom) --- */}
+            <div 
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              style={{
+                opacity: systemOpacity,
+                transform: `scale(${systemScale}) translateY(${systemTranslateY}px)`
+              }}
+            >
+              <div className={`w-[80vw] h-[80vh] flex flex-col items-center justify-center ${isSystem ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+                
+                {/* Back Button - positioned under the pyramid */}
+                <button 
+                  onClick={handleReset}
+                  className="absolute group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2"
                   style={{
-                    opacity: labelOpacity,
-                    top: `${yOffsetVh}vh`,
-                    left: horizontalOffsetVw,
-                    right: horizontalOffsetVwRight,
-                    transform: `translate(${isRight ? '0' : '0'}, -50%) scale(${scaleValue})`,
-                    transformOrigin: isRight ? 'right center' : 'left center',
-                    pointerEvents: isVisible ? 'auto' : 'none',
-                    willChange: 'opacity, transform'
+                    border: '1px solid rgba(147, 51, 234, 0.3)',
+                    background: 'rgba(10, 5, 16, 0.6)',
+                    bottom: '10rem',
+                    left: '50%',
+                    transform: 'translateX(-50%)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.6)';
+                    e.currentTarget.style.background = 'rgba(147, 51, 234, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.3)';
+                    e.currentTarget.style.background = 'rgba(10, 5, 16, 0.6)';
                   }}
                 >
-                  <HoloLabel
-                    layerIndex={layerIndex}
-                    showButton={showButton}
-                    isLast={layerIndex === 4}
-                    alignment={isRight ? 'right' : 'left'}
-                    onSend={() => {
-                      // When final label is sent, trigger pyramid gold mode animation
-                      if (layerIndex === 4) {
-                        window.dispatchEvent(new CustomEvent('triggerGoldMode'));
-                      }
-                    }}
-                    isSent={layerState.isGoldMode}
-                  />
-                </div>
-              );
-            })}
-
-            {/* Compass Sync Button - shown when gold mode is active */}
-            {isSystem && layerState.isGoldMode && (
-              <div
-                className="absolute flex items-center gap-2 whitespace-nowrap transition-opacity duration-300 pointer-events-auto"
-                style={{
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  opacity: layerState.isGoldMode ? 1 : 0,
-                  pointerEvents: layerState.isGoldMode ? 'auto' : 'none'
-                }}
-              >
-                <div
-                  className="relative px-6 py-3 bg-[#1a0525] border border-orange-500 text-white font-mono text-xs tracking-widest uppercase shadow-[0_0_30px_rgba(255,165,0,0.5)] cursor-pointer flex items-center gap-3 hover:bg-orange-900/50 transition-all duration-300 animate-pulse"
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    console.log('Syncing compass...'); 
-                  }}
-                  style={{
-                    fontSize: isMobile ? 'clamp(9px, 2vw, 12px)' : 'clamp(11px, 1.5vw, 14px)',
-                    padding: isMobile ? 'clamp(6px, 1.5vw, 10px) clamp(12px, 3vw, 20px)' : 'clamp(8px, 1vw, 12px) clamp(16px, 2vw, 24px)'
-                  }}
-                >
-                  <div className="absolute -left-1 -top-1 w-2 h-2 border-t border-l border-white"></div>
-                  <div className="absolute -right-1 -bottom-1 w-2 h-2 border-b border-r border-white"></div>
-                  <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping"></span>
-                  Synchroniseer kompas
-                </div>
-                <div className="h-[1px] bg-orange-500/60" style={{ width: isMobile ? 'clamp(24px, 4vw, 36px)' : 'clamp(36px, 3vw, 48px)' }}></div>
+                  <div className="flex items-center justify-center w-5 h-5" style={{color: 'rgba(147, 51, 234, 0.8)'}}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform w-4 h-4">
+                      <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                  </div>
+                  <span className="tracking-[0.2em] uppercase text-xs" style={{color: 'rgba(255, 254, 240, 0.7)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>ORBIT</span>
+                  <div className="absolute top-0 left-0 w-2 h-2 border-t border-l" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
+                  <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
+                </button>
               </div>
-            )}
+            </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* --- Footer / Deco --- */}
       <div 

@@ -11,7 +11,20 @@ body {
   background: linear-gradient(to bottom, rgb(29, 10, 1), rgb(12, 5, 4), #0d0811ff, rgb(11, 1, 14), rgb(13, 1, 15), rgb(20, 2, 27));
   background-attachment: fixed;
   color: #FFFEF0;
-  overflow: hidden;
+}
+
+/* Allow scroll on mobile, hidden on desktop */
+@media (min-width: 768px) {
+  body {
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 767px) {
+  body {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
 }
 
 /* Font classes */

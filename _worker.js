@@ -1,10 +1,4 @@
 import { getAssetFromKV, MethodNotAllowedError, NotFoundError } from '@cloudflare/kv-asset-handler';
-import manifestJSON from '__STATIC_CONTENT_MANIFEST';
-
-const manifest = JSON.parse(manifestJSON);
-
-// Supported file extensions for static assets
-const STATIC_EXTENSIONS = ['.js', '.css', '.json', '.html', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.mp4', '.webm', '.ogg', '.mov', '.avi'];
 
 export default {
   async fetch(request, env, ctx) {
@@ -24,12 +18,12 @@ export default {
         },
         {
           ASSET_NAMESPACE: env.__STATIC_CONTENT,
-          ASSET_MANIFEST: manifest,
         }
       );
     } catch (e) {
       if (e instanceof NotFoundError) {
         // Check if the requested path is a static file
+        const STATIC_EXTENSIONS = ['.js', '.css', '.json', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.mp4', '.webm', '.ogg', '.mov', '.avi'];
         const isStaticFile = STATIC_EXTENSIONS.some(ext => pathname.toLowerCase().endsWith(ext));
         
         // For client-side routing, serve index.html for all non-file requests
@@ -42,7 +36,6 @@ export default {
               },
               {
                 ASSET_NAMESPACE: env.__STATIC_CONTENT,
-                ASSET_MANIFEST: manifest,
               }
             );
           } catch (error) {

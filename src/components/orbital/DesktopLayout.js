@@ -2,56 +2,129 @@ import React from 'react';
 import TechContainer from './TechContainer';
 import { Activity, Database, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 
+// Import garden logos
+import karmanLogo from '../../images/slideshow images/karmaneventsPNG.png';
+import code49Logo from '../../images/slideshow images/club49-logo.png';
+import tattooshopLogo from '../../images/slideshow images/1111logo.png';
+import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
+
 const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0 }) => {
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
   // animationProgress goes from 0 to 1 as containers fly away
+  // All values in vw/vh for consistent viewport scaling
   const containerOpacity = Math.max(0, 1 - animationProgress * 2); // Fades out quickly
   
-  // Each container flies in different direction
-  const topLeftX = -250 * animationProgress;
-  const topLeftY = -200 * animationProgress;
-  const bottomLeftX = -250 * animationProgress;
-  const bottomLeftY = 200 * animationProgress;
-  const topRightX = 250 * animationProgress;
-  const topRightY = -200 * animationProgress;
-  const bottomRightX = 250 * animationProgress;
-  const bottomRightY = 200 * animationProgress;
-  const bottomCenterY = 250 * animationProgress;
+  // Each container flies in different direction (converted to vw/vh from 2560x1440 reference)
+  // 250px @ 2560w = 9.77vw, 200px @ 1440h = 13.89vh
+  const topLeftX = -9.77 * animationProgress;      // vw
+  const topLeftY = -13.89 * animationProgress;     // vh
+  const bottomLeftX = -9.77 * animationProgress;   // vw
+  const bottomLeftY = 13.89 * animationProgress;   // vh
+  const topRightX = 9.77 * animationProgress;      // vw
+  const topRightY = -13.89 * animationProgress;    // vh
+  const bottomRightX = 9.77 * animationProgress;   // vw
+  const bottomRightY = 13.89 * animationProgress;  // vh
+  const bottomCenterY = 17.36 * animationProgress; // vh (250px @ 1440h)
   
   const containerScale = 1 - (0.25 * animationProgress);
 
   return (
     <>
-      {/* 1. Top Left - Analytics */}
+      {/* 1. Top Left - Filosofie */}
       <div 
-        className="absolute top-[15%] left-[5%] w-[20vw] h-[25vh] pointer-events-auto"
+        className="absolute pointer-events-auto"
         style={{
-          transform: `translate(${topLeftX}px, ${topLeftY}px) scale(${containerScale})`,
+          top: '15vh',
+          left: '4.06vw',
+          minHeight: '32.5vh',
+          width: '26vw',
+          transform: `translate(${topLeftX}vw, ${topLeftY}vh) scale(${containerScale})`,
           opacity: mounted ? containerOpacity : 0
         }}
       >
-        <TechContainer title="SECTOR_ANALYTICS" variant="purple" className="w-full h-full">
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-50">
-            <Activity className="w-8 h-8 text-purple-400" />
-            <div className="h-1 w-2/3 bg-purple-900/50 rounded-full overflow-hidden">
-              <div className="h-full w-1/3 bg-purple-400 animate-pulse"></div>
+        <TechContainer title="FILOSOFIE" variant="purple" className="w-full h-full">
+          <div className="w-full h-full flex flex-col items-center justify-between" style={{ padding: '0.8vw' }}>
+            {/* Header */}
+            <div className="flex flex-col items-center w-full" style={{ gap: '0.4vw' }}>
+              <h2 style={{
+                fontSize: 'max(15.6px, 0.85vw)',
+                color: 'rgb(196, 181, 253)',
+                margin: 0,
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                fontWeight: 600,
+                lineHeight: 0.9,
+                filter: 'brightness(0.9)',
+                textAlign: 'center',
+                letterSpacing: '0.05em'
+              }}>
+                DE LUIDE STILTE <br/> EN DE INTENSE KALMTE <br/> WIJZEN MIJ DE WEG <br/> VAN HET HART <br/> NAAR HET HOOFD
+              </h2>
+              <div style={{ width: '2vw', height: '0.1vh', background: 'linear-gradient(to right, transparent, rgb(168, 85, 247), transparent)' }}></div>
             </div>
+
+            {/* Content */}
+            <div className="flex flex-col items-center justify-center flex-1" style={{ gap: '0.8vw' }}>
+              <Activity style={{ width: '2vw', height: '2vw', color: 'rgb(192, 132, 252)' }} />
+              <div style={{ height: '0.1vh', width: '50%', backgroundColor: 'rgba(88, 28, 135, 0.5)', borderRadius: '9999px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: '33%', backgroundColor: 'rgb(192, 132, 252)' }} className="animate-pulse"></div>
+              </div>
+              <div style={{
+                fontFamily: "'Figtree', sans-serif",
+                fontWeight: 400,
+                lineHeight: 1.5,
+                color: '#FFFEF0',
+                fontSize: 'max(13px, 0.7vw)',
+                textAlign: 'center'
+              }}>
+                De ontembare chaos uit haar wil <br /> in het uni-versum. <br />
+ 
+               Masculiniteit stroomt op harmonieuze wijze mee met de natuurlijke stroming, een stroming met veel gezichten en wonderschone vormen.
+              </div>
+            </div>
+
+            {/* Button */}
+            <button
+              className="rounded-sm font-bold tracking-widest transition-all duration-300 hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))',
+                border: '0.05vw solid rgba(167, 139, 250, 0.5)',
+                color: '#c4b5fd',
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                fontSize: 'max(8.5px, 0.45vw)',
+                padding: '0.4vw 0.8vw',
+                width: 'fit-content',
+                borderRadius: '0.1vw'
+              }}
+            >
+              LEARN MORE
+            </button>
           </div>
         </TechContainer>
       </div>
 
       {/* 2. Bottom Left - Database/Logs */}
       <div 
-        className="absolute bottom-[10%] left-[8%] w-[18vw] h-[35vh] pointer-events-auto"
+        className="absolute pointer-events-auto"
         style={{
-          transform: `translate(${bottomLeftX}px, ${bottomLeftY}px) scale(${containerScale})`,
+          bottom: '6vh',
+          left: '7.5vw',
+          width: '23.4vw',
+          minHeight: '36.4vh',
+          transform: `translate(${bottomLeftX}vw, ${bottomLeftY}vh) scale(${containerScale})`,
           opacity: mounted ? containerOpacity : 0
         }}
       >
         <TechContainer title="DATA_STREAM" variant="orange" className="w-full h-full">
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-50">
-            <Database className="w-8 h-8" style={{color: '#f59e0b'}} />
-            <div className="text-[10px] font-mono text-center" style={{color: '#fed7aa'}}>
+          <div className="w-full h-full flex flex-col items-center justify-center opacity-50" style={{ gap: '0.5vw' }}>
+            <Database style={{ width: '2vw', height: '2vw', color: '#f59e0b' }} />
+            <div style={{
+              fontFamily: "'Figtree', sans-serif",
+              fontWeight: 400,
+              lineHeight: 1.5,
+              color: '#FFFEF0',
+              fontSize: 'max(13px, 0.7vw)',
+              textAlign: 'center'
+            }}>
               packet_loss: 0%<br/>
               encryption: AES-256<br/>
               latency: 12ms
@@ -62,9 +135,13 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
       {/* 3. Top Right - Garden For Life Website */}
       <div 
-        className="absolute top-[20%] right-[5%] w-[18vw] h-[20vh] pointer-events-auto"
+        className="absolute pointer-events-auto"
         style={{
-          transform: `translate(${topRightX}px, ${topRightY}px) scale(${containerScale})`,
+          top: '14.44vh',
+          right: '5vw',
+          width: '15.21vw',
+          height: '16.9vh',
+          transform: `translate(${topRightX}vw, ${topRightY}vh) scale(${containerScale})`,
           opacity: mounted ? containerOpacity : 0
         }}
       >
@@ -74,17 +151,24 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             <div className="absolute inset-0 bg-gradient-to-br from-green-900/30 to-green-800/20 backdrop-blur-sm" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34, 197, 94, 0.1) 2px, rgba(34, 197, 94, 0.1) 4px)'}}></div>
             
             {/* Decorative lines to simulate webpage content */}
-            <div className="absolute inset-0 flex flex-col justify-start pt-3 px-2 gap-1.5 opacity-40">
-              <div className="h-1 bg-green-600/40 rounded w-3/4"></div>
-              <div className="h-0.5 bg-green-500/30 rounded w-1/2"></div>
-              <div className="h-0.5 bg-green-500/30 rounded w-2/3"></div>
+            <div className="absolute inset-0 flex flex-col justify-start opacity-40" style={{ paddingTop: '0.8vw', paddingLeft: '0.5vw', paddingRight: '0.5vw', gap: '0.4vw' }}>
+              <div style={{ height: '0.2vw', backgroundColor: 'rgba(22, 163, 74, 0.4)', borderRadius: '2px', width: '75%' }}></div>
+              <div style={{ height: '0.1vw', backgroundColor: 'rgba(34, 197, 94, 0.3)', borderRadius: '2px', width: '50%' }}></div>
+              <div style={{ height: '0.1vw', backgroundColor: 'rgba(34, 197, 94, 0.3)', borderRadius: '2px', width: '66%' }}></div>
             </div>
             
             {/* Lock Icon Overlay */}
             <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
-              <div className="flex flex-col items-center gap-2">
-                <Lock className="w-6 h-6" style={{color: '#f59e0b'}} strokeWidth={1.5} />
-                <span className="text-[10px] tracking-widest" style={{color: 'rgba(245, 158, 11, 0.8)', fontFamily: "'Figtree', sans-serif"}}>LOCKED</span>
+              <div className="flex flex-col items-center" style={{ gap: '0.5vw' }}>
+                <Lock style={{ width: '1.5vw', height: '1.5vw', color: '#f59e0b' }} strokeWidth={1.5} />
+                <span style={{
+                  fontFamily: "'Figtree', sans-serif",
+                  fontWeight: 400,
+                  lineHeight: 1.5,
+                  color: 'rgba(245, 158, 11, 0.8)',
+                  fontSize: 'max(9.1px, 0.5vw)',
+                  letterSpacing: '0.05em'
+                }}>LOCKED</span>
               </div>
             </div>
           </div>
@@ -93,120 +177,203 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
       {/* 4. Center Right/Bottom - Gardens Slideshow */}
       <div 
-        className="absolute bottom-[15%] right-[10%] w-[22vw] h-[30vh] pointer-events-auto"
+        className="absolute pointer-events-auto"
         style={{
-          transform: `translate(${bottomRightX}px, ${bottomRightY}px) scale(${containerScale})`,
+          bottom: '15vh',
+          right: '3.56vw',
+          width: '22.88vw',
+          height: '39vh',
+          transform: `translate(${bottomRightX}vw, ${bottomRightY}vh) scale(${containerScale})`,
           opacity: mounted ? containerOpacity : 0
         }}
       >
         <TechContainer title="GARDENS" variant="purple" className="w-full h-full">
-          <div className="w-full h-full flex flex-col items-center justify-between p-4 relative">
-            {/* Slideshow Area */}
-            <div className="w-full flex-1 relative overflow-hidden rounded-sm bg-purple-900/20 border border-purple-500/20 mb-3">
-              {/* Slides */}
-              {[...Array(6)].map((_, i) => {
-                let translateX = 0;
-                if (i > currentSlide) {
-                  translateX = 100;
-                } else if (i < currentSlide) {
-                  translateX = -100;
-                }
-                return (
-                  <div
-                    key={i}
-                    className={`absolute inset-0 transition-all duration-500 ${i === currentSlide ? 'opacity-100 translate-x-0' : 'opacity-0'}`}
-                    style={{transform: `translateX(${translateX}%)`}}
-                  >
-                    {/* Garden Image Placeholder */}
-                    <div className="w-full h-3/4 bg-gradient-to-br from-green-900/40 to-green-700/30 flex items-center justify-center relative">
-                      <div className="absolute inset-0 opacity-30" style={{backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.3) 0%, transparent 50%)'}}></div>
-                      <div className="text-center z-10">
-                        <div className="text-xs text-green-400 tracking-widest mb-1" style={{fontFamily: "'Figtree', sans-serif"}}>GARDEN {i + 1}</div>
-                        <div className="text-[10px] text-green-300/70" style={{fontFamily: "'Figtree', sans-serif"}}>Sector {String(i).padStart(2, '0')}</div>
+          {(() => {
+            const gardensData = [
+              {
+                id: 'karman',
+                name: 'KARMAN',
+                tagline: 'Underground Techno Events',
+                description: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings.',
+                accentColor: '#8b5cf6',
+                logo: karmanLogo
+              },
+              {
+                id: 'code49',
+                name: 'CODE49',
+                tagline: 'AI Solutions',
+                description: 'Cutting-edge software development company specializing in AI-driven solutions and advanced technology integration.',
+                accentColor: '#06b6d4',
+                logo: code49Logo
+              },
+              {
+                id: 'tattooshop',
+                name: 'TATTOO SHOP',
+                tagline: 'Artistic Expression & Body Art',
+                description: 'A premier tattoo studio specializing in custom designs, traditional and modern styles.',
+                accentColor: '#ec4899',
+                logo: tattooshopLogo
+              },
+              {
+                id: 'rengifoods',
+                name: 'RENGI FOODS',
+                tagline: 'Sustainable Organic Nutrition',
+                description: 'Dedicated to providing the highest quality organic and sustainably-sourced food products.',
+                accentColor: '#10b981',
+                logo: rengiLogo
+              }
+            ];
+            return (
+              <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '1vw' }}>
+                {/* Slideshow Area */}
+                <div className="w-full relative overflow-hidden rounded-sm bg-purple-900/20 border border-purple-500/20" style={{ height: 'calc(100% - 2vw)', marginBottom: '0.8vw' }}>
+                  {/* Slides */}
+                  {gardensData.map((garden, i) => {
+                    let translateX = 0;
+                    if (i > currentSlide) {
+                      translateX = 100;
+                    } else if (i < currentSlide) {
+                      translateX = -100;
+                    }
+                    return (
+                      <div
+                        key={garden.id}
+                        className={`absolute inset-0 transition-all duration-500 ${i === currentSlide ? 'opacity-100 translate-x-0' : 'opacity-0'}`}
+                        style={{transform: `translateX(${translateX}%)`}}
+                      >
+                        {/* Garden Card Content */}
+                        <div className="w-full h-[70%] flex flex-col items-center justify-center relative" style={{background: `linear-gradient(135deg, ${garden.accentColor}20, ${garden.accentColor}10)`}}>
+                          <div className="absolute inset-0 opacity-30" style={{backgroundImage: `radial-gradient(circle at 20% 50%, ${garden.accentColor}40 0%, transparent 50%)`}}></div>
+                          
+                          {/* Logo Image */}
+                          <img 
+                            src={garden.logo} 
+                            alt={`${garden.name} logo`}
+                            className="object-contain"
+                            style={{
+                              width: '3.5vw',
+                              height: '3.5vw',
+                              marginBottom: '0.5vw',
+                              filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))'
+                            }}
+                          />
+                          
+                          {/* Header */}
+                          <div className="text-center z-10">
+                            <div style={{
+                              fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                              fontWeight: 600,
+                              fontSize: 'max(15px, 0.8vw)',
+                              color: garden.accentColor,
+                              letterSpacing: '0.1em',
+                              marginBottom: '0.2vw'
+                            }}>{garden.name}</div>
+                            <div style={{
+                              fontFamily: "'Figtree', sans-serif",
+                              fontSize: 'max(10.4px, 0.55vw)',
+                              color: `${garden.accentColor}cc`,
+                              letterSpacing: '0.05em'
+                            }}>{garden.tagline}</div>
+                          </div>
+                        </div>
+                        
+                        {/* Description */}
+                        <div className="h-[30%] bg-black/40 backdrop-blur-sm flex items-center justify-center border-t border-purple-500/20" style={{ padding: '0.4vw 0.8vw' }}>
+                          <span style={{
+                            fontFamily: "'Figtree', sans-serif",
+                            fontSize: 'max(10.4px, 0.55vw)',
+                            color: '#c4b5fd',
+                            textAlign: 'center',
+                            lineHeight: '1.3'
+                          }}>
+                            {garden.description}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    
-                    {/* Description */}
-                    <div className="h-1/4 bg-black/40 backdrop-blur-sm px-2 py-1.5 flex items-center justify-center border-t border-purple-500/20">
-                      <span className="text-[9px] text-purple-300/80 text-center leading-tight" style={{fontFamily: "'Figtree', sans-serif"}}>
-                        {['Botanical Research Lab', 'Hydroponic Station', 'Organic Growth Zone', 'Neural Garden', 'Bio-Culture Center', 'Genesis Sector'][i]}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            
-            {/* Circle Indicators with Arrow Navigation */}
-            <div className="flex gap-3 justify-center items-center z-50 relative">
-              {/* Left Arrow */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCurrentSlide(prev => (prev - 1 + 6) % 6);
-                }}
-                className="p-1 rounded transition-colors border border-purple-500 bg-transparent hover:border-purple-400 cursor-pointer z-50"
-                title="Previous slide"
-              >
-                <ChevronLeft className="w-4 h-4 text-purple-400 pointer-events-none" />
-              </button>
-              
-              {/* Indicators */}
-              <div className="flex gap-2 items-center">
-                {[...Array(6)].map((_, i) => (
-                  <div
-                    key={i}
+                    );
+                  })}
+                </div>
+                
+                {/* Circle Indicators with Arrow Navigation */}
+                <div className="flex justify-center items-center z-50 relative" style={{ gap: '0.8vw' }}>
+                  {/* Left Arrow */}
+                  <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setCurrentSlide(i);
+                      setCurrentSlide(prev => (prev - 1 + gardensData.length) % gardensData.length);
                     }}
-                    className={`cursor-pointer transition-all duration-300 h-0.5 z-50 ${i === currentSlide ? 'w-4 bg-purple-400' : 'w-2 bg-purple-500/30 hover:bg-purple-500/50'}`}
-                  />
-                ))}
+                    className="rounded transition-colors border border-purple-500 bg-transparent hover:border-purple-400 cursor-pointer z-50"
+                    style={{ padding: '0.2vw' }}
+                    title="Previous slide"
+                  >
+                    <ChevronLeft style={{ width: '1vw', height: '1vw', color: 'rgb(192, 132, 252)' }} className="pointer-events-none" />
+                  </button>
+                  
+                  {/* Indicators */}
+                  <div className="flex items-center" style={{ gap: '0.4vw' }}>
+                    {gardensData.map((garden, i) => (
+                      <div
+                        key={garden.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentSlide(i);
+                        }}
+                        className="cursor-pointer transition-all duration-300 z-50"
+                        style={{
+                          height: '0.15vw',
+                          width: i === currentSlide ? '1vw' : '0.5vw',
+                          backgroundColor: i === currentSlide ? 'rgb(192, 132, 252)' : 'rgba(168, 85, 247, 0.3)'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Right Arrow */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentSlide(prev => (prev + 1) % gardensData.length);
+                    }}
+                    className="rounded transition-colors border border-purple-500 bg-transparent hover:border-purple-400 cursor-pointer z-50"
+                    style={{ padding: '0.2vw' }}
+                    title="Next slide"
+                  >
+                    <ChevronRight style={{ width: '1vw', height: '1vw', color: 'rgb(192, 132, 252)' }} className="pointer-events-none" />
+                  </button>
+                </div>
               </div>
-              
-              {/* Right Arrow */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCurrentSlide(prev => (prev + 1) % 6);
-                }}
-                className="p-1 rounded transition-colors border border-purple-500 bg-transparent hover:border-purple-400 cursor-pointer z-50"
-                title="Next slide"
-              >
-                <ChevronRight className="w-4 h-4 text-purple-400 pointer-events-none" />
-              </button>
-            </div>
-          </div>
+            );
+          })()}
         </TechContainer>
       </div>
 
       {/* 5. Center Bottom - Status Strip */}
       <div 
-        className="absolute bottom-[5%] left-0 right-0 flex justify-center pointer-events-auto"
+        className="absolute left-0 right-0 flex justify-center pointer-events-auto"
         style={{
-          transform: `translateY(${bottomCenterY}px) scale(${containerScale})`,
+          bottom: '5vh',
+          transform: `translateY(${bottomCenterY}vh) scale(${containerScale})`,
           opacity: mounted ? containerOpacity : 0
         }}
       >
-        <div className="w-[30vw] h-[10vh]">
+        <div style={{ width: '30vw', height: '10vh' }}>
           <TechContainer title="GLOBAL_STATUS" variant="purple" className="w-full h-full">
-            <div className="w-full h-full flex items-center justify-around px-4 opacity-70">
+            <div className="w-full h-full flex items-center justify-around opacity-70" style={{ padding: '0 1vw' }}>
               <div className="flex flex-col items-center">
-                <span className="text-[10px] text-gray-400">MEM</span>
-                <span className="text-lg font-bold text-purple-300">64%</span>
+                <span style={{ fontSize: 'max(9.1px, 0.5vw)', color: 'rgb(156, 163, 175)' }}>MEM</span>
+                <span style={{ fontSize: 'max(18.2px, 1vw)', fontWeight: 'bold', color: 'rgb(216, 180, 254)' }}>64%</span>
               </div>
-              <div className="h-8 w-[1px] bg-white/10"></div>
+              <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
               <div className="flex flex-col items-center">
-                <span className="text-[10px] text-gray-400">CPU</span>
-                <span className="text-lg font-bold" style={{color: '#fed7aa'}}>32%</span>
+                <span style={{ fontSize: 'max(9.1px, 0.5vw)', color: 'rgb(156, 163, 175)' }}>CPU</span>
+                <span style={{ fontSize: 'max(18.2px, 1vw)', fontWeight: 'bold', color: '#fed7aa' }}>32%</span>
               </div>
-              <div className="h-8 w-[1px] bg-white/10"></div>
+              <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
               <div className="flex flex-col items-center">
-                <span className="text-[10px] text-gray-400">TMP</span>
-                <span className="text-lg font-bold text-white">45°</span>
+                <span style={{ fontSize: 'max(9.1px, 0.5vw)', color: 'rgb(156, 163, 175)' }}>TMP</span>
+                <span style={{ fontSize: 'max(18.2px, 1vw)', fontWeight: 'bold', color: 'white' }}>45°</span>
               </div>
             </div>
           </TechContainer>

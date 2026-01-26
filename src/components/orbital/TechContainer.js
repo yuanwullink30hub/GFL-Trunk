@@ -31,34 +31,34 @@ const TechContainer = ({
     >
       {/* --- HUD Corners --- */}
       {/* Top Left */}
-      <div className={`absolute -top-[1px] -left-[1px] w-4 h-4 border-t-2 border-l-2 ${accentColor} z-10`} />
+      <div className={`absolute -top-[1px] -left-[1px] border-t-2 border-l-2 ${accentColor} z-10`} style={{ width: '0.8vw', height: '0.8vw' }} />
       {/* Bottom Right */}
-      <div className={`absolute -bottom-[1px] -right-[1px] w-4 h-4 border-b-2 border-r-2 ${accentColor} z-10`} />
+      <div className={`absolute -bottom-[1px] -right-[1px] border-t-2 border-l-2 ${accentColor} z-10`} style={{ width: '0.8vw', height: '0.8vw' }} />
       
       {/* --- Header Decoration --- */}
-      <div className="absolute top-0 right-8 flex gap-1 h-1">
-        <div className={`w-4 ${variant === 'orange' ? 'bg-[#f59e0b]' : 'bg-purple-500'}`} style={{opacity: 0.5}}></div>
-        <div className={`w-2 ${variant === 'orange' ? 'bg-[#f59e0b]' : 'bg-purple-500'}`} style={{opacity: 0.3}}></div>
-        <div className={`w-1 ${variant === 'orange' ? 'bg-[#f59e0b]' : 'bg-purple-500'}`} style={{opacity: 0.2}}></div>
+      <div className="absolute top-0 flex" style={{ right: '1.5vw', gap: '0.2vw', height: '0.2vw' }}>
+        <div className={`${variant === 'orange' ? 'bg-[#f59e0b]' : 'bg-purple-500'}`} style={{opacity: 0.5, width: '0.8vw'}}></div>
+        <div className={`${variant === 'orange' ? 'bg-[#f59e0b]' : 'bg-purple-500'}`} style={{opacity: 0.3, width: '0.4vw'}}></div>
+        <div className={`${variant === 'orange' ? 'bg-[#f59e0b]' : 'bg-purple-500'}`} style={{opacity: 0.2, width: '0.2vw'}}></div>
       </div>
 
       {/* --- Content Area --- */}
-      <div className="p-4 flex-1 flex flex-col h-full relative z-0 overflow-hidden">
+      <div className="flex-1 flex flex-col h-full relative z-0 overflow-hidden" style={{ padding: '0.8vw' }}>
         {/* Title Tag */}
         <div className={`
-          absolute top-2 left-2 
-          text-[14px] tracking-[0.2em] font-bold 
+          absolute 
+          tracking-[0.2em] font-bold 
           ${textColor} opacity-80 select-none
-        `} style={{fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>
+        `} style={{fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", top: '0.4vw', left: '0.4vw', fontSize: 'max(10.4px, 0.55vw)'}}>
           {`// ${title}`}
         </div>
         
         {/* Inner Content Placeholder */}
-        <div className="mt-6 flex-1 w-full h-full border border-dashed border-white/5 rounded-sm flex items-center justify-center">
+        <div className="flex-1 w-full h-full border border-dashed border-white/5 rounded-sm flex items-center justify-center" style={{ marginTop: '1.2vw' }}>
             {children || (
-                <div className="flex flex-col items-center gap-2">
-                    <div className={`w-8 h-8 rounded-full border border-t-transparent animate-spin ${accentColor}`} />
-                    <span className="text-sm" style={{color: 'rgba(255, 254, 240, 0.3)', fontFamily: "'Figtree', sans-serif", letterSpacing: '0.1em'}}>INITIALIZING...</span>
+                <div className="flex flex-col items-center" style={{ gap: '0.4vw' }}>
+                    <div className={`rounded-full border border-t-transparent animate-spin ${accentColor}`} style={{ width: '1.5vw', height: '1.5vw' }} />
+                    <span style={{color: 'rgba(255, 254, 240, 0.3)', fontFamily: "'Figtree', sans-serif", letterSpacing: '0.1em', fontSize: 'max(9.1px, 0.5vw)'}}>INITIALIZING...</span>
                 </div>
             )}
         </div>

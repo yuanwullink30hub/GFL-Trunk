@@ -50,7 +50,7 @@ export const detectPerformance = () => {
   // AMD integrated GPUs (Vega, Radeon Graphics on APUs)
   // Note: Dedicated Radeon cards (RX, etc.) should NOT be flagged
   const hasAMDIntegrated = 
-    gpuLower.includes('vega') && gpuLower.includes('graphics') ||
+    (gpuLower.includes('vega') && gpuLower.includes('graphics')) ||
     (gpuLower.includes('radeon') && gpuLower.includes('graphics') && !gpuLower.includes('rx'));
   
   const hasIntegratedGPU = hasIntelIntegrated || hasAMDIntegrated;

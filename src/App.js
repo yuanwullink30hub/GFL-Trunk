@@ -50,8 +50,6 @@ const TimeSync = ({ isMobile }) => {
   );
 };
 
-const TOTAL_FRAMES = 180; // Total animation set points (more frames = smoother)
-
 // ============================================
 // ANIMATION SECTION CONFIGURATION
 // Adjust these values to control scroll timing for each phase
@@ -353,9 +351,6 @@ const App = () => {
   
   const section1End = SECTION_1_FRAMES;
   const section2End = SECTION_1_FRAMES + SECTION_2_FRAMES;
-  
-  // SECTION 1: Scroll prompt disappears (0 to section1End)
-  const section1Progress = Math.min(1, Math.max(0, currentFrame / section1End));
   
   // Scroll button: fades in first 3 frames (faster than section 1)
   const buttonFadeProgress = Math.min(1, Math.max(0, currentFrame / SCROLL_BUTTON_FRAMES));

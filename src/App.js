@@ -649,7 +649,7 @@ const App = () => {
                     border: '2px solid rgba(245, 158, 11, 0.7)',
                     padding: '1rem 3rem',
                     boxShadow: '0 0 20px rgba(245, 158, 11, 0.3)',
-                    transform: 'scale(0.3) translateY(-2rem)',
+                    transform: 'scale(0.7) translateY(-4rem)',
                     transformOrigin: 'center center'
                   }}
                 >

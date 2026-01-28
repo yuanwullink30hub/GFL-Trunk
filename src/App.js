@@ -648,7 +648,9 @@ const App = () => {
                   style={{
                     border: '2px solid rgba(245, 158, 11, 0.7)',
                     padding: '1rem 3rem',
-                    boxShadow: '0 0 20px rgba(245, 158, 11, 0.3)'
+                    boxShadow: '0 0 20px rgba(245, 158, 11, 0.3)',
+                    transform: 'scale(0.3) translateY(-2rem)',
+                    transformOrigin: 'center center'
                   }}
                 >
                   <span className="tracking-[0.25em] font-bold" style={{

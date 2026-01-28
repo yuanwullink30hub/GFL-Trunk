@@ -499,7 +499,8 @@ const HoloEarthSphere = ({
 
       {/* Earth Particle Waves - wave-like particle motion (aistudios style) */}
       {/* Particles fade in as chunks shrink and break apart */}
-      {explosionProgress > 0 && (
+      {/* Disabled on low-end devices for better performance */}
+      {explosionProgress > 0 && getPerformanceSettings().tier !== 'LOW' && (
         <EarthParticleWaves 
           explosionProgress={explosionProgress} 
           sphereRadius={2.5}

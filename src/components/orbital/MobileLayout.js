@@ -306,7 +306,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
 
           {/* 5. Global Status */}
           <div style={{height: 'clamp(8rem, 15vh, 10rem)'}}>
-            <TechContainer title="GLOBAL_STATUS" variant="purple" className="w-full h-full">
+            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full">
               <div className="w-full h-full flex items-center justify-around px-4 opacity-70">
                 <div className="flex flex-col items-center">
                   <span style={{

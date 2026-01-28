@@ -19,6 +19,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // DEBUG: Log window width to console
+  console.log('DesktopLayout windowWidth:', windowWidth, 'isLaptop:', windowWidth >= 1024 && windowWidth < 1280);
+
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
   // animationProgress goes from 0 to 1 as containers fly away
   // All values in vw/vh for consistent viewport scaling
@@ -44,7 +48,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       <div 
         className="absolute pointer-events-auto"
         style={{
-          top: windowWidth >= 768 && windowWidth < 1024 ? 'calc(15vh + 2.5rem - 2rem)' : 'calc(15vh + 2.5rem)',
+          top: windowWidth >= 768 && windowWidth < 1024 ? 'calc(15vh + 2.5rem - 2rem)' : windowWidth >= 1024 ? 'calc(15vh + 0.5rem + 0.5rem)' : 'calc(15vh + 2.5rem)',
           left: windowWidth >= 768 && windowWidth < 1024 ? 'calc(4.06vw - 1.5rem)' : 'calc(4.06vw - 2.5rem)',
           minHeight: '32.5vh',
           width: '26vw',
@@ -118,7 +122,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         className="absolute pointer-events-auto"
         style={{
           top: '12.09vh',
-          right: windowWidth >= 768 && windowWidth < 1024 ? 'calc(3.7vw + 2rem)' : windowWidth >= 1024 && windowWidth < 1280 ? 'calc(3.7vw + 1.5rem)' : '3.7vw',
+          right: windowWidth >= 768 && windowWidth < 1024 ? 'calc(3.7vw + 2rem)' : windowWidth >= 1024 ? 'calc(3.7vw + 1.5rem + 1rem + 3rem)' : '3.7vw',
           width: '19.01vw',
           height: '21.13vh',
           transform: `translate(${topRightX}vw, ${topRightY}vh) scale(${containerScale})`,
@@ -162,7 +166,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           bottom: '15vh',
           right: '3.56vw',
           width: '22.88vw',
-          height: windowWidth >= 768 && windowWidth < 1024 ? 'calc(29.5vh * 1.3)' : windowWidth >= 1024 && windowWidth < 1280 ? 'calc(39vh * 1.2)' : '39vh',
+          height: windowWidth >= 768 && windowWidth < 1024 ? 'calc(29.5vh * 1.3)' : 'calc(39vh * 1.2)',
           transform: `translate(${bottomRightX}vw, ${bottomRightY}vh) scale(${containerScale})`,
           opacity: mounted ? containerOpacity : 0
         }}
@@ -246,17 +250,17 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                                   else if (garden.id === 'rengifoods') scale = 1.25;
                                   else if (garden.id === 'karman') scale = 1.2;
                                 } else if (windowWidth >= 1024) {
-                                  // Laptop
-                                  if (garden.id === 'tattooshop') scale = 2.2;
-                                  else if (garden.id === 'rengifoods') scale = 1.5;
-                                  else if (garden.id === 'code49') scale = 1.45;
-                                  else if (garden.id === 'karman') scale = 1.25;
+                                  // Laptop - responsive scaling
+                                  if (garden.id === 'tattooshop') scale = 1.8 + (windowWidth - 1024) / 256 * 0.4;
+                                  else if (garden.id === 'rengifoods') scale = 1.2 + (windowWidth - 1024) / 256 * 0.3;
+                                  else if (garden.id === 'code49') scale = 1.15 + (windowWidth - 1024) / 256 * 0.3;
+                                  else if (garden.id === 'karman') scale = 1.0 + (windowWidth - 1024) / 256 * 0.25;
                                 } else if (windowWidth >= 768) {
-                                  // Tablet
-                                  if (garden.id === 'rengifoods') scale = 1.2;
-                                  else if (garden.id === 'karman') scale = 1.5;
-                                  else if (garden.id === 'code49') scale = 1.5;
-                                  else if (garden.id === 'tattooshop') scale = 3;
+                                  // Tablet - responsive scaling
+                                  if (garden.id === 'rengifoods') scale = 0.9 + (windowWidth - 768) / 256 * 0.3;
+                                  else if (garden.id === 'karman') scale = 1.2 + (windowWidth - 768) / 256 * 0.3;
+                                  else if (garden.id === 'code49') scale = 1.2 + (windowWidth - 768) / 256 * 0.3;
+                                  else if (garden.id === 'tattooshop') scale = 2.4 + (windowWidth - 768) / 256 * 0.6;
                                 }
                                 
                                 return `calc(${baseSize}vw * ${scale})`;
@@ -292,20 +296,22 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                                  if (windowWidth >= 1280) {
                                    // Desktop
                                    if (garden.id === 'tattooshop') return 'translateY(-4rem)';
-                                   else if (garden.id === 'karman') return 'translateY(-1rem)';
+                                   else if (garden.id === 'karman') return 'translateY(-1.2rem)';
                                    else if (garden.id === 'rengifoods') return 'translateY(-1.2rem)';
-                                   else if (garden.id === 'code49') return 'translateY(-1rem)';
+                                   else if (garden.id === 'code49') return 'translateY(-1.2rem)';
                                    return 'translateY(0)';
                                 } else if (windowWidth >= 1024) {
-                                  // Laptop
-                                  if (garden.id === 'tattooshop') return 'translateY(-3.5rem)';
-                                  else if (garden.id === 'karman') return 'translateY(-0.8rem)';
-                                  else if (garden.id === 'code49') return 'translateY(-0.6rem)';
-                                  else if (garden.id === 'rengifoods') return 'translateY(-0.8rem)';
+                                  // Laptop - responsive positioning
+                                  const laptopProgress = (windowWidth - 1024) / 256;
+                                  if (garden.id === 'tattooshop') return `translateY(${-3.5 - laptopProgress * 0.5}rem)`;
+                                  else if (garden.id === 'karman') return `translateY(${-0.8 - laptopProgress * 0.4}rem)`;
+                                  else if (garden.id === 'code49') return `translateY(${-0.6 - laptopProgress * 0.6}rem)`;
+                                  else if (garden.id === 'rengifoods') return `translateY(${-0.8 - laptopProgress * 0.4}rem)`;
                                   return 'translateY(0)';
                                 } else if (windowWidth >= 768) {
-                                  // Tablet
-                                  return 'translateY(0)';
+                                  // Tablet - responsive positioning
+                                  const tabletProgress = (windowWidth - 768) / 256;
+                                  return `translateY(${-0.5 * tabletProgress}rem)`;
                                 }
                               })(),
                               filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))'
@@ -327,13 +333,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         }}>
                           <div style={{
                             fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                            fontWeight: 600,
-                            fontSize: windowWidth >= 768 && windowWidth < 1024 ? 'clamp(10px, 1.8vw, 16px)' : 'max(18px, 0.96vw)',
-                            color: garden.accentColor,
-                            letterSpacing: '0.1em',
+                            fontWeight: 700,
+                            fontSize: 'max(13px, 0.7vw)',
+                            color: '#f59e0b',
+                            letterSpacing: '0.2em',
                             marginBottom: '0.2vw',
                             whiteSpace: windowWidth >= 1024 ? 'nowrap' : 'normal',
-                            maxWidth: windowWidth < 1024 ? '90%' : 'none'
+                            maxWidth: windowWidth < 1024 ? '90%' : 'none',
+                            textAlign: 'center',
+                            opacity: 0.8
                           }}>
                             {(() => {
                               // Tablet: show only "TATTOOS"
@@ -354,10 +362,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         </div>
                         
                         {/* Description */}
-                        <div className="flex flex-col items-center justify-center relative" style={{ 
+                        <div className="flex flex-col items-center justify-center relative w-full" style={{ 
                           height: windowWidth >= 1024 ? '30%' : '30%',
                           padding: '0.4vw 0.8vw',
-                          display: windowWidth >= 1024 ? 'flex' : 'none'
+                          display: windowWidth >= 1024 ? 'flex' : 'none',
+                          backgroundColor: 'rgb(25, 5, 41)',
+                          borderRadius: '0.2vw'
                         }}>
                           <span style={{
                             fontFamily: "'Figtree', sans-serif",
@@ -366,10 +376,13 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                             color: '#FFFEF0',
                             fontSize: 'max(13px, 0.7vw)',
                             textAlign: 'center',
-                            backgroundColor: 'rgb(25, 5, 41)',
-                            padding: '0.4vw 0.8vw',
-                            borderRadius: '0.2vw'
-                          }}>
+                            padding: 0,
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: 3,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                         }}>
                             {garden.description}
                           </span>
                         </div>
@@ -394,9 +407,9 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     <ChevronLeft style={{ width: '1vw', height: '1vw', color: 'rgb(192, 132, 252)' }} className="pointer-events-none" />
                   </button>
                   
-                  {/* Indicators */}
+                  {/* Left Indicators */}
                   <div className="flex items-center" style={{ gap: '0.4vw' }}>
-                    {gardensData.map((garden, i) => (
+                    {gardensData.slice(0, 2).map((garden, i) => (
                       <div
                         key={garden.id}
                         onClick={(e) => {
@@ -406,8 +419,44 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         className="cursor-pointer transition-all duration-300 z-50"
                         style={{
                           height: '0.15vw',
-                          width: i === currentSlide ? '1vw' : '0.5vw',
+                          width: '0.5vw',
                           backgroundColor: i === currentSlide ? 'rgb(192, 132, 252)' : 'rgba(168, 85, 247, 0.3)'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Learn More Button */}
+                  <button
+                    className="rounded-sm font-bold tracking-widest transition-all duration-300 hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.2))',
+                      border: '0.05vw solid rgba(245, 158, 11, 0.5)',
+                      color: '#fbbf24',
+                      fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                      fontSize: 'max(8.5px, 0.45vw)',
+                      padding: '0.4vw 0.8vw',
+                      width: 'fit-content',
+                      borderRadius: '0.1vw'
+                    }}
+                  >
+                    LEARN MORE
+                  </button>
+                  
+                  {/* Right Indicators */}
+                  <div className="flex items-center" style={{ gap: '0.4vw' }}>
+                    {gardensData.slice(2).map((garden, i) => (
+                      <div
+                        key={garden.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentSlide(i + 2);
+                        }}
+                        className="cursor-pointer transition-all duration-300 z-50"
+                        style={{
+                          height: '0.15vw',
+                          width: '0.5vw',
+                          backgroundColor: i + 2 === currentSlide ? 'rgb(192, 132, 252)' : 'rgba(168, 85, 247, 0.3)'
                         }}
                       />
                     ))}
@@ -437,17 +486,14 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       <div 
         className="absolute pointer-events-auto"
         style={{
-          bottom: window.innerWidth >= 768 && window.innerWidth < 1024 
+          bottom: windowWidth >= 768 && windowWidth < 1024 
             ? 'calc(6vh + 8rem - 2rem)' 
-            : window.innerWidth >= 1100 && window.innerWidth <= 1300 && window.innerHeight >= 650 && window.innerHeight <= 800 
-            ? 'calc(6vh + 8rem - 3rem)' 
+            : windowWidth >= 1024
+            ? 'calc(6vh + 8rem - 4rem)'
             : 'calc(6vh + 8rem)',
-          left: window.innerWidth >= 768 && window.innerWidth < 1024 
+          left: windowWidth >= 768 && windowWidth < 1024 
             ? 'calc(7.5vw + 4.5rem - 4rem - 3rem)' 
-            : window.innerWidth >= 1100 && window.innerWidth <= 1300 && window.innerHeight >= 650 && window.innerHeight <= 800 
-            ? 'calc(7.5vw + 4.5rem + -3rem)' 
             : 'calc(7.5vw + 4.5rem)',
-          width: '18.25vw',
           height: 'auto',
           maxHeight: '18vh',
           transform: `translate(${bottomLeftX}vw, ${bottomLeftY}vh) scale(${containerScale})`,
@@ -522,7 +568,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         }}
       >
         <div style={{ width: '30vw', height: '10vh' }}>
-          <TechContainer title="GLOBAL_STATUS" variant="purple" className="w-full h-full">
+          <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full">
             <div className="w-full h-full flex items-center justify-around opacity-70" style={{ padding: '0 1vw' }}>
               <div className="flex flex-col items-center">
                 <span style={{ fontSize: 'max(9.1px, 0.5vw)', color: 'rgb(156, 163, 175)' }}>MEM</span>

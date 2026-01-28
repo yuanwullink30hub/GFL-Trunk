@@ -487,7 +487,7 @@ const HoloEarthSphere = ({
       {/* Outer Holographic Crust - renders in front of pyramid during explosion */}
       <Sphere 
         ref={groupRef} 
-        args={[2.5, getPerformanceSettings().tier === 'LOW' ? 32 : 128, getPerformanceSettings().tier === 'LOW' ? 32 : 128]} 
+        args={[2.5, getPerformanceSettings().tier === 'LOW' ? 16 : 128, getPerformanceSettings().tier === 'LOW' ? 16 : 128]} 
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}

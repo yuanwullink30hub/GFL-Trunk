@@ -126,7 +126,11 @@ const App = () => {
   // Calculate progress from frame (0-1)
   
   // Total frames needed for all three sections
-  const TOTAL_ANIMATION_FRAMES = SECTION_1_FRAMES + SECTION_2_FRAMES + SECTION_3_FRAMES;
+  // For low-end devices, increase frame count to slow down animation
+  const totalAnimFrames = isLowEndMode ? 
+    (SECTION_1_FRAMES * 2 + SECTION_2_FRAMES * 1.5 + SECTION_3_FRAMES * 1.5) : 
+    (SECTION_1_FRAMES + SECTION_2_FRAMES + SECTION_3_FRAMES);
+  const TOTAL_ANIMATION_FRAMES = Math.ceil(totalAnimFrames);
   
   // Cap the animation at the end of section 3
   const MAX_FRAME = TOTAL_ANIMATION_FRAMES;
@@ -480,31 +484,35 @@ const App = () => {
             className="relative w-full h-screen"
             style={{ background: 'transparent', marginTop: '-9rem' }}
           >
-            {/* Radial Glow */}
-            <div 
-              className="absolute inset-0 z-5 pointer-events-none" 
-              style={{
-                background: 'radial-gradient(circle at center, rgba(147, 51, 234, 0.03) 0%, transparent 55%)',
-                opacity: isExploding ? Math.max(0, 1 - explosionProgress * 1.5) : 1,
-                transform: isExploding ? `scale(${1 + explosionProgress * 0.5})` : 'scale(1)',
-                transformOrigin: 'center center'
-              }} 
-            />
+            {/* Radial Glow - disabled on low-end during intro for performance */}
+            {!isLowEndMode && (
+              <div 
+                className="absolute inset-0 z-5 pointer-events-none" 
+                style={{
+                  background: 'radial-gradient(circle at center, rgba(147, 51, 234, 0.03) 0%, transparent 55%)',
+                  opacity: isExploding ? Math.max(0, 1 - explosionProgress * 1.5) : 1,
+                  transform: isExploding ? `scale(${1 + explosionProgress * 0.5})` : 'scale(1)',
+                  transformOrigin: 'center center'
+                }} 
+              />
+            )}
 
             {/* 3D Earth Scene */}
-            <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <HoloEarth 
-                className="w-full h-full" 
-                exploding={isExploding}
-                explosionProgress={explosionProgress}
-                isMobile={isMobile}
-                isActive={isSystem}
-                pyramidScrollProgress={pyramidScrollProgress}
-                showPyramidLabels={isSystem}
-                onIntroComplete={handleIntroComplete}
-                onLayerStateChange={handleLayerStateChange}
-              />
-            </div>
+            {!(isLowEndMode && !introComplete) && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center">
+                <HoloEarth 
+                  className="w-full h-full" 
+                  exploding={isExploding}
+                  explosionProgress={explosionProgress}
+                  isMobile={isMobile}
+                  isActive={isSystem}
+                  pyramidScrollProgress={pyramidScrollProgress}
+                  showPyramidLabels={isSystem}
+                  onIntroComplete={handleIntroComplete}
+                  onLayerStateChange={handleLayerStateChange}
+                />
+              </div>
+            )}
           </div>
 
           {/* Bottom Section - Button + Data Stream */}

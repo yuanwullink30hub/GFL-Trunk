@@ -35,43 +35,50 @@ export const detectPerformance = () => {
   const memoryInfo = performance?.memory;
   const jsHeapSizeLimit = memoryInfo?.jsHeapSizeLimit || Infinity;
   
-  // Low-end device detection
+  // Low-end device detection - AGGRESSIVE
+  // Prioritize GPU type as the main indicator
+  const hasIntegratedGPU = 
+    gpuVendor?.toLowerCase().includes('intel') ||
+    gpuVendor?.toLowerCase().includes('radeon') ||
+    gpuVendor?.toLowerCase().includes('amd') ||
+    gpuVendor?.toLowerCase().includes('uhd');
+  
   const isLowEnd = 
+    hasIntegratedGPU || // Integrated GPU = LOW-end (biggest bottleneck)
     navigator.hardwareConcurrency <= 4 || // 4 or fewer cores
     jsHeapSizeLimit < 500_000_000 || // Less than 500MB
-    gpuVendor?.toLowerCase().includes('radeon') || // Integrated AMD
-    gpuVendor?.toLowerCase().includes('intel hd') || // Integrated Intel
     navigator.deviceMemory <= 3; // 3GB or less RAM
 
   // Medium-end device detection
   const isMediumEnd = 
-    (navigator.hardwareConcurrency >= 5 && navigator.hardwareConcurrency <= 7) ||
-    jsHeapSizeLimit < 1_000_000_000 ||
-    (navigator.deviceMemory > 3 && navigator.deviceMemory < 7); // 3GB to 6.6GB RAM
+    (navigator.hardwareConcurrency >= 5 && navigator.hardwareConcurrency <= 7) &&
+    !hasIntegratedGPU && // Must have dedicated GPU
+    navigator.deviceMemory >= 7 && // At least 7GB RAM
+    jsHeapSizeLimit >= 1_000_000_000; // At least 1GB heap
 
   if (isLowEnd) {
     profile = {
       tier: 'LOW',
-      maxParticles: 3000,
-      pixelRatioCap: 1.5,
+      maxParticles: 1500, // Reduced from 3000 - aggressive for integrated GPU
+      pixelRatioCap: 1, // No super-sampling, 1x only
       waveQuality: 'low',
-      voronoiFrequency: 8,
+      voronoiFrequency: 4, // Reduced from 8 - much simpler chunks
       shaderDetail: 'simplified',
       enableAntialias: false,
-      textureQuality: 0.5,
-      maxDrawCalls: 300
+      textureQuality: 0.25, // Very low texture quality
+      maxDrawCalls: 150
     };
   } else if (isMediumEnd) {
     profile = {
       tier: 'MEDIUM',
-      maxParticles: 5000,
-      pixelRatioCap: 1.8,
+      maxParticles: 4000, // Increased from 5000
+      pixelRatioCap: 1.5,
       waveQuality: 'medium',
-      voronoiFrequency: 10,
+      voronoiFrequency: 8,
       shaderDetail: 'medium',
       enableAntialias: false,
-      textureQuality: 0.75,
-      maxDrawCalls: 600
+      textureQuality: 0.5,
+      maxDrawCalls: 500
     };
   }
 

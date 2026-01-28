@@ -136,7 +136,9 @@ const HolographicShaderMaterial = {
         
         // Surface cracking/deformation (increases with breakage)
         float crackIntensity = 1.0 + shrinkProgress * 3.0;
-        float deform = sin(position.x * 4.0 * crackIntensity + uExplode * 1.5) * cos(position.y * 4.0 * crackIntensity + uExplode);
+        // Disable vertical crack deformation after frame 12 (uExplode > 3.0)
+        float crackDisable = uExplode > 3.0 ? 0.0 : 1.0;
+        float deform = sin(position.x * 4.0 * crackIntensity + uExplode * 1.5) * cos(position.y * 4.0 * crackIntensity + uExplode) * crackDisable;
         finalPos += normalize(position) * deform * uExplode * 0.08;
         
         // Add jitter as chunks get very small (particle-like)
@@ -399,7 +401,17 @@ const HoloEarthSphere = ({
         // z: zoom from 0 to 4.5 (towards camera)
         // y: move from 0.25 down to -1.5 
         const zoomZ = 4.5 * explosionProgress;
-        const zoomY = 0.25 - (1.75 * explosionProgress); // ends at y=-1.5
+        
+        // Device-specific Y offset for pyramid endpoint
+        // Desktop: 3rem up - 1rem down = 2rem up (+0.27)
+        // Laptop: 3rem up - 1rem down = 2rem up (+0.27)
+        // Tablet: 2.5rem up - 1rem down = 1.5rem up (+0.22)
+        const pyramidYOffset = window.innerWidth >= 1280 ? 0.27 : // Desktop: 2rem up
+                               window.innerWidth >= 1024 ? 0.27 : // Laptop: 2rem up
+                               window.innerWidth >= 768 ? 0.22 : // Tablet: 1.5rem up
+                               0; // Mobile
+        
+        const zoomY = 0.25 - (1.75 * explosionProgress) + (pyramidYOffset * explosionProgress);
         coreRef.current.position.z = zoomZ;
         coreRef.current.position.y = zoomY;
     }

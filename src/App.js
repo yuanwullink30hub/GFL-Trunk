@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import HoloEarth from './components/orbital/HoloEarth';
 import DesktopLayout from './components/orbital/DesktopLayout';
 import MobileLayout from './components/orbital/MobileLayout';
+import { getPerformanceSettings } from './utils/performanceMonitor';
 
 // Mobile detection hook
 const useIsMobile = () => {
@@ -66,6 +67,8 @@ const App = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [pyramidScrollProgress, setPyramidScrollProgress] = useState(0); // Separate scroll for pyramid layers (0-1)
   const [introComplete, setIntroComplete] = useState(false); // Track when pyramid intro animation is done
+  const [isLowEndMode, setIsLowEndMode] = useState(false); // Track if device is low-end
+  const [lowEndAnimating, setLowEndAnimating] = useState(false); // Track low-end animation state
   // eslint-disable-next-line no-unused-vars
   const [layerState, setLayerState] = useState({
     completedLayerIndex: -1,
@@ -78,11 +81,15 @@ const App = () => {
   const isMobile = useIsMobile();
   const containerRef = useRef(null);
   const earthSectionRef = useRef(null);
+  const lowEndAnimationRef = useRef(null); // Ref for low-end animation interval
   const isScrolling = useRef(false); // Debounce to prevent multiple triggers per scroll
   const mobileScrollLockedRef = useRef(false); // Ref for use in event handlers
 
   useEffect(() => {
     setMounted(true);
+    // Detect low-end device on mount
+    const performanceSettings = getPerformanceSettings();
+    setIsLowEndMode(performanceSettings.tier === 'LOW');
   }, []);
 
   // Mobile: Lock scroll when earth section is 100% visible, unlock when scrolling out
@@ -124,9 +131,55 @@ const App = () => {
   // Cap the animation at the end of section 3
   const MAX_FRAME = TOTAL_ANIMATION_FRAMES;
 
+  // LOW-END MODE: Trigger smooth animation on button click using requestAnimationFrame
+  // Animation ends at pyramid visible state, then scroll takes over for layer control
+  const triggerLowEndAnimation = useCallback(() => {
+    if (lowEndAnimating) return; // Prevent double-click
+    
+    setLowEndAnimating(true);
+    const targetFrame = MAX_FRAME;
+    const animationDuration = 7500; // 7.5 seconds for full animation
+    const startTime = performance.now();
+    
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / animationDuration, 1); // 0 to 1
+      
+      // Use easeOutCubic for smooth deceleration
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const smoothFrame = Math.round(easeProgress * targetFrame);
+      
+      setCurrentFrame(smoothFrame);
+      
+      if (progress < 1) {
+        lowEndAnimationRef.current = requestAnimationFrame(animate);
+      } else {
+        // Animation complete - pyramid is now visible with layers
+        setCurrentFrame(targetFrame); // Ensure we land exactly on target
+        setLowEndAnimating(false);
+        // Don't auto-progress pyramid - let user scroll to control layers
+      }
+    };
+    
+    lowEndAnimationRef.current = requestAnimationFrame(animate);
+  }, [lowEndAnimating, MAX_FRAME]);
+
+  // Cleanup low-end animation on unmount
+  useEffect(() => {
+    return () => {
+      if (lowEndAnimationRef.current) {
+        cancelAnimationFrame(lowEndAnimationRef.current);
+      }
+    };
+  }, []);
+
   // Scroll handler - one tick = one frame
+  // For low-end devices: disabled until animation completes, then enabled for pyramid control only
   // After intro completes (introComplete=true), scroll controls pyramid layers instead
   const handleWheel = useCallback((e) => {
+    // LOW-END: Skip scroll during animation, but allow after animation completes for pyramid control
+    if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
+    
     // On mobile, only capture if scroll is locked for animation
     if (window.innerWidth < 768 && !mobileScrollLockedRef.current) return;
     
@@ -179,7 +232,7 @@ const App = () => {
     setTimeout(() => {
       isScrolling.current = false;
     }, 50);
-  }, [currentFrame, introComplete, MAX_FRAME]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating]);
 
   // Callback when pyramid intro animation completes
   const handleIntroComplete = useCallback(() => {
@@ -197,11 +250,16 @@ const App = () => {
   const TOUCH_THRESHOLD = 30; // Pixels needed to trigger one frame
   
   const handleTouchStart = useCallback((e) => {
+    // LOW-END: Skip during animation, allow after for pyramid control
+    if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
     touchStartY.current = e.touches[0].clientY;
     touchAccumulator.current = 0;
-  }, []);
+  }, [isLowEndMode, lowEndAnimating, currentFrame, MAX_FRAME]);
 
   const handleTouchMove = useCallback((e) => {
+    // LOW-END: Skip during animation, but allow after for pyramid control
+    if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
+    
     // On mobile, only capture if scroll is locked for animation
     if (window.innerWidth < 768 && !mobileScrollLockedRef.current) return;
     
@@ -252,7 +310,7 @@ const App = () => {
       }
       touchAccumulator.current = 0;
     }
-  }, [currentFrame, introComplete, MAX_FRAME]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating]);
 
   // Attach wheel/touch listeners - also needed on mobile when scroll is locked
   useEffect(() => {
@@ -272,10 +330,10 @@ const App = () => {
 
   // Slideshow auto-advance
   useEffect(() => {
-    const slideInterval = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % 6);
-    }, 4000);
-    return () => clearInterval(slideInterval);
+    // const slideInterval = setInterval(() => {
+    //   setCurrentSlide(prev => (prev + 1) % 4);
+    // }, 4000);
+    // return () => clearInterval(slideInterval);
   }, []);
 
   // Derive animation values from currentFrame using section-based timing
@@ -336,7 +394,18 @@ const App = () => {
   // System content: fades in during section 3
   const systemOpacity = section3Progress;
   const systemScale = 0.9 + section3Progress * 0.1;
-  const systemTranslateY = section3Progress * 160; // 10rem = 160px
+  
+  // Device-specific pyramid endpoint adjustment
+  const pyramidOffset = window.innerWidth >= 1280 ? -48 : // Desktop: 3rem = 48px higher
+                        window.innerWidth >= 1024 ? -48 : // Laptop: 3rem = 48px higher
+                        window.innerWidth >= 768 ? -40 : // Tablet: 2.5rem = 40px higher
+                        0; // Mobile: no change
+  
+  const systemTranslateY = section3Progress * 160 + pyramidOffset; // 10rem = 160px
+  
+  // Separate entity offset to counteract the pyramid movement
+  const entityCounterOffset = window.innerWidth >= 1024 ? 16 : // Desktop/Laptop: 1rem = 16px down (counteract pyramid's 3rem move)
+                              0; // Tablet/Mobile: no adjustment needed
   const isSystem = section3Progress > 0;
 
   // Pyramid layer scroll - only active after system is visible
@@ -506,33 +575,43 @@ const App = () => {
               style={{
                 transform: `translateY(calc(${headerY}px - 1.5rem)) scale(${headerScale})`,
                 opacity: headerOpacity,
-                padding: '1.5rem',
-                marginLeft: '3vw'
+                marginTop: window.innerWidth >= 768 ? 'clamp(3rem, 3.5vw, 3.5rem)' : 'clamp(1.75rem, 2.5vw, 2rem)',
+                marginLeft: 'clamp(1rem, 3vw, 2rem)',
+                paddingRight: 'clamp(1rem, 2vw, 1.5rem)',
+                paddingBottom: 'clamp(0.75rem, 1.5vw, 1.5rem)'
               }}
             >
-              <div className="flex items-center" style={{gap: '1rem'}}>
-                <img src="images/landingpage/logo.png" alt="Delta" className="w-full h-full" style={{width: '12.5rem', height: '12.5rem'}} />
-                <div style={{marginLeft: '-1.5rem'}}>
+              <div className="flex items-center" style={{gap: 'clamp(0.75rem, 1.5vw, 1.5rem)'}}>
+                <img 
+                  src="images/landingpage/logo.png" 
+                  alt="Delta" 
+                  style={{
+                    width: 'clamp(4rem, 7vw, 12.5rem)', 
+                    height: 'clamp(4rem, 7vw, 12.5rem)',
+                    flexShrink: 0
+                  }} 
+                />
+                <div style={{marginLeft: 'clamp(-1rem, -1vw, -1.5rem)'}}>
                   <h1 style={{
                     color: '#FFFEF0',
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                    fontSize: '2.25rem',
+                    fontSize: 'clamp(1.2rem, 2vw, 2.25rem)',
                     fontWeight: 600,
                     lineHeight: 0.9,
                     filter: 'brightness(0.9)',
-                    letterSpacing: '0.2em'
+                    letterSpacing: 'clamp(0.1em, 0.15vw, 0.2em)'
                   }}>
                     DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
                   </h1>
-                  <div className="flex gap-2 items-center">
+                  <div className="flex gap-2 items-center" style={{marginTop: 'clamp(0.25rem, 0.5vw, 0.5rem)'}}>
                     <span className="rounded-full bg-green-500 animate-ping" style={{
-                      width: '0.5rem',
-                      height: '0.5rem',
-                      minWidth: '0.5rem',
-                      minHeight: '0.5rem'
+                      width: 'clamp(0.35rem, 0.5vw, 0.5rem)',
+                      height: 'clamp(0.35rem, 0.5vw, 0.5rem)',
+                      minWidth: 'clamp(0.35rem, 0.5vw, 0.5rem)',
+                      minHeight: 'clamp(0.35rem, 0.5vw, 0.5rem)'
                     }}></span>
                     <span className="text-gray-400 tracking-widest" style={{
-                      fontSize: '0.75rem'
+                      fontSize: 'clamp(0.6rem, 0.9vw, 0.85rem)'
                     }}>SCHADUW WERK {'/'}{'/'} V.4.9</span>
                   </div>
                 </div>
@@ -548,38 +627,75 @@ const App = () => {
               <TimeSync isMobile={false} />
             </div>
 
-            {/* --- Scroll Prompt (Desktop) --- */}
+            {/* --- Scroll Prompt (Desktop) OR Start Button (Low-End) --- */}
             <div 
-              className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50 pointer-events-none"
+              className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50"
               style={{
                 bottom: 'calc(20% - 3rem)',
                 opacity: promptOpacity,
                 transform: promptOpacity > 0 ? 'scale(1)' : 'scale(1.5)'
               }}
             >
-              <div className="relative flex flex-col items-center gap-2 bg-black/40 backdrop-blur-md rounded-sm" style={{
-                border: '1px solid rgba(21, 179, 21, 0.4)',
-                padding: '0.625rem 2rem'
-              }}>
-                <span className="tracking-[0.25em] font-bold" style={{
-                  color: 'white', 
-                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                  fontSize: '1rem'
-                }}>SCROLL TO SYNCHRONISE</span>
-                <div className="absolute top-0 left-0 border-t border-l" style={{
-                  width: '0.5rem',
-                  height: '0.5rem',
-                  borderColor: 'rgba(21, 179, 21, 0.4)'
-                }}></div>
-                <div className="absolute bottom-0 right-0 border-b border-r" style={{
-                  width: '0.5rem',
-                  height: '0.5rem',
-                  borderColor: 'rgba(21, 179, 21, 0.4)'
-                }}></div>
-              </div>
-              <div className="flex flex-col items-center gap-2 animate-bounce">
-                <div className="w-6 h-10 border-2 rounded-full flex justify-center pt-2" style={{borderColor: 'rgba(245, 158, 11, 0.5)'}}></div>
-              </div>
+              {/* LOW-END: Show "Start Experience" button instead of scroll prompt */}
+              {isLowEndMode ? (
+                <button
+                  onClick={triggerLowEndAnimation}
+                  disabled={lowEndAnimating}
+                  className="relative flex flex-col items-center gap-2 bg-black/60 backdrop-blur-md rounded-sm cursor-pointer hover:bg-black/80 transition-all duration-300 pointer-events-auto hover:scale-105"
+                  style={{
+                    border: '2px solid rgba(245, 158, 11, 0.7)',
+                    padding: '1rem 3rem',
+                    boxShadow: '0 0 20px rgba(245, 158, 11, 0.3)'
+                  }}
+                >
+                  <span className="tracking-[0.25em] font-bold" style={{
+                    color: lowEndAnimating ? 'rgba(255,255,255,0.5)' : '#f59e0b', 
+                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                    fontSize: '1.1rem'
+                  }}>
+                    {lowEndAnimating ? 'SYNCHRONISING...' : 'START EXPERIENCE'}
+                  </span>
+                  <div className="absolute top-0 left-0 border-t-2 border-l-2" style={{
+                    width: '0.75rem',
+                    height: '0.75rem',
+                    borderColor: 'rgba(245, 158, 11, 0.7)'
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 border-b-2 border-r-2" style={{
+                    width: '0.75rem',
+                    height: '0.75rem',
+                    borderColor: 'rgba(245, 158, 11, 0.7)'
+                  }}></div>
+                </button>
+              ) : (
+                /* NORMAL: Scroll prompt for high/medium-end devices */
+                <>
+                  <div className="relative flex flex-col items-center gap-2 bg-black/40 backdrop-blur-md rounded-sm pointer-events-none" style={{
+                    border: '1px solid rgba(21, 179, 21, 0.4)',
+                    padding: '0.625rem 2rem',
+                    transform: window.innerWidth >= 1280 ? 'scale(1)' : window.innerWidth >= 1024 ? 'scale(0.8)' : window.innerWidth >= 768 ? 'scale(0.7)' : 'scale(1)',
+                    transformOrigin: 'center bottom'
+                  }}>
+                    <span className="tracking-[0.25em] font-bold" style={{
+                      color: 'white', 
+                      fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                      fontSize: '1rem'
+                    }}>{window.innerWidth >= 1024 ? 'SCROLL' : 'SWIPE'} = SYNCHRONISATIE</span>
+                    <div className="absolute top-0 left-0 border-t border-l" style={{
+                      width: '0.5rem',
+                      height: '0.5rem',
+                      borderColor: 'rgba(21, 179, 21, 0.4)'
+                    }}></div>
+                    <div className="absolute bottom-0 right-0 border-b border-r" style={{
+                      width: '0.5rem',
+                      height: '0.5rem',
+                      borderColor: 'rgba(21, 179, 21, 0.4)'
+                    }}></div>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 animate-bounce pointer-events-none">
+                    <div className="w-6 h-10 border-2 rounded-full flex justify-center pt-2" style={{borderColor: 'rgba(245, 158, 11, 0.5)'}}></div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* --- Floating Containers (Orbital View) --- */}
@@ -599,38 +715,40 @@ const App = () => {
                 transform: `scale(${systemScale}) translateY(${systemTranslateY}px)`
               }}
             >
-              <div className={`w-[80vw] h-[80vh] flex flex-col items-center justify-center ${isSystem ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-                
-                {/* Back Button - positioned under the pyramid */}
-                <button 
-                  onClick={handleReset}
-                  className="absolute group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2"
-                  style={{
-                    border: '1px solid rgba(147, 51, 234, 0.3)',
-                    background: 'rgba(10, 5, 16, 0.6)',
-                    bottom: '10rem',
-                    left: '50%',
-                    transform: 'translateX(-50%)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.6)';
-                    e.currentTarget.style.background = 'rgba(147, 51, 234, 0.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.3)';
-                    e.currentTarget.style.background = 'rgba(10, 5, 16, 0.6)';
-                  }}
-                >
-                  <div className="flex items-center justify-center w-5 h-5" style={{color: 'rgba(147, 51, 234, 0.8)'}}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform w-4 h-4">
-                      <path d="M19 12H5M12 19l-7-7 7-7"/>
-                    </svg>
-                  </div>
-                  <span className="tracking-[0.2em] uppercase text-xs" style={{color: 'rgba(255, 254, 240, 0.7)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>ORBIT</span>
-                  <div className="absolute top-0 left-0 w-2 h-2 border-t border-l" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
-                  <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
-                </button>
+              <div className={`w-[80vw] h-[80vh] flex flex-col items-center justify-center ${isSystem ? 'pointer-events-auto' : 'pointer-events-none'}`} style={{transform: `translateY(${entityCounterOffset}px)`}}>
+                {/* Content container - pyramid controls are inside HoloEarth */}
               </div>
+              
+              {/* Back Button - positioned separately from entity transforms */}
+              <button 
+                onClick={handleReset}
+                className="absolute group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2 mb-3"
+                style={{
+                  border: '1px solid rgba(147, 51, 234, 0.3)',
+                  background: 'rgba(10, 5, 16, 0.6)',
+                  bottom: window.innerWidth >= 1280 ? '11rem' : window.innerWidth >= 768 ? '8rem' : '11rem', // Laptop/Tablet: 2rem lower
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  pointerEvents: isSystem ? 'auto' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.6)';
+                  e.currentTarget.style.background = 'rgba(147, 51, 234, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.3)';
+                  e.currentTarget.style.background = 'rgba(10, 5, 16, 0.6)';
+                }}
+              >
+                <div className="flex items-center justify-center w-5 h-5" style={{color: 'rgba(147, 51, 234, 0.8)'}}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform w-4 h-4">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                </div>
+                <span className="tracking-[0.2em] uppercase text-xs" style={{color: 'rgba(255, 254, 240, 0.7)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>DELTAWERKEN</span>
+                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
+                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
+              </button>
             </div>
           </div>
         </>

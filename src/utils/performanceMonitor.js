@@ -37,11 +37,23 @@ export const detectPerformance = () => {
   
   // Low-end device detection - AGGRESSIVE
   // Prioritize GPU type as the main indicator
-  const hasIntegratedGPU = 
-    gpuVendor?.toLowerCase().includes('intel') ||
-    gpuVendor?.toLowerCase().includes('radeon') ||
-    gpuVendor?.toLowerCase().includes('amd') ||
-    gpuVendor?.toLowerCase().includes('uhd');
+  // Be specific about integrated GPUs vs dedicated GPUs
+  const gpuLower = gpuVendor?.toLowerCase() || '';
+  
+  // Intel integrated GPUs (UHD, HD Graphics, Iris, etc.)
+  const hasIntelIntegrated = 
+    (gpuLower.includes('intel') && 
+     (gpuLower.includes('uhd') || 
+      gpuLower.includes('hd graphics') || 
+      gpuLower.includes('iris')));
+  
+  // AMD integrated GPUs (Vega, Radeon Graphics on APUs)
+  // Note: Dedicated Radeon cards (RX, etc.) should NOT be flagged
+  const hasAMDIntegrated = 
+    gpuLower.includes('vega') && gpuLower.includes('graphics') ||
+    (gpuLower.includes('radeon') && gpuLower.includes('graphics') && !gpuLower.includes('rx'));
+  
+  const hasIntegratedGPU = hasIntelIntegrated || hasAMDIntegrated;
   
   const isLowEnd = 
     hasIntegratedGPU || // Integrated GPU = LOW-end (biggest bottleneck)

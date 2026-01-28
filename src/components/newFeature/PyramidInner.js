@@ -34,6 +34,7 @@ const holoFragmentShader = `
   uniform float uTime;
   uniform vec3 uColor;
   uniform float uOpacity;
+  uniform float uExplosionProgress;
   varying vec2 vUv;
   
   void main() {
@@ -41,7 +42,11 @@ const holoFragmentShader = `
     float pulse = smoothstep(0.0, 0.2, 0.1 - abs(fract(uTime * 0.2) - vUv.y));
     float gridX = step(0.97, fract(vUv.x * 20.0));
     float gridY = step(0.97, fract(vUv.y * 20.0));
-    float grid = max(gridX, gridY) * 0.1;
+    
+    // Disable entire grid (both vertical and horizontal lines) once explosion starts
+    float gridMultiplier = uExplosionProgress > 0.05 ? 0.0 : 1.0;
+    float grid = max(gridX, gridY) * 0.1 * gridMultiplier;
+    
     float noise = fract(sin(dot(vUv * uTime, vec2(12.9898, 78.233))) * 43758.5453);
     float flicker = 0.95 + 0.05 * noise;
     float alpha = (scanline * 0.15 + pulse * 0.3 + grid) * flicker;
@@ -52,7 +57,7 @@ const holoFragmentShader = `
 `;
 
 // --- Inner Holographic Effect ---
-const InnerHoloEffect = ({ radiusTop, radiusBottom, height, isGoldMode }) => {
+const InnerHoloEffect = ({ radiusTop, radiusBottom, height, isGoldMode, explosionProgress = 0 }) => {
   const materialRef = useRef(null);
   const color = useMemo(() => new THREE.Color(isGoldMode ? '#fbbf24' : '#5d2e0f'), [isGoldMode]);
 
@@ -60,13 +65,15 @@ const InnerHoloEffect = ({ radiusTop, radiusBottom, height, isGoldMode }) => {
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
       materialRef.current.uniforms.uColor.value.lerp(color, 0.1);
+      materialRef.current.uniforms.uExplosionProgress.value = explosionProgress;
     }
   });
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uColor: { value: new THREE.Color('#5d2e0f') },
-    uOpacity: { value: 1.0 }
+    uOpacity: { value: 1.0 },
+    uExplosionProgress: { value: 0 }
   }), []);
 
   return (
@@ -228,6 +235,7 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
         radiusBottom={radiusBottom * 0.9}
         height={height}
         isGoldMode={isGoldMode}
+        explosionProgress={explosionProgress}
       />
     </group>
   );
@@ -341,7 +349,14 @@ const PyramidInner = ({
 
     // Container float animation (only when active and showing)
     if (containerRef.current) {
-      const floatY = 2.5 + Math.sin(state.clock.elapsedTime) * 0.1;
+      // Device-specific entity Y offset
+      // Desktop/Laptop: 1rem up - 1rem down = 0
+      // Tablet: 0 - 0.5rem down = -0.065
+      const entityYOffset = window.innerWidth >= 1024 ? 0 : // Desktop/Laptop: back to original
+                            window.innerWidth >= 768 ? -0.065 : // Tablet: 0.5rem down
+                            0; // Mobile
+      
+      const floatY = 2.5 + entityYOffset + Math.sin(state.clock.elapsedTime) * 0.1;
       containerRef.current.position.y = floatY;
       containerRef.current.rotation.y += delta * 0.1;
       

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import TechContainer from './TechContainer';
 import { Activity, Database, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -9,6 +9,16 @@ import tattooshopLogo from '../../images/slideshow images/1111logo.png';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 
 const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0 }) => {
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
   // animationProgress goes from 0 to 1 as containers fly away
   // All values in vw/vh for consistent viewport scaling
@@ -34,8 +44,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       <div 
         className="absolute pointer-events-auto"
         style={{
-          top: 'calc(15vh + 2.5rem)',
-          left: 'calc(4.06vw - 2.5rem)',
+          top: windowWidth >= 768 && windowWidth < 1024 ? 'calc(15vh + 2.5rem - 2rem)' : 'calc(15vh + 2.5rem)',
+          left: windowWidth >= 768 && windowWidth < 1024 ? 'calc(4.06vw - 1.5rem)' : 'calc(4.06vw - 2.5rem)',
           minHeight: '32.5vh',
           width: '26vw',
           transform: `translate(${topLeftX}vw, ${topLeftY}vh) scale(${containerScale})`,
@@ -68,13 +78,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               <div style={{ height: '0.1vh', width: '50%', backgroundColor: 'rgba(88, 28, 135, 0.5)', borderRadius: '9999px', overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: '33%', backgroundColor: 'rgb(192, 132, 252)' }} className="animate-pulse"></div>
               </div>
+              {/* Hide secondary text on tablet sizes (768px-1024px) */}
               <div style={{
                 fontFamily: "'Figtree', sans-serif",
                 fontWeight: 400,
                 lineHeight: 1.5,
                 color: '#FFFEF0',
                 fontSize: 'max(13px, 0.7vw)',
-                textAlign: 'center'
+                textAlign: 'center',
+                display: windowWidth >= 768 && windowWidth < 1024 ? 'none' : 'block'
               }}>
                 Man en Vrouw gelijkgesteld <br/> De tuinierder moet zich overgeven aan en overkomen van de doorschijnende passie <br />
               </div>
@@ -106,7 +118,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         className="absolute pointer-events-auto"
         style={{
           top: '12.09vh',
-          right: '3.7vw',
+          right: windowWidth >= 768 && windowWidth < 1024 ? 'calc(3.7vw + 2rem)' : windowWidth >= 1024 && windowWidth < 1280 ? 'calc(3.7vw + 1.5rem)' : '3.7vw',
           width: '19.01vw',
           height: '21.13vh',
           transform: `translate(${topRightX}vw, ${topRightY}vh) scale(${containerScale})`,
@@ -150,7 +162,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           bottom: '15vh',
           right: '3.56vw',
           width: '22.88vw',
-          height: '39vh',
+          height: windowWidth >= 768 && windowWidth < 1024 ? 'calc(29.5vh * 1.3)' : windowWidth >= 1024 && windowWidth < 1280 ? 'calc(39vh * 1.2)' : '39vh',
           transform: `translate(${bottomRightX}vw, ${bottomRightY}vh) scale(${containerScale})`,
           opacity: mounted ? containerOpacity : 0
         }}
@@ -176,7 +188,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               },
               {
                 id: 'tattooshop',
-                name: 'TATTOO SHOP',
+                name: 'ELEVEN ELEVEN TATTOOS',
                 tagline: 'Artistic Expression & Body Art',
                 description: 'A premier tattoo studio specializing in custom designs, traditional and modern styles.',
                 accentColor: '#ec4899',
@@ -194,7 +206,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             return (
               <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '1vw' }}>
                 {/* Slideshow Area */}
-                <div className="w-full relative overflow-hidden rounded-sm bg-purple-900/20 border border-purple-500/20" style={{ height: 'calc(100% - 2vw)', marginBottom: '0.8vw' }}>
+                <div className="w-full relative overflow-visible rounded-sm border border-purple-500/20" style={{ 
+                  height: 'calc(100% - 2vw)', 
+                  marginBottom: '0.8vw'
+                }}>
                   {/* Slides */}
                   {gardensData.map((garden, i) => {
                     let translateX = 0;
@@ -210,8 +225,9 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         style={{transform: `translateX(${translateX}%)`}}
                       >
                         {/* Garden Card Content */}
-                        <div className="w-full h-[70%] flex flex-col items-center justify-center relative" style={{background: `linear-gradient(135deg, ${garden.accentColor}20, ${garden.accentColor}10)`}}>
-                          <div className="absolute inset-0 opacity-30" style={{backgroundImage: `radial-gradient(circle at 20% 50%, ${garden.accentColor}40 0%, transparent 50%)`}}></div>
+                        <div className="w-full flex flex-col items-center justify-center relative" style={{
+                          height: windowWidth >= 1024 ? '70%' : '70%'
+                        }}>
                           
                           {/* Logo Image */}
                           <img 
@@ -219,43 +235,140 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                             alt={`${garden.name} logo`}
                             className="object-contain"
                             style={{
-                              width: '7vw',
-                              height: '7vw',
+                              width: (() => {
+                                const baseSize = 7;
+                                let scale = 1;
+                                
+                                if (windowWidth >= 1280) {
+                                  // Desktop
+                                  if (garden.id === 'code49') scale = 1.2;
+                                  else if (garden.id === 'tattooshop') scale = 2.5;
+                                  else if (garden.id === 'rengifoods') scale = 1.25;
+                                  else if (garden.id === 'karman') scale = 1.2;
+                                } else if (windowWidth >= 1024) {
+                                  // Laptop
+                                  if (garden.id === 'tattooshop') scale = 2.2;
+                                  else if (garden.id === 'rengifoods') scale = 1.5;
+                                  else if (garden.id === 'code49') scale = 1.45;
+                                  else if (garden.id === 'karman') scale = 1.25;
+                                } else if (windowWidth >= 768) {
+                                  // Tablet
+                                  if (garden.id === 'rengifoods') scale = 1.2;
+                                  else if (garden.id === 'karman') scale = 1.5;
+                                  else if (garden.id === 'code49') scale = 1.5;
+                                  else if (garden.id === 'tattooshop') scale = 3;
+                                }
+                                
+                                return `calc(${baseSize}vw * ${scale})`;
+                              })(),
+                              height: (() => {
+                                const baseSize = 7;
+                                let scale = 1;
+                                
+                                if (windowWidth >= 1280) {
+                                  // Desktop
+                                  if (garden.id === 'code49') scale = 1.2;
+                                  else if (garden.id === 'tattooshop') scale = 2.5;
+                                  else if (garden.id === 'rengifoods') scale = 1.25;
+                                  else if (garden.id === 'karman') scale = 1.15;
+                                } else if (windowWidth >= 1024) {
+                                  // Laptop
+                                  if (garden.id === 'tattooshop') scale = 2.2;
+                                  else if (garden.id === 'rengifoods') scale = 1.5;
+                                  else if (garden.id === 'code49') scale = 1.45;
+                                  else if (garden.id === 'karman') scale = 1.25;
+                                } else if (windowWidth >= 768) {
+                                  // Tablet
+                                  if (garden.id === 'rengifoods') scale = 1.2;
+                                  else if (garden.id === 'karman') scale = 1.5;
+                                  else if (garden.id === 'code49') scale = 1.5;
+                                  else if (garden.id === 'tattooshop') scale = 3;
+                                }
+                                
+                                return `calc(${baseSize}vw * ${scale})`;
+                              })(),
                               marginBottom: '0.5vw',
+                               transform: (() => {
+                                 if (windowWidth >= 1280) {
+                                   // Desktop
+                                   if (garden.id === 'tattooshop') return 'translateY(-4rem)';
+                                   else if (garden.id === 'karman') return 'translateY(-1rem)';
+                                   else if (garden.id === 'rengifoods') return 'translateY(-1.2rem)';
+                                   else if (garden.id === 'code49') return 'translateY(-1rem)';
+                                   return 'translateY(0)';
+                                } else if (windowWidth >= 1024) {
+                                  // Laptop
+                                  if (garden.id === 'tattooshop') return 'translateY(-3.5rem)';
+                                  else if (garden.id === 'karman') return 'translateY(-0.8rem)';
+                                  else if (garden.id === 'code49') return 'translateY(-0.6rem)';
+                                  else if (garden.id === 'rengifoods') return 'translateY(-0.8rem)';
+                                  return 'translateY(0)';
+                                } else if (windowWidth >= 768) {
+                                  // Tablet
+                                  return 'translateY(0)';
+                                }
+                              })(),
                               filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))'
                             }}
                           />
-                          
-                          {/* Header */}
-                          <div className="text-center z-10">
-                            <div style={{
-                              fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                              fontWeight: 600,
-                              fontSize: 'max(18px, 0.96vw)',
-                              color: garden.accentColor,
-                              letterSpacing: '0.1em',
-                              marginBottom: '0.2vw'
-                            }}>{garden.name}</div>
-                            <div style={{
-                              fontFamily: "'Figtree', sans-serif",
-                              fontWeight: 400,
-                              lineHeight: 1.5,
-                              fontSize: 'max(10px, 0.5vw)',
-                              color: '#FFFEF0',
-                              letterSpacing: '0.05em'
-                            }}>{garden.tagline}</div>
+                        </div>
+                        
+                        {/* Header - Positioned between logo and description */}
+                        <div className="text-center absolute" style={{
+                          top: windowWidth >= 768 && windowWidth < 1024 ? 'auto' : windowWidth >= 1024 && windowWidth < 1280 ? 'auto' : '70%',
+                          bottom: windowWidth >= 768 && windowWidth < 1024 ? '-0.5vw' : windowWidth >= 1024 && windowWidth < 1280 ? '6.5vw' : 'auto',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          paddingBottom: windowWidth >= 768 && windowWidth < 1024 ? '0.6vw' : '0.4vw',
+                          paddingTop: windowWidth >= 768 && windowWidth < 1024 ? '0.4vw' : '0',
+                          marginTop: windowWidth >= 1280 ? '-2rem' : '0',
+                          zIndex: 10,
+                          display: windowWidth < 768 ? 'none' : 'block'
+                        }}>
+                          <div style={{
+                            fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                            fontWeight: 600,
+                            fontSize: windowWidth >= 768 && windowWidth < 1024 ? 'clamp(10px, 1.8vw, 16px)' : 'max(18px, 0.96vw)',
+                            color: garden.accentColor,
+                            letterSpacing: '0.1em',
+                            marginBottom: '0.2vw',
+                            whiteSpace: windowWidth >= 1024 ? 'nowrap' : 'normal',
+                            maxWidth: windowWidth < 1024 ? '90%' : 'none'
+                          }}>
+                            {(() => {
+                              // Tablet: show only "TATTOOS"
+                              if (garden.id === 'tattooshop' && windowWidth >= 768 && windowWidth < 1024) {
+                                return 'TATTOOS';
+                              }
+                              // Tablet: show only "RENGI"
+                              if (garden.id === 'rengifoods' && windowWidth >= 768 && windowWidth < 1024) {
+                                return 'RENGI';
+                              }
+                              // Laptop: show only "TATTOOS" (remove ELEVEN ELEVEN)
+                              if (garden.id === 'tattooshop' && windowWidth >= 1024 && windowWidth < 1280) {
+                                return 'TATTOOS';
+                              }
+                              return garden.name;
+                            })()}
                           </div>
                         </div>
                         
                         {/* Description */}
-                        <div className="h-[30%] bg-black/40 backdrop-blur-sm flex items-center justify-center border-t border-purple-500/20" style={{ padding: '0.4vw 0.8vw' }}>
+                        <div className="flex flex-col items-center justify-center relative" style={{ 
+                          height: windowWidth >= 1024 ? '30%' : '30%',
+                          padding: '0.4vw 0.8vw',
+                          display: windowWidth >= 1024 ? 'flex' : 'none'
+                        }}>
                           <span style={{
                             fontFamily: "'Figtree', sans-serif",
                             fontWeight: 400,
                             lineHeight: 1.5,
                             color: '#FFFEF0',
-                            fontSize: 'max(10px, 0.5vw)',
-                            textAlign: 'center'
+                            fontSize: 'max(13px, 0.7vw)',
+                            textAlign: 'center',
+                            backgroundColor: 'rgb(25, 5, 41)',
+                            padding: '0.4vw 0.8vw',
+                            borderRadius: '0.2vw'
                           }}>
                             {garden.description}
                           </span>
@@ -324,8 +437,16 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       <div 
         className="absolute pointer-events-auto"
         style={{
-          bottom: 'calc(6vh + 8rem)',
-          left: 'calc(7.5vw + 4.5rem)',
+          bottom: window.innerWidth >= 768 && window.innerWidth < 1024 
+            ? 'calc(6vh + 8rem - 2rem)' 
+            : window.innerWidth >= 1100 && window.innerWidth <= 1300 && window.innerHeight >= 650 && window.innerHeight <= 800 
+            ? 'calc(6vh + 8rem - 3rem)' 
+            : 'calc(6vh + 8rem)',
+          left: window.innerWidth >= 768 && window.innerWidth < 1024 
+            ? 'calc(7.5vw + 4.5rem - 4rem - 3rem)' 
+            : window.innerWidth >= 1100 && window.innerWidth <= 1300 && window.innerHeight >= 650 && window.innerHeight <= 800 
+            ? 'calc(7.5vw + 4.5rem + -3rem)' 
+            : 'calc(7.5vw + 4.5rem)',
           width: '18.25vw',
           height: 'auto',
           maxHeight: '18vh',

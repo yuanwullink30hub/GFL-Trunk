@@ -135,7 +135,7 @@ export const createAdaptiveRAFThrottle = (callback) => {
   let skipFrames = 0;
 
   // LOW tier: skip every 2nd frame (30fps instead of 60fps)
-  // MEDIUM tier: skip every 3rd frame (45fps instead of 60fps)
+  // MEDIUM tier: skip every 1 frame (45fps instead of 60fps)
   // HIGH tier: no skipping (60fps)
   const framesToSkip = settings.tier === 'LOW' ? 2 : settings.tier === 'MEDIUM' ? 1 : 0;
 

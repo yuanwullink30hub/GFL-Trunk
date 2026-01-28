@@ -487,7 +487,7 @@ const HoloEarthSphere = ({
       {/* Outer Holographic Crust - renders in front of pyramid during explosion */}
       <Sphere 
         ref={groupRef} 
-        args={[2.5, 128, 128]} 
+        args={[2.5, getPerformanceSettings().tier === 'LOW' ? 32 : 128, getPerformanceSettings().tier === 'LOW' ? 32 : 128]} 
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
@@ -507,35 +507,37 @@ const HoloEarthSphere = ({
         />
       )}
 
-      {/* Atmospheric Glow - hidden after frame 15 */}
-      <Sphere args={[3.2, 32, 32]}>
-        <shaderMaterial
-          transparent={true}
-          side={THREE.BackSide}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-          uniforms={{
-            uColor: { value: new THREE.Color('#360642') }, 
-            uIntensity: { value: explosionProgress > 0.4 ? 0 : 0.05 }
-          }}
-          vertexShader={`
-            varying vec3 vNormal;
-            void main() {
-              vNormal = normalize(normalMatrix * normal);
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-          `}
-          fragmentShader={`
-            uniform vec3 uColor;
-            uniform float uIntensity;
-            varying vec3 vNormal;
-            void main() {
-              float intensity = pow(0.85 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 6.0);
-              gl_FragColor = vec4(uColor, intensity * uIntensity);
-            }
-          `}
-        />
-      </Sphere>
+      {/* Atmospheric Glow - hidden after frame 15, disabled on low-end for performance */}
+      {getPerformanceSettings().tier !== 'LOW' && (
+        <Sphere args={[3.2, 32, 32]}>
+          <shaderMaterial
+            transparent={true}
+            side={THREE.BackSide}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            uniforms={{
+              uColor: { value: new THREE.Color('#360642') }, 
+              uIntensity: { value: explosionProgress > 0.4 ? 0 : 0.05 }
+            }}
+            vertexShader={`
+              varying vec3 vNormal;
+              void main() {
+                vNormal = normalize(normalMatrix * normal);
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              }
+            `}
+            fragmentShader={`
+              uniform vec3 uColor;
+              uniform float uIntensity;
+              varying vec3 vNormal;
+              void main() {
+                float intensity = pow(0.85 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 6.0);
+                gl_FragColor = vec4(uColor, intensity * uIntensity);
+              }
+            `}
+          />
+        </Sphere>
+      )}
     </group>
   );
 };
@@ -579,7 +581,7 @@ const HoloEarth = ({
         <Suspense fallback={null}>
           <ambientLight intensity={0.2} />
           <pointLight position={[10, 10, 10]} intensity={1.5} color="#FFD700" />
-          <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />
+          {getPerformanceSettings().tier !== 'LOW' && <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />}
           <HoloEarthSphere 
             exploding={exploding} 
             explosionProgress={explosionProgress}

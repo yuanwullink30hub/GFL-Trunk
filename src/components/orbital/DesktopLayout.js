@@ -22,21 +22,21 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
   // animationProgress goes from 0 to 1 as containers fly away
   // All values in vw/vh for consistent viewport scaling
-  const containerOpacity = Math.max(0, 1 - animationProgress * 2); // Fades out quickly
+  const containerOpacity = Math.max(0, 1 - animationProgress * 3.5); // Fades out faster
   
   // Each container flies in different direction (converted to vw/vh from 2560x1440 reference)
   // 250px @ 2560w = 9.77vw, 200px @ 1440h = 13.89vh
-  const topLeftX = -9.77 * animationProgress;      // vw
-  const topLeftY = -13.89 * animationProgress;     // vh
-  const topRightX = 9.77 * animationProgress;      // vw
-  const topRightY = -13.89 * animationProgress;    // vh
-  const bottomRightX = 9.77 * animationProgress;   // vw
-  const bottomRightY = 13.89 * animationProgress;  // vh
-  const bottomLeftX = -9.77 * animationProgress;   // vw
-  const bottomLeftY = 13.89 * animationProgress;   // vh
-  const bottomCenterY = 17.36 * animationProgress; // vh (250px @ 1440h)
+  const topLeftX = -9.77 * animationProgress * 1.5;      // vw - faster exit
+  const topLeftY = -13.89 * animationProgress * 1.5;     // vh
+  const topRightX = 9.77 * animationProgress * 1.5;      // vw
+  const topRightY = -13.89 * animationProgress * 1.5;    // vh
+  const bottomRightX = 9.77 * animationProgress * 1.5;   // vw
+  const bottomRightY = 13.89 * animationProgress * 1.5;  // vh
+  const bottomLeftX = -9.77 * animationProgress * 1.5;   // vw
+  const bottomLeftY = 13.89 * animationProgress * 1.5;   // vh - faster exit
+  const bottomCenterY = 17.36 * animationProgress * 1.5; // vh - faster exit (250px @ 1440h)
   
-  const containerScale = 1 - (0.25 * animationProgress);
+  const containerScale = 1 - (0.35 * animationProgress); // Shrink faster too
 
   return (
     <>

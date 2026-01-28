@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import HoloEarth from './components/orbital/HoloEarth';
 import DesktopLayout from './components/orbital/DesktopLayout';
 import MobileLayout from './components/orbital/MobileLayout';
+import HoloLabel from './components/newFeature/HoloLabel';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 
 // Mobile detection hook
@@ -55,10 +56,11 @@ const TOTAL_FRAMES = 180; // Total animation set points (more frames = smoother)
 // ANIMATION SECTION CONFIGURATION
 // Adjust these values to control scroll timing for each phase
 // ============================================
-const SECTION_1_FRAMES = 6;   // Scroll prompt disappears
-const SECTION_2_FRAMES = 30;  // Earth explosion
+const SCROLL_BUTTON_FRAMES = 3; // Scroll button disappears (first 3 frames)
+const SECTION_1_FRAMES = 3;   // Pre-explosion phase (button gone)
+const SECTION_2_FRAMES = 33;  // Earth explosion (30 + 3 extra for smoother animation)
 const HEADER_START_FRAME = 9; // Header/containers start vanishing after this frame
-const SECTION_3_FRAMES = 12;  // Pyramid center to bottom (system visible)
+const SECTION_3_FRAMES = 13;  // Pyramid center to bottom (system visible)
 // ============================================
 
 const App = () => {
@@ -244,6 +246,11 @@ const App = () => {
     setLayerState(state);
   }, []);
 
+  // Trigger gold mode from DOM labels (dispatches window event to PyramidInner)
+  const triggerGoldMode = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('triggerGoldMode'));
+  }, []);
+
   // Touch handling for mobile
   const touchStartY = useRef(0);
   const touchAccumulator = useRef(0);
@@ -350,8 +357,9 @@ const App = () => {
   // SECTION 1: Scroll prompt disappears (0 to section1End)
   const section1Progress = Math.min(1, Math.max(0, currentFrame / section1End));
   
-  // Scroll prompt: fades during section 1
-  const promptOpacity = Math.max(0, 1 - section1Progress);
+  // Scroll button: fades in first 3 frames (faster than section 1)
+  const buttonFadeProgress = Math.min(1, Math.max(0, currentFrame / SCROLL_BUTTON_FRAMES));
+  const promptOpacity = Math.max(0, 1 - buttonFadeProgress);
   
   // Earth starts exploding right after section 1
   const isExploding = currentFrame >= section1End;
@@ -573,7 +581,7 @@ const App = () => {
             <header 
               className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-auto"
               style={{
-                transform: `translateY(calc(${headerY}px - 1.5rem)) scale(${headerScale})`,
+                transform: `translateY(calc(${headerY * 2.5}px - 1.5rem)) scale(${headerScale})`,
                 opacity: headerOpacity,
                 marginTop: window.innerWidth >= 768 ? 'clamp(3rem, 3.5vw, 3.5rem)' : 'clamp(1.75rem, 2.5vw, 2rem)',
                 marginLeft: 'clamp(1rem, 3vw, 2rem)',
@@ -716,40 +724,163 @@ const App = () => {
               }}
             >
               <div className={`w-[80vw] h-[80vh] flex flex-col items-center justify-center ${isSystem ? 'pointer-events-auto' : 'pointer-events-none'}`} style={{transform: `translateY(${entityCounterOffset}px)`}}>
-                {/* Content container - pyramid controls are inside HoloEarth */}
+                {/* Pyramid Layer Labels are rendered as static DOM elements */}
               </div>
-              
-              {/* Back Button - positioned separately from entity transforms */}
-              <button 
-                onClick={handleReset}
-                className="absolute group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2 mb-3"
-                style={{
-                  border: '1px solid rgba(147, 51, 234, 0.3)',
-                  background: 'rgba(10, 5, 16, 0.6)',
-                  bottom: window.innerWidth >= 1280 ? '11rem' : window.innerWidth >= 768 ? '8rem' : '11rem', // Laptop/Tablet: 2rem lower
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  pointerEvents: isSystem ? 'auto' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.6)';
-                  e.currentTarget.style.background = 'rgba(147, 51, 234, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.3)';
-                  e.currentTarget.style.background = 'rgba(10, 5, 16, 0.6)';
-                }}
-              >
-                <div className="flex items-center justify-center w-5 h-5" style={{color: 'rgba(147, 51, 234, 0.8)'}}>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform w-4 h-4">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
-                  </svg>
-                </div>
-                <span className="tracking-[0.2em] uppercase text-xs" style={{color: 'rgba(255, 254, 240, 0.7)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>DELTAWERKEN</span>
-                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
-                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
-              </button>
             </div>
+            
+            {/* === STATIC PYRAMID LAYER LABELS === */}
+            {/* These are completely static DOM elements - not affected by 3D transforms */}
+            {isSystem && (
+              <>
+                {/* Layer 0 - Bottom Right */}
+                <div 
+                  className="absolute pointer-events-auto transition-opacity duration-300"
+                  style={{
+                    right: window.innerWidth >= 1280 ? '8%' : window.innerWidth >= 768 ? '5%' : '3%',
+                    bottom: window.innerWidth >= 1280 ? 'calc(22% - 10rem)' : window.innerWidth >= 768 ? 'calc(20% - 7.5rem)' : 'calc(18% - 4rem)',
+                    opacity: (layerState.completedLayerIndex >= 0 ? 1 : 0) * systemOpacity,
+                    visibility: layerState.completedLayerIndex >= 0 ? 'visible' : 'hidden',
+                    transform: `scale(${(window.innerWidth >= 1280 ? 1.3 : window.innerWidth >= 768 ? 0.55 : 0.45) * systemScale}) translateY(${-systemTranslateY * 0.5}px)`,
+                    transformOrigin: 'right center',
+                    zIndex: 100
+                  }}
+                >
+                  <HoloLabel
+                    layerIndex={0}
+                    showButton={layerState.completedLayerIndex === 0 && !layerState.isIntroActive}
+                    isLast={false}
+                    alignment="right"
+                    onSend={() => {}}
+                    isSent={layerState.isGoldMode}
+                  />
+                </div>
+                
+                {/* Layer 1 - Bottom Left, slightly higher */}
+                <div 
+                  className="absolute pointer-events-auto transition-opacity duration-300"
+                  style={{
+                    left: window.innerWidth >= 1280 ? '8%' : window.innerWidth >= 768 ? '5%' : '3%',
+                    bottom: window.innerWidth >= 1280 ? 'calc(32% - 10rem)' : window.innerWidth >= 768 ? 'calc(28% - 7.5rem)' : 'calc(25% - 4rem)',
+                    opacity: (layerState.completedLayerIndex >= 1 ? 1 : 0) * systemOpacity,
+                    visibility: layerState.completedLayerIndex >= 1 ? 'visible' : 'hidden',
+                    transform: `scale(${(window.innerWidth >= 1280 ? 1.3 : window.innerWidth >= 768 ? 0.55 : 0.45) * systemScale}) translateY(${-systemTranslateY * 0.5}px)`,
+                    transformOrigin: 'left center',
+                    zIndex: 101
+                  }}
+                >
+                  <HoloLabel
+                    layerIndex={1}
+                    showButton={layerState.completedLayerIndex === 1 && !layerState.isIntroActive}
+                    isLast={false}
+                    alignment="left"
+                    onSend={() => {}}
+                    isSent={layerState.isGoldMode}
+                  />
+                </div>
+                
+                {/* Layer 2 - Right side, higher */}
+                <div 
+                  className="absolute pointer-events-auto transition-opacity duration-300"
+                  style={{
+                    right: window.innerWidth >= 1280 ? '8%' : window.innerWidth >= 768 ? '5%' : '3%',
+                    bottom: window.innerWidth >= 1280 ? 'calc(42% - 10rem)' : window.innerWidth >= 768 ? 'calc(36% - 7.5rem)' : 'calc(32% - 4rem)',
+                    opacity: (layerState.completedLayerIndex >= 2 ? 1 : 0) * systemOpacity,
+                    visibility: layerState.completedLayerIndex >= 2 ? 'visible' : 'hidden',
+                    transform: `scale(${(window.innerWidth >= 1280 ? 1.3 : window.innerWidth >= 768 ? 0.55 : 0.45) * systemScale}) translateY(${-systemTranslateY * 0.5}px)`,
+                    transformOrigin: 'right center',
+                    zIndex: 102
+                  }}
+                >
+                  <HoloLabel
+                    layerIndex={2}
+                    showButton={layerState.completedLayerIndex === 2 && !layerState.isIntroActive}
+                    isLast={false}
+                    alignment="right"
+                    onSend={() => {}}
+                    isSent={layerState.isGoldMode}
+                  />
+                </div>
+                
+                {/* Layer 3 - Left side, higher */}
+                <div 
+                  className="absolute pointer-events-auto transition-opacity duration-300"
+                  style={{
+                    left: window.innerWidth >= 1280 ? '8%' : window.innerWidth >= 768 ? '5%' : '3%',
+                    bottom: window.innerWidth >= 1280 ? 'calc(52% - 10rem)' : window.innerWidth >= 768 ? 'calc(44% - 7.5rem)' : 'calc(39% - 4rem)',
+                    opacity: (layerState.completedLayerIndex >= 3 ? 1 : 0) * systemOpacity,
+                    visibility: layerState.completedLayerIndex >= 3 ? 'visible' : 'hidden',
+                    transform: `scale(${(window.innerWidth >= 1280 ? 1.3 : window.innerWidth >= 768 ? 0.55 : 0.45) * systemScale}) translateY(${-systemTranslateY * 0.5}px)`,
+                    transformOrigin: 'left center',
+                    zIndex: 103
+                  }}
+                >
+                  <HoloLabel
+                    layerIndex={3}
+                    showButton={layerState.completedLayerIndex === 3 && !layerState.isIntroActive}
+                    isLast={false}
+                    alignment="left"
+                    onSend={() => {}}
+                    isSent={layerState.isGoldMode}
+                  />
+                </div>
+                
+                {/* Layer 4 - Right side, near top (FINAL LAYER) */}
+                <div 
+                  className="absolute pointer-events-auto transition-opacity duration-300"
+                  style={{
+                    right: window.innerWidth >= 1280 ? '8%' : window.innerWidth >= 768 ? '5%' : '3%',
+                    bottom: window.innerWidth >= 1280 ? 'calc(62% - 10rem)' : window.innerWidth >= 768 ? 'calc(52% - 7.5rem)' : 'calc(46% - 4rem)',
+                    opacity: (layerState.completedLayerIndex >= 4 ? 1 : 0) * systemOpacity,
+                    visibility: layerState.completedLayerIndex >= 4 ? 'visible' : 'hidden',
+                    transform: `scale(${(window.innerWidth >= 1280 ? 1.3 : window.innerWidth >= 768 ? 0.55 : 0.45) * systemScale}) translateY(${-systemTranslateY * 0.5}px)`,
+                    transformOrigin: 'right center',
+                    zIndex: 104
+                  }}
+                >
+                  <HoloLabel
+                    layerIndex={4}
+                    showButton={layerState.completedLayerIndex === 4 && !layerState.isIntroActive}
+                    isLast={true}
+                    alignment="right"
+                    onSend={triggerGoldMode}
+                    isSent={layerState.isGoldMode}
+                  />
+                </div>
+              </>
+            )}
+              
+            {/* Back Button - positioned separately from entity transforms */}
+            <button 
+              onClick={handleReset}
+              className="absolute group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2 mb-3"
+              style={{
+                border: '1px solid rgba(147, 51, 234, 0.3)',
+                background: 'rgba(10, 5, 16, 0.6)',
+                bottom: window.innerWidth >= 1280 ? '2rem' : window.innerWidth >= 768 ? '0.5rem' : '7rem', // Laptop/Tablet: 2rem lower
+                left: '50%',
+                transform: 'translateX(-50%)',
+                pointerEvents: isSystem ? 'auto' : 'none',
+                opacity: isSystem ? 1 : 0,
+                visibility: isSystem ? 'visible' : 'hidden'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.6)';
+                e.currentTarget.style.background = 'rgba(147, 51, 234, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.3)';
+                e.currentTarget.style.background = 'rgba(10, 5, 16, 0.6)';
+              }}
+            >
+              <div className="flex items-center justify-center w-5 h-5" style={{color: 'rgba(147, 51, 234, 0.8)'}}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform w-4 h-4">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+              </div>
+              <span className="tracking-[0.2em] uppercase text-xs" style={{color: 'rgba(255, 254, 240, 0.7)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>DELTAWERKEN</span>
+              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
+              <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
+            </button>
           </div>
         </>
       )}
@@ -774,7 +905,7 @@ const App = () => {
         className="fixed bottom-4 right-4 z-50 text-xs font-mono pointer-events-none"
         style={{ color: 'rgba(245, 158, 11, 0.6)' }}
       >
-        Frame: {currentFrame + 1}/{TOTAL_FRAMES}
+        Frame: {currentFrame}/{TOTAL_ANIMATION_FRAMES}
       </div>
     </main>
   );

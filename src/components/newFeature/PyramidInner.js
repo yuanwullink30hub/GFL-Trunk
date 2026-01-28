@@ -344,8 +344,6 @@ const PyramidInner = ({
       // Active mode: independent slow rotation
       groupRef.current.rotation.y += delta * 0.2;
     }
-    
-    // Labels are rendered outside the rotating group - no counter-rotation needed
 
     // Container float animation (only when active and showing)
     if (containerRef.current) {
@@ -526,7 +524,7 @@ const PyramidInner = ({
         })}
       </group>
 
-      {/* Labels are now rendered as pure DOM in App.js - no 3D Html components */}
+      {/* Labels are now rendered as pure DOM elements in App.js for completely static positioning */}
 
       {/* Floating Container - only when showLabels */}
       {showLabels && (

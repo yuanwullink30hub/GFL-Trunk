@@ -406,4 +406,4 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
   return null;
 };
 
-export default MobileLayout;
+export default React.memo(MobileLayout);

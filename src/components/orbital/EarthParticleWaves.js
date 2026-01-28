@@ -274,4 +274,4 @@ const EarthParticleWaves = ({
   );
 };
 
-export default EarthParticleWaves;
+export default React.memo(EarthParticleWaves);

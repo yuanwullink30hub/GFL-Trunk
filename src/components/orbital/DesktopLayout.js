@@ -425,4 +425,4 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   );
 };
 
-export default DesktopLayout;
+export default React.memo(DesktopLayout);

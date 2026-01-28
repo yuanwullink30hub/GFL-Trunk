@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
 import { Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import { MotionPredictor } from '../../utils/MotionPredictor';
+import { getPerformanceSettings } from '../../utils/performanceMonitor';
 import PyramidInner from '../newFeature/PyramidInner';
 import EarthParticleWaves from './EarthParticleWaves';
 
@@ -17,7 +18,8 @@ const HolographicShaderMaterial = {
     uColorRim: { value: new THREE.Color('#1a0320') },    // Dark Purple Glow
     uColorBorder: { value: new THREE.Color('#FFD700') }, // Bright Gold
     uColorBorderDark: { value: new THREE.Color('#2c290e') }, // Dark Brown for post-frame 9
-    uMap: { value: null }, 
+    uMap: { value: null },
+    uVoronoiQuality: { value: 1.0 }, // Performance-based quality setting
   },
   vertexShader: `
     varying vec3 vNormal;
@@ -29,6 +31,7 @@ const HolographicShaderMaterial = {
 
     uniform float uExplode;
     uniform float uTime;
+    uniform float uVoronoiQuality;
 
     // Hash function for chunk randomization
     vec3 hash33(vec3 p) {
@@ -38,15 +41,20 @@ const HolographicShaderMaterial = {
     }
 
     // Voronoi for chunk generation - with dynamic frequency
+    // Optimized: Fewer iterations on low-end devices
     vec4 voronoi(in vec3 x, float freq) {
       vec3 scaledX = x * freq;
       vec3 n = floor(scaledX);
       vec3 f = fract(scaledX);
       float m_dist = 100.0;
       vec3 m_center = vec3(0.0);
-      for(int k=-1; k<=1; k++)
-      for(int j=-1; j<=1; j++)
-      for(int i=-1; i<=1; i++) {
+      
+      // Reduce iterations on low-end devices
+      int maxIter = uVoronoiQuality > 0.5 ? 1 : 0; // Only nearest neighbor on low-end
+      
+      for(int k=-maxIter; k<=maxIter; k++)
+      for(int j=-maxIter; j<=maxIter; j++)
+      for(int i=-maxIter; i<=maxIter; i++) {
         vec3 g = vec3(float(i),float(j),float(k));
         vec3 p = hash33(n + g);
         vec3 diff = g + p - f;
@@ -70,11 +78,11 @@ const HolographicShaderMaterial = {
         // Normalized explosion progress (0-1)
         float normalizedExp = uExplode / 25.0;
         
-        // === PROGRESSIVE CHUNK BREAKING ===
+        // === PROGRESSIVE CHUNK BREAKING (OPTIMIZED) ===
         // Chunks shatter into tiny pieces very quickly
-        // Start with medium chunks (freq 2.5), rapidly break into tiny fragments (freq 12.0)
+        // Reduced max frequency on low-end devices to reduce shader cost
         float baseFreq = 2.5;
-        float maxFreq = 12.0;
+        float maxFreq = mix(8.0, 12.0, uVoronoiQuality); // 8.0 on low-end, 12.0 on high-end
         // Fast exponential-like transition - by frame 10 (0.22) already at high freq
         float freqProgress = smoothstep(0.0, 0.2, normalizedExp) * 0.7 + smoothstep(0.1, 0.35, normalizedExp) * 0.3;
         float frequency = baseFreq + (maxFreq - baseFreq) * freqProgress;
@@ -311,6 +319,9 @@ const HoloEarthSphere = ({
   const scale = isMobile ? baseScale * 1.15 : baseScale;
 
   const material = useMemo(() => {
+    const performanceSettings = getPerformanceSettings();
+    const voronoiQuality = performanceSettings.tier === 'HIGH' ? 1.0 : 0.5;
+    
     const mat = new THREE.ShaderMaterial({
       uniforms: THREE.UniformsUtils.clone(HolographicShaderMaterial.uniforms),
       vertexShader: HolographicShaderMaterial.vertexShader,
@@ -321,6 +332,10 @@ const HoloEarthSphere = ({
       depthWrite: false,
       depthTest: false, // Render on top of pyramid during explosion
     });
+    
+    // Set performance-based uniforms
+    mat.uniforms.uVoronoiQuality.value = voronoiQuality;
+    
     return mat;
   }, []);
 
@@ -524,6 +539,8 @@ const HoloEarth = ({
   onIntroComplete = () => {},
   onLayerStateChange = () => {}
 }) => {
+  const performanceSettings = getPerformanceSettings();
+  
   return (
     <div 
       className={`absolute inset-0 ${className || ''}`}
@@ -536,13 +553,15 @@ const HoloEarth = ({
         camera={{ position: [0, 0, 8], fov: 40 }}
         gl={{ 
           alpha: true, 
-          antialias: true,
+          antialias: false, // Disable for better performance, we have post-processing
           powerPreference: 'high-performance',
           preserveDrawingBuffer: false,
           depth: true,
-          stencil: false
+          stencil: false,
+          precision: 'mediump', // Use mediump precision on mobile for faster GPU work
         }}
-        dpr={[1, 1.5]}
+        dpr={[1, performanceSettings.actualPixelRatio]} // Use performance-aware pixel ratio
+        performance={{ min: 0.5, max: 1, debounce: 200 }} // Throttle on frame drops
       >
         <Suspense fallback={null}>
           <ambientLight intensity={0.2} />

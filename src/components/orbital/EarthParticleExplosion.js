@@ -1,12 +1,13 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getPerformanceSettings } from '../../utils/performanceMonitor';
 
 /**
  * Earth Particle Explosion System
  * 
- * Creates 9000 particles organized into ~300 wave-like streams
- * that emerge from the large earth chunks and flow outward.
+ * Creates adaptive particle count based on device performance
+ * Organized into wave-like streams that emerge from earth chunks
  * 
  * The transition happens over multiple frames:
  * - Phase 1 (0-0.3): Particles start inside chunks, begin emerging
@@ -15,31 +16,35 @@ import * as THREE from 'three';
  */
 const EarthParticleExplosion = ({ 
   explosionProgress = 0, 
-  particleCount = 9000,
-  streamCount = 300,
+  particleCount = null, // If null, uses adaptive count
+  streamCount = null, // If null, scales with particleCount
   sphereRadius = 2.5,
   chunkExplosionValue = 0  // The uExplode value from chunks shader
 }) => {
+  // Use adaptive performance settings
+  const performanceSettings = getPerformanceSettings();
+  const adaptiveParticleCount = particleCount || performanceSettings.maxParticles;
+  const adaptiveStreamCount = streamCount || Math.max(100, Math.floor(adaptiveParticleCount / 30));
   const pointsRef = useRef();
   const materialRef = useRef();
   
   // Generate particles organized into wave streams
   const particleData = useMemo(() => {
-    const positions = new Float32Array(particleCount * 3);
-    const streamIds = new Float32Array(particleCount);
-    const streamOffsets = new Float32Array(particleCount); // Position along stream
-    const wavePhases = new Float32Array(particleCount);
-    const colors = new Float32Array(particleCount * 3);
-    const sizes = new Float32Array(particleCount);
+    const positions = new Float32Array(adaptiveParticleCount * 3);
+    const streamIds = new Float32Array(adaptiveParticleCount);
+    const streamOffsets = new Float32Array(adaptiveParticleCount); // Position along stream
+    const wavePhases = new Float32Array(adaptiveParticleCount);
+    const colors = new Float32Array(adaptiveParticleCount * 3);
+    const sizes = new Float32Array(adaptiveParticleCount);
     
     // Pre-calculate stream directions (golden spiral distribution on sphere)
     const streamDirections = [];
     const streamTangents = [];
     const streamBitangents = [];
     
-    for (let s = 0; s < streamCount; s++) {
+    for (let s = 0; s < adaptiveStreamCount; s++) {
       // Golden angle spiral for even distribution
-      const phi = Math.acos(1 - 2 * (s + 0.5) / streamCount);
+      const phi = Math.acos(1 - 2 * (s + 0.5) / adaptiveStreamCount);
       const theta = Math.PI * (1 + Math.sqrt(5)) * s;
       
       const dir = new THREE.Vector3(
@@ -75,11 +80,11 @@ const EarthParticleExplosion = ({
     ];
     
     // Distribute particles among streams
-    const particlesPerStream = Math.ceil(particleCount / streamCount);
+    const particlesPerStream = Math.ceil(adaptiveParticleCount / adaptiveStreamCount);
     
-    for (let i = 0; i < particleCount; i++) {
+    for (let i = 0; i < adaptiveParticleCount; i++) {
       // Assign to a stream
-      const streamId = Math.floor(i / particlesPerStream) % streamCount;
+      const streamId = Math.floor(i / particlesPerStream) % adaptiveStreamCount;
       const positionInStream = (i % particlesPerStream) / particlesPerStream;
       
       streamIds[i] = streamId;
@@ -144,8 +149,9 @@ const EarthParticleExplosion = ({
         uTime: { value: 0 },
         uExplosion: { value: 0 },
         uChunkExplosion: { value: 0 }, // Synced with chunk shader uExplode
-        uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+        uPixelRatio: { value: performanceSettings.actualPixelRatio },
         uSphereRadius: { value: sphereRadius },
+        uStreamCount: { value: adaptiveStreamCount }, // For shader optimization
       },
       vertexShader: `
         attribute float aStreamId;
@@ -159,12 +165,12 @@ const EarthParticleExplosion = ({
         uniform float uPixelRatio;
         uniform float uSphereRadius;
         uniform float uChunkExplosion; // Synced with chunk displacement
+        uniform float uStreamCount;
         
         varying vec3 vColor;
         varying float vAlpha;
         
         #define PI 3.14159265359
-        #define STREAM_COUNT 300.0
         
         // Transition phases
         #define PHASE1_START 0.08   // When particles start appearing
@@ -173,7 +179,7 @@ const EarthParticleExplosion = ({
         
         // Golden ratio for stream distribution
         vec3 getStreamDirection(float streamId) {
-          float phi = acos(1.0 - 2.0 * (streamId + 0.5) / STREAM_COUNT);
+          float phi = acos(1.0 - 2.0 * (streamId + 0.5) / uStreamCount);
           float theta = PI * (1.0 + sqrt(5.0)) * streamId;
           return normalize(vec3(
             sin(phi) * cos(theta),
@@ -256,7 +262,7 @@ const EarthParticleExplosion = ({
           // Main movement - outward along stream direction (only after separation)
           vec3 newPos = startPos + streamDir * distance * separationProgress;
           
-          // LIGHT WAVE OSCILLATION
+          // LIGHT WAVE OSCILLATION - Adaptive complexity based on performance
           // Sinusoidal wave perpendicular to travel direction
           // This creates the characteristic wave-like movement
           float waveFrequency = 2.5; // Number of oscillations
@@ -265,17 +271,23 @@ const EarthParticleExplosion = ({
           // Primary wave (side-to-side)
           float wave1 = sin(aWavePhase + easedProgress * waveFrequency * PI * 2.0);
           // Secondary wave (up-down) - phase shifted for figure-8 like motion
-          float wave2 = sin(aWavePhase * 1.3 + easedProgress * waveFrequency * PI * 2.0 + PI * 0.5);
+          // Skip secondary wave on LOW performance devices to reduce shader complexity
+          float wave2 = 0.0;
+          if (uStreamCount > 150.0) { // Only high/medium end devices
+            wave2 = sin(aWavePhase * 1.3 + easedProgress * waveFrequency * PI * 2.0 + PI * 0.5);
+          }
           
           // Apply wave oscillation perpendicular to stream direction
           newPos += tangent * wave1 * waveAmplitude;
           newPos += bitangent * wave2 * waveAmplitude * 0.7;
           
-          // Add subtle spiral motion (like light helicity)
-          float spiralAngle = easedProgress * PI * 3.0 + aStreamOffset * PI * 2.0;
-          float spiralRadius = 0.15 * easedProgress;
-          newPos += tangent * cos(spiralAngle) * spiralRadius;
-          newPos += bitangent * sin(spiralAngle) * spiralRadius;
+          // Add subtle spiral motion (like light helicity) - only on high-end devices
+          if (uStreamCount > 200.0) { // Only HIGH performance devices
+            float spiralAngle = easedProgress * PI * 3.0 + aStreamOffset * PI * 2.0;
+            float spiralRadius = 0.15 * easedProgress;
+            newPos += tangent * cos(spiralAngle) * spiralRadius;
+            newPos += bitangent * sin(spiralAngle) * spiralRadius;
+          }
           
           // Subtle time-based shimmer
           float shimmer = sin(uTime * 5.0 + aWavePhase * 10.0) * 0.05 * easedProgress;
@@ -386,4 +398,4 @@ const EarthParticleExplosion = ({
   );
 };
 
-export default EarthParticleExplosion;
+export default React.memo(EarthParticleExplosion);

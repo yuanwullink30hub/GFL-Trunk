@@ -71,4 +71,4 @@ const TechContainer = ({
   );
 };
 
-export default TechContainer;
+export default React.memo(TechContainer);

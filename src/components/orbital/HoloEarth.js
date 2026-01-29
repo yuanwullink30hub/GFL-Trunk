@@ -407,7 +407,7 @@ const HoloEarthSphere = ({
         // Laptop: 3rem up - 1rem down = 2rem up (+0.27)
         // Tablet: 2.5rem up - 1rem down = 1.5rem up (+0.22)
         const pyramidYOffset = window.innerWidth >= 1280 ? 0.27 : // Desktop: 2rem up
-                               window.innerWidth >= 1024 ? 0.27 : // Laptop: 2rem up
+                               window.innerWidth >= 1100 ? 0.27 : // Laptop: 2rem up
                                window.innerWidth >= 768 ? 0.22 : // Tablet: 1.5rem up
                                0; // Mobile
         

@@ -411,7 +411,7 @@ const App = () => {
   const systemTranslateY = section3Progress * 160 + pyramidOffset; // 10rem = 160px
   
   // Separate entity offset to counteract the pyramid movement
-  const entityCounterOffset = window.innerWidth >= 1024 ? 16 : // Desktop/Laptop: 1rem = 16px down (counteract pyramid's 3rem move)
+  const entityCounterOffset = window.innerWidth >= 1100 ? 16 : // Desktop/Laptop: 1rem = 16px down (counteract pyramid's 3rem move)
                               0; // Tablet/Mobile: no adjustment needed
   const isSystem = section3Progress > 0;
 
@@ -685,14 +685,14 @@ const App = () => {
                   <div className="relative flex flex-col items-center gap-2 bg-black/40 backdrop-blur-md rounded-sm pointer-events-none" style={{
                     border: '1px solid rgba(21, 179, 21, 0.4)',
                     padding: '0.625rem 2rem',
-                    transform: window.innerWidth >= 1280 ? 'scale(1)' : window.innerWidth >= 1024 ? 'scale(0.8)' : window.innerWidth >= 768 ? 'scale(0.7)' : 'scale(1)',
+                    transform: window.innerWidth >= 1325 ? 'scale(1)' : window.innerWidth >= 1100 ? 'scale(0.85) translateY(-0.7rem)' : window.innerWidth >= 768 ? 'scale(0.7)' : 'scale(1)',
                     transformOrigin: 'center bottom'
                   }}>
                     <span className="tracking-[0.25em] font-bold" style={{
                       color: 'white', 
                       fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                       fontSize: '1rem'
-                    }}>{window.innerWidth >= 1024 ? 'SCROLL' : 'SWIPE'} = SYNCHRONISATIE</span>
+                    }}>{window.innerWidth >= 1100 ? 'SCROLL' : 'SWIPE'} = SYNCHRONISATIE</span>
                     <div className="absolute top-0 left-0 border-t border-l" style={{
                       width: '0.5rem',
                       height: '0.5rem',

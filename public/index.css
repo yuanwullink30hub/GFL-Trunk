@@ -357,6 +357,12 @@
 .gap-0{
   gap: 0px;
 }
+.gap-0\.5{
+  gap: 0.125rem;
+}
+.gap-1{
+  gap: 0.25rem;
+}
 .gap-1\.5{
   gap: 0.375rem;
 }
@@ -756,6 +762,9 @@
 }
 .opacity-80{
   opacity: 0.8;
+}
+.opacity-90{
+  opacity: 0.9;
 }
 .mix-blend-overlay{
   mix-blend-mode: overlay;

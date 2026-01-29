@@ -7,6 +7,7 @@ import karmanLogo from '../../images/slideshow images/karmaneventsPNG.png';
 import code49Logo from '../../images/slideshow images/club49-logo.png';
 import tattooshopLogo from '../../images/slideshow images/1111logo.png';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
+import sunIcon from '../../images/illustrativesun.png';
 
 const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0 }) => {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -567,26 +568,125 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           opacity: mounted ? containerOpacity : 0
         }}
       >
-        <div style={{ width: '30vw', height: '10vh' }}>
-          <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full">
-            <div className="w-full h-full flex items-center justify-around opacity-70" style={{ padding: '0 1vw' }}>
-              <div className="flex flex-col items-center">
-                <span style={{ fontSize: 'max(9.1px, 0.5vw)', color: 'rgb(156, 163, 175)' }}>MEM</span>
-                <span style={{ fontSize: 'max(18.2px, 1vw)', fontWeight: 'bold', color: 'rgb(216, 180, 254)' }}>64%</span>
+        {/* Desktop Build - 1325px+ */}
+        {windowWidth >= 1325 && (
+          <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(2rem)' }}>
+            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '14.95vh' }}>
+              <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
+                {/* Left: Logo */}
+                <div className="flex flex-col items-center justify-center">
+                  <span style={{ fontSize: 'max(14px, 0.8vw)', fontWeight: 'bold', color: 'rgb(216, 180, 254)' }}>LOGO</span>
+                </div>
+                <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+                {/* Center: Contact Info */}
+                <div className="flex flex-col items-center justify-center gap-0.5">
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>info@gfl.com</span>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>+1 555 0100</span>
+                </div>
+                <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+                {/* Right: Login Button */}
+                <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'hidden' }}>
+                  <button style={{
+                    padding: '0',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }} onMouseEnter={(e) => {
+                    e.target.style.opacity = '0.8';
+                  }} onMouseLeave={(e) => {
+                    e.target.style.opacity = '1';
+                  }}>
+                    <img src={sunIcon} alt="Login" style={{ width: 'max(72px, 4.2vw)', height: 'auto' }} />
+                  </button>
+                </div>
               </div>
-              <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
-              <div className="flex flex-col items-center">
-                <span style={{ fontSize: 'max(9.1px, 0.5vw)', color: 'rgb(156, 163, 175)' }}>CPU</span>
-                <span style={{ fontSize: 'max(18.2px, 1vw)', fontWeight: 'bold', color: '#fed7aa' }}>32%</span>
+            </TechContainer>
+          </div>
+        )}
+
+        {/* Laptop Build - 1100px to 1324px */}
+        {windowWidth >= 1100 && windowWidth < 1325 && (
+          <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(0.9rem)' }}>
+            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }}>
+              <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
+                {/* Left: Logo */}
+                <div className="flex flex-col items-center justify-center">
+                  <span style={{ fontSize: 'max(14px, 0.8vw)', fontWeight: 'bold', color: 'rgb(216, 180, 254)' }}>LOGO</span>
+                </div>
+                <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+                {/* Center: Contact Info */}
+                <div className="flex flex-col items-center justify-center gap-0.5">
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>info@gfl.com</span>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>+1 555 0100</span>
+                </div>
+                <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+                {/* Right: Login Button */}
+                <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'hidden' }}>
+                  <button style={{
+                    padding: '0',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }} onMouseEnter={(e) => {
+                    e.target.style.opacity = '0.8';
+                  }} onMouseLeave={(e) => {
+                    e.target.style.opacity = '1';
+                  }}>
+                    <img src={sunIcon} alt="Login" style={{ width: 'max(72px, 4.2vw)', height: 'auto' }} />
+                  </button>
+                </div>
               </div>
-              <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
-              <div className="flex flex-col items-center">
-                <span style={{ fontSize: 'max(9.1px, 0.5vw)', color: 'rgb(156, 163, 175)' }}>TMP</span>
-                <span style={{ fontSize: 'max(18.2px, 1vw)', fontWeight: 'bold', color: 'white' }}>45°</span>
+            </TechContainer>
+          </div>
+        )}
+
+        {/* Tablet Build - 768px to 1099px */}
+        {windowWidth >= 768 && windowWidth < 1100 && (
+          <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(1rem)' }}>
+            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }}>
+              <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
+                {/* Left: Logo */}
+                <div className="flex flex-col items-center justify-center">
+                  <span style={{ fontSize: 'max(14px, 0.8vw)', fontWeight: 'bold', color: 'rgb(216, 180, 254)' }}>LOGO</span>
+                </div>
+                <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+                {/* Center: Contact Info */}
+                <div className="flex flex-col items-center justify-center gap-0.5">
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>info@gfl.com</span>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>+1 555 0100</span>
+                </div>
+                <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+                {/* Right: Login Button */}
+                <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'hidden' }}>
+                  <button style={{
+                    padding: '0',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }} onMouseEnter={(e) => {
+                    e.target.style.opacity = '0.8';
+                  }} onMouseLeave={(e) => {
+                    e.target.style.opacity = '1';
+                  }}>
+                    <img src={sunIcon} alt="Login" style={{ width: 'max(72px, 4.2vw)', height: 'auto' }} />
+                  </button>
+                </div>
               </div>
-            </div>
-          </TechContainer>
-        </div>
+            </TechContainer>
+          </div>
+        )}
       </div>
     </>
   );

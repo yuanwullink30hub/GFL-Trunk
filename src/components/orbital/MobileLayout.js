@@ -7,6 +7,7 @@ import karmanLogo from '../../images/slideshow images/karmaneventsPNG.png';
 import code49Logo from '../../images/slideshow images/club49-logo.png';
 import tattooshopLogo from '../../images/slideshow images/1111logo.png';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
+import sunIcon from '../../images/illustrativesun.png';
 
 const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, position = 'top', isMobile, TimeSync }) => {
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
@@ -301,52 +302,8 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
             }}
           />
 
-          {/* Spacing - reduced for global status */}
-          <div style={{height: '0', marginTop: '-5.5rem'}} />
-
-          {/* 5. Global Status */}
-          <div style={{height: 'clamp(8rem, 15vh, 10rem)'}}>
-            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full">
-              <div className="w-full h-full flex items-center justify-around px-4 opacity-70">
-                <div className="flex flex-col items-center">
-                  <span style={{
-                    fontFamily: "'Figtree', sans-serif",
-                    fontWeight: 400,
-                    lineHeight: 1.5,
-                    color: '#FFFEF0',
-                    fontSize: 'clamp(10px, 2.5vw, 14px)',
-                    textAlign: 'center'
-                  }}>MEM</span>
-                  <span style={{fontSize: 'clamp(0.9rem, 3vw, 1.25rem)', fontWeight: 'bold', color: 'rgb(196, 181, 253)'}}>64%</span>
-                </div>
-                <div style={{height: 'clamp(1.5rem, 4vw, 2rem)', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)'}}></div>
-                <div className="flex flex-col items-center">
-                  <span style={{
-                    fontFamily: "'Figtree', sans-serif",
-                    fontWeight: 400,
-                    lineHeight: 1.5,
-                    color: '#FFFEF0',
-                    fontSize: 'clamp(10px, 2.5vw, 14px)',
-                    textAlign: 'center'
-                  }}>CPU</span>
-                  <span style={{fontSize: 'clamp(0.9rem, 3vw, 1.25rem)', fontWeight: 'bold', color: '#fed7aa'}}>32%</span>
-                </div>
-                <div style={{height: 'clamp(1.5rem, 4vw, 2rem)', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)'}}></div>
-                <div className="flex flex-col items-center">
-                  <span style={{
-                    fontFamily: "'Figtree', sans-serif",
-                    fontWeight: 400,
-                    lineHeight: 1.5,
-                    color: '#FFFEF0',
-                    fontSize: 'clamp(10px, 2.5vw, 14px)',
-                    textAlign: 'center'
-                  }}>TMP</span>
-                  <span className="text-[10px] text-gray-400">TMP</span>
-                  <span style={{fontSize: 'clamp(0.9rem, 3vw, 1.25rem)', fontWeight: 'bold', color: '#ffffff'}}>45°</span>
-                </div>
-              </div>
-            </TechContainer>
-          </div>
+          {/* Spacing - removed VERBINDINGS_MENU (now in DesktopLayout with separate builds) */}
+          <div style={{height: '0', marginTop: '0'}} />
 
           {/* Spacing - reduced for TimeSync */}
           <div style={{height: '0', marginTop: '-5.5rem'}} />

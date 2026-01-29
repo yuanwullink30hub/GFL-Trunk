@@ -542,7 +542,7 @@ const HoloEarthSphere = ({
   );
 };
 
-const HoloEarth = ({ 
+const HoloEarth = ({
   className, 
   style, 
   exploding = false, 
@@ -561,22 +561,39 @@ const HoloEarth = ({
       className={`absolute inset-0 ${className || ''}`}
       style={{
         ...style,
-        pointerEvents: exploding ? 'none' : 'auto'
+        pointerEvents: exploding ? 'none' : 'auto',
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0
       }}
     >
       <Canvas 
         camera={{ position: [0, 0, 8], fov: 40 }}
+        style={{ width: '100%', height: '100%', display: 'block' }}
         gl={{ 
           alpha: true, 
-          antialias: false, // Disable for better performance, we have post-processing
+          antialias: false,
           powerPreference: 'high-performance',
           preserveDrawingBuffer: false,
           depth: true,
           stencil: false,
-          precision: 'mediump', // Use mediump precision on mobile for faster GPU work
+          precision: 'mediump',
         }}
-        dpr={[1, performanceSettings.actualPixelRatio]} // Use performance-aware pixel ratio
-        performance={{ min: 0.5, max: 1, debounce: 200 }} // Throttle on frame drops
+        dpr={1}
+        performance={{ min: 0.5, max: 1, debounce: 200 }}
+        onCreated={(state) => {
+          // Force canvas size on creation
+          const width = window.innerWidth;
+          const height = window.innerHeight;
+          state.gl.setSize(width, height);
+          state.camera.aspect = width / height;
+          state.camera.updateProjectionMatrix();
+        }}
       >
         <Suspense fallback={null}>
           <ambientLight intensity={0.2} />

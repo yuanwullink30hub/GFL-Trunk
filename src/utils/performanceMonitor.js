@@ -41,10 +41,6 @@ export const detectPerformance = () => {
   const debugInfo = gl?.getExtension('WEBGL_debug_renderer_info');
   const gpuVendor = debugInfo ? gl?.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'unknown';
   
-  // Check available memory
-  const memoryInfo = performance?.memory;
-  const jsHeapSizeLimit = memoryInfo?.jsHeapSizeLimit || Infinity;
-  
   const gpuLower = gpuVendor?.toLowerCase() || '';
   
   // Check for integrated GPU

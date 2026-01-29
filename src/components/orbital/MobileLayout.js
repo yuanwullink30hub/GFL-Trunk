@@ -7,7 +7,6 @@ import karmanLogo from '../../images/slideshow images/karmaneventsPNG.png';
 import code49Logo from '../../images/slideshow images/club49-logo.png';
 import tattooshopLogo from '../../images/slideshow images/1111logo.png';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
-import sunIcon from '../../images/illustrativesun.png';
 
 const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, position = 'top', isMobile, TimeSync }) => {
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)

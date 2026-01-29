@@ -554,8 +554,6 @@ const HoloEarth = ({
   onIntroComplete = () => {},
   onLayerStateChange = () => {}
 }) => {
-  const performanceSettings = getPerformanceSettings();
-  
   return (
     <div 
       className={`absolute inset-0 ${className || ''}`}

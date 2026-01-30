@@ -13,7 +13,6 @@ import blackholeIcon from '../../images/Blackhole.png';
 
 const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, setActiveSection }) => {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -644,7 +643,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   }} onMouseLeave={(e) => {
                     e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(255,200,100,0))';
                   }}>
-                    <img src={isLoggedIn ? sunIcon : blackholeIcon} alt="Login" style={{ width: 'max(70px, 4.1vw)', height: 'auto' }} />
+                    <img src={blackholeIcon} alt="Login" style={{ width: 'max(70px, 4.1vw)', height: 'auto' }} />
                   </button>
                 </div>
               </div>
@@ -702,7 +701,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   }} onMouseLeave={(e) => {
                     e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(255,200,100,0))';
                   }}>
-                    <img src={isLoggedIn ? sunIcon : blackholeIcon} alt="Login" style={{ width: 'max(70px, 4.1vw)', height: 'auto' }} />
+                    <img src={blackholeIcon} alt="Login" style={{ width: 'max(70px, 4.1vw)', height: 'auto' }} />
                   </button>
                 </div>
               </div>
@@ -760,7 +759,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   }} onMouseLeave={(e) => {
                     e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(255,200,100,0))';
                   }}>
-                    <img src={isLoggedIn ? sunIcon : blackholeIcon} alt="Login" style={{ width: 'max(70px, 4.1vw)', height: 'auto' }} />
+                    <img src={blackholeIcon} alt="Login" style={{ width: 'max(70px, 4.1vw)', height: 'auto' }} />
                   </button>
                 </div>
               </div>

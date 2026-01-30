@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TechContainer from './TechContainer';
 import { Activity, Database, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -12,6 +12,38 @@ import blackholeIcon from '../../images/Blackhole.png';
 
 const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, setActiveSection }) => {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
+  
+  // Touch swipe state for Gardens slideshow
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const gardensDataLength = 4; // Total number of garden slides
+  
+  const handleTouchStart = useCallback((e) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+  
+  const handleTouchMove = useCallback((e) => {
+    touchEndX.current = e.touches[0].clientX;
+  }, []);
+  
+  const handleTouchEnd = useCallback(() => {
+    const swipeThreshold = 50;
+    const diff = touchStartX.current - touchEndX.current;
+    
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        // Swiped left - go to next slide
+        setCurrentSlide(prev => (prev + 1) % gardensDataLength);
+      } else {
+        // Swiped right - go to previous slide
+        setCurrentSlide(prev => (prev - 1 + gardensDataLength) % gardensDataLength);
+      }
+    }
+    
+    // Reset
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  }, [setCurrentSlide]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -215,11 +247,18 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             ];
             return (
               <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '1vw' }}>
-                {/* Slideshow Area */}
-                <div className="w-full relative overflow-visible rounded-sm border border-purple-500/20" style={{ 
-                  height: 'calc(100% - 2vw)', 
-                  marginBottom: '0.8vw'
-                }}>
+                {/* Slideshow Area - Touch swipable */}
+                <div 
+                  className="w-full relative overflow-visible rounded-sm border border-purple-500/20" 
+                  style={{ 
+                    height: 'calc(100% - 2vw)', 
+                    marginBottom: '0.8vw',
+                    touchAction: 'pan-y' // Allow vertical scroll but capture horizontal swipe
+                  }}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
                   {/* Slides */}
                   {gardensData.map((garden, i) => {
                     let translateX = 0;
@@ -263,9 +302,9 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                                   else if (garden.id === 'karman') scale = 1.0 + (windowWidth - 1024) / 256 * 0.25;
                                 } else if (windowWidth >= 768) {
                                   // Tablet - responsive scaling
-                                  if (garden.id === 'rengifoods') scale = 0.9 + (windowWidth - 768) / 256 * 0.3;
-                                  else if (garden.id === 'karman') scale = 1.2 + (windowWidth - 768) / 256 * 0.3;
-                                  else if (garden.id === 'code49') scale = 1.2 + (windowWidth - 768) / 256 * 0.3;
+                                  if (garden.id === 'rengifoods') scale = 1.8 + (windowWidth - 768) / 256 * 0.3;
+                                  else if (garden.id === 'karman') scale = 1.5 + (windowWidth - 768) / 256 * 0.3;
+                                  else if (garden.id === 'code49') scale = 1.5 + (windowWidth - 768) / 256 * 0.3;
                                   else if (garden.id === 'tattooshop') scale = 2.4 + (windowWidth - 768) / 256 * 0.6;
                                 }
                                 
@@ -289,9 +328,9 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                                   else if (garden.id === 'karman') scale = 1.25;
                                 } else if (windowWidth >= 768) {
                                   // Tablet
-                                  if (garden.id === 'rengifoods') scale = 1.2;
-                                  else if (garden.id === 'karman') scale = 1.5;
-                                  else if (garden.id === 'code49') scale = 1.5;
+                                  if (garden.id === 'rengifoods') scale = 2.4;
+                                  else if (garden.id === 'karman') scale = 1.875;
+                                  else if (garden.id === 'code49') scale = 1.875;
                                   else if (garden.id === 'tattooshop') scale = 3;
                                 }
                                 
@@ -315,9 +354,13 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                                   else if (garden.id === 'rengifoods') return `translateY(${-0.8 - laptopProgress * 0.4}rem)`;
                                   return 'translateY(0)';
                                 } else if (windowWidth >= 768) {
-                                  // Tablet - responsive positioning
+                                  // Tablet - responsive positioning (each logo independent)
                                   const tabletProgress = (windowWidth - 768) / 256;
-                                  return `translateY(${-0.5 * tabletProgress}rem)`;
+                                  if (garden.id === 'tattooshop') return `translateY(${-0.5 * tabletProgress}rem)`; // Original position
+                                  else if (garden.id === 'karman') return `translateY(${1.1 + tabletProgress * 0.3}rem)`;
+                                  else if (garden.id === 'code49') return `translateY(${1.1 + tabletProgress * 0.3}rem)`;
+                                  else if (garden.id === 'rengifoods') return `translateY(${0.5 + tabletProgress * 0.3}rem)`;
+                                  return 'translateY(0)';
                                 }
                               })(),
                               filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))'
@@ -712,7 +755,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         {windowWidth >= 768 && windowWidth < 1100 && (
           <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(1rem)' }}>
             <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }}>
-              <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
+              <div className="w-full h-full flex items-center justify-evenly opacity-90" style={{ padding: '0 0.5vw' }}>
                 {/* Left: Logo - Button */}
                 <button 
                   onClick={() => setActiveSection('menu')}
@@ -730,13 +773,13 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
                 >
-                  <img src={eyeLogo} alt="Logo" style={{ width: 'max(55px, 3vw)', height: 'auto' }} />
+                  <img src={eyeLogo} alt="Logo" style={{ width: 'max(45px, 2.5vw)', height: 'auto' }} />
                 </button>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Center: Contact Info */}
-                <div className="flex flex-col items-center justify-center gap-0.5" style={{ transform: 'translateY(-1.5rem)' }}>
-                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Yuanwullink30@gmail.com</span>
-                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Zutphen, NL</span>
+                <div className="flex flex-col items-center justify-center gap-0.5">
+                  <span style={{ fontSize: 'max(11px, 0.6vw)', color: 'white', fontWeight: 'bold' }}>Yuanwullink30@gmail.com</span>
+                  <span style={{ fontSize: 'max(11px, 0.6vw)', color: 'white', fontWeight: 'bold' }}>Zutphen, NL</span>
                 </div>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Right: Login Button */}
@@ -758,7 +801,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   }} onMouseLeave={(e) => {
                     e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(255,200,100,0))';
                   }}>
-                    <img src={blackholeIcon} alt="Login" style={{ width: 'max(70px, 4.1vw)', height: 'auto' }} />
+                    <img src={blackholeIcon} alt="Login" style={{ width: 'max(55px, 3.2vw)', height: 'auto' }} />
                   </button>
                 </div>
               </div>

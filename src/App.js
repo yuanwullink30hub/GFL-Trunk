@@ -804,7 +804,7 @@ const App = () => {
                       color: 'white', 
                       fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                       fontSize: '1rem'
-                    }}>{window.innerWidth >= 1100 ? 'SCROLL' : 'SWIPE'} = SYNCHRONISATIE</span>
+                    }}>{window.innerWidth >= 1100 ? 'SCROLL' : 'SWIPE'} {window.innerWidth >= 1100 ? '' : '↓'} = SYNCHRONISATIE</span>
                     <div className="absolute top-0 left-0 border-t border-l" style={{
                       width: '0.5rem',
                       height: '0.5rem',
@@ -856,7 +856,6 @@ const App = () => {
               
               // Viewport dimensions for calculations
               const vw = window.innerWidth / 100;
-              const vh = window.innerHeight / 100;
               
               // Helper to calculate animation progress for each label
               // Layer 1 starts almost immediately (at 0.02 progress = ~2 scroll ticks)

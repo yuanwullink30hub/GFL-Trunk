@@ -8,7 +8,6 @@ import code49Logo from '../../images/slideshow images/club49-logo.png';
 import tattooshopLogo from '../../images/slideshow images/1111logo.png';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 import eyeLogo from '../../images/Eyedentity.png';
-import sunIcon from '../../images/illustrativesun.png';
 import blackholeIcon from '../../images/Blackhole.png';
 
 const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, setActiveSection }) => {

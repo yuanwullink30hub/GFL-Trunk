@@ -4,6 +4,7 @@ import DesktopLayout from './components/orbital/DesktopLayout';
 import MobileLayout from './components/orbital/MobileLayout';
 import HoloLabel from './components/newFeature/HoloLabel';
 import { getPerformanceSettings } from './utils/performanceMonitor';
+import { FilosofiePage, GardensPage, DataPage, LoginPage, EyedentityPage } from './pages';
 
 // Mobile detection hook
 const useIsMobile = () => {
@@ -78,6 +79,7 @@ const App = () => {
   }); // Pure DOM label state from PyramidInner
   // eslint-disable-next-line no-unused-vars
   const [mobileScrollLocked, setMobileScrollLocked] = useState(false); // Track when mobile scroll should be hijacked
+  const [activeSection, setActiveSection] = useState(null); // Track active section page (filosofie, gardens, monitor, menu)
   const isMobile = useIsMobile();
   const containerRef = useRef(null);
   const earthSectionRef = useRef(null);
@@ -462,10 +464,62 @@ const App = () => {
       )}
 
       {/* =========================== */}
+      {/* =========================== */}
+      {/* PERSISTENT ELEMENTS (Mobile) - Stay visible during page transitions */}
+      {/* =========================== */}
+      {isMobile && (
+        <>
+          {/* --- Background/Grid (Mobile) --- */}
+          <div className="absolute inset-0 z-0" style={{background: 'transparent'}} />
+          <div 
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              opacity: 0.5,
+              backgroundImage: `
+                linear-gradient(rgba(201, 160, 240, 0.05) 1px, transparent 1px), 
+                linear-gradient(90deg, rgba(201, 160, 240, 0.05) 1px, transparent 1px)
+              `,
+              backgroundSize: '50px 50px'
+            }}
+          />
+
+          {/* --- Persistent Logo (Mobile) --- */}
+          <div
+            className="fixed pointer-events-auto z-50"
+            style={{
+              top: 'clamp(1rem, 2vw, 1.5rem)',
+              left: 'clamp(0.75rem, 2vw, 1rem)',
+            }}
+          >
+            <img 
+              src="images/landingpage/logo.png" 
+              alt="Delta" 
+              style={{
+                width: 'clamp(3rem, 10vw, 4rem)', 
+                height: 'clamp(3rem, 10vw, 4rem)',
+                flexShrink: 0,
+                cursor: activeSection ? 'pointer' : 'default',
+              }} 
+              onClick={() => activeSection && setActiveSection(null)}
+              title={activeSection ? 'Back to Landing' : ''}
+            />
+          </div>
+        </>
+      )}
+
       {/* MOBILE LAYOUT - Flow based */}
       {/* =========================== */}
       {isMobile && (
-        <div className="flex flex-col w-full relative z-10">
+        <div 
+          className="flex flex-col w-full relative z-10"
+          style={{
+            opacity: activeSection ? 0 : 1,
+            transform: activeSection ? 'scale(0.85)' : 'scale(1)',
+            transformOrigin: 'center center',
+            pointerEvents: activeSection ? 'none' : 'auto',
+            transition: 'opacity 1.5s ease, transform 1.5s ease',
+          }}
+        >
           {/* Tech Containers Section - scrollable */}
           <MobileLayout 
             isExploding={isExploding} 
@@ -531,7 +585,7 @@ const App = () => {
       )}
 
       {/* =========================== */}
-      {/* DESKTOP LAYOUT - Original absolute positioning */}
+      {/* PERSISTENT ELEMENTS - Stay visible during all page transitions */}
       {/* =========================== */}
       {!isMobile && (
         <>
@@ -551,6 +605,48 @@ const App = () => {
             }}
           />
 
+          {/* --- Persistent Logo (top-left) --- */}
+          <div
+            className="fixed pointer-events-auto z-50"
+            style={{
+              top: 'clamp(1.5rem, 2vw, 2rem)',
+              left: 'clamp(1rem, 3vw, 2rem)',
+            }}
+          >
+            <img 
+              src="images/landingpage/logo.png" 
+              alt="Delta" 
+              style={{
+                width: 'clamp(4rem, 7vw, 12.5rem)', 
+                height: 'clamp(4rem, 7vw, 12.5rem)',
+                flexShrink: 0,
+                cursor: activeSection ? 'pointer' : 'default',
+                transition: 'transform 0.2s ease',
+              }} 
+              onClick={() => activeSection && setActiveSection(null)}
+              title={activeSection ? 'Back to Landing' : ''}
+              onMouseEnter={(e) => activeSection && (e.target.style.transform = 'scale(1.05)')}
+              onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+            />
+          </div>
+        </>
+      )}
+
+      {/* =========================== */}
+      {/* DESKTOP LAYOUT - Original absolute positioning */}
+      {/* =========================== */}
+      {!isMobile && (
+        <div
+          style={{
+            opacity: activeSection ? 0 : 1,
+            transform: activeSection ? 'scale(0.85)' : 'scale(1)',
+            transformOrigin: 'center center',
+            pointerEvents: activeSection ? 'none' : 'auto',
+            transition: 'opacity 1.5s ease, transform 1.5s ease',
+            position: 'absolute',
+            inset: 0,
+          }}
+        >
           {/* --- Radial Shadow/Glow Behind Earth --- */}
           <div 
             className="absolute inset-0 z-5 pointer-events-none" 
@@ -580,7 +676,7 @@ const App = () => {
 
           {/* --- Overlay UI Layer --- */}
           <div className="absolute inset-0 z-20 pointer-events-none">
-            {/* Header HUD - Flies up based on scroll progress */}
+            {/* Header HUD - Flies up based on scroll progress (without logo - logo is now persistent) */}
             <header 
               className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-auto"
               style={{
@@ -593,9 +689,8 @@ const App = () => {
               }}
             >
               <div className="flex items-center" style={{gap: 'clamp(0.75rem, 1.5vw, 1.5rem)'}}>
-                <img 
-                  src="images/landingpage/logo.png" 
-                  alt="Delta" 
+                {/* Invisible spacer where logo used to be */}
+                <div 
                   style={{
                     width: 'clamp(4rem, 7vw, 12.5rem)', 
                     height: 'clamp(4rem, 7vw, 12.5rem)',
@@ -644,7 +739,7 @@ const App = () => {
               style={{
                 bottom: 'calc(20% - 3rem)',
                 opacity: promptOpacity,
-                transform: promptOpacity > 0 ? 'scale(1)' : 'scale(1.5)'
+                transform: promptOpacity > 0 ? 'scale(1)' : 'scale(1.5)',
               }}
             >
               {/* LOW-END: Show "Start Experience" button instead of scroll prompt */}
@@ -718,6 +813,7 @@ const App = () => {
               currentSlide={currentSlide} 
               setCurrentSlide={setCurrentSlide}
               animationProgress={containerProgress}
+              setActiveSection={setActiveSection}
             />
 
             {/* --- SYSTEM INNER CONTENT (Shown after Zoom) --- */}
@@ -887,7 +983,7 @@ const App = () => {
               <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
             </button>
           </div>
-        </>
+        </div>
       )}
 
       {/* --- Footer / Deco --- */}
@@ -912,6 +1008,30 @@ const App = () => {
       >
         Frame: {currentFrame}/{TOTAL_ANIMATION_FRAMES}
       </div>
+
+      {/* ========================= */}
+      {/* PAGE COMPONENTS          */}
+      {/* ========================= */}
+      <FilosofiePage 
+        isVisible={activeSection === 'filosofie'} 
+        onBack={() => setActiveSection(null)} 
+      />
+      <GardensPage 
+        isVisible={activeSection === 'gardens'} 
+        onBack={() => setActiveSection(null)} 
+      />
+      <DataPage 
+        isVisible={activeSection === 'monitor'} 
+        onBack={() => setActiveSection(null)} 
+      />
+      <LoginPage 
+        isVisible={activeSection === 'login'} 
+        onBack={() => setActiveSection(null)} 
+      />
+      <EyedentityPage 
+        isVisible={activeSection === 'menu'} 
+        onBack={() => setActiveSection(null)} 
+      />
     </main>
   );
 };

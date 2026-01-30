@@ -7,10 +7,13 @@ import karmanLogo from '../../images/slideshow images/karmaneventsPNG.png';
 import code49Logo from '../../images/slideshow images/club49-logo.png';
 import tattooshopLogo from '../../images/slideshow images/1111logo.png';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
+import eyeLogo from '../../images/Eyedentity.png';
 import sunIcon from '../../images/illustrativesun.png';
+import blackholeIcon from '../../images/Blackhole.png';
 
-const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0 }) => {
+const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, setActiveSection }) => {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -99,7 +102,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
             {/* Button */}
             <button
-              className="rounded-sm font-bold tracking-widest transition-all duration-300 hover:scale-105"
+              className="rounded-sm font-bold tracking-widest transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))',
                 border: '0.05vw solid rgba(167, 139, 250, 0.5)',
@@ -108,8 +111,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 fontSize: 'max(8.5px, 0.45vw)',
                 padding: '0.4vw 0.8vw',
                 width: 'fit-content',
-                borderRadius: '0.1vw'
+                borderRadius: '0.1vw',
+                boxShadow: '0 0 0px 0px rgba(167,139,250,0.5)'
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(167,139,250,0.6)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.5), rgba(168, 85, 247, 0.4))'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(167,139,250,0.5)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))'; }}
+              onClick={() => setActiveSection('filosofie')}
             >
               LEARN MORE
             </button>
@@ -429,7 +436,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   
                   {/* Learn More Button */}
                   <button
-                    className="rounded-sm font-bold tracking-widest transition-all duration-300 hover:scale-105"
+                    className="rounded-sm font-bold tracking-widest transition-all duration-300"
                     style={{
                       background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.2))',
                       border: '0.05vw solid rgba(245, 158, 11, 0.5)',
@@ -438,8 +445,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                       fontSize: 'max(8.5px, 0.45vw)',
                       padding: '0.4vw 0.8vw',
                       width: 'fit-content',
-                      borderRadius: '0.1vw'
+                      borderRadius: '0.1vw',
+                      boxShadow: '0 0 0px 0px rgba(245,158,11,0.5)'
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(245,158,11,0.6)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.5), rgba(245, 158, 11, 0.4))'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(245,158,11,0.5)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.2))'; }}
+                    onClick={() => setActiveSection('gardens')}
                   >
                     LEARN MORE
                   </button>
@@ -498,7 +509,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           height: 'auto',
           maxHeight: '18vh',
           transform: `translate(${bottomLeftX}vw, ${bottomLeftY}vh) scale(${containerScale})`,
-          opacity: mounted ? containerOpacity : 0
+          opacity: mounted ? containerOpacity : 0,
+          zIndex: 30
         }}
       >
         <TechContainer title="DATA_STREAM" variant="cyan" className="w-full h-full">
@@ -541,7 +553,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
             {/* Button */}
             <button
-              className="rounded-sm font-bold tracking-widest transition-all duration-300 hover:scale-105"
+              className="rounded-sm font-bold tracking-widest transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(34, 211, 238, 0.2))',
                 border: '0.05vw solid rgba(34, 211, 238, 0.5)',
@@ -550,8 +562,22 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 fontSize: 'max(8.5px, 0.45vw)',
                 padding: '0.4vw 0.8vw',
                 width: 'fit-content',
-                borderRadius: '0.1vw'
+                borderRadius: '0.1vw',
+                boxShadow: '0 0 0px 0px rgba(34,211,238,0.5)',
+                cursor: 'pointer',
+                zIndex: 100,
+                pointerEvents: 'auto',
+                position: 'relative'
               }}
+              onMouseEnter={(e) => { 
+                e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(34,211,238,0.6)'; 
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(34, 211, 238, 0.5), rgba(34, 211, 238, 0.4))'; 
+              }}
+              onMouseLeave={(e) => { 
+                e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(34,211,238,0.5)'; 
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(34, 211, 238, 0.2))'; 
+              }}
+              onClick={() => setActiveSection('monitor')}
             >
               MONITOR
             </button>
@@ -573,34 +599,52 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(2rem)' }}>
             <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '14.95vh' }}>
               <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
-                {/* Left: Logo */}
-                <div className="flex flex-col items-center justify-center">
-                  <span style={{ fontSize: 'max(14px, 0.8vw)', fontWeight: 'bold', color: 'rgb(216, 180, 254)' }}>LOGO</span>
-                </div>
+                {/* Left: Logo - Button */}
+                <button 
+                  onClick={() => setActiveSection('menu')}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease',
+                    padding: 0,
+                    filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
+                >
+                  <img src={eyeLogo} alt="Logo" style={{ width: 'max(55px, 3vw)', height: 'auto' }} />
+                </button>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Center: Contact Info */}
                 <div className="flex flex-col items-center justify-center gap-0.5">
-                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>info@gfl.com</span>
-                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>+1 555 0100</span>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Yuanwullink30@gmail.com</span>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Zutphen, NL</span>
                 </div>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Right: Login Button */}
-                <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'hidden' }}>
-                  <button style={{
+                <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
+                  <button 
+                    onClick={() => setActiveSection('login')}
+                    style={{
                     padding: '0',
                     backgroundColor: 'transparent',
                     border: 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'all 0.3s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    filter: 'drop-shadow(0 0 0px rgba(255,200,100,0))'
                   }} onMouseEnter={(e) => {
-                    e.target.style.opacity = '0.8';
+                    e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(255,200,100,0.6))';
                   }} onMouseLeave={(e) => {
-                    e.target.style.opacity = '1';
+                    e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(255,200,100,0))';
                   }}>
-                    <img src={sunIcon} alt="Login" style={{ width: 'max(72px, 4.2vw)', height: 'auto' }} />
+                    <img src={isLoggedIn ? sunIcon : blackholeIcon} alt="Login" style={{ width: 'max(70px, 4.1vw)', height: 'auto' }} />
                   </button>
                 </div>
               </div>
@@ -613,34 +657,52 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(0.9rem)' }}>
             <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }}>
               <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
-                {/* Left: Logo */}
-                <div className="flex flex-col items-center justify-center">
-                  <span style={{ fontSize: 'max(14px, 0.8vw)', fontWeight: 'bold', color: 'rgb(216, 180, 254)' }}>LOGO</span>
-                </div>
+                {/* Left: Logo - Button */}
+                <button 
+                  onClick={() => setActiveSection('menu')}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease',
+                    padding: 0,
+                    filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
+                >
+                  <img src={eyeLogo} alt="Logo" style={{ width: 'max(55px, 3vw)', height: 'auto' }} />
+                </button>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Center: Contact Info */}
                 <div className="flex flex-col items-center justify-center gap-0.5">
-                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>info@gfl.com</span>
-                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>+1 555 0100</span>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Yuanwullink30@gmail.com</span>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Zutphen, NL</span>
                 </div>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Right: Login Button */}
-                <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'hidden' }}>
-                  <button style={{
+                <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
+                  <button 
+                    onClick={() => setActiveSection('login')}
+                    style={{
                     padding: '0',
                     backgroundColor: 'transparent',
                     border: 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'all 0.3s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    filter: 'drop-shadow(0 0 0px rgba(255,200,100,0))'
                   }} onMouseEnter={(e) => {
-                    e.target.style.opacity = '0.8';
+                    e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(255,200,100,0.6))';
                   }} onMouseLeave={(e) => {
-                    e.target.style.opacity = '1';
+                    e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(255,200,100,0))';
                   }}>
-                    <img src={sunIcon} alt="Login" style={{ width: 'max(72px, 4.2vw)', height: 'auto' }} />
+                    <img src={isLoggedIn ? sunIcon : blackholeIcon} alt="Login" style={{ width: 'max(70px, 4.1vw)', height: 'auto' }} />
                   </button>
                 </div>
               </div>
@@ -653,34 +715,52 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(1rem)' }}>
             <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }}>
               <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
-                {/* Left: Logo */}
-                <div className="flex flex-col items-center justify-center">
-                  <span style={{ fontSize: 'max(14px, 0.8vw)', fontWeight: 'bold', color: 'rgb(216, 180, 254)' }}>LOGO</span>
-                </div>
+                {/* Left: Logo - Button */}
+                <button 
+                  onClick={() => setActiveSection('menu')}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease',
+                    padding: 0,
+                    filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
+                >
+                  <img src={eyeLogo} alt="Logo" style={{ width: 'max(55px, 3vw)', height: 'auto' }} />
+                </button>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Center: Contact Info */}
-                <div className="flex flex-col items-center justify-center gap-0.5">
-                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>info@gfl.com</span>
-                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>+1 555 0100</span>
+                <div className="flex flex-col items-center justify-center gap-0.5" style={{ transform: 'translateY(-1.5rem)' }}>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Yuanwullink30@gmail.com</span>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Zutphen, NL</span>
                 </div>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Right: Login Button */}
-                <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'hidden' }}>
-                  <button style={{
+                <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
+                  <button 
+                    onClick={() => setActiveSection('login')}
+                    style={{
                     padding: '0',
                     backgroundColor: 'transparent',
                     border: 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'all 0.3s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    filter: 'drop-shadow(0 0 0px rgba(255,200,100,0))'
                   }} onMouseEnter={(e) => {
-                    e.target.style.opacity = '0.8';
+                    e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(255,200,100,0.6))';
                   }} onMouseLeave={(e) => {
-                    e.target.style.opacity = '1';
+                    e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(255,200,100,0))';
                   }}>
-                    <img src={sunIcon} alt="Login" style={{ width: 'max(72px, 4.2vw)', height: 'auto' }} />
+                    <img src={isLoggedIn ? sunIcon : blackholeIcon} alt="Login" style={{ width: 'max(70px, 4.1vw)', height: 'auto' }} />
                   </button>
                 </div>
               </div>
@@ -688,6 +768,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           </div>
         )}
       </div>
+
     </>
   );
 };

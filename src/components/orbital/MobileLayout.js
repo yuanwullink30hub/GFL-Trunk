@@ -127,7 +127,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
 
                 {/* Button */}
                 <button
-                  className="rounded-sm font-bold tracking-widest transition-all duration-300 hover:scale-105 mt-2"
+                  className="rounded-sm font-bold tracking-widest transition-all duration-300 mt-2"
                   style={{
                     background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))',
                     border: '1px solid rgba(167, 139, 250, 0.5)',
@@ -135,7 +135,18 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                     fontSize: 'clamp(0.65rem, 2.2vw, 0.85rem)',
                     padding: 'clamp(0.4rem, 1.5vw, 0.6rem) clamp(0.8rem, 3.5vw, 1.5rem)',
-                    width: 'fit-content'
+                    width: 'fit-content',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 0px 0px rgba(167, 139, 250, 0.5)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(167, 139, 250, 0.6)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.5), rgba(168, 85, 247, 0.4))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(167, 139, 250, 0.5)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))';
                   }}
                 >
                   LEARN MORE
@@ -337,14 +348,25 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
           {/* Action Button - moved up 5rem */}
           <div className="flex justify-center" style={{marginTop: '-4rem'}}>
             <button 
-              className="rounded-sm font-bold tracking-widest transition-all duration-300 hover:scale-105"
+              className="rounded-sm font-bold tracking-widest transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(251, 191, 36, 0.2))',
                 border: '1px solid rgba(245, 158, 11, 0.5)',
                 color: '#fbbf24',
                 fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                 fontSize: 'clamp(0.7rem, 2.5vw, 0.9rem)',
-                padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 4vw, 2rem)'
+                padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 4vw, 2rem)',
+                cursor: 'pointer',
+                boxShadow: '0 0 0px 0px rgba(245, 158, 11, 0.5)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(245, 158, 11, 0.6)';
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.5), rgba(251, 191, 36, 0.4))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(245, 158, 11, 0.5)';
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(251, 191, 36, 0.2))';
               }}
             >
               ENTER SYSTEM

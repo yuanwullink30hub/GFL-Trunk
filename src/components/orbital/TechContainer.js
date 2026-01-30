@@ -43,7 +43,7 @@ const TechContainer = ({
       </div>
 
       {/* --- Content Area --- */}
-      <div className="flex-1 flex flex-col h-full relative z-0 overflow-hidden" style={{ padding: '0.8vw' }}>
+      <div className="flex-1 flex flex-col h-full relative z-0 overflow-hidden pointer-events-auto" style={{ padding: '0.8vw' }}>
         {/* Title Tag */}
         <div className={`
           absolute 
@@ -55,7 +55,7 @@ const TechContainer = ({
         </div>
         
         {/* Inner Content Placeholder */}
-        <div className="flex-1 w-full h-full border border-dashed border-white/5 rounded-sm flex items-center justify-center" style={{ marginTop: '1.2vw' }}>
+        <div className="flex-1 w-full h-full border border-dashed border-white/5 rounded-sm flex items-center justify-center pointer-events-auto" style={{ marginTop: '1.2vw' }}>
             {children || (
                 <div className="flex flex-col items-center" style={{ gap: '0.4vw' }}>
                     <div className={`rounded-full border border-t-transparent animate-spin ${accentColor}`} style={{ width: '1.5vw', height: '1.5vw' }} />

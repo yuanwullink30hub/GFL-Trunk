@@ -56,12 +56,15 @@ export const detectPerformance = () => {
   
   const hasIntegratedGPU = hasIntelIntegrated || hasAMDIntegrated;
   
-  // LOW-end detection: must match ALL criteria
-  // <3GB RAM AND ≤4 cores AND integrated GPU
-  const isLowEnd = 
-    (navigator.deviceMemory < 3) &&
-    (navigator.hardwareConcurrency <= 4) &&
-    hasIntegratedGPU;
+  // LOW-end detection: must match AT LEAST 2 of 3 criteria
+  // <3GB RAM OR ≤4 cores OR integrated GPU (any 2 of 3)
+  const lowEndCriteria = [
+    navigator.deviceMemory < 3,
+    navigator.hardwareConcurrency <= 4,
+    hasIntegratedGPU
+  ];
+  const matchedCriteria = lowEndCriteria.filter(Boolean).length;
+  const isLowEnd = matchedCriteria >= 2;
 
   if (isLowEnd) {
     profile = {

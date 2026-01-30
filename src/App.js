@@ -341,10 +341,10 @@ const App = () => {
 
   // Slideshow auto-advance
   useEffect(() => {
-    // const slideInterval = setInterval(() => {
-    //   setCurrentSlide(prev => (prev + 1) % 4);
-    // }, 4000);
-    // return () => clearInterval(slideInterval);
+    const slideInterval = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % 4);
+    }, 3300);
+    return () => clearInterval(slideInterval);
   }, []);
 
   // Derive animation values from currentFrame using section-based timing
@@ -484,11 +484,15 @@ const App = () => {
           />
 
           {/* --- Persistent Logo (Mobile) --- */}
+          {/* Moves out with header at frame 9, but stays static if activeSection is clicked */}
           <div
             className="fixed pointer-events-auto z-50"
             style={{
               top: 'clamp(1rem, 2vw, 1.5rem)',
               left: 'clamp(0.75rem, 2vw, 1rem)',
+              transform: activeSection ? 'none' : `translateX(${headerY * 2.5}px) translateY(${headerY * 2.5}px) scale(${headerScale})`,
+              opacity: activeSection ? 1 : headerOpacity,
+              transition: activeSection ? 'none' : undefined,
             }}
           >
             <img 
@@ -529,7 +533,14 @@ const App = () => {
             animationProgress={containerProgress}
             position="top"
             isMobile={isMobile}
-            TimeSync={<TimeSync isMobile={isMobile} />}
+            TimeSync={
+              <div style={{
+                transform: `translateX(${-headerY * 2.5}px) translateY(${headerY * 2.5}px) scale(${headerScale})`,
+                opacity: headerOpacity,
+              }}>
+                <TimeSync isMobile={isMobile} />
+              </div>
+            }
           />
           
           {/* Earth Animation Section */}
@@ -606,11 +617,15 @@ const App = () => {
           />
 
           {/* --- Persistent Logo (top-left) --- */}
+          {/* Moves out with header at frame 9, but stays static if activeSection is clicked */}
           <div
             className="fixed pointer-events-auto z-50"
             style={{
               top: 'clamp(1.5rem, 2vw, 2rem)',
               left: 'clamp(1rem, 3vw, 2rem)',
+              transform: activeSection ? 'none' : `translateX(${headerY * 2.5}px) translateY(${headerY * 2.5}px) scale(${headerScale})`,
+              opacity: activeSection ? 1 : headerOpacity,
+              transition: activeSection ? 'none' : undefined,
             }}
           >
             <img 
@@ -724,11 +739,13 @@ const App = () => {
               </div>
             </header>
         
-            {/* Desktop TimeSync */}
+            {/* Desktop TimeSync - Floats out with header at frame 9 */}
             <div className="absolute pointer-events-auto" style={{
               right: '1.5rem',
               top: '2.5rem',
-              zIndex: 50
+              zIndex: 50,
+              transform: `translateX(${-headerY * 2.5}px) translateY(${headerY * 2.5}px) scale(${headerScale})`,
+              opacity: headerOpacity,
             }}>
               <TimeSync isMobile={false} />
             </div>
@@ -829,126 +846,239 @@ const App = () => {
               </div>
             </div>
             
-            {/* === STATIC PYRAMID LAYER LABELS === */}
-            {/* These are completely static DOM elements - not affected by 3D transforms */}
-            {isSystem && (
-              <>
-                {/* Layer 0 - Bottom Right */}
-                <div 
-                  className="absolute pointer-events-auto transition-opacity duration-300"
-                  style={{
-                    right: window.innerWidth >= 1280 ? '8%' : window.innerWidth >= 768 ? '5%' : '3%',
-                    bottom: window.innerWidth >= 1280 ? 'calc(22% - 10rem)' : window.innerWidth >= 768 ? 'calc(20% - 7.5rem)' : 'calc(18% - 4rem)',
-                    opacity: (layerState.completedLayerIndex >= 0 ? 1 : 0) * systemOpacity,
-                    visibility: layerState.completedLayerIndex >= 0 ? 'visible' : 'hidden',
-                    transform: `scale(${(window.innerWidth >= 1280 ? 1.3 : window.innerWidth >= 768 ? 0.55 : 0.45) * systemScale}) translateY(${-systemTranslateY * 0.5}px)`,
-                    transformOrigin: 'right center',
-                    zIndex: 100
-                  }}
-                >
-                  <HoloLabel
-                    layerIndex={0}
-                    showButton={layerState.completedLayerIndex === 0 && !layerState.isIntroActive}
-                    isLast={false}
-                    alignment="right"
-                    onSend={() => {}}
-                    isSent={layerState.isGoldMode}
-                  />
-                </div>
-                
-                {/* Layer 1 - Bottom Left, slightly higher */}
-                <div 
-                  className="absolute pointer-events-auto transition-opacity duration-300"
-                  style={{
-                    left: window.innerWidth >= 1280 ? '8%' : window.innerWidth >= 768 ? '5%' : '3%',
-                    bottom: window.innerWidth >= 1280 ? 'calc(32% - 10rem)' : window.innerWidth >= 768 ? 'calc(28% - 7.5rem)' : 'calc(25% - 4rem)',
-                    opacity: (layerState.completedLayerIndex >= 1 ? 1 : 0) * systemOpacity,
-                    visibility: layerState.completedLayerIndex >= 1 ? 'visible' : 'hidden',
-                    transform: `scale(${(window.innerWidth >= 1280 ? 1.3 : window.innerWidth >= 768 ? 0.55 : 0.45) * systemScale}) translateY(${-systemTranslateY * 0.5}px)`,
-                    transformOrigin: 'left center',
-                    zIndex: 101
-                  }}
-                >
-                  <HoloLabel
-                    layerIndex={1}
-                    showButton={layerState.completedLayerIndex === 1 && !layerState.isIntroActive}
-                    isLast={false}
-                    alignment="left"
-                    onSend={() => {}}
-                    isSent={layerState.isGoldMode}
-                  />
-                </div>
-                
-                {/* Layer 2 - Right side, higher */}
-                <div 
-                  className="absolute pointer-events-auto transition-opacity duration-300"
-                  style={{
-                    right: window.innerWidth >= 1280 ? '8%' : window.innerWidth >= 768 ? '5%' : '3%',
-                    bottom: window.innerWidth >= 1280 ? 'calc(42% - 10rem)' : window.innerWidth >= 768 ? 'calc(36% - 7.5rem)' : 'calc(32% - 4rem)',
-                    opacity: (layerState.completedLayerIndex >= 2 ? 1 : 0) * systemOpacity,
-                    visibility: layerState.completedLayerIndex >= 2 ? 'visible' : 'hidden',
-                    transform: `scale(${(window.innerWidth >= 1280 ? 1.3 : window.innerWidth >= 768 ? 0.55 : 0.45) * systemScale}) translateY(${-systemTranslateY * 0.5}px)`,
-                    transformOrigin: 'right center',
-                    zIndex: 102
-                  }}
-                >
-                  <HoloLabel
-                    layerIndex={2}
-                    showButton={layerState.completedLayerIndex === 2 && !layerState.isIntroActive}
-                    isLast={false}
-                    alignment="right"
-                    onSend={() => {}}
-                    isSent={layerState.isGoldMode}
-                  />
-                </div>
-                
-                {/* Layer 3 - Left side, higher */}
-                <div 
-                  className="absolute pointer-events-auto transition-opacity duration-300"
-                  style={{
-                    left: window.innerWidth >= 1280 ? '8%' : window.innerWidth >= 768 ? '5%' : '3%',
-                    bottom: window.innerWidth >= 1280 ? 'calc(52% - 10rem)' : window.innerWidth >= 768 ? 'calc(44% - 7.5rem)' : 'calc(39% - 4rem)',
-                    opacity: (layerState.completedLayerIndex >= 3 ? 1 : 0) * systemOpacity,
-                    visibility: layerState.completedLayerIndex >= 3 ? 'visible' : 'hidden',
-                    transform: `scale(${(window.innerWidth >= 1280 ? 1.3 : window.innerWidth >= 768 ? 0.55 : 0.45) * systemScale}) translateY(${-systemTranslateY * 0.5}px)`,
-                    transformOrigin: 'left center',
-                    zIndex: 103
-                  }}
-                >
-                  <HoloLabel
-                    layerIndex={3}
-                    showButton={layerState.completedLayerIndex === 3 && !layerState.isIntroActive}
-                    isLast={false}
-                    alignment="left"
-                    onSend={() => {}}
-                    isSent={layerState.isGoldMode}
-                  />
-                </div>
-                
-                {/* Layer 4 - Right side, near top (FINAL LAYER) */}
-                <div 
-                  className="absolute pointer-events-auto transition-opacity duration-300"
-                  style={{
-                    right: window.innerWidth >= 1280 ? '8%' : window.innerWidth >= 768 ? '5%' : '3%',
-                    bottom: window.innerWidth >= 1280 ? 'calc(62% - 10rem)' : window.innerWidth >= 768 ? 'calc(52% - 7.5rem)' : 'calc(46% - 4rem)',
-                    opacity: (layerState.completedLayerIndex >= 4 ? 1 : 0) * systemOpacity,
-                    visibility: layerState.completedLayerIndex >= 4 ? 'visible' : 'hidden',
-                    transform: `scale(${(window.innerWidth >= 1280 ? 1.3 : window.innerWidth >= 768 ? 0.55 : 0.45) * systemScale}) translateY(${-systemTranslateY * 0.5}px)`,
-                    transformOrigin: 'right center',
-                    zIndex: 104
-                  }}
-                >
-                  <HoloLabel
-                    layerIndex={4}
-                    showButton={layerState.completedLayerIndex === 4 && !layerState.isIntroActive}
-                    isLast={true}
-                    alignment="right"
-                    onSend={triggerGoldMode}
-                    isSent={layerState.isGoldMode}
-                  />
-                </div>
-              </>
-            )}
+            {/* === SCROLL-ANIMATED PYRAMID LAYER LABELS === */}
+            {/* Labels animate with pyramidScrollProgress to match 3D layer movement */}
+            {isSystem && (() => {
+              // Calculate label positions based on scroll progress
+              // Each label (1-4) animates over its corresponding scroll range
+              // Labels float from entity center (bottom of blue diamond) down to final positions
+              const totalMovable = 4; // Layers 1-4 are movable
+              
+              // Viewport dimensions for calculations
+              const vw = window.innerWidth / 100;
+              const vh = window.innerHeight / 100;
+              
+              // Helper to calculate animation progress for each label
+              // Layer 1 starts almost immediately (at 0.02 progress = ~2 scroll ticks)
+              const getLabelAnimProgress = (labelIndex) => {
+                const startOffset = 0.02; // Start layer 1 at 2% progress (2-3 scroll ticks)
+                const adjustedProgress = Math.max(0, (pyramidScrollProgress - startOffset) / (1 - startOffset));
+                const rangeStart = (labelIndex - 1) / totalMovable;
+                const rangeEnd = labelIndex / totalMovable;
+                if (adjustedProgress >= rangeEnd) return 1;
+                if (adjustedProgress <= rangeStart) return 0;
+                return (adjustedProgress - rangeStart) / (rangeEnd - rangeStart);
+              };
+              
+              // Fast opacity - reaches 100% very quickly (after ~10% of layer's animation)
+              const getOpacity = (progress) => {
+                if (progress <= 0) return 0;
+                return Math.min(progress * 10, 1); // Full opacity at 10% progress
+              };
+              
+              // Easing function (smoothstep)
+              const ease = (t) => t * t * (3 - 2 * t);
+              
+              // Entity START position - bottom of the blue diamond in the entity cube
+              // This is where ALL labels (1-4) emerge FROM - dead center horizontally
+              const entityStartVh = 72; // Higher up - bottom of blue diamond
+              
+              // Final vertical positions for each label (in vh from bottom)
+              const finalVhPositions = [21, 29, 37, 45, 53]; // Evenly spaced pyramid layers
+              
+              // Final horizontal offset from edge (in vw) - MATCHES LABEL 0's positioning
+              const finalHorizontalVw = 6; // 6vw from edge - same as label 0
+              
+              // Calculate vertical position
+              const getInterpolatedBottom = (labelIndex, progress) => {
+                const easedProgress = ease(progress);
+                const startVh = entityStartVh;
+                const endVh = finalVhPositions[labelIndex];
+                const currentVh = startVh - (startVh - endVh) * easedProgress;
+                return `${currentVh}vh`;
+              };
+              
+              // Scale animation - starts small (0.15), ends at full scale
+              const getScale = (progress) => {
+                const easedProgress = ease(progress);
+                const minScale = 0.15;
+                return minScale + (1 - minScale) * easedProgress;
+              };
+              
+              // Base scale - use vw for responsive scaling
+              const baseScale = Math.max(0.8, Math.min(1.4, vw * 0.055));
+              
+              return (
+                <>
+                  {/* Layer 0 - Right side - COMPLETELY STATIC (just fades in, no movement) */}
+                  <div 
+                    className="absolute pointer-events-auto"
+                    style={{
+                      right: `${finalHorizontalVw}vw`,
+                      bottom: `${finalVhPositions[0]}vh`,
+                      opacity: layerState.introComplete ? systemOpacity : 0,
+                      visibility: layerState.introComplete ? 'visible' : 'hidden',
+                      transform: `scale(${baseScale})`,
+                      transformOrigin: 'right center',
+                      zIndex: 100,
+                      transition: 'opacity 0.5s ease'
+                    }}
+                  >
+                    <HoloLabel
+                      layerIndex={0}
+                      showButton={layerState.completedLayerIndex === 0 && !layerState.isIntroActive}
+                      isLast={false}
+                      alignment="right"
+                      onSend={() => {}}
+                      isSent={layerState.isGoldMode}
+                    />
+                  </div>
+                  
+                  {/* Layer 1 - Left side - SCROLL ANIMATED from entity center */}
+                  {(() => {
+                    const progress = getLabelAnimProgress(1);
+                    const easedProgress = ease(progress);
+                    const scale = getScale(progress);
+                    // Start at center (left: 50% with translateX(-50%))
+                    // End at left: 6vw with translateX(0) - matching label 0's mirrored position
+                    const startLeft = 50; // percent
+                    const endLeft = finalHorizontalVw; // vw
+                    // Interpolate translateX from -50% to 0%
+                    const translateX = -50 + (50 * easedProgress);
+                    // Interpolate left position (convert % to vw equivalent at start)
+                    const currentLeft = startLeft + (endLeft - startLeft) * easedProgress;
+                    return (
+                      <div 
+                        className="absolute pointer-events-auto"
+                        style={{
+                          left: progress === 0 ? '50%' : `${currentLeft}vw`,
+                          bottom: getInterpolatedBottom(1, progress),
+                          opacity: getOpacity(progress) * systemOpacity,
+                          visibility: progress > 0 ? 'visible' : 'hidden',
+                          transform: `scale(${baseScale * scale}) translateX(${translateX}%)`,
+                          transformOrigin: 'left center',
+                          zIndex: 101
+                        }}
+                      >
+                        <HoloLabel
+                          layerIndex={1}
+                          showButton={layerState.completedLayerIndex === 1 && !layerState.isIntroActive}
+                          isLast={false}
+                          alignment="left"
+                          onSend={() => {}}
+                          isSent={layerState.isGoldMode}
+                        />
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* Layer 2 - Right side - SCROLL ANIMATED from entity center */}
+                  {(() => {
+                    const progress = getLabelAnimProgress(2);
+                    const easedProgress = ease(progress);
+                    const scale = getScale(progress);
+                    // Start at center, end at right: 6vw (like label 0)
+                    // Use right positioning to match label 0 exactly
+                    const startRight = 50; // percent from right
+                    const endRight = finalHorizontalVw; // vw
+                    // Interpolate translateX from 50% to 0%
+                    const translateX = 50 - (50 * easedProgress);
+                    const currentRight = startRight + (endRight - startRight) * easedProgress;
+                    return (
+                      <div 
+                        className="absolute pointer-events-auto"
+                        style={{
+                          right: progress === 0 ? '50%' : `${currentRight}vw`,
+                          bottom: getInterpolatedBottom(2, progress),
+                          opacity: getOpacity(progress) * systemOpacity,
+                          visibility: progress > 0 ? 'visible' : 'hidden',
+                          transform: `scale(${baseScale * scale}) translateX(${translateX}%)`,
+                          transformOrigin: 'right center',
+                          zIndex: 102
+                        }}
+                      >
+                        <HoloLabel
+                          layerIndex={2}
+                          showButton={layerState.completedLayerIndex === 2 && !layerState.isIntroActive}
+                          isLast={false}
+                          alignment="right"
+                          onSend={() => {}}
+                          isSent={layerState.isGoldMode}
+                        />
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* Layer 3 - Left side - SCROLL ANIMATED from entity center */}
+                  {(() => {
+                    const progress = getLabelAnimProgress(3);
+                    const easedProgress = ease(progress);
+                    const scale = getScale(progress);
+                    const startLeft = 50;
+                    const endLeft = finalHorizontalVw;
+                    const translateX = -50 + (50 * easedProgress);
+                    const currentLeft = startLeft + (endLeft - startLeft) * easedProgress;
+                    return (
+                      <div 
+                        className="absolute pointer-events-auto"
+                        style={{
+                          left: progress === 0 ? '50%' : `${currentLeft}vw`,
+                          bottom: getInterpolatedBottom(3, progress),
+                          opacity: getOpacity(progress) * systemOpacity,
+                          visibility: progress > 0 ? 'visible' : 'hidden',
+                          transform: `scale(${baseScale * scale}) translateX(${translateX}%)`,
+                          transformOrigin: 'left center',
+                          zIndex: 103
+                        }}
+                      >
+                        <HoloLabel
+                          layerIndex={3}
+                          showButton={layerState.completedLayerIndex === 3 && !layerState.isIntroActive}
+                          isLast={false}
+                          alignment="left"
+                          onSend={() => {}}
+                          isSent={layerState.isGoldMode}
+                        />
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* Layer 4 - Right side (FINAL LAYER) - SCROLL ANIMATED from entity center */}
+                  {(() => {
+                    const progress = getLabelAnimProgress(4);
+                    const easedProgress = ease(progress);
+                    const scale = getScale(progress);
+                    const startRight = 50;
+                    const endRight = finalHorizontalVw;
+                    const translateX = 50 - (50 * easedProgress);
+                    const currentRight = startRight + (endRight - startRight) * easedProgress;
+                    return (
+                      <div 
+                        className="absolute pointer-events-auto"
+                        style={{
+                          right: progress === 0 ? '50%' : `${currentRight}vw`,
+                          bottom: getInterpolatedBottom(4, progress),
+                          opacity: getOpacity(progress) * systemOpacity,
+                          visibility: progress > 0 ? 'visible' : 'hidden',
+                          transform: `scale(${baseScale * scale}) translateX(${translateX}%)`,
+                          transformOrigin: 'right center',
+                          zIndex: 104
+                        }}
+                      >
+                        <HoloLabel
+                          layerIndex={4}
+                          showButton={layerState.completedLayerIndex === 4 && !layerState.isIntroActive}
+                          isLast={true}
+                          alignment="right"
+                          onSend={triggerGoldMode}
+                          isSent={layerState.isGoldMode}
+                        />
+                      </div>
+                    );
+                  })()}
+                </>
+              );
+            })()}
               
             {/* Back Button - positioned separately from entity transforms */}
             <button 

@@ -7,65 +7,118 @@ import { getPerformanceSettings } from '../../utils/performanceMonitor';
 import PyramidInner from '../newFeature/PyramidInner';
 import EarthParticleWaves from './EarthParticleWaves';
 
+// --- Pre-computed chunk data generator ---
+// Generates chunk assignments once at geometry creation time
+const generateChunkData = (geometry, frequency = 6.0) => {
+  const positions = geometry.attributes.position.array;
+  const vertexCount = positions.length / 3;
+  
+  // Pre-allocate typed arrays for performance
+  const chunkIds = new Float32Array(vertexCount);
+  const chunkCenters = new Float32Array(vertexCount * 3);
+  const chunkHashes = new Float32Array(vertexCount * 3);
+  
+  // Simple hash function (same as shader)
+  const hash33 = (x, y, z) => {
+    let px = (x * 0.1031) % 1;
+    let py = (y * 0.1030) % 1;
+    let pz = (z * 0.0973) % 1;
+    const dot = px * py + py * pz + pz * px + 33.33;
+    px = (px + dot) % 1;
+    py = (py + dot) % 1;
+    pz = (pz + dot) % 1;
+    return [
+      Math.abs(((px + py) * pz) % 1),
+      Math.abs(((py + pz) * px) % 1),
+      Math.abs(((pz + px) * py) % 1)
+    ];
+  };
+  
+  for (let i = 0; i < vertexCount; i++) {
+    const x = positions[i * 3] * frequency;
+    const y = positions[i * 3 + 1] * frequency;
+    const z = positions[i * 3 + 2] * frequency;
+    
+    // Floor to get cell coordinates
+    const nx = Math.floor(x);
+    const ny = Math.floor(y);
+    const nz = Math.floor(z);
+    
+    // Fractional part
+    const fx = x - nx;
+    const fy = y - ny;
+    const fz = z - nz;
+    
+    // Find nearest Voronoi center (simplified - just check 8 corners)
+    let minDist = 100.0;
+    let centerX = 0, centerY = 0, centerZ = 0;
+    
+    for (let dk = 0; dk <= 1; dk++) {
+      for (let dj = 0; dj <= 1; dj++) {
+        for (let di = 0; di <= 1; di++) {
+          const gx = di, gy = dj, gz = dk;
+          const [px, py, pz] = hash33(nx + gx, ny + gy, nz + gz);
+          const diffX = gx + px - fx;
+          const diffY = gy + py - fy;
+          const diffZ = gz + pz - fz;
+          const d = diffX * diffX + diffY * diffY + diffZ * diffZ;
+          if (d < minDist) {
+            minDist = d;
+            centerX = (nx + gx + px) / frequency;
+            centerY = (ny + gy + py) / frequency;
+            centerZ = (nz + gz + pz) / frequency;
+          }
+        }
+      }
+    }
+    
+    // Store chunk center
+    chunkCenters[i * 3] = centerX;
+    chunkCenters[i * 3 + 1] = centerY;
+    chunkCenters[i * 3 + 2] = centerZ;
+    
+    // Generate hash for this chunk center
+    const [hx, hy, hz] = hash33(centerX * frequency, centerY * frequency, centerZ * frequency);
+    chunkHashes[i * 3] = hx;
+    chunkHashes[i * 3 + 1] = hy;
+    chunkHashes[i * 3 + 2] = hz;
+    
+    // ChunkId is just the x component of hash
+    chunkIds[i] = hx;
+  }
+  
+  return { chunkIds, chunkCenters, chunkHashes };
+};
+
 // --- Custom Shader Material for the Holographic Surface ---
-// Simplified - no more chunk explosion, just fade out when exploding
+// OPTIMIZED: Uses pre-computed chunk data instead of per-frame Voronoi
 const HolographicShaderMaterial = {
   uniforms: {
     uTime: { value: 0 },
     uExplode: { value: 0 },
+    uChunkFade: { value: 1.0 }, // Smooth fade for chunks (1.0 = fully visible, 0.0 = hidden)
     uColorCore: { value: new THREE.Color('#0d0618') },   
-    uColorLand: { value: new THREE.Color('#4a1d66') },   
+    uColorLand: { value: new THREE.Color('#6b1d8f') },   // Vibrant magenta-purple
+    uColorLandDeep: { value: new THREE.Color('#3d0a5c') }, // Deep purple for later frames
     uColorRim: { value: new THREE.Color('#1a0320') },    // Dark Purple Glow
     uColorBorder: { value: new THREE.Color('#FFD700') }, // Bright Gold
     uColorBorderDark: { value: new THREE.Color('#2c290e') }, // Dark Brown for post-frame 9
     uMap: { value: null },
-    uVoronoiQuality: { value: 1.0 }, // Performance-based quality setting
   },
   vertexShader: `
+    attribute float aChunkId;
+    attribute vec3 aChunkCenter;
+    attribute vec3 aChunkHash;
+    
     varying vec3 vNormal;
     varying vec3 vPosition;
     varying vec2 vUv;
     varying float vFragExplode;
     varying float vChunkId;
     varying float vChunkScale;
+    varying float vNormalizedExp;
 
     uniform float uExplode;
-    uniform float uTime;
-    uniform float uVoronoiQuality;
-
-    // Hash function for chunk randomization
-    vec3 hash33(vec3 p) {
-      p = fract(p * vec3(.1031, .1030, .0973));
-      p += dot(p, p.yxz + 33.33);
-      return fract((p.xxy + p.yxx) * p.zyx);
-    }
-
-    // Voronoi for chunk generation - with dynamic frequency
-    // Optimized: Fewer iterations on low-end devices
-    vec4 voronoi(in vec3 x, float freq) {
-      vec3 scaledX = x * freq;
-      vec3 n = floor(scaledX);
-      vec3 f = fract(scaledX);
-      float m_dist = 100.0;
-      vec3 m_center = vec3(0.0);
-      
-      // Reduce iterations on low-end devices
-      int maxIter = uVoronoiQuality > 0.5 ? 1 : 0; // Only nearest neighbor on low-end
-      
-      for(int k=-maxIter; k<=maxIter; k++)
-      for(int j=-maxIter; j<=maxIter; j++)
-      for(int i=-maxIter; i<=maxIter; i++) {
-        vec3 g = vec3(float(i),float(j),float(k));
-        vec3 p = hash33(n + g);
-        vec3 diff = g + p - f;
-        float d = dot(diff, diff);
-        if(d < m_dist) {
-          m_dist = d;
-          m_center = n + g + p;
-        }
-      }
-      return vec4(m_dist, m_center);
-    }
 
     void main() {
       vUv = uv;
@@ -77,34 +130,29 @@ const HolographicShaderMaterial = {
       if (uExplode > 0.0) {
         // Normalized explosion progress (0-1)
         float normalizedExp = uExplode / 25.0;
+        vNormalizedExp = normalizedExp;
         
-        // === PROGRESSIVE CHUNK BREAKING (OPTIMIZED) ===
-        // Chunks shatter into tiny pieces very quickly
-        // Reduced max frequency on low-end devices to reduce shader cost
-        float baseFreq = 2.5;
-        float maxFreq = mix(8.0, 12.0, uVoronoiQuality); // 8.0 on low-end, 12.0 on high-end
-        // Fast exponential-like transition - by frame 10 (0.22) already at high freq
-        float freqProgress = smoothstep(0.0, 0.2, normalizedExp) * 0.7 + smoothstep(0.1, 0.35, normalizedExp) * 0.3;
-        float frequency = baseFreq + (maxFreq - baseFreq) * freqProgress;
-        
-        // Create chunks using Voronoi with dynamic frequency
-        vec4 cell = voronoi(position, frequency);
-        vec3 cellCenter = cell.yzw / frequency; // Unscale center
-        
-        // Random properties per chunk
-        vec3 cellHash = hash33(cellCenter * frequency);
-        float randomFactor = cellHash.x;
+        // Use pre-computed chunk data (NO MORE VORONOI!)
+        vec3 cellCenter = aChunkCenter;
+        vec3 cellHash = aChunkHash;
+        float randomFactor = aChunkId;
         vChunkId = randomFactor;
         
         // === CHUNK SHRINKING ===
-        // Chunks shrink rapidly towards their center as they shatter
-        float shrinkStart = 0.05;
-        float shrinkEnd = 0.3;
-        float shrinkProgress = smoothstep(shrinkStart, shrinkEnd, normalizedExp);
-        
-        // Calculate chunk scale - shrink to ~4x particle size very quickly
-        // By frame 10 (~0.22) chunks should be tiny (about 4x particle size)
-        vChunkScale = 1.0 - shrinkProgress * 0.95; // Shrink to 5% original size (nearly particle-sized)
+        // During fade period (frames 19-24, normExp 0.19-0.32), keep chunks at full size
+        // so they can fade smoothly via opacity. Resume shrinking after frame 24.
+        float shrinkProgress;
+        if (normalizedExp >= 0.19 && normalizedExp <= 0.32) {
+          // Keep at full size during fade (frames 19-24)
+          shrinkProgress = 0.0;
+        } else if (normalizedExp > 0.32) {
+          // Resume shrinking after frame 24
+          shrinkProgress = smoothstep(0.32, 0.5, normalizedExp);
+        } else {
+          // Normal shrinking before frame 19
+          shrinkProgress = smoothstep(0.05, 0.3, normalizedExp);
+        }
+        vChunkScale = 1.0 - shrinkProgress * 0.95;
         
         // Pull vertices toward chunk center
         vec3 toChunkCenter = cellCenter - position;
@@ -113,11 +161,8 @@ const HolographicShaderMaterial = {
         // Explosion direction - radial with some randomness
         vec3 explosionDir = normalize(cellCenter + (cellHash - 0.5) * 0.4);
         
-        // Tangent for tumbling motion
-        vec3 tangent = cross(explosionDir, vec3(0.0, 1.0, 0.0));
-        if (length(tangent) < 0.1) tangent = cross(explosionDir, vec3(1.0, 0.0, 0.0));
-        tangent = normalize(tangent);
-        vec3 bitangent = cross(tangent, explosionDir);
+        // Tangent for tumbling motion (simplified)
+        vec3 tangent = normalize(cross(explosionDir, vec3(0.0, 1.0, 0.0)));
         
         // Speed variation per chunk
         float speed = 0.6 + randomFactor * 1.5;
@@ -126,22 +171,19 @@ const HolographicShaderMaterial = {
         // Main outward movement
         finalPos += explosionDir * dist;
         
-        // Tumbling/rotation motion (intensifies as chunks get smaller)
+        // Tumbling/rotation motion (simplified)
         float tumbleIntensity = 1.0 + shrinkProgress * 2.0;
-        float rotation = cellHash.y * 15.0;
-        float tangentialMove = sin(uExplode * (0.3 + randomFactor * 0.4) + rotation) * (dist * 0.12 * tumbleIntensity);
-        float bitangentialMove = cos(uExplode * (0.2 + randomFactor * 0.3) + cellHash.z * 12.0) * (dist * 0.1 * tumbleIntensity);
+        float tangentialMove = sin(uExplode * (0.3 + randomFactor * 0.4) + cellHash.y * 15.0) * (dist * 0.12 * tumbleIntensity);
         finalPos += tangent * tangentialMove;
-        finalPos += bitangent * bitangentialMove;
         
-        // Surface cracking/deformation (increases with breakage)
-        float crackIntensity = 1.0 + shrinkProgress * 3.0;
-        // Disable vertical crack deformation after frame 12 (uExplode > 3.0)
-        float crackDisable = uExplode > 3.0 ? 0.0 : 1.0;
-        float deform = sin(position.x * 4.0 * crackIntensity + uExplode * 1.5) * cos(position.y * 4.0 * crackIntensity + uExplode) * crackDisable;
-        finalPos += normalize(position) * deform * uExplode * 0.08;
+        // Surface cracking (disabled after frame 12)
+        if (uExplode <= 3.0) {
+          float crackIntensity = 1.0 + shrinkProgress * 3.0;
+          float deform = sin(position.x * 4.0 * crackIntensity + uExplode * 1.5) * cos(position.y * 4.0 * crackIntensity + uExplode);
+          finalPos += normalize(position) * deform * uExplode * 0.08;
+        }
         
-        // Add jitter as chunks get very small (particle-like)
+        // Add jitter as chunks get very small
         float jitter = shrinkProgress * 0.3;
         finalPos += (cellHash - 0.5) * jitter * uExplode * 0.1;
         
@@ -159,10 +201,12 @@ const HolographicShaderMaterial = {
     uniform float uExplode;
     uniform vec3 uColorCore;
     uniform vec3 uColorLand;
+    uniform vec3 uColorLandDeep;
     uniform vec3 uColorRim;
     uniform vec3 uColorBorder;
     uniform vec3 uColorBorderDark;
     uniform sampler2D uMap;
+    uniform float uChunkFade;
 
     varying vec3 vNormal;
     varying vec3 vPosition;
@@ -170,120 +214,73 @@ const HolographicShaderMaterial = {
     varying float vFragExplode;
     varying float vChunkId;
     varying float vChunkScale;
-
-    float random(vec2 st) {
-      return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
-    }
+    varying float vNormalizedExp;
 
     void main() {
       vec3 N = normalize(vNormal);
       vec3 V = normalize(cameraPosition - vPosition);
+      float VdotN = dot(V, N);
       
-      float fresnel = pow(1.0 - abs(dot(V, N)), 2.0);
+      // Pre-compute normalized explosion once
+      float normExp = uExplode * 0.04; // 1/25 = 0.04
+      
+      // Fresnel (simplified)
+      float fresnel = pow(1.0 - abs(VdotN), 2.0);
 
       vec4 texColor = texture2D(uMap, vUv);
       float mapValue = texColor.r;
-      float continent = smoothstep(0.40, 0.60, mapValue);
       
-      vec3 color = uColorCore * 0.4; 
-      color = mix(color, uColorLand * 1.2, continent);
-
-      // THICKER BORDER LOGIC
+      // Combined continent and border calculation
+      float continent = smoothstep(0.40, 0.60, mapValue);
       float border = smoothstep(0.3, 0.45, mapValue) * (1.0 - smoothstep(0.55, 0.7, mapValue));
       
-      // Normalize explosion value (uExplode goes 0-25, normalize to 0-1)
-      float normalizedExplosion = uExplode / 25.0;
+      // Landmass color gradient - vibrant magenta/purple transitioning to deep purple
+      // Matches particle color progression (bright early, deeper as explosion continues)
+      float landColorBlend = smoothstep(0.1, 0.4, normExp);
+      vec3 landColor = mix(uColorLand, uColorLandDeep, landColorBlend);
       
-      // Before frame 9: gold border, After: dark brown
-      bool isAfterFrame9 = normalizedExplosion > 0.2;
-      vec3 borderColor = isAfterFrame9 ? uColorBorderDark : uColorBorder;
-      float borderIntensity = isAfterFrame9 ? 1.0 : 2.5;
+      // Base color
+      vec3 color = mix(uColorCore * 0.4, landColor * 1.2, continent);
+      
+      // Border color - smooth transition from gold to dark brown over frames 20-24
+      // Frame 20: normExp ≈ 0.19 (gold), Frame 24: normExp ≈ 0.32 (dark brown)
+      float borderFade = smoothstep(0.19, 0.32, normExp);
+      vec3 borderColor = mix(uColorBorder, uColorBorderDark, borderFade);
+      float borderIntensity = mix(2.5, 1.0, borderFade);
       color += borderColor * border * borderIntensity;
 
+      // Rim lighting
       color += uColorRim * fresnel * 1.5;
 
-      if (!gl_FrontFacing) {
-         color *= 0.5; 
-         color += uColorRim * fresnel * 0.8;
-      } else {
-         color *= 1.1;
-      }
+      // Front/back face handling
+      float faceMult = gl_FrontFacing ? 1.1 : 0.5;
+      color *= faceMult;
+      if (!gl_FrontFacing) color += uColorRim * fresnel * 0.8;
 
-      float scanline = sin(gl_FragCoord.y * 0.15 - uTime * 2.0) * 0.1 + 0.9;
+      // Scanline effect (simplified - less frequent sin)
+      float scanline = 0.9 + sin(gl_FragCoord.y * 0.15 - uTime * 2.0) * 0.1;
       color *= scanline;
       
-      float flicker = 1.0 - 0.03 * random(vec2(floor(uTime * 20.0), 0.0));
-      color *= flicker;
-      
-      // Per-chunk color variation during explosion
+      // Per-chunk effects during explosion
       if (vFragExplode > 0.0) {
-        float chunkBrightness = mix(0.9, 1.0, vChunkId);
-        color *= chunkBrightness;
-        
-        // Smooth color transition to dimmer tones as chunks fade
-        float brownTransition = smoothstep(0.15, 0.4, normalizedExplosion);
-        vec3 tintColor = mix(uColorBorder, uColorBorderDark, brownTransition);
-        color = mix(color, color + tintColor * 0.2, vChunkId * normalizedExplosion);
-        
-        // === GRADUAL BRIGHTNESS REDUCTION ===
-        // Start dimming earlier for smoother transition at frame 23
-        float dimStart = 0.22;  // ~frame 10
-        float dimEnd = 0.45;    // ~frame 20
-        float brightnessReduction = smoothstep(dimStart, dimEnd, normalizedExplosion);
-        
-        // Reduce brightness gradually (1.0 -> 0.05) - more aggressive fade
-        float brightnessMult = mix(1.0, 0.05, brightnessReduction);
-        color *= brightnessMult;
-        
-        // Also reduce gold/border intensity specifically
-        float goldFade = smoothstep(dimStart - 0.05, dimEnd - 0.1, normalizedExplosion);
-        color = mix(color, color * vec3(0.4, 0.3, 0.5), goldFade * border);
-        
-        // Remove purple glow - it creates bright center at frame 23
-        // float smallChunkGlow = (1.0 - vChunkScale) * 0.3 * (1.0 - brightnessReduction);
-        // color += vec3(0.3, 0.0, 0.6) * smallChunkGlow;
+        // Brightness reduction
+        float brightnessReduction = smoothstep(0.22, 0.45, normExp);
+        color *= mix(1.0, 0.05, brightnessReduction) * mix(0.9, 1.0, vChunkId);
       }
 
-      // Landmass opacity
-      float landmassOpacity = (1.0 - continent) * 0.5;
-      float alpha = 0.2 + landmassOpacity + (fresnel * 0.6);
+      // Alpha calculation (simplified)
+      float alpha = 0.2 + (1.0 - continent) * 0.5 + fresnel * 0.6;
       
-      // === SMOOTH CHUNK FADE OUT ===
-      // Multi-stage opacity transition for smooth chunk-to-particle handoff
-      
-      // Determine if chunk is on backside (facing away from camera)
-      // dot(V, N) < 0 means backside
-      float facingCamera = dot(V, N);
-      float isBackside = smoothstep(0.1, -0.3, facingCamera); // 1.0 for backside, 0.0 for frontside
-      
-      // Backside chunks get delayed fade (extra 0.15 normalized time = ~7 frames)
-      float backsideDelay = isBackside * 0.15;
-      
-      // Stage 1: Start fading early based on chunk shrink (more aggressive)
-      float shrinkFade = smoothstep(0.1, 0.4, vChunkScale);
-      
-      // Stage 2: Per-chunk staggered fade - backside gets delayed
-      float staggerOffset = vChunkId * 0.06;
-      float fadeStart = 0.06 + staggerOffset + backsideDelay;
-      float fadeEnd = 0.28 + staggerOffset + backsideDelay;
-      float staggeredFade = 1.0 - smoothstep(fadeStart, fadeEnd, normalizedExplosion);
-      
-      // Stage 3: Hard cutoff - backside chunks get more time
-      float cutoffStart = 0.28 + backsideDelay;
-      float cutoffEnd = 0.42 + backsideDelay; // Extended from 0.38 for backside
-      float hardCutoff = 1.0 - smoothstep(cutoffStart, cutoffEnd, normalizedExplosion);
-      
-      // Combine all fades with smooth blending
-      float combinedChunkFade = shrinkFade * staggeredFade * hardCutoff;
-      
-      // Distance-based fade
-      float distToCamera = distance(cameraPosition, vPosition);
-      float proximityFade = smoothstep(2.0, 5.0, distToCamera);
-      
-      // Edge fade for softer silhouette
-      float edgeSoftness = 1.0 - pow(1.0 - abs(dot(V, N)), 4.0) * normalizedExplosion;
-      
-      alpha *= combinedChunkFade * proximityFade * edgeSoftness;
+      // Chunk fade during explosion
+      if (normExp > 0.0) {
+        // During frames 19-24 (0.19-0.32), disable shrinkFade to allow smooth opacity fade
+        float shrinkFade = (vNormalizedExp >= 0.19 && vNormalizedExp <= 0.32) ? 1.0 : smoothstep(0.1, 0.4, vChunkScale);
+        
+        // Apply smooth chunk fade uniform (controlled externally for frames 20-24)
+        // This is the primary fade control for chunk disappearance
+        alpha *= shrinkFade * uChunkFade;
+        alpha *= smoothstep(2.0, 5.0, distance(cameraPosition, vPosition));
+      }
 
       gl_FragColor = vec4(color, alpha);
     }
@@ -320,10 +317,23 @@ const HoloEarthSphere = ({
   const baseScale = Math.min(1, viewport.width / 5.5) * 0.65;
   const scale = isMobile ? baseScale * 1.15 : baseScale;
 
-  const material = useMemo(() => {
+  // Pre-compute geometry with chunk data baked in (PERFORMANCE OPTIMIZATION)
+  const sphereGeometry = useMemo(() => {
     const performanceSettings = getPerformanceSettings();
-    const voronoiQuality = performanceSettings.tier === 'HIGH' ? 1.0 : 0.5;
+    const segments = performanceSettings.tier === 'LOW' ? 32 : 128;
     
+    const geometry = new THREE.SphereGeometry(2.5, segments, segments);
+    
+    // Generate and attach pre-computed chunk data
+    const { chunkIds, chunkCenters, chunkHashes } = generateChunkData(geometry, 6.0);
+    geometry.setAttribute('aChunkId', new THREE.BufferAttribute(chunkIds, 1));
+    geometry.setAttribute('aChunkCenter', new THREE.BufferAttribute(chunkCenters, 3));
+    geometry.setAttribute('aChunkHash', new THREE.BufferAttribute(chunkHashes, 3));
+    
+    return geometry;
+  }, []);
+
+  const material = useMemo(() => {
     const mat = new THREE.ShaderMaterial({
       uniforms: THREE.UniformsUtils.clone(HolographicShaderMaterial.uniforms),
       vertexShader: HolographicShaderMaterial.vertexShader,
@@ -334,9 +344,6 @@ const HoloEarthSphere = ({
       depthWrite: false,
       depthTest: false, // Render on top of pyramid during explosion
     });
-    
-    // Set performance-based uniforms
-    mat.uniforms.uVoronoiQuality.value = voronoiQuality;
     
     return mat;
   }, []);
@@ -365,16 +372,25 @@ const HoloEarthSphere = ({
       const targetExplode = 25.0; // Maximum explosion distance
       material.uniforms.uExplode.value = targetExplode * explosionProgress;
       
-      // Only disable depth test during smokescreen phase
-      const inSmokescreenPhase = explosionProgress > 0.1 && explosionProgress < 0.32;
+      // Smooth chunk fade between frames 20-24
+      // Frame 20: explosionProgress ≈ 0.19, Frame 24: explosionProgress ≈ 0.32
+      // Fade from 1.0 (fully visible) to 0.0 (hidden)
+      const chunkFade = explosionProgress < 0.19 ? 1.0 :
+                        explosionProgress > 0.32 ? 0.0 :
+                        1.0 - ((explosionProgress - 0.19) / (0.32 - 0.19));
+      material.uniforms.uChunkFade.value = chunkFade;
+      
+      // Only disable depth test during smokescreen phase (after frame 22)
+      // Frames 20-24: normal depth test enabled so fading chunks render correctly
+      const inSmokescreenPhase = explosionProgress > 0.25;
       material.depthTest = !inSmokescreenPhase;
       
       // Transition colors from orbital to explosion view
-      // Orbital: brighter, Explosion: darker
+      // Orbital: brighter magenta-purple, Explosion: darker purple
       const orbitalCore = new THREE.Color('#0d0618');
       const explosionCore = new THREE.Color('#050310');
-      const orbitalLand = new THREE.Color('#4a1d66');
-      const explosionLand = new THREE.Color('#2d0f3d');
+      const orbitalLand = new THREE.Color('#6b1d8f');   // Vibrant magenta-purple
+      const explosionLand = new THREE.Color('#3d0a5c'); // Deep purple
       const orbitalRim = new THREE.Color('#1a0320');
       const explosionRim = new THREE.Color('#0a0110');
       
@@ -388,6 +404,7 @@ const HoloEarthSphere = ({
       
       material.uniforms.uColorCore.value = currentCore;
       material.uniforms.uColorLand.value = currentLand;
+      material.uniforms.uColorLandDeep.value = explosionLand;
       material.uniforms.uColorRim.value = currentRim;
     }
     
@@ -461,7 +478,9 @@ const HoloEarthSphere = ({
   };
 
   // Calculate render order for earth surface chunks - should be in front of pyramid during explosion smokescreen only
-  const earthRenderOrder = explosionProgress > 0.1 && explosionProgress < 0.32 ? 5 : 0;
+  // Smokescreen phase: after frame 22 (explosionProgress > 0.25)
+  // Frames 14-22: normal depth rendering - particles behind pyramid not visible
+  const earthRenderOrder = explosionProgress > 0.25 && explosionProgress < 0.35 ? 5 : 0;
 
   // Mobile: move down 3rem (convert rem to world units via viewport ratio)
   // 3rem ≈ 48px at 16px base, convert to world units using viewport height ratio
@@ -484,10 +503,10 @@ const HoloEarthSphere = ({
         />
       </group>
 
-      {/* Outer Holographic Crust - renders in front of pyramid during explosion */}
-      <Sphere 
+      {/* Outer Holographic Crust - uses pre-computed chunk geometry */}
+      <mesh 
         ref={groupRef} 
-        args={[2.5, getPerformanceSettings().tier === 'LOW' ? 16 : 128, getPerformanceSettings().tier === 'LOW' ? 16 : 128]} 
+        geometry={sphereGeometry}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
@@ -495,7 +514,7 @@ const HoloEarthSphere = ({
         renderOrder={earthRenderOrder}
       >
         <primitive object={material} attach="material" />
-      </Sphere>
+      </mesh>
 
       {/* Earth Particle Waves - wave-like particle motion (aistudios style) */}
       {/* Particles fade in as chunks shrink and break apart */}

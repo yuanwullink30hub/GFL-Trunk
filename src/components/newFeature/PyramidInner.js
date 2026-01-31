@@ -490,8 +490,9 @@ const PyramidInner = ({
 
   // Calculate pyramid render order - should be behind particles only during smokescreen phase
   // Lower renderOrder = renders first (behind), Higher = renders later (in front)
-  // After frame 24 (0.26): pyramid uses normal depth for proper 3D sphere effect
-  const pyramidRenderOrder = explosionProgress > 0.1 && explosionProgress < 0.26 ? -10 : 0;
+  // Frames 14-22: normal depth rendering - particles behind pyramid not visible
+  // After frame 22 (explosionProgress > 0.25): pyramid behind particles (smokescreen)
+  const pyramidRenderOrder = explosionProgress > 0.25 && explosionProgress < 0.35 ? -10 : 0;
 
   return (
     <group>

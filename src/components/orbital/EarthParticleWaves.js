@@ -92,6 +92,11 @@ const EarthParticleWaves = ({
           vCalmFactor = calmFactor;
 
           if (uExplode > 0.0) {
+              // === RADIAL SPREAD - particles separate from each other ===
+              vec3 radialDir = normalize(position);
+              float spreadFactor = uExplode * 0.04; // Smooth spread factor
+              pos = position + radialDir * spreadFactor;
+              
               // === SIMPLIFIED WAVE DISPLACEMENT ===
               float waveSpeed = mix(0.8, 0.15, calmFactor);
               float waveAmp = mix(0.2, 0.05, calmFactor);

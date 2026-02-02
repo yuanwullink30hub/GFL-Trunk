@@ -225,6 +225,8 @@ const ChunkShaderMaterial = {
     uMap: { value: null },
   },
   vertexShader: `
+    uniform float uExplode;
+    
     varying vec3 vNormal;
     varying vec3 vPosition;
     varying vec2 vUv;
@@ -233,8 +235,15 @@ const ChunkShaderMaterial = {
     void main() {
       vUv = uv;
       vNormal = normalize(normalMatrix * normal);
-      vPosition = (modelMatrix * vec4(position, 1.0)).xyz;
-      vWorldPosition = position;
+      
+      // Each vertex spreads outward from sphere center based on explosion progress
+      // This creates the visual of particles separating/spreading apart
+      vec3 radialDir = normalize(position); // Direction from center to this vertex
+      float spreadFactor = uExplode * 0.04; // Smooth spread factor (adjustable)
+      vec3 spreadPosition = position + radialDir * spreadFactor;
+      
+      vPosition = (modelMatrix * vec4(spreadPosition, 1.0)).xyz;
+      vWorldPosition = spreadPosition;
       gl_Position = projectionMatrix * viewMatrix * vec4(vPosition, 1.0);
     }
   `,
@@ -335,17 +344,14 @@ const ChunkShaderMaterial = {
       // === ALPHA - Match solid sphere formula at start ===
       // Solid sphere: alpha = 0.3 + (1.0 - continent) * 0.4 + fresnel * 0.5
       // This means: land = 0.3 + fresnel*0.5, ocean = 0.7 + fresnel*0.5
-      float solidSphereAlpha = 0.3 + (1.0 - continent) * 0.4 + fresnel * 0.5;
+      // Starting alpha (before transition) - denser starting point
+      float startAlpha = 3.3;
       
-      // Boost alpha to make chunks more visible with additive blending
-      solidSphereAlpha *= 1.4; // 40% brighter/more opaque
-      solidSphereAlpha = min(solidSphereAlpha, 1.0); // Clamp to 1.0
+      // Ending alpha (fully transitioned chunks)
+      float chunkAlpha = 2.4;
       
-      // After transition: full opacity
-      float chunkAlpha = 1.0;
-      
-      // Blend from solid sphere alpha to chunk alpha
-      float baseAlpha = mix(solidSphereAlpha, chunkAlpha, transition);
+      // Blend from start alpha to chunk alpha based on transition
+      float baseAlpha = mix(startAlpha, chunkAlpha, transition);
       
       // Apply fade-out during later frames via uChunkFade
       float alpha = baseAlpha * uChunkFade;

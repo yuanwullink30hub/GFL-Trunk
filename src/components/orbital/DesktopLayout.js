@@ -10,7 +10,7 @@ import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 import eyeLogo from '../../images/Eyedentity.png';
 import blackholeIcon from '../../images/Blackhole.png';
 
-const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, setActiveSection }) => {
+const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, setActiveSection, pauseAutoSlide }) => {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
   
   // Touch swipe state for Gardens slideshow
@@ -31,6 +31,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
     const diff = touchStartX.current - touchEndX.current;
     
     if (Math.abs(diff) > swipeThreshold) {
+      // User manually swiped - pause auto-slide
+      if (pauseAutoSlide) pauseAutoSlide();
       if (diff > 0) {
         // Swiped left - go to next slide
         setCurrentSlide(prev => (prev + 1) % gardensDataLength);
@@ -43,7 +45,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
     // Reset
     touchStartX.current = 0;
     touchEndX.current = 0;
-  }, [setCurrentSlide]);
+  }, [setCurrentSlide, pauseAutoSlide]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -146,7 +148,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               }}
               onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(167,139,250,0.6)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.5), rgba(168, 85, 247, 0.4))'; }}
               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(167,139,250,0.5)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))'; }}
-              onClick={() => setActiveSection('filosofie')}
+              onClick={(e) => setActiveSection('filosofie', e)}
             >
               LEARN MORE
             </button>
@@ -167,8 +169,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           opacity: mounted ? containerOpacity : 0
         }}
       >
-        <TechContainer title="GARDENFORLIFE.NL" variant="orange" className="w-full h-full">
-          <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-hidden">
+        <TechContainer title="GARDENFORLIFE.NL" variant="purple" className="w-full h-full">
+          <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-visible">
             {/* Blurred webpage background */}
             <div className="absolute inset-0 bg-gradient-to-br from-green-900/30 to-green-800/20 backdrop-blur-sm" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34, 197, 94, 0.1) 2px, rgba(34, 197, 94, 0.1) 4px)'}}></div>
             
@@ -249,10 +251,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '1vw' }}>
                 {/* Slideshow Area - Touch swipable */}
                 <div 
-                  className="w-full relative overflow-visible rounded-sm border border-purple-500/20" 
+                  className="w-full relative overflow-hidden rounded-sm border border-purple-500/20" 
                   style={{ 
-                    height: 'calc(100% - 2vw)', 
-                    marginBottom: '0.8vw',
+                    height: 'calc(100% - 2.5vw)', 
+                    marginBottom: '0.5vw',
                     touchAction: 'pan-y' // Allow vertical scroll but capture horizontal swipe
                   }}
                   onTouchStart={handleTouchStart}
@@ -441,12 +443,13 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 </div>
                 
                 {/* Circle Indicators with Arrow Navigation */}
-                <div className="flex justify-center items-center z-50 relative" style={{ gap: '0.8vw' }}>
+                <div className="flex justify-center items-center relative" style={{ gap: '0.8vw', zIndex: 100, position: 'relative' }}>
                   {/* Left Arrow */}
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (pauseAutoSlide) pauseAutoSlide();
                       setCurrentSlide(prev => (prev - 1 + gardensData.length) % gardensData.length);
                     }}
                     className="rounded transition-colors border border-purple-500 bg-transparent hover:border-purple-400 cursor-pointer z-50"
@@ -463,6 +466,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         key={garden.id}
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (pauseAutoSlide) pauseAutoSlide();
                           setCurrentSlide(i);
                         }}
                         className="cursor-pointer transition-all duration-300 z-50"
@@ -477,6 +481,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   
                   {/* Learn More Button */}
                   <button
+                    type="button"
                     className="rounded-sm font-bold tracking-widest transition-all duration-300"
                     style={{
                       background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.2))',
@@ -484,14 +489,18 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                       color: '#fbbf24',
                       fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                       fontSize: 'max(8.5px, 0.45vw)',
-                      padding: '0.4vw 0.8vw',
-                      width: 'fit-content',
+                      padding: '0.6vw 1.2vw',
+                      minHeight: '1.5vw',
                       borderRadius: '0.1vw',
-                      boxShadow: '0 0 0px 0px rgba(245,158,11,0.5)'
+                      boxShadow: '0 0 0px 0px rgba(245,158,11,0.5)',
+                      pointerEvents: 'auto',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      zIndex: 100
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(245,158,11,0.6)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.5), rgba(245, 158, 11, 0.4))'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(245,158,11,0.5)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.2))'; }}
-                    onClick={() => setActiveSection('gardens')}
+                    onClick={(e) => setActiveSection('gardens', e)}
                   >
                     LEARN MORE
                   </button>
@@ -503,6 +512,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         key={garden.id}
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (pauseAutoSlide) pauseAutoSlide();
                           setCurrentSlide(i + 2);
                         }}
                         className="cursor-pointer transition-all duration-300 z-50"
@@ -520,6 +530,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (pauseAutoSlide) pauseAutoSlide();
                       setCurrentSlide(prev => (prev + 1) % gardensData.length);
                     }}
                     className="rounded transition-colors border border-purple-500 bg-transparent hover:border-purple-400 cursor-pointer z-50"
@@ -618,7 +629,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(34,211,238,0.5)'; 
                 e.currentTarget.style.background = 'linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(34, 211, 238, 0.2))'; 
               }}
-              onClick={() => setActiveSection('monitor')}
+              onClick={(e) => setActiveSection('monitor', e)}
             >
               MONITOR
             </button>
@@ -628,7 +639,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
       {/* 5. Center Bottom - Status Strip */}
       <div 
-        className="absolute left-0 right-0 flex justify-center pointer-events-auto"
+        className="absolute left-0 right-0 flex justify-center pointer-events-none"
         style={{
           bottom: '5vh',
           transform: `translateY(${bottomCenterY}vh) scale(${containerScale})`,
@@ -637,12 +648,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       >
         {/* Desktop Build - 1325px+ */}
         {windowWidth >= 1325 && (
-          <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(2rem)' }}>
+          <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(2rem)' }} className="pointer-events-auto">
             <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '14.95vh' }}>
               <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
                 {/* Left: Logo - Button */}
                 <button 
-                  onClick={() => setActiveSection('menu')}
+                  onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
@@ -669,7 +680,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 {/* Right: Login Button */}
                 <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
                   <button 
-                    onClick={() => setActiveSection('login')}
+                    onClick={(e) => setActiveSection('login', e)}
                     style={{
                     padding: '0',
                     backgroundColor: 'transparent',
@@ -695,12 +706,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
         {/* Laptop Build - 1100px to 1324px */}
         {windowWidth >= 1100 && windowWidth < 1325 && (
-          <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(0.9rem)' }}>
+          <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(0.9rem)' }} className="pointer-events-auto">
             <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }}>
               <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
                 {/* Left: Logo - Button */}
                 <button 
-                  onClick={() => setActiveSection('menu')}
+                  onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
@@ -727,7 +738,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 {/* Right: Login Button */}
                 <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
                   <button 
-                    onClick={() => setActiveSection('login')}
+                    onClick={(e) => setActiveSection('login', e)}
                     style={{
                     padding: '0',
                     backgroundColor: 'transparent',
@@ -753,12 +764,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
         {/* Tablet Build - 768px to 1099px */}
         {windowWidth >= 768 && windowWidth < 1100 && (
-          <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(1rem)' }}>
+          <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(1rem)' }} className="pointer-events-auto">
             <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }}>
               <div className="w-full h-full flex items-center justify-evenly opacity-90" style={{ padding: '0 0.5vw' }}>
                 {/* Left: Logo - Button */}
                 <button 
-                  onClick={() => setActiveSection('menu')}
+                  onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
@@ -785,7 +796,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 {/* Right: Login Button */}
                 <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
                   <button 
-                    onClick={() => setActiveSection('login')}
+                    onClick={(e) => setActiveSection('login', e)}
                     style={{
                     padding: '0',
                     backgroundColor: 'transparent',

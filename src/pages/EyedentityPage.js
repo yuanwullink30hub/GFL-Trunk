@@ -1,41 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { memo } from 'react';
 
-const EyedentityPage = ({ isVisible, onBack }) => {
-  const [showContent, setShowContent] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
-
-  useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(() => setShowContent(true), 1500);
-      return () => clearTimeout(timer);
-    } else {
-      setShowContent(false);
-      setIsExiting(false);
-    }
-  }, [isVisible]);
-
-  const handleBack = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onBack();
-    }, 1500);
-  };
-
-  if (!isVisible && !isExiting) return null;
-
+const EyedentityPage = memo(({ isVisible, onBack }) => {
+  // Content only renders fully when visible or animating toward it
   return (
     <div
       style={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: showContent && !isExiting ? 'translate(-50%, -50%) scale(1)' : 'translate(-50%, -50%) scale(0.85)',
-        zIndex: 95,
-        opacity: showContent && !isExiting ? 1 : 0,
-        pointerEvents: showContent && !isExiting ? 'auto' : 'none',
-        transition: 'opacity 1.5s ease, transform 1.5s ease',
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        // No background - transparent over grid
       }}
     >
+      {/* Render content when visible, placeholder when not */}
+      {isVisible ? (
       <div style={{
         minWidth: '40vw',
         minHeight: '30vh',
@@ -61,7 +40,7 @@ const EyedentityPage = ({ isVisible, onBack }) => {
           Welcome to Eyedentity
         </div>
         <button
-          onClick={handleBack}
+          onClick={onBack}
           style={{
             padding: '0.5rem 1rem',
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -80,11 +59,16 @@ const EyedentityPage = ({ isVisible, onBack }) => {
             e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
           }}
         >
-          ← BACK
+          ← TERUG
         </button>
       </div>
+      ) : (
+        <div style={{ width: '40vw', height: '30vh' }} />
+      )}
     </div>
   );
-};
+});
+
+EyedentityPage.displayName = 'EyedentityPage';
 
 export default EyedentityPage;

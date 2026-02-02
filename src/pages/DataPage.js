@@ -1,41 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { memo } from 'react';
 
-const DataPage = ({ isVisible, onBack }) => {
-  const [showContent, setShowContent] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
-
-  useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(() => setShowContent(true), 1500);
-      return () => clearTimeout(timer);
-    } else {
-      setShowContent(false);
-      setIsExiting(false);
-    }
-  }, [isVisible]);
-
-  const handleBack = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onBack();
-    }, 1500);
-  };
-
-  if (!isVisible && !isExiting) return null;
-
+const DataPage = memo(({ isVisible, onBack }) => {
+  // Content only renders fully when visible or animating toward it
   return (
     <div
       style={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: showContent && !isExiting ? 'translate(-50%, -50%) scale(1)' : 'translate(-50%, -50%) scale(0.85)',
-        zIndex: 95,
-        opacity: showContent && !isExiting ? 1 : 0,
-        pointerEvents: showContent && !isExiting ? 'auto' : 'none',
-        transition: 'opacity 1.5s ease, transform 1.5s ease',
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        // No background - transparent over grid
       }}
     >
+      {/* Render content when visible, placeholder when not */}
+      {isVisible ? (
       <div style={{
         minWidth: '40vw',
         minHeight: '30vh',
@@ -60,7 +39,7 @@ const DataPage = ({ isVisible, onBack }) => {
           Content coming soon...
         </div>
         <button
-          onClick={handleBack}
+          onClick={onBack}
           style={{
             padding: '0.5rem 1rem',
             backgroundColor: 'rgba(34, 211, 238, 0.2)',
@@ -79,11 +58,16 @@ const DataPage = ({ isVisible, onBack }) => {
             e.target.style.backgroundColor = 'rgba(34, 211, 238, 0.2)';
           }}
         >
-          ← BACK
+          ← TERUG
         </button>
       </div>
+      ) : (
+        <div style={{ width: '40vw', height: '30vh' }} />
+      )}
     </div>
   );
-};
+});
+
+DataPage.displayName = 'DataPage';
 
 export default DataPage;

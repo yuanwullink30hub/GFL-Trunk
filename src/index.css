@@ -13,10 +13,10 @@ body {
   color: #FFFEF0;
 }
 
-/* Allow scroll on mobile, hidden on desktop */
+/* Allow scroll on mobile, visible overflow on desktop for map navigation */
 @media (min-width: 768px) {
   body {
-    overflow: hidden;
+    overflow: visible;
   }
 }
 
@@ -59,4 +59,71 @@ body {
   100% {
     opacity: 1;
   }
+}
+
+/* Additional animations for GeneralBrandPage */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Animation utility classes */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-zoomIn {
+  animation: zoomIn 0.3s ease-out;
+}
+
+.animate-spin-slow {
+  animation: spin 20s linear infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbar for brand pages */
+.brand-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.brand-scrollbar::-webkit-scrollbar-track {
+  background: rgba(42, 10, 56, 0.3);
+}
+
+.brand-scrollbar::-webkit-scrollbar-thumb {
+  background: #ffae00;
+  border-radius: 0px;
+}
+
+/* Selection styling for brand pages */
+.brand-selection::selection {
+  background-color: #ffae00;
+  color: #000;
 }

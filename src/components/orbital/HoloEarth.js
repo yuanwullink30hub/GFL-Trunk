@@ -7,192 +7,234 @@ import { getPerformanceSettings } from '../../utils/performanceMonitor';
 import PyramidInner from '../newFeature/PyramidInner';
 import EarthParticleWaves from './EarthParticleWaves';
 
-// --- Pre-computed chunk data generator ---
-// Generates chunk assignments once at geometry creation time
-const generateChunkData = (geometry, frequency = 6.0) => {
-  const positions = geometry.attributes.position.array;
-  const vertexCount = positions.length / 3;
+// --- Generate landmass chunks from actual sphere surface with thickness ---
+const generateChunkGeometries = (radius = 2.5, segments = 48) => {
+  const baseSphere = new THREE.SphereGeometry(radius, segments, segments);
+  const positions = baseSphere.attributes.position.array;
+  const normals = baseSphere.attributes.normal.array;
+  const uvs = baseSphere.attributes.uv.array;
+  const indices = baseSphere.index.array;
   
-  // Pre-allocate typed arrays for performance
-  const chunkIds = new Float32Array(vertexCount);
-  const chunkCenters = new Float32Array(vertexCount * 3);
-  const chunkHashes = new Float32Array(vertexCount * 3);
-  
-  // Simple hash function (same as shader)
+  // Hash function for chunk assignment
   const hash33 = (x, y, z) => {
-    let px = (x * 0.1031) % 1;
-    let py = (y * 0.1030) % 1;
-    let pz = (z * 0.0973) % 1;
-    const dot = px * py + py * pz + pz * px + 33.33;
-    px = (px + dot) % 1;
-    py = (py + dot) % 1;
-    pz = (pz + dot) % 1;
-    return [
-      Math.abs(((px + py) * pz) % 1),
-      Math.abs(((py + pz) * px) % 1),
-      Math.abs(((pz + px) * py) % 1)
-    ];
+    let px = Math.abs((x * 127.1 + y * 311.7 + z * 74.7) % 1);
+    let py = Math.abs((x * 269.5 + y * 183.3 + z * 246.1) % 1);
+    let pz = Math.abs((x * 113.5 + y * 271.9 + z * 124.6) % 1);
+    return [px, py, pz];
   };
   
-  for (let i = 0; i < vertexCount; i++) {
-    const x = positions[i * 3] * frequency;
-    const y = positions[i * 3 + 1] * frequency;
-    const z = positions[i * 3 + 2] * frequency;
+  // Voronoi-style chunk assignment for natural "broken" look
+  const frequency = 2.0; // Controls chunk size
+  const triangleCount = indices.length / 3;
+  const chunkTriangles = {};
+  
+  for (let t = 0; t < triangleCount; t++) {
+    const i0 = indices[t * 3];
+    const i1 = indices[t * 3 + 1];
+    const i2 = indices[t * 3 + 2];
     
-    // Floor to get cell coordinates
-    const nx = Math.floor(x);
-    const ny = Math.floor(y);
-    const nz = Math.floor(z);
+    const cx = (positions[i0 * 3] + positions[i1 * 3] + positions[i2 * 3]) / 3;
+    const cy = (positions[i0 * 3 + 1] + positions[i1 * 3 + 1] + positions[i2 * 3 + 1]) / 3;
+    const cz = (positions[i0 * 3 + 2] + positions[i1 * 3 + 2] + positions[i2 * 3 + 2]) / 3;
     
-    // Fractional part
-    const fx = x - nx;
-    const fy = y - ny;
-    const fz = z - nz;
+    const sx = cx * frequency;
+    const sy = cy * frequency;
+    const sz = cz * frequency;
+    const nx = Math.floor(sx);
+    const ny = Math.floor(sy);
+    const nz = Math.floor(sz);
+    const fx = sx - nx;
+    const fy = sy - ny;
+    const fz = sz - nz;
     
-    // Find nearest Voronoi center (simplified - just check 8 corners)
-    let minDist = 100.0;
-    let centerX = 0, centerY = 0, centerZ = 0;
+    let minDist = 100;
+    let chunkKey = '0_0_0';
     
-    for (let dk = 0; dk <= 1; dk++) {
-      for (let dj = 0; dj <= 1; dj++) {
-        for (let di = 0; di <= 1; di++) {
-          const gx = di, gy = dj, gz = dk;
-          const [px, py, pz] = hash33(nx + gx, ny + gy, nz + gz);
-          const diffX = gx + px - fx;
-          const diffY = gy + py - fy;
-          const diffZ = gz + pz - fz;
+    for (let dk = -1; dk <= 1; dk++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        for (let di = -1; di <= 1; di++) {
+          const gx = nx + di;
+          const gy = ny + dj;
+          const gz = nz + dk;
+          const [px, py, pz] = hash33(gx, gy, gz);
+          const diffX = di + px - fx;
+          const diffY = dj + py - fy;
+          const diffZ = dk + pz - fz;
           const d = diffX * diffX + diffY * diffY + diffZ * diffZ;
           if (d < minDist) {
             minDist = d;
-            centerX = (nx + gx + px) / frequency;
-            centerY = (ny + gy + py) / frequency;
-            centerZ = (nz + gz + pz) / frequency;
+            chunkKey = `${gx}_${gy}_${gz}`;
           }
         }
       }
     }
     
-    // Store chunk center
-    chunkCenters[i * 3] = centerX;
-    chunkCenters[i * 3 + 1] = centerY;
-    chunkCenters[i * 3 + 2] = centerZ;
-    
-    // Generate hash for this chunk center
-    const [hx, hy, hz] = hash33(centerX * frequency, centerY * frequency, centerZ * frequency);
-    chunkHashes[i * 3] = hx;
-    chunkHashes[i * 3 + 1] = hy;
-    chunkHashes[i * 3 + 2] = hz;
-    
-    // ChunkId is just the x component of hash
-    chunkIds[i] = hx;
+    if (!chunkTriangles[chunkKey]) chunkTriangles[chunkKey] = [];
+    chunkTriangles[chunkKey].push(t);
   }
   
-  return { chunkIds, chunkCenters, chunkHashes };
+  // Create proper 3D chunks with thickness
+  const chunks = [];
+  const thickness = 0.22;
+  
+  for (const key of Object.keys(chunkTriangles)) {
+    const tris = chunkTriangles[key];
+    if (tris.length < 4) continue;
+    
+    // Build vertex arrays for this chunk
+    const chunkPositions = [];
+    const chunkNormals = [];
+    const chunkUvs = [];
+    
+    // Track edge vertices for side walls
+    const edgeMap = new Map();
+    
+    const addEdge = (v1Idx, v2Idx, triIdx) => {
+      const key = v1Idx < v2Idx ? `${v1Idx}_${v2Idx}` : `${v2Idx}_${v1Idx}`;
+      if (!edgeMap.has(key)) {
+        edgeMap.set(key, { v1: v1Idx, v2: v2Idx, count: 0 });
+      }
+      edgeMap.get(key).count++;
+    };
+    
+    // OUTER SURFACE (original sphere)
+    for (const t of tris) {
+      const i0 = indices[t * 3];
+      const i1 = indices[t * 3 + 1];
+      const i2 = indices[t * 3 + 2];
+      
+      addEdge(i0, i1, t);
+      addEdge(i1, i2, t);
+      addEdge(i2, i0, t);
+      
+      for (const idx of [i0, i1, i2]) {
+        chunkPositions.push(positions[idx * 3], positions[idx * 3 + 1], positions[idx * 3 + 2]);
+        chunkNormals.push(normals[idx * 3], normals[idx * 3 + 1], normals[idx * 3 + 2]);
+        chunkUvs.push(uvs[idx * 2], uvs[idx * 2 + 1]);
+      }
+    }
+    
+    // INNER SURFACE (extruded inward, reversed winding)
+    for (const t of tris) {
+      const triIndices = [indices[t * 3 + 2], indices[t * 3 + 1], indices[t * 3]]; // Reversed
+      
+      for (const idx of triIndices) {
+        const px = positions[idx * 3];
+        const py = positions[idx * 3 + 1];
+        const pz = positions[idx * 3 + 2];
+        const nnx = normals[idx * 3];
+        const nny = normals[idx * 3 + 1];
+        const nnz = normals[idx * 3 + 2];
+        
+        chunkPositions.push(px - nnx * thickness, py - nny * thickness, pz - nnz * thickness);
+        chunkNormals.push(-nnx, -nny, -nnz);
+        chunkUvs.push(uvs[idx * 2], uvs[idx * 2 + 1]);
+      }
+    }
+    
+    // SIDE WALLS (connect edges that belong to only one triangle = boundary edges)
+    for (const [edgeKey, edge] of edgeMap) {
+      if (edge.count === 1) {
+        const v1 = edge.v1;
+        const v2 = edge.v2;
+        
+        // Outer edge vertices
+        const o1 = [positions[v1 * 3], positions[v1 * 3 + 1], positions[v1 * 3 + 2]];
+        const o2 = [positions[v2 * 3], positions[v2 * 3 + 1], positions[v2 * 3 + 2]];
+        
+        // Inner edge vertices
+        const n1 = [normals[v1 * 3], normals[v1 * 3 + 1], normals[v1 * 3 + 2]];
+        const n2 = [normals[v2 * 3], normals[v2 * 3 + 1], normals[v2 * 3 + 2]];
+        const i1 = [o1[0] - n1[0] * thickness, o1[1] - n1[1] * thickness, o1[2] - n1[2] * thickness];
+        const i2 = [o2[0] - n2[0] * thickness, o2[1] - n2[1] * thickness, o2[2] - n2[2] * thickness];
+        
+        // Calculate side normal (perpendicular to edge and radial direction)
+        const edgeDir = new THREE.Vector3(o2[0] - o1[0], o2[1] - o1[1], o2[2] - o1[2]).normalize();
+        const midpoint = new THREE.Vector3((o1[0] + o2[0]) / 2, (o1[1] + o2[1]) / 2, (o1[2] + o2[2]) / 2);
+        const radial = midpoint.clone().normalize();
+        const sideNormal = new THREE.Vector3().crossVectors(edgeDir, radial).normalize();
+        
+        // Two triangles for the quad
+        // Triangle 1: o1, o2, i1
+        chunkPositions.push(o1[0], o1[1], o1[2]);
+        chunkPositions.push(o2[0], o2[1], o2[2]);
+        chunkPositions.push(i1[0], i1[1], i1[2]);
+        for (let j = 0; j < 3; j++) {
+          chunkNormals.push(sideNormal.x, sideNormal.y, sideNormal.z);
+          chunkUvs.push(0, 0);
+        }
+        
+        // Triangle 2: o2, i2, i1
+        chunkPositions.push(o2[0], o2[1], o2[2]);
+        chunkPositions.push(i2[0], i2[1], i2[2]);
+        chunkPositions.push(i1[0], i1[1], i1[2]);
+        for (let j = 0; j < 3; j++) {
+          chunkNormals.push(sideNormal.x, sideNormal.y, sideNormal.z);
+          chunkUvs.push(0, 0);
+        }
+      }
+    }
+    
+    // Calculate chunk center
+    let centerX = 0, centerY = 0, centerZ = 0;
+    const outerVertCount = tris.length * 3;
+    for (let i = 0; i < outerVertCount; i++) {
+      centerX += chunkPositions[i * 3];
+      centerY += chunkPositions[i * 3 + 1];
+      centerZ += chunkPositions[i * 3 + 2];
+    }
+    centerX /= outerVertCount;
+    centerY /= outerVertCount;
+    centerZ /= outerVertCount;
+    
+    const chunkGeom = new THREE.BufferGeometry();
+    chunkGeom.setAttribute('position', new THREE.Float32BufferAttribute(chunkPositions, 3));
+    chunkGeom.setAttribute('normal', new THREE.Float32BufferAttribute(chunkNormals, 3));
+    chunkGeom.setAttribute('uv', new THREE.Float32BufferAttribute(chunkUvs, 2));
+    
+    const [rx, ry, rz] = hash33(centerX * 10, centerY * 10, centerZ * 10);
+    
+    chunks.push({
+      geometry: chunkGeom,
+      center: new THREE.Vector3(centerX, centerY, centerZ),
+      direction: new THREE.Vector3(centerX, centerY, centerZ).normalize(),
+      randomSeed: rx,
+      rotationAxis: new THREE.Vector3(rx - 0.5, ry - 0.5, rz - 0.5).normalize(),
+      rotationSpeed: 0.3 + rx * 0.6,
+      speed: 0.2 + ry * 0.4,
+      delay: rz * 0.12,
+    });
+  }
+  
+  baseSphere.dispose();
+  return chunks;
 };
 
-// --- Custom Shader Material for the Holographic Surface ---
-// OPTIMIZED: Uses pre-computed chunk data instead of per-frame Voronoi
-const HolographicShaderMaterial = {
+// --- Shader for landmass chunk pieces ---
+const ChunkShaderMaterial = {
   uniforms: {
     uTime: { value: 0 },
     uExplode: { value: 0 },
-    uChunkFade: { value: 1.0 }, // Smooth fade for chunks (1.0 = fully visible, 0.0 = hidden)
+    uChunkFade: { value: 1.0 },
     uColorCore: { value: new THREE.Color('#0d0618') },   
-    uColorLand: { value: new THREE.Color('#6b1d8f') },   // Vibrant magenta-purple
-    uColorLandDeep: { value: new THREE.Color('#3d0a5c') }, // Deep purple for later frames
-    uColorRim: { value: new THREE.Color('#1a0320') },    // Dark Purple Glow
-    uColorBorder: { value: new THREE.Color('#FFD700') }, // Bright Gold
-    uColorBorderDark: { value: new THREE.Color('#2c290e') }, // Dark Brown for post-frame 9
+    uColorLand: { value: new THREE.Color('#6b1d8f') },
+    uColorLandDeep: { value: new THREE.Color('#3d0a5c') },
+    uColorRim: { value: new THREE.Color('#1a0320') },
+    uColorBorder: { value: new THREE.Color('#FFD700') },
+    uColorBorderDark: { value: new THREE.Color('#2c290e') },
     uMap: { value: null },
   },
   vertexShader: `
-    attribute float aChunkId;
-    attribute vec3 aChunkCenter;
-    attribute vec3 aChunkHash;
-    
     varying vec3 vNormal;
     varying vec3 vPosition;
     varying vec2 vUv;
-    varying float vFragExplode;
-    varying float vChunkId;
-    varying float vChunkScale;
-    varying float vNormalizedExp;
-
-    uniform float uExplode;
+    varying vec3 vWorldPosition;
 
     void main() {
       vUv = uv;
       vNormal = normalize(normalMatrix * normal);
-      vFragExplode = uExplode;
-      
-      vec3 finalPos = position;
-      
-      if (uExplode > 0.0) {
-        // Normalized explosion progress (0-1)
-        float normalizedExp = uExplode / 25.0;
-        vNormalizedExp = normalizedExp;
-        
-        // Use pre-computed chunk data (NO MORE VORONOI!)
-        vec3 cellCenter = aChunkCenter;
-        vec3 cellHash = aChunkHash;
-        float randomFactor = aChunkId;
-        vChunkId = randomFactor;
-        
-        // === CHUNK SHRINKING ===
-        // During fade period (frames 19-24, normExp 0.19-0.32), keep chunks at full size
-        // so they can fade smoothly via opacity. Resume shrinking after frame 24.
-        float shrinkProgress;
-        if (normalizedExp >= 0.19 && normalizedExp <= 0.32) {
-          // Keep at full size during fade (frames 19-24)
-          shrinkProgress = 0.0;
-        } else if (normalizedExp > 0.32) {
-          // Resume shrinking after frame 24
-          shrinkProgress = smoothstep(0.32, 0.5, normalizedExp);
-        } else {
-          // Normal shrinking before frame 19
-          shrinkProgress = smoothstep(0.05, 0.3, normalizedExp);
-        }
-        vChunkScale = 1.0 - shrinkProgress * 0.95;
-        
-        // Pull vertices toward chunk center
-        vec3 toChunkCenter = cellCenter - position;
-        finalPos = position + toChunkCenter * (1.0 - vChunkScale);
-        
-        // Explosion direction - radial with some randomness
-        vec3 explosionDir = normalize(cellCenter + (cellHash - 0.5) * 0.4);
-        
-        // Tangent for tumbling motion (simplified)
-        vec3 tangent = normalize(cross(explosionDir, vec3(0.0, 1.0, 0.0)));
-        
-        // Speed variation per chunk
-        float speed = 0.6 + randomFactor * 1.5;
-        float dist = uExplode * speed;
-        
-        // Main outward movement
-        finalPos += explosionDir * dist;
-        
-        // Tumbling/rotation motion (simplified)
-        float tumbleIntensity = 1.0 + shrinkProgress * 2.0;
-        float tangentialMove = sin(uExplode * (0.3 + randomFactor * 0.4) + cellHash.y * 15.0) * (dist * 0.12 * tumbleIntensity);
-        finalPos += tangent * tangentialMove;
-        
-        // Surface cracking (disabled after frame 12)
-        if (uExplode <= 3.0) {
-          float crackIntensity = 1.0 + shrinkProgress * 3.0;
-          float deform = sin(position.x * 4.0 * crackIntensity + uExplode * 1.5) * cos(position.y * 4.0 * crackIntensity + uExplode);
-          finalPos += normalize(position) * deform * uExplode * 0.08;
-        }
-        
-        // Add jitter as chunks get very small
-        float jitter = shrinkProgress * 0.3;
-        finalPos += (cellHash - 0.5) * jitter * uExplode * 0.1;
-        
-      } else {
-        vChunkId = 0.0;
-        vChunkScale = 1.0;
-      }
-
-      vPosition = (modelMatrix * vec4(finalPos, 1.0)).xyz; 
+      vPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+      vWorldPosition = position;
       gl_Position = projectionMatrix * viewMatrix * vec4(vPosition, 1.0);
     }
   `,
@@ -211,80 +253,177 @@ const HolographicShaderMaterial = {
     varying vec3 vNormal;
     varying vec3 vPosition;
     varying vec2 vUv;
-    varying float vFragExplode;
-    varying float vChunkId;
-    varying float vChunkScale;
-    varying float vNormalizedExp;
+    varying vec3 vWorldPosition;
 
     void main() {
       vec3 N = normalize(vNormal);
       vec3 V = normalize(cameraPosition - vPosition);
       float VdotN = dot(V, N);
       
-      // Pre-compute normalized explosion once
-      float normExp = uExplode * 0.04; // 1/25 = 0.04
-      
-      // Fresnel (simplified)
+      // Frame-based progression (matches previous build)
+      float normExp = uExplode / 25.0;
       float fresnel = pow(1.0 - abs(VdotN), 2.0);
-
+      
+      // Sample earth texture using spherical UVs
       vec4 texColor = texture2D(uMap, vUv);
       float mapValue = texColor.r;
       
-      // Combined continent and border calculation
+      // Continent detection from texture - SAME as solid sphere
       float continent = smoothstep(0.40, 0.60, mapValue);
       float border = smoothstep(0.3, 0.45, mapValue) * (1.0 - smoothstep(0.55, 0.7, mapValue));
       
-      // Landmass color gradient - vibrant magenta/purple transitioning to deep purple
-      // Matches particle color progression (bright early, deeper as explosion continues)
-      float landColorBlend = smoothstep(0.1, 0.4, normExp);
-      vec3 landColor = mix(uColorLand, uColorLandDeep, landColorBlend);
+      // Transition factor: 0 at start (match solid sphere), 1 after frame 9
+      float fadeInEnd = 0.078; // Frame 9 eased
+      float transition = clamp(normExp / fadeInEnd, 0.0, 1.0);
       
-      // Base color
-      vec3 color = mix(uColorCore * 0.4, landColor * 1.2, continent);
+      // Lighting transition: kicks in earlier (frame 3-4) instead of frame 9
+      // Frame 3 linear (0.12) = 0.12^2.5 ≈ 0.003, Frame 4 = 0.01
+      float lightingTransition = clamp(normExp / 0.015, 0.0, 1.0); // Earlier than transition
       
-      // Border color - smooth transition from gold to dark brown over frames 20-24
-      // Frame 20: normExp ≈ 0.19 (gold), Frame 24: normExp ≈ 0.32 (dark brown)
-      float borderFade = smoothstep(0.19, 0.32, normExp);
-      vec3 borderColor = mix(uColorBorder, uColorBorderDark, borderFade);
-      float borderIntensity = mix(2.5, 1.0, borderFade);
-      color += borderColor * border * borderIntensity;
-
-      // Rim lighting
+      // === COLORS - Match solid sphere at start ===
+      // Solid sphere uses: mix(uColorCore * 0.4, uColorLand * 1.2, continent)
+      // Start: exactly match solid sphere
+      // End: slightly brighter for exploded chunks
+      vec3 oceanColorStart = uColorCore * 0.4;
+      vec3 oceanColorEnd = uColorCore * 0.6;
+      vec3 landColorStart = uColorLand * 1.2;
+      vec3 landColorEnd = uColorLand * 1.4;
+      
+      vec3 oceanColor = mix(oceanColorStart, oceanColorEnd, transition);
+      vec3 landColor = mix(landColorStart, landColorEnd, transition);
+      
+      // Base color: ocean vs land
+      vec3 color = mix(oceanColor, landColor, continent);
+      
+      // Gold borders - solid sphere uses: uColorBorder * border * 2.5
+      // Start at 2.5 (match solid), boost to 12.0 for visibility during explosion
+      if (gl_FrontFacing) {
+        float borderBoost = 1.0 - smoothstep(0.0, 0.15, normExp);
+        float borderIntensity = mix(2.5, mix(12.0, 2.0, transition), normExp > 0.01 ? 1.0 : 0.0);
+        if (normExp <= 0.01) borderIntensity = 2.5; // Exact match at start
+        // Increase base border visibility - multiply by 1.6 for more prominent lines
+        color += uColorBorder * border * borderIntensity * 1.6;
+      }
+      
+      // Fresnel rim glow - solid sphere uses: uColorRim * fresnel * 1.5
       color += uColorRim * fresnel * 1.5;
-
-      // Front/back face handling
+      
+      // Face shading - solid sphere uses: faceMult = gl_FrontFacing ? 1.1 : 0.5
       float faceMult = gl_FrontFacing ? 1.1 : 0.5;
       color *= faceMult;
-      if (!gl_FrontFacing) color += uColorRim * fresnel * 0.8;
-
-      // Scanline effect (simplified - less frequent sin)
+      
+      // Directional lighting - ONLY apply after lighting transition (earlier than color transition)
+      vec3 lightDir = normalize(vec3(0.4, 0.8, 0.6));
+      float diffuse = max(dot(N, lightDir), 0.0) * 0.3 + 0.7;
+      float lightingMix = mix(1.0, diffuse, lightingTransition); // Kicks in around frame 3-4
+      color *= lightingMix;
+      
+      if (!gl_FrontFacing) {
+        // Inner faces
+        color = landColor * 0.7 + oceanColor * 0.3;
+      }
+      
+      // Scanline effect - solid sphere uses same
       float scanline = 0.9 + sin(gl_FragCoord.y * 0.15 - uTime * 2.0) * 0.1;
       color *= scanline;
-      
-      // Per-chunk effects during explosion
-      if (vFragExplode > 0.0) {
-        // Brightness reduction
-        float brightnessReduction = smoothstep(0.22, 0.45, normExp);
-        color *= mix(1.0, 0.05, brightnessReduction) * mix(0.9, 1.0, vChunkId);
-      }
 
-      // Alpha calculation (simplified)
-      float alpha = 0.2 + (1.0 - continent) * 0.5 + fresnel * 0.6;
+      // === ALPHA - Match solid sphere formula at start ===
+      // Solid sphere: alpha = 0.3 + (1.0 - continent) * 0.4 + fresnel * 0.5
+      // This means: land = 0.3 + fresnel*0.5, ocean = 0.7 + fresnel*0.5
+      float solidSphereAlpha = 0.3 + (1.0 - continent) * 0.4 + fresnel * 0.5;
       
-      // Chunk fade during explosion
-      if (normExp > 0.0) {
-        // During frames 19-24 (0.19-0.32), disable shrinkFade to allow smooth opacity fade
-        float shrinkFade = (vNormalizedExp >= 0.19 && vNormalizedExp <= 0.32) ? 1.0 : smoothstep(0.1, 0.4, vChunkScale);
-        
-        // Apply smooth chunk fade uniform (controlled externally for frames 20-24)
-        // This is the primary fade control for chunk disappearance
-        alpha *= shrinkFade * uChunkFade;
-        alpha *= smoothstep(2.0, 5.0, distance(cameraPosition, vPosition));
-      }
+      // Boost alpha to make chunks more visible with additive blending
+      solidSphereAlpha *= 1.4; // 40% brighter/more opaque
+      solidSphereAlpha = min(solidSphereAlpha, 1.0); // Clamp to 1.0
+      
+      // After transition: full opacity
+      float chunkAlpha = 1.0;
+      
+      // Blend from solid sphere alpha to chunk alpha
+      float baseAlpha = mix(solidSphereAlpha, chunkAlpha, transition);
+      
+      // Apply fade-out during later frames via uChunkFade
+      float alpha = baseAlpha * uChunkFade;
 
       gl_FragColor = vec4(color, alpha);
     }
   `
+};
+
+// --- Single Chunk Mesh Component ---
+// The chunk geometries already have vertices at their correct sphere positions.
+// We only add position offset for expansion movement, NOT for the base position.
+// NOTE: explosionProgress is EASED (linear^2.5), not linear!
+const ChunkMesh = ({ chunk, explosionProgress, material }) => {
+  const meshRef = useRef();
+  
+  // Match particle sphere movement - fast, snappy expansion
+  // Particles use baseDist = uExplode * 0.8 where uExplode = explosionProgress * 25
+  // So particles move at roughly explosionProgress * 20-25 rate
+  const expansion = explosionProgress * 49; // Much faster expansion
+  
+  // Position is ONLY the expansion offset - geometry already has correct sphere positions
+  const posX = chunk.direction.x * expansion * chunk.speed;
+  const posY = chunk.direction.y * expansion * chunk.speed;
+  const posZ = chunk.direction.z * expansion * chunk.speed;
+  
+  return (
+    <mesh 
+      ref={meshRef} 
+      geometry={chunk.geometry} 
+      material={material}
+      position={[posX, posY, posZ]}
+    />
+  );
+};
+
+// --- All Chunks Container - appears at frame 4, animates outward ---
+const ExplodingChunks = ({ explosionProgress, earthMap, chunkFadeValue }) => {
+  const chunks = useMemo(() => {
+    const performanceSettings = getPerformanceSettings();
+    const segments = performanceSettings.tier === 'LOW' ? 32 : 48;
+    return generateChunkGeometries(2.5, segments);
+  }, []);
+  
+  const material = useMemo(() => {
+    const mat = new THREE.ShaderMaterial({
+      uniforms: THREE.UniformsUtils.clone(ChunkShaderMaterial.uniforms),
+      vertexShader: ChunkShaderMaterial.vertexShader,
+      fragmentShader: ChunkShaderMaterial.fragmentShader,
+      transparent: true,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending, // Match solid sphere's additive blending
+      depthWrite: false, // Required for proper additive blending
+    });
+    return mat;
+  }, []);
+  
+  useEffect(() => {
+    if (material && earthMap) {
+      material.uniforms.uMap.value = earthMap;
+    }
+  }, [earthMap, material]);
+  
+  useFrame((state) => {
+    if (material) {
+      material.uniforms.uTime.value = state.clock.elapsedTime;
+      material.uniforms.uExplode.value = explosionProgress * 25;
+      material.uniforms.uChunkFade.value = chunkFadeValue;
+    }
+  });
+  
+  return (
+    <group>
+      {chunks.map((chunk, i) => (
+        <ChunkMesh 
+          key={i} 
+          chunk={chunk} 
+          explosionProgress={explosionProgress}
+          material={material}
+        />
+      ))}
+    </group>
+  );
 };
 
 const HoloEarthSphere = ({ 
@@ -317,42 +456,79 @@ const HoloEarthSphere = ({
   const baseScale = Math.min(1, viewport.width / 5.5) * 0.65;
   const scale = isMobile ? baseScale * 1.15 : baseScale;
 
-  // Pre-compute geometry with chunk data baked in (PERFORMANCE OPTIMIZATION)
-  const sphereGeometry = useMemo(() => {
-    const performanceSettings = getPerformanceSettings();
-    const segments = performanceSettings.tier === 'LOW' ? 32 : 128;
-    
-    const geometry = new THREE.SphereGeometry(2.5, segments, segments);
-    
-    // Generate and attach pre-computed chunk data
-    const { chunkIds, chunkCenters, chunkHashes } = generateChunkData(geometry, 6.0);
-    geometry.setAttribute('aChunkId', new THREE.BufferAttribute(chunkIds, 1));
-    geometry.setAttribute('aChunkCenter', new THREE.BufferAttribute(chunkCenters, 3));
-    geometry.setAttribute('aChunkHash', new THREE.BufferAttribute(chunkHashes, 3));
-    
-    return geometry;
-  }, []);
-
-  const material = useMemo(() => {
-    const mat = new THREE.ShaderMaterial({
-      uniforms: THREE.UniformsUtils.clone(HolographicShaderMaterial.uniforms),
-      vertexShader: HolographicShaderMaterial.vertexShader,
-      fragmentShader: HolographicShaderMaterial.fragmentShader,
+  // Solid sphere material - used for complete earth (frames 0-3)
+  const solidSphereMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uColorCore: { value: new THREE.Color('#0d0618') },   
+        uColorLand: { value: new THREE.Color('#6b1d8f') },
+        uColorRim: { value: new THREE.Color('#1a0320') },
+        uColorBorder: { value: new THREE.Color('#FFD700') },
+        uMap: { value: null },
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          vNormal = normalize(normalMatrix * normal);
+          vPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+          gl_Position = projectionMatrix * viewMatrix * vec4(vPosition, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        uniform vec3 uColorCore;
+        uniform vec3 uColorLand;
+        uniform vec3 uColorRim;
+        uniform vec3 uColorBorder;
+        uniform sampler2D uMap;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        varying vec2 vUv;
+        void main() {
+          vec3 N = normalize(vNormal);
+          vec3 V = normalize(cameraPosition - vPosition);
+          float VdotN = dot(V, N);
+          float fresnel = pow(1.0 - abs(VdotN), 2.0);
+          vec4 texColor = texture2D(uMap, vUv);
+          float mapValue = texColor.r;
+          float continent = smoothstep(0.40, 0.60, mapValue);
+          float border = smoothstep(0.3, 0.45, mapValue) * (1.0 - smoothstep(0.55, 0.7, mapValue));
+          // Match brighter chunk colors - increase land color multiplier
+          vec3 color = mix(uColorCore * 0.4, uColorLand * 1.4, continent);
+          // Match chunk border visibility (2.5 * 1.6 = 4.0)
+          color += uColorBorder * border * 2.5 * 1.6;
+          // Boost rim glow for more brightness
+          color += uColorRim * fresnel * 2.0;
+          float faceMult = gl_FrontFacing ? 1.1 : 0.5;
+          color *= faceMult;
+          // Reduce scanline darkening for brighter result
+          float scanline = 0.95 + sin(gl_FragCoord.y * 0.15 - uTime * 2.0) * 0.05;
+          color *= scanline;
+          // Significantly boost alpha to match chunks brightness (2.0x instead of 1.4x)
+          float alpha = (0.3 + (1.0 - continent) * 0.4 + fresnel * 0.5) * 2.0;
+          alpha = min(alpha, 1.0); // Clamp to 1.0
+          gl_FragColor = vec4(color, alpha);
+        }
+      `,
       transparent: true,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      depthTest: false, // Render on top of pyramid during explosion
     });
-    
-    return mat;
   }, []);
 
+  // Load earth texture into solid sphere material
   useEffect(() => {
-    if (material) {
-      material.uniforms.uMap.value = earthMap;
+    if (solidSphereMaterial && earthMap) {
+      solidSphereMaterial.uniforms.uMap.value = earthMap;
     }
-  }, [earthMap, material]);
+  }, [earthMap, solidSphereMaterial]);
+
+
 
   useEffect(() => {
     if (groupRef.current) {
@@ -361,51 +537,24 @@ const HoloEarthSphere = ({
     }
   }, []);
 
+  // Chunk fade calculation - fade out during later frames
+  // NOTE: explosionProgress is EASED (linear^2.5)
+  // Chunk fade: extended by 5 frames for smoother fade-out
+  // Start fade at frame 13 (instead of 18) for longer, smoother transition
+  // Frame 13 linear (0.52) = 0.52^2.5 ≈ 0.20 eased
+  // Frame 24 linear (0.96) = 0.96^2.5 ≈ 0.90 eased
+  const easedFrame13 = 0.20;
+  const easedFrame24 = 0.90;
+  const chunkFadeValue = explosionProgress < easedFrame13 ? 1.0 :
+                         explosionProgress > easedFrame24 ? 0.0 :
+                         1.0 - ((explosionProgress - easedFrame13) / (easedFrame24 - easedFrame13));
+
   useFrame((state, delta) => {
     const time = state.clock.getElapsedTime();
     
-    if (material) {
-      material.uniforms.uTime.value = time;
-
-      // Use explosionProgress directly instead of time-based animation
-      // explosionProgress goes from 0 to 1
-      const targetExplode = 25.0; // Maximum explosion distance
-      material.uniforms.uExplode.value = targetExplode * explosionProgress;
-      
-      // Smooth chunk fade between frames 20-24
-      // Frame 20: explosionProgress ≈ 0.19, Frame 24: explosionProgress ≈ 0.32
-      // Fade from 1.0 (fully visible) to 0.0 (hidden)
-      const chunkFade = explosionProgress < 0.19 ? 1.0 :
-                        explosionProgress > 0.32 ? 0.0 :
-                        1.0 - ((explosionProgress - 0.19) / (0.32 - 0.19));
-      material.uniforms.uChunkFade.value = chunkFade;
-      
-      // Only disable depth test during smokescreen phase (after frame 22)
-      // Frames 20-24: normal depth test enabled so fading chunks render correctly
-      const inSmokescreenPhase = explosionProgress > 0.25;
-      material.depthTest = !inSmokescreenPhase;
-      
-      // Transition colors from orbital to explosion view
-      // Orbital: brighter magenta-purple, Explosion: darker purple
-      const orbitalCore = new THREE.Color('#0d0618');
-      const explosionCore = new THREE.Color('#050310');
-      const orbitalLand = new THREE.Color('#6b1d8f');   // Vibrant magenta-purple
-      const explosionLand = new THREE.Color('#3d0a5c'); // Deep purple
-      const orbitalRim = new THREE.Color('#1a0320');
-      const explosionRim = new THREE.Color('#0a0110');
-      
-      // Frame 15 threshold: vFragExplode > 0.4, hide purple shadows after
-      const fadeOutRim = explosionProgress > 0.4 ? 0 : new THREE.Color('#1a0320');
-      
-      // Lerp between colors based on explosion progress
-      const currentCore = orbitalCore.clone().lerp(explosionCore, explosionProgress);
-      const currentLand = orbitalLand.clone().lerp(explosionLand, explosionProgress);
-      const currentRim = typeof fadeOutRim === 'number' ? new THREE.Color('#0a0110') : orbitalRim.clone().lerp(explosionRim, explosionProgress);
-      
-      material.uniforms.uColorCore.value = currentCore;
-      material.uniforms.uColorLand.value = currentLand;
-      material.uniforms.uColorLandDeep.value = explosionLand;
-      material.uniforms.uColorRim.value = currentRim;
+    // Update solid sphere time uniform
+    if (solidSphereMaterial) {
+      solidSphereMaterial.uniforms.uTime.value = time;
     }
     
     const momentumMagnitude = Math.abs(rotationVelocity.current.x) + Math.abs(rotationVelocity.current.y);
@@ -414,20 +563,11 @@ const HoloEarthSphere = ({
         coreRef.current.rotation.y += 0.0014;
         coreRef.current.rotation.x = Math.sin(time * 0.35) * 0.1;
         
-        // Position based on explosionProgress instead of time-based animation
-        // z: zoom from 0 to 4.5 (towards camera)
-        // y: move from 0.25 down to -1.5 
         const zoomZ = 4.5 * explosionProgress;
-        
-        // Device-specific Y offset for pyramid endpoint
-        // Desktop: 3rem up - 1rem down = 2rem up (+0.27)
-        // Laptop: 3rem up - 1rem down = 2rem up (+0.27)
-        // Tablet: 2.5rem up - 1rem down = 1.5rem up (+0.22)
-        const pyramidYOffset = window.innerWidth >= 1280 ? 0.27 : // Desktop: 2rem up
-                               window.innerWidth >= 1100 ? 0.27 : // Laptop: 2rem up
-                               window.innerWidth >= 768 ? 0.22 : // Tablet: 1.5rem up
-                               0; // Mobile
-        
+        const pyramidYOffset = window.innerWidth >= 1280 ? 0.27 :
+                               window.innerWidth >= 1100 ? 0.27 :
+                               window.innerWidth >= 768 ? 0.22 :
+                               0;
         const zoomY = 0.25 - (1.75 * explosionProgress) + (pyramidYOffset * explosionProgress);
         coreRef.current.position.z = zoomZ;
         coreRef.current.position.y = zoomY;
@@ -448,7 +588,6 @@ const HoloEarthSphere = ({
         } else {
             groupRef.current.rotation.y += 0.00035; 
         }
-        // Track orbital rotation for pyramid sync
         orbitalRotationY.current = groupRef.current.rotation.y;
     }
   });
@@ -477,20 +616,13 @@ const HoloEarthSphere = ({
     previousMouse.current = { x: e.clientX, y: e.clientY };
   };
 
-  // Calculate render order for earth surface chunks - should be in front of pyramid during explosion smokescreen only
-  // Smokescreen phase: after frame 22 (explosionProgress > 0.25)
-  // Frames 14-22: normal depth rendering - particles behind pyramid not visible
-  const earthRenderOrder = explosionProgress > 0.25 && explosionProgress < 0.35 ? 5 : 0;
-
-  // Mobile: move down 3rem (convert rem to world units via viewport ratio)
-  // 3rem ≈ 48px at 16px base, convert to world units using viewport height ratio
   const mobileYOffset = isMobile ? -(3 * 16 * viewport.height / window.innerHeight) : 0;
   const baseY = 0.45 + mobileYOffset;
 
   return (
     <group position={[0, baseY, 0]} scale={scale}>
       
-      {/* Inner Core: PyramidInner replaces the cone */}
+      {/* Inner Core: PyramidInner */}
       <group ref={coreRef} position={[0, 0.35, 0]}>
         <PyramidInner 
           isActive={isActive}
@@ -503,22 +635,82 @@ const HoloEarthSphere = ({
         />
       </group>
 
-      {/* Outer Holographic Crust - uses pre-computed chunk geometry */}
-      <mesh 
-        ref={groupRef} 
-        geometry={sphereGeometry}
+      {/* Earth Hologram - Solid sphere before explosion, chunks during explosion */}
+      {/* Chunks appear immediately when explosion starts (15 frames earlier than before) */}
+      <group ref={groupRef}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         onPointerMove={handlePointerMove}
-        renderOrder={earthRenderOrder}
       >
-        <primitive object={material} attach="material" />
-      </mesh>
+        {/* Solid Complete Earth - visible only before explosion starts */}
+        {explosionProgress === 0 && (
+          <Sphere args={[2.5, 64, 64]}>
+            <primitive 
+              object={solidSphereMaterial} 
+              attach="material" 
+              transparent={true}
+            />
+          </Sphere>
+        )}
+        
+        {/* Exploding Chunks - appear immediately when explosion begins */}
+        {explosionProgress > 0 && (
+          <ExplodingChunks 
+            explosionProgress={explosionProgress}
+            earthMap={earthMap}
+            chunkFadeValue={chunkFadeValue}
+          />
+        )}
+        
+        {/* Inner Glow - dropshadow/glow inside earth to integrate chunks with particle sphere */}
+        {/* NOTE: explosionProgress is EASED. Frame 9 linear (0.36) = 0.36^2.5 ≈ 0.078 eased */}
+        {explosionProgress > 0.078 && (
+          <Sphere args={[2.35, 32, 32]}>
+            <shaderMaterial
+              transparent={true}
+              side={THREE.BackSide}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+              uniforms={{
+                uColor: { value: new THREE.Color('#1a0825') },
+                uGlowColor: { value: new THREE.Color('#6b1d8f') },
+                uIntensity: { value: Math.min(1, (explosionProgress - 0.078) / 0.15) * 0.6 }
+              }}
+              vertexShader={`
+                varying vec3 vNormal;
+                varying vec3 vPosition;
+                void main() {
+                  vNormal = normalize(normalMatrix * normal);
+                  vPosition = position;
+                  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+              `}
+              fragmentShader={`
+                uniform vec3 uColor;
+                uniform vec3 uGlowColor;
+                uniform float uIntensity;
+                varying vec3 vNormal;
+                varying vec3 vPosition;
+                void main() {
+                  // Soft inner glow that's stronger at edges
+                  float edgeFade = 1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0)));
+                  float glow = pow(edgeFade, 1.5) * uIntensity;
+                  
+                  // Mix base color with glow color
+                  vec3 color = mix(uColor, uGlowColor, edgeFade * 0.5);
+                  
+                  // Soft falloff for nice integration
+                  float alpha = glow * 0.8;
+                  gl_FragColor = vec4(color, alpha);
+                }
+              `}
+            />
+          </Sphere>
+        )}
+      </group>
 
-      {/* Earth Particle Waves - wave-like particle motion (aistudios style) */}
-      {/* Particles fade in as chunks shrink and break apart */}
-      {/* Disabled on low-end devices for better performance */}
+      {/* Earth Particle Waves - has internal visibility logic, becomes visible around frame 9 */}
       {explosionProgress > 0 && getPerformanceSettings().tier !== 'LOW' && (
         <EarthParticleWaves 
           explosionProgress={explosionProgress} 
@@ -527,6 +719,7 @@ const HoloEarthSphere = ({
       )}
 
       {/* Atmospheric Glow - hidden after frame 15, disabled on low-end for performance */}
+      {/* NOTE: explosionProgress is EASED. Frame 15 linear (0.6) = 0.6^2.5 ≈ 0.28 eased */}
       {getPerformanceSettings().tier !== 'LOW' && (
         <Sphere args={[3.2, 32, 32]}>
           <shaderMaterial
@@ -536,7 +729,7 @@ const HoloEarthSphere = ({
             depthWrite={false}
             uniforms={{
               uColor: { value: new THREE.Color('#360642') }, 
-              uIntensity: { value: explosionProgress > 0.4 ? 0 : 0.05 }
+              uIntensity: { value: explosionProgress > 0.28 ? 0 : 0.05 }
             }}
             vertexShader={`
               varying vec3 vNormal;
@@ -579,55 +772,53 @@ const HoloEarth = ({
       style={{
         ...style,
         pointerEvents: exploding ? 'none' : 'auto',
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0
+        overflow: 'visible',
       }}
     >
-      <Canvas 
-        camera={{ position: [0, 0, 8], fov: 40 }}
-        style={{ width: '100%', height: '100%', display: 'block' }}
-        gl={{ 
-          alpha: true, 
-          antialias: false,
-          powerPreference: 'high-performance',
-          preserveDrawingBuffer: false,
-          depth: true,
-          stencil: false,
-          precision: 'mediump',
-        }}
-        dpr={1}
-        performance={{ min: 0.5, max: 1, debounce: 200 }}
-        onCreated={(state) => {
-          // Force canvas size on creation
-          const width = window.innerWidth;
-          const height = window.innerHeight;
-          state.gl.setSize(width, height);
-          state.camera.aspect = width / height;
-          state.camera.updateProjectionMatrix();
-        }}
-      >
-        <Suspense fallback={null}>
-          <ambientLight intensity={0.2} />
-          <pointLight position={[10, 10, 10]} intensity={1.5} color="#FFD700" />
-          {getPerformanceSettings().tier !== 'LOW' && <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />}
-          <HoloEarthSphere 
-            exploding={exploding} 
-            explosionProgress={explosionProgress}
-            isActive={isActive}
-            pyramidScrollProgress={pyramidScrollProgress}
-            showPyramidLabels={showPyramidLabels}
-            onIntroComplete={onIntroComplete}
-            onLayerStateChange={onLayerStateChange}
-            isMobile={isMobile}
-          />
-        </Suspense>
-      </Canvas>
+      {/* Canvas wrapper - 200% size for extra rendering area to prevent clipping during map navigation */}
+      <div style={{
+        position: 'absolute',
+        width: '200%',
+        height: '200%',
+        left: '-50%',
+        top: '-50%',
+        overflow: 'visible',
+      }}>
+        <Canvas 
+          camera={{ position: [0, 0, 8], fov: 40 }}
+          style={{ width: '100%', height: '100%', display: 'block' }}
+          gl={{ 
+            alpha: true, 
+            antialias: false,
+            powerPreference: 'high-performance',
+            preserveDrawingBuffer: false,
+            depth: true,
+            stencil: false,
+            precision: 'mediump',
+          }}
+          dpr={1}
+          performance={{ min: 0.5, max: 1, debounce: 200 }}
+        >
+          <Suspense fallback={null}>
+            <ambientLight intensity={0.2} />
+            <pointLight position={[10, 10, 10]} intensity={1.5} color="#FFD700" />
+            {getPerformanceSettings().tier !== 'LOW' && <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />}
+            {/* Scale group to keep 3D content at original size (0.5 = 1/2 to compensate for 200% canvas) */}
+            <group scale={0.5}>
+              <HoloEarthSphere 
+                exploding={exploding} 
+                explosionProgress={explosionProgress}
+                isActive={isActive}
+                pyramidScrollProgress={pyramidScrollProgress}
+                showPyramidLabels={showPyramidLabels}
+                onIntroComplete={onIntroComplete}
+                onLayerStateChange={onLayerStateChange}
+                isMobile={isMobile}
+              />
+            </group>
+          </Suspense>
+        </Canvas>
+      </div>
     </div>
   );
 };

@@ -8,7 +8,7 @@ import code49Logo from '../../images/slideshow images/club49-logo.png';
 import tattooshopLogo from '../../images/slideshow images/1111logo.png';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 
-const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, position = 'top', isMobile, TimeSync }) => {
+const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, position = 'top', isMobile, TimeSync, setActiveSection, pauseAutoSlide }) => {
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
   const containerOpacity = Math.max(0, 1 - animationProgress * 2);
   const containerScale = 1 - (0.25 * animationProgress);
@@ -127,6 +127,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
 
                 {/* Button */}
                 <button
+                  type="button"
                   className="rounded-sm font-bold tracking-widest transition-all duration-300 mt-2"
                   style={{
                     background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))',
@@ -134,12 +135,14 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     color: '#c4b5fd',
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                     fontSize: 'clamp(0.65rem, 2.2vw, 0.85rem)',
-                    padding: 'clamp(0.4rem, 1.5vw, 0.6rem) clamp(0.8rem, 3.5vw, 1.5rem)',
-                    width: 'fit-content',
+                    padding: 'clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 4vw, 2rem)',
+                    minHeight: 'clamp(1.5rem, 4vw, 2rem)',
                     cursor: 'pointer',
                     boxShadow: '0 0 0px 0px rgba(167, 139, 250, 0.5)',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    pointerEvents: 'auto'
                   }}
+                  onClick={(e) => setActiveSection('gardens', e)}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(167, 139, 250, 0.6)';
                     e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.5), rgba(168, 85, 247, 0.4))';
@@ -162,7 +165,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
           <div style={{height: 'clamp(8rem, 18vh, 11rem)', display: 'flex', justifyContent: 'center', paddingLeft: 'clamp(1rem, 4vw, 1.5rem)', paddingRight: 'clamp(1rem, 4vw, 1.5rem)', marginTop: '-3rem'}}>
             <div style={{width: '80%', height: '100%'}}>
               <TechContainer title="GARDENFORLIFE.NL" variant="orange" className="w-full h-full">
-                <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-hidden">
+                <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-visible">
                   <div className="absolute inset-0 bg-gradient-to-br from-green-900/30 to-green-800/20 backdrop-blur-sm" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34, 197, 94, 0.1) 2px, rgba(34, 197, 94, 0.1) 4px)'}}></div>
                   <div className="absolute inset-0 flex flex-col justify-center items-center gap-1.5 opacity-40">
                     <div className="h-1 bg-green-600/40 rounded" style={{width: '60%'}}></div>
@@ -279,7 +282,10 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                       {gardensData.map((garden, i) => (
                         <div
                           key={garden.id}
-                          onClick={() => setCurrentSlide(i)}
+                          onClick={() => {
+                            if (pauseAutoSlide) pauseAutoSlide();
+                            setCurrentSlide(i);
+                          }}
                           className="cursor-pointer transition-all duration-300"
                           style={{
                             height: 'clamp(0.4rem, 0.75vh, 0.5rem)',

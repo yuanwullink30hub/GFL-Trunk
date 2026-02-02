@@ -6,6 +6,24 @@ import HoloLabel from './components/newFeature/HoloLabel';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { FilosofiePage, GardensPage, DataPage, LoginPage, EyedentityPage } from './pages';
 
+// ============================================
+// GRID MAP NAVIGATION CONFIGURATION
+// Creates illusion of floating/panning across a massive grid
+// Transform: translate(-x*100vw, -y*100vh)
+// Positive x = content moves LEFT (we float RIGHT)
+// Positive y = content moves UP (we float DOWN)
+// Each section is 1+ viewport away to prevent overlap
+// ============================================
+const GRID_POSITIONS = {
+  main: { x: 0, y: 0 },              // Center - HoloEarth main page
+  filosofie: { x: -1.2, y: -1.1 },   // Top-left button → far top-left on map
+  gardens: { x: 1.3, y: 1.2 },       // Bottom-RIGHT button → far bottom-right on map
+  monitor: { x: -1.3, y: 1.2 },      // Bottom-LEFT button → far bottom-left on map
+  login: { x: 0, y: 1 },             // Eyedentity (right verbindingsmenu) → 1 viewport below
+  menu: { x: 0, y: 2 },              // Blackhole (left verbindingsmenu) → 2 viewports below
+};
+const MAP_TRANSITION_DURATION = 1800; // ms for smooth curved map movement (longer for more distance)
+
 // Mobile detection hook
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -80,12 +98,138 @@ const App = () => {
   // eslint-disable-next-line no-unused-vars
   const [mobileScrollLocked, setMobileScrollLocked] = useState(false); // Track when mobile scroll should be hijacked
   const [activeSection, setActiveSection] = useState(null); // Track active section page (filosofie, gardens, monitor, menu)
+  const [autoSlideEnabled, setAutoSlideEnabled] = useState(true); // Track if auto-slide is enabled
+  const [gardensBrandIndex, setGardensBrandIndex] = useState(0); // Captured brand index when opening gardens
+  
+  // ============================================
+  // MAP NAVIGATION STATE - Smooth curved panning
+  // ============================================
+  const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 }); // Current grid position
+  const [isMapAnimating, setIsMapAnimating] = useState(false);
+  const mapAnimationRef = useRef(null);
+  const mapStartPosRef = useRef({ x: 0, y: 0 });
+  const mapTargetPosRef = useRef({ x: 0, y: 0 });
+  const mapCurveOffsetRef = useRef({ x: 0, y: 0 });
+  const mapStartTimeRef = useRef(0);
+  
   const isMobile = useIsMobile();
   const containerRef = useRef(null);
   const earthSectionRef = useRef(null);
   const lowEndAnimationRef = useRef(null); // Ref for low-end animation interval
   const isScrolling = useRef(false); // Debounce to prevent multiple triggers per scroll
   const mobileScrollLockedRef = useRef(false); // Ref for use in event handlers
+  const autoSlideTimeoutRef = useRef(null); // Ref for auto-slide re-enable timeout
+
+  // Pause auto-slide when user manually navigates, re-enable after 9 seconds
+  const pauseAutoSlide = useCallback(() => {
+    setAutoSlideEnabled(false);
+    if (autoSlideTimeoutRef.current) {
+      clearTimeout(autoSlideTimeoutRef.current);
+    }
+    autoSlideTimeoutRef.current = setTimeout(() => {
+      setAutoSlideEnabled(true);
+    }, 9000);
+  }, []);
+
+  // ============================================
+  // MAP NAVIGATION - Precise directional movement
+  // Content exits up-left, new content enters from bottom-right
+  // ============================================
+  const calculateCurveOffset = useCallback((startPos, endPos) => {
+    // Subtle curve for natural feel - very minimal
+    const dx = endPos.x - startPos.x;
+    const dy = endPos.y - startPos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Very subtle perpendicular offset (10% of previous)
+    const curveStrength = distance * 0.08;
+    
+    // Perpendicular direction
+    const perpX = -dy / (distance || 1);
+    const perpY = dx / (distance || 1);
+    
+    return {
+      x: perpX * curveStrength,
+      y: perpY * curveStrength
+    };
+  }, []);
+
+  const navigateToSection = useCallback((section) => {
+    const target = GRID_POSITIONS[section] || GRID_POSITIONS.main;
+    const start = { ...mapPosition };
+    
+    // Don't animate if already at target
+    if (Math.abs(target.x - start.x) < 0.01 && Math.abs(target.y - start.y) < 0.01) {
+      setActiveSection(section === 'main' ? null : section);
+      return;
+    }
+    
+    // Calculate curve offset for natural movement
+    const curve = calculateCurveOffset(start, target);
+    
+    mapStartPosRef.current = start;
+    mapTargetPosRef.current = target;
+    mapCurveOffsetRef.current = curve;
+    mapStartTimeRef.current = performance.now();
+    setIsMapAnimating(true);
+    setActiveSection(section === 'main' ? null : section);
+  }, [mapPosition, calculateCurveOffset]);
+
+  // Map animation loop
+  useEffect(() => {
+    if (!isMapAnimating) return;
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - mapStartTimeRef.current;
+      const progress = Math.min(elapsed / MAP_TRANSITION_DURATION, 1);
+      
+      // Smooth ease-in-out cubic
+      const eased = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      
+      // Bezier-like curve: at progress 0.5, we're at the peak of the curve
+      const curveFactor = Math.sin(progress * Math.PI); // 0 -> 1 -> 0
+      
+      const start = mapStartPosRef.current;
+      const target = mapTargetPosRef.current;
+      const curve = mapCurveOffsetRef.current;
+      
+      const newX = start.x + (target.x - start.x) * eased + curve.x * curveFactor;
+      const newY = start.y + (target.y - start.y) * eased + curve.y * curveFactor;
+      
+      setMapPosition({ x: newX, y: newY });
+      
+      if (progress < 1) {
+        mapAnimationRef.current = requestAnimationFrame(animate);
+      } else {
+        setIsMapAnimating(false);
+        setMapPosition(target);
+      }
+    };
+
+    mapAnimationRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (mapAnimationRef.current) {
+        cancelAnimationFrame(mapAnimationRef.current);
+      }
+    };
+  }, [isMapAnimating]);
+
+  // Handler for opening sections - navigate on map
+  const handleOpenSection = useCallback((section) => {
+    // Capture current slide when opening gardens section
+    if (section === 'gardens') {
+      setGardensBrandIndex(currentSlide);
+    }
+    navigateToSection(section);
+  }, [navigateToSection, currentSlide]);
+
+  // Handler for closing sections - navigate back to main
+  const handleCloseSection = useCallback(() => {
+    navigateToSection('main');
+  }, [navigateToSection]);
 
   useEffect(() => {
     setMounted(true);
@@ -182,7 +326,11 @@ const App = () => {
   // Scroll handler - one tick = one frame
   // For low-end devices: disabled until animation completes, then enabled for pyramid control only
   // After intro completes (introComplete=true), scroll controls pyramid layers instead
+  // Only works when viewing HoloEarth (activeSection === null)
   const handleWheel = useCallback((e) => {
+    // Don't process scroll if viewing other content sections
+    if (activeSection !== null) return;
+    
     // LOW-END: Skip scroll during animation, but allow after animation completes for pyramid control
     if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
     
@@ -238,7 +386,7 @@ const App = () => {
     setTimeout(() => {
       isScrolling.current = false;
     }, 50);
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection]);
 
   // Callback when pyramid intro animation completes
   const handleIntroComplete = useCallback(() => {
@@ -339,13 +487,15 @@ const App = () => {
     };
   }, [handleWheel, handleTouchStart, handleTouchMove]);
 
-  // Slideshow auto-advance
+  // Slideshow auto-advance - respects autoSlideEnabled state
   useEffect(() => {
+    if (!autoSlideEnabled) return; // Don't run if auto-slide is paused
+    
     const slideInterval = setInterval(() => {
       setCurrentSlide(prev => (prev + 1) % 4);
     }, 3300);
     return () => clearInterval(slideInterval);
-  }, []);
+  }, [autoSlideEnabled]);
 
   // Derive animation values from currentFrame using section-based timing
   // ============================================
@@ -446,9 +596,20 @@ const App = () => {
   return (
     <main 
       ref={containerRef}
-      className={`relative w-screen font-figtree ${isMobile ? 'min-h-screen' : 'h-screen overflow-hidden'}`}
+      className={`relative w-screen font-figtree ${isMobile ? 'min-h-screen' : 'h-screen overflow-visible'}`}
       style={{color: '#FFFEF0', touchAction: isMobile ? 'pan-y' : 'none'}}
     >
+      {/* Desktop TimeSync - Fixed HUD element, stays in viewport corner like camera timestamp */}
+      {!isMobile && (
+        <div className="fixed pointer-events-none" style={{
+          right: '1.5rem',
+          top: '2.5rem',
+          zIndex: 9999,
+        }}>
+          <TimeSync isMobile={false} />
+        </div>
+      )}
+
       {/* Grid Background - spans entire page on mobile */}
       {isMobile && (
         <div 
@@ -547,7 +708,7 @@ const App = () => {
           <div 
             ref={earthSectionRef}
             className="relative w-full h-screen"
-            style={{ background: 'transparent', marginTop: '-9rem' }}
+            style={{ background: 'transparent', marginTop: '-9rem', overflow: 'visible' }}
           >
             {/* Radial Glow - disabled on low-end during intro for performance */}
             {!isLowEndMode && (
@@ -564,7 +725,7 @@ const App = () => {
 
             {/* 3D Earth Scene */}
             {!(isLowEndMode && !introComplete) && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ overflow: 'visible' }}>
                 <HoloEarth 
                   className="w-full h-full" 
                   exploding={isExploding}
@@ -603,29 +764,55 @@ const App = () => {
           {/* --- Background Elements --- */}
           <div className="absolute inset-0 z-0" style={{background: 'transparent'}} />
       
-          {/* --- Grid Background --- */}
+          {/* --- Grid Background - Moves with map for floating illusion --- */}
           <div 
-            className="absolute inset-0 z-0 pointer-events-none"
+            className="fixed z-0 pointer-events-none"
             style={{
+              // Extend grid far beyond viewport (5x5 viewport area)
+              width: '500vw',
+              height: '500vh',
+              left: '-200vw',
+              top: '-200vh',
               opacity: gridOpacity,
               backgroundImage: `
-                linear-gradient(rgba(201, 160, 240, 0.05) 1px, transparent 1px), 
-                linear-gradient(90deg, rgba(201, 160, 240, 0.05) 1px, transparent 1px)
+                linear-gradient(rgba(201, 160, 240, 0.07) 1px, transparent 1px), 
+                linear-gradient(90deg, rgba(201, 160, 240, 0.07) 1px, transparent 1px)
               `,
-              backgroundSize: '50px 50px'
+              backgroundSize: '50px 50px',
+              // Move grid with map position - creates floating illusion
+              transform: `translate(${-mapPosition.x * 100}vw, ${-mapPosition.y * 100}vh)`,
+              transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+              willChange: 'transform',
             }}
           />
+        </>
+      )}
 
-          {/* --- Persistent Logo (top-left) --- */}
-          {/* Moves out with header at frame 9, but stays static if activeSection is clicked */}
+      {/* =========================== */}
+      {/* DESKTOP LAYOUT - Grid Map Navigation - pure position movement, no scale/fade */}
+      {/* =========================== */}
+      {!isMobile && (
+        <div
+          style={{
+            transform: `translate(${-mapPosition.x * 100}vw, ${-mapPosition.y * 100}vh)`,
+            transformOrigin: 'center center',
+            pointerEvents: activeSection ? 'none' : 'auto',
+            transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+            position: 'absolute',
+            inset: 0,
+            willChange: 'transform',
+            overflow: 'visible',
+          }}
+        >
+          {/* --- Logo (top-left) - Inside moving container --- */}
           <div
-            className="fixed pointer-events-auto z-50"
+            className="absolute pointer-events-auto z-50"
             style={{
               top: 'clamp(1.5rem, 2vw, 2rem)',
               left: 'clamp(1rem, 3vw, 2rem)',
-              transform: activeSection ? 'none' : `translateX(${headerY * 2.5}px) translateY(${headerY * 2.5}px) scale(${headerScale})`,
-              opacity: activeSection ? 1 : headerOpacity,
-              transition: activeSection ? 'none' : undefined,
+              // Header animation during scroll (before navigating)
+              transform: `translateX(${headerY * 2.5}px) translateY(${headerY * 2.5}px) scale(${headerScale})`,
+              opacity: headerOpacity,
             }}
           >
             <img 
@@ -638,30 +825,12 @@ const App = () => {
                 cursor: activeSection ? 'pointer' : 'default',
                 transition: 'transform 0.2s ease',
               }} 
-              onClick={() => activeSection && setActiveSection(null)}
+              onClick={() => activeSection && handleCloseSection()}
               title={activeSection ? 'Back to Landing' : ''}
               onMouseEnter={(e) => activeSection && (e.target.style.transform = 'scale(1.05)')}
               onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
             />
           </div>
-        </>
-      )}
-
-      {/* =========================== */}
-      {/* DESKTOP LAYOUT - Original absolute positioning */}
-      {/* =========================== */}
-      {!isMobile && (
-        <div
-          style={{
-            opacity: activeSection ? 0 : 1,
-            transform: activeSection ? 'scale(0.85)' : 'scale(1)',
-            transformOrigin: 'center center',
-            pointerEvents: activeSection ? 'none' : 'auto',
-            transition: 'opacity 1.5s ease, transform 1.5s ease',
-            position: 'absolute',
-            inset: 0,
-          }}
-        >
           {/* --- Radial Shadow/Glow Behind Earth --- */}
           <div 
             className="absolute inset-0 z-5 pointer-events-none" 
@@ -675,7 +844,7 @@ const App = () => {
           />
 
           {/* --- Main 3D Scene --- */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center">
+          <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ overflow: 'visible' }}>
             <HoloEarth 
               className="w-full h-full" 
               exploding={isExploding}
@@ -738,19 +907,8 @@ const App = () => {
                 </div>
               </div>
             </header>
-        
-            {/* Desktop TimeSync - Floats out with header at frame 9 */}
-            <div className="absolute pointer-events-auto" style={{
-              right: '1.5rem',
-              top: '2.5rem',
-              zIndex: 50,
-              transform: `translateX(${-headerY * 2.5}px) translateY(${headerY * 2.5}px) scale(${headerScale})`,
-              opacity: headerOpacity,
-            }}>
-              <TimeSync isMobile={false} />
-            </div>
 
-            {/* --- Scroll Prompt (Desktop) OR Start Button (Low-End) --- */}
+            {/* --- Scroll Prompt (Desktop) OR Start Button (Low-End) --- */}}
             <div 
               className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50"
               style={{
@@ -830,7 +988,8 @@ const App = () => {
               currentSlide={currentSlide} 
               setCurrentSlide={setCurrentSlide}
               animationProgress={containerProgress}
-              setActiveSection={setActiveSection}
+              setActiveSection={handleOpenSection}
+              pauseAutoSlide={pauseAutoSlide}
             />
 
             {/* --- SYSTEM INNER CONTENT (Shown after Zoom) --- */}
@@ -1127,40 +1286,135 @@ const App = () => {
           opacity: isSystem ? 0 : 1
         }}
       >
-        {isMobile ? 'COORD: 13.41° N, 103.87° E' : 'COORD: 13.412469° N, 103.866986° E'}
+        {isMobile ? 'COORD: 29.98° N, 31.13° E' : 'COORD: 29.9792458° N, 31.1342° E'}
       </div>
 
       {/* Progress indicator for debugging - remove later */}
       <div 
         className="fixed bottom-4 right-4 z-50 text-xs font-mono pointer-events-none"
-        style={{ color: 'rgba(245, 158, 11, 0.6)' }}
+        style={{ 
+          color: 'rgba(245, 158, 11, 0.6)',
+          transform: `translate(${-mapPosition.x * 100}vw, ${-mapPosition.y * 100}vh)`,
+          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out'
+        }}
       >
         Frame: {currentFrame}/{TOTAL_ANIMATION_FRAMES}
       </div>
 
+      {/* Debug: Map position indicator */}
+      <div 
+        className="fixed top-4 right-4 z-50 text-xs font-mono pointer-events-none"
+        style={{ color: 'rgba(147, 51, 234, 0.6)' }}
+      >
+        Map: ({mapPosition.x.toFixed(2)}, {mapPosition.y.toFixed(2)}) {isMapAnimating ? '⟳' : '●'}
+      </div>
+
       {/* ========================= */}
-      {/* PAGE COMPONENTS          */}
+      {/* PAGE COMPONENTS - Smart pre-loading with content-visibility */}
+      {/* Uses CSS content-visibility: auto to skip rendering off-screen content */}
       {/* ========================= */}
-      <FilosofiePage 
-        isVisible={activeSection === 'filosofie'} 
-        onBack={() => setActiveSection(null)} 
-      />
-      <GardensPage 
-        isVisible={activeSection === 'gardens'} 
-        onBack={() => setActiveSection(null)} 
-      />
-      <DataPage 
-        isVisible={activeSection === 'monitor'} 
-        onBack={() => setActiveSection(null)} 
-      />
-      <LoginPage 
-        isVisible={activeSection === 'login'} 
-        onBack={() => setActiveSection(null)} 
-      />
-      <EyedentityPage 
-        isVisible={activeSection === 'menu'} 
-        onBack={() => setActiveSection(null)} 
-      />
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 95,
+          pointerEvents: 'none',
+          overflow: 'visible',
+        }}
+      >
+        {/* Each page is positioned at its grid location */}
+        {/* Filosofie - Top-left button area */}
+        <div style={{
+          position: 'absolute',
+          width: '100vw',
+          height: '100vh',
+          transform: `translate(${(GRID_POSITIONS.filosofie.x - mapPosition.x) * 100}vw, ${(GRID_POSITIONS.filosofie.y - mapPosition.y) * 100}vh)`,
+          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+          pointerEvents: activeSection === 'filosofie' ? 'auto' : 'none',
+          // Smart rendering: skip painting when far off-screen
+          contentVisibility: (activeSection === 'filosofie' || isMapAnimating) ? 'visible' : 'auto',
+          containIntrinsicSize: '100vw 100vh',
+          willChange: activeSection === 'filosofie' ? 'transform' : 'auto',
+        }}>
+          <FilosofiePage 
+            isVisible={activeSection === 'filosofie' || isMapAnimating}
+            onBack={handleCloseSection} 
+          />
+        </div>
+
+        {/* Gardens - Bottom-RIGHT button area */}
+        <div style={{
+          position: 'absolute',
+          width: '100vw',
+          height: '100vh',
+          transform: `translate(${(GRID_POSITIONS.gardens.x - mapPosition.x) * 100}vw, ${(GRID_POSITIONS.gardens.y - mapPosition.y) * 100}vh)`,
+          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+          pointerEvents: activeSection === 'gardens' ? 'auto' : 'none',
+          contentVisibility: (activeSection === 'gardens' || isMapAnimating) ? 'visible' : 'auto',
+          containIntrinsicSize: '100vw 100vh',
+          willChange: activeSection === 'gardens' ? 'transform' : 'auto',
+        }}>
+          <GardensPage 
+            isVisible={activeSection === 'gardens' || isMapAnimating}
+            onBack={handleCloseSection}
+            initialBrandIndex={gardensBrandIndex}
+          />
+        </div>
+
+        {/* Monitor/Data - Bottom-LEFT button area */}
+        <div style={{
+          position: 'absolute',
+          width: '100vw',
+          height: '100vh',
+          transform: `translate(${(GRID_POSITIONS.monitor.x - mapPosition.x) * 100}vw, ${(GRID_POSITIONS.monitor.y - mapPosition.y) * 100}vh)`,
+          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+          pointerEvents: activeSection === 'monitor' ? 'auto' : 'none',
+          contentVisibility: (activeSection === 'monitor' || isMapAnimating) ? 'visible' : 'auto',
+          containIntrinsicSize: '100vw 100vh',
+          willChange: activeSection === 'monitor' ? 'transform' : 'auto',
+        }}>
+          <DataPage 
+            isVisible={activeSection === 'monitor' || isMapAnimating}
+            onBack={handleCloseSection} 
+          />
+        </div>
+
+        {/* Login - Right verbindingsmenu button area */}
+        <div style={{
+          position: 'absolute',
+          width: '100vw',
+          height: '100vh',
+          transform: `translate(${(GRID_POSITIONS.login.x - mapPosition.x) * 100}vw, ${(GRID_POSITIONS.login.y - mapPosition.y) * 100}vh)`,
+          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+          pointerEvents: activeSection === 'login' ? 'auto' : 'none',
+          contentVisibility: (activeSection === 'login' || isMapAnimating) ? 'visible' : 'auto',
+          containIntrinsicSize: '100vw 100vh',
+          willChange: activeSection === 'login' ? 'transform' : 'auto',
+        }}>
+          <LoginPage 
+            isVisible={activeSection === 'login' || isMapAnimating}
+            onBack={handleCloseSection} 
+          />
+        </div>
+
+        {/* Eyedentity/Menu - Left verbindingsmenu button area */}
+        <div style={{
+          position: 'absolute',
+          width: '100vw',
+          height: '100vh',
+          transform: `translate(${(GRID_POSITIONS.menu.x - mapPosition.x) * 100}vw, ${(GRID_POSITIONS.menu.y - mapPosition.y) * 100}vh)`,
+          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+          pointerEvents: activeSection === 'menu' ? 'auto' : 'none',
+          contentVisibility: (activeSection === 'menu' || isMapAnimating) ? 'visible' : 'auto',
+          containIntrinsicSize: '100vw 100vh',
+          willChange: activeSection === 'menu' ? 'transform' : 'auto',
+        }}>
+          <EyedentityPage 
+            isVisible={activeSection === 'menu' || isMapAnimating}
+            onBack={handleCloseSection} 
+          />
+        </div>
+      </div>
     </main>
   );
 };

@@ -10,6 +10,7 @@ let performanceProfile = null;
  * Returns quality tier and settings for animations
  */
 export const detectPerformance = () => {
+
   if (performanceProfile) return performanceProfile;
 
   const canvas = document.createElement('canvas');

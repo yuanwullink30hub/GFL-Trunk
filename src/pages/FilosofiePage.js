@@ -1,48 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { memo } from 'react';
 
-const FilosofiePage = ({ isVisible, onBack }) => {
-  const [showContent, setShowContent] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
-
-  // Delay content appearance to sync with landing page fade-out
-  useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(() => setShowContent(true), 1500);
-      return () => clearTimeout(timer);
-    } else {
-      setShowContent(false);
-      setIsExiting(false);
-    }
-  }, [isVisible]);
-
-  const handleBack = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onBack();
-    }, 1500);
-  };
-
-  if (!isVisible && !isExiting) return null;
-
+const FilosofiePage = memo(({ isVisible, onBack }) => {
+  // Content only renders fully when visible or animating toward it
   return (
     <div
       style={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: showContent && !isExiting ? 'translate(-50%, -50%) scale(1)' : 'translate(-50%, -50%) scale(0.85)',
-        zIndex: 95,
-        opacity: showContent && !isExiting ? 1 : 0,
-        pointerEvents: showContent && !isExiting ? 'auto' : 'none',
-        transition: 'opacity 1.5s ease, transform 1.5s ease',
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        // No background - transparent over grid
       }}
     >
+      {/* Render content when visible, placeholder when not */}
+      {isVisible ? (
       <div style={{
         minWidth: '40vw',
         minHeight: '30vh',
         border: '1px solid rgba(167, 139, 250, 0.3)',
         borderRadius: '0.5rem',
-        backgroundColor: 'rgba(88, 28, 135, 0.1)',
+        backgroundColor: 'rgba(88, 28, 135, 0.15)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -61,7 +39,7 @@ const FilosofiePage = ({ isVisible, onBack }) => {
           Content coming soon...
         </div>
         <button
-          onClick={handleBack}
+          onClick={onBack}
           style={{
             padding: '0.5rem 1rem',
             backgroundColor: 'rgba(167, 139, 250, 0.2)',
@@ -80,11 +58,16 @@ const FilosofiePage = ({ isVisible, onBack }) => {
             e.target.style.backgroundColor = 'rgba(167, 139, 250, 0.2)';
           }}
         >
-          ← BACK
+          ← TERUG
         </button>
       </div>
+      ) : (
+        <div style={{ width: '40vw', height: '30vh' }} />
+      )}
     </div>
   );
-};
+});
+
+FilosofiePage.displayName = 'FilosofiePage';
 
 export default FilosofiePage;

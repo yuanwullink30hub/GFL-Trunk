@@ -109,6 +109,17 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
     const darkGoldColor = new THREE.Color("#b45309");
     const neonShadowColor = new THREE.Color("#fb923c");
 
+    // Chunk glow fade: pyramid starts at 10% opacity when chunks appear,
+    // then gradually returns to 100% over 9 frames
+    // explosionProgress is EASED (linear^2.5)
+    // Frame 0 linear = 0 eased, Frame 9 linear (0.36) = 0.36^2.5 ≈ 0.078 eased
+    let chunkGlowFade = 1.0;
+    if (explosionProgress > 0 && explosionProgress < 0.078) {
+      // Start at 10% (0.1), fade to 100% (1.0) over 9 frames
+      const fadeProgress = explosionProgress / 0.078;
+      chunkGlowFade = 0.1 + fadeProgress * 0.9;
+    }
+
     // Keep full opacity during explosion for vibrant pyramid visibility
     // Only reduce during orbital mode when inside earth
     // Apply particle occlusion - pyramid is behind smokescreen during explosion
@@ -116,29 +127,33 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
     
     // During explosion, use higher opacity to block particles from shining through
     const isDuringExplosion = explosionProgress > 0.05;
-    const targetEdgeOpacity = (insideEarth && !isDuringExplosion ? 0.15 : 1) * occlusionMult;
-    const targetGlassOpacity = (insideEarth && !isDuringExplosion ? 0.07 : 0.35) * occlusionMult;
-    const targetWireOpacity = (insideEarth && !isDuringExplosion ? 0.04 : 0.15) * occlusionMult;
-    const targetEmissive = (insideEarth ? 0.05 : 0.35) * occlusionMult;
+    // Apply chunkGlowFade AFTER calculating base opacity so it always takes effect
+    const targetEdgeOpacity = (insideEarth && !isDuringExplosion ? 0.15 : 1) * occlusionMult * chunkGlowFade;
+    const targetGlassOpacity = (insideEarth && !isDuringExplosion ? 0.07 : 0.35) * occlusionMult * chunkGlowFade;
+    const targetWireOpacity = (insideEarth && !isDuringExplosion ? 0.04 : 0.15) * occlusionMult * chunkGlowFade;
+    const targetEmissive = (insideEarth ? 0.05 : 0.35) * occlusionMult * chunkGlowFade;
+
+    // Use fast lerp during chunk glow fade for instant effect, normal lerp otherwise
+    const lerpSpeed = chunkGlowFade < 1.0 ? 15 : 3;
 
     if (edgesRef.current && edgesRef.current.material) {
       const targetColor = isGoldMode ? goldColor : orangeColor;
-      // Darken orange edges to 0.7 intensity
+      // Darken orange edges to 0.7 intensity, also apply chunkGlowFade to dim during chunk animation
       if (!isGoldMode) {
-        edgesRef.current.material.color.copy(orangeColor).multiplyScalar(0.7);
+        edgesRef.current.material.color.copy(orangeColor).multiplyScalar(0.7 * chunkGlowFade);
       } else {
         edgesRef.current.material.color.lerp(targetColor, delta * 3);
       }
-      edgesRef.current.material.opacity = THREE.MathUtils.lerp(edgesRef.current.material.opacity, targetEdgeOpacity, delta * 3);
+      edgesRef.current.material.opacity = THREE.MathUtils.lerp(edgesRef.current.material.opacity, targetEdgeOpacity, delta * lerpSpeed);
     }
 
     if (glassMatRef.current) {
-      glassMatRef.current.opacity = THREE.MathUtils.lerp(glassMatRef.current.opacity, targetGlassOpacity, delta * 3);
-      glassMatRef.current.emissiveIntensity = THREE.MathUtils.lerp(glassMatRef.current.emissiveIntensity, targetEmissive, delta * 3);
+      glassMatRef.current.opacity = THREE.MathUtils.lerp(glassMatRef.current.opacity, targetGlassOpacity, delta * lerpSpeed);
+      glassMatRef.current.emissiveIntensity = THREE.MathUtils.lerp(glassMatRef.current.emissiveIntensity, targetEmissive, delta * lerpSpeed);
     }
 
     if (wireMatRef.current) {
-      wireMatRef.current.opacity = THREE.MathUtils.lerp(wireMatRef.current.opacity, targetWireOpacity, delta * 3);
+      wireMatRef.current.opacity = THREE.MathUtils.lerp(wireMatRef.current.opacity, targetWireOpacity, delta * lerpSpeed);
     }
 
     const targetShadowOpacity = isGoldMode ? 0.3 : 0;

@@ -101,7 +101,7 @@ const PyramidView = ({ onBack = () => {}, isActive = true }) => {
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden"
+      className="relative w-full h-full overflow-visible"
       style={{ 
         background: '#050510', 
         touchAction: 'none',

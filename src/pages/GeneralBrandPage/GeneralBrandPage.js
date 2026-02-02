@@ -506,7 +506,6 @@ const GeneralBrandPage = React.memo(({
                   <div className="animate-fadeIn">
                     <p className="text-sm text-white/70 leading-relaxed font-light mb-4">
                       <span className="font-mono text-xs mr-2" style={{ color: '#bc13fe' }}>
-                        {/* Briefing header */}
                         /// BRIEFING:
                       </span>
                       {brand.description}

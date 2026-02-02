@@ -908,7 +908,7 @@ const App = () => {
               </div>
             </header>
 
-            {/* --- Scroll Prompt (Desktop) OR Start Button (Low-End) --- */}}
+            {/* --- Scroll Prompt (Desktop) OR Start Button (Low-End) --- */}
             <div 
               className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50"
               style={{

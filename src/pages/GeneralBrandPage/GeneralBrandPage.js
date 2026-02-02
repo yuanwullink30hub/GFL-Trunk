@@ -505,7 +505,10 @@ const GeneralBrandPage = React.memo(({
                 {activeTab === 'profile' && (
                   <div className="animate-fadeIn">
                     <p className="text-sm text-white/70 leading-relaxed font-light mb-4">
-                      <span className="font-mono text-xs mr-2" style={{ color: '#bc13fe' }}>/// BRIEFING:</span>
+                      <span className="font-mono text-xs mr-2" style={{ color: '#bc13fe' }}>
+                        {/* Briefing header */}
+                        /// BRIEFING:
+                      </span>
                       {brand.description}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-4">

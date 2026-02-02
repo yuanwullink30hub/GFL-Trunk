@@ -272,9 +272,14 @@ const ChunkShaderMaterial = {
       float continent = smoothstep(0.40, 0.60, mapValue);
       float border = smoothstep(0.3, 0.45, mapValue) * (1.0 - smoothstep(0.55, 0.7, mapValue));
       
-      // Transition factor: 0 at start (match solid sphere), 1 after frame 9
-      float fadeInEnd = 0.078; // Frame 9 eased
-      float transition = clamp(normExp / fadeInEnd, 0.0, 1.0);
+      // Transition factor: gradual fade-in from frame 9 to frame 20
+      // Frame 9 linear (0.36) = 0.36^2.5 ≈ 0.078 eased - particles start appearing
+      // Frame 20 linear (0.80) = 0.80^2.5 ≈ 0.57 eased - fully visible
+      float fadeInStart = 0.078; // Frame 9 eased
+      float fadeInEnd = 0.57;    // Frame 20 eased
+      float transition = clamp((normExp - fadeInStart) / (fadeInEnd - fadeInStart), 0.0, 1.0);
+      // Before fadeInStart, transition is 0; after fadeInEnd, transition is 1
+      if (normExp < fadeInStart) transition = 0.0;
       
       // Lighting transition: kicks in earlier (frame 3-4) instead of frame 9
       // Frame 3 linear (0.12) = 0.12^2.5 ≈ 0.003, Frame 4 = 0.01
@@ -360,7 +365,7 @@ const ChunkMesh = ({ chunk, explosionProgress, material }) => {
   // Match particle sphere movement - fast, snappy expansion
   // Particles use baseDist = uExplode * 0.8 where uExplode = explosionProgress * 25
   // So particles move at roughly explosionProgress * 20-25 rate
-  const expansion = explosionProgress * 49; // Much faster expansion
+  const expansion = explosionProgress * 69; // Much faster expansion
   
   // Position is ONLY the expansion offset - geometry already has correct sphere positions
   const posX = chunk.direction.x * expansion * chunk.speed;
@@ -539,15 +544,35 @@ const HoloEarthSphere = ({
 
   // Chunk fade calculation - fade out during later frames
   // NOTE: explosionProgress is EASED (linear^2.5)
-  // Chunk fade: extended by 5 frames for smoother fade-out
-  // Start fade at frame 13 (instead of 18) for longer, smoother transition
-  // Frame 13 linear (0.52) = 0.52^2.5 ≈ 0.20 eased
-  // Frame 24 linear (0.96) = 0.96^2.5 ≈ 0.90 eased
-  const easedFrame13 = 0.20;
-  const easedFrame24 = 0.90;
-  const chunkFadeValue = explosionProgress < easedFrame13 ? 1.0 :
-                         explosionProgress > easedFrame24 ? 0.0 :
-                         1.0 - ((explosionProgress - easedFrame13) / (easedFrame24 - easedFrame13));
+  // Multi-step gradual fade with set points for smoother transparency transition
+  // Frame mappings (linear -> eased):
+  // Frame 13 (0.52 linear) = 0.20 eased -> 100% opacity
+  // Frame 16 (0.64 linear) = 0.33 eased -> 85% opacity
+  // Frame 19 (0.76 linear) = 0.50 eased -> 60% opacity
+  // Frame 22 (0.88 linear) = 0.72 eased -> 30% opacity
+  // Frame 25 (1.00 linear) = 1.00 eased -> 0% opacity
+  const fadePoints = [
+    { progress: 0.20, opacity: 1.0 },   // Frame 13 - fully visible
+    { progress: 0.33, opacity: 0.85 },  // Frame 16 - slight fade
+    { progress: 0.50, opacity: 0.60 },  // Frame 19 - moderate fade
+    { progress: 0.72, opacity: 0.30 },  // Frame 22 - mostly faded
+    { progress: 1.00, opacity: 0.0 },   // Frame 25 - fully transparent
+  ];
+  
+  let chunkFadeValue = 1.0;
+  if (explosionProgress >= fadePoints[0].progress) {
+    // Find which segment we're in
+    for (let i = 0; i < fadePoints.length - 1; i++) {
+      if (explosionProgress >= fadePoints[i].progress && explosionProgress <= fadePoints[i + 1].progress) {
+        const segmentProgress = (explosionProgress - fadePoints[i].progress) / (fadePoints[i + 1].progress - fadePoints[i].progress);
+        chunkFadeValue = fadePoints[i].opacity + (fadePoints[i + 1].opacity - fadePoints[i].opacity) * segmentProgress;
+        break;
+      }
+    }
+    if (explosionProgress > fadePoints[fadePoints.length - 1].progress) {
+      chunkFadeValue = 0.0;
+    }
+  }
 
   useFrame((state, delta) => {
     const time = state.clock.getElapsedTime();

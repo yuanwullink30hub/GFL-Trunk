@@ -133,7 +133,7 @@ const generateChunkGeometries = (radius = 2.5, segments = 48) => {
     }
     
     // SIDE WALLS (connect edges that belong to only one triangle = boundary edges)
-    for (const [edgeKey, edge] of edgeMap) {
+    for (const [, edge] of edgeMap) {
       if (edge.count === 1) {
         const v1 = edge.v1;
         const v2 = edge.v2;

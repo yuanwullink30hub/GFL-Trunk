@@ -363,7 +363,7 @@ export const Modal = ({ isOpen, onClose, children }) => {
   );
 };
 
-export default {
+const SciFiUIComponents = {
   HoloCard,
   GlowButton,
   TechBadge,
@@ -374,3 +374,5 @@ export default {
   LoadingSpinner,
   Modal
 };
+
+export default SciFiUIComponents;

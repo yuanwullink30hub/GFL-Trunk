@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Globe, 
-  Play, 
   ChevronLeft,
   ChevronRight,
   ChevronUp,
@@ -20,7 +19,7 @@ import {
 } from 'lucide-react';
 // Note: lucide-react provides icons - ensure it's installed or use alternatives
 
-import { BRANDS, getBrandByIndex } from './brandData';
+import { BRANDS } from './brandData';
 import { 
   SectorFrame, 
   TabButton, 
@@ -30,39 +29,6 @@ import {
   Modal
 } from './SciFiUI';
 import BrandStats from './BrandStats';
-
-/**
- * TimeSync - Display current date and time
- */
-const TimeSync = ({ isMobile }) => {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const timeString = time.toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    second: '2-digit',
-    hour12: false 
-  });
-
-  const dateString = time.toLocaleDateString('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    year: 'numeric'
-  });
-
-  return (
-    <div className="text-center whitespace-nowrap">
-      <div className="tracking-widest" style={{color: 'rgba(21, 179, 21, 0.8)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(13px, 0.7vw)'}}>TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</div>
-    </div>
-  );
-};
 
 // Instagram icon component (since lucide doesn't have Instagram)
 const Instagram = ({ size = 24, className = '' }) => (

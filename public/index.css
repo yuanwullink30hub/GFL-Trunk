@@ -307,9 +307,6 @@
 .h-\[80vh\]{
   height: 80vh;
 }
-.h-\[84px\]{
-  height: 84px;
-}
 .h-full{
   height: 100%;
 }
@@ -375,9 +372,6 @@
 }
 .w-\[80vw\]{
   width: 80vw;
-}
-.w-\[84px\]{
-  width: 84px;
 }
 .w-\[90\%\]{
   width: 90%;
@@ -826,9 +820,6 @@
 }
 .p-0\.5{
   padding: 0.125rem;
-}
-.p-1{
-  padding: 0.25rem;
 }
 .p-2{
   padding: 0.5rem;

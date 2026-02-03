@@ -3,6 +3,7 @@
 
 export { default } from './GeneralBrandPage';
 export { default as GeneralBrandPage } from './GeneralBrandPage';
+export { default as MobileDetailPage } from './MobileDetailPage';
 export { BRANDS, getBrandByIndex, getBrandBySlug, getBrandById } from './brandData';
 export { 
   HoloCard, 

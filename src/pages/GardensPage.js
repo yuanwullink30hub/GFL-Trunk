@@ -8,14 +8,14 @@ import GeneralBrandPage from './GeneralBrandPage';
  * Props:
  * - isVisible: boolean - whether the page should be displayed
  * - onBack: function - callback to close the page and return
- * - initialBrandIndex: number - which brand (0-11) to show initially (corresponds to Gardens slideshow index)
+ * - brandIndex: number - which brand (0-11) to show (controlled by parent via brand ring)
  */
-const GardensPage = ({ isVisible, onBack, initialBrandIndex = 0 }) => {
+const GardensPage = ({ isVisible, onBack, brandIndex = 0 }) => {
   return (
     <GeneralBrandPage 
       isVisible={isVisible}
       onBack={onBack}
-      initialBrandIndex={initialBrandIndex}
+      initialBrandIndex={brandIndex}
     />
   );
 };

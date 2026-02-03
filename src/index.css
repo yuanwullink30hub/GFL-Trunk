@@ -16,14 +16,14 @@ body {
 /* Prevent window scroll on desktop - map navigation uses transforms not scroll */
 @media (min-width: 768px) {
   html, body {
-    overflow: hidden;
+    overflow: hidden !important;
   }
 }
 
 @media (max-width: 767px) {
-  body {
-    overflow-y: auto;
-    overflow-x: hidden;
+  html, body {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
   }
 }
 
@@ -126,4 +126,13 @@ body {
 .brand-selection::selection {
   background-color: #ffae00;
   color: #000;
+}
+
+/* Hide scrollbar but allow scrolling */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
 }

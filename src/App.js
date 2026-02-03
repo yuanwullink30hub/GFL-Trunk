@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { List } from 'lucide-react';
 import HoloEarth from './components/orbital/HoloEarth';
 import DesktopLayout from './components/orbital/DesktopLayout';
-import MobileLayout from './components/orbital/MobileLayout';
 import HoloLabel from './components/newFeature/HoloLabel';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { FilosofiePage, GardensPage, DataPage, LoginPage, EyedentityPage } from './pages';
+import { BRANDS } from './pages/GeneralBrandPage/brandData';
 
 // ============================================
 // GRID MAP NAVIGATION CONFIGURATION
@@ -71,6 +72,950 @@ const TimeSync = ({ isMobile }) => {
 };
 
 // ============================================
+// MOBILE NAVIGATION WHEEL
+// Circular navigation at bottom of screen for mobile
+// ============================================
+// ============================================
+// MOBILE NAVIGATION ITEMS - Arranged like a clock (360°)
+// 0° (top) = Deltawerken, 60° = Gardens, 120° = Blackhole
+// 180° (bottom) = Eyedentity, 240° = Data, 300° = Filosofie
+// ============================================
+const MOBILE_NAV_ITEMS = [
+  { 
+    key: 'deltawerken', 
+    label: 'DELTAWERKEN', 
+    description: 'Bouw de toekomst',
+    icon: 'deltawerken-custom', // custom SVG: circle with triangle inside
+    color: '#06b6d4', // cyan
+    angle: 0 // 0° - top of clock
+  },
+  { 
+    key: 'gardens', 
+    label: 'GARDENS', 
+    description: 'Verken de merkwereld',
+    icon: '⬡',
+    color: '#22c55e', // green
+    angle: 60 // 60° - 2 o'clock position
+  },
+  { 
+    key: 'menu', 
+    label: 'BLACKHOLE', 
+    description: 'Verborgen portaal',
+    icon: '●',
+    color: '#ef4444', // red
+    angle: 120 // 120° - 4 o'clock position
+  },
+  { 
+    key: 'login', 
+    label: 'EYEDENTITY', 
+    description: 'Verbind je profiel',
+    icon: '◈',
+    color: '#f59e0b', // amber
+    angle: 180 // 180° - bottom of clock
+  },
+  { 
+    key: 'monitor', 
+    label: 'DATA', 
+    description: 'Statistieken & analytics',
+    icon: '▣',
+    color: '#3b82f6', // blue
+    angle: 240 // 240° - 8 o'clock position
+  },
+  { 
+    key: 'filosofie', 
+    label: 'FILOSOFIE', 
+    description: 'Ontdek je mentale energie',
+    icon: '◇',
+    color: '#a855f7', // purple
+    angle: 300 // 300° - 10 o'clock position
+  },
+];
+
+const MobileNavWheel = ({ onNavigate, activeSection, onIndexChange, onRotationChange, onBrandChange, headerOpacity = 1, headerY = 0, currentFrame = 0 }) => {
+  const [expandedItem, setExpandedItem] = useState(null);
+  const [isListOpen, setIsListOpen] = useState(false);
+  const [virtualIndex, setVirtualIndex] = useState(0); // Virtual index for infinite circular scroll
+  const [scrollDirection, setScrollDirection] = useState(0); // -1 = left/ccw, 1 = right/cw
+  const wheelRef = useRef(null);
+  const eventWrapperRef = useRef(null); // Separate ref for event handling wrapper
+  const touchStartRef = useRef(null);
+  
+  // Brand ring state (for Gardens)
+  const [brandVirtualIndex, setBrandVirtualIndex] = useState(0);
+  const [brandRingExpanded, setBrandRingExpanded] = useState(false); // Delayed expansion state
+  const brandRingRef = useRef(null);
+  const brandTouchStartRef = useRef(null);
+  
+  // Wheel configuration
+  const wheelSizeVw = 75; // percentage of viewport width (1.1x of 68)
+  const itemRadiusPercent = 0.40; // Distance from center - reduced to keep items inside outer border
+  const totalItems = MOBILE_NAV_ITEMS.length;
+  const anglePerItem = 360 / totalItems; // degrees between each item (60°)
+  
+  // Calculate continuous rotation - item at virtualIndex should be at top
+  // Wheel rotation: when virtualIndex increases, wheel rotates clockwise (negative degrees)
+  const rotation = -virtualIndex * anglePerItem;
+  
+  // Get the currently active item (at top of wheel)
+  const activeItemIndex = ((virtualIndex % totalItems) + totalItems) % totalItems;
+  
+  // Brand ring configuration (12 brands)
+  const totalBrands = BRANDS.length;
+  const brandAnglePerItem = 360 / totalBrands; // 30° between brands
+  const brandRotation = -brandVirtualIndex * brandAnglePerItem;
+  const activeBrandIndex = ((brandVirtualIndex % totalBrands) + totalBrands) % totalBrands;
+  
+  // Is Gardens active? (index 1)
+  const isGardensActive = activeItemIndex === 1;
+  
+  // Delayed brand ring expansion - expands after Gardens is active for a moment
+  useEffect(() => {
+    let timeoutId;
+    if (isGardensActive) {
+      // Short delay before expanding the ring
+      timeoutId = setTimeout(() => {
+        setBrandRingExpanded(true);
+      }, 150); // 150ms delay
+    } else {
+      // Immediately collapse when leaving Gardens
+      setBrandRingExpanded(false);
+    }
+    return () => clearTimeout(timeoutId);
+  }, [isGardensActive]);
+  
+  // Notify parent of index and rotation changes
+  useEffect(() => {
+    if (onIndexChange) {
+      onIndexChange(activeItemIndex, scrollDirection, MOBILE_NAV_ITEMS[activeItemIndex]?.key);
+    }
+    if (onRotationChange) {
+      // Pass the wheel rotation so content can sync with it
+      onRotationChange(rotation, activeItemIndex);
+    }
+  }, [activeItemIndex, scrollDirection, rotation, onIndexChange, onRotationChange]);
+  
+  // Notify parent of brand changes when Gardens is active
+  useEffect(() => {
+    if (onBrandChange && isGardensActive) {
+      onBrandChange(activeBrandIndex);
+    }
+  }, [activeBrandIndex, isGardensActive, onBrandChange]);
+  
+  const handleItemClick = (item, itemIndex) => {
+    // Calculate shortest path to clicked item
+    const currentMod = ((virtualIndex % totalItems) + totalItems) % totalItems;
+    let diff = itemIndex - currentMod;
+    if (diff > totalItems / 2) diff -= totalItems;
+    if (diff < -totalItems / 2) diff += totalItems;
+    
+    if (diff === 0) {
+      // Item is already at top - handle expand/navigate
+      if (expandedItem === item.key) {
+        // Second tap - navigate
+        onNavigate(item.key);
+        setExpandedItem(null);
+        setIsListOpen(false);
+      } else {
+        // First tap - expand to show description
+        setExpandedItem(item.key);
+      }
+    } else {
+      // Rotate to clicked item
+      setScrollDirection(diff > 0 ? 1 : -1);
+      setVirtualIndex(virtualIndex + diff);
+      setExpandedItem(null);
+    }
+  };
+  
+  const handleListToggle = () => {
+    setIsListOpen(!isListOpen);
+    setExpandedItem(null);
+  };
+  
+  // Scoped Wheel Event Listener - only works when scrolling on the event wrapper
+  useEffect(() => {
+    const handleWheel = (e) => {
+      // Only allow navigation during frames 0-5
+      if (currentFrame > 5) return;
+      
+      // Only handle horizontal-ish scrolls or vertical scrolls
+      const direction = e.deltaY > 0 ? 1 : -1;
+      setScrollDirection(direction);
+      setVirtualIndex(prev => prev + direction);
+      setExpandedItem(null);
+      
+      // Prevent page scroll when wheel is being used for navigation
+      e.preventDefault();
+    };
+
+    // Listen on the event wrapper element
+    const el = eventWrapperRef.current;
+    if (el) {
+      el.addEventListener('wheel', handleWheel, { passive: false });
+    }
+    
+    return () => {
+      if (el) {
+        el.removeEventListener('wheel', handleWheel);
+      }
+    };
+  }, [currentFrame]);
+  
+  // Handle touch swipe - scoped to event wrapper only
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now()
+      };
+    };
+    
+    const handleTouchEnd = (e) => {
+      if (!touchStartRef.current) return;
+      
+      // Only allow navigation during frames 0-5
+      if (currentFrame > 5) {
+        touchStartRef.current = null;
+        return;
+      }
+      
+      const touchEnd = e.changedTouches[0].clientX;
+      const diff = touchStartRef.current.x - touchEnd;
+      const timeDiff = Date.now() - touchStartRef.current.time;
+      
+      // Lower threshold: 80px swipe OR 30% of screen width, whichever is smaller
+      // Also check for quick swipes (velocity)
+      const minSwipe = Math.min(80, window.innerWidth * 0.3);
+      const velocity = Math.abs(diff) / timeDiff;
+      
+      if (Math.abs(diff) > minSwipe || (Math.abs(diff) > 40 && velocity > 0.3)) {
+        const direction = diff > 0 ? 1 : -1; // Swipe left = next (clockwise), swipe right = prev
+        setScrollDirection(direction);
+        setVirtualIndex(prev => prev + direction);
+        setExpandedItem(null);
+      }
+      touchStartRef.current = null;
+    };
+
+    // Add listeners to the event wrapper element
+    const el = eventWrapperRef.current;
+    if (el) {
+      el.addEventListener('touchstart', handleTouchStart, { passive: true });
+      el.addEventListener('touchend', handleTouchEnd, { passive: true });
+    }
+    
+    return () => {
+      if (el) {
+        el.removeEventListener('touchstart', handleTouchStart);
+        el.removeEventListener('touchend', handleTouchEnd);
+      }
+    };
+  }, [currentFrame]);
+  
+  // Brand ring scroll handler (separate from main wheel)
+  useEffect(() => {
+    const handleBrandWheel = (e) => {
+      if (currentFrame > 5) return;
+      if (!isGardensActive) return;
+      
+      const direction = e.deltaY > 0 ? 1 : -1;
+      setBrandVirtualIndex(prev => prev + direction);
+      e.preventDefault();
+    };
+
+    const el = brandRingRef.current;
+    if (el) {
+      el.addEventListener('wheel', handleBrandWheel, { passive: false });
+    }
+    
+    return () => {
+      if (el) {
+        el.removeEventListener('wheel', handleBrandWheel);
+      }
+    };
+  }, [currentFrame, isGardensActive]);
+  
+  // Brand ring touch handler
+  useEffect(() => {
+    const handleBrandTouchStart = (e) => {
+      brandTouchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now()
+      };
+    };
+    
+    const handleBrandTouchEnd = (e) => {
+      if (!brandTouchStartRef.current) return;
+      if (currentFrame > 5) {
+        brandTouchStartRef.current = null;
+        return;
+      }
+      if (!isGardensActive) {
+        brandTouchStartRef.current = null;
+        return;
+      }
+      
+      const touchEnd = e.changedTouches[0].clientX;
+      const diff = brandTouchStartRef.current.x - touchEnd;
+      const timeDiff = Date.now() - brandTouchStartRef.current.time;
+      
+      const minSwipe = Math.min(60, window.innerWidth * 0.2);
+      const velocity = Math.abs(diff) / timeDiff;
+      
+      if (Math.abs(diff) > minSwipe || (Math.abs(diff) > 30 && velocity > 0.3)) {
+        const direction = diff > 0 ? 1 : -1;
+        setBrandVirtualIndex(prev => prev + direction);
+      }
+      brandTouchStartRef.current = null;
+    };
+
+    const el = brandRingRef.current;
+    if (el) {
+      el.addEventListener('touchstart', handleBrandTouchStart, { passive: true });
+      el.addEventListener('touchend', handleBrandTouchEnd, { passive: true });
+    }
+    
+    return () => {
+      if (el) {
+        el.removeEventListener('touchstart', handleBrandTouchStart);
+        el.removeEventListener('touchend', handleBrandTouchEnd);
+      }
+    };
+  }, [currentFrame, isGardensActive]);
+  
+  return (
+    <>
+      {/* Expanded List Overlay */}
+      {isListOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{
+            background: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(10px)',
+          }}
+          onClick={() => setIsListOpen(false)}
+        >
+          <div 
+            className="flex flex-col gap-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {MOBILE_NAV_ITEMS.map((item, i) => (
+              <button
+                key={item.key}
+                className="flex items-center gap-4 px-6 py-4 rounded-lg transition-all duration-300"
+                style={{
+                  background: i === activeItemIndex ? 'rgba(147, 51, 234, 0.2)' : 'rgba(0,0,0,0.6)',
+                  border: `2px solid ${i === activeItemIndex ? item.color : item.color + '40'}`,
+                  minWidth: '16rem',
+                }}
+                onClick={() => { handleItemClick(item, i); setIsListOpen(false); }}
+              >
+                <div
+                  className="flex items-center justify-center rounded-full"
+                  style={{
+                    width: '3rem',
+                    height: '3rem',
+                    background: `radial-gradient(circle, ${item.color}30 0%, transparent 100%)`,
+                    border: `2px solid ${item.color}`,
+                  }}
+                >
+                  <span style={{ color: item.color, fontSize: '1.2rem' }}>{item.icon}</span>
+                </div>
+                <div className="text-left">
+                  <div style={{ 
+                    color: item.color, 
+                    fontFamily: "'Lexend Mega', sans-serif",
+                    fontSize: '0.9rem',
+                    letterSpacing: '0.1em'
+                  }}>
+                    {item.label}
+                  </div>
+                  <div style={{ 
+                    color: 'rgba(255,255,255,0.5)', 
+                    fontFamily: "'Figtree', sans-serif",
+                    fontSize: '0.7rem',
+                    marginTop: '0.25rem'
+                  }}>
+                    {item.description}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* UNDERLAY - Circular background behind the nav wheel + brand ring area only */}
+      {/* Sized to match brand ring (1.35x wheel), positioned same as wheels */}
+      {/* z-38 ensures it's behind nav wheel (z-40) and brand ring (z-40) */}
+      <div 
+        className="fixed left-1/2 pointer-events-none"
+        style={{
+          bottom: 0,
+          transform: `translateX(-50%) translateY(calc(50% + ${-headerY}px))`,
+          width: `${wheelSizeVw * 1.35}vw`, // Same size as brand ring (outermost)
+          maxWidth: '30rem',
+          aspectRatio: '1',
+          background: 'rgba(0, 0, 0, 0.85)',
+          borderRadius: '50%',
+          opacity: isGardensActive ? headerOpacity : 0,
+          transition: 'opacity 0.4s ease, transform 0.3s ease',
+          clipPath: 'inset(-50% -50% 50% -50%)', // Only show top half (same as wheels)
+          zIndex: 38,
+        }}
+      />
+      
+      {/* Half-circle wheel container */}
+      <div 
+        ref={wheelRef}
+        className="fixed left-1/2"
+        style={{
+          bottom: 0,
+          transform: `translateX(-50%) translateY(calc(50% + ${-headerY}px))`, // Move down 50% so only top half shows
+          width: `${wheelSizeVw}vw`,
+          maxWidth: '22rem',
+          aspectRatio: '1',
+          pointerEvents: 'auto',
+          overflow: 'visible', // Allow drop shadows to show
+          clipPath: 'inset(-50% -50% 50% -50%)', // Hide bottom half but allow overflow for shadows
+          opacity: headerOpacity,
+          transition: 'transform 0.3s ease, opacity 0.3s ease',
+          zIndex: 42, // Higher than underlay (z-38) and brand ring (z-40)
+        }}
+      >
+        {/* Wheel background glow */}
+        <div 
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: 'radial-gradient(circle at center, rgba(147, 51, 234, 0.15) 0%, transparent 70%)',
+            filter: 'blur(1.25rem)',
+          }}
+        />
+        
+        {/* Outer ring */}
+        <div 
+          className="absolute inset-0 rounded-full"
+          style={{
+            border: '1px solid rgba(147, 51, 234, 0.3)',
+            background: 'radial-gradient(circle at center 30%, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.95) 100%)',
+          }}
+        />
+        
+        {/* Inner decorative ring */}
+        <div 
+          className="absolute rounded-full"
+          style={{
+            top: '15%',
+            left: '15%',
+            right: '15%',
+            bottom: '15%',
+            border: '1px solid rgba(147, 51, 234, 0.2)',
+          }}
+        />
+        
+        {/* Center content - Logo only - positioned in visible top half */}
+        <div 
+          className="absolute left-1/2"
+          style={{
+            top: 'calc(25% + 0.8rem)', // Position in visible top half (moved up 1.2rem)
+            transform: 'translateX(-50%) translateY(-50%)',
+            zIndex: 100,
+          }}
+        >
+          <img 
+            src="/images/landingpage/logo.png" 
+            alt="Logo"
+            style={{
+              width: 'clamp(3.5rem, 16vw, 5rem)',
+              height: 'clamp(3.5rem, 16vw, 5rem)',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 0 15px rgba(147, 51, 234, 0.6))',
+            }}
+          />
+        </div>
+        
+        {/* Rotating wheel with all items positioned like clock */}
+        <div 
+          className="absolute inset-0 transition-transform duration-500 ease-out"
+          style={{
+            transform: `rotate(${rotation}deg)`,
+          }}
+        >
+          {/* Navigation items arranged in 360° circle */}
+          {MOBILE_NAV_ITEMS.map((item, index) => {
+            // Position items around the circle - first item at top (-90°)
+            const itemAngle = -90 + (index * anglePerItem); // degrees
+            const angleRad = (itemAngle * Math.PI) / 180;
+            
+            // Position as percentage of container
+            const x = 50 + itemRadiusPercent * 100 * Math.cos(angleRad);
+            const y = 50 + itemRadiusPercent * 100 * Math.sin(angleRad);
+            
+            const isActive = index === activeItemIndex;
+            const isExpanded = expandedItem === item.key && isActive;
+            
+            // Shrink Gardens item when brand ring is expanded (not just active)
+            const isGardensItem = item.key === 'gardens';
+            const gardensScale = isGardensItem && brandRingExpanded ? 0.7 : 1;
+            
+            return (
+              <div
+                key={item.key}
+                className="absolute flex flex-col items-center transition-all duration-300"
+                style={{
+                  left: `${x}%`,
+                  top: `${y}%`,
+                  // Counter-rotate so items stay upright, scale down Gardens when brand ring is active
+                  transform: `translate(-50%, -50%) rotate(${-rotation}deg) scale(${gardensScale})`,
+                  width: 'clamp(4rem, 18vw, 5.5rem)',
+                  pointerEvents: 'auto',
+                  zIndex: isActive ? 100 : 10,
+                  opacity: isActive ? 1 : 0.6,
+                }}
+                onClick={() => handleItemClick(item, index)}
+              >
+                {/* Icon circle - 0.85x size */}
+                <div
+                  className="flex items-center justify-center rounded-full transition-all duration-300"
+                  style={{
+                    width: isActive ? 'clamp(2.72rem, 11.05vw, 3.4rem)' : 'clamp(2.04rem, 7.65vw, 2.55rem)',
+                    height: isActive ? 'clamp(2.72rem, 11.05vw, 3.4rem)' : 'clamp(2.04rem, 7.65vw, 2.55rem)',
+                    background: isActive 
+                      ? `radial-gradient(circle, ${item.color}40 0%, ${item.color}20 100%)`
+                      : 'rgba(0,0,0,0.6)',
+                    border: `2px solid ${isActive ? item.color : 'rgba(147, 51, 234, 0.4)'}`,
+                  }}
+                >
+                  {item.icon === 'deltawerken-custom' ? (
+                    // Custom icon: circle with triangle overlayed inside - 1.5x size
+                    <div style={{ 
+                      position: 'relative',
+                      width: isActive ? 'clamp(1.65rem, 6.75vw, 2.25rem)' : 'clamp(1.2rem, 4.5vw, 1.5rem)',
+                      height: isActive ? 'clamp(1.65rem, 6.75vw, 2.25rem)' : 'clamp(1.2rem, 4.5vw, 1.5rem)',
+                    }}>
+                      {/* Outer circle */}
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '50%',
+                        border: `2px solid ${isActive ? item.color : '#c4b5fd'}`,
+                      }} />
+                      {/* Inner triangle */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -45%)',
+                        width: 0,
+                        height: 0,
+                        borderLeft: `${isActive ? '0.525rem' : '0.375rem'} solid transparent`,
+                        borderRight: `${isActive ? '0.525rem' : '0.375rem'} solid transparent`,
+                        borderBottom: `${isActive ? '0.9rem' : '0.6rem'} solid ${isActive ? item.color : '#c4b5fd'}`,
+                      }} />
+                    </div>
+                  ) : (
+                    <span style={{ 
+                      color: isActive ? item.color : '#c4b5fd',
+                      fontSize: isActive ? 'clamp(1.65rem, 6.75vw, 2.25rem)' : 'clamp(1.2rem, 4.5vw, 1.5rem)',
+                    }}>{item.icon}</span>
+                  )}
+                </div>
+                
+                {/* Label - only show for active item */}
+                {isActive && (
+                  <span 
+                    className="text-center transition-all duration-300"
+                    style={{
+                      marginTop: '0.35rem',
+                      fontSize: 'clamp(0.5rem, 2vw, 0.7rem)',
+                      fontFamily: "'Lexend Mega', sans-serif",
+                      letterSpacing: '0.05em',
+                      color: item.color,
+                      textShadow: `0 0 0.625rem ${item.color}`,
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                )}
+                
+                {/* Description tooltip - shows on expand */}
+                {isExpanded && (
+                  <div 
+                    className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg"
+                    style={{
+                      top: '-3.5rem',
+                      padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 3vw, 1.25rem)',
+                      background: 'rgba(0,0,0,0.95)',
+                      border: `1px solid ${item.color}60`,
+                      boxShadow: `0 0 1.5rem ${item.color}30`,
+                    }}
+                  >
+                    <div style={{
+                      fontSize: 'clamp(0.6rem, 2.5vw, 0.8rem)',
+                      color: item.color,
+                      fontFamily: "'Figtree', sans-serif",
+                    }}>
+                      {item.description}
+                    </div>
+                    <div className="text-center" style={{
+                      marginTop: '0.25rem',
+                      fontSize: 'clamp(0.5rem, 2vw, 0.65rem)',
+                      color: 'rgba(255,255,255,0.5)',
+                      fontFamily: "'Figtree', sans-serif",
+                    }}>
+                      TAP AGAIN TO OPEN
+                    </div>
+                    {/* Arrow pointing down */}
+                    <div 
+                      className="absolute left-1/2 -translate-x-1/2"
+                      style={{
+                        bottom: '-0.4rem',
+                        width: 0,
+                        height: 0,
+                        borderLeft: '0.4rem solid transparent',
+                        borderRight: '0.4rem solid transparent',
+                        borderTop: `0.4rem solid ${item.color}60`,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      
+      {/* BRAND RING - Outer ring that appears when Gardens is active */}
+      {/* Shows 12 brand logos arranged in a circle outside the main wheel */}
+      {/* Styled to match the main nav wheel but with orange outer border */}
+      {/* Expands from nav wheel size (scale 0.74 = 1/1.35) to full size after delay */}
+      <div 
+        className="fixed left-1/2 z-40 pointer-events-none"
+        style={{
+          bottom: 0,
+          transform: `translateX(-50%) translateY(calc(50% + ${-headerY}px)) scale(${brandRingExpanded ? 1 : 0.74})`,
+          width: `${wheelSizeVw * 1.35}vw`, // 35% larger than main wheel
+          maxWidth: '30rem',
+          aspectRatio: '1',
+          opacity: isGardensActive ? headerOpacity : 0,
+          transition: 'opacity 0.3s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          clipPath: 'inset(-50% -50% 50% -50%)', // Hide bottom half
+          transformOrigin: 'center center',
+        }}
+      >
+        {/* Outer ring background glow - matches main wheel style */}
+        <div 
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: 'radial-gradient(circle at center, rgba(249, 115, 22, 0.15) 0%, transparent 70%)',
+            filter: 'blur(1.25rem)',
+          }}
+        />
+        
+        {/* Outer ring border - orange accent */}
+        <div 
+          className="absolute inset-0 rounded-full"
+          style={{
+            border: '1px solid rgba(249, 115, 22, 0.4)',
+            background: 'radial-gradient(circle at center 30%, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.95) 100%)',
+          }}
+        />
+        
+        {/* No inner ring - the original nav wheel's purple border serves as the visual inner boundary */}
+        
+        {/* Rotating brand container */}
+        <div
+          className="absolute inset-0 transition-transform duration-500 ease-out"
+          style={{
+            transform: `rotate(${brandRotation}deg)`,
+          }}
+        >
+          {BRANDS.map((brand, index) => {
+            const brandAngle = index * brandAnglePerItem;
+            const radians = (brandAngle - 90) * (Math.PI / 180);
+            // Position brands between inner border (38% radius) and outer border (50% radius)
+            // Center of that band is at 44% radius
+            const brandRadiusPercent = 0.44;
+            const x = 50 + brandRadiusPercent * 100 * Math.cos(radians);
+            const y = 50 + brandRadiusPercent * 100 * Math.sin(radians);
+            const isBrandActive = index === activeBrandIndex;
+            
+            return (
+              <div
+                key={brand.id}
+                className="absolute flex items-center justify-center transition-all duration-300"
+                style={{
+                  left: `${x}%`,
+                  top: `${y}%`,
+                  transform: `translate(-50%, -50%) rotate(${-brandRotation}deg)`, // Counter-rotate to keep upright
+                  width: isBrandActive ? 'clamp(3.59rem, 13.46vw, 4.49rem)' : 'clamp(2.69rem, 10.47vw, 3.29rem)',
+                  height: isBrandActive ? 'clamp(3.59rem, 13.46vw, 4.49rem)' : 'clamp(2.69rem, 10.47vw, 3.29rem)',
+                  opacity: isBrandActive ? 1 : 0.6,
+                  zIndex: isBrandActive ? 10 : 1,
+                }}
+              >
+                <img 
+                  src={brand.logoUrl} 
+                  alt={brand.name}
+                  className="w-full h-full object-contain"
+                  style={{
+                    filter: isBrandActive 
+                      ? 'drop-shadow(0 0 12px rgba(249, 115, 22, 0.6))' 
+                      : 'grayscale(100%) brightness(0.7)',
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      
+      {/* BRAND RING EVENT WRAPPER - Separate hit area for brand scrolling */}
+      {/* Clip path creates a ring shape: outer radius 50%, inner radius ~37% (matches main wheel edge) */}
+      {/* Main wheel is 1x size, brand ring is 1.35x, so inner edge = 1/1.35 = 74% of brand ring = 37% radius */}
+      <div 
+        ref={brandRingRef}
+        className="fixed left-1/2"
+        style={{
+          bottom: 0,
+          transform: `translateX(-50%) translateY(calc(50% + ${-headerY}px))`,
+          width: `${wheelSizeVw * 1.35}vw`,
+          maxWidth: '30rem',
+          aspectRatio: '1',
+          pointerEvents: isGardensActive && headerOpacity > 0 ? 'auto' : 'none',
+          zIndex: 201, // Above main wheel event wrapper
+          background: 'transparent',
+          transition: 'transform 0.3s ease',
+          // Ring-shaped clip: outer circle (50% radius) minus inner circle (37% radius = main wheel edge)
+          // Using polygon approximation for ring shape (top half only since bottom is clipped)
+          clipPath: 'polygon(50% 0%, 61% 1%, 71% 4%, 80% 9%, 88% 16%, 94% 25%, 98% 35%, 100% 46%, 100% 50%, 0% 50%, 0% 46%, 2% 35%, 6% 25%, 12% 16%, 20% 9%, 29% 4%, 39% 1%, 50% 0%, 50% 13%, 41% 14%, 33% 17%, 26% 22%, 20% 28%, 16% 36%, 14% 44%, 13% 50%, 87% 50%, 86% 44%, 84% 36%, 80% 28%, 74% 22%, 67% 17%, 59% 14%, 50% 13%)',
+          // Debug: uncomment to see the wrapper
+          // background: 'rgba(249,115,22,0.3)',
+        }}
+      />
+      
+      {/* EVENT WRAPPER - Invisible overlay on top of nav wheel for scroll/touch events */}
+      {/* z-index 200 ensures it's above content (z-100) but captures events only in wheel area */}
+      <div 
+        ref={eventWrapperRef}
+        className="fixed left-1/2"
+        style={{
+          bottom: 0,
+          transform: `translateX(-50%) translateY(calc(50% + ${-headerY}px))`, // Same position as wheel + slide animation
+          width: `${wheelSizeVw}vw`,
+          maxWidth: '22rem',
+          aspectRatio: '1',
+          pointerEvents: headerOpacity > 0 ? 'auto' : 'none', // Disable events when hidden
+          zIndex: 200, // Higher than content (z-100) to capture scroll events
+          // Transparent - only captures events
+          background: 'transparent',
+          transition: 'transform 0.3s ease',
+          // Debug: uncomment to see the wrapper
+          // background: 'rgba(255,0,0,0.2)',
+        }}
+      />
+      
+      {/* Swipe hint below wheel - at bottom of window */}
+      <div 
+        className="fixed z-40 flex items-center justify-center gap-2"
+        style={{ 
+          bottom: 'clamp(0.6rem, 2.5vw, 1.2rem)',
+          left: '50%',
+          transform: `translateX(-50%) translateY(${-headerY}px)`, // Slide down with wheel
+          opacity: headerOpacity, // Full opacity, no 0.6 multiplier
+          width: '100%',
+          transition: 'transform 0.3s ease, opacity 0.3s ease',
+        }}
+      >
+        <span style={{ fontSize: 'clamp(0.95rem, 4vw, 1.3rem)', color: '#d8b4fe' }}>◀</span>
+        <span style={{ 
+          fontSize: 'clamp(0.8rem, 3.2vw, 1.05rem)', 
+          color: '#d8b4fe', 
+          fontFamily: "'Lexend Mega', sans-serif", 
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase'
+        }}>SWIPE</span>
+        <span style={{ fontSize: 'clamp(0.95rem, 4vw, 1.3rem)', color: '#d8b4fe' }}>▶</span>
+      </div>
+    </>
+  );
+};
+
+// ============================================
+// MOBILE PAGE CONTENT - Circular transition animations
+// Content is "sticky" to its nav item on the virtual 360° clock
+// When wheel rotates, content follows along the circular path
+// ============================================
+// ============================================
+// MOBILE CONTENT TRANSFORM CALCULATOR
+// Calculates circular position based on wheel rotation
+// Clockwise (scroll up) → content exits LEFT with curve down
+// Counter-clockwise (scroll down) → content exits RIGHT with curve down
+// ============================================
+const getMobileContentTransform = (itemIndex, wheelRotation) => {
+  const totalItems = MOBILE_NAV_ITEMS.length;
+  const anglePerItem = 360 / totalItems; // 60° between items
+  
+  // Current angle of this item relative to top (0° = top/active position)
+  const itemBaseAngle = itemIndex * anglePerItem;
+  const currentAngle = itemBaseAngle + wheelRotation;
+  
+  // Normalize angle to -180 to 180 range
+  let normalizedAngle = ((currentAngle % 360) + 360) % 360;
+  if (normalizedAngle > 180) normalizedAngle -= 360;
+  
+  // Convert angle to radians
+  const angleRad = (normalizedAngle * Math.PI) / 180;
+  
+  // ============================================
+  // CAROUSEL MOTION:
+  // - Positive angle (clockwise rotation) → content moves RIGHT (positive X)
+  // - Negative angle (counter-clockwise) → content moves LEFT (negative X)
+  // ============================================
+  const contentRadius = 250; // Large radius for smooth exit off-screen
+  
+  // X position: clockwise → exits RIGHT, counter-clockwise → exits LEFT
+  const xOffset = Math.sin(angleRad) * contentRadius;
+  
+  // Y position: minimal curve - mostly horizontal movement
+  const yOffset = Math.abs(Math.sin(angleRad)) * 15;
+  
+  // Tilt: minimal rotation for cleaner horizontal movement
+  const tiltAngle = -normalizedAngle * 0.02;
+  
+  // ============================================
+  // OPACITY: Smooth fade as content slides out
+  // ============================================
+  const fadeStartAngle = 25; // Start fading at 25°
+  const fadeEndAngle = 60; // Fully transparent by 60° for quick clean exit
+  const absAngle = Math.abs(normalizedAngle);
+  
+  let opacity;
+  if (absAngle <= fadeStartAngle) {
+    opacity = 1; // Fully visible in center zone
+  } else if (absAngle >= fadeEndAngle) {
+    opacity = 0; // Fully hidden at edges
+  } else {
+    // Smooth fade between fadeStart and fadeEnd
+    opacity = 1 - (absAngle - fadeStartAngle) / (fadeEndAngle - fadeStartAngle);
+    // Apply easing for smoother fade
+    opacity = opacity * opacity * (3 - 2 * opacity); // smoothstep
+  }
+  
+  // Scale: keep scale mostly constant for cleaner movement
+  const scale = 1 - Math.abs(normalizedAngle) / 800;
+  
+  // Z-index: keep page content BEHIND nav wheel (z-40) but in front of background
+  // Active content at z-35, fades to lower z as it moves away
+  const zIndex = Math.round(35 - Math.abs(normalizedAngle) / 10);
+  
+  // Is this item currently active (at top)?
+  const isActive = Math.abs(normalizedAngle) < 30;
+  
+  // Is visible at all? Must be slightly larger than fadeEndAngle to allow transition to complete
+  const isVisible = Math.abs(normalizedAngle) <= 75;
+  
+  return {
+    transform: `translateX(${xOffset}%) translateY(${yOffset}%) rotate(${tiltAngle}deg) scale(${scale})`,
+    opacity,
+    zIndex,
+    isActive,
+    isVisible,
+    normalizedAngle,
+  };
+};
+
+// ============================================
+// MOBILE PAGE CONTENT - Circular transition animations
+// Content is "sticky" to its nav item on the virtual 360° clock
+// NOTE: Deltawerken (index 0) is rendered separately as the main content
+// ============================================
+const MobilePageContent = ({ activeIndex, wheelRotation, onBack, brandIndex = 0 }) => {
+  const renderPage = (item, index) => {
+    // Skip deltawerken - it's rendered as the main HoloEarth content
+    if (item.key === 'deltawerken') return null;
+    
+    const { transform, opacity, zIndex, isActive, isVisible, normalizedAngle } = 
+      getMobileContentTransform(index, wheelRotation);
+    
+    const PageComponent = {
+      filosofie: FilosofiePage,
+      gardens: GardensPage,
+      monitor: DataPage,
+      login: LoginPage,
+      menu: EyedentityPage,
+    }[item.key];
+    
+    // Match the main content wrapper (Deltawerken) styling EXACTLY
+    // No early return for !isVisible - let opacity handle the fade
+    // This prevents "popping" when content crosses visibility threshold
+    const pageStyle = {
+      position: 'fixed',
+      inset: 0,
+      transform,
+      opacity,
+      transformOrigin: 'center center',
+      pointerEvents: isActive ? 'auto' : 'none',
+      // Smooth eased transition for carousel-like motion
+      // visibility transition: instant when showing, delayed when hiding (to allow opacity fade)
+      transition: 'transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), visibility 0s linear ' + (isVisible ? '0s' : '0.6s'),
+      overflow: 'visible',
+      willChange: 'transform, opacity',
+      zIndex, // Same as Deltawerken - no +10 offset
+      visibility: isVisible ? 'visible' : 'hidden', // Use CSS visibility for off-screen items (with delayed transition)
+    };
+    
+    if (!PageComponent) {
+      // Placeholder for pages not yet created
+      return (
+        <div style={pageStyle} key={item.key}>
+          <div className="fixed inset-0 flex items-center justify-center bg-black/90">
+            <div className="text-center">
+              <div style={{ 
+                fontSize: 'clamp(1.5rem, 6vw, 2.5rem)',
+                color: item.color,
+                fontFamily: "'Lexend Mega', sans-serif",
+                marginBottom: '1rem'
+              }}>
+                {item.label}
+              </div>
+              <div style={{
+                color: 'rgba(255,255,255,0.5)',
+                fontSize: 'clamp(0.8rem, 3vw, 1rem)',
+              }}>
+                Coming soon...
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // Pass brandIndex to GardensPage for brand selection
+    const extraProps = item.key === 'gardens' ? { brandIndex } : {};
+    
+    return (
+      <div style={pageStyle} key={item.key}>
+        <PageComponent 
+          isVisible={Math.abs(normalizedAngle) < 60}
+          onBack={onBack}
+          {...extraProps}
+        />
+      </div>
+    );
+  };
+  
+  // Render pages directly without a container wrapper - each page positions itself
+  return (
+    <>
+      {MOBILE_NAV_ITEMS.map((item, index) => renderPage(item, index))}
+    </>
+  );
+};
+
+// ============================================
 // ANIMATION SECTION CONFIGURATION
 // Adjust these values to control scroll timing for each phase
 // ============================================
@@ -107,6 +1052,14 @@ const App = () => {
   const [gardensBrandIndex, setGardensBrandIndex] = useState(0); // Captured brand index when opening gardens
   
   // ============================================
+  // MOBILE PAGE CONTENT STATE - Circular transitions
+  // Content follows wheel rotation on the virtual 360° clock
+  // ============================================
+  const [mobileWheelRotation, setMobileWheelRotation] = useState(0); // Wheel rotation in degrees
+  const [mobileActiveIndex, setMobileActiveIndex] = useState(0); // Currently active item index
+  const [mobileBrandIndex, setMobileBrandIndex] = useState(0); // Currently active brand in Gardens
+  
+  // ============================================
   // MAP NAVIGATION STATE - Smooth curved panning
   // ============================================
   const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 }); // Current grid position
@@ -124,6 +1077,17 @@ const App = () => {
   const isScrolling = useRef(false); // Debounce to prevent multiple triggers per scroll
   const mobileScrollLockedRef = useRef(false); // Ref for use in event handlers
   const autoSlideTimeoutRef = useRef(null); // Ref for auto-slide re-enable timeout
+
+  // Handle mobile wheel rotation changes - sync content with wheel
+  const handleMobileRotationChange = useCallback((rotation, activeIndex) => {
+    setMobileWheelRotation(rotation);
+    setMobileActiveIndex(activeIndex);
+  }, []);
+
+  // Handle mobile brand changes from the brand ring
+  const handleMobileBrandChange = useCallback((brandIndex) => {
+    setMobileBrandIndex(brandIndex);
+  }, []);
 
   // Pause auto-slide when user manually navigates, re-enable after 9 seconds
   const pauseAutoSlide = useCallback(() => {
@@ -283,6 +1247,18 @@ const App = () => {
     };
   }, []);
 
+  // LOW-END ONLY APPLIES TO DESKTOPS/LAPTOPS
+  // Phones, tablets, and mobile viewports always get normal (HIGH) build
+  useEffect(() => {
+    if (isMobile) {
+      setIsLowEndMode(false); // Mobile = always normal build
+    } else {
+      // Desktop/laptop: check hardware for low-end detection
+      const performanceSettings = getPerformanceSettings();
+      setIsLowEndMode(performanceSettings.tier === 'LOW');
+    }
+  }, [isMobile]);
+
   // Mobile: Lock scroll when earth section is 100% visible, unlock when scrolling out
   useEffect(() => {
     if (!isMobile || !earthSectionRef.current) return;
@@ -294,12 +1270,16 @@ const App = () => {
             // Earth section is completely visible - lock scroll for animation control
             setMobileScrollLocked(true);
             mobileScrollLockedRef.current = true;
-            document.body.style.overflow = 'hidden';
+            // Only lock scroll via JS when animation is active
+            if (window.innerWidth < 768) {
+              document.body.style.setProperty('overflow', 'hidden', 'important');
+            }
           } else if (!entry.isIntersecting || entry.intersectionRatio < 0.5) {
             // Earth section is mostly out of view - unlock scroll
             setMobileScrollLocked(false);
             mobileScrollLockedRef.current = false;
-            document.body.style.overflow = '';
+            // Remove inline style to let CSS media query take over
+            document.body.style.removeProperty('overflow');
           }
         });
       },
@@ -310,7 +1290,7 @@ const App = () => {
     
     return () => {
       observer.disconnect();
-      document.body.style.overflow = '';
+      document.body.style.removeProperty('overflow');
     };
   }, [isMobile]);
 
@@ -371,24 +1351,37 @@ const App = () => {
   // Scroll handler - one tick = one frame
   // For low-end devices: disabled until animation completes, then enabled for pyramid control only
   // After intro completes (introComplete=true), scroll controls pyramid layers instead
-  // Only works when viewing HoloEarth (activeSection === null)
+  // Only works when viewing HoloEarth/Deltawerken (activeSection === null AND mobileActiveIndex === 0)
   const handleWheel = useCallback((e) => {
     // Don't process scroll if viewing other content sections
     if (activeSection !== null) return;
     
+    // On mobile, only process if Deltawerken is the active nav item (index 0)
+    if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
+    
     // LOW-END: Skip scroll during animation, but allow after animation completes for pyramid control
     if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
     
-    // On mobile, only capture if scroll is locked for animation
-    if (window.innerWidth < 768 && !mobileScrollLockedRef.current) return;
+    const direction = e.deltaY > 0 ? 1 : -1; // Down = forward, Up = backward
+    
+    // On mobile: Re-enable scroll lock when at frame 0 and scrolling forward
+    if (window.innerWidth < 768 && !mobileScrollLockedRef.current) {
+      // Only allow re-locking if at frame 0 and scrolling forward (down)
+      if (currentFrame === 0 && direction > 0) {
+        setMobileScrollLocked(true);
+        mobileScrollLockedRef.current = true;
+        document.body.style.setProperty('overflow', 'hidden', 'important');
+      } else {
+        // Not at start or scrolling backward - don't capture scroll
+        return;
+      }
+    }
     
     e.preventDefault();
     
     // Debounce to ensure one scroll tick = one frame
     if (isScrolling.current) return;
     isScrolling.current = true;
-    
-    const direction = e.deltaY > 0 ? 1 : -1; // Down = forward, Up = backward
     
     // If at max frame AND intro is complete, control pyramid scroll instead
     if (currentFrame >= MAX_FRAME && introComplete) {
@@ -431,7 +1424,7 @@ const App = () => {
     setTimeout(() => {
       isScrolling.current = false;
     }, 50);
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection, mobileActiveIndex]);
 
   // Callback when pyramid intro animation completes
   const handleIntroComplete = useCallback(() => {
@@ -456,43 +1449,60 @@ const App = () => {
   const handleTouchStart = useCallback((e) => {
     // LOW-END: Skip during animation, allow after for pyramid control
     if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
+    // On mobile, only process if Deltawerken is the active nav item (index 0)
+    if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     touchStartY.current = e.touches[0].clientY;
     touchAccumulator.current = 0;
-  }, [isLowEndMode, lowEndAnimating, currentFrame, MAX_FRAME]);
+  }, [isLowEndMode, lowEndAnimating, currentFrame, MAX_FRAME, mobileActiveIndex]);
 
   const handleTouchMove = useCallback((e) => {
     // LOW-END: Skip during animation, but allow after for pyramid control
     if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
     
-    // On mobile, only capture if scroll is locked for animation
-    if (window.innerWidth < 768 && !mobileScrollLockedRef.current) return;
+    // On mobile, only process if Deltawerken is the active nav item (index 0)
+    if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     
-    e.preventDefault();
     const touchY = e.touches[0].clientY;
     const delta = touchStartY.current - touchY;
+    const direction = delta > 0 ? 1 : -1; // Swipe up = forward, swipe down = backward
+    
+    // On mobile: Re-enable scroll lock when at frame 0 and swiping forward (up)
+    if (window.innerWidth < 768 && !mobileScrollLockedRef.current) {
+      // Only allow re-locking if at frame 0 and scrolling forward
+      if (currentFrame === 0 && direction > 0 && Math.abs(delta) > 10) {
+        setMobileScrollLocked(true);
+        mobileScrollLockedRef.current = true;
+        document.body.style.setProperty('overflow', 'hidden', 'important');
+      } else {
+        // Not at start or scrolling backward - don't capture touch
+        return;
+      }
+    }
+    
+    e.preventDefault();
     touchStartY.current = touchY;
     
     touchAccumulator.current += delta;
     
     // Check if accumulated touch exceeds threshold
     if (Math.abs(touchAccumulator.current) >= TOUCH_THRESHOLD) {
-      const direction = touchAccumulator.current > 0 ? 1 : -1;
+      const accDirection = touchAccumulator.current > 0 ? 1 : -1;
       
       // If at max frame AND intro is complete, control pyramid scroll
       if (currentFrame >= MAX_FRAME && introComplete) {
         setPyramidScrollProgress(prev => {
           const step = 0.05; // 5% per scroll tick - slower for smoother layer animation
-          const newProgress = Math.max(0, Math.min(1, prev + (direction * step)));
+          const newProgress = Math.max(0, Math.min(1, prev + (accDirection * step)));
           
           // Mobile: If scrolling down and at end, unlock scroll to continue page scroll
-          if (direction > 0 && prev >= 1) {
+          if (accDirection > 0 && prev >= 1) {
             setMobileScrollLocked(false);
             mobileScrollLockedRef.current = false;
             document.body.style.overflow = '';
             return 1;
           }
           
-          if (direction < 0 && prev <= 0) {
+          if (accDirection < 0 && prev <= 0) {
             setCurrentFrame(prevFrame => Math.max(0, prevFrame - 1));
             return 0;
           }
@@ -500,10 +1510,10 @@ const App = () => {
         });
       } else {
         setCurrentFrame(prev => {
-          const newFrame = Math.max(0, Math.min(MAX_FRAME, prev + direction));
+          const newFrame = Math.max(0, Math.min(MAX_FRAME, prev + accDirection));
           
           // Mobile: If scrolling up from frame 0, unlock scroll to return to page scroll
-          if (direction < 0 && prev <= 0) {
+          if (accDirection < 0 && prev <= 0) {
             setMobileScrollLocked(false);
             mobileScrollLockedRef.current = false;
             document.body.style.overflow = '';
@@ -514,7 +1524,7 @@ const App = () => {
       }
       touchAccumulator.current = 0;
     }
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, mobileActiveIndex]);
 
   // Attach wheel/touch listeners - also needed on mobile when scroll is locked
   useEffect(() => {
@@ -641,8 +1651,8 @@ const App = () => {
   return (
     <main 
       ref={containerRef}
-      className={`relative w-screen font-figtree ${isMobile ? 'min-h-screen' : 'h-screen overflow-hidden'}`}
-      style={{color: '#FFFEF0', touchAction: isMobile ? 'pan-y' : 'none'}}
+      className={`relative w-screen font-figtree ${isMobile ? 'min-h-screen overflow-visible' : 'h-screen overflow-hidden'}`}
+      style={{color: '#FFFEF0', touchAction: isMobile ? 'pan-y pinch-zoom' : 'none'}}
     >
       {/* ========================= */}
       {/* LOADING SCREEN OVERLAY */}
@@ -795,15 +1805,14 @@ const App = () => {
       )}
 
       {/* =========================== */}
-      {/* =========================== */}
-      {/* PERSISTENT ELEMENTS (Mobile) - Stay visible during page transitions */}
+      {/* MOBILE LAYOUT - Full screen HoloEarth with Navigation Wheel */}
       {/* =========================== */}
       {isMobile && (
         <>
           {/* --- Background/Grid (Mobile) --- */}
-          <div className="absolute inset-0 z-0" style={{background: 'transparent'}} />
+          <div className="fixed inset-0 z-0" style={{background: 'transparent'}} />
           <div 
-            className="absolute inset-0 z-0 pointer-events-none"
+            className="fixed inset-0 z-0 pointer-events-none"
             style={{
               opacity: 0.5,
               backgroundImage: `
@@ -814,90 +1823,132 @@ const App = () => {
             }}
           />
 
-          {/* --- Persistent Logo (Mobile) --- */}
-          {/* Moves out with header at frame 9, but stays static if activeSection is clicked */}
-          <div
-            className="fixed pointer-events-auto z-50"
-            style={{
-              top: 'clamp(1rem, 2vw, 1.5rem)',
-              left: 'clamp(0.75rem, 2vw, 1rem)',
-              transform: activeSection ? 'none' : `translateX(${headerY * 2.5}px) translateY(${headerY * 2.5}px) scale(${headerScale})`,
-              opacity: activeSection ? 1 : headerOpacity,
-              transition: activeSection ? 'none' : undefined,
-            }}
-          >
-            <img 
-              src="images/landingpage/logo.png" 
-              alt="Delta" 
-              style={{
-                width: 'clamp(3rem, 10vw, 4rem)', 
-                height: 'clamp(3rem, 10vw, 4rem)',
-                flexShrink: 0,
-                cursor: activeSection ? 'pointer' : 'default',
-              }} 
-              onClick={() => activeSection && setActiveSection(null)}
-              title={activeSection ? 'Back to Landing' : ''}
-            />
-          </div>
-        </>
-      )}
-
-      {/* MOBILE LAYOUT - Flow based */}
-      {/* =========================== */}
-      {isMobile && (
-        <div 
-          className="flex flex-col w-full relative z-10"
-          style={{
-            opacity: activeSection ? 0 : 1,
-            transform: activeSection ? 'scale(0.85)' : 'scale(1)',
-            transformOrigin: 'center center',
-            pointerEvents: activeSection ? 'none' : 'auto',
-            transition: 'opacity 1.5s ease, transform 1.5s ease',
-          }}
-        >
-          {/* Tech Containers Section - scrollable */}
-          <MobileLayout 
-            isExploding={isExploding} 
-            mounted={mounted} 
-            currentSlide={currentSlide} 
-            setCurrentSlide={setCurrentSlide}
-            animationProgress={containerProgress}
-            position="top"
-            isMobile={isMobile}
-            TimeSync={
-              <div style={{
-                transform: `translateX(${-headerY * 2.5}px) translateY(${headerY * 2.5}px) scale(${headerScale})`,
-                opacity: headerOpacity,
-              }}>
-                <TimeSync isMobile={isMobile} />
-              </div>
-            }
-          />
-          
-          {/* Earth Animation Section */}
-          <div 
-            ref={earthSectionRef}
-            className="relative w-full h-screen"
-            style={{ background: 'transparent', marginTop: '-9rem', overflow: 'visible' }}
-          >
-            {/* Radial Glow - disabled on low-end during intro for performance */}
-            {!isLowEndMode && (
+          {/* Main Content Container (DELTAWERKEN) - Follows wheel circular motion */}
+          {(() => {
+            // Calculate Deltawerken's position (index 0) based on wheel rotation
+            const deltawerkenTransform = getMobileContentTransform(0, mobileWheelRotation);
+            
+            return (
               <div 
-                className="absolute inset-0 z-5 pointer-events-none" 
+                ref={containerRef}
+                className="fixed inset-0"
                 style={{
+                  transform: deltawerkenTransform.transform,
+                  opacity: deltawerkenTransform.opacity,
+                  transformOrigin: 'center center',
+                  pointerEvents: deltawerkenTransform.isActive ? 'auto' : 'none',
+                  // Smooth eased transition for carousel-like motion
+                  // visibility transition: instant when showing, delayed when hiding (to allow opacity fade)
+                  transition: `transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), visibility 0s linear ${deltawerkenTransform.isVisible ? '0s' : '0.6s'}`,
+                  overflow: 'visible',
+                  zIndex: deltawerkenTransform.zIndex,
+                  willChange: 'transform, opacity',
+                  visibility: deltawerkenTransform.isVisible ? 'visible' : 'hidden',
+                }}
+              >
+                {/* Header with Title - Centered (No logo on mobile) */}
+                <div 
+                  className="absolute z-50 left-0 right-0 flex justify-center"
+                  style={{
+                    top: '4rem',
+                    opacity: headerOpacity,
+                    transform: `translateY(${headerY}px)`,
+                  }}
+                >
+                  <div className="flex flex-col items-center">
+                    <h1 style={{
+                      color: '#FFFEF0',
+                      fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                      fontSize: 'clamp(1.7rem, 6vw, 2.2rem)',
+                      fontWeight: 600,
+                      lineHeight: 1,
+                      letterSpacing: '0.1em'
+                    }}>
+                      DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
+                    </h1>
+                    <div className="flex items-center" style={{ gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <span className="rounded-full bg-green-500 animate-ping" style={{
+                        width: '0.5rem',
+                        height: '0.5rem',
+                      }}></span>
+                      <span className="text-gray-400 tracking-wider" style={{
+                        fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
+                        fontFamily: "'Figtree', sans-serif",
+                      }}>SCHADUW WERK</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top-Right Info Panel - Frame counter + Coordinates */}
+                {/* Inside deltawerken wrapper so it follows carousel animation */}
+                <div 
+                  className="absolute top-4 right-4 z-50 text-xs font-mono pointer-events-none text-right"
+                  style={{ 
+                    opacity: isSystem ? 0 : headerOpacity,
+                    transform: `translateY(${headerY}px)`,
+                  }}
+                >
+                  <div style={{ color: 'rgba(245, 158, 11, 0.6)' }}>
+                    Frame: {currentFrame}/{TOTAL_ANIMATION_FRAMES}
+                  </div>
+                  <div style={{ 
+                    color: 'rgba(255, 254, 240, 0.3)',
+                    fontSize: '0.6rem',
+                    marginTop: '0.25rem',
+                    fontFamily: "'Figtree', sans-serif",
+                    letterSpacing: '0.05em'
+                  }}>
+                    29.98° N, 31.13° E
+                  </div>
+                </div>
+
+                {/* TimeSync - Centered with 6rem from top */}
+                <div 
+                  className="absolute z-50 left-0 right-0 flex justify-center"
+                  style={{
+                    top: '8rem',
+                    opacity: headerOpacity,
+                    transform: `translateY(${headerY}px) scale(0.7)`,
+                  }}
+                >
+                  <TimeSync isMobile={true} />
+                </div>
+
+            {/* Earth Animation Section - Simple centered layout */}
+            <div 
+              ref={earthSectionRef}
+              style={{ 
+                position: 'fixed',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+              }}
+            >
+              {/* Radial Glow - centered */}
+              <div 
+                className="z-5 pointer-events-none" 
+                style={{
+                  position: 'absolute',
+                  inset: 0,
                   background: 'radial-gradient(circle at center, rgba(147, 51, 234, 0.03) 0%, transparent 55%)',
                   opacity: isExploding ? Math.max(0, 1 - explosionProgress * 1.5) : 1,
-                  transform: isExploding ? `scale(${1 + explosionProgress * 0.5})` : 'scale(1)',
-                  transformOrigin: 'center center'
                 }} 
               />
-            )}
 
-            {/* 3D Earth Scene */}
-            {!(isLowEndMode && !introComplete) && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ overflow: 'visible' }}>
+              {/* 3D Earth Scene - Simply centered */}
+              <div 
+                className="z-10" 
+                style={{ 
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <HoloEarth 
-                  className="w-full h-full" 
                   exploding={isExploding}
                   explosionProgress={explosionProgress}
                   isMobile={isMobile}
@@ -908,22 +1959,52 @@ const App = () => {
                   onLayerStateChange={handleLayerStateChange}
                 />
               </div>
-            )}
-          </div>
 
-          {/* Bottom Section - Button + Data Stream */}
-          <div style={{marginTop: '-13rem'}}>
-            <MobileLayout 
-              isExploding={isExploding} 
-              mounted={mounted} 
-              currentSlide={currentSlide} 
-              setCurrentSlide={setCurrentSlide}
-              animationProgress={containerProgress}
-              position="bottom"
-              isMobile={isMobile}
-            />
+              {/* Scroll Prompt - Positioned below TimeSync at top of screen */}
+              <div 
+                className="absolute left-0 right-0 flex flex-col items-center justify-center z-30"
+                style={{
+                  top: 'clamp(10rem, 14vw, 12rem)',
+                  opacity: promptOpacity,
+                }}
+              >
+                <div className="relative flex flex-col items-center bg-black/40 backdrop-blur-md rounded-sm pointer-events-none" style={{
+                  border: '1px solid rgba(21, 179, 21, 0.4)',
+                  padding: 'clamp(0.4rem, 1.5vw, 0.6rem) clamp(0.8rem, 3vw, 1.2rem)',
+                  gap: 'clamp(0.2rem, 0.5vw, 0.35rem)',
+                }}>
+                  <span className="tracking-[0.15em] font-bold" style={{
+                    color: 'white', 
+                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                    fontSize: 'clamp(0.55rem, 2vw, 0.75rem)',
+                    lineHeight: 1,
+                  }}>SWIPE ↓ = SYNCHRONISATIE</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+            );
+          })()}
+
+          {/* Mobile Page Content - Circular transitions following wheel (excludes Deltawerken) */}
+          <MobilePageContent
+            activeIndex={mobileActiveIndex}
+            wheelRotation={mobileWheelRotation}
+            onBack={() => {}}
+            brandIndex={mobileBrandIndex}
+          />
+
+          {/* Mobile Navigation Wheel */}
+          <MobileNavWheel 
+            onNavigate={handleOpenSection}
+            activeSection={activeSection}
+            onRotationChange={handleMobileRotationChange}
+            onBrandChange={handleMobileBrandChange}
+            headerOpacity={headerOpacity}
+            headerY={headerY}
+            currentFrame={currentFrame}
+          />
+        </>
       )}
 
       {/* =========================== */}
@@ -1444,40 +2525,34 @@ const App = () => {
         </div>
       )}
 
-      {/* --- Footer / Deco --- */}
-      <div 
-        className="absolute z-30 select-none tracking-widest" 
-        style={{
-          bottom: '0.5rem',
-          left: isMobile ? '0.75rem' : '1.5rem',
-          fontSize: isMobile ? '0.625rem' : '0.875rem',
-          color: 'rgba(255, 254, 240, 0.2)',
-          fontFamily: "'Figtree', sans-serif",
-          opacity: isSystem ? 0 : 1
-        }}
-      >
-        {isMobile ? 'COORD: 29.98° N, 31.13° E' : 'COORD: 29.9792458° N, 31.1342° E'}
-      </div>
+      {/* --- Footer / Deco --- Desktop only */}
+      {!isMobile && (
+        <div 
+          className="absolute z-30 select-none tracking-widest" 
+          style={{
+            bottom: '0.5rem',
+            left: '1.5rem',
+            fontSize: '0.875rem',
+            color: 'rgba(255, 254, 240, 0.2)',
+            fontFamily: "'Figtree', sans-serif",
+            opacity: isSystem ? 0 : 1
+          }}
+        >
+          COORD: 29.9792458° N, 31.1342° E
+        </div>
+      )}
 
-      {/* Progress indicator for debugging - remove later */}
-      <div 
-        className="fixed bottom-4 right-4 z-50 text-xs font-mono pointer-events-none"
-        style={{ 
-          color: 'rgba(245, 158, 11, 0.6)',
-          transform: `translate(${-mapPosition.x * 100}vw, ${-mapPosition.y * 100}vh)`,
-          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out'
-        }}
-      >
-        Frame: {currentFrame}/{TOTAL_ANIMATION_FRAMES}
-      </div>
+      {/* Debug: Map position indicator - Desktop only */}
+      {!isMobile && (
+        <div 
+          className="fixed top-4 right-4 z-50 text-xs font-mono pointer-events-none"
+          style={{ color: 'rgba(147, 51, 234, 0.6)' }}
+        >
+          Map: ({mapPosition.x.toFixed(2)}, {mapPosition.y.toFixed(2)}) {isMapAnimating ? '⟳' : '●'}
+        </div>
+      )}
 
-      {/* Debug: Map position indicator */}
-      <div 
-        className="fixed top-4 right-4 z-50 text-xs font-mono pointer-events-none"
-        style={{ color: 'rgba(147, 51, 234, 0.6)' }}
-      >
-        Map: ({mapPosition.x.toFixed(2)}, {mapPosition.y.toFixed(2)}) {isMapAnimating ? '⟳' : '●'}
-      </div>
+
 
       {/* ========================= */}
       {/* PAGE COMPONENTS - Smart pre-loading with content-visibility */}

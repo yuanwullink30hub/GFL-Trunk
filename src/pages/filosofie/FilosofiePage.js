@@ -1876,10 +1876,7 @@ const FilosofiePage = memo(({ isVisible, onBack }) => {
     setTimeout(() => setJustReturnedId(null), 600);
   }, []);
 
-  if (!isVisible) {
-    return <div style={{ width: '100%', height: '100%' }} />;
-  }
-
+  // Always render content - use CSS opacity transition for smooth exit animation
   return (
     <div
       style={{
@@ -1894,7 +1891,10 @@ const FilosofiePage = memo(({ isVisible, onBack }) => {
         overflow: 'hidden',
         fontFamily: "'Menlo', 'Monaco', 'Courier New', monospace",
         padding: '0',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        opacity: isVisible ? 1 : 0,
+        transition: 'opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1)',
+        pointerEvents: isVisible ? 'auto' : 'none',
       }}
     >
       {/* Inject keyframes and body overflow fix */}

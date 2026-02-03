@@ -799,15 +799,26 @@ const HoloEarth = ({
 }) => {
   return (
     <div 
-      className={`absolute inset-0 ${className || ''}`}
+      className={className || ''}
       style={{
         ...style,
+        // Mobile: Fill parent (which is flexbox centered), Desktop: absolute fill
+        position: isMobile ? 'relative' : 'absolute',
+        inset: isMobile ? undefined : 0,
+        width: isMobile ? '100vw' : undefined,
+        height: isMobile ? '100vh' : undefined,
         pointerEvents: exploding ? 'none' : 'auto',
         overflow: 'visible',
       }}
     >
-      {/* Canvas wrapper - 200% size for extra rendering area to prevent clipping during map navigation */}
-      <div style={{
+      {/* Canvas wrapper - Mobile uses simple 100% fill, Desktop uses 200% for map navigation */}
+      <div style={isMobile ? {
+        // Mobile: Simple full-size canvas
+        position: 'absolute',
+        inset: 0,
+        overflow: 'visible',
+      } : {
+        // Desktop: 200% size for extra rendering area to prevent clipping during map navigation
         position: 'absolute',
         width: '200%',
         height: '200%',
@@ -817,7 +828,7 @@ const HoloEarth = ({
       }}>
         <Canvas 
           camera={{ position: [0, 0, 8], fov: 40 }}
-          style={{ width: '100%', height: '100%', display: 'block' }}
+          style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}
           gl={{ 
             alpha: true, 
             antialias: false,
@@ -834,8 +845,8 @@ const HoloEarth = ({
             <ambientLight intensity={0.2} />
             <pointLight position={[10, 10, 10]} intensity={1.5} color="#FFD700" />
             {getPerformanceSettings().tier !== 'LOW' && <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />}
-            {/* Scale group to keep 3D content at original size (0.5 = 1/2 to compensate for 200% canvas) */}
-            <group scale={0.5}>
+            {/* Scale group - Mobile uses 1.3x for larger display, Desktop uses 0.5 to compensate for 200% canvas */}
+            <group scale={isMobile ? 1.3 : 0.5}>
               <HoloEarthSphere 
                 exploding={exploding} 
                 explosionProgress={explosionProgress}

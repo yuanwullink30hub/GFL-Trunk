@@ -29,6 +29,7 @@ import {
   Modal
 } from './SciFiUI';
 import BrandStats from './BrandStats';
+import MobileDetailPage from './MobileDetailPage';
 
 // Instagram icon component (since lucide doesn't have Instagram)
 const Instagram = ({ size = 24, className = '' }) => (
@@ -435,6 +436,15 @@ const GeneralBrandPage = React.memo(({
   const [showContactModal, setShowContactModal] = useState(false);
   const prevVisibleRef = useRef(false);
   
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
   // Sync virtualIndex ONLY when page transitions from hidden to visible
   // This captures the brand when user clicks "LEARN MORE" and keeps it static
   useEffect(() => {
@@ -453,7 +463,18 @@ const GeneralBrandPage = React.memo(({
   const activeBrandIndex = ((virtualIndex % BRANDS.length) + BRANDS.length) % BRANDS.length;
   const brand = BRANDS[activeBrandIndex];
 
-  // Smart rendering: full content when visible, placeholder when hidden
+  // Mobile: Use MobileDetailPage component
+  if (isMobile) {
+    return (
+      <MobileDetailPage 
+        isVisible={isVisible}
+        onBack={onBack}
+        brandIndex={initialBrandIndex}
+      />
+    );
+  }
+
+  // Desktop: Smart rendering - full content when visible, placeholder when hidden
   return (
     <div 
       className="absolute inset-0 font-sans text-white"

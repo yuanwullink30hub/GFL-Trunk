@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 
 const EyedentityPage = memo(({ isVisible, onBack }) => {
-  // Content only renders fully when visible or animating toward it
+  // Always render content - let parent wrapper handle exit animations
+  // Use CSS opacity transition for smooth fade
   return (
     <div
       style={{
@@ -10,18 +11,17 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        // No background - transparent over grid
+        opacity: isVisible ? 1 : 0,
+        transition: 'opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1)',
+        pointerEvents: isVisible ? 'auto' : 'none',
       }}
     >
-      {/* Render content when visible, placeholder when not */}
-      {isVisible ? (
       <div style={{
         minWidth: '40vw',
         minHeight: '30vh',
         border: '1px solid rgba(255, 255, 255, 0.3)',
         borderRadius: '0.5rem',
         backgroundColor: 'rgba(30, 30, 30, 0.2)',
-
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -62,9 +62,6 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
           ← TERUG
         </button>
       </div>
-      ) : (
-        <div style={{ width: '40vw', height: '30vh' }} />
-      )}
     </div>
   );
 });

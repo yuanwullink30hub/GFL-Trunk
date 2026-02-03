@@ -22,14 +22,14 @@ const HIGH_PROFILE = {
 
 const LOW_PROFILE = {
   tier: 'LOW',
-  maxParticles: 1500,
+  maxParticles: 300,
   pixelRatioCap: 1,
   waveQuality: 'low',
-  voronoiFrequency: 4,
-  shaderDetail: 'simplified',
+  voronoiFrequency: 3,
+  shaderDetail: 'off',
   enableAntialias: false,
   textureQuality: 0.25,
-  maxDrawCalls: 150
+  maxDrawCalls: 100
 };
 
 /**
@@ -281,18 +281,25 @@ export const detectPerformance = () => {
 /**
  * Synchronous detection (immediate, less accurate)
  * Used as fallback while async detection runs
+ * 
+ * LOW-END ONLY APPLIES TO DESKTOPS/LAPTOPS
+ * Phones and tablets always get the normal (HIGH) build
  */
 const detectPerformanceSync = () => {
   if (performanceProfile) return performanceProfile;
   
   let profile = { ...HIGH_PROFILE };
   
-  // Check if device is mobile or tablet - use HIGH (optimized for mobile)
+  // Phones and tablets ALWAYS get HIGH tier - no low-end option for mobile devices
   const isMobileOrTablet = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if (isMobileOrTablet) {
+  
+  // Mobile-sized viewports also get HIGH tier (for responsive testing on desktop)
+  const isMobileViewport = window.innerWidth < 768;
+  
+  if (isMobileOrTablet || isMobileViewport) {
     profile.actualPixelRatio = Math.min(window.devicePixelRatio || 1, profile.pixelRatioCap);
     performanceProfile = profile;
-    console.log(`[Performance Monitor] Mobile/Tablet detected - using HIGH tier`);
+    console.log(`[Performance Monitor] Mobile ${isMobileOrTablet ? 'device' : 'viewport'} - always HIGH tier (no low-end for mobile)`);
     return profile;
   }
   

@@ -119,6 +119,7 @@ const Shape3D = memo(({ shape, size = 50, rotation = 0, onClick, title }) => {
 
   // Sphere for circle shape
   if (shape === 'circle') {
+    // eslint-disable-next-line no-unused-vars
     const segments = 12;
     const rings = 8;
     return (
@@ -200,7 +201,9 @@ const Shape3D = memo(({ shape, size = 50, rotation = 0, onClick, title }) => {
   if (shape === 'triangle') {
     // Simple wireframe tetrahedron - 4 vertices, 6 edges
     // Vertices: apex at top, 3 base corners forming triangle
+    // eslint-disable-next-line no-unused-vars
     const h = size * 0.8; // total height
+    // eslint-disable-next-line no-unused-vars
     const r = size * 0.4; // base radius
     
     // Calculate vertex positions (2D projection with slight 3D tilt)
@@ -1836,6 +1839,7 @@ BackButton.displayName = 'BackButton';
 const FilosofiePage = memo(({ isVisible, onBack }) => {
   const [showInfo, setShowInfo] = useState(false);
   const [playgroundSymbols, setPlaygroundSymbols] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [isDragging, setIsDragging] = useState(false);
   const [justReturnedId, setJustReturnedId] = useState(null);
   const [newlyAddedId, setNewlyAddedId] = useState(null);

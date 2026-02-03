@@ -4,6 +4,7 @@ import DesktopLayout from './components/orbital/DesktopLayout';
 import MobileLayout from './components/orbital/MobileLayout';
 import HoloLabel from './components/newFeature/HoloLabel';
 import { getPerformanceSettings } from './utils/performanceMonitor';
+import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { FilosofiePage, GardensPage, DataPage, LoginPage, EyedentityPage } from './pages';
 
 // ============================================
@@ -82,6 +83,10 @@ const SECTION_3_FRAMES = 13;  // Pyramid center to bottom (system visible)
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(true); // Loading screen visible for 6 seconds
+  const [loadingFadeOut, setLoadingFadeOut] = useState(false); // Fade out animation state
+  const [loadingProgress, setLoadingProgress] = useState(0); // Preloading progress (0-1)
+  const [resourcesLoaded, setResourcesLoaded] = useState(false); // Track when all resources are ready
   const [currentFrame, setCurrentFrame] = useState(0); // 0 to 29 discrete frames
   const [currentSlide, setCurrentSlide] = useState(0);
   const [pyramidScrollProgress, setPyramidScrollProgress] = useState(0); // Separate scroll for pyramid layers (0-1)
@@ -236,6 +241,46 @@ const App = () => {
     // Detect low-end device on mount
     const performanceSettings = getPerformanceSettings();
     setIsLowEndMode(performanceSettings.tier === 'LOW');
+    
+    // Start preloading all heavy resources immediately
+    // Loading screen shows until resources are loaded (max 6 seconds)
+    const maxLoadTime = 6000;
+    let hasEnded = false;
+    
+    const endLoadingScreen = () => {
+      if (hasEnded) return;
+      hasEnded = true;
+      setLoadingFadeOut(true);
+      setTimeout(() => setShowLoadingScreen(false), 500);
+    };
+    
+    // Preload all resources - end loading screen when done
+    preloadAll((progress) => {
+      setLoadingProgress(progress);
+    }).then(() => {
+      setResourcesLoaded(true);
+      console.log('[App] All resources preloaded');
+      // Show "GEREED" for 1.5 seconds before fading out
+      setTimeout(() => endLoadingScreen(), 1500);
+    }).catch(() => {
+      // If preloading fails, still end loading screen
+      console.warn('[App] Preloading failed, continuing anyway');
+      endLoadingScreen();
+    });
+    
+    // Fallback: max 6 seconds even if resources aren't fully loaded
+    const maxTimer = setTimeout(() => {
+      if (!hasEnded) {
+        console.log('[App] Max load time reached, continuing');
+        endLoadingScreen();
+        // Continue loading in background
+        preloadInBackground();
+      }
+    }, maxLoadTime);
+    
+    return () => {
+      clearTimeout(maxTimer);
+    };
   }, []);
 
   // Mobile: Lock scroll when earth section is 100% visible, unlock when scrolling out
@@ -596,9 +641,134 @@ const App = () => {
   return (
     <main 
       ref={containerRef}
-      className={`relative w-screen font-figtree ${isMobile ? 'min-h-screen' : 'h-screen overflow-visible'}`}
+      className={`relative w-screen font-figtree ${isMobile ? 'min-h-screen' : 'h-screen overflow-hidden'}`}
       style={{color: '#FFFEF0', touchAction: isMobile ? 'pan-y' : 'none'}}
     >
+      {/* ========================= */}
+      {/* LOADING SCREEN OVERLAY */}
+      {/* ========================= */}
+      {showLoadingScreen && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center"
+          style={{
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.98)',
+            opacity: loadingFadeOut ? 0 : 1,
+            transition: 'opacity 0.5s ease-out',
+            pointerEvents: loadingFadeOut ? 'none' : 'auto'
+          }}
+        >
+          {/* Loading Modal Container */}
+          <div 
+            className="relative backdrop-blur-md rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col items-center"
+            style={{
+              backgroundColor: 'rgba(8, 2, 12, 0.9)',
+              padding: isMobile ? '2rem 1.5rem' : '2.5rem 3rem',
+              maxWidth: isMobile ? '90vw' : '500px',
+              border: '1px solid rgba(147, 51, 234, 0.3)'
+            }}
+          >
+            {/* Top-Left Corner Border */}
+            <div className="absolute -top-0.5 -left-0.5 w-5 h-5" style={{
+              border: '1.5px solid #a855f7',
+              borderRadius: '10px 0 0 0',
+              borderBottom: 'none',
+              borderRight: 'none'
+            }}></div>
+            
+            {/* Top-Right Corner Border */}
+            <div className="absolute -top-0.5 -right-0.5 w-5 h-5" style={{
+              border: '1.5px solid #a855f7',
+              borderRadius: '0 10px 0 0',
+              borderBottom: 'none',
+              borderLeft: 'none'
+            }}></div>
+            
+            {/* Bottom-Left Corner Border */}
+            <div className="absolute -bottom-0.5 -left-0.5 w-5 h-5" style={{
+              border: '1.5px solid #a855f7',
+              borderRadius: '0 0 0 10px',
+              borderTop: 'none',
+              borderRight: 'none'
+            }}></div>
+            
+            {/* Bottom-Right Corner Border */}
+            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5" style={{
+              border: '1.5px solid #a855f7',
+              borderRadius: '0 0 10px 0',
+              borderTop: 'none',
+              borderLeft: 'none'
+            }}></div>
+
+            {/* Spinning Loader */}
+            <div 
+              className="rounded-full border-2 border-t-transparent animate-spin mb-6"
+              style={{
+                borderColor: '#a855f7',
+                borderTopColor: 'transparent',
+                width: isMobile ? '2.5rem' : '3rem',
+                height: isMobile ? '2.5rem' : '3rem'
+              }}
+            />
+
+            {/* Loading Message */}
+            <p 
+              className="text-center tracking-wide"
+              style={{
+                color: 'rgba(255, 254, 240, 0.9)',
+                fontFamily: "'Figtree', sans-serif",
+                fontSize: isMobile ? '0.9rem' : '1rem',
+                lineHeight: 1.6,
+                maxWidth: '320px'
+              }}
+            >
+              Bereiden van de meest optimale software voor jouw hardware
+            </p>
+
+            {/* Progress Bar */}
+            <div 
+              className="mt-5 w-full relative"
+              style={{
+                height: '3px',
+                backgroundColor: 'rgba(147, 51, 234, 0.2)',
+                borderRadius: '2px',
+                overflow: 'hidden',
+                maxWidth: '280px'
+              }}
+            >
+              <div 
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  height: '100%',
+                  width: `${Math.round(loadingProgress * 100)}%`,
+                  backgroundColor: '#a855f7',
+                  borderRadius: '2px',
+                  transition: 'width 0.3s ease-out',
+                  boxShadow: '0 0 10px rgba(168, 85, 247, 0.5)'
+                }}
+              />
+            </div>
+
+            {/* Progress percentage */}
+            <p 
+              className="mt-2 tracking-[0.15em]"
+              style={{
+                color: 'rgba(168, 85, 247, 0.8)',
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                fontSize: '0.7rem'
+              }}
+            >
+              {resourcesLoaded ? 'GEREED' : `${Math.round(loadingProgress * 100)}%`}
+            </p>
+
+            {/* Scanline overlay */}
+            <div className="absolute inset-0 pointer-events-none rounded-lg bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 mix-blend-overlay"></div>
+          </div>
+        </div>
+      )}
+
       {/* Desktop TimeSync - Fixed HUD element, stays in viewport corner like camera timestamp */}
       {!isMobile && (
         <div className="fixed pointer-events-none" style={{

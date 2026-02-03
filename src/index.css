@@ -13,10 +13,10 @@ body {
   color: #FFFEF0;
 }
 
-/* Allow scroll on mobile, visible overflow on desktop for map navigation */
+/* Prevent window scroll on desktop - map navigation uses transforms not scroll */
 @media (min-width: 768px) {
-  body {
-    overflow: visible;
+  html, body {
+    overflow: hidden;
   }
 }
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { List } from 'lucide-react';
 import HoloEarth from './components/orbital/HoloEarth';
 import DesktopLayout from './components/orbital/DesktopLayout';
 import HoloLabel from './components/newFeature/HoloLabel';
@@ -225,11 +224,6 @@ const MobileNavWheel = ({ onNavigate, activeSection, onIndexChange, onRotationCh
       setVirtualIndex(virtualIndex + diff);
       setExpandedItem(null);
     }
-  };
-  
-  const handleListToggle = () => {
-    setIsListOpen(!isListOpen);
-    setExpandedItem(null);
   };
   
   // Scoped Wheel Event Listener - only works when scrolling on the event wrapper

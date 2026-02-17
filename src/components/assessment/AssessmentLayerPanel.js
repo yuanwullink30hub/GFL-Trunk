@@ -91,7 +91,6 @@ const SingleLayerPanel = ({
   const questions = useMemo(() => generateLayerQuestions(layerIndex), [layerIndex]);
   const totalQuestions = QUESTIONS_PER_LAYER;
   
-  const allAnswered = questions.every(q => answers[q.id] !== undefined);
   const answeredCount = questions.filter(q => answers[q.id] !== undefined).length;
   
   // Calculate animation progress for this layer

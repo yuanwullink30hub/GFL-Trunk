@@ -1,6 +1,8 @@
 import React, { memo } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const LoginPage = memo(({ isVisible, onBack }) => {
+  const { t } = useLanguage();
   // Always render content - let parent wrapper handle exit animations
   // Use CSS opacity transition for smooth fade
   return (
@@ -34,10 +36,10 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       }}>
         {/* Login page content */}
         <div style={{ fontSize: 'max(18px, 1vw)', fontWeight: 'bold', marginBottom: '1rem' }}>
-          LOGIN
+          {t('pages.loginPage.title')}
         </div>
         <div style={{ fontSize: 'max(13px, 0.7vw)', textAlign: 'center', marginBottom: '1rem' }}>
-          Authentication coming soon...
+          {t('pages.loginPage.placeholder')}
         </div>
         <button
           onClick={onBack}
@@ -59,7 +61,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
             e.target.style.backgroundColor = 'rgba(21, 179, 21, 0.2)';
           }}
         >
-          ← TERUG
+          {t('pages.loginPage.back')}
         </button>
       </div>
     </div>

@@ -1,6 +1,8 @@
 import React, { memo } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const DataPage = memo(({ isVisible, onBack }) => {
+  const { t } = useLanguage();
   // Always render content - let parent wrapper handle exit animations
   // Use CSS opacity transition for smooth fade
   return (
@@ -34,10 +36,10 @@ const DataPage = memo(({ isVisible, onBack }) => {
       }}>
         {/* Data/Monitor page content */}
         <div style={{ fontSize: 'max(18px, 1vw)', fontWeight: 'bold', marginBottom: '1rem' }}>
-          DATA STREAM
+          {t('pages.dataPage.title')}
         </div>
         <div style={{ fontSize: 'max(13px, 0.7vw)', textAlign: 'center', marginBottom: '1rem' }}>
-          Content coming soon...
+          {t('pages.dataPage.placeholder')}
         </div>
         <button
           onClick={onBack}
@@ -59,7 +61,7 @@ const DataPage = memo(({ isVisible, onBack }) => {
             e.target.style.backgroundColor = 'rgba(34, 211, 238, 0.2)';
           }}
         >
-          ← TERUG
+          {t('pages.dataPage.back')}
         </button>
       </div>
     </div>

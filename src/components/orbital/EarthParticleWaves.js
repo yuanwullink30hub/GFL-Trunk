@@ -54,7 +54,7 @@ const EarthParticleWaves = ({
         uTime: { value: 0 },
         uExplode: { value: 0 },
         uMap: { value: null },
-        uTransitionStart: { value: 0.01 }, // When particles start appearing (frame ~9)
+        uTransitionStart: { value: 0.007 }, // When particles start appearing (frame 9)
         uTransitionEnd: { value: 0.35 },   // When chunks fully gone
       },
       vertexShader: `

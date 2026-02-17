@@ -3,10 +3,11 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 // --- Holographic Core Component ---
-const HoloCore = ({ isGoldMode = false, opacity = 1 }) => {
+const HoloCore = ({ isGoldMode = false, opacity = 1, scaleMultiplier = 1 }) => {
   const ref = useRef(null);
   const ringRef = useRef(null);
   const outerRingRef = useRef(null);
+  const groupRef = useRef(null);
 
   // Material refs for dynamic opacity
   const mat1 = useRef(null);
@@ -42,13 +43,18 @@ const HoloCore = ({ isGoldMode = false, opacity = 1 }) => {
     if(matRing1.current) matRing1.current.opacity = 0.6 * opacity;
     if(matRing2.current) matRing2.current.opacity = 0.3 * opacity;
     if(matGlow.current) matGlow.current.opacity = 0.5 * opacity;
+    
+    // Apply scale multiplier to entire group
+    if (groupRef.current) {
+      groupRef.current.scale.setScalar(scaleMultiplier);
+    }
   });
 
   const primaryColor = isGoldMode ? "#fbbf24" : "#22d3ee"; // Gold or Cyan
   const glowColor = isGoldMode ? "#b45309" : "#0891b2";
 
   return (
-    <group>
+    <group ref={groupRef}>
       <group ref={ref}>
         {/* Solid Core - High Transmission */}
         <mesh>

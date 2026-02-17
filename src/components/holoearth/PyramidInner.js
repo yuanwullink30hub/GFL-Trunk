@@ -265,12 +265,14 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
 // - orbitalRotationY: ref to the orbital/earth Y rotation (sync when not active)
 // - onIntroComplete: callback when intro animation finishes (enables scroll for layers)
 // - onLayerStateChange: callback to expose layer state (completedLayerIndex, isIntroActive, isGoldMode) for DOM labels
+// - coreScaleMultiplier: 1-5 scale for the inner core (used during convergence animation)
 const PyramidInner = ({ 
   isActive = false, 
   scrollProgress = 0, 
   showLabels = false,
   orbitalRotationY = null,
   explosionProgress = 0,
+  coreScaleMultiplier = 1, // Scale multiplier for inner core during convergence
   onSendComplete = () => {},
   onIntroComplete = () => {},
   onLayerStateChange = () => {}
@@ -489,7 +491,13 @@ const PyramidInner = ({
       const effectiveR = scrollR + (1 - scrollR) * introFactor;
 
       const targetPos = new THREE.Vector3(0, layer.yPos, 0);
-      const containerPos = new THREE.Vector3(0, 1.7, 0);
+      // Entity center point - where layers should float FROM (start position)
+      // Adjusted to match actual entity visual position on screen
+      const entityYOffset = window.innerWidth >= 1024 ? 0 :
+                            window.innerWidth >= 768 ? -0.065 :
+                            0;
+      // Set to 0.75 to match entity placement (2rem higher than 0.5)
+      const containerPos = new THREE.Vector3(0, 0.75 + entityYOffset, 0);
       const inverseMatrix = groupRef.current.matrixWorld.clone().invert();
       const localStartPos = containerPos.clone().applyMatrix4(inverseMatrix);
 
@@ -585,7 +593,7 @@ const PyramidInner = ({
             />
           </mesh>
 
-          <HoloCore isGoldMode={isGoldMode} opacity={entityOpacity} />
+          <HoloCore isGoldMode={isGoldMode} opacity={entityOpacity} scaleMultiplier={coreScaleMultiplier} />
         </group>
       )}
     </group>

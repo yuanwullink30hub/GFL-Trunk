@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import HoloEarth from './components/orbital/HoloEarth';
 import DesktopLayout from './components/orbital/DesktopLayout';
-import HoloLabel from './components/newFeature/HoloLabel';
+import { AssessmentIntro, AssessmentQuestions, AssessmentUpload, AssessmentLayerPanel } from './components/assessment';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { FilosofiePage, GardensPage, DataPage, LoginPage, EyedentityPage } from './pages';
 import { BRANDS } from './pages/GeneralBrandPage/brandData';
+import { useLanguage } from './contexts/LanguageContext';
 
 // ============================================
 // GRID MAP NAVIGATION CONFIGURATION
@@ -83,7 +84,7 @@ const MOBILE_NAV_ITEMS = [
   { 
     key: 'deltawerken', 
     label: 'DELTAWERKEN', 
-    description: 'Bouw de toekomst',
+    descriptionKey: 'mobileNav.deltawerken',
     icon: 'deltawerken-custom', // custom SVG: circle with triangle inside
     color: '#06b6d4', // cyan
     angle: 0 // 0° - top of clock
@@ -91,7 +92,7 @@ const MOBILE_NAV_ITEMS = [
   { 
     key: 'gardens', 
     label: 'GARDENS', 
-    description: 'Verken de merkwereld',
+    descriptionKey: 'mobileNav.gardens',
     icon: '⬡',
     color: '#22c55e', // green
     angle: 60 // 60° - 2 o'clock position
@@ -99,7 +100,7 @@ const MOBILE_NAV_ITEMS = [
   { 
     key: 'menu', 
     label: 'BLACKHOLE', 
-    description: 'Verborgen portaal',
+    descriptionKey: 'mobileNav.blackhole',
     icon: '●',
     color: '#ef4444', // red
     angle: 120 // 120° - 4 o'clock position
@@ -107,7 +108,7 @@ const MOBILE_NAV_ITEMS = [
   { 
     key: 'login', 
     label: 'EYEDENTITY', 
-    description: 'Verbind je profiel',
+    descriptionKey: 'mobileNav.eyedentity',
     icon: '◈',
     color: '#f59e0b', // amber
     angle: 180 // 180° - bottom of clock
@@ -115,7 +116,7 @@ const MOBILE_NAV_ITEMS = [
   { 
     key: 'monitor', 
     label: 'DATA', 
-    description: 'Statistieken & analytics',
+    descriptionKey: 'mobileNav.data',
     icon: '▣',
     color: '#3b82f6', // blue
     angle: 240 // 240° - 8 o'clock position
@@ -123,7 +124,7 @@ const MOBILE_NAV_ITEMS = [
   { 
     key: 'filosofie', 
     label: 'FILOSOFIE', 
-    description: 'Ontdek je mentale energie',
+    descriptionKey: 'mobileNav.filosofie',
     icon: '◇',
     color: '#a855f7', // purple
     angle: 300 // 300° - 10 o'clock position
@@ -131,6 +132,7 @@ const MOBILE_NAV_ITEMS = [
 ];
 
 const MobileNavWheel = ({ onNavigate, activeSection, onIndexChange, onRotationChange, onBrandChange, headerOpacity = 1, headerY = 0, currentFrame = 0 }) => {
+  const { t } = useLanguage();
   const [expandedItem, setExpandedItem] = useState(null);
   const [isListOpen, setIsListOpen] = useState(false);
   const [virtualIndex, setVirtualIndex] = useState(0); // Virtual index for infinite circular scroll
@@ -432,7 +434,7 @@ const MobileNavWheel = ({ onNavigate, activeSection, onIndexChange, onRotationCh
                     fontSize: '0.7rem',
                     marginTop: '0.25rem'
                   }}>
-                    {item.description}
+                    {t(item.descriptionKey)}
                   </div>
                 </div>
               </button>
@@ -651,7 +653,7 @@ const MobileNavWheel = ({ onNavigate, activeSection, onIndexChange, onRotationCh
                       color: item.color,
                       fontFamily: "'Figtree', sans-serif",
                     }}>
-                      {item.description}
+                      {t(item.descriptionKey)}
                     </div>
                     <div className="text-center" style={{
                       marginTop: '0.25rem',
@@ -1011,13 +1013,16 @@ const MobilePageContent = ({ activeIndex, wheelRotation, onBack, brandIndex = 0 
 
 // ============================================
 // ANIMATION SECTION CONFIGURATION
-// Adjust these values to control scroll timing for each phase
+// Section 1 (frames 0-2): Label disappears, chunks become visible
+// Section 2 (frames 3-45): Chunks and particles explosion (43 frames for smooth animation)
+// Section 3 (frames 46-48): Pyramid shifts down, button visible at frame 49
+// Total: 49 frames (0-48)
 // ============================================
-const SCROLL_BUTTON_FRAMES = 3; // Scroll button disappears (first 3 frames)
-const SECTION_1_FRAMES = 3;   // Pre-explosion phase (button gone)
-const SECTION_2_FRAMES = 33;  // Earth explosion (30 + 3 extra for smoother animation)
-const HEADER_START_FRAME = 9; // Header/containers start vanishing after this frame
-const SECTION_3_FRAMES = 13;  // Pyramid center to bottom (system visible)
+const SCROLL_BUTTON_FRAMES = 3; // Scroll button disappears (frames 0-2)
+const SECTION_1_FRAMES = 3;     // Label disappears, chunks visible (frames 0-2)
+const SECTION_2_FRAMES = 43;    // Chunks and particles explosion - maximized for smooth flow
+const HEADER_START_FRAME = 12;  // Header/containers start vanishing mid-explosion
+const SECTION_3_FRAMES = 3;     // Pyramid shifts down (frames 46-48)
 // ============================================
 
 const App = () => {
@@ -1026,6 +1031,7 @@ const App = () => {
   const [loadingFadeOut, setLoadingFadeOut] = useState(false); // Fade out animation state
   const [loadingProgress, setLoadingProgress] = useState(0); // Preloading progress (0-1)
   const [resourcesLoaded, setResourcesLoaded] = useState(false); // Track when all resources are ready
+  const { language, toggleLanguage, t, tArray } = useLanguage();
   const [currentFrame, setCurrentFrame] = useState(0); // 0 to 29 discrete frames
   const [currentSlide, setCurrentSlide] = useState(0);
   const [pyramidScrollProgress, setPyramidScrollProgress] = useState(0); // Separate scroll for pyramid layers (0-1)
@@ -1039,6 +1045,98 @@ const App = () => {
     isGoldMode: false,
     introComplete: false
   }); // Pure DOM label state from PyramidInner
+  
+  // ============================================
+  // ASSESSMENT STATE - Replaces the old label system
+  // Phases: 'hidden' → 'intro' → 'layers' → 'convergence' → 'results'
+  // ============================================
+  const [assessmentPhase, setAssessmentPhase] = useState('hidden'); // Current assessment phase
+  const [assessmentLevel, setAssessmentLevel] = useState(null); // 'quick' | 'standard' | 'deep'
+  const [currentSubjectIndex, setCurrentSubjectIndex] = useState(0); // 0-4 for 5 subjects
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0); // 0-5 for 6 questions per subject
+  const [assessmentAnswers, setAssessmentAnswers] = useState([]); // Array of {subjectIndex, questionIndex, answer}
+  const [uploadedFiles, setUploadedFiles] = useState([]); // Files for deep assessment
+  const [currentLayerIndex, setCurrentLayerIndex] = useState(0); // 0-4 for 5 layers
+  const [layerAnswers, setLayerAnswers] = useState({}); // { layerIndex: { questionId: answerId } }
+  const [assessmentScrollEnabled, setAssessmentScrollEnabled] = useState(false); // Controls when user can scroll to next layer
+  const [convergenceProgress, setConvergenceProgress] = useState(0); // 0-1 progress for panels floating back to entity
+  const [coreScaleMultiplier, setCoreScaleMultiplier] = useState(1); // 1-5 scale for inner core growth
+  const [resultsModalProgress, setResultsModalProgress] = useState(0); // 0-1 progress for results modal floating out
+  const [resultsLoadingProgress, setResultsLoadingProgress] = useState(0); // 0-1 loading bar progress (AI thinking time)
+  const [resultsPoetryIndex, setResultsPoetryIndex] = useState(0); // Current poetry slide index
+  const [showLoginFromResults, setShowLoginFromResults] = useState(false); // Show login modal after results
+  
+  // Poetry slides for the results loading screen
+  const poetrySlides = useMemo(() => [
+    {
+      title: t('poetry.slide1.title'),
+      lines: tArray('poetry.slide1.lines')
+    },
+    {
+      title: t('poetry.slide2.title'),
+      lines: tArray('poetry.slide2.lines')
+    },
+    {
+      title: t('poetry.slide3.title'),
+      lines: tArray('poetry.slide3.lines')
+    },
+    {
+      title: t('poetry.slide4.title'),
+      lines: tArray('poetry.slide4.lines')
+    },
+    {
+      title: t('poetry.slide5.title'),
+      lines: tArray('poetry.slide5.lines')
+    },
+    {
+      title: t('poetry.slide6.title'),
+      lines: tArray('poetry.slide6.lines')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [language]);
+  
+  // Assessment data: 5 subjects with 6 questions each (30 total)
+  // Standard answer options for assessment questions
+  const standardAnswers = [
+    { id: 'strongly_agree', text: t('standardAnswers.stronglyAgree'), value: 5 },
+    { id: 'agree', text: t('standardAnswers.agree'), value: 4 },
+    { id: 'neutral', text: t('standardAnswers.neutral'), value: 3 },
+    { id: 'disagree', text: t('standardAnswers.disagree'), value: 2 },
+    { id: 'strongly_disagree', text: t('standardAnswers.stronglyDisagree'), value: 1 }
+  ];
+
+  // Transform question strings into full question objects with answers
+  const createQuestionObjects = (questionStrings, subjectName) => {
+    return questionStrings.map((text, index) => ({
+      id: `${subjectName.toLowerCase()}_q${index + 1}`,
+      text: text,
+      answers: standardAnswers
+    }));
+  };
+
+  const assessmentSubjects = [
+    { name: 'Perception', color: '#00BFFF', questions: createQuestionObjects(['How do you perceive challenges?', 'What patterns do you notice in daily life?', 'How do you process new information?', 'What triggers your intuition?', 'How do you sense energy in a room?', 'What visual patterns attract you most?'], 'Perception') },
+    { name: 'Connection', color: '#00FF88', questions: createQuestionObjects(['How do you form meaningful relationships?', 'What makes you feel connected?', 'How do you nurture bonds over time?', 'What role does trust play for you?', 'How do you handle disconnection?', 'What creates lasting connection?'], 'Connection') },
+    { name: 'Expression', color: '#FFD700', questions: createQuestionObjects(['How do you express your truth?', 'What medium resonates with you?', 'When do you feel most creative?', 'How do you share ideas?', 'What blocks your expression?', 'How do you find your voice?'], 'Expression') },
+    { name: 'Transformation', color: '#FF6B35', questions: createQuestionObjects(['How do you embrace change?', 'What catalyzes your growth?', 'How do you release old patterns?', 'What does evolution mean to you?', 'How do you navigate uncertainty?', 'What transforms your perspective?'], 'Transformation') },
+    { name: 'Integration', color: '#8B5CF6', questions: createQuestionObjects(['How do you synthesize experiences?', 'What creates wholeness for you?', 'How do you balance opposing forces?', 'What integrates your different selves?', 'How do you find harmony?', 'What brings everything together?'], 'Integration') }
+  ];
+  
+  // Get total questions based on level
+  const getTotalQuestions = (level) => {
+    switch (level) {
+      case 'quick': return 15; // 3 questions per subject
+      case 'standard': return 30; // 6 questions per subject
+      case 'deep': return 30; // 6 questions per subject + upload
+      default: return 30;
+    }
+  };
+  
+  // Get questions per subject based on level
+  const getQuestionsPerSubject = (level) => {
+    return level === 'quick' ? 3 : 6;
+  };
+  
   // eslint-disable-next-line no-unused-vars
   const [mobileScrollLocked, setMobileScrollLocked] = useState(false); // Track when mobile scroll should be hijacked
   const [activeSection, setActiveSection] = useState(null); // Track active section page (filosofie, gardens, monitor, menu)
@@ -1180,14 +1278,24 @@ const App = () => {
     };
   }, [isMapAnimating]);
 
+  // Beta lock: only allow full interaction on localhost
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const hasLockOverride = urlParams.has('lock');
+  const shouldShowLock = !isLocalhost || hasLockOverride;
+
   // Handler for opening sections - navigate on map
   const handleOpenSection = useCallback((section) => {
+    // Beta lock: block locked sections (gardens, monitor, filosofie) on non-localhost
+    // VERBINDINGS_MENU sections (menu, login) remain accessible
+    const lockedSections = ['gardens', 'monitor', 'filosofie'];
+    if (shouldShowLock && lockedSections.includes(section)) return;
     // Capture current slide when opening gardens section
     if (section === 'gardens') {
       setGardensBrandIndex(currentSlide);
     }
     navigateToSection(section);
-  }, [navigateToSection, currentSlide]);
+  }, [navigateToSection, currentSlide, shouldShowLock]);
 
   // Handler for closing sections - navigate back to main
   const handleCloseSection = useCallback(() => {
@@ -1435,6 +1543,235 @@ const App = () => {
     window.dispatchEvent(new CustomEvent('triggerGoldMode'));
   }, []);
 
+  // ============================================
+  // ASSESSMENT HANDLERS
+  // ============================================
+  
+  // Show intro modal when entity intro completes
+  useEffect(() => {
+    if (layerState.introComplete && assessmentPhase === 'hidden') {
+      setAssessmentPhase('intro');
+    }
+  }, [layerState.introComplete, assessmentPhase]);
+  
+  // Start assessment with selected level
+  const handleAssessmentStart = useCallback((levelId) => {
+    setAssessmentLevel(levelId);
+    setCurrentSubjectIndex(0);
+    setCurrentQuestionIndex(0);
+    setAssessmentAnswers([]);
+    setCurrentLayerIndex(0);
+    setLayerAnswers({});
+    setAssessmentPhase('layers');
+  }, []);
+  
+  // Close assessment (back to hidden)
+  const handleAssessmentClose = useCallback(() => {
+    setAssessmentPhase('hidden');
+    setAssessmentLevel(null);
+  }, []);
+  
+  // Handle layer completion (Save button clicked)
+  const handleLayerComplete = useCallback((layerIndex, answers) => {
+    setLayerAnswers(prev => ({
+      ...prev,
+      [layerIndex]: answers
+    }));
+  }, []);
+  
+  // Handle all layers complete - triggers convergence animation
+  const handleAllLayersComplete = useCallback((allAnswers) => {
+    setLayerAnswers(allAnswers);
+    setAssessmentPhase('convergence');
+    setConvergenceProgress(0);
+    setCoreScaleMultiplier(1);
+  }, []);
+  
+  // Convergence animation effect - panels float back, then core grows
+  useEffect(() => {
+    if (assessmentPhase !== 'convergence') return;
+    
+    const CONVERGENCE_DURATION = 1500; // 1.5s for panels to float back
+    const CORE_GROWTH_DURATION = 2000; // 2s for core to grow
+    const RESULTS_APPEAR_DURATION = 800; // 0.8s for results modal to float out
+    const startTime = Date.now();
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      
+      if (elapsed < CONVERGENCE_DURATION) {
+        // Phase 1: Panels float back to entity center
+        const progress = Math.min(elapsed / CONVERGENCE_DURATION, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setConvergenceProgress(eased);
+      } else if (elapsed < CONVERGENCE_DURATION + CORE_GROWTH_DURATION) {
+        // Phase 2: Core grows to fill pyramid
+        setConvergenceProgress(1);
+        const coreElapsed = elapsed - CONVERGENCE_DURATION;
+        const coreProgress = Math.min(coreElapsed / CORE_GROWTH_DURATION, 1);
+        // Ease out cubic for smooth growth
+        const eased = 1 - Math.pow(1 - coreProgress, 3);
+        const scale = 1 + eased * 4; // Grow from 1 to 5
+        setCoreScaleMultiplier(scale);
+      } else if (elapsed < CONVERGENCE_DURATION + CORE_GROWTH_DURATION + RESULTS_APPEAR_DURATION) {
+        // Phase 3: Results modal floats out from entity
+        setConvergenceProgress(1);
+        setCoreScaleMultiplier(5);
+        setAssessmentPhase('results');
+        const resultsElapsed = elapsed - CONVERGENCE_DURATION - CORE_GROWTH_DURATION;
+        const resultsProgress = Math.min(resultsElapsed / RESULTS_APPEAR_DURATION, 1);
+        // Ease out back for overshoot effect
+        const eased = 1 - Math.pow(1 - resultsProgress, 3);
+        setResultsModalProgress(eased);
+      } else {
+        // Animation complete
+        setConvergenceProgress(1);
+        setCoreScaleMultiplier(5);
+        setResultsModalProgress(1);
+        return;
+      }
+      
+      requestAnimationFrame(animate);
+    };
+    
+    requestAnimationFrame(animate);
+  }, [assessmentPhase]);
+  
+  // Results loading animation - poetry slideshow and loading bar
+  useEffect(() => {
+    if (assessmentPhase !== 'results') return;
+    if (resultsModalProgress < 1) return; // Wait for modal to appear
+    
+    const LOADING_DURATION = 12000; // 12 seconds for AI to "think"
+    const POETRY_INTERVAL = 2000; // Change poetry every 2 seconds
+    const startTime = Date.now();
+    
+    // Reset loading state
+    setResultsLoadingProgress(0);
+    setResultsPoetryIndex(0);
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      
+      // Update loading progress
+      const progress = Math.min(elapsed / LOADING_DURATION, 1);
+      // Ease-in-out for natural feeling
+      const eased = progress < 0.5 
+        ? 2 * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      setResultsLoadingProgress(eased);
+      
+      // Update poetry index based on time
+      const poetryIdx = Math.min(
+        Math.floor(elapsed / POETRY_INTERVAL),
+        poetrySlides.length - 1
+      );
+      setResultsPoetryIndex(poetryIdx);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }, [assessmentPhase, resultsModalProgress, poetrySlides.length]);
+  
+  // Handle scroll to next layer (Scroll button clicked)
+  // Handle scroll to next layer - triggered by scroll progress during layers phase
+  const handleScrollToNextLayer = useCallback((nextLayerIndex) => {
+    if (nextLayerIndex < 5) {
+      setCurrentLayerIndex(nextLayerIndex);
+      setAssessmentScrollEnabled(false); // Disable scroll until next save
+    } else {
+      // All layers complete, show results
+      setAssessmentPhase('results');
+    }
+  }, []);
+  
+  // Handle scroll enabled toggle from assessment panel
+  const handleAssessmentScrollEnabled = useCallback((enabled) => {
+    setAssessmentScrollEnabled(enabled);
+  }, []);
+  
+  // Update current layer based on pyramid scroll progress when in layers phase
+  useEffect(() => {
+    if (assessmentPhase === 'layers' && assessmentScrollEnabled) {
+      // Calculate which layer should be active based on scroll progress
+      const totalMovable = 4; // Layers 1-4 (layer 0 is always visible)
+      const newLayerIndex = Math.min(
+        Math.floor(pyramidScrollProgress * totalMovable) + 1,
+        4
+      );
+      if (newLayerIndex > currentLayerIndex) {
+        setCurrentLayerIndex(newLayerIndex);
+        setAssessmentScrollEnabled(false); // Disable until next save
+      }
+    }
+  }, [pyramidScrollProgress, assessmentPhase, assessmentScrollEnabled, currentLayerIndex]);
+  
+  // Handle answer selection
+  const handleAnswerSelect = useCallback((answerIndex) => {
+    // Record the answer
+    setAssessmentAnswers(prev => [...prev, {
+      subjectIndex: currentSubjectIndex,
+      questionIndex: currentQuestionIndex,
+      answer: answerIndex
+    }]);
+    
+    const questionsPerSubject = getQuestionsPerSubject(assessmentLevel);
+    
+    // Move to next question
+    if (currentQuestionIndex < questionsPerSubject - 1) {
+      // More questions in this subject
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else if (currentSubjectIndex < 4) {
+      // Move to next subject
+      setCurrentSubjectIndex(prev => prev + 1);
+      setCurrentQuestionIndex(0);
+    } else {
+      // All questions done
+      if (assessmentLevel === 'deep') {
+        setAssessmentPhase('upload');
+      } else {
+        setAssessmentPhase('results');
+        triggerGoldMode(); // Trigger gold mode on completion
+      }
+    }
+  }, [currentSubjectIndex, currentQuestionIndex, assessmentLevel, triggerGoldMode]);
+  
+  // Go back one question
+  const handleGoBack = useCallback(() => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+      setAssessmentAnswers(prev => prev.slice(0, -1));
+    } else if (currentSubjectIndex > 0) {
+      setCurrentSubjectIndex(prev => prev - 1);
+      const questionsPerSubject = getQuestionsPerSubject(assessmentLevel);
+      setCurrentQuestionIndex(questionsPerSubject - 1);
+      setAssessmentAnswers(prev => prev.slice(0, -1));
+    }
+  }, [currentQuestionIndex, currentSubjectIndex, assessmentLevel]);
+  
+  // File upload handlers
+  const handleAddFile = useCallback((file) => {
+    setUploadedFiles(prev => [...prev, file]);
+  }, []);
+  
+  const handleRemoveFile = useCallback((index) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  }, []);
+  
+  const handleUploadContinue = useCallback(() => {
+    setAssessmentPhase('results');
+    triggerGoldMode();
+  }, [triggerGoldMode]);
+  
+  const handleUploadSkip = useCallback(() => {
+    setAssessmentPhase('results');
+    triggerGoldMode();
+  }, [triggerGoldMode]);
+
   // Touch handling for mobile
   const touchStartY = useRef(0);
   const touchAccumulator = useRef(0);
@@ -1614,7 +1951,12 @@ const App = () => {
   // Separate entity offset to counteract the pyramid movement
   const entityCounterOffset = window.innerWidth >= 1100 ? 16 : // Desktop/Laptop: 1rem = 16px down (counteract pyramid's 3rem move)
                               0; // Tablet/Mobile: no adjustment needed
-  const isSystem = section3Progress > 0;
+  
+  // Button becomes visible at frame 49 (the very last frame)
+  // section1End=3, section2End=46, section3End=49
+  const section3End = section2End + SECTION_3_FRAMES;
+  const BUTTON_APPEAR_FRAME = section3End; // Frame 49 - the last frame
+  const isSystem = currentFrame >= BUTTON_APPEAR_FRAME;
 
   // Pyramid layer scroll - only active after system is visible
   // This controls the layer float-up animation via scroll after the 3s intro
@@ -1726,7 +2068,7 @@ const App = () => {
                 maxWidth: '320px'
               }}
             >
-              Bereiden van de meest optimale software voor jouw hardware
+              {t('loading.description')}
             </p>
 
             {/* Progress Bar */}
@@ -1764,7 +2106,7 @@ const App = () => {
                 fontSize: '0.7rem'
               }}
             >
-              {resourcesLoaded ? 'GEREED' : `${Math.round(loadingProgress * 100)}%`}
+              {resourcesLoaded && loadingProgress >= 0.8 ? t('loading.ready') : `${Math.round(loadingProgress * 100)}%`}
             </p>
 
             {/* Scanline overlay */}
@@ -1868,13 +2210,13 @@ const App = () => {
                       <span className="text-gray-400 tracking-wider" style={{
                         fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
                         fontFamily: "'Figtree', sans-serif",
-                      }}>SCHADUW WERK</span>
+                      }}>{t('header.versionText')}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Top-Right Info Panel - Frame counter + Coordinates */}
-                {/* Inside deltawerken wrapper so it follows carousel animation */}
+                {/* Inside deltawerken wrapper so it follows carousel animation */}}
                 <div 
                   className="absolute top-4 right-4 z-50 text-xs font-mono pointer-events-none text-right"
                   style={{ 
@@ -1949,6 +2291,7 @@ const App = () => {
                   isActive={isSystem}
                   pyramidScrollProgress={pyramidScrollProgress}
                   showPyramidLabels={isSystem}
+                  coreScaleMultiplier={coreScaleMultiplier}
                   onIntroComplete={handleIntroComplete}
                   onLayerStateChange={handleLayerStateChange}
                 />
@@ -1998,6 +2341,31 @@ const App = () => {
             headerY={headerY}
             currentFrame={currentFrame}
           />
+
+          {/* Mobile Language Toggle */}
+          <button
+            onClick={toggleLanguage}
+            style={{
+              position: 'fixed',
+              top: '12px',
+              right: '12px',
+              zIndex: 200,
+              backgroundColor: 'rgba(10, 5, 21, 0.7)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              padding: '5px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              backdropFilter: 'blur(8px)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <span style={{ fontSize: '12px', color: language === 'nl' ? '#f97316' : 'rgba(255,255,255,0.4)', fontWeight: language === 'nl' ? 'bold' : 'normal' }}>NL</span>
+            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>|</span>
+            <span style={{ fontSize: '12px', color: language === 'en' ? '#f97316' : 'rgba(255,255,255,0.4)', fontWeight: language === 'en' ? 'bold' : 'normal' }}>EN</span>
+          </button>
         </>
       )}
 
@@ -2098,6 +2466,7 @@ const App = () => {
               isActive={isSystem}
               pyramidScrollProgress={pyramidScrollProgress}
               showPyramidLabels={isSystem}
+              coreScaleMultiplier={coreScaleMultiplier}
               onIntroComplete={handleIntroComplete}
               onLayerStateChange={handleLayerStateChange}
             />
@@ -2147,7 +2516,7 @@ const App = () => {
                     }}></span>
                     <span className="text-gray-400 tracking-widest" style={{
                       fontSize: 'clamp(0.6rem, 0.9vw, 0.85rem)'
-                    }}>SCHADUW WERK {'/'}{'/'} V.4.9</span>
+                    }}>{t('header.versionText')} {'/'}{'/'} V.4.9</span>
                   </div>
                 </div>
               </div>
@@ -2181,7 +2550,7 @@ const App = () => {
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                     fontSize: '1.1rem'
                   }}>
-                    {lowEndAnimating ? 'SYNCHRONISING...' : 'START EXPERIENCE'}
+                    {lowEndAnimating ? t('lowEndButton.synchronising') : t('lowEndButton.start')}
                   </span>
                   <div className="absolute top-0 left-0 border-t-2 border-l-2" style={{
                     width: '0.75rem',
@@ -2207,7 +2576,7 @@ const App = () => {
                       color: 'white', 
                       fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                       fontSize: '1rem'
-                    }}>{window.innerWidth >= 1100 ? 'SCROLL' : 'SWIPE'} {window.innerWidth >= 1100 ? '' : '↓'} = SYNCHRONISATIE</span>
+                    }}>{window.innerWidth >= 1100 ? t('scrollPrompt.scroll') : t('scrollPrompt.swipe')}</span>
                     <div className="absolute top-0 left-0 border-t border-l" style={{
                       width: '0.5rem',
                       height: '0.5rem',
@@ -2250,243 +2619,400 @@ const App = () => {
               </div>
             </div>
             
-            {/* === SCROLL-ANIMATED PYRAMID LAYER LABELS === */}
-            {/* Labels animate with pyramidScrollProgress to match 3D layer movement */}
-            {isSystem && (() => {
-              // Calculate label positions based on scroll progress
-              // Each label (1-4) animates over its corresponding scroll range
-              // Labels float from entity center (bottom of blue diamond) down to final positions
-              const totalMovable = 4; // Layers 1-4 are movable
-              
-              // Viewport dimensions for calculations
-              const vw = window.innerWidth / 100;
-              
-              // Helper to calculate animation progress for each label
-              // Layer 1 starts almost immediately (at 0.02 progress = ~2 scroll ticks)
-              const getLabelAnimProgress = (labelIndex) => {
-                const startOffset = 0.02; // Start layer 1 at 2% progress (2-3 scroll ticks)
-                const adjustedProgress = Math.max(0, (pyramidScrollProgress - startOffset) / (1 - startOffset));
-                const rangeStart = (labelIndex - 1) / totalMovable;
-                const rangeEnd = labelIndex / totalMovable;
-                if (adjustedProgress >= rangeEnd) return 1;
-                if (adjustedProgress <= rangeStart) return 0;
-                return (adjustedProgress - rangeStart) / (rangeEnd - rangeStart);
-              };
-              
-              // Fast opacity - reaches 100% very quickly (after ~10% of layer's animation)
-              const getOpacity = (progress) => {
-                if (progress <= 0) return 0;
-                return Math.min(progress * 10, 1); // Full opacity at 10% progress
-              };
-              
-              // Easing function (smoothstep)
-              const ease = (t) => t * t * (3 - 2 * t);
-              
-              // Entity START position - bottom of the blue diamond in the entity cube
-              // This is where ALL labels (1-4) emerge FROM - dead center horizontally
-              const entityStartVh = 72; // Higher up - bottom of blue diamond
-              
-              // Final vertical positions for each label (in vh from bottom)
-              const finalVhPositions = [21, 29, 37, 45, 53]; // Evenly spaced pyramid layers
-              
-              // Final horizontal offset from edge (in vw) - MATCHES LABEL 0's positioning
-              const finalHorizontalVw = 6; // 6vw from edge - same as label 0
-              
-              // Calculate vertical position
-              const getInterpolatedBottom = (labelIndex, progress) => {
-                const easedProgress = ease(progress);
-                const startVh = entityStartVh;
-                const endVh = finalVhPositions[labelIndex];
-                const currentVh = startVh - (startVh - endVh) * easedProgress;
-                return `${currentVh}vh`;
-              };
-              
-              // Scale animation - starts small (0.15), ends at full scale
-              const getScale = (progress) => {
-                const easedProgress = ease(progress);
-                const minScale = 0.15;
-                return minScale + (1 - minScale) * easedProgress;
-              };
-              
-              // Base scale - use vw for responsive scaling
-              const baseScale = Math.max(0.8, Math.min(1.4, vw * 0.055));
-              
-              return (
-                <>
-                  {/* Layer 0 - Right side - COMPLETELY STATIC (just fades in, no movement) */}
-                  <div 
-                    className="absolute pointer-events-auto"
+            {/* === ASSESSMENT SYSTEM === */}
+            {/* Replaces the old scroll-animated pyramid labels */}
+            {/* Shows intro modal first, then questions one at a time */}
+            
+            {/* Assessment Intro Modal - Shows when entity intro completes */}
+            {isSystem && assessmentPhase === 'intro' && (
+              <div 
+                className="fixed inset-0 flex items-center justify-center z-[200] pointer-events-auto"
+                style={{
+                  background: 'transparent'
+                }}
+              >
+                <AssessmentIntro 
+                  onStart={handleAssessmentStart}
+                  onClose={handleAssessmentClose}
+                  onNavigateToData={() => { handleAssessmentClose(); handleOpenSection('monitor'); }}
+                />
+              </div>
+            )}
+            
+            {/* Assessment Questions - Shows one question at a time */}
+            {isSystem && assessmentPhase === 'questions' && (
+              <div 
+                className="fixed inset-0 flex items-center justify-center z-[200] pointer-events-auto"
+                style={{
+                  background: 'transparent'
+                }}
+              >
+                <AssessmentQuestions 
+                  questions={assessmentSubjects[currentSubjectIndex].questions.slice(0, getQuestionsPerSubject(assessmentLevel))}
+                  currentSubject={assessmentSubjects[currentSubjectIndex]}
+                  currentSubjectIndex={currentSubjectIndex}
+                  currentQuestionIndex={currentQuestionIndex}
+                  totalQuestions={getTotalQuestions(assessmentLevel)}
+                  answeredCount={assessmentAnswers.length}
+                  onSelectAnswer={handleAnswerSelect}
+                  onGoBack={handleGoBack}
+                  canGoBack={assessmentAnswers.length > 0}
+                />
+              </div>
+            )}
+            
+            {/* Assessment Layer Panel - Shows during layers and convergence phases */}
+            {/* Animates in sync with pyramid layers - floats from entity center to alternating sides */}
+            {/* During convergence, panels float back to entity center */}
+            {isSystem && (assessmentPhase === 'layers' || assessmentPhase === 'convergence') && (
+              <AssessmentLayerPanel
+                currentLayerIndex={currentLayerIndex}
+                scrollProgress={pyramidScrollProgress}
+                onLayerComplete={handleLayerComplete}
+                onScrollEnabled={handleAssessmentScrollEnabled}
+                onAllLayersComplete={handleAllLayersComplete}
+                convergenceProgress={convergenceProgress}
+                isVisible={true}
+              />
+            )}
+            
+            {/* Assessment Upload - Shows after questions for deep level */}
+            {isSystem && assessmentPhase === 'upload' && (
+              <div 
+                className="fixed inset-0 flex items-center justify-center z-[200] pointer-events-auto"
+                style={{
+                  background: 'transparent'
+                }}
+              >
+                <AssessmentUpload 
+                  files={uploadedFiles}
+                  onAddFile={handleAddFile}
+                  onRemoveFile={handleRemoveFile}
+                  onContinue={handleUploadContinue}
+                  onSkip={handleUploadSkip}
+                />
+              </div>
+            )}
+            
+            {/* Assessment Results - Poetry slideshow during loading, then action buttons */}
+            {isSystem && assessmentPhase === 'results' && (
+              <div 
+                className="fixed inset-0 flex items-center justify-center z-[200] pointer-events-auto"
+                style={{
+                  background: 'transparent'
+                }}
+              >
+                <div 
+                  className="relative w-96 p-6 rounded-lg text-center backdrop-blur-sm overflow-hidden"
+                  style={{
+                    background: 'rgba(8, 2, 12, 0.95)',
+                    transform: `translate(0, ${(1 - resultsModalProgress) * -15}vh) scale(${0.3 + resultsModalProgress * 0.7})`,
+                    opacity: resultsModalProgress,
+                    transition: resultsModalProgress >= 1 ? 'opacity 0.3s ease' : 'none',
+                  }}
+                >
+                  {/* Corner decorations - SectorFrame style with orange (#ffae00) */}
+                  <div className="absolute -top-0.5 -left-0.5 w-4 h-4" style={{
+                    border: '1.5px solid #ffae00',
+                    borderRadius: '10px 0 0 0',
+                    borderBottom: 'none',
+                    borderRight: 'none'
+                  }}></div>
+                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4" style={{
+                    border: '1.5px solid #ffae00',
+                    borderRadius: '0 10px 0 0',
+                    borderBottom: 'none',
+                    borderLeft: 'none'
+                  }}></div>
+                  <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4" style={{
+                    border: '1.5px solid #ffae00',
+                    borderRadius: '0 0 0 10px',
+                    borderTop: 'none',
+                    borderRight: 'none'
+                  }}></div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4" style={{
+                    border: '1.5px solid #ffae00',
+                    borderRadius: '0 0 10px 0',
+                    borderTop: 'none',
+                    borderLeft: 'none'
+                  }}></div>
+                  
+                  {/* Loading State - Poetry Slideshow */}
+                  {resultsLoadingProgress < 1 ? (
+                    <>
+                      {/* Poetry Content */}
+                      <div className="min-h-[180px] flex flex-col justify-center mb-4">
+                        <h3 
+                          className="text-base font-bold mb-3 tracking-wider"
+                          style={{
+                            color: '#fbbf24',
+                            fontFamily: "'Lexend Mega', sans-serif",
+                            opacity: 0.9
+                          }}
+                        >
+                          {poetrySlides[resultsPoetryIndex]?.title}
+                        </h3>
+                        <div className="space-y-1">
+                          {poetrySlides[resultsPoetryIndex]?.lines.map((line, idx) => (
+                            <p 
+                              key={idx}
+                              className="text-sm italic leading-relaxed"
+                              style={{ 
+                                color: 'rgba(255, 254, 240, 0.8)',
+                                animationDelay: `${idx * 0.1}s`
+                              }}
+                            >
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Loading Bar */}
+                      <div className="mb-3">
+                        <div 
+                          className="h-1 rounded-full overflow-hidden"
+                          style={{ background: 'rgba(255, 255, 255, 0.1)' }}
+                        >
+                          <div 
+                            className="h-full rounded-full transition-all duration-100"
+                            style={{ 
+                              width: `${resultsLoadingProgress * 100}%`,
+                              background: 'linear-gradient(90deg, #22d3ee, #a855f7, #f472b6, #fbbf24, #f97316)',
+                              boxShadow: '0 0 10px rgba(34, 211, 238, 0.5)'
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Loading Status */}
+                      <p 
+                        className="text-xs tracking-wider uppercase"
+                        style={{ color: 'rgba(255, 254, 240, 0.5)' }}
+                      >
+                        {resultsLoadingProgress < 0.3 
+                          ? t('results.analyzing')
+                          : resultsLoadingProgress < 0.6 
+                            ? t('results.mapping')
+                            : resultsLoadingProgress < 0.9
+                              ? t('results.generating')
+                              : t('results.finalizing')
+                        }
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      {/* Completed State - Action Buttons */}
+                      <div className="mb-4">
+                        <div 
+                          className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(168, 85, 247, 0.2))',
+                            border: '2px solid rgba(34, 211, 238, 0.5)'
+                          }}
+                        >
+                          <svg className="w-8 h-8" fill="none" stroke="#22d3ee" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        
+                        <h2 
+                          className="text-lg font-bold mb-2 tracking-wider uppercase"
+                          style={{
+                            color: '#22d3ee',
+                            fontFamily: "'Lexend Mega', sans-serif",
+                            textShadow: '0 0 10px rgba(34, 211, 238, 0.5)'
+                          }}
+                        >
+                          {t('results.profileReady')}
+                        </h2>
+                        
+                        <p 
+                          className="text-sm leading-relaxed"
+                          style={{ color: 'rgba(255, 254, 240, 0.7)' }}
+                        >
+                          {t('results.profileDescription')}
+                        </p>
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex flex-col gap-3">
+                        <button
+                          onClick={() => {
+                            // Download PDF
+                            console.log('Download PDF:', layerAnswers);
+                            // TODO: Generate and download PDF
+                          }}
+                          className="w-full py-3 rounded-lg font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2"
+                          style={{
+                            background: '#22d3ee',
+                            color: '#000',
+                            border: '2px solid #22d3ee'
+                          }}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          {t('results.downloadPdf')}
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            // Download PDF first, then show login
+                            console.log('Download PDF and create account:', layerAnswers);
+                            // TODO: Generate and download PDF
+                            // Show login modal
+                            setShowLoginFromResults(true);
+                          }}
+                          className="w-full py-3 rounded-lg font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2"
+                          style={{
+                            background: 'transparent',
+                            color: '#a855f7',
+                            border: '2px solid #a855f7'
+                          }}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          {t('results.createAccount')}
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            setAssessmentPhase('hidden');
+                            setCoreScaleMultiplier(1);
+                            setConvergenceProgress(0);
+                            setResultsModalProgress(0);
+                            setResultsLoadingProgress(0);
+                          }}
+                          className="w-full py-2 rounded-lg text-sm transition-all duration-300 mt-1"
+                          style={{
+                            background: 'transparent',
+                            color: 'rgba(255, 254, 240, 0.4)',
+                            border: '1px solid rgba(255, 254, 240, 0.15)'
+                          }}
+                        >
+                          {t('results.close')}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Login Modal from Results */}
+            {showLoginFromResults && (
+              <div 
+                className="fixed inset-0 flex items-center justify-center z-[250] pointer-events-auto"
+                style={{ background: 'rgba(0, 0, 0, 0.7)' }}
+              >
+                <div 
+                  className="relative w-96 p-6 rounded-lg backdrop-blur-sm"
+                  style={{ background: 'rgba(8, 2, 12, 0.95)' }}
+                >
+                  {/* Corner decorations */}
+                  <div className="absolute -top-0.5 -left-0.5 w-4 h-4" style={{
+                    border: '1.5px solid #ffae00',
+                    borderRadius: '10px 0 0 0',
+                    borderBottom: 'none',
+                    borderRight: 'none'
+                  }}></div>
+                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4" style={{
+                    border: '1.5px solid #ffae00',
+                    borderRadius: '0 10px 0 0',
+                    borderBottom: 'none',
+                    borderLeft: 'none'
+                  }}></div>
+                  <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4" style={{
+                    border: '1.5px solid #ffae00',
+                    borderRadius: '0 0 0 10px',
+                    borderTop: 'none',
+                    borderRight: 'none'
+                  }}></div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4" style={{
+                    border: '1.5px solid #ffae00',
+                    borderRadius: '0 0 10px 0',
+                    borderTop: 'none',
+                    borderLeft: 'none'
+                  }}></div>
+                  
+                  <h2 
+                    className="text-lg font-bold mb-4 tracking-wider uppercase text-center"
                     style={{
-                      right: `${finalHorizontalVw}vw`,
-                      bottom: `${finalVhPositions[0]}vh`,
-                      opacity: layerState.introComplete ? systemOpacity : 0,
-                      visibility: layerState.introComplete ? 'visible' : 'hidden',
-                      transform: `scale(${baseScale})`,
-                      transformOrigin: 'right center',
-                      zIndex: 100,
-                      transition: 'opacity 0.5s ease'
+                      color: '#a855f7',
+                      fontFamily: "'Lexend Mega', sans-serif"
                     }}
                   >
-                    <HoloLabel
-                      layerIndex={0}
-                      showButton={layerState.completedLayerIndex === 0 && !layerState.isIntroActive}
-                      isLast={false}
-                      alignment="right"
-                      onSend={() => {}}
-                      isSent={layerState.isGoldMode}
+                    {t('results.createAccount')}
+                  </h2>
+                  
+                  <p 
+                    className="text-sm mb-6 text-center leading-relaxed"
+                    style={{ color: 'rgba(255, 254, 240, 0.7)' }}
+                  >
+                    Save your profile and track your growth over time.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      className="w-full px-4 py-3 rounded-lg text-sm"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(168, 85, 247, 0.3)',
+                        color: 'rgba(255, 254, 240, 0.9)',
+                        outline: 'none'
+                      }}
                     />
+                    <input
+                      type="password"
+                      placeholder="Password"
+                      className="w-full px-4 py-3 rounded-lg text-sm"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(168, 85, 247, 0.3)',
+                        color: 'rgba(255, 254, 240, 0.9)',
+                        outline: 'none'
+                      }}
+                    />
+                    
+                    <button
+                      onClick={() => {
+                        console.log('Create account');
+                        setShowLoginFromResults(false);
+                      }}
+                      className="w-full py-3 rounded-lg font-bold uppercase tracking-wider transition-all duration-300"
+                      style={{
+                        background: '#a855f7',
+                        color: '#000',
+                        border: '2px solid #a855f7'
+                      }}
+                    >
+                      {t('results.createAccount')}
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowLoginFromResults(false)}
+                      className="w-full py-2 rounded-lg text-sm transition-all duration-300"
+                      style={{
+                        background: 'transparent',
+                        color: 'rgba(255, 254, 240, 0.5)',
+                        border: '1px solid rgba(255, 254, 240, 0.2)'
+                      }}
+                    >
+                      {t('results.close')}
+                    </button>
                   </div>
-                  
-                  {/* Layer 1 - Left side - SCROLL ANIMATED from entity center */}
-                  {(() => {
-                    const progress = getLabelAnimProgress(1);
-                    const easedProgress = ease(progress);
-                    const scale = getScale(progress);
-                    // Start at center (left: 50% with translateX(-50%))
-                    // End at left: 6vw with translateX(0) - matching label 0's mirrored position
-                    const startLeft = 50; // percent
-                    const endLeft = finalHorizontalVw; // vw
-                    // Interpolate translateX from -50% to 0%
-                    const translateX = -50 + (50 * easedProgress);
-                    // Interpolate left position (convert % to vw equivalent at start)
-                    const currentLeft = startLeft + (endLeft - startLeft) * easedProgress;
-                    return (
-                      <div 
-                        className="absolute pointer-events-auto"
-                        style={{
-                          left: progress === 0 ? '50%' : `${currentLeft}vw`,
-                          bottom: getInterpolatedBottom(1, progress),
-                          opacity: getOpacity(progress) * systemOpacity,
-                          visibility: progress > 0 ? 'visible' : 'hidden',
-                          transform: `scale(${baseScale * scale}) translateX(${translateX}%)`,
-                          transformOrigin: 'left center',
-                          zIndex: 101
-                        }}
-                      >
-                        <HoloLabel
-                          layerIndex={1}
-                          showButton={layerState.completedLayerIndex === 1 && !layerState.isIntroActive}
-                          isLast={false}
-                          alignment="left"
-                          onSend={() => {}}
-                          isSent={layerState.isGoldMode}
-                        />
-                      </div>
-                    );
-                  })()}
-                  
-                  {/* Layer 2 - Right side - SCROLL ANIMATED from entity center */}
-                  {(() => {
-                    const progress = getLabelAnimProgress(2);
-                    const easedProgress = ease(progress);
-                    const scale = getScale(progress);
-                    // Start at center, end at right: 6vw (like label 0)
-                    // Use right positioning to match label 0 exactly
-                    const startRight = 50; // percent from right
-                    const endRight = finalHorizontalVw; // vw
-                    // Interpolate translateX from 50% to 0%
-                    const translateX = 50 - (50 * easedProgress);
-                    const currentRight = startRight + (endRight - startRight) * easedProgress;
-                    return (
-                      <div 
-                        className="absolute pointer-events-auto"
-                        style={{
-                          right: progress === 0 ? '50%' : `${currentRight}vw`,
-                          bottom: getInterpolatedBottom(2, progress),
-                          opacity: getOpacity(progress) * systemOpacity,
-                          visibility: progress > 0 ? 'visible' : 'hidden',
-                          transform: `scale(${baseScale * scale}) translateX(${translateX}%)`,
-                          transformOrigin: 'right center',
-                          zIndex: 102
-                        }}
-                      >
-                        <HoloLabel
-                          layerIndex={2}
-                          showButton={layerState.completedLayerIndex === 2 && !layerState.isIntroActive}
-                          isLast={false}
-                          alignment="right"
-                          onSend={() => {}}
-                          isSent={layerState.isGoldMode}
-                        />
-                      </div>
-                    );
-                  })()}
-                  
-                  {/* Layer 3 - Left side - SCROLL ANIMATED from entity center */}
-                  {(() => {
-                    const progress = getLabelAnimProgress(3);
-                    const easedProgress = ease(progress);
-                    const scale = getScale(progress);
-                    const startLeft = 50;
-                    const endLeft = finalHorizontalVw;
-                    const translateX = -50 + (50 * easedProgress);
-                    const currentLeft = startLeft + (endLeft - startLeft) * easedProgress;
-                    return (
-                      <div 
-                        className="absolute pointer-events-auto"
-                        style={{
-                          left: progress === 0 ? '50%' : `${currentLeft}vw`,
-                          bottom: getInterpolatedBottom(3, progress),
-                          opacity: getOpacity(progress) * systemOpacity,
-                          visibility: progress > 0 ? 'visible' : 'hidden',
-                          transform: `scale(${baseScale * scale}) translateX(${translateX}%)`,
-                          transformOrigin: 'left center',
-                          zIndex: 103
-                        }}
-                      >
-                        <HoloLabel
-                          layerIndex={3}
-                          showButton={layerState.completedLayerIndex === 3 && !layerState.isIntroActive}
-                          isLast={false}
-                          alignment="left"
-                          onSend={() => {}}
-                          isSent={layerState.isGoldMode}
-                        />
-                      </div>
-                    );
-                  })()}
-                  
-                  {/* Layer 4 - Right side (FINAL LAYER) - SCROLL ANIMATED from entity center */}
-                  {(() => {
-                    const progress = getLabelAnimProgress(4);
-                    const easedProgress = ease(progress);
-                    const scale = getScale(progress);
-                    const startRight = 50;
-                    const endRight = finalHorizontalVw;
-                    const translateX = 50 - (50 * easedProgress);
-                    const currentRight = startRight + (endRight - startRight) * easedProgress;
-                    return (
-                      <div 
-                        className="absolute pointer-events-auto"
-                        style={{
-                          right: progress === 0 ? '50%' : `${currentRight}vw`,
-                          bottom: getInterpolatedBottom(4, progress),
-                          opacity: getOpacity(progress) * systemOpacity,
-                          visibility: progress > 0 ? 'visible' : 'hidden',
-                          transform: `scale(${baseScale * scale}) translateX(${translateX}%)`,
-                          transformOrigin: 'right center',
-                          zIndex: 104
-                        }}
-                      >
-                        <HoloLabel
-                          layerIndex={4}
-                          showButton={layerState.completedLayerIndex === 4 && !layerState.isIntroActive}
-                          isLast={true}
-                          alignment="right"
-                          onSend={triggerGoldMode}
-                          isSent={layerState.isGoldMode}
-                        />
-                      </div>
-                    );
-                  })()}
-                </>
-              );
-            })()}
+                </div>
+              </div>
+            )}
               
             {/* Back Button - positioned separately from entity transforms */}
             <button 
               onClick={handleReset}
-              className="absolute group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2 mb-3"
+              className="absolute z-[250] group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2 mb-3"
               style={{
                 border: '1px solid rgba(147, 51, 234, 0.3)',
                 background: 'rgba(10, 5, 16, 0.6)',
@@ -2543,6 +3069,17 @@ const App = () => {
           style={{ color: 'rgba(147, 51, 234, 0.6)' }}
         >
           Map: ({mapPosition.x.toFixed(2)}, {mapPosition.y.toFixed(2)}) {isMapAnimating ? '⟳' : '●'}
+        </div>
+      )}
+
+      {/* Frame counter - Desktop only - Bottom right */}
+      {!isMobile && (
+        <div 
+          className="fixed bottom-4 right-4 z-50 text-xs font-mono pointer-events-none text-right"
+        >
+          <div style={{ color: 'rgba(245, 158, 11, 0.6)' }}>
+            Frame: {currentFrame}/{TOTAL_ANIMATION_FRAMES}
+          </div>
         </div>
       )}
 

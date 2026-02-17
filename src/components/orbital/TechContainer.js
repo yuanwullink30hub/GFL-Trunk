@@ -5,7 +5,8 @@ const TechContainer = ({
   className = '', 
   style, 
   title = "NO_DATA",
-  variant = 'purple'
+  variant = 'purple',
+  headerRight = null
 }) => {
   const accentColor = variant === 'orange' ? '#f59e0b' : '#a855f7';
   const textColor = variant === 'orange' ? 'text-[#f59e0b]' : 'text-purple-400';
@@ -69,8 +70,14 @@ const TechContainer = ({
           tracking-[0.2em] font-bold 
           ${textColor} opacity-80 select-none
           left-0 right-0
-        `} style={{fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", top: '0.4vw', fontSize: 'max(13px, 0.7vw)', textAlign: 'center'}}>
-          {title}
+          flex items-center justify-center
+        `} style={{fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", top: '0.4vw', fontSize: 'max(13px, 0.7vw)'}}>
+          <span>{title}</span>
+          {headerRight && (
+            <div style={{ position: 'absolute', right: '0.6vw', top: '50%', transform: 'translateY(-50%)' }}>
+              {headerRight}
+            </div>
+          )}
         </div>
         
         {/* Inner Content Placeholder */}

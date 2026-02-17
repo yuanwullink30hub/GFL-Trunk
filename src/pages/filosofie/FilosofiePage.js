@@ -1,5 +1,6 @@
 import React, { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { SYMBOLS, QUOTES, NEON_GREEN, getCombinationInsight } from './constants';
 
 // Animation keyframes
@@ -1341,6 +1342,7 @@ SacredGeometry.displayName = 'SacredGeometry';
 
 // Entropy Graph Component (Right Side)
 const EntropyGraph = memo(() => {
+  const { t } = useLanguage();
   const [sliderVal, setSliderVal] = useState(50);
   const canvasRef = useRef(null);
   const pointsRef = useRef([]);
@@ -1430,7 +1432,7 @@ const EntropyGraph = memo(() => {
         alignItems: 'center'
       }}>
         <span style={{ color: 'rgba(0, 255, 65, 0.5)', fontSize: 'clamp(0.7rem, 0.85vw, 0.85rem)' }}>[SYS]</span>
-        <span>ENTROPY DYNAMICS</span>
+        <span>{t('pages.filosofiePage.entropyDynamics')}</span>
         <span style={{ color: 'rgba(0, 255, 65, 0.5)', fontSize: 'clamp(0.7rem, 0.85vw, 0.85rem)' }}>[{sliderVal}%]</span>
       </div>
 
@@ -1485,8 +1487,8 @@ const EntropyGraph = memo(() => {
           fontFamily: "'Figtree', sans-serif",
           marginTop: '0.25rem'
         }}>
-          <span>CHAOS</span>
-          <span>ORDER</span>
+          <span>{t('pages.filosofiePage.chaos')}</span>
+          <span>{t('pages.filosofiePage.order')}</span>
         </div>
       </div>
 
@@ -1651,6 +1653,7 @@ QuoteNetwork.displayName = 'QuoteNetwork';
 
 // Info Modal
 const InfoModal = memo(({ isOpen, onClose }) => {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -1734,17 +1737,17 @@ const InfoModal = memo(({ isOpen, onClose }) => {
           <div style={{ padding: '1.25rem', overflowY: 'auto', maxHeight: 'calc(80vh - 60px)' }}>
             <div style={{ marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <span style={{ color: NEON_GREEN, fontSize: 'clamp(0.85rem, 1vw, 1rem)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}>SUPERSYMMETRY</span>
+                <span style={{ color: NEON_GREEN, fontSize: 'clamp(0.85rem, 1vw, 1rem)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}>{t('pages.filosofiePage.supersymmetry')}</span>
                 <span style={{ color: 'rgba(0, 255, 65, 0.5)', fontSize: 'clamp(0.75rem, 0.9vw, 0.9rem)' }}>::</span>
                 <span style={{ color: 'rgba(0, 255, 65, 0.6)', fontSize: 'clamp(0.8rem, 0.95vw, 0.95rem)', fontFamily: "'Figtree', sans-serif" }}>
-                  The unified theory of consciousness and being.
+                  {t('pages.filosofiePage.supersymmetryDescription')}
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                <span style={{ color: NEON_GREEN, fontSize: 'clamp(0.85rem, 1vw, 1rem)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}>DIMENSIONAAL BEWUST</span>
+                <span style={{ color: NEON_GREEN, fontSize: 'clamp(0.85rem, 1vw, 1rem)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}>{t('pages.filosofiePage.dimensionalConscious')}</span>
                 <span style={{ color: 'rgba(0, 255, 65, 0.5)', fontSize: 'clamp(0.75rem, 0.9vw, 0.9rem)' }}>::</span>
                 <span style={{ color: 'rgba(0, 255, 65, 0.6)', fontSize: 'clamp(0.8rem, 0.95vw, 0.95rem)', fontFamily: "'Figtree', sans-serif" }}>
-                  Reality perceived through geometric constants.
+                  {t('pages.filosofiePage.dimensionalDescription')}
                 </span>
               </div>
             </div>
@@ -1799,6 +1802,7 @@ InfoModal.displayName = 'InfoModal';
 
 // Back Button
 const BackButton = memo(({ onClick }) => {
+  const { t } = useLanguage();
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -1829,7 +1833,7 @@ const BackButton = memo(({ onClick }) => {
       }}
     >
       <span>←</span>
-      <span>Terug</span>
+      <span>{t('pages.filosofiePage.back')}</span>
     </button>
   );
 });

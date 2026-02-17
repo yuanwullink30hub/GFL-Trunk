@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TechContainer from './TechContainer';
 import { Activity, Database, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // Import garden logos
 import karmanLogo from '../../images/slideshow images/karmaneventsPNG.png';
@@ -12,6 +13,55 @@ import blackholeIcon from '../../images/Blackhole.png';
 
 const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, setActiveSection, pauseAutoSlide }) => {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
+  const { language, toggleLanguage, t } = useLanguage();
+  
+  // Beta lock: only allow full interaction on localhost
+  // Dev override: add ?lock=true to URL to see locks on localhost for manual refinement
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const hasLockOverride = urlParams.has('lock');
+  const shouldShowLock = !isLocalhost || hasLockOverride;
+  
+  // Reusable lock overlay — GARDENFORLIFE.NL grid/roster style
+  const LockedOverlay = () => (
+    <div 
+      className="absolute inset-0"
+      style={{ pointerEvents: 'auto', cursor: 'default', zIndex: 200 }}
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+    >
+      {/* Grid/roster pattern background */}
+      <div className="absolute inset-0" 
+        style={{
+          background: 'linear-gradient(to bottom right, rgba(20, 83, 45, 0.3), rgba(22, 101, 52, 0.2))',
+          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34, 197, 94, 0.1) 2px, rgba(34, 197, 94, 0.1) 4px)',
+          backdropFilter: 'blur(4px)',
+          WebkitBackdropFilter: 'blur(4px)'
+        }}>
+      </div>
+      
+      {/* Decorative lines to simulate webpage content */}
+      <div className="absolute inset-0 flex flex-col justify-start opacity-40" style={{ paddingTop: '0.8vw', paddingLeft: '0.5vw', paddingRight: '0.5vw', gap: '0.4vw' }}>
+        <div style={{ height: '0.2vw', backgroundColor: 'rgba(22, 163, 74, 0.4)', borderRadius: '2px', width: '75%' }}></div>
+        <div style={{ height: '0.1vw', backgroundColor: 'rgba(34, 197, 94, 0.3)', borderRadius: '2px', width: '50%' }}></div>
+        <div style={{ height: '0.1vw', backgroundColor: 'rgba(34, 197, 94, 0.3)', borderRadius: '2px', width: '66%' }}></div>
+      </div>
+      
+      {/* Lock Icon Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex flex-col items-center" style={{ gap: '0.5vw' }}>
+          <Lock style={{ width: '1.5vw', height: '1.5vw', color: '#f59e0b' }} strokeWidth={1.5} />
+          <span style={{
+            fontFamily: "'Figtree', sans-serif",
+            fontWeight: 400,
+            lineHeight: 1.5,
+            color: 'rgba(245, 158, 11, 0.8)',
+            fontSize: 'max(9px, 0.5vw)',
+            letterSpacing: '0.05em'
+          }}>{t('desktopLayout.locked')}</span>
+        </div>
+      </div>
+    </div>
+  );
   
   // Touch swipe state for Gardens slideshow
   const touchStartX = useRef(0);
@@ -78,6 +128,31 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   
   const containerScale = 1 - (0.35 * animationProgress); // Shrink faster too
 
+  // Language toggle element for TechContainer headerRight
+  const langToggle = (
+    <button
+      onClick={toggleLanguage}
+      style={{
+        backgroundColor: 'transparent',
+        border: '1px solid rgba(255,255,255,0.2)',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        padding: '2px 6px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '3px',
+        transition: 'all 0.3s ease',
+        filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))'
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 8px rgba(139,90,43,0.6))'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+    >
+      <span style={{ fontSize: 'max(9px, 0.5vw)', color: language === 'nl' ? '#f97316' : 'rgba(255,255,255,0.4)', fontWeight: language === 'nl' ? 'bold' : 'normal', transition: 'all 0.3s ease' }}>NL</span>
+      <span style={{ fontSize: 'max(7px, 0.4vw)', color: 'rgba(255,255,255,0.3)' }}>|</span>
+      <span style={{ fontSize: 'max(9px, 0.5vw)', color: language === 'en' ? '#f97316' : 'rgba(255,255,255,0.4)', fontWeight: language === 'en' ? 'bold' : 'normal', transition: 'all 0.3s ease' }}>EN</span>
+    </button>
+  );
+
   return (
     <>
       {/* 1. Top Left - Filosofie */}
@@ -93,7 +168,11 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         }}
       >
         <TechContainer title="FILOSOFIE" variant="purple" className="w-full h-full">
-          <div className="w-full h-full flex flex-col items-center justify-between" style={{ padding: '0.8vw' }}>
+          <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '0.8vw' }}>
+            {/* Lock overlay - inside content div, above content but below header */}
+            {shouldShowLock && <LockedOverlay />}
+            {/* Content wrapper with reduced opacity when locked */}
+            <div style={{ opacity: shouldShowLock ? 0.3 : 1, display: 'contents' }}>
             {/* Header */}
             <div className="flex flex-col items-center w-full" style={{ gap: '0.4vw' }}>
               <h2 style={{
@@ -144,14 +223,19 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 padding: '0.4vw 0.8vw',
                 width: 'fit-content',
                 borderRadius: '0.1vw',
-                boxShadow: '0 0 0px 0px rgba(167,139,250,0.5)'
+                boxShadow: '0 0 0px 0px rgba(167,139,250,0.5)',
+                opacity: shouldShowLock ? 0.35 : 1,
+                pointerEvents: shouldShowLock ? 'none' : 'auto',
+                cursor: shouldShowLock ? 'default' : 'pointer'
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(167,139,250,0.6)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.5), rgba(168, 85, 247, 0.4))'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(167,139,250,0.5)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))'; }}
-              onClick={(e) => setActiveSection('filosofie', e)}
+              onMouseEnter={shouldShowLock ? undefined : (e) => { e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(167,139,250,0.6)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.5), rgba(168, 85, 247, 0.4))'; }}
+              onMouseLeave={shouldShowLock ? undefined : (e) => { e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(167,139,250,0.5)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))'; }}
+              onClick={shouldShowLock ? undefined : (e) => setActiveSection('filosofie', e)}
+              disabled={shouldShowLock}
             >
               LEARN MORE
             </button>
+            </div>{/* end content wrapper */}
           </div>
         </TechContainer>
       </div>
@@ -192,7 +276,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   color: 'rgba(245, 158, 11, 0.8)',
                   fontSize: 'max(9px, 0.5vw)',
                   letterSpacing: '0.05em'
-                }}>LOCKED</span>
+                }}>{t('desktopLayout.locked')}</span>
               </div>
             </div>
           </div>
@@ -217,45 +301,48 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               {
                 id: 'karman',
                 name: 'KARMAN',
-                tagline: 'Underground Techno Events',
-                description: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings.',
+                tagline: t('desktopLayout.gardens.karman.tagline'),
+                description: t('desktopLayout.gardens.karman.description'),
                 accentColor: '#8b5cf6',
                 logo: karmanLogo
               },
               {
                 id: 'code49',
                 name: 'CODE49',
-                tagline: 'AI Solutions',
-                description: 'Cutting-edge software development company specializing in AI-driven solutions and advanced technology integration.',
+                tagline: t('desktopLayout.gardens.code49.tagline'),
+                description: t('desktopLayout.gardens.code49.description'),
                 accentColor: '#06b6d4',
                 logo: code49Logo
               },
               {
                 id: 'tattooshop',
                 name: 'ELEVEN ELEVEN TATTOOS',
-                tagline: 'Artistic Expression & Body Art',
-                description: 'A premier tattoo studio specializing in custom designs, traditional and modern styles.',
+                tagline: t('desktopLayout.gardens.elevenEleven.tagline'),
+                description: t('desktopLayout.gardens.elevenEleven.description'),
                 accentColor: '#ec4899',
                 logo: tattooshopLogo
               },
               {
                 id: 'rengifoods',
                 name: 'RENGI FOODS',
-                tagline: 'Sustainable Organic Nutrition',
-                description: 'Dedicated to providing the highest quality organic and sustainably-sourced food products.',
+                tagline: t('desktopLayout.gardens.rengiFoods.tagline'),
+                description: t('desktopLayout.gardens.rengiFoods.description'),
                 accentColor: '#10b981',
                 logo: rengiLogo
               }
             ];
             return (
               <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '1vw' }}>
+                {/* Lock overlay - inside content div, above content but below header */}
+                {shouldShowLock && <LockedOverlay />}
                 {/* Slideshow Area - Touch swipable */}
                 <div 
                   className="w-full relative overflow-hidden rounded-sm border border-purple-500/20" 
                   style={{ 
                     height: 'calc(100% - 2.5vw)', 
                     marginBottom: '0.5vw',
-                    touchAction: 'pan-y' // Allow vertical scroll but capture horizontal swipe
+                    touchAction: 'pan-y', // Allow vertical scroll but capture horizontal swipe
+                    opacity: shouldShowLock ? 0.3 : 1
                   }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
@@ -443,7 +530,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 </div>
                 
                 {/* Circle Indicators with Arrow Navigation */}
-                <div className="flex justify-center items-center relative" style={{ gap: '0.8vw', zIndex: 100, position: 'relative' }}>
+                <div className="flex justify-center items-center relative" style={{ gap: '0.8vw', zIndex: 100, position: 'relative', opacity: shouldShowLock ? 0.3 : 1 }}>
                   {/* Left Arrow */}
                   <button
                     type="button"
@@ -542,7 +629,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 </div>
               </div>
             );
-          })()}
+          })()} 
         </TechContainer>
       </div>
 
@@ -566,7 +653,11 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         }}
       >
         <TechContainer title="DATA_STREAM" variant="cyan" className="w-full h-full">
-          <div className="w-full h-full flex flex-col items-center justify-between" style={{ padding: '0.8vw' }}>
+          <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '0.8vw' }}>
+            {/* Lock overlay - inside content div, above content but below header */}
+            {shouldShowLock && <LockedOverlay />}
+            {/* Content wrapper with reduced opacity when locked */}
+            <div style={{ opacity: shouldShowLock ? 0.3 : 1, display: 'contents' }}>
             {/* Header */}
             <div className="flex flex-col items-center w-full" style={{ gap: '0.4vw' }}>
               <h2 style={{
@@ -580,7 +671,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 textAlign: 'center',
                 letterSpacing: '0.05em'
               }}>
-                LIVE FEED
+                {t('desktopLayout.liveFeed')}
               </h2>
               <div style={{ width: '2vw', height: '0.1vh', background: 'linear-gradient(to right, transparent, rgb(34, 211, 238), transparent)' }}></div>
             </div>
@@ -599,7 +690,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 fontSize: 'max(13px, 0.7vw)',
                 textAlign: 'center'
               }}>
-                Real-time system metrics <br /> and data streams flowing live
+                <span dangerouslySetInnerHTML={{ __html: t('desktopLayout.dataStreamDescription') }} />
               </div>
             </div>
 
@@ -631,8 +722,9 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               }}
               onClick={(e) => setActiveSection('monitor', e)}
             >
-              MONITOR
+              {t('desktopLayout.monitor')}
             </button>
+            </div>{/* end content wrapper */}
           </div>
         </TechContainer>
       </div>
@@ -649,31 +741,33 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         {/* Desktop Build - 1325px+ */}
         {windowWidth >= 1325 && (
           <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(2rem)' }} className="pointer-events-auto">
-            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '14.95vh' }}>
-              <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
+            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '14.95vh' }} headerRight={langToggle}>
+              <div className="w-full h-full flex items-center justify-around opacity-90 relative" style={{ padding: '0 1vw' }}>
                 {/* Left: Logo - Button */}
                 <button 
-                  onClick={(e) => setActiveSection('menu', e)}
+                  onClick={(e) => !shouldShowLock && setActiveSection('menu', e)}
+                  disabled={shouldShowLock}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
-                    cursor: 'pointer',
+                    cursor: shouldShowLock ? 'default' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease',
                     padding: 0,
-                    filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))'
+                    filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))',
+                    opacity: shouldShowLock ? 0.35 : 1
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
+                  onMouseEnter={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
+                  onMouseLeave={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
                 >
                   <img src={eyeLogo} alt="Logo" style={{ width: 'max(55px, 3vw)', height: 'auto' }} />
                 </button>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Center: Contact Info */}
                 <div className="flex flex-col items-center justify-center gap-0.5">
-                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Yuanwullink30@gmail.com</span>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>yuanwullink30@gfl.community</span>
                   <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Zutphen, NL</span>
                 </div>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
@@ -707,31 +801,33 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         {/* Laptop Build - 1100px to 1324px */}
         {windowWidth >= 1100 && windowWidth < 1325 && (
           <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(0.9rem)' }} className="pointer-events-auto">
-            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }}>
-              <div className="w-full h-full flex items-center justify-around opacity-90" style={{ padding: '0 1vw' }}>
+            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }} headerRight={langToggle}>
+              <div className="w-full h-full flex items-center justify-around opacity-90 relative" style={{ padding: '0 1vw' }}>
                 {/* Left: Logo - Button */}
                 <button 
-                  onClick={(e) => setActiveSection('menu', e)}
+                  onClick={(e) => !shouldShowLock && setActiveSection('menu', e)}
+                  disabled={shouldShowLock}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
-                    cursor: 'pointer',
+                    cursor: shouldShowLock ? 'default' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease',
                     padding: 0,
-                    filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))'
+                    filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))',
+                    opacity: shouldShowLock ? 0.35 : 1
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
+                  onMouseEnter={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
+                  onMouseLeave={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
                 >
                   <img src={eyeLogo} alt="Logo" style={{ width: 'max(55px, 3vw)', height: 'auto' }} />
                 </button>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Center: Contact Info */}
                 <div className="flex flex-col items-center justify-center gap-0.5">
-                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Yuanwullink30@gmail.com</span>
+                  <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>yuanwullink30@gfl.community</span>
                   <span style={{ fontSize: 'max(13px, 0.7vw)', color: 'white', fontWeight: 'bold' }}>Zutphen, NL</span>
                 </div>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
@@ -765,31 +861,33 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         {/* Tablet Build - 768px to 1099px */}
         {windowWidth >= 768 && windowWidth < 1100 && (
           <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(1rem)' }} className="pointer-events-auto">
-            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }}>
-              <div className="w-full h-full flex items-center justify-evenly opacity-90" style={{ padding: '0 0.5vw' }}>
+            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }} headerRight={langToggle}>
+              <div className="w-full h-full flex items-center justify-evenly opacity-90 relative" style={{ padding: '0 0.5vw' }}>
                 {/* Left: Logo - Button */}
                 <button 
-                  onClick={(e) => setActiveSection('menu', e)}
+                  onClick={(e) => !shouldShowLock && setActiveSection('menu', e)}
+                  disabled={shouldShowLock}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
-                    cursor: 'pointer',
+                    cursor: shouldShowLock ? 'default' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease',
                     padding: 0,
-                    filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))'
+                    filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))',
+                    opacity: shouldShowLock ? 0.35 : 1
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
+                  onMouseEnter={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
+                  onMouseLeave={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
                 >
                   <img src={eyeLogo} alt="Logo" style={{ width: 'max(45px, 2.5vw)', height: 'auto' }} />
                 </button>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Center: Contact Info */}
                 <div className="flex flex-col items-center justify-center gap-0.5">
-                  <span style={{ fontSize: 'max(11px, 0.6vw)', color: 'white', fontWeight: 'bold' }}>Yuanwullink30@gmail.com</span>
+                  <span style={{ fontSize: 'max(11px, 0.6vw)', color: 'white', fontWeight: 'bold' }}>yuanwullink30@gfl.community</span>
                   <span style={{ fontSize: 'max(11px, 0.6vw)', color: 'white', fontWeight: 'bold' }}>Zutphen, NL</span>
                 </div>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>

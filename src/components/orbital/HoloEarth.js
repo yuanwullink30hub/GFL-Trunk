@@ -4,7 +4,7 @@ import { Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import { MotionPredictor } from '../../utils/MotionPredictor';
 import { getPerformanceSettings } from '../../utils/performanceMonitor';
-import PyramidInner from '../newFeature/PyramidInner';
+import PyramidInner from '../holoearth/PyramidInner';
 import EarthParticleWaves from './EarthParticleWaves';
 
 // --- Generate landmass chunks from actual sphere surface with thickness ---
@@ -443,6 +443,7 @@ const HoloEarthSphere = ({
   isActive = false, 
   pyramidScrollProgress = 0,
   showPyramidLabels = false,
+  coreScaleMultiplier = 1, // Scale for inner core during convergence
   onIntroComplete = () => {},
   onLayerStateChange = () => {},
   isMobile = false
@@ -661,6 +662,7 @@ const HoloEarthSphere = ({
           showLabels={showPyramidLabels}
           orbitalRotationY={orbitalRotationY}
           explosionProgress={explosionProgress}
+          coreScaleMultiplier={coreScaleMultiplier}
           onIntroComplete={onIntroComplete}
           onLayerStateChange={onLayerStateChange}
         />
@@ -794,6 +796,7 @@ const HoloEarth = ({
   isActive = false,
   pyramidScrollProgress = 0,
   showPyramidLabels = false,
+  coreScaleMultiplier = 1, // Scale for inner core during convergence
   onIntroComplete = () => {},
   onLayerStateChange = () => {}
 }) => {
@@ -853,6 +856,7 @@ const HoloEarth = ({
                 isActive={isActive}
                 pyramidScrollProgress={pyramidScrollProgress}
                 showPyramidLabels={showPyramidLabels}
+                coreScaleMultiplier={coreScaleMultiplier}
                 onIntroComplete={onIntroComplete}
                 onLayerStateChange={onLayerStateChange}
                 isMobile={isMobile}

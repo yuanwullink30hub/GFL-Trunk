@@ -4,7 +4,7 @@ import { Html, Edges } from '@react-three/drei';
 import * as THREE from 'three';
 import HoloCore from '../holoearth/HoloCore';
 import AssessmentIntro from './AssessmentIntro';
-import AssessmentQuestions from './AssessmentQuestions';
+import AssessmentCard from './AssessmentCard';
 import AssessmentUpload from './AssessmentUpload';
 import AssessmentResults from './AssessmentResults';
 import { useAssessmentIntegration } from './useAssessmentIntegration';
@@ -233,6 +233,7 @@ const HoloPyramidAssessment = ({ scrollProgress = 0, isActive = false, onSendCom
   const [isGoldMode, setIsGoldMode] = useState(false);
   const [entityOpacity, setEntityOpacity] = useState(0);
   const [assessmentState, setAssessmentState] = useState(ASSESSMENT_STATES.WAITING);
+  // eslint-disable-next-line no-unused-vars
   const [assessmentLevel, setAssessmentLevel] = useState(null);
   const [currentSubjectIndex, setCurrentSubjectIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -551,19 +552,24 @@ const HoloPyramidAssessment = ({ scrollProgress = 0, isActive = false, onSendCom
           {/* Questions Panel */}
           {assessmentState === ASSESSMENT_STATES.QUESTIONS && currentQuestion && (
             <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-              <div className="w-full max-w-3xl bg-[#0a0515]/95 border border-cyan-500/30 rounded-lg shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-                <AssessmentQuestions
-                  questions={currentQuestions}
-                  currentSubject={currentSubject}
-                  currentSubjectIndex={currentSubjectIndex}
-                  currentQuestionIndex={currentQuestionIndex}
-                  totalQuestions={assessment.totalQuestions}
-                  answeredCount={answeredCount}
-                  onSelectAnswer={handleAnswerSelect}
-                  onGoBack={handleGoBack}
-                  canGoBack={answeredCount > 0}
-                />
-              </div>
+              <AssessmentCard
+                questions={currentQuestions}
+                currentSubject={currentSubject}
+                currentSubjectIndex={currentSubjectIndex}
+                currentQuestionIndex={currentQuestionIndex}
+                totalQuestions={assessment.totalQuestions}
+                answeredCount={answeredCount}
+                onSelectAnswer={handleAnswerSelect}
+                onGoBack={handleGoBack}
+                canGoBack={answeredCount > 0}
+                onNext={() => {
+                  if (currentQuestionIndex < currentQuestions.length - 1) {
+                    // handled by handleAnswerSelect auto-advance
+                  }
+                }}
+                onComplete={handleContinueToResults}
+                allAnswers={assessment.responses.reduce((acc, r) => ({ ...acc, [r.questionId]: r.answerId }), {})}
+              />
             </div>
           )}
 

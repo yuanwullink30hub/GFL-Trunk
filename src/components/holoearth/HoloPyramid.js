@@ -12,7 +12,7 @@ const LAYER_THICKNESS = PYRAMID_HEIGHT / TOTAL_LAYERS;
 const SPACING = 0.08;
 
 // Timing constants
-const INTRO_DELAY = 3.0;      // Wait 3 seconds before layers start floating up
+const INTRO_DELAY = 1.5;      // Wait 1.5 seconds before layers start floating up
 const INTRO_DURATION = 2.0;   // 2 seconds for layers to float up to entity 
 
 // --- Shaders for Inner Effect ---

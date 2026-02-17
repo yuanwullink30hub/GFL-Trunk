@@ -19,7 +19,7 @@ const AssessmentQuestions = ({
   isLastQuestion
 }) => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const currentQuestion = questions[currentQuestionIndex];
   const questionNumber = currentQuestionIndex + 1 + (currentSubjectIndex * 6);

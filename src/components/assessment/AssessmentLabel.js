@@ -123,7 +123,7 @@ const AssessmentLabel = ({
         >
           <div className="flex flex-col">
             <span className="font-bold tracking-widest uppercase" style={{fontSize: 'max(28px, 1.26vw)', color: layer.color}}>
-              {layer.name.toUpperCase()} // {layer.fundamental}
+              {layer.name.toUpperCase()} {'//'} {layer.fundamental}
             </span>
             <span className="text-white/80 font-light" style={{fontSize: 'max(31px, 1.4vw)'}}>
               {layer.title}

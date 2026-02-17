@@ -16,7 +16,7 @@ const AssessmentResults = ({
   const [expandedSection, setExpandedSection] = useState('archetype');
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   if (!result || !isVisible) return null;
 

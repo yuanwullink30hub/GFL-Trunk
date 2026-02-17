@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import HoloEarth from './components/orbital/HoloEarth';
 import DesktopLayout from './components/orbital/DesktopLayout';
-import { AssessmentIntro, AssessmentQuestions, AssessmentUpload, AssessmentLayerPanel } from './components/assessment';
+import { AssessmentIntro, AssessmentCard, AssessmentUpload, AssessmentLayerPanel } from './components/assessment';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { FilosofiePage, GardensPage, DataPage, LoginPage, EyedentityPage } from './pages';
@@ -1326,8 +1326,8 @@ const App = () => {
     }).then(() => {
       setResourcesLoaded(true);
       console.log('[App] All resources preloaded');
-      // Show "GEREED" for 1.5 seconds before fading out
-      setTimeout(() => endLoadingScreen(), 1500);
+      // Exit loading screen immediately when done
+      endLoadingScreen();
     }).catch(() => {
       // If preloading fails, still end loading screen
       console.warn('[App] Preloading failed, continuing anyway');
@@ -1591,7 +1591,7 @@ const App = () => {
   useEffect(() => {
     if (assessmentPhase !== 'convergence') return;
     
-    const CONVERGENCE_DURATION = 1500; // 1.5s for panels to float back
+    const CONVERGENCE_DURATION = 750; // 0.75s for panels to float back
     const CORE_GROWTH_DURATION = 2000; // 2s for core to grow
     const RESULTS_APPEAR_DURATION = 800; // 0.8s for results modal to float out
     const startTime = Date.now();
@@ -1679,6 +1679,7 @@ const App = () => {
   
   // Handle scroll to next layer (Scroll button clicked)
   // Handle scroll to next layer - triggered by scroll progress during layers phase
+  // eslint-disable-next-line no-unused-vars
   const handleScrollToNextLayer = useCallback((nextLayerIndex) => {
     if (nextLayerIndex < 5) {
       setCurrentLayerIndex(nextLayerIndex);
@@ -2106,7 +2107,7 @@ const App = () => {
                 fontSize: '0.7rem'
               }}
             >
-              {resourcesLoaded && loadingProgress >= 0.8 ? t('loading.ready') : `${Math.round(loadingProgress * 100)}%`}
+              {resourcesLoaded && loadingProgress >= 0.8 ? '100%' : `${Math.round(loadingProgress * 100)}%`}
             </p>
 
             {/* Scanline overlay */}
@@ -2647,7 +2648,7 @@ const App = () => {
                   background: 'transparent'
                 }}
               >
-                <AssessmentQuestions 
+                <AssessmentCard 
                   questions={assessmentSubjects[currentSubjectIndex].questions.slice(0, getQuestionsPerSubject(assessmentLevel))}
                   currentSubject={assessmentSubjects[currentSubjectIndex]}
                   currentSubjectIndex={currentSubjectIndex}
@@ -2657,6 +2658,16 @@ const App = () => {
                   onSelectAnswer={handleAnswerSelect}
                   onGoBack={handleGoBack}
                   canGoBack={assessmentAnswers.length > 0}
+                  onNext={() => {}}
+                  onComplete={() => {
+                    if (assessmentLevel === 'deep') {
+                      setAssessmentPhase('upload');
+                    } else {
+                      setAssessmentPhase('results');
+                      triggerGoldMode();
+                    }
+                  }}
+                  allAnswers={assessmentAnswers.reduce((acc, a) => ({ ...acc, [`${a.subjectIndex}-${a.questionIndex}`]: a.answer }), {})}
                 />
               </div>
             )}

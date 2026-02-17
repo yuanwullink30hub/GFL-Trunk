@@ -18,7 +18,7 @@ const LAYER_THICKNESS = PYRAMID_HEIGHT / TOTAL_LAYERS;
 const SPACING = 0.04;
 
 // Timing constants
-const INTRO_DELAY = 3.0;
+const INTRO_DELAY = 1.5;
 const INTRO_DURATION = 2.0;
 
 // --- Shaders for Inner Effect ---

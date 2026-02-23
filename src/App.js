@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import HoloEarth from './components/orbital/HoloEarth';
 import DesktopLayout from './components/orbital/DesktopLayout';
 import { AssessmentIntro, AssessmentCard, AssessmentUpload, AssessmentLayerPanel } from './components/assessment';
+import AssessmentResultsModal from './components/assessment/AssessmentResultsModal';
+import { assessmentSubjects } from './pages/assessment/assessmentData';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { FilosofiePage, GardensPage, DataPage, LoginPage, EyedentityPage } from './pages';
@@ -1096,45 +1098,21 @@ const App = () => {
   ], [language]);
   
   // Assessment data: 5 subjects with 6 questions each (30 total)
-  // Standard answer options for assessment questions
-  const standardAnswers = [
-    { id: 'strongly_agree', text: t('standardAnswers.stronglyAgree'), value: 5 },
-    { id: 'agree', text: t('standardAnswers.agree'), value: 4 },
-    { id: 'neutral', text: t('standardAnswers.neutral'), value: 3 },
-    { id: 'disagree', text: t('standardAnswers.disagree'), value: 2 },
-    { id: 'strongly_disagree', text: t('standardAnswers.stronglyDisagree'), value: 1 }
-  ];
-
-  // Transform question strings into full question objects with answers
-  const createQuestionObjects = (questionStrings, subjectName) => {
-    return questionStrings.map((text, index) => ({
-      id: `${subjectName.toLowerCase()}_q${index + 1}`,
-      text: text,
-      answers: standardAnswers
-    }));
-  };
-
-  const assessmentSubjects = [
-    { name: 'Perception', color: '#00BFFF', questions: createQuestionObjects(['How do you perceive challenges?', 'What patterns do you notice in daily life?', 'How do you process new information?', 'What triggers your intuition?', 'How do you sense energy in a room?', 'What visual patterns attract you most?'], 'Perception') },
-    { name: 'Connection', color: '#00FF88', questions: createQuestionObjects(['How do you form meaningful relationships?', 'What makes you feel connected?', 'How do you nurture bonds over time?', 'What role does trust play for you?', 'How do you handle disconnection?', 'What creates lasting connection?'], 'Connection') },
-    { name: 'Expression', color: '#FFD700', questions: createQuestionObjects(['How do you express your truth?', 'What medium resonates with you?', 'When do you feel most creative?', 'How do you share ideas?', 'What blocks your expression?', 'How do you find your voice?'], 'Expression') },
-    { name: 'Transformation', color: '#FF6B35', questions: createQuestionObjects(['How do you embrace change?', 'What catalyzes your growth?', 'How do you release old patterns?', 'What does evolution mean to you?', 'How do you navigate uncertainty?', 'What transforms your perspective?'], 'Transformation') },
-    { name: 'Integration', color: '#8B5CF6', questions: createQuestionObjects(['How do you synthesize experiences?', 'What creates wholeness for you?', 'How do you balance opposing forces?', 'What integrates your different selves?', 'How do you find harmony?', 'What brings everything together?'], 'Integration') }
-  ];
+  // assessmentSubjects is imported from './pages/assessment/assessmentData' (60 Dutch questions, 12 per layer)
   
-  // Get total questions based on level
+  // Get total questions based on level (5 layers × questions per layer)
   const getTotalQuestions = (level) => {
     switch (level) {
       case 'quick': return 15; // 3 questions per subject
-      case 'standard': return 30; // 6 questions per subject
-      case 'deep': return 30; // 6 questions per subject + upload
-      default: return 30;
+      case 'standard': return 60; // 12 per layer × 5 layers
+      case 'deep': return 60; // 12 per layer × 5 layers + upload
+      default: return 60;
     }
   };
   
   // Get questions per subject based on level
   const getQuestionsPerSubject = (level) => {
-    return level === 'quick' ? 3 : 6;
+    return level === 'quick' ? 3 : 12;
   };
   
   // eslint-disable-next-line no-unused-vars
@@ -1316,8 +1294,14 @@ const App = () => {
     const endLoadingScreen = () => {
       if (hasEnded) return;
       hasEnded = true;
-      setLoadingFadeOut(true);
-      setTimeout(() => setShowLoadingScreen(false), 500);
+      // 1) Jump progress bar to 100%
+      setLoadingProgress(1);
+      // 2) Wait for bar CSS transition to finish (300ms), then fade out
+      setTimeout(() => {
+        setLoadingFadeOut(true);
+        // 3) Remove from DOM after fade-out (500ms)
+        setTimeout(() => setShowLoadingScreen(false), 500);
+      }, 400);
     };
     
     // Preload all resources - end loading screen when done
@@ -1326,7 +1310,6 @@ const App = () => {
     }).then(() => {
       setResourcesLoaded(true);
       console.log('[App] All resources preloaded');
-      // Exit loading screen immediately when done
       endLoadingScreen();
     }).catch(() => {
       // If preloading fails, still end loading screen
@@ -1458,6 +1441,9 @@ const App = () => {
     // Don't process scroll if viewing other content sections
     if (activeSection !== null) return;
     
+    // Don't process scroll when assessment results modal is open
+    if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
+    
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     
@@ -1489,7 +1475,18 @@ const App = () => {
     if (currentFrame >= MAX_FRAME && introComplete) {
       setPyramidScrollProgress(prev => {
         const step = 0.05; // 5% per scroll tick - slower for smoother layer animation
-        const newProgress = Math.max(0, Math.min(1, prev + (direction * step)));
+        let newProgress = Math.max(0, Math.min(1, prev + (direction * step)));
+        
+        // SCROLL GATING via dynamic cap:
+        // - Scroll enabled (layer saved): allow forward to next layer threshold
+        // - Scroll disabled (layer unsaved): cap at CURRENT layer threshold
+        //   so the user can scroll the card back out but not beyond
+        if (assessmentPhase === 'layers' && direction > 0) {
+          const maxProgress = assessmentScrollEnabled
+            ? (currentLayerIndex + 1) / 4
+            : currentLayerIndex / 4;
+          newProgress = Math.min(newProgress, maxProgress);
+        }
         
         // Mobile: If scrolling down and at end, unlock scroll to continue page scroll
         if (window.innerWidth < 768 && direction > 0 && prev >= 1) {
@@ -1500,8 +1497,11 @@ const App = () => {
         }
         
         // If scrolling up and at 0, allow returning to orbital animation
+        // BUT NOT during assessment — stay locked at progress 0
         if (direction < 0 && prev <= 0) {
-          setCurrentFrame(prevFrame => Math.max(0, prevFrame - 1));
+          if (assessmentPhase !== 'layers' && assessmentPhase !== 'convergence') {
+            setCurrentFrame(prevFrame => Math.max(0, prevFrame - 1));
+          }
           return 0;
         }
         return newProgress;
@@ -1526,7 +1526,7 @@ const App = () => {
     setTimeout(() => {
       isScrolling.current = false;
     }, 50);
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection, mobileActiveIndex]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection, mobileActiveIndex, assessmentPhase, assessmentScrollEnabled, currentLayerIndex]);
 
   // Callback when pyramid intro animation completes
   const handleIntroComplete = useCallback(() => {
@@ -1562,6 +1562,8 @@ const App = () => {
     setAssessmentAnswers([]);
     setCurrentLayerIndex(0);
     setLayerAnswers({});
+    setPyramidScrollProgress(0); // Reset scroll so layers start from zero
+    setAssessmentScrollEnabled(false);
     setAssessmentPhase('layers');
   }, []);
   
@@ -1591,7 +1593,7 @@ const App = () => {
   useEffect(() => {
     if (assessmentPhase !== 'convergence') return;
     
-    const CONVERGENCE_DURATION = 750; // 0.75s for panels to float back
+    const CONVERGENCE_DURATION = 3000; // 3s for panels to float back
     const CORE_GROWTH_DURATION = 2000; // 2s for core to grow
     const RESULTS_APPEAR_DURATION = 800; // 0.8s for results modal to float out
     const startTime = Date.now();
@@ -1696,28 +1698,30 @@ const App = () => {
   }, []);
   
   // Update current layer based on pyramid scroll progress when in layers phase
+  // Only advances ONE layer at a time: after saving layer N, scrolling reveals layer N+1
+  // Layer N+1 fully animates in at scrollProgress = (N+1)/4
   useEffect(() => {
     if (assessmentPhase === 'layers' && assessmentScrollEnabled) {
-      // Calculate which layer should be active based on scroll progress
-      const totalMovable = 4; // Layers 1-4 (layer 0 is always visible)
-      const newLayerIndex = Math.min(
-        Math.floor(pyramidScrollProgress * totalMovable) + 1,
-        4
-      );
-      if (newLayerIndex > currentLayerIndex) {
-        setCurrentLayerIndex(newLayerIndex);
+      const nextLayer = currentLayerIndex + 1;
+      if (nextLayer > 4) return; // All layers visible
+      
+      // Layer N+1 is fully animated when scroll reaches (N+1)/4
+      const threshold = nextLayer / 4;
+      if (pyramidScrollProgress >= threshold) {
+        setCurrentLayerIndex(nextLayer);
         setAssessmentScrollEnabled(false); // Disable until next save
       }
     }
   }, [pyramidScrollProgress, assessmentPhase, assessmentScrollEnabled, currentLayerIndex]);
   
-  // Handle answer selection
-  const handleAnswerSelect = useCallback((answerIndex) => {
+  // Handle answer selection (AssessmentCard passes questionId and answerId)
+  const handleAnswerSelect = useCallback((questionId, answerId) => {
     // Record the answer
     setAssessmentAnswers(prev => [...prev, {
       subjectIndex: currentSubjectIndex,
       questionIndex: currentQuestionIndex,
-      answer: answerIndex
+      questionId,
+      answer: answerId
     }]);
     
     const questionsPerSubject = getQuestionsPerSubject(assessmentLevel);
@@ -1781,15 +1785,20 @@ const App = () => {
   const handleTouchStart = useCallback((e) => {
     // LOW-END: Skip during animation, allow after for pyramid control
     if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
+    // Don't process touch when assessment results modal is open
+    if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     touchStartY.current = e.touches[0].clientY;
     touchAccumulator.current = 0;
-  }, [isLowEndMode, lowEndAnimating, currentFrame, MAX_FRAME, mobileActiveIndex]);
+  }, [isLowEndMode, lowEndAnimating, currentFrame, MAX_FRAME, mobileActiveIndex, assessmentPhase]);
 
   const handleTouchMove = useCallback((e) => {
     // LOW-END: Skip during animation, but allow after for pyramid control
     if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
+    
+    // Don't process touch when assessment results modal is open
+    if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
     
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
@@ -1824,7 +1833,17 @@ const App = () => {
       if (currentFrame >= MAX_FRAME && introComplete) {
         setPyramidScrollProgress(prev => {
           const step = 0.05; // 5% per scroll tick - slower for smoother layer animation
-          const newProgress = Math.max(0, Math.min(1, prev + (accDirection * step)));
+          let newProgress = Math.max(0, Math.min(1, prev + (accDirection * step)));
+          
+          // SCROLL GATING via dynamic cap:
+          // - Scroll enabled (layer saved): allow forward to next layer threshold
+          // - Scroll disabled (layer unsaved): cap at CURRENT layer threshold
+          if (assessmentPhase === 'layers' && accDirection > 0) {
+            const maxProgress = assessmentScrollEnabled
+              ? (currentLayerIndex + 1) / 4
+              : currentLayerIndex / 4;
+            newProgress = Math.min(newProgress, maxProgress);
+          }
           
           // Mobile: If scrolling down and at end, unlock scroll to continue page scroll
           if (accDirection > 0 && prev >= 1) {
@@ -1835,7 +1854,9 @@ const App = () => {
           }
           
           if (accDirection < 0 && prev <= 0) {
-            setCurrentFrame(prevFrame => Math.max(0, prevFrame - 1));
+            if (assessmentPhase !== 'layers' && assessmentPhase !== 'convergence') {
+              setCurrentFrame(prevFrame => Math.max(0, prevFrame - 1));
+            }
             return 0;
           }
           return newProgress;
@@ -1856,7 +1877,7 @@ const App = () => {
       }
       touchAccumulator.current = 0;
     }
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, mobileActiveIndex]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, mobileActiveIndex, assessmentPhase, assessmentScrollEnabled, currentLayerIndex]);
 
   // Attach wheel/touch listeners - also needed on mobile when scroll is locked
   useEffect(() => {
@@ -1966,6 +1987,15 @@ const App = () => {
 
   // Reset to frame 0
   const handleReset = () => {
+    // Close assessment if it's open (any phase)
+    if (assessmentPhase !== 'hidden') {
+      setAssessmentPhase('hidden');
+      setAssessmentLevel(null);
+      setCoreScaleMultiplier(1);
+      setConvergenceProgress(0);
+      setResultsModalProgress(0);
+      setResultsLoadingProgress(0);
+    }
     setPyramidScrollProgress(0); // Reset pyramid scroll too
     setIntroComplete(false); // Reset intro state for next activation
     setLayerState({ // Reset layer state for pure DOM labels
@@ -2217,7 +2247,7 @@ const App = () => {
                 </div>
 
                 {/* Top-Right Info Panel - Frame counter + Coordinates */}
-                {/* Inside deltawerken wrapper so it follows carousel animation */}}
+                {/* Inside deltawerken wrapper so it follows carousel animation */}
                 <div 
                   className="absolute top-4 right-4 z-50 text-xs font-mono pointer-events-none text-right"
                   style={{ 
@@ -2705,211 +2735,32 @@ const App = () => {
               </div>
             )}
             
-            {/* Assessment Results - Poetry slideshow during loading, then action buttons */}
+            {/* Assessment Results - Poetry slideshow during loading, then full results modal */}
             {isSystem && assessmentPhase === 'results' && (
-              <div 
-                className="fixed inset-0 flex items-center justify-center z-[200] pointer-events-auto"
-                style={{
-                  background: 'transparent'
+              <AssessmentResultsModal
+                resultsLoadingProgress={resultsLoadingProgress}
+                resultsModalProgress={resultsModalProgress}
+                resultsPoetryIndex={resultsPoetryIndex}
+                poetrySlides={poetrySlides}
+                layerAnswers={layerAnswers}
+                onClose={() => {
+                  setAssessmentPhase('hidden');
+                  setCoreScaleMultiplier(1);
+                  setConvergenceProgress(0);
+                  setResultsModalProgress(0);
+                  setResultsLoadingProgress(0);
                 }}
-              >
-                <div 
-                  className="relative w-96 p-6 rounded-lg text-center backdrop-blur-sm overflow-hidden"
-                  style={{
-                    background: 'rgba(8, 2, 12, 0.95)',
-                    transform: `translate(0, ${(1 - resultsModalProgress) * -15}vh) scale(${0.3 + resultsModalProgress * 0.7})`,
-                    opacity: resultsModalProgress,
-                    transition: resultsModalProgress >= 1 ? 'opacity 0.3s ease' : 'none',
-                  }}
-                >
-                  {/* Corner decorations - SectorFrame style with orange (#ffae00) */}
-                  <div className="absolute -top-0.5 -left-0.5 w-4 h-4" style={{
-                    border: '1.5px solid #ffae00',
-                    borderRadius: '10px 0 0 0',
-                    borderBottom: 'none',
-                    borderRight: 'none'
-                  }}></div>
-                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4" style={{
-                    border: '1.5px solid #ffae00',
-                    borderRadius: '0 10px 0 0',
-                    borderBottom: 'none',
-                    borderLeft: 'none'
-                  }}></div>
-                  <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4" style={{
-                    border: '1.5px solid #ffae00',
-                    borderRadius: '0 0 0 10px',
-                    borderTop: 'none',
-                    borderRight: 'none'
-                  }}></div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4" style={{
-                    border: '1.5px solid #ffae00',
-                    borderRadius: '0 0 10px 0',
-                    borderTop: 'none',
-                    borderLeft: 'none'
-                  }}></div>
-                  
-                  {/* Loading State - Poetry Slideshow */}
-                  {resultsLoadingProgress < 1 ? (
-                    <>
-                      {/* Poetry Content */}
-                      <div className="min-h-[180px] flex flex-col justify-center mb-4">
-                        <h3 
-                          className="text-base font-bold mb-3 tracking-wider"
-                          style={{
-                            color: '#fbbf24',
-                            fontFamily: "'Lexend Mega', sans-serif",
-                            opacity: 0.9
-                          }}
-                        >
-                          {poetrySlides[resultsPoetryIndex]?.title}
-                        </h3>
-                        <div className="space-y-1">
-                          {poetrySlides[resultsPoetryIndex]?.lines.map((line, idx) => (
-                            <p 
-                              key={idx}
-                              className="text-sm italic leading-relaxed"
-                              style={{ 
-                                color: 'rgba(255, 254, 240, 0.8)',
-                                animationDelay: `${idx * 0.1}s`
-                              }}
-                            >
-                              {line}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* Loading Bar */}
-                      <div className="mb-3">
-                        <div 
-                          className="h-1 rounded-full overflow-hidden"
-                          style={{ background: 'rgba(255, 255, 255, 0.1)' }}
-                        >
-                          <div 
-                            className="h-full rounded-full transition-all duration-100"
-                            style={{ 
-                              width: `${resultsLoadingProgress * 100}%`,
-                              background: 'linear-gradient(90deg, #22d3ee, #a855f7, #f472b6, #fbbf24, #f97316)',
-                              boxShadow: '0 0 10px rgba(34, 211, 238, 0.5)'
-                            }}
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* Loading Status */}
-                      <p 
-                        className="text-xs tracking-wider uppercase"
-                        style={{ color: 'rgba(255, 254, 240, 0.5)' }}
-                      >
-                        {resultsLoadingProgress < 0.3 
-                          ? t('results.analyzing')
-                          : resultsLoadingProgress < 0.6 
-                            ? t('results.mapping')
-                            : resultsLoadingProgress < 0.9
-                              ? t('results.generating')
-                              : t('results.finalizing')
-                        }
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      {/* Completed State - Action Buttons */}
-                      <div className="mb-4">
-                        <div 
-                          className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                          style={{
-                            background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(168, 85, 247, 0.2))',
-                            border: '2px solid rgba(34, 211, 238, 0.5)'
-                          }}
-                        >
-                          <svg className="w-8 h-8" fill="none" stroke="#22d3ee" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        
-                        <h2 
-                          className="text-lg font-bold mb-2 tracking-wider uppercase"
-                          style={{
-                            color: '#22d3ee',
-                            fontFamily: "'Lexend Mega', sans-serif",
-                            textShadow: '0 0 10px rgba(34, 211, 238, 0.5)'
-                          }}
-                        >
-                          {t('results.profileReady')}
-                        </h2>
-                        
-                        <p 
-                          className="text-sm leading-relaxed"
-                          style={{ color: 'rgba(255, 254, 240, 0.7)' }}
-                        >
-                          {t('results.profileDescription')}
-                        </p>
-                      </div>
-                      
-                      {/* Action Buttons */}
-                      <div className="flex flex-col gap-3">
-                        <button
-                          onClick={() => {
-                            // Download PDF
-                            console.log('Download PDF:', layerAnswers);
-                            // TODO: Generate and download PDF
-                          }}
-                          className="w-full py-3 rounded-lg font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2"
-                          style={{
-                            background: '#22d3ee',
-                            color: '#000',
-                            border: '2px solid #22d3ee'
-                          }}
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          {t('results.downloadPdf')}
-                        </button>
-                        
-                        <button
-                          onClick={() => {
-                            // Download PDF first, then show login
-                            console.log('Download PDF and create account:', layerAnswers);
-                            // TODO: Generate and download PDF
-                            // Show login modal
-                            setShowLoginFromResults(true);
-                          }}
-                          className="w-full py-3 rounded-lg font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2"
-                          style={{
-                            background: 'transparent',
-                            color: '#a855f7',
-                            border: '2px solid #a855f7'
-                          }}
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          {t('results.createAccount')}
-                        </button>
-                        
-                        <button
-                          onClick={() => {
-                            setAssessmentPhase('hidden');
-                            setCoreScaleMultiplier(1);
-                            setConvergenceProgress(0);
-                            setResultsModalProgress(0);
-                            setResultsLoadingProgress(0);
-                          }}
-                          className="w-full py-2 rounded-lg text-sm transition-all duration-300 mt-1"
-                          style={{
-                            background: 'transparent',
-                            color: 'rgba(255, 254, 240, 0.4)',
-                            border: '1px solid rgba(255, 254, 240, 0.15)'
-                          }}
-                        >
-                          {t('results.close')}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
+                onDownload={() => {
+                  console.log('Download PDF:', layerAnswers);
+                  // TODO: Generate and download PDF
+                }}
+                onCreateAccount={() => {
+                  console.log('Download PDF and create account:', layerAnswers);
+                  // TODO: Generate and download PDF
+                  setShowLoginFromResults(true);
+                }}
+                t={t}
+              />
             )}
             
             {/* Login Modal from Results */}
@@ -3023,7 +2874,7 @@ const App = () => {
             {/* Back Button - positioned separately from entity transforms */}
             <button 
               onClick={handleReset}
-              className="absolute z-[250] group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2 mb-3"
+              className="absolute z-[10001] group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2 mb-3"
               style={{
                 border: '1px solid rgba(147, 51, 234, 0.3)',
                 background: 'rgba(10, 5, 16, 0.6)',

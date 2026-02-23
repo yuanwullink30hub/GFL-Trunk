@@ -1,0 +1,50 @@
+/**
+ * Garden for Life — Assessment Document Library
+ * 
+ * Master barrel export for all assessment data modules.
+ * The API agent should import everything from this single entry point:
+ * 
+ *   import { questions, ARCHETYPES, LAYERS, RADAR_TRAITS, ... } from '../data/assessment';
+ * 
+ * Folder structure:
+ *   questions/    — 60 questions across 5 layers (12 per layer, 6 answers each)
+ *   archetypes/   — 12 archetype definitions (Set A + Set B) with traits, shadows & group pairings
+ *   layers/       — Layer metadata (colors, elements, chakras, domains)
+ *   scoring/      — Scoring algorithms (radar, subgroups, archetype determination)
+ *   analysis/     — Pre-written analysis text templates per archetype
+ *   research/     — Source documents & papers (non-JS, for agent context)
+ */
+
+// Questions
+export { questions, QUESTION_SCHEMA, getQuestionsForLayer, getAllQuestionsFlat } from './questions';
+
+// Archetypes
+export { ARCHETYPES, ARCHETYPE_KEYS, ARCHETYPE_GROUPS, ARCHETYPE_SCHEMA, getArchetype } from './archetypes';
+
+// Layers
+export { LAYERS, getLayer, subjectMetadata } from './layers';
+
+// Scoring
+export {
+  RADAR_TRAITS,
+  SUBGROUP_POLARITIES,
+  ARCHETYPE_TRAIT_MAP,
+  computeRadarScores,
+  computeSubgroups,
+  determineArchetype,
+  // Archetype-based scoring (12-point radar)
+  ARCHETYPE_RADAR_LABELS,
+  ALL_ARCHETYPE_KEYS,
+  COMPLEMENTARY_PAIRS,
+  SHADOW_PAIRS,
+  ARCHETYPE_TO_GROUP,
+  EXTENDED_ARCHETYPES,
+  getExtendedArchetype,
+  isComplementaryPair,
+} from './scoring';
+
+// Analysis Templates
+export { ANALYSIS_TEMPLATES, getAnalysisTemplate, blendAnalysisTemplates } from './analysis/templates';
+
+// Extended Archetype Descriptions (72 combination profiles)
+export { getExtendedDescription } from './extendedArchetypeDescriptions';

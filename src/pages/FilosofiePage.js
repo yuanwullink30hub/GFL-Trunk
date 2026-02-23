@@ -8,4 +8,3 @@ const FilosofiePage = memo(({ isVisible, onBack }) => {
 FilosofiePage.displayName = 'FilosofiePage';
 
 export default FilosofiePage;
-

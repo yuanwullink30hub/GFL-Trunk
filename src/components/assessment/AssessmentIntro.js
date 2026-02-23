@@ -118,14 +118,11 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
           {/* Header */}
           <div className="text-center mb-8">
             <span className="text-orange-400 block" style={{ fontSize: '2.8rem' }}>✨</span>
-            <h1 className="text-4xl md:text-5xl font-light mb-2" style={{ color: '#f97316' }}>
-              AAA+
-            </h1>
-            <h2 className="text-3xl md:text-4xl font-light" style={{ color: '#f97316' }}>
+            <h1 className="text-3xl md:text-4xl font-light" style={{ color: '#f97316' }}>
               A+ Archetype Analyse
-            </h2>
+            </h1>
 
-            <p className="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+            <p className="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed mt-4">
               {t('assessmentIntro.description')}
             </p>
           </div>
@@ -188,33 +185,48 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
               {t('assessmentIntro.levelsTitle')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {levels.map((level) => (
-                <button
-                  key={level.id}
-                  onClick={() => onStart(level.id)}
-                  className="relative p-4 rounded-lg border transition-all duration-300 text-left group hover:scale-[1.02]"
-                  style={{
-                    borderColor: `${level.color}40`,
-                    backgroundColor: `${level.color}08`,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = level.color;
-                    e.currentTarget.style.boxShadow = `0 0 20px ${level.color}30`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = `${level.color}40`;
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div className="absolute top-0 left-0 w-2 h-2 border-t border-l opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderColor: level.color }} />
-                  <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderColor: level.color }} />
-                  
-                  <h3 className="text-base font-medium mb-1" style={{ color: level.color }}>
-                    {t(level.nameKey)}
-                  </h3>
-                  <p className="text-xs text-slate-500">{t(level.descKey)}</p>
-                </button>
-              ))}
+              {levels.map((level) => {
+                const isLocked = level.id === 'quick' || level.id === 'standard';
+                return (
+                  <button
+                    key={level.id}
+                    onClick={() => !isLocked && onStart(level.id)}
+                    className={`relative p-4 rounded-lg border transition-all duration-300 text-left group ${isLocked ? 'cursor-not-allowed' : 'hover:scale-[1.02]'}`}
+                    style={{
+                      borderColor: isLocked ? 'rgba(100,116,139,0.25)' : `${level.color}40`,
+                      backgroundColor: isLocked ? 'rgba(30,30,40,0.5)' : `${level.color}08`,
+                      opacity: isLocked ? 0.55 : 1,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLocked) {
+                        e.currentTarget.style.borderColor = level.color;
+                        e.currentTarget.style.boxShadow = `0 0 20px ${level.color}30`;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLocked) {
+                        e.currentTarget.style.borderColor = `${level.color}40`;
+                        e.currentTarget.style.boxShadow = 'none';
+                      }
+                    }}
+                  >
+                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderColor: level.color }} />
+                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderColor: level.color }} />
+                    
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-base font-medium" style={{ color: isLocked ? '#64748b' : level.color }}>
+                        {t(level.nameKey)}
+                      </h3>
+                      {isLocked && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                      )}
+                    </div>
+                    <p className="text-xs" style={{ color: isLocked ? '#475569' : '#64748b' }}>{t(level.descKey)}</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

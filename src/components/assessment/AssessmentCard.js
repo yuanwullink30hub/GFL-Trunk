@@ -181,13 +181,14 @@ const AssessmentCard = ({
         <div 
           className={`
             relative z-10 flex-1 px-5 py-4 flex flex-col gap-4 overflow-y-auto
-            transition-all duration-500 ease-in-out
+            transition-opacity duration-500 ease-in-out
             ${isCollapsed ? 'opacity-0 h-0 py-0 overflow-hidden pointer-events-none' : 'opacity-100'}
             ${isAnimating && !isCollapsed ? 'opacity-0' : ''}
           `}
+          style={{ minHeight: isCollapsed ? 0 : '32rem' }}
         >
           {/* Question Text */}
-          <div className="relative pl-3">
+          <div className="relative pl-3" style={{ minHeight: '4.5rem' }}>
             <div className="absolute left-0 top-1 bottom-1 w-[2px]" style={{ background: `linear-gradient(to bottom, ${subjectColor}, transparent)` }} />
             <p className="text-base leading-relaxed" style={{ color: '#FFFEF0', fontFamily: "'Figtree', sans-serif" }}>
               {t(`questions.${currentQuestion.id}`) !== `questions.${currentQuestion.id}` 
@@ -210,6 +211,7 @@ const AssessmentCard = ({
                     ${isSelected ? 'translate-x-1' : 'hover:translate-x-0.5'}
                     ${selectedAnswer !== null && selectedAnswer !== answer.id ? 'opacity-40' : ''}
                   `}
+                  style={{ minHeight: '3.5rem' }}
                 >
                   {/* Letter Badge */}
                   <div 

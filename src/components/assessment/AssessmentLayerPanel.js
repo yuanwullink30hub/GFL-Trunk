@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import AssessmentCard from './AssessmentCard';
+import { assessmentSubjects } from '../../pages/assessment/assessmentData';
 
 /**
  * AssessmentLayerPanel - Renders MULTIPLE layer panels that persist after saving
@@ -18,35 +19,20 @@ import AssessmentCard from './AssessmentCard';
  */
 
 // Layer configuration matching pyramid (bottom to top)
+// Colors synced with assessmentData.js canonical source
 const LAYERS = [
-  { nameKey: "foundation", color: "#22c55e", descKey: "foundation" },
-  { nameKey: "emotional", color: "#3b82f6", descKey: "emotional" },
-  { nameKey: "mental", color: "#a855f7", descKey: "mental" },
-  { nameKey: "spiritual", color: "#ef4444", descKey: "spiritual" },
-  { nameKey: "unity", color: "#f97316", descKey: "unity" },
+  { nameKey: "foundation", color: assessmentSubjects[0]?.color || "#22d3ee", descKey: "foundation" },
+  { nameKey: "emotional", color: assessmentSubjects[1]?.color || "#a855f7", descKey: "emotional" },
+  { nameKey: "mental", color: assessmentSubjects[2]?.color || "#f472b6", descKey: "mental" },
+  { nameKey: "spiritual", color: assessmentSubjects[3]?.color || "#fbbf24", descKey: "spiritual" },
+  { nameKey: "unity", color: assessmentSubjects[4]?.color || "#f97316", descKey: "unity" },
 ];
 
-const QUESTIONS_PER_LAYER = 12;
-
-// Standard answer options for layer questions
-const STANDARD_ANSWERS = [
-  { id: 'strongly_agree', text: 'Strongly Agree', value: 6 },
-  { id: 'agree', text: 'Agree', value: 5 },
-  { id: 'neutral', text: 'Neutral', value: 4 },
-  { id: 'disagree', text: 'Disagree', value: 3 },
-  { id: 'strongly_disagree', text: 'Strongly Disagree', value: 2 },
-  { id: 'no_opinion', text: 'No Opinion', value: 1 },
-];
-
-// Generate questions for each layer
-const generateLayerQuestions = (layerIndex) => {
-  const layerName = LAYERS[layerIndex]?.nameKey || 'unknown';
-  return Array.from({ length: QUESTIONS_PER_LAYER }, (_, i) => ({
-    id: `layer${layerIndex}_q${i + 1}`,
-    text: `${layerName.charAt(0).toUpperCase() + layerName.slice(1)} Question ${i + 1}`,
-    domain: layerName,
-    answers: STANDARD_ANSWERS
-  }));
+// Get real questions for each layer from assessmentData
+const getLayerQuestions = (layerIndex) => {
+  const layer = assessmentSubjects[layerIndex];
+  if (!layer) return [];
+  return layer.questions;
 };
 
 // Vertical positions for each layer panel (vh from top)
@@ -88,8 +74,8 @@ const SingleLayerPanel = ({
   const currentQuestionIndexRef = useRef(0);
   const { t } = useLanguage();
   
-  const questions = useMemo(() => generateLayerQuestions(layerIndex), [layerIndex]);
-  const totalQuestions = QUESTIONS_PER_LAYER;
+  const questions = useMemo(() => getLayerQuestions(layerIndex), [layerIndex]);
+  const totalQuestions = questions.length;
   
   const answeredCount = questions.filter(q => answers[q.id] !== undefined).length;
   
@@ -110,16 +96,29 @@ const SingleLayerPanel = ({
   const animProgress = getAnimationProgress();
   
   // Get panel position and style - includes convergence animation
+  // Uses a single consistent coordinate system (left % with translate(-50%))
+  // to avoid teleporting between animation and final position
   const getPanelStyles = useCallback(() => {
     const progress = animProgress;
     const isFirstLayer = layerIndex === 0;
     const onRight = isLayerOnRight(layerIndex);
     
     const entityCenterX = 50;
-    const entityCenterY = 35;
+    // Target the blue inner core center (above innermost layer at 28vh)
+    const entityCenterY = 28;
     const finalY = LAYER_POSITIONS[layerIndex];
-    const finalXPercent = onRight ? 60 : 40;
     const rotation = LAYER_ROTATIONS[layerIndex] || 0;
+    
+    // Compute final X as percentage that matches "11rem from edge" position
+    // Card center = edgeOffset + halfCardWidth for left-side,
+    //             = viewportWidth - edgeOffset - halfCardWidth for right-side
+    const vw = window.innerWidth;
+    const remPx = 16;
+    const edgeOffset = 11 * remPx; // 176px
+    const cardWidth = Math.min(480, vw * 0.45); // w-[480px] max-w-[45vw]
+    const finalXPercent = onRight
+      ? ((vw - edgeOffset - cardWidth / 2) / vw) * 100
+      : ((edgeOffset + cardWidth / 2) / vw) * 100;
     
     // During convergence, animate from final position back to entity center
     if (convergenceProgress > 0) {
@@ -145,22 +144,24 @@ const SingleLayerPanel = ({
     if (isFirstLayer || progress >= 1) {
       return {
         position: 'fixed',
-        ...(onRight 
-          ? { right: '7rem', left: 'auto' } 
-          : { left: '7rem', right: 'auto' }),
+        left: `${finalXPercent}%`,
+        right: 'auto',
         top: `${finalY}vh`,
-        transform: `translateY(-50%) rotate(${rotation}deg)`,
+        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
         opacity: 1,
         transition: 'opacity 0.3s ease',
         pointerEvents: 'auto',
       };
     }
     
-    const currentX = entityCenterX + (finalXPercent - entityCenterX) * progress;
-    const currentY = entityCenterY + (finalY - entityCenterY) * progress;
-    const scale = 0.1 + 0.9 * progress;
-    const opacity = progress;
-    const currentRotation = rotation * progress;
+    // Ease-out curve for smoother distribution across scroll range
+    const easedProgress = 1 - Math.pow(1 - progress, 2);
+    
+    const currentX = entityCenterX + (finalXPercent - entityCenterX) * easedProgress;
+    const currentY = entityCenterY + (finalY - entityCenterY) * easedProgress;
+    const scale = 0.1 + 0.9 * easedProgress;
+    const opacity = Math.min(1, progress * 2); // fade in faster in first half
+    const currentRotation = rotation * easedProgress;
     
     return {
       position: 'fixed',
@@ -201,6 +202,9 @@ const SingleLayerPanel = ({
 
   // Don't render if layer hasn't started animating (except layer 0)
   if (layerIndex > 0 && animProgress === 0) return null;
+
+  // Guard: don't render if layer data is missing
+  if (!layer) return null;
 
   const panelStyles = getPanelStyles();
 
@@ -294,13 +298,21 @@ const AssessmentLayerPanel = ({
   if (convergenceProgress >= 1) return null;
 
   // Determine which layers to render:
-  // - All saved layers (they persist)
-  // - Current layer (active layer being worked on)
+  // - All saved layers (they persist as collapsed cards)
+  // - Current layer (the active layer being worked on)
+  // - Any layer whose scroll animation range has begun (so it animates in from entity)
+  //   Layer N (N>0) starts animating at scrollProgress > (N-1)/4
   const layersToRender = new Set([...savedLayers, currentLayerIndex]);
+  for (let i = 1; i <= 4; i++) {
+    const rangeStart = (i - 1) / 4;
+    if (scrollProgress > rangeStart) {
+      layersToRender.add(i);
+    }
+  }
 
   return (
     <>
-      {Array.from(layersToRender).sort((a, b) => a - b).map(layerIndex => (
+      {Array.from(layersToRender).sort((a, b) => a - b).filter(i => LAYERS[i]).map(layerIndex => (
         <SingleLayerPanel
           key={layerIndex}
           layerIndex={layerIndex}

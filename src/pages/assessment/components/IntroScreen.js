@@ -95,7 +95,7 @@ function IntroScreen({ onStart }) {
           <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-purple-400" />
           <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-purple-400" />
         </button>
-        <p className="mt-4 text-xs text-slate-500">30 questions • ~15 minutes • Optional file upload</p>
+        <p className="mt-4 text-xs text-slate-500">Assessment • ~15 minutes • Optional file upload</p>
       </div>
 
       <div className="mt-16 text-center">

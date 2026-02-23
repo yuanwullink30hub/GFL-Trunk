@@ -33,6 +33,7 @@ const preloadImage = (src) => {
  * Pre-warm WebGL context and compile basic shaders
  * This helps avoid jank when the 3D scene first renders
  */
+// eslint-disable-next-line no-unused-vars
 const preWarmWebGL = () => {
   return new Promise((resolve) => {
     try {
@@ -123,6 +124,7 @@ const preWarmWebGL = () => {
 /**
  * Preload Three.js and related libraries
  */
+// eslint-disable-next-line no-unused-vars
 const preloadThreeJS = async () => {
   try {
     // Import THREE to trigger bundler to load it

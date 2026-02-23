@@ -1046,7 +1046,6 @@ const App = () => {
   const loadingAnimRef = useRef(null); // setInterval handle for smooth progress
   const animatedProgressRef = useRef(0); // Current animated value (0-1), bypasses React state
   const nebulaReadyRef = useRef(null); // resolves when NebulaBackground fires onReady
-  const [resourcesLoaded, setResourcesLoaded] = useState(false); // Track when all resources are ready
   const { language, toggleLanguage, t, tArray } = useLanguage();
   const [currentFrame, setCurrentFrame] = useState(0); // 0 to 29 discrete frames
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -1381,7 +1380,6 @@ const App = () => {
       }
     }, { signal: abortController.signal }).then(async () => {
       if (abortController.signal.aborted) return;
-      setResourcesLoaded(true);
       console.log('[App] JS chunks loaded — mounting nebula background');
       // Push bar to exactly 81% immediately via DOM
       loadingTargetRef.current = 0.81;

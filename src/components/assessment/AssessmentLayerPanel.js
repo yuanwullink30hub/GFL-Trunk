@@ -166,7 +166,6 @@ const SingleLayerPanel = ({
     // Compute RIGHT-side X position (where cards open — all at same Y)
     // Breakpoint-aware positioning: Desktop / Laptop / Tablet / Mobile
     const vw = window.innerWidth;
-    const remPx = 16;
     const rightXPercent = vw >= 1441 ? 73 :  // Desktop — balanced
                           vw >= 1024 ? 83 + (4 * 16 / vw * 100) :  // Laptop — +4rem right
                           vw >= 768  ? 75 :  // Tablet

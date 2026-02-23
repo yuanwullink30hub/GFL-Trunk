@@ -61,6 +61,81 @@ const AssessmentResultsModal = ({
   
   // PDF download state
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // ── Responsive breakpoints (matches DesktopLayout pattern) ──
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Breakpoint-based sizing:  Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
+  const rs = windowWidth >= 1441 ? {
+    // ── Desktop ── original full-size
+    poetryWidth: '24rem',
+    poetryPad: '1.5rem',
+    modalMaxWidth: '56rem',
+    modalMaxHeight: '85vh',
+    scrollPad: '1.5rem 2rem',
+    profileImgSize: '25rem',
+    profileTextMaxW: '40rem',
+    titleFont: 'clamp(1.8rem, 4vw, 3rem)',
+    radarHeight: '380px',
+    sectionPad: '1.5rem',
+    cardPad: '1.25rem',
+    btnMinWidth: '200px',
+    btnPad: '1rem 1.5rem',
+    btnFont: '0.85rem',
+  } : windowWidth >= 1024 ? {
+    // ── Laptop ── 0.56x
+    poetryWidth: '13.4rem',
+    poetryPad: '0.84rem',
+    modalMaxWidth: '31.4rem',
+    modalMaxHeight: '85vh',
+    scrollPad: '0.84rem 1.12rem',
+    profileImgSize: '14rem',
+    profileTextMaxW: '22.4rem',
+    titleFont: '1.4rem',
+    radarHeight: '213px',
+    sectionPad: '0.84rem',
+    cardPad: '0.7rem',
+    btnMinWidth: '112px',
+    btnPad: '0.56rem 0.84rem',
+    btnFont: '0.6rem',
+  } : windowWidth >= 768 ? {
+    // ── Tablet ── 0.65x
+    poetryWidth: '15.6rem',
+    poetryPad: '0.975rem',
+    modalMaxWidth: '36.4rem',
+    modalMaxHeight: '85vh',
+    scrollPad: '0.975rem 1.3rem',
+    profileImgSize: '16.25rem',
+    profileTextMaxW: '26rem',
+    titleFont: '1.6rem',
+    radarHeight: '247px',
+    sectionPad: '0.975rem',
+    cardPad: '0.8rem',
+    btnMinWidth: '130px',
+    btnPad: '0.65rem 0.975rem',
+    btnFont: '0.7rem',
+  } : {
+    // ── Mobile ── near-full-width
+    poetryWidth: '90vw',
+    poetryPad: '1rem',
+    modalMaxWidth: '95vw',
+    modalMaxHeight: '85vh',
+    scrollPad: '0.75rem 1rem',
+    profileImgSize: '80vw',
+    profileTextMaxW: '90vw',
+    titleFont: '1.5rem',
+    radarHeight: '260px',
+    sectionPad: '0.75rem',
+    cardPad: '0.65rem',
+    btnMinWidth: '100%',
+    btnPad: '0.75rem 1rem',
+    btnFont: '0.8rem',
+  };
   
   // Generate and download PDF from the modal content
   const handleDownloadPdf = useCallback(async () => {
@@ -200,8 +275,8 @@ const AssessmentResultsModal = ({
         <div 
           style={{
             position: 'relative',
-            width: '24rem',
-            padding: '1.5rem',
+          width: rs.poetryWidth,
+            padding: rs.poetryPad,
             borderRadius: '0.5rem',
             textAlign: 'center',
             backdropFilter: 'blur(4px)',
@@ -286,15 +361,15 @@ const AssessmentResultsModal = ({
           opacity: resultsModalProgress,
           animation: 'resultsModalFadeIn 0.6s ease-out',
           width: '100%',
-          maxWidth: '56rem',
+          maxWidth: rs.modalMaxWidth,
         }}>
 
           {/* Modal Container - transparent like intro modal */}
           <div style={{
             position: 'relative',
             width: '100%',
-            maxWidth: '56rem',
-            maxHeight: '85vh',
+            maxWidth: rs.modalMaxWidth,
+            maxHeight: rs.modalMaxHeight,
             background: 'rgba(8, 2, 12, 0.95)',
             backdropFilter: 'blur(4px)',
             border: '1px solid rgba(0, 255, 157, 0.3)',
@@ -338,7 +413,7 @@ const AssessmentResultsModal = ({
               style={{
                 flex: 1,
                 overflowY: 'scroll',
-                padding: '1.5rem 2rem',
+                padding: rs.scrollPad,
                 position: 'relative',
                 zIndex: 10,
                 WebkitOverflowScrolling: 'touch',
@@ -354,8 +429,8 @@ const AssessmentResultsModal = ({
                   paddingBottom: '1.5rem',
                   borderBottom: '1px solid rgba(0, 255, 157, 0.2)',
                 }}>
-                  {/* Profile Image with Holographic Rings — 2.5x size */}
-                  <div style={{ position: 'relative', width: '25rem', height: '25rem', flexShrink: 0 }}>
+                  {/* Profile Image with Holographic Rings — responsive size */}
+                  <div style={{ position: 'relative', width: rs.profileImgSize, height: rs.profileImgSize, flexShrink: 0 }}>
                     {/* Dashed spinning ring */}
                     <div style={{
                       position: 'absolute',
@@ -400,9 +475,9 @@ const AssessmentResultsModal = ({
                     </div>
                   </div>
 
-                  <div style={{ maxWidth: '40rem' }}>
+                  <div style={{ maxWidth: rs.profileTextMaxW }}>
                     <h1 style={{
-                      fontSize: 'clamp(1.8rem, 4vw, 3rem)',
+                      fontSize: rs.titleFont,
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontWeight: 'bold',
                       background: 'linear-gradient(to right, #a855f7, #d8b4fe, #a855f7)',
@@ -484,7 +559,7 @@ const AssessmentResultsModal = ({
                     background: 'linear-gradient(135deg, rgba(0, 255, 157, 0.08), rgba(0, 255, 157, 0.03))',
                     border: '1px solid rgba(0, 255, 157, 0.25)',
                     borderRadius: '0.75rem',
-                    padding: '1.5rem',
+                    padding: rs.sectionPad,
                     position: 'relative',
                     overflow: 'hidden',
                   }}>
@@ -529,7 +604,7 @@ const AssessmentResultsModal = ({
                     background: 'rgba(249, 115, 22, 0.05)',
                     border: '1px solid rgba(249, 115, 22, 0.2)',
                     borderRadius: '0.75rem',
-                    padding: '1.25rem',
+                    padding: rs.cardPad,
                     position: 'relative',
                   }}>
                     <div style={{
@@ -585,7 +660,7 @@ const AssessmentResultsModal = ({
                     background: 'rgba(168, 85, 247, 0.05)',
                     border: '1px solid rgba(168, 85, 247, 0.2)',
                     borderRadius: '0.75rem',
-                    padding: '1.25rem',
+                    padding: rs.cardPad,
                     position: 'relative',
                   }}>
                     <div style={{
@@ -644,7 +719,7 @@ const AssessmentResultsModal = ({
                     background: 'rgba(0, 255, 157, 0.05)',
                     border: '1px solid rgba(0, 255, 157, 0.15)',
                     borderRadius: '0.75rem',
-                    padding: '1.25rem',
+                    padding: rs.cardPad,
                     position: 'relative',
                     overflow: 'hidden',
                   }}>
@@ -735,7 +810,7 @@ const AssessmentResultsModal = ({
                     background: 'rgba(249, 115, 22, 0.05)',
                     border: '1px solid rgba(249, 115, 22, 0.2)',
                     borderRadius: '0.75rem',
-                    padding: '1.25rem',
+                    padding: rs.cardPad,
                     position: 'relative',
                     overflow: 'hidden',
                   }}>
@@ -800,7 +875,7 @@ const AssessmentResultsModal = ({
                   background: 'rgba(168, 85, 247, 0.05)',
                   border: '1px solid rgba(168, 85, 247, 0.1)',
                   borderRadius: '0.75rem',
-                  padding: '1.5rem',
+                  padding: rs.sectionPad,
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
@@ -842,7 +917,7 @@ const AssessmentResultsModal = ({
                   }}>
                     {'/// ARCHETYPE_MATRIX'}
                   </div>
-                  <div style={{ width: '100%', height: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', height: rs.radarHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <SciFiRadarChart data={result.radarData} />
                   </div>
                 </div>
@@ -881,7 +956,7 @@ const AssessmentResultsModal = ({
                       lineHeight: 1.7,
                       textAlign: 'justify',
                       background: 'rgba(0, 0, 0, 0.4)',
-                      padding: '1.5rem',
+                      padding: rs.sectionPad,
                       borderRadius: '0 0.75rem 0.75rem 0',
                       borderRight: '1px solid rgba(0, 255, 157, 0.2)',
                       borderTop: '1px solid rgba(0, 255, 157, 0.2)',
@@ -898,7 +973,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     background: 'rgba(168, 85, 247, 0.05)',
                     border: '1px solid rgba(168, 85, 247, 0.2)',
-                    padding: '1.5rem',
+                    padding: rs.sectionPad,
                     borderRadius: '0.75rem',
                     position: 'relative',
                   }}>
@@ -994,10 +1069,10 @@ const AssessmentResultsModal = ({
                       disabled={isGeneratingPdf}
                       style={{
                         flex: '1 1 0',
-                        minWidth: '200px',
+                        minWidth: rs.btnMinWidth,
                         position: 'relative',
                         overflow: 'hidden',
-                        padding: '1rem 1.5rem',
+                        padding: rs.btnPad,
                         background: '#000',
                         border: '1px solid #00ff9d',
                         color: '#00ff9d',
@@ -1005,7 +1080,7 @@ const AssessmentResultsModal = ({
                         fontWeight: 'bold',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        fontSize: '0.85rem',
+                        fontSize: rs.btnFont,
                         cursor: isGeneratingPdf ? 'wait' : 'pointer',
                         transition: 'all 0.3s',
                         boxShadow: '0 0 15px rgba(0, 255, 157, 0.1)',
@@ -1046,10 +1121,10 @@ const AssessmentResultsModal = ({
                       onClick={onCreateAccount}
                       style={{
                         flex: '1 1 0',
-                        minWidth: '200px',
+                        minWidth: rs.btnMinWidth,
                         position: 'relative',
                         overflow: 'hidden',
-                        padding: '1rem 1.5rem',
+                        padding: rs.btnPad,
                         background: 'linear-gradient(to right, #a855f7, #581c87)',
                         border: '1px solid transparent',
                         color: '#fff',
@@ -1057,7 +1132,7 @@ const AssessmentResultsModal = ({
                         fontWeight: 'bold',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        fontSize: '0.85rem',
+                        fontSize: rs.btnFont,
                         cursor: 'pointer',
                         transition: 'all 0.3s',
                       }}

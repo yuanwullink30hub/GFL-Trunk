@@ -5,10 +5,17 @@ import { useLanguage } from '../../contexts/LanguageContext';
 /**
  * AssessmentCard - Question card matching SectorFrame styling
  * 
+ * Responsive tiers: Desktop (≥1441) / Laptop (≥1024) / Tablet (≥768) / Mobile (<768)
+ * 
  * Features:
  * - SectorFrame-style background (rgba(8,2,12,0.95)) with colored corner accents
  * - 6 answer options (A-F) with skewed connectors
- * - 12 question indicators at bottom with click-to-jump
+ * - Dual-choice system: pick up to 2 answers per question
+ *   Choice 1 = 3 pts, Choice 2 = 2 pts to their linked archetype
+ * - Click to select (1st click → "1", 2nd click on another → "2")
+ * - Click selected answer to remove; if #1 removed, #2 becomes #1
+ * - "1"/"2" indicator shown on the connector line between letter and text
+ * - Manual "Next" button below 12 question indicators
  * - Save button when all answered → collapses to header-only with "Scroll"
  */
 const AssessmentCard = ({ 
@@ -29,8 +36,82 @@ const AssessmentCard = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showScrollMode, setShowScrollMode] = useState(false);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
   const { t } = useLanguage();
+
+  // ── Responsive breakpoints (matches DesktopLayout pattern) ──
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Breakpoint-based sizing:  Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
+  const s = windowWidth >= 1441 ? {
+    // ── Desktop ── original full-size
+    cardMaxWidth: '42rem',
+    maxH: '82vh',
+    headerPad: '0.75rem 1.25rem',
+    badgeSize: '2.25rem',
+    badgeFont: '0.875rem',
+    contentMinH: '32rem',
+    contentPad: '1rem 1.25rem',
+    questionFont: '1rem',
+    questionMinH: '4.5rem',
+    answerMinH: '3.5rem',
+    answerFont: '0.875rem',
+    letterBadgeW: '2.5rem',
+    footerPad: '0.75rem 1.25rem',
+    indicatorSize: '1.75rem',
+  } : windowWidth >= 1024 ? {
+    // ── Laptop ── vw-based ×1.3
+    cardMaxWidth: '33.9vw',
+    maxH: '80vh',
+    headerPad: '0.57vw 0.95vw',
+    badgeSize: '1.89vw',
+    badgeFont: '0.85vw',
+    contentMinH: '26.4vw',
+    contentPad: '0.75vw 0.95vw',
+    questionFont: '1.13vw',
+    questionMinH: '3.77vw',
+    answerMinH: '3.02vw',
+    answerFont: '0.95vw',
+    letterBadgeW: '2.08vw',
+    footerPad: '0.57vw 0.95vw',
+    indicatorSize: '1.51vw',
+  } : windowWidth >= 768 ? {
+    // ── Tablet ── 0.65x
+    cardMaxWidth: '27rem',
+    maxH: '80vh',
+    headerPad: '0.5rem 0.8rem',
+    badgeSize: '1.5rem',
+    badgeFont: '0.65rem',
+    contentMinH: '21rem',
+    contentPad: '0.65rem 0.8rem',
+    questionFont: '0.8rem',
+    questionMinH: '3rem',
+    answerMinH: '2.3rem',
+    answerFont: '0.7rem',
+    letterBadgeW: '1.6rem',
+    footerPad: '0.5rem 0.8rem',
+    indicatorSize: '1.15rem',
+  } : {
+    // ── Mobile ── comfortable touch sizes
+    cardMaxWidth: '95vw',
+    maxH: '80vh',
+    headerPad: '0.5rem 0.75rem',
+    badgeSize: '1.75rem',
+    badgeFont: '0.75rem',
+    contentMinH: '20rem',
+    contentPad: '0.6rem 0.75rem',
+    questionFont: '0.9rem',
+    questionMinH: '3rem',
+    answerMinH: '2.5rem',
+    answerFont: '0.8rem',
+    letterBadgeW: '2rem',
+    footerPad: '0.5rem 0.75rem',
+    indicatorSize: '1.4rem',
+  };
 
   const currentQuestion = questions[currentQuestionIndex];
   const questionNumber = currentQuestionIndex + 1;
@@ -39,9 +120,16 @@ const AssessmentCard = ({
   const layerColors = ['#22c55e', '#3b82f6', '#a855f7', '#ef4444', '#f97316'];
   const subjectColor = currentSubject?.color || layerColors[currentSubjectIndex] || '#22c55e';
 
-  // Check if all questions in this card have been answered
+  // Check if all questions in this card have been answered (at least 1 choice each)
   const isAllAnswered = answeredCount >= totalQuestions;
-  const currentAnswer = allAnswers[currentQuestion?.id];
+  
+  // Current question's selections: always an array of 0-2 answer IDs
+  const currentSelections = (() => {
+    const val = allAnswers[currentQuestion?.id];
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    return [val]; // legacy single-value compat
+  })();
 
   // Trigger content animation when question changes
   useEffect(() => {
@@ -50,15 +138,24 @@ const AssessmentCard = ({
     return () => clearTimeout(timer);
   }, [currentQuestion?.id]);
 
+  // Dual-choice click handler
   const handleAnswerClick = useCallback((answerId) => {
-    if (selectedAnswer !== null) return;
-    setSelectedAnswer(answerId);
+    const idx = currentSelections.indexOf(answerId);
+    let newSelections;
     
-    setTimeout(() => {
-      onSelectAnswer(currentQuestion.id, answerId);
-      setSelectedAnswer(null);
-    }, 200);
-  }, [currentQuestion, onSelectAnswer, selectedAnswer]);
+    if (idx !== -1) {
+      // Already selected → remove it. If it was #1, #2 becomes #1 automatically.
+      newSelections = currentSelections.filter(id => id !== answerId);
+    } else if (currentSelections.length < 2) {
+      // Not selected and room for more → add as next choice
+      newSelections = [...currentSelections, answerId];
+    } else {
+      // Already have 2 selections — ignore
+      return;
+    }
+    
+    onSelectAnswer(currentQuestion.id, newSelections);
+  }, [currentQuestion, onSelectAnswer, currentSelections]);
 
   const handleSave = () => {
     setIsCollapsed(true);
@@ -81,15 +178,15 @@ const AssessmentCard = ({
   }
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
+    <div className="relative w-full mx-auto" style={{ maxWidth: s.cardMaxWidth }}>
       {/* Main Card - SectorFrame style */}
       <div 
         className={`
           relative rounded-lg backdrop-blur-sm overflow-hidden flex flex-col
           transition-[max-height] duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
-          ${isCollapsed ? 'max-h-[80px]' : 'max-h-[85vh]'}
+          ${isCollapsed ? 'max-h-[80px]' : ''}
         `}
-        style={{ backgroundColor: 'rgba(8, 2, 12, 0.95)' }}
+        style={{ backgroundColor: 'rgba(8, 2, 12, 0.95)', maxHeight: isCollapsed ? '80px' : s.maxH }}
       >
         {/* Corner Accents - SectorFrame style */}
         <div className="absolute -top-0.5 -left-0.5 w-4 h-4 pointer-events-none z-20" style={{
@@ -127,8 +224,8 @@ const AssessmentCard = ({
 
         {/* --- Header Section --- */}
         <header 
-          className="relative shrink-0 px-5 py-3 z-10 transition-all duration-700"
-          style={{ borderBottom: isCollapsed ? 'none' : `1px solid ${subjectColor}30` }}
+          className="relative shrink-0 z-10 transition-all duration-700"
+          style={{ borderBottom: isCollapsed ? 'none' : `1px solid ${subjectColor}30`, padding: s.headerPad }}
         >
           <div className="flex items-center justify-between">
             {/* Left: Question number badge */}
@@ -137,8 +234,11 @@ const AssessmentCard = ({
               ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}
             `}>
               <div 
-                className="w-9 h-9 flex items-center justify-center rounded font-bold text-sm"
+                className="flex items-center justify-center rounded font-bold"
                 style={{
+                  width: s.badgeSize,
+                  height: s.badgeSize,
+                  fontSize: s.badgeFont,
                   backgroundColor: `${subjectColor}20`,
                   color: subjectColor,
                   border: `1px solid ${subjectColor}40`,
@@ -180,43 +280,46 @@ const AssessmentCard = ({
         {/* --- Main Content Section --- */}
         <div 
           className={`
-            relative z-10 flex-1 px-5 py-4 flex flex-col gap-4 overflow-y-auto
+            relative z-10 flex-1 flex flex-col gap-3 overflow-y-auto
             transition-opacity duration-500 ease-in-out
             ${isCollapsed ? 'opacity-0 h-0 py-0 overflow-hidden pointer-events-none' : 'opacity-100'}
             ${isAnimating && !isCollapsed ? 'opacity-0' : ''}
           `}
-          style={{ minHeight: isCollapsed ? 0 : '32rem' }}
+          style={{ minHeight: isCollapsed ? 0 : s.contentMinH, padding: isCollapsed ? 0 : s.contentPad }}
         >
           {/* Question Text */}
-          <div className="relative pl-3" style={{ minHeight: '4.5rem' }}>
+            <div className="relative pl-3" style={{ minHeight: s.questionMinH }}>
             <div className="absolute left-0 top-1 bottom-1 w-[2px]" style={{ background: `linear-gradient(to bottom, ${subjectColor}, transparent)` }} />
-            <p className="text-base leading-relaxed" style={{ color: '#FFFEF0', fontFamily: "'Figtree', sans-serif" }}>
+            <p style={{ fontSize: s.questionFont, lineHeight: 1.5, color: '#FFFEF0', fontFamily: "'Figtree', sans-serif" }}>
               {t(`questions.${currentQuestion.id}`) !== `questions.${currentQuestion.id}` 
                 ? t(`questions.${currentQuestion.id}`) 
                 : currentQuestion.text}
             </p>
           </div>
 
-          {/* Answer Options (A-F) */}
+          {/* Answer Options (A-F) — dual-choice: up to 2 selections */}
           <div className="flex flex-col gap-2">
             {currentQuestion.answers.map((answer, idx) => {
-              const isSelected = selectedAnswer === answer.id || currentAnswer === answer.id;
+              const selectionIdx = currentSelections.indexOf(answer.id);
+              const isSelected = selectionIdx !== -1;
+              const choiceNumber = selectionIdx !== -1 ? selectionIdx + 1 : null; // 1 or 2
               return (
                 <button
                   key={answer.id}
                   onClick={() => handleAnswerClick(answer.id)}
-                  disabled={selectedAnswer !== null}
                   className={`
                     relative group flex items-stretch text-left transition-all duration-200 w-full
                     ${isSelected ? 'translate-x-1' : 'hover:translate-x-0.5'}
-                    ${selectedAnswer !== null && selectedAnswer !== answer.id ? 'opacity-40' : ''}
+                    ${currentSelections.length >= 2 && !isSelected ? 'opacity-40' : ''}
                   `}
-                  style={{ minHeight: '3.5rem' }}
+                  style={{ minHeight: s.answerMinH }}
                 >
                   {/* Letter Badge */}
                   <div 
-                    className="w-10 flex items-center justify-center font-bold text-sm border-y border-l rounded-l-sm transition-colors duration-300"
+                    className="flex items-center justify-center font-bold border-y border-l rounded-l-sm transition-colors duration-300"
                     style={{
+                      width: s.letterBadgeW,
+                      fontSize: s.answerFont,
                       fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                       backgroundColor: isSelected ? subjectColor : 'rgba(8, 2, 12, 0.95)',
                       color: isSelected ? '#0f172a' : '#FFFEF0',
@@ -226,17 +329,41 @@ const AssessmentCard = ({
                     {String.fromCharCode(65 + idx)}
                   </div>
 
-                  {/* Connector */}
+                  {/* Connector with choice indicator (1 or 2) */}
                   <div 
-                    className="w-3 border-y relative overflow-hidden"
+                    className="w-5 border-y relative overflow-visible"
                     style={{
                       borderColor: isSelected ? subjectColor : `${subjectColor}30`,
                       backgroundColor: isSelected ? `${subjectColor}15` : 'transparent'
                     }}
                   >
+                    {/* Horizontal line */}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-full h-[1px]" style={{ backgroundColor: isSelected ? subjectColor : `${subjectColor}20` }} />
                     </div>
+                    {/* Choice number indicator — on top of the line */}
+                    {choiceNumber && (
+                      <div 
+                        className="absolute flex items-center justify-center"
+                        style={{
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: s.indicatorSize,
+                          height: s.indicatorSize,
+                          borderRadius: '50%',
+                          backgroundColor: subjectColor,
+                          color: '#0f172a',
+                          fontSize: `calc(${s.answerFont} * 0.75)`,
+                          fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                          fontWeight: 'bold',
+                          zIndex: 5,
+                          boxShadow: `0 0 6px ${subjectColor}60`,
+                        }}
+                      >
+                        {choiceNumber}
+                      </div>
+                    )}
                   </div>
 
                   {/* Answer Text */}
@@ -263,7 +390,7 @@ const AssessmentCard = ({
                       }
                     }}
                   >
-                    <span className="text-sm" style={{ fontFamily: "'Figtree', sans-serif" }}>
+                    <span style={{ fontSize: s.answerFont, fontFamily: "'Figtree', sans-serif" }}>
                       {t(`answers.${answer.id}`) !== `answers.${answer.id}` 
                         ? t(`answers.${answer.id}`) 
                         : answer.text}
@@ -278,22 +405,25 @@ const AssessmentCard = ({
         {/* --- Footer --- */}
         <footer 
           className={`
-            relative shrink-0 px-5 z-10 transition-all duration-500
-            ${isCollapsed ? 'h-0 py-0 overflow-hidden opacity-0' : 'py-3'}
+            relative shrink-0 z-10 transition-all duration-500
+            ${isCollapsed ? 'h-0 py-0 overflow-hidden opacity-0' : ''}
           `}
-          style={{ borderTop: isCollapsed ? 'none' : `1px solid ${subjectColor}20` }}
+          style={{ borderTop: isCollapsed ? 'none' : `1px solid ${subjectColor}20`, padding: isCollapsed ? 0 : s.footerPad }}
         >
           {/* 12 Question Indicators - click to jump */}
-          <div className="flex items-center justify-center gap-1.5 mb-3">
+          <div className="flex items-center justify-center gap-1.5 mb-2">
             {questions.map((q, idx) => {
               const isActive = idx === currentQuestionIndex;
-              const isAnswered = allAnswers[q.id] !== undefined;
+              const qAnswers = allAnswers[q.id];
+              const isAnswered = Array.isArray(qAnswers) ? qAnswers.length > 0 : qAnswers !== undefined;
               return (
                 <button
                   key={q.id}
                   onClick={() => handleJumpToQuestion(idx)}
-                  className="relative flex-shrink-0 flex items-center justify-center w-7 h-7 transition-all duration-200"
+                  className="relative flex-shrink-0 flex items-center justify-center transition-all duration-200"
                   style={{
+                    width: s.indicatorSize,
+                    height: s.indicatorSize,
                     border: `1.5px solid ${isActive ? subjectColor : isAnswered ? `${subjectColor}50` : `${subjectColor}20`}`,
                     backgroundColor: isActive ? `${subjectColor}25` : isAnswered ? `${subjectColor}10` : 'rgba(8, 2, 12, 0.6)',
                     color: isActive ? '#FFFEF0' : isAnswered ? `${subjectColor}` : 'rgba(255, 254, 240, 0.35)',
@@ -307,6 +437,37 @@ const AssessmentCard = ({
               );
             })}
           </div>
+
+          {/* Next Button — manual advance (centered below indicators) */}
+          {!isAllAnswered && currentQuestionIndex < totalQuestions - 1 && (
+            <button
+              onClick={() => onNext && onNext()}
+              className="mx-auto flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"
+              style={{
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                fontSize: s.answerFont,
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                backgroundColor: `${subjectColor}15`,
+                border: `1px solid ${subjectColor}40`,
+                color: subjectColor,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = `${subjectColor}30`;
+                e.currentTarget.style.borderColor = subjectColor;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = `${subjectColor}15`;
+                e.currentTarget.style.borderColor = `${subjectColor}40`;
+              }}
+            >
+              Next
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
 
           {/* Save Button - appears when all 12 answered */}
           {isAllAnswered && (

@@ -74,14 +74,13 @@ export const ARCHETYPE_TRAIT_MAP = {
 
 /**
  * Compute radar chart data from raw answers.
- * Uses the 12-archetype system: +5 pts per answer selection.
+ * Dual-choice scoring: Primary (1st pick) +3 pts, Secondary (2nd pick) +2 pts.
  * 
- * @param {Object} layerAnswers - { layerIndex: { questionId: answerId }, ... }
+ * @param {Object} layerAnswers - { layerIndex: { questionId: [answerId1, answerId2?] }, ... }
  * @param {Array}  questions    - Full question definitions (from questions/index.js)
  * @returns {Array<{ subject: string, A: number, fullMark: number }>}
  */
 export function computeRadarScores(layerAnswers, questions) {
-  // Tally archetype scores: +5 per selected answer
   const archetypeScores = {};
   ALL_ARCHETYPE_KEYS.forEach(key => { archetypeScores[key] = 0; });
 
@@ -91,16 +90,21 @@ export function computeRadarScores(layerAnswers, questions) {
       const layerIdx = parseInt(layerIdxStr, 10);
       const layer = questions.find(q => q.layerIndex === layerIdx);
       if (!layer) return;
-      Object.entries(layerData).forEach(([questionIdStr, answerId]) => {
+      Object.entries(layerData).forEach(([questionIdStr, answerVal]) => {
         const questionId = parseInt(questionIdStr, 10) || questionIdStr;
         const question = layer.questions.find(q => q.id === questionId);
         if (!question) return;
-        const selectedAnswer = question.answers.find(a => a.id === answerId);
-        if (!selectedAnswer) return;
-        const archetype = selectedAnswer.archetype;
-        if (archetype) {
-          archetypeScores[archetype] = (archetypeScores[archetype] || 0) + 5;
-        }
+        // Normalize to array (backward compat with single-value)
+        const selections = Array.isArray(answerVal) ? answerVal : [answerVal];
+        selections.forEach((aid, idx) => {
+          const selectedAnswer = question.answers.find(a => a.id === aid);
+          if (!selectedAnswer) return;
+          const archetype = selectedAnswer.archetype;
+          const pts = idx === 0 ? 3 : 2; // Primary +3, Secondary +2
+          if (archetype) {
+            archetypeScores[archetype] = (archetypeScores[archetype] || 0) + pts;
+          }
+        });
       });
     });
   }
@@ -124,7 +128,7 @@ export function computeRadarScores(layerAnswers, questions) {
  * @returns {Array<{ id, leftLabel, leftScore, rightLabel, rightScore, group, axis }>}
  */
 export function computeSubgroups(layerAnswers, questions) {
-  // Tally archetype hits
+  // Tally archetype hits (dual-choice: each selection counts as 1 hit)
   const archetypeCounts = {};
   if (layerAnswers && questions) {
     Object.entries(layerAnswers).forEach(([layerIdxStr, layerData]) => {
@@ -132,14 +136,17 @@ export function computeSubgroups(layerAnswers, questions) {
       const layerIdx = parseInt(layerIdxStr, 10);
       const layer = questions.find(q => q.layerIndex === layerIdx);
       if (!layer) return;
-      Object.entries(layerData).forEach(([questionIdStr, answerId]) => {
+      Object.entries(layerData).forEach(([questionIdStr, answerVal]) => {
         const questionId = parseInt(questionIdStr, 10) || questionIdStr;
         const question = layer.questions.find(q => q.id === questionId);
         if (!question) return;
-        const selectedAnswer = question.answers.find(a => a.id === answerId);
-        if (!selectedAnswer) return;
-        const archetype = selectedAnswer.archetype;
-        if (archetype) archetypeCounts[archetype] = (archetypeCounts[archetype] || 0) + 1;
+        const selections = Array.isArray(answerVal) ? answerVal : [answerVal];
+        selections.forEach(aid => {
+          const selectedAnswer = question.answers.find(a => a.id === aid);
+          if (!selectedAnswer) return;
+          const archetype = selectedAnswer.archetype;
+          if (archetype) archetypeCounts[archetype] = (archetypeCounts[archetype] || 0) + 1;
+        });
       });
     });
   }
@@ -174,14 +181,19 @@ export function determineArchetype(layerAnswers, questions) {
       const layerIdx = parseInt(layerIdxStr, 10);
       const layer = questions.find(q => q.layerIndex === layerIdx);
       if (!layer) return;
-      Object.entries(layerData).forEach(([questionIdStr, answerId]) => {
+      Object.entries(layerData).forEach(([questionIdStr, answerVal]) => {
         const questionId = parseInt(questionIdStr, 10) || questionIdStr;
         const question = layer.questions.find(q => q.id === questionId);
         if (!question) return;
-        const selectedAnswer = question.answers.find(a => a.id === answerId);
-        if (!selectedAnswer) return;
-        const archetype = selectedAnswer.archetype;
-        if (archetype) counts[archetype] = (counts[archetype] || 0) + 1;
+        const selections = Array.isArray(answerVal) ? answerVal : [answerVal];
+        selections.forEach((aid, idx) => {
+          const selectedAnswer = question.answers.find(a => a.id === aid);
+          if (!selectedAnswer) return;
+          const archetype = selectedAnswer.archetype;
+          // Weight: primary choice counts more than secondary
+          const weight = idx === 0 ? 3 : 2;
+          if (archetype) counts[archetype] = (counts[archetype] || 0) + weight;
+        });
       });
     });
   }

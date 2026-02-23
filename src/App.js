@@ -1,15 +1,26 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
 import NebulaBackground from './components/NebulaBackground';
-import HoloEarth from './components/orbital/HoloEarth';
-import DesktopLayout from './components/orbital/DesktopLayout';
-import { AssessmentIntro, AssessmentCard, AssessmentUpload, AssessmentLayerPanel } from './components/assessment';
-import AssessmentResultsModal from './components/assessment/AssessmentResultsModal';
 import { assessmentSubjects } from './pages/assessment/assessmentData';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
-import { FilosofiePage, GardensPage, DataPage, LoginPage, EyedentityPage } from './pages';
 import { BRANDS } from './pages/GeneralBrandPage/brandData';
 import { useLanguage } from './contexts/LanguageContext';
+
+// Lazy-load ALL heavy components so the main bundle stays tiny.
+// These get code-split into separate chunks that load in the background
+// while the loading screen is visible.
+const HoloEarth = lazy(() => import('./components/orbital/HoloEarth'));
+const DesktopLayout = lazy(() => import('./components/orbital/DesktopLayout'));
+const AssessmentIntro = lazy(() => import('./components/assessment/AssessmentIntro'));
+const AssessmentCard = lazy(() => import('./components/assessment/AssessmentCard'));
+const AssessmentUpload = lazy(() => import('./components/assessment/AssessmentUpload'));
+const AssessmentLayerPanel = lazy(() => import('./components/assessment/AssessmentLayerPanel'));
+const AssessmentResultsModal = lazy(() => import('./components/assessment/AssessmentResultsModal'));
+const FilosofiePage = lazy(() => import('./pages/FilosofiePage'));
+const GardensPage = lazy(() => import('./pages/GardensPage'));
+const DataPage = lazy(() => import('./pages/DataPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const EyedentityPage = lazy(() => import('./pages/EyedentityPage'));
 
 // ============================================
 // GRID MAP NAVIGATION CONFIGURATION
@@ -1030,9 +1041,11 @@ const SECTION_3_FRAMES = 3;     // Pyramid shifts down (frames 46-48)
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
-  const [showLoadingScreen, setShowLoadingScreen] = useState(true); // Loading screen visible for 6 seconds
-  const [loadingFadeOut, setLoadingFadeOut] = useState(false); // Fade out animation state
-  const [loadingProgress, setLoadingProgress] = useState(0); // Preloading progress (0-1)
+  const [mountNebula, setMountNebula] = useState(false); // Mount nebula after imports are done
+  const loadingTargetRef = useRef(0); // Raw tick-based target progress
+  const loadingAnimRef = useRef(null); // setInterval handle for smooth progress
+  const animatedProgressRef = useRef(0); // Current animated value (0-1), bypasses React state
+  const nebulaReadyRef = useRef(null); // resolves when NebulaBackground fires onReady
   const [resourcesLoaded, setResourcesLoaded] = useState(false); // Track when all resources are ready
   const { language, toggleLanguage, t, tArray } = useLanguage();
   const [currentFrame, setCurrentFrame] = useState(0); // 0 to 29 discrete frames
@@ -1287,49 +1300,129 @@ const App = () => {
     const performanceSettings = getPerformanceSettings();
     setIsLowEndMode(performanceSettings.tier === 'LOW');
     
+    // AbortController prevents StrictMode double-fire from causing races
+    const abortController = new AbortController();
+    
     // Start preloading all heavy resources immediately
-    // Loading screen shows until resources are loaded (max 6 seconds)
-    const maxLoadTime = 6000;
+    // Loading screen stays until nebula background is fully rendered
+    const maxLoadTime = 12000;
     let hasEnded = false;
     
     const endLoadingScreen = () => {
-      if (hasEnded) return;
+      if (hasEnded || abortController.signal.aborted) return;
       hasEnded = true;
-      // 1) Jump progress bar to 100%
-      setLoadingProgress(1);
-      // 2) Wait for bar CSS transition to finish (300ms), then fade out
+      // 1) Jump progress bar to 100% via direct DOM
+      animatedProgressRef.current = 1;
+      if (loadingAnimRef.current) { clearInterval(loadingAnimRef.current); loadingAnimRef.current = null; }
+      const bar = document.getElementById('gfl-loading-bar');
+      const txt = document.getElementById('gfl-loading-pct');
+      if (bar) bar.style.width = '100%';
+      if (txt) txt.textContent = '100%';
+      // 2) Wait for bar CSS transition to finish, then fade out the static HTML overlay
+      const overlay = document.getElementById('gfl-loading-overlay');
       setTimeout(() => {
-        setLoadingFadeOut(true);
+        if (abortController.signal.aborted) return;
+        if (overlay) {
+          overlay.style.opacity = '0';
+          overlay.style.pointerEvents = 'none';
+        }
         // 3) Remove from DOM after fade-out (500ms)
-        setTimeout(() => setShowLoadingScreen(false), 500);
+        setTimeout(() => {
+          if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        }, 500);
       }, 400);
     };
     
-    // Preload all resources - end loading screen when done
+    // Helper: write progress directly to DOM (bypasses React entirely)
+    const writeProgress = (value) => {
+      animatedProgressRef.current = value;
+      const pct = Math.round(value * 100);
+      const bar = document.getElementById('gfl-loading-bar');
+      const txt = document.getElementById('gfl-loading-pct');
+      if (bar) bar.style.width = pct + '%';
+      if (txt) txt.textContent = pct + '%';
+    };
+
+    // Smooth loading bar via setInterval — fast catch-up to target
+    const startTime = Date.now();
+    loadingAnimRef.current = setInterval(() => {
+      if (abortController.signal.aborted) return;
+      const elapsed = (Date.now() - startTime) / 1000;
+      const target = loadingTargetRef.current;
+      const prev = animatedProgressRef.current;
+      
+      // Minimum trickle based on elapsed time (never stuck at 0)
+      const minProgress = Math.min(0.45, 0.03 + elapsed * 0.06 + Math.sqrt(elapsed) * 0.04);
+      // Fast catch-up: close 40% of gap per tick (reaches target in ~5 ticks = 250ms)
+      const gap = target - prev;
+      const smooth = prev + gap * 0.40;
+      // Never go backward — always >= prev (protects direct writeProgress calls)
+      const next = Math.min(Math.max(smooth, minProgress, prev), 0.99);
+      
+      // Only write if value actually advanced (avoids overwriting direct writes)
+      if (next > prev + 0.001) {
+        writeProgress(next);
+      }
+    }, 50);
+
+    // Create a promise that resolves when NebulaBackground fires onReady
+    let resolveNebulaReady;
+    const nebulaReadyPromise = new Promise(resolve => { resolveNebulaReady = resolve; });
+    nebulaReadyRef.current = resolveNebulaReady;
+
+    // THREE-PHASE LOADING:
+    // Phase 1 (0→80%): Download + evaluate Three.js and app components
+    // Phase 2 (80→95%): Mount NebulaBackground, wait for shader compile + first render
+    // Phase 3 (95→100%): Nebula ready → end loading screen
     preloadAll((progress) => {
-      setLoadingProgress(progress);
-    }).then(() => {
+      if (!abortController.signal.aborted) {
+        // Map preload progress to 0→80% range
+        loadingTargetRef.current = progress * 0.80;
+      }
+    }, { signal: abortController.signal }).then(async () => {
+      if (abortController.signal.aborted) return;
       setResourcesLoaded(true);
-      console.log('[App] All resources preloaded');
-      endLoadingScreen();
+      console.log('[App] JS chunks loaded — mounting nebula background');
+      // Push bar to exactly 81% immediately via DOM
+      loadingTargetRef.current = 0.81;
+      writeProgress(0.81);
+      // Mount nebula — shader compilation will block the thread
+      setMountNebula(true);
+      // Give React a tick to mount the canvas before WebGL init blocks the thread
+      await new Promise(r => setTimeout(r, 16));
+      if (abortController.signal.aborted) return;
+      // Bar stays at 81% while shaders compile (thread blocked, can't animate)
+      
+      // Wait for nebula to signal it’s rendered its first frame
+      return nebulaReadyPromise;
+    }).then(() => {
+      if (abortController.signal.aborted) return;
+      console.log('[App] Nebula background ready');
+      // Nebula is rendered — end loading screen
+      loadingTargetRef.current = 1;
+      // Small delay so the bar visually reaches 100% before fade
+      setTimeout(() => endLoadingScreen(), 200);
     }).catch(() => {
-      // If preloading fails, still end loading screen
+      if (abortController.signal.aborted) return;
       console.warn('[App] Preloading failed, continuing anyway');
+      setMountNebula(true);
       endLoadingScreen();
     });
     
-    // Fallback: max 6 seconds even if resources aren't fully loaded
+    // Fallback: max load time even if something hangs
     const maxTimer = setTimeout(() => {
-      if (!hasEnded) {
+      if (!hasEnded && !abortController.signal.aborted) {
         console.log('[App] Max load time reached, continuing');
+        setMountNebula(true);
         endLoadingScreen();
-        // Continue loading in background
         preloadInBackground();
       }
     }, maxLoadTime);
     
     return () => {
+      abortController.abort();
       clearTimeout(maxTimer);
+      if (loadingAnimRef.current) clearInterval(loadingAnimRef.current);
     };
   }, []);
 
@@ -1715,36 +1808,21 @@ const App = () => {
     }
   }, [pyramidScrollProgress, assessmentPhase, assessmentScrollEnabled, currentLayerIndex]);
   
-  // Handle answer selection (AssessmentCard passes questionId and answerId)
-  const handleAnswerSelect = useCallback((questionId, answerId) => {
-    // Record the answer
-    setAssessmentAnswers(prev => [...prev, {
-      subjectIndex: currentSubjectIndex,
-      questionIndex: currentQuestionIndex,
-      questionId,
-      answer: answerId
-    }]);
-    
-    const questionsPerSubject = getQuestionsPerSubject(assessmentLevel);
-    
-    // Move to next question
-    if (currentQuestionIndex < questionsPerSubject - 1) {
-      // More questions in this subject
-      setCurrentQuestionIndex(prev => prev + 1);
-    } else if (currentSubjectIndex < 4) {
-      // Move to next subject
-      setCurrentSubjectIndex(prev => prev + 1);
-      setCurrentQuestionIndex(0);
-    } else {
-      // All questions done
-      if (assessmentLevel === 'deep') {
-        setAssessmentPhase('upload');
-      } else {
-        setAssessmentPhase('results');
-        triggerGoldMode(); // Trigger gold mode on completion
-      }
-    }
-  }, [currentSubjectIndex, currentQuestionIndex, assessmentLevel, triggerGoldMode]);
+  // Handle answer selection (AssessmentCard passes questionId and selections array)
+  const handleAnswerSelect = useCallback((questionId, selections) => {
+    // Record the answer (selections is an array of 0-2 answer IDs)
+    setAssessmentAnswers(prev => {
+      // Replace existing entry for this question if present
+      const filtered = prev.filter(a => a.questionId !== questionId);
+      if (selections.length === 0) return filtered;
+      return [...filtered, {
+        subjectIndex: currentSubjectIndex,
+        questionIndex: currentQuestionIndex,
+        questionId,
+        answer: selections
+      }];
+    });
+  }, [currentSubjectIndex, currentQuestionIndex]);
   
   // Go back one question
   const handleGoBack = useCallback(() => {
@@ -1949,7 +2027,12 @@ const App = () => {
   const headerScale = 1 - (headerProgress * 0.05);
   
   // Grid background: fades out with header
-  const gridOpacity = Math.max(0, 0.4 * (1 - headerProgress));
+  const gridOpacity = Math.max(0, 0.3 * (1 - headerProgress));
+
+  // Alternating + and × cross grid: 100x100 tile, checkerboard pattern at 50px spacing
+  // (0,0)=+  (50,0)=×  (0,50)=×  (50,50)=+
+  const crossPatternDesktop = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3C/svg%3E")`;
+  const crossPatternMobile = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3C/svg%3E")`;
   
   // Containers: fly away with header
   const containerProgress = headerProgress;
@@ -2022,132 +2105,30 @@ const App = () => {
       className={`relative w-screen font-figtree ${isMobile ? 'min-h-screen overflow-visible' : 'h-screen overflow-hidden'}`}
       style={{color: '#FFFEF0', touchAction: isMobile ? 'pan-y pinch-zoom' : 'none', zIndex: 1, isolation: 'isolate'}}
     >
-      {/* Procedural WebGL nebula background — fixed behind all content */}
-      <NebulaBackground mapPosition={mapPosition} />
+      {/* Procedural WebGL nebula background — fixed behind all content.
+          Mounted after JS chunks are loaded (mountNebula=true). Shader compilation
+          happens behind the opaque loading overlay. The onReady callback signals
+          when the first frame has rendered, allowing the loading screen to end. */}
+      {mountNebula && (
+        <NebulaBackground
+          mapPosition={mapPosition}
+          onReady={() => {
+            if (nebulaReadyRef.current) {
+              nebulaReadyRef.current();
+              nebulaReadyRef.current = null;
+            }
+          }}
+        />
+      )}
       {/* ========================= */}
       {/* LOADING SCREEN OVERLAY */}
       {/* ========================= */}
-      {showLoadingScreen && (
-        <div 
-          className="fixed inset-0 flex items-center justify-center"
-          style={{
-            zIndex: 99999,
-            backgroundColor: 'rgba(0, 0, 0, 0.98)',
-            opacity: loadingFadeOut ? 0 : 1,
-            transition: 'opacity 0.5s ease-out',
-            pointerEvents: loadingFadeOut ? 'none' : 'auto'
-          }}
-        >
-          {/* Loading Modal Container */}
-          <div 
-            className="relative backdrop-blur-md rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.8)] flex flex-col items-center"
-            style={{
-              backgroundColor: 'rgba(8, 2, 12, 0.9)',
-              padding: isMobile ? '2rem 1.5rem' : '2.5rem 3rem',
-              maxWidth: isMobile ? '90vw' : '500px',
-              border: '1px solid rgba(147, 51, 234, 0.3)'
-            }}
-          >
-            {/* Top-Left Corner Border */}
-            <div className="absolute -top-0.5 -left-0.5 w-5 h-5" style={{
-              border: '1.5px solid #a855f7',
-              borderRadius: '10px 0 0 0',
-              borderBottom: 'none',
-              borderRight: 'none'
-            }}></div>
-            
-            {/* Top-Right Corner Border */}
-            <div className="absolute -top-0.5 -right-0.5 w-5 h-5" style={{
-              border: '1.5px solid #a855f7',
-              borderRadius: '0 10px 0 0',
-              borderBottom: 'none',
-              borderLeft: 'none'
-            }}></div>
-            
-            {/* Bottom-Left Corner Border */}
-            <div className="absolute -bottom-0.5 -left-0.5 w-5 h-5" style={{
-              border: '1.5px solid #a855f7',
-              borderRadius: '0 0 0 10px',
-              borderTop: 'none',
-              borderRight: 'none'
-            }}></div>
-            
-            {/* Bottom-Right Corner Border */}
-            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5" style={{
-              border: '1.5px solid #a855f7',
-              borderRadius: '0 0 10px 0',
-              borderTop: 'none',
-              borderLeft: 'none'
-            }}></div>
+      {/* Loading screen is now rendered as static HTML in index.html (appears before JS loads).
+          It is faded out & removed from the DOM by endLoadingScreen(). */}
 
-            {/* Spinning Loader */}
-            <div 
-              className="rounded-full border-2 border-t-transparent animate-spin mb-6"
-              style={{
-                borderColor: '#a855f7',
-                borderTopColor: 'transparent',
-                width: isMobile ? '2.5rem' : '3rem',
-                height: isMobile ? '2.5rem' : '3rem'
-              }}
-            />
-
-            {/* Loading Message */}
-            <p 
-              className="text-center tracking-wide"
-              style={{
-                color: 'rgba(255, 254, 240, 0.9)',
-                fontFamily: "'Figtree', sans-serif",
-                fontSize: isMobile ? '0.9rem' : '1rem',
-                lineHeight: 1.6,
-                maxWidth: '320px'
-              }}
-            >
-              {t('loading.description')}
-            </p>
-
-            {/* Progress Bar */}
-            <div 
-              className="mt-5 w-full relative"
-              style={{
-                height: '3px',
-                backgroundColor: 'rgba(147, 51, 234, 0.2)',
-                borderRadius: '2px',
-                overflow: 'hidden',
-                maxWidth: '280px'
-              }}
-            >
-              <div 
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  height: '100%',
-                  width: `${Math.round(loadingProgress * 100)}%`,
-                  backgroundColor: '#a855f7',
-                  borderRadius: '2px',
-                  transition: 'width 0.3s ease-out',
-                  boxShadow: '0 0 10px rgba(168, 85, 247, 0.5)'
-                }}
-              />
-            </div>
-
-            {/* Progress percentage */}
-            <p 
-              className="mt-2 tracking-[0.15em]"
-              style={{
-                color: 'rgba(168, 85, 247, 0.8)',
-                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontSize: '0.7rem'
-              }}
-            >
-              {resourcesLoaded && loadingProgress >= 0.8 ? '100%' : `${Math.round(loadingProgress * 100)}%`}
-            </p>
-
-            {/* Scanline overlay */}
-            <div className="absolute inset-0 pointer-events-none rounded-lg bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 mix-blend-overlay"></div>
-          </div>
-        </div>
-      )}
+      {/* Suspense boundary for all lazy-loaded components.
+          The loading screen above handles the visual — this just prevents React errors. */}
+      <Suspense fallback={null}>
 
       {/* Desktop TimeSync - Fixed HUD element, stays in viewport corner like camera timestamp */}
       {!isMobile && (
@@ -2165,11 +2146,8 @@ const App = () => {
         <div 
           className="fixed inset-0 z-0 pointer-events-none"
           style={{
-            backgroundImage: `
-              linear-gradient(rgba(201, 160, 240, 0.05) 1px, transparent 1px), 
-              linear-gradient(90deg, rgba(201, 160, 240, 0.05) 1px, transparent 1px)
-            `,
-            backgroundSize: '50px 50px'
+            backgroundImage: crossPatternMobile,
+            backgroundSize: '100px 100px'
           }}
         />
       )}
@@ -2184,12 +2162,9 @@ const App = () => {
           <div 
             className="fixed inset-0 z-0 pointer-events-none"
             style={{
-              opacity: 0.5,
-              backgroundImage: `
-                linear-gradient(rgba(201, 160, 240, 0.05) 1px, transparent 1px), 
-                linear-gradient(90deg, rgba(201, 160, 240, 0.05) 1px, transparent 1px)
-              `,
-              backgroundSize: '50px 50px'
+              opacity: 0.4,
+              backgroundImage: crossPatternMobile,
+              backgroundSize: '100px 100px'
             }}
           />
 
@@ -2421,11 +2396,8 @@ const App = () => {
               left: '-200vw',
               top: '-200vh',
               opacity: gridOpacity,
-              backgroundImage: `
-                linear-gradient(rgba(201, 160, 240, 0.07) 1px, transparent 1px), 
-                linear-gradient(90deg, rgba(201, 160, 240, 0.07) 1px, transparent 1px)
-              `,
-              backgroundSize: '50px 50px',
+              backgroundImage: crossPatternDesktop,
+              backgroundSize: '100px 100px',
               // Move grid with map position - creates floating illusion
               transform: `translate(${-mapPosition.x * 100}vw, ${-mapPosition.y * 100}vh)`,
               transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
@@ -2691,7 +2663,15 @@ const App = () => {
                   onSelectAnswer={handleAnswerSelect}
                   onGoBack={handleGoBack}
                   canGoBack={assessmentAnswers.length > 0}
-                  onNext={() => {}}
+                  onNext={() => {
+                    const questionsPerSubject = getQuestionsPerSubject(assessmentLevel);
+                    if (currentQuestionIndex < questionsPerSubject - 1) {
+                      setCurrentQuestionIndex(prev => prev + 1);
+                    } else if (currentSubjectIndex < 4) {
+                      setCurrentSubjectIndex(prev => prev + 1);
+                      setCurrentQuestionIndex(0);
+                    }
+                  }}
                   onComplete={() => {
                     if (assessmentLevel === 'deep') {
                       setAssessmentPhase('upload');
@@ -3056,6 +3036,7 @@ const App = () => {
           />
         </div>
       </div>
+      </Suspense>
     </main>
   );
 };

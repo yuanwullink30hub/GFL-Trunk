@@ -237,34 +237,86 @@ const preloadFonts = () => {
 };
 
 /**
- * Master preload function - loads everything in parallel
- * Returns a promise that resolves when critical resources are ready
- * @param {function} onProgress - Optional callback with progress (0-1)
+ * Yield to the event loop so setInterval / DOM updates can fire
  */
-export const preloadAll = (onProgress) => {
-  const tasks = [
-    { name: 'webgl', fn: preWarmWebGL, weight: 1 },
-    { name: 'three', fn: preloadThreeJS, weight: 2 },
-    { name: 'components', fn: preloadComponents, weight: 3 },
-    { name: 'images', fn: preloadImages, weight: 2 },
-    { name: 'fonts', fn: preloadFonts, weight: 1 },
+const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
+
+/**
+ * Master preload function — phased loading with smooth progress
+ *
+ * Phase 1 (0→50%): Download + evaluate Three.js (the single heaviest dep)
+ * Phase 2 (50→100%): Download + evaluate all components in parallel
+ *
+ * Yields between phases so the loading bar interval can fire.
+ * Images + fonts load in background without blocking.
+ *
+ * @param {function} onProgress - Callback with progress (0-1)
+ * @param {object} options - { signal: AbortController.signal } for cancellation
+ */
+export const preloadAll = async (onProgress, options = {}) => {
+  const signal = options.signal;
+  const aborted = () => signal && signal.aborted;
+  const report = (p) => { if (onProgress && !aborted()) onProgress(p); };
+
+  report(0);
+
+  // ── All imports loaded sequentially with yields ──
+  // Sequential loading ensures each import triggers a visible progress
+  // bar update before the next one starts evaluating.
+  const allImports = [
+    // Three.js core (heaviest)
+    () => import('three'),
+    () => import('@react-three/fiber'),
+    () => import('@react-three/drei'),
+    // App components
+    () => import('../components/orbital/HoloEarth'),
+    () => import('../components/orbital/DesktopLayout'),
+    () => import('../components/orbital/MobileLayout'),
+    () => import('../components/orbital/TechContainer'),
+    () => import('../components/orbital/EarthParticleWaves'),
+    () => import('../components/holoearth/HoloPyramid'),
+    () => import('../components/holoearth/HoloCore'),
+    () => import('../components/holoearth/HoloLabel'),
+    () => import('../components/holoearth/PyramidView'),
+    () => import('../components/holoearth/PyramidInner'),
+    () => import('../components/holoearth/PyramidOverlay'),
+    () => import('../pages/FilosofiePage'),
+    () => import('../pages/GardensPage'),
+    () => import('../pages/DataPage'),
+    () => import('../pages/LoginPage'),
+    () => import('../pages/EyedentityPage'),
   ];
-  
-  const totalWeight = tasks.reduce((sum, t) => sum + t.weight, 0);
-  let completedWeight = 0;
-  
-  const taskPromises = tasks.map(task => 
-    task.fn().then(() => {
-      completedWeight += task.weight;
-      if (onProgress) {
-        onProgress(completedWeight / totalWeight);
-      }
-    })
-  );
-  
-  return Promise.all(taskPromises).then(() => {
-    console.log('[Preload] All resources loaded');
-  });
+  const total = allImports.length;
+  for (let i = 0; i < total; i++) {
+    if (aborted()) return;
+    try {
+      await allImports[i]();
+    } catch (e) {
+      console.warn('[Preload] Import failed:', e);
+    }
+    report((i + 1) / total);
+    // Yield to event loop so the loading bar interval can fire
+    await yieldToMain();
+  }
+
+  // ── Background: images + fonts (fire-and-forget) ──
+  const bgImages = [
+    'images/landingpage/logo.png',
+    'images/slideshow images/1111logo.png',
+    'images/slideshow images/club49-logo.png',
+    'images/slideshow images/karmaneventsPNG.png',
+    'images/slideshow images/Rengi-logo.png',
+    'images/Blackhole.png',
+    'images/Eyedentity.png',
+    'images/illustrativesun.png',
+  ];
+  bgImages.forEach(src => preloadImage(src).catch(() => {}));
+  preloadFonts().catch(() => {});
+
+  if (!aborted()) {
+    report(1);
+    console.log('[Preload] All critical resources loaded');
+  }
 };
 
 /**

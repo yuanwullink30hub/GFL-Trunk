@@ -47,13 +47,13 @@ const SAVED_LAYER_POSITIONS = [
 // All OPEN cards sit at the same vertical center on the RIGHT side
 const OPEN_Y = 50; // vertically centered in viewport
 
-// Scale factors for saved cards on the left side — smaller toward the top (pyramid shape)
+// Scale factors for saved cards on the left side — all stay full size
 const SAVED_SCALES = [
-  0.60, // Foundation (bottom) — widest
-  0.55, // Emotional
-  0.50, // Mental
-  0.45, // Spiritual
-  0.40, // Unity (top) — narrowest
+  1.0, // Foundation (bottom)
+  1.0, // Emotional
+  1.0, // Mental
+  1.0, // Spiritual
+  1.0, // Unity (top)
 ];
 
 // Animation timing (ms)
@@ -75,11 +75,21 @@ const SingleLayerPanel = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const currentQuestionIndexRef = useRef(0);
   const { t } = useLanguage();
+
+  // ── Responsive breakpoints ──
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Track save animation: 'idle' → 'collapsing' → 'moving' → 'done'
-  const [savePhase, setSavePhase] = useState('idle');
+  // If already saved on mount (e.g. remount after scroll-back), skip straight to 'done'
+  const [savePhase, setSavePhase] = useState(() => isSaved ? 'done' : 'idle');
   // Move progress (0 = still on right, 1 = fully on left)
-  const [moveProgress, setMoveProgress] = useState(0);
+  // If already saved on mount, start at 1 so card is already in its left position
+  const [moveProgress, setMoveProgress] = useState(() => isSaved ? 1 : 0);
   const moveAnimRef = useRef(null);
   const collapseTimerRef = useRef(null);
 
@@ -120,7 +130,10 @@ const SingleLayerPanel = ({
   const questions = useMemo(() => getLayerQuestions(layerIndex), [layerIndex]);
   const totalQuestions = questions.length;
   
-  const answeredCount = questions.filter(q => answers[q.id] !== undefined).length;
+  const answeredCount = questions.filter(q => {
+    const a = answers[q.id];
+    return Array.isArray(a) ? a.length > 0 : a !== undefined;
+  }).length;
   
   // Calculate animation progress for this layer (scroll-based entry from entity)
   const getAnimationProgress = useCallback(() => {
@@ -151,16 +164,20 @@ const SingleLayerPanel = ({
     const savedY = SAVED_LAYER_POSITIONS[layerIndex]; // left-side pyramid Y
     
     // Compute RIGHT-side X position (where cards open — all at same Y)
+    // Breakpoint-aware positioning: Desktop / Laptop / Tablet / Mobile
     const vw = window.innerWidth;
     const remPx = 16;
-    const edgeOffset = 11 * remPx; // 176px from edge
-    const cardWidth = Math.min(480, vw * 0.45);
-    const rightXPercent = ((vw - edgeOffset - cardWidth / 2) / vw) * 100;
+    const rightXPercent = vw >= 1441 ? 73 :  // Desktop — balanced
+                          vw >= 1024 ? 83 + (4 * 16 / vw * 100) :  // Laptop — +4rem right
+                          vw >= 768  ? 75 :  // Tablet
+                          50;                 // Mobile — centered
     
     // Compute LEFT-side X position (where saved cards stack)
     const savedScale = SAVED_SCALES[layerIndex];
-    const leftEdgeOffset = 6 * remPx;
-    const leftXPercent = ((leftEdgeOffset + (cardWidth * savedScale) / 2) / vw) * 100;
+    const leftXPercent = vw >= 1441 ? 21 :   // Desktop — snug left of pyramid
+                         vw >= 1024 ? 13 - (1.5 * 16 / vw * 100) :   // Laptop — -1.5rem left
+                         vw >= 768  ? 18 :   // Tablet
+                         50;                  // Mobile — centered
     
     // During convergence, animate from current position back to entity center
     if (convergenceProgress > 0) {
@@ -258,13 +275,11 @@ const SingleLayerPanel = ({
     };
   }, [layerIndex, animProgress, convergenceProgress, isSaved, savePhase, moveProgress]);
 
-  // Answer selection handler - auto-advances to next question
+  // Answer selection handler - stores selections (no auto-advance)
   const handleAnswerSelect = useCallback((questionId, answerId) => {
     if (isSaved) return;
     
     onAnswerSelect(layerIndex, questionId, answerId);
-    
-    // Auto-advance handled by AssessmentCard internally via selectedAnswer state
   }, [layerIndex, isSaved, onAnswerSelect]);
 
   // Go back one question
@@ -283,8 +298,9 @@ const SingleLayerPanel = ({
     }
   }, [currentQuestionIndex, totalQuestions]);
 
-  // Don't render if layer hasn't started animating (except layer 0)
-  if (layerIndex > 0 && animProgress === 0) return null;
+  // Don't render if layer hasn't started animating (except layer 0 and saved layers)
+  // Saved layers must ALWAYS render regardless of scroll position
+  if (layerIndex > 0 && animProgress === 0 && !isSaved) return null;
 
   // Guard: don't render if layer data is missing
   if (!layer) return null;
@@ -299,10 +315,17 @@ const SingleLayerPanel = ({
     color: layer.color,
   };
 
+  // Breakpoint-aware card wrapper width
+  const cardWrapperWidth = windowWidth >= 1441 ? '30rem' :
+                           windowWidth >= 1024 ? '37.7vw' :
+                           windowWidth >= 768  ? '24rem' :
+                           '90vw';
+  const cardMaxWidth = windowWidth >= 768 ? '45vw' : '95vw';
+
   return (
     <div 
-      className="w-[480px] max-w-[45vw] z-[150]"
-      style={panelStyles}
+      className="z-[150]"
+      style={{ ...panelStyles, width: cardWrapperWidth, maxWidth: cardMaxWidth }}
     >
       <AssessmentCard
         questions={questions}
@@ -313,14 +336,6 @@ const SingleLayerPanel = ({
         answeredCount={answeredCount}
         onSelectAnswer={(questionId, answerId) => {
           handleAnswerSelect(questionId, answerId);
-          // Auto-advance after brief delay using ref for current index
-          if (currentQuestionIndexRef.current < totalQuestions - 1) {
-            const nextIndex = currentQuestionIndexRef.current + 1;
-            setTimeout(() => {
-              setCurrentQuestionIndex(nextIndex);
-              currentQuestionIndexRef.current = nextIndex;
-            }, 400);
-          }
         }}
         onGoBack={handleGoBack}
         canGoBack={currentQuestionIndex > 0}

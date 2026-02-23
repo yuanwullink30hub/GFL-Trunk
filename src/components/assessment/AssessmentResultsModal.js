@@ -11,7 +11,6 @@ import {
   // Archetype-based scoring
   ARCHETYPE_RADAR_LABELS,
   ALL_ARCHETYPE_KEYS,
-  COMPLEMENTARY_PAIRS,
   SHADOW_PAIRS,
   ARCHETYPE_TO_GROUP,
   EXTENDED_ARCHETYPES,
@@ -542,7 +541,7 @@ const AssessmentResultsModal = ({
                       fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em',
                       textTransform: 'uppercase', marginBottom: '0.75rem',
                     }}>
-                      /// MAIN ARCHETYPE
+                      {/* MAIN ARCHETYPE */}
                     </div>
                     <h4 style={{
                       color: '#f97316',
@@ -598,7 +597,7 @@ const AssessmentResultsModal = ({
                       fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em',
                       textTransform: 'uppercase', marginBottom: '0.75rem',
                     }}>
-                      /// SUPPORT ARCHETYPE
+                      {/* SUPPORT ARCHETYPE */}
                     </div>
                     <h4 style={{
                       color: '#a855f7',

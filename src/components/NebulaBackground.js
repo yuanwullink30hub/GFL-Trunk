@@ -77,9 +77,9 @@ const DISP_FRAG = `
       // Distance from this pixel to the stroke segment
       float dist = segDist(uvA, mpA, mA);
 
-      // Adaptive brush radius: faster = wider wake (generous base for touchpads)
-      float brushR = 0.12 + u_mouseSpeed * 5.0;
-      brushR = min(brushR, 0.35);
+      // Adaptive brush radius: smaller for subtler interaction
+      float brushR = 0.06 + u_mouseSpeed * 2.0;
+      brushR = min(brushR, 0.18);
 
       // Smooth cubic falloff
       float falloff = 1.0 - smoothstep(0.0, brushR, dist);
@@ -90,8 +90,8 @@ const DISP_FRAG = `
       float spd = length(moveDir);
       vec2 dir = spd > 1e-5 ? moveDir / spd : vec2(0.0);
 
-      // Strong strength with minimum floor so even slow touchpad moves are visible
-      float str = max(0.04, min(spd * 30.0, 0.22));
+      // Gentle strength — subtle paint-stirring feel
+      float str = max(0.015, min(spd * 10.0, 0.08));
 
       // Push 1: drag paint forward along movement direction
       vec2 push = dir * falloff * str;
@@ -103,7 +103,7 @@ const DISP_FRAG = `
       if (radLen > 0.001) {
         vec2 rn = radDir / radLen;
         rn.x /= u_aspect;
-        push += normalize(rn) * falloff * str * 1.0;
+        push += normalize(rn) * falloff * str * 0.4;
       }
 
       diffused += push;

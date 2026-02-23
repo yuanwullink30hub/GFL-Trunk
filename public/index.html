@@ -74,6 +74,7 @@
         position: relative;
         background-color: rgba(8, 2, 12, 0.9);
         padding: 2.5rem 3rem;
+        min-width: 380px;
         max-width: 500px;
         border: 1px solid rgba(147, 51, 234, 0.3);
         border-radius: 0.5rem;
@@ -97,62 +98,59 @@
           margin-bottom: 1.5rem;
         "></div>
 
-        <!-- Loading text -->
-        <p style="
-          text-align: center;
-          letter-spacing: 0.025em;
-          color: rgba(255, 254, 240, 0.9);
-          font-family: 'Rajdhani', sans-serif;
-          font-size: 1rem;
-          line-height: 1.6;
-          max-width: 320px;
-        " id="gfl-loading-text">Bereiden van de meest optimale software voor jouw hardware</p>
-
-        <!-- Progress bar track -->
-        <div style="
-          margin-top: 1.25rem;
-          width: 100%;
-          max-width: 280px;
-          height: 3px;
-          background-color: rgba(147, 51, 234, 0.2);
-          border-radius: 2px;
-          overflow: hidden;
+        <!-- Rotating text slideshow (pure CSS — won't freeze during shader compile) -->
+        <div id="gfl-loading-slideshow" style="
           position: relative;
+          width: 100%;
+          max-width: 380px;
+          min-height: 3.6rem;
+          overflow: hidden;
         ">
-          <div id="gfl-loading-bar" style="
-            position: absolute;
-            left: 0; top: 0;
-            height: 100%;
-            width: 0%;
-            background-color: #a855f7;
-            border-radius: 2px;
-            transition: width 0.15s linear;
-            box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
-          "></div>
+          <p class="gfl-slide" style="animation-delay: 0s">Verbinding vaststellen</p>
+          <p class="gfl-slide" style="animation-delay: 2.8s">Exclusieve toegang tot Versie Beta2.9</p>
+          <p class="gfl-slide" style="animation-delay: 5.6s">Six Seven</p>
         </div>
-
-        <!-- Percentage text -->
-        <p style="
-          margin-top: 0.5rem;
-          letter-spacing: 0.15em;
-          color: rgba(168, 85, 247, 0.8);
-          font-family: 'Rajdhani', Arial, Helvetica, sans-serif;
-          font-size: 0.7rem;
-        "><span id="gfl-loading-pct">0%</span></p>
 
         <!-- Noise overlay -->
         <div style="position:absolute;inset:0;pointer-events:none;border-radius:0.5rem;background-image:url('https://grainy-gradients.vercel.app/noise.svg');opacity:0.05;mix-blend-mode:overlay"></div>
       </div>
     </div>
 
-    <!-- Inline spinner animation — no external CSS needed -->
+    <!-- Loading animations — pure CSS, runs on compositor thread -->
     <style>
       @keyframes gfl-spin { to { transform: rotate(360deg); } }
       #gfl-loading-spinner { animation: gfl-spin 1s linear infinite; }
+
+      /* Text slideshow: 3 cards, 8.4s total cycle, each visible 2.8s */
+      @keyframes gfl-slide-cycle {
+        0%      { opacity: 0; transform: translateY(6px); }
+        3%      { opacity: 1; transform: translateY(0); }
+        30%     { opacity: 1; transform: translateY(0); }
+        35%     { opacity: 0; transform: translateY(-6px); }
+        100%    { opacity: 0; transform: translateY(-6px); }
+      }
+      .gfl-slide {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        letter-spacing: 0.05em;
+        color: rgba(255, 254, 240, 0.9);
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1rem;
+        line-height: 1.4;
+        opacity: 0;
+        animation: gfl-slide-cycle 8.4s ease-in-out infinite;
+      }
+
       @media (max-width: 767px) {
-        #gfl-loading-modal { padding: 2rem 1.5rem !important; max-width: 90vw !important; }
+        #gfl-loading-modal { padding: 2rem 1.5rem !important; min-width: auto !important; max-width: 90vw !important; }
         #gfl-loading-spinner { width: 2.5rem !important; height: 2.5rem !important; }
-        #gfl-loading-text { font-size: 0.9rem !important; }
+        .gfl-slide { font-size: 0.9rem !important; }
+        #gfl-loading-slideshow { min-height: 3.2rem !important; }
       }
     </style>
 

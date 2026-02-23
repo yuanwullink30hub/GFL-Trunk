@@ -1042,9 +1042,6 @@ const SECTION_3_FRAMES = 3;     // Pyramid shifts down (frames 46-48)
 const App = () => {
   const [mounted, setMounted] = useState(false);
   const [mountNebula, setMountNebula] = useState(false); // Mount nebula after imports are done
-  const loadingTargetRef = useRef(0); // Raw tick-based target progress
-  const loadingAnimRef = useRef(null); // setInterval handle for smooth progress
-  const animatedProgressRef = useRef(0); // Current animated value (0-1), bypasses React state
   const nebulaReadyRef = useRef(null); // resolves when NebulaBackground fires onReady
   const { language, toggleLanguage, t, tArray } = useLanguage();
   const [currentFrame, setCurrentFrame] = useState(0); // 0 to 29 discrete frames
@@ -1310,59 +1307,17 @@ const App = () => {
     const endLoadingScreen = () => {
       if (hasEnded || abortController.signal.aborted) return;
       hasEnded = true;
-      // 1) Jump progress bar to 100% via direct DOM
-      animatedProgressRef.current = 1;
-      if (loadingAnimRef.current) { clearInterval(loadingAnimRef.current); loadingAnimRef.current = null; }
-      const bar = document.getElementById('gfl-loading-bar');
-      const txt = document.getElementById('gfl-loading-pct');
-      if (bar) bar.style.width = '100%';
-      if (txt) txt.textContent = '100%';
-      // 2) Wait for bar CSS transition to finish, then fade out the static HTML overlay
+      // Fade out the static HTML overlay
       const overlay = document.getElementById('gfl-loading-overlay');
-      setTimeout(() => {
-        if (abortController.signal.aborted) return;
-        if (overlay) {
-          overlay.style.opacity = '0';
-          overlay.style.pointerEvents = 'none';
-        }
-        // 3) Remove from DOM after fade-out (500ms)
+      if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
+        // Remove from DOM after fade-out (500ms)
         setTimeout(() => {
-          if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
         }, 500);
-      }, 400);
-    };
-    
-    // Helper: write progress directly to DOM (bypasses React entirely)
-    const writeProgress = (value) => {
-      animatedProgressRef.current = value;
-      const pct = Math.round(value * 100);
-      const bar = document.getElementById('gfl-loading-bar');
-      const txt = document.getElementById('gfl-loading-pct');
-      if (bar) bar.style.width = pct + '%';
-      if (txt) txt.textContent = pct + '%';
-    };
-
-    // Smooth loading bar via setInterval — fast catch-up to target
-    const startTime = Date.now();
-    loadingAnimRef.current = setInterval(() => {
-      if (abortController.signal.aborted) return;
-      const elapsed = (Date.now() - startTime) / 1000;
-      const target = loadingTargetRef.current;
-      const prev = animatedProgressRef.current;
-      
-      // Minimum trickle based on elapsed time (never stuck at 0)
-      const minProgress = Math.min(0.45, 0.03 + elapsed * 0.06 + Math.sqrt(elapsed) * 0.04);
-      // Fast catch-up: close 40% of gap per tick (reaches target in ~5 ticks = 250ms)
-      const gap = target - prev;
-      const smooth = prev + gap * 0.40;
-      // Never go backward — always >= prev (protects direct writeProgress calls)
-      const next = Math.min(Math.max(smooth, minProgress, prev), 0.99);
-      
-      // Only write if value actually advanced (avoids overwriting direct writes)
-      if (next > prev + 0.001) {
-        writeProgress(next);
       }
-    }, 50);
+    };
 
     // Create a promise that resolves when NebulaBackground fires onReady
     let resolveNebulaReady;
@@ -1373,17 +1328,9 @@ const App = () => {
     // Phase 1 (0→80%): Download + evaluate Three.js and app components
     // Phase 2 (80→95%): Mount NebulaBackground, wait for shader compile + first render
     // Phase 3 (95→100%): Nebula ready → end loading screen
-    preloadAll((progress) => {
-      if (!abortController.signal.aborted) {
-        // Map preload progress to 0→80% range
-        loadingTargetRef.current = progress * 0.80;
-      }
-    }, { signal: abortController.signal }).then(async () => {
+    preloadAll(null, { signal: abortController.signal }).then(async () => {
       if (abortController.signal.aborted) return;
       console.log('[App] JS chunks loaded — mounting nebula background');
-      // Push bar to exactly 81% immediately via DOM
-      loadingTargetRef.current = 0.81;
-      writeProgress(0.81);
       // Mount nebula — shader compilation will block the thread
       setMountNebula(true);
       // Give React a tick to mount the canvas before WebGL init blocks the thread
@@ -1397,9 +1344,7 @@ const App = () => {
       if (abortController.signal.aborted) return;
       console.log('[App] Nebula background ready');
       // Nebula is rendered — end loading screen
-      loadingTargetRef.current = 1;
-      // Small delay so the bar visually reaches 100% before fade
-      setTimeout(() => endLoadingScreen(), 200);
+      endLoadingScreen();
     }).catch(() => {
       if (abortController.signal.aborted) return;
       console.warn('[App] Preloading failed, continuing anyway');
@@ -1420,7 +1365,6 @@ const App = () => {
     return () => {
       abortController.abort();
       clearTimeout(maxTimer);
-      if (loadingAnimRef.current) clearInterval(loadingAnimRef.current);
     };
   }, []);
 
@@ -2269,16 +2213,7 @@ const App = () => {
                 pointerEvents: 'none',
               }}
             >
-              {/* Radial Glow - centered */}
-              <div 
-                className="z-5 pointer-events-none" 
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'radial-gradient(circle at center, rgba(147, 51, 234, 0.03) 0%, transparent 55%)',
-                  opacity: isExploding ? Math.max(0, 1 - explosionProgress * 1.5) : 1,
-                }} 
-              />
+
 
               {/* 3D Earth Scene - Simply centered */}
               <div 
@@ -2448,17 +2383,7 @@ const App = () => {
               onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
             />
           </div>
-          {/* --- Radial Shadow/Glow Behind Earth --- */}
-          <div 
-            className="absolute inset-0 z-5 pointer-events-none" 
-            style={{
-              background: 'radial-gradient(circle at center, rgba(147, 51, 234, 0.03) 0%, transparent 55%)',
-              opacity: isExploding ? Math.max(0, 1 - explosionProgress * 1.5) : 1,
-              transform: isExploding ? `scale(${1 + explosionProgress * 0.5})` : 'scale(1)',
-              transition: 'none',
-              transformOrigin: 'center center'
-            }} 
-          />
+
 
           {/* --- Main 3D Scene --- */}
           <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ overflow: 'visible' }}>

@@ -752,39 +752,6 @@ const HoloEarthSphere = ({
         />
       )}
 
-      {/* Atmospheric Glow - hidden after frame 15, disabled on low-end for performance */}
-      {/* NOTE: explosionProgress is EASED. Frame 15 linear (0.6) = 0.6^2.5 ≈ 0.28 eased */}
-      {/* Unmount when invisible to prevent alpha accumulation blocking nebula background */}
-      {getPerformanceSettings().tier !== 'LOW' && explosionProgress < 0.28 && (
-        <Sphere args={[3.2, 32, 32]}>
-          <shaderMaterial
-            transparent={true}
-            side={THREE.BackSide}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
-            uniforms={{
-              uColor: { value: new THREE.Color('#360642') }, 
-              uIntensity: { value: explosionProgress > 0.28 ? 0 : 0.05 }
-            }}
-            vertexShader={`
-              varying vec3 vNormal;
-              void main() {
-                vNormal = normalize(normalMatrix * normal);
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-              }
-            `}
-            fragmentShader={`
-              uniform vec3 uColor;
-              uniform float uIntensity;
-              varying vec3 vNormal;
-              void main() {
-                float intensity = pow(0.85 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 6.0);
-                gl_FragColor = vec4(uColor, intensity * uIntensity);
-              }
-            `}
-          />
-        </Sphere>
-      )}
     </group>
   );
 };

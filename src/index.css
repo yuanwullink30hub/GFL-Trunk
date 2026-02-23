@@ -4,12 +4,14 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
+html, body {
   margin: 0;
   padding: 0;
+  background: #0a0510 !important;
+}
+
+body {
   font-family: 'Figtree', sans-serif;
-  background: linear-gradient(to bottom, rgb(29, 10, 1), rgb(12, 5, 4), #0d0811ff, rgb(11, 1, 14), rgb(13, 1, 15), rgb(20, 2, 27));
-  background-attachment: fixed;
   color: #FFFEF0;
 }
 

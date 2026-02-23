@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import NebulaBackground from './components/NebulaBackground';
 import HoloEarth from './components/orbital/HoloEarth';
 import DesktopLayout from './components/orbital/DesktopLayout';
 import { AssessmentIntro, AssessmentCard, AssessmentUpload, AssessmentLayerPanel } from './components/assessment';
@@ -2019,8 +2020,10 @@ const App = () => {
     <main 
       ref={containerRef}
       className={`relative w-screen font-figtree ${isMobile ? 'min-h-screen overflow-visible' : 'h-screen overflow-hidden'}`}
-      style={{color: '#FFFEF0', touchAction: isMobile ? 'pan-y pinch-zoom' : 'none'}}
+      style={{color: '#FFFEF0', touchAction: isMobile ? 'pan-y pinch-zoom' : 'none', zIndex: 1, isolation: 'isolate'}}
     >
+      {/* Procedural WebGL nebula background — fixed behind all content */}
+      <NebulaBackground mapPosition={mapPosition} />
       {/* ========================= */}
       {/* LOADING SCREEN OVERLAY */}
       {/* ========================= */}

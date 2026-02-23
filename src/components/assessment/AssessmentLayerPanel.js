@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import AssessmentCard from './AssessmentCard';
 import { assessmentSubjects } from '../../pages/assessment/assessmentData';
@@ -7,15 +7,14 @@ import { assessmentSubjects } from '../../pages/assessment/assessmentData';
  * AssessmentLayerPanel - Renders MULTIPLE layer panels that persist after saving
  * Now uses the new AssessmentCard component for each layer's question UI
  * 
- * Animation flow:
- * 1. Layer 0 (Foundation) - appears on RIGHT side
+ * Animation flow (v3 — right-centered open, left pyramid stack):
+ * 1. Every card opens at the SAME position: RIGHT side, vertically centered (50vh)
  * 2. When all 12 questions answered → Save button appears in AssessmentCard
- * 3. Click Save → card collapses, shows "SCROLL"
- * 4. User scrolls → next pyramid layer floats down from entity
- * 5. Layer 1 floats to LEFT, Layer 2 to RIGHT, Layer 3 to LEFT, Layer 4 to RIGHT
- * 6. All saved panels remain visible on screen (collapsed)
- * 7. When layer 4 is saved → all panels float back to entity center (convergence)
- * 8. After convergence → results modal floats out from entity
+ * 3. Click Save → Phase 1: card COLLAPSES in place (~900ms)
+ *                → Phase 2: collapsed card slides to LEFT at its pyramid layer height (~1200ms)
+ * 4. User scrolls → next card floats from entity to the same RIGHT center position
+ * 5. Saved cards on the LEFT stack at pyramid layer heights (pyramid shape)
+ * 6. When layer 4 is saved → all panels float back to entity center (convergence)
  */
 
 // Layer configuration matching pyramid (bottom to top)
@@ -35,9 +34,9 @@ const getLayerQuestions = (layerIndex) => {
   return layer.questions;
 };
 
-// Vertical positions for each layer panel (vh from top)
+// Vertical positions for SAVED cards on the LEFT side (pyramid layer heights)
 // Follow the pyramid upward trail: bottom layer lowest on screen, top layer highest
-const LAYER_POSITIONS = [
+const SAVED_LAYER_POSITIONS = [
   68, // Foundation (bottom) - low on screen
   58, // Emotional
   48, // Mental - center
@@ -45,18 +44,21 @@ const LAYER_POSITIONS = [
   28, // Unity (top) - high on screen
 ];
 
-// Rotation angles - keep cards straight (no tilt)
-const LAYER_ROTATIONS = [
-  0,   // Foundation (right)
-  0,   // Emotional (left)
-  0,   // Mental (right)
-  0,   // Spiritual (left)
-  0,   // Unity (right)
+// All OPEN cards sit at the same vertical center on the RIGHT side
+const OPEN_Y = 50; // vertically centered in viewport
+
+// Scale factors for saved cards on the left side — smaller toward the top (pyramid shape)
+const SAVED_SCALES = [
+  0.60, // Foundation (bottom) — widest
+  0.55, // Emotional
+  0.50, // Mental
+  0.45, // Spiritual
+  0.40, // Unity (top) — narrowest
 ];
 
-// Determine if layer goes to left or right side
-// Layer 0: right, 1: left, 2: right, 3: left, 4: right
-const isLayerOnRight = (layerIndex) => layerIndex % 2 === 0;
+// Animation timing (ms)
+const COLLAPSE_WAIT = 900;   // Wait for card collapse before moving
+const MOVE_DURATION = 1200;  // Slide from right to left
 
 // Single Layer Panel Component - wraps AssessmentCard with positioning logic
 const SingleLayerPanel = ({
@@ -74,12 +76,53 @@ const SingleLayerPanel = ({
   const currentQuestionIndexRef = useRef(0);
   const { t } = useLanguage();
   
+  // Track save animation: 'idle' → 'collapsing' → 'moving' → 'done'
+  const [savePhase, setSavePhase] = useState('idle');
+  // Move progress (0 = still on right, 1 = fully on left)
+  const [moveProgress, setMoveProgress] = useState(0);
+  const moveAnimRef = useRef(null);
+  const collapseTimerRef = useRef(null);
+
+  // Two-phase save animation:
+  //   Phase 1: card collapses in place (COLLAPSE_WAIT ms)
+  //   Phase 2: collapsed card slides from right to left (MOVE_DURATION ms)
+  useEffect(() => {
+    if (isSaved && savePhase === 'idle') {
+      setSavePhase('collapsing');
+      // Phase 1: wait for collapse animation to finish
+      collapseTimerRef.current = setTimeout(() => {
+        setSavePhase('moving');
+        // Phase 2: animate slide to left
+        const startTime = performance.now();
+        const animate = (now) => {
+          const elapsed = now - startTime;
+          const t = Math.min(1, elapsed / MOVE_DURATION);
+          // ease-in-out cubic for a natural feel
+          const eased = t < 0.5
+            ? 4 * t * t * t
+            : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          setMoveProgress(eased);
+          if (t < 1) {
+            moveAnimRef.current = requestAnimationFrame(animate);
+          } else {
+            setSavePhase('done');
+          }
+        };
+        moveAnimRef.current = requestAnimationFrame(animate);
+      }, COLLAPSE_WAIT);
+    }
+    return () => {
+      if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+      if (moveAnimRef.current) cancelAnimationFrame(moveAnimRef.current);
+    };
+  }, [isSaved]); // eslint-disable-line react-hooks/exhaustive-deps
+  
   const questions = useMemo(() => getLayerQuestions(layerIndex), [layerIndex]);
   const totalQuestions = questions.length;
   
   const answeredCount = questions.filter(q => answers[q.id] !== undefined).length;
   
-  // Calculate animation progress for this layer
+  // Calculate animation progress for this layer (scroll-based entry from entity)
   const getAnimationProgress = useCallback(() => {
     if (layerIndex === 0) return 1;
     
@@ -95,85 +138,125 @@ const SingleLayerPanel = ({
   
   const animProgress = getAnimationProgress();
   
-  // Get panel position and style - includes convergence animation
-  // Uses a single consistent coordinate system (left % with translate(-50%))
-  // to avoid teleporting between animation and final position
+  // Get panel position and style
+  // All cards OPEN at the same right-center position (OPEN_Y vh).
+  // When SAVED: first collapse in place, then slide to LEFT at pyramid layer height.
+  // Saved cards scale down progressively (pyramid shape).
   const getPanelStyles = useCallback(() => {
     const progress = animProgress;
     const isFirstLayer = layerIndex === 0;
-    const onRight = isLayerOnRight(layerIndex);
     
     const entityCenterX = 50;
-    // Target the blue inner core center (above innermost layer at 28vh)
-    const entityCenterY = 28;
-    const finalY = LAYER_POSITIONS[layerIndex];
-    const rotation = LAYER_ROTATIONS[layerIndex] || 0;
+    const entityCenterY = 28; // entity center in vh
+    const savedY = SAVED_LAYER_POSITIONS[layerIndex]; // left-side pyramid Y
     
-    // Compute final X as percentage that matches "11rem from edge" position
-    // Card center = edgeOffset + halfCardWidth for left-side,
-    //             = viewportWidth - edgeOffset - halfCardWidth for right-side
+    // Compute RIGHT-side X position (where cards open — all at same Y)
     const vw = window.innerWidth;
     const remPx = 16;
-    const edgeOffset = 11 * remPx; // 176px
-    const cardWidth = Math.min(480, vw * 0.45); // w-[480px] max-w-[45vw]
-    const finalXPercent = onRight
-      ? ((vw - edgeOffset - cardWidth / 2) / vw) * 100
-      : ((edgeOffset + cardWidth / 2) / vw) * 100;
+    const edgeOffset = 11 * remPx; // 176px from edge
+    const cardWidth = Math.min(480, vw * 0.45);
+    const rightXPercent = ((vw - edgeOffset - cardWidth / 2) / vw) * 100;
     
-    // During convergence, animate from final position back to entity center
+    // Compute LEFT-side X position (where saved cards stack)
+    const savedScale = SAVED_SCALES[layerIndex];
+    const leftEdgeOffset = 6 * remPx;
+    const leftXPercent = ((leftEdgeOffset + (cardWidth * savedScale) / 2) / vw) * 100;
+    
+    // During convergence, animate from current position back to entity center
     if (convergenceProgress > 0) {
+      const isOnLeft = savePhase === 'done' || savePhase === 'moving';
+      const currentBaseX = isOnLeft ? leftXPercent : rightXPercent;
+      const currentBaseY = isOnLeft ? savedY : OPEN_Y;
+      const currentBaseScale = isOnLeft ? savedScale : 1;
       const eased = 1 - Math.pow(1 - convergenceProgress, 2);
-      const currentX = finalXPercent + (entityCenterX - finalXPercent) * eased;
-      const currentY = finalY + (entityCenterY - finalY) * eased;
-      const scale = 1 - 0.9 * eased;
+      const currentX = currentBaseX + (entityCenterX - currentBaseX) * eased;
+      const currentY = currentBaseY + (entityCenterY - currentBaseY) * eased;
+      const scale = currentBaseScale * (1 - 0.9 * eased);
       const opacity = 1 - eased;
-      const currentRotation = rotation * (1 - eased);
       
       return {
         position: 'fixed',
         left: `${currentX}%`,
         right: 'auto',
         top: `${currentY}vh`,
-        transform: `translate(-50%, -50%) scale(${scale}) rotate(${currentRotation}deg)`,
+        transform: `translate(-50%, -50%) scale(${scale})`,
         opacity,
         transition: 'none',
         pointerEvents: 'none',
+        zIndex: isSaved ? 140 : 150,
       };
     }
     
+    // Card is saved — determine which phase we're in
+    if (isSaved) {
+      if (savePhase === 'collapsing') {
+        // Phase 1: card is collapsing in place on the right — stay put
+        return {
+          position: 'fixed',
+          left: `${rightXPercent}%`,
+          right: 'auto',
+          top: `${OPEN_Y}vh`,
+          transform: `translate(-50%, -50%)`,
+          opacity: 1,
+          transition: 'none',
+          pointerEvents: 'none',
+          zIndex: 150,
+        };
+      }
+      
+      // Phase 2 or done: sliding from right → left, and from OPEN_Y → savedY
+      const currentX = rightXPercent + (leftXPercent - rightXPercent) * moveProgress;
+      const currentY = OPEN_Y + (savedY - OPEN_Y) * moveProgress;
+      const currentScale = 1 + (savedScale - 1) * moveProgress;
+      
+      return {
+        position: 'fixed',
+        left: `${currentX}%`,
+        right: 'auto',
+        top: `${currentY}vh`,
+        transform: `translate(-50%, -50%) scale(${currentScale})`,
+        opacity: 1,
+        transition: 'none',
+        pointerEvents: 'none',
+        zIndex: 140,
+      };
+    }
+    
+    // Card is fully arrived and active (open on right side, centered)
     if (isFirstLayer || progress >= 1) {
       return {
         position: 'fixed',
-        left: `${finalXPercent}%`,
+        left: `${rightXPercent}%`,
         right: 'auto',
-        top: `${finalY}vh`,
-        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+        top: `${OPEN_Y}vh`,
+        transform: `translate(-50%, -50%)`,
         opacity: 1,
         transition: 'opacity 0.3s ease',
         pointerEvents: 'auto',
+        zIndex: 150,
       };
     }
     
-    // Ease-out curve for smoother distribution across scroll range
+    // Card is animating in from entity center → right center position
     const easedProgress = 1 - Math.pow(1 - progress, 2);
     
-    const currentX = entityCenterX + (finalXPercent - entityCenterX) * easedProgress;
-    const currentY = entityCenterY + (finalY - entityCenterY) * easedProgress;
+    const currentX = entityCenterX + (rightXPercent - entityCenterX) * easedProgress;
+    const currentY = entityCenterY + (OPEN_Y - entityCenterY) * easedProgress;
     const scale = 0.1 + 0.9 * easedProgress;
-    const opacity = Math.min(1, progress * 2); // fade in faster in first half
-    const currentRotation = rotation * easedProgress;
+    const opacity = Math.min(1, progress * 2);
     
     return {
       position: 'fixed',
       left: `${currentX}%`,
       right: 'auto',
       top: `${currentY}vh`,
-      transform: `translate(-50%, -50%) scale(${scale}) rotate(${currentRotation}deg)`,
+      transform: `translate(-50%, -50%) scale(${scale})`,
       opacity,
       transition: 'none',
       pointerEvents: progress > 0.9 ? 'auto' : 'none',
+      zIndex: 150,
     };
-  }, [layerIndex, animProgress, convergenceProgress]);
+  }, [layerIndex, animProgress, convergenceProgress, isSaved, savePhase, moveProgress]);
 
   // Answer selection handler - auto-advances to next question
   const handleAnswerSelect = useCallback((questionId, answerId) => {

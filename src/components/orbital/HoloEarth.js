@@ -687,8 +687,8 @@ const HoloEarthSphere = ({
           </Sphere>
         )}
         
-        {/* Exploding Chunks - appear immediately when explosion begins */}
-        {explosionProgress > 0 && (
+        {/* Exploding Chunks - appear immediately when explosion begins, unmount when fully faded */}
+        {explosionProgress > 0 && chunkFadeValue > 0 && (
           <ExplodingChunks 
             explosionProgress={explosionProgress}
             earthMap={earthMap}
@@ -697,8 +697,9 @@ const HoloEarthSphere = ({
         )}
         
         {/* Inner Glow - dropshadow/glow inside earth to integrate chunks with particle sphere */}
-        {/* NOTE: explosionProgress is EASED. Frame 9 linear (0.36) = 0.36^2.5 ≈ 0.078 eased */}
-        {explosionProgress > 0.078 && (
+        {/* NOTE: explosionProgress is EASED. Frame 9 (0.078) to Frame 18 (0.44) */}
+        {/* Fades out from frame 16 (0.33) to frame 18 (0.44), then unmounts */}
+        {explosionProgress > 0.078 && explosionProgress < 0.44 && (
           <Sphere args={[2.35, 32, 32]}>
             <shaderMaterial
               transparent={true}
@@ -708,7 +709,7 @@ const HoloEarthSphere = ({
               uniforms={{
                 uColor: { value: new THREE.Color('#1a0825') },
                 uGlowColor: { value: new THREE.Color('#6b1d8f') },
-                uIntensity: { value: Math.min(1, (explosionProgress - 0.078) / 0.15) * 0.6 }
+                uIntensity: { value: Math.min(1, (explosionProgress - 0.078) / 0.15) * 0.6 * (explosionProgress > 0.33 ? Math.max(0, 1 - (explosionProgress - 0.33) / (0.44 - 0.33)) : 1) }
               }}
               vertexShader={`
                 varying vec3 vNormal;
@@ -753,7 +754,8 @@ const HoloEarthSphere = ({
 
       {/* Atmospheric Glow - hidden after frame 15, disabled on low-end for performance */}
       {/* NOTE: explosionProgress is EASED. Frame 15 linear (0.6) = 0.6^2.5 ≈ 0.28 eased */}
-      {getPerformanceSettings().tier !== 'LOW' && (
+      {/* Unmount when invisible to prevent alpha accumulation blocking nebula background */}
+      {getPerformanceSettings().tier !== 'LOW' && explosionProgress < 0.28 && (
         <Sphere args={[3.2, 32, 32]}>
           <shaderMaterial
             transparent={true}
@@ -834,6 +836,7 @@ const HoloEarth = ({
           style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}
           gl={{ 
             alpha: true, 
+            premultipliedAlpha: false,
             antialias: false,
             powerPreference: 'high-performance',
             preserveDrawingBuffer: false,

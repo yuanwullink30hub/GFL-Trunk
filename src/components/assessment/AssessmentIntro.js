@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import archetypeHeader from '../../images/Import ready/Archetype header.png';
 
 /**
  * AssessmentIntro - Modal shown when entity appears
@@ -117,10 +118,11 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
         <div className="relative z-10 h-full w-full p-5 flex flex-col overflow-y-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <span className="text-orange-400 block" style={{ fontSize: '2.8rem' }}>✨</span>
-            <h1 className="text-3xl md:text-4xl font-light" style={{ color: '#f97316' }}>
-              A+ Archetype Analyse
-            </h1>
+            <img 
+              src={archetypeHeader} 
+              alt="A+ Archetype Analyse" 
+              style={{ maxWidth: '420px', width: '100%', margin: '0 auto' }}
+            />
 
             <p className="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed mt-4">
               {t('assessmentIntro.description')}

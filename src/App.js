@@ -1032,7 +1032,6 @@ const MobilePageContent = ({ activeIndex, wheelRotation, onBack, brandIndex = 0 
 // Section 3 (frames 46-48): Pyramid shifts down, button visible at frame 49
 // Total: 49 frames (0-48)
 // ============================================
-const SCROLL_BUTTON_FRAMES = 3; // Scroll button disappears (frames 0-2)
 const SECTION_1_FRAMES = 3;     // Label disappears, chunks visible (frames 0-2)
 const SECTION_2_FRAMES = 43;    // Chunks and particles explosion - maximized for smooth flow
 const HEADER_START_FRAME = 12;  // Header/containers start vanishing mid-explosion
@@ -1969,9 +1968,6 @@ const App = () => {
   
   const section1End = SECTION_1_FRAMES;
   const section2End = SECTION_1_FRAMES + SECTION_2_FRAMES;
-  
-  // Scroll button: fades in first 3 frames (faster than section 1)
-  const buttonFadeProgress = Math.min(1, Math.max(0, currentFrame / SCROLL_BUTTON_FRAMES));
   
   // Earth starts exploding right after section 1
   const isExploding = currentFrame >= section1End;

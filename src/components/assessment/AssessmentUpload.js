@@ -46,8 +46,8 @@ const AssessmentUpload = ({
 
   return (
     <div 
-      className="relative w-full mx-auto rounded-lg backdrop-blur-sm animate-fadeIn"
-      style={{ backgroundColor: 'rgba(8, 2, 12, 0.95)', maxWidth: '53rem' }}
+      className="relative w-full mx-auto rounded-lg backdrop-blur-xl animate-fadeIn overflow-hidden"
+      style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', maxWidth: '53rem', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(255, 174, 0, 0.06), inset 0 0 30px rgba(255, 174, 0, 0.03)' }}
     >
       {/* Top-Left Corner Border */}
       <div className="absolute -top-0.5 -left-0.5 w-4 h-4" style={{
@@ -81,6 +81,25 @@ const AssessmentUpload = ({
         borderLeft: 'none'
       }}></div>
       
+      {/* Holographic sheen */}
+      <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
+        background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
+        backgroundSize: '400% 400%',
+        backgroundRepeat: 'no-repeat',
+        animation: 'holoSheen 45s ease-in-out infinite',
+        mixBlendMode: 'screen',
+      }} />
+
+      {/* Scanline sweep */}
+      <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
+        background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
+        backgroundSize: '100% 300%',
+        animation: 'holoScanline 14s linear infinite',
+      }} />
+
+      {/* Noise texture overlay */}
+      <div className="absolute inset-0 rounded-lg pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
+
       {/* Content - matches SectorFrame inner structure */}
       <div className="relative z-10 h-full w-full p-5 flex flex-col">
       {/* Header */}

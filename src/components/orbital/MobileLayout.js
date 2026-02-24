@@ -9,6 +9,12 @@ import tattooshopLogo from '../../images/slideshow images/1111logo.png';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 
 const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, position = 'top', isMobile, TimeSync, setActiveSection, pauseAutoSlide }) => {
+  // Beta lock: only allow full interaction on localhost
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const hasLockOverride = urlParams.has('lock');
+  const shouldShowLock = !isLocalhost || hasLockOverride;
+
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
   const containerOpacity = Math.max(0, 1 - animationProgress * 2);
   const containerScale = 1 - (0.25 * animationProgress);
@@ -57,7 +63,6 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
               fontWeight: 600,
               lineHeight: 0.9,
               margin: 0,
-              filter: 'brightness(0.9)',
               letterSpacing: 'clamp(0.1em, 0.15vw, 0.15em)'
             }}>
               DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
@@ -97,7 +102,6 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                     fontWeight: 600,
                     lineHeight: 0.9,
-                    filter: 'brightness(0.9)',
                     textAlign: 'center',
                     letterSpacing: '0.05em'
                   }}>
@@ -137,13 +141,15 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     fontSize: 'clamp(0.65rem, 2.2vw, 0.85rem)',
                     padding: 'clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 4vw, 2rem)',
                     minHeight: 'clamp(1.5rem, 4vw, 2rem)',
-                    cursor: 'pointer',
+                    cursor: shouldShowLock ? 'default' : 'pointer',
                     boxShadow: '0 0 0px 0px rgba(167, 139, 250, 0.5)',
                     transition: 'all 0.3s ease',
-                    pointerEvents: 'auto'
+                    pointerEvents: shouldShowLock ? 'none' : 'auto',
+                    opacity: shouldShowLock ? 0.35 : 1
                   }}
-                  onClick={(e) => setActiveSection('gardens', e)}
-                  onMouseEnter={(e) => {
+                  onClick={shouldShowLock ? undefined : (e) => setActiveSection('gardens', e)}
+                  disabled={shouldShowLock}
+                  onMouseEnter={shouldShowLock ? undefined : (e) => {
                     e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(167, 139, 250, 0.6)';
                     e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.5), rgba(168, 85, 247, 0.4))';
                   }}
@@ -226,7 +232,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                 ];
                 return (
                   <div className="w-full h-full flex flex-col items-center justify-between p-3 relative">
-                    <div className="w-full flex-1 relative overflow-hidden rounded-sm bg-purple-900/20 border border-purple-500/20 mb-2">
+                    <div className="w-full flex-1 relative overflow-hidden rounded-sm bg-purple-900/20 border border-purple-500/20 mb-2" style={{ visibility: shouldShowLock ? 'hidden' : 'visible' }}>
                       {gardensData.map((garden, i) => {
                         let translateX = 0;
                         if (i > currentSlide) translateX = 100;
@@ -278,7 +284,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                         );
                       })}
                     </div>
-                    <div className="flex gap-2 justify-center items-center">
+                    <div className="flex gap-2 justify-center items-center" style={{ visibility: shouldShowLock ? 'hidden' : 'visible' }}>
                       {gardensData.map((garden, i) => (
                         <div
                           key={garden.id}

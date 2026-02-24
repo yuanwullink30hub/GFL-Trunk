@@ -11,11 +11,11 @@ function IntroScreen({ onStart }) {
 
   return (
     <div className="w-full max-w-4xl mx-auto animate-fadeIn" style={{ transform: 'scale(1.2)', transformOrigin: 'top center', position: 'relative', padding: '16px' }}>
-      {/* Purple corner borders */}
-      <div style={{ position: 'absolute', top: 0, left: 0, width: 28, height: 28, borderTop: '2px solid #a855f7', borderLeft: '2px solid #a855f7' }} />
-      <div style={{ position: 'absolute', top: 0, right: 0, width: 28, height: 28, borderTop: '2px solid #a855f7', borderRight: '2px solid #a855f7' }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, width: 28, height: 28, borderBottom: '2px solid #a855f7', borderLeft: '2px solid #a855f7' }} />
-      <div style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderBottom: '2px solid #a855f7', borderRight: '2px solid #a855f7' }} />
+      {/* Purple curved corner brackets */}
+      <div style={{ position: 'absolute', top: -2, left: -2, width: 16, height: 16, border: '1.5px solid #a855f7', borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }} />
+      <div style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, border: '1.5px solid #a855f7', borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }} />
+      <div style={{ position: 'absolute', bottom: -2, left: -2, width: 16, height: 16, border: '1.5px solid #a855f7', borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }} />
+      <div style={{ position: 'absolute', bottom: -2, right: -2, width: 16, height: 16, border: '1.5px solid #a855f7', borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }} />
 
       <div className="text-center mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-purple-500/30 mb-6">

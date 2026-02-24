@@ -279,9 +279,10 @@ const AssessmentResultsModal = ({
             padding: rs.poetryPad,
             borderRadius: '0.5rem',
             textAlign: 'center',
-            backdropFilter: 'blur(4px)',
+            backdropFilter: 'blur(24px)',
             overflow: 'hidden',
-            background: 'rgba(8, 2, 12, 0.95)',
+            background: 'rgba(2, 0, 3, 0.3)',
+            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(255, 174, 0, 0.06), inset 0 0 30px rgba(255, 174, 0, 0.03)',
             transform: `translate(0, ${(1 - resultsModalProgress) * -15}vh) scale(${0.3 + resultsModalProgress * 0.7})`,
             opacity: resultsModalProgress,
             transition: resultsModalProgress >= 1 ? 'opacity 0.3s ease' : 'none',
@@ -289,8 +290,17 @@ const AssessmentResultsModal = ({
         >
           {/* Corner decorations */}
           {renderCorners('#ffae00')}
-          
-          {/* Poetry Content */}
+
+          {/* Holographic sheen */}
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '0.5rem', pointerEvents: 'none', background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)', backgroundSize: '400% 400%', backgroundRepeat: 'no-repeat', animation: 'holoSheen 45s ease-in-out infinite', mixBlendMode: 'screen' }} />
+
+          {/* Scanline sweep */}
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '0.5rem', pointerEvents: 'none', background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)', backgroundSize: '100% 300%', animation: 'holoScanline 14s linear infinite' }} />
+
+          {/* Noise texture */}
+          <div className="absolute inset-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" style={{ borderRadius: '0.5rem' }} />
+
+          {/* Poetry Content */}}
           <div style={{ minHeight: '180px', display: 'flex', flexDirection: 'column', justifyContent: 'center', marginBottom: '1rem' }}>
             <h3 style={{
               fontSize: '1rem',
@@ -364,17 +374,17 @@ const AssessmentResultsModal = ({
           maxWidth: rs.modalMaxWidth,
         }}>
 
-          {/* Modal Container - transparent like intro modal */}
+          {/* Modal Container - holographic glass */}
           <div style={{
             position: 'relative',
             width: '100%',
             maxWidth: rs.modalMaxWidth,
             maxHeight: rs.modalMaxHeight,
-            background: 'rgba(8, 2, 12, 0.95)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(2, 0, 3, 0.3)',
+            backdropFilter: 'blur(24px)',
             border: '1px solid rgba(0, 255, 157, 0.3)',
             borderRadius: '0.75rem',
-            boxShadow: '0 0 30px rgba(0, 255, 157, 0.15), 0 0 60px rgba(0, 255, 157, 0.05)',
+            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(0, 255, 157, 0.06), inset 0 0 30px rgba(0, 255, 157, 0.03)',
             display: 'flex',
             flexDirection: 'column',
             color: '#fff',
@@ -383,6 +393,12 @@ const AssessmentResultsModal = ({
 
             {/* SectorFrame-style corner borders */}
             {renderCorners('#00ff9d')}
+
+            {/* Holographic sheen */}
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '0.75rem', pointerEvents: 'none', background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)', backgroundSize: '400% 400%', backgroundRepeat: 'no-repeat', animation: 'holoSheen 45s ease-in-out infinite', mixBlendMode: 'screen' }} />
+
+            {/* Scanline sweep */}
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '0.75rem', pointerEvents: 'none', background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)', backgroundSize: '100% 300%', animation: 'holoScanline 14s linear infinite' }} />
             
             {/* Noise overlay */}
             <div style={{

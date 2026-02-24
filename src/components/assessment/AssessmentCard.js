@@ -165,6 +165,15 @@ const AssessmentCard = ({
     if (onComplete) onComplete();
   };
 
+  // AUTO-fill all questions (DEV only) — picks 2 random answers per question
+  const handleAutoFill = useCallback(() => {
+    if (!questions) return;
+    questions.forEach((q) => {
+      const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
+      onSelectAnswer(q.id, [shuffled[0].id, shuffled[1].id]);
+    });
+  }, [questions, onSelectAnswer]);
+
   const handleJumpToQuestion = useCallback((idx) => {
     if (onJumpTo) onJumpTo(idx);
   }, [onJumpTo]);
@@ -182,11 +191,11 @@ const AssessmentCard = ({
       {/* Main Card - SectorFrame style */}
       <div 
         className={`
-          relative rounded-lg backdrop-blur-sm overflow-hidden flex flex-col
+          relative rounded-lg backdrop-blur-xl overflow-hidden flex flex-col
           transition-[max-height] duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
           ${isCollapsed ? 'max-h-[80px]' : ''}
         `}
-        style={{ backgroundColor: 'rgba(8, 2, 12, 0.95)', maxHeight: isCollapsed ? '80px' : s.maxH }}
+        style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', maxHeight: isCollapsed ? '80px' : s.maxH, boxShadow: `0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px ${subjectColor}10, inset 0 0 30px ${subjectColor}08` }}
       >
         {/* Corner Accents - SectorFrame style */}
         <div className="absolute -top-0.5 -left-0.5 w-4 h-4 pointer-events-none z-20" style={{
@@ -214,13 +223,24 @@ const AssessmentCard = ({
           borderLeft: 'none'
         }} />
 
-        {/* Decorative Grid Overlay */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.04]" 
-             style={{ 
-               backgroundImage: `linear-gradient(${subjectColor}40 1px, transparent 1px), linear-gradient(90deg, ${subjectColor}40 1px, transparent 1px)`,
-               backgroundSize: '40px 40px'
-             }}
-        />
+        {/* Holographic sheen */}
+        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
+          background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
+          backgroundSize: '400% 400%',
+          backgroundRepeat: 'no-repeat',
+          animation: 'holoSheen 45s ease-in-out infinite',
+          mixBlendMode: 'screen',
+        }} />
+
+        {/* Scanline sweep */}
+        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
+          background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
+          backgroundSize: '100% 300%',
+          animation: 'holoScanline 14s linear infinite',
+        }} />
+
+        {/* Noise texture overlay */}
+        <div className="absolute inset-0 rounded-lg pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
 
         {/* --- Header Section --- */}
         <header 
@@ -438,35 +458,66 @@ const AssessmentCard = ({
             })}
           </div>
 
-          {/* Next Button — manual advance (centered below indicators) */}
-          {!isAllAnswered && currentQuestionIndex < totalQuestions - 1 && (
-            <button
-              onClick={() => onNext && onNext()}
-              className="mx-auto flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"
-              style={{
-                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontSize: s.answerFont,
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                backgroundColor: `${subjectColor}15`,
-                border: `1px solid ${subjectColor}40`,
-                color: subjectColor,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = `${subjectColor}30`;
-                e.currentTarget.style.borderColor = subjectColor;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = `${subjectColor}15`;
-                e.currentTarget.style.borderColor = `${subjectColor}40`;
-              }}
-            >
-              Next
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+          {/* Next + AUTO Buttons — manual advance (centered below indicators) */}
+          {!isAllAnswered && (
+            <div className="flex items-center justify-center gap-2">
+              {currentQuestionIndex < totalQuestions - 1 && (
+                <button
+                  onClick={() => onNext && onNext()}
+                  className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"
+                  style={{
+                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                    fontSize: s.answerFont,
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    backgroundColor: `${subjectColor}15`,
+                    border: `1px solid ${subjectColor}40`,
+                    color: subjectColor,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = `${subjectColor}30`;
+                    e.currentTarget.style.borderColor = subjectColor;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = `${subjectColor}15`;
+                    e.currentTarget.style.borderColor = `${subjectColor}40`;
+                  }}
+                >
+                  Next
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
+              {process.env.NODE_ENV !== 'production' && (
+                <button
+                  onClick={handleAutoFill}
+                  className="flex items-center justify-center gap-1 px-3 py-1.5 rounded transition-all duration-200"
+                  style={{
+                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                    fontSize: s.answerFont,
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    backgroundColor: 'rgba(250, 204, 21, 0.12)',
+                    border: '1px solid rgba(250, 204, 21, 0.4)',
+                    color: '#facc15',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(250, 204, 21, 0.25)';
+                    e.currentTarget.style.borderColor = '#facc15';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(250, 204, 21, 0.12)';
+                    e.currentTarget.style.borderColor = 'rgba(250, 204, 21, 0.4)';
+                  }}
+                  title="DEV: Auto-fill all questions with random answers"
+                >
+                  AUTO
+                </button>
+              )}
+            </div>
           )}
 
           {/* Save Button - appears when all 12 answered */}

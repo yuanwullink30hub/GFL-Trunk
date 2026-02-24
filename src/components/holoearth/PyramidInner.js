@@ -24,9 +24,16 @@ const INTRO_DURATION = 2.0;
 // --- Shaders for Inner Effect ---
 const holoVertexShader = `
   varying vec2 vUv;
+  varying vec3 vNormal;
+  varying vec3 vViewDir;
+  varying float vY;
   void main() {
     vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vNormal = normalize(normalMatrix * normal);
+    vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+    vViewDir = normalize(-mvPos.xyz);
+    vY = position.y;
+    gl_Position = projectionMatrix * mvPos;
   }
 `;
 
@@ -36,30 +43,86 @@ const holoFragmentShader = `
   uniform float uOpacity;
   uniform float uExplosionProgress;
   varying vec2 vUv;
+  varying vec3 vNormal;
+  varying vec3 vViewDir;
+  varying float vY;
+  
+  // Simplex-ish noise for organic variation
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+  }
+  
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+  }
   
   void main() {
-    float scanline = step(0.8, sin(vUv.y * 80.0 - uTime * 4.0));
-    float pulse = smoothstep(0.0, 0.2, 0.1 - abs(fract(uTime * 0.2) - vUv.y));
-    float gridX = step(0.97, fract(vUv.x * 20.0));
-    float gridY = step(0.97, fract(vUv.y * 20.0));
+    // 1. Fresnel edge glow — brighter at grazing angles
+    float fresnel = 1.0 - abs(dot(vNormal, vViewDir));
+    fresnel = pow(fresnel, 2.5) * 1.2;
     
-    // Disable entire grid (both vertical and horizontal lines) once explosion starts
+    // 2. Layered scanlines with varying thickness and speed
+    float scan1 = smoothstep(0.3, 0.35, sin(vUv.y * 100.0 - uTime * 3.0) * 0.5 + 0.5);
+    float scan2 = smoothstep(0.6, 0.65, sin(vUv.y * 40.0 + uTime * 1.5) * 0.5 + 0.5) * 0.5;
+    float scan3 = smoothstep(0.85, 0.9, sin(vUv.y * 200.0 - uTime * 8.0) * 0.5 + 0.5) * 0.15;
+    float scanlines = scan1 * 0.12 + scan2 * 0.08 + scan3;
+    
+    // 3. Holographic interference pattern — rainbow shimmer
+    float interference = sin(vUv.y * 300.0 + uTime * 2.0) * sin(vUv.x * 150.0 - uTime);
+    interference = interference * 0.5 + 0.5;
+    vec3 rainbow = vec3(
+      sin(interference * 6.28 + 0.0) * 0.5 + 0.5,
+      sin(interference * 6.28 + 2.09) * 0.5 + 0.5,
+      sin(interference * 6.28 + 4.19) * 0.5 + 0.5
+    );
+    
+    // 4. Rising data pulse — thicker, more visible
+    float pulseY = fract(uTime * 0.15);
+    float pulse = smoothstep(0.0, 0.06, 0.03 - abs(pulseY - vUv.y));
+    float pulse2 = smoothstep(0.0, 0.12, 0.06 - abs(fract(uTime * 0.1 + 0.5) - vUv.y)) * 0.5;
+    
+    // 5. Tech grid with glow — disable during explosion
     float gridMultiplier = uExplosionProgress > 0.05 ? 0.0 : 1.0;
-    float grid = max(gridX, gridY) * 0.1 * gridMultiplier;
+    float gridX = smoothstep(0.02, 0.0, abs(fract(vUv.x * 16.0) - 0.5) - 0.48);
+    float gridY = smoothstep(0.02, 0.0, abs(fract(vUv.y * 16.0) - 0.5) - 0.48);
+    float grid = max(gridX, gridY) * 0.12 * gridMultiplier;
     
-    float noise = fract(sin(dot(vUv * uTime, vec2(12.9898, 78.233))) * 43758.5453);
-    float flicker = 0.95 + 0.05 * noise;
-    float alpha = (scanline * 0.15 + pulse * 0.3 + grid) * flicker;
-    alpha *= smoothstep(0.0, 0.1, vUv.y) * smoothstep(1.0, 0.9, vUv.y);
+    // 6. Data flow noise — organic digital texture
+    float dataFlow = noise(vUv * 8.0 + vec2(0.0, -uTime * 0.5));
+    dataFlow = smoothstep(0.4, 0.6, dataFlow) * 0.08;
+    
+    // 7. Subtle flicker
+    float flicker = 0.96 + 0.04 * hash(vec2(floor(uTime * 12.0), 0.0));
+
+    // Combine all effects
+    float alpha = (scanlines + pulse * 0.4 + pulse2 * 0.3 + grid + dataFlow + fresnel * 0.25) * flicker;
+    
+    // Vertical fade at edges
+    alpha *= smoothstep(0.0, 0.15, vUv.y) * smoothstep(1.0, 0.85, vUv.y);
+    
+    // Mix base color with holographic rainbow
+    vec3 finalColor = mix(uColor, rainbow * uColor * 2.0, 0.15 + fresnel * 0.2);
+    finalColor += uColor * fresnel * 0.6; // Edge highlight
+    finalColor += vec3(1.0) * pulse * 0.3; // White pulse flash
+    
+    // Global Opacity Control
     alpha *= uOpacity;
-    gl_FragColor = vec4(uColor, alpha);
+
+    gl_FragColor = vec4(finalColor, alpha);
   }
 `;
 
 // --- Inner Holographic Effect ---
 const InnerHoloEffect = ({ radiusTop, radiusBottom, height, isGoldMode, explosionProgress = 0 }) => {
   const materialRef = useRef(null);
-  const color = useMemo(() => new THREE.Color(isGoldMode ? '#fbbf24' : '#5d2e0f'), [isGoldMode]);
+  const color = useMemo(() => new THREE.Color(isGoldMode ? '#fbbf24' : '#d8b4fe'), [isGoldMode]);
 
   useFrame((state) => {
     if (materialRef.current) {
@@ -71,14 +134,14 @@ const InnerHoloEffect = ({ radiusTop, radiusBottom, height, isGoldMode, explosio
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
-    uColor: { value: new THREE.Color('#5d2e0f') },
+    uColor: { value: new THREE.Color('#d8b4fe') },
     uOpacity: { value: 1.0 },
     uExplosionProgress: { value: 0 }
   }), []);
 
   return (
     <mesh scale={[0.98, 0.98, 0.98]}>
-      <cylinderGeometry args={[radiusTop * 0.99, radiusBottom * 0.99, height, 4, 1]} />
+      <cylinderGeometry args={[radiusTop * 0.99, radiusBottom * 0.99, height, 4, 8]} />
       <shaderMaterial
         ref={materialRef}
         vertexShader={holoVertexShader}
@@ -102,6 +165,8 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
   const shadowSoftRef = useRef(null);
   const glassMatRef = useRef(null);
   const wireMatRef = useRef(null);
+  const glowMeshRef = useRef(null);
+  const wire2MatRef = useRef(null);
 
   useFrame((state, delta) => {
     const orangeColor = new THREE.Color("#ff6600");
@@ -111,39 +176,26 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
 
     // Chunk glow fade: pyramid starts at 10% opacity when chunks appear,
     // then gradually returns to 100% over 9 frames
-    // explosionProgress is EASED (linear^2.5)
-    // Frame 0 linear = 0 eased, Frame 9 linear (0.36) = 0.36^2.5 ≈ 0.078 eased
     let chunkGlowFade = 1.0;
     if (explosionProgress > 0 && explosionProgress < 0.078) {
-      // Start at 10% (0.1), fade to 100% (1.0) over 9 frames
       const fadeProgress = explosionProgress / 0.078;
       chunkGlowFade = 0.1 + fadeProgress * 0.9;
     }
 
-    // Keep full opacity during explosion for vibrant pyramid visibility
-    // Only reduce during orbital mode when inside earth
-    // Apply particle occlusion - pyramid is behind smokescreen during explosion
-    const occlusionMult = 1.0 - particleOcclusion * 0.85; // Reduce to 15% visibility at peak occlusion
+    // Particle occlusion - pyramid is behind smokescreen during explosion
+    const occlusionMult = 1.0 - particleOcclusion * 0.85;
     
-    // During explosion, use higher opacity to block particles from shining through
     const isDuringExplosion = explosionProgress > 0.05;
-    // Apply chunkGlowFade AFTER calculating base opacity so it always takes effect
     const targetEdgeOpacity = (insideEarth && !isDuringExplosion ? 0.15 : 1) * occlusionMult * chunkGlowFade;
-    const targetGlassOpacity = (insideEarth && !isDuringExplosion ? 0.07 : 0.35) * occlusionMult * chunkGlowFade;
+    const targetGlassOpacity = (insideEarth && !isDuringExplosion ? 0.07 : 0.25) * occlusionMult * chunkGlowFade;
     const targetWireOpacity = (insideEarth && !isDuringExplosion ? 0.04 : 0.15) * occlusionMult * chunkGlowFade;
-    const targetEmissive = (insideEarth ? 0.05 : 0.35) * occlusionMult * chunkGlowFade;
+    const targetEmissive = (insideEarth && !isDuringExplosion ? 0.05 : 0.35) * occlusionMult * chunkGlowFade;
 
-    // Use fast lerp during chunk glow fade for instant effect, normal lerp otherwise
     const lerpSpeed = chunkGlowFade < 1.0 ? 15 : 3;
 
     if (edgesRef.current && edgesRef.current.material) {
       const targetColor = isGoldMode ? goldColor : orangeColor;
-      // Darken orange edges to 0.7 intensity, also apply chunkGlowFade to dim during chunk animation
-      if (!isGoldMode) {
-        edgesRef.current.material.color.copy(orangeColor).multiplyScalar(0.7 * chunkGlowFade);
-      } else {
-        edgesRef.current.material.color.lerp(targetColor, delta * 3);
-      }
+      edgesRef.current.material.color.lerp(targetColor, delta * 3);
       edgesRef.current.material.opacity = THREE.MathUtils.lerp(edgesRef.current.material.opacity, targetEdgeOpacity, delta * lerpSpeed);
     }
 
@@ -154,6 +206,16 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
 
     if (wireMatRef.current) {
       wireMatRef.current.opacity = THREE.MathUtils.lerp(wireMatRef.current.opacity, targetWireOpacity, delta * lerpSpeed);
+    }
+    
+    if (wire2MatRef.current) {
+      wire2MatRef.current.opacity = THREE.MathUtils.lerp(wire2MatRef.current.opacity, targetWireOpacity * 0.4, delta * lerpSpeed);
+    }
+    
+    // Fresnel glow pulse
+    if (glowMeshRef.current && glowMeshRef.current.material) {
+      const pulse = (0.12 + Math.sin(state.clock.elapsedTime * 2.0) * 0.04) * occlusionMult * chunkGlowFade;
+      glowMeshRef.current.material.opacity = pulse;
     }
 
     const targetShadowOpacity = isGoldMode ? 0.3 : 0;
@@ -178,69 +240,119 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
 
   return (
     <group>
+      {/* Main Glassy Shell — enhanced transmission glass */}
       <mesh>
         <cylinderGeometry args={[radiusTop, radiusBottom, height, 4, 1]} />
         <meshPhysicalMaterial
           ref={glassMatRef}
-          color={basePurple}
-          emissive={glowPurple}
-          emissiveIntensity={insideEarth ? 0.12 : (0.7 - 0.2 * Math.max(0, Math.min(1, (explosionProgress - 0.4) / 0.3)))}
+          color={isGoldMode ? "#d97706" : basePurple}
+          emissive={isGoldMode ? "#92400e" : glowPurple}
+          emissiveIntensity={insideEarth && explosionProgress < 0.05 ? 0.12 : (0.7 - 0.2 * Math.max(0, Math.min(1, (explosionProgress - 0.4) / 0.3)))}
           transparent
-          opacity={insideEarth ? 0.07 : 0.35}
-          roughness={0.1}
-          metalness={0.8}
-          transmission={0.9}
-          thickness={2.5}
-          attenuationColor="#ffffff"
-          attenuationDistance={5}
+          opacity={insideEarth && explosionProgress < 0.05 ? 0.07 : 0.25}
+          roughness={0.05}
+          metalness={0.9}
+          transmission={0.92}
+          thickness={3.0}
+          attenuationColor={isGoldMode ? "#fcd34d" : "#e9d5ff"}
+          attenuationDistance={3}
+          clearcoat={1.0}
+          clearcoatRoughness={0.05}
+          ior={1.8}
           side={THREE.DoubleSide}
         />
       </mesh>
+      
+      {/* Fresnel edge glow layer — additive outer shell */}
+      <mesh ref={glowMeshRef} scale={[1.015, 1.01, 1.015]}>
+        <cylinderGeometry args={[radiusTop, radiusBottom, height, 4, 1]} />
+        <meshBasicMaterial 
+          color={isGoldMode ? "#fbbf24" : "#c084fc"}
+          transparent
+          opacity={0.12}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          side={THREE.BackSide}
+        />
+      </mesh>
 
+      {/* Primary Structural Edges (Animated Color) */}
       <mesh>
         <cylinderGeometry args={[radiusTop, radiusBottom, height, 4, 1]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         <Edges ref={edgesRef} threshold={10} color="#ff6600" scale={1.005} />
       </mesh>
 
+      {/* Neon Drop Shadow 1: Hard Dark Offset */}
       <mesh position={[0.04, -0.04, 0.04]} scale={[1.02, 1.02, 1.02]}>
         <cylinderGeometry args={[radiusTop, radiusBottom, height, 4, 1]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         <Edges ref={shadowHardRef} threshold={10} color="#b45309" />
       </mesh>
 
+      {/* Neon Drop Shadow 2: Soft Glow Offset */}
       <mesh position={[0.08, -0.08, 0.08]} scale={[1.04, 1.04, 1.04]}>
         <cylinderGeometry args={[radiusTop, radiusBottom, height, 4, 1]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         <Edges ref={shadowSoftRef} threshold={10} color="#fb923c" />
       </mesh>
 
+      {/* Internal Structure — dual wireframe for depth */}
       <mesh scale={[0.85, 0.98, 0.85]}>
-        <cylinderGeometry args={[radiusTop, radiusBottom, height, 4, 2]} />
+        <cylinderGeometry args={[radiusTop, radiusBottom, height, 4, 3]} />
         <meshBasicMaterial
           ref={wireMatRef}
           color={isGoldMode ? "#d97706" : "#22d3ee"}
           wireframe
           transparent
-          opacity={insideEarth ? 0.04 : 0.15}
+          opacity={insideEarth && explosionProgress < 0.05 ? 0.04 : 0.15}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
+      
+      {/* Second inner wireframe — offset rotation for depth parallax */}
+      <mesh scale={[0.7, 0.96, 0.7]} rotation={[0, Math.PI / 4, 0]}>
+        <cylinderGeometry args={[radiusTop, radiusBottom, height, 4, 2]} />
+        <meshBasicMaterial 
+          ref={wire2MatRef}
+          color={isGoldMode ? "#fbbf24" : "#a78bfa"} 
+          wireframe 
+          transparent 
+          opacity={0.06} 
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
 
+      {/* Caps — enhanced with glow */}
       <group position={[0, height / 2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <mesh>
-          <ringGeometry args={[radiusTop * 0.8, radiusTop, 4]} />
-          <meshStandardMaterial color={frameColor} metalness={0.9} roughness={0.2} side={THREE.DoubleSide} />
-          <Edges threshold={10} color={isGoldMode ? "#fbbf24" : "#ff6600"} opacity={0.5} />
+          <ringGeometry args={[radiusTop * 0.75, radiusTop, 4]} />
+          <meshPhysicalMaterial 
+            color={frameColor} 
+            metalness={0.95} 
+            roughness={0.1} 
+            emissive={isGoldMode ? "#92400e" : "#4c1d95"}
+            emissiveIntensity={0.3}
+            side={THREE.DoubleSide} 
+          />
+          <Edges threshold={10} color={isGoldMode ? "#fbbf24" : "#ff6600"} opacity={0.6} />
         </mesh>
       </group>
       
       {showBottomCap && (
         <group position={[0, -height / 2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <mesh>
-            <ringGeometry args={[radiusBottom * 0.8, radiusBottom, 4]} />
-            <meshStandardMaterial color={frameColor} metalness={0.9} roughness={0.2} side={THREE.DoubleSide} />
-            <Edges threshold={10} color={isGoldMode ? "#fbbf24" : "#ff6600"} opacity={0.5} />
+            <ringGeometry args={[radiusBottom * 0.75, radiusBottom, 4]} />
+            <meshPhysicalMaterial 
+              color={frameColor} 
+              metalness={0.95} 
+              roughness={0.1}
+              emissive={isGoldMode ? "#92400e" : "#4c1d95"}
+              emissiveIntensity={0.3}
+              side={THREE.DoubleSide} 
+            />
+            <Edges threshold={10} color={isGoldMode ? "#fbbf24" : "#ff6600"} opacity={0.6} />
           </mesh>
         </group>
       )}

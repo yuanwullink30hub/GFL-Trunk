@@ -1072,6 +1072,7 @@ const App = () => {
   const [layerAnswers, setLayerAnswers] = useState({}); // { layerIndex: { questionId: answerId } }
   const [assessmentScrollEnabled, setAssessmentScrollEnabled] = useState(false); // Controls when user can scroll to next layer
   const [convergenceProgress, setConvergenceProgress] = useState(0); // 0-1 progress for panels floating back to entity
+  const [gatherProgress, setGatherProgress] = useState(0); // 0-1 progress for cards gathering to center stack
   const [coreScaleMultiplier, setCoreScaleMultiplier] = useState(1); // 1-5 scale for inner core growth
   const [resultsModalProgress, setResultsModalProgress] = useState(0); // 0-1 progress for results modal floating out
   const [resultsLoadingProgress, setResultsLoadingProgress] = useState(0); // 0-1 loading bar progress (AI thinking time)
@@ -1522,6 +1523,9 @@ const App = () => {
             ? (currentLayerIndex + 1) / 4
             : currentLayerIndex / 4;
           newProgress = Math.min(newProgress, maxProgress);
+          if (prev !== newProgress) {
+            console.log('[SCROLL-DEBUG]', { prev: prev.toFixed(3), newProgress: newProgress.toFixed(3), maxProgress: maxProgress.toFixed(3), currentLayerIndex, assessmentScrollEnabled });
+          }
         }
         
         // Mobile: If scrolling down and at end, unlock scroll to continue page scroll
@@ -1621,49 +1625,76 @@ const App = () => {
   const handleAllLayersComplete = useCallback((allAnswers) => {
     setLayerAnswers(allAnswers);
     setAssessmentPhase('convergence');
+    setGatherProgress(0);
     setConvergenceProgress(0);
     setCoreScaleMultiplier(1);
   }, []);
   
-  // Convergence animation effect - panels float back, then core grows
+  // Convergence animation effect - cards gather to center, then float to entity
   useEffect(() => {
     if (assessmentPhase !== 'convergence') return;
     
-    const CONVERGENCE_DURATION = 3000; // 3s for panels to float back
-    const CORE_GROWTH_DURATION = 2000; // 2s for core to grow
-    const RESULTS_APPEAR_DURATION = 800; // 0.8s for results modal to float out
+    // Timeline: wait for last card's save animation → gather to center → converge to entity → core grows → results
+    const GATHER_DELAY = 2200;          // Wait for card 5 collapse+slide to finish (900+1200+buffer)
+    const GATHER_DURATION = 1000;       // Cards float from pyramid positions to center stack
+    const PAUSE_AT_CENTER = 400;        // Brief pause with cards stacked at center
+    const CONVERGENCE_DURATION = 1200;  // Cards fly from center stack into entity
+    const CORE_GROWTH_DURATION = 1500;  // Core grows
+    const RESULTS_APPEAR_DURATION = 600; // Results modal floats out
+    
+    const t1 = GATHER_DELAY;
+    const t2 = t1 + GATHER_DURATION;
+    const t3 = t2 + PAUSE_AT_CENTER;
+    const t4 = t3 + CONVERGENCE_DURATION;
+    const t5 = t4 + CORE_GROWTH_DURATION;
+    const t6 = t5 + RESULTS_APPEAR_DURATION;
     const startTime = Date.now();
     
     const animate = () => {
       const elapsed = Date.now() - startTime;
       
-      if (elapsed < CONVERGENCE_DURATION) {
-        // Phase 1: Panels float back to entity center
-        const progress = Math.min(elapsed / CONVERGENCE_DURATION, 1);
-        // Ease out cubic
-        const eased = 1 - Math.pow(1 - progress, 3);
+      if (elapsed < t1) {
+        // Waiting for last card's save animation to finish
+        setGatherProgress(0);
+        setConvergenceProgress(0);
+      } else if (elapsed < t2) {
+        // Phase 1: Cards gather from saved positions to center stack
+        const p = (elapsed - t1) / GATHER_DURATION;
+        const eased = 1 - Math.pow(1 - p, 3);
+        setGatherProgress(eased);
+        setConvergenceProgress(0);
+      } else if (elapsed < t3) {
+        // Pause: cards stacked at center
+        setGatherProgress(1);
+        setConvergenceProgress(0);
+      } else if (elapsed < t4) {
+        // Phase 2: Cards converge from center stack to entity
+        setGatherProgress(1);
+        const p = (elapsed - t3) / CONVERGENCE_DURATION;
+        const eased = 1 - Math.pow(1 - p, 3);
         setConvergenceProgress(eased);
-      } else if (elapsed < CONVERGENCE_DURATION + CORE_GROWTH_DURATION) {
-        // Phase 2: Core grows to fill pyramid
+      } else if (elapsed < t5) {
+        // Phase 3: Core grows
+        setGatherProgress(1);
         setConvergenceProgress(1);
-        const coreElapsed = elapsed - CONVERGENCE_DURATION;
+        const coreElapsed = elapsed - t4;
         const coreProgress = Math.min(coreElapsed / CORE_GROWTH_DURATION, 1);
-        // Ease out cubic for smooth growth
         const eased = 1 - Math.pow(1 - coreProgress, 3);
-        const scale = 1 + eased * 4; // Grow from 1 to 5
+        const scale = 1 + eased * 4;
         setCoreScaleMultiplier(scale);
-      } else if (elapsed < CONVERGENCE_DURATION + CORE_GROWTH_DURATION + RESULTS_APPEAR_DURATION) {
-        // Phase 3: Results modal floats out from entity
+      } else if (elapsed < t6) {
+        // Phase 4: Results modal floats out
+        setGatherProgress(1);
         setConvergenceProgress(1);
         setCoreScaleMultiplier(5);
         setAssessmentPhase('results');
-        const resultsElapsed = elapsed - CONVERGENCE_DURATION - CORE_GROWTH_DURATION;
+        const resultsElapsed = elapsed - t5;
         const resultsProgress = Math.min(resultsElapsed / RESULTS_APPEAR_DURATION, 1);
-        // Ease out back for overshoot effect
         const eased = 1 - Math.pow(1 - resultsProgress, 3);
         setResultsModalProgress(eased);
       } else {
         // Animation complete
+        setGatherProgress(1);
         setConvergenceProgress(1);
         setCoreScaleMultiplier(5);
         setResultsModalProgress(1);
@@ -1743,7 +1774,9 @@ const App = () => {
       
       // Layer N+1 is fully animated when scroll reaches (N+1)/4
       const threshold = nextLayer / 4;
+      console.log('[LAYER-DEBUG] checking advance:', { currentLayerIndex, nextLayer, threshold, pyramidScrollProgress, assessmentScrollEnabled });
       if (pyramidScrollProgress >= threshold) {
+        console.log('[LAYER-DEBUG] ✓ ADVANCING to layer', nextLayer);
         setCurrentLayerIndex(nextLayer);
         setAssessmentScrollEnabled(false); // Disable until next save
       }
@@ -1968,6 +2001,41 @@ const App = () => {
   const headerOpacity = Math.max(0, 1 - headerProgress * 1.5);
   const headerScale = 1 - (headerProgress * 0.05);
   
+  // --- Per-component delays for staggered entropicalm movement ---
+  // GFL icon logo: delayed 1 frame
+  const logoStartFrame = HEADER_START_FRAME + 1;
+  const logoVanishFrames = section2End - logoStartFrame;
+  const logoProgress = currentFrame <= logoStartFrame ? 0 : Math.min(1, Math.max(0, (currentFrame - logoStartFrame) / logoVanishFrames));
+  const logoY = logoProgress * -150;
+  const logoOpacity = Math.max(0, 1 - logoProgress * 1.5);
+  const logoScale = 1 - (logoProgress * 0.05);
+  
+  // DELTAWerken header + subheader: delayed 2 frames
+  const deltaStartFrame = HEADER_START_FRAME + 2;
+  const deltaVanishFrames = section2End - deltaStartFrame;
+  const deltaProgress = currentFrame <= deltaStartFrame ? 0 : Math.min(1, Math.max(0, (currentFrame - deltaStartFrame) / deltaVanishFrames));
+  const deltaY = deltaProgress * -150;
+  const deltaOpacity = Math.max(0, 1 - deltaProgress * 1.5);
+  const deltaScale = 1 - (deltaProgress * 0.05);
+  
+  // gardenforlife.nl container: delayed 2 frames
+  const gardenStartFrame = HEADER_START_FRAME + 2;
+  const gardenVanishFrames = section2End - gardenStartFrame;
+  const gardenProgress = currentFrame <= gardenStartFrame ? 0 : Math.min(1, Math.max(0, (currentFrame - gardenStartFrame) / gardenVanishFrames));
+  
+  // Verbindings menu: starts 1 frame EARLIER than other containers
+  const verbindingsStartFrame = HEADER_START_FRAME - 1;
+  const verbindingsVanishFrames = section2End - verbindingsStartFrame;
+  const verbindingsProgress = currentFrame <= verbindingsStartFrame ? 0 : Math.min(1, Math.max(0, (currentFrame - verbindingsStartFrame) / verbindingsVanishFrames));
+  
+  // Scroll label: entropicalm movement, starts 3 frames BEFORE verbindingsmenu (frame 9)
+  const scrollLabelStartFrame = HEADER_START_FRAME - 3;
+  const scrollLabelVanishFrames = section2End - scrollLabelStartFrame;
+  const scrollLabelProgress = currentFrame <= scrollLabelStartFrame ? 0 : Math.min(1, Math.max(0, (currentFrame - scrollLabelStartFrame) / scrollLabelVanishFrames));
+  const scrollLabelY = scrollLabelProgress * 250; // faster outward movement (closer to explosion)
+  const scrollLabelOpacity = Math.max(0, 1 - scrollLabelProgress * 2.0);
+  const scrollLabelScale = 1 - (scrollLabelProgress * 0.08);
+  
   // Grid background: fades out with header
   const gridOpacity = Math.max(0, 0.3 * (1 - headerProgress));
 
@@ -2149,10 +2217,18 @@ const App = () => {
                       fontSize: 'clamp(1.7rem, 6vw, 2.2rem)',
                       fontWeight: 600,
                       lineHeight: 1,
-                      letterSpacing: '0.1em'
+                      letterSpacing: '0.1em',
+                      animation: 'headerBreathe 6s ease-in-out infinite',
                     }}>
                       DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
                     </h1>
+                    {/* Gradient underline */}
+                    <div style={{
+                      width: '100%',
+                      height: '1px',
+                      marginTop: 'clamp(0.2rem, 1vw, 0.4rem)',
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,254,240,0.4) 20%, rgba(245,158,11,0.5) 50%, rgba(255,254,240,0.4) 80%, transparent 100%)',
+                    }} />
                     <div className="flex items-center" style={{ gap: '0.5rem', marginTop: '0.5rem' }}>
                       <span className="rounded-full bg-green-500 animate-ping" style={{
                         width: '0.5rem',
@@ -2224,6 +2300,7 @@ const App = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  boxShadow: 'inset 0 0 80px rgba(0,0,0,0.6), inset 0 0 160px rgba(0,0,0,0.3)',
                 }}
               >
                 <HoloEarth 
@@ -2244,20 +2321,42 @@ const App = () => {
                 className="absolute left-0 right-0 flex flex-col items-center justify-center z-30"
                 style={{
                   top: 'clamp(10rem, 14vw, 12rem)',
-                  opacity: promptOpacity,
+                  opacity: scrollLabelOpacity,
+                  transform: `translateY(${scrollLabelY * 2.5}px) scale(${scrollLabelScale})`,
                 }}
               >
-                <div className="relative flex flex-col items-center bg-black/40 backdrop-blur-md rounded-sm pointer-events-none" style={{
-                  border: '1px solid rgba(21, 179, 21, 0.4)',
-                  padding: 'clamp(0.4rem, 1.5vw, 0.6rem) clamp(0.8rem, 3vw, 1.2rem)',
-                  gap: 'clamp(0.2rem, 0.5vw, 0.35rem)',
-                }}>
-                  <span className="tracking-[0.15em] font-bold" style={{
-                    color: 'white', 
-                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                    fontSize: 'clamp(0.55rem, 2vw, 0.75rem)',
-                    lineHeight: 1,
-                  }}>SWIPE ↓ = SYNCHRONISATIE</span>
+                <div className="relative pointer-events-none">
+                  {/* Text with scanline + data lines */}
+                  <div className="relative overflow-hidden" style={{
+                    padding: 'clamp(0.65rem, 1.5vw, 0.85rem) clamp(0.8rem, 3vw, 1.2rem)',
+                    transform: 'scale(1.02) scaleY(1.045)',
+                  }}>
+                    {/* Scanline */}
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'linear-gradient(180deg, transparent 0%, rgba(21, 179, 21, 0.04) 45%, rgba(21, 179, 21, 0.08) 50%, rgba(21, 179, 21, 0.04) 55%, transparent 100%)',
+                      animation: 'scrollPromptScanline 4s linear infinite',
+                      pointerEvents: 'none',
+                    }} />
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(21, 179, 21, 0.025) 3px, rgba(21, 179, 21, 0.025) 4px)',
+                      pointerEvents: 'none',
+                    }} />
+                    <span className="tracking-[0.15em] font-bold relative" style={{
+                      color: 'rgba(21, 179, 21, 0.7)',
+                      fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                      fontSize: 'clamp(0.55rem, 2vw, 0.75rem)',
+                      lineHeight: 1,
+                      textShadow: '0 0 8px rgba(21, 179, 21, 0.3)',
+                      animation: 'scrollPromptTextFlicker 8s linear infinite',
+                    }}>SWIPE ↓ = SYNCHRONISATIE</span>
+                  </div>
+                  {/* Corner bracket accents — curved, offset outward */}
+                  <div style={{ position: 'absolute', top: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderTopLeftRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite' }} />
+                  <div style={{ position: 'absolute', top: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderTopRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 0.5s' }} />
+                  <div style={{ position: 'absolute', bottom: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderBottomLeftRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1s' }} />
+                  <div style={{ position: 'absolute', bottom: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderBottomRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1.5s' }} />
                 </div>
               </div>
             </div>
@@ -2362,9 +2461,9 @@ const App = () => {
             style={{
               top: 'clamp(1.5rem, 2vw, 2rem)',
               left: 'clamp(1rem, 3vw, 2rem)',
-              // Header animation during scroll (before navigating)
-              transform: `translateX(${headerY * 2.5}px) translateY(${headerY * 2.5}px) scale(${headerScale})`,
-              opacity: headerOpacity,
+              // Header animation during scroll — delayed 1 frame
+              transform: `translateX(${logoY * 2.5}px) translateY(${logoY * 2.5}px) scale(${logoScale})`,
+              opacity: logoOpacity,
             }}
           >
             <img 
@@ -2386,7 +2485,7 @@ const App = () => {
 
 
           {/* --- Main 3D Scene --- */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ overflow: 'visible' }}>
+          <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ overflow: 'visible', boxShadow: 'inset 0 0 80px rgba(0,0,0,0.6), inset 0 0 160px rgba(0,0,0,0.3)' }}>
             <HoloEarth 
               className="w-full h-full" 
               exploding={isExploding}
@@ -2403,12 +2502,12 @@ const App = () => {
 
           {/* --- Overlay UI Layer --- */}
           <div className="absolute inset-0 z-20 pointer-events-none">
-            {/* Header HUD - Flies up based on scroll progress (without logo - logo is now persistent) */}
+            {/* Header HUD - Flies up based on scroll progress — delayed 2 frames */}
             <header 
               className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-auto"
               style={{
-                transform: `translateY(calc(${headerY * 2.5}px - 1.5rem)) scale(${headerScale})`,
-                opacity: headerOpacity,
+                transform: `translateY(calc(${deltaY * 2.5}px - 1.5rem)) scale(${deltaScale})`,
+                opacity: deltaOpacity,
                 marginTop: window.innerWidth >= 768 ? 'clamp(3rem, 3.5vw, 3.5rem)' : 'clamp(1.75rem, 2.5vw, 2rem)',
                 marginLeft: 'clamp(1rem, 3vw, 2rem)',
                 paddingRight: 'clamp(1rem, 2vw, 1.5rem)',
@@ -2432,10 +2531,17 @@ const App = () => {
                     fontWeight: 600,
                     lineHeight: 0.9,
                     filter: 'brightness(0.9)',
-                    letterSpacing: 'clamp(0.1em, 0.15vw, 0.2em)'
+                    letterSpacing: 'clamp(0.1em, 0.15vw, 0.2em)',
+                    animation: 'headerBreathe 6s ease-in-out infinite',
                   }}>
                     DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
                   </h1>
+                  {/* Gradient underline */}
+                  <div style={{
+                    height: '1px',
+                    marginTop: 'clamp(0.2rem, 0.4vw, 0.4rem)',
+                    background: 'linear-gradient(90deg, rgba(255,254,240,0.4) 0%, rgba(245,158,11,0.5) 50%, transparent 100%)',
+                  }} />
                   <div className="flex gap-2 items-center" style={{marginTop: 'clamp(0.25rem, 0.5vw, 0.5rem)'}}>
                     <span className="rounded-full bg-green-500 animate-ping" style={{
                       width: 'clamp(0.35rem, 0.5vw, 0.5rem)',
@@ -2455,9 +2561,9 @@ const App = () => {
             <div 
               className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50"
               style={{
-                bottom: 'calc(20% - 3rem)',
-                opacity: promptOpacity,
-                transform: promptOpacity > 0 ? 'scale(1)' : 'scale(1.5)',
+                bottom: 'calc(20% + 0.5rem)',
+                opacity: scrollLabelOpacity,
+                transform: `translateY(${scrollLabelY * 2.5}px) scale(${scrollLabelScale})`,
               }}
             >
               {/* LOW-END: Show "Start Experience" button instead of scroll prompt */}
@@ -2494,33 +2600,44 @@ const App = () => {
                 </button>
               ) : (
                 /* NORMAL: Scroll prompt for high/medium-end devices */
-                <>
-                  <div className="relative flex flex-col items-center gap-2 bg-black/40 backdrop-blur-md rounded-sm pointer-events-none" style={{
-                    border: '1px solid rgba(21, 179, 21, 0.4)',
-                    padding: '0.625rem 2rem',
-                    transform: window.innerWidth >= 1325 ? 'scale(1)' : window.innerWidth >= 1100 ? 'scale(0.85) translateY(-0.7rem)' : window.innerWidth >= 768 ? 'scale(0.7)' : 'scale(1)',
-                    transformOrigin: 'center bottom'
+                <div className="relative flex flex-col items-center pointer-events-none" style={{
+                  transform: window.innerWidth >= 1325 ? 'scale(1)' : window.innerWidth >= 1100 ? 'scale(0.85) translateY(-0.7rem)' : window.innerWidth >= 768 ? 'scale(0.7)' : 'scale(1)',
+                  transformOrigin: 'center bottom'
+                }}>
+                  {/* Text with scanline + data lines */}
+                  <div className="relative overflow-hidden" style={{
+                    padding: '0.875rem 2rem',
+                    transform: 'scale(1.02) scaleY(1.045)',
                   }}>
-                    <span className="tracking-[0.25em] font-bold" style={{
-                      color: 'white', 
+                    {/* Scanline sweep */}
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'linear-gradient(180deg, transparent 0%, rgba(21, 179, 21, 0.04) 45%, rgba(21, 179, 21, 0.08) 50%, rgba(21, 179, 21, 0.04) 55%, transparent 100%)',
+                      animation: 'scrollPromptScanline 4s linear infinite',
+                      pointerEvents: 'none',
+                    }} />
+                    {/* Horizontal data lines */}
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(21, 179, 21, 0.025) 3px, rgba(21, 179, 21, 0.025) 4px)',
+                      pointerEvents: 'none',
+                    }} />
+                    {/* Text */}
+                    <span className="tracking-[0.25em] font-bold relative" style={{
+                      color: 'rgba(21, 179, 21, 0.7)',
                       fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                      fontSize: '1rem'
+                      fontSize: '1rem',
+                      textShadow: '0 0 8px rgba(21, 179, 21, 0.3)',
+                      animation: 'scrollPromptTextFlicker 8s linear infinite',
+                      letterSpacing: '0.25em',
                     }}>{window.innerWidth >= 1100 ? t('scrollPrompt.scroll') : t('scrollPrompt.swipe')}</span>
-                    <div className="absolute top-0 left-0 border-t border-l" style={{
-                      width: '0.5rem',
-                      height: '0.5rem',
-                      borderColor: 'rgba(21, 179, 21, 0.4)'
-                    }}></div>
-                    <div className="absolute bottom-0 right-0 border-b border-r" style={{
-                      width: '0.5rem',
-                      height: '0.5rem',
-                      borderColor: 'rgba(21, 179, 21, 0.4)'
-                    }}></div>
                   </div>
-                  <div className="flex flex-col items-center gap-2 animate-bounce pointer-events-none">
-                    <div className="w-6 h-10 border-2 rounded-full flex justify-center pt-2" style={{borderColor: 'rgba(245, 158, 11, 0.5)'}}></div>
-                  </div>
-                </>
+                  {/* Corner bracket accents — curved, offset outward */}
+                  <div style={{ position: 'absolute', top: -3, left: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderTopLeftRadius: '3px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite' }} />
+                  <div style={{ position: 'absolute', top: -3, right: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderTopRightRadius: '3px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 0.5s' }} />
+                  <div style={{ position: 'absolute', bottom: -3, left: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderBottomLeftRadius: '3px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1s' }} />
+                  <div style={{ position: 'absolute', bottom: -3, right: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderBottomRightRadius: '3px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1.5s' }} />
+                </div>
               )}
             </div>
 
@@ -2531,6 +2648,8 @@ const App = () => {
               currentSlide={currentSlide} 
               setCurrentSlide={setCurrentSlide}
               animationProgress={containerProgress}
+              gardenAnimationProgress={gardenProgress}
+              verbindingsAnimationProgress={verbindingsProgress}
               setActiveSection={handleOpenSection}
               pauseAutoSlide={pauseAutoSlide}
             />
@@ -2612,15 +2731,18 @@ const App = () => {
             {/* Animates in sync with pyramid layers - floats from entity center to alternating sides */}
             {/* During convergence, panels float back to entity center */}
             {isSystem && (assessmentPhase === 'layers' || assessmentPhase === 'convergence') && (
-              <AssessmentLayerPanel
+              <>
+                <AssessmentLayerPanel
                 currentLayerIndex={currentLayerIndex}
                 scrollProgress={pyramidScrollProgress}
                 onLayerComplete={handleLayerComplete}
                 onScrollEnabled={handleAssessmentScrollEnabled}
                 onAllLayersComplete={handleAllLayersComplete}
+                gatherProgress={gatherProgress}
                 convergenceProgress={convergenceProgress}
                 isVisible={true}
               />
+              </>
             )}
             
             {/* Assessment Upload - Shows after questions for deep level */}

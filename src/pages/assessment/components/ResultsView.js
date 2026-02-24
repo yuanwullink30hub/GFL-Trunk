@@ -29,7 +29,7 @@ function ResultsView({ result, onReset }) {
       </div>
 
       <div className="space-y-6">
-        <div className="glass rounded-xl p-6 md:p-8 border border-cyan-500/30 relative overflow-hidden">
+        <div className="rounded-xl p-6 md:p-8 border border-cyan-500/30 relative overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34, 211, 238, 0.06), inset 0 0 30px rgba(34, 211, 238, 0.03)' }}>
           <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
           <div className="relative z-10">
@@ -55,7 +55,7 @@ function ResultsView({ result, onReset }) {
           <StatCard icon={<Sparkles className="w-5 h-5" />} label="Profile ID" value={result.id.split("-")[1]} color="#fbbf24" />
         </div>
 
-        <div className="glass rounded-xl p-6 border border-purple-500/30">
+        <div className="rounded-xl p-6 border border-purple-500/30 backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168, 85, 247, 0.06), inset 0 0 30px rgba(168, 85, 247, 0.03)' }}>
           <h3 className="text-lg font-light text-purple-300 mb-3 flex items-center gap-2">
             <Sparkles className="w-5 h-5" />
             Quantum Resonance
@@ -73,7 +73,7 @@ function ResultsView({ result, onReset }) {
           ))}
         </div>
 
-        <div className="glass rounded-xl p-6 border border-orange-500/30">
+        <div className="rounded-xl p-6 border border-orange-500/30 backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(245, 158, 11, 0.06), inset 0 0 30px rgba(245, 158, 11, 0.03)' }}>
           <h3 className="text-lg font-light text-orange-300 mb-3 flex items-center gap-2">
             <Brain className="w-5 h-5" />
             AI Training Prompt
@@ -91,7 +91,7 @@ function ResultsView({ result, onReset }) {
         </div>
 
         {result.uploadedFiles && result.uploadedFiles.length > 0 && (
-          <div className="glass rounded-xl p-6 border border-slate-700">
+          <div className="rounded-xl p-6 border border-slate-700 backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15)' }}>
             <h3 className="text-lg font-light text-slate-300 mb-3">Enhanced With</h3>
             <div className="flex flex-wrap gap-2">
               {result.uploadedFiles.map((file, index) => (
@@ -125,7 +125,7 @@ function ResultsView({ result, onReset }) {
 
 function StatCard({ icon, label, value, color }) {
   return (
-    <div className="glass rounded-xl p-4 border text-center" style={{ borderColor: `${color}30` }}>
+    <div className="rounded-xl p-4 border text-center backdrop-blur-xl" style={{ borderColor: `${color}30`, backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15)' }}>
       <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2" style={{ backgroundColor: `${color}20`, color }}>
         {icon}
       </div>
@@ -140,7 +140,7 @@ function SubjectResultCard({ result, index }) {
   const color = colors[index % colors.length];
 
   return (
-    <div className="glass rounded-lg p-4 border border-slate-700 hover:border-slate-600 transition-colors">
+    <div className="rounded-lg p-4 border border-slate-700 hover:border-slate-600 transition-colors backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15)' }}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 10px ${color}` }} />

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import archetypeHeader from '../../images/Import ready/Archetype header.png';
+import analyseIcon from '../../images/Import ready/analyseicon.PNG';
+import shadowIcon from '../../images/Import ready/Shadowicon.png';
+import scienceIcon from '../../images/Import ready/Scienceicon.png';
+import aiIcon from '../../images/Import ready/AIicon.PNG';
 
 /**
  * AssessmentIntro - Modal shown when entity appears
@@ -26,176 +30,184 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
 
   // Breakpoint-based sizing:  Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
   const s = windowWidth >= 1441 ? {
-    // ── Desktop ── original full-size
-    modalMaxWidth: '85.2rem',
+    // ── Desktop ── increased spacing, same fonts
+    modalMaxWidth: '106.5rem',
     modalMaxHeight: '90vh',
-    padding: '1.25rem',
+    padding: '1.875rem',
     headerMaxWidth: '26.25rem',
-    headerMb: '2rem',
+    headerMb: '3rem',
     descFontSize: '0.875rem',
-    descMt: '1rem',
-    featureGap: '0.75rem',
-    featureMb: '2rem',
-    featurePadding: '1rem',
-    featureIconSize: '2rem',
+    descMt: '1.5rem',
+    featureGap: '0.6rem',
+    featureMb: '3rem',
+    contentShiftUp: '-3rem',
+    featurePadding: '0.75rem',
+    featureIconSize: '2.75rem',
     featureIconFont: '1rem',
     featureTitleFont: '0.875rem',
     featureDescFont: '0.75rem',
-    featureItemGap: '0.75rem',
-    pyramidMb: '2rem',
-    pyramidGap: '0.375rem',
-    pyramidBaseWidth: 100, pyramidStepWidth: 20, // px
-    pyramidPadY: '0.5rem', pyramidPadX: '1rem',
+    featureItemGap: '0.6rem',
+    pyramidMb: '3rem',
+    pyramidGap: '0.5rem',
+    pyramidBaseWidth: 280, pyramidStepWidth: 56, // increased for spacing
+    pyramidPadY: '0.75rem', pyramidPadX: '1.5rem',
     pyramidDotSize: '0.5rem',
     pyramidLabelFont: '0.75rem',
     pyramidDescFont: '0.625rem',
-    pyramidLabelGap: '0.5rem',
-    pyramidItemGap: '0.75rem',
-    levelsMb: '1.5rem',
+    pyramidLabelGap: '0.75rem',
+    pyramidItemGap: '1rem',
+    levelsMb: '2.25rem',
     levelsTitleFont: '0.875rem',
-    levelsTitleMb: '1rem',
-    levelsGap: '0.75rem',
-    levelPadding: '1rem',
+    levelsTitleMb: '1.5rem',
+    levelsGap: '1rem',
+    levelPadding: '1.5rem',
     levelTitleFont: '1rem',
     levelDescFont: '0.75rem',
-    footerPt: '1rem',
+    footerPt: '1.5rem',
     footerFont: '0.625rem',
-    footerBtnPad: '0.375rem 1rem',
+    footerBtnPad: '0.5rem 1.5rem',
     footerBtnFont: '0.75rem',
   } : windowWidth >= 1024 ? {
     // ── Laptop ── vw-based ×1.35 × 0.75 height reduction
-    modalMaxWidth: '53.85vw',
-    modalMaxHeight: '60vh',
-    padding: '0.78vw',
+    modalMaxWidth: '67.2vw',
+    modalMaxHeight: '70vh',
+    padding: '1.05vw',
     headerMaxWidth: '17.03vw',
-    headerMb: '0.71vw',
-    descFontSize: '1.07vw',
-    descMt: '0.43vw',
-    featureGap: '0.43vw',
-    featureMb: '0.71vw',
-    featurePadding: '0.57vw',
-    featureIconSize: '1.42vw',
+    headerMb: '1.05vw',
+    descFontSize: '0.85vw',
+    descMt: '0.63vw',
+    featureGap: '0.4vw',
+    featureMb: '1.05vw',
+    contentShiftUp: '-2.4vw',
+    featurePadding: '0.52vw',
+    featureIconSize: '1.89vw',
     featureIconFont: '0.71vw',
-    featureTitleFont: '0.92vw',
-    featureDescFont: '0.78vw',
-    featureItemGap: '0.43vw',
-    pyramidMb: '0.71vw',
-    pyramidGap: '0.21vw',
-    pyramidBaseWidth: Math.round(windowWidth * 0.0567), pyramidStepWidth: Math.round(windowWidth * 0.0113),
-    pyramidPadY: '0.29vw', pyramidPadX: '0.57vw',
+    featureTitleFont: '0.78vw',
+    featureDescFont: '0.71vw',
+    featureItemGap: '0.4vw',
+    pyramidMb: '1.05vw',
+    pyramidGap: '0.45vw',
+    pyramidBaseWidth: Math.round(windowWidth * 0.085), pyramidStepWidth: Math.round(windowWidth * 0.017),
+    pyramidPadY: '0.42vw', pyramidPadX: '0.84vw',
     pyramidDotSize: '0.29vw',
-    pyramidLabelFont: '0.71vw',
+    pyramidLabelFont: '0.57vw',
     pyramidDescFont: '0.57vw',
-    pyramidLabelGap: '0.29vw',
-    pyramidItemGap: '0.43vw',
-    levelsMb: '0.71vw',
-    levelsTitleFont: '0.92vw',
-    levelsTitleMb: '0.57vw',
-    levelsGap: '0.43vw',
-    levelPadding: '0.57vw',
+    pyramidLabelGap: '0.42vw',
+    pyramidItemGap: '0.65vw',
+    levelsMb: '1.05vw',
+    levelsTitleFont: '0.78vw',
+    levelsTitleMb: '0.84vw',
+    levelsGap: '0.65vw',
+    levelPadding: '0.84vw',
     levelTitleFont: '0.99vw',
     levelDescFont: '0.78vw',
-    footerPt: '0.57vw',
+    footerPt: '0.84vw',
     footerFont: '0.57vw',
-    footerBtnPad: '0.29vw 0.57vw',
+    footerBtnPad: '0.42vw 0.84vw',
     footerBtnFont: '0.71vw',
   } : windowWidth >= 768 ? {
-    // ── Tablet ── 0.65x of desktop
+    // ── Tablet ── increased spacing, same fonts
     modalMaxWidth: '55rem',
     modalMaxHeight: '85vh',
-    padding: '0.8rem',
+    padding: '1.2rem',
     headerMaxWidth: '17rem',
-    headerMb: '1.25rem',
+    headerMb: '1.875rem',
     descFontSize: '0.75rem',
-    descMt: '0.6rem',
-    featureGap: '0.5rem',
-    featureMb: '1.25rem',
-    featurePadding: '0.65rem',
-    featureIconSize: '1.3rem',
+    descMt: '0.9rem',
+    featureGap: '0.36rem',
+    featureMb: '1.875rem',
+    contentShiftUp: '-2rem',
+    featurePadding: '0.49rem',
+    featureIconSize: '1.95rem',
     featureIconFont: '0.65rem',
-    featureTitleFont: '0.7rem',
-    featureDescFont: '0.6rem',
-    featureItemGap: '0.5rem',
-    pyramidMb: '1.25rem',
-    pyramidGap: '0.25rem',
-    pyramidBaseWidth: 65, pyramidStepWidth: 13,
-    pyramidPadY: '0.33rem', pyramidPadX: '0.65rem',
+    featureTitleFont: '0.65rem',
+    featureDescFont: '0.55rem',
+    featureItemGap: '0.36rem',
+    pyramidMb: '1.875rem',
+    pyramidGap: '0.375rem',
+    pyramidBaseWidth: 97.5, pyramidStepWidth: 19.5,
+    pyramidPadY: '0.5rem', pyramidPadX: '0.975rem',
     pyramidDotSize: '0.33rem',
-    pyramidLabelFont: '0.55rem',
-    pyramidDescFont: '0.45rem',
-    pyramidLabelGap: '0.33rem',
-    pyramidItemGap: '0.5rem',
-    levelsMb: '1rem',
-    levelsTitleFont: '0.7rem',
-    levelsTitleMb: '0.65rem',
-    levelsGap: '0.5rem',
-    levelPadding: '0.65rem',
+    pyramidLabelFont: '0.65rem',
+    pyramidDescFont: '0.55rem',
+    pyramidLabelGap: '0.5rem',
+    pyramidItemGap: '0.6rem',
+    levelsMb: '1.5rem',
+    levelsTitleFont: '0.65rem',
+    levelsTitleMb: '0.975rem',
+    levelsGap: '0.6rem',
+    levelPadding: '0.975rem',
     levelTitleFont: '0.75rem',
     levelDescFont: '0.6rem',
-    footerPt: '0.65rem',
+    footerPt: '0.975rem',
     footerFont: '0.5rem',
-    footerBtnPad: '0.25rem 0.65rem',
+    footerBtnPad: '0.375rem 0.975rem',
     footerBtnFont: '0.6rem',
   } : {
     // ── Mobile ── full-width, comfortable touch sizes
     modalMaxWidth: '95vw',
     modalMaxHeight: '85vh',
-    padding: '0.75rem',
+    padding: '1.125rem',
     headerMaxWidth: '14rem',
-    headerMb: '1rem',
+    headerMb: '1.5rem',
     descFontSize: '0.8rem',
-    descMt: '0.5rem',
-    featureGap: '0.5rem',
-    featureMb: '1rem',
-    featurePadding: '0.75rem',
-    featureIconSize: '1.5rem',
+    descMt: '0.75rem',
+    featureGap: '0.36rem',
+    featureMb: '1.5rem',
+    contentShiftUp: '-1.5rem',
+    featurePadding: '0.675rem',
+    featureIconSize: '2.25rem',
     featureIconFont: '0.75rem',
-    featureTitleFont: '0.75rem',
-    featureDescFont: '0.65rem',
-    featureItemGap: '0.5rem',
-    pyramidMb: '1rem',
-    pyramidGap: '0.25rem',
-    pyramidBaseWidth: 80, pyramidStepWidth: 16,
-    pyramidPadY: '0.35rem', pyramidPadX: '0.75rem',
+    featureTitleFont: '0.7rem',
+    featureDescFont: '0.6rem',
+    featureItemGap: '0.36rem',
+    pyramidMb: '1.5rem',
+    pyramidGap: '0.375rem',
+    pyramidBaseWidth: 120, pyramidStepWidth: 24,
+    pyramidPadY: '0.525rem', pyramidPadX: '1.125rem',
     pyramidDotSize: '0.35rem',
     pyramidLabelFont: '0.65rem',
     pyramidDescFont: '0.5rem',
-    pyramidLabelGap: '0.35rem',
-    pyramidItemGap: '0.5rem',
-    levelsMb: '1rem',
+    pyramidLabelGap: '0.525rem',
+    pyramidItemGap: '0.6rem',
+    levelsMb: '1.5rem',
     levelsTitleFont: '0.75rem',
-    levelsTitleMb: '0.65rem',
-    levelsGap: '0.5rem',
-    levelPadding: '0.75rem',
+    levelsTitleMb: '0.975rem',
+    levelsGap: '0.6rem',
+    levelPadding: '1.125rem',
     levelTitleFont: '0.85rem',
     levelDescFont: '0.7rem',
-    footerPt: '0.65rem',
+    footerPt: '0.975rem',
     footerFont: '0.55rem',
-    footerBtnPad: '0.3rem 0.75rem',
+    footerBtnPad: '0.45rem 1.125rem',
     footerBtnFont: '0.65rem',
   };
 
   const features = [
     { 
-      icon: '🧠', 
+      icon: analyseIcon,
+      isImage: true,
       titleKey: 'assessmentIntro.features.layerAnalysis.title',
       descKey: 'assessmentIntro.features.layerAnalysis.description',
       color: "#22d3ee" 
     },
     { 
-      icon: '👁️', 
+      icon: shadowIcon,
+      isImage: true,
       titleKey: 'assessmentIntro.features.shadowIntegration.title',
       descKey: 'assessmentIntro.features.shadowIntegration.description',
       color: "#a855f7" 
     },
     { 
-      icon: '💜', 
+      icon: scienceIcon,
+      isImage: true,
       titleKey: 'assessmentIntro.features.researchBacked.title',
       descKey: 'assessmentIntro.features.researchBacked.description',
       color: "#f472b6" 
     },
     { 
-      icon: '✨', 
+      icon: aiIcon,
+      isImage: true,
       titleKey: 'assessmentIntro.features.aiTraining.title',
       descKey: 'assessmentIntro.features.aiTraining.description',
       color: "#fbbf24" 
@@ -285,26 +297,35 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
               style={{ maxWidth: s.headerMaxWidth, width: '100%', margin: '0 auto' }}
             />
 
-            <p className="text-slate-400 max-w-xl mx-auto leading-relaxed" style={{ fontSize: s.descFontSize, marginTop: s.descMt }}>
+            <p className="mx-auto leading-relaxed" style={{ fontSize: s.descFontSize, marginTop: `calc(${s.descMt} - 1.5rem)`, whiteSpace: 'nowrap', color: '#FFFEF0' }}>
               {t('assessmentIntro.description')}
             </p>
           </div>
 
-          {/* Features Grid */}
-          <div className={`grid grid-cols-1 ${windowWidth >= 768 ? 'md:grid-cols-2' : ''}`} style={{ gap: s.featureGap, marginBottom: s.featureMb }}>
+          {/* Features Grid — shifted up */}
+          <div className={`grid grid-cols-1 ${windowWidth >= 768 ? 'md:grid-cols-2' : ''}`} style={{ gap: s.featureGap, marginBottom: s.featureMb, marginTop: `calc(${s.contentShiftUp} + 2rem)` }}>
             {features.map((feature) => (
               <div
                 key={feature.titleKey}
                 className="rounded-lg border border-slate-700/50 bg-slate-900/30"
                 style={{ padding: s.featurePadding }}
               >
-                <div className="flex items-start" style={{ gap: s.featureItemGap }}>
-                  <div
-                    className="rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${feature.color}20`, width: s.featureIconSize, height: s.featureIconSize, fontSize: s.featureIconFont }}
-                  >
-                    {feature.icon}
-                  </div>
+                <div className="flex items-center" style={{ gap: s.featureItemGap }}>
+                  {feature.isImage ? (
+                    <img
+                      src={feature.icon}
+                      alt={t(feature.titleKey)}
+                      className="flex-shrink-0 rounded-lg"
+                      style={{ width: `calc(${s.featureIconSize} * 1.2)`, height: `calc(${s.featureIconSize} * 1.2)`, objectFit: 'contain' }}
+                    />
+                  ) : (
+                    <div
+                      className="rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${feature.color}20`, width: s.featureIconSize, height: s.featureIconSize, fontSize: s.featureIconFont }}
+                    >
+                      {feature.icon}
+                    </div>
+                  )}
                   <div>
                     <h3 className="font-medium text-slate-200" style={{ fontSize: s.featureTitleFont, marginBottom: '1px' }}>{t(feature.titleKey)}</h3>
                     <p className="text-slate-500" style={{ fontSize: s.featureDescFont }}>{t(feature.descKey)}</p>
@@ -314,42 +335,112 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
             ))}
           </div>
 
+          {/* Referenties button + research text row */}
+          <div className="relative" style={{ marginTop: '-3.5rem', marginBottom: s.featureMb }}>
+            {onNavigateToData && (
+              <button
+                onClick={onNavigateToData}
+                className="absolute left-0 top-1/2 -translate-y-1/2 border border-green-500/40 rounded-full flex-shrink-0
+                           hover:scale-[1.02] transition-all duration-300 
+                           font-mono uppercase tracking-wider"
+                style={{ padding: s.footerBtnPad, fontSize: s.footerBtnFont, color: '#22c55e', backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#22c55e';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(34,197,94,0.19)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(34,197,94,0.4)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                {t('assessmentIntro.footerButton')}
+              </button>
+            )}
+            <p className="text-center leading-relaxed text-slate-500" style={{ fontSize: s.descFontSize, paddingTop: '1.85rem' }}>
+              {t('assessmentIntro.footerResearch')}
+            </p>
+          </div>
+
           {/* Pyramid Layers Visual */}
           <div style={{ marginBottom: s.pyramidMb }}>
             <h2 className="text-center text-slate-400 font-mono uppercase tracking-wider" style={{ display: 'none', fontSize: s.levelsTitleFont, marginBottom: s.levelsTitleMb }}>
               {t('assessmentIntro.layersTitle')}
             </h2>
-            <div className="flex flex-col items-center" style={{ gap: s.pyramidGap }}>
-              {layers.map((layer, index) => (
-                <div
-                  key={layer.nameKey}
-                  className="flex items-center rounded border transition-all duration-300 hover:scale-105"
-                  style={{
-                    width: `${s.pyramidBaseWidth + index * s.pyramidStepWidth}px`,
-                    borderColor: `${layer.color}40`,
-                    backgroundColor: `${layer.color}10`,
-                    padding: `${s.pyramidPadY} ${s.pyramidPadX}`,
-                    gap: s.pyramidItemGap,
-                  }}
-                >
+            <div className="flex flex-col items-center relative" style={{ gap: s.pyramidGap }}>
+              {/* Holographic glow backdrop */}
+              <div className="absolute inset-0 pointer-events-none" style={{
+                background: 'radial-gradient(ellipse at center, rgba(168,85,247,0.06) 0%, transparent 70%)',
+                filter: 'blur(20px)',
+              }} />
+              {layers.map((layer, index) => {
+                const glowIntensity = 1 - index * 0.12;
+                return (
                   <div
-                    className="rounded-full flex-shrink-0"
-                    style={{ backgroundColor: layer.color, boxShadow: `0 0 8px ${layer.color}`, width: s.pyramidDotSize, height: s.pyramidDotSize }}
-                  />
-                  <div className="flex items-center" style={{ gap: s.pyramidLabelGap }}>
-                    <span className="font-medium" style={{ color: layer.color, fontSize: s.pyramidLabelFont }}>{t(`${layer.nameKey}.name`)}</span>
-                    <span className="text-slate-500" style={{ fontSize: s.pyramidDescFont }}>{t(`${layer.descKey}.desc`)}</span>
+                    key={layer.nameKey}
+                    className="flex items-center rounded border transition-all duration-500 hover:scale-105 relative group"
+                    style={{
+                      width: `${s.pyramidBaseWidth + index * s.pyramidStepWidth}px`,
+                      justifyContent: 'center',
+                      borderColor: `${layer.color}50`,
+                      background: `linear-gradient(135deg, ${layer.color}12 0%, ${layer.color}06 50%, ${layer.color}10 100%)`,
+                      padding: `${s.pyramidPadY} ${s.pyramidPadX}`,
+                      gap: s.pyramidItemGap,
+                      boxShadow: `0 0 ${12 * glowIntensity}px ${layer.color}18, inset 0 0 ${8 * glowIntensity}px ${layer.color}08`,
+                      backdropFilter: 'blur(4px)',
+                    }}
+                  >
+                    {/* Scan line overlay */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded" style={{ opacity: 0.04 }}>
+                      <div style={{
+                        width: '100%', height: '100%',
+                        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.3) 2px, rgba(255,255,255,0.3) 3px)',
+                      }} />
+                    </div>
+                    {/* Edge highlight */}
+                    <div className="absolute inset-0 pointer-events-none rounded" style={{
+                      background: `linear-gradient(90deg, ${layer.color}15, transparent 20%, transparent 80%, ${layer.color}15)`,
+                    }} />
+                    {/* Glowing dot */}
+                    <div
+                      className="rounded-full flex-shrink-0 relative"
+                      style={{
+                        backgroundColor: layer.color,
+                        boxShadow: `0 0 8px ${layer.color}, 0 0 16px ${layer.color}60, 0 0 24px ${layer.color}30`,
+                        width: s.pyramidDotSize,
+                        height: s.pyramidDotSize,
+                      }}
+                    >
+                      <div className="absolute inset-0 rounded-full" style={{
+                        background: `radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%)`,
+                        transform: 'scale(0.5) translate(-20%, -20%)',
+                      }} />
+                    </div>
+                    <div className="flex items-center relative" style={{ gap: s.pyramidLabelGap }}>
+                      <span className="font-medium" style={{
+                        color: layer.color,
+                        fontSize: s.pyramidLabelFont,
+                        textShadow: `0 0 10px ${layer.color}50`,
+                      }}>{t(`${layer.nameKey}.name`)}</span>
+                      <span style={{
+                        fontSize: s.pyramidDescFont,
+                        color: 'rgba(148,163,184,0.8)',
+                      }}>{t(`${layer.descKey}.desc`)}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
+          {/* Transition text between pyramid & levels */}
+          <p className="text-center text-slate-500 italic" style={{ fontSize: s.descFontSize, marginBottom: s.levelsMb }}>
+            {t('assessmentIntro.pyramidToLevelsText')}<br />
+            {t('assessmentIntro.pyramidToLevelsText2')}<br />
+            {t('assessmentIntro.pyramidToLevelsText3')}
+          </p>
+
           {/* Level Selection */}
           <div style={{ marginBottom: s.levelsMb }}>
-            <h2 className="text-center text-slate-400 font-mono uppercase tracking-wider" style={{ fontSize: s.levelsTitleFont, marginBottom: s.levelsTitleMb }}>
-              {t('assessmentIntro.levelsTitle')}
-            </h2>
             <div className={`grid grid-cols-1 ${windowWidth >= 768 ? 'md:grid-cols-3' : ''}`} style={{ gap: s.levelsGap }}>
               {levels.map((level) => {
                 const isLocked = level.id === 'quick' || level.id === 'standard';
@@ -398,22 +489,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
           </div>
 
           {/* Footer */}
-          <div className="text-center border-t border-slate-800" style={{ paddingTop: s.footerPt }}>
-            <p className="text-slate-600" style={{ fontSize: s.footerFont }}>
-              {t('assessmentIntro.footerResearch')}
-            </p>
-            {onNavigateToData && (
-              <button
-                onClick={onNavigateToData}
-                className="mt-1 text-cyan-400 border border-cyan-500/30 rounded-full 
-                           hover:bg-cyan-500/10 hover:border-cyan-400/60 transition-all duration-300 
-                           font-mono uppercase tracking-wider"
-                style={{ padding: s.footerBtnPad, fontSize: s.footerBtnFont }}
-              >
-                {t('assessmentIntro.footerButton')}
-              </button>
-            )}
-            <p className="text-slate-700 mt-0.5" style={{ fontSize: s.footerFont }}>{t('assessmentIntro.footerUrl')}</p>
+          <div className="border-t border-slate-800" style={{ paddingTop: s.footerPt }}>
           </div>
         </div>
       </div>

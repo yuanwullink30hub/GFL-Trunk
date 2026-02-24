@@ -526,9 +526,10 @@ Shape3D.displayName = 'Shape3D';
 const SectorFrame = ({ children, className = '', style = {}, ...props }) => (
   <div 
     {...props}
-    className={`relative rounded-lg backdrop-blur-sm ${className}`} 
+    className={`relative rounded-lg backdrop-blur-xl overflow-hidden ${className}`} 
     style={{ 
-      backgroundColor: 'rgba(8, 2, 12, 0.85)',
+      backgroundColor: 'rgba(1, 0, 2, 0.3)',
+      boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(0, 255, 65, 0.06), inset 0 0 30px rgba(0, 255, 65, 0.03)',
       ...style
     }}
   >
@@ -548,6 +549,26 @@ const SectorFrame = ({ children, className = '', style = {}, ...props }) => (
         ...(i === 3 && { borderTop: 'none', borderLeft: 'none' })
       }} />
     ))}
+
+    {/* Holographic sheen */}
+    <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
+      background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
+      backgroundSize: '400% 400%',
+      backgroundRepeat: 'no-repeat',
+      animation: 'holoSheen 45s ease-in-out infinite',
+      mixBlendMode: 'screen',
+    }} />
+
+    {/* Scanline sweep */}
+    <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
+      background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
+      backgroundSize: '100% 300%',
+      animation: 'holoScanline 14s linear infinite',
+    }} />
+
+    {/* Noise texture overlay */}
+    <div className="absolute inset-0 rounded-lg pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
+
     <div className="relative z-10 h-full w-full">{children}</div>
   </div>
 );

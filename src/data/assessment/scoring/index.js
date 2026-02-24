@@ -213,24 +213,31 @@ export function determineArchetype(layerAnswers, questions) {
 
 /**
  * The 12 archetype labels for radar chart anchors.
- * Arranged as complementary pairs (adjacent) for balanced visual layout.
+ * Clockwise "Value Web" starting at 12 o'clock (Ruler).
+ * Smooth Big-5 transitions: Structure → Empathy → Creativity → Rebellion → Power → back.
  */
 export const ARCHETYPE_RADAR_LABELS = [
-  'Sage', 'Explorer',       // Wisdom pair
-  'Hero', 'Outlaw',         // Action pair
-  'Lover', 'Caregiver',     // Relational pair
-  'Artist', 'Magician',     // Creative pair
-  'Ruler', 'Judge',         // Ruling pair
-  'Innocent', 'Trickster',  // Spirit pair
+  'Ruler',      // 12 — High Conscientiousness, High Extraversion
+  'Judge',      //  1 — High Conscientiousness, Low Agreeableness
+  'Sage',       //  2 — High Conscientiousness, High Openness
+  'Innocent',   //  3 — High Agreeableness, Introverted
+  'Caregiver',  //  4 — High Agreeableness, High Conscientiousness
+  'Lover',      //  5 — High Agreeableness, High Extraversion
+  'Artist',     //  6 — High Openness, High Agreeableness
+  'Explorer',   //  7 — High Openness, Low Conscientiousness
+  'Trickster',  //  8 — High Openness, High Extraversion, Low Conscientiousness
+  'Outlaw',     //  9 — Low Agreeableness, Low Conscientiousness
+  'Magician',   // 10 — High Openness, High Extraversion
+  'Hero',       // 11 — High Extraversion, High Conscientiousness
 ];
 
 /**
- * All 12 archetype keys in radar label order.
+ * All 12 archetype keys in radar label order (Value Web clockwise).
  */
 export const ALL_ARCHETYPE_KEYS = [
-  'SAGE', 'EXPLORER', 'HERO', 'OUTLAW',
-  'LOVER', 'CAREGIVER', 'ARTIST', 'MAGICIAN',
-  'RULER', 'JUDGE', 'INNOCENT', 'TRICKSTER',
+  'RULER', 'JUDGE', 'SAGE', 'INNOCENT',
+  'CAREGIVER', 'LOVER', 'ARTIST', 'EXPLORER',
+  'TRICKSTER', 'OUTLAW', 'MAGICIAN', 'HERO',
 ];
 
 /**

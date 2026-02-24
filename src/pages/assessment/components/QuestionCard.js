@@ -53,8 +53,10 @@ function QuestionCard({
             onClick={() => onSelectAnswer(answer.id)}
             className="w-full text-left p-4 md:p-5 rounded-lg border transition-all duration-300 group relative overflow-hidden hover:scale-[1.02]"
             style={{
-              backgroundColor: "rgba(15, 7, 22, 0.8)",
+              backgroundColor: "rgba(4, 1, 6, 0.3)",
               borderColor: `${subjectColor}30`,
+              backdropFilter: 'blur(24px)',
+              boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = subjectColor;

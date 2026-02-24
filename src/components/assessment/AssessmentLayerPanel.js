@@ -44,6 +44,9 @@ const SAVED_LAYER_POSITIONS = [
   28, // Unity (top) - high on screen
 ];
 
+// Gathered stack positions at screen center (stacked order: Foundation at bottom, Unity on top)
+const GATHERED_Y = [54, 52, 50, 48, 46];
+
 // All OPEN cards sit at the same vertical center on the RIGHT side
 const OPEN_Y = 50; // vertically centered in viewport
 
@@ -70,6 +73,7 @@ const SingleLayerPanel = ({
   isCurrentLayer,
   scrollProgress,
   onSave,
+  gatherProgress = 0,
   convergenceProgress = 0,
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -178,16 +182,14 @@ const SingleLayerPanel = ({
                          vw >= 768  ? 18 :   // Tablet
                          50;                  // Mobile — centered
     
-    // During convergence, animate from current position back to entity center
+    // During convergence, animate from center stack to entity center
     if (convergenceProgress > 0) {
-      const isOnLeft = savePhase === 'done' || savePhase === 'moving';
-      const currentBaseX = isOnLeft ? leftXPercent : rightXPercent;
-      const currentBaseY = isOnLeft ? savedY : OPEN_Y;
-      const currentBaseScale = isOnLeft ? savedScale : 1;
-      const eased = 1 - Math.pow(1 - convergenceProgress, 2);
-      const currentX = currentBaseX + (entityCenterX - currentBaseX) * eased;
-      const currentY = currentBaseY + (entityCenterY - currentBaseY) * eased;
-      const scale = currentBaseScale * (1 - 0.9 * eased);
+      const startX = 50;
+      const startY = GATHERED_Y[layerIndex];
+      const eased = convergenceProgress; // already eased in App.js
+      const currentX = startX + (entityCenterX - startX) * eased;
+      const currentY = startY + (entityCenterY - startY) * eased;
+      const scale = 1 - 0.9 * eased;
       const opacity = 1 - eased;
       
       return {
@@ -199,7 +201,30 @@ const SingleLayerPanel = ({
         opacity,
         transition: 'none',
         pointerEvents: 'none',
-        zIndex: isSaved ? 140 : 150,
+        zIndex: 140 + layerIndex,
+      };
+    }
+    
+    // During gather, animate saved cards from pyramid positions to center stack
+    if (gatherProgress > 0) {
+      const startX = leftXPercent;
+      const startY = savedY;
+      const targetX = 50;
+      const targetY = GATHERED_Y[layerIndex];
+      const eased = gatherProgress; // already eased in App.js
+      const currentX = startX + (targetX - startX) * eased;
+      const currentY = startY + (targetY - startY) * eased;
+      
+      return {
+        position: 'fixed',
+        left: `${currentX}%`,
+        right: 'auto',
+        top: `${currentY}vh`,
+        transform: `translate(-50%, -50%)`,
+        opacity: 1,
+        transition: 'none',
+        pointerEvents: 'none',
+        zIndex: 140 + layerIndex,
       };
     }
     
@@ -272,7 +297,7 @@ const SingleLayerPanel = ({
       pointerEvents: progress > 0.9 ? 'auto' : 'none',
       zIndex: 150,
     };
-  }, [layerIndex, animProgress, convergenceProgress, isSaved, savePhase, moveProgress]);
+  }, [layerIndex, animProgress, gatherProgress, convergenceProgress, isSaved, savePhase, moveProgress]);
 
   // Answer selection handler - stores selections (no auto-advance)
   const handleAnswerSelect = useCallback((questionId, answerId) => {
@@ -357,6 +382,7 @@ const AssessmentLayerPanel = ({
   onLayerComplete,
   onScrollEnabled,
   onAllLayersComplete, // Callback when layer 4 is saved - triggers convergence
+  gatherProgress = 0,    // 0-1 progress for cards gathering to center stack
   convergenceProgress = 0, // 0-1 progress for panels floating back to entity
   isVisible = true,
 }) => {
@@ -378,13 +404,16 @@ const AssessmentLayerPanel = ({
   // Handle save for a specific layer
   const handleSave = useCallback((layerIndex) => {
     const layerAnswers = allLayerAnswers[layerIndex] || {};
+    console.log('[SAVE-DEBUG] saving layer', layerIndex, 'total saved so far:', savedLayers.length);
     onLayerComplete?.(layerIndex, layerAnswers);
     setSavedLayers(prev => [...prev, layerIndex]);
     
     // If this is the last layer (index 4), trigger convergence
     if (layerIndex === 4) {
+      console.log('[SAVE-DEBUG] last layer saved → convergence');
       onAllLayersComplete?.(allLayerAnswers);
     } else {
+      console.log('[SAVE-DEBUG] enabling scroll for next layer');
       onScrollEnabled?.(true);
     }
   }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete]);
@@ -420,6 +449,7 @@ const AssessmentLayerPanel = ({
           isCurrentLayer={layerIndex === currentLayerIndex}
           scrollProgress={scrollProgress}
           onSave={() => handleSave(layerIndex)}
+          gatherProgress={gatherProgress}
           convergenceProgress={convergenceProgress}
         />
       ))}

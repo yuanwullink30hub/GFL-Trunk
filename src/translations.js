@@ -18,24 +18,36 @@ const translations = {
       en: "A+ Analyse Archetypes"
     },
     description: {
-      nl: "Een uitgebreide psychologische analyse die biochemie, fysica, alchemie en kwantumpanpsychisme integreert om jouw unieke bewustzijnsprofiel te onthullen.",
-      en: "A comprehensive psychological assessment integrating biochemistry, physics, alchemy, and quantum panpsychism to reveal your unique consciousness signature."
+      nl: "De meest complete archetype test voor de synchronisatie tussen jouw essentie en je intelligentie.",
+      en: "The most complete archetype test for the synchronization between your essence and your intelligence."
+    },
+    pyramidToLevelsText: {
+      nl: "Kies je niveau gebaseerd op de zelfkennis die je al beheerst.",
+      en: "Choose your level based on the self-knowledge you already master."
+    },
+    pyramidToLevelsText2: {
+      nl: "6 Antwoorden per vraag/ 1 keuze is 5P / keuze 1-3P en keuze 2-2P",
+      en: "6 Answers per question/ 1 choice is 5P / choice 1-3P and choice 2-2P"
+    },
+    pyramidToLevelsText3: {
+      nl: "Overvolledig rapport met Kern, Support en Schaduw Archetype.",
+      en: "Comprehensive report with Core, Support and Shadow Archetype."
     },
     features: {
       layerAnalysis: {
         title: { nl: "5-Lagen Analyse", en: "5-Layer Analysis" },
-        description: { nl: "Verken de Fundament-, Emotionele, Mentale, Spirituele en Eenheidslagen", en: "Explore Foundation, Emotional, Mental, Spiritual, and Unity layers" }
+        description: { nl: "5 lagen analyxe X 5 ocean model", en: "5-layer analysis X 5 ocean model" }
       },
       shadowIntegration: {
         title: { nl: "Schaduw Integratie", en: "Shadow Integration" },
-        description: { nl: "Gebaseerd op het deltawerken raamwerk van FM/MF dynamiek", en: "Based on the deltawerken framework of FM/MF dynamics" }
+        description: { nl: "Gebaseerd op het raamwerk van de Deltawerken dynamiek", en: "Based on the Deltawerken framework dynamics" }
       },
       researchBacked: {
         title: { nl: "Wetenschappelijk Onderbouwd", en: "Research-Backed" },
-        description: { nl: "Geïnformeerd door kwantumpanpsychisme, morfogenese en alchemie", en: "Informed by quantum panpsychism, morphogenesis, and alchemy" }
+        description: { nl: "Geïnspireerd door Carl Gustav Jung", en: "Inspired by Carl Gustav Jung" }
       },
       aiTraining: {
-        title: { nl: "AI Training Klaar", en: "AI Training Ready" },
+        title: { nl: "AI prompt generatie", en: "AI Prompt Generation" },
         description: { nl: "Genereer prompts om je AI-agenten af te stemmen op jouw psychologie", en: "Generate prompts to harmonize your AI agents with your psychology" }
       }
     },
@@ -69,16 +81,16 @@ const translations = {
       }
     },
     footerResearch: {
-      nl: "Gebaseerd op onderzoek in kwantumpanpsychisme, morfogenese en alchemistische tradities",
-      en: "Based on research in quantum panpsychism, morphogenesis, and alchemical traditions"
+      nl: "Gebaseerd op onderzoek in Alchemie, Astrologie, Bewustzijn, Biochemie, Psychologie en... zie meer.",
+      en: "Based on research in Alchemy, Astrology, Consciousness, Biochemistry, Psychology and... see more."
     },
     footerButton: {
-      nl: "Bekijk het onderzoek →",
-      en: "View the research →"
+      nl: "Referenties",
+      en: "References"
     },
     footerUrl: {
-      nl: "www.gardenforlife.nl",
-      en: "www.gardenforlife.nl"
+      nl: "",
+      en: ""
     }
   },
 

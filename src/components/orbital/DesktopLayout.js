@@ -11,7 +11,7 @@ import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 import eyeLogo from '../../images/Eyedentity.png';
 import blackholeIcon from '../../images/Blackhole.png';
 
-const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, setActiveSection, pauseAutoSlide }) => {
+const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, gardenAnimationProgress, verbindingsAnimationProgress, setActiveSection, pauseAutoSlide }) => {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
   const { language, toggleLanguage, t } = useLanguage();
   
@@ -114,19 +114,51 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   // All values in vw/vh for consistent viewport scaling
   const containerOpacity = Math.max(0, 1 - animationProgress * 3.5); // Fades out faster
   
+  // Data Stream starts 4 frames later but catches up to same end state
+  // 4 frames delay out of ~34 frame range = ~0.118 offset, rescaled to 0-1
+  const dataStreamDelay = 0.118;
+  const dataStreamProgress = Math.max(0, Math.min(1, (animationProgress - dataStreamDelay) / (1 - dataStreamDelay)));
+  const dataStreamOpacity = Math.max(0, 1 - dataStreamProgress * 3.5);
+  
+  // Gardens (bottomRight) starts 2 frames later
+  // 2 frames delay out of ~34 frame range = ~0.059 offset, rescaled to 0-1
+  const gardensDelay = 0.059;
+  const gardensProgress = Math.max(0, Math.min(1, (animationProgress - gardensDelay) / (1 - gardensDelay)));
+  const gardensOpacity = Math.max(0, 1 - gardensProgress * 3.5);
+  
   // Each container flies in different direction (converted to vw/vh from 2560x1440 reference)
   // 250px @ 2560w = 9.77vw, 200px @ 1440h = 13.89vh
   const topLeftX = -9.77 * animationProgress * 1.5;      // vw - faster exit
   const topLeftY = -13.89 * animationProgress * 1.5;     // vh
   const topRightX = 9.77 * animationProgress * 1.5;      // vw
   const topRightY = -13.89 * animationProgress * 1.5;    // vh
-  const bottomRightX = 9.77 * animationProgress * 1.5;   // vw
-  const bottomRightY = 13.89 * animationProgress * 1.5;  // vh
+  const bottomRightX = 9.77 * gardensProgress * 1.5;     // vw - Gardens uses delayed progress
+  const bottomRightY = 13.89 * gardensProgress * 1.5;    // vh - Gardens uses delayed progress
   const bottomLeftX = -9.77 * animationProgress * 1.5;   // vw
   const bottomLeftY = 13.89 * animationProgress * 1.5;   // vh - faster exit
-  const bottomCenterY = 17.36 * animationProgress * 1.5; // vh - faster exit (250px @ 1440h)
+  
+  // Verbindings (bottomCenter): uses progress that starts 1 frame earlier
+  const verbProg = verbindingsAnimationProgress != null ? verbindingsAnimationProgress : animationProgress;
+  const bottomCenterY = 17.36 * verbProg * 1.5; // vh - faster exit (250px @ 1440h)
+  const verbindingsOpacity = Math.max(0, 1 - verbProg * 3.5);
+  const verbindingsScale = 1 - (0.35 * verbProg);
+  
+  // Data Stream flies with its own delayed progress
+  const dataStreamX = -9.77 * dataStreamProgress * 1.5;
+  const dataStreamY = 13.89 * dataStreamProgress * 1.5;
+  const dataStreamScale = 1 - (0.35 * dataStreamProgress);
+  
+  // Gardens flies with its own delayed progress
+  const gardensScale = 1 - (0.35 * gardensProgress);
   
   const containerScale = 1 - (0.35 * animationProgress); // Shrink faster too
+  
+  // gardenforlife.nl container: uses delayed progress (2 frames later)
+  const gardenProg = gardenAnimationProgress != null ? gardenAnimationProgress : animationProgress;
+  const gardenOpacity = Math.max(0, 1 - gardenProg * 3.5);
+  const gardenTopRightX = 9.77 * gardenProg * 1.5;
+  const gardenTopRightY = -13.89 * gardenProg * 1.5;
+  const gardenScale = 1 - (0.35 * gardenProg);
 
   // Language toggle element for TechContainer headerRight
   const langToggle = (
@@ -167,12 +199,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           opacity: mounted ? containerOpacity : 0
         }}
       >
-        <TechContainer title="FILOSOFIE" variant="purple" className="w-full h-full">
+        <TechContainer title="FILOSOFIE" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
           <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '0.8vw' }}>
-            {/* Lock overlay - inside content div, above content but below header */}
-            {shouldShowLock && <LockedOverlay />}
-            {/* Content wrapper with reduced opacity when locked */}
-            <div style={{ opacity: shouldShowLock ? 0.3 : 1, display: 'contents' }}>
+            {/* Content wrapper */}
+            <div style={{ display: 'contents' }}>
             {/* Header */}
             <div className="flex flex-col items-center w-full" style={{ gap: '0.4vw' }}>
               <h2 style={{
@@ -249,8 +279,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           right: windowWidth >= 768 && windowWidth < 1024 ? 'calc(3.7vw + 2rem)' : windowWidth >= 1024 ? 'calc(3.7vw + 1.5rem + 1rem + 3rem)' : '3.7vw',
           width: '19.01vw',
           height: '21.13vh',
-          transform: `translate(${topRightX}vw, ${topRightY}vh) scale(${containerScale})`,
-          opacity: mounted ? containerOpacity : 0
+          transform: `translate(${gardenTopRightX}vw, ${gardenTopRightY}vh) scale(${gardenScale})`,
+          opacity: mounted ? gardenOpacity : 0
         }}
       >
         <TechContainer title="GARDENFORLIFE.NL" variant="purple" className="w-full h-full">
@@ -291,8 +321,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           right: '3.56vw',
           width: '22.88vw',
           height: windowWidth >= 768 && windowWidth < 1024 ? 'calc(29.5vh * 1.3)' : 'calc(39vh * 1.2)',
-          transform: `translate(${bottomRightX}vw, ${bottomRightY}vh) scale(${containerScale})`,
-          opacity: mounted ? containerOpacity : 0
+          transform: `translate(${bottomRightX}vw, ${bottomRightY}vh) scale(${gardensScale})`,
+          opacity: mounted ? gardensOpacity : 0
         }}
       >
         <TechContainer title="GARDENS" variant="purple" className="w-full h-full">
@@ -333,8 +363,6 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             ];
             return (
               <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '1vw' }}>
-                {/* Lock overlay - inside content div, above content but below header */}
-                {shouldShowLock && <LockedOverlay />}
                 {/* Slideshow Area - Touch swipable */}
                 <div 
                   className="w-full relative overflow-hidden rounded-sm border border-purple-500/20" 
@@ -342,7 +370,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     height: 'calc(100% - 2.5vw)', 
                     marginBottom: '0.5vw',
                     touchAction: 'pan-y', // Allow vertical scroll but capture horizontal swipe
-                    opacity: shouldShowLock ? 0.3 : 1
+                    visibility: shouldShowLock ? 'hidden' : 'visible',
                   }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
@@ -530,7 +558,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 </div>
                 
                 {/* Circle Indicators with Arrow Navigation */}
-                <div className="flex justify-center items-center relative" style={{ gap: '0.8vw', zIndex: 100, position: 'relative', opacity: shouldShowLock ? 0.3 : 1 }}>
+                <div className="flex justify-center items-center relative" style={{ gap: '0.8vw', zIndex: 100, position: 'relative', visibility: shouldShowLock ? 'hidden' : 'visible' }}>
                   {/* Left Arrow */}
                   <button
                     type="button"
@@ -647,17 +675,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             : 'calc(7.5vw + 4.5rem)',
           height: 'auto',
           maxHeight: '18vh',
-          transform: `translate(${bottomLeftX}vw, ${bottomLeftY}vh) scale(${containerScale})`,
-          opacity: mounted ? containerOpacity : 0,
+          transform: `translate(${dataStreamX}vw, ${dataStreamY}vh) scale(${dataStreamScale})`,
+          opacity: mounted ? dataStreamOpacity : 0,
           zIndex: 30
         }}
       >
         <TechContainer title="DATA_STREAM" variant="cyan" className="w-full h-full">
           <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '0.8vw' }}>
-            {/* Lock overlay - inside content div, above content but below header */}
-            {shouldShowLock && <LockedOverlay />}
-            {/* Content wrapper with reduced opacity when locked */}
-            <div style={{ opacity: shouldShowLock ? 0.3 : 1, display: 'contents' }}>
+            {/* Content wrapper */}
+            <div style={{ display: 'contents' }}>
             {/* Header */}
             <div className="flex flex-col items-center w-full" style={{ gap: '0.4vw' }}>
               <h2 style={{
@@ -734,8 +760,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         className="absolute left-0 right-0 flex justify-center pointer-events-none"
         style={{
           bottom: '5vh',
-          transform: `translateY(${bottomCenterY}vh) scale(${containerScale})`,
-          opacity: mounted ? containerOpacity : 0
+          transform: `translateY(${bottomCenterY}vh) scale(${verbindingsScale})`,
+          opacity: mounted ? verbindingsOpacity : 0
         }}
       >
         {/* Desktop Build - 1325px+ */}

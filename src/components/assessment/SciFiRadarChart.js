@@ -43,9 +43,14 @@ const SciFiRadarChart = ({ data }) => {
             name="Archetype"
             dataKey="A"
             stroke="#00ff9d"
-            strokeWidth={2}
+            strokeWidth={2.5}
             fill="#00ff9d"
-            fillOpacity={0.3}
+            fillOpacity={0.25}
+            dot={{ r: 4, fill: '#00ff9d', stroke: '#003d27', strokeWidth: 1.5 }}
+            activeDot={{ r: 6, fill: '#a5f3fc', stroke: '#00ff9d', strokeWidth: 2 }}
+            connectNulls
+            isAnimationActive={true}
+            animationDuration={800}
           />
           <Tooltip 
             contentStyle={{ 

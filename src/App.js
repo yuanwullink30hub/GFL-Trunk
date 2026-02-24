@@ -1972,7 +1972,6 @@ const App = () => {
   
   // Scroll button: fades in first 3 frames (faster than section 1)
   const buttonFadeProgress = Math.min(1, Math.max(0, currentFrame / SCROLL_BUTTON_FRAMES));
-  const promptOpacity = Math.max(0, 1 - buttonFadeProgress);
   
   // Earth starts exploding right after section 1
   const isExploding = currentFrame >= section1End;
@@ -1999,7 +1998,6 @@ const App = () => {
   
   const headerY = headerProgress * -150;
   const headerOpacity = Math.max(0, 1 - headerProgress * 1.5);
-  const headerScale = 1 - (headerProgress * 0.05);
   
   // --- Per-component delays for staggered entropicalm movement ---
   // GFL icon logo: delayed 1 frame

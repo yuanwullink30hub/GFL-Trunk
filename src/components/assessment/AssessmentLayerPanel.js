@@ -416,7 +416,7 @@ const AssessmentLayerPanel = ({
       console.log('[SAVE-DEBUG] enabling scroll for next layer');
       onScrollEnabled?.(true);
     }
-  }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete]);
+  }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete, savedLayers.length]);
 
   if (!isVisible) return null;
   

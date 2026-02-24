@@ -21,47 +21,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const hasLockOverride = urlParams.has('lock');
   const shouldShowLock = !isLocalhost || hasLockOverride;
-  
-  // Reusable lock overlay — GARDENFORLIFE.NL grid/roster style
-  const LockedOverlay = () => (
-    <div 
-      className="absolute inset-0"
-      style={{ pointerEvents: 'auto', cursor: 'default', zIndex: 200 }}
-      onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-    >
-      {/* Grid/roster pattern background */}
-      <div className="absolute inset-0" 
-        style={{
-          background: 'linear-gradient(to bottom right, rgba(20, 83, 45, 0.3), rgba(22, 101, 52, 0.2))',
-          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34, 197, 94, 0.1) 2px, rgba(34, 197, 94, 0.1) 4px)',
-          backdropFilter: 'blur(4px)',
-          WebkitBackdropFilter: 'blur(4px)'
-        }}>
-      </div>
-      
-      {/* Decorative lines to simulate webpage content */}
-      <div className="absolute inset-0 flex flex-col justify-start opacity-40" style={{ paddingTop: '0.8vw', paddingLeft: '0.5vw', paddingRight: '0.5vw', gap: '0.4vw' }}>
-        <div style={{ height: '0.2vw', backgroundColor: 'rgba(22, 163, 74, 0.4)', borderRadius: '2px', width: '75%' }}></div>
-        <div style={{ height: '0.1vw', backgroundColor: 'rgba(34, 197, 94, 0.3)', borderRadius: '2px', width: '50%' }}></div>
-        <div style={{ height: '0.1vw', backgroundColor: 'rgba(34, 197, 94, 0.3)', borderRadius: '2px', width: '66%' }}></div>
-      </div>
-      
-      {/* Lock Icon Overlay */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="flex flex-col items-center" style={{ gap: '0.5vw' }}>
-          <Lock style={{ width: '1.5vw', height: '1.5vw', color: '#f59e0b' }} strokeWidth={1.5} />
-          <span style={{
-            fontFamily: "'Figtree', sans-serif",
-            fontWeight: 400,
-            lineHeight: 1.5,
-            color: 'rgba(245, 158, 11, 0.8)',
-            fontSize: 'max(9px, 0.5vw)',
-            letterSpacing: '0.05em'
-          }}>{t('desktopLayout.locked')}</span>
-        </div>
-      </div>
-    </div>
-  );
+
   
   // Touch swipe state for Gardens slideshow
   const touchStartX = useRef(0);
@@ -130,12 +90,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   // 250px @ 2560w = 9.77vw, 200px @ 1440h = 13.89vh
   const topLeftX = -9.77 * animationProgress * 1.5;      // vw - faster exit
   const topLeftY = -13.89 * animationProgress * 1.5;     // vh
-  const topRightX = 9.77 * animationProgress * 1.5;      // vw
-  const topRightY = -13.89 * animationProgress * 1.5;    // vh
   const bottomRightX = 9.77 * gardensProgress * 1.5;     // vw - Gardens uses delayed progress
   const bottomRightY = 13.89 * gardensProgress * 1.5;    // vh - Gardens uses delayed progress
-  const bottomLeftX = -9.77 * animationProgress * 1.5;   // vw
-  const bottomLeftY = 13.89 * animationProgress * 1.5;   // vh - faster exit
   
   // Verbindings (bottomCenter): uses progress that starts 1 frame earlier
   const verbProg = verbindingsAnimationProgress != null ? verbindingsAnimationProgress : animationProgress;

@@ -122,7 +122,8 @@ const DISP_FRAG = `
 
 // ─── Pass 2: Nebula render with displacement applied ───────────────────
 const NEBULA_FRAG = `
-  precision mediump float;
+  #extension GL_OES_standard_derivatives : enable
+  precision highp float;
 
   uniform float     u_time;
   uniform vec2      u_resolution;
@@ -149,7 +150,7 @@ const NEBULA_FRAG = `
 
   float fbm(vec2 p) {
     float v = 0.0, a = 0.5, f = 1.0;
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 5; i++) {
       v += a * noise(p * f);
       f *= 2.1; a *= 0.48;
     }
@@ -163,7 +164,7 @@ const NEBULA_FRAG = `
 
   float ridgeFbm(vec2 p) {
     float v = 0.0, a = 0.5, f = 1.0;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 5; i++) {
       v += a * ridgeNoise(p * f);
       f *= 2.2; a *= 0.45;
     }
@@ -181,14 +182,14 @@ const NEBULA_FRAG = `
     return mix(base, ridge, 0.45);
   }
 
-  float stars(vec2 uv, float density) {
+  float stars(vec2 uv, float density, float sizeScale) {
     vec2 cell = floor(uv * density);
     vec2 local = fract(uv * density);
     float h = hash(cell);
     if (h > 0.15) return 0.0;
     vec2 sp = vec2(hash(cell + 0.1), hash(cell + 0.2));
     float d = length(local - sp);
-    float sz = 0.015 + 0.025 * hash(cell + 0.3);
+    float sz = (0.015 + 0.025 * hash(cell + 0.3)) * 1.1 * sizeScale;
     float b = smoothstep(sz, sz * 0.1, d);
     b *= 0.6 + 0.4 * sin(u_time * (2.0 + 4.0 * hash(cell + 0.5)) + hash(cell + 0.7) * 6.28);
     return b;
@@ -201,40 +202,80 @@ const NEBULA_FRAG = `
     // Read accumulated displacement
     vec2 disp = texture2D(u_disp, uv).xy * 2.0 - 1.0;
 
-    float t = u_time * 0.14;
+    float t = u_time * 0.07;
 
     // Map navigation offset
     vec2 mapOff = u_offset * vec2(0.35, 0.35);
 
     // Parallax-depth displacement per layer
+    vec2 p0 = (uv + disp * 0.06 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.12; // deepest — background gas
     vec2 p1 = (uv + disp * 0.18 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.3;
     vec2 p2 = (uv + disp * 0.32 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.5;
     vec2 p3 = (uv + disp * 0.48 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.7;
+
+    // ── Edge distortion: 3 noise layers for organic nebula boundaries ──
+    float edgeWarp = fbm(p1 * 4.5 + vec2(7.3, 2.1) + t * 0.04) * 0.16 - 0.08;
+    float edgeWarp2 = ridgeFbm(p1 * 6.0 + vec2(3.7, 8.4) + t * 0.03) * 0.12 - 0.06;
+    float edgeWarp4 = warpedFbm(p1 * 3.0 + vec2(4.8, 6.9), t * 0.5) * 0.14 - 0.07;
+    vec2 warpOffset = vec2(edgeWarp, edgeWarp2 + edgeWarp4);
+
+    // ── Background Gaussians — distant diffuse glow for depth illusion ──
+    // Very wide, soft shapes at deepest parallax (p0) — feels like distant gas
+    // behind the main nebulae. Subtle enough to not overpower foreground.
+    // Reuse main edgeWarp scaled down — bg blobs are too diffuse to need dedicated warp
+    vec2 bgWarpOff = vec2(edgeWarp * 0.5, edgeWarp2 * 0.35);
+
+    // BG Nebula 1: Upper-center — vast cool violet wash
+    vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
+    float nebBG1 = exp(-(bgN1.x * bgN1.x * 0.9 + bgN1.y * bgN1.y * 1.1));
+
+    // BG Nebula 2: Lower-left — warm diffuse ember
+    vec2 bgN2 = p0 + bgWarpOff - vec2(-0.40, -0.18);
+    float nebBG2 = exp(-(bgN2.x * bgN2.x * 1.2 + bgN2.y * bgN2.y * 0.8));
+
+    // BG Nebula 3: Right — faint blue haze
+    vec2 bgN3 = p0 + bgWarpOff - vec2(0.45, -0.05);
+    float nebBG3 = exp(-(bgN3.x * bgN3.x * 1.5 + bgN3.y * bgN3.y * 1.8));
+
+    float bgGaussMask = clamp(nebBG1 + nebBG2 * 0.8 + nebBG3 * 0.6, 0.0, 1.0);
 
     // ── Spatial confinement: 3 nebulae scattered across the content map ──
     // Each nebula has unique position, shape, and rich color grading.
     // They may overflow between viewports as user navigates.
 
     // Nebula A: Center-left — visible from main page — large elongated, magenta-purple
-    vec2 nA = p1 - vec2(-0.15, 0.1);
+    vec2 nA = p1 + warpOffset - vec2(-0.15, 0.1);
     float nebA = exp(-(nA.x * nA.x * 4.5 + nA.y * nA.y * 7.0));
 
     // Nebula B: Lower-left — near gardens area — wide diffuse, warm orange-gold
-    vec2 nB = p1 - vec2(-0.6, -0.32);
-    float nebB = exp(-(nB.x * nB.x * 6.0 + nB.y * nB.y * 5.5));
+    vec2 nB = p1 + warpOffset - vec2(-0.6, -0.32);
+    float nebB = exp(-(nB.x * nB.x * 6.5 + nB.y * nB.y * 6.0));
 
-    // Nebula C: Lower-right — near monitor area — compact, red-orange
-    vec2 nC = p1 - vec2(0.5, -0.38);
-    float nebC = exp(-(nC.x * nC.x * 14.0 + nC.y * nC.y * 10.0));
+    // Nebula C: Lower-right — phoenix silhouette, 5 sub-Gaussians merged
+    vec2 nC_base = p1 + warpOffset - vec2(0.5, -0.38);
+    float nebC_body = exp(-(nC_base.x * nC_base.x * 14.0 + nC_base.y * nC_base.y * 11.0));
+    vec2 nC_lw = nC_base - vec2(-0.08, -0.03);
+    vec2 lw = vec2(0.866 * nC_lw.x + 0.5 * nC_lw.y, -0.5 * nC_lw.x + 0.866 * nC_lw.y);
+    float nebC_lw = exp(-(lw.x * lw.x * 5.0 + lw.y * lw.y * 28.0));
+    vec2 nC_rw = nC_base - vec2(0.09, -0.025);
+    vec2 rw = vec2(0.866 * nC_rw.x - 0.5 * nC_rw.y, 0.5 * nC_rw.x + 0.866 * nC_rw.y);
+    float nebC_rw = exp(-(rw.x * rw.x * 5.0 + rw.y * rw.y * 28.0));
+    vec2 nC_hd = nC_base - vec2(0.01, 0.07);
+    vec2 hd = vec2(0.966 * nC_hd.x + 0.259 * nC_hd.y, -0.259 * nC_hd.x + 0.966 * nC_hd.y);
+    float nebC_hd = exp(-(hd.x * hd.x * 24.0 + hd.y * hd.y * 6.0));
+    vec2 nC_tl = nC_base - vec2(-0.02, -0.10);
+    vec2 tl = vec2(0.985 * nC_tl.x + 0.174 * nC_tl.y, -0.174 * nC_tl.x + 0.985 * nC_tl.y);
+    float nebC_tl = exp(-(tl.x * tl.x * 20.0 + tl.y * tl.y * 4.0));
+    float nebC = max(max(max(nebC_body, nebC_lw), max(nebC_rw, nebC_hd)), nebC_tl);
 
-    // Combined cloud mask
-    float cloudMask = clamp(nebA + nebB * 0.8 + nebC * 0.6, 0.0, 1.0);
+    // Combined cloud mask — warm clouds contribute equally
+    float cloudMask = clamp(nebA + nebB * 1.0 + nebC * 0.85, 0.0, 1.0);
     cloudMask = pow(cloudMask, 1.5); // sharpen edges
 
     // Per-nebula color identity: 0 = purple/magenta, 1 = warm orange
     // Each nebula leans toward a hue but all contain both colors swirling through
     float totalNeb = nebA + nebB + nebC + 0.001;
-    float baseHue = (nebA * 0.25 + nebB * 0.50 + nebC * 0.78) / totalNeb;
+    float baseHue = (nebA * 0.25 + nebB * 0.55 + nebC * 0.82) / totalNeb;
     // Add large-scale noise to break up the spatial color separation
     // This makes purple streaks appear in warm regions and vice versa
     float hueNoise = fbm(p2 * 2.5 + vec2(13.7, 7.3) + t * 0.06);
@@ -253,9 +294,86 @@ const NEBULA_FRAG = `
 
     // Layer 1: Deep background void — subtle color hint from nearest nebula
     float n1 = warpedFbm(p1 * 1.2 + vec2(0.0, t * 0.3), t);
+
+    // ── BACKGROUND STARS (behind all gas) ──
+    vec3 color = vec3(0.0); // accumulate bg stars first, gas composited on top later
+    vec2 bgStarUv = uv + mapOff * 0.15; // slowest parallax — deepest layer
+
+    // Tiny distant background stars — very dim, dense field
+    float bgS1 = stars(bgStarUv, 120.0, 1.1);
+    vec3 bgSc1 = mix(vec3(0.5, 0.5, 0.75), vec3(0.7, 0.65, 0.5), hash(floor(bgStarUv * 120.0)));
+    color += bgSc1 * bgS1 * 0.16;
+
+    // Small background stars — slightly brighter
+    float bgS2 = stars(bgStarUv, 80.0, 1.1);
+    vec3 bgSc2 = mix(vec3(0.55, 0.55, 0.8), vec3(0.8, 0.7, 0.45), hash(floor(bgStarUv * 80.0) + 44.0));
+    color += bgSc2 * bgS2 * 0.24;
+
+    // Background galaxies — very distant, dim ellipses
+    {
+      float density = 4.0;
+      for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+          vec2 cell = floor(bgStarUv * density) + vec2(float(dx), float(dy));
+          float h = hash(cell + 200.0);
+          if (h < 0.06) {
+            vec2 center = (cell + vec2(hash(cell + 201.0), hash(cell + 202.0))) / density;
+            vec2 delta = (bgStarUv - center) * density;
+            float angle = hash(cell + 203.0) * 6.28;
+            float ca = cos(angle), sa = sin(angle);
+            vec2 rotD = vec2(ca * delta.x + sa * delta.y, -sa * delta.x + ca * delta.y);
+            float axisRatio = 0.2 + 0.3 * hash(cell + 204.0);
+            rotD.y /= axisRatio;
+            float dist = length(rotD);
+            float gDist = 0.2 + 0.4 * hash(cell + 207.0); // far only
+            float falloff = 60.0 / (gDist * gDist);
+            float galaxyBright = exp(-dist * dist * falloff) * gDist * (0.10 + 0.08 * hash(cell + 205.0));
+            float gc = hash(cell + 206.0);
+            vec3 galaxyColor = gc < 0.4 ? vec3(0.6, 0.55, 0.45) :
+                               gc < 0.7 ? vec3(0.45, 0.48, 0.65) :
+                                           vec3(0.65, 0.52, 0.40);
+            color += galaxyColor * max(galaxyBright, 0.0) * 0.5;
+          }
+        }
+      }
+    }
+
+    // Background star clusters — faint, compact
+    {
+      float density = 6.0;
+      for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+          vec2 cell = floor(bgStarUv * density) + vec2(float(dx), float(dy));
+          float h = hash(cell + 350.0);
+          if (h < 0.04) {
+            vec2 clusterCenter = (cell + vec2(hash(cell + 351.0), hash(cell + 352.0))) / density;
+            float clusterDist = length(bgStarUv - clusterCenter) * density;
+            float cDist = 0.25 + 0.35 * hash(cell + 353.0); // small/dim
+            float spread = 0.12 + 0.10 * cDist;
+            if (clusterDist < 0.35 * cDist) {
+              for (int i = 0; i < 4; i++) {
+                float fi = float(i);
+                vec2 subPos = clusterCenter + vec2(
+                  hash(cell + fi * 10.0 + 360.0) - 0.5,
+                  hash(cell + fi * 10.0 + 361.0) - 0.5
+                ) * spread / density;
+                float subDist = length(bgStarUv - subPos) * density;
+                float starSize = 0.008 * (0.7 + 0.3 * hash(cell + fi + 375.0));
+                float subBright = smoothstep(starSize, starSize * 0.1, subDist) * 0.20 * (0.6 + 0.4 * hash(cell + fi + 370.0));
+                vec3 subColor = mix(vec3(0.6, 0.65, 0.9), vec3(0.9, 0.8, 0.55), hash(cell + fi + 380.0));
+                color += subColor * max(subBright, 0.0);
+              }
+              float clGlow = exp(-clusterDist * clusterDist * 18.0) * 0.015 * cDist;
+              color += vec3(0.5, 0.5, 0.7) * clGlow;
+            }
+          }
+        }
+      }
+    }
+
     vec3 deepPurple = mix(vec3(0.008, 0.002, 0.018), vec3(0.025, 0.008, 0.04), n1);
     vec3 deepBlue   = mix(vec3(0.004, 0.006, 0.020), vec3(0.012, 0.018, 0.045), n1);
-    vec3 deepWarm   = mix(vec3(0.015, 0.005, 0.003), vec3(0.035, 0.012, 0.006), n1);
+    vec3 deepWarm   = mix(vec3(0.020, 0.007, 0.004), vec3(0.047, 0.016, 0.008), n1);
     // Primary: purple→warm, then tint with blue as depth accent
     vec3 deepColor  = mix(deepPurple, deepWarm, smoothstep(0.25, 0.75, nebulaHue));
     deepColor = mix(deepColor, deepBlue, blueDepth);
@@ -280,10 +398,10 @@ const NEBULA_FRAG = `
                        mix(backB3, backB4, smoothstep(0.5, 0.7, nBack)),
                        smoothstep(0.35, 0.55, nBack));
     // Warm nebula back grades
-    vec3 backW1 = vec3(0.04, 0.015, 0.005);
-    vec3 backW2 = vec3(0.08, 0.03, 0.01);
-    vec3 backW3 = vec3(0.14, 0.055, 0.015);
-    vec3 backW4 = vec3(0.20, 0.08, 0.025);
+    vec3 backW1 = vec3(0.054, 0.020, 0.007);
+    vec3 backW2 = vec3(0.108, 0.040, 0.014);
+    vec3 backW3 = vec3(0.189, 0.074, 0.020);
+    vec3 backW4 = vec3(0.27, 0.108, 0.034);
     vec3 backWarm = mix(mix(backW1, backW2, smoothstep(0.2, 0.4, nBack)),
                        mix(backW3, backW4, smoothstep(0.5, 0.7, nBack)),
                        smoothstep(0.35, 0.55, nBack));
@@ -321,11 +439,11 @@ const NEBULA_FRAG = `
     midBlue = mix(midBlue, blu5, smoothstep(0.65, 0.82, n2));
 
     // Warm orange grades: near-black → deep brown → burnt orange → amber → bright gold
-    vec3 wrm1 = vec3(0.03, 0.01, 0.003);
-    vec3 wrm2 = vec3(0.10, 0.035, 0.01);
-    vec3 wrm3 = vec3(0.22, 0.08, 0.02);
-    vec3 wrm4 = vec3(0.38, 0.15, 0.03);
-    vec3 wrm5 = vec3(0.55, 0.25, 0.06);
+    vec3 wrm1 = vec3(0.04, 0.013, 0.004);
+    vec3 wrm2 = vec3(0.135, 0.047, 0.014);
+    vec3 wrm3 = vec3(0.30, 0.108, 0.027);
+    vec3 wrm4 = vec3(0.51, 0.20, 0.04);
+    vec3 wrm5 = vec3(0.62, 0.30, 0.08);
     vec3 midWarm = wrm1;
     midWarm = mix(midWarm, wrm2, smoothstep(0.15, 0.30, n2));
     midWarm = mix(midWarm, wrm3, smoothstep(0.30, 0.48, n2));
@@ -364,10 +482,10 @@ const NEBULA_FRAG = `
     coreBlue = mix(coreBlue, cb4, smoothstep(0.68, 0.85, n3));
 
     // Orange core grades: dark red-brown → ember → fire → white-gold
-    vec3 co1 = vec3(0.14, 0.04, 0.01);
-    vec3 co2 = vec3(0.30, 0.10, 0.02);
-    vec3 co3 = vec3(0.50, 0.22, 0.04);
-    vec3 co4 = vec3(0.72, 0.38, 0.10);
+    vec3 co1 = vec3(0.19, 0.054, 0.014);
+    vec3 co2 = vec3(0.40, 0.135, 0.027);
+    vec3 co3 = vec3(0.67, 0.30, 0.054);
+    vec3 co4 = vec3(0.80, 0.44, 0.14);
     vec3 coreOrange = co1;
     coreOrange = mix(coreOrange, co2, smoothstep(0.3, 0.5, n3));
     coreOrange = mix(coreOrange, co3, smoothstep(0.5, 0.68, n3));
@@ -381,29 +499,45 @@ const NEBULA_FRAG = `
     // Backlit rim glow — per-nebula tinted with grade variation
     float rimNoise = fbm(p3 * 3.0 + t * 0.06);
     float rim = smoothstep(0.68, 0.52, n3) * smoothstep(0.40, 0.55, n3) * cloudMask;
+    rim = pow(rim, 1.2); // concentrated to thin bright line
     vec3 rimPurple = mix(vec3(0.18, 0.04, 0.22), vec3(0.38, 0.10, 0.42), rimNoise);
     vec3 rimBlue   = mix(vec3(0.06, 0.08, 0.25), vec3(0.15, 0.20, 0.45), rimNoise);
-    vec3 rimWarm   = mix(vec3(0.25, 0.08, 0.02), vec3(0.48, 0.16, 0.04), rimNoise);
+    vec3 rimWarm   = mix(vec3(0.34, 0.108, 0.027), vec3(0.65, 0.216, 0.054), rimNoise);
     vec3 rimColor = mix(rimPurple, rimWarm, smoothstep(0.25, 0.75, nebulaHue));
     rimColor = mix(rimColor, rimBlue, blueDepth);
 
     // Layer 4: Filamentary edge emission — graded
     float edge = abs(n2 - 0.5) * 2.0;
+    float combinedEdge = smoothstep(0.20, 0.80, edge);
     float edgeGlow = smoothstep(0.58, 0.90, edge) * filament2 * cloudMask;
     vec3 edgePurple = mix(vec3(0.12, 0.02, 0.10), vec3(0.28, 0.06, 0.22), edge);
     vec3 edgeBlue   = mix(vec3(0.05, 0.05, 0.14), vec3(0.12, 0.14, 0.32), edge);
-    vec3 edgeWarm   = mix(vec3(0.18, 0.06, 0.01), vec3(0.38, 0.14, 0.03), edge);
+    vec3 edgeWarm   = mix(vec3(0.24, 0.081, 0.014), vec3(0.51, 0.189, 0.04), edge);
     vec3 edgeColor = mix(edgePurple, edgeWarm, smoothstep(0.25, 0.75, nebulaHue));
     edgeColor = mix(edgeColor, edgeBlue, blueDepth);
 
-    // Compose nebula with depth layering
-    vec3 color = deepColor;
+    // Compose nebula with depth layering — bg stars show through voids
+    vec3 bgStars = color; // save accumulated background stars
+    color = deepColor + bgStars * (1.0 - cloudMask); // stars visible in voids, hidden behind gas
+
+    // ── Background Gaussian glow — deep-space luminosity behind main gas ──
+    // Adds subtle color wash visible in voids and partially through thin gas
+    vec3 bgGlow = vec3(0.0);
+    // Cool violet — upper wash
+    bgGlow += mix(vec3(0.012, 0.007, 0.032), vec3(0.028, 0.014, 0.058), n1) * nebBG1;
+    // Warm ember — lower-left
+    bgGlow += mix(vec3(0.028, 0.010, 0.005), vec3(0.048, 0.022, 0.010), n1) * nebBG2;
+    // Cool blue — right haze
+    bgGlow += mix(vec3(0.007, 0.010, 0.025), vec3(0.016, 0.022, 0.045), n1) * nebBG3;
+    // Show through voids, partially dimmed behind dense foreground gas
+    color += bgGlow * (1.0 - cloudMask * 0.6);
+
     color = mix(color, backGasColor, backMask * 0.50);
     color *= (1.0 - absorption);
     color = mix(color, midColor, midMask * 0.70);
     color += rimColor * rim * 0.22;
     color = mix(color, brightColor, brightMask * 0.60);
-    color += edgeColor * edgeGlow * 0.24;
+    color += edgeColor * edgeGlow * 0.35;
 
     // ── Depth enhancement: dark voids, highlights, contrast ──
 
@@ -417,12 +551,17 @@ const NEBULA_FRAG = `
     hotSpot = pow(hotSpot, 1.4); // concentrate to peaks — keeps rifts tight
     // White-hot tint: desaturates toward white at the brightest peaks
     vec3 hotTint = mix(vec3(1.0, 0.82, 0.90), vec3(1.0, 0.95, 0.93), hotSpot);
-    color += hotTint * hotSpot * 0.38;
+    color += hotTint * hotSpot * 0.35;
+
+    // Border/edge hotspots — fire only on sharp edge curves
+    float borderHot = pow(combinedEdge, 1.8) * cloudMask;
+    float edgeHotGlow = pow(combinedEdge, 2.2) * cloudMask;
+    color += hotTint * borderHot * 0.35;
+    color += hotTint * edgeHotGlow * 0.35;
 
     // Luminous filament wisps — thin bright edges where gas density changes sharply
-    float wispNoise = fbm(p3 * 5.0 + vec2(3.3, 9.1) + t * 0.025);
     float wisp = abs(n2 - 0.48) * 2.0;
-    float wispGlow = smoothstep(0.82, 0.95, wisp) * smoothstep(0.35, 0.50, n2) * cloudMask * wispNoise;
+    float wispGlow = smoothstep(0.82, 0.95, wisp) * smoothstep(0.35, 0.50, n2) * cloudMask * filament3;
     vec3 wispColor = mix(vec3(0.7, 0.5, 0.85), vec3(0.9, 0.7, 0.5), nebulaHue);
     color += wispColor * wispGlow * 0.12;
 
@@ -437,29 +576,72 @@ const NEBULA_FRAG = `
     float breath = 0.93 + 0.07 * sin(t * 2.5 + n1 * 3.0);
     color *= breath;
 
-    // ── Stars ──
-    vec2 starUv = uv + mapOff * 0.3;
+    // ── MIDGROUND STARS (partially occluded by gas) ──
+    vec2 midStarUv = uv + mapOff * 0.35; // medium parallax
+    float gasOcclusion = 1.0 - cloudMask * 0.65; // dimmed inside dense gas
 
-    // Small background stars
-    float s1 = stars(starUv, 90.0);
-    vec3 sc1 = mix(vec3(0.6, 0.6, 0.85), vec3(0.85, 0.75, 0.5), hash(floor(starUv * 90.0)));
-    color += sc1 * s1 * 0.30;
+    // Medium midground stars — partially hidden by nebula
+    float mS1 = stars(midStarUv, 45.0, 1.0);
+    vec3 mSc1 = mix(vec3(0.7, 0.7, 0.9), vec3(0.9, 0.8, 0.55), hash(floor(midStarUv * 45.0) + 55.0));
+    color += mSc1 * mS1 * 0.42 * gasOcclusion;
 
-    // Medium stars
-    float s2 = stars(starUv, 35.0);
-    vec3 sc2 = mix(vec3(0.85, 0.8, 0.75), vec3(0.95, 0.65, 0.35), hash(floor(starUv * 35.0) + 99.0));
-    color += sc2 * s2 * 0.55;
+    // Medium-bright stars — some shine through gas edges
+    float mS2 = stars(midStarUv + 0.01, 25.0, 1.0);
+    vec3 mSc2 = mix(vec3(0.8, 0.78, 0.72), vec3(0.95, 0.7, 0.4), hash(floor((midStarUv + 0.01) * 25.0) + 88.0));
+    color += mSc2 * mS2 * 0.52 * gasOcclusion;
 
-    // ── Large bright stars — variable size/distance, tilted axes ──
+    // Midground galaxies — partially visible through gas
+    {
+      float density = 5.0;
+      for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+          vec2 cell = floor(midStarUv * density) + vec2(float(dx), float(dy));
+          float h = hash(cell + 400.0);
+          if (h < 0.05) {
+            vec2 center = (cell + vec2(hash(cell + 401.0), hash(cell + 402.0))) / density;
+            vec2 delta = (midStarUv - center) * density;
+            float angle = hash(cell + 403.0) * 6.28;
+            float ca = cos(angle), sa = sin(angle);
+            vec2 rotD = vec2(ca * delta.x + sa * delta.y, -sa * delta.x + ca * delta.y);
+            float axisRatio = 0.25 + 0.35 * hash(cell + 404.0);
+            rotD.y /= axisRatio;
+            float dist = length(rotD);
+            float gDist = 0.4 + 0.6 * hash(cell + 407.0);
+            float falloff = 50.0 / (gDist * gDist);
+            float galaxyBright = exp(-dist * dist * falloff) * gDist * (0.15 + 0.10 * hash(cell + 405.0));
+            if (gDist > 0.7) {
+              float armAngle = atan(rotD.y, rotD.x);
+              float spiral = sin(armAngle * 2.0 + dist * 12.0) * 0.5 + 0.5;
+              galaxyBright *= (0.7 + 0.3 * spiral);
+            }
+            float gc = hash(cell + 406.0);
+            vec3 galaxyColor = gc < 0.4 ? vec3(0.70, 0.65, 0.52) :
+                               gc < 0.7 ? vec3(0.52, 0.56, 0.72) :
+                                           vec3(0.75, 0.60, 0.45);
+            color += galaxyColor * max(galaxyBright, 0.0) * gasOcclusion;
+          }
+        }
+      }
+    }
+
+    // ── FOREGROUND STARS (in front of everything) ──
+    vec2 fgStarUv = uv + mapOff * 0.55; // fastest parallax — closest layer
+
+    // Foreground small bright stars
+    float fgS1 = stars(fgStarUv, 30.0, 1.0);
+    vec3 fgSc1 = mix(vec3(0.85, 0.85, 1.0), vec3(1.0, 0.9, 0.6), hash(floor(fgStarUv * 30.0) + 77.0));
+    color += fgSc1 * fgS1 * 0.50;
+
+    // ── Large bright foreground stars — with diffraction spikes ──
     {
       float density = 10.0;
       for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
-          vec2 cell = floor(starUv * density) + vec2(float(dx), float(dy));
+          vec2 cell = floor(fgStarUv * density) + vec2(float(dx), float(dy));
           float h = hash(cell + 77.0);
           if (h < 0.12) {
             vec2 sp = (cell + vec2(hash(cell + 0.3), hash(cell + 0.4))) / density;
-            vec2 toStar = starUv - sp;
+            vec2 toStar = fgStarUv - sp;
             float d = length(toStar) * density;
             // Distance factor: 0.4 (far/small) to 1.0 (close/large)
             float distFactor = 0.4 + 0.6 * hash(cell + 12.0);
@@ -485,63 +667,29 @@ const NEBULA_FRAG = `
       }
     }
 
-    // ── Galaxies — variable size/distance ──
-    {
-      float density = 5.0;
-      for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
-          vec2 cell = floor(starUv * density) + vec2(float(dx), float(dy));
-          float h = hash(cell + 200.0);
-          if (h < 0.08) {
-            vec2 center = (cell + vec2(hash(cell + 201.0), hash(cell + 202.0))) / density;
-            vec2 delta = (starUv - center) * density;
-            float angle = hash(cell + 203.0) * 6.28;
-            float ca = cos(angle), sa = sin(angle);
-            vec2 rotD = vec2(ca * delta.x + sa * delta.y, -sa * delta.x + ca * delta.y);
-            float axisRatio = 0.25 + 0.35 * hash(cell + 204.0);
-            rotD.y /= axisRatio;
-            float dist = length(rotD);
-            // Distance: 0.3 (tiny/far) to 1.0 (close/bright)
-            float gDist = 0.3 + 0.7 * hash(cell + 207.0);
-            float falloff = 50.0 / (gDist * gDist);
-            float galaxyBright = exp(-dist * dist * falloff) * gDist * (0.18 + 0.12 * hash(cell + 205.0));
-            // Spiral arm hint for close galaxies
-            if (gDist > 0.7) {
-              float armAngle = atan(rotD.y, rotD.x);
-              float spiral = sin(armAngle * 2.0 + dist * 12.0) * 0.5 + 0.5;
-              galaxyBright *= (0.7 + 0.3 * spiral);
-            }
-            float gc = hash(cell + 206.0);
-            vec3 galaxyColor = gc < 0.4 ? vec3(0.75, 0.7, 0.58) :
-                               gc < 0.7 ? vec3(0.58, 0.62, 0.78) :
-                                           vec3(0.80, 0.65, 0.50);
-            color += galaxyColor * max(galaxyBright, 0.0);
-          }
-        }
-      }
-    }
+    // (old single-layer galaxies removed — now split into bg + midground layers above)
 
-    // ── Star clusters — variable size/density ──
+    // ── Foreground star clusters — bright, close ──
     {
       float density = 7.0;
       for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
-          vec2 cell = floor(starUv * density) + vec2(float(dx), float(dy));
+          vec2 cell = floor(fgStarUv * density) + vec2(float(dx), float(dy));
           float h = hash(cell + 300.0);
           if (h < 0.05) {
             vec2 clusterCenter = (cell + vec2(hash(cell + 301.0), hash(cell + 302.0))) / density;
-            float clusterDist = length(starUv - clusterCenter) * density;
+            float clusterDist = length(fgStarUv - clusterCenter) * density;
             // Distance: 0.35 (compact/dim) to 1.0 (spread/bright)
             float cDist = 0.35 + 0.65 * hash(cell + 303.0);
             float spread = 0.18 + 0.18 * cDist;
             if (clusterDist < 0.5 * cDist) {
-              for (int i = 0; i < 8; i++) {
+              for (int i = 0; i < 5; i++) {
                 float fi = float(i);
                 vec2 subPos = clusterCenter + vec2(
                   hash(cell + fi * 10.0 + 310.0) - 0.5,
                   hash(cell + fi * 10.0 + 311.0) - 0.5
                 ) * spread / density;
-                float subDist = length(starUv - subPos) * density;
+                float subDist = length(fgStarUv - subPos) * density;
                 float starSize = (0.012 + 0.012 * cDist) * (0.7 + 0.3 * hash(cell + fi + 325.0));
                 float subBright = smoothstep(starSize, starSize * 0.1, subDist) * (0.3 + 0.4 * cDist) * (0.6 + 0.4 * hash(cell + fi + 320.0));
                 vec3 subColor = mix(vec3(0.7, 0.75, 1.0), vec3(1.0, 0.9, 0.6), hash(cell + fi + 330.0));
@@ -602,7 +750,9 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       alpha: false,
       antialias: false,
       preserveDrawingBuffer: false,
-      powerPreference: 'low-power',
+      desynchronized: true,
+      failIfMajorPerformanceCaveat: false,
+      powerPreference: 'high-performance',
     });
     if (!gl) {
       console.warn('NebulaBackground: WebGL unavailable');
@@ -611,6 +761,10 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       if (onReadyRef.current) onReadyRef.current();
       return () => {};
     }
+
+    // Enable GPU extensions for potential driver optimizations
+    gl.getExtension('OES_standard_derivatives');
+    gl.getExtension('EXT_shader_texture_lod');
 
     // Shader helpers
     function compile(type, src) {

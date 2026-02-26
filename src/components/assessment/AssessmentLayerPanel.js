@@ -44,8 +44,17 @@ const SAVED_LAYER_POSITIONS = [
   28, // Unity (top) - high on screen
 ];
 
-// Gathered stack positions at screen center (stacked order: Foundation at bottom, Unity on top)
-const GATHERED_Y = [54, 52, 50, 48, 46];
+// Where the 3D pyramid layers ACTUALLY render on screen (vh) — Desktop
+// Camera: fov=40°, z=8 → halfFrustum=2.912. Canvas 200% centred.
+// Transform chain: (localY + 0.35 coreOffset + 0.45 baseY) × 0.5 scale = worldY
+// screenVh = 50 − (worldY / 2.912) × 100
+const PYRAMID_CENTER_Y = [
+  53, // Foundation  (3D y=-1.0 → world -0.10 → 53vh)
+  45, // Emotional   (3D y=-0.5 → world  0.15 → 45vh)
+  36, // Mental      (3D y= 0.0 → world  0.40 → 36vh)
+  28, // Spiritual   (3D y= 0.5 → world  0.65 → 28vh)
+  19, // Unity       (3D y= 1.0 → world  0.90 → 19vh) — above entity
+];
 
 // All OPEN cards sit at the same vertical center on the RIGHT side
 const OPEN_Y = 50; // vertically centered in viewport
@@ -75,6 +84,7 @@ const SingleLayerPanel = ({
   onSave,
   gatherProgress = 0,
   convergenceProgress = 0,
+  staircaseStep = -1,
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const currentQuestionIndexRef = useRef(0);
@@ -164,7 +174,7 @@ const SingleLayerPanel = ({
     const isFirstLayer = layerIndex === 0;
     
     const entityCenterX = 50;
-    const entityCenterY = 28; // entity center in vh
+    const entityCenterY = 23; // entity center in vh (3D y=0.75 → world 0.775 → ~23vh)
     const savedY = SAVED_LAYER_POSITIONS[layerIndex]; // left-side pyramid Y
     
     // Compute RIGHT-side X position (where cards open — all at same Y)
@@ -182,16 +192,40 @@ const SingleLayerPanel = ({
                          vw >= 768  ? 18 :   // Tablet
                          50;                  // Mobile — centered
     
-    // During convergence, animate from center stack to entity center
-    if (convergenceProgress > 0) {
-      const startX = 50;
-      const startY = GATHERED_Y[layerIndex];
-      const eased = convergenceProgress; // already eased in App.js
-      const currentX = startX + (entityCenterX - startX) * eased;
-      const currentY = startY + (entityCenterY - startY) * eased;
-      const scale = 1 - 0.9 * eased;
-      const opacity = 1 - eased;
-      
+    // ── ABSORB PHASE (staircaseStep=0): all saved cards simultaneously fly
+    //    from their saved left positions toward the pyramid center and shrink
+    //    to invisible — as if absorbed into their 3D pyramid layers.
+    // ── FOLD / DONE (staircaseStep≥1): cards already invisible, hide them.
+    if (staircaseStep >= 1) {
+      // Already absorbed — fully invisible, keep out of the way
+      return {
+        position: 'fixed',
+        left: '50%',
+        right: 'auto',
+        top: `${savedY}vh`,
+        transform: 'translate(-50%, -50%) scale(0)',
+        opacity: 0,
+        transition: 'none',
+        pointerEvents: 'none',
+        zIndex: 140 + layerIndex,
+      };
+    }
+
+    if (staircaseStep === 0) {
+      // Absorb: ALL cards fly simultaneously to their pyramid layer center and shrink.
+      // Card 5 (layer 4, just saved) starts from the RIGHT side; cards 0-3 always from LEFT.
+      const isLastCard = layerIndex === 4;
+      const startX = isLastCard ? rightXPercent : leftXPercent;
+      const startY = isLastCard ? OPEN_Y : savedY;
+      const endX = entityCenterX; // 50 % — horizontally centered on pyramid
+      const endY = PYRAMID_CENTER_Y[layerIndex]; // actual 3D layer screen position (NOT entity)
+      const eased = gatherProgress; // already eased in App.js
+      const currentX = startX + (endX - startX) * eased;
+      const currentY = startY + (endY - startY) * eased;
+      // Shrink to ~0.12 at the pyramid (not fully invisible before arriving)
+      const scale = Math.max(0, 1 - eased * 0.88);
+      const opacity = Math.max(0, 1 - eased * 0.88);
+
       return {
         position: 'fixed',
         left: `${currentX}%`,
@@ -199,29 +233,6 @@ const SingleLayerPanel = ({
         top: `${currentY}vh`,
         transform: `translate(-50%, -50%) scale(${scale})`,
         opacity,
-        transition: 'none',
-        pointerEvents: 'none',
-        zIndex: 140 + layerIndex,
-      };
-    }
-    
-    // During gather, animate saved cards from pyramid positions to center stack
-    if (gatherProgress > 0) {
-      const startX = leftXPercent;
-      const startY = savedY;
-      const targetX = 50;
-      const targetY = GATHERED_Y[layerIndex];
-      const eased = gatherProgress; // already eased in App.js
-      const currentX = startX + (targetX - startX) * eased;
-      const currentY = startY + (targetY - startY) * eased;
-      
-      return {
-        position: 'fixed',
-        left: `${currentX}%`,
-        right: 'auto',
-        top: `${currentY}vh`,
-        transform: `translate(-50%, -50%)`,
-        opacity: 1,
         transition: 'none',
         pointerEvents: 'none',
         zIndex: 140 + layerIndex,
@@ -297,7 +308,7 @@ const SingleLayerPanel = ({
       pointerEvents: progress > 0.9 ? 'auto' : 'none',
       zIndex: 150,
     };
-  }, [layerIndex, animProgress, gatherProgress, convergenceProgress, isSaved, savePhase, moveProgress]);
+  }, [layerIndex, animProgress, gatherProgress, convergenceProgress, staircaseStep, isSaved, savePhase, moveProgress]);
 
   // Answer selection handler - stores selections (no auto-advance)
   const handleAnswerSelect = useCallback((questionId, answerId) => {
@@ -382,8 +393,9 @@ const AssessmentLayerPanel = ({
   onLayerComplete,
   onScrollEnabled,
   onAllLayersComplete, // Callback when layer 4 is saved - triggers convergence
-  gatherProgress = 0,    // 0-1 progress for cards gathering to center stack
-  convergenceProgress = 0, // 0-1 progress for panels floating back to entity
+  gatherProgress = 0,    // 0-1 progress within current staircase step
+  convergenceProgress = 0, // 0-1 progress for assembled pyramid floating to entity
+  staircaseStep = -1,      // -1=waiting, 0-3=current staircase step, 4=fully assembled
   isVisible = true,
 }) => {
   // Store answers for ALL layers persistently
@@ -420,7 +432,9 @@ const AssessmentLayerPanel = ({
 
   if (!isVisible) return null;
   
-  // Hide panels once convergence is complete
+  // Hide panels once cards are absorbed into pyramid layers (fold is handled in 3D)
+  if (staircaseStep >= 1) return null;
+  // Fallback: hide when convergence is fully done
   if (convergenceProgress >= 1) return null;
 
   // Determine which layers to render:
@@ -451,6 +465,7 @@ const AssessmentLayerPanel = ({
           onSave={() => handleSave(layerIndex)}
           gatherProgress={gatherProgress}
           convergenceProgress={convergenceProgress}
+          staircaseStep={staircaseStep}
         />
       ))}
     </>

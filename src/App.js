@@ -1072,6 +1072,8 @@ const App = () => {
   const [assessmentScrollEnabled, setAssessmentScrollEnabled] = useState(false); // Controls when user can scroll to next layer
   const [convergenceProgress, setConvergenceProgress] = useState(0); // 0-1 progress for panels floating back to entity
   const [gatherProgress, setGatherProgress] = useState(0); // 0-1 progress for cards gathering to center stack
+  const [staircaseStep, setStaircaseStep] = useState(-1); // -1=waiting, 0=absorb cards into pyramid, 1=fold pyramid up, 2=done
+  const [foldProgress, setFoldProgress] = useState(0); // 0-1 for pyramid fold-up animation (3D layers)
   const [coreScaleMultiplier, setCoreScaleMultiplier] = useState(1); // 1-5 scale for inner core growth
   const [resultsModalProgress, setResultsModalProgress] = useState(0); // 0-1 progress for results modal floating out
   const [resultsLoadingProgress, setResultsLoadingProgress] = useState(0); // 0-1 loading bar progress (AI thinking time)
@@ -1626,27 +1628,30 @@ const App = () => {
     setAssessmentPhase('convergence');
     setGatherProgress(0);
     setConvergenceProgress(0);
+    setStaircaseStep(-1);
+    setFoldProgress(0);
     setCoreScaleMultiplier(1);
   }, []);
   
-  // Convergence animation effect - cards gather to center, then float to entity
+  // Convergence animation effect — 2 visual phases:
+  // Phase 0 (absorb): All 5 saved cards simultaneously fly to their pyramid layer center and shrink to invisible
+  // Phase 1 (fold):   3D pyramid layers do a folding-mat staircase upward into the entity, shrinking on the way
   useEffect(() => {
     if (assessmentPhase !== 'convergence') return;
     
-    // Timeline: wait for last card's save animation → gather to center → converge to entity → core grows → results
-    const GATHER_DELAY = 2200;          // Wait for card 5 collapse+slide to finish (900+1200+buffer)
-    const GATHER_DURATION = 1000;       // Cards float from pyramid positions to center stack
-    const PAUSE_AT_CENTER = 400;        // Brief pause with cards stacked at center
-    const CONVERGENCE_DURATION = 1200;  // Cards fly from center stack into entity
-    const CORE_GROWTH_DURATION = 1500;  // Core grows
+    const ABSORB_DELAY = 1000;           // Wait for card 5 collapse to finish (skip slide-to-left)
+    const ABSORB_DURATION = 900;         // Cards fly to pyramid centers and shrink to 0
+    const FOLD_PAUSE = 200;              // Brief pause before fold starts
+    const FOLD_DURATION = 2800;          // Smooth continuous fold up to entity
+    const CORE_GROWTH_DURATION = 1500;   // Core grows after fold
     const RESULTS_APPEAR_DURATION = 600; // Results modal floats out
     
-    const t1 = GATHER_DELAY;
-    const t2 = t1 + GATHER_DURATION;
-    const t3 = t2 + PAUSE_AT_CENTER;
-    const t4 = t3 + CONVERGENCE_DURATION;
-    const t5 = t4 + CORE_GROWTH_DURATION;
-    const t6 = t5 + RESULTS_APPEAR_DURATION;
+    const t1 = ABSORB_DELAY;                        // absorb starts
+    const t2 = t1 + ABSORB_DURATION;                // absorb ends
+    const t3 = t2 + FOLD_PAUSE;                     // fold starts
+    const t4 = t3 + FOLD_DURATION;                  // fold ends
+    const t5 = t4 + CORE_GROWTH_DURATION;           // core growth ends
+    const t6 = t5 + RESULTS_APPEAR_DURATION;        // results appear done
     const startTime = Date.now();
     
     const animate = () => {
@@ -1654,36 +1659,47 @@ const App = () => {
       
       if (elapsed < t1) {
         // Waiting for last card's save animation to finish
+        setStaircaseStep(-1);
         setGatherProgress(0);
+        setFoldProgress(0);
         setConvergenceProgress(0);
       } else if (elapsed < t2) {
-        // Phase 1: Cards gather from saved positions to center stack
-        const p = (elapsed - t1) / GATHER_DURATION;
-        const eased = 1 - Math.pow(1 - p, 3);
+        // Phase 0: Cards fly to pyramid layer centers and shrink
+        setStaircaseStep(0);
+        const p = (elapsed - t1) / ABSORB_DURATION;
+        const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
         setGatherProgress(eased);
+        setFoldProgress(0);
         setConvergenceProgress(0);
       } else if (elapsed < t3) {
-        // Pause: cards stacked at center
+        // Brief pause — cards absorbed, pyramid about to fold
+        setStaircaseStep(0);
         setGatherProgress(1);
+        setFoldProgress(0);
         setConvergenceProgress(0);
       } else if (elapsed < t4) {
-        // Phase 2: Cards converge from center stack to entity
+        // Phase 1: Pyramid layers fold up to entity (folding mat)
+        setStaircaseStep(1);
         setGatherProgress(1);
-        const p = (elapsed - t3) / CONVERGENCE_DURATION;
-        const eased = 1 - Math.pow(1 - p, 3);
-        setConvergenceProgress(eased);
+        const p = (elapsed - t3) / FOLD_DURATION;
+        const eased = p * p * (3 - 2 * p); // smoothstep for flowing motion
+        setFoldProgress(eased);
+        setConvergenceProgress(0);
       } else if (elapsed < t5) {
-        // Phase 3: Core grows
+        // Core grows — fold complete
+        setStaircaseStep(2);
         setGatherProgress(1);
+        setFoldProgress(1);
         setConvergenceProgress(1);
         const coreElapsed = elapsed - t4;
         const coreProgress = Math.min(coreElapsed / CORE_GROWTH_DURATION, 1);
         const eased = 1 - Math.pow(1 - coreProgress, 3);
-        const scale = 1 + eased * 4;
-        setCoreScaleMultiplier(scale);
+        setCoreScaleMultiplier(1 + eased * 4);
       } else if (elapsed < t6) {
-        // Phase 4: Results modal floats out
+        // Results modal floats out
+        setStaircaseStep(2);
         setGatherProgress(1);
+        setFoldProgress(1);
         setConvergenceProgress(1);
         setCoreScaleMultiplier(5);
         setAssessmentPhase('results');
@@ -1693,7 +1709,9 @@ const App = () => {
         setResultsModalProgress(eased);
       } else {
         // Animation complete
+        setStaircaseStep(2);
         setGatherProgress(1);
+        setFoldProgress(1);
         setConvergenceProgress(1);
         setCoreScaleMultiplier(5);
         setResultsModalProgress(1);
@@ -2081,6 +2099,8 @@ const App = () => {
       setAssessmentLevel(null);
       setCoreScaleMultiplier(1);
       setConvergenceProgress(0);
+      setStaircaseStep(-1);
+      setFoldProgress(0);
       setResultsModalProgress(0);
       setResultsLoadingProgress(0);
     }
@@ -2489,6 +2509,7 @@ const App = () => {
               pyramidScrollProgress={pyramidScrollProgress}
               showPyramidLabels={isSystem}
               coreScaleMultiplier={coreScaleMultiplier}
+              foldProgress={foldProgress}
               onIntroComplete={handleIntroComplete}
               onLayerStateChange={handleLayerStateChange}
             />
@@ -2734,6 +2755,7 @@ const App = () => {
                 onAllLayersComplete={handleAllLayersComplete}
                 gatherProgress={gatherProgress}
                 convergenceProgress={convergenceProgress}
+                staircaseStep={staircaseStep}
                 isVisible={true}
               />
               </>

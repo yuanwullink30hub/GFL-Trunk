@@ -444,6 +444,7 @@ const HoloEarthSphere = ({
   pyramidScrollProgress = 0,
   showPyramidLabels = false,
   coreScaleMultiplier = 1, // Scale for inner core during convergence
+  foldProgress = 0, // 0-1 for pyramid fold-up animation
   onIntroComplete = () => {},
   onLayerStateChange = () => {},
   isMobile = false
@@ -663,6 +664,7 @@ const HoloEarthSphere = ({
           orbitalRotationY={orbitalRotationY}
           explosionProgress={explosionProgress}
           coreScaleMultiplier={coreScaleMultiplier}
+          foldProgress={foldProgress}
           onIntroComplete={onIntroComplete}
           onLayerStateChange={onLayerStateChange}
         />
@@ -766,6 +768,7 @@ const HoloEarth = ({
   pyramidScrollProgress = 0,
   showPyramidLabels = false,
   coreScaleMultiplier = 1, // Scale for inner core during convergence
+  foldProgress = 0, // 0-1 for pyramid fold-up animation
   onIntroComplete = () => {},
   onLayerStateChange = () => {}
 }) => {
@@ -827,6 +830,7 @@ const HoloEarth = ({
                 pyramidScrollProgress={pyramidScrollProgress}
                 showPyramidLabels={showPyramidLabels}
                 coreScaleMultiplier={coreScaleMultiplier}
+                foldProgress={foldProgress}
                 onIntroComplete={onIntroComplete}
                 onLayerStateChange={onLayerStateChange}
                 isMobile={isMobile}

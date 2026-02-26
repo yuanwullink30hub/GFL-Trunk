@@ -385,6 +385,7 @@ const PyramidInner = ({
   orbitalRotationY = null,
   explosionProgress = 0,
   coreScaleMultiplier = 1, // Scale multiplier for inner core during convergence
+  foldProgress = 0, // 0-1 for pyramid fold-up (folding mat staircase into entity)
   onSendComplete = () => {},
   onIntroComplete = () => {},
   onLayerStateChange = () => {}
@@ -621,6 +622,81 @@ const PyramidInner = ({
 
       meshChild.visible = effectiveR > 0.05;
     });
+
+    // ── Fold-up override ──────────────────────────────────────────────────
+    // Two sub-phases within foldProgress [0→1]:
+    //   A) Staircase fold (0 → 0.70): layer 0 rises to 1, both to 2, etc.
+    //      Only collected layers shrink; un-collected stay at scale 1.
+    //   B) Final ascent  (0.70 → 1.0): all 5 at top-layer position rise
+    //      together into entity centre and shrink to 0.
+    if (foldProgress > 0 && groupRef.current) {
+      const entityYOffset = window.innerWidth >= 1024 ? 0 :
+                            window.innerWidth >= 768 ? -0.065 : 0;
+      const entityY = 0.75 + entityYOffset;
+
+      const STAIRCASE_END = 0.70;
+      const NUM_STEPS = TOTAL_LAYERS - 1; // 4 pickup steps
+      const STEP_SIZE = STAIRCASE_END / NUM_STEPS; // ~0.175
+
+      // The top layer is the smallest: radiusBottom ratio = 0.2 of base layer.
+      // Shrink collected group from 1.0 → 0.3 during staircase (visually matches top layer).
+      const STAIRCASE_END_SCALE = 0.3;
+
+      if (foldProgress <= STAIRCASE_END) {
+        // ── A) Staircase fold ──
+        const rawStep = foldProgress / STEP_SIZE;
+        const step = Math.min(NUM_STEPS - 1, Math.floor(rawStep));
+        const localP = rawStep - step; // 0→1 within current step
+        const eased = localP * localP * (3 - 2 * localP); // smoothstep
+
+        // Group Y: collected stack moves from layers[step] → layers[step+1]
+        const fromY = layers[step].yPos;
+        const toY = layers[step + 1].yPos;
+        const groupY = fromY + (toY - fromY) * eased;
+
+        // Scale: only collected layers shrink; un-collected stay at 1.0
+        const overallP = foldProgress / STAIRCASE_END; // 0→1 over all steps
+        const collectedScale = 1.0 - overallP * (1.0 - STAIRCASE_END_SCALE);
+
+        layers.forEach((layer, i) => {
+          const meshChild = groupRef.current.children[i];
+          if (!meshChild) return;
+
+          if (i <= step) {
+            // Already in the moving group — move with the stack
+            meshChild.position.set(0, groupY, 0);
+            meshChild.scale.setScalar(collectedScale);
+          } else if (i === step + 1) {
+            // Next target layer: stays at own pos, but smoothly scales
+            // down as the group approaches so the pickup looks seamless
+            const blendScale = 1.0 - eased * (1.0 - collectedScale);
+            meshChild.position.set(0, layer.yPos, 0);
+            meshChild.scale.setScalar(blendScale);
+          } else {
+            // Not yet involved — stay at own position, full scale
+            meshChild.position.set(0, layer.yPos, 0);
+            meshChild.scale.setScalar(1);
+          }
+          meshChild.visible = true;
+        });
+      } else {
+        // ── B) Final ascent: all 5 → entity centre, shrink to 0 ──
+        const ascentP = (foldProgress - STAIRCASE_END) / (1 - STAIRCASE_END);
+        const eased = ascentP * ascentP * (3 - 2 * ascentP);
+
+        const topY = layers[TOTAL_LAYERS - 1].yPos; // 1.0
+        const currentY = topY + (entityY - topY) * eased;
+        const s = Math.max(0.01, STAIRCASE_END_SCALE * (1 - eased));
+
+        layers.forEach((layer, i) => {
+          const meshChild = groupRef.current.children[i];
+          if (!meshChild) return;
+          meshChild.position.set(0, currentY, 0);
+          meshChild.scale.setScalar(s);
+          meshChild.visible = s > 0.02;
+        });
+      }
+    }
   });
 
   // Calculate pyramid render order - should be behind particles only during smokescreen phase

@@ -426,7 +426,7 @@ const AssessmentLayerPanel = ({
     } else {
       onScrollEnabled?.(true);
     }
-  }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete, savedLayers.length]);
+  }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete, savedLayers]);
 
   if (!isVisible) return null;
   

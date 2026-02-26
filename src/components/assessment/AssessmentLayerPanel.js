@@ -45,15 +45,18 @@ const SAVED_LAYER_POSITIONS = [
 ];
 
 // Where the 3D pyramid layers ACTUALLY render on screen (vh) — Desktop
-// Camera: fov=40°, z=8 → halfFrustum=2.912. Canvas 200% centred.
-// Transform chain: (localY + 0.35 coreOffset + 0.45 baseY) × 0.5 scale = worldY
-// screenVh = 50 − (worldY / 2.912) × 100
+// FULL transform chain (post-explosion, explosionProgress=1):
+//   coreRef.y = 0.25 - 1.75 + 0.27 = -1.23  (zoomed-in state)
+//   worldY = (baseY + (yPos + coreY) × innerScale) × outerScale
+//         = (0.45 + (yPos - 1.23) × 0.65) × 0.5
+//   Camera fov=40°, z=8, worldZ=1.46 → dist=6.54, halfFrustum=2.38
+//   viewportVh = 50 − (worldY / 2.38) × 100   (200% canvas centred)
 const PYRAMID_CENTER_Y = [
-  53, // Foundation  (3D y=-1.0 → world -0.10 → 53vh)
-  45, // Emotional   (3D y=-0.5 → world  0.15 → 45vh)
-  36, // Mental      (3D y= 0.0 → world  0.40 → 36vh)
-  28, // Spiritual   (3D y= 0.5 → world  0.65 → 28vh)
-  19, // Unity       (3D y= 1.0 → world  0.90 → 19vh) — above entity
+  71, // Foundation  (3D y=-1.0 → worldY -0.50 → 71vh)
+  64, // Emotional   (3D y=-0.5 → worldY -0.34 → 64vh)
+  57, // Mental      (3D y= 0.0 → worldY -0.17 → 57vh)
+  51, // Spiritual   (3D y= 0.5 → worldY -0.01 → 51vh)
+  44, // Unity       (3D y= 1.0 → worldY  0.15 → 44vh)
 ];
 
 // All OPEN cards sit at the same vertical center on the RIGHT side
@@ -79,11 +82,9 @@ const SingleLayerPanel = ({
   answers,
   onAnswerSelect,
   isSaved,
-  isCurrentLayer,
   scrollProgress,
   onSave,
   gatherProgress = 0,
-  convergenceProgress = 0,
   staircaseStep = -1,
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -308,7 +309,7 @@ const SingleLayerPanel = ({
       pointerEvents: progress > 0.9 ? 'auto' : 'none',
       zIndex: 150,
     };
-  }, [layerIndex, animProgress, gatherProgress, convergenceProgress, staircaseStep, isSaved, savePhase, moveProgress]);
+  }, [layerIndex, animProgress, gatherProgress, staircaseStep, isSaved, savePhase, moveProgress]);
 
   // Answer selection handler - stores selections (no auto-advance)
   const handleAnswerSelect = useCallback((questionId, answerId) => {
@@ -416,16 +417,13 @@ const AssessmentLayerPanel = ({
   // Handle save for a specific layer
   const handleSave = useCallback((layerIndex) => {
     const layerAnswers = allLayerAnswers[layerIndex] || {};
-    console.log('[SAVE-DEBUG] saving layer', layerIndex, 'total saved so far:', savedLayers.length);
     onLayerComplete?.(layerIndex, layerAnswers);
     setSavedLayers(prev => [...prev, layerIndex]);
     
     // If this is the last layer (index 4), trigger convergence
     if (layerIndex === 4) {
-      console.log('[SAVE-DEBUG] last layer saved → convergence');
       onAllLayersComplete?.(allLayerAnswers);
     } else {
-      console.log('[SAVE-DEBUG] enabling scroll for next layer');
       onScrollEnabled?.(true);
     }
   }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete, savedLayers.length]);
@@ -460,11 +458,9 @@ const AssessmentLayerPanel = ({
           answers={allLayerAnswers[layerIndex] || {}}
           onAnswerSelect={handleAnswerSelect}
           isSaved={savedLayers.includes(layerIndex)}
-          isCurrentLayer={layerIndex === currentLayerIndex}
           scrollProgress={scrollProgress}
           onSave={() => handleSave(layerIndex)}
           gatherProgress={gatherProgress}
-          convergenceProgress={convergenceProgress}
           staircaseStep={staircaseStep}
         />
       ))}

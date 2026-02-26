@@ -66,9 +66,6 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // DEBUG: Log window width to console
-  console.log('DesktopLayout windowWidth:', windowWidth, 'isLaptop:', windowWidth >= 1024 && windowWidth < 1280);
-
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
   // animationProgress goes from 0 to 1 as containers fly away
   // All values in vw/vh for consistent viewport scaling
@@ -689,20 +686,22 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 width: 'fit-content',
                 borderRadius: '0.1vw',
                 boxShadow: '0 0 0px 0px rgba(34,211,238,0.5)',
-                cursor: 'pointer',
+                cursor: shouldShowLock ? 'default' : 'pointer',
                 zIndex: 100,
-                pointerEvents: 'auto',
-                position: 'relative'
+                pointerEvents: shouldShowLock ? 'none' : 'auto',
+                position: 'relative',
+                opacity: shouldShowLock ? 0.35 : 1
               }}
-              onMouseEnter={(e) => { 
+              onMouseEnter={shouldShowLock ? undefined : (e) => { 
                 e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(34,211,238,0.6)'; 
                 e.currentTarget.style.background = 'linear-gradient(135deg, rgba(34, 211, 238, 0.5), rgba(34, 211, 238, 0.4))'; 
               }}
-              onMouseLeave={(e) => { 
+              onMouseLeave={shouldShowLock ? undefined : (e) => { 
                 e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(34,211,238,0.5)'; 
                 e.currentTarget.style.background = 'linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(34, 211, 238, 0.2))'; 
               }}
-              onClick={(e) => setActiveSection('monitor', e)}
+              onClick={shouldShowLock ? undefined : (e) => setActiveSection('monitor', e)}
+              disabled={shouldShowLock}
             >
               {t('desktopLayout.monitor')}
             </button>
@@ -727,22 +726,21 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               <div className="w-full h-full flex items-center justify-around opacity-90 relative" style={{ padding: '0 1vw' }}>
                 {/* Left: Logo - Button */}
                 <button 
-                  onClick={(e) => !shouldShowLock && setActiveSection('menu', e)}
-                  disabled={shouldShowLock}
+                  onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
-                    cursor: shouldShowLock ? 'default' : 'pointer',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease',
                     padding: 0,
                     filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))',
-                    opacity: shouldShowLock ? 0.35 : 1
+                    opacity: 1
                   }}
-                  onMouseEnter={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
-                  onMouseLeave={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
                 >
                   <img src={eyeLogo} alt="Logo" style={{ width: 'max(55px, 3vw)', height: 'auto' }} />
                 </button>
@@ -787,22 +785,21 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               <div className="w-full h-full flex items-center justify-around opacity-90 relative" style={{ padding: '0 1vw' }}>
                 {/* Left: Logo - Button */}
                 <button 
-                  onClick={(e) => !shouldShowLock && setActiveSection('menu', e)}
-                  disabled={shouldShowLock}
+                  onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
-                    cursor: shouldShowLock ? 'default' : 'pointer',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease',
                     padding: 0,
                     filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))',
-                    opacity: shouldShowLock ? 0.35 : 1
+                    opacity: 1
                   }}
-                  onMouseEnter={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
-                  onMouseLeave={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
                 >
                   <img src={eyeLogo} alt="Logo" style={{ width: 'max(55px, 3vw)', height: 'auto' }} />
                 </button>
@@ -847,22 +844,21 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               <div className="w-full h-full flex items-center justify-evenly opacity-90 relative" style={{ padding: '0 0.5vw' }}>
                 {/* Left: Logo - Button */}
                 <button 
-                  onClick={(e) => !shouldShowLock && setActiveSection('menu', e)}
-                  disabled={shouldShowLock}
+                  onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
-                    cursor: shouldShowLock ? 'default' : 'pointer',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease',
                     padding: 0,
                     filter: 'drop-shadow(0 0 0px rgba(139,90,43,0))',
-                    opacity: shouldShowLock ? 0.35 : 1
+                    opacity: 1
                   }}
-                  onMouseEnter={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
-                  onMouseLeave={shouldShowLock ? undefined : (e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
                 >
                   <img src={eyeLogo} alt="Logo" style={{ width: 'max(45px, 2.5vw)', height: 'auto' }} />
                 </button>

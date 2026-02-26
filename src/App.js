@@ -1524,9 +1524,7 @@ const App = () => {
             ? (currentLayerIndex + 1) / 4
             : currentLayerIndex / 4;
           newProgress = Math.min(newProgress, maxProgress);
-          if (prev !== newProgress) {
-            console.log('[SCROLL-DEBUG]', { prev: prev.toFixed(3), newProgress: newProgress.toFixed(3), maxProgress: maxProgress.toFixed(3), currentLayerIndex, assessmentScrollEnabled });
-          }
+          // (scroll progress updated)
         }
         
         // Mobile: If scrolling down and at end, unlock scroll to continue page scroll
@@ -1608,11 +1606,40 @@ const App = () => {
     setAssessmentPhase('layers');
   }, []);
   
-  // Close assessment (back to hidden)
-  const handleAssessmentClose = useCallback(() => {
+  // Full reset of all assessment/pyramid state — used when closing results, returning to landing, etc.
+  const resetAssessmentState = useCallback(() => {
     setAssessmentPhase('hidden');
     setAssessmentLevel(null);
+    setCurrentSubjectIndex(0);
+    setCurrentQuestionIndex(0);
+    setAssessmentAnswers([]);
+    setUploadedFiles([]);
+    setCurrentLayerIndex(0);
+    setLayerAnswers({});
+    setAssessmentScrollEnabled(false);
+    setConvergenceProgress(0);
+    setGatherProgress(0);
+    setStaircaseStep(-1);
+    setFoldProgress(0);
+    setCoreScaleMultiplier(1);
+    setResultsModalProgress(0);
+    setResultsLoadingProgress(0);
+    setResultsPoetryIndex(0);
+    setShowLoginFromResults(false);
+    setPyramidScrollProgress(0);
+    setIntroComplete(false);
+    setLayerState({
+      completedLayerIndex: -1,
+      isIntroActive: false,
+      isGoldMode: false,
+      introComplete: false
+    });
   }, []);
+
+  // Close assessment (back to hidden)
+  const handleAssessmentClose = useCallback(() => {
+    resetAssessmentState();
+  }, [resetAssessmentState]);
   
   // Handle layer completion (Save button clicked)
   const handleLayerComplete = useCallback((layerIndex, answers) => {
@@ -1791,9 +1818,7 @@ const App = () => {
       
       // Layer N+1 is fully animated when scroll reaches (N+1)/4
       const threshold = nextLayer / 4;
-      console.log('[LAYER-DEBUG] checking advance:', { currentLayerIndex, nextLayer, threshold, pyramidScrollProgress, assessmentScrollEnabled });
       if (pyramidScrollProgress >= threshold) {
-        console.log('[LAYER-DEBUG] ✓ ADVANCING to layer', nextLayer);
         setCurrentLayerIndex(nextLayer);
         setAssessmentScrollEnabled(false); // Disable until next save
       }
@@ -2093,25 +2118,9 @@ const App = () => {
 
   // Reset to frame 0
   const handleReset = () => {
-    // Close assessment if it's open (any phase)
-    if (assessmentPhase !== 'hidden') {
-      setAssessmentPhase('hidden');
-      setAssessmentLevel(null);
-      setCoreScaleMultiplier(1);
-      setConvergenceProgress(0);
-      setStaircaseStep(-1);
-      setFoldProgress(0);
-      setResultsModalProgress(0);
-      setResultsLoadingProgress(0);
-    }
-    setPyramidScrollProgress(0); // Reset pyramid scroll too
-    setIntroComplete(false); // Reset intro state for next activation
-    setLayerState({ // Reset layer state for pure DOM labels
-      completedLayerIndex: -1,
-      isIntroActive: false,
-      isGoldMode: false,
-      introComplete: false
-    });
+    // Full reset of all assessment/pyramid state
+    resetAssessmentState();
+    // Rewind frames back to 0
     const interval = setInterval(() => {
       setCurrentFrame(prev => {
         if (prev <= 0) {
@@ -2787,13 +2796,7 @@ const App = () => {
                 resultsPoetryIndex={resultsPoetryIndex}
                 poetrySlides={poetrySlides}
                 layerAnswers={layerAnswers}
-                onClose={() => {
-                  setAssessmentPhase('hidden');
-                  setCoreScaleMultiplier(1);
-                  setConvergenceProgress(0);
-                  setResultsModalProgress(0);
-                  setResultsLoadingProgress(0);
-                }}
+                onClose={resetAssessmentState}
                 onDownload={() => {
                   console.log('Download PDF:', layerAnswers);
                   // TODO: Generate and download PDF

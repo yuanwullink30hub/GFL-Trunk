@@ -587,6 +587,8 @@ const PyramidInner = ({
 
       if (i === 0) {
         meshChild.visible = true;
+        meshChild.position.set(0, layer.yPos, 0);
+        meshChild.scale.set(1, 1, 1);
         return;
       }
 
@@ -624,78 +626,69 @@ const PyramidInner = ({
     });
 
     // ── Fold-up override ──────────────────────────────────────────────────
-    // Two sub-phases within foldProgress [0→1]:
-    //   A) Staircase fold (0 → 0.70): layer 0 rises to 1, both to 2, etc.
-    //      Only collected layers shrink; un-collected stay at scale 1.
-    //   B) Final ascent  (0.70 → 1.0): all 5 at top-layer position rise
-    //      together into entity centre and shrink to 0.
+    // Seamless domino collapse with overshoot: each layer rises PAST the
+    // layer above it while shrinking, then vanishes. The next layer starts
+    // rising when the previous one reaches the boundary — but the previous
+    // layer continues upward & shrinking in the background. No hard stops,
+    // no duplicate glitches (outgoing layer is smaller + above by then).
     if (foldProgress > 0 && groupRef.current) {
-      const entityYOffset = window.innerWidth >= 1024 ? 0 :
-                            window.innerWidth >= 768 ? -0.065 : 0;
-      const entityY = 0.75 + entityYOffset;
+      const entityY = 2.5; // entity position in PyramidInner local space
 
-      const STAIRCASE_END = 0.70;
-      const NUM_STEPS = TOTAL_LAYERS - 1; // 4 pickup steps
-      const STEP_SIZE = STAIRCASE_END / NUM_STEPS; // ~0.175
+      const CASCADE_END = 0.55;
+      const STEP_DUR = CASCADE_END / (TOTAL_LAYERS - 1); // ≈0.1375 — when next layer starts
+      const TAIL = STEP_DUR * 0.4;     // extra time for the overshoot beyond next layer
+      const ANIM_DUR = STEP_DUR + TAIL; // total animation time per layer
 
-      // The top layer is the smallest: radiusBottom ratio = 0.2 of base layer.
-      // Shrink collected group from 1.0 → 0.3 during staircase (visually matches top layer).
-      const STAIRCASE_END_SCALE = 0.3;
+      layers.forEach((layer, i) => {
+        const meshChild = groupRef.current.children[i];
+        if (!meshChild) return;
 
-      if (foldProgress <= STAIRCASE_END) {
-        // ── A) Staircase fold ──
-        const rawStep = foldProgress / STEP_SIZE;
-        const step = Math.min(NUM_STEPS - 1, Math.floor(rawStep));
-        const localP = rawStep - step; // 0→1 within current step
-        const eased = localP * localP * (3 - 2 * localP); // smoothstep
+        if (i < TOTAL_LAYERS - 1) {
+          // ── Layers 0-3: rise past the layer above, shrink, vanish ──
+          const nextY = layers[i + 1].yPos;
+          const gap = nextY - layer.yPos;           // 0.5
+          const overshootY = nextY + gap * 0.35;    // travel 35% past the next layer
+          const startT = i * STEP_DUR;
+          const endT = startT + ANIM_DUR;
 
-        // Group Y: collected stack moves from layers[step] → layers[step+1]
-        const fromY = layers[step].yPos;
-        const toY = layers[step + 1].yPos;
-        const groupY = fromY + (toY - fromY) * eased;
-
-        // Scale: only collected layers shrink; un-collected stay at 1.0
-        const overallP = foldProgress / STAIRCASE_END; // 0→1 over all steps
-        const collectedScale = 1.0 - overallP * (1.0 - STAIRCASE_END_SCALE);
-
-        layers.forEach((layer, i) => {
-          const meshChild = groupRef.current.children[i];
-          if (!meshChild) return;
-
-          if (i <= step) {
-            // Already in the moving group — move with the stack
-            meshChild.position.set(0, groupY, 0);
-            meshChild.scale.setScalar(collectedScale);
-          } else if (i === step + 1) {
-            // Next target layer: stays at own pos, but smoothly scales
-            // down as the group approaches so the pickup looks seamless
-            const blendScale = 1.0 - eased * (1.0 - collectedScale);
-            meshChild.position.set(0, layer.yPos, 0);
-            meshChild.scale.setScalar(blendScale);
-          } else {
-            // Not yet involved — stay at own position, full scale
+          if (foldProgress <= startT) {
             meshChild.position.set(0, layer.yPos, 0);
             meshChild.scale.setScalar(1);
+            meshChild.visible = true;
+          } else if (foldProgress < endT) {
+            const t = (foldProgress - startT) / ANIM_DUR;
+            // Position: ease-out cubic — fast launch, gentle arrival
+            const posEased = 1 - Math.pow(1 - t, 3);
+            const currentY = layer.yPos + (overshootY - layer.yPos) * posEased;
+            meshChild.position.set(0, currentY, 0);
+            // Scale: ease-in shrink — stays near full early, shrinks fast near end
+            const shrinkEased = t * t;
+            const s = Math.max(0.05, 1 - shrinkEased * 0.85);
+            meshChild.scale.setScalar(s);
+            meshChild.visible = true;
+          } else {
+            meshChild.visible = false;
           }
-          meshChild.visible = true;
-        });
-      } else {
-        // ── B) Final ascent: all 5 → entity centre, shrink to 0 ──
-        const ascentP = (foldProgress - STAIRCASE_END) / (1 - STAIRCASE_END);
-        const eased = ascentP * ascentP * (3 - 2 * ascentP);
+        } else {
+          // ── Layer 4 (top): rise directly into entity ──
+          const startT = CASCADE_END;
+          const endT = 1.0;
 
-        const topY = layers[TOTAL_LAYERS - 1].yPos; // 1.0
-        const currentY = topY + (entityY - topY) * eased;
-        const s = Math.max(0.01, STAIRCASE_END_SCALE * (1 - eased));
-
-        layers.forEach((layer, i) => {
-          const meshChild = groupRef.current.children[i];
-          if (!meshChild) return;
-          meshChild.position.set(0, currentY, 0);
-          meshChild.scale.setScalar(s);
-          meshChild.visible = s > 0.02;
-        });
-      }
+          if (foldProgress <= startT) {
+            meshChild.position.set(0, layer.yPos, 0);
+            meshChild.scale.setScalar(1);
+            meshChild.visible = true;
+          } else {
+            const t = Math.min(1, (foldProgress - startT) / (endT - startT));
+            const eased = 1 - Math.pow(1 - t, 3);
+            const currentY = layer.yPos + (entityY - layer.yPos) * eased;
+            meshChild.position.set(0, currentY, 0);
+            const s = Math.max(0.01, 1 - eased * 0.97);
+            meshChild.scale.setScalar(s);
+            meshChild.visible = s > 0.02;
+          }
+        }
+      });
     }
   });
 

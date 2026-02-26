@@ -426,7 +426,8 @@ const AssessmentLayerPanel = ({
     } else {
       onScrollEnabled?.(true);
     }
-  }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete, savedLayers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete]);
 
   if (!isVisible) return null;
   

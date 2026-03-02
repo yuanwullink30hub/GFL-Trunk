@@ -54,14 +54,5 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy build --project-name=gfl-trunk
 
-      # ── Inject backend secrets into Cloudflare (Workers / Pages Functions) ──
-      # These are available as env.VAR_NAME inside your Worker/Pages Function
-      - name: Set Cloudflare secrets
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages secret put ENCRYPTION_KEY --project-name=gfl-trunk
-        env:
-          # wrangler reads from stdin for secret values
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # NOTE: Backend secrets (MONGODB_URI, JWT_SECRET, etc.) are configured
+      # in Render.com environment variables, not Cloudflare.

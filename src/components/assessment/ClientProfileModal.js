@@ -206,16 +206,6 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
                 GEBRUIKER: {user.displayName} {'·'} ROL: {(user.role || 'client').toUpperCase()} {'·'} {user.email}
               </p>
             </div>
-            <button onClick={onLogout}
-              style={{
-                ...BTN, display: 'flex', alignItems: 'center', gap: '0.4rem',
-                borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
-                fontSize: 'max(9px, 0.45vw)',
-              }}
-              onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-              onMouseLeave={(e) => { e.target.style.background = BTN.background; e.target.style.color = '#fca5a5'; }}>
-              Sessie Beëindigen
-            </button>
           </header>
 
           {/* ── Tab Navigation (client-level only) ── */}
@@ -245,9 +235,10 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
           {tab === 'agenda' && <AgendaTab />}
         </div>
 
-        {/* Footer — return button */}
+        {/* Footer — return + logout */}
         <div style={{
           display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+          gap: '0.5rem',
           padding: '0.5rem 1rem',
           borderTop: '1px solid rgba(255,255,255,0.05)',
           backgroundColor: 'rgba(42, 10, 56, 0.35)',
@@ -260,6 +251,15 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
             onMouseEnter={(e) => hover(e, true)}
             onMouseLeave={(e) => hover(e, false)}>
             ← Terug
+          </button>
+          <button onClick={onLogout} style={{
+            ...BTN, width: 'auto', padding: '0.35rem 1rem',
+            fontSize: 'max(9px, 0.48vw)',
+            borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
+          }}
+            onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+            onMouseLeave={(e) => { e.target.style.background = BTN.background; e.target.style.color = '#fca5a5'; }}>
+            Uitloggen
           </button>
         </div>
       </div>

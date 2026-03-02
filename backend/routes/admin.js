@@ -19,6 +19,27 @@ const { ObjectId } = require('mongodb');
 const { collections, getDB } = require('../db');
 const { authRequired, adminRequired } = require('../middleware/auth');
 const { decryptUser, decryptUsers, decrypt } = require('../services/encryption');
+const multer = require('multer');
+const mammoth = require('mammoth');
+const pdfParse = require('pdf-parse');
+
+const docUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'text/plain',
+    ];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF, Word (.docx/.doc), and plain text files are allowed'));
+    }
+  },
+});
 
 const router = Router();
 
@@ -288,6 +309,121 @@ router.put('/prompts', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// POST /api/admin/prompts/documents — Upload a context document
+// ─────────────────────────────────────────────────────────────
+
+router.post('/prompts/documents', docUpload.single('document'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { originalname, mimetype, size, buffer } = req.file;
+    let extractedText = '';
+
+    // Extract text based on file type
+    if (mimetype === 'application/pdf') {
+      const pdfData = await pdfParse(buffer);
+      extractedText = pdfData.text;
+    } else if (
+      mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      mimetype === 'application/msword'
+    ) {
+      const result = await mammoth.extractRawText({ buffer });
+      extractedText = result.value;
+    } else if (mimetype === 'text/plain') {
+      extractedText = buffer.toString('utf-8');
+    }
+
+    if (!extractedText || extractedText.trim().length === 0) {
+      return res.status(400).json({ error: 'Could not extract text from uploaded file' });
+    }
+
+    const doc = {
+      filename: originalname,
+      mimetype,
+      size,
+      extractedText: extractedText.trim(),
+      charCount: extractedText.trim().length,
+      uploadedBy: req.user.userId,
+      uploadedAt: new Date(),
+    };
+
+    const result = await docsCollection().insertOne(doc);
+    doc._id = result.insertedId;
+
+    console.log(`[Admin] Document uploaded: "${originalname}" (${doc.charCount} chars)`);
+    res.json({ success: true, document: { _id: doc._id, filename: doc.filename, mimetype: doc.mimetype, size: doc.size, charCount: doc.charCount, uploadedAt: doc.uploadedAt } });
+  } catch (err) {
+    console.error('[Admin] Document upload error:', err.message);
+    res.status(500).json({ error: err.message || 'Failed to upload document' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/admin/prompts/documents — List all context documents
+// ─────────────────────────────────────────────────────────────
+
+router.get('/prompts/documents', async (_req, res) => {
+  try {
+    const docs = await docsCollection()
+      .find({})
+      .sort({ uploadedAt: -1 })
+      .project({ extractedText: 0 }) // Don't send full text in listing
+      .toArray();
+
+    res.json({ documents: docs });
+  } catch (err) {
+    console.error('[Admin] List documents error:', err.message);
+    res.status(500).json({ error: 'Failed to load documents' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/admin/prompts/documents/:id — Get a single document (with text)
+// ─────────────────────────────────────────────────────────────
+
+router.get('/prompts/documents/:id', async (req, res) => {
+  try {
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid document ID' });
+    }
+
+    const doc = await docsCollection().findOne({ _id: new ObjectId(req.params.id) });
+    if (!doc) return res.status(404).json({ error: 'Document not found' });
+
+    res.json(doc);
+  } catch (err) {
+    console.error('[Admin] Get document error:', err.message);
+    res.status(500).json({ error: 'Failed to load document' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// DELETE /api/admin/prompts/documents/:id — Delete a context document
+// ─────────────────────────────────────────────────────────────
+
+router.delete('/prompts/documents/:id', async (req, res) => {
+  try {
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid document ID' });
+    }
+
+    const result = await docsCollection().deleteOne({ _id: new ObjectId(req.params.id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    console.log(`[Admin] Document deleted: ${req.params.id}`);
+    res.json({ success: true, deletedId: req.params.id });
+  } catch (err) {
+    console.error('[Admin] Delete document error:', err.message);
+    res.status(500).json({ error: 'Failed to delete document' });
+  }
+});
+
 module.exports = router;
 
 // ─────────────────────────────────────────────────────────────
@@ -296,6 +432,10 @@ module.exports = router;
 
 function promptsCollection() {
   return getDB().collection('promptConfigs');
+}
+
+function docsCollection() {
+  return getDB().collection('promptDocuments');
 }
 
 function getDefaultPromptConfig() {

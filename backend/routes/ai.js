@@ -6,6 +6,7 @@
  */
 const { Router } = require('express');
 const { callAI, getAvailableProviders } = require('../services/aiProviders');
+const { getDB } = require('../db');
 
 const router = Router();
 
@@ -23,13 +24,14 @@ const router = Router();
  *   extendedArchetypeName: "The Arbiter",       // optional
  *   userQuestion: "...",                         // optional
  *   oceanScores: { O:4, C:9, E:4, A:3, N:3 },  // optional
- *   coreProfile: "...",                          // optional
- *   extendedDescription: "...",                  // optional
- *   neuroticismTrigger: "...",                   // optional
  *   systemPrompt: "...",                         // optional full override
  *   maxTokens: 2048,                             // optional
  *   temperature: 0.7                             // optional
  * }
+ *
+ * NOTE: Knowledge context (archetype descriptions, OCEAN profiles, etc.)
+ * is now provided via admin-uploaded documents stored in MongoDB
+ * (collection: promptDocuments), not hardcoded parameters.
  */
 router.post('/analyze', async (req, res) => {
   try {
@@ -41,9 +43,6 @@ router.post('/analyze', async (req, res) => {
       extendedArchetypeName,
       userQuestion,
       oceanScores,
-      coreProfile,
-      extendedDescription,
-      neuroticismTrigger,
       systemPrompt,
       maxTokens,
       temperature,
@@ -53,10 +52,11 @@ router.post('/analyze', async (req, res) => {
       return res.status(400).json({ error: 'archetypeKey is required' });
     }
 
-    // Build messages
+    // Build messages — include uploaded context documents
+    const contextDocs = await getContextDocuments();
     const system = systemPrompt || buildDefaultSystemPrompt({
       archetypeKey, supportGroup, extendedArchetypeName,
-      oceanScores, coreProfile, extendedDescription, neuroticismTrigger,
+      oceanScores, contextDocs,
     });
 
     const user = userQuestion || buildDefaultUserMessage(archetypeKey, supportGroup);
@@ -96,7 +96,7 @@ module.exports = router;
 
 function buildDefaultSystemPrompt({
   archetypeKey, supportGroup, extendedArchetypeName,
-  oceanScores, coreProfile, extendedDescription, neuroticismTrigger,
+  oceanScores, contextDocs,
 }) {
   const parts = [
     `Je bent een persoonlijke ontwikkelingscoach gespecialiseerd in Jungiaanse archetypen, ` +
@@ -104,19 +104,29 @@ function buildDefaultSystemPrompt({
     `Je werkt voor Garden For Life, een bewustzijnsplatform.\n\n` +
     `Antwoord altijd in het Nederlands tenzij de gebruiker in het Engels schrijft. ` +
     `Wees empathisch, genuanceerd en concreet. Vermijd vage algemeenheden.\n`,
-
-    `═══════════════════════════════════════`,
-    `ARCHETYPE PROFIEL`,
-    `═══════════════════════════════════════`,
-    `Archetype: ${archetypeKey}`,
   ];
+
+  // ── Uploaded context documents ──
+  if (contextDocs && contextDocs.length > 0) {
+    parts.push(`═══════════════════════════════════════`);
+    parts.push(`KENNISBANK / CONTEXT DOCUMENTEN`);
+    parts.push(`═══════════════════════════════════════`);
+    for (const doc of contextDocs) {
+      parts.push(`── ${doc.filename} ──`);
+      parts.push(doc.extractedText);
+      parts.push('');
+    }
+  }
+
+  // ── Assessment result data ──
+  parts.push(`═══════════════════════════════════════`);
+  parts.push(`ARCHETYPE PROFIEL`);
+  parts.push(`═══════════════════════════════════════`);
+  parts.push(`Archetype: ${archetypeKey}`);
 
   if (supportGroup) parts.push(`Steungroep: ${supportGroup}`);
   if (extendedArchetypeName) parts.push(`Uitgebreid archetype: ${extendedArchetypeName}`);
   if (oceanScores) parts.push(`\nOCEAN Scores: ${JSON.stringify(oceanScores)}`);
-  if (coreProfile) parts.push(`\n── Kernprofiel ──\n${coreProfile}`);
-  if (extendedDescription) parts.push(`\n── Uitgebreide beschrijving ──\n${extendedDescription}`);
-  if (neuroticismTrigger) parts.push(`\n── Neuroticisme trigger ──\n${neuroticismTrigger}`);
 
   return parts.join('\n');
 }
@@ -126,4 +136,23 @@ function buildDefaultUserMessage(archetypeKey, supportGroup) {
     (supportGroup ? ` met steungroep ${supportGroup}` : '') +
     `. Gebruik de OCEAN-dimensies en neurobiologische inzichten. ` +
     `Geef concrete adviezen voor persoonlijke groei en individuatie.`;
+}
+
+/**
+ * Fetch all uploaded context documents from MongoDB.
+ * Returns array of { filename, extractedText }.
+ */
+async function getContextDocuments() {
+  try {
+    const db = getDB();
+    const docs = await db.collection('promptDocuments')
+      .find({})
+      .sort({ uploadedAt: 1 })
+      .project({ filename: 1, extractedText: 1 })
+      .toArray();
+    return docs;
+  } catch {
+    // If DB not connected or collection doesn't exist, return empty
+    return [];
+  }
 }

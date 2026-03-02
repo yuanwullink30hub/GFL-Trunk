@@ -11,6 +11,9 @@ import {
   downloadPdf,
   getPromptConfig,
   updatePromptConfig,
+  uploadPromptDocument,
+  getPromptDocuments,
+  deletePromptDocument,
   getQuestions,
   seedQuestions,
   updateQuestion,
@@ -1192,6 +1195,189 @@ const PromptsTab = memo(() => {
       >
         {saving ? 'SAVING...' : saved ? '✓ SAVED' : 'SAVE PROMPT CONFIG'}
       </button>
+
+      {/* ── Context Documents Section ── */}
+      <div style={{ marginTop: '1.2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem' }}>
+        <div style={LABEL}>CONTEXT DOCUMENTEN</div>
+        <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.4, marginBottom: '0.5rem' }}>
+          Upload Word, PDF of tekst bestanden. De inhoud wordt automatisch meegestuurd met elk AI verzoek als kennisbank context.
+        </div>
+
+        <ContextDocumentsSection />
+      </div>
+    </div>
+  );
+});
+
+// ── Context Documents Sub-component ──
+const ContextDocumentsSection = memo(() => {
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = React.useRef(null);
+
+  const loadDocuments = useCallback(async () => {
+    try {
+      setError('');
+      const { documents: docs } = await getPromptDocuments();
+      setDocuments(docs || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadDocuments(); }, [loadDocuments]);
+
+  const handleUpload = useCallback(async (files) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    setError('');
+    try {
+      for (const file of files) {
+        await uploadPromptDocument(file);
+      }
+      await loadDocuments();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  }, [loadDocuments]);
+
+  const handleDelete = useCallback(async (docId, filename) => {
+    if (!window.confirm(`Document "${filename}" verwijderen? Dit kan niet ongedaan worden.`)) return;
+    try {
+      setError('');
+      await deletePromptDocument(docId);
+      setDocuments((prev) => prev.filter((d) => d._id !== docId));
+    } catch (err) {
+      setError(err.message);
+    }
+  }, []);
+
+  const handleFileInput = (e) => {
+    handleUpload(Array.from(e.target.files));
+    e.target.value = '';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    handleUpload(Array.from(e.dataTransfer.files));
+  };
+
+  const formatSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1048576).toFixed(1)} MB`;
+  };
+
+  const fileIcon = (mimetype) => {
+    if (mimetype === 'application/pdf') return '📄';
+    if (mimetype?.includes('word')) return '📝';
+    return '📃';
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      {error && <ErrorBox msg={error} />}
+
+      {/* Drop zone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+        style={{
+          border: `2px dashed ${dragOver ? 'rgba(255,174,0,0.7)' : 'rgba(255,174,0,0.2)'}`,
+          borderRadius: '8px',
+          padding: '1rem',
+          textAlign: 'center',
+          cursor: 'pointer',
+          background: dragOver ? 'rgba(255,174,0,0.05)' : 'transparent',
+          transition: 'all 0.2s',
+        }}
+      >
+        <div style={{ fontSize: 'max(18px, 1vw)', marginBottom: '0.3rem' }}>
+          {uploading ? '⏳' : '📁'}
+        </div>
+        <div style={{ fontSize: 'max(10px, 0.5vw)', color: C.gold, opacity: 0.7 }}>
+          {uploading ? 'Uploading...' : 'Sleep bestanden hierheen of klik om te uploaden'}
+        </div>
+        <div style={{ fontSize: 'max(8px, 0.4vw)', opacity: 0.3, marginTop: '0.2rem' }}>
+          PDF, Word (.docx), TXT — max 20 MB
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.docx,.doc,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+          onChange={handleFileInput}
+          style={{ display: 'none' }}
+        />
+      </div>
+
+      {/* Document list */}
+      {loading ? (
+        <Loading />
+      ) : documents.length === 0 ? (
+        <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.3, textAlign: 'center', padding: '0.5rem' }}>
+          Geen documenten geüpload. Upload bestanden om de AI kennisbank te vullen.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+          {documents.map((doc) => (
+            <div
+              key={doc._id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.4rem 0.6rem',
+                background: 'rgba(255,174,0,0.04)',
+                border: '1px solid rgba(255,174,0,0.1)',
+                borderRadius: '6px',
+                fontSize: 'max(9px, 0.45vw)',
+              }}
+            >
+              <span style={{ fontSize: 'max(14px, 0.7vw)' }}>{fileIcon(doc.mimetype)}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: C.gold, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {doc.filename}
+                </div>
+                <div style={{ opacity: 0.4, fontSize: 'max(8px, 0.38vw)' }}>
+                  {formatSize(doc.size)} · {doc.charCount?.toLocaleString()} tekens · {new Date(doc.uploadedAt).toLocaleDateString('nl-NL')}
+                </div>
+              </div>
+              <button
+                onClick={() => handleDelete(doc._id, doc.filename)}
+                style={{
+                  background: 'none',
+                  border: '1px solid rgba(255,60,60,0.3)',
+                  color: '#ff4444',
+                  borderRadius: '4px',
+                  padding: '0.15rem 0.4rem',
+                  cursor: 'pointer',
+                  fontSize: 'max(8px, 0.4vw)',
+                  fontFamily: FONT,
+                  letterSpacing: '0.05em',
+                }}
+                onMouseEnter={(e) => { e.target.style.background = 'rgba(255,60,60,0.1)'; }}
+                onMouseLeave={(e) => { e.target.style.background = 'none'; }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <div style={{ fontSize: 'max(8px, 0.38vw)', opacity: 0.3, textAlign: 'right' }}>
+            {documents.length} document{documents.length !== 1 ? 'en' : ''} · totaal {documents.reduce((s, d) => s + (d.charCount || 0), 0).toLocaleString()} tekens
+          </div>
+        </div>
+      )}
     </div>
   );
 });

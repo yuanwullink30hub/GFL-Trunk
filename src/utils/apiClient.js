@@ -165,9 +165,6 @@ export async function getAssessment(id) {
  * @param {string} [params.extendedArchetypeName] - e.g. "The Arbiter"
  * @param {string} [params.userQuestion] - Free-text question
  * @param {Object} [params.oceanScores] - e.g. { O: 4, C: 9, E: 4, A: 3, N: 3 }
- * @param {string} [params.coreProfile] - Core archetype profile text
- * @param {string} [params.extendedDescription] - Extended archetype description
- * @param {string} [params.neuroticismTrigger] - Neuroticism trigger text
  * @param {string} [params.systemPrompt] - Full system prompt override
  * @returns {Promise<{
  *   archetypeKey: string,
@@ -188,9 +185,6 @@ export async function analyzeAssessment({
   extendedArchetypeName,
   userQuestion,
   oceanScores,
-  coreProfile,
-  extendedDescription,
-  neuroticismTrigger,
   systemPrompt,
 }) {
   const response = await fetch(`${API_BASE}/ai/analyze`, {
@@ -204,9 +198,6 @@ export async function analyzeAssessment({
       extendedArchetypeName: extendedArchetypeName || undefined,
       userQuestion: userQuestion || undefined,
       oceanScores: oceanScores || undefined,
-      coreProfile: coreProfile || undefined,
-      extendedDescription: extendedDescription || undefined,
-      neuroticismTrigger: neuroticismTrigger || undefined,
       systemPrompt: systemPrompt || undefined,
     }),
   });
@@ -392,6 +383,59 @@ export async function updatePromptConfig(config) {
     body: JSON.stringify(config),
   });
   if (!response.ok) throw new Error(`Prompt update failed (${response.status})`);
+  return response.json();
+}
+
+// ── Context Documents (uploaded by admin, included in AI calls) ──
+
+/**
+ * Upload a context document (Word/PDF/TXT) for AI system prompt inclusion.
+ * @param {File} file - The file to upload
+ * @returns {Promise<{ success: boolean, document: Object }>}
+ */
+export async function uploadPromptDocument(file) {
+  const formData = new FormData();
+  formData.append('document', file);
+
+  const response = await fetch(`${API_BASE}/admin/prompts/documents`, {
+    method: 'POST',
+    headers: authHeaders(), // No Content-Type — browser sets multipart boundary
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Upload failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * List all uploaded context documents (metadata only, no text).
+ * @returns {Promise<{ documents: Array }>}
+ */
+export async function getPromptDocuments() {
+  const response = await fetch(`${API_BASE}/admin/prompts/documents`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error(`Document list failed (${response.status})`);
+  return response.json();
+}
+
+/**
+ * Delete an uploaded context document.
+ * @param {string} docId - MongoDB ObjectId
+ * @returns {Promise<{ success: boolean }>}
+ */
+export async function deletePromptDocument(docId) {
+  const response = await fetch(`${API_BASE}/admin/prompts/documents/${docId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Delete failed (${response.status})`);
+  }
   return response.json();
 }
 

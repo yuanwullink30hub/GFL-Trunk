@@ -1,24 +1,5 @@
 {
   "name": "gfl-trunk",
-  "main": "_worker.js",
   "compatibility_date": "2024-12-10",
-  "pages_build_output_dir": "./build",
-  "assets": {
-    "directory": "./build"
-  },
-  "observability": {
-    "enabled": false,
-    "head_sampling_rate": 1,
-    "logs": {
-      "enabled": true,
-      "head_sampling_rate": 1,
-      "persist": true,
-      "invocation_logs": true
-    },
-    "traces": {
-      "enabled": false,
-      "persist": true,
-      "head_sampling_rate": 1
-    }
-  }
+  "pages_build_output_dir": "./build"
 }

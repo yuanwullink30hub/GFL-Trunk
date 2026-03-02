@@ -101,7 +101,7 @@ const CORNER = (pos) => ({
  * Tabs: overview, assessments
  */
 const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
-  const { t: _t } = useLanguage();
+  useLanguage();
   const [tab, setTab] = useState('overview');
 
   return (
@@ -886,7 +886,6 @@ const InboxTab = memo(() => {
     try { const raw = localStorage.getItem(INBOX_KEY); return raw ? JSON.parse(raw) : []; } catch { return []; }
   });
 
-  const tc = CARD_COLORS.gold;
   const pc = CARD_COLORS.purple;
 
   const markRead = (id) => {
@@ -971,7 +970,6 @@ const ContactenTab = memo(() => {
   const [form, setForm] = useState({ naam: '', email: '', notitie: '' });
 
   const tc = CARD_COLORS.gold;
-  const pc = CARD_COLORS.purple;
 
   const addContact = () => {
     if (!form.naam.trim()) return;
@@ -1078,7 +1076,6 @@ const AgendaTab = memo(() => {
   const [form, setForm] = useState({ titel: '', datum: '', tijd: '', notitie: '' });
 
   const tc = CARD_COLORS.gold;
-  const pc = CARD_COLORS.purple;
 
   const addEvent = () => {
     if (!form.titel.trim() || !form.datum) return;

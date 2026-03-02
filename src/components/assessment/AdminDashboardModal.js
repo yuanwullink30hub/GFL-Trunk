@@ -14,6 +14,7 @@ import {
   uploadPromptDocument,
   getPromptDocuments,
   deletePromptDocument,
+  verifyPromptDocuments,
   getQuestions,
   seedQuestions,
   updateQuestion,
@@ -126,7 +127,7 @@ const CORNER = (pos) => ({
 });
 
 const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
-  const { t: _t } = useLanguage();
+  useLanguage();
   const [tab, setTab] = useState('overview');
 
   return (
@@ -1216,6 +1217,8 @@ const ContextDocumentsSection = memo(() => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(null); // null | { verified, documents, totalChars }
   const fileInputRef = React.useRef(null);
 
   const loadDocuments = useCallback(async () => {
@@ -1236,6 +1239,7 @@ const ContextDocumentsSection = memo(() => {
     if (!files || files.length === 0) return;
     setUploading(true);
     setError('');
+    setVerified(null); // Reset verification status on new upload
     try {
       for (const file of files) {
         await uploadPromptDocument(file);
@@ -1254,8 +1258,27 @@ const ContextDocumentsSection = memo(() => {
       setError('');
       await deletePromptDocument(docId);
       setDocuments((prev) => prev.filter((d) => d._id !== docId));
+      setVerified(null); // Reset verification status after change
     } catch (err) {
       setError(err.message);
+    }
+  }, []);
+
+  const handleVerify = useCallback(async () => {
+    setVerifying(true);
+    setError('');
+    setVerified(null);
+    try {
+      const result = await verifyPromptDocuments();
+      setVerified(result);
+      if (!result.verified && result.totalDocuments > 0) {
+        const invalid = result.documents.filter((d) => !d.hasText);
+        setError(`${invalid.length} document(en) bevatten geen leesbare tekst: ${invalid.map((d) => d.filename).join(', ')}`);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setVerifying(false);
     }
   }, []);
 
@@ -1376,6 +1399,59 @@ const ContextDocumentsSection = memo(() => {
           <div style={{ fontSize: 'max(8px, 0.38vw)', opacity: 0.3, textAlign: 'right' }}>
             {documents.length} document{documents.length !== 1 ? 'en' : ''} · totaal {documents.reduce((s, d) => s + (d.charCount || 0), 0).toLocaleString()} tekens
           </div>
+        </div>
+      )}
+
+      {/* Verify / Save button */}
+      {documents.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.3rem' }}>
+          <button
+            onClick={handleVerify}
+            disabled={verifying}
+            style={{
+              ...BTN,
+              width: '100%',
+              opacity: verifying ? 0.5 : 1,
+              borderColor: verified?.verified ? 'rgba(0,255,157,0.6)' : undefined,
+              color: verified?.verified ? '#00ff9d' : undefined,
+            }}
+            onMouseEnter={(e) => hover(e, true)}
+            onMouseLeave={(e) => hover(e, false)}
+          >
+            {verifying
+              ? '⏳ VERIFYING...'
+              : verified?.verified
+                ? '✓ DOCUMENTEN GEVERIFIEERD'
+                : '💾 SAVE & VERIFY DOCUMENTEN'}
+          </button>
+
+          {/* Verification result */}
+          {verified && verified.verified && (
+            <div style={{
+              padding: '0.5rem 0.7rem',
+              background: 'rgba(0,255,157,0.06)',
+              border: '1px solid rgba(0,255,157,0.2)',
+              borderRadius: '6px',
+              fontSize: 'max(9px, 0.45vw)',
+            }}>
+              <div style={{ color: '#00ff9d', fontWeight: 600, marginBottom: '0.3rem' }}>
+                ✓ Alle {verified.totalDocuments} document{verified.totalDocuments !== 1 ? 'en' : ''} succesvol geverifieerd
+              </div>
+              <div style={{ opacity: 0.5, fontSize: 'max(8px, 0.4vw)' }}>
+                {verified.totalChars?.toLocaleString()} tekens worden meegestuurd als AI kennisbank context
+              </div>
+              {verified.documents?.map((doc) => (
+                <div key={doc._id} style={{ marginTop: '0.3rem', padding: '0.3rem', background: 'rgba(0,255,157,0.03)', borderRadius: '4px' }}>
+                  <div style={{ color: C.gold, fontSize: 'max(8px, 0.4vw)', fontWeight: 600 }}>
+                    {doc.filename} — {doc.charCount?.toLocaleString()} tekens
+                  </div>
+                  <div style={{ opacity: 0.4, fontSize: 'max(7px, 0.35vw)', marginTop: '0.1rem', fontStyle: 'italic' }}>
+                    "{doc.preview}"
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

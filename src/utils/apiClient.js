@@ -439,6 +439,22 @@ export async function deletePromptDocument(docId) {
   return response.json();
 }
 
+/**
+ * Verify all uploaded context documents are valid and readable by the AI.
+ * @returns {Promise<{ success: boolean, verified: boolean, totalDocuments: number, totalChars: number, documents: Array }>}
+ */
+export async function verifyPromptDocuments() {
+  const response = await fetch(`${API_BASE}/admin/prompts/documents/verify`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Verification failed (${response.status})`);
+  }
+  return response.json();
+}
+
 // ── Questions (stored in MongoDB, editable by admin) ──
 
 /**

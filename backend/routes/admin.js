@@ -424,6 +424,44 @@ router.delete('/prompts/documents/:id', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// POST /api/admin/prompts/documents/verify — Verify all documents are readable
+// ─────────────────────────────────────────────────────────────
+
+router.post('/prompts/documents/verify', async (_req, res) => {
+  try {
+    const docs = await docsCollection()
+      .find({})
+      .sort({ uploadedAt: 1 })
+      .toArray();
+
+    const results = docs.map((doc) => ({
+      _id: doc._id,
+      filename: doc.filename,
+      charCount: doc.charCount || 0,
+      hasText: !!(doc.extractedText && doc.extractedText.trim().length > 0),
+      preview: doc.extractedText
+        ? doc.extractedText.substring(0, 200) + (doc.extractedText.length > 200 ? '…' : '')
+        : '',
+    }));
+
+    const allValid = results.every((r) => r.hasText);
+    const totalChars = results.reduce((s, r) => s + r.charCount, 0);
+
+    console.log(`[Admin] Document verification: ${results.length} docs, ${totalChars} chars, all valid: ${allValid}`);
+    res.json({
+      success: true,
+      verified: allValid,
+      totalDocuments: results.length,
+      totalChars,
+      documents: results,
+    });
+  } catch (err) {
+    console.error('[Admin] Document verify error:', err.message);
+    res.status(500).json({ error: 'Failed to verify documents' });
+  }
+});
+
 module.exports = router;
 
 // ─────────────────────────────────────────────────────────────

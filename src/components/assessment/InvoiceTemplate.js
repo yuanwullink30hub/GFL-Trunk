@@ -222,6 +222,10 @@ const InvoiceTemplate = memo(({ onSave }) => {
       doc.setFontSize(20); doc.setTextColor(100, 100, 100);
       doc.text('FACTUUR', pw - 14, 55, { align: 'right' });
 
+      // ─── Separator line: header → payment info ───
+      doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.3);
+      doc.line(14, 57, pw - 14, 57);
+
       // Payment info
       doc.setFontSize(8); doc.setTextColor(255, 255, 255);
       doc.text(`Rekening: ${invoice.bankAccount} (Ref: ${invoice.invoiceNumber})`, 14, 62);
@@ -230,6 +234,10 @@ const InvoiceTemplate = memo(({ onSave }) => {
       doc.setFontSize(10); doc.setTextColor(255, 255, 255);
       doc.text(`Nr: ${invoice.invoiceNumber}`, pw - 14, 62, { align: 'right' });
       doc.text(`Datum: ${liveDate}`, pw - 14, 67, { align: 'right' });
+
+      // ─── Separator line: payment info → table ───
+      doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.2);
+      doc.line(14, 71, pw - 14, 71);
     };
 
     // Page 1 header
@@ -263,6 +271,10 @@ const InvoiceTemplate = memo(({ onSave }) => {
     let finalY = doc.lastAutoTable?.finalY || 75;
     if (finalY > ph - 90) { doc.addPage(); doc.setFillColor(26, 26, 26); doc.rect(0, 0, pw, ph, 'F'); finalY = 20; }
 
+    // ─── Separator line: table → totals ───
+    doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.2);
+    doc.line(14, finalY + 1, pw - 14, finalY + 1);
+
     // Total rows
     doc.setDrawColor(60, 60, 60);
     if (btwIncluded) {
@@ -286,6 +298,11 @@ const InvoiceTemplate = memo(({ onSave }) => {
       doc.text(`€${total.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 10, { align: 'right' });
     }
 
+    // ─── Separator line: totals → footer ───
+    doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.2);
+    const sepY = btwIncluded ? finalY + 28 : finalY + 14;
+    doc.line(14, sepY, pw - 14, sepY);
+
     // Footer — Factuur voor
     const footerY = ph - 60;
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(150, 150, 150);
@@ -299,9 +316,13 @@ const InvoiceTemplate = memo(({ onSave }) => {
     doc.text('Ondertekend door:', pw - 14, footerY - 15, { align: 'right' });
     if (signatureData) doc.addImage(signatureData, 'PNG', pw - 54, footerY - 12, 40, 15);
 
+    // ─── Separator line: client/signature → spell ───
+    doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.15);
+    doc.line(14, ph - 40, pw - 14, ph - 40);
+
     // Spell
     doc.setTextColor(255, 255, 255); doc.setFontSize(10); doc.setFont('helvetica', 'italic');
-    doc.text('De luide stilte En de intense kalmte', 14, ph - 35);
+    doc.text('De luide stilte en de intense kalmte', 14, ph - 35);
     doc.text('Wijzen de euros van jouw Bank naar mijn Hart', 14, ph - 30);
     doc.setFontSize(9); doc.setTextColor(150, 150, 150);
     doc.text(invoice.notes || '', 14, ph - 20);
@@ -759,7 +780,7 @@ const InvoiceTemplate = memo(({ onSave }) => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                     {/* Spell + Notes */}
                     <div>
-                      <p style={{ fontSize: '0.6em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: 0 }}>De luide stilte En de intense kalmte</p>
+                      <p style={{ fontSize: '0.6em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: 0 }}>De luide stilte en de intense kalmte</p>
                       <p style={{ fontSize: '0.6em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: '0.1em 0 0' }}>Wijzen de euros van jouw Bank naar mijn Hart</p>
                       <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#888', margin: '0.7em 0 0' }}>{invoice.notes}</p>
                     </div>

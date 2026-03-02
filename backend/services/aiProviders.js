@@ -2,15 +2,15 @@
  * Garden For Life — Multi-Provider AI Service
  *
  * Unified interface for OpenAI (ChatGPT), Google Gemini, and xAI (Grok).
- * All three expose chat-completion-style APIs; this module normalises
- * the request/response format so callers don't need to know which provider
- * is in use.
+ * Gemini uses the official @google/genai SDK with "Thinking" mode.
+ * OpenAI / Grok use their REST APIs (OpenAI-compatible format).
  *
  * Usage:
  *   const { callAI, getAvailableProviders } = require('./aiProviders');
- *   const result = await callAI({ provider: 'openai', messages, ... });
+ *   const result = await callAI({ provider: 'gemini', messages, ... });
  */
 const config = require('../config');
+const { GoogleGenAI } = require('@google/genai');
 
 // ─────────────────────────────────────────────────────────────
 // Provider registry
@@ -29,12 +29,9 @@ const PROVIDERS = {
   },
 
   gemini: {
-    name: 'Google Gemini',
-    buildRequest: buildGeminiRequest,
-    parseResponse: parseGeminiResponse,
-    getUrl: (cfg, model) =>
-      `${cfg.baseUrl}/models/${model}:generateContent?key=${cfg.apiKey}`,
-    getHeaders: () => ({ 'Content-Type': 'application/json' }),
+    name: 'Google Gemini (SDK + Thinking)',
+    // Gemini now uses @google/genai SDK — no REST helpers needed
+    useSDK: true,
   },
 
   grok: {
@@ -82,6 +79,13 @@ async function callAI({
   }
 
   const selectedModel = model || providerConfig.defaultModel;
+
+  // ── Gemini: use @google/genai SDK with Thinking mode ──
+  if (providerDef.useSDK) {
+    return callGeminiSDK({ messages, model: selectedModel, maxTokens, temperature, providerConfig });
+  }
+
+  // ── OpenAI / Grok: REST API ──
   const url = providerDef.getUrl(providerConfig, selectedModel);
   const headers = providerDef.getHeaders(providerConfig);
   const body = providerDef.buildRequest({ messages, model: selectedModel, maxTokens, temperature });
@@ -144,40 +148,46 @@ function parseResponse(json) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Google Gemini — different API shape
+// Google Gemini — @google/genai SDK with Thinking mode
 // ─────────────────────────────────────────────────────────────
 
-function buildGeminiRequest({ messages, maxTokens, temperature }) {
-  // Gemini uses "contents" with "parts", and systemInstruction for system messages
+/**
+ * Call Gemini via the official SDK.
+ * Uses thinkingConfig to enable "Thinking" mode for deeper reasoning.
+ */
+async function callGeminiSDK({ messages, model, maxTokens, temperature, providerConfig }) {
+  const ai = new GoogleGenAI({ apiKey: providerConfig.apiKey });
+
+  // Extract system instruction from messages
   const systemMsg = messages.find(m => m.role === 'system');
   const userMsgs = messages.filter(m => m.role !== 'system');
 
-  const body = {
-    contents: userMsgs.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    })),
-    generationConfig: {
+  // Build contents array for the SDK
+  const contents = userMsgs.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }));
+
+  const response = await ai.models.generateContent({
+    model,
+    contents,
+    config: {
       maxOutputTokens: maxTokens,
       temperature,
+      thinkingConfig: {
+        thinkingLevel: 'high',
+      },
+      ...(systemMsg ? { systemInstruction: systemMsg.content } : {}),
     },
-  };
+  });
 
-  if (systemMsg) {
-    body.systemInstruction = {
-      parts: [{ text: systemMsg.content }],
-    };
-  }
+  const text = response.text || '';
 
-  return body;
-}
-
-function parseGeminiResponse(json) {
-  const text = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  const usage = json.usageMetadata || {};
   return {
     analysis: text,
-    promptTokens: usage.promptTokenCount || 0,
-    completionTokens: usage.candidatesTokenCount || 0,
+    model,
+    provider: 'gemini',
+    promptTokens: response.usageMetadata?.promptTokenCount || 0,
+    completionTokens: response.usageMetadata?.candidatesTokenCount || 0,
   };
 }

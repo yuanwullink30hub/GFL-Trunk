@@ -33,7 +33,7 @@ module.exports = {
     gemini: {
       apiKey: process.env.GEMINI_API_KEY || '',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: 'gemini-2.0-flash',
+      defaultModel: 'gemini-2.5-flash-preview-05-20',
     },
     grok: {
       apiKey: process.env.GROK_API_KEY || '',

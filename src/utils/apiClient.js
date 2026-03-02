@@ -478,6 +478,40 @@ export async function updateQuestion(questionId, data) {
 }
 
 /**
+ * Export questions as Word document (.docx) — admin only.
+ * Returns a Blob for download.
+ */
+export async function exportQuestionsDocx() {
+  const response = await fetch(`${API_BASE}/questions/export/docx`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `DOCX export failed (${response.status})`);
+  }
+  return response.blob();
+}
+
+/**
+ * Import questions from a Word document (.docx) — admin only.
+ * @param {File} file — .docx file
+ */
+export async function importQuestionsDocx(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await fetch(`${API_BASE}/questions/import/docx`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: formData,
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `DOCX import failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
  * Update an entire layer (admin only).
  * @param {number} layerIndex — 0-4
  * @param {Object} data — layer fields to update

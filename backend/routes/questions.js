@@ -6,15 +6,23 @@
  *
  * GET    /api/questions              — Get all questions (public, no auth)
  * GET    /api/questions/export       — Export as clean JSON (admin)
+ * GET    /api/questions/export/docx  — Export as Word document (admin)
  * POST   /api/questions/seed         — Seed default questions into DB (admin only)
  * POST   /api/questions/seed?force=1 — Wipe + re-seed from backend code (admin)
  * POST   /api/questions/import       — Bulk import full JSON payload (admin)
+ * POST   /api/questions/import/docx  — Import from Word document (admin)
  * PUT    /api/questions/layer/:i     — Update a full layer (admin only)
  * PUT    /api/questions/:id          — Update a single question (admin only)
  */
 const { Router } = require('express');
 const { collections } = require('../db');
 const { authRequired, adminRequired } = require('../middleware/auth');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell,
+        WidthType, BorderStyle, AlignmentType, ShadingType } = require('docx');
+const mammoth = require('mammoth');
+const multer = require('multer');
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const router = Router();
 
@@ -252,6 +260,376 @@ router.put('/:questionId', authRequired, adminRequired, async (req, res) => {
   } catch (err) {
     console.error('[Questions] Question update error:', err.message);
     res.status(500).json({ error: 'Failed to update question' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/questions/export/docx — Admin: export as Word document
+// Generates a styled .docx with all layers and questions
+// ─────────────────────────────────────────────────────────────
+
+router.get('/export/docx', authRequired, adminRequired, async (_req, res) => {
+  try {
+    const layers = await collections.questions()
+      .find({})
+      .sort({ layerIndex: 1 })
+      .toArray();
+
+    if (layers.length === 0) {
+      return res.status(404).json({ error: 'No questions found. Seed first.' });
+    }
+
+    const children = [];
+
+    // Title page
+    children.push(
+      new Paragraph({
+        text: 'Garden For Life — Assessment Vragen',
+        heading: HeadingLevel.TITLE,
+        spacing: { after: 200 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: `Geëxporteerd: ${new Date().toLocaleString('nl-NL')}`, italics: true, size: 20, color: '888888' }),
+        ],
+        spacing: { after: 400 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: 'Dit document bevat alle assessment vragen. Bewerk de teksten en importeer opnieuw via het admin dashboard.', size: 22 }),
+        ],
+        spacing: { after: 200 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: 'FORMAT REGELS:', bold: true, size: 22 }),
+        ],
+        spacing: { after: 100 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: '• Verander NIET de structuur markering teksten: [LAAG ...], [VRAAG ...], [A], [B], etc.', size: 20 }),
+        ],
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: '• U mag de vraagteksten en antwoordteksten vrij aanpassen.', size: 20 }),
+        ],
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({ text: '• Het domein (bijv. O, C, E, A, N) mag worden gewijzigd.', size: 20 }),
+        ],
+        spacing: { after: 400 },
+      })
+    );
+
+    // Each layer
+    for (const layer of layers) {
+      // Layer header
+      children.push(
+        new Paragraph({
+          text: `[LAAG ${layer.layerIndex}] ${layer.name} — ${layer.title}`,
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 400, after: 100 },
+          shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'FFF3D4' },
+        })
+      );
+
+      if (layer.subtitle) {
+        children.push(
+          new Paragraph({
+            children: [new TextRun({ text: layer.subtitle, italics: true, size: 20, color: '666666' })],
+            spacing: { after: 200 },
+          })
+        );
+      }
+
+      // Each question
+      for (const q of layer.questions) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: `[VRAAG ${q.id}]`, bold: true, size: 24, color: 'B8860B' }),
+              new TextRun({ text: `  Domein: ${q.domain}`, size: 20, color: '888888' }),
+            ],
+            spacing: { before: 300, after: 100 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: q.text, size: 22 })],
+            spacing: { after: 150 },
+          })
+        );
+
+        // Answers as a table
+        const answerLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
+        const rows = q.answers.map((a, i) => {
+          return new TableRow({
+            children: [
+              new TableCell({
+                width: { size: 800, type: WidthType.DXA },
+                children: [new Paragraph({
+                  children: [new TextRun({ text: `[${answerLetters[i]}]`, bold: true, size: 20 })],
+                  alignment: AlignmentType.CENTER,
+                })],
+                shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'F5F5F5' },
+                borders: { top: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' },
+                           bottom: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' },
+                           left: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' },
+                           right: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' } },
+              }),
+              new TableCell({
+                width: { size: 1500, type: WidthType.DXA },
+                children: [new Paragraph({
+                  children: [new TextRun({ text: a.archetype || '', size: 18, italics: true, color: '999999' })],
+                })],
+                borders: { top: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' },
+                           bottom: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' },
+                           left: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' },
+                           right: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' } },
+              }),
+              new TableCell({
+                children: [new Paragraph({
+                  children: [new TextRun({ text: a.text, size: 20 })],
+                })],
+                borders: { top: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' },
+                           bottom: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' },
+                           left: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' },
+                           right: { style: BorderStyle.SINGLE, size: 1, color: 'DDDDDD' } },
+              }),
+            ],
+          });
+        });
+
+        children.push(
+          new Table({
+            rows,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+          })
+        );
+
+        children.push(new Paragraph({ text: '', spacing: { after: 100 } }));
+      }
+    }
+
+    const doc = new Document({
+      styles: {
+        default: {
+          document: {
+            run: { font: 'Calibri', size: 22 },
+          },
+        },
+      },
+      sections: [{ children }],
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="gfl-vragen-${Date.now()}.docx"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('[Questions] DOCX export error:', err.message);
+    res.status(500).json({ error: 'Failed to export Word document' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/questions/import/docx — Admin: import from Word document
+// Parses .docx and extracts questions using [LAAG], [VRAAG], [A-F] markers
+// ─────────────────────────────────────────────────────────────
+
+router.post('/import/docx', authRequired, adminRequired, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded. Send a .docx file as "file" field.' });
+    }
+
+    // Extract raw text from Word doc
+    const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+    const text = result.value;
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+    // Parse structure using markers
+    const layers = [];
+    let currentLayer = null;
+    let currentQuestion = null;
+    let currentAnswerLetter = null;
+
+    const laagRegex = /^\[LAAG\s+(\d+)\]\s*(.*)$/i;
+    const vraagRegex = /^\[VRAAG\s+(\d+)\]\s*(.*)$/i;
+    const domeinRegex = /Domein:\s*(\w+)/i;
+    const answerRegex = /^\[([A-F])\]\s*(.*)$/i;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Check for layer marker
+      const laagMatch = line.match(laagRegex);
+      if (laagMatch) {
+        if (currentQuestion && currentLayer) {
+          currentLayer.questions.push(currentQuestion);
+        }
+        currentQuestion = null;
+
+        const layerIndex = parseInt(laagMatch[1]);
+        const rest = laagMatch[2];
+        const parts = rest.split('—').map(s => s.trim());
+
+        currentLayer = {
+          layerIndex,
+          name: parts[0] || `Layer ${layerIndex}`,
+          title: parts[1] || '',
+          questions: [],
+        };
+        layers.push(currentLayer);
+        continue;
+      }
+
+      // Check for question marker
+      const vraagMatch = line.match(vraagRegex);
+      if (vraagMatch) {
+        if (currentQuestion && currentLayer) {
+          currentLayer.questions.push(currentQuestion);
+        }
+
+        const qId = parseInt(vraagMatch[1]);
+        const rest = vraagMatch[2];
+        const domMatch = rest.match(domeinRegex);
+
+        currentQuestion = {
+          id: qId,
+          text: '',
+          domain: domMatch ? domMatch[1] : '',
+          answers: [],
+        };
+        currentAnswerLetter = null;
+        continue;
+      }
+
+      // Check for answer marker
+      const answerMatch = line.match(answerRegex);
+      if (answerMatch && currentQuestion) {
+        currentAnswerLetter = answerMatch[1];
+        const answerText = answerMatch[2];
+        const letterIndex = currentAnswerLetter.charCodeAt(0) - 65;
+
+        // The archetype might be on the same line or in a table cell
+        currentQuestion.answers[letterIndex] = {
+          id: `${currentQuestion.id}${currentAnswerLetter.toLowerCase()}`,
+          text: answerText,
+          value: letterIndex + 1,
+          archetype: '', // Will try to recover from existing data
+        };
+        continue;
+      }
+
+      // If we're in a question but haven't hit answers yet, it's question text
+      if (currentQuestion && currentQuestion.answers.length === 0 && !currentAnswerLetter) {
+        // Skip lines that are just archetype names (typically from table parsing)
+        if (line.length > 2 && !domeinRegex.test(line)) {
+          currentQuestion.text = currentQuestion.text
+            ? currentQuestion.text + ' ' + line
+            : line;
+        }
+        continue;
+      }
+
+      // If we're after an answer marker, this might be continuation text or archetype
+      if (currentQuestion && currentAnswerLetter) {
+        const letterIndex = currentAnswerLetter.charCodeAt(0) - 65;
+        const answer = currentQuestion.answers[letterIndex];
+        if (answer) {
+          // If the answer text is empty, this line is probably the archetype then the answer
+          if (!answer.text && line.length > 0) {
+            answer.text = line;
+          } else if (answer.text && !answer.archetype && line.length < 30) {
+            // Short text after answer is likely archetype
+            answer.archetype = line;
+          }
+        }
+      }
+    }
+
+    // Push last question
+    if (currentQuestion && currentLayer) {
+      currentLayer.questions.push(currentQuestion);
+    }
+
+    if (layers.length === 0) {
+      return res.status(400).json({
+        error: 'Geen [LAAG ...] markers gevonden in dit document. Gebruik het juiste export-format.',
+      });
+    }
+
+    // Try to recover archetypes from existing DB data
+    const existingLayers = await collections.questions().find({}).sort({ layerIndex: 1 }).toArray();
+    const archetypeMap = {};
+    for (const el of existingLayers) {
+      for (const eq of el.questions) {
+        for (const ea of eq.answers) {
+          archetypeMap[`${eq.id}_${ea.id ? ea.id.slice(-1) : ''}`] = ea.archetype;
+        }
+      }
+    }
+
+    // Fill in archetypes and validate
+    let totalQuestions = 0;
+    for (const layer of layers) {
+      // Recover layer metadata from existing
+      const existing = existingLayers.find(l => l.layerIndex === layer.layerIndex);
+      if (existing) {
+        layer.color = layer.color || existing.color;
+        layer.subtitle = layer.subtitle || existing.subtitle;
+        layer.description = layer.description || existing.description;
+        layer.fundamental = layer.fundamental || existing.fundamental;
+      }
+
+      for (const q of layer.questions) {
+        // Fill missing archetypes
+        for (let i = 0; i < q.answers.length; i++) {
+          const a = q.answers[i];
+          if (!a.archetype) {
+            const letter = String.fromCharCode(97 + i); // a-f
+            a.archetype = archetypeMap[`${q.id}_${letter}`] || '';
+          }
+        }
+
+        // Ensure exactly 6 answers
+        while (q.answers.length < 6) {
+          const idx = q.answers.length;
+          const letter = String.fromCharCode(97 + idx);
+          q.answers.push({
+            id: `${q.id}${letter}`,
+            text: '',
+            value: idx + 1,
+            archetype: archetypeMap[`${q.id}_${letter}`] || '',
+          });
+        }
+
+        totalQuestions++;
+      }
+    }
+
+    // Replace in database
+    await collections.questions().deleteMany({});
+    const docs = layers.map((layer) => ({
+      ...layer,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      updatedBy: req.user.userId,
+    }));
+    await collections.questions().insertMany(docs);
+
+    console.log(`[Questions] Word import: ${layers.length} layers, ${totalQuestions} questions`);
+    res.json({
+      success: true,
+      layersImported: layers.length,
+      questionsImported: totalQuestions,
+    });
+  } catch (err) {
+    console.error('[Questions] DOCX import error:', err.message);
+    res.status(500).json({ error: `Failed to import Word document: ${err.message}` });
   }
 });
 

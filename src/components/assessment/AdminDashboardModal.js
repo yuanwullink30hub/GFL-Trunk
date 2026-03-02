@@ -16,6 +16,8 @@ import {
   updateQuestion,
   exportQuestions,
   importQuestions,
+  exportQuestionsDocx,
+  importQuestionsDocx,
   getApiStatus,
   getProviders,
 } from '../../utils/apiClient';
@@ -1187,6 +1189,8 @@ const QuestionsTab = memo(() => {
   const [showImport, setShowImport] = useState(false);
   const [importJson, setImportJson] = useState('');
   const [importing, setImporting] = useState(false);
+  const [exportingDocx, setExportingDocx] = useState(false);
+  const [importingDocx, setImportingDocx] = useState(false);
 
   const load = useCallback(() => {
     setError('');
@@ -1258,6 +1262,40 @@ const QuestionsTab = memo(() => {
       setImporting(false);
     }
   }, [importJson, load]);
+
+  const handleExportDocx = useCallback(async () => {
+    setExportingDocx(true);
+    setError('');
+    try {
+      const blob = await exportQuestionsDocx();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gfl-vragen-${Date.now()}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setExportingDocx(false);
+    }
+  }, []);
+
+  const handleImportDocx = useCallback(async (file) => {
+    if (!file) return;
+    if (!window.confirm('Dit vervangt ALLE bestaande vragen met het Word-document. Doorgaan?')) return;
+    setImportingDocx(true);
+    setError('');
+    try {
+      const result = await importQuestionsDocx(file);
+      load();
+      window.alert(`✓ Geïmporteerd: ${result.layersImported} lagen, ${result.questionsImported} vragen`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setImportingDocx(false);
+    }
+  }, [load]);
 
   const startEdit = useCallback((layerIndex, question) => {
     setEditingQuestion({
@@ -1427,13 +1465,32 @@ const QuestionsTab = memo(() => {
 
       {/* Toolbar: export / import / force re-seed */}
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+        <button onClick={handleExportDocx} disabled={exportingDocx}
+          style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)',
+            borderColor: 'rgba(188, 19, 254, 0.5)', opacity: exportingDocx ? 0.4 : 1 }}
+          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
+          {exportingDocx ? 'EXPORTEREN...' : '📄 EXPORT WORD'}
+        </button>
+        <label style={{ display: 'inline-flex' }}>
+          <input type="file" accept=".docx" style={{ display: 'none' }}
+            onChange={(e) => { handleImportDocx(e.target.files[0]); e.target.value = ''; }}
+            disabled={importingDocx} />
+          <span style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)',
+            borderColor: 'rgba(188, 19, 254, 0.5)', opacity: importingDocx ? 0.4 : 1,
+            cursor: importingDocx ? 'wait' : 'pointer', display: 'inline-block' }}
+            onMouseEnter={(e) => { e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
+            onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
+            {importingDocx ? 'IMPORTEREN...' : '📄 IMPORT WORD'}
+          </span>
+        </label>
+        <div style={{ borderLeft: '1px solid rgba(255,174,0,0.15)', margin: '0 0.1rem' }} />
         <button onClick={handleExport}
-          style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)' }}
+          style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)', opacity: 0.6 }}
           onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
           EXPORT JSON
         </button>
         <button onClick={() => setShowImport(true)}
-          style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)' }}
+          style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)', opacity: 0.6 }}
           onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
           IMPORT JSON
         </button>

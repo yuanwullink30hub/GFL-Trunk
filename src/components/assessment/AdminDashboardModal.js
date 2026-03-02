@@ -269,6 +269,24 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
       {tab === 'feedback' && <FeedbackTab />}
       {tab === 'contact' && <ContactTab />}
         </div>{/* end scrollable content */}
+
+        {/* Footer — return button */}
+        <div style={{
+          display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+          padding: '0.5rem 1rem',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          backgroundColor: 'rgba(42, 10, 56, 0.35)',
+          position: 'relative', zIndex: 2,
+        }}>
+          <button onClick={onClose} style={{
+            ...BTN, width: 'auto', padding: '0.35rem 1rem',
+            fontSize: 'max(9px, 0.48vw)',
+          }}
+            onMouseEnter={(e) => hover(e, true)}
+            onMouseLeave={(e) => hover(e, false)}>
+            ← Terug
+          </button>
+        </div>
       </div>{/* end inner panel */}
     </div>/* end outer shell */
   );

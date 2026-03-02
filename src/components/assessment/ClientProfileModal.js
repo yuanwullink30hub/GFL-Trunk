@@ -869,6 +869,7 @@ const InboxTab = memo(() => {
   });
 
   const tc = CARD_COLORS.gold;
+  const pc = CARD_COLORS.purple;
 
   const markRead = (id) => {
     const updated = messages.map((m) => m.id === id ? { ...m, read: true } : m);
@@ -952,6 +953,7 @@ const ContactenTab = memo(() => {
   const [form, setForm] = useState({ naam: '', email: '', notitie: '' });
 
   const tc = CARD_COLORS.gold;
+  const pc = CARD_COLORS.purple;
 
   const addContact = () => {
     if (!form.naam.trim()) return;
@@ -1058,6 +1060,7 @@ const AgendaTab = memo(() => {
   const [form, setForm] = useState({ titel: '', datum: '', tijd: '', notitie: '' });
 
   const tc = CARD_COLORS.gold;
+  const pc = CARD_COLORS.purple;
 
   const addEvent = () => {
     if (!form.titel.trim() || !form.datum) return;

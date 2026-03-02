@@ -24,12 +24,18 @@ import {
   importQuestionsDocx,
   getApiStatus,
   getProviders,
+  saveFormDocument,
+  getFormDocuments,
+  deleteFormDocument,
+  sendFormEmail,
+  getEmailStatus,
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
   hover, C, FONT,
 } from './dashboardStyles';
 import { BRANDS } from '../../pages/GeneralBrandPage/brandData';
+import InvoiceTemplate from './InvoiceTemplate';
 
 // ═══════════════════════════════════════════════════════════
 // DashboardCard — inline-style version of HoloAuth's HoloCard
@@ -243,6 +249,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
           { key: 'assessments', label: 'Assessments' },
           { key: 'questions', label: 'Vragen' },
           { key: 'prompts', label: 'Prompts' },
+          { key: 'formulieren', label: 'Formulieren' },
           { key: 'feedback', label: 'Feedback' },
           { key: 'contact', label: 'Contact' },
         ].map(({ key, label }) => (
@@ -260,6 +267,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
       {tab === 'assessments' && <AssessmentsTab />}
       {tab === 'questions' && <QuestionsTab />}
       {tab === 'prompts' && <PromptsTab />}
+      {tab === 'formulieren' && <FormulierenTab />}
       {tab === 'feedback' && <FeedbackTab />}
       {tab === 'contact' && <ContactTab />}
         </div>{/* end scrollable content */}
@@ -1844,6 +1852,508 @@ const QuestionsTab = memo(() => {
     </div>
   );
 });
+
+// ═══════════════════════════════════════════════════════════
+// Formulieren Tab — document templates (invoices, inquiries, requests)
+// ═══════════════════════════════════════════════════════════
+
+const FORM_TEMPLATES = [
+  { id: 'factuur', label: 'Factuur', icon: '🧾', type: 'excel', desc: 'Factuur template voor cliënten en zakelijke partners', status: 'gereed' },
+  { id: 'intake', label: 'Intake Formulier', icon: '📋', type: 'word', desc: 'Standaard intake formulier voor nieuwe cliënten', status: 'gereed' },
+  { id: 'offerte', label: 'Offerte', icon: '📄', type: 'word', desc: 'Offerte template voor diensten en pakketten', status: 'concept' },
+  { id: 'verzoek', label: 'Verzoek Indienen', icon: '📨', type: 'word', desc: 'Intern verzoekformulier voor aanvragen en goedkeuringen', status: 'gereed' },
+  { id: 'rapportage', label: 'Rapportage', icon: '📊', type: 'pdf', desc: 'Rapportage template voor sessie- en voortgangsverslagen', status: 'concept' },
+  { id: 'overeenkomst', label: 'Overeenkomst', icon: '📝', type: 'word', desc: 'Contract- en overeenkomst template voor samenwerking', status: 'gereed' },
+  { id: 'brief', label: 'Zakelijke Brief', icon: '✉️', type: 'word', desc: 'Standaard brieftemplate met Garden For Life huisstijl', status: 'concept' },
+  { id: 'evaluatie', label: 'Evaluatie', icon: '🔍', type: 'word', desc: 'Evaluatieformulier voor coaching trajecten', status: 'concept' },
+];
+
+const TYPE_COLORS = {
+  word: { bg: 'rgba(37, 99, 235, 0.12)', text: '#60a5fa', label: 'WORD' },
+  pdf: { bg: 'rgba(239, 68, 68, 0.12)', text: '#f87171', label: 'PDF' },
+  excel: { bg: 'rgba(34, 197, 94, 0.12)', text: '#4ade80', label: 'EXCEL' },
+};
+
+const FormulierenTab = memo(() => {
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [editorContent, setEditorContent] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [recipientName, setRecipientName] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [savedForms, setSavedForms] = useState([]);
+  const [savingState, setSavingState] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const [sendingState, setSendingState] = useState(null); // null | 'sending' | 'sent' | 'error'
+  const [emailConfigured, setEmailConfigured] = useState(null); // null | true | false
+  const [showHistory, setShowHistory] = useState(false);
+  const [sendError, setSendError] = useState('');
+  const tc = CARD_COLORS.gold;
+
+  // Load saved forms + email status on mount
+  useEffect(() => {
+    getFormDocuments().then(res => setSavedForms(res.forms || [])).catch(() => {});
+    getEmailStatus().then(res => setEmailConfigured(res.configured)).catch(() => setEmailConfigured(false));
+  }, []);
+
+  const gereedeCount = FORM_TEMPLATES.filter(t => t.status === 'gereed').length;
+  const conceptCount = FORM_TEMPLATES.filter(t => t.status === 'concept').length;
+
+  // When selecting a template, reset editor
+  const handleSelectTemplate = (tmplId) => {
+    if (selectedTemplate === tmplId) {
+      setSelectedTemplate(null);
+      return;
+    }
+    setSelectedTemplate(tmplId);
+    setEditorContent('');
+    setEmailBody('');
+    setRecipientEmail('');
+    setRecipientName('');
+    setEmailSubject('');
+    setSavingState(null);
+    setSendingState(null);
+    setSendError('');
+  };
+
+  // Save document to DB
+  const handleSave = async () => {
+    const tmpl = FORM_TEMPLATES.find(t => t.id === selectedTemplate);
+    if (!tmpl || !editorContent.trim()) return;
+    setSavingState('saving');
+    try {
+      const saved = await saveFormDocument({
+        templateId: tmpl.id,
+        templateLabel: tmpl.label,
+        type: tmpl.type,
+        content: editorContent,
+        recipientEmail: recipientEmail || null,
+        recipientName: recipientName || null,
+        status: 'concept',
+      });
+      setSavedForms(prev => [saved, ...prev]);
+      setSavingState('saved');
+      setTimeout(() => setSavingState(null), 2000);
+    } catch (err) {
+      console.error('Save error:', err);
+      setSavingState('error');
+      setTimeout(() => setSavingState(null), 3000);
+    }
+  };
+
+  // Download as text file
+  const handleDownload = () => {
+    const tmpl = FORM_TEMPLATES.find(t => t.id === selectedTemplate);
+    if (!tmpl || !editorContent.trim()) return;
+    const ext = tmpl.type === 'excel' ? 'txt' : tmpl.type === 'pdf' ? 'txt' : 'txt';
+    const blob = new Blob([editorContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${tmpl.label}.${ext}`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Send via email (save first, then send)
+  const handleSend = async () => {
+    const tmpl = FORM_TEMPLATES.find(t => t.id === selectedTemplate);
+    if (!tmpl || !emailBody.trim()) return;
+    if (!recipientEmail.trim()) { setSendError('Vul een e-mailadres in'); return; }
+    setSendingState('sending');
+    setSendError('');
+    try {
+      // Save first
+      const saved = await saveFormDocument({
+        templateId: tmpl.id,
+        templateLabel: tmpl.label,
+        type: tmpl.type,
+        content: emailBody,
+        recipientEmail,
+        recipientName: recipientName || null,
+        status: 'concept',
+      });
+      // Then send
+      await sendFormEmail(saved.id, {
+        recipientEmail,
+        subject: emailSubject || undefined,
+      });
+      setSavedForms(prev => [{ ...saved, status: 'verstuurd', sentAt: new Date().toISOString(), sentTo: recipientEmail }, ...prev]);
+      setSendingState('sent');
+      setTimeout(() => setSendingState(null), 3000);
+    } catch (err) {
+      console.error('Send error:', err);
+      setSendError(err.message || 'Versturen mislukt');
+      setSendingState('error');
+      setTimeout(() => setSendingState(null), 4000);
+    }
+  };
+
+  // Delete a saved form
+  const handleDeleteForm = async (id) => {
+    try {
+      await deleteFormDocument(id);
+      setSavedForms(prev => prev.filter(f => f._id !== id));
+    } catch (err) { console.error('Delete error:', err); }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {/* Email status banner */}
+      {emailConfigured === false && (
+        <div style={{
+          padding: '0.5rem 0.8rem', borderRadius: '0.2rem',
+          backgroundColor: 'rgba(250, 204, 21, 0.08)',
+          borderLeft: '2px solid #facc15',
+          fontSize: 'max(8px, 0.42vw)', color: '#facc15',
+        }}>
+          ⚠ E-mail niet geconfigureerd — stel SMTP_USER en SMTP_PASS in via Render omgevingsvariabelen om e-mails te versturen
+        </div>
+      )}
+      {emailConfigured === true && (
+        <div style={{
+          padding: '0.5rem 0.8rem', borderRadius: '0.2rem',
+          backgroundColor: 'rgba(34, 197, 94, 0.05)',
+          borderLeft: '2px solid #4ade80',
+          fontSize: 'max(8px, 0.42vw)', color: '#4ade80',
+        }}>
+          ✓ E-mail geconfigureerd — klaar om documenten te versturen
+        </div>
+      )}
+
+      {/* Stats bar */}
+      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{
+          flex: 1, minWidth: '120px', padding: '0.6rem 0.8rem',
+          backgroundColor: 'rgba(255, 174, 0, 0.04)', borderRadius: '0.3rem',
+          borderLeft: `2px solid ${C.gold}`,
+        }}>
+          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Totaal Templates</div>
+          <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold }}>{FORM_TEMPLATES.length}</div>
+        </div>
+        <div style={{
+          flex: 1, minWidth: '120px', padding: '0.6rem 0.8rem',
+          backgroundColor: 'rgba(34, 197, 94, 0.04)', borderRadius: '0.3rem',
+          borderLeft: '2px solid #4ade80',
+        }}>
+          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Gereed</div>
+          <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: '#4ade80' }}>{gereedeCount}</div>
+        </div>
+        <div style={{
+          flex: 1, minWidth: '120px', padding: '0.6rem 0.8rem',
+          backgroundColor: 'rgba(188, 19, 254, 0.04)', borderRadius: '0.3rem',
+          borderLeft: `2px solid ${C.purple}`,
+        }}>
+          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Concept</div>
+          <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.purple }}>{conceptCount}</div>
+        </div>
+        <div style={{
+          flex: 1, minWidth: '120px', padding: '0.6rem 0.8rem',
+          backgroundColor: 'rgba(96, 165, 250, 0.04)', borderRadius: '0.3rem',
+          borderLeft: '2px solid #60a5fa',
+          cursor: 'pointer',
+        }} onClick={() => setShowHistory(!showHistory)}>
+          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Verstuurd / Opgeslagen</div>
+          <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: '#60a5fa' }}>{savedForms.length}</div>
+        </div>
+      </div>
+
+      {/* Template grid */}
+      <DashboardCard title="Document Templates" color="gold">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(220px, 100%), 1fr))',
+          gap: '0.6rem',
+        }}>
+          {FORM_TEMPLATES.map((tmpl) => {
+            const typeStyle = TYPE_COLORS[tmpl.type] || TYPE_COLORS.word;
+            const isSelected = selectedTemplate === tmpl.id;
+            return (
+              <button
+                key={tmpl.id}
+                onClick={() => handleSelectTemplate(tmpl.id)}
+                style={{
+                  textAlign: 'left', cursor: 'pointer', border: 'none',
+                  padding: '0.7rem 0.8rem',
+                  backgroundColor: isSelected ? 'rgba(255, 174, 0, 0.08)' : tc.cardBg,
+                  borderRadius: '0.3rem',
+                  borderLeft: `2px solid ${isSelected ? C.gold : tc.border}`,
+                  transition: 'all 0.2s',
+                  display: 'flex', flexDirection: 'column', gap: '0.35rem',
+                  color: C.text,
+                }}
+                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255, 174, 0, 0.05)'; }}
+                onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = tc.cardBg; }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: 'max(14px, 0.75vw)' }}>{tmpl.icon}</span>
+                    <span style={{ fontWeight: 'bold', fontSize: 'max(10px, 0.55vw)', color: C.gold }}>{tmpl.label}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <span style={{
+                      fontSize: 'max(7px, 0.35vw)', padding: '0.1rem 0.3rem',
+                      borderRadius: '0.1rem', backgroundColor: typeStyle.bg,
+                      color: typeStyle.text, fontWeight: 'bold', textTransform: 'uppercase',
+                    }}>{typeStyle.label}</span>
+                    <span style={{
+                      fontSize: 'max(7px, 0.35vw)', padding: '0.1rem 0.3rem',
+                      borderRadius: '0.1rem',
+                      backgroundColor: tmpl.status === 'gereed' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(250, 204, 21, 0.12)',
+                      color: tmpl.status === 'gereed' ? '#4ade80' : '#facc15',
+                      fontWeight: 'bold', textTransform: 'uppercase',
+                    }}>{tmpl.status}</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText, lineHeight: 1.5 }}>
+                  {tmpl.desc}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </DashboardCard>
+
+      {/* Editor panel — shows when a template is selected */}
+      {selectedTemplate && (() => {
+        const tmpl = FORM_TEMPLATES.find(t => t.id === selectedTemplate);
+        if (!tmpl) return null;
+        const typeStyle = TYPE_COLORS[tmpl.type] || TYPE_COLORS.word;
+
+        // ── Factuur uses dedicated InvoiceTemplate component ──
+        if (selectedTemplate === 'factuur') {
+          return (
+            <DashboardCard title={`${tmpl.icon} ${tmpl.label}`} color="gold">
+              <InvoiceTemplate onSave={async (data) => {
+                setSavingState('saving');
+                try {
+                  const saved = await saveFormDocument(data);
+                  setSavedForms(prev => [saved, ...prev]);
+                  setSavingState('saved');
+                  setTimeout(() => setSavingState(null), 2000);
+                } catch (err) {
+                  console.error('Save error:', err);
+                  setSavingState('error');
+                  setTimeout(() => setSavingState(null), 3000);
+                }
+              }} />
+            </DashboardCard>
+          );
+        }
+
+        // ── All other templates use the generic textarea editor ──
+        return (
+          <>
+          <DashboardCard title={`${tmpl.icon} ${tmpl.label} — Template`} color="gold">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              {/* Toolbar */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0.4rem 0.6rem',
+                backgroundColor: 'rgba(255, 174, 0, 0.04)',
+                borderRadius: '0.2rem',
+                borderBottom: `1px solid ${tc.border}`,
+                flexWrap: 'wrap', gap: '0.3rem',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{
+                    fontSize: 'max(7px, 0.35vw)', padding: '0.1rem 0.3rem',
+                    borderRadius: '0.1rem', backgroundColor: typeStyle.bg,
+                    color: typeStyle.text, fontWeight: 'bold',
+                  }}>{typeStyle.label} TEMPLATE</span>
+                  <span style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText }}>
+                    {tmpl.label}.{tmpl.type === 'excel' ? 'xlsx' : tmpl.type === 'word' ? 'docx' : 'pdf'}
+                  </span>
+                  {savingState === 'saved' && <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80' }}>✓ Opgeslagen</span>}
+                  {savingState === 'error' && <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#f87171' }}>✗ Opslaan mislukt</span>}
+                </div>
+                <div style={{ display: 'flex', gap: '0.3rem' }}>
+                  <button onClick={handleSave} disabled={savingState === 'saving' || !editorContent.trim()} style={{
+                    padding: '0.2rem 0.5rem', fontSize: 'max(8px, 0.4vw)',
+                    backgroundColor: 'rgba(255, 174, 0, 0.08)',
+                    color: C.gold, border: '1px solid rgba(255, 174, 0, 0.15)',
+                    borderRadius: '0.15rem', cursor: savingState === 'saving' || !editorContent.trim() ? 'not-allowed' : 'pointer',
+                    textTransform: 'uppercase', fontWeight: 'bold', transition: 'all 0.2s',
+                    opacity: !editorContent.trim() ? 0.4 : 1,
+                  }}>{savingState === 'saving' ? 'BEZIG...' : 'OPSLAAN'}</button>
+                  <button onClick={handleDownload} disabled={!editorContent.trim()} style={{
+                    padding: '0.2rem 0.5rem', fontSize: 'max(8px, 0.4vw)',
+                    backgroundColor: 'rgba(255, 174, 0, 0.08)',
+                    color: C.gold, border: '1px solid rgba(255, 174, 0, 0.15)',
+                    borderRadius: '0.15rem', cursor: !editorContent.trim() ? 'not-allowed' : 'pointer',
+                    textTransform: 'uppercase', fontWeight: 'bold', transition: 'all 0.2s',
+                    opacity: !editorContent.trim() ? 0.4 : 1,
+                  }}>DOWNLOADEN</button>
+                </div>
+              </div>
+
+              {/* Template content area */}
+              <textarea
+                value={editorContent}
+                onChange={(e) => setEditorContent(e.target.value)}
+                placeholder={`Template-inhoud voor "${tmpl.label}"...\n\nImporteer of bewerk hier het documentsjabloon. Dit is de template — niet de e-mailtekst.`}
+                style={{
+                  width: '100%', minHeight: '250px', padding: '0.8rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  color: C.text, border: `1px solid ${tc.border}`,
+                  borderRadius: '0.2rem', outline: 'none',
+                  fontFamily: FONT, fontSize: 'max(10px, 0.5vw)',
+                  lineHeight: 1.7, resize: 'vertical',
+                }}
+              />
+            </div>
+          </DashboardCard>
+
+          {/* E-mail versturen — below the template editor */}
+          <DashboardCard title={`✉ E-mail Versturen — ${tmpl.label}`} color="gold">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              {/* Recipient fields */}
+              <div style={{
+                display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+                gap: '0.4rem',
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                  <label style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase' }}>Ontvanger E-mail *</label>
+                  <input
+                    type="email" value={recipientEmail}
+                    onChange={(e) => { setRecipientEmail(e.target.value); setSendError(''); }}
+                    placeholder="naam@voorbeeld.nl"
+                    style={{
+                      padding: '0.3rem 0.4rem', fontSize: 'max(9px, 0.45vw)',
+                      backgroundColor: 'rgba(255,255,255,0.03)', color: C.text,
+                      border: `1px solid ${sendError && !recipientEmail ? '#f87171' : tc.border}`,
+                      borderRadius: '0.15rem', outline: 'none',
+                      fontFamily: FONT,
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                  <label style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase' }}>Naam Ontvanger</label>
+                  <input
+                    type="text" value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                    placeholder="Optioneel"
+                    style={{
+                      padding: '0.3rem 0.4rem', fontSize: 'max(9px, 0.45vw)',
+                      backgroundColor: 'rgba(255,255,255,0.03)', color: C.text,
+                      border: `1px solid ${tc.border}`,
+                      borderRadius: '0.15rem', outline: 'none',
+                      fontFamily: FONT,
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                  <label style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase' }}>Onderwerp</label>
+                  <input
+                    type="text" value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    placeholder={`Garden For Life — ${tmpl.label}`}
+                    style={{
+                      padding: '0.3rem 0.4rem', fontSize: 'max(9px, 0.45vw)',
+                      backgroundColor: 'rgba(255,255,255,0.03)', color: C.text,
+                      border: `1px solid ${tc.border}`,
+                      borderRadius: '0.15rem', outline: 'none',
+                      fontFamily: FONT,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {sendError && (
+                <div style={{ fontSize: 'max(8px, 0.4vw)', color: '#f87171' }}>
+                  ✗ {sendError}
+                </div>
+              )}
+
+              {/* Email body textarea */}
+              <textarea
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                placeholder={`Typ hier de e-mailtekst voor "${tmpl.label}"...\n\nDeze tekst wordt als e-mailinhoud verstuurd naar de ontvanger.`}
+                style={{
+                  width: '100%', minHeight: '180px', padding: '0.8rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  color: C.text, border: `1px solid ${tc.border}`,
+                  borderRadius: '0.2rem', outline: 'none',
+                  fontFamily: FONT, fontSize: 'max(10px, 0.5vw)',
+                  lineHeight: 1.7, resize: 'vertical',
+                }}
+              />
+
+              {/* Send button row */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0.5rem 0.6rem',
+                backgroundColor: 'rgba(188, 19, 254, 0.03)',
+                borderRadius: '0.2rem',
+                border: '1px solid rgba(188, 19, 254, 0.1)',
+              }}>
+                <div style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText }}>
+                  {emailBody.trim()
+                    ? `${emailBody.trim().length} tekens — klaar om te versturen`
+                    : 'Schrijf de e-mailtekst in het veld hierboven'}
+                  {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 'bold' }}>✓ Verstuurd!</span>}
+                </div>
+                <button onClick={handleSend} disabled={sendingState === 'sending' || !emailBody.trim() || !recipientEmail.trim() || emailConfigured === false} style={{
+                  padding: '0.3rem 0.8rem', fontSize: 'max(9px, 0.45vw)',
+                  backgroundColor: (!emailBody.trim() || !recipientEmail.trim()) ? 'rgba(188, 19, 254, 0.06)' : 'rgba(188, 19, 254, 0.15)',
+                  color: C.purple, border: '1px solid rgba(188, 19, 254, 0.3)',
+                  borderRadius: '0.15rem',
+                  cursor: (sendingState === 'sending' || !emailBody.trim() || !recipientEmail.trim()) ? 'not-allowed' : 'pointer',
+                  textTransform: 'uppercase', fontWeight: 'bold', transition: 'all 0.2s',
+                  opacity: (!emailBody.trim() || !recipientEmail.trim()) ? 0.4 : 1,
+                }}>{sendingState === 'sending' ? 'BEZIG MET VERSTUREN...' : '✉ VERSTUREN'}</button>
+              </div>
+            </div>
+          </DashboardCard>
+          </>
+        );
+      })()}
+
+      {/* Saved forms history */}
+      {showHistory && savedForms.length > 0 && (
+        <DashboardCard title={`Opgeslagen Documenten (${savedForms.length})`} color="gold">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            {savedForms.map((form) => {
+              const statusColor = form.status === 'verstuurd' ? '#4ade80' : form.status === 'concept' ? '#facc15' : tc.dimText;
+              return (
+                <div key={form._id} style={{
+                  padding: '0.5rem 0.6rem',
+                  backgroundColor: tc.cardBg,
+                  borderLeft: `2px solid ${statusColor}`,
+                  borderRadius: '0 0.15rem 0.15rem 0',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontWeight: 'bold', fontSize: 'max(9px, 0.48vw)', color: C.gold }}>{form.templateLabel}</span>
+                      <span style={{
+                        fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.25rem', borderRadius: '0.1rem',
+                        backgroundColor: form.status === 'verstuurd' ? 'rgba(34,197,94,0.12)' : 'rgba(250,204,21,0.12)',
+                        color: statusColor, textTransform: 'uppercase', fontWeight: 'bold',
+                      }}>{form.status}</span>
+                    </div>
+                    <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText }}>
+                      {form.sentTo && `→ ${form.sentTo} · `}
+                      {new Date(form.updatedAt || form.createdAt).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                  <button onClick={() => handleDeleteForm(form._id)} style={{
+                    background: 'none', border: 'none', color: 'rgba(239,68,68,0.5)',
+                    cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', padding: '0 0.3rem',
+                  }}
+                    onMouseEnter={(e) => { e.target.style.color = '#ef4444'; }}
+                    onMouseLeave={(e) => { e.target.style.color = 'rgba(239,68,68,0.5)'; }}
+                  >✕</button>
+                </div>
+              );
+            })}
+          </div>
+        </DashboardCard>
+      )}
+    </div>
+  );
+});
+
 
 // ═══════════════════════════════════════════════════════════
 // Feedback Tab — audit log only (no inquiry form)

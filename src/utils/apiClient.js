@@ -588,3 +588,110 @@ export async function updateLayer(layerIndex, data) {
   }
   return response.json();
 }
+
+// ── Form Documents (Formulieren) ──
+
+/** Save a form document to the database */
+export async function saveFormDocument(data) {
+  const response = await fetch(`${API_BASE}/admin/forms`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Form save failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/** List all saved form documents */
+export async function getFormDocuments() {
+  const response = await fetch(`${API_BASE}/admin/forms`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Form list failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/** Get a single form document with full content */
+export async function getFormDocument(id) {
+  const response = await fetch(`${API_BASE}/admin/forms/${id}`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Form get failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/** Update a form document */
+export async function updateFormDocument(id, data) {
+  const response = await fetch(`${API_BASE}/admin/forms/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Form update failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/** Delete a form document */
+export async function deleteFormDocument(id) {
+  const response = await fetch(`${API_BASE}/admin/forms/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Form delete failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/** Send a saved form via email */
+export async function sendFormEmail(id, { recipientEmail, subject }) {
+  const response = await fetch(`${API_BASE}/admin/forms/${id}/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ recipientEmail, subject }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Form send failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/** Send a form directly without saving first */
+export async function sendFormDirect(data) {
+  const response = await fetch(`${API_BASE}/admin/forms/send-direct`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Direct send failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/** Check email SMTP configuration status */
+export async function getEmailStatus() {
+  const response = await fetch(`${API_BASE}/admin/email/status`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Email status check failed (${response.status})`);
+  }
+  return response.json();
+}

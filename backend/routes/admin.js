@@ -22,6 +22,59 @@ const { decryptUser, decryptUsers, decrypt } = require('../services/encryption')
 const multer = require('multer');
 const mammoth = require('mammoth');
 const pdfParse = require('pdf-parse');
+const nodemailer = require('nodemailer');
+
+// ─── Shared email HTML builder with professional signature ───
+function buildEmailHTML(templateLabel, bodyContent) {
+  return `
+<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f5f5f0;">
+<div style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;">
+  <!-- Header with logo -->
+  <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 24px 30px;">
+    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+      <tr>
+        <td style="vertical-align:middle;width:130px;">
+          <img src="https://gfl-trunk.pages.dev/images/landingpage/logo.png" alt="Garden For Life" style="height:120px;display:block;" />
+        </td>
+        <td style="vertical-align:middle;text-align:center;">
+          <h1 style="color:#bc13fe;margin:0;font-size:26px;font-weight:700;letter-spacing:0.5px;">Garden For Life</h1>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Body content -->
+  <div style="padding:28px 30px;line-height:1.7;color:#333;font-size:15px;white-space:pre-wrap;">${bodyContent}</div>
+
+  <!-- Signature / Contact block -->
+  <div style="padding:0 30px 24px;">
+    <div style="border-top:2px solid #bc13fe;padding-top:20px;margin-top:12px;">
+      <p style="margin:0;font-size:15px;font-weight:700;color:#1a1a2e;">Garden For Life</p>
+      <div style="margin-top:8px;font-size:12px;line-height:1.6;color:#555;">
+        <div>\u2709 <a href="mailto:yuanwullink30@gfl.community" style="color:#1a73e8;text-decoration:none;">yuanwullink30@gfl.community</a></div>
+        <div>\ud83c\udf10 <a href="https://gardenforlife.nl/" style="color:#1a73e8;text-decoration:none;">www.gardenforlife.nl</a></div>
+        <div style="margin-top:4px;font-size:11px;color:#888;">KVK: 85125245</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#f8f8f5;padding:16px 30px;text-align:left;border-top:1px solid #eee;">
+    <p style="margin:0;font-size:11px;color:#999;">
+      \u00a9 ${new Date().getFullYear()} Garden For Life \u00b7 Alle rechten voorbehouden
+    </p>
+    <p style="margin:6px 0 0;font-size:10px;color:#bbb;">
+      Dit bericht is verstuurd vanuit het Garden For Life Verbindingscentrum
+    </p>
+  </div>
+</div>
+</body>
+</html>`;
+}
+const config = require('../config');
 
 const docUpload = multer({
   storage: multer.memoryStorage(),
@@ -460,6 +513,239 @@ router.post('/prompts/documents/verify', async (_req, res) => {
     console.error('[Admin] Document verify error:', err.message);
     res.status(500).json({ error: 'Failed to verify documents' });
   }
+});
+
+
+// ═════════════════════════════════════════════════════════════
+// Form Documents — save, list, retrieve, send via email
+// ═════════════════════════════════════════════════════════════
+
+function formsCollection() {
+  return getDB().collection('formDocuments');
+}
+
+// POST /api/admin/forms — save a form document
+router.post('/forms', authRequired, adminRequired, async (req, res) => {
+  try {
+    const { templateId, templateLabel, type, content, recipientEmail, recipientName, status } = req.body;
+    if (!templateId || !templateLabel) {
+      return res.status(400).json({ error: 'templateId and templateLabel required' });
+    }
+
+    const doc = {
+      templateId,
+      templateLabel,
+      type: type || 'word',
+      content: content || '',
+      recipientEmail: recipientEmail || null,
+      recipientName: recipientName || null,
+      status: status || 'concept',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: req.user?.id || 'admin',
+    };
+
+    const result = await formsCollection().insertOne(doc);
+    res.json({ success: true, id: result.insertedId, ...doc });
+  } catch (err) {
+    console.error('[Admin] Form save error:', err.message);
+    res.status(500).json({ error: 'Failed to save form' });
+  }
+});
+
+// GET /api/admin/forms — list all saved form documents
+router.get('/forms', authRequired, adminRequired, async (req, res) => {
+  try {
+    const docs = await formsCollection()
+      .find({})
+      .sort({ updatedAt: -1 })
+      .project({ content: 0 }) // exclude large content field from list
+      .toArray();
+    res.json({ forms: docs });
+  } catch (err) {
+    console.error('[Admin] Form list error:', err.message);
+    res.status(500).json({ error: 'Failed to list forms' });
+  }
+});
+
+// GET /api/admin/forms/:id — get full form document
+router.get('/forms/:id', authRequired, adminRequired, async (req, res) => {
+  try {
+    const doc = await formsCollection().findOne({ _id: new ObjectId(req.params.id) });
+    if (!doc) return res.status(404).json({ error: 'Form not found' });
+    res.json(doc);
+  } catch (err) {
+    console.error('[Admin] Form get error:', err.message);
+    res.status(500).json({ error: 'Failed to get form' });
+  }
+});
+
+// PUT /api/admin/forms/:id — update a form document
+router.put('/forms/:id', authRequired, adminRequired, async (req, res) => {
+  try {
+    const { content, recipientEmail, recipientName, status } = req.body;
+    const update = {
+      ...(content !== undefined && { content }),
+      ...(recipientEmail !== undefined && { recipientEmail }),
+      ...(recipientName !== undefined && { recipientName }),
+      ...(status !== undefined && { status }),
+      updatedAt: new Date(),
+    };
+    const result = await formsCollection().updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $set: update }
+    );
+    if (result.matchedCount === 0) return res.status(404).json({ error: 'Form not found' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Admin] Form update error:', err.message);
+    res.status(500).json({ error: 'Failed to update form' });
+  }
+});
+
+// DELETE /api/admin/forms/:id — delete a form document
+router.delete('/forms/:id', authRequired, adminRequired, async (req, res) => {
+  try {
+    const result = await formsCollection().deleteOne({ _id: new ObjectId(req.params.id) });
+    if (result.deletedCount === 0) return res.status(404).json({ error: 'Form not found' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Admin] Form delete error:', err.message);
+    res.status(500).json({ error: 'Failed to delete form' });
+  }
+});
+
+// POST /api/admin/forms/:id/send — send form via email + save to DB
+router.post('/forms/:id/send', authRequired, adminRequired, async (req, res) => {
+  try {
+    const doc = await formsCollection().findOne({ _id: new ObjectId(req.params.id) });
+    if (!doc) return res.status(404).json({ error: 'Form not found' });
+
+    const { recipientEmail, subject } = req.body;
+    const toEmail = recipientEmail || doc.recipientEmail;
+    if (!toEmail) return res.status(400).json({ error: 'No recipient email specified' });
+
+    // Check SMTP config
+    if (!config.email.user || !config.email.pass) {
+      return res.status(503).json({ error: 'Email not configured. Set SMTP_USER and SMTP_PASS in environment variables.' });
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: config.email.host,
+      port: config.email.port,
+      secure: config.email.secure,
+      auth: {
+        user: config.email.user,
+        pass: config.email.pass,
+      },
+    });
+
+    const emailSubject = subject || `Garden For Life — ${doc.templateLabel}`;
+
+    await transporter.sendMail({
+      from: `"Garden For Life" <${config.email.from}>`,
+      to: toEmail,
+      subject: emailSubject,
+      html: buildEmailHTML(doc.templateLabel, doc.content),
+    });
+
+    // Update status to 'verstuurd' in DB
+    await formsCollection().updateOne(
+      { _id: new ObjectId(req.params.id) },
+      {
+        $set: {
+          status: 'verstuurd',
+          sentAt: new Date(),
+          sentTo: toEmail,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    res.json({ success: true, sentTo: toEmail });
+  } catch (err) {
+    console.error('[Admin] Form send error:', err.message);
+    res.status(500).json({ error: `Failed to send email: ${err.message}` });
+  }
+});
+
+// POST /api/admin/forms/send-direct — send a form without saving first (quick send)
+// Supports optional pdfAttachment (data URI) for invoice emails
+router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) => {
+  try {
+    const { templateId, templateLabel, type, content, recipientEmail, recipientName, subject, pdfAttachment, pdfBase64, attachmentFilename } = req.body;
+    if (!recipientEmail) return res.status(400).json({ error: 'recipientEmail required' });
+    if (!content) return res.status(400).json({ error: 'content required' });
+
+    // Check SMTP config
+    if (!config.email.user || !config.email.pass) {
+      return res.status(503).json({ error: 'Email not configured. Set SMTP_USER and SMTP_PASS in environment variables.' });
+    }
+
+    // Save to DB first
+    const doc = {
+      templateId: templateId || 'custom',
+      templateLabel: templateLabel || 'Direct bericht',
+      type: type || 'word',
+      content,
+      recipientEmail,
+      recipientName: recipientName || null,
+      status: 'verstuurd',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      sentAt: new Date(),
+      sentTo: recipientEmail,
+      createdBy: req.user?.id || 'admin',
+    };
+    const saved = await formsCollection().insertOne(doc);
+
+    // Send email
+    const transporter = nodemailer.createTransport({
+      host: config.email.host,
+      port: config.email.port,
+      secure: config.email.secure,
+      auth: {
+        user: config.email.user,
+        pass: config.email.pass,
+      },
+    });
+
+    // Build mail options
+    const mailOptions = {
+      from: `"Garden For Life" <${config.email.from}>`,
+      to: recipientEmail,
+      subject: subject || `Garden For Life — ${doc.templateLabel}`,
+      html: buildEmailHTML(doc.templateLabel, content),
+    };
+
+    // If PDF attachment provided, decode and attach
+    // Accepts either raw base64 (pdfBase64) or data URI (pdfAttachment)
+    const rawB64 = pdfBase64 || (pdfAttachment ? pdfAttachment.replace(/^data:[^;]+;[^,]*,/, '') : null);
+    if (rawB64) {
+      mailOptions.attachments = [{
+        filename: attachmentFilename || 'factuur.pdf',
+        content: Buffer.from(rawB64, 'base64'),
+        contentType: 'application/pdf',
+      }];
+    }
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ success: true, id: saved.insertedId, sentTo: recipientEmail });
+  } catch (err) {
+    console.error('[Admin] Direct send error:', err.message);
+    res.status(500).json({ error: `Failed to send: ${err.message}` });
+  }
+});
+
+// GET /api/admin/email/status — check SMTP configuration status
+router.get('/email/status', authRequired, adminRequired, (_req, res) => {
+  const configured = !!(config.email.user && config.email.pass);
+  res.json({
+    configured,
+    from: configured ? config.email.from : null,
+    host: config.email.host,
+  });
 });
 
 module.exports = router;

@@ -1,0 +1,29 @@
+# ─────────────────────────────────────────────────────────────
+# Garden For Life — Render.com Blueprint
+#
+# Deploys the Express backend as a Web Service.
+# Connect your GitHub repo at https://dashboard.render.com
+# and Render will auto-detect this file.
+#
+# After first deploy, set these Environment Variables in Dashboard:
+#   MONGODB_URI       — MongoDB Atlas connection string
+#   JWT_SECRET        — JWT signing secret
+#   ENCRYPTION_KEY    — AES-256-GCM master key (base64)
+#   GEMINI_API_KEY    — Google Gemini API key
+#   CORS_ORIGINS      — https://gfl-trunk.pages.dev (your Cloudflare URL)
+# ─────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: gfl-api
+    runtime: node
+    region: frankfurt          # EU — close to users
+    plan: free                 # Free tier (spins down after 15 min inactivity)
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"         # Render assigns this automatically, but explicit is fine

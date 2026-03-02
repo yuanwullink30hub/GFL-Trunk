@@ -52,6 +52,9 @@ router.post('/analyze', async (req, res) => {
       return res.status(400).json({ error: 'archetypeKey is required' });
     }
 
+    // Fetch admin prompt config from MongoDB for defaults
+    const adminConfig = await getAdminPromptConfig();
+
     // Build messages — include uploaded context documents
     const contextDocs = await getContextDocuments();
     const system = systemPrompt || buildDefaultSystemPrompt({
@@ -66,7 +69,19 @@ router.post('/analyze', async (req, res) => {
       { role: 'user', content: user },
     ];
 
-    const result = await callAI({ provider, model, messages, maxTokens, temperature });
+    // Admin config overrides hardcoded defaults; request body overrides admin config
+    const finalProvider = provider || adminConfig.defaultProvider || undefined;
+    const finalModel = model || adminConfig.defaultModel || undefined;
+    const finalMaxTokens = maxTokens || adminConfig.maxTokens || 2048;
+    const finalTemperature = temperature ?? adminConfig.temperature ?? 0.7;
+
+    const result = await callAI({
+      provider: finalProvider,
+      model: finalModel,
+      messages,
+      maxTokens: finalMaxTokens,
+      temperature: finalTemperature,
+    });
 
     res.json({
       archetypeKey,
@@ -154,5 +169,19 @@ async function getContextDocuments() {
   } catch {
     // If DB not connected or collection doesn't exist, return empty
     return [];
+  }
+}
+
+/**
+ * Fetch admin prompt configuration from MongoDB.
+ * Returns defaults if not found or DB unavailable.
+ */
+async function getAdminPromptConfig() {
+  try {
+    const db = getDB();
+    const config = await db.collection('promptConfigs').findOne({ _id: 'default' });
+    return config || {};
+  } catch {
+    return {};
   }
 }

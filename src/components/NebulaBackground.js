@@ -988,6 +988,9 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       gl.deleteBuffer(quadBuf);
       gl.deleteTexture(fboA.tex);  gl.deleteFramebuffer(fboA.fb);
       gl.deleteTexture(fboB.tex);  gl.deleteFramebuffer(fboB.fb);
+      // Force-release the WebGL context so it doesn't linger during hot-reload
+      const loseCtx = gl.getExtension('WEBGL_lose_context');
+      if (loseCtx) loseCtx.loseContext();
     };
 
     } // end initWebGL

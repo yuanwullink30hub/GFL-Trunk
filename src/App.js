@@ -1521,8 +1521,8 @@ const App = () => {
         //   so the user can scroll the card back out but not beyond
         if (assessmentPhase === 'layers' && direction > 0) {
           const maxProgress = assessmentScrollEnabled
-            ? (currentLayerIndex + 1) / 4
-            : currentLayerIndex / 4;
+            ? Math.min(1, (currentLayerIndex + 1) / 4)
+            : (currentLayerIndex / 4);
           newProgress = Math.min(newProgress, maxProgress);
           // (scroll progress updated)
         }
@@ -1936,8 +1936,8 @@ const App = () => {
           // - Scroll disabled (layer unsaved): cap at CURRENT layer threshold
           if (assessmentPhase === 'layers' && accDirection > 0) {
             const maxProgress = assessmentScrollEnabled
-              ? (currentLayerIndex + 1) / 4
-              : currentLayerIndex / 4;
+              ? Math.min(1, (currentLayerIndex + 1) / 4)
+              : (currentLayerIndex / 4);
             newProgress = Math.min(newProgress, maxProgress);
           }
           
@@ -2323,7 +2323,6 @@ const App = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: 'inset 0 0 80px rgba(0,0,0,0.6), inset 0 0 160px rgba(0,0,0,0.3)',
                 }}
               >
                 <HoloEarth 
@@ -2334,6 +2333,7 @@ const App = () => {
                   pyramidScrollProgress={pyramidScrollProgress}
                   showPyramidLabels={isSystem}
                   coreScaleMultiplier={coreScaleMultiplier}
+                  currentFrame={currentFrame}
                   onIntroComplete={handleIntroComplete}
                   onLayerStateChange={handleLayerStateChange}
                 />
@@ -2508,7 +2508,7 @@ const App = () => {
 
 
           {/* --- Main 3D Scene --- */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ overflow: 'visible', boxShadow: 'inset 0 0 80px rgba(0,0,0,0.6), inset 0 0 160px rgba(0,0,0,0.3)' }}>
+          <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ overflow: 'visible' }}>
             <HoloEarth 
               className="w-full h-full" 
               exploding={isExploding}
@@ -2519,6 +2519,7 @@ const App = () => {
               showPyramidLabels={isSystem}
               coreScaleMultiplier={coreScaleMultiplier}
               foldProgress={foldProgress}
+              currentFrame={currentFrame}
               onIntroComplete={handleIntroComplete}
               onLayerStateChange={handleLayerStateChange}
             />
@@ -2707,6 +2708,9 @@ const App = () => {
                   onStart={handleAssessmentStart}
                   onClose={handleAssessmentClose}
                   onNavigateToData={() => { handleAssessmentClose(); handleOpenSection('monitor'); }}
+                  uploadedFiles={uploadedFiles}
+                  onAddFile={handleAddFile}
+                  onRemoveFile={handleRemoveFile}
                 />
               </div>
             )}

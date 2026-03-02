@@ -257,79 +257,99 @@ export const COMPLEMENTARY_PAIRS = {
  * Shadow archetype pairs (psychological tension / integration point).
  */
 export const SHADOW_PAIRS = {
-  SAGE: 'TRICKSTER',   TRICKSTER: 'SAGE',
-  RULER: 'OUTLAW',     OUTLAW: 'RULER',
-  HERO: 'CAREGIVER',   CAREGIVER: 'HERO',
-  INNOCENT: 'EXPLORER', EXPLORER: 'INNOCENT',
-  ARTIST: 'JUDGE',     JUDGE: 'ARTIST',
-  MAGICIAN: 'LOVER',   LOVER: 'MAGICIAN',
+  // 180° Individuation pairs (position + 6 on wheel)
+  JUDGE: 'TRICKSTER',    TRICKSTER: 'JUDGE',      // 1 ↔ 7
+  LOVER: 'SAGE',         SAGE: 'LOVER',           // 2 ↔ 8
+  CAREGIVER: 'ARTIST',   ARTIST: 'CAREGIVER',     // 3 ↔ 9
+  INNOCENT: 'MAGICIAN',  MAGICIAN: 'INNOCENT',    // 4 ↔ 10
+  EXPLORER: 'HERO',      HERO: 'EXPLORER',        // 5 ↔ 11
+  OUTLAW: 'RULER',       RULER: 'OUTLAW',         // 6 ↔ 12
 };
 
 /**
- * Map archetype key → functional group.
+ * Map archetype key → functional group (neurobiological).
  */
 export const ARCHETYPE_TO_GROUP = {
-  SAGE: 'WISDOM',     EXPLORER: 'WISDOM',
-  HERO: 'ACTION',     OUTLAW: 'ACTION',
+  // Ruling (CEN Dominantie)
+  JUDGE: 'RULING',    RULER: 'RULING',
+  // Relational (Limbic Coupling)
   LOVER: 'RELATIONAL', CAREGIVER: 'RELATIONAL',
-  ARTIST: 'CREATIVE', MAGICIAN: 'CREATIVE',
-  RULER: 'RULING',    JUDGE: 'RULING',
-  INNOCENT: 'SPIRIT', TRICKSTER: 'SPIRIT',
+  // Seeker (Hoge Openness)
+  INNOCENT: 'SEEKER',  EXPLORER: 'SEEKER',
+  // Chaos (Salience Network)
+  OUTLAW: 'CHAOS',    TRICKSTER: 'CHAOS',
+  // Abstract (DMN Hyper-connectie)
+  SAGE: 'ABSTRACT',   ARTIST: 'ABSTRACT',
+  // Agency (Extraversie/Wilskracht)
+  MAGICIAN: 'AGENCY', HERO: 'AGENCY',
 };
 
 /**
  * Extended Archetype Matrix: 12 Main × 6 Support Groups = 72 outcomes.
  * Key format: "MAINKEY_GROUPNAME"
+ * Based on neuro-archetypal framework with 6 biological support groups:
+ * RULING, RELATIONAL, SEEKER, CHAOS, ABSTRACT, AGENCY
  */
 export const EXTENDED_ARCHETYPES = {
-  // Main: SAGE
-  SAGE_WISDOM: 'The Enlightened', SAGE_ACTION: 'The Detective',
-  SAGE_RELATIONAL: 'The Mentor', SAGE_CREATIVE: 'The Alchemist',
-  SAGE_RULING: 'The Analyst', SAGE_SPIRIT: 'The Hermit',
-  // Main: HERO
-  HERO_ACTION: 'The Legend', HERO_WISDOM: 'The Strategist',
-  HERO_RELATIONAL: 'The Guardian', HERO_CREATIVE: 'The Inventor',
-  HERO_RULING: 'The Commander', HERO_SPIRIT: 'The Paladin',
-  // Main: LOVER
-  LOVER_RELATIONAL: 'The Soulmate', LOVER_WISDOM: 'The Mystic',
-  LOVER_ACTION: 'The Hedonist', LOVER_CREATIVE: 'The Poet',
-  LOVER_RULING: 'The Partner', LOVER_SPIRIT: 'The Companion',
-  // Main: ARTIST
-  ARTIST_CREATIVE: 'The Demiurge', ARTIST_WISDOM: 'The Visionary',
-  ARTIST_ACTION: 'The Engineer', ARTIST_RELATIONAL: 'The Storyteller',
-  ARTIST_RULING: 'The Architect', ARTIST_SPIRIT: 'The Dreamer',
-  // Main: RULER
-  RULER_RULING: 'The Emperor', RULER_WISDOM: 'The Philosopher-King',
-  RULER_ACTION: 'The Conqueror', RULER_RELATIONAL: 'The Patriarch',
-  RULER_CREATIVE: 'The Entrepreneur', RULER_SPIRIT: 'The Sovereign',
-  // Main: INNOCENT
-  INNOCENT_SPIRIT: 'The Saint', INNOCENT_WISDOM: 'The Disciple',
-  INNOCENT_ACTION: 'The Pioneer', INNOCENT_RELATIONAL: 'The Child',
-  INNOCENT_CREATIVE: 'The Utopian', INNOCENT_RULING: 'The Traditionalist',
-  // Main: EXPLORER
-  EXPLORER_WISDOM: 'The Navigator', EXPLORER_ACTION: 'The Wanderer',
-  EXPLORER_RELATIONAL: 'The Networker', EXPLORER_CREATIVE: 'The Innovator',
-  EXPLORER_RULING: 'The Scout', EXPLORER_SPIRIT: 'The Scholar',
-  // Main: OUTLAW
-  OUTLAW_ACTION: 'The Anarchist', OUTLAW_WISDOM: 'The Iconoclast',
-  OUTLAW_RELATIONAL: 'The Liberator', OUTLAW_CREATIVE: 'The Provocateur',
-  OUTLAW_RULING: 'The Reformer', OUTLAW_SPIRIT: 'The Revolutionary',
-  // Main: CAREGIVER
-  CAREGIVER_RELATIONAL: 'The Healer', CAREGIVER_WISDOM: 'The Therapist',
-  CAREGIVER_ACTION: 'The Protector', CAREGIVER_CREATIVE: 'The Cultivator',
-  CAREGIVER_RULING: 'The Advocate', CAREGIVER_SPIRIT: 'The Samaritan',
-  // Main: MAGICIAN
-  MAGICIAN_CREATIVE: 'The Illusionist', MAGICIAN_WISDOM: 'The Shaman',
-  MAGICIAN_ACTION: 'The Forgemaster', MAGICIAN_RELATIONAL: 'The Enchanter',
-  MAGICIAN_RULING: 'The Oracle', MAGICIAN_SPIRIT: 'The Sorcerer',
-  // Main: JUDGE
-  JUDGE_RULING: 'The Arbiter', JUDGE_WISDOM: 'The Critic',
-  JUDGE_ACTION: 'The Avenger', JUDGE_RELATIONAL: 'The Mediator',
-  JUDGE_CREATIVE: 'The Evaluator', JUDGE_SPIRIT: 'The Shepherd',
-  // Main: TRICKSTER
-  TRICKSTER_SPIRIT: 'The Fool', TRICKSTER_WISDOM: 'The Comedian',
-  TRICKSTER_ACTION: 'The Saboteur', TRICKSTER_RELATIONAL: 'The Clown',
-  TRICKSTER_CREATIVE: 'The Shapeshifter', TRICKSTER_RULING: 'The Jester',
+  // Main: JUDGE (Positie 1)
+  JUDGE_RULING: 'The Arbiter', JUDGE_RELATIONAL: 'The Mediator',
+  JUDGE_SEEKER: 'The Examiner', JUDGE_CHAOS: 'The Whistleblower',
+  JUDGE_ABSTRACT: 'The Critic', JUDGE_AGENCY: 'The Avenger',
+
+  // Main: LOVER (Positie 2)
+  LOVER_RELATIONAL: 'The Soulmate', LOVER_SEEKER: 'The Poet',
+  LOVER_CHAOS: 'The Seducer', LOVER_ABSTRACT: 'The Mystic',
+  LOVER_AGENCY: 'The Romantic', LOVER_RULING: 'The Companion',
+
+  // Main: CAREGIVER (Positie 3)
+  CAREGIVER_RELATIONAL: 'The Healer', CAREGIVER_SEEKER: 'The Pathfinder',
+  CAREGIVER_CHAOS: 'The Cultivator', CAREGIVER_ABSTRACT: 'The Therapist',
+  CAREGIVER_AGENCY: 'The Protector', CAREGIVER_RULING: 'The Advocate',
+
+  // Main: INNOCENT (Positie 4)
+  INNOCENT_SEEKER: 'The Saint', INNOCENT_CHAOS: 'The Free Spirit',
+  INNOCENT_ABSTRACT: 'The Disciple', INNOCENT_AGENCY: 'The Pioneer',
+  INNOCENT_RULING: 'The Shepherd', INNOCENT_RELATIONAL: 'The Samaritan',
+
+  // Main: EXPLORER (Positie 5)
+  EXPLORER_SEEKER: 'The Navigator', EXPLORER_CHAOS: 'The Innovator',
+  EXPLORER_ABSTRACT: 'The Scholar', EXPLORER_AGENCY: 'The Sailor',
+  EXPLORER_RULING: 'The Scout', EXPLORER_RELATIONAL: 'The Networker',
+
+  // Main: OUTLAW (Positie 6)
+  OUTLAW_CHAOS: 'The Anarchist', OUTLAW_ABSTRACT: 'The Iconoclast',
+  OUTLAW_AGENCY: 'The Revolutionary', OUTLAW_RULING: 'The Reformer',
+  OUTLAW_RELATIONAL: 'The Liberator', OUTLAW_SEEKER: 'The Renegade',
+
+  // Main: TRICKSTER (Positie 7)
+  TRICKSTER_CHAOS: 'The Fool', TRICKSTER_ABSTRACT: 'The Comedian',
+  TRICKSTER_AGENCY: 'The Saboteur', TRICKSTER_RULING: 'The Jester',
+  TRICKSTER_RELATIONAL: 'The Clown', TRICKSTER_SEEKER: 'The Shapeshifter',
+
+  // Main: SAGE (Positie 8)
+  SAGE_ABSTRACT: 'The Enlightened', SAGE_AGENCY: 'The Detective',
+  SAGE_RULING: 'The Analyst', SAGE_RELATIONAL: 'The Mentor',
+  SAGE_SEEKER: 'The Dreamer', SAGE_CHAOS: 'The Hermit',
+
+  // Main: ARTIST (Positie 9)
+  ARTIST_ABSTRACT: 'The Demiurge', ARTIST_AGENCY: 'The Forgemaster',
+  ARTIST_RULING: 'The Architect', ARTIST_RELATIONAL: 'The Storyteller',
+  ARTIST_SEEKER: 'The Visionary', ARTIST_CHAOS: 'The Illusionist',
+
+  // Main: MAGICIAN (Positie 10)
+  MAGICIAN_AGENCY: 'The Alchemist', MAGICIAN_RULING: 'The Engineer',
+  MAGICIAN_RELATIONAL: 'The Shaman', MAGICIAN_SEEKER: 'The Oracle',
+  MAGICIAN_CHAOS: 'The Enchanter', MAGICIAN_ABSTRACT: 'The Sorcerer',
+
+  // Main: HERO (Positie 11)
+  HERO_AGENCY: 'The Legend', HERO_RULING: 'The Commander',
+  HERO_RELATIONAL: 'The Guardian', HERO_SEEKER: 'The Inventor',
+  HERO_CHAOS: 'The Ronin', HERO_ABSTRACT: 'The Strategist',
+
+  // Main: RULER (Positie 12)
+  RULER_RULING: 'The Emperor', RULER_RELATIONAL: 'The Patriarch',
+  RULER_SEEKER: 'The Entrepreneur', RULER_CHAOS: 'The Maverick',
+  RULER_ABSTRACT: 'The Philosopher-King', RULER_AGENCY: 'The Conqueror',
 };
 
 /**

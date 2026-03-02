@@ -6,12 +6,14 @@ import QuestionCard from './components/QuestionCard';
 import FileUpload from './components/FileUpload';
 import ResultsView from './components/ResultsView';
 import PyramidVisualizer from './components/PyramidVisualizer';
-import { assessmentSubjects } from './assessmentData';
 import { FileUp, Sparkles } from 'lucide-react';
 
 function AssessmentPage() {
   const [appState, setAppState] = useState("intro"); // "intro" | "assessment" | "upload" | "results"
   const {
+    subjects,
+    questionsReady,
+    questionsError,
     currentSubject,
     currentQuestion,
     currentSubjectIndex,
@@ -34,7 +36,7 @@ function AssessmentPage() {
   const handleAnswerSelect = (answerId) => {
     selectAnswer(answerId);
     const isLastQuestion =
-      currentSubjectIndex === assessmentSubjects.length - 1 &&
+      currentSubjectIndex === subjects.length - 1 &&
       currentQuestionIndex === currentSubject.questions.length - 1;
     if (isLastQuestion) setAppState("upload");
   };
@@ -47,7 +49,7 @@ function AssessmentPage() {
   };
 
   const currentQuestionNumber =
-    assessmentSubjects.slice(0, currentSubjectIndex).reduce((acc, s) => acc + s.questions.length, 0) +
+    subjects.slice(0, currentSubjectIndex).reduce((acc, s) => acc + s.questions.length, 0) +
     currentQuestionIndex +
     1;
 
@@ -90,12 +92,38 @@ function AssessmentPage() {
       {/* Main content */}
       <div className="relative z-10 px-4 md:px-6 pb-12">
         <div className="max-w-4xl mx-auto">
-          {appState === "intro" && <IntroScreen onStart={handleStart} />}
+          {/* Loading / Error states */}
+          {!questionsReady && !questionsError && (
+            <div className="text-center py-24 animate-pulse">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-600/20 mb-4">
+                <Sparkles className="w-8 h-8 text-cyan-400 animate-spin" />
+              </div>
+              <p className="text-slate-400 text-sm">Loading assessment...</p>
+            </div>
+          )}
+
+          {questionsError && (
+            <div className="text-center py-24">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
+                <Sparkles className="w-8 h-8 text-red-400" />
+              </div>
+              <h2 className="text-lg font-medium text-red-300 mb-2">Assessment Unavailable</h2>
+              <p className="text-slate-400 text-sm max-w-md mx-auto">{questionsError}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-6 px-5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-sm hover:bg-slate-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {questionsReady && !questionsError && appState === "intro" && <IntroScreen onStart={handleStart} />}
 
           {appState === "assessment" && (
             <div className="space-y-8 animate-fadeIn">
               <PyramidVisualizer activeLayer={currentSubjectIndex} progress={progress} />
-              <ProgressBar progress={progress} currentSubject={currentSubjectIndex} totalSubjects={assessmentSubjects.length} />
+              <ProgressBar progress={progress} currentSubject={currentSubjectIndex} totalSubjects={subjects.length} />
               <QuestionCard
                 question={currentQuestion}
                 subjectName={currentSubject.name}

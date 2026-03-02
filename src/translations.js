@@ -88,9 +88,74 @@ const translations = {
       nl: "Referenties",
       en: "References"
     },
+    footerUpload: {
+      nl: "Upload OCEAN",
+      en: "Upload OCEAN"
+    },
+    footerUploadHint: {
+      nl: "PDF, DOC, TXT, Afbeelding",
+      en: "PDF, DOC, TXT, Image"
+    },
+    footerUploadCount: {
+      nl: "bestand",
+      en: "file"
+    },
     footerUrl: {
       nl: "",
       en: ""
+    },
+    referencesBack: {
+      nl: "Terug",
+      en: "Back"
+    },
+    referencesTitle: {
+      nl: "Wetenschappelijke Referenties",
+      en: "Scientific References"
+    },
+    referencesSubtitle: {
+      nl: "Het A+ Archetype Analyse systeem is gebaseerd op interdisciplinair onderzoek uit de volgende domeinen:",
+      en: "The A+ Archetype Analysis system is based on interdisciplinary research from the following domains:"
+    },
+    references: {
+      psychology: {
+        title: { nl: "Psychologie", en: "Psychology" },
+        sources: {
+          nl: "Carl Gustav Jung — Archetypes & het Collectief Onbewuste • Big Five / OCEAN persoonlijkheidsmodel • Myers-Briggs Type Indicator (MBTI) • Schaduwwerk & Individuatie",
+          en: "Carl Gustav Jung — Archetypes & the Collective Unconscious • Big Five / OCEAN personality model • Myers-Briggs Type Indicator (MBTI) • Shadow Work & Individuation"
+        }
+      },
+      alchemy: {
+        title: { nl: "Alchemie", en: "Alchemy" },
+        sources: {
+          nl: "Hermetische traditie — De 7 Alchemistische Fasen • Nigredo, Albedo, Citrinitas, Rubedo transformatiecycli • Transmutatie als metafoor voor innerlijke groei",
+          en: "Hermetic tradition — The 7 Alchemical Stages • Nigredo, Albedo, Citrinitas, Rubedo transformation cycles • Transmutation as metaphor for inner growth"
+        }
+      },
+      astrology: {
+        title: { nl: "Astrologie", en: "Astrology" },
+        sources: {
+          nl: "Archetypische planetaire energieën • 12 Zodiac archetypen & elementaire classificatie • Huizensysteem als bewustzijnskaart",
+          en: "Archetypal planetary energies • 12 Zodiac archetypes & elemental classification • House system as consciousness map"
+        }
+      },
+      consciousness: {
+        title: { nl: "Bewustzijn", en: "Consciousness" },
+        sources: {
+          nl: "Deltawerken dynamiek raamwerk • 5-lagen bewustzijnsmodel (Fysiek, Emotioneel, Mentaal, Spiritueel, Eenheid) • Entropie & Supersymmetrie in bewustzijnsontwikkeling",
+          en: "Deltawerken dynamics framework • 5-layer consciousness model (Physical, Emotional, Mental, Spiritual, Unity) • Entropy & Supersymmetry in consciousness development"
+        }
+      },
+      biochemistry: {
+        title: { nl: "Biochemie", en: "Biochemistry" },
+        sources: {
+          nl: "Neuroplasticiteit & gedragspatronen • Hormonen & neurotransmitters in persoonlijkheidsontwikkeling • Epigenetica & omgevingsinvloeden op karakter",
+          en: "Neuroplasticity & behavioral patterns • Hormones & neurotransmitters in personality development • Epigenetics & environmental influences on character"
+        }
+      }
+    },
+    referencesFooter: {
+      nl: "Dit systeem combineert oude wijsheid met moderne wetenschap voor een holistisch archetype profiel.",
+      en: "This system combines ancient wisdom with modern science for a holistic archetype profile."
     }
   },
 
@@ -786,7 +851,19 @@ const translations = {
     },
     loginPage: {
       title: { nl: "LOGIN", en: "LOGIN" },
-      placeholder: { nl: "Authenticatie komt binnenkort...", en: "Authentication coming soon..." },
+      register: { nl: "REGISTREREN", en: "REGISTER" },
+      email: { nl: "E-mail", en: "Email" },
+      password: { nl: "Wachtwoord", en: "Password" },
+      displayName: { nl: "Weergavenaam", en: "Display Name" },
+      loginButton: { nl: "INLOGGEN", en: "LOG IN" },
+      registerButton: { nl: "REGISTREREN", en: "REGISTER" },
+      switchToRegister: { nl: "Nog geen account? Registreer", en: "No account? Register" },
+      switchToLogin: { nl: "Heb je al een account? Log in", en: "Already have an account? Log in" },
+      welcome: { nl: "Welkom", en: "Welcome" },
+      logoutButton: { nl: "UITLOGGEN", en: "LOG OUT" },
+      history: { nl: "GESCHIEDENIS", en: "HISTORY" },
+      noHistory: { nl: "Nog geen assessments", en: "No assessments yet" },
+      loading: { nl: "Laden...", en: "Loading..." },
       back: { nl: "← TERUG", en: "← BACK" }
     },
     filosofiePage: {

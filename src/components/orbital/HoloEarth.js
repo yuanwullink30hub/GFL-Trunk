@@ -769,9 +769,27 @@ const HoloEarth = ({
   showPyramidLabels = false,
   coreScaleMultiplier = 1, // Scale for inner core during convergence
   foldProgress = 0, // 0-1 for pyramid fold-up animation
+  currentFrame = 0,
   onIntroComplete = () => {},
   onLayerStateChange = () => {}
 }) => {
+  const glRef = useRef(null);
+
+  // Force-release WebGL context on unmount (prevents context leak during hot-reload)
+  useEffect(() => {
+    return () => {
+      if (glRef.current) {
+        glRef.current.dispose();
+        const ctx = glRef.current.getContext();
+        if (ctx) {
+          const ext = ctx.getExtension('WEBGL_lose_context');
+          if (ext) ext.loseContext();
+        }
+        glRef.current = null;
+      }
+    };
+  }, []);
+
   return (
     <div 
       className={className || ''}
@@ -786,6 +804,22 @@ const HoloEarth = ({
         overflow: 'visible',
       }}
     >
+      {/* Depth shadow behind the sphere */}
+      <div style={{
+        position: 'absolute',
+        top: 'calc(50% - 5.85rem)',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: isMobile ? '71vh' : '55vh',
+        height: isMobile ? '71vh' : '55vh',
+        borderRadius: '50%',
+        boxShadow: '0 6px 40px rgba(0,0,0,0.85), 0 12px 80px rgba(0,0,0,0.6), 0 0 110px rgba(0,0,0,0.45), 0 0 170px rgba(0,0,0,0.25)',
+        pointerEvents: 'none',
+        zIndex: 0,
+        opacity: currentFrame > 3 ? 0 : 1,
+        transition: 'opacity 0.6s ease',
+      }} />
+
       {/* Canvas wrapper - Mobile uses simple 100% fill, Desktop uses 200% for map navigation */}
       <div style={isMobile ? {
         // Mobile: Simple full-size canvas
@@ -816,6 +850,7 @@ const HoloEarth = ({
           }}
           dpr={1}
           performance={{ min: 0.5, max: 1, debounce: 200 }}
+          onCreated={({ gl }) => { glRef.current = gl; }}
         >
           <Suspense fallback={null}>
             <ambientLight intensity={0.2} />

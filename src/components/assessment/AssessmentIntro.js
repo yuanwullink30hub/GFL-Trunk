@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import archetypeHeader from '../../images/Import ready/Archetype header.png';
 import analyseIcon from '../../images/Import ready/analyseicon.PNG';
@@ -17,8 +17,10 @@ import aiIcon from '../../images/Import ready/AIicon.PNG';
  * - onClose() - called when user closes the modal
  * - onNavigateToData() - called when user clicks the research button
  */
-const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
+const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [], onAddFile, onRemoveFile }) => {
   const { t } = useLanguage();
+  const fileInputRef = useRef(null);
+  const [showReferences, setShowReferences] = useState(false);
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -289,6 +291,98 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
         
         {/* Content - matches SectorFrame inner structure */}
         <div className="relative z-10 h-full w-full flex flex-col overflow-y-auto" style={{ padding: s.padding }}>
+
+          {/* ═══ REFERENCES VIEW ═══ */}
+          {showReferences ? (
+            <div style={{ animation: 'fadeIn 0.3s ease' }}>
+              {/* Back button */}
+              <button
+                onClick={() => setShowReferences(false)}
+                className="font-mono uppercase tracking-wider hover:scale-[1.02] transition-all duration-300"
+                style={{
+                  color: '#a855f7',
+                  backgroundColor: 'transparent',
+                  border: '1px solid rgba(168,85,247,0.4)',
+                  borderRadius: '9999px',
+                  padding: s.footerBtnPad,
+                  fontSize: s.footerBtnFont,
+                  marginBottom: '1.5rem',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#a855f7';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.19)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(168,85,247,0.4)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                ← {t('assessmentIntro.referencesBack')}
+              </button>
+
+              {/* References title */}
+              <h2 className="text-center font-mono uppercase tracking-wider" style={{
+                fontSize: s.levelsTitleFont,
+                color: '#22c55e',
+                marginBottom: '1.5rem',
+                textShadow: '0 0 10px rgba(34,197,94,0.3)',
+              }}>
+                {t('assessmentIntro.referencesTitle')}
+              </h2>
+
+              {/* References subtitle */}
+              <p className="text-center text-slate-400 leading-relaxed" style={{
+                fontSize: s.descFontSize,
+                marginBottom: '2rem',
+              }}>
+                {t('assessmentIntro.referencesSubtitle')}
+              </p>
+
+              {/* Reference categories */}
+              {[
+                { key: 'psychology', color: '#3b82f6', icon: '🧠' },
+                { key: 'alchemy', color: '#f97316', icon: '⚗️' },
+                { key: 'astrology', color: '#a855f7', icon: '✦' },
+                { key: 'consciousness', color: '#ef4444', icon: '◉' },
+                { key: 'biochemistry', color: '#22c55e', icon: '🧬' },
+              ].map((cat) => (
+                <div
+                  key={cat.key}
+                  className="rounded-lg border border-slate-700/50 bg-slate-900/30"
+                  style={{ padding: '1rem', marginBottom: '0.75rem' }}
+                >
+                  <div className="flex items-start gap-3">
+                    <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{cat.icon}</span>
+                    <div>
+                      <h3 className="font-medium" style={{
+                        color: cat.color,
+                        fontSize: s.featureTitleFont,
+                        marginBottom: '0.35rem',
+                        textShadow: `0 0 8px ${cat.color}40`,
+                      }}>
+                        {t(`assessmentIntro.references.${cat.key}.title`)}
+                      </h3>
+                      <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                        {t(`assessmentIntro.references.${cat.key}.sources`)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Footer note */}
+              <p className="text-center text-slate-600 italic" style={{
+                fontSize: s.featureDescFont,
+                marginTop: '1.5rem',
+                paddingBottom: '1rem',
+              }}>
+                {t('assessmentIntro.referencesFooter')}
+              </p>
+            </div>
+          ) : (
+          /* ═══ MAIN INTRO VIEW ═══ */
+          <>
           {/* Header */}
           <div className="text-center" style={{ marginBottom: s.headerMb }}>
             <img 
@@ -335,30 +429,108 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
             ))}
           </div>
 
-          {/* Referenties button + research text row */}
-          <div className="relative" style={{ marginTop: '-3.5rem', marginBottom: s.featureMb }}>
-            {onNavigateToData && (
-              <button
-                onClick={onNavigateToData}
-                className="absolute left-0 top-1/2 -translate-y-1/2 border border-green-500/40 rounded-full flex-shrink-0
-                           hover:scale-[1.02] transition-all duration-300 
-                           font-mono uppercase tracking-wider"
-                style={{ padding: s.footerBtnPad, fontSize: s.footerBtnFont, color: '#22c55e', backgroundColor: 'transparent' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#22c55e';
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(34,197,94,0.19)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(34,197,94,0.4)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                {t('assessmentIntro.footerButton')}
-              </button>
-            )}
-            <p className="text-center leading-relaxed text-slate-500" style={{ fontSize: s.descFontSize, paddingTop: '1.85rem' }}>
+          {/* Referenties button + research text + upload button row */}
+          <div className="flex items-center justify-between" style={{ marginTop: '-2.5rem', marginBottom: s.featureMb }}>
+            {/* Left: Referenties button */}
+            <div style={{ width: '10rem', flexShrink: 0 }}>
+              {
+                <button
+                  onClick={() => setShowReferences(true)}
+                  className="border border-green-500/40 rounded-full
+                             hover:scale-[1.02] transition-all duration-300 
+                             font-mono uppercase tracking-wider"
+                  style={{
+                    padding: s.footerBtnPad,
+                    fontSize: s.footerBtnFont,
+                    color: '#22c55e',
+                    backgroundColor: 'transparent',
+                    width: '10rem',
+                    display: 'block',
+                    textAlign: 'center',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#22c55e';
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(34,197,94,0.19)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(34,197,94,0.4)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  {t('assessmentIntro.footerButton')}
+                </button>
+              }
+            </div>
+
+            {/* Center: research text */}
+            <p className="text-center leading-relaxed text-slate-500" style={{ fontSize: s.descFontSize, flex: 1, padding: '0 1rem', paddingTop: '1.85rem' }}>
               {t('assessmentIntro.footerResearch')}
             </p>
+
+            {/* Right: Upload OCEAN button */}
+            <div style={{ width: '10rem', flexShrink: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem' }}>
+              {onAddFile && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (uploadedFiles.length > 0 && onRemoveFile) onRemoveFile(0);
+                        onAddFile(file);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border rounded-full
+                               hover:scale-[1.02] transition-all duration-300 
+                               font-mono uppercase tracking-wider"
+                    style={{
+                      padding: s.footerBtnPad,
+                      fontSize: s.footerBtnFont,
+                      color: '#a78bfa',
+                      backgroundColor: 'transparent',
+                      borderColor: 'rgba(167,139,250,0.4)',
+                      width: '10rem',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#a78bfa';
+                      e.currentTarget.style.boxShadow = '0 0 20px rgba(167,139,250,0.19)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(167,139,250,0.4)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    {uploadedFiles.length > 0 && onRemoveFile && (
+                      <span
+                        onClick={(e) => { e.stopPropagation(); onRemoveFile(0); }}
+                        className="text-slate-500 hover:text-red-400 transition-colors"
+                        style={{ fontSize: '0.65rem', lineHeight: 1, marginRight: '0.25rem', flexShrink: 0, cursor: 'pointer' }}
+                        title="Remove file"
+                      >
+                        ✕
+                      </span>
+                    )}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {uploadedFiles.length > 0
+                        ? uploadedFiles[0].name
+                        : t('assessmentIntro.footerUpload')}
+                    </span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Pyramid Layers Visual */}
@@ -491,6 +663,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData }) => {
           {/* Footer */}
           <div className="border-t border-slate-800" style={{ paddingTop: s.footerPt }}>
           </div>
+          </>
+          )}
         </div>
       </div>
     </div>

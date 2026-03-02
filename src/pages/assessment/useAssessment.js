@@ -1,17 +1,54 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { ARCHETYPES } from './assessmentTypes';
-import { assessmentSubjects } from './assessmentData';
+import { getQuestions } from '../../utils/apiClient';
 
 // Custom hook for assessment state management
 export function useAssessment() {
+  const [subjects, setSubjects] = useState([]);
+  const [questionsReady, setQuestionsReady] = useState(false);
+  const [questionsError, setQuestionsError] = useState(null);
   const [responses, setResponses] = useState([]);
   const [currentSubjectIndex, setCurrentSubjectIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState([]);
 
-  const currentSubject = assessmentSubjects[currentSubjectIndex];
-  const currentQuestion = currentSubject.questions[currentQuestionIndex];
-  const totalQuestions = assessmentSubjects.reduce((acc, s) => acc + s.questions.length, 0);
+  // Fetch questions from backend — API is the sole source of truth
+  useEffect(() => {
+    let cancelled = false;
+    getQuestions()
+      .then((data) => {
+        if (cancelled) return;
+        if (data.seeded && data.layers && data.layers.length > 0) {
+          const mapped = data.layers.map((layer) => ({
+            id: layer.layerId || layer._id,
+            name: layer.name,
+            title: layer.title,
+            subtitle: layer.subtitle,
+            color: layer.color,
+            layerIndex: layer.layerIndex,
+            fundamental: layer.fundamental,
+            description: layer.description,
+            questions: layer.questions,
+          }));
+          setSubjects(mapped);
+          setQuestionsReady(true);
+          console.log('[Assessment] Loaded questions from backend');
+        } else {
+          setQuestionsError('Questions not seeded yet. An admin must seed from the dashboard.');
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('[Assessment] Failed to load questions:', err.message);
+          setQuestionsError('Could not connect to the server. Please try again later.');
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const currentSubject = subjects[currentSubjectIndex];
+  const currentQuestion = currentSubject?.questions?.[currentQuestionIndex];
+  const totalQuestions = subjects.reduce((acc, s) => acc + s.questions.length, 0);
   const answeredQuestions = responses.length;
   const progress = (answeredQuestions / totalQuestions) * 100;
 
@@ -34,21 +71,21 @@ export function useAssessment() {
 
     if (currentQuestionIndex < currentSubject.questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
-    } else if (currentSubjectIndex < assessmentSubjects.length - 1) {
+    } else if (currentSubjectIndex < subjects.length - 1) {
       setCurrentSubjectIndex((prev) => prev + 1);
       setCurrentQuestionIndex(0);
     }
-  }, [currentQuestion, currentSubject, currentQuestionIndex, currentSubjectIndex]);
+  }, [currentQuestion, currentSubject, currentQuestionIndex, currentSubjectIndex, subjects]);
 
   const goBack = useCallback(() => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1);
     } else if (currentSubjectIndex > 0) {
-      const prevSubject = assessmentSubjects[currentSubjectIndex - 1];
+      const prevSubject = subjects[currentSubjectIndex - 1];
       setCurrentSubjectIndex((prev) => prev - 1);
       setCurrentQuestionIndex(prevSubject.questions.length - 1);
     }
-  }, [currentQuestionIndex, currentSubjectIndex]);
+  }, [currentQuestionIndex, currentSubjectIndex, subjects]);
 
   const addFile = useCallback((file) => {
     setUploadedFiles((prev) => [...prev, file]);
@@ -59,7 +96,7 @@ export function useAssessment() {
   }, []);
 
   const calculateResults = useMemo(() => {
-    const subjectResults = assessmentSubjects.map((subject) => {
+    const subjectResults = subjects.map((subject) => {
       const subjectResponses = responses.filter((r) =>
         subject.questions.some((q) => q.id === r.questionId)
       );
@@ -170,6 +207,9 @@ export function useAssessment() {
   }, []);
 
   return {
+    subjects,
+    questionsReady,
+    questionsError,
     currentSubject,
     currentQuestion,
     currentSubjectIndex,

@@ -19,6 +19,8 @@ import {
   getExtendedDescription,
 } from '../../data/assessment';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
+import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
+import { getToken, saveAssessment } from '../../utils/apiClient';
 
 /**
  * AssessmentResultsModal - Full-screen sci-fi results modal
@@ -61,6 +63,29 @@ const AssessmentResultsModal = ({
   
   // PDF download state
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // ── Auto-save to backend when user is logged in ──
+  const [savedToBackend, setSavedToBackend] = useState(false);
+  useEffect(() => {
+    if (!result || savedToBackend || !getToken()) return;
+    const oceanScores = result.extendedOcean?.ocean || null;
+    saveAssessment({
+      archetypeKey: result.mainArchetype,
+      supportGroup: result.supportGroup,
+      extendedArchetypeName: result.extendedName,
+      oceanScores,
+      responses: result._answerLog || [],
+      subjectResults: result.subjectResults || [],
+      harmonyScore: result.harmonyScore ?? null,
+      consciousnessLevel: result.consciousnessLevel || null,
+      overallShadow: result.overallShadow || null,
+    }).then(() => {
+      setSavedToBackend(true);
+      console.log('[GFL] Assessment saved to account');
+    }).catch((err) => {
+      console.warn('[GFL] Could not save assessment:', err.message);
+    });
+  }, [result, savedToBackend]);
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -137,108 +162,439 @@ const AssessmentResultsModal = ({
     btnFont: '0.8rem',
   };
   
-  // Generate and download PDF from the modal content
+  // ── Ref for the radar chart element (captured as image for PDF) ──
+  const radarRef = useRef(null);
+  // ── Ref for the subgroup dynamics element ──
+  const subgroupRef = useRef(null);
+
+  // Generate and download a clean, document-style PDF
   const handleDownloadPdf = useCallback(async () => {
-    const contentEl = contentRef.current;
-    const scrollEl = scrollRef.current;
-    if (!contentEl || !scrollEl) return;
-    
+    if (!result) return;
     setIsGeneratingPdf(true);
-    
+
     try {
-      // Save original scroll state
-      const originalScrollTop = scrollEl.scrollTop;
-      const originalMaxHeight = scrollEl.style.maxHeight;
-      const originalOverflow = scrollEl.style.overflowY;
-      const originalHeight = scrollEl.style.height;
-      
-      // Temporarily expand the scroll container to show ALL content
-      scrollEl.scrollTop = 0;
-      scrollEl.style.maxHeight = 'none';
-      scrollEl.style.overflowY = 'visible';
-      scrollEl.style.height = 'auto';
-      
-      // Wait for layout to settle
-      await new Promise(r => setTimeout(r, 100));
-      
-      // Capture the content with html2canvas
-      const canvas = await html2canvas(contentEl, {
-        backgroundColor: '#08020c',
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        // Remove border styling for PDF
-        onclone: (clonedDoc) => {
-          const clonedContent = clonedDoc.querySelector('[data-pdf-content]');
-          if (clonedContent) {
-            // Remove buttons from the clone
-            const buttons = clonedContent.querySelectorAll('[data-pdf-hide]');
-            buttons.forEach(btn => btn.remove());
-          }
+      // ── PDF Setup ──
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const W = 210, H = 297;
+      const margin = 18;
+      const contentW = W - margin * 2;
+      let y = margin;
+
+      // Colors (only used for accents, not background)
+      const orange = [249, 115, 22];
+      const purple = [168, 85, 247];
+      const green = [0, 180, 110];
+      const red = [220, 60, 60];
+      const black = [30, 30, 30];
+      const gray = [100, 100, 100];
+      const lightGray = [180, 180, 180];
+
+      // ── Helper: add page if needed ──
+      const ensureSpace = (needed) => {
+        if (y + needed > H - margin) {
+          pdf.addPage();
+          y = margin;
+          return true;
         }
-      });
-      
-      // Restore original scroll state
-      scrollEl.style.maxHeight = originalMaxHeight;
-      scrollEl.style.overflowY = originalOverflow;
-      scrollEl.style.height = originalHeight;
-      scrollEl.scrollTop = originalScrollTop;
-      
-      // Calculate PDF dimensions (A4 width, variable height)
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const pdfWidth = 210; // A4 width in mm
-      const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
-      
-      // Create PDF - use portrait, fit content width to page
-      const pdf = new jsPDF({
-        orientation: pdfHeight > pdfWidth * 1.5 ? 'portrait' : 'portrait',
-        unit: 'mm',
-        format: [pdfWidth, Math.max(pdfHeight, 297)], // At least A4 height
-      });
-      
-      // If content is taller than one page, we need to paginate
-      const pageHeight = 297; // A4 page height in mm
-      const imgData = canvas.toDataURL('image/png');
-      
-      if (pdfHeight <= pageHeight) {
-        // Single page
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      } else {
-        // Multi-page: slice the canvas into page-sized chunks
-        const totalPages = Math.ceil(pdfHeight / pageHeight);
-        const sliceHeightPx = (pageHeight / pdfHeight) * imgHeight;
-        
-        for (let page = 0; page < totalPages; page++) {
-          if (page > 0) pdf.addPage([pdfWidth, pageHeight]);
-          
-          // Create a slice canvas for this page
-          const sliceCanvas = document.createElement('canvas');
-          sliceCanvas.width = imgWidth;
-          sliceCanvas.height = Math.min(sliceHeightPx, imgHeight - page * sliceHeightPx);
-          const sliceCtx = sliceCanvas.getContext('2d');
-          
-          // Fill with background color
-          sliceCtx.fillStyle = '#08020c';
-          sliceCtx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-          
-          // Draw the slice
-          sliceCtx.drawImage(
-            canvas,
-            0, page * sliceHeightPx,                        // source x, y
-            imgWidth, sliceCanvas.height,                     // source w, h
-            0, 0,                                             // dest x, y
-            imgWidth, sliceCanvas.height                      // dest w, h
-          );
-          
-          const sliceData = sliceCanvas.toDataURL('image/png');
-          const sliceHeight = (sliceCanvas.height * pdfWidth) / imgWidth;
-          pdf.addImage(sliceData, 'PNG', 0, 0, pdfWidth, sliceHeight);
+        return false;
+      };
+
+      // ── Helper: wrapped text that returns lines used ──
+      const writeWrapped = (text, x, startY, maxW, fontSize, color, style = 'normal') => {
+        pdf.setFontSize(fontSize);
+        pdf.setTextColor(...color);
+        pdf.setFont('helvetica', style);
+        const lines = pdf.splitTextToSize(text, maxW);
+        const lineH = fontSize * 0.45;
+        for (let i = 0; i < lines.length; i++) {
+          ensureSpace(lineH);
+          pdf.text(lines[i], x, y);
+          y += lineH;
         }
+        return lines.length;
+      };
+
+      // ── Helper: section heading with colored left bar ──
+      const sectionHeading = (title, color) => {
+        ensureSpace(14);
+        y += 4;
+        pdf.setFillColor(...color);
+        pdf.rect(margin, y - 4, 1.5, 7, 'F');
+        pdf.setFontSize(12);
+        pdf.setTextColor(...color);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(title.toUpperCase(), margin + 5, y);
+        y += 8;
+      };
+
+      // ── Helper: key-value line ──
+      const keyValue = (key, value) => {
+        if (!value) return;
+        ensureSpace(6);
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...gray);
+        pdf.text(key + ':', margin + 2, y);
+        const keyW = pdf.getTextWidth(key + ':  ');
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...black);
+        const valLines = pdf.splitTextToSize(value, contentW - keyW - 4);
+        pdf.text(valLines, margin + 2 + keyW, y);
+        y += valLines.length * 4.2;
+      };
+
+      // ── Thin horizontal rule ──
+      const hr = (color = lightGray) => {
+        ensureSpace(4);
+        y += 2;
+        pdf.setDrawColor(...color);
+        pdf.setLineWidth(0.15);
+        pdf.line(margin, y, W - margin, y);
+        y += 4;
+      };
+
+      // ═══════════════════════════════════════════════════
+      // PAGE 1: COVER / IDENTITY
+      // ═══════════════════════════════════════════════════
+
+      // Top brand line
+      pdf.setFontSize(8);
+      pdf.setTextColor(...lightGray);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('GARDEN FOR LIFE  —  Advanced Consciousness Assessment', margin, y);
+      y += 3;
+      pdf.setDrawColor(...green);
+      pdf.setLineWidth(0.4);
+      pdf.line(margin, y, W - margin, y);
+      y += 10;
+
+      // Profile image (try to load)
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = result.imageUrl;
+        });
+        const imgCanvas = document.createElement('canvas');
+        const imgSize = 300;
+        imgCanvas.width = imgSize;
+        imgCanvas.height = imgSize;
+        const ctx = imgCanvas.getContext('2d');
+        // Draw circular mask
+        ctx.beginPath();
+        ctx.arc(imgSize / 2, imgSize / 2, imgSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(img, 0, 0, imgSize, imgSize);
+        const imgData = imgCanvas.toDataURL('image/png');
+        const pdfImgSize = 42;
+        const imgX = W / 2 - pdfImgSize / 2;
+        pdf.addImage(imgData, 'PNG', imgX, y, pdfImgSize, pdfImgSize);
+        y += pdfImgSize + 6;
+      } catch {
+        // Skip image if it can't be loaded
+        y += 4;
       }
-      
-      // Download
+
+      // Extended Archetype Name (colored, centered)
+      pdf.setFontSize(22);
+      pdf.setTextColor(...purple);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(result.name || '', W / 2, y, { align: 'center' });
+      y += 8;
+
+      if (result.extendedSubtitle) {
+        pdf.setFontSize(11);
+        pdf.setTextColor(...orange);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(result.extendedSubtitle, W / 2, y, { align: 'center' });
+        y += 6;
+      }
+
+      // Description
+      if (result.description) {
+        pdf.setFontSize(10);
+        pdf.setTextColor(...gray);
+        pdf.setFont('helvetica', 'italic');
+        const descLines = pdf.splitTextToSize(`"${result.description}"`, contentW - 20);
+        descLines.forEach(line => {
+          pdf.text(line, W / 2, y, { align: 'center' });
+          y += 4.5;
+        });
+        y += 2;
+      }
+
+      // Main + Support indicator
+      if (result.secondaryName) {
+        pdf.setFontSize(9);
+        pdf.setTextColor(...green);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(
+          `${result.mainName} ${result.harmonyActive ? '\u27F7' : '+'} ${result.secondaryName}`,
+          W / 2, y, { align: 'center' }
+        );
+        y += 5;
+      }
+
+      if (result.harmonyActive) {
+        pdf.setFontSize(8);
+        pdf.setTextColor(...green);
+        pdf.text('Harmony Bonus Active (+33)', W / 2, y, { align: 'center' });
+        y += 4;
+      }
+      if (result.shadowBonusActive) {
+        pdf.setFontSize(8);
+        pdf.setTextColor(...orange);
+        pdf.text('Shadow Bonus Active (+69)', W / 2, y, { align: 'center' });
+        y += 4;
+      }
+
+      hr(green);
+
+      // ═══════════════════════════════════════════════════
+      // SECTION 2: WHY THIS COMBINATION
+      // ═══════════════════════════════════════════════════
+      if (result.combinationText) {
+        sectionHeading(`Waarom jij ${result.name} bent`, green);
+        writeWrapped(result.combinationText, margin + 2, y, contentW - 4, 9.5, black);
+        y += 4;
+        hr();
+      }
+
+      // ═══════════════════════════════════════════════════
+      // SECTION 3: MAIN ARCHETYPE
+      // ═══════════════════════════════════════════════════
+      sectionHeading(`De Essentie — ${result.mainName} (${result.mainNameEn})`, orange);
+      if (result.group) {
+        pdf.setFontSize(8);
+        pdf.setTextColor(...gray);
+        pdf.text(`Groep: ${result.group}`, margin + 5, y);
+        y += 5;
+      }
+      keyValue('Motivatie', result.mainMotivation);
+      keyValue('Kracht', result.mainPositive);
+      keyValue('Schaduwkant', result.mainShadowTrait);
+      y += 2;
+      hr();
+
+      // ═══════════════════════════════════════════════════
+      // SECTION 4: SUPPORT ARCHETYPE
+      // ═══════════════════════════════════════════════════
+      sectionHeading(`De Vermenigvuldiging — ${result.secondaryName} (${result.secondaryNameEn})`, purple);
+      if (result.supportGroup) {
+        pdf.setFontSize(8);
+        pdf.setTextColor(...gray);
+        pdf.text(`Support Groep: ${result.supportGroup}`, margin + 5, y);
+        y += 5;
+      }
+      keyValue('Motivatie', result.secondaryMotivation);
+      keyValue('Kracht', result.secondaryPositive);
+      if (result.secondaryDescription) {
+        keyValue('Profiel', result.secondaryDescription);
+      }
+      if (result.harmonyActive) {
+        ensureSpace(6);
+        pdf.setFontSize(8);
+        pdf.setTextColor(...green);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`\u2666 Harmony: ${result.mainNameEn} + ${result.secondaryNameEn} — complementaire as`, margin + 2, y);
+        y += 5;
+      }
+      y += 2;
+      hr();
+
+      // ═══════════════════════════════════════════════════
+      // SECTION 5: ALL 6 OUTCOMES TABLE
+      // ═══════════════════════════════════════════════════
+      if (result.allSupportArchetypes) {
+        sectionHeading(`Alle Uitkomsten voor ${result.mainName}`, green);
+        ensureSpace(28);
+        const colW = contentW / 3;
+        result.allSupportArchetypes.forEach((sa, i) => {
+          const col = i % 3;
+          const row = Math.floor(i / 3);
+          if (col === 0 && row > 0) y += 12;
+          const cx = margin + col * colW;
+          const cy = y;
+          // Highlight active
+          if (sa.isActive) {
+            pdf.setFillColor(240, 230, 255);
+            pdf.roundedRect(cx, cy - 3.5, colW - 2, 11, 1.5, 1.5, 'F');
+          }
+          pdf.setFontSize(7);
+          pdf.setTextColor(...(sa.isActive ? purple : gray));
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(sa.group, cx + 2, cy);
+          pdf.setFontSize(9);
+          pdf.setTextColor(...(sa.isActive ? purple : black));
+          pdf.setFont('helvetica', sa.isActive ? 'bold' : 'normal');
+          pdf.text(sa.extendedName, cx + 2, cy + 4.2);
+          if (sa.isActive) {
+            pdf.setFontSize(6);
+            pdf.setTextColor(...green);
+            pdf.text('\u25B8 JOUW RESULTAAT', cx + 2, cy + 7.5);
+          }
+        });
+        y += 24;
+        hr();
+      }
+
+      // ═══════════════════════════════════════════════════
+      // SECTION 6: SHADOW
+      // ═══════════════════════════════════════════════════
+      if (result.shadowPartner) {
+        sectionHeading(`De Schaduw — ${result.shadowName} (${result.shadowNameEn})`, orange);
+        if (result.mainShadowTension) {
+          writeWrapped(result.mainShadowTension, margin + 2, y, contentW - 4, 9, orange, 'italic');
+          y += 2;
+        }
+        if (result.shadowInsight) {
+          writeWrapped(result.shadowInsight, margin + 2, y, contentW - 4, 9.5, black);
+        } else if (result.shadowDescription) {
+          writeWrapped(result.shadowDescription, margin + 2, y, contentW - 4, 9.5, black);
+        }
+        y += 4;
+        hr();
+      }
+
+      // ═══════════════════════════════════════════════════
+      // SECTION 7: BLINDSPOT
+      // ═══════════════════════════════════════════════════
+      if (result.blindspotPartner) {
+        sectionHeading(`De Blindspot — ${result.blindspotName} (${result.blindspotNameEn})`, red);
+        ensureSpace(6);
+        pdf.setFontSize(8);
+        pdf.setTextColor(...red);
+        pdf.setFont('helvetica', 'italic');
+        pdf.text(`De tegenhanger van je Support (${result.secondaryNameEn}) — jouw externe blinde vlek`, margin + 5, y);
+        y += 5;
+        if (result.blindspotDescription) {
+          writeWrapped(result.blindspotDescription, margin + 2, y, contentW - 4, 9.5, black);
+          y += 2;
+        }
+        if (result.blindspotShadowTrait) {
+          keyValue('Sabotage patroon', result.blindspotShadowTrait);
+        }
+        y += 4;
+        hr();
+      }
+
+      // ═══════════════════════════════════════════════════
+      // SECTION 8a: RADAR CHART (captured from DOM)
+      // ═══════════════════════════════════════════════════
+      if (radarRef.current) {
+        sectionHeading('Visuele Analyse — Archetype Matrix', green);
+        try {
+          const radarCanvas = await html2canvas(radarRef.current, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+            useCORS: true,
+            logging: false,
+          });
+          const radarImg = radarCanvas.toDataURL('image/png');
+          const radarW = Math.min(contentW, 120);
+          const radarH = (radarCanvas.height / radarCanvas.width) * radarW;
+          ensureSpace(radarH + 4);
+          pdf.addImage(radarImg, 'PNG', W / 2 - radarW / 2, y, radarW, radarH);
+          y += radarH + 6;
+        } catch {
+          y += 4;
+        }
+        hr();
+      }
+
+      // ═══════════════════════════════════════════════════
+      // SECTION 8b: DUAL-CORE DYNAMICS (drawn natively)
+      // ═══════════════════════════════════════════════════
+      if (result.subgroups && result.subgroups.length > 0) {
+        sectionHeading('Dual-Core Dynamics', purple);
+        const MAX_PTS = 25;
+        const barMaxW = 50;
+        const rowH = 10;
+
+        result.subgroups.forEach(sg => {
+          ensureSpace(rowH + 2);
+          const leftPct = MAX_PTS > 0 ? sg.leftScore / MAX_PTS : 0;
+          const rightPct = MAX_PTS > 0 ? sg.rightScore / MAX_PTS : 0;
+          const centerX = W / 2;
+          const barY = y - 1;
+
+          // Left bar (purple, grows from center to left)
+          pdf.setFillColor(...purple);
+          const leftBarW = leftPct * barMaxW;
+          pdf.rect(centerX - leftBarW - 1, barY, leftBarW, 4, 'F');
+
+          // Right bar (orange, grows from center to right)
+          pdf.setFillColor(...orange);
+          const rightBarW = rightPct * barMaxW;
+          pdf.rect(centerX + 1, barY, rightBarW, 4, 'F');
+
+          // Center divider
+          pdf.setFillColor(200, 200, 200);
+          pdf.rect(centerX - 0.3, barY - 0.5, 0.6, 5, 'F');
+
+          // Labels & scores
+          pdf.setFontSize(7.5);
+          pdf.setFont('helvetica', 'bold');
+          // Left label
+          pdf.setTextColor(...purple);
+          pdf.text(`${sg.leftLabel}  ${sg.leftScore}`, centerX - barMaxW - 2, y + 1.5, { align: 'right' });
+          // Right label
+          pdf.setTextColor(...orange);
+          pdf.text(`${sg.rightScore}  ${sg.rightLabel}`, centerX + barMaxW + 2, y + 1.5);
+
+          // Bonus indicators
+          if (sg.harmonyPoints > 0) {
+            pdf.setFontSize(5.5);
+            pdf.setTextColor(...green);
+            pdf.text(`+${sg.harmonyPoints} harmony`, centerX, y + 5, { align: 'center' });
+          }
+          if (sg.shadowPoints > 0) {
+            pdf.setFontSize(5.5);
+            pdf.setTextColor(...orange);
+            pdf.text(`+${sg.shadowPoints} shadow`, centerX, y + (sg.harmonyPoints > 0 ? 7.5 : 5), { align: 'center' });
+          }
+
+          y += rowH + (sg.harmonyPoints > 0 || sg.shadowPoints > 0 ? 4 : 0);
+        });
+        y += 4;
+        hr();
+      }
+
+      // ═══════════════════════════════════════════════════
+      // SECTION 9-11: ANALYSIS SECTIONS
+      // ═══════════════════════════════════════════════════
+      if (result.analysisSections) {
+        const sectionColors = [green, purple, orange];
+        result.analysisSections.forEach((section, i) => {
+          sectionHeading(section.title, sectionColors[i % 3]);
+          writeWrapped(section.content, margin + 2, y, contentW - 4, 9.5, black);
+          y += 4;
+          if (i < result.analysisSections.length - 1) hr();
+        });
+      }
+
+      // ═══════════════════════════════════════════════════
+      // FOOTER
+      // ═══════════════════════════════════════════════════
+      ensureSpace(14);
+      y += 4;
+      pdf.setDrawColor(...green);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, y, W - margin, y);
+      y += 5;
+      pdf.setFontSize(7);
+      pdf.setTextColor(...lightGray);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Garden for Life  \u2022  Advanced Consciousness Assessment', W / 2, y, { align: 'center' });
+      y += 3.5;
+      pdf.text(`Score: ${result.totalScore} / ${result.maxScore}`, W / 2, y, { align: 'center' });
+      y += 3.5;
+      pdf.text(`Gegenereerd op ${new Date().toLocaleDateString('nl-NL')}`, W / 2, y, { align: 'center' });
+
+      // ── Download ──
       const archetypeName = (result?.extendedName || 'Archetype').replace(/\s+/g, '_');
       pdf.save(`GardenForLife_${archetypeName}.pdf`);
     } catch (err) {
@@ -885,6 +1241,226 @@ const AssessmentResultsModal = ({
                   </div>
                 )}
 
+                {/* ── 4b. Blindspot — opposite of Support (external saboteur) ── */}
+                {result.blindspotPartner && (
+                  <div style={{
+                    width: '100%',
+                    background: 'rgba(239, 68, 68, 0.05)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: '0.75rem',
+                    padding: rs.cardPad,
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
+                      background: 'linear-gradient(to right, transparent, #ef4444, transparent)',
+                    }} />
+                    <h3 style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      color: '#ef4444',
+                      fontFamily: "'Lexend Mega', sans-serif",
+                      fontSize: '0.85rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.15em',
+                      marginBottom: '0.75rem',
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                      Blindspot — {result.blindspotName} ({result.blindspotNameEn})
+                    </h3>
+                    <p style={{
+                      fontSize: '0.75rem',
+                      color: 'rgba(239, 68, 68, 0.6)',
+                      fontFamily: "'Rajdhani', sans-serif",
+                      fontWeight: 600,
+                      fontStyle: 'italic',
+                      marginBottom: '0.75rem',
+                      letterSpacing: '0.05em',
+                    }}>
+                      De tegenhanger van je Support ({result.secondaryNameEn}) — jouw externe blinde vlek
+                    </p>
+                    {result.blindspotDescription && (
+                      <p style={{
+                        color: 'rgba(209, 213, 219, 0.9)',
+                        fontFamily: "'Figtree', sans-serif",
+                        fontSize: '0.9rem',
+                        lineHeight: 1.7,
+                        textAlign: 'justify',
+                        marginBottom: '0.5rem',
+                      }}>
+                        {result.blindspotDescription}
+                      </p>
+                    )}
+                    {result.blindspotShadowTrait && (
+                      <div>
+                        <span style={{ fontSize: '0.7rem', color: '#ef4444', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sabotage patroon: </span>
+                        <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.7)', fontFamily: "'Figtree', sans-serif" }}>{result.blindspotShadowTrait}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── 4c. OCEAN Personality Profile ── */}
+                {result.extendedOcean && (
+                  <div style={{
+                    width: '100%',
+                    background: 'rgba(168, 85, 247, 0.04)',
+                    border: '1px solid rgba(168, 85, 247, 0.15)',
+                    borderRadius: '0.75rem',
+                    padding: rs.cardPad,
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
+                      background: 'linear-gradient(to right, #a855f7, #22d3ee, #fbbf24, #f472b6, #ef4444)',
+                    }} />
+                    <h3 style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      color: '#a855f7',
+                      fontFamily: "'Lexend Mega', sans-serif",
+                      fontSize: '0.85rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.15em',
+                      marginBottom: '1rem',
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>
+                      </svg>
+                      OCEAN Persoonlijkheidsprofiel
+                    </h3>
+
+                    {/* OCEAN Bars */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.25rem' }}>
+                      {['O', 'C', 'E', 'A', 'N'].map(dim => {
+                        const score = result.extendedOcean.ocean[dim];
+                        const textRating = result.extendedOcean.oceanText[dim];
+                        const color = result.oceanColors[dim];
+                        const label = result.oceanLabels[dim];
+                        const pct = (score / 10) * 100;
+                        return (
+                          <div key={dim} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{
+                              width: '2rem', textAlign: 'right',
+                              fontFamily: "'Lexend Mega', sans-serif",
+                              fontSize: '0.7rem', fontWeight: 700,
+                              color: color, letterSpacing: '0.05em',
+                            }}>
+                              {dim}
+                            </div>
+                            <div style={{
+                              flex: 1, height: '1.2rem', borderRadius: '0.6rem',
+                              background: 'rgba(0, 0, 0, 0.4)',
+                              border: `1px solid ${color}22`,
+                              overflow: 'hidden', position: 'relative',
+                            }}>
+                              <div style={{
+                                height: '100%', width: `${pct}%`,
+                                background: `linear-gradient(to right, ${color}33, ${color}aa)`,
+                                borderRadius: '0.6rem',
+                                transition: 'width 1s ease-out',
+                              }} />
+                              <span style={{
+                                position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)',
+                                fontSize: '0.6rem', fontFamily: "'Rajdhani', sans-serif",
+                                color: 'rgba(209, 213, 219, 0.6)', fontWeight: 600,
+                              }}>
+                                {textRating}
+                              </span>
+                            </div>
+                            <div style={{
+                              width: '1.5rem', textAlign: 'center',
+                              fontFamily: "'Rajdhani', sans-serif",
+                              fontSize: '0.75rem', fontWeight: 700,
+                              color: color,
+                            }}>
+                              {score}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* OCEAN Dimension Legend */}
+                    <div style={{
+                      display: 'flex', flexWrap: 'wrap', gap: '0.25rem 0.75rem',
+                      marginBottom: '1rem', paddingBottom: '0.75rem',
+                      borderBottom: '1px solid rgba(168, 85, 247, 0.1)',
+                    }}>
+                      {['O', 'C', 'E', 'A', 'N'].map(dim => (
+                        <span key={dim} style={{
+                          fontSize: '0.65rem', fontFamily: "'Rajdhani', sans-serif",
+                          color: 'rgba(209, 213, 219, 0.5)',
+                        }}>
+                          <span style={{ color: result.oceanColors[dim], fontWeight: 700 }}>{dim}</span>
+                          {' = '}{result.oceanLabels[dim].dutch}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Neuroticism Trigger */}
+                    {result.neuroticismTrigger && (
+                      <div style={{
+                        background: 'rgba(239, 68, 68, 0.08)',
+                        border: '1px solid rgba(239, 68, 68, 0.15)',
+                        borderRadius: '0.5rem',
+                        padding: '0.75rem 1rem',
+                        marginBottom: '1rem',
+                      }}>
+                        <div style={{
+                          fontSize: '0.65rem', color: '#ef4444',
+                          fontFamily: "'Rajdhani', sans-serif",
+                          fontWeight: 700, textTransform: 'uppercase',
+                          letterSpacing: '0.1em', marginBottom: '0.35rem',
+                        }}>
+                          Neuroticisme Trigger
+                        </div>
+                        <p style={{
+                          fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.85)',
+                          fontFamily: "'Figtree', sans-serif",
+                          lineHeight: 1.6, margin: 0,
+                        }}>
+                          {result.neuroticismTrigger}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Core Profile: Workplace & Conflict */}
+                    {result.coreProfile && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {[
+                          { label: 'Superkracht op de Werkvloer', text: result.coreProfile.workplaceSuperpower, color: '#00ff9d' },
+                          { label: 'Conflictstijl', text: result.coreProfile.conflictStyle, color: '#fbbf24' },
+                          { label: 'Relatiepatroon', text: result.coreProfile.relationshipPattern, color: '#f472b6' },
+                          { label: 'Individuatiepad', text: result.coreProfile.individuationPath, color: '#a855f7' },
+                        ].map(({ label, text, color: c }) => (
+                          <div key={label}>
+                            <div style={{
+                              fontSize: '0.65rem', color: c,
+                              fontFamily: "'Rajdhani', sans-serif",
+                              fontWeight: 700, textTransform: 'uppercase',
+                              letterSpacing: '0.1em', marginBottom: '0.25rem',
+                            }}>
+                              {label}
+                            </div>
+                            <p style={{
+                              fontSize: '0.85rem',
+                              color: 'rgba(209, 213, 219, 0.8)',
+                              fontFamily: "'Figtree', sans-serif",
+                              lineHeight: 1.6, margin: 0,
+                              textAlign: 'justify',
+                            }}>
+                              {text}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* ── 5. Subgroup Dynamics ── */}
                 <div style={{
                   width: '100%',
@@ -907,7 +1483,9 @@ const AssessmentResultsModal = ({
                       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                     </svg>
                   </div>
-                  <SubgroupCounters subgroups={result.subgroups} />
+                  <div ref={subgroupRef}>
+                    <SubgroupCounters subgroups={result.subgroups} />
+                  </div>
                 </div>
 
                 {/* ── 6. Radar Chart (full width) ── */}
@@ -933,7 +1511,7 @@ const AssessmentResultsModal = ({
                   }}>
                     {'/// ARCHETYPE_MATRIX'}
                   </div>
-                  <div style={{ width: '100%', height: rs.radarHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div ref={radarRef} style={{ width: '100%', height: rs.radarHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <SciFiRadarChart data={result.radarData} />
                   </div>
                 </div>
@@ -1346,7 +1924,7 @@ function computeResultFromAnswers(layerAnswers) {
   // ──────────────────────────────────────────────────────────
   // 4. Extended Archetype Name (72-outcome matrix)
   // ──────────────────────────────────────────────────────────
-  const supportGroup = ARCHETYPE_TO_GROUP[supportKey] || 'WISDOM';
+  const supportGroup = ARCHETYPE_TO_GROUP[supportKey] || 'RULING';
   const extendedName = getExtendedArchetype(mainKey, supportKey);
 
   // ──────────────────────────────────────────────────────────
@@ -1357,8 +1935,15 @@ function computeResultFromAnswers(layerAnswers) {
 
   // ──────────────────────────────────────────────────────────
   // 5. Shadow Archetype (psychological tension point)
+  //    Shadow = 180° opposite of MAIN archetype (internal fuel)
   // ──────────────────────────────────────────────────────────
   const shadowKey = SHADOW_PAIRS[mainKey] || null;
+
+  // ──────────────────────────────────────────────────────────
+  // 5b. Blindspot Archetype (external saboteur)
+  //     Blindspot = shadow partner of SUPPORT archetype
+  // ──────────────────────────────────────────────────────────
+  const blindspotKey = SHADOW_PAIRS[supportKey] || null;
 
   const primaryArchetype = ARCHETYPES[mainKey] || ARCHETYPES.SAGE;
   const supportArchetype = ARCHETYPES[supportKey] || ARCHETYPES.EXPLORER;
@@ -1381,7 +1966,7 @@ function computeResultFromAnswers(layerAnswers) {
   // ──────────────────────────────────────────────────────────
   // 6b. All possible support archetypes for this main archetype
   // ──────────────────────────────────────────────────────────
-  const ALL_GROUPS = ['WISDOM', 'ACTION', 'RELATIONAL', 'CREATIVE', 'RULING', 'SPIRIT'];
+  const ALL_GROUPS = ['RULING', 'RELATIONAL', 'SEEKER', 'CHAOS', 'ABSTRACT', 'AGENCY'];
   const allSupportArchetypes = ALL_GROUPS.map(group => {
     const extKey = `${mainKey}_${group}`;
     const extName = EXTENDED_ARCHETYPES[extKey] || mainKey;
@@ -1392,6 +1977,31 @@ function computeResultFromAnswers(layerAnswers) {
       subtitle: desc?.subtitle || group,
       isActive: group === supportGroup,
     };
+  });
+
+  // ──────────────────────────────────────────────────────────
+  // 6c. Full 72 Matrix: 12 Main × 6 Support Groups
+  //     For the "Matrix van 72 Mogelijkheden" display
+  // ──────────────────────────────────────────────────────────
+  const ALL_MAIN_KEYS = ALL_ARCHETYPE_KEYS;
+  const fullMatrix72 = ALL_MAIN_KEYS.map(mk => {
+    const mainArch = ARCHETYPES[mk] || {};
+    const row = {
+      mainKey: mk,
+      mainName: mainArch.name || mk,
+      mainNameEn: mainArch.nameEn || mk,
+      isActiveMain: mk === mainKey,
+      outcomes: ALL_GROUPS.map(group => {
+        const extKey = `${mk}_${group}`;
+        const extName = EXTENDED_ARCHETYPES[extKey] || mk;
+        return {
+          group,
+          extendedName: extName,
+          isActive: mk === mainKey && group === supportGroup,
+        };
+      }),
+    };
+    return row;
   });
 
   // ──────────────────────────────────────────────────────────
@@ -1431,15 +2041,21 @@ function computeResultFromAnswers(layerAnswers) {
   const analysisSections = analysisTemplate
     ? analysisTemplate.sections.map(s => ({ title: s.title, content: s.content }))
     : [
-        { title: 'Systeemkern Analyse', content: 'Analyse wordt berekend...' },
-        { title: 'Tactische Implementatie', content: 'Implementatie wordt berekend...' },
-        { title: 'Toekomsttraject & Integratie', content: 'Traject wordt berekend...' },
+        { title: 'De Alchemie van Individuatie', content: 'Analyse wordt berekend...' },
+        { title: 'Het Neurale Schakelbord', content: 'Implementatie wordt berekend...' },
+        { title: 'Ontologische Evolutie', content: 'Traject wordt berekend...' },
       ];
 
   // ──────────────────────────────────────────────────────────
   // 9. Compute total score
   // ──────────────────────────────────────────────────────────
   const totalScore = Object.values(archetypeScores).reduce((s, v) => s + v, 0);
+
+  // ──────────────────────────────────────────────────────────
+  // 8b. OCEAN Personality Profiles
+  // ──────────────────────────────────────────────────────────
+  const coreProfile = getCoreProfile(mainKey);
+  const extendedOcean = getExtendedOcean(mainKey, supportGroup);
 
   const resultObj = {
     // Extended identity
@@ -1465,11 +2081,18 @@ function computeResultFromAnswers(layerAnswers) {
     secondaryDescription: supportArchetype.description || null,
     secondaryMotivation: supportArchetype.motivation || null,
     secondaryPositive: supportArchetype.positive || null,
-    // Shadow
+    // Shadow (180° opposite of Main — internal fuel)
     shadowPartner: shadowKey,
     shadowName: shadowKey ? (ARCHETYPES[shadowKey]?.name || shadowKey) : null,
     shadowNameEn: shadowKey ? (ARCHETYPES[shadowKey]?.nameEn || shadowKey) : null,
     shadowDescription: shadowKey ? (ARCHETYPES[shadowKey]?.description || null) : null,
+    // Blindspot (shadow partner of Support — external saboteur)
+    blindspotPartner: blindspotKey,
+    blindspotName: blindspotKey ? (ARCHETYPES[blindspotKey]?.name || blindspotKey) : null,
+    blindspotNameEn: blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn || blindspotKey) : null,
+    blindspotDescription: blindspotKey ? (ARCHETYPES[blindspotKey]?.description || null) : null,
+    blindspotShadowTrait: blindspotKey ? (ARCHETYPES[blindspotKey]?.shadow || null) : null,
+    blindspotTension: blindspotKey ? (ARCHETYPES[blindspotKey]?.shadowTension || null) : null,
     // Harmony
     harmonyActive,
     shadowBonusActive,
@@ -1484,9 +2107,16 @@ function computeResultFromAnswers(layerAnswers) {
     radarData,
     subgroups,
     allSupportArchetypes,
+    fullMatrix72,
     analysisSections,
     totalScore,
     maxScore: shadowBonusActive ? 369 : harmonyActive ? 333 : 300,
+    // OCEAN Personality Profile
+    coreProfile,                                       // Full core archetype psychological portrait
+    extendedOcean,                                     // OCEAN scores + trigger for this extended archetype
+    oceanLabels: OCEAN_LABELS,                         // Dimension label map (short/full/dutch)
+    oceanColors: OCEAN_COLORS,                         // Dimension color map for UI
+    neuroticismTrigger: extendedOcean?.neuroticismTrigger || null,
     // Raw data for future API agent
     _archetypeScores: archetypeScores,
     _primaryKey: mainKey,
@@ -1495,6 +2125,8 @@ function computeResultFromAnswers(layerAnswers) {
     _harmonyActive: harmonyActive,
     // Full answer log (backend-only, for account-linked retrieval)
     _answerLog: answerLog,
+    // AI Agent prompt (for Ontologische Evolutie section)
+    _aiAgentPrompt: `Je bent een persoonlijke ontwikkelingscoach gespecialiseerd in Jungiaanse archetypen en het OCEAN persoonlijkheidsmodel. Mijn profiel: Extended Archetype "${extendedName}" (Main: ${primaryArchetype.nameEn || mainKey}, Support: ${supportArchetype.nameEn || supportKey}, Support Group: ${supportGroup}). Mijn schaduw (180° individuatie) is ${shadowKey ? (ARCHETYPES[shadowKey]?.nameEn || shadowKey) : 'onbekend'}, mijn blindspot is ${blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn || blindspotKey) : 'onbekend'}. Harmony bonus: ${harmonyActive ? 'actief' : 'niet actief'}. OCEAN profiel: O=${extendedOcean?.ocean?.O || '?'}, C=${extendedOcean?.ocean?.C || '?'}, E=${extendedOcean?.ocean?.E || '?'}, A=${extendedOcean?.ocean?.A || '?'}, N=${extendedOcean?.ocean?.N || '?'}. Neuroticisme-trigger: ${extendedOcean?.neuroticismTrigger || 'onbekend'}. ${coreProfile ? `Werkplek superkracht: ${coreProfile.workplaceSuperpower} Conflictstijl: ${coreProfile.conflictStyle} Individuatiepad: ${coreProfile.individuationPath}` : ''} Help me mijn schaduw te integreren en mijn blindspot te herkennen in dagelijkse situaties.`,
   };
 
   // ──────────────────────────────────────────────────────────

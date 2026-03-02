@@ -1,0 +1,66 @@
+# ─────────────────────────────────────────────────────────────
+# Garden For Life — Deploy to Cloudflare Pages
+#
+# Builds the React SPA and deploys static assets to Cloudflare.
+# Injects secrets (ENCRYPTION_KEY, etc.) for production use.
+#
+# Required GitHub Repository Secrets:
+#   CLOUDFLARE_API_TOKEN     — Cloudflare API token with Pages edit permission
+#   CLOUDFLARE_ACCOUNT_ID    — Your Cloudflare account ID
+#   ENCRYPTION_KEY           — 32-byte AES-256 master key (base64)
+#   MONGODB_URI              — MongoDB Atlas connection string
+#   JWT_SECRET               — JWT signing secret
+#   GEMINI_API_KEY           — Google Gemini API key
+# ─────────────────────────────────────────────────────────────
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Build React SPA ──
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          CI: false
+
+      # ── Deploy to Cloudflare Pages ──
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build --project-name=gfl-trunk
+
+      # ── Inject backend secrets into Cloudflare (Workers / Pages Functions) ──
+      # These are available as env.VAR_NAME inside your Worker/Pages Function
+      - name: Set Cloudflare secrets
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages secret put ENCRYPTION_KEY --project-name=gfl-trunk
+        env:
+          # wrangler reads from stdin for secret values
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

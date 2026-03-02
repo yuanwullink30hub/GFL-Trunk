@@ -38,6 +38,7 @@ export {
   COMPLEMENTARY_PAIRS,
   SHADOW_PAIRS,
   ARCHETYPE_TO_GROUP,
+  ARCHETYPE_NUMBERS,
   EXTENDED_ARCHETYPES,
   getExtendedArchetype,
   isComplementaryPair,

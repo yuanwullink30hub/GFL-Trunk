@@ -1,9 +1,9 @@
 /**
- * Scoring Algorithm — Master Index
+ * Scoring Algorithm — Master Index (Neuraal Schakelbord)
  * 
  * Contains the scoring logic that converts raw user answers into:
  * 1. Per-archetype scores (12 archetypes, +5 pts per answer, max 300 base)
- * 2. Harmony Bonus (+69 pts to Main & Support if complementary pair)
+ * 2. Harmony Bonus (+69 pts to Main & Support if same-pillar neighbors)
  * 3. Radar chart data (12 archetype anchors, 0-369 scale)
  * 4. Subgroup dynamics (6 archetype group polarity pairs)
  * 5. Primary & secondary archetype determination
@@ -13,7 +13,8 @@
  *   Single choice: +5 pts to the answer's archetype
  *   Dual choice: Primary +3 pts, Secondary +2 pts
  *   Base max: 60 × 5 = 300 pts
- *   Harmony Bonus: +69 to BOTH Main & Support if complementary pair
+ *   Harmony Bonus: +69 to BOTH Main & Support if Neurale Zuil neighbors
+ *   Shadow Integration: 180°-as measurement (no scoring bonus)
  *   Total max: 369 pts
  */
 
@@ -38,16 +39,16 @@ export const RADAR_TRAITS = [
 ];
 
 /**
- * The 6 subgroup polarity pairs — mapped to the 6 Archetype Functional Groups.
- * Each pair shows the tension between the Set A and Set B archetype in that group.
+ * The 6 subgroup polarity pairs — mapped to the 6 Neurale Zuilen (Neural Pillars).
+ * Each pair shows the tension between the two archetypes in that pillar.
  */
 export const SUBGROUP_POLARITIES = [
-  { id: 1, leftLabel: 'Sage',     rightLabel: 'Explorer',  group: 'Wisdom',     axis: 'Waarheidsvinding' },
-  { id: 2, leftLabel: 'Hero',     rightLabel: 'Outlaw',    group: 'Action',     axis: 'Transformatie door Actie' },
-  { id: 3, leftLabel: 'Lover',    rightLabel: 'Caregiver', group: 'Relational', axis: 'Relatie & Verbinding' },
-  { id: 4, leftLabel: 'Artist',   rightLabel: 'Magician',  group: 'Creative',   axis: 'Manifestatie & Creatie' },
-  { id: 5, leftLabel: 'Ruler',    rightLabel: 'Judge',     group: 'Ruling',     axis: 'Autoriteit & Structuur' },
-  { id: 6, leftLabel: 'Innocent', rightLabel: 'Trickster', group: 'Spirit',     axis: 'Eerlijkheid & Perspectief' },
+  { id: 1, leftLabel: 'Judge',     rightLabel: 'Ruler',     group: 'Ruling',     axis: 'Autoriteit & Structuur' },
+  { id: 2, leftLabel: 'Lover',     rightLabel: 'Caregiver', group: 'Relational', axis: 'Relatie & Verbinding' },
+  { id: 3, leftLabel: 'Innocent',  rightLabel: 'Explorer',  group: 'Seeker',     axis: 'Waarheid & Ontdekking' },
+  { id: 4, leftLabel: 'Outlaw',    rightLabel: 'Trickster', group: 'Chaos',      axis: 'Disruptie & Perspectief' },
+  { id: 5, leftLabel: 'Sage',      rightLabel: 'Artist',    group: 'Abstract',   axis: 'Wijsheid & Creatie' },
+  { id: 6, leftLabel: 'Magician',  rightLabel: 'Hero',      group: 'Agency',     axis: 'Manifestatie & Actie' },
 ];
 
 /**
@@ -241,16 +242,33 @@ export const ALL_ARCHETYPE_KEYS = [
 ];
 
 /**
+ * Archetype numbering on the 12-position wheel (Neuraal Schakelbord).
+ */
+export const ARCHETYPE_NUMBERS = {
+  JUDGE: 1, LOVER: 2, CAREGIVER: 3, INNOCENT: 4,
+  EXPLORER: 5, OUTLAW: 6, TRICKSTER: 7, SAGE: 8,
+  ARTIST: 9, MAGICIAN: 10, HERO: 11, RULER: 12,
+};
+
+/**
  * Complementary archetype pairs for the Harmony Bonus (+69).
- * When Main and Support archetypes form a pair, both scores get +69.
+ * Harmony is unlocked when Main and Support are direct neighbors
+ * within the same Neurale Zuil (biological pillar).
+ *
+ * G1 Ruling (CEN):        Judge(1)  ↔ Ruler(12)
+ * G2 Relational (Limbisch): Lover(2)  ↔ Caregiver(3)
+ * G3 Seeker (Openness):    Innocent(4) ↔ Explorer(5)
+ * G4 Chaos (Salience):     Outlaw(6) ↔ Trickster(7)
+ * G5 Abstract (DMN):       Sage(8)   ↔ Artist(9)
+ * G6 Agency (Extraversie): Magician(10) ↔ Hero(11)
  */
 export const COMPLEMENTARY_PAIRS = {
-  SAGE: 'EXPLORER',   EXPLORER: 'SAGE',
-  HERO: 'OUTLAW',     OUTLAW: 'HERO',
-  LOVER: 'CAREGIVER', CAREGIVER: 'LOVER',
-  ARTIST: 'MAGICIAN', MAGICIAN: 'ARTIST',
-  RULER: 'JUDGE',     JUDGE: 'RULER',
-  INNOCENT: 'TRICKSTER', TRICKSTER: 'INNOCENT',
+  JUDGE: 'RULER',       RULER: 'JUDGE',        // G1: Ruling (CEN)
+  LOVER: 'CAREGIVER',   CAREGIVER: 'LOVER',    // G2: Relational (Limbisch)
+  INNOCENT: 'EXPLORER', EXPLORER: 'INNOCENT',  // G3: Seeker (Openness)
+  OUTLAW: 'TRICKSTER',  TRICKSTER: 'OUTLAW',   // G4: Chaos (Salience)
+  SAGE: 'ARTIST',       ARTIST: 'SAGE',        // G5: Abstract (DMN)
+  MAGICIAN: 'HERO',     HERO: 'MAGICIAN',      // G6: Agency (Extraversie)
 };
 
 /**

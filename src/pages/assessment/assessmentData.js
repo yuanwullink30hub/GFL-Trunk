@@ -3,34 +3,40 @@
  *
  * 60 questions × 6 answers, split across 5 layers (12 questions each).
  *
- * ─── 12-Archetype Rotation System ───
+ * ─── Neuraal Schakelbord — 12-Archetype Rotation System ───
  *
- * Set A (Odd questions Q1,Q3,Q5,...):
- *   1 = SAGE, 2 = HERO, 3 = LOVER, 4 = ARTIST, 5 = RULER, 6 = INNOCENT
+ * Archetype Nummering (1-12 op het wiel):
+ *   1=Judge(G1)  2=Lover(G2)  3=Caregiver(G2)  4=Innocent(G3)
+ *   5=Explorer(G3)  6=Outlaw(G4)  7=Trickster(G4)  8=Sage(G5)
+ *   9=Artist(G5)  10=Magician(G6)  11=Hero(G6)  12=Ruler(G1)
  *
- * Set B (Even questions Q2,Q4,Q6,...):
- *   1 = EXPLORER, 2 = OUTLAW, 3 = CAREGIVER, 4 = MAGICIAN, 5 = JUDGE, 6 = TRICKSTER
+ * Set Alpha (Odd questions Q1,Q3,Q5,...): Judge, Lover, Innocent, Outlaw, Sage, Magician
+ * Set Beta  (Even questions Q2,Q4,Q6,...): Trickster, Artist, Hero, Ruler, Caregiver, Explorer
  *
- * 4 rotation patterns cycle 1→2→3→4→1→2→... across all 60 questions:
- *   Pattern 1: A→1  B→2  C→3  D→4  E→5  F→6
- *   Pattern 2: A→4  B→5  C→6  D→1  E→2  F→3
- *   Pattern 3: A→6  B→5  C→4  D→3  E→2  F→1
- *   Pattern 4: A→3  B→2  C→1  D→6  E→5  F→4
+ * 4 Rotation Keys cycle Q1→Q2→Q3→Q4→Q1→... across all 60 questions:
+ *   Q1 (ABCDEF) — De Grondhouding (G1→G6):      A→1  B→2  C→4  D→6  E→8  F→10
+ *   Q2 (DEFABC) — De Verschuiving naar Chaos:     A→7  B→9  C→11 D→12 E→3  F→5
+ *   Q3 (FEDCBA) — De Spiegeling van de Geest:     A→10 B→8  C→6  D→4  E→2  F→1
+ *   Q4 (CBAFED) — De Omgekeerde Orde (G3→G4):    A→5  B→3  C→12 D→11 E→9  F→7
  *
- * This guarantees each of the 12 archetypes appears exactly 30 times
- * across all 360 answer slots.
+ * Harmony Bonus (+69): Main & Support zijn directe buren binnen hun Neurale Zuil
+ * Shadow Integration: 180°-as op het wiel (positie + 6)
+ *
+ * Each of the 12 archetypes appears exactly 30 times across all 360 answer slots.
  */
 
-// ──────── Archetype Sets ────────
-const SET_A = ['SAGE', 'HERO', 'LOVER', 'ARTIST', 'RULER', 'INNOCENT'];
-const SET_B = ['EXPLORER', 'OUTLAW', 'CAREGIVER', 'MAGICIAN', 'JUDGE', 'TRICKSTER'];
+// ──────── Archetype Sets (Neuraal Schakelbord) ────────
+// Set Alpha: positions 1,2,4,6,8,10 on the wheel
+const SET_A = ['JUDGE', 'LOVER', 'INNOCENT', 'OUTLAW', 'SAGE', 'MAGICIAN'];
+// Set Beta: positions 7,9,11,12,3,5 on the wheel
+const SET_B = ['TRICKSTER', 'ARTIST', 'HERO', 'RULER', 'CAREGIVER', 'EXPLORER'];
 
 // ──────── Rotation Patterns (answer-position → archetype-index) ────────
 const PATTERNS = [
-  [0, 1, 2, 3, 4, 5], // Pattern 1: A→1, B→2, C→3, D→4, E→5, F→6
-  [3, 4, 5, 0, 1, 2], // Pattern 2: A→4, B→5, C→6, D→1, E→2, F→3
-  [5, 4, 3, 2, 1, 0], // Pattern 3: A→6, B→5, C→4, D→3, E→2, F→1
-  [2, 1, 0, 5, 4, 3], // Pattern 4: A→3, B→2, C→1, D→6, E→5, F→4
+  [0, 1, 2, 3, 4, 5], // Q1 (ABCDEF): De Grondhouding — G1→G6 forward
+  [0, 1, 2, 3, 4, 5], // Q2 (DEFABC): De Verschuiving naar Chaos — G4→G3
+  [5, 4, 3, 2, 1, 0], // Q3 (FEDCBA): De Spiegeling van de Geest — G6→G1 mirror
+  [5, 4, 3, 2, 1, 0], // Q4 (CBAFED): De Omgekeerde Orde — G3→G4
 ];
 
 /**

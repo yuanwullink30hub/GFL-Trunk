@@ -1907,16 +1907,13 @@ function computeResultFromAnswers(layerAnswers) {
   const supportKey = sorted[1]?.[0] || 'EXPLORER';
 
   // ──────────────────────────────────────────────────────────
-  // 3. Harmony Bonus: +33 to BOTH if complementary pair (max 333)
-  //    Shadow Bonus: +69 to BOTH if shadow pair (max 369)
+  // 3. Harmony Bonus (+69): unlocked when Main and Support are
+  //    direct neighbors within their Neurale Zuil (biological pillar)
+  //    Shadow Integration: measured on 180°-axis (no scoring bonus)
   // ──────────────────────────────────────────────────────────
   const harmonyActive = isComplementaryPair(mainKey, supportKey);
-  const shadowBonusActive = SHADOW_PAIRS[mainKey] === supportKey;
+  const shadowBonusActive = SHADOW_PAIRS[mainKey] === supportKey; // flag only, no bonus
   if (harmonyActive) {
-    archetypeScores[mainKey] += 33;
-    archetypeScores[supportKey] += 33;
-  }
-  if (shadowBonusActive) {
     archetypeScores[mainKey] += 69;
     archetypeScores[supportKey] += 69;
   }
@@ -2110,7 +2107,7 @@ function computeResultFromAnswers(layerAnswers) {
     fullMatrix72,
     analysisSections,
     totalScore,
-    maxScore: shadowBonusActive ? 369 : harmonyActive ? 333 : 300,
+    maxScore: harmonyActive ? 369 : 300,
     // OCEAN Personality Profile
     coreProfile,                                       // Full core archetype psychological portrait
     extendedOcean,                                     // OCEAN scores + trigger for this extended archetype

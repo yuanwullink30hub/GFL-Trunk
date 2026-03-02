@@ -1338,7 +1338,7 @@ const AssessmentResultsModal = ({
                         const score = result.extendedOcean.ocean[dim];
                         const textRating = result.extendedOcean.oceanText[dim];
                         const color = result.oceanColors[dim];
-                        const label = result.oceanLabels[dim];
+                        const _label = result.oceanLabels[dim];
                         const pct = (score / 10) * 100;
                         return (
                           <div key={dim} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

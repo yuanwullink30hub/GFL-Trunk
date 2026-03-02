@@ -30,7 +30,7 @@ import imgCompanion        from '../../images/Import ready/Companion.png';
 // ── CAREGIVER images ───────────────────────────────────────
 import imgHealer           from '../../images/Import ready/Healer.PNG';
 import imgPathfinder       from '../../images/Import ready/Pathfinder.png';
-import imgCultivator       from '../../images/Import ready/Cultivator.PNG';
+import imgCultivator       from '../../images/Import ready/Cultivator.png';
 import imgTherapist        from '../../images/Import ready/Therapist.PNG';
 import imgProtector        from '../../images/Import ready/Protector.png';
 import imgAdvocate         from '../../images/Import ready/Advocate.PNG';

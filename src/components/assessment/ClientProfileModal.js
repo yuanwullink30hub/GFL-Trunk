@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getHistory, getAssessment, downloadPdf } from '../../utils/apiClient';
-import { BTN, TAB_STYLE, ERROR_STYLE, LABEL, TEXTAREA, INPUT_SM, hover, C, FONT } from './dashboardStyles';
+import { BTN, TAB_STYLE, ERROR_STYLE, hover, C, FONT } from './dashboardStyles';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 
 // ═══════════════════════════════════════════════════════════
@@ -101,7 +101,7 @@ const CORNER = (pos) => ({
  * Tabs: overview, assessments
  */
 const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
-  const { t } = useLanguage();
+  const { t: _t } = useLanguage();
   const [tab, setTab] = useState('overview');
 
   return (
@@ -203,7 +203,7 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
                 color: 'rgba(255, 174, 0, 0.35)', fontSize: 'max(10px, 0.55vw)',
                 marginTop: '0.25rem', fontFamily: FONT,
               }}>
-                GEBRUIKER: {user.displayName} // ROL: {(user.role || 'client').toUpperCase()} // {user.email}
+                GEBRUIKER: {user.displayName} {'·'} ROL: {(user.role || 'client').toUpperCase()} {'·'} {user.email}
               </p>
             </div>
             <button onClick={onLogout}
@@ -869,7 +869,6 @@ const InboxTab = memo(() => {
   });
 
   const tc = CARD_COLORS.gold;
-  const pc = CARD_COLORS.purple;
 
   const markRead = (id) => {
     const updated = messages.map((m) => m.id === id ? { ...m, read: true } : m);
@@ -953,7 +952,6 @@ const ContactenTab = memo(() => {
   const [form, setForm] = useState({ naam: '', email: '', notitie: '' });
 
   const tc = CARD_COLORS.gold;
-  const pc = CARD_COLORS.purple;
 
   const addContact = () => {
     if (!form.naam.trim()) return;
@@ -1060,7 +1058,6 @@ const AgendaTab = memo(() => {
   const [form, setForm] = useState({ titel: '', datum: '', tijd: '', notitie: '' });
 
   const tc = CARD_COLORS.gold;
-  const pc = CARD_COLORS.purple;
 
   const addEvent = () => {
     if (!form.titel.trim() || !form.datum) return;

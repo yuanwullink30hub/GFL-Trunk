@@ -21,7 +21,7 @@ import {
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
-  MODAL_CONTAINER, hover, hoverDanger, C, FONT,
+  hover, C, FONT,
 } from './dashboardStyles';
 import { BRANDS } from '../../pages/GeneralBrandPage/brandData';
 
@@ -121,7 +121,7 @@ const CORNER = (pos) => ({
 });
 
 const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
-  const { t } = useLanguage();
+  const { t: _t } = useLanguage();
   const [tab, setTab] = useState('overview');
 
   return (
@@ -224,7 +224,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
             color: 'rgba(255, 174, 0, 0.35)', fontSize: 'max(10px, 0.55vw)',
             marginTop: '0.25rem', fontFamily: FONT,
           }}>
-            GEBRUIKER: {user.displayName} // ROL: {(user.role || 'client').toUpperCase()} // {user.email}
+            GEBRUIKER: {user.displayName} {'·'} ROL: {(user.role || 'client').toUpperCase()} {'·'} {user.email}
           </p>
         </div>
         <button onClick={onLogout}
@@ -350,7 +350,7 @@ if (!window.__gflErrorCapture) {
 
 const OverviewTab = memo(({ user }) => {
   const [stats, setStats] = useState(null);
-  const [recentUsers, setRecentUsers] = useState([]);
+  const [, setRecentUsers] = useState([]);
   const [error, setError] = useState('');
 
   /* ── Admin Notities (opgeslagen in localStorage) ── */
@@ -1519,7 +1519,6 @@ const FeedbackTab = memo(() => {
   });
 
   const tc = CARD_COLORS.gold;
-  const pc = CARD_COLORS.purple;
 
   const markRead = (id) => {
     const updated = items.map((it) => it.id === id ? { ...it, status: it.status === 'gelezen' ? 'nieuw' : 'gelezen' } : it);
@@ -1633,7 +1632,6 @@ const ContactTab = memo(() => {
   const [editSaved, setEditSaved] = useState(false);
 
   const tc = CARD_COLORS.gold;
-  const pc = CARD_COLORS.purple;
 
   /* Load brand with any saved edits */
   const getBrand = (brand) => {

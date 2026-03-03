@@ -131,6 +131,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
   uniform vec2      u_resolution;
   uniform sampler2D u_disp;   // accumulated displacement field
   uniform vec2      u_offset; // map navigation offset (viewport units)
+  uniform float     u_brightness; // overall brightness multiplier (higher on mobile)
 
   // Noise
   float hash(vec2 p) {
@@ -710,6 +711,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     float vig = 1.0 - dot(uv - 0.5, uv - 0.5) * 1.2;
     color *= smoothstep(0.0, 0.50, vig);
 
+    color *= u_brightness;
     gl_FragColor = vec4(max(color, 0.0), 1.0);
   }
 `;
@@ -894,6 +896,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       resolution: gl.getUniformLocation(nebulaProg, 'u_resolution'),
       disp:       gl.getUniformLocation(nebulaProg, 'u_disp'),
       offset:     gl.getUniformLocation(nebulaProg, 'u_offset'),
+      brightness: gl.getUniformLocation(nebulaProg, 'u_brightness'),
     };
     const nPosLoc = gl.getAttribLocation(nebulaProg, 'a_position');
 
@@ -990,6 +993,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       gl.uniform1f(nU.time, elapsed);
       gl.uniform2f(nU.resolution, canvas.width, canvas.height);
       gl.uniform2f(nU.offset, mapPosRef.current.x, mapPosRef.current.y);
+      gl.uniform1f(nU.brightness, isMobileDevice ? 1.4 : 1.0);
 
       gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
       gl.enableVertexAttribArray(nPosLoc);

@@ -86,15 +86,15 @@ const TimeSync = ({ isMobile }) => {
 
 // ============================================
 // ANIMATION SECTION CONFIGURATION
-// Section 1 (frames 0-2): Label disappears, chunks become visible
-// Section 2 (frames 3-45): Chunks and particles explosion (43 frames for smooth animation)
-// Section 3 (frames 46-48): Pyramid shifts down, button visible at frame 49
-// Total: 49 frames (0-48)
+// Section 1 (frame 0): Label disappears, chunks become visible
+// Section 2 (frames 1-43): Chunks and particles explosion (43 frames for smooth animation)
+// Section 3 (frames 44-46): Pyramid shifts down, button visible at frame 47
+// Total: 47 frames (0-46)
 // ============================================
-const SECTION_1_FRAMES = 3;     // Label disappears, chunks visible (frames 0-2)
+const SECTION_1_FRAMES = 1;     // Label disappears, chunks visible (frame 0)
 const SECTION_2_FRAMES = 43;    // Chunks and particles explosion - maximized for smooth flow
 const HEADER_START_FRAME = 12;  // Header/containers start vanishing mid-explosion
-const SECTION_3_FRAMES = 3;     // Pyramid shifts down (frames 46-48)
+const SECTION_3_FRAMES = 3;     // Pyramid shifts down (frames 44-46)
 // ============================================
 
 const App = () => {
@@ -1141,7 +1141,7 @@ const App = () => {
   // Alternating + and × cross grid: 100x100 tile, checkerboard pattern at 50px spacing
   // (0,0)=+  (50,0)=×  (0,50)=×  (50,50)=+
   const crossPatternDesktop = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3C/svg%3E")`;
-  const crossPatternMobile = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.03)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.025)' stroke-width='1'/%3E%3C/svg%3E")`;
+  const crossPatternMobile = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3C/svg%3E")`;
   
   // Containers: fly away with header
   const containerProgress = headerProgress;
@@ -1391,7 +1391,7 @@ const App = () => {
                   lineHeight: 1,
                   textShadow: '0 0 8px rgba(21, 179, 21, 0.3)',
                   animation: 'scrollPromptTextFlicker 8s linear infinite',
-                }}>SWIPE ↓ = SYNCHRONISATIE</span>
+                }}>SWIPE = SYNCHRONISATIE</span>
               </div>
               <div style={{ position: 'absolute', top: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderTopLeftRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite' }} />
               <div style={{ position: 'absolute', top: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderTopRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 0.5s' }} />
@@ -1400,10 +1400,11 @@ const App = () => {
             </div>
           </div>
 
-          {/* Login Button - Bottom center */}
+          {/* Login Button - Bottom center — sci-fi themed to match scroll label */}
           {!showMobileLogin && (
             <button
               onClick={() => setShowMobileLogin(true)}
+              className="relative"
               style={{
                 position: 'fixed',
                 bottom: '5rem',
@@ -1411,26 +1412,43 @@ const App = () => {
                 transform: `translateX(-50%) translateY(${loginBtnY * 2.5}px) scale(${loginBtnScale})`,
                 opacity: loginBtnOpacity,
                 zIndex: 100,
-                backgroundColor: 'rgba(10, 5, 21, 0.8)',
-                border: '1px solid rgba(245, 158, 11, 0.5)',
-                borderRadius: '8px',
+                background: 'transparent',
+                border: 'none',
                 cursor: 'pointer',
-                padding: '12px 32px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backdropFilter: 'blur(12px)',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 0 20px rgba(245, 158, 11, 0.15)',
+                padding: 0,
               }}
             >
-              <span style={{
-                color: '#f59e0b',
-                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontSize: 'clamp(0.85rem, 3vw, 1rem)',
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-              }}>LOGIN</span>
+              <div className="relative pointer-events-none">
+                <div className="relative overflow-hidden" style={{
+                  padding: 'clamp(0.65rem, 1.5vw, 0.85rem) clamp(1.2rem, 4vw, 1.8rem)',
+                  border: '1px solid rgba(255, 174, 0, 0.35)',
+                  borderRadius: '2px',
+                }}>
+                  {/* Scanline sweep */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(180deg, transparent 0%, rgba(255, 174, 0, 0.04) 45%, rgba(255, 174, 0, 0.08) 50%, rgba(255, 174, 0, 0.04) 55%, transparent 100%)',
+                    animation: 'scrollPromptScanline 4s linear infinite',
+                    pointerEvents: 'none',
+                  }} />
+                  {/* CRT lines */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255, 174, 0, 0.025) 3px, rgba(255, 174, 0, 0.025) 4px)',
+                    pointerEvents: 'none',
+                  }} />
+                  <span className="tracking-[0.15em] font-bold relative" style={{
+                    color: 'rgba(255, 174, 0, 0.7)',
+                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                    fontSize: 'clamp(0.55rem, 2vw, 0.75rem)',
+                    lineHeight: 1,
+                    textShadow: '0 0 8px rgba(255, 174, 0, 0.3)',
+                    animation: 'scrollPromptTextFlicker 8s linear infinite',
+                    pointerEvents: 'auto',
+                  }}>LOGIN</span>
+                </div>
+
+              </div>
             </button>
           )}
 

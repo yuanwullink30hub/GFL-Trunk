@@ -96,21 +96,21 @@ const AssessmentCard = ({
     footerPad: '0.5rem 0.8rem',
     indicatorSize: '1.15rem',
   } : {
-    // ── Mobile ── comfortable touch sizes
-    cardMaxWidth: '95vw',
-    maxH: '80vh',
-    headerPad: '0.5rem 0.75rem',
-    badgeSize: '1.75rem',
-    badgeFont: '0.75rem',
-    contentMinH: '20rem',
-    contentPad: '0.6rem 0.75rem',
-    questionFont: '0.9rem',
-    questionMinH: '3rem',
-    answerMinH: '2.5rem',
-    answerFont: '0.8rem',
-    letterBadgeW: '2rem',
-    footerPad: '0.5rem 0.75rem',
-    indicatorSize: '1.4rem',
+    // ── Mobile ── viewport-fitting, touch-friendly
+    cardMaxWidth: '94vw',
+    maxH: '82vh',
+    headerPad: '0.5rem 0.65rem',
+    badgeSize: '1.6rem',
+    badgeFont: '0.7rem',
+    contentMinH: '0',
+    contentPad: '0.5rem 0.65rem',
+    questionFont: '0.82rem',
+    questionMinH: '2.5rem',
+    answerMinH: '2.6rem',
+    answerFont: '0.75rem',
+    letterBadgeW: '1.75rem',
+    footerPad: '0.45rem 0.65rem',
+    indicatorSize: '1.25rem',
   };
 
   const currentQuestion = questions[currentQuestionIndex];

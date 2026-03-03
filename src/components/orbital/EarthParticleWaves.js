@@ -22,6 +22,7 @@ import * as THREE from 'three';
 const EarthParticleWaves = ({ 
   explosionProgress = 0, 
   sphereRadius = 2.5,
+  isMobile = false,
 }) => {
   const pointsRef = useRef();
   const materialRef = useRef();
@@ -56,12 +57,14 @@ const EarthParticleWaves = ({
         uMap: { value: null },
         uTransitionStart: { value: 0.007 }, // When particles start appearing (frame 9)
         uTransitionEnd: { value: 0.35 },   // When chunks fully gone
+        uMobileFade: { value: 1.0 },       // Mobile-only: fade to 0 after chunks disappear
       },
       vertexShader: `
         uniform float uTime;
         uniform float uExplode;
         uniform float uTransitionStart;
         uniform float uTransitionEnd;
+        uniform float uMobileFade;
         uniform sampler2D uMap;
         
         varying vec3 vColor;
@@ -149,6 +152,7 @@ const EarthParticleWaves = ({
           vAlpha *= 1.0 - smoothstep(22.0, 40.0, uExplode); // Distance fade
           vAlpha *= smoothstep(2.0, 5.0, distance(cameraPosition, (modelMatrix * vec4(pos, 1.0)).xyz));
           vAlpha *= mix(1.0, 0.9, calmFactor);
+          vAlpha *= uMobileFade;
 
           gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
         }
@@ -191,6 +195,16 @@ const EarthParticleWaves = ({
     if (materialRef.current && pointsRef.current) {
       materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
       materialRef.current.uniforms.uExplode.value = 25.0 * explosionProgress;
+      
+      // Mobile: fade particles to 0 — chunks gone at eased 1.0, particles gone ~2-3 frames later
+      // Chunk fade: 0.72→0.30 opacity, 1.0→0.0 opacity
+      // Particle fade on mobile: start at 0.72, gone by 1.06 (~2 frames past chunk disappearance)
+      if (isMobile) {
+        const mobileFade = explosionProgress < 0.72 ? 1.0 
+          : explosionProgress >= 1.06 ? 0.0 
+          : 1.0 - ((explosionProgress - 0.72) / (1.06 - 0.72));
+        materialRef.current.uniforms.uMobileFade.value = mobileFade;
+      }
       
       // Only disable depth test during smokescreen phase (after frame 22)
       // Frames 14-22: normal depth rendering - particles behind pyramid not visible

@@ -146,43 +146,43 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     footerBtnPad: '0.375rem 0.975rem',
     footerBtnFont: '0.6rem',
   } : {
-    // ── Mobile ── full-width, comfortable touch sizes
-    modalMaxWidth: '95vw',
-    modalMaxHeight: '85vh',
-    padding: '1.125rem',
-    headerMaxWidth: '14rem',
-    headerMb: '1.5rem',
-    descFontSize: '0.8rem',
-    descMt: '0.75rem',
-    featureGap: '0.36rem',
-    featureMb: '1.5rem',
-    contentShiftUp: '-1.5rem',
-    featurePadding: '0.675rem',
-    featureIconSize: '2.25rem',
-    featureIconFont: '0.75rem',
-    featureTitleFont: '0.7rem',
-    featureDescFont: '0.6rem',
-    featureItemGap: '0.36rem',
-    pyramidMb: '1.5rem',
-    pyramidGap: '0.375rem',
-    pyramidBaseWidth: 120, pyramidStepWidth: 24,
-    pyramidPadY: '0.525rem', pyramidPadX: '1.125rem',
-    pyramidDotSize: '0.35rem',
-    pyramidLabelFont: '0.65rem',
+    // ── Mobile ── full-width, comfortable touch sizes, proper viewport fit
+    modalMaxWidth: '94vw',
+    modalMaxHeight: '88vh',
+    padding: '1rem 0.85rem',
+    headerMaxWidth: '11rem',
+    headerMb: '0.75rem',
+    descFontSize: '0.72rem',
+    descMt: '0.5rem',
+    featureGap: '0.35rem',
+    featureMb: '0.75rem',
+    contentShiftUp: '-0.5rem',
+    featurePadding: '0.5rem',
+    featureIconSize: '1.75rem',
+    featureIconFont: '0.65rem',
+    featureTitleFont: '0.65rem',
+    featureDescFont: '0.55rem',
+    featureItemGap: '0.35rem',
+    pyramidMb: '0.75rem',
+    pyramidGap: '0.25rem',
+    pyramidBaseWidth: 100, pyramidStepWidth: 20,
+    pyramidPadY: '0.35rem', pyramidPadX: '0.75rem',
+    pyramidDotSize: '0.3rem',
+    pyramidLabelFont: '0.6rem',
     pyramidDescFont: '0.5rem',
-    pyramidLabelGap: '0.525rem',
-    pyramidItemGap: '0.6rem',
-    levelsMb: '1.5rem',
-    levelsTitleFont: '0.75rem',
-    levelsTitleMb: '0.975rem',
-    levelsGap: '0.6rem',
-    levelPadding: '1.125rem',
-    levelTitleFont: '0.85rem',
-    levelDescFont: '0.7rem',
-    footerPt: '0.975rem',
-    footerFont: '0.55rem',
-    footerBtnPad: '0.45rem 1.125rem',
-    footerBtnFont: '0.65rem',
+    pyramidLabelGap: '0.4rem',
+    pyramidItemGap: '0.5rem',
+    levelsMb: '0.75rem',
+    levelsTitleFont: '0.7rem',
+    levelsTitleMb: '0.5rem',
+    levelsGap: '0.5rem',
+    levelPadding: '0.75rem',
+    levelTitleFont: '0.8rem',
+    levelDescFont: '0.65rem',
+    footerPt: '0.5rem',
+    footerFont: '0.5rem',
+    footerBtnPad: '0.4rem 0.85rem',
+    footerBtnFont: '0.6rem',
   };
 
   const features = [
@@ -250,8 +250,10 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     { nameKey: "assessmentIntro.layers.foundation", color: "#22c55e", descKey: "assessmentIntro.layers.foundation" },
   ];
 
+  const isMobile = windowWidth < 768;
+
   return (
-    <div className="flex items-center justify-center p-4 pointer-events-auto">
+    <div className="fixed inset-0 flex items-center justify-center p-3 pointer-events-auto" style={{ backgroundColor: isMobile ? 'rgba(0,0,0,0.65)' : 'transparent', backdropFilter: isMobile ? 'blur(4px)' : 'none' }}>
       {/* Modal Content - Exact SectorFrame style from GeneralBrandPage */}
       <div 
         className="relative w-full rounded-lg backdrop-blur-sm"
@@ -391,7 +393,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
               style={{ maxWidth: s.headerMaxWidth, width: '100%', margin: '0 auto' }}
             />
 
-            <p className="mx-auto leading-relaxed" style={{ fontSize: s.descFontSize, marginTop: `calc(${s.descMt} - 1.5rem)`, whiteSpace: 'nowrap', color: '#FFFEF0' }}>
+            <p className="mx-auto leading-relaxed" style={{ fontSize: s.descFontSize, marginTop: `calc(${s.descMt} - 1.5rem)`, whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'center', color: '#FFFEF0' }}>
               {t('assessmentIntro.description')}
             </p>
           </div>
@@ -430,9 +432,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
           </div>
 
           {/* Referenties button + research text + upload button row */}
-          <div className="flex items-center justify-between" style={{ marginTop: '-2.5rem', marginBottom: s.featureMb }}>
+          <div className={isMobile ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between'} style={{ marginTop: isMobile ? '-0.5rem' : '-2.5rem', marginBottom: s.featureMb }}>
             {/* Left: Referenties button */}
-            <div style={{ width: '10rem', flexShrink: 0 }}>
+            <div style={{ width: isMobile ? 'auto' : '10rem', flexShrink: 0 }}>
               {
                 <button
                   onClick={() => setShowReferences(true)}
@@ -463,12 +465,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
             </div>
 
             {/* Center: research text */}
-            <p className="text-center leading-relaxed text-slate-500" style={{ fontSize: s.descFontSize, flex: 1, padding: '0 1rem', paddingTop: '1.85rem' }}>
+            <p className="text-center leading-relaxed text-slate-500" style={{ fontSize: s.descFontSize, flex: isMobile ? 'none' : 1, padding: isMobile ? '0' : '0 1rem', paddingTop: isMobile ? '0' : '1.85rem', order: isMobile ? 3 : 0 }}>
               {t('assessmentIntro.footerResearch')}
             </p>
 
             {/* Right: Upload OCEAN button */}
-            <div style={{ width: '10rem', flexShrink: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ width: isMobile ? 'auto' : '10rem', flexShrink: 0, display: 'flex', justifyContent: isMobile ? 'center' : 'flex-end', alignItems: 'center', gap: '0.5rem' }}>
               {onAddFile && (
                 <>
                   <input
@@ -613,7 +615,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
 
           {/* Level Selection */}
           <div style={{ marginBottom: s.levelsMb }}>
-            <div className={`grid grid-cols-1 ${windowWidth >= 768 ? 'md:grid-cols-3' : ''}`} style={{ gap: s.levelsGap }}>
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`} style={{ gap: s.levelsGap }}>
               {levels.map((level) => {
                 const isLocked = level.id === 'quick' || level.id === 'standard';
                 return (

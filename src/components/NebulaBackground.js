@@ -122,16 +122,18 @@ const DISP_FRAG = `
 
 // ─── Pass 2: Nebula render with displacement applied ───────────────────
 // Factory: generates shader source with configurable octave counts
-function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
+function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', gasLayers = 4, mobileLayout = false) {
   return `
   #extension GL_OES_standard_derivatives : enable
-  precision highp float;
+  precision ${precision} float;
 
   uniform float     u_time;
   uniform vec2      u_resolution;
   uniform sampler2D u_disp;   // accumulated displacement field
   uniform vec2      u_offset; // map navigation offset (viewport units)
-  uniform float     u_brightness; // overall brightness multiplier (higher on mobile)
+  uniform float     u_brightness;  // overall brightness multiplier (higher on mobile)
+  uniform float     u_saturation;  // color saturation boost (higher on mobile)
+  uniform float     u_colorDepth;  // gas color intensity multiplier (higher on mobile)
 
   // Noise
   float hash(vec2 p) {
@@ -228,6 +230,20 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     // Reuse main edgeWarp scaled down — bg blobs are too diffuse to need dedicated warp
     vec2 bgWarpOff = vec2(edgeWarp * 0.5, edgeWarp2 * 0.35);
 
+` + (mobileLayout ? `
+    // Mobile: BG Gaussians tightened to fit fixed portrait viewport
+    // BG1: Upper — cool violet wash
+    vec2 bgN1 = p0 + bgWarpOff - vec2(0.0, 0.20);
+    float nebBG1 = exp(-(bgN1.x * bgN1.x * 2.0 + bgN1.y * bgN1.y * 1.5));
+
+    // BG2: Lower-left — warm ember
+    vec2 bgN2 = p0 + bgWarpOff - vec2(-0.15, -0.20);
+    float nebBG2 = exp(-(bgN2.x * bgN2.x * 2.5 + bgN2.y * bgN2.y * 1.8));
+
+    // BG3: Right — blue haze
+    vec2 bgN3 = p0 + bgWarpOff - vec2(0.18, -0.08);
+    float nebBG3 = exp(-(bgN3.x * bgN3.x * 3.0 + bgN3.y * bgN3.y * 2.5));
+` : `
     // BG Nebula 1: Upper-center — vast cool violet wash
     vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
     float nebBG1 = exp(-(bgN1.x * bgN1.x * 0.9 + bgN1.y * bgN1.y * 1.1));
@@ -239,10 +255,41 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     // BG Nebula 3: Right — faint blue haze
     vec2 bgN3 = p0 + bgWarpOff - vec2(0.45, -0.05);
     float nebBG3 = exp(-(bgN3.x * bgN3.x * 1.5 + bgN3.y * bgN3.y * 1.8));
+`) + `
 
     float bgGaussMask = clamp(nebBG1 + nebBG2 * 0.8 + nebBG3 * 0.6, 0.0, 1.0);
 
-    // ── Spatial confinement: 3 nebulae scattered across the content map ──
+    // ── Spatial confinement: nebulae across the viewport ──
+
+` + (mobileLayout ? `
+    // Mobile: All 3 nebulae repositioned into the fixed portrait viewport
+    // No map navigation — everything must be visible at offset (0,0)
+
+    // Nebula A: Upper-center — magenta-purple, main feature
+    vec2 nA = p1 + warpOffset - vec2(-0.05, 0.15);
+    float nebA = exp(-(nA.x * nA.x * 6.0 + nA.y * nA.y * 4.0));
+
+    // Nebula B: Lower-left — warm orange-gold, pulled into viewport
+    vec2 nB = p1 + warpOffset - vec2(-0.18, -0.22);
+    float nebB = exp(-(nB.x * nB.x * 7.0 + nB.y * nB.y * 5.5));
+
+    // Nebula C: Right — phoenix warm, compact, pulled into viewport
+    vec2 nC_base = p1 + warpOffset - vec2(0.20, -0.10);
+    float nebC_body = exp(-(nC_base.x * nC_base.x * 10.0 + nC_base.y * nC_base.y * 8.0));
+    vec2 nC_lw = nC_base - vec2(-0.06, -0.02);
+    vec2 lw = vec2(0.866 * nC_lw.x + 0.5 * nC_lw.y, -0.5 * nC_lw.x + 0.866 * nC_lw.y);
+    float nebC_lw = exp(-(lw.x * lw.x * 6.0 + lw.y * lw.y * 28.0));
+    vec2 nC_rw = nC_base - vec2(0.07, -0.02);
+    vec2 rw = vec2(0.866 * nC_rw.x - 0.5 * nC_rw.y, 0.5 * nC_rw.x + 0.866 * nC_rw.y);
+    float nebC_rw = exp(-(rw.x * rw.x * 6.0 + rw.y * rw.y * 28.0));
+    vec2 nC_hd = nC_base - vec2(0.01, 0.05);
+    vec2 hd = vec2(0.966 * nC_hd.x + 0.259 * nC_hd.y, -0.259 * nC_hd.x + 0.966 * nC_hd.y);
+    float nebC_hd = exp(-(hd.x * hd.x * 24.0 + hd.y * hd.y * 6.0));
+    vec2 nC_tl = nC_base - vec2(-0.015, -0.07);
+    vec2 tl = vec2(0.985 * nC_tl.x + 0.174 * nC_tl.y, -0.174 * nC_tl.x + 0.985 * nC_tl.y);
+    float nebC_tl = exp(-(tl.x * tl.x * 20.0 + tl.y * tl.y * 4.0));
+    float nebC = max(max(max(nebC_body, nebC_lw), max(nebC_rw, nebC_hd)), nebC_tl);
+` : `
     // Each nebula has unique position, shape, and rich color grading.
     // They may overflow between viewports as user navigates.
 
@@ -270,6 +317,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     vec2 tl = vec2(0.985 * nC_tl.x + 0.174 * nC_tl.y, -0.174 * nC_tl.x + 0.985 * nC_tl.y);
     float nebC_tl = exp(-(tl.x * tl.x * 20.0 + tl.y * tl.y * 4.0));
     float nebC = max(max(max(nebC_body, nebC_lw), max(nebC_rw, nebC_hd)), nebC_tl);
+`) + `
 
     // Combined cloud mask — warm clouds contribute equally
     float cloudMask = clamp(nebA + nebB * 1.0 + nebC * 0.85, 0.0, 1.0);
@@ -278,7 +326,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     // Per-nebula color identity: 0 = purple/magenta, 1 = warm orange
     // Each nebula leans toward a hue but all contain both colors swirling through
     float totalNeb = nebA + nebB + nebC + 0.001;
-    float baseHue = (nebA * 0.25 + nebB * 0.55 + nebC * 0.82) / totalNeb;
+    float baseHue = (nebA * 0.25 + nebB * 0.55 + nebC * ${mobileLayout ? '0.95' : '0.82'}) / totalNeb;
     // Add large-scale noise to break up the spatial color separation
     // This makes purple streaks appear in warm regions and vice versa
     float hueNoise = fbm(p2 * 2.5 + vec2(13.7, 7.3) + t * 0.06);
@@ -302,15 +350,21 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     vec3 color = vec3(0.0); // accumulate bg stars first, gas composited on top later
     vec2 bgStarUv = uv + mapOff * 0.15; // slowest parallax — deepest layer
 
-    // Tiny distant background stars — very dim, dense field
-    float bgS1 = stars(bgStarUv, 120.0, 1.1);
-    vec3 bgSc1 = mix(vec3(0.5, 0.5, 0.75), vec3(0.7, 0.65, 0.5), hash(floor(bgStarUv * 120.0)));
-    color += bgSc1 * bgS1 * 0.16;
-
-    // Small background stars — slightly brighter
+` + (mobileLayout ? `
+    // Mobile: single background star layer (halved, brightened)
     float bgS2 = stars(bgStarUv, 80.0, 1.1);
     vec3 bgSc2 = mix(vec3(0.55, 0.55, 0.8), vec3(0.8, 0.7, 0.45), hash(floor(bgStarUv * 80.0) + 44.0));
-    color += bgSc2 * bgS2 * 0.24;
+    color += bgSc2 * bgS2 * 0.42;
+` : `
+    // Tiny distant background stars — dense field
+    float bgS1 = stars(bgStarUv, 120.0, 1.1);
+    vec3 bgSc1 = mix(vec3(0.5, 0.5, 0.75), vec3(0.7, 0.65, 0.5), hash(floor(bgStarUv * 120.0)));
+    color += bgSc1 * bgS1 * 0.24;
+
+    // Small background stars — brighter
+    float bgS2 = stars(bgStarUv, 80.0, 1.1);
+    vec3 bgSc2 = mix(vec3(0.55, 0.55, 0.8), vec3(0.8, 0.7, 0.45), hash(floor(bgStarUv * 80.0) + 44.0));
+    color += bgSc2 * bgS2 * 0.34;
 
     // Background galaxies — very distant, dim ellipses
     {
@@ -335,7 +389,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
             vec3 galaxyColor = gc < 0.4 ? vec3(0.6, 0.55, 0.45) :
                                gc < 0.7 ? vec3(0.45, 0.48, 0.65) :
                                            vec3(0.65, 0.52, 0.40);
-            color += galaxyColor * max(galaxyBright, 0.0) * 0.5;
+            color += galaxyColor * max(galaxyBright, 0.0) * 0.7;
           }
         }
       }
@@ -362,17 +416,18 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
                 ) * spread / density;
                 float subDist = length(bgStarUv - subPos) * density;
                 float starSize = 0.008 * (0.7 + 0.3 * hash(cell + fi + 375.0));
-                float subBright = smoothstep(starSize, starSize * 0.1, subDist) * 0.20 * (0.6 + 0.4 * hash(cell + fi + 370.0));
+                float subBright = smoothstep(starSize, starSize * 0.1, subDist) * 0.30 * (0.6 + 0.4 * hash(cell + fi + 370.0));
                 vec3 subColor = mix(vec3(0.6, 0.65, 0.9), vec3(0.9, 0.8, 0.55), hash(cell + fi + 380.0));
                 color += subColor * max(subBright, 0.0);
               }
-              float clGlow = exp(-clusterDist * clusterDist * 18.0) * 0.015 * cDist;
+              float clGlow = exp(-clusterDist * clusterDist * 18.0) * 0.025 * cDist;
               color += vec3(0.5, 0.5, 0.7) * clGlow;
             }
           }
         }
       }
     }
+`) + `
 
     vec3 deepPurple = mix(vec3(0.008, 0.002, 0.018), vec3(0.025, 0.008, 0.04), n1);
     vec3 deepBlue   = mix(vec3(0.004, 0.006, 0.020), vec3(0.012, 0.018, 0.045), n1);
@@ -409,8 +464,10 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
                        mix(backW3, backW4, smoothstep(0.5, 0.7, nBack)),
                        smoothstep(0.35, 0.55, nBack));
     // Primary: purple→warm (50/35 split), blue as depth accent (15%)
+    backMagenta *= 1.27; // boost purple/magenta depth
     vec3 backGasColor = mix(backMagenta, backWarm, smoothstep(0.25, 0.75, nebulaHue));
     backGasColor = mix(backGasColor, backBlue, blueDepth);
+    backGasColor *= u_colorDepth;
     float backMask = smoothstep(0.40, 0.62, nBack) * cloudMask * 0.5 * (0.6 + 0.4 * filamentBack);
 
     // Layer 2 front: Mid nebula clouds — rich 5-grade palette per identity
@@ -454,10 +511,12 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     midWarm = mix(midWarm, wrm5, smoothstep(0.65, 0.82, n2));
 
     // Primary blend: magenta→warm (50/35), blue depth accent (15%)
+    midMagenta *= 1.27; // boost purple/magenta depth
     vec3 midColor = mix(midMagenta, midWarm, smoothstep(0.25, 0.75, nebulaHue));
     midColor = mix(midColor, midBlue, blueDepth);
     // Blend some filament texture into it
     midColor *= (0.8 + 0.2 * filament2);
+    midColor *= u_colorDepth;
     float midMask = smoothstep(0.42, 0.65, n2) * cloudMask * (0.7 + 0.3 * filament2);
 
     // Layer 3: Bright emission cores — 4-grade ramp to peak brightness
@@ -495,8 +554,10 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     coreOrange = mix(coreOrange, co4, smoothstep(0.68, 0.85, n3));
 
     // Primary blend: purple→orange (50/35), blue depth accent (15%)
+    corePurple *= 1.27; // boost purple/magenta depth
     vec3 brightColor = mix(corePurple, coreOrange, smoothstep(0.25, 0.75, nebulaHue));
     brightColor = mix(brightColor, coreBlue, blueDepth);
+    brightColor *= u_colorDepth;
     float brightMask = smoothstep(0.50, 0.70, n3) * smoothstep(0.42, 0.60, n2) * cloudMask * (0.6 + 0.4 * filament3);
 
     // Backlit rim glow — per-nebula tinted with grade variation
@@ -504,20 +565,27 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     float rim = smoothstep(0.68, 0.52, n3) * smoothstep(0.40, 0.55, n3) * cloudMask;
     rim = pow(rim, 1.2); // concentrated to thin bright line
     vec3 rimPurple = mix(vec3(0.18, 0.04, 0.22), vec3(0.38, 0.10, 0.42), rimNoise);
+    rimPurple *= 1.27; // boost purple/magenta depth
     vec3 rimBlue   = mix(vec3(0.06, 0.08, 0.25), vec3(0.15, 0.20, 0.45), rimNoise);
     vec3 rimWarm   = mix(vec3(0.34, 0.108, 0.027), vec3(0.65, 0.216, 0.054), rimNoise);
     vec3 rimColor = mix(rimPurple, rimWarm, smoothstep(0.25, 0.75, nebulaHue));
     rimColor = mix(rimColor, rimBlue, blueDepth);
+    rimColor *= u_colorDepth;
 
     // Layer 4: Filamentary edge emission — graded
     float edge = abs(n2 - 0.5) * 2.0;
     float combinedEdge = smoothstep(0.20, 0.80, edge);
+` + (gasLayers >= 4 ? `
     float edgeGlow = smoothstep(0.58, 0.90, edge) * filament2 * cloudMask;
     vec3 edgePurple = mix(vec3(0.12, 0.02, 0.10), vec3(0.28, 0.06, 0.22), edge);
     vec3 edgeBlue   = mix(vec3(0.05, 0.05, 0.14), vec3(0.12, 0.14, 0.32), edge);
     vec3 edgeWarm   = mix(vec3(0.24, 0.081, 0.014), vec3(0.51, 0.189, 0.04), edge);
     vec3 edgeColor = mix(edgePurple, edgeWarm, smoothstep(0.25, 0.75, nebulaHue));
     edgeColor = mix(edgeColor, edgeBlue, blueDepth);
+` : `
+    float edgeGlow = 0.0;
+    vec3 edgeColor = vec3(0.0);
+`) + `
 
     // Compose nebula with depth layering — bg stars show through voids
     vec3 bgStars = color; // save accumulated background stars
@@ -583,6 +651,12 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     vec2 midStarUv = uv + mapOff * 0.35; // medium parallax
     float gasOcclusion = 1.0 - cloudMask * 0.65; // dimmed inside dense gas
 
+` + (mobileLayout ? `
+    // Mobile: single midground star layer (halved, brightened)
+    float mS1 = stars(midStarUv, 35.0, 1.0);
+    vec3 mSc1 = mix(vec3(0.7, 0.7, 0.9), vec3(0.9, 0.8, 0.55), hash(floor(midStarUv * 35.0) + 55.0));
+    color += mSc1 * mS1 * 0.58 * gasOcclusion;
+` : `
     // Medium midground stars — partially hidden by nebula
     float mS1 = stars(midStarUv, 45.0, 1.0);
     vec3 mSc1 = mix(vec3(0.7, 0.7, 0.9), vec3(0.9, 0.8, 0.55), hash(floor(midStarUv * 45.0) + 55.0));
@@ -626,6 +700,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
         }
       }
     }
+`) + `
 
     // ── FOREGROUND STARS (in front of everything) ──
     vec2 fgStarUv = uv + mapOff * 0.55; // fastest parallax — closest layer
@@ -633,16 +708,16 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
     // Foreground small bright stars
     float fgS1 = stars(fgStarUv, 30.0, 1.0);
     vec3 fgSc1 = mix(vec3(0.85, 0.85, 1.0), vec3(1.0, 0.9, 0.6), hash(floor(fgStarUv * 30.0) + 77.0));
-    color += fgSc1 * fgS1 * 0.50;
+    color += fgSc1 * fgS1 * ${mobileLayout ? '0.65' : '0.50'};
 
     // ── Large bright foreground stars — with diffraction spikes ──
     {
-      float density = 10.0;
+      float density = ${mobileLayout ? '6.0' : '10.0'};
       for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
           vec2 cell = floor(fgStarUv * density) + vec2(float(dx), float(dy));
           float h = hash(cell + 77.0);
-          if (h < 0.12) {
+          if (h < ${mobileLayout ? '0.08' : '0.12'}) {
             vec2 sp = (cell + vec2(hash(cell + 0.3), hash(cell + 0.4))) / density;
             vec2 toStar = fgStarUv - sp;
             float d = length(toStar) * density;
@@ -672,6 +747,40 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
 
     // (old single-layer galaxies removed — now split into bg + midground layers above)
 
+` + (mobileLayout ? `
+    // Mobile: foreground clusters — boosted visibility
+    {
+      float density = 6.0;
+      for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+          vec2 cell = floor(fgStarUv * density) + vec2(float(dx), float(dy));
+          float h = hash(cell + 300.0);
+          if (h < 0.09) {
+            vec2 clusterCenter = (cell + vec2(hash(cell + 301.0), hash(cell + 302.0))) / density;
+            float clusterDist = length(fgStarUv - clusterCenter) * density;
+            float cDist = 0.45 + 0.55 * hash(cell + 303.0);
+            float spread = 0.22 + 0.20 * cDist;
+            if (clusterDist < 0.7 * cDist) {
+              for (int i = 0; i < 4; i++) {
+                float fi = float(i);
+                vec2 subPos = clusterCenter + vec2(
+                  hash(cell + fi * 10.0 + 310.0) - 0.5,
+                  hash(cell + fi * 10.0 + 311.0) - 0.5
+                ) * spread / density;
+                float subDist = length(fgStarUv - subPos) * density;
+                float starSize = (0.016 + 0.016 * cDist) * (0.7 + 0.3 * hash(cell + fi + 325.0));
+                float subBright = smoothstep(starSize, starSize * 0.1, subDist) * (0.5 + 0.5 * cDist) * (0.6 + 0.4 * hash(cell + fi + 320.0));
+                vec3 subColor = mix(vec3(0.7, 0.75, 1.0), vec3(1.0, 0.9, 0.6), hash(cell + fi + 330.0));
+                color += subColor * max(subBright, 0.0);
+              }
+              float clGlow = exp(-clusterDist * clusterDist * (8.0 / (cDist * cDist))) * 0.08 * cDist;
+              color += vec3(0.6, 0.6, 0.8) * clGlow;
+            }
+          }
+        }
+      }
+    }
+` : `
     // ── Foreground star clusters — bright, close ──
     {
       float density = 7.0;
@@ -706,19 +815,25 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
         }
       }
     }
+`) + `
 
     // Vignette
     float vig = 1.0 - dot(uv - 0.5, uv - 0.5) * 1.2;
     color *= smoothstep(0.0, 0.50, vig);
 
     color *= u_brightness;
+
+    // Saturation boost — enriches color depth on mobile where fewer layers thin out the gas
+    float luma = dot(color, vec3(0.299, 0.587, 0.114));
+    color = mix(vec3(luma), color, u_saturation);
+
     gl_FragColor = vec4(max(color, 0.0), 1.0);
   }
 `;
 } // end makeNebulaFrag
 
-const NEBULA_FRAG = makeNebulaFrag(5, 5);           // Desktop: full quality
-const NEBULA_FRAG_MOBILE = makeNebulaFrag(3, 3);    // Mobile: reduced octaves
+const NEBULA_FRAG = makeNebulaFrag(3, 3, 'highp', 3);  // Desktop: 3 octaves, 3 gas layers
+const NEBULA_FRAG_MOBILE = makeNebulaFrag(2, 2, 'mediump', 3, true); // Mobile: 2 octaves, mediump, 3 gas layers, mobile layout
 
 // ─── React Component ────────────────────────────────────────────────────
 const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
@@ -818,12 +933,12 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
 
-    // Canvas sizing — mobile capped to 1080p for performance
-    const dpr = isMobileDevice ? 1.0 : Math.min(window.devicePixelRatio, 1.5);
+    // Canvas sizing — mobile rendered at half-res (540p) for GPU performance
+    const dpr = isMobileDevice ? 0.5 : Math.min(window.devicePixelRatio, 1.5);
     let cw = Math.round(window.innerWidth  * dpr);
     let ch = Math.round(window.innerHeight * dpr);
     if (isMobileDevice) {
-      const maxDim = 1080;
+      const maxDim = 540;
       if (ch > maxDim) { const scale = maxDim / ch; cw = Math.round(cw * scale); ch = maxDim; }
     }
     canvas.width  = cw;
@@ -896,18 +1011,20 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       resolution: gl.getUniformLocation(nebulaProg, 'u_resolution'),
       disp:       gl.getUniformLocation(nebulaProg, 'u_disp'),
       offset:     gl.getUniformLocation(nebulaProg, 'u_offset'),
-      brightness: gl.getUniformLocation(nebulaProg, 'u_brightness'),
+      brightness:  gl.getUniformLocation(nebulaProg, 'u_brightness'),
+      saturation:  gl.getUniformLocation(nebulaProg, 'u_saturation'),
+      colorDepth:  gl.getUniformLocation(nebulaProg, 'u_colorDepth'),
     };
     const nPosLoc = gl.getAttribLocation(nebulaProg, 'a_position');
 
     // Resize handler
     function resize() {
       const mob = window.innerWidth < 768;
-      const d = mob ? 1.0 : Math.min(window.devicePixelRatio, 1.5);
+      const d = mob ? 0.5 : Math.min(window.devicePixelRatio, 1.5);
       let rw = Math.round(window.innerWidth  * d);
       let rh = Math.round(window.innerHeight * d);
       if (mob) {
-        const maxDim = 1080;
+        const maxDim = 540;
         if (rh > maxDim) { const s = maxDim / rh; rw = Math.round(rw * s); rh = maxDim; }
       }
       canvas.width  = rw;
@@ -930,7 +1047,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
 
     // Render loop
     let lastFrame = 0;
-    const INTERVAL = 1000 / 30;
+    const INTERVAL = 1000 / (isMobileDevice ? 25 : 30);
 
     function render(timestamp) {
       animRef.current = requestAnimationFrame(render);
@@ -994,6 +1111,8 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       gl.uniform2f(nU.resolution, canvas.width, canvas.height);
       gl.uniform2f(nU.offset, mapPosRef.current.x, mapPosRef.current.y);
       gl.uniform1f(nU.brightness, isMobileDevice ? 1.4 : 1.0);
+      gl.uniform1f(nU.saturation, isMobileDevice ? 1.6 : 1.35);
+      gl.uniform1f(nU.colorDepth, isMobileDevice ? 1.8 : 1.5);
 
       gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
       gl.enableVertexAttribArray(nPosLoc);

@@ -718,8 +718,8 @@ const translations = {
       en: "SCROLL = SYNCHRONISATION"
     },
     swipe: {
-      nl: "SWIPE ↓ = SYNCHRONISATIE",
-      en: "SWIPE ↓ = SYNCHRONISATION"
+      nl: "SWIPE = SYNCHRONISATIE",
+      en: "SWIPE = SYNCHRONISATION"
     }
   },
 

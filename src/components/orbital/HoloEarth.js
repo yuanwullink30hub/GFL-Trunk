@@ -747,10 +747,12 @@ const HoloEarthSphere = ({
       </group>
 
       {/* Earth Particle Waves - has internal visibility logic, becomes visible around frame 9 */}
+      {/* On mobile: fade out completely ~2-3 frames after chunks disappear */}
       {explosionProgress > 0 && getPerformanceSettings().tier !== 'LOW' && (
         <EarthParticleWaves 
           explosionProgress={explosionProgress} 
           sphereRadius={2.5}
+          isMobile={isMobile}
         />
       )}
 

@@ -2259,6 +2259,7 @@ const FormulierenTab = memo(() => {
         <DashboardCard title={`Opgeslagen Documenten (${savedForms.length})`} color="gold">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             {savedForms.map((form) => {
+              const statusColor = form.status === 'verstuurd' ? '#4ade80' : form.status === 'concept' ? '#facc15' : tc.dimText;
               const isExpanded = expandedFormId === form._id;
               // Try to parse content for display
               let displayContent = form.content || '';

@@ -841,7 +841,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 } // end makeNebulaFrag
 
 const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3, true, false);  // Desktop: mobile gaussians, full desktop stars
-const NEBULA_FRAG_MOBILE = makeNebulaFrag(2, 2, 'mediump', 3, true, true); // Mobile: 2 octaves, mediump, 3 gas layers, mobile stars
+const NEBULA_FRAG_MOBILE = makeNebulaFrag(2, 2, 'highp', 3, true, true); // Mobile: 2 octaves, highp (mediump breaks on real mobile GPUs), 3 gas layers, mobile stars
 
 // ─── React Component ────────────────────────────────────────────────────
 const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
 import NebulaBackground from './components/NebulaBackground';
+import NebulaOverlay from './components/NebulaOverlay';
 import { assessmentSubjects } from './pages/assessment/assessmentData';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
@@ -1612,6 +1613,9 @@ const App = () => {
               onLayerStateChange={handleLayerStateChange}
             />
           </div>
+
+          {/* --- Foreground nebula gas overlay — bottom-right phoenix layered in front of HoloEarth --- */}
+          <NebulaOverlay mapPosition={mapPosition} opacity={0.55} />
 
           {/* --- Overlay UI Layer --- */}
           <div className="absolute inset-0 z-20 pointer-events-none">

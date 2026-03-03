@@ -2345,8 +2345,7 @@ const FormulierenTab = memo(() => {
                         }}>{displayContent}</pre>
                       )}
                     </div>
-                  )}ave={(e) => { e.target.style.color = 'rgba(239,68,68,0.5)'; }}
-                  >✕</button>
+                  )}
                 </div>
               );
             })}

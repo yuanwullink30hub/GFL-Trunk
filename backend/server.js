@@ -16,9 +16,16 @@ const questionsRoutes = require('./routes/questions');
 const app = express();
 
 // ── Middleware ──
+// Explicit preflight handler — ensures CORS headers are always present
+app.options('*', cors({
+  origin: config.corsOrigins,
+  credentials: true,
+  maxAge: 0, // prevent browsers from caching preflight responses
+}));
 app.use(cors({
   origin: config.corsOrigins,
   credentials: true,
+  maxAge: 0,
 }));
 app.use(express.json({ limit: '25mb' }));
 

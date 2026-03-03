@@ -98,6 +98,31 @@ app.get('/api/debug/smtp', async (_req, res) => {
   res.json(results);
 });
 
+// Test SMTP connectivity — actually attempts to connect (no email sent)
+app.get('/api/debug/smtp-test', async (_req, res) => {
+  const nodemailer = require('nodemailer');
+  const dnsModule = require('dns');
+  try {
+    const transporter = nodemailer.createTransport({
+      host: config.email.host,
+      port: config.email.port,
+      secure: config.email.secure,
+      auth: {
+        user: config.email.user,
+        pass: config.email.pass,
+      },
+      family: 4,
+      dnsLookup: (hostname, options, callback) => {
+        dnsModule.lookup(hostname, { family: 4 }, callback);
+      },
+    });
+    await transporter.verify();
+    res.json({ success: true, message: 'SMTP connection verified — ready to send' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message, code: err.code });
+  }
+});
+
 // ── All 4 modules mounted ──
 
 // ── Start ──

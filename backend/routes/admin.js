@@ -23,6 +23,25 @@ const multer = require('multer');
 const mammoth = require('mammoth');
 const pdfParse = require('pdf-parse');
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// ─── Shared SMTP transporter with forced IPv4 DNS ───
+function createSMTPTransport() {
+  return nodemailer.createTransport({
+    host: config.email.host,
+    port: config.email.port,
+    secure: config.email.secure,
+    auth: {
+      user: config.email.user,
+      pass: config.email.pass,
+    },
+    family: 4,
+    // Force IPv4 DNS lookup — Render free tier has no IPv6
+    dnsLookup: (hostname, options, callback) => {
+      dns.lookup(hostname, { family: 4 }, callback);
+    },
+  });
+}
 
 // ─── Shared email HTML builder with professional signature ───
 function buildEmailHTML(templateLabel, bodyContent) {
@@ -619,16 +638,7 @@ router.post('/forms/:id/send', authRequired, adminRequired, async (req, res) => 
       return res.status(503).json({ error: 'Email not configured. Set SMTP_USER and SMTP_PASS in environment variables.' });
     }
 
-    const transporter = nodemailer.createTransport({
-      host: config.email.host,
-      port: config.email.port,
-      secure: config.email.secure,
-      auth: {
-        user: config.email.user,
-        pass: config.email.pass,
-      },
-      family: 4, // Force IPv4 — Render free tier has no IPv6
-    });
+    const transporter = createSMTPTransport();
 
     const emailSubject = subject || `Garden For Life — ${doc.templateLabel}`;
 
@@ -690,16 +700,7 @@ router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) 
     const saved = await formsCollection().insertOne(doc);
 
     // Send email
-    const transporter = nodemailer.createTransport({
-      host: config.email.host,
-      port: config.email.port,
-      secure: config.email.secure,
-      auth: {
-        user: config.email.user,
-        pass: config.email.pass,
-      },
-      family: 4, // Force IPv4 — Render free tier has no IPv6
-    });
+    const transporter = createSMTPTransport();
 
     // Build mail options
     const mailOptions = {

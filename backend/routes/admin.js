@@ -18,7 +18,8 @@ const { Router } = require('express');
 const { ObjectId } = require('mongodb');
 const { collections, getDB } = require('../db');
 const { authRequired, adminRequired } = require('../middleware/auth');
-const { decryptUser, decryptUsers, decrypt } = require('../services/encryption');
+const { decryptUser, decryptUsers } = require('../services/encryption');
+const config = require('../config');
 const multer = require('multer');
 const mammoth = require('mammoth');
 const pdfParse = require('pdf-parse');
@@ -76,7 +77,6 @@ function buildEmailHTML(templateLabel, bodyContent) {
 </body>
 </html>`;
 }
-const config = require('../config');
 
 const docUpload = multer({
   storage: multer.memoryStorage(),

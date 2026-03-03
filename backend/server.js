@@ -16,16 +16,9 @@ const questionsRoutes = require('./routes/questions');
 const app = express();
 
 // ── Middleware ──
-// Explicit preflight handler — ensures CORS headers are always present
-app.options('*', cors({
-  origin: config.corsOrigins,
-  credentials: true,
-  maxAge: 0, // prevent browsers from caching preflight responses
-}));
 app.use(cors({
   origin: config.corsOrigins,
   credentials: true,
-  maxAge: 0,
 }));
 app.use(express.json({ limit: '25mb' }));
 
@@ -49,71 +42,6 @@ app.get('/api/status', (_req, res) => {
     encryption: encryptionEnabled() ? 'AES-256-GCM' : 'disabled',
   });
 });
-
-// Diagnostic endpoint — reveals SMTP + DNS config for debugging
-app.get('/api/debug/smtp', async (_req, res) => {
-  const dnsModule = require('dns');
-  const results = {
-    nodeVersion: process.version,
-    dnsOrder: dnsModule.getDefaultResultOrder?.() || 'unknown',
-    smtpHost: config.email.host,
-    smtpPort: config.email.port,
-    smtpSecure: config.email.secure,
-    smtpUser: config.email.user ? `${config.email.user.slice(0, 3)}***` : 'NOT SET',
-    smtpPass: config.email.pass ? '***SET***' : 'NOT SET',
-    smtpFrom: config.email.from,
-    dnsLookup: null,
-    dnsResolve4: null,
-    dnsResolve6: null,
-  };
-
-  // Test DNS resolution
-  try {
-    const { promisify } = require('util');
-    const lookup = promisify(dnsModule.lookup);
-    const resolve4 = promisify(dnsModule.resolve4);
-    const resolve6 = promisify(dnsModule.resolve6);
-
-    try {
-      const lookupResult = await lookup(config.email.host, { all: true });
-      results.dnsLookup = lookupResult;
-    } catch (e) { results.dnsLookup = e.message; }
-
-    try {
-      results.dnsResolve4 = await resolve4(config.email.host);
-    } catch (e) { results.dnsResolve4 = e.message; }
-
-    try {
-      results.dnsResolve6 = await resolve6(config.email.host);
-    } catch (e) { results.dnsResolve6 = e.message; }
-  } catch (e) {
-    results.error = e.message;
-  }
-
-  res.json(results);
-});
-
-// Test SMTP connectivity — actually attempts to connect (no email sent)
-app.get('/api/debug/smtp-test', async (_req, res) => {
-  const nodemailer = require('nodemailer');
-  try {
-    const transporter = nodemailer.createTransport({
-      host: config.email.host,
-      port: config.email.port,
-      secure: config.email.secure,
-      auth: {
-        user: config.email.user,
-        pass: config.email.pass,
-      },
-    });
-    await transporter.verify();
-    res.json({ success: true, message: 'SMTP connection verified — ready to send' });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message, code: err.code });
-  }
-});
-
-// ── All 4 modules mounted ──
 
 // ── Start ──
 async function start() {

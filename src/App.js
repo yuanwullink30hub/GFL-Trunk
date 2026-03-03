@@ -1491,7 +1491,7 @@ const App = () => {
             </button>
           )}
 
-          {/* Mobile Language Toggle */}
+          {/* Mobile Language Toggle — hidden when login/dashboard modal is open */}
           <button
             onClick={toggleLanguage}
             style={{
@@ -1499,8 +1499,8 @@ const App = () => {
               top: '12px',
               right: '12px',
               zIndex: 200,
-              opacity: langOpacity,
-              transform: `translateY(${langY}px)`,
+              opacity: showMobileLogin ? 0 : langOpacity,
+              transform: `translateY(${showMobileLogin ? -40 : langY}px)`,
               backgroundColor: 'rgba(10, 5, 21, 0.7)',
               border: '1px solid rgba(255,255,255,0.2)',
               borderRadius: '6px',
@@ -1510,7 +1510,8 @@ const App = () => {
               alignItems: 'center',
               gap: '4px',
               backdropFilter: 'blur(8px)',
-              transition: 'all 0.3s ease'
+              transition: 'opacity 0.4s ease, transform 0.4s ease',
+              pointerEvents: showMobileLogin ? 'none' : 'auto',
             }}
           >
             <span style={{ fontSize: '12px', color: language === 'nl' ? '#f97316' : 'rgba(255,255,255,0.4)', fontWeight: language === 'nl' ? 'bold' : 'normal' }}>NL</span>

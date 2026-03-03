@@ -203,7 +203,11 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
   void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution;
     float aspect = u_resolution.x / u_resolution.y;
-
+` + (mobileLayout ? `
+    // Mobile: portrait phones have aspect ~0.45 which squishes x coords to ±0.23,
+    // making the nebula look extremely zoomed-in. Clamp to 0.9 for readable features.
+    aspect = max(aspect, 0.9);
+` : ``) + `
     // Read accumulated displacement
     vec2 disp = texture2D(u_disp, uv).xy * 2.0 - 1.0;
 
@@ -615,33 +619,37 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Dark absorption lanes — wispy dark dust cutting through gas
     float dustDetail = ridgeFbm(p2 * 4.5 + vec2(11.3, 4.7) + t * 0.015);
     float voidMask = smoothstep(0.62, 0.80, dustDetail) * cloudMask;
-    color *= (1.0 - voidMask * 0.45); // darken up to 45% in dust lanes
+    color *= (1.0 - voidMask * ${mobileLayout ? '0.25' : '0.45'}); // darken in dust lanes
 
     // Hot emission highlights — bright white/pink peaks at densest cores
-    float hotSpot = smoothstep(0.68, 0.88, n3) * smoothstep(0.55, 0.72, n2) * cloudMask;
-    hotSpot = pow(hotSpot, 1.4); // concentrate to peaks — keeps rifts tight
+    float hotSpot = smoothstep(${mobileLayout ? '0.75' : '0.68'}, 0.88, n3) * smoothstep(${mobileLayout ? '0.62' : '0.55'}, 0.72, n2) * cloudMask;
+    hotSpot = pow(hotSpot, ${mobileLayout ? '2.0' : '1.4'}); // concentrate to peaks
     // White-hot tint: desaturates toward white at the brightest peaks
     vec3 hotTint = mix(vec3(1.0, 0.82, 0.90), vec3(1.0, 0.95, 0.93), hotSpot);
-    color += hotTint * hotSpot * 0.35;
+    color += hotTint * hotSpot * ${mobileLayout ? '0.12' : '0.35'};
 
+` + (mobileLayout ? `
+    // Mobile: skip border/edge hotspots (2 octaves = too smooth → giant white blocks)
+` : `
     // Border/edge hotspots — fire only on sharp edge curves
     float borderHot = pow(combinedEdge, 1.8) * cloudMask;
     float edgeHotGlow = pow(combinedEdge, 2.2) * cloudMask;
     color += hotTint * borderHot * 0.35;
     color += hotTint * edgeHotGlow * 0.35;
+`) + `
 
     // Luminous filament wisps — thin bright edges where gas density changes sharply
     float wisp = abs(n2 - 0.48) * 2.0;
     float wispGlow = smoothstep(0.82, 0.95, wisp) * smoothstep(0.35, 0.50, n2) * cloudMask * filament3;
     vec3 wispColor = mix(vec3(0.7, 0.5, 0.85), vec3(0.9, 0.7, 0.5), nebulaHue);
-    color += wispColor * wispGlow * 0.12;
+    color += wispColor * wispGlow * ${mobileLayout ? '0.06' : '0.12'};
 
     // S-curve contrast — crushes blacks deeper, lifts highlights
     // Subtle per-channel sigmoid: x → x^g / (x^g + (1-x)^g)  with g ≈ 1.15
     vec3 cNorm = clamp(color * 2.8, 0.0, 1.0); // normalize to 0-1 range for curve
-    float g = 1.15;
+    float g = ${mobileLayout ? '1.08' : '1.15'};
     vec3 curved = pow(cNorm, vec3(g)) / (pow(cNorm, vec3(g)) + pow(vec3(1.0) - cNorm, vec3(g)) + 0.001);
-    color = mix(color, curved * 0.357, 0.35); // blend 35% of the contrast curve back in
+    color = mix(color, curved * 0.357, ${mobileLayout ? '0.20' : '0.35'}); // blend contrast curve
 
     // Ambient breathing
     float breath = 0.93 + 0.07 * sin(t * 2.5 + n1 * 3.0);

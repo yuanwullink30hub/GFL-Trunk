@@ -431,7 +431,7 @@ const AssessmentCard = ({
           style={{ borderTop: isCollapsed ? 'none' : `1px solid ${subjectColor}20`, padding: isCollapsed ? 0 : s.footerPad }}
         >
           {/* 12 Question Indicators - click to jump */}
-          <div className="flex items-center justify-center gap-1.5 mb-2">
+          <div className="flex items-center justify-center gap-1 mb-2 flex-wrap">
             {questions.map((q, idx) => {
               const isActive = idx === currentQuestionIndex;
               const qAnswers = allAnswers[q.id];

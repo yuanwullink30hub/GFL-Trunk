@@ -158,16 +158,19 @@ const SF_SHADOW =
   'inset 0 0 12px rgba(245, 158, 11, 0.06), ' +
   'inset 0 0 30px rgba(245, 158, 11, 0.03)';
 
-const CORNER = (pos) => ({
-  position: 'absolute',
-  width: 'max(0.7rem, 1vw)', height: 'max(0.7rem, 1vw)',
-  border: '1.5px solid #ffae00',
-  pointerEvents: 'none', zIndex: 3,
-  ...(pos === 'tl' && { top: '-0.125rem', left: '-0.125rem', borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }),
-  ...(pos === 'tr' && { top: '-0.125rem', right: '-0.125rem', borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }),
-  ...(pos === 'bl' && { bottom: '-0.125rem', left: '-0.125rem', borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }),
-  ...(pos === 'br' && { bottom: '-0.125rem', right: '-0.125rem', borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }),
-});
+const CORNER = (pos, mobile) => {
+  const off = mobile ? '0.475rem' : '-0.125rem';
+  return {
+    position: 'absolute',
+    width: 'max(0.7rem, 1vw)', height: 'max(0.7rem, 1vw)',
+    border: '1.5px solid #ffae00',
+    pointerEvents: 'none', zIndex: 3,
+    ...(pos === 'tl' && { top: off, left: off, borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }),
+    ...(pos === 'tr' && { top: off, right: off, borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }),
+    ...(pos === 'bl' && { bottom: off, left: off, borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }),
+    ...(pos === 'br' && { bottom: off, right: off, borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }),
+  };
+};
 
 const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
   useLanguage();
@@ -185,12 +188,12 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
   return (
     <MobileCtx.Provider value={isMobile}>
     {/* Outer shell — fixed size, positioning context for corners */}
-    <div style={{ position: 'relative', width: isMobile ? '96vw' : '90vw', maxWidth: '1280px', height: isMobile ? '96vh' : '85vh' }}>
-      {/* Corner brackets */}
-      <div style={CORNER('tl')} />
-      <div style={CORNER('tr')} />
-      <div style={CORNER('bl')} />
-      <div style={CORNER('br')} />
+    <div style={{ position: 'relative', width: isMobile ? '96vw' : '90vw', maxWidth: '1280px', height: isMobile ? '96vh' : '85vh', padding: isMobile ? '0.6rem' : 0 }}>
+      {/* Corner brackets — positioned on the inner panel edge */}
+      <div style={CORNER('tl', isMobile)} />
+      <div style={CORNER('tr', isMobile)} />
+      <div style={CORNER('bl', isMobile)} />
+      <div style={CORNER('br', isMobile)} />
 
       {/* Inner panel — fills fixed outer shell */}
       <div style={{

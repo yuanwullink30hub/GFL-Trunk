@@ -551,7 +551,7 @@ const HoloPyramidAssessment = ({ scrollProgress = 0, isActive = false, onSendCom
 
           {/* Questions Panel */}
           {assessmentState === ASSESSMENT_STATES.QUESTIONS && currentQuestion && (
-            <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="fixed inset-0 flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm">
               <AssessmentCard
                 questions={currentQuestions}
                 currentSubject={currentSubject}
@@ -575,7 +575,7 @@ const HoloPyramidAssessment = ({ scrollProgress = 0, isActive = false, onSendCom
 
           {/* Upload Screen */}
           {assessmentState === ASSESSMENT_STATES.UPLOAD && (
-            <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="fixed inset-0 flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm">
               <div className="w-full max-w-2xl bg-[#0a0515]/95 border border-purple-500/30 rounded-lg shadow-[0_0_40px_rgba(168,85,247,0.2)]">
                 <AssessmentUpload
                   files={assessment.uploadedFiles}

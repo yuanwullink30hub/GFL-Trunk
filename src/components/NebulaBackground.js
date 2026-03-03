@@ -238,15 +238,15 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Mobile: BG Gaussians tightened to fit fixed portrait viewport
     // BG1: Upper — cool violet wash
     vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
-    float nebBG1 = exp(-(bgN1.x * bgN1.x * 1.2 + bgN1.y * bgN1.y * 1.0));
+    float nebBG1 = exp(-(bgN1.x * bgN1.x * 1.7 + bgN1.y * bgN1.y * 1.4));
 
     // BG2: Lower-left — warm ember
     vec2 bgN2 = p0 + bgWarpOff - vec2(-0.25, -0.22);
-    float nebBG2 = exp(-(bgN2.x * bgN2.x * 1.5 + bgN2.y * bgN2.y * 1.2));
+    float nebBG2 = exp(-(bgN2.x * bgN2.x * 2.1 + bgN2.y * bgN2.y * 1.7));
 
     // BG3: Right — blue haze
     vec2 bgN3 = p0 + bgWarpOff - vec2(0.28, -0.10);
-    float nebBG3 = exp(-(bgN3.x * bgN3.x * 1.8 + bgN3.y * bgN3.y * 1.5));
+    float nebBG3 = exp(-(bgN3.x * bgN3.x * 2.5 + bgN3.y * bgN3.y * 2.1));
 ` : `
     // BG Nebula 1: Upper-center — vast cool violet wash
     vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
@@ -271,11 +271,11 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Nebula A: Upper-center — magenta-purple, main feature
     vec2 nA = p1 + warpOffset - vec2(-0.08, 0.18);
-    float nebA = exp(-(nA.x * nA.x * 3.5 + nA.y * nA.y * 2.8));
+    float nebA = exp(-(nA.x * nA.x * 4.5 + nA.y * nA.y * 3.6));
 
     // Nebula B: Lower-left — warm orange-gold, pulled into viewport
     vec2 nB = p1 + warpOffset - vec2(-0.28, -0.25);
-    float nebB = exp(-(nB.x * nB.x * 4.0 + nB.y * nB.y * 3.5));
+    float nebB = exp(-(nB.x * nB.x * 5.2 + nB.y * nB.y * 4.5));
 
     // Nebula C: Right — phoenix warm, compact, pulled into viewport
     vec2 nC_base = p1 + warpOffset - vec2(0.30, -0.12);
@@ -325,7 +325,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Combined cloud mask — warm clouds contribute equally
     float cloudMask = clamp(nebA + nebB * 1.0 + nebC * 0.85, 0.0, 1.0);
-    cloudMask = pow(cloudMask, 1.5); // sharpen edges
+    cloudMask = pow(cloudMask, ${mobileLayout ? '1.8' : '1.5'}); // sharpen edges (more on mobile)
 
     // Per-nebula color identity: 0 = purple/magenta, 1 = warm orange
     // Each nebula leans toward a hue but all contain both colors swirling through
@@ -864,6 +864,9 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     mapPosTargetRef.current = mapPosition;
   }, [mapPosition]);
 
+  // Track WebGL init function so context restore can re-run it
+  const initCountRef = useRef(0);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -874,6 +877,26 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     const initTimer = setTimeout(() => {
       cleanupFn = initWebGL(canvas);
     }, 0);
+
+    // WebGL context loss/restore handlers — browser may kill the context
+    // after extended GPU usage; we must detect this and reinitialize
+    function onContextLost(e) {
+      e.preventDefault(); // tells browser we want to restore
+      console.warn('NebulaBackground: WebGL context lost — will restore');
+      if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
+    }
+    function onContextRestored() {
+      console.log('NebulaBackground: WebGL context restored — reinitializing');
+      if (cleanupFn) {
+        // Only remove event listeners and animation frame, not the context loss handlers
+        if (animRef.current) cancelAnimationFrame(animRef.current);
+      }
+      readyFiredRef.current = false;
+      initCountRef.current += 1;
+      cleanupFn = initWebGL(canvas);
+    }
+    canvas.addEventListener('webglcontextlost', onContextLost);
+    canvas.addEventListener('webglcontextrestored', onContextRestored);
 
     function initWebGL(canvas) {
 
@@ -946,13 +969,9 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     const wrapper = wrapperRef.current;
     const vpW = wrapper ? wrapper.clientWidth  : window.innerWidth;
     const vpH = wrapper ? wrapper.clientHeight : window.innerHeight;
-    const dpr = isMobileDevice ? 0.5 : Math.min(window.devicePixelRatio, 1.5);
+    const dpr = isMobileDevice ? 1.0 : Math.min(window.devicePixelRatio, 1.5);
     let cw = Math.round(vpW * dpr);
     let ch = Math.round(vpH * dpr);
-    if (isMobileDevice) {
-      const maxDim = 540;
-      if (ch > maxDim) { const scale = maxDim / ch; cw = Math.round(cw * scale); ch = maxDim; }
-    }
     canvas.width  = cw;
     canvas.height = ch;
 
@@ -1027,21 +1046,18 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     };
     const nPosLoc = gl.getAttribLocation(nebulaProg, 'a_position');
 
-    // Resize handler
+    // Resize handler — uses wrapper dimensions to match real visible viewport
     function resize() {
       const mob = window.innerWidth < 768;
-      const d = mob ? 0.5 : Math.min(window.devicePixelRatio, 1.5);
-      let rw = Math.round(window.innerWidth  * d);
-      let rh = Math.round(window.innerHeight * d);
-      if (mob) {
-        const maxDim = 540;
-        if (rh > maxDim) { const s = maxDim / rh; rw = Math.round(rw * s); rh = maxDim; }
-      }
+      const w = wrapperRef.current;
+      const rVpW = w ? w.clientWidth  : window.innerWidth;
+      const rVpH = w ? w.clientHeight : window.innerHeight;
+      const d = mob ? 1.0 : Math.min(window.devicePixelRatio, 1.5);
+      let rw = Math.round(rVpW * d);
+      let rh = Math.round(rVpH * d);
       canvas.width  = rw;
       canvas.height = rh;
-      canvas.style.width  = window.innerWidth  + 'px';
-      canvas.style.height = window.innerHeight + 'px';
-      // Displacement FBOs intentionally keep their size — trails persist through resize
+      // Don't set canvas.style.width/height — CSS 100%/100% in wrapper handles display size
     }
     window.addEventListener('resize', resize);
 
@@ -1061,10 +1077,14 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
 
     function render(timestamp) {
       animRef.current = requestAnimationFrame(render);
+      if (gl.isContextLost()) return; // context lost — skip until restored
       if (timestamp - lastFrame < INTERVAL) return;
       lastFrame = timestamp;
 
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      // Wrap time to prevent unbounded growth — 600s period ensures smooth
+      // looping (noise offsets like 0.07*t stay in a small range ≤42)
+      const wrappedTime = elapsed % 600;
 
       if (!isMobileDevice) {
         // Desktop: full displacement pass with mouse interaction
@@ -1117,7 +1137,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, isMobileDevice ? mobileDispTex : readFBO.tex);
       gl.uniform1i(nU.disp, 0);
-      gl.uniform1f(nU.time, elapsed);
+      gl.uniform1f(nU.time, wrappedTime);
       gl.uniform2f(nU.resolution, canvas.width, canvas.height);
       gl.uniform2f(nU.offset, mapPosRef.current.x, mapPosRef.current.y);
       gl.uniform1f(nU.brightness, isMobileDevice ? 1.4 : 1.3);
@@ -1174,6 +1194,8 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     // useEffect cleanup: clear deferred init timer + inner cleanup
     return () => {
       clearTimeout(initTimer);
+      canvas.removeEventListener('webglcontextlost', onContextLost);
+      canvas.removeEventListener('webglcontextrestored', onContextRestored);
       if (cleanupFn) cleanupFn();
     };
   }, []);

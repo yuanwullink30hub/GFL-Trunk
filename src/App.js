@@ -1614,7 +1614,7 @@ const App = () => {
             />
           </div>
 
-          {/* --- Foreground nebula gas overlay — bottom-right phoenix layered in front of HoloEarth --- */}
+          {/* --- Foreground nebula gas overlay — upper magenta-purple cloud layered in front of HoloEarth --- */}
           <NebulaOverlay mapPosition={mapPosition} opacity={0.55} />
 
           {/* --- Overlay UI Layer --- */}

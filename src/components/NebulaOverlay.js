@@ -3,8 +3,9 @@ import React, { useRef, useEffect } from 'react';
 /**
  * NebulaOverlay — Lightweight foreground gas layer (desktop only)
  *
- * Renders the bottom-right nebula (Nebula C / phoenix) with alpha transparency
+ * Renders the upper nebula (Nebula A / magenta-purple) with alpha transparency
  * so it can be layered in front of HoloEarth, creating depth.
+ * The bottom nebulae (B & C) remain behind HoloEarth in the main canvas.
  * Single-pass, no displacement, no stars — just the gas cloud with alpha.
  */
 
@@ -91,27 +92,13 @@ const OVERLAY_FRAG = `
     float edgeWarp4 = warpedFbm(p1 * 3.0 + vec2(4.8, 6.9), t * 0.5) * 0.14 - 0.07;
     vec2 warpOffset = vec2(edgeWarp, edgeWarp2 + edgeWarp4);
 
-    // ── Nebula C: Lower-right phoenix silhouette — exact copy from main shader ──
-    // Desktop position: vec2(0.5, -0.38) — same as mobileLayout=true desktop config
-    // Using the mobileLayout=true gaussian positions since desktop now uses those
-    vec2 nC_base = p1 + warpOffset - vec2(0.30, -0.12);
-    float nebC_body = exp(-(nC_base.x * nC_base.x * 10.0 + nC_base.y * nC_base.y * 8.0));
-    vec2 nC_lw = nC_base - vec2(-0.06, -0.02);
-    vec2 lw = vec2(0.866 * nC_lw.x + 0.5 * nC_lw.y, -0.5 * nC_lw.x + 0.866 * nC_lw.y);
-    float nebC_lw = exp(-(lw.x * lw.x * 6.0 + lw.y * lw.y * 28.0));
-    vec2 nC_rw = nC_base - vec2(0.07, -0.02);
-    vec2 rw = vec2(0.866 * nC_rw.x - 0.5 * nC_rw.y, 0.5 * nC_rw.x + 0.866 * nC_rw.y);
-    float nebC_rw = exp(-(rw.x * rw.x * 6.0 + rw.y * rw.y * 28.0));
-    vec2 nC_hd = nC_base - vec2(0.01, 0.05);
-    vec2 hd = vec2(0.966 * nC_hd.x + 0.259 * nC_hd.y, -0.259 * nC_hd.x + 0.966 * nC_hd.y);
-    float nebC_hd = exp(-(hd.x * hd.x * 24.0 + hd.y * hd.y * 6.0));
-    vec2 nC_tl = nC_base - vec2(-0.015, -0.07);
-    vec2 tl = vec2(0.985 * nC_tl.x + 0.174 * nC_tl.y, -0.174 * nC_tl.x + 0.985 * nC_tl.y);
-    float nebC_tl = exp(-(tl.x * tl.x * 20.0 + tl.y * tl.y * 4.0));
-    float nebC = max(max(max(nebC_body, nebC_lw), max(nebC_rw, nebC_hd)), nebC_tl);
+    // ── Nebula A: Upper-center — magenta-purple, main feature ──
+    // Position matches mobileLayout=true desktop config from main shader
+    vec2 nA = p1 + warpOffset - vec2(-0.08, 0.18);
+    float nebA = exp(-(nA.x * nA.x * 3.5 + nA.y * nA.y * 2.8));
 
     // Cloud mask — just this nebula
-    float cloudMask = clamp(nebC * 0.85, 0.0, 1.0);
+    float cloudMask = clamp(nebA, 0.0, 1.0);
     cloudMask = pow(cloudMask, 1.5);
 
     // Quick exit if barely visible — skip expensive color grading
@@ -120,8 +107,8 @@ const OVERLAY_FRAG = `
       return;
     }
 
-    // Nebula C is the phoenix (warm) — nebulaHue ≈ 0.82-0.95
-    float nebulaHue = 0.88;
+    // Nebula A is magenta-purple — nebulaHue ≈ 0.20-0.35
+    float nebulaHue = 0.25;
     float hueNoise = fbm(p2 * 2.5 + vec2(13.7, 7.3) + t * 0.06);
     float hueSwirl = warpedFbm(p1 * 1.8 + vec2(5.2, 9.1) + vec2(t * 0.08, -t * 0.05), t * 0.7);
     nebulaHue = clamp(nebulaHue + (hueNoise - 0.5) * 0.40 + (hueSwirl - 0.5) * 0.20, 0.0, 1.0);
@@ -133,42 +120,46 @@ const OVERLAY_FRAG = `
     float n3 = warpedFbm(p3 * 2.5 + vec2(7.5, 3.2) + vec2(t * 0.12, t * 0.18), t * 0.8);
     float filament2 = ridgeFbm(p2 * 3.5 + vec2(2.0, 4.5) + t * 0.05);
 
-    // Mid-layer color grades (warm orange for phoenix)
-    vec3 wrm1 = vec3(0.04, 0.013, 0.004);
-    vec3 wrm2 = vec3(0.135, 0.047, 0.014);
-    vec3 wrm3 = vec3(0.30, 0.108, 0.027);
-    vec3 wrm4 = vec3(0.51, 0.20, 0.04);
-    vec3 wrm5 = vec3(0.62, 0.30, 0.08);
-    vec3 midWarm = wrm1;
-    midWarm = mix(midWarm, wrm2, smoothstep(0.15, 0.30, n2));
-    midWarm = mix(midWarm, wrm3, smoothstep(0.30, 0.48, n2));
-    midWarm = mix(midWarm, wrm4, smoothstep(0.48, 0.65, n2));
-    midWarm = mix(midWarm, wrm5, smoothstep(0.65, 0.82, n2));
-
-    // Some magenta bleed
+    // Mid-layer color grades (magenta-purple for Nebula A)
+    vec3 mag1 = vec3(0.04, 0.005, 0.03);
+    vec3 mag2 = vec3(0.10, 0.015, 0.08);
     vec3 mag3 = vec3(0.20, 0.035, 0.16);
     vec3 mag4 = vec3(0.32, 0.06, 0.26);
-    vec3 midMagenta = mix(mag3, mag4, smoothstep(0.48, 0.65, n2)) * 1.27;
+    vec3 mag5 = vec3(0.50, 0.12, 0.40);
+    vec3 midMagenta = mag1;
+    midMagenta = mix(midMagenta, mag2, smoothstep(0.15, 0.30, n2));
+    midMagenta = mix(midMagenta, mag3, smoothstep(0.30, 0.48, n2));
+    midMagenta = mix(midMagenta, mag4, smoothstep(0.48, 0.65, n2));
+    midMagenta = mix(midMagenta, mag5, smoothstep(0.65, 0.82, n2));
+    midMagenta *= 1.27; // boost purple/magenta depth
+
+    // Some warm bleed
+    vec3 wrm3 = vec3(0.30, 0.108, 0.027);
+    vec3 wrm4 = vec3(0.51, 0.20, 0.04);
+    vec3 midWarm = mix(wrm3, wrm4, smoothstep(0.48, 0.65, n2));
 
     vec3 midColor = mix(midMagenta, midWarm, smoothstep(0.25, 0.75, nebulaHue));
+    midColor = mix(midColor, midColor * vec3(0.6, 0.65, 1.2), blueDepth); // blue tint at depth edges
     midColor *= (0.8 + 0.2 * filament2) * 1.8;  // u_colorDepth equivalent
     float midMask = smoothstep(0.42, 0.65, n2) * cloudMask * (0.7 + 0.3 * filament2);
 
-    // Bright emission cores
-    vec3 co1 = vec3(0.19, 0.054, 0.014);
-    vec3 co2 = vec3(0.40, 0.135, 0.027);
-    vec3 co3 = vec3(0.67, 0.30, 0.054);
-    vec3 co4 = vec3(0.80, 0.44, 0.14);
-    vec3 coreOrange = co1;
-    coreOrange = mix(coreOrange, co2, smoothstep(0.3, 0.5, n3));
-    coreOrange = mix(coreOrange, co3, smoothstep(0.5, 0.68, n3));
-    coreOrange = mix(coreOrange, co4, smoothstep(0.68, 0.85, n3));
-
+    // Bright emission cores (purple)
+    vec3 cp1 = vec3(0.12, 0.02, 0.16);
     vec3 cp2 = vec3(0.25, 0.04, 0.30);
     vec3 cp3 = vec3(0.42, 0.08, 0.38);
-    vec3 corePurple = mix(cp2, cp3, smoothstep(0.5, 0.68, n3)) * 1.27;
+    vec3 cp4 = vec3(0.65, 0.20, 0.55);
+    vec3 corePurple = cp1;
+    corePurple = mix(corePurple, cp2, smoothstep(0.3, 0.5, n3));
+    corePurple = mix(corePurple, cp3, smoothstep(0.5, 0.68, n3));
+    corePurple = mix(corePurple, cp4, smoothstep(0.68, 0.85, n3));
+    corePurple *= 1.27;
 
-    vec3 brightColor = mix(corePurple, coreOrange, smoothstep(0.25, 0.75, nebulaHue)) * 1.8;
+    // Some warm core bleed
+    vec3 co2 = vec3(0.40, 0.135, 0.027);
+    vec3 co3 = vec3(0.67, 0.30, 0.054);
+    vec3 coreWarm = mix(co2, co3, smoothstep(0.5, 0.68, n3));
+
+    vec3 brightColor = mix(corePurple, coreWarm, smoothstep(0.25, 0.75, nebulaHue)) * 1.8;
     float brightMask = smoothstep(0.50, 0.70, n3) * smoothstep(0.42, 0.60, n2) * cloudMask;
 
     // Compose — just gas, no background
@@ -176,12 +167,12 @@ const OVERLAY_FRAG = `
     color = mix(color, midColor, midMask * 0.70);
     color = mix(color, brightColor, brightMask * 0.60);
 
-    // Rim glow
+    // Rim glow (purple-magenta for Nebula A)
     float rimNoise = fbm(p3 * 3.0 + t * 0.06);
     float rim = smoothstep(0.68, 0.52, n3) * smoothstep(0.40, 0.55, n3) * cloudMask;
     rim = pow(rim, 1.2);
-    vec3 rimWarm = mix(vec3(0.34, 0.108, 0.027), vec3(0.65, 0.216, 0.054), rimNoise) * 1.8;
-    color += rimWarm * rim * 0.22;
+    vec3 rimPurple = mix(vec3(0.18, 0.04, 0.22), vec3(0.38, 0.10, 0.42), rimNoise) * 1.27 * 1.8;
+    color += rimPurple * rim * 0.22;
 
     // Breathing
     float breath = 0.93 + 0.07 * sin(t * 2.5 + fbm(p1 * 1.2 + vec2(0.0, t * 0.3)) * 3.0);

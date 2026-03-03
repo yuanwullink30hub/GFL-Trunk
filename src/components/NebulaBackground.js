@@ -157,7 +157,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float v = 0.0, a = 0.5, f = 1.0;
     for (int i = 0; i < ${fbmOctaves}; i++) {
       v += a * noise(p * f);
-      f *= 2.1; a *= 0.48;
+      f *= ${mobileStars ? '2.8' : '2.1'}; a *= 0.48;
     }
     return v;
   }
@@ -171,12 +171,20 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float v = 0.0, a = 0.5, f = 1.0;
     for (int i = 0; i < ${ridgeOctaves}; i++) {
       v += a * ridgeNoise(p * f);
-      f *= 2.2; a *= 0.45;
+      f *= ${mobileStars ? '2.9' : '2.2'}; a *= 0.45;
     }
     return v;
   }
 
   float warpedFbm(vec2 p, float t) {
+` + (mobileStars ? `
+    // Mobile: 1-level domain warp (3 fbm calls instead of 6)
+    vec2 q = vec2(fbm(p + 0.05 * t), fbm(p + vec2(5.2, 1.3) + 0.065 * t));
+    float base = fbm(p + 2.0 * q + vec2(1.7, 9.2) + 0.035 * t);
+    float ridge = ridgeFbm(p + 1.8 * q + 0.02 * t);
+    return mix(base, ridge, 0.45);
+` : `
+    // Desktop: 2-level domain warp (full quality)
     vec2 q = vec2(fbm(p + 0.05 * t), fbm(p + vec2(5.2, 1.3) + 0.065 * t));
     vec2 r = vec2(
       fbm(p + 2.0 * q + vec2(1.7, 9.2) + 0.035 * t),
@@ -185,6 +193,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float base = fbm(p + 2.0 * r);
     float ridge = ridgeFbm(p + 1.8 * r + 0.02 * t);
     return mix(base, ridge, 0.45);
+`) + `
   }
 
   float stars(vec2 uv, float density, float sizeScale) {
@@ -333,8 +342,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float baseHue = (nebA * 0.25 + nebB * 0.55 + nebC * ${mobileLayout ? '0.95' : '0.82'}) / totalNeb;
     // Add large-scale noise to break up the spatial color separation
     // This makes purple streaks appear in warm regions and vice versa
-    float hueNoise = fbm(p2 * 2.5 + vec2(13.7, 7.3) + t * 0.06);
-    float hueSwirl = warpedFbm(p1 * 1.8 + vec2(5.2, 9.1) + vec2(t * 0.08, -t * 0.05), t * 0.7);
+    float hueNoise = fbm(p2 * 2.5 + vec2(13.7, 7.3) + t * 0.10);
+    float hueSwirl = warpedFbm(p1 * 1.8 + vec2(5.2, 9.1) + vec2(t * 0.14, -t * 0.09), t * 1.2);
     // Blend noise into hue — ±0.30 variation so colors truly intermingle
     float nebulaHue = clamp(baseHue + (hueNoise - 0.5) * 0.40 + (hueSwirl - 0.5) * 0.20, 0.0, 1.0);
     // Blue depth factor: strongest in transition zones + at depth edges
@@ -475,8 +484,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float backMask = smoothstep(0.40, 0.62, nBack) * cloudMask * 0.5 * (0.6 + 0.4 * filamentBack);
 
     // Layer 2 front: Mid nebula clouds — rich 5-grade palette per identity
-    float n2 = warpedFbm(p2 * 1.8 + vec2(3.1, 1.7) + vec2(t * 0.3, t * 0.08), t * 1.2);
-    float filament2 = ridgeFbm(p2 * 3.5 + vec2(2.0, 4.5) + t * 0.05);
+    float n2 = warpedFbm(p2 * 1.8 + vec2(3.1, 1.7) + vec2(t * 0.5, t * 0.14), t * 2.0);
+    float filament2 = ridgeFbm(p2 * 3.5 + vec2(2.0, 4.5) + t * 0.08);
 
     // Magenta-purple grades: pitch black → dark plum → magenta → hot pink → bright rose
     vec3 mag1 = vec3(0.04, 0.005, 0.03);
@@ -485,10 +494,10 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 mag4 = vec3(0.32, 0.06, 0.26);
     vec3 mag5 = vec3(0.50, 0.12, 0.40);
     vec3 midMagenta = mag1;
-    midMagenta = mix(midMagenta, mag2, smoothstep(0.15, 0.30, n2));
-    midMagenta = mix(midMagenta, mag3, smoothstep(0.30, 0.48, n2));
-    midMagenta = mix(midMagenta, mag4, smoothstep(0.48, 0.65, n2));
-    midMagenta = mix(midMagenta, mag5, smoothstep(0.65, 0.82, n2));
+    midMagenta = mix(midMagenta, mag2, smoothstep(0.12, 0.26, n2));
+    midMagenta = mix(midMagenta, mag3, smoothstep(0.26, 0.42, n2));
+    midMagenta = mix(midMagenta, mag4, smoothstep(0.42, 0.58, n2));
+    midMagenta = mix(midMagenta, mag5, smoothstep(0.58, 0.74, n2));
 
     // Blue-violet grades: deep navy → slate blue → cerulean → bright blue → electric blue
     vec3 blu1 = vec3(0.02, 0.015, 0.05);
@@ -497,10 +506,10 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 blu4 = vec3(0.12, 0.14, 0.35);
     vec3 blu5 = vec3(0.20, 0.24, 0.52);
     vec3 midBlue = blu1;
-    midBlue = mix(midBlue, blu2, smoothstep(0.15, 0.30, n2));
-    midBlue = mix(midBlue, blu3, smoothstep(0.30, 0.48, n2));
-    midBlue = mix(midBlue, blu4, smoothstep(0.48, 0.65, n2));
-    midBlue = mix(midBlue, blu5, smoothstep(0.65, 0.82, n2));
+    midBlue = mix(midBlue, blu2, smoothstep(0.12, 0.26, n2));
+    midBlue = mix(midBlue, blu3, smoothstep(0.26, 0.42, n2));
+    midBlue = mix(midBlue, blu4, smoothstep(0.42, 0.58, n2));
+    midBlue = mix(midBlue, blu5, smoothstep(0.58, 0.74, n2));
 
     // Warm orange grades: near-black → deep brown → burnt orange → amber → bright gold
     vec3 wrm1 = vec3(0.04, 0.013, 0.004);
@@ -509,10 +518,10 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 wrm4 = vec3(0.51, 0.20, 0.04);
     vec3 wrm5 = vec3(0.62, 0.30, 0.08);
     vec3 midWarm = wrm1;
-    midWarm = mix(midWarm, wrm2, smoothstep(0.15, 0.30, n2));
-    midWarm = mix(midWarm, wrm3, smoothstep(0.30, 0.48, n2));
-    midWarm = mix(midWarm, wrm4, smoothstep(0.48, 0.65, n2));
-    midWarm = mix(midWarm, wrm5, smoothstep(0.65, 0.82, n2));
+    midWarm = mix(midWarm, wrm2, smoothstep(0.12, 0.26, n2));
+    midWarm = mix(midWarm, wrm3, smoothstep(0.26, 0.42, n2));
+    midWarm = mix(midWarm, wrm4, smoothstep(0.42, 0.58, n2));
+    midWarm = mix(midWarm, wrm5, smoothstep(0.58, 0.74, n2));
 
     // Primary blend: magenta→warm (50/35), blue depth accent (15%)
     midMagenta *= 1.27; // boost purple/magenta depth
@@ -524,8 +533,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float midMask = smoothstep(0.42, 0.65, n2) * cloudMask * (0.7 + 0.3 * filament2);
 
     // Layer 3: Bright emission cores — 4-grade ramp to peak brightness
-    float n3 = warpedFbm(p3 * 2.5 + vec2(7.5, 3.2) + vec2(t * 0.12, t * 0.18), t * 0.8);
-    float filament3 = ridgeFbm(p3 * 4.0 + vec2(1.3, 7.1) + t * 0.03);
+    float n3 = warpedFbm(p3 * 2.5 + vec2(7.5, 3.2) + vec2(t * 0.20, t * 0.30), t * 1.4);
+    float filament3 = ridgeFbm(p3 * 4.0 + vec2(1.3, 7.1) + t * 0.05);
 
     // Purple core grades: dark violet → vivid purple → magenta → hot white-pink
     vec3 cp1 = vec3(0.12, 0.02, 0.16);
@@ -533,9 +542,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 cp3 = vec3(0.42, 0.08, 0.38);
     vec3 cp4 = vec3(0.65, 0.20, 0.55);
     vec3 corePurple = cp1;
-    corePurple = mix(corePurple, cp2, smoothstep(0.3, 0.5, n3));
-    corePurple = mix(corePurple, cp3, smoothstep(0.5, 0.68, n3));
-    corePurple = mix(corePurple, cp4, smoothstep(0.68, 0.85, n3));
+    corePurple = mix(corePurple, cp2, smoothstep(0.25, 0.43, n3));
+    corePurple = mix(corePurple, cp3, smoothstep(0.43, 0.60, n3));
+    corePurple = mix(corePurple, cp4, smoothstep(0.60, 0.78, n3));
 
     // Blue core grades: deep indigo → sapphire → bright blue → white-blue
     vec3 cb1 = vec3(0.04, 0.03, 0.14);
@@ -543,9 +552,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 cb3 = vec3(0.14, 0.16, 0.42);
     vec3 cb4 = vec3(0.28, 0.32, 0.62);
     vec3 coreBlue = cb1;
-    coreBlue = mix(coreBlue, cb2, smoothstep(0.3, 0.5, n3));
-    coreBlue = mix(coreBlue, cb3, smoothstep(0.5, 0.68, n3));
-    coreBlue = mix(coreBlue, cb4, smoothstep(0.68, 0.85, n3));
+    coreBlue = mix(coreBlue, cb2, smoothstep(0.25, 0.43, n3));
+    coreBlue = mix(coreBlue, cb3, smoothstep(0.43, 0.60, n3));
+    coreBlue = mix(coreBlue, cb4, smoothstep(0.60, 0.78, n3));
 
     // Orange core grades: dark red-brown → ember → fire → white-gold
     vec3 co1 = vec3(0.19, 0.054, 0.014);
@@ -553,9 +562,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 co3 = vec3(0.67, 0.30, 0.054);
     vec3 co4 = vec3(0.80, 0.44, 0.14);
     vec3 coreOrange = co1;
-    coreOrange = mix(coreOrange, co2, smoothstep(0.3, 0.5, n3));
-    coreOrange = mix(coreOrange, co3, smoothstep(0.5, 0.68, n3));
-    coreOrange = mix(coreOrange, co4, smoothstep(0.68, 0.85, n3));
+    coreOrange = mix(coreOrange, co2, smoothstep(0.25, 0.43, n3));
+    coreOrange = mix(coreOrange, co3, smoothstep(0.43, 0.60, n3));
+    coreOrange = mix(coreOrange, co4, smoothstep(0.60, 0.78, n3));
 
     // Primary blend: purple→orange (50/35), blue depth accent (15%)
     corePurple *= 1.27; // boost purple/magenta depth
@@ -651,8 +660,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 curved = pow(cNorm, vec3(g)) / (pow(cNorm, vec3(g)) + pow(vec3(1.0) - cNorm, vec3(g)) + 0.001);
     color = mix(color, curved * 0.357, ${mobileLayout ? '0.20' : '0.35'}); // blend contrast curve
 
-    // Ambient breathing
-    float breath = 0.93 + 0.07 * sin(t * 2.5 + n1 * 3.0);
+    // Ambient breathing — deeper pulses for richer color moments
+    float breath = 0.88 + 0.12 * sin(t * 3.5 + n1 * 3.0) + 0.05 * sin(t * 7.3 + n2 * 2.0);
     color *= breath;
 
     // ── MIDGROUND STARS (partially occluded by gas) ──
@@ -841,7 +850,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 } // end makeNebulaFrag
 
 const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3, true, false);  // Desktop: mobile gaussians, full desktop stars
-const NEBULA_FRAG_MOBILE = makeNebulaFrag(2, 2, 'highp', 3, true, true); // Mobile: 2 octaves, highp (mediump breaks on real mobile GPUs), 3 gas layers, mobile stars
+const NEBULA_FRAG_MOBILE = makeNebulaFrag(3, 3, 'highp', 3, true, true); // Mobile: 3 octaves, wider freq steps (2.8x/2.9x), simplified warpedFbm
 
 // ─── React Component ────────────────────────────────────────────────────
 const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {

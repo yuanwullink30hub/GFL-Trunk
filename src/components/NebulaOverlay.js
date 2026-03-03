@@ -92,35 +92,14 @@ const OVERLAY_FRAG = `
     float edgeWarp4 = warpedFbm(p1 * 3.0 + vec2(4.8, 6.9), t * 0.5) * 0.14 - 0.07;
     vec2 warpOffset = vec2(edgeWarp, edgeWarp2 + edgeWarp4);
 
-    // ── Nebula A: Upper-center — magenta-purple, main feature ──
-    // Position matches mobileLayout=true desktop config from main shader
-    vec2 nA = p1 + warpOffset - vec2(-0.08, 0.18);
-    float nebA = exp(-(nA.x * nA.x * 3.5 + nA.y * nA.y * 2.8));
+    // ── Nebula A: Top-left corner — magenta-purple, covers logo & header ──
+    // Anchored at the top-left corner so gas extends from the very edge
+    vec2 nA = p1 + warpOffset - vec2(-0.55, 0.35);
+    float nebA = exp(-(nA.x * nA.x * 0.9 + nA.y * nA.y * 1.2));
 
-    // ── Nebula D: Top-right — magenta-purple, with arms toward center-top ──
-    // Main body — top-right
-    vec2 nD = p1 + warpOffset - vec2(0.38, 0.30);
-    float nebD_body = exp(-(nD.x * nD.x * 5.0 + nD.y * nD.y * 6.0));
-
-    // Arm 1: Long sweep from top-right toward center-top (rotated ~35°)
-    vec2 nD_arm1 = nD - vec2(-0.12, 0.04);
-    float cos35 = 0.819;
-    float sin35 = 0.574;
-    vec2 arm1 = vec2(cos35 * nD_arm1.x + sin35 * nD_arm1.y, -sin35 * nD_arm1.x + cos35 * nD_arm1.y);
-    float nebD_arm1 = exp(-(arm1.x * arm1.x * 3.0 + arm1.y * arm1.y * 22.0));
-
-    // Arm 2: Shorter sweep curving slightly lower (rotated ~55°)
-    vec2 nD_arm2 = nD - vec2(-0.08, -0.03);
-    float cos55 = 0.574;
-    float sin55 = 0.819;
-    vec2 arm2 = vec2(cos55 * nD_arm2.x + sin55 * nD_arm2.y, -sin55 * nD_arm2.x + cos55 * nD_arm2.y);
-    float nebD_arm2 = exp(-(arm2.x * arm2.x * 4.0 + arm2.y * arm2.y * 28.0));
-
-    float nebD = max(max(nebD_body, nebD_arm1), nebD_arm2);
-
-    // Cloud mask — both nebulae
-    float cloudMask = clamp(nebA + nebD * 0.85, 0.0, 1.0);
-    cloudMask = pow(cloudMask, 1.5);
+    // Cloud mask — higher starting value for denser coverage from the start
+    float cloudMask = clamp(nebA * 1.6, 0.0, 1.0);
+    cloudMask = pow(cloudMask, 1.2);
 
     // Quick exit if barely visible — skip expensive color grading
     if (cloudMask < 0.005) {
@@ -128,18 +107,26 @@ const OVERLAY_FRAG = `
       return;
     }
 
-    // Nebula A is magenta-purple — nebulaHue ≈ 0.20-0.35
+    // Nebula A is magenta-purple — nebulaHue with wide swings for clashing mixes
     float nebulaHue = 0.25;
-    float hueNoise = fbm(p2 * 2.5 + vec2(13.7, 7.3) + t * 0.06);
-    float hueSwirl = warpedFbm(p1 * 1.8 + vec2(5.2, 9.1) + vec2(t * 0.08, -t * 0.05), t * 0.7);
-    nebulaHue = clamp(nebulaHue + (hueNoise - 0.5) * 0.40 + (hueSwirl - 0.5) * 0.20, 0.0, 1.0);
+    float hueNoise = fbm(p2 * 2.5 + vec2(13.7, 7.3) + t * 0.10);
+    float hueSwirl = warpedFbm(p1 * 1.8 + vec2(5.2, 9.1) + vec2(t * 0.14, -t * 0.09), t * 1.2);
+    float hueTurb = warpedFbm(p1 * 3.5 + vec2(8.3, 2.6) + vec2(-t * 0.18, t * 0.12), t * 1.8);
+    nebulaHue = clamp(nebulaHue + (hueNoise - 0.5) * 0.55 + (hueSwirl - 0.5) * 0.30 + (hueTurb - 0.5) * 0.25, 0.0, 1.0);
 
-    float blueDepth = smoothstep(0.20, 0.45, nebulaHue) * smoothstep(0.85, 0.55, nebulaHue) * 0.15;
+    float blueDepth = smoothstep(0.20, 0.45, nebulaHue) * smoothstep(0.85, 0.55, nebulaHue) * 0.20;
 
-    // Volumetric layers — simplified from main shader
-    float n2 = warpedFbm(p2 * 1.8 + vec2(3.1, 1.7) + vec2(t * 0.3, t * 0.08), t * 1.2);
-    float n3 = warpedFbm(p3 * 2.5 + vec2(7.5, 3.2) + vec2(t * 0.12, t * 0.18), t * 0.8);
-    float filament2 = ridgeFbm(p2 * 3.5 + vec2(2.0, 4.5) + t * 0.05);
+    // Volumetric layers — with extra turbulence for internal structure
+    float n2 = warpedFbm(p2 * 1.8 + vec2(3.1, 1.7) + vec2(t * 0.5, t * 0.14), t * 2.0);
+    float n3 = warpedFbm(p3 * 2.5 + vec2(7.5, 3.2) + vec2(t * 0.20, t * 0.30), t * 1.4);
+    float filament2 = ridgeFbm(p2 * 3.5 + vec2(2.0, 4.5) + t * 0.08);
+
+    // Extra turbulence layers — creates internal clashing/mixing within the cloud
+    float turb1 = warpedFbm(p1 * 3.2 + vec2(11.4, 3.8) + vec2(t * 0.7, -t * 0.3), t * 2.5);
+    float turb2 = ridgeFbm(p2 * 4.8 + vec2(6.1, 14.7) + t * 0.12);
+    // Modulate n2/n3 with turbulence — pushes noise values around more aggressively
+    n2 = mix(n2, turb1, 0.35);
+    n3 = mix(n3, turb1 * turb2, 0.30);
 
     // Mid-layer color grades (magenta-purple for Nebula A)
     vec3 mag1 = vec3(0.04, 0.005, 0.03);
@@ -148,16 +135,16 @@ const OVERLAY_FRAG = `
     vec3 mag4 = vec3(0.32, 0.06, 0.26);
     vec3 mag5 = vec3(0.50, 0.12, 0.40);
     vec3 midMagenta = mag1;
-    midMagenta = mix(midMagenta, mag2, smoothstep(0.15, 0.30, n2));
-    midMagenta = mix(midMagenta, mag3, smoothstep(0.30, 0.48, n2));
-    midMagenta = mix(midMagenta, mag4, smoothstep(0.48, 0.65, n2));
-    midMagenta = mix(midMagenta, mag5, smoothstep(0.65, 0.82, n2));
+    midMagenta = mix(midMagenta, mag2, smoothstep(0.12, 0.26, n2));
+    midMagenta = mix(midMagenta, mag3, smoothstep(0.26, 0.42, n2));
+    midMagenta = mix(midMagenta, mag4, smoothstep(0.42, 0.58, n2));
+    midMagenta = mix(midMagenta, mag5, smoothstep(0.58, 0.74, n2));
     midMagenta *= 1.27; // boost purple/magenta depth
 
     // Some warm bleed
     vec3 wrm3 = vec3(0.30, 0.108, 0.027);
     vec3 wrm4 = vec3(0.51, 0.20, 0.04);
-    vec3 midWarm = mix(wrm3, wrm4, smoothstep(0.48, 0.65, n2));
+    vec3 midWarm = mix(wrm3, wrm4, smoothstep(0.42, 0.58, n2));
 
     vec3 midColor = mix(midMagenta, midWarm, smoothstep(0.25, 0.75, nebulaHue));
     midColor = mix(midColor, midColor * vec3(0.6, 0.65, 1.2), blueDepth); // blue tint at depth edges
@@ -170,15 +157,15 @@ const OVERLAY_FRAG = `
     vec3 cp3 = vec3(0.42, 0.08, 0.38);
     vec3 cp4 = vec3(0.65, 0.20, 0.55);
     vec3 corePurple = cp1;
-    corePurple = mix(corePurple, cp2, smoothstep(0.3, 0.5, n3));
-    corePurple = mix(corePurple, cp3, smoothstep(0.5, 0.68, n3));
-    corePurple = mix(corePurple, cp4, smoothstep(0.68, 0.85, n3));
+    corePurple = mix(corePurple, cp2, smoothstep(0.25, 0.43, n3));
+    corePurple = mix(corePurple, cp3, smoothstep(0.43, 0.60, n3));
+    corePurple = mix(corePurple, cp4, smoothstep(0.60, 0.78, n3));
     corePurple *= 1.27;
 
     // Some warm core bleed
     vec3 co2 = vec3(0.40, 0.135, 0.027);
     vec3 co3 = vec3(0.67, 0.30, 0.054);
-    vec3 coreWarm = mix(co2, co3, smoothstep(0.5, 0.68, n3));
+    vec3 coreWarm = mix(co2, co3, smoothstep(0.43, 0.60, n3));
 
     vec3 brightColor = mix(corePurple, coreWarm, smoothstep(0.25, 0.75, nebulaHue)) * 1.8;
     float brightMask = smoothstep(0.50, 0.70, n3) * smoothstep(0.42, 0.60, n2) * cloudMask;
@@ -195,8 +182,8 @@ const OVERLAY_FRAG = `
     vec3 rimPurple = mix(vec3(0.18, 0.04, 0.22), vec3(0.38, 0.10, 0.42), rimNoise) * 1.27 * 1.8;
     color += rimPurple * rim * 0.22;
 
-    // Breathing
-    float breath = 0.93 + 0.07 * sin(t * 2.5 + fbm(p1 * 1.2 + vec2(0.0, t * 0.3)) * 3.0);
+    // Breathing — deeper pulses for richer color moments
+    float breath = 0.88 + 0.12 * sin(t * 3.5 + fbm(p1 * 1.2 + vec2(0.0, t * 0.3)) * 3.0) + 0.05 * sin(t * 7.3 + n2 * 2.0);
     color *= breath;
 
     // Alpha = driven by actual gas brightness, not just spatial mask
@@ -206,9 +193,13 @@ const OVERLAY_FRAG = `
     // Soften outer edges further for natural blend
     alpha *= smoothstep(0.008, 0.06, cloudMask);
 
-    // Vignette — fade edges so the overlay doesn't have hard borders
-    float vig = 1.0 - dot(uv - 0.5, uv - 0.5) * 1.2;
-    alpha *= smoothstep(0.0, 0.50, vig);
+    // Directional fade — preserve top-left, fade toward bottom-right
+    // Only fade where gas should naturally trail off, not the corner origin
+    float fadeRight = smoothstep(0.0, 0.35, uv.x);  // fade near left edge = 0 (no fade)
+    float fadeBottom = smoothstep(0.0, 0.35, 1.0 - uv.y); // fade near top edge = 0 (no fade)
+    float dirFade = fadeRight * fadeBottom;
+    // Gentle fade only on the trailing edges (bottom-right of the cloud)
+    alpha *= mix(1.0, dirFade, 0.3);
 
     gl_FragColor = vec4(color * alpha, alpha);  // premultiplied alpha
   }

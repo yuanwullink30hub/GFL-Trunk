@@ -1,6 +1,11 @@
 /**
  * Garden For Life — Express Server
  */
+
+// Force IPv4-first DNS resolution — Render free tier has no IPv6 connectivity
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 const express = require('express');
 const cors = require('cors');
 const config = require('./config');

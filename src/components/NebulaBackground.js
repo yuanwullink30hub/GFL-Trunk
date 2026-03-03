@@ -122,7 +122,7 @@ const DISP_FRAG = `
 
 // ─── Pass 2: Nebula render with displacement applied ───────────────────
 // Factory: generates shader source with configurable octave counts
-function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', gasLayers = 4, mobileLayout = false) {
+function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', gasLayers = 4, mobileLayout = false, mobileStars = false) {
   return `
   #extension GL_OES_standard_derivatives : enable
   precision ${precision} float;
@@ -237,16 +237,16 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 ` + (mobileLayout ? `
     // Mobile: BG Gaussians tightened to fit fixed portrait viewport
     // BG1: Upper — cool violet wash
-    vec2 bgN1 = p0 + bgWarpOff - vec2(0.0, 0.20);
-    float nebBG1 = exp(-(bgN1.x * bgN1.x * 2.0 + bgN1.y * bgN1.y * 1.5));
+    vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
+    float nebBG1 = exp(-(bgN1.x * bgN1.x * 1.2 + bgN1.y * bgN1.y * 1.0));
 
     // BG2: Lower-left — warm ember
-    vec2 bgN2 = p0 + bgWarpOff - vec2(-0.15, -0.20);
-    float nebBG2 = exp(-(bgN2.x * bgN2.x * 2.5 + bgN2.y * bgN2.y * 1.8));
+    vec2 bgN2 = p0 + bgWarpOff - vec2(-0.25, -0.22);
+    float nebBG2 = exp(-(bgN2.x * bgN2.x * 1.5 + bgN2.y * bgN2.y * 1.2));
 
     // BG3: Right — blue haze
-    vec2 bgN3 = p0 + bgWarpOff - vec2(0.18, -0.08);
-    float nebBG3 = exp(-(bgN3.x * bgN3.x * 3.0 + bgN3.y * bgN3.y * 2.5));
+    vec2 bgN3 = p0 + bgWarpOff - vec2(0.28, -0.10);
+    float nebBG3 = exp(-(bgN3.x * bgN3.x * 1.8 + bgN3.y * bgN3.y * 1.5));
 ` : `
     // BG Nebula 1: Upper-center — vast cool violet wash
     vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
@@ -270,15 +270,15 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // No map navigation — everything must be visible at offset (0,0)
 
     // Nebula A: Upper-center — magenta-purple, main feature
-    vec2 nA = p1 + warpOffset - vec2(-0.05, 0.15);
-    float nebA = exp(-(nA.x * nA.x * 6.0 + nA.y * nA.y * 4.0));
+    vec2 nA = p1 + warpOffset - vec2(-0.08, 0.18);
+    float nebA = exp(-(nA.x * nA.x * 3.5 + nA.y * nA.y * 2.8));
 
     // Nebula B: Lower-left — warm orange-gold, pulled into viewport
-    vec2 nB = p1 + warpOffset - vec2(-0.18, -0.22);
-    float nebB = exp(-(nB.x * nB.x * 7.0 + nB.y * nB.y * 5.5));
+    vec2 nB = p1 + warpOffset - vec2(-0.28, -0.25);
+    float nebB = exp(-(nB.x * nB.x * 4.0 + nB.y * nB.y * 3.5));
 
     // Nebula C: Right — phoenix warm, compact, pulled into viewport
-    vec2 nC_base = p1 + warpOffset - vec2(0.20, -0.10);
+    vec2 nC_base = p1 + warpOffset - vec2(0.30, -0.12);
     float nebC_body = exp(-(nC_base.x * nC_base.x * 10.0 + nC_base.y * nC_base.y * 8.0));
     vec2 nC_lw = nC_base - vec2(-0.06, -0.02);
     vec2 lw = vec2(0.866 * nC_lw.x + 0.5 * nC_lw.y, -0.5 * nC_lw.x + 0.866 * nC_lw.y);
@@ -354,7 +354,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 color = vec3(0.0); // accumulate bg stars first, gas composited on top later
     vec2 bgStarUv = uv + mapOff * 0.15; // slowest parallax — deepest layer
 
-` + (mobileLayout ? `
+` + (mobileStars ? `
     // Mobile: single background star layer (halved, brightened)
     float bgS2 = stars(bgStarUv, 80.0, 1.1);
     vec3 bgSc2 = mix(vec3(0.55, 0.55, 0.8), vec3(0.8, 0.7, 0.45), hash(floor(bgStarUv * 80.0) + 44.0));
@@ -659,7 +659,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec2 midStarUv = uv + mapOff * 0.35; // medium parallax
     float gasOcclusion = 1.0 - cloudMask * 0.65; // dimmed inside dense gas
 
-` + (mobileLayout ? `
+` + (mobileStars ? `
     // Mobile: single midground star layer (halved, brightened)
     float mS1 = stars(midStarUv, 35.0, 1.0);
     vec3 mSc1 = mix(vec3(0.7, 0.7, 0.9), vec3(0.9, 0.8, 0.55), hash(floor(midStarUv * 35.0) + 55.0));
@@ -716,16 +716,16 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Foreground small bright stars
     float fgS1 = stars(fgStarUv, 30.0, 1.0);
     vec3 fgSc1 = mix(vec3(0.85, 0.85, 1.0), vec3(1.0, 0.9, 0.6), hash(floor(fgStarUv * 30.0) + 77.0));
-    color += fgSc1 * fgS1 * ${mobileLayout ? '0.65' : '0.50'};
+    color += fgSc1 * fgS1 * ${mobileStars ? '0.65' : '0.50'};
 
     // ── Large bright foreground stars — with diffraction spikes ──
     {
-      float density = ${mobileLayout ? '6.0' : '10.0'};
+      float density = ${mobileStars ? '6.0' : '10.0'};
       for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
           vec2 cell = floor(fgStarUv * density) + vec2(float(dx), float(dy));
           float h = hash(cell + 77.0);
-          if (h < ${mobileLayout ? '0.08' : '0.12'}) {
+          if (h < ${mobileStars ? '0.08' : '0.12'}) {
             vec2 sp = (cell + vec2(hash(cell + 0.3), hash(cell + 0.4))) / density;
             vec2 toStar = fgStarUv - sp;
             float d = length(toStar) * density;
@@ -755,7 +755,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // (old single-layer galaxies removed — now split into bg + midground layers above)
 
-` + (mobileLayout ? `
+` + (mobileStars ? `
     // Mobile: foreground clusters — boosted visibility
     {
       float density = 6.0;
@@ -840,11 +840,12 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 `;
 } // end makeNebulaFrag
 
-const NEBULA_FRAG = makeNebulaFrag(3, 3, 'highp', 3);  // Desktop: 3 octaves, 3 gas layers
-const NEBULA_FRAG_MOBILE = makeNebulaFrag(2, 2, 'mediump', 3, true); // Mobile: 2 octaves, mediump, 3 gas layers, mobile layout
+const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3, true, false);  // Desktop: mobile gaussians, full desktop stars
+const NEBULA_FRAG_MOBILE = makeNebulaFrag(2, 2, 'mediump', 3, true, true); // Mobile: 2 octaves, mediump, 3 gas layers, mobile stars
 
 // ─── React Component ────────────────────────────────────────────────────
 const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
+  const wrapperRef    = useRef(null);
   const canvasRef     = useRef(null);
   const animRef       = useRef(null);
   const mouseRef      = useRef({ x: 0.5, y: 0.5 });
@@ -941,18 +942,19 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
 
-    // Canvas sizing — mobile rendered at half-res (540p) for GPU performance
+    // Canvas sizing — use wrapper's real viewport dimensions (avoids mobile 100vh bugs)
+    const wrapper = wrapperRef.current;
+    const vpW = wrapper ? wrapper.clientWidth  : window.innerWidth;
+    const vpH = wrapper ? wrapper.clientHeight : window.innerHeight;
     const dpr = isMobileDevice ? 0.5 : Math.min(window.devicePixelRatio, 1.5);
-    let cw = Math.round(window.innerWidth  * dpr);
-    let ch = Math.round(window.innerHeight * dpr);
+    let cw = Math.round(vpW * dpr);
+    let ch = Math.round(vpH * dpr);
     if (isMobileDevice) {
       const maxDim = 540;
       if (ch > maxDim) { const scale = maxDim / ch; cw = Math.round(cw * scale); ch = maxDim; }
     }
     canvas.width  = cw;
     canvas.height = ch;
-    canvas.style.width  = window.innerWidth  + 'px';
-    canvas.style.height = window.innerHeight + 'px';
 
     // Displacement FBOs (quarter-res for performance) — desktop only
     let dispW, dispH, fboA, fboB, readFBO, writeFBO, dU, dPosLoc;
@@ -1118,9 +1120,9 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       gl.uniform1f(nU.time, elapsed);
       gl.uniform2f(nU.resolution, canvas.width, canvas.height);
       gl.uniform2f(nU.offset, mapPosRef.current.x, mapPosRef.current.y);
-      gl.uniform1f(nU.brightness, isMobileDevice ? 1.4 : 1.0);
-      gl.uniform1f(nU.saturation, isMobileDevice ? 1.6 : 1.35);
-      gl.uniform1f(nU.colorDepth, isMobileDevice ? 1.8 : 1.5);
+      gl.uniform1f(nU.brightness, isMobileDevice ? 1.4 : 1.3);
+      gl.uniform1f(nU.saturation, isMobileDevice ? 1.6 : 1.6);
+      gl.uniform1f(nU.colorDepth, isMobileDevice ? 1.8 : 1.8);
 
       gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
       gl.enableVertexAttribArray(nPosLoc);
@@ -1177,18 +1179,25 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
+      ref={wrapperRef}
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
+        inset: 0,
         zIndex: 0,
         pointerEvents: 'none',
+        overflow: 'hidden',
       }}
-    />
+    >
+      <canvas
+        ref={canvasRef}
+        style={{
+          display: 'block',
+          width: '100%',
+          height: '100%',
+        }}
+      />
+    </div>
   );
 };
 

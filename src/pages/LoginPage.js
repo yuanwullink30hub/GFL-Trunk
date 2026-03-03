@@ -53,8 +53,10 @@ const CORNER = (pos) => ({
   ...(pos === 'br' && { bottom: '-0.125rem', right: '-0.125rem', borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }),
 });
 
-const LoginFrame = ({ title, children }) => (
-  <div style={{ position: 'relative', minWidth: '35vw', maxWidth: '450px' }}>
+const LoginFrame = ({ title, children }) => {
+  const mob = typeof window !== 'undefined' && window.innerWidth < 768;
+  return (
+  <div style={{ position: 'relative', minWidth: mob ? '90vw' : '35vw', maxWidth: '450px' }}>
     {/* Corner brackets — outside overflow:hidden so they're never clipped */}
     <div style={CORNER('tl')} />
     <div style={CORNER('tr')} />
@@ -64,9 +66,9 @@ const LoginFrame = ({ title, children }) => (
     {/* Inner panel — SectorFrame exact */}
     <div style={{
       position: 'relative',
-      backgroundColor: 'rgba(2, 0, 3, 0.12)',
-      backdropFilter: 'blur(4px)',
-      WebkitBackdropFilter: 'blur(4px)',
+      backgroundColor: mob ? 'rgba(2, 0, 3, 0.85)' : 'rgba(2, 0, 3, 0.12)',
+      backdropFilter: mob ? 'blur(14px)' : 'blur(4px)',
+      WebkitBackdropFilter: mob ? 'blur(14px)' : 'blur(4px)',
       borderRadius: '0.5rem',
       overflow: 'hidden',
       boxShadow: SF_SHADOW,
@@ -131,7 +133,8 @@ const LoginFrame = ({ title, children }) => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 /* ═══════════════════════════════════════════════════ */
 

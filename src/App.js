@@ -1275,8 +1275,10 @@ const App = () => {
               className="absolute z-50 left-0 right-0 flex justify-center"
               style={{
                 top: '4rem',
-                opacity: deltaOpacity,
-                transform: `translateY(${deltaY}px) scale(${deltaScale})`,
+                opacity: showMobileLogin ? 0 : deltaOpacity,
+                transform: `translateY(${showMobileLogin ? -60 : deltaY}px) scale(${deltaScale})`,
+                transition: 'opacity 0.4s ease, transform 0.4s ease',
+                pointerEvents: showMobileLogin ? 'none' : 'auto',
               }}
             >
               <div className="flex flex-col items-center">

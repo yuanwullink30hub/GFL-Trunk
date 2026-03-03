@@ -188,7 +188,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
   return (
     <MobileCtx.Provider value={isMobile}>
     {/* Outer shell — fixed size, positioning context for corners */}
-    <div style={{ position: 'relative', width: isMobile ? '96vw' : '90vw', maxWidth: '1280px', height: isMobile ? '96vh' : '85vh', padding: isMobile ? '0.6rem' : 0 }}>
+    <div style={{ position: 'relative', width: isMobile ? '96vw' : '90vw', maxWidth: '1280px', height: isMobile ? '82vh' : '85vh', padding: isMobile ? '0.6rem' : 0 }}>
       {/* Corner brackets — positioned on the inner panel edge */}
       <div style={CORNER('tl', isMobile)} />
       <div style={CORNER('tr', isMobile)} />

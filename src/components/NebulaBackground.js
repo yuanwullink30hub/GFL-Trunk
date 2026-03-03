@@ -122,7 +122,7 @@ const DISP_FRAG = `
 
 // ─── Pass 2: Nebula render with displacement applied ───────────────────
 // Factory: generates shader source with configurable octave counts
-function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', gasLayers = 4, mobileLayout = false, mobileStars = false) {
+function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', gasLayers = 4) {
   return `
   #extension GL_OES_standard_derivatives : enable
   precision ${precision} float;
@@ -131,9 +131,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
   uniform vec2      u_resolution;
   uniform sampler2D u_disp;   // accumulated displacement field
   uniform vec2      u_offset; // map navigation offset (viewport units)
-  uniform float     u_brightness;  // overall brightness multiplier (higher on mobile)
-  uniform float     u_saturation;  // color saturation boost (higher on mobile)
-  uniform float     u_colorDepth;  // gas color intensity multiplier (higher on mobile)
+  uniform float     u_brightness;  // overall brightness multiplier
+  uniform float     u_saturation;  // color saturation boost
+  uniform float     u_colorDepth;  // gas color intensity multiplier
 
   // Noise
   float hash(vec2 p) {
@@ -157,7 +157,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float v = 0.0, a = 0.5, f = 1.0;
     for (int i = 0; i < ${fbmOctaves}; i++) {
       v += a * noise(p * f);
-      f *= ${mobileStars ? '2.8' : '2.1'}; a *= 0.48;
+      f *= 2.1; a *= 0.48;
     }
     return v;
   }
@@ -171,20 +171,12 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float v = 0.0, a = 0.5, f = 1.0;
     for (int i = 0; i < ${ridgeOctaves}; i++) {
       v += a * ridgeNoise(p * f);
-      f *= ${mobileStars ? '2.9' : '2.2'}; a *= 0.45;
+      f *= 2.2; a *= 0.45;
     }
     return v;
   }
 
   float warpedFbm(vec2 p, float t) {
-` + (mobileStars ? `
-    // Mobile: 1-level domain warp (3 fbm calls instead of 6)
-    vec2 q = vec2(fbm(p + 0.05 * t), fbm(p + vec2(5.2, 1.3) + 0.065 * t));
-    float base = fbm(p + 2.0 * q + vec2(1.7, 9.2) + 0.035 * t);
-    float ridge = ridgeFbm(p + 1.8 * q + 0.02 * t);
-    return mix(base, ridge, 0.45);
-` : `
-    // Desktop: 2-level domain warp (full quality)
     vec2 q = vec2(fbm(p + 0.05 * t), fbm(p + vec2(5.2, 1.3) + 0.065 * t));
     vec2 r = vec2(
       fbm(p + 2.0 * q + vec2(1.7, 9.2) + 0.035 * t),
@@ -193,7 +185,6 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float base = fbm(p + 2.0 * r);
     float ridge = ridgeFbm(p + 1.8 * r + 0.02 * t);
     return mix(base, ridge, 0.45);
-`) + `
   }
 
   float stars(vec2 uv, float density, float sizeScale) {
@@ -212,11 +203,10 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
   void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution;
     float aspect = u_resolution.x / u_resolution.y;
-` + (mobileLayout ? `
-    // Mobile: portrait phones have aspect ~0.45 which squishes x coords to ±0.23,
-    // making the nebula look extremely zoomed-in. Clamp to 0.9 for readable features.
+
+    // Clamp aspect so narrow viewports don't squish features beyond recognition
     aspect = max(aspect, 0.9);
-` : ``) + `
+
     // Read accumulated displacement
     vec2 disp = texture2D(u_disp, uv).xy * 2.0 - 1.0;
 
@@ -243,8 +233,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Reuse main edgeWarp scaled down — bg blobs are too diffuse to need dedicated warp
     vec2 bgWarpOff = vec2(edgeWarp * 0.5, edgeWarp2 * 0.35);
 
-` + (mobileLayout ? `
-    // Mobile: BG Gaussians tightened to fit fixed portrait viewport
+
     // BG1: Upper — cool violet wash
     vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
     float nebBG1 = exp(-(bgN1.x * bgN1.x * 1.7 + bgN1.y * bgN1.y * 1.4));
@@ -256,37 +245,22 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // BG3: Right — blue haze
     vec2 bgN3 = p0 + bgWarpOff - vec2(0.28, -0.10);
     float nebBG3 = exp(-(bgN3.x * bgN3.x * 2.5 + bgN3.y * bgN3.y * 2.1));
-` : `
-    // BG Nebula 1: Upper-center — vast cool violet wash
-    vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
-    float nebBG1 = exp(-(bgN1.x * bgN1.x * 0.9 + bgN1.y * bgN1.y * 1.1));
 
-    // BG Nebula 2: Lower-left — warm diffuse ember
-    vec2 bgN2 = p0 + bgWarpOff - vec2(-0.40, -0.18);
-    float nebBG2 = exp(-(bgN2.x * bgN2.x * 1.2 + bgN2.y * bgN2.y * 0.8));
-
-    // BG Nebula 3: Right — faint blue haze
-    vec2 bgN3 = p0 + bgWarpOff - vec2(0.45, -0.05);
-    float nebBG3 = exp(-(bgN3.x * bgN3.x * 1.5 + bgN3.y * bgN3.y * 1.8));
-`) + `
 
     float bgGaussMask = clamp(nebBG1 + nebBG2 * 0.8 + nebBG3 * 0.6, 0.0, 1.0);
 
     // ── Spatial confinement: nebulae across the viewport ──
 
-` + (mobileLayout ? `
-    // Mobile: All 3 nebulae repositioned into the fixed portrait viewport
-    // No map navigation — everything must be visible at offset (0,0)
 
     // Nebula A: Upper-center — magenta-purple, main feature
     vec2 nA = p1 + warpOffset - vec2(-0.08, 0.18);
     float nebA = exp(-(nA.x * nA.x * 4.5 + nA.y * nA.y * 3.6));
 
-    // Nebula B: Lower-left — warm orange-gold, pulled into viewport
+    // Nebula B: Lower-left — warm orange-gold
     vec2 nB = p1 + warpOffset - vec2(-0.28, -0.25);
     float nebB = exp(-(nB.x * nB.x * 5.2 + nB.y * nB.y * 4.5));
 
-    // Nebula C: Right — phoenix warm, compact, pulled into viewport
+    // Nebula C: Right — phoenix warm, compact
     vec2 nC_base = p1 + warpOffset - vec2(0.30, -0.12);
     float nebC_body = exp(-(nC_base.x * nC_base.x * 10.0 + nC_base.y * nC_base.y * 8.0));
     vec2 nC_lw = nC_base - vec2(-0.06, -0.02);
@@ -302,44 +276,16 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec2 tl = vec2(0.985 * nC_tl.x + 0.174 * nC_tl.y, -0.174 * nC_tl.x + 0.985 * nC_tl.y);
     float nebC_tl = exp(-(tl.x * tl.x * 20.0 + tl.y * tl.y * 4.0));
     float nebC = max(max(max(nebC_body, nebC_lw), max(nebC_rw, nebC_hd)), nebC_tl);
-` : `
-    // Each nebula has unique position, shape, and rich color grading.
-    // They may overflow between viewports as user navigates.
 
-    // Nebula A: Center-left — visible from main page — large elongated, magenta-purple
-    vec2 nA = p1 + warpOffset - vec2(-0.15, 0.1);
-    float nebA = exp(-(nA.x * nA.x * 4.5 + nA.y * nA.y * 7.0));
-
-    // Nebula B: Lower-left — near gardens area — wide diffuse, warm orange-gold
-    vec2 nB = p1 + warpOffset - vec2(-0.6, -0.32);
-    float nebB = exp(-(nB.x * nB.x * 6.5 + nB.y * nB.y * 6.0));
-
-    // Nebula C: Lower-right — phoenix silhouette, 5 sub-Gaussians merged
-    vec2 nC_base = p1 + warpOffset - vec2(0.5, -0.38);
-    float nebC_body = exp(-(nC_base.x * nC_base.x * 14.0 + nC_base.y * nC_base.y * 11.0));
-    vec2 nC_lw = nC_base - vec2(-0.08, -0.03);
-    vec2 lw = vec2(0.866 * nC_lw.x + 0.5 * nC_lw.y, -0.5 * nC_lw.x + 0.866 * nC_lw.y);
-    float nebC_lw = exp(-(lw.x * lw.x * 5.0 + lw.y * lw.y * 28.0));
-    vec2 nC_rw = nC_base - vec2(0.09, -0.025);
-    vec2 rw = vec2(0.866 * nC_rw.x - 0.5 * nC_rw.y, 0.5 * nC_rw.x + 0.866 * nC_rw.y);
-    float nebC_rw = exp(-(rw.x * rw.x * 5.0 + rw.y * rw.y * 28.0));
-    vec2 nC_hd = nC_base - vec2(0.01, 0.07);
-    vec2 hd = vec2(0.966 * nC_hd.x + 0.259 * nC_hd.y, -0.259 * nC_hd.x + 0.966 * nC_hd.y);
-    float nebC_hd = exp(-(hd.x * hd.x * 24.0 + hd.y * hd.y * 6.0));
-    vec2 nC_tl = nC_base - vec2(-0.02, -0.10);
-    vec2 tl = vec2(0.985 * nC_tl.x + 0.174 * nC_tl.y, -0.174 * nC_tl.x + 0.985 * nC_tl.y);
-    float nebC_tl = exp(-(tl.x * tl.x * 20.0 + tl.y * tl.y * 4.0));
-    float nebC = max(max(max(nebC_body, nebC_lw), max(nebC_rw, nebC_hd)), nebC_tl);
-`) + `
 
     // Combined cloud mask — warm clouds contribute equally
     float cloudMask = clamp(nebA + nebB * 1.0 + nebC * 0.85, 0.0, 1.0);
-    cloudMask = pow(cloudMask, ${mobileLayout ? '1.8' : '1.5'}); // sharpen edges (more on mobile)
+    cloudMask = pow(cloudMask, 1.8); // sharpen edges
 
     // Per-nebula color identity: 0 = purple/magenta, 1 = warm orange
     // Each nebula leans toward a hue but all contain both colors swirling through
     float totalNeb = nebA + nebB + nebC + 0.001;
-    float baseHue = (nebA * 0.25 + nebB * 0.55 + nebC * ${mobileLayout ? '0.95' : '0.82'}) / totalNeb;
+    float baseHue = (nebA * 0.25 + nebB * 0.55 + nebC * 0.95) / totalNeb;
     // Add large-scale noise to break up the spatial color separation
     // This makes purple streaks appear in warm regions and vice versa
     float hueNoise = fbm(p2 * 2.5 + vec2(13.7, 7.3) + t * 0.10);
@@ -363,12 +309,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 color = vec3(0.0); // accumulate bg stars first, gas composited on top later
     vec2 bgStarUv = uv + mapOff * 0.15; // slowest parallax — deepest layer
 
-` + (mobileStars ? `
-    // Mobile: single background star layer (halved, brightened)
-    float bgS2 = stars(bgStarUv, 80.0, 1.1);
-    vec3 bgSc2 = mix(vec3(0.55, 0.55, 0.8), vec3(0.8, 0.7, 0.45), hash(floor(bgStarUv * 80.0) + 44.0));
-    color += bgSc2 * bgS2 * 0.42;
-` : `
+
     // Tiny distant background stars — dense field
     float bgS1 = stars(bgStarUv, 120.0, 1.1);
     vec3 bgSc1 = mix(vec3(0.5, 0.5, 0.75), vec3(0.7, 0.65, 0.5), hash(floor(bgStarUv * 120.0)));
@@ -440,7 +381,6 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
         }
       }
     }
-`) + `
 
     vec3 deepPurple = mix(vec3(0.008, 0.002, 0.018), vec3(0.025, 0.008, 0.04), n1);
     vec3 deepBlue   = mix(vec3(0.004, 0.006, 0.020), vec3(0.012, 0.018, 0.045), n1);
@@ -628,37 +568,29 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Dark absorption lanes — wispy dark dust cutting through gas
     float dustDetail = ridgeFbm(p2 * 4.5 + vec2(11.3, 4.7) + t * 0.015);
     float voidMask = smoothstep(0.62, 0.80, dustDetail) * cloudMask;
-    color *= (1.0 - voidMask * ${mobileLayout ? '0.25' : '0.45'}); // darken in dust lanes
+    color *= (1.0 - voidMask * 0.25); // darken in dust lanes
 
     // Hot emission highlights — bright white/pink peaks at densest cores
-    float hotSpot = smoothstep(${mobileLayout ? '0.75' : '0.68'}, 0.88, n3) * smoothstep(${mobileLayout ? '0.62' : '0.55'}, 0.72, n2) * cloudMask;
-    hotSpot = pow(hotSpot, ${mobileLayout ? '2.0' : '1.4'}); // concentrate to peaks
+    float hotSpot = smoothstep(0.75, 0.88, n3) * smoothstep(0.62, 0.72, n2) * cloudMask;
+    hotSpot = pow(hotSpot, 2.0); // concentrate to peaks
     // White-hot tint: desaturates toward white at the brightest peaks
     vec3 hotTint = mix(vec3(1.0, 0.82, 0.90), vec3(1.0, 0.95, 0.93), hotSpot);
-    color += hotTint * hotSpot * ${mobileLayout ? '0.12' : '0.35'};
+    color += hotTint * hotSpot * 0.12;
 
-` + (mobileLayout ? `
-    // Mobile: skip border/edge hotspots (2 octaves = too smooth → giant white blocks)
-` : `
-    // Border/edge hotspots — fire only on sharp edge curves
-    float borderHot = pow(combinedEdge, 1.8) * cloudMask;
-    float edgeHotGlow = pow(combinedEdge, 2.2) * cloudMask;
-    color += hotTint * borderHot * 0.35;
-    color += hotTint * edgeHotGlow * 0.35;
-`) + `
+    // Skip border/edge hotspots (2 octaves = too smooth → giant white blocks)
 
     // Luminous filament wisps — thin bright edges where gas density changes sharply
     float wisp = abs(n2 - 0.48) * 2.0;
     float wispGlow = smoothstep(0.82, 0.95, wisp) * smoothstep(0.35, 0.50, n2) * cloudMask * filament3;
     vec3 wispColor = mix(vec3(0.7, 0.5, 0.85), vec3(0.9, 0.7, 0.5), nebulaHue);
-    color += wispColor * wispGlow * ${mobileLayout ? '0.06' : '0.12'};
+    color += wispColor * wispGlow * 0.06;
 
     // S-curve contrast — crushes blacks deeper, lifts highlights
     // Subtle per-channel sigmoid: x → x^g / (x^g + (1-x)^g)  with g ≈ 1.15
     vec3 cNorm = clamp(color * 2.8, 0.0, 1.0); // normalize to 0-1 range for curve
-    float g = ${mobileLayout ? '1.08' : '1.15'};
+    float g = 1.08;
     vec3 curved = pow(cNorm, vec3(g)) / (pow(cNorm, vec3(g)) + pow(vec3(1.0) - cNorm, vec3(g)) + 0.001);
-    color = mix(color, curved * 0.357, ${mobileLayout ? '0.20' : '0.35'}); // blend contrast curve
+    color = mix(color, curved * 0.357, 0.20); // blend contrast curve
 
     // Ambient breathing — deeper pulses for richer color moments
     float breath = 0.88 + 0.12 * sin(t * 3.5 + n1 * 3.0) + 0.05 * sin(t * 7.3 + n2 * 2.0);
@@ -668,12 +600,6 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec2 midStarUv = uv + mapOff * 0.35; // medium parallax
     float gasOcclusion = 1.0 - cloudMask * 0.65; // dimmed inside dense gas
 
-` + (mobileStars ? `
-    // Mobile: single midground star layer (halved, brightened)
-    float mS1 = stars(midStarUv, 35.0, 1.0);
-    vec3 mSc1 = mix(vec3(0.7, 0.7, 0.9), vec3(0.9, 0.8, 0.55), hash(floor(midStarUv * 35.0) + 55.0));
-    color += mSc1 * mS1 * 0.58 * gasOcclusion;
-` : `
     // Medium midground stars — partially hidden by nebula
     float mS1 = stars(midStarUv, 45.0, 1.0);
     vec3 mSc1 = mix(vec3(0.7, 0.7, 0.9), vec3(0.9, 0.8, 0.55), hash(floor(midStarUv * 45.0) + 55.0));
@@ -717,7 +643,6 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
         }
       }
     }
-`) + `
 
     // ── FOREGROUND STARS (in front of everything) ──
     vec2 fgStarUv = uv + mapOff * 0.55; // fastest parallax — closest layer
@@ -725,16 +650,16 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Foreground small bright stars
     float fgS1 = stars(fgStarUv, 30.0, 1.0);
     vec3 fgSc1 = mix(vec3(0.85, 0.85, 1.0), vec3(1.0, 0.9, 0.6), hash(floor(fgStarUv * 30.0) + 77.0));
-    color += fgSc1 * fgS1 * ${mobileStars ? '0.65' : '0.50'};
+    color += fgSc1 * fgS1 * 0.50;
 
     // ── Large bright foreground stars — with diffraction spikes ──
     {
-      float density = ${mobileStars ? '6.0' : '10.0'};
+      float density = 10.0;
       for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
           vec2 cell = floor(fgStarUv * density) + vec2(float(dx), float(dy));
           float h = hash(cell + 77.0);
-          if (h < ${mobileStars ? '0.08' : '0.12'}) {
+          if (h < 0.12) {
             vec2 sp = (cell + vec2(hash(cell + 0.3), hash(cell + 0.4))) / density;
             vec2 toStar = fgStarUv - sp;
             float d = length(toStar) * density;
@@ -764,40 +689,6 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // (old single-layer galaxies removed — now split into bg + midground layers above)
 
-` + (mobileStars ? `
-    // Mobile: foreground clusters — boosted visibility
-    {
-      float density = 6.0;
-      for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
-          vec2 cell = floor(fgStarUv * density) + vec2(float(dx), float(dy));
-          float h = hash(cell + 300.0);
-          if (h < 0.09) {
-            vec2 clusterCenter = (cell + vec2(hash(cell + 301.0), hash(cell + 302.0))) / density;
-            float clusterDist = length(fgStarUv - clusterCenter) * density;
-            float cDist = 0.45 + 0.55 * hash(cell + 303.0);
-            float spread = 0.22 + 0.20 * cDist;
-            if (clusterDist < 0.7 * cDist) {
-              for (int i = 0; i < 4; i++) {
-                float fi = float(i);
-                vec2 subPos = clusterCenter + vec2(
-                  hash(cell + fi * 10.0 + 310.0) - 0.5,
-                  hash(cell + fi * 10.0 + 311.0) - 0.5
-                ) * spread / density;
-                float subDist = length(fgStarUv - subPos) * density;
-                float starSize = (0.016 + 0.016 * cDist) * (0.7 + 0.3 * hash(cell + fi + 325.0));
-                float subBright = smoothstep(starSize, starSize * 0.1, subDist) * (0.5 + 0.5 * cDist) * (0.6 + 0.4 * hash(cell + fi + 320.0));
-                vec3 subColor = mix(vec3(0.7, 0.75, 1.0), vec3(1.0, 0.9, 0.6), hash(cell + fi + 330.0));
-                color += subColor * max(subBright, 0.0);
-              }
-              float clGlow = exp(-clusterDist * clusterDist * (8.0 / (cDist * cDist))) * 0.08 * cDist;
-              color += vec3(0.6, 0.6, 0.8) * clGlow;
-            }
-          }
-        }
-      }
-    }
-` : `
     // ── Foreground star clusters — bright, close ──
     {
       float density = 7.0;
@@ -832,7 +723,6 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
         }
       }
     }
-`) + `
 
     // Vignette
     float vig = 1.0 - dot(uv - 0.5, uv - 0.5) * 1.2;
@@ -840,7 +730,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     color *= u_brightness;
 
-    // Saturation boost — enriches color depth on mobile where fewer layers thin out the gas
+    // Saturation boost — enriches color depth
     float luma = dot(color, vec3(0.299, 0.587, 0.114));
     color = mix(vec3(luma), color, u_saturation);
 
@@ -849,21 +739,22 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 `;
 } // end makeNebulaFrag
 
-const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3, true, false);  // Desktop: mobile gaussians, full desktop stars
-const NEBULA_FRAG_MOBILE = makeNebulaFrag(3, 3, 'highp', 3, true, true); // Mobile: 3 octaves, wider freq steps (2.8x/2.9x), simplified warpedFbm
+const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3);  // Desktop: 2 octaves, highp, 3 gas layers
 
 // ─── React Component ────────────────────────────────────────────────────
 const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
-  const wrapperRef    = useRef(null);
-  const canvasRef     = useRef(null);
-  const animRef       = useRef(null);
-  const mouseRef      = useRef({ x: 0.5, y: 0.5 });
-  const mousePrevRef  = useRef({ x: 0.5, y: 0.5 });
-  const startTimeRef  = useRef(Date.now());
+  const wrapperRef      = useRef(null);
+  const canvasRef       = useRef(null);
+  const videoRef        = useRef(null);
+  const animRef         = useRef(null);
+  const mouseRef        = useRef({ x: 0.5, y: 0.5 });
+  const mousePrevRef    = useRef({ x: 0.5, y: 0.5 });
+  const startTimeRef    = useRef(Date.now());
   const mapPosTargetRef = useRef({ x: 0, y: 0 }); // target from prop
   const mapPosRef       = useRef({ x: 0, y: 0 }); // smoothed value sent to shader
   const onReadyRef      = useRef(onReady);
   const readyFiredRef   = useRef(false);
+  const isMobile        = typeof window !== 'undefined' && window.innerWidth < 768;
 
   // Keep onReady ref current
   useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
@@ -873,6 +764,76 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     mapPosTargetRef.current = mapPosition;
   }, [mapPosition]);
 
+  // ─── MOBILE: Pre-recorded video loop (zero GPU cost) ─────────────────
+  useEffect(() => {
+    if (!isMobile) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    function onCanPlay() {
+      video.play().catch(() => {}); // autoplay may be blocked; gradient shows as fallback
+      if (onReadyRef.current && !readyFiredRef.current) {
+        readyFiredRef.current = true;
+        onReadyRef.current();
+      }
+    }
+    function onError() {
+      console.warn('NebulaBackground: video failed to load, falling back to gradient');
+      if (onReadyRef.current && !readyFiredRef.current) {
+        readyFiredRef.current = true;
+        onReadyRef.current();
+      }
+    }
+    video.addEventListener('canplaythrough', onCanPlay);
+    video.addEventListener('error', onError);
+    return () => {
+      video.removeEventListener('canplaythrough', onCanPlay);
+      video.removeEventListener('error', onError);
+      video.pause();
+    };
+  }, [isMobile]);
+
+  // ─── MOBILE: Render <video> element instead of WebGL canvas ──────────
+  if (isMobile) {
+    return (
+      <div
+        ref={wrapperRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+          overflow: 'hidden',
+          background: 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)',
+        }}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          disablePictureInPicture
+          disableRemotePlayback
+          style={{
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            resize: 'none',
+            outline: 'none',
+            border: 'none',
+          }}
+        >
+          <source src="/images/nebula-mobile-loop.mp4"  type="video/mp4" />
+          <source src="/images/nebula-mobile-loop.webm" type="video/webm" />
+        </video>
+      </div>
+    );
+  }
+
+  // ─── DESKTOP: WebGL shader path (unchanged / LOCKED) ─────────────────
   // Track WebGL init function so context restore can re-run it
   const initCountRef = useRef(0);
 
@@ -958,11 +919,10 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       return p;
     }
 
-    // Create programs — mobile uses reduced-octave shader and skips displacement
-    const isMobileDevice = window.innerWidth < 768;
-    const dispProg   = isMobileDevice ? null : linkProg(VERT, DISP_FRAG);
-    const nebulaProg = linkProg(VERT, isMobileDevice ? NEBULA_FRAG_MOBILE : NEBULA_FRAG);
-    if (!nebulaProg || (!isMobileDevice && !dispProg)) {
+    // Create programs
+    const dispProg   = linkProg(VERT, DISP_FRAG);
+    const nebulaProg = linkProg(VERT, NEBULA_FRAG);
+    if (!nebulaProg || !dispProg) {
       canvas.style.background = 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)';
       if (onReadyRef.current) onReadyRef.current();
       return () => {};
@@ -974,21 +934,19 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
 
-    // Canvas sizing — use wrapper's real viewport dimensions (avoids mobile 100vh bugs)
+    // Canvas sizing — use wrapper's real viewport dimensions
     const wrapper = wrapperRef.current;
     const vpW = wrapper ? wrapper.clientWidth  : window.innerWidth;
     const vpH = wrapper ? wrapper.clientHeight : window.innerHeight;
-    const dpr = isMobileDevice ? 2.0 : Math.min(window.devicePixelRatio, 1.5);
+    const dpr = Math.min(window.devicePixelRatio, 1.5);
     let cw = Math.round(vpW * dpr);
     let ch = Math.round(vpH * dpr);
     canvas.width  = cw;
     canvas.height = ch;
 
-    // Displacement FBOs (quarter-res for performance) — desktop only
-    let dispW, dispH, fboA, fboB, readFBO, writeFBO, dU, dPosLoc;
-    if (!isMobileDevice) {
-      dispW = Math.max(256, Math.ceil(canvas.width  / 4));
-      dispH = Math.max(256, Math.ceil(canvas.height / 4));
+    // Displacement FBOs (quarter-res for performance)
+    const dispW = Math.max(256, Math.ceil(canvas.width  / 4));
+    const dispH = Math.max(256, Math.ceil(canvas.height / 4));
 
     function createFBO(w, h) {
       const tex = gl.createTexture();
@@ -1012,14 +970,14 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       return { tex, fb };
     }
 
-      fboA = createFBO(dispW, dispH);
-      fboB = createFBO(dispW, dispH);
-      readFBO  = fboA;
-      writeFBO = fboB;
+    let fboA = createFBO(dispW, dispH);
+    let fboB = createFBO(dispW, dispH);
+    let readFBO  = fboA;
+    let writeFBO = fboB;
 
     // Uniform locations — displacement program
     gl.useProgram(dispProg);
-    dU = {
+    const dU = {
       prev:       gl.getUniformLocation(dispProg, 'u_prev'),
       res:        gl.getUniformLocation(dispProg, 'u_res'),
       mouse:      gl.getUniformLocation(dispProg, 'u_mouse'),
@@ -1027,20 +985,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       mouseSpeed: gl.getUniformLocation(dispProg, 'u_mouseSpeed'),
       aspect:     gl.getUniformLocation(dispProg, 'u_aspect'),
     };
-    dPosLoc = gl.getAttribLocation(dispProg, 'a_position');
-    } // end desktop-only displacement setup
-
-    // Mobile: create a static neutral displacement texture (no interaction)
-    let mobileDispTex = null;
-    if (isMobileDevice) {
-      mobileDispTex = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, mobileDispTex);
-      const neutralData = new Uint8Array(4);
-      neutralData.fill(128); // neutral = zero displacement
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, neutralData);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    }
+    const dPosLoc = gl.getAttribLocation(dispProg, 'a_position');
 
     // Uniform locations — nebula program
     gl.useProgram(nebulaProg);
@@ -1057,11 +1002,10 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
 
     // Resize handler — uses wrapper dimensions to match real visible viewport
     function resize() {
-      const mob = window.innerWidth < 768;
       const w = wrapperRef.current;
       const rVpW = w ? w.clientWidth  : window.innerWidth;
       const rVpH = w ? w.clientHeight : window.innerHeight;
-      const d = mob ? 2.0 : Math.min(window.devicePixelRatio, 1.5);
+      const d = Math.min(window.devicePixelRatio, 1.5);
       let rw = Math.round(rVpW * d);
       let rh = Math.round(rVpH * d);
       canvas.width  = rw;
@@ -1070,19 +1014,17 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     }
     window.addEventListener('resize', resize);
 
-    // Mouse / pointer tracking — desktop only (no interactive path on mobile)
+    // Mouse / pointer tracking
     function onPointerMove(e) {
       mouseRef.current.x = e.clientX / window.innerWidth;
       mouseRef.current.y = 1.0 - e.clientY / window.innerHeight;
     }
-    if (!isMobileDevice) {
-      window.addEventListener('pointermove', onPointerMove, { passive: true });
-      window.addEventListener('mousemove', onPointerMove, { passive: true });
-    }
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('mousemove', onPointerMove, { passive: true });
 
     // Render loop
     let lastFrame = 0;
-    const INTERVAL = 1000 / (isMobileDevice ? 25 : 30);
+    const INTERVAL = 1000 / 30;
 
     function render(timestamp) {
       animRef.current = requestAnimationFrame(render);
@@ -1095,43 +1037,40 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       // looping (noise offsets like 0.07*t stay in a small range ≤42)
       const wrappedTime = elapsed % 600;
 
-      if (!isMobileDevice) {
-        // Desktop: full displacement pass with mouse interaction
-        const mx = mouseRef.current.x;
-        const my = mouseRef.current.y;
-        const px = mousePrevRef.current.x;
-        const py = mousePrevRef.current.y;
-        const speed  = Math.sqrt((mx - px) * (mx - px) + (my - py) * (my - py));
-        const aspect = canvas.width / canvas.height;
+      // ═══ Pass 1: Update displacement field ═══
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
+      const px = mousePrevRef.current.x;
+      const py = mousePrevRef.current.y;
+      const speed  = Math.sqrt((mx - px) * (mx - px) + (my - py) * (my - py));
+      const aspect = canvas.width / canvas.height;
 
-        // ═══ Pass 1: Update displacement field ═══
-        gl.bindFramebuffer(gl.FRAMEBUFFER, writeFBO.fb);
-        gl.viewport(0, 0, dispW, dispH);
-        gl.useProgram(dispProg);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, writeFBO.fb);
+      gl.viewport(0, 0, dispW, dispH);
+      gl.useProgram(dispProg);
 
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, readFBO.tex);
-        gl.uniform1i(dU.prev, 0);
-        gl.uniform2f(dU.res, dispW, dispH);
-        gl.uniform2f(dU.mouse, mx, my);
-        gl.uniform2f(dU.mousePrev, px, py);
-        gl.uniform1f(dU.mouseSpeed, speed);
-        gl.uniform1f(dU.aspect, aspect);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, readFBO.tex);
+      gl.uniform1i(dU.prev, 0);
+      gl.uniform2f(dU.res, dispW, dispH);
+      gl.uniform2f(dU.mouse, mx, my);
+      gl.uniform2f(dU.mousePrev, px, py);
+      gl.uniform1f(dU.mouseSpeed, speed);
+      gl.uniform1f(dU.aspect, aspect);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
-        gl.enableVertexAttribArray(dPosLoc);
-        gl.vertexAttribPointer(dPosLoc, 2, gl.FLOAT, false, 0, 0);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+      gl.enableVertexAttribArray(dPosLoc);
+      gl.vertexAttribPointer(dPosLoc, 2, gl.FLOAT, false, 0, 0);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-        // Swap ping-pong
-        const tmp = readFBO;
-        readFBO  = writeFBO;
-        writeFBO = tmp;
+      // Swap ping-pong
+      const tmp = readFBO;
+      readFBO  = writeFBO;
+      writeFBO = tmp;
 
-        // Store previous mouse for next frame's velocity
-        mousePrevRef.current.x = mx;
-        mousePrevRef.current.y = my;
-      }
+      // Store previous mouse for next frame's velocity
+      mousePrevRef.current.x = mx;
+      mousePrevRef.current.y = my;
 
       // ═══ Pass 2: Render nebula to screen ═══
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -1144,14 +1083,14 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       mapPosRef.current.y += (mapPosTargetRef.current.y - mapPosRef.current.y) * lerpFactor;
 
       gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, isMobileDevice ? mobileDispTex : readFBO.tex);
+      gl.bindTexture(gl.TEXTURE_2D, readFBO.tex);
       gl.uniform1i(nU.disp, 0);
       gl.uniform1f(nU.time, wrappedTime);
       gl.uniform2f(nU.resolution, canvas.width, canvas.height);
       gl.uniform2f(nU.offset, mapPosRef.current.x, mapPosRef.current.y);
-      gl.uniform1f(nU.brightness, isMobileDevice ? 1.4 : 1.3);
-      gl.uniform1f(nU.saturation, isMobileDevice ? 1.6 : 1.6);
-      gl.uniform1f(nU.colorDepth, isMobileDevice ? 1.8 : 1.8);
+      gl.uniform1f(nU.brightness, 1.3);
+      gl.uniform1f(nU.saturation, 1.6);
+      gl.uniform1f(nU.colorDepth, 1.8);
 
       gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
       gl.enableVertexAttribArray(nPosLoc);
@@ -1182,17 +1121,14 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
-      if (!isMobileDevice) {
-        window.removeEventListener('pointermove', onPointerMove);
-        window.removeEventListener('mousemove', onPointerMove);
-      }
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('mousemove', onPointerMove);
       document.removeEventListener('visibilitychange', onVisibility);
       if (dispProg)   { dispProg._shaders.forEach(s => gl.deleteShader(s));   gl.deleteProgram(dispProg); }
       if (nebulaProg) { nebulaProg._shaders.forEach(s => gl.deleteShader(s)); gl.deleteProgram(nebulaProg); }
       gl.deleteBuffer(quadBuf);
       if (fboA) { gl.deleteTexture(fboA.tex);  gl.deleteFramebuffer(fboA.fb); }
       if (fboB) { gl.deleteTexture(fboB.tex);  gl.deleteFramebuffer(fboB.fb); }
-      if (mobileDispTex) gl.deleteTexture(mobileDispTex);
       // Force-release the WebGL context so it doesn't linger during hot-reload
       const loseCtx = gl.getExtension('WEBGL_lose_context');
       if (loseCtx) loseCtx.loseContext();

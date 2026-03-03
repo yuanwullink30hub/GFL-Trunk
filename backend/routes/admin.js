@@ -627,6 +627,7 @@ router.post('/forms/:id/send', authRequired, adminRequired, async (req, res) => 
         user: config.email.user,
         pass: config.email.pass,
       },
+      family: 4, // Force IPv4 — Render free tier has no IPv6
     });
 
     const emailSubject = subject || `Garden For Life — ${doc.templateLabel}`;
@@ -697,6 +698,7 @@ router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) 
         user: config.email.user,
         pass: config.email.pass,
       },
+      family: 4, // Force IPv4 — Render free tier has no IPv6
     });
 
     // Build mail options

@@ -55,6 +55,49 @@ app.get('/api/status', (_req, res) => {
   });
 });
 
+// Diagnostic endpoint — reveals SMTP + DNS config for debugging
+app.get('/api/debug/smtp', async (_req, res) => {
+  const dnsModule = require('dns');
+  const results = {
+    nodeVersion: process.version,
+    dnsOrder: dnsModule.getDefaultResultOrder?.() || 'unknown',
+    smtpHost: config.email.host,
+    smtpPort: config.email.port,
+    smtpSecure: config.email.secure,
+    smtpUser: config.email.user ? `${config.email.user.slice(0, 3)}***` : 'NOT SET',
+    smtpPass: config.email.pass ? '***SET***' : 'NOT SET',
+    smtpFrom: config.email.from,
+    dnsLookup: null,
+    dnsResolve4: null,
+    dnsResolve6: null,
+  };
+
+  // Test DNS resolution
+  try {
+    const { promisify } = require('util');
+    const lookup = promisify(dnsModule.lookup);
+    const resolve4 = promisify(dnsModule.resolve4);
+    const resolve6 = promisify(dnsModule.resolve6);
+
+    try {
+      const lookupResult = await lookup(config.email.host, { all: true });
+      results.dnsLookup = lookupResult;
+    } catch (e) { results.dnsLookup = e.message; }
+
+    try {
+      results.dnsResolve4 = await resolve4(config.email.host);
+    } catch (e) { results.dnsResolve4 = e.message; }
+
+    try {
+      results.dnsResolve6 = await resolve6(config.email.host);
+    } catch (e) { results.dnsResolve6 = e.message; }
+  } catch (e) {
+    results.error = e.message;
+  }
+
+  res.json(results);
+});
+
 // ── All 4 modules mounted ──
 
 // ── Start ──

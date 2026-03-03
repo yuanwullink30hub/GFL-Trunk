@@ -29,46 +29,35 @@ function buildEmailHTML(templateLabel, bodyContent) {
   return `
 <!DOCTYPE html>
 <html lang="nl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f5f5f0;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background-color:#ffffff;">
 <div style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;">
   <!-- Header with logo -->
-  <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 24px 30px;">
-    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;">
-      <tr>
-        <td style="vertical-align:middle;width:130px;">
-          <img src="https://gfl-trunk.pages.dev/images/landingpage/logo.png" alt="Garden For Life" style="height:120px;display:block;" />
-        </td>
-        <td style="vertical-align:middle;text-align:center;">
-          <h1 style="color:#bc13fe;margin:0;font-size:26px;font-weight:700;letter-spacing:0.5px;">Garden For Life</h1>
-        </td>
-      </tr>
-    </table>
+  <div style="background: #121212; padding: 24px 30px; position: relative; text-align: center;">
+    <img src="https://gfl-trunk.pages.dev/images/landingpage/logo.png" alt="Garden For Life" style="height:100px;display:block;position:absolute;left:30px;top:50%;transform:translateY(-50%);" />
+    <h1 style="color:#bc13fe;margin:0;font-size:28px;font-weight:700;letter-spacing:1.5px;font-family:'Rajdhani','Segoe UI',Tahoma,sans-serif;text-transform:uppercase;">Garden For Life</h1>
   </div>
 
   <!-- Body content -->
   <div style="padding:28px 30px;line-height:1.7;color:#333;font-size:15px;white-space:pre-wrap;">${bodyContent}</div>
 
-  <!-- Signature / Contact block -->
+  <!-- Signature / Contact block + Footer -->
   <div style="padding:0 30px 24px;">
     <div style="border-top:2px solid #bc13fe;padding-top:20px;margin-top:12px;">
-      <p style="margin:0;font-size:15px;font-weight:700;color:#1a1a2e;">Garden For Life</p>
-      <div style="margin-top:8px;font-size:12px;line-height:1.6;color:#555;">
+      <div style="font-size:12px;line-height:1.6;color:#555;">
         <div>\u2709 <a href="mailto:yuanwullink30@gfl.community" style="color:#1a73e8;text-decoration:none;">yuanwullink30@gfl.community</a></div>
         <div>\ud83c\udf10 <a href="https://gardenforlife.nl/" style="color:#1a73e8;text-decoration:none;">www.gardenforlife.nl</a></div>
         <div style="margin-top:4px;font-size:11px;color:#888;">KVK: 85125245</div>
       </div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid #eee;">
+        <p style="margin:0;font-size:11px;color:#999;">
+          \u00a9 ${new Date().getFullYear()} Garden For Life \u00b7 Alle rechten voorbehouden
+        </p>
+        <p style="margin:4px 0 0;font-size:10px;color:#bbb;">
+          Dit bericht is verstuurd vanuit het Garden For Life Verbindingscentrum
+        </p>
+      </div>
     </div>
-  </div>
-
-  <!-- Footer -->
-  <div style="background:#f8f8f5;padding:16px 30px;text-align:left;border-top:1px solid #eee;">
-    <p style="margin:0;font-size:11px;color:#999;">
-      \u00a9 ${new Date().getFullYear()} Garden For Life \u00b7 Alle rechten voorbehouden
-    </p>
-    <p style="margin:6px 0 0;font-size:10px;color:#bbb;">
-      Dit bericht is verstuurd vanuit het Garden For Life Verbindingscentrum
-    </p>
   </div>
 </div>
 </body>
@@ -721,6 +710,7 @@ router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) 
     // If PDF attachment provided, decode and attach
     // Accepts either raw base64 (pdfBase64) or data URI (pdfAttachment)
     const rawB64 = pdfBase64 || (pdfAttachment ? pdfAttachment.replace(/^data:[^;]+;[^,]*,/, '') : null);
+    console.log('[Admin] PDF attachment:', rawB64 ? `${rawB64.length} chars base64` : 'NONE');
     if (rawB64) {
       mailOptions.attachments = [{
         filename: attachmentFilename || 'factuur.pdf',

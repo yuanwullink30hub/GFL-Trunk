@@ -28,7 +28,6 @@ import {
   getFormDocuments,
   deleteFormDocument,
   sendFormEmail,
-  getEmailStatus,
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
@@ -1884,19 +1883,15 @@ const FormulierenTab = memo(() => {
   const [savedForms, setSavedForms] = useState([]);
   const [savingState, setSavingState] = useState(null); // null | 'saving' | 'saved' | 'error'
   const [sendingState, setSendingState] = useState(null); // null | 'sending' | 'sent' | 'error'
-  const [emailConfigured, setEmailConfigured] = useState(null); // null | true | false
   const [showHistory, setShowHistory] = useState(false);
+  const [expandedFormId, setExpandedFormId] = useState(null);
   const [sendError, setSendError] = useState('');
   const tc = CARD_COLORS.gold;
 
-  // Load saved forms + email status on mount
+  // Load saved forms on mount
   useEffect(() => {
     getFormDocuments().then(res => setSavedForms(res.forms || [])).catch(() => {});
-    getEmailStatus().then(res => setEmailConfigured(res.configured)).catch(() => setEmailConfigured(false));
   }, []);
-
-  const gereedeCount = FORM_TEMPLATES.filter(t => t.status === 'gereed').length;
-  const conceptCount = FORM_TEMPLATES.filter(t => t.status === 'concept').length;
 
   // When selecting a template, reset editor
   const handleSelectTemplate = (tmplId) => {
@@ -1998,28 +1993,6 @@ const FormulierenTab = memo(() => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Email status banner */}
-      {emailConfigured === false && (
-        <div style={{
-          padding: '0.5rem 0.8rem', borderRadius: '0.2rem',
-          backgroundColor: 'rgba(250, 204, 21, 0.08)',
-          borderLeft: '2px solid #facc15',
-          fontSize: 'max(8px, 0.42vw)', color: '#facc15',
-        }}>
-          ⚠ E-mail niet geconfigureerd — stel SMTP_USER en SMTP_PASS in via Render omgevingsvariabelen om e-mails te versturen
-        </div>
-      )}
-      {emailConfigured === true && (
-        <div style={{
-          padding: '0.5rem 0.8rem', borderRadius: '0.2rem',
-          backgroundColor: 'rgba(34, 197, 94, 0.05)',
-          borderLeft: '2px solid #4ade80',
-          fontSize: 'max(8px, 0.42vw)', color: '#4ade80',
-        }}>
-          ✓ E-mail geconfigureerd — klaar om documenten te versturen
-        </div>
-      )}
-
       {/* Stats bar */}
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <div style={{
@@ -2027,24 +2000,8 @@ const FormulierenTab = memo(() => {
           backgroundColor: 'rgba(255, 174, 0, 0.04)', borderRadius: '0.3rem',
           borderLeft: `2px solid ${C.gold}`,
         }}>
-          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Totaal Templates</div>
+          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Templates</div>
           <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold }}>{FORM_TEMPLATES.length}</div>
-        </div>
-        <div style={{
-          flex: 1, minWidth: '120px', padding: '0.6rem 0.8rem',
-          backgroundColor: 'rgba(34, 197, 94, 0.04)', borderRadius: '0.3rem',
-          borderLeft: '2px solid #4ade80',
-        }}>
-          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Gereed</div>
-          <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: '#4ade80' }}>{gereedeCount}</div>
-        </div>
-        <div style={{
-          flex: 1, minWidth: '120px', padding: '0.6rem 0.8rem',
-          backgroundColor: 'rgba(188, 19, 254, 0.04)', borderRadius: '0.3rem',
-          borderLeft: `2px solid ${C.purple}`,
-        }}>
-          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Concept</div>
-          <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.purple }}>{conceptCount}</div>
         </div>
         <div style={{
           flex: 1, minWidth: '120px', padding: '0.6rem 0.8rem',
@@ -2123,19 +2080,7 @@ const FormulierenTab = memo(() => {
         if (selectedTemplate === 'factuur') {
           return (
             <DashboardCard title={`${tmpl.icon} ${tmpl.label}`} color="gold">
-              <InvoiceTemplate onSave={async (data) => {
-                setSavingState('saving');
-                try {
-                  const saved = await saveFormDocument(data);
-                  setSavedForms(prev => [saved, ...prev]);
-                  setSavingState('saved');
-                  setTimeout(() => setSavingState(null), 2000);
-                } catch (err) {
-                  console.error('Save error:', err);
-                  setSavingState('error');
-                  setTimeout(() => setSavingState(null), 3000);
-                }
-              }} />
+              <InvoiceTemplate />
             </DashboardCard>
           );
         }
@@ -2293,7 +2238,7 @@ const FormulierenTab = memo(() => {
                     : 'Schrijf de e-mailtekst in het veld hierboven'}
                   {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 'bold' }}>✓ Verstuurd!</span>}
                 </div>
-                <button onClick={handleSend} disabled={sendingState === 'sending' || !emailBody.trim() || !recipientEmail.trim() || emailConfigured === false} style={{
+                <button onClick={handleSend} disabled={sendingState === 'sending' || !emailBody.trim() || !recipientEmail.trim()} style={{
                   padding: '0.3rem 0.8rem', fontSize: 'max(9px, 0.45vw)',
                   backgroundColor: (!emailBody.trim() || !recipientEmail.trim()) ? 'rgba(188, 19, 254, 0.06)' : 'rgba(188, 19, 254, 0.15)',
                   color: C.purple, border: '1px solid rgba(188, 19, 254, 0.3)',
@@ -2314,35 +2259,93 @@ const FormulierenTab = memo(() => {
         <DashboardCard title={`Opgeslagen Documenten (${savedForms.length})`} color="gold">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             {savedForms.map((form) => {
-              const statusColor = form.status === 'verstuurd' ? '#4ade80' : form.status === 'concept' ? '#facc15' : tc.dimText;
+              const isExpanded = expandedFormId === form._id;
+              // Try to parse content for display
+              let displayContent = form.content || '';
+              let isJson = false;
+              try {
+                const parsed = JSON.parse(displayContent);
+                if (parsed && typeof parsed === 'object') {
+                  isJson = true;
+                  displayContent = parsed;
+                }
+              } catch {}
               return (
                 <div key={form._id} style={{
-                  padding: '0.5rem 0.6rem',
                   backgroundColor: tc.cardBg,
                   borderLeft: `2px solid ${statusColor}`,
                   borderRadius: '0 0.15rem 0.15rem 0',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  overflow: 'hidden',
                 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontWeight: 'bold', fontSize: 'max(9px, 0.48vw)', color: C.gold }}>{form.templateLabel}</span>
-                      <span style={{
-                        fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.25rem', borderRadius: '0.1rem',
-                        backgroundColor: form.status === 'verstuurd' ? 'rgba(34,197,94,0.12)' : 'rgba(250,204,21,0.12)',
-                        color: statusColor, textTransform: 'uppercase', fontWeight: 'bold',
-                      }}>{form.status}</span>
+                  <div style={{
+                    padding: '0.5rem 0.6rem',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    cursor: 'pointer',
+                  }} onClick={() => setExpandedFormId(isExpanded ? null : form._id)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText }}>{isExpanded ? '▾' : '▸'}</span>
+                        <span style={{ fontWeight: 'bold', fontSize: 'max(9px, 0.48vw)', color: C.gold }}>{form.templateLabel}</span>
+                        <span style={{
+                          fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.25rem', borderRadius: '0.1rem',
+                          backgroundColor: form.status === 'verstuurd' ? 'rgba(34,197,94,0.12)' : 'rgba(250,204,21,0.12)',
+                          color: statusColor, textTransform: 'uppercase', fontWeight: 'bold',
+                        }}>{form.status}</span>
+                      </div>
+                      <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText }}>
+                        {form.sentTo && `→ ${form.sentTo} · `}
+                        {new Date(form.updatedAt || form.createdAt).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText }}>
-                      {form.sentTo && `→ ${form.sentTo} · `}
-                      {new Date(form.updatedAt || form.createdAt).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <button onClick={(e) => { e.stopPropagation(); setExpandedFormId(isExpanded ? null : form._id); }} style={{
+                        background: 'none', border: 'none', color: C.gold,
+                        cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', padding: '0 0.3rem',
+                      }}>👁</button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteForm(form._id); }} style={{
+                        background: 'none', border: 'none', color: 'rgba(239,68,68,0.5)',
+                        cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', padding: '0 0.3rem',
+                      }}
+                        onMouseEnter={(e) => { e.target.style.color = '#ef4444'; }}
+                        onMouseLeave={(e) => { e.target.style.color = 'rgba(239,68,68,0.5)'; }}
+                      >✕</button>
                     </div>
                   </div>
-                  <button onClick={() => handleDeleteForm(form._id)} style={{
-                    background: 'none', border: 'none', color: 'rgba(239,68,68,0.5)',
-                    cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', padding: '0 0.3rem',
-                  }}
-                    onMouseEnter={(e) => { e.target.style.color = '#ef4444'; }}
-                    onMouseLeave={(e) => { e.target.style.color = 'rgba(239,68,68,0.5)'; }}
+                  {/* Expanded content viewer */}
+                  {isExpanded && (
+                    <div style={{
+                      padding: '0.6rem 0.8rem',
+                      borderTop: `1px solid ${tc.border}`,
+                      backgroundColor: 'rgba(0,0,0,0.2)',
+                    }}>
+                      {isJson ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: 'max(8px, 0.42vw)' }}>
+                          {displayContent.invoiceNumber && <div><span style={{ color: tc.dimText }}>Factuurnr: </span><span style={{ color: C.gold }}>{displayContent.invoiceNumber}</span></div>}
+                          {displayContent.clientName && <div><span style={{ color: tc.dimText }}>Klant: </span><span style={{ color: C.text }}>{displayContent.clientName}</span></div>}
+                          {displayContent.clientEmail && <div><span style={{ color: tc.dimText }}>E-mail: </span><span style={{ color: C.text }}>{displayContent.clientEmail}</span></div>}
+                          {displayContent.date && <div><span style={{ color: tc.dimText }}>Datum: </span><span style={{ color: C.text }}>{displayContent.date}</span></div>}
+                          {displayContent.items && displayContent.items.length > 0 && (
+                            <div style={{ marginTop: '0.3rem' }}>
+                              <div style={{ color: tc.dimText, marginBottom: '0.2rem' }}>Regels:</div>
+                              {displayContent.items.map((item, i) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.15rem 0', borderBottom: `1px solid ${tc.border}` }}>
+                                  <span style={{ color: C.text }}>{item.description || '(geen omschrijving)'}</span>
+                                  <span style={{ color: C.gold }}>€{(item.amount || 0).toFixed(2).replace('.', ',')}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <pre style={{
+                          color: C.text, fontSize: 'max(8px, 0.42vw)',
+                          whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                          margin: 0, lineHeight: 1.6,
+                          maxHeight: '300px', overflowY: 'auto',
+                        }}>{displayContent}</pre>
+                      )}
+                    </div>
+                  )}ave={(e) => { e.target.style.color = 'rgba(239,68,68,0.5)'; }}
                   >✕</button>
                 </div>
               );

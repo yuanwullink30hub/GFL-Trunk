@@ -3,7 +3,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Plus, Trash2, Eraser, FileText, User, Hash, Receipt, Mail, Send, ChevronDown, UserPlus, X } from 'lucide-react';
-import { sendFormDirect, getEmailStatus } from '../../utils/apiClient';
+import { sendFormDirect } from '../../utils/apiClient';
 
 // ═══════════════════════════════════════════════════════════
 // GFL Invoice Template — faithful replica of AI Studio layout
@@ -93,7 +93,7 @@ const CONTACTS_KEY = 'gfl_invoice_contacts';
 const loadContacts = () => { try { return JSON.parse(localStorage.getItem(CONTACTS_KEY) || '[]'); } catch { return []; } };
 const persistContacts = (list) => localStorage.setItem(CONTACTS_KEY, JSON.stringify(list));
 
-const InvoiceTemplate = memo(({ onSave }) => {
+const InvoiceTemplate = memo(() => {
   const [invoice, setInvoice] = useState(INITIAL_DATA);
   const liveDate = useLiveDate();
   const sigCanvas = useRef(null);
@@ -137,11 +137,22 @@ const InvoiceTemplate = memo(({ onSave }) => {
   const [emailSubject, setEmailSubject] = useState('');
   const [sendingState, setSendingState] = useState(null);
   const [sendError, setSendError] = useState('');
-  const [emailConfigured, setEmailConfigured] = useState(null);
 
+  // Preload & compress logo for PDF (avoid embedding full-res PNG)
+  const [logoDataUrl, setLogoDataUrl] = useState(null);
   useEffect(() => {
-    getEmailStatus().then(res => setEmailConfigured(res.configured)).catch(() => setEmailConfigured(false));
-  }, []);
+    if (!invoice.logoUrl) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 120; canvas.height = 120;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, 120, 120);
+      setLogoDataUrl(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = invoice.logoUrl;
+  }, [invoice.logoUrl]);
 
   const itemsPerPage = 8;
   const totalPreviewPages = Math.ceil(invoice.items.length / itemsPerPage) || 1;
@@ -216,15 +227,11 @@ const InvoiceTemplate = memo(({ onSave }) => {
       doc.text(invoice.businessEmail, 14, 42);
 
       // Logo + FACTUUR — right
-      if (invoice.logoUrl) {
-        try { doc.addImage(invoice.logoUrl, 'JPEG', pw - 44, 15, 30, 30); } catch (e) { /* skip */ }
+      if (logoDataUrl) {
+        try { doc.addImage(logoDataUrl, 'JPEG', pw - 44, 15, 30, 30); } catch (e) { /* skip */ }
       }
       doc.setFontSize(20); doc.setTextColor(100, 100, 100);
       doc.text('FACTUUR', pw - 14, 55, { align: 'right' });
-
-      // ─── Separator line: header → payment info ───
-      doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.3);
-      doc.line(14, 57, pw - 14, 57);
 
       // Payment info
       doc.setFontSize(8); doc.setTextColor(255, 255, 255);
@@ -270,10 +277,6 @@ const InvoiceTemplate = memo(({ onSave }) => {
 
     let finalY = doc.lastAutoTable?.finalY || 75;
     if (finalY > ph - 90) { doc.addPage(); doc.setFillColor(26, 26, 26); doc.rect(0, 0, pw, ph, 'F'); finalY = 20; }
-
-    // ─── Separator line: table → totals ───
-    doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.2);
-    doc.line(14, finalY + 1, pw - 14, finalY + 1);
 
     // Total rows
     doc.setDrawColor(60, 60, 60);
@@ -341,8 +344,14 @@ const InvoiceTemplate = memo(({ onSave }) => {
     setSendError('');
     try {
       const doc = buildPDF();
-      const pdfBase64 = doc.output('base64');
-      await sendFormDirect({
+      // jsPDF v4: output('arraybuffer') is synchronous, convert manually to base64
+      const arrayBuf = doc.output('arraybuffer');
+      const bytes = new Uint8Array(arrayBuf);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      const pdfBase64 = btoa(binary);
+      console.log('[Invoice] pdfBase64 length:', pdfBase64?.length);
+      const payload = {
         templateId: 'factuur',
         templateLabel: 'Factuur',
         type: 'pdf',
@@ -351,7 +360,8 @@ const InvoiceTemplate = memo(({ onSave }) => {
         subject: emailSubject || `Garden For Life — Factuur ${invoice.invoiceNumber}`,
         pdfBase64,
         attachmentFilename: `${invoice.invoiceNumber}.pdf`,
-      });
+      };
+      await sendFormDirect(payload);
       setSendingState('sent');
       setTimeout(() => setSendingState(null), 3000);
     } catch (err) {
@@ -359,11 +369,6 @@ const InvoiceTemplate = memo(({ onSave }) => {
       setSendingState('error');
       setTimeout(() => setSendingState(null), 4000);
     }
-  };
-
-  /* ── Save callback for GFL integration ── */
-  const handleSaveCallback = () => {
-    if (onSave) onSave({ templateId: 'factuur', templateLabel: 'Factuur', type: 'excel', content: JSON.stringify(invoice) });
   };
 
   /* ═══════════════════════════════════════════ */
@@ -844,12 +849,6 @@ const InvoiceTemplate = memo(({ onSave }) => {
           {btwIncluded && <span style={{ color: '#4ade80', marginLeft: '0.4rem' }}>(incl. BTW)</span>}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={handleSaveCallback} style={{
-            padding: '0.4rem 0.8rem', fontSize: '0.72rem', fontWeight: 700,
-            backgroundColor: 'rgba(255,174,0,0.08)', color: GOLD,
-            border: '1px solid rgba(255,174,0,0.15)', borderRadius: '0.35rem',
-            cursor: 'pointer', textTransform: 'uppercase', fontFamily: FONT,
-          }}>OPSLAAN</button>
           <button onClick={generatePDF} style={{
             padding: '0.4rem 0.8rem', fontSize: '0.72rem', fontWeight: 700,
             backgroundColor: 'rgba(188,19,254,0.12)', color: ACCENT,
@@ -871,24 +870,6 @@ const InvoiceTemplate = memo(({ onSave }) => {
           <Mail size={20} color={ACCENT} />
           E-mail Versturen — Factuur
         </h2>
-
-        {/* Email status */}
-        {emailConfigured === false && (
-          <div style={{
-            padding: '0.5rem 0.8rem', borderRadius: '0.5rem',
-            backgroundColor: 'rgba(250,204,21,0.06)',
-            borderLeft: '2px solid #facc15',
-            fontSize: '0.7rem', color: '#facc15',
-          }}>⚠ E-mail niet geconfigureerd — stel SMTP in via Render omgevingsvariabelen</div>
-        )}
-        {emailConfigured === true && (
-          <div style={{
-            padding: '0.5rem 0.8rem', borderRadius: '0.5rem',
-            backgroundColor: 'rgba(34,197,94,0.04)',
-            borderLeft: '2px solid #4ade80',
-            fontSize: '0.7rem', color: '#4ade80',
-          }}>✓ E-mail geconfigureerd — PDF wordt als bijlage meegestuurd</div>
-        )}
 
         {/* Recipient fields */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
@@ -953,7 +934,7 @@ const InvoiceTemplate = memo(({ onSave }) => {
           </div>
           <button
             onClick={handleSendEmail}
-            disabled={sendingState === 'sending' || !recipientEmail.trim() || emailConfigured === false}
+            disabled={sendingState === 'sending' || !recipientEmail.trim()}
             style={{
               display: 'flex', alignItems: 'center', gap: '0.4rem',
               padding: '0.4rem 0.85rem',

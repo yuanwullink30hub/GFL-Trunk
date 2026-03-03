@@ -20,7 +20,7 @@ app.use(cors({
   origin: config.corsOrigins,
   credentials: true,
 }));
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '25mb' }));
 
 // ── Routes ──
 app.use('/api/ai', aiRoutes);

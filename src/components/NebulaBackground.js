@@ -793,51 +793,12 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     };
   }, [isMobile]);
 
-  // ─── MOBILE: Render <video> element instead of WebGL canvas ──────────
-  if (isMobile) {
-    return (
-      <div
-        ref={wrapperRef}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: 'none',
-          overflow: 'hidden',
-          background: 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)',
-        }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          disablePictureInPicture
-          disableRemotePlayback
-          style={{
-            display: 'block',
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            resize: 'none',
-            outline: 'none',
-            border: 'none',
-          }}
-        >
-          <source src="/images/nebula-mobile-loop.mp4"  type="video/mp4" />
-          <source src="/images/nebula-mobile-loop.webm" type="video/webm" />
-        </video>
-      </div>
-    );
-  }
-
-  // ─── DESKTOP: WebGL shader path (unchanged / LOCKED) ─────────────────
+  // ─── DESKTOP: WebGL shader path ─────────────────────────────────────
   // Track WebGL init function so context restore can re-run it
   const initCountRef = useRef(0);
 
   useEffect(() => {
+    if (isMobile) return; // mobile uses video, no WebGL
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -1143,8 +1104,49 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       canvas.removeEventListener('webglcontextrestored', onContextRestored);
       if (cleanupFn) cleanupFn();
     };
-  }, []);
+  }, [isMobile]);
 
+  // ─── MOBILE: Render <video> element instead of WebGL canvas ──────────
+  if (isMobile) {
+    return (
+      <div
+        ref={wrapperRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+          overflow: 'hidden',
+          background: 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)',
+        }}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          disablePictureInPicture
+          disableRemotePlayback
+          style={{
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            resize: 'none',
+            outline: 'none',
+            border: 'none',
+          }}
+        >
+          <source src="/images/nebula-mobile-loop.mp4"  type="video/mp4" />
+          <source src="/images/nebula-mobile-loop.webm" type="video/webm" />
+        </video>
+      </div>
+    );
+  }
+
+  // ─── DESKTOP: Render WebGL canvas ────────────────────────────────────
   return (
     <div
       ref={wrapperRef}

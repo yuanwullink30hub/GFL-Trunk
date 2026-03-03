@@ -18,13 +18,15 @@ module.exports = {
   // Field-Level Encryption
   encryptionKey: process.env.ENCRYPTION_KEY || '',
 
-  // CORS — always include production origin
+  // CORS — always include production origins
   corsOrigins: [
     ...new Set([
       ...(process.env.CORS_ORIGINS || 'http://localhost:3000')
         .split(',')
         .map(s => s.trim()),
       'https://gfl-trunk.pages.dev',
+      'https://gardenforlife.nl',
+      'https://www.gardenforlife.nl',
     ]),
   ],
 

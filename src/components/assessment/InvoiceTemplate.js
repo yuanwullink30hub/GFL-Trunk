@@ -10,28 +10,42 @@ import { sendFormDirect } from '../../utils/apiClient';
 // Left: editor  |  Right: A4-ratio preview
 // ═══════════════════════════════════════════════════════════
 
+const INVOICE_NUM_KEY = 'gfl_invoice_number';
+const getNextInvoiceNumber = () => {
+  const stored = localStorage.getItem(INVOICE_NUM_KEY);
+  if (stored) return stored;
+  const yr = new Date().getFullYear();
+  return `${yr}0001`;
+};
+const saveInvoiceNumber = (num) => localStorage.setItem(INVOICE_NUM_KEY, num);
+const incrementInvoiceNumber = (num) => {
+  const n = parseInt(num, 10);
+  if (isNaN(n)) return num;
+  const next = String(n + 1);
+  saveInvoiceNumber(next);
+  return next;
+};
+
 const INITIAL_DATA = {
-  invoiceNumber: '20260002',
-  clientName: 'Eastecofoods',
+  invoiceNumber: '',
+  clientName: '',
   clientEmail: '',
-  clientAddress: 'Nijverheidsweg 23, 3534AM Utrecht',
+  clientAddress: '',
   businessName: 'Garden For Life',
+  businessKvk: '85125245',
   businessEmail: 'Yuanwullink30@gfl.community',
   businessAddress: 'Zutphen, De Taxushaag 2, 7207MB',
   businessPhone: '0613126283',
-  businessTagline: 'De luide stilte en de intense kalmte\nwijzen de euros\nvan de klant\nnaar mijn rekening',
-  serviceDescription: 'Dienstverlening als assistent-salesmanager',
+  businessTagline: '',
+  serviceDescription: '',
   bankAccount: 'NL63KNAB0514 5390 54',
-  paymentReference: 'Bedrijfsnaam + 20260002',
+  paymentReference: '',
   logoUrl: '/images/landingpage/logo.png',
   items: [
-    { id: '1', description: 'Wk8 6 Werkuren + 1 Reisuur', quantity: 7, price: 18 },
-    { id: '2', description: 'Demo Enschede', quantity: 1, price: 125 },
-    { id: '3', description: 'Demo Antwerp', quantity: 1, price: 150 },
-    { id: '4', description: 'Reiskosten', quantity: 1, price: 20 },
+    { id: '1', description: '', quantity: 1, price: 0 },
   ],
   taxRate: 21,
-  notes: 'Bedankt voor uw vertrouwen.',
+  notes: '',
 };
 
 /* ── Style primitives (GFL dark theme) ── */
@@ -93,8 +107,11 @@ const CONTACTS_KEY = 'gfl_invoice_contacts';
 const loadContacts = () => { try { return JSON.parse(localStorage.getItem(CONTACTS_KEY) || '[]'); } catch { return []; } };
 const persistContacts = (list) => localStorage.setItem(CONTACTS_KEY, JSON.stringify(list));
 
-const InvoiceTemplate = memo(() => {
-  const [invoice, setInvoice] = useState(INITIAL_DATA);
+const InvoiceTemplate = memo(({ isMobile = false }) => {
+  const [invoice, setInvoice] = useState(() => ({
+    ...INITIAL_DATA,
+    invoiceNumber: getNextInvoiceNumber(),
+  }));
   const liveDate = useLiveDate();
   const sigCanvas = useRef(null);
   const [signatureData, setSignatureData] = useState(null);
@@ -138,18 +155,22 @@ const InvoiceTemplate = memo(() => {
   const [sendingState, setSendingState] = useState(null);
   const [sendError, setSendError] = useState('');
 
-  // Preload & compress logo for PDF (avoid embedding full-res PNG)
+  // Preload logo for PDF at high resolution
   const [logoDataUrl, setLogoDataUrl] = useState(null);
   useEffect(() => {
     if (!invoice.logoUrl) return;
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      const size = Math.min(img.naturalWidth, img.naturalHeight, 600);
       const canvas = document.createElement('canvas');
-      canvas.width = 120; canvas.height = 120;
+      canvas.width = size; canvas.height = size;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 120, 120);
-      setLogoDataUrl(canvas.toDataURL('image/jpeg', 0.7));
+      // Fill with dark background so PNG transparency matches the PDF
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+      setLogoDataUrl(canvas.toDataURL('image/png'));
     };
     img.src = invoice.logoUrl;
   }, [invoice.logoUrl]);
@@ -219,31 +240,33 @@ const InvoiceTemplate = memo(() => {
       doc.rect(0, 0, pw, ph, 'F');
 
       // Business info — left
-      doc.setTextColor(255, 255, 255); doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255); doc.setFontSize(15); doc.setFont('helvetica', 'bold');
       doc.text(invoice.businessName, 14, 25);
       doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 200, 200);
-      doc.text(invoice.businessAddress, 14, 32);
-      doc.text(`Tel: ${invoice.businessPhone}`, 14, 37);
-      doc.text(invoice.businessEmail, 14, 42);
+      doc.text(`KVK: ${invoice.businessKvk}`, 14, 32);
+      doc.text(invoice.businessAddress, 14, 37);
+      doc.text(`Tel: ${invoice.businessPhone}`, 14, 42);
+      doc.text(invoice.businessEmail, 14, 47);
 
       // Logo + FACTUUR — right
       if (logoDataUrl) {
-        try { doc.addImage(logoDataUrl, 'JPEG', pw - 44, 15, 30, 30); } catch (e) { /* skip */ }
+        try { doc.addImage(logoDataUrl, 'PNG', pw - 53, 10.5, 39, 39); } catch (e) { /* skip */ }
       }
-      doc.setFontSize(20); doc.setTextColor(100, 100, 100);
+      doc.setFontSize(20); doc.setTextColor(85, 85, 85);
       doc.text('FACTUUR', pw - 14, 55, { align: 'right' });
 
       // Payment info
-      doc.setFontSize(8); doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(255, 255, 255);
       doc.text(`Rekening: ${invoice.bankAccount} (Ref: ${invoice.invoiceNumber})`, 14, 62);
-      doc.setTextColor(150, 150, 150);
+      doc.setTextColor(136, 136, 136); doc.setFont('helvetica', 'bold');
       doc.text('gelieve te betalen binnen 14 werkdagen', 14, 67);
-      doc.setFontSize(10); doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
       doc.text(`Nr: ${invoice.invoiceNumber}`, pw - 14, 62, { align: 'right' });
-      doc.text(`Datum: ${liveDate}`, pw - 14, 67, { align: 'right' });
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(187, 187, 187);
+      doc.text(`DATUM: ${liveDate}`, pw - 14, 67, { align: 'right' });
 
       // ─── Separator line: payment info → table ───
-      doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.2);
+      doc.setDrawColor(51, 51, 51); doc.setLineWidth(0.2);
       doc.line(14, 71, pw - 14, 71);
     };
 
@@ -252,23 +275,42 @@ const InvoiceTemplate = memo(() => {
 
     // Table
     const tableData = invoice.items.map(item => [
-      item.description || '—', item.quantity.toString(),
+      item.description || 'Nieuw Item', item.quantity.toString(),
       `${item.price.toFixed(2)}.-`,
       `${(item.quantity * item.price).toFixed(2).replace('.', ',')}`,
     ]);
 
     let isFirstPage = true;
     autoTable(doc, {
-      startY: 75,
+      startY: 79,
       head: [['OMSCHRIJVING', 'UUR', 'TARIEF Ex.-', 'BEDRAG']],
       body: tableData,
-      theme: 'grid',
-      headStyles: { fillColor: [45, 45, 45], textColor: 255, fontStyle: 'bold', halign: 'left', lineWidth: 0.1, lineColor: [60, 60, 60] },
-      bodyStyles: { textColor: 255, fillColor: [26, 26, 26], fontSize: 10, lineWidth: 0.1, lineColor: [60, 60, 60] },
-      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20, halign: 'center' }, 2: { cellWidth: 30, halign: 'center' }, 3: { cellWidth: 30, halign: 'right' } },
+      theme: 'plain',
+      headStyles: { textColor: [136, 136, 136], fontStyle: 'bold', fontSize: 10, cellPadding: { top: 2, bottom: 3, left: 0, right: 0 } },
+      bodyStyles: { textColor: [255, 255, 255], fontSize: 10, cellPadding: { top: 3, bottom: 3, left: 0, right: 0 } },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20 }, 2: { cellWidth: 30 }, 3: { cellWidth: 30 } },
       margin: { left: 14, right: 14, bottom: 80 },
+      didParseCell: (data) => {
+        // Apply alignment to BOTH head and body sections consistently
+        if (data.column.index === 0) data.cell.styles.halign = 'left';
+        if (data.column.index === 1) data.cell.styles.halign = 'center';
+        if (data.column.index === 2) data.cell.styles.halign = 'center';
+        if (data.column.index === 3) data.cell.styles.halign = 'right';
+        // Nudge header text right for columns 1-3
+        if (data.section === 'head' && data.column.index >= 1) {
+          const lp = data.column.index === 3 ? 6 : 3;
+          data.cell.styles.cellPadding = { top: 2, bottom: 3, left: lp, right: 0 };
+        }
+      },
+      didDrawCell: (data) => {
+        if (data.column.index === data.table.columns.length - 1) {
+          const y = data.cell.y + data.cell.height;
+          doc.setDrawColor(data.section === 'head' ? 51 : 34);
+          doc.setLineWidth(0.2);
+          doc.line(14, y, pw - 14, y);
+        }
+      },
       didDrawPage: () => {
-        // Only fill background on continuation pages (page 1 already drawn above)
         if (isFirstPage) { isFirstPage = false; return; }
         doc.setFillColor(26, 26, 26);
         doc.rect(0, 0, pw, ph, 'F');
@@ -278,63 +320,76 @@ const InvoiceTemplate = memo(() => {
     let finalY = doc.lastAutoTable?.finalY || 75;
     if (finalY > ph - 90) { doc.addPage(); doc.setFillColor(26, 26, 26); doc.rect(0, 0, pw, ph, 'F'); finalY = 20; }
 
-    // Total rows
-    doc.setDrawColor(60, 60, 60);
+    // Total rows — right-aligned, matching preview
     if (btwIncluded) {
-      // Subtotaal
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(200, 200, 200);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(187, 187, 187);
       doc.text('Subtotaal', 140, finalY + 8);
       doc.text(`€${subtotal.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 8, { align: 'right' });
-      // BTW 21%
       doc.text('BTW 21%', 140, finalY + 14);
       doc.text(`€${taxAmount.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 14, { align: 'right' });
-      // Line
+      doc.setDrawColor(68, 68, 68); doc.setLineWidth(0.2);
       doc.line(140, finalY + 17, pw - 14, finalY + 17);
-      // TOTAAL
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
       doc.text('TOTAAL', 140, finalY + 24);
       doc.text(`€${total.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 24, { align: 'right' });
     } else {
-      doc.line(140, finalY + 2, pw - 14, finalY + 2);
-      doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
       doc.text('TOTAAL', 140, finalY + 10);
       doc.text(`€${total.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 10, { align: 'right' });
     }
 
-    // ─── Separator line: totals → footer ───
-    doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.2);
-    const sepY = btwIncluded ? finalY + 28 : finalY + 14;
-    doc.line(14, sepY, pw - 14, sepY);
+    // ─── Footer ───
+    const footerY = ph - 49;
+    doc.setDrawColor(51, 51, 51); doc.setLineWidth(0.2);
+    doc.line(14, footerY, pw - 14, footerY);
 
-    // Footer — Factuur voor
-    const footerY = ph - 60;
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(150, 150, 150);
-    doc.text('Factuur voor:', 14, footerY - 15);
-    doc.setTextColor(255, 255, 255); doc.text(invoice.clientName || '—', 14, footerY - 8);
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 200, 200);
-    doc.text(invoice.clientAddress || '', 14, footerY - 2);
+    // Factuur voor
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(136, 136, 136);
+    doc.text('FACTUUR VOOR:', 14, footerY + 4);
+    doc.setTextColor(255, 255, 255);
+    doc.text(invoice.clientName || '', 14, footerY + 9);
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(187, 187, 187);
+    doc.text(invoice.clientAddress || '', 14, footerY + 14);
 
-    // Signature
+    // Side-by-side: Spell (left) + Signature (right)
+    const sideY = footerY + 18;
+
+    // Spell (left)
+    doc.setFontSize(10); doc.setFont('helvetica', 'italic'); doc.setTextColor(255, 255, 255);
+    doc.text('De luide stilte en de intense kalmte', 14, sideY + 4);
+    doc.text('Wijzen de euros van jouw Bank naar mijn Hart', 14, sideY + 9);
+    doc.setFontSize(9); doc.setTextColor(136, 136, 136);
+    if (invoice.notes) doc.text(invoice.notes, 14, sideY + 14);
+
+    // Signature (right) — aligned with Factuur voor
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('Ondertekend door:', pw - 14, footerY - 15, { align: 'right' });
-    if (signatureData) doc.addImage(signatureData, 'PNG', pw - 54, footerY - 12, 40, 15);
+    doc.text('ONDERTEKEND DOOR:', pw - 14, footerY + 4, { align: 'right' });
+    const sigW = 56; const sigH = 18;
+    const sigX = pw - 14 - sigW;
+    const sigBoxY = footerY + 7;
+    doc.setFillColor(8, 8, 8);
+    doc.roundedRect(sigX, sigBoxY, sigW, sigH, 1.5, 1.5, 'F');
+    doc.setDrawColor(188, 19, 254); doc.setLineWidth(0.4);
+    doc.roundedRect(sigX, sigBoxY, sigW, sigH, 1.5, 1.5, 'S');
+    if (signatureData) {
+      doc.addImage(signatureData, 'PNG', sigX + 2, sigBoxY + 2, sigW - 4, sigH - 4);
+    } else {
+      doc.setFontSize(6); doc.setFont('helvetica', 'bold'); doc.setTextColor(85, 85, 85);
+      doc.text('WACHTEN OP', sigX + sigW / 2, sigBoxY + sigH / 2 - 2, { align: 'center' });
+      doc.text('HANDTEKENING', sigX + sigW / 2, sigBoxY + sigH / 2 + 3, { align: 'center' });
+    }
 
-    // ─── Separator line: client/signature → spell ───
-    doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.15);
-    doc.line(14, ph - 40, pw - 14, ph - 40);
-
-    // Spell
-    doc.setTextColor(255, 255, 255); doc.setFontSize(10); doc.setFont('helvetica', 'italic');
-    doc.text('De luide stilte en de intense kalmte', 14, ph - 35);
-    doc.text('Wijzen de euros van jouw Bank naar mijn Hart', 14, ph - 30);
-    doc.setFontSize(9); doc.setTextColor(150, 150, 150);
-    doc.text(invoice.notes || '', 14, ph - 20);
+    // Bedankt — right-aligned below signature
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(136, 136, 136);
+    doc.text('Bedankt voor uw vertrouwen', sigX + sigW / 2, sigBoxY + sigH + 5, { align: 'center' });
 
     return doc;
   };
 
   const generatePDF = () => {
     buildPDF().save(`${invoice.invoiceNumber}.pdf`);
+    const next = incrementInvoiceNumber(invoice.invoiceNumber);
+    setInvoice(prev => ({ ...INITIAL_DATA, invoiceNumber: next }));
   };
 
   /* ── Send invoice email with PDF attachment ── */
@@ -362,6 +417,8 @@ const InvoiceTemplate = memo(() => {
         attachmentFilename: `${invoice.invoiceNumber}.pdf`,
       };
       await sendFormDirect(payload);
+      const next = incrementInvoiceNumber(invoice.invoiceNumber);
+      setInvoice(prev => ({ ...INITIAL_DATA, invoiceNumber: next }));
       setSendingState('sent');
       setTimeout(() => setSendingState(null), 3000);
     } catch (err) {
@@ -376,17 +433,28 @@ const InvoiceTemplate = memo(() => {
   /* ═══════════════════════════════════════════ */
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {/* Hide number input spinners */}
+      <style>{`
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+      `}</style>
 
-      {/* Two-column grid: Editor | Preview */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
+      {/* Two-column grid: Editor | Preview (desktop), Stacked (mobile) */}
+      <div style={isMobile
+        ? { display: 'flex', flexDirection: 'column', gap: '1.5rem' }
+        : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }
+      }>
 
         {/* ════════════ LEFT: EDITOR ════════════ */}
-        <div style={{
+        <div style={isMobile ? {
+          display: 'flex', flexDirection: 'column', gap: '2rem',
+        } : {
           backgroundColor: CARD,
-          padding: '1.6rem',
+          padding: '0.8rem 1rem',
           borderRadius: '1.2rem',
           border: `1px solid ${BORDER}`,
-          display: 'flex', flexDirection: 'column', gap: '2rem',
+          display: 'flex', flexDirection: 'column', gap: '1.2rem',
         }}>
 
           {/* § Factuur Gegevens */}
@@ -395,13 +463,16 @@ const InvoiceTemplate = memo(() => {
               <FileText size={20} color={ACCENT} />
               Factuur Gegevens
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={isMobile
+              ? { display: 'flex', flexDirection: 'column', gap: '1rem' }
+              : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }
+            }>
               <div>
                 <div style={labelCss}>Factuurnummer</div>
                 <div style={{ position: 'relative' }}>
                   <Hash size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
                   <input style={input} value={invoice.invoiceNumber}
-                    onChange={(e) => setInvoice({ ...invoice, invoiceNumber: e.target.value })} />
+                    onChange={(e) => { const v = e.target.value; saveInvoiceNumber(v); setInvoice({ ...invoice, invoiceNumber: v }); }} />
                 </div>
               </div>
               <div>
@@ -433,6 +504,7 @@ const InvoiceTemplate = memo(() => {
                   backgroundColor: 'rgba(255,174,0,0.08)', color: GOLD,
                   border: 'none', borderRadius: '0.4rem', cursor: 'pointer',
                   fontFamily: FONT, transition: 'background-color 0.2s',
+                  whiteSpace: 'nowrap',
                 }}
                   onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,174,0,0.16)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,174,0,0.08)'; }}
@@ -527,7 +599,7 @@ const InvoiceTemplate = memo(() => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
               <h2 style={{ ...sectionHeading, marginBottom: 0 }}>
                 <Receipt size={20} color={ACCENT} />
-                Factuurregels
+                {isMobile ? <span>Factuur<br/>regels</span> : 'Factuurregels'}
               </h2>
               <button onClick={handleAddItem} style={{
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -545,7 +617,14 @@ const InvoiceTemplate = memo(() => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               {invoice.items.map((item) => (
-                <div key={item.id} style={{
+                <div key={item.id} style={isMobile ? {
+                  display: 'flex', flexDirection: 'column',
+                  gap: '0.5rem',
+                  padding: '0.75rem',
+                  backgroundColor: 'rgba(255,255,255,0.015)',
+                  borderRadius: '0.6rem',
+                  border: `1px solid ${BORDER}`,
+                } : {
                   display: 'grid', gridTemplateColumns: '6fr 2fr 3fr 1fr',
                   gap: '0.5rem', alignItems: 'start',
                   padding: '0.75rem',
@@ -553,28 +632,58 @@ const InvoiceTemplate = memo(() => {
                   borderRadius: '0.6rem',
                   border: `1px solid ${BORDER}`,
                 }}>
-                  <input style={inputNoPad} placeholder="Omschrijving" value={item.description}
-                    onChange={(e) => handleItemChange(item.id, 'description', e.target.value)} />
-                  <input style={{ ...inputNoPad, textAlign: 'center' }} type="number" placeholder="Aantal"
-                    value={item.quantity}
-                    onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
-                  <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)', color: DIM, fontSize: '0.8rem' }}>€</span>
-                    <input style={{ ...input, paddingLeft: '1.6rem' }} type="number" placeholder="Prijs"
-                      value={item.price}
-                      onChange={(e) => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '0.55rem' }}>
-                    <button onClick={() => handleRemoveItem(item.id)} style={{
-                      background: 'none', border: 'none', color: 'rgba(255,255,255,0.15)',
-                      cursor: 'pointer', padding: '0.2rem', transition: 'color 0.2s',
-                    }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.15)'; }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                  {isMobile ? (
+                    <>
+                      <input style={{ ...inputNoPad, width: '100%', boxSizing: 'border-box' }} placeholder="Omschrijving" value={item.description}
+                        onChange={(e) => handleItemChange(item.id, 'description', e.target.value)} />
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <input style={{ ...inputNoPad, flex: 1, textAlign: 'center', minHeight: '2.2rem' }} type="number" placeholder="Aantal"
+                          value={item.quantity}
+                          onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
+                        <div style={{ position: 'relative', flex: 1 }}>
+                          <span style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)', color: DIM, fontSize: '0.8rem' }}>€</span>
+                          <input style={{ ...input, paddingLeft: '1.6rem', width: '100%', boxSizing: 'border-box', minHeight: '2.2rem' }} type="number" placeholder="Prijs"
+                            value={item.price}
+                            onChange={(e) => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} />
+                        </div>
+                        <button onClick={() => handleRemoveItem(item.id)} style={{
+                          background: 'none', border: 'none', color: 'rgba(255,255,255,0.15)',
+                          cursor: 'pointer', padding: '0.2rem', transition: 'color 0.2s',
+                          alignSelf: 'center', flexShrink: 0,
+                        }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.15)'; }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <input style={inputNoPad} placeholder="Omschrijving" value={item.description}
+                        onChange={(e) => handleItemChange(item.id, 'description', e.target.value)} />
+                      <input style={{ ...inputNoPad, textAlign: 'center' }} type="number" placeholder="Aantal"
+                        value={item.quantity}
+                        onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
+                      <div style={{ position: 'relative' }}>
+                        <span style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)', color: DIM, fontSize: '0.8rem' }}>€</span>
+                        <input style={{ ...input, paddingLeft: '1.6rem' }} type="number" placeholder="Prijs"
+                          value={item.price}
+                          onChange={(e) => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '0.55rem' }}>
+                        <button onClick={() => handleRemoveItem(item.id)} style={{
+                          background: 'none', border: 'none', color: 'rgba(255,255,255,0.15)',
+                          cursor: 'pointer', padding: '0.2rem', transition: 'color 0.2s',
+                        }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.15)'; }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -607,14 +716,16 @@ const InvoiceTemplate = memo(() => {
                   >
                     {btwIncluded ? '✓ BTW 21%' : 'BTW 21%'}
                   </button>
-                  <span style={{ fontSize: '0.65rem', color: DIM }}>
-                    {btwIncluded ? 'BTW wordt berekend over het subtotaal' : 'Prijzen exclusief BTW'}
-                  </span>
+                  {!isMobile && (
+                    <span style={{ fontSize: '0.65rem', color: DIM }}>
+                      {btwIncluded ? 'BTW wordt berekend over het subtotaal' : 'Prijzen exclusief BTW'}
+                    </span>
+                  )}
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '0.6rem', justifyContent: 'flex-end' }}>
                   {btwIncluded && (
-                    <div style={{ fontSize: '0.65rem', color: DIM, marginBottom: '0.15rem' }}>
-                      Subtotaal: €{subtotal.toFixed(2).replace('.', ',')}  ·  BTW: €{taxAmount.toFixed(2).replace('.', ',')}
+                    <div style={{ fontSize: '0.65rem', color: DIM }}>
+                      BTW: €{taxAmount.toFixed(2).replace('.', ',')}
                     </div>
                   )}
                   <div style={{ fontSize: '0.85rem', fontWeight: 700, color: GOLD }}>
@@ -626,7 +737,7 @@ const InvoiceTemplate = memo(() => {
           </section>
 
           {/* § Handtekening */}
-          <section style={{ paddingTop: '1.2rem', borderTop: `1px solid ${BORDER}` }}>
+          <section style={isMobile ? {} : { paddingTop: '1.2rem', borderTop: `1px solid ${BORDER}` }}>
             <h2 style={sectionHeading}>
               <Eraser size={20} color={ACCENT} />
               Handtekening
@@ -669,7 +780,7 @@ const InvoiceTemplate = memo(() => {
         </div>
 
         {/* ════════════ RIGHT: PREVIEW (A4 ratio) ════════════ */}
-        <div style={{ position: 'sticky', top: '1rem' }}>
+        <div style={isMobile ? {} : { position: 'sticky', top: '1rem' }}>
           <div style={{
             aspectRatio: '210 / 297',
             width: '100%',
@@ -680,7 +791,7 @@ const InvoiceTemplate = memo(() => {
             boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
           }}>
             <div style={{
-              padding: '6% 7%',
+              padding: '7% 6.7%',
               height: '100%',
               display: 'flex',
               flexDirection: 'column',
@@ -691,20 +802,21 @@ const InvoiceTemplate = memo(() => {
               {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <div style={{ fontSize: '1.1em', fontWeight: 700, color: '#fff' }}>{invoice.businessName}</div>
-                  <div style={{ paddingTop: '0.5em' }}>
-                    <p style={{ fontSize: '0.55em', color: '#bbb', margin: '0.15em 0' }}>{invoice.businessAddress}</p>
-                    <p style={{ fontSize: '0.55em', color: '#bbb', margin: '0.15em 0' }}>Tel: {invoice.businessPhone}</p>
-                    <p style={{ fontSize: '0.55em', color: '#bbb', margin: '0.15em 0' }}>{invoice.businessEmail}</p>
+                  <div style={{ fontSize: '0.77em', fontWeight: 700, color: '#fff' }}>{invoice.businessName}</div>
+                  <div style={{ paddingTop: '0.3em' }}>
+                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>KVK: {invoice.businessKvk}</p>
+                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>{invoice.businessAddress}</p>
+                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>Tel: {invoice.businessPhone}</p>
+                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>{invoice.businessEmail}</p>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                     {invoice.logoUrl && (
                       <img src={invoice.logoUrl} alt="Logo" referrerPolicy="no-referrer"
-                        style={{ width: '3.5em', height: '3.5em', objectFit: 'contain', marginBottom: '0.4em', borderRadius: '0.3em' }} />
+                        style={{ width: '2.5em', height: '2.5em', objectFit: 'contain', marginBottom: '0.3em', borderRadius: '0.3em' }} />
                     )}
-                    <div style={{ fontSize: '1.6em', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.03em' }}>FACTUUR</div>
+                    <div style={{ fontSize: '1.1em', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.03em' }}>FACTUUR</div>
                   </div>
                 </div>
               </div>
@@ -712,15 +824,15 @@ const InvoiceTemplate = memo(() => {
               {/* Payment line */}
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
-                borderBottom: '1px solid #333', paddingBottom: '0.7em', marginTop: '1em',
+                borderBottom: '1px solid #333', paddingBottom: '0.5em', marginTop: '0.7em',
               }}>
                 <div>
-                  <p style={{ fontSize: '0.5em', color: '#fff', margin: 0 }}>Rekening: {invoice.bankAccount} (Ref: {invoice.invoiceNumber})</p>
-                  <p style={{ fontSize: '0.48em', color: '#888', fontWeight: 700, margin: '0.2em 0 0' }}>gelieve te betalen binnen 14 werkdagen</p>
+                  <p style={{ fontSize: '0.44em', color: '#fff', margin: 0 }}>Rekening: {invoice.bankAccount} (Ref: {invoice.invoiceNumber})</p>
+                  <p style={{ fontSize: '0.44em', color: '#888', fontWeight: 700, margin: '0.15em 0 0' }}>gelieve te betalen binnen 14 werkdagen</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '0.6em', fontWeight: 700, color: '#fff', margin: 0 }}>Nr: {invoice.invoiceNumber}</p>
-                  <p style={{ fontSize: '0.55em', color: '#bbb', textTransform: 'uppercase', margin: '0.15em 0 0' }}>Datum: {liveDate}</p>
+                  <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: 0 }}>Nr: {invoice.invoiceNumber}</p>
+                  <p style={{ fontSize: '0.55em', color: '#bbb', textTransform: 'uppercase', margin: '0.1em 0 0' }}>Datum: {liveDate}</p>
                 </div>
               </div>
 
@@ -729,10 +841,10 @@ const InvoiceTemplate = memo(() => {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #333' }}>
-                      <th style={{ textAlign: 'left', padding: '0.4em 0', fontSize: '0.48em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Omschrijving</th>
-                      <th style={{ textAlign: 'center', padding: '0.4em 0', fontSize: '0.48em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Uur</th>
-                      <th style={{ textAlign: 'center', padding: '0.4em 0', fontSize: '0.48em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Tarief Ex.-</th>
-                      <th style={{ textAlign: 'right', padding: '0.4em 0', fontSize: '0.48em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Bedrag</th>
+                      <th style={{ textAlign: 'left', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Omschrijving</th>
+                      <th style={{ textAlign: 'center', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Uur</th>
+                      <th style={{ textAlign: 'center', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Tarief Ex.-</th>
+                      <th style={{ textAlign: 'right', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Bedrag</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -750,23 +862,23 @@ const InvoiceTemplate = memo(() => {
                 </table>
 
                 {previewPage === totalPreviewPages && (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingTop: '0.8em', gap: '0.25em' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingTop: '0.6em', gap: '0.2em' }}>
                     {btwIncluded && (
                       <>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.2em' }}>
-                          <span style={{ fontSize: '0.42em', color: '#888' }}>Subtotaal</span>
-                          <span style={{ fontSize: '0.65em', color: '#bbb' }}>€{subtotal.toFixed(2).replace('.', ',')}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8em' }}>
+                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>Subtotaal</span>
+                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>€{subtotal.toFixed(2).replace('.', ',')}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.2em' }}>
-                          <span style={{ fontSize: '0.42em', color: '#888' }}>BTW 21%</span>
-                          <span style={{ fontSize: '0.65em', color: '#bbb' }}>€{taxAmount.toFixed(2).replace('.', ',')}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8em' }}>
+                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>BTW 21%</span>
+                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>€{taxAmount.toFixed(2).replace('.', ',')}</span>
                         </div>
-                        <div style={{ width: '8em', borderTop: '1px solid #444', marginTop: '0.15em', paddingTop: '0.3em' }} />
+                        <div style={{ width: '5.5em', borderTop: '1px solid #444', marginTop: '0.1em', paddingTop: '0.2em' }} />
                       </>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.2em' }}>
-                      <span style={{ fontSize: '0.48em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>TOTAAL</span>
-                      <span style={{ fontSize: '1em', fontWeight: 700, color: '#fff' }}>€{total.toFixed(2).replace('.', ',')}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8em' }}>
+                      <span style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#fff' }}>TOTAAL</span>
+                      <span style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff' }}>€{total.toFixed(2).replace('.', ',')}</span>
                     </div>
                   </div>
                 )}
@@ -774,45 +886,44 @@ const InvoiceTemplate = memo(() => {
 
               {/* Footer */}
               {previewPage === totalPreviewPages && (
-                <div style={{ marginTop: 'auto', paddingTop: '1.2em', borderTop: '1px solid #333', display: 'flex', flexDirection: 'column', gap: '1.2em' }}>
-                  {/* Factuur voor */}
-                  <div>
-                    <p style={{ fontSize: '0.48em', fontWeight: 700, textTransform: 'uppercase', color: '#888', margin: 0 }}>Factuur voor:</p>
-                    <p style={{ fontSize: '0.65em', fontWeight: 600, color: '#fff', margin: '0.2em 0' }}>{invoice.clientName}</p>
-                    <p style={{ fontSize: '0.55em', color: '#888', lineHeight: 1.5, margin: 0 }}>{invoice.clientAddress}</p>
+                <div style={{ marginTop: 'auto', paddingTop: '0.8em', borderTop: '1px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  {/* Left column: Factuur voor + Spell */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6em' }}>
+                    <div>
+                      <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#888', margin: 0 }}>Factuur voor:</p>
+                      <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: '0.15em 0' }}>{invoice.clientName}</p>
+                      <p style={{ fontSize: '0.50em', color: '#bbb', lineHeight: 1.5, margin: 0 }}>{invoice.clientAddress}</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: 0 }}>De luide stilte en de intense kalmte</p>
+                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: '0.1em 0 0' }}>Wijzen de euros van jouw Bank naar mijn Hart</p>
+                      <p style={{ fontSize: '0.50em', fontStyle: 'italic', color: '#888', margin: '0.5em 0 0' }}>{invoice.notes}</p>
+                    </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    {/* Spell + Notes */}
-                    <div>
-                      <p style={{ fontSize: '0.6em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: 0 }}>De luide stilte en de intense kalmte</p>
-                      <p style={{ fontSize: '0.6em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: '0.1em 0 0' }}>Wijzen de euros van jouw Bank naar mijn Hart</p>
-                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#888', margin: '0.7em 0 0' }}>{invoice.notes}</p>
+                  {/* Right column: Signature + Bedankt */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2em', flexShrink: 0 }}>
+                    <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Ondertekend door:</p>
+                    <div style={{
+                      border: '2px solid rgba(188,19,254,0.35)',
+                      borderRadius: '0.3em', padding: '0.2em',
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      width: '5em', height: '2em',
+                      display: 'flex', justifyContent: 'center', alignItems: 'center',
+                      boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.8)',
+                      overflow: 'hidden',
+                    }}>
+                      {signatureData ? (
+                        <img src={signatureData} alt="Handtekening"
+                          style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', filter: 'brightness(2) contrast(1.25)' }} />
+                      ) : (
+                        <div style={{ textAlign: 'center' }}>
+                          <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>Wachten op</span>
+                          <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>handtekening</span>
+                        </div>
+                      )}
                     </div>
-
-                    {/* Signature */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3em', flexShrink: 0 }}>
-                      <p style={{ fontSize: '0.48em', fontWeight: 700, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Ondertekend door:</p>
-                      <div style={{
-                        border: '2px solid rgba(188,19,254,0.35)',
-                        borderRadius: '0.4em', padding: '0.3em',
-                        backgroundColor: 'rgba(0,0,0,0.7)',
-                        width: '9em', height: '4em',
-                        display: 'flex', justifyContent: 'center', alignItems: 'center',
-                        boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.8)',
-                        overflow: 'hidden',
-                      }}>
-                        {signatureData ? (
-                          <img src={signatureData} alt="Handtekening"
-                            style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', filter: 'brightness(2) contrast(1.25)' }} />
-                        ) : (
-                          <div style={{ textAlign: 'center' }}>
-                            <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>Wachten op</span>
-                            <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>handtekening</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <p style={{ fontSize: '0.42em', color: '#888', margin: '0.2em 0 0' }}>Bedankt voor uw vertrouwen</p>
                   </div>
                 </div>
               )}
@@ -859,7 +970,9 @@ const InvoiceTemplate = memo(() => {
       </div>
 
       {/* ════════════ EMAIL CARD ════════════ */}
-      <div style={{
+      <div style={isMobile ? {
+        display: 'flex', flexDirection: 'column', gap: '1.2rem',
+      } : {
         backgroundColor: CARD,
         padding: '1.6rem',
         borderRadius: '1.2rem',
@@ -868,11 +981,14 @@ const InvoiceTemplate = memo(() => {
       }}>
         <h2 style={sectionHeading}>
           <Mail size={20} color={ACCENT} />
-          E-mail Versturen — Factuur
+          E-mail Versturen
         </h2>
 
         {/* Recipient fields */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+        <div style={isMobile
+          ? { display: 'flex', flexDirection: 'column', gap: '0.8rem' }
+          : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }
+        }>
           <div>
             <div style={labelCss}>Ontvanger E-mail *</div>
             <div style={{ position: 'relative' }}>
@@ -888,13 +1004,31 @@ const InvoiceTemplate = memo(() => {
           </div>
           <div>
             <div style={labelCss}>Onderwerp</div>
-            <input
-              type="text"
-              value={emailSubject}
-              onChange={(e) => setEmailSubject(e.target.value)}
-              placeholder={`Garden For Life — Factuur ${invoice.invoiceNumber}`}
-              style={inputNoPad}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder={`Garden For Life — Factuur ${invoice.invoiceNumber}`}
+                style={inputNoPad}
+              />
+              {emailSubject.length > 0 &&
+               emailSubject.length < `Garden For Life — Factuur ${invoice.invoiceNumber}`.length &&
+               `Garden For Life — Factuur ${invoice.invoiceNumber}`.toLowerCase().startsWith(emailSubject.toLowerCase()) && (
+                <button
+                  type="button"
+                  onClick={() => setEmailSubject(`Garden For Life — Factuur ${invoice.invoiceNumber}`)}
+                  style={{
+                    position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+                    background: 'rgba(138,92,246,0.25)', color: '#c4b5fd', border: '1px solid rgba(138,92,246,0.4)',
+                    borderRadius: 4, padding: '2px 8px', fontSize: '0.7rem', cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Autofill
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

@@ -121,7 +121,9 @@ const DISP_FRAG = `
 `;
 
 // ─── Pass 2: Nebula render with displacement applied ───────────────────
-const NEBULA_FRAG = `
+// Factory: generates shader source with configurable octave counts
+function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5) {
+  return `
   #extension GL_OES_standard_derivatives : enable
   precision highp float;
 
@@ -150,7 +152,7 @@ const NEBULA_FRAG = `
 
   float fbm(vec2 p) {
     float v = 0.0, a = 0.5, f = 1.0;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < ${fbmOctaves}; i++) {
       v += a * noise(p * f);
       f *= 2.1; a *= 0.48;
     }
@@ -164,7 +166,7 @@ const NEBULA_FRAG = `
 
   float ridgeFbm(vec2 p) {
     float v = 0.0, a = 0.5, f = 1.0;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < ${ridgeOctaves}; i++) {
       v += a * ridgeNoise(p * f);
       f *= 2.2; a *= 0.45;
     }
@@ -711,6 +713,10 @@ const NEBULA_FRAG = `
     gl_FragColor = vec4(max(color, 0.0), 1.0);
   }
 `;
+} // end makeNebulaFrag
+
+const NEBULA_FRAG = makeNebulaFrag(5, 5);           // Desktop: full quality
+const NEBULA_FRAG_MOBILE = makeNebulaFrag(3, 3);    // Mobile: reduced octaves
 
 // ─── React Component ────────────────────────────────────────────────────
 const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
@@ -794,10 +800,11 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       return p;
     }
 
-    // Create programs
-    const dispProg   = linkProg(VERT, DISP_FRAG);
-    const nebulaProg = linkProg(VERT, NEBULA_FRAG);
-    if (!dispProg || !nebulaProg) {
+    // Create programs — mobile uses reduced-octave shader and skips displacement
+    const isMobileDevice = window.innerWidth < 768;
+    const dispProg   = isMobileDevice ? null : linkProg(VERT, DISP_FRAG);
+    const nebulaProg = linkProg(VERT, isMobileDevice ? NEBULA_FRAG_MOBILE : NEBULA_FRAG);
+    if (!nebulaProg || (!isMobileDevice && !dispProg)) {
       canvas.style.background = 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)';
       if (onReadyRef.current) onReadyRef.current();
       return () => {};
@@ -809,16 +816,24 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
 
-    // Canvas sizing
-    const dpr = Math.min(window.devicePixelRatio, 1.5);
-    canvas.width  = window.innerWidth  * dpr;
-    canvas.height = window.innerHeight * dpr;
+    // Canvas sizing — mobile capped to 1080p for performance
+    const dpr = isMobileDevice ? 1.0 : Math.min(window.devicePixelRatio, 1.5);
+    let cw = Math.round(window.innerWidth  * dpr);
+    let ch = Math.round(window.innerHeight * dpr);
+    if (isMobileDevice) {
+      const maxDim = 1080;
+      if (ch > maxDim) { const scale = maxDim / ch; cw = Math.round(cw * scale); ch = maxDim; }
+    }
+    canvas.width  = cw;
+    canvas.height = ch;
     canvas.style.width  = window.innerWidth  + 'px';
     canvas.style.height = window.innerHeight + 'px';
 
-    // Displacement FBOs (quarter-res for performance)
-    const dispW = Math.max(256, Math.ceil(canvas.width  / 4));
-    const dispH = Math.max(256, Math.ceil(canvas.height / 4));
+    // Displacement FBOs (quarter-res for performance) — desktop only
+    let dispW, dispH, fboA, fboB, readFBO, writeFBO, dU, dPosLoc;
+    if (!isMobileDevice) {
+      dispW = Math.max(256, Math.ceil(canvas.width  / 4));
+      dispH = Math.max(256, Math.ceil(canvas.height / 4));
 
     function createFBO(w, h) {
       const tex = gl.createTexture();
@@ -842,14 +857,14 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       return { tex, fb };
     }
 
-    const fboA = createFBO(dispW, dispH);
-    const fboB = createFBO(dispW, dispH);
-    let readFBO  = fboA;
-    let writeFBO = fboB;
+      fboA = createFBO(dispW, dispH);
+      fboB = createFBO(dispW, dispH);
+      readFBO  = fboA;
+      writeFBO = fboB;
 
     // Uniform locations — displacement program
     gl.useProgram(dispProg);
-    const dU = {
+    dU = {
       prev:       gl.getUniformLocation(dispProg, 'u_prev'),
       res:        gl.getUniformLocation(dispProg, 'u_res'),
       mouse:      gl.getUniformLocation(dispProg, 'u_mouse'),
@@ -857,7 +872,20 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       mouseSpeed: gl.getUniformLocation(dispProg, 'u_mouseSpeed'),
       aspect:     gl.getUniformLocation(dispProg, 'u_aspect'),
     };
-    const dPosLoc = gl.getAttribLocation(dispProg, 'a_position');
+    dPosLoc = gl.getAttribLocation(dispProg, 'a_position');
+    } // end desktop-only displacement setup
+
+    // Mobile: create a static neutral displacement texture (no interaction)
+    let mobileDispTex = null;
+    if (isMobileDevice) {
+      mobileDispTex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, mobileDispTex);
+      const neutralData = new Uint8Array(4);
+      neutralData.fill(128); // neutral = zero displacement
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, neutralData);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    }
 
     // Uniform locations — nebula program
     gl.useProgram(nebulaProg);
@@ -871,23 +899,31 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
 
     // Resize handler
     function resize() {
-      const d = Math.min(window.devicePixelRatio, 1.5);
-      canvas.width  = window.innerWidth  * d;
-      canvas.height = window.innerHeight * d;
+      const mob = window.innerWidth < 768;
+      const d = mob ? 1.0 : Math.min(window.devicePixelRatio, 1.5);
+      let rw = Math.round(window.innerWidth  * d);
+      let rh = Math.round(window.innerHeight * d);
+      if (mob) {
+        const maxDim = 1080;
+        if (rh > maxDim) { const s = maxDim / rh; rw = Math.round(rw * s); rh = maxDim; }
+      }
+      canvas.width  = rw;
+      canvas.height = rh;
       canvas.style.width  = window.innerWidth  + 'px';
       canvas.style.height = window.innerHeight + 'px';
       // Displacement FBOs intentionally keep their size — trails persist through resize
     }
     window.addEventListener('resize', resize);
 
-    // Mouse / pointer tracking (unthrottled for smooth strokes)
-    // Using both mousemove and pointermove for maximum compatibility
+    // Mouse / pointer tracking — desktop only (no interactive path on mobile)
     function onPointerMove(e) {
       mouseRef.current.x = e.clientX / window.innerWidth;
       mouseRef.current.y = 1.0 - e.clientY / window.innerHeight;
     }
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    window.addEventListener('mousemove', onPointerMove, { passive: true });
+    if (!isMobileDevice) {
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+      window.addEventListener('mousemove', onPointerMove, { passive: true });
+    }
 
     // Render loop
     let lastFrame = 0;
@@ -899,36 +935,44 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       lastFrame = timestamp;
 
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
-      const mx = mouseRef.current.x;
-      const my = mouseRef.current.y;
-      const px = mousePrevRef.current.x;
-      const py = mousePrevRef.current.y;
-      const speed  = Math.sqrt((mx - px) * (mx - px) + (my - py) * (my - py));
-      const aspect = canvas.width / canvas.height;
 
-      // ═══ Pass 1: Update displacement field ═══
-      gl.bindFramebuffer(gl.FRAMEBUFFER, writeFBO.fb);
-      gl.viewport(0, 0, dispW, dispH);
-      gl.useProgram(dispProg);
+      if (!isMobileDevice) {
+        // Desktop: full displacement pass with mouse interaction
+        const mx = mouseRef.current.x;
+        const my = mouseRef.current.y;
+        const px = mousePrevRef.current.x;
+        const py = mousePrevRef.current.y;
+        const speed  = Math.sqrt((mx - px) * (mx - px) + (my - py) * (my - py));
+        const aspect = canvas.width / canvas.height;
 
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, readFBO.tex);
-      gl.uniform1i(dU.prev, 0);
-      gl.uniform2f(dU.res, dispW, dispH);
-      gl.uniform2f(dU.mouse, mx, my);
-      gl.uniform2f(dU.mousePrev, px, py);
-      gl.uniform1f(dU.mouseSpeed, speed);
-      gl.uniform1f(dU.aspect, aspect);
+        // ═══ Pass 1: Update displacement field ═══
+        gl.bindFramebuffer(gl.FRAMEBUFFER, writeFBO.fb);
+        gl.viewport(0, 0, dispW, dispH);
+        gl.useProgram(dispProg);
 
-      gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
-      gl.enableVertexAttribArray(dPosLoc);
-      gl.vertexAttribPointer(dPosLoc, 2, gl.FLOAT, false, 0, 0);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, readFBO.tex);
+        gl.uniform1i(dU.prev, 0);
+        gl.uniform2f(dU.res, dispW, dispH);
+        gl.uniform2f(dU.mouse, mx, my);
+        gl.uniform2f(dU.mousePrev, px, py);
+        gl.uniform1f(dU.mouseSpeed, speed);
+        gl.uniform1f(dU.aspect, aspect);
 
-      // Swap ping-pong
-      const tmp = readFBO;
-      readFBO  = writeFBO;
-      writeFBO = tmp;
+        gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+        gl.enableVertexAttribArray(dPosLoc);
+        gl.vertexAttribPointer(dPosLoc, 2, gl.FLOAT, false, 0, 0);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        // Swap ping-pong
+        const tmp = readFBO;
+        readFBO  = writeFBO;
+        writeFBO = tmp;
+
+        // Store previous mouse for next frame's velocity
+        mousePrevRef.current.x = mx;
+        mousePrevRef.current.y = my;
+      }
 
       // ═══ Pass 2: Render nebula to screen ═══
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -941,7 +985,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       mapPosRef.current.y += (mapPosTargetRef.current.y - mapPosRef.current.y) * lerpFactor;
 
       gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, readFBO.tex);
+      gl.bindTexture(gl.TEXTURE_2D, isMobileDevice ? mobileDispTex : readFBO.tex);
       gl.uniform1i(nU.disp, 0);
       gl.uniform1f(nU.time, elapsed);
       gl.uniform2f(nU.resolution, canvas.width, canvas.height);
@@ -951,10 +995,6 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       gl.enableVertexAttribArray(nPosLoc);
       gl.vertexAttribPointer(nPosLoc, 2, gl.FLOAT, false, 0, 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-      // Store previous mouse for next frame's velocity
-      mousePrevRef.current.x = mx;
-      mousePrevRef.current.y = my;
 
       // Signal ready after first frame is fully rendered
       if (!readyFiredRef.current) {
@@ -980,14 +1020,17 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('mousemove', onPointerMove);
+      if (!isMobileDevice) {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('mousemove', onPointerMove);
+      }
       document.removeEventListener('visibilitychange', onVisibility);
       if (dispProg)   { dispProg._shaders.forEach(s => gl.deleteShader(s));   gl.deleteProgram(dispProg); }
       if (nebulaProg) { nebulaProg._shaders.forEach(s => gl.deleteShader(s)); gl.deleteProgram(nebulaProg); }
       gl.deleteBuffer(quadBuf);
-      gl.deleteTexture(fboA.tex);  gl.deleteFramebuffer(fboA.fb);
-      gl.deleteTexture(fboB.tex);  gl.deleteFramebuffer(fboB.fb);
+      if (fboA) { gl.deleteTexture(fboA.tex);  gl.deleteFramebuffer(fboA.fb); }
+      if (fboB) { gl.deleteTexture(fboB.tex);  gl.deleteFramebuffer(fboB.fb); }
+      if (mobileDispTex) gl.deleteTexture(mobileDispTex);
       // Force-release the WebGL context so it doesn't linger during hot-reload
       const loseCtx = gl.getExtension('WEBGL_lose_context');
       if (loseCtx) loseCtx.loseContext();

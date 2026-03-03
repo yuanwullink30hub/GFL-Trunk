@@ -89,26 +89,29 @@
         <div style="position:absolute;bottom:-1px;left:-1px;width:1.25rem;height:1.25rem;border:1.5px solid #a855f7;border-radius:0 0 0 10px;border-top:none;border-right:none"></div>
         <div style="position:absolute;bottom:-1px;right:-1px;width:1.25rem;height:1.25rem;border:1.5px solid #a855f7;border-radius:0 0 10px 0;border-top:none;border-left:none"></div>
 
-        <!-- Spinner -->
-        <div id="gfl-loading-spinner" style="
-          width: 3rem; height: 3rem;
-          border: 2px solid #a855f7;
-          border-top-color: transparent;
-          border-radius: 50%;
-          margin-bottom: 1.5rem;
-        "></div>
+        <!-- Content wrapper (counter-rotated on mobile) -->
+        <div id="gfl-loading-content" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:100%">
+          <!-- Spinner -->
+          <div id="gfl-loading-spinner" style="
+            width: 3rem; height: 3rem;
+            border: 2px solid #a855f7;
+            border-top-color: transparent;
+            border-radius: 50%;
+            margin-bottom: 1.5rem;
+          "></div>
 
-        <!-- Rotating text slideshow (pure CSS — won't freeze during shader compile) -->
-        <div id="gfl-loading-slideshow" style="
-          position: relative;
-          width: 100%;
-          max-width: 380px;
-          min-height: 3.6rem;
-          overflow: hidden;
-        ">
-          <p class="gfl-slide" style="animation-delay: 0s">Verbinding vaststellen</p>
-          <p class="gfl-slide" style="animation-delay: 2.8s">Exclusieve toegang tot Versie Beta2.9</p>
-          <p class="gfl-slide" style="animation-delay: 5.6s">Six Seven</p>
+          <!-- Rotating text slideshow (pure CSS — won't freeze during shader compile) -->
+          <div id="gfl-loading-slideshow" style="
+            position: relative;
+            width: 100%;
+            max-width: 380px;
+            min-height: 3.6rem;
+            overflow: hidden;
+          ">
+            <p class="gfl-slide" style="animation-delay: 0s">Verbinding vaststellen</p>
+            <p class="gfl-slide" style="animation-delay: 2.8s">Exclusieve toegang<br>tot Beta V2.9</p>
+            <p class="gfl-slide" style="animation-delay: 5.6s">Six Seven</p>
+          </div>
         </div>
 
         <!-- Noise overlay -->
@@ -147,10 +150,11 @@
       }
 
       @media (max-width: 767px) {
-        #gfl-loading-modal { padding: 2rem 1.5rem !important; min-width: auto !important; max-width: 90vw !important; }
+        #gfl-loading-modal { padding: 2rem 1.5rem !important; min-width: auto !important; width: 85vw !important; max-width: 85vw !important; box-sizing: border-box !important; transform: rotate(90deg) !important; }
+        #gfl-loading-content { transform: rotate(-90deg) !important; }
         #gfl-loading-spinner { width: 2.5rem !important; height: 2.5rem !important; }
-        .gfl-slide { font-size: 0.9rem !important; }
-        #gfl-loading-slideshow { min-height: 3.2rem !important; }
+        .gfl-slide { font-size: 0.9rem !important; word-wrap: break-word !important; overflow-wrap: break-word !important; white-space: normal !important; }
+        #gfl-loading-slideshow { min-height: 3.2rem !important; max-width: 100% !important; overflow: hidden !important; }
       }
     </style>
 

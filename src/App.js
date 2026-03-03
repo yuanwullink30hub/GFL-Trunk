@@ -1134,6 +1134,11 @@ const App = () => {
   const [gardensBrandIndex, setGardensBrandIndex] = useState(0); // Captured brand index when opening gardens
   
   // ============================================
+  // MOBILE LOGIN STATE
+  // ============================================
+  const [showMobileLogin, setShowMobileLogin] = useState(false);
+
+  // ============================================
   // MOBILE PAGE CONTENT STATE - Circular transitions
   // Content follows wheel rotation on the virtual 360° clock
   // ============================================
@@ -2072,6 +2077,21 @@ const App = () => {
   const scrollLabelY = scrollLabelProgress * 250; // faster outward movement (closer to explosion)
   const scrollLabelOpacity = Math.max(0, 1 - scrollLabelProgress * 2.0);
   const scrollLabelScale = 1 - (scrollLabelProgress * 0.08);
+
+  // Login button (mobile): matches scroll label, delayed 1 frame
+  const loginBtnStartFrame = scrollLabelStartFrame + 1;
+  const loginBtnVanishFrames = section2End - loginBtnStartFrame;
+  const loginBtnProgress = currentFrame <= loginBtnStartFrame ? 0 : Math.min(1, Math.max(0, (currentFrame - loginBtnStartFrame) / loginBtnVanishFrames));
+  const loginBtnY = loginBtnProgress * 250;
+  const loginBtnOpacity = Math.max(0, 1 - loginBtnProgress * 2.0);
+  const loginBtnScale = 1 - (loginBtnProgress * 0.08);
+
+  // Language toggle (mobile): 1 frame delay relative to Deltawerken header
+  const langStartFrame = deltaStartFrame + 1;
+  const langVanishFrames = section2End - langStartFrame;
+  const langProgress = currentFrame <= langStartFrame ? 0 : Math.min(1, Math.max(0, (currentFrame - langStartFrame) / langVanishFrames));
+  const langY = langProgress * -150;
+  const langOpacity = Math.max(0, 1 - langProgress * 1.5);
   
   // Grid background: fades out with header
   const gridOpacity = Math.max(0, 0.3 * (1 - headerProgress));
@@ -2186,7 +2206,7 @@ const App = () => {
       )}
 
       {/* =========================== */}
-      {/* MOBILE LAYOUT - Full screen HoloEarth with Navigation Wheel */}
+      {/* MOBILE LAYOUT - Login + Dashboard only */}
       {/* =========================== */}
       {isMobile && (
         <>
@@ -2201,106 +2221,65 @@ const App = () => {
             }}
           />
 
-          {/* Main Content Container (DELTAWERKEN) - Follows wheel circular motion */}
-          {(() => {
-            // Calculate Deltawerken's position (index 0) based on wheel rotation
-            const deltawerkenTransform = getMobileContentTransform(0, mobileWheelRotation);
-            
-            return (
-              <div 
-                ref={containerRef}
-                className="fixed inset-0"
-                style={{
-                  transform: deltawerkenTransform.transform,
-                  opacity: deltawerkenTransform.opacity,
-                  transformOrigin: 'center center',
-                  pointerEvents: deltawerkenTransform.isActive ? 'auto' : 'none',
-                  // Smooth eased transition for carousel-like motion
-                  // visibility transition: instant when showing, delayed when hiding (to allow opacity fade)
-                  transition: `transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), visibility 0s linear ${deltawerkenTransform.isVisible ? '0s' : '0.6s'}`,
-                  overflow: 'visible',
-                  zIndex: deltawerkenTransform.zIndex,
-                  willChange: 'transform, opacity',
-                  visibility: deltawerkenTransform.isVisible ? 'visible' : 'hidden',
-                }}
-              >
-                {/* Header with Title - Centered (No logo on mobile) */}
-                <div 
-                  className="absolute z-50 left-0 right-0 flex justify-center"
-                  style={{
-                    top: '4rem',
-                    opacity: headerOpacity,
-                    transform: `translateY(${headerY}px)`,
-                  }}
-                >
-                  <div className="flex flex-col items-center">
-                    <h1 style={{
-                      color: '#FFFEF0',
-                      fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                      fontSize: 'clamp(1.7rem, 6vw, 2.2rem)',
-                      fontWeight: 600,
-                      lineHeight: 1,
-                      letterSpacing: '0.1em',
-                      animation: 'headerBreathe 6s ease-in-out infinite',
-                    }}>
-                      DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
-                    </h1>
-                    {/* Gradient underline */}
-                    <div style={{
-                      width: '100%',
-                      height: '1px',
-                      marginTop: 'clamp(0.2rem, 1vw, 0.4rem)',
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,254,240,0.4) 20%, rgba(245,158,11,0.5) 50%, rgba(255,254,240,0.4) 80%, transparent 100%)',
-                    }} />
-                    <div className="flex items-center" style={{ gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <span className="rounded-full bg-green-500 animate-ping" style={{
-                        width: '0.5rem',
-                        height: '0.5rem',
-                      }}></span>
-                      <span className="text-gray-400 tracking-wider" style={{
-                        fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
-                        fontFamily: "'Figtree', sans-serif",
-                      }}>{t('header.versionText')}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Top-Right Info Panel - Frame counter + Coordinates */}
-                {/* Inside deltawerken wrapper so it follows carousel animation */}
-                <div 
-                  className="absolute top-4 right-4 z-50 text-xs font-mono pointer-events-none text-right"
-                  style={{ 
-                    opacity: isSystem ? 0 : headerOpacity,
-                    transform: `translateY(${headerY}px)`,
-                  }}
-                >
-                  <div style={{ color: 'rgba(245, 158, 11, 0.6)' }}>
-                    Frame: {currentFrame}/{TOTAL_ANIMATION_FRAMES}
-                  </div>
-                  <div style={{ 
-                    color: 'rgba(255, 254, 240, 0.3)',
-                    fontSize: '0.6rem',
-                    marginTop: '0.25rem',
+          {/* HoloEarth background - centered */}
+          <div 
+            ref={containerRef}
+            className="fixed inset-0"
+            style={{ pointerEvents: 'none' }}
+          >
+            {/* Header with Title - Centered */}
+            <div 
+              className="absolute z-50 left-0 right-0 flex justify-center"
+              style={{
+                top: '4rem',
+                opacity: deltaOpacity,
+                transform: `translateY(${deltaY}px) scale(${deltaScale})`,
+              }}
+            >
+              <div className="flex flex-col items-center">
+                <h1 style={{
+                  color: '#FFFEF0',
+                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                  fontSize: 'clamp(1.7rem, 6vw, 2.2rem)',
+                  fontWeight: 600,
+                  lineHeight: 1,
+                  letterSpacing: '0.1em',
+                  animation: 'headerBreathe 6s ease-in-out infinite',
+                }}>
+                  DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
+                </h1>
+                {/* Gradient underline */}
+                <div style={{
+                  width: '100%',
+                  height: '1px',
+                  marginTop: 'clamp(0.2rem, 1vw, 0.4rem)',
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,254,240,0.4) 20%, rgba(245,158,11,0.5) 50%, rgba(255,254,240,0.4) 80%, transparent 100%)',
+                }} />
+                <div className="flex items-center" style={{ gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <span className="rounded-full bg-green-500 animate-ping" style={{
+                    width: '0.5rem',
+                    height: '0.5rem',
+                  }}></span>
+                  <span className="text-gray-400 tracking-wider" style={{
+                    fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
                     fontFamily: "'Figtree', sans-serif",
-                    letterSpacing: '0.05em'
-                  }}>
-                    29.98° N, 31.13° E
-                  </div>
+                  }}>{t('header.versionText')} {'/'}{'/'} V.4.9</span>
                 </div>
+              </div>
+            </div>
 
-                {/* TimeSync - Centered with 6rem from top */}
-                <div 
-                  className="absolute z-50 left-0 right-0 flex justify-center"
-                  style={{
-                    top: '8rem',
-                    opacity: headerOpacity,
-                    transform: `translateY(${headerY}px) scale(0.7)`,
-                  }}
-                >
-                  <TimeSync isMobile={true} />
-                </div>
+            {/* TimeSync - Centered */}
+            <div 
+              className="absolute z-50 left-0 right-0 flex justify-center"
+              style={{
+                top: '8rem',
+                opacity: headerOpacity,
+                transform: `translateY(${headerY}px) scale(0.7)`,
+              }}
+            >
+              <TimeSync isMobile={true} />
+            </div>
 
-            {/* Earth Animation Section - Simple centered layout */}
             <div 
               ref={earthSectionRef}
               style={{ 
@@ -2309,12 +2288,8 @@ const App = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                pointerEvents: 'none',
               }}
             >
-
-
-              {/* 3D Earth Scene - Simply centered */}
               <div 
                 className="z-10" 
                 style={{ 
@@ -2339,72 +2314,122 @@ const App = () => {
                 />
               </div>
 
-              {/* Scroll Prompt - Positioned below TimeSync at top of screen */}
-              <div 
-                className="absolute left-0 right-0 flex flex-col items-center justify-center z-30"
-                style={{
-                  top: 'clamp(10rem, 14vw, 12rem)',
-                  opacity: scrollLabelOpacity,
-                  transform: `translateY(${scrollLabelY * 2.5}px) scale(${scrollLabelScale})`,
-                }}
-              >
-                <div className="relative pointer-events-none">
-                  {/* Text with scanline + data lines */}
-                  <div className="relative overflow-hidden" style={{
-                    padding: 'clamp(0.65rem, 1.5vw, 0.85rem) clamp(0.8rem, 3vw, 1.2rem)',
-                    transform: 'scale(1.02) scaleY(1.045)',
-                  }}>
-                    {/* Scanline */}
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      background: 'linear-gradient(180deg, transparent 0%, rgba(21, 179, 21, 0.04) 45%, rgba(21, 179, 21, 0.08) 50%, rgba(21, 179, 21, 0.04) 55%, transparent 100%)',
-                      animation: 'scrollPromptScanline 4s linear infinite',
-                      pointerEvents: 'none',
-                    }} />
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(21, 179, 21, 0.025) 3px, rgba(21, 179, 21, 0.025) 4px)',
-                      pointerEvents: 'none',
-                    }} />
-                    <span className="tracking-[0.15em] font-bold relative" style={{
-                      color: 'rgba(21, 179, 21, 0.7)',
-                      fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                      fontSize: 'clamp(0.55rem, 2vw, 0.75rem)',
-                      lineHeight: 1,
-                      textShadow: '0 0 8px rgba(21, 179, 21, 0.3)',
-                      animation: 'scrollPromptTextFlicker 8s linear infinite',
-                    }}>SWIPE ↓ = SYNCHRONISATIE</span>
-                  </div>
-                  {/* Corner bracket accents — curved, offset outward */}
-                  <div style={{ position: 'absolute', top: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderTopLeftRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite' }} />
-                  <div style={{ position: 'absolute', top: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderTopRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 0.5s' }} />
-                  <div style={{ position: 'absolute', bottom: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderBottomLeftRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1s' }} />
-                  <div style={{ position: 'absolute', bottom: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderBottomRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1.5s' }} />
-                </div>
-              </div>
             </div>
           </div>
-            );
-          })()}
 
-          {/* Mobile Page Content - Circular transitions following wheel (excludes Deltawerken) */}
-          <MobilePageContent
-            activeIndex={mobileActiveIndex}
-            wheelRotation={mobileWheelRotation}
-            onBack={() => {}}
-            brandIndex={mobileBrandIndex}
-          />
+          {/* Scroll Prompt - Between HoloEarth and Login */}
+          <div 
+            className="fixed left-0 right-0 flex flex-col items-center justify-center z-30"
+            style={{
+              bottom: '9.5rem',
+              opacity: scrollLabelOpacity,
+              transform: `translateY(${scrollLabelY * 2.5}px) scale(${scrollLabelScale})`,
+            }}
+          >
+            <div className="relative pointer-events-none">
+              <div className="relative overflow-hidden" style={{
+                padding: 'clamp(0.65rem, 1.5vw, 0.85rem) clamp(0.8rem, 3vw, 1.2rem)',
+                transform: 'scale(1.02) scaleY(1.045)',
+              }}>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(180deg, transparent 0%, rgba(21, 179, 21, 0.04) 45%, rgba(21, 179, 21, 0.08) 50%, rgba(21, 179, 21, 0.04) 55%, transparent 100%)',
+                  animation: 'scrollPromptScanline 4s linear infinite',
+                  pointerEvents: 'none',
+                }} />
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(21, 179, 21, 0.025) 3px, rgba(21, 179, 21, 0.025) 4px)',
+                  pointerEvents: 'none',
+                }} />
+                <span className="tracking-[0.15em] font-bold relative" style={{
+                  color: 'rgba(21, 179, 21, 0.7)',
+                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                  fontSize: 'clamp(0.55rem, 2vw, 0.75rem)',
+                  lineHeight: 1,
+                  textShadow: '0 0 8px rgba(21, 179, 21, 0.3)',
+                  animation: 'scrollPromptTextFlicker 8s linear infinite',
+                }}>SWIPE ↓ = SYNCHRONISATIE</span>
+              </div>
+              <div style={{ position: 'absolute', top: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderTopLeftRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite' }} />
+              <div style={{ position: 'absolute', top: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderTopRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 0.5s' }} />
+              <div style={{ position: 'absolute', bottom: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderBottomLeftRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1s' }} />
+              <div style={{ position: 'absolute', bottom: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderBottomRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1.5s' }} />
+            </div>
+          </div>
 
-          {/* Mobile Navigation Wheel */}
-          <MobileNavWheel 
-            onNavigate={handleOpenSection}
-            activeSection={activeSection}
-            onRotationChange={handleMobileRotationChange}
-            onBrandChange={handleMobileBrandChange}
-            headerOpacity={headerOpacity}
-            headerY={headerY}
-            currentFrame={currentFrame}
-          />
+          {/* Login Button - Bottom center */}
+          {!showMobileLogin && (
+            <button
+              onClick={() => setShowMobileLogin(true)}
+              style={{
+                position: 'fixed',
+                bottom: '5rem',
+                left: '50%',
+                transform: `translateX(-50%) translateY(${loginBtnY * 2.5}px) scale(${loginBtnScale})`,
+                opacity: loginBtnOpacity,
+                zIndex: 100,
+                backgroundColor: 'rgba(10, 5, 21, 0.8)',
+                border: '1px solid rgba(245, 158, 11, 0.5)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                padding: '12px 32px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backdropFilter: 'blur(12px)',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 0 20px rgba(245, 158, 11, 0.15)',
+              }}
+            >
+              <span style={{
+                color: '#f59e0b',
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                fontSize: 'clamp(0.85rem, 3vw, 1rem)',
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+              }}>LOGIN</span>
+            </button>
+          )}
+
+          {/* LoginPage Modal - Full screen overlay */}
+          {showMobileLogin && (
+            <div className="fixed inset-0" style={{ zIndex: 250 }}>
+              <Suspense fallback={<div />}>
+                <LoginPage 
+                  isVisible={true}
+                  onBack={() => setShowMobileLogin(false)}
+                />
+              </Suspense>
+            </div>
+          )}
+
+          {/* Mobile Back Button - HoloPyramid return (matches login button position) */}
+          {isSystem && (
+            <button 
+              onClick={handleReset}
+              className="group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2"
+              style={{
+                position: 'fixed',
+                bottom: '5rem',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 10001,
+                border: '1px solid rgba(147, 51, 234, 0.3)',
+                background: 'rgba(10, 5, 16, 0.6)',
+                pointerEvents: 'auto',
+              }}
+            >
+              <div className="flex items-center justify-center w-5 h-5" style={{color: 'rgba(147, 51, 234, 0.8)'}}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform w-4 h-4">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+              </div>
+              <span className="tracking-[0.2em] uppercase text-xs" style={{color: 'rgba(255, 254, 240, 0.7)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>DELTAWERKEN</span>
+              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
+              <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
+            </button>
+          )}
 
           {/* Mobile Language Toggle */}
           <button
@@ -2414,6 +2439,8 @@ const App = () => {
               top: '12px',
               right: '12px',
               zIndex: 200,
+              opacity: langOpacity,
+              transform: `translateY(${langY}px)`,
               backgroundColor: 'rgba(10, 5, 21, 0.7)',
               border: '1px solid rgba(255,255,255,0.2)',
               borderRadius: '6px',
@@ -2929,7 +2956,7 @@ const App = () => {
               style={{
                 border: '1px solid rgba(147, 51, 234, 0.3)',
                 background: 'rgba(10, 5, 16, 0.6)',
-                bottom: window.innerWidth >= 1280 ? '2rem' : window.innerWidth >= 768 ? '0.5rem' : '7rem', // Laptop/Tablet: 2rem lower
+                bottom: window.innerWidth >= 1280 ? '2rem' : window.innerWidth >= 768 ? '0.5rem' : '5rem', // Mobile matches login button position
                 left: '50%',
                 transform: 'translateX(-50%)',
                 pointerEvents: isSystem ? 'auto' : 'none',

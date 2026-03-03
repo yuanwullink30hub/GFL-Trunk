@@ -36,6 +36,34 @@ import {
 import { BRANDS } from '../../pages/GeneralBrandPage/brandData';
 import InvoiceTemplate from './InvoiceTemplate';
 
+// ── Mobile detection context ──
+const MobileCtx = React.createContext(false);
+
+// Mobile-only tab style (standalone, no BTN spread)
+const MOBILE_TAB_STYLE = (active) => ({
+  fontSize: 'max(10px, 0.55vw)',
+  padding: '0.3rem 0',
+  letterSpacing: '0.02em',
+  width: '100%',
+  textAlign: 'center',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'visible',
+  background: active
+    ? 'linear-gradient(135deg, rgba(255, 174, 0, 0.2), rgba(255, 174, 0, 0.3))'
+    : 'linear-gradient(135deg, rgba(255, 174, 0, 0.03), rgba(255, 174, 0, 0.06))',
+  border: '1px solid',
+  borderColor: active ? 'rgba(255, 174, 0, 0.7)' : 'rgba(255, 174, 0, 0.2)',
+  color: C.gold,
+  borderRadius: 'max(2px, 0.15vw)',
+  cursor: 'pointer',
+  fontFamily: FONT,
+  transition: 'all 0.3s',
+  textTransform: 'uppercase',
+  fontWeight: 'bold',
+});
+
 // ═══════════════════════════════════════════════════════════
 // DashboardCard — inline-style version of HoloAuth's HoloCard
 // Supports 'gold' (primary) and 'purple' (secondary) themes
@@ -62,6 +90,7 @@ const CARD_COLORS = {
 };
 
 function DashboardCard({ children, title, color = 'gold', className, style = {} }) {
+  const isMobile = React.useContext(MobileCtx);
   const t = CARD_COLORS[color] || CARD_COLORS.gold;
   return (
     <div style={{
@@ -76,22 +105,31 @@ function DashboardCard({ children, title, color = 'gold', className, style = {} 
       fontFamily: FONT,
       color: C.text,
       fontSize: 'max(12px, 0.65vw)',
+      ...(isMobile
+        ? { overflowX: 'hidden', overflowY: 'visible', maxWidth: '100%', boxSizing: 'border-box' }
+        : { overflow: 'hidden' }
+      ),
       ...style,
     }}>
-
-
-      {/* Title badge — positioned above top border like HoloCard */}
-      {title && (
+      {!isMobile && title && (
         <div style={{
-          position: 'absolute', top: '-0.6rem', left: '1.25rem',
-          padding: '0 0.5rem',
-          backgroundColor: '#0a0510',
-          color: t.titleColor, fontSize: 'max(9px, 0.45vw)',
-          fontWeight: 'bold', textTransform: 'uppercase',
-          letterSpacing: '0.15em', fontFamily: FONT,
-          border: `1px solid ${t.border}`,
+          display: 'flex', alignItems: 'center', gap: '0.4rem',
+          marginBottom: '0.8rem',
+          paddingBottom: '0.6rem',
+          borderBottom: `1px solid ${t.border}`,
         }}>
-          {title}
+          <div style={{
+            width: '3px', height: '1rem',
+            backgroundColor: t.border,
+            borderRadius: '1px',
+          }} />
+          <span style={{
+            fontSize: 'max(10px, 0.5vw)',
+            fontWeight: 'bold',
+            color: t.titleColor,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+          }}>{title}</span>
         </div>
       )}
 
@@ -122,7 +160,7 @@ const SF_SHADOW =
 
 const CORNER = (pos) => ({
   position: 'absolute',
-  width: '1rem', height: '1rem',
+  width: 'max(0.7rem, 1vw)', height: 'max(0.7rem, 1vw)',
   border: '1.5px solid #ffae00',
   pointerEvents: 'none', zIndex: 3,
   ...(pos === 'tl' && { top: '-0.125rem', left: '-0.125rem', borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }),
@@ -135,9 +173,19 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
   useLanguage();
   const [tab, setTab] = useState('overview');
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
+
+  const tabStyle = isMobile ? MOBILE_TAB_STYLE : TAB_STYLE;
+
   return (
-    /* Outer shell — fixed size, positioning context for corners */
-    <div style={{ position: 'relative', width: '90vw', maxWidth: '1280px', height: '85vh' }}>
+    <MobileCtx.Provider value={isMobile}>
+    {/* Outer shell — fixed size, positioning context for corners */}
+    <div style={{ position: 'relative', width: isMobile ? '96vw' : '90vw', maxWidth: '1280px', height: isMobile ? '96vh' : '85vh' }}>
       {/* Corner brackets */}
       <div style={CORNER('tl')} />
       <div style={CORNER('tr')} />
@@ -150,15 +198,15 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: 'rgba(2, 0, 3, 0.12)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-        borderRadius: '0.5rem',
-        overflow: 'hidden',
+        backgroundColor: isMobile ? 'rgba(2, 0, 3, 0.85)' : 'rgba(2, 0, 3, 0.12)',
+        backdropFilter: isMobile ? 'blur(14px)' : 'blur(4px)',
+        WebkitBackdropFilter: isMobile ? 'blur(14px)' : 'blur(4px)',
+        borderRadius: 'max(4px, 0.5vw)',
         boxShadow: SF_SHADOW,
         color: C.text,
         fontFamily: FONT,
         fontSize: 'max(12px, 0.65vw)',
+        ...(isMobile ? {} : { overflow: 'hidden' }),
       }}>
         {/* Holographic sheen */}
         <div style={{
@@ -188,77 +236,141 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         {/* Title bar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0.55rem 1rem',
+          padding: isMobile ? 'max(0.4rem, 0.55vw) max(0.7rem, 1vw)' : '0.3rem 0.7rem',
           borderBottom: '1px solid rgba(255,255,255,0.05)',
           backgroundColor: 'rgba(42, 10, 56, 0.35)',
           position: 'relative', zIndex: 2,
         }}>
-          <span style={{
-            fontFamily: FONT, fontSize: 'max(10px, 0.55vw)',
-            textTransform: 'uppercase', letterSpacing: '0.2em',
-            fontWeight: 'bold', color: C.gold,
-          }}>Commandocentrum</span>
-          <div style={{ display: 'flex', gap: 3 }}>
-            <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: C.gold }} />
-            <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: C.purple }} />
-            <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)' }} />
-          </div>
+          {isMobile ? (
+            <>
+              <div />
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button onClick={onClose} style={{
+                  ...BTN, width: 'auto', padding: '0.35rem 1rem',
+                  fontSize: 'max(9px, 0.48vw)',
+                }}
+                  onMouseEnter={(e) => hover(e, true)}
+                  onMouseLeave={(e) => hover(e, false)}>
+                  ← Terug
+                </button>
+                <button onClick={onLogout} style={{
+                  ...BTN, width: 'auto', padding: '0.35rem 1rem',
+                  fontSize: 'max(9px, 0.48vw)',
+                  borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
+                }}
+                  onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+                  onMouseLeave={(e) => { e.target.style.background = BTN.background; e.target.style.color = '#fca5a5'; }}>
+                  Uitloggen
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div />
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button onClick={onClose} style={{
+                  ...BTN, width: 'auto', padding: '0.35rem 1rem',
+                  fontSize: 'max(9px, 0.48vw)',
+                }}
+                  onMouseEnter={(e) => hover(e, true)}
+                  onMouseLeave={(e) => hover(e, false)}>
+                  ← Terug
+                </button>
+                <button onClick={onLogout} style={{
+                  ...BTN, width: 'auto', padding: '0.35rem 1rem',
+                  fontSize: 'max(9px, 0.48vw)',
+                  borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
+                }}
+                  onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+                  onMouseLeave={(e) => { e.target.style.background = BTN.background; e.target.style.color = '#fca5a5'; }}>
+                  Uitloggen
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Scrollable content area — fills remaining space */}
         <div style={{
           position: 'relative', zIndex: 10,
-          padding: '1.5rem',
+          padding: isMobile ? 'max(1rem, 1.5vw) max(1.4rem, 2.5vw)' : '1.5rem',
           flex: 1,
           minHeight: 0,
           overflowY: 'auto',
+          ...(isMobile ? { overflowX: 'hidden', maxWidth: '100%', wordBreak: 'break-word' } : {}),
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.5rem',
+          gap: isMobile ? 'max(1rem, 1.5vw)' : '1.5rem',
         }}>
       {/* ── Koptekst — HoloAuth Dashboard structuur ── */}
       <header style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         borderBottom: '1px solid rgba(255, 174, 0, 0.15)',
-        paddingBottom: '1.2rem',
+        paddingBottom: isMobile ? 'max(0.8rem, 1.2vw)' : '0.8rem',
       }}>
         <div>
           <h1 style={{
-            fontSize: 'max(22px, 1.4vw)', fontWeight: 'bold',
+            fontSize: isMobile ? 'max(18px, 1.4vw)' : 'max(22px, 1.4vw)', fontWeight: 'bold',
             color: C.gold, textTransform: 'uppercase',
             letterSpacing: '0.2em', fontFamily: FONT, margin: 0,
             textShadow: '0 0 5px #ffae00, 0 0 10px #ffae00',
           }}>
             Commandocentrum
           </h1>
-          <p style={{
-            color: 'rgba(255, 174, 0, 0.35)', fontSize: 'max(10px, 0.55vw)',
-            marginTop: '0.25rem', fontFamily: FONT,
-          }}>
-            GEBRUIKER: {user.displayName} {'·'} ROL: {(user.role || 'client').toUpperCase()} {'·'} {user.email}
-          </p>
         </div>
       </header>
 
       {/* ── Tab Navigatie ── */}
-      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-        {[
+      {isMobile ? (() => {
+        const topRows = [
           { key: 'overview', label: 'Overzicht' },
           { key: 'users', label: 'Gebruikers' },
-          { key: 'assessments', label: 'Assessments' },
           { key: 'questions', label: 'Vragen' },
           { key: 'prompts', label: 'Prompts' },
-          { key: 'formulieren', label: 'Formulieren' },
           { key: 'feedback', label: 'Feedback' },
           { key: 'contact', label: 'Contact' },
-        ].map(({ key, label }) => (
-          <button key={key} onClick={() => setTab(key)} style={TAB_STYLE(tab === key)}
+        ];
+        const bottomRow = [
+          { key: 'assessments', label: 'Assessments' },
+          { key: 'formulieren', label: 'Formulieren' },
+        ];
+        const renderBtn = ({ key, label }) => (
+          <button key={key} onClick={() => setTab(key)} style={tabStyle(tab === key)}
             onMouseEnter={(e) => { if (tab !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
-            onMouseLeave={(e) => { if (tab !== key) e.target.style.background = TAB_STYLE(false).background; }}>
+            onMouseLeave={(e) => { if (tab !== key) e.target.style.background = tabStyle(false).background; }}>
             {label.toUpperCase()}
           </button>
-        ))}
-      </div>
+        );
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.9rem' }}>
+              {topRows.map(renderBtn)}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.9rem', width: '80%', margin: '0 auto' }}>
+              {bottomRow.map(renderBtn)}
+            </div>
+          </div>
+        );
+      })() : (
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          {[
+            { key: 'overview', label: 'Overzicht' },
+            { key: 'users', label: 'Gebruikers' },
+            { key: 'assessments', label: 'Assessments' },
+            { key: 'questions', label: 'Vragen' },
+            { key: 'prompts', label: 'Prompts' },
+            { key: 'formulieren', label: 'Formulieren' },
+            { key: 'feedback', label: 'Feedback' },
+            { key: 'contact', label: 'Contact' },
+          ].map(({ key, label }) => (
+            <button key={key} onClick={() => setTab(key)} style={tabStyle(tab === key)}
+              onMouseEnter={(e) => { if (tab !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
+              onMouseLeave={(e) => { if (tab !== key) e.target.style.background = tabStyle(false).background; }}>
+              {label.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Tab Inhoud ── */}
       {tab === 'overview' && <OverviewTab user={user} />}
@@ -269,37 +381,11 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
       {tab === 'formulieren' && <FormulierenTab />}
       {tab === 'feedback' && <FeedbackTab />}
       {tab === 'contact' && <ContactTab />}
-        </div>{/* end scrollable content */}
-
-        {/* Footer — return + logout */}
-        <div style={{
-          display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.5rem 1rem',
-          borderTop: '1px solid rgba(255,255,255,0.05)',
-          backgroundColor: 'rgba(42, 10, 56, 0.35)',
-          position: 'relative', zIndex: 2,
-        }}>
-          <button onClick={onClose} style={{
-            ...BTN, width: 'auto', padding: '0.35rem 1rem',
-            fontSize: 'max(9px, 0.48vw)',
-          }}
-            onMouseEnter={(e) => hover(e, true)}
-            onMouseLeave={(e) => hover(e, false)}>
-            ← Terug
-          </button>
-          <button onClick={onLogout} style={{
-            ...BTN, width: 'auto', padding: '0.35rem 1rem',
-            fontSize: 'max(9px, 0.48vw)',
-            borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
-          }}
-            onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-            onMouseLeave={(e) => { e.target.style.background = BTN.background; e.target.style.color = '#fca5a5'; }}>
-            Uitloggen
-          </button>
         </div>
-      </div>{/* end inner panel */}
-    </div>/* end outer shell */
+
+      </div>
+    </div>
+    </MobileCtx.Provider>
   );
 });
 
@@ -380,6 +466,7 @@ if (!window.__gflErrorCapture) {
 
 
 const OverviewTab = memo(({ user }) => {
+  const isMobile = React.useContext(MobileCtx);
   const [stats, setStats] = useState(null);
   const [, setRecentUsers] = useState([]);
   const [error, setError] = useState('');
@@ -482,25 +569,26 @@ const OverviewTab = memo(({ user }) => {
   return (
     <>
       {/* ── 3-Kolommen Raster ── */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem',
-      }}>
+      <div style={isMobile
+        ? { display: 'flex', flexDirection: 'column', gap: 'max(1rem, 1.5vw)' }
+        : { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }
+      }>
         {/* Kaart 1: Identiteitsmatrix (goud) — gebruikersprofiel */}
         <DashboardCard title="Identiteitsmatrix" color="gold">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 'max(0.5rem, 0.8vw)' : '0.8rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 'max(0.5rem, 0.8vw)' : '0.8rem' }}>
               <div style={{
-                width: '3.5rem', height: '3.5rem', borderRadius: '50%',
+                width: isMobile ? 'max(2.5rem, 3.5vw)' : '3.5rem', height: isMobile ? 'max(2.5rem, 3.5vw)' : '3.5rem', borderRadius: '50%',
                 backgroundColor: tc.iconBg, border: `1px solid ${tc.border}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '1.5rem',
+                fontSize: isMobile ? 'max(1rem, 1.5vw)' : '1.5rem',
               }}>🛡</div>
               <div>
                 <div style={{ fontSize: 'max(9px, 0.45vw)', color: tc.dimText, textTransform: 'uppercase' }}>Status</div>
                 <div style={{ color: C.gold, fontWeight: 'bold' }}>OPERATIONEEL</div>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 'max(0.25rem, 0.4vw)' : '0.4rem', marginTop: isMobile ? 'max(0.3rem, 0.5vw)' : '0.5rem' }}>
               {[
                 ['Gebruiker', user.displayName || '—'],
                 ['E-mail Protocol', user.email],
@@ -509,10 +597,10 @@ const OverviewTab = memo(({ user }) => {
               ].map(([label, value]) => (
                 <div key={label} style={{
                   display: 'flex', justifyContent: 'space-between',
-                  borderBottom: `1px solid ${tc.rowBorder}`, paddingBottom: '0.35rem',
+                  borderBottom: `1px solid ${tc.rowBorder}`, paddingBottom: isMobile ? 'max(0.25rem, 0.35vw)' : '0.35rem',
                 }}>
-                  <span style={{ color: tc.dimText, fontSize: 'max(9px, 0.45vw)', textTransform: 'uppercase' }}>{label}</span>
-                  <span style={{ fontSize: 'max(10px, 0.5vw)', fontFamily: FONT }}>{value}</span>
+                  <span style={{ color: tc.dimText, fontSize: 'max(9px, 0.45vw)', textTransform: 'uppercase', ...(isMobile ? { flexShrink: 0, width: '30%' } : {}) }}>{label}</span>
+                  <span style={{ fontSize: 'max(10px, 0.5vw)', fontFamily: FONT, ...(isMobile ? { textAlign: 'right', flex: 1 } : {}) }}>{value}</span>
                 </div>
               ))}
             </div>
@@ -521,18 +609,20 @@ const OverviewTab = memo(({ user }) => {
 
         {/* Kaart 2: Admin Notities (paars) — opslaan van notities */}
         <DashboardCard title="Admin Notities" color="purple">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 'max(0.35rem, 0.5vw)' : '0.5rem' }}>
+            <div style={{ display: 'flex', gap: isMobile ? 'max(0.25rem, 0.4vw)' : '0.4rem' }}>
               <input
                 value={noteInput}
                 onChange={(e) => setNoteInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') addNote(); }}
                 placeholder="Notitie toevoegen..."
                 style={{
-                  flex: 1, padding: '0.4rem 0.6rem',
+                  flex: 1,
+                  padding: isMobile ? 'max(0.6rem, 0.8vw) max(0.6rem, 0.9vw)' : '0.4rem 0.6rem',
+                  ...(isMobile ? { minHeight: '2.5rem' } : {}),
                   backgroundColor: 'rgba(0,0,0,0.4)',
                   border: `1px solid ${pc.rowBorder}`,
-                  borderRadius: '0.25rem',
+                  borderRadius: isMobile ? 'max(2px, 0.25vw)' : '0.25rem',
                   color: C.text, fontFamily: FONT,
                   fontSize: 'max(9px, 0.45vw)',
                   outline: 'none',
@@ -542,7 +632,7 @@ const OverviewTab = memo(({ user }) => {
               />
               <button onClick={addNote} style={{
                 ...BTN, borderColor: C.purple, color: C.purple,
-                fontSize: 'max(9px, 0.45vw)', padding: '0.35rem 0.6rem',
+                fontSize: 'max(9px, 0.45vw)', padding: isMobile ? 'max(0.25rem, 0.35vw) max(0.4rem, 0.6vw)' : '0.35rem 0.6rem',
               }}
                 onMouseEnter={(e) => { e.target.style.background = 'rgba(188, 19, 254, 0.2)'; }}
                 onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
@@ -554,18 +644,18 @@ const OverviewTab = memo(({ user }) => {
                 ✓ Opgeslagen
               </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '220px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 'max(0.25rem, 0.35vw)' : '0.35rem', maxHeight: isMobile ? '30vh' : '220px', overflowY: 'auto' }}>
               {notes.length > 0 ? notes.map((n) => (
                 <div key={n.id} style={{
-                  padding: '0.4rem 0.6rem',
+                  padding: isMobile ? 'max(0.3rem, 0.4vw) max(0.4rem, 0.6vw)' : '0.4rem 0.6rem',
                   backgroundColor: pc.cardBg,
                   border: `1px solid ${pc.rowBorder}`,
-                  borderRadius: '0.25rem',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.4rem',
+                  borderRadius: isMobile ? 'max(2px, 0.25vw)' : '0.25rem',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: isMobile ? 'max(0.25rem, 0.4vw)' : '0.4rem',
                 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 'max(10px, 0.5vw)', wordBreak: 'break-word' }}>{n.text}</div>
-                    <div style={{ fontSize: 'max(7px, 0.35vw)', color: pc.dimText, marginTop: '0.2rem' }}>
+                    <div style={{ fontSize: 'max(7px, 0.35vw)', color: pc.dimText, marginTop: isMobile ? 'max(0.15rem, 0.2vw)' : '0.2rem' }}>
                       {new Date(n.ts).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
@@ -652,44 +742,79 @@ const OverviewTab = memo(({ user }) => {
       </div>
 
       {/* ── API Gezondheid — 4 gekoppelde services ── */}
-      <DashboardCard title="API Verbindingen" color="gold" style={{ padding: '1rem 1.25rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+      {isMobile ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {[
             { label: 'Backend API', key: 'backend', desc: 'REST / MongoDB' },
             { label: 'AI Provider', key: 'ai', desc: 'Gemini / Analyse' },
             { label: 'PDF Service', key: 'pdf', desc: 'Rapportgeneratie' },
             { label: 'Encryptie', key: 'encryption', desc: 'AES-256-GCM / PII' },
           ].map(({ label, key, desc }) => (
-            <div key={key} style={{
-              display: 'flex', alignItems: 'center', gap: '0.6rem',
-              padding: '0.6rem 0.8rem', borderRadius: '0.3rem',
-              backgroundColor: 'rgba(0,0,0,0.3)', border: `1px solid ${tc.rowBorder}`,
-            }}>
+            <DashboardCard key={key} color="gold" style={{ padding: '1rem 1.25rem' }}>
               <div style={{
-                width: '0.5rem', height: '0.5rem', borderRadius: '50%',
-                backgroundColor: apiHealth[key].color,
-                boxShadow: `0 0 6px ${apiHealth[key].color}`,
-                flexShrink: 0,
-              }} />
-              <div>
-                <div style={{ fontSize: 'max(9px, 0.45vw)', fontWeight: 'bold', textTransform: 'uppercase' }}>{label}</div>
-                <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText }}>{desc}</div>
-              </div>
-              <div style={{
-                marginLeft: 'auto', fontSize: 'max(8px, 0.42vw)', fontWeight: 'bold',
-                color: apiHealth[key].color, fontFamily: FONT,
+                display: 'flex', alignItems: 'center', gap: '0.6rem',
               }}>
-                {apiHealth[key].status}
+                <div style={{
+                  width: '0.5rem', height: '0.5rem', borderRadius: '50%',
+                  backgroundColor: apiHealth[key].color,
+                  boxShadow: `0 0 6px ${apiHealth[key].color}`,
+                  flexShrink: 0,
+                }} />
+                <div>
+                  <div style={{ fontSize: 'max(9px, 0.45vw)', fontWeight: 'bold', textTransform: 'uppercase' }}>{label}</div>
+                  <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText }}>{desc}</div>
+                </div>
+                <div style={{
+                  marginLeft: 'auto', fontSize: 'max(8px, 0.42vw)', fontWeight: 'bold',
+                  color: apiHealth[key].color, fontFamily: FONT,
+                }}>
+                  {apiHealth[key].status}
+                </div>
               </div>
-            </div>
+            </DashboardCard>
           ))}
         </div>
-      </DashboardCard>
+      ) : (
+        <DashboardCard title="API Verbindingen" color="gold" style={{ padding: '1rem 1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+            {[
+              { label: 'Backend API', key: 'backend', desc: 'REST / MongoDB' },
+              { label: 'AI Provider', key: 'ai', desc: 'Gemini / Analyse' },
+              { label: 'PDF Service', key: 'pdf', desc: 'Rapportgeneratie' },
+              { label: 'Encryptie', key: 'encryption', desc: 'AES-256-GCM / PII' },
+            ].map(({ label, key, desc }) => (
+              <div key={key} style={{
+                display: 'flex', alignItems: 'center', gap: '0.6rem',
+                padding: '0.6rem 0.8rem', borderRadius: '0.3rem',
+                backgroundColor: 'rgba(0,0,0,0.3)', border: `1px solid ${tc.rowBorder}`,
+              }}>
+                <div style={{
+                  width: '0.5rem', height: '0.5rem', borderRadius: '50%',
+                  backgroundColor: apiHealth[key].color,
+                  boxShadow: `0 0 6px ${apiHealth[key].color}`,
+                  flexShrink: 0,
+                }} />
+                <div>
+                  <div style={{ fontSize: 'max(9px, 0.45vw)', fontWeight: 'bold', textTransform: 'uppercase' }}>{label}</div>
+                  <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText }}>{desc}</div>
+                </div>
+                <div style={{
+                  marginLeft: 'auto', fontSize: 'max(8px, 0.42vw)', fontWeight: 'bold',
+                  color: apiHealth[key].color, fontFamily: FONT,
+                }}>
+                  {apiHealth[key].status}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DashboardCard>
+      )}
 
       {/* ── 4-Kolommen Statistieken Voettekst ── */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.8rem',
-      }}>
+      <div style={isMobile
+        ? { display: 'flex', flexDirection: 'column', gap: '0.6rem' }
+        : { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.8rem' }
+      }>
         {[
           { label: 'Gebruikers', value: stats.userCount },
           { label: 'Assessments', value: stats.assessmentCount },
@@ -709,6 +834,7 @@ const OverviewTab = memo(({ user }) => {
 });
 
 const UsersTab = memo(({ currentUserId }) => {
+  const isMobile = React.useContext(MobileCtx);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(null); // userId being toggled
@@ -769,7 +895,7 @@ const UsersTab = memo(({ currentUserId }) => {
               {u.email} · {new Date(u.createdAt).toLocaleDateString()}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', ...(isMobile ? { flexWrap: 'wrap' } : {}) }}>
             <span style={{
               padding: '0.15rem 0.4rem', borderRadius: '0.2rem',
               fontSize: 'max(8px, 0.4vw)',
@@ -812,6 +938,7 @@ const UsersTab = memo(({ currentUserId }) => {
 });
 
 const AssessmentsTab = memo(() => {
+  const isMobile = React.useContext(MobileCtx);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [detail, setDetail] = useState(null); // full assessment detail
@@ -919,7 +1046,7 @@ const AssessmentsTab = memo(() => {
         </div>
 
         {/* Action buttons */}
-        <div style={{ display: 'flex', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem', ...(isMobile ? { flexWrap: 'wrap' } : {}) }}>
           <button onClick={() => handleDownloadPdf(d._id)}
             style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)' }}
             onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
@@ -1087,6 +1214,7 @@ const AssessmentsTab = memo(() => {
 });
 
 const PromptsTab = memo(() => {
+  const isMobile = React.useContext(MobileCtx);
   const [config, setConfig] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -1124,43 +1252,50 @@ const PromptsTab = memo(() => {
   if (error && !config) return <ErrorBox msg={error} />;
   if (!config) return <Loading />;
 
+  const mLABEL = isMobile ? { ...LABEL, fontSize: '13px' } : LABEL;
+  const mTEXTAREA = isMobile ? { ...TEXTAREA, fontSize: '14px', padding: '0.6rem' } : TEXTAREA;
+  const mINPUT_SM = isMobile ? { ...INPUT_SM, fontSize: '14px', padding: '0.5rem 0.7rem' } : INPUT_SM;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-      <div style={LABEL}>AI PROMPT CONFIGURATION</div>
-      <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.4 }}>
+      <div style={mLABEL}>AI PROMPT CONFIGURATION</div>
+      <div style={{ fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)', opacity: 0.4 }}>
         These templates control what the AI model receives. Only admins can edit this.
       </div>
 
       {error && <ErrorBox msg={error} />}
 
       <div>
-        <div style={LABEL}>SYSTEM PROMPT TEMPLATE</div>
+        <div style={mLABEL}>SYSTEM PROMPT TEMPLATE</div>
         <textarea
           value={config.systemPromptTemplate || ''}
           onChange={(e) => update('systemPromptTemplate', e.target.value)}
-          style={{ ...TEXTAREA, minHeight: '120px' }}
+          style={{ ...mTEXTAREA, minHeight: '120px' }}
         />
       </div>
 
       <div>
-        <div style={LABEL}>USER PROMPT TEMPLATE</div>
+        <div style={mLABEL}>USER PROMPT TEMPLATE</div>
         <textarea
           value={config.userPromptTemplate || ''}
           onChange={(e) => update('userPromptTemplate', e.target.value)}
-          style={TEXTAREA}
+          style={mTEXTAREA}
         />
-        <div style={{ fontSize: 'max(8px, 0.4vw)', opacity: 0.3, marginTop: '0.2rem' }}>
+        <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)', opacity: 0.3, marginTop: '0.2rem' }}>
           Variables: {'{archetypeKey}'}, {'{supportGroup}'}, {'{extendedArchetypeName}'}, {'{oceanScores}'}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+      <div style={isMobile
+        ? { display: 'flex', flexDirection: 'column', gap: '0.5rem' }
+        : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }
+      }>
         <div>
-          <div style={LABEL}>DEFAULT PROVIDER</div>
+          <div style={mLABEL}>DEFAULT PROVIDER</div>
           <select
             value={config.defaultProvider || 'openai'}
             onChange={(e) => update('defaultProvider', e.target.value)}
-            style={INPUT_SM}
+            style={mINPUT_SM}
           >
             <option value="openai">OpenAI</option>
             <option value="gemini">Google Gemini</option>
@@ -1168,30 +1303,30 @@ const PromptsTab = memo(() => {
           </select>
         </div>
         <div>
-          <div style={LABEL}>DEFAULT MODEL</div>
+          <div style={mLABEL}>DEFAULT MODEL</div>
           <input
             value={config.defaultModel || ''}
             onChange={(e) => update('defaultModel', e.target.value)}
-            style={INPUT_SM}
+            style={mINPUT_SM}
             placeholder="gpt-4o"
           />
         </div>
         <div>
-          <div style={LABEL}>TEMPERATURE</div>
+          <div style={mLABEL}>TEMPERATURE</div>
           <input
             type="number" step="0.1" min="0" max="2"
             value={config.temperature ?? 0.7}
             onChange={(e) => update('temperature', e.target.value)}
-            style={INPUT_SM}
+            style={mINPUT_SM}
           />
         </div>
         <div>
-          <div style={LABEL}>MAX TOKENS</div>
+          <div style={mLABEL}>MAX TOKENS</div>
           <input
             type="number" step="256" min="256" max="16384"
             value={config.maxTokens ?? 2048}
             onChange={(e) => update('maxTokens', e.target.value)}
-            style={INPUT_SM}
+            style={mINPUT_SM}
           />
         </div>
       </div>
@@ -1206,8 +1341,8 @@ const PromptsTab = memo(() => {
 
       {/* ── Context Documents Section ── */}
       <div style={{ marginTop: '1.2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem' }}>
-        <div style={LABEL}>CONTEXT DOCUMENTEN</div>
-        <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.4, marginBottom: '0.5rem' }}>
+        <div style={mLABEL}>CONTEXT DOCUMENTEN</div>
+        <div style={{ fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)', opacity: 0.4, marginBottom: '0.5rem' }}>
           Upload Word, PDF of tekst bestanden. De inhoud wordt automatisch meegestuurd met elk AI verzoek als kennisbank context.
         </div>
 
@@ -1219,6 +1354,7 @@ const PromptsTab = memo(() => {
 
 // ── Context Documents Sub-component ──
 const ContextDocumentsSection = memo(() => {
+  const isMobile = React.useContext(MobileCtx);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -1335,10 +1471,10 @@ const ContextDocumentsSection = memo(() => {
         <div style={{ fontSize: 'max(18px, 1vw)', marginBottom: '0.3rem' }}>
           {uploading ? '⏳' : '📁'}
         </div>
-        <div style={{ fontSize: 'max(10px, 0.5vw)', color: C.gold, opacity: 0.7 }}>
+        <div style={{ fontSize: isMobile ? '14px' : 'max(10px, 0.5vw)', color: C.gold, opacity: 0.7 }}>
           {uploading ? 'Uploading...' : 'Sleep bestanden hierheen of klik om te uploaden'}
         </div>
-        <div style={{ fontSize: 'max(8px, 0.4vw)', opacity: 0.3, marginTop: '0.2rem' }}>
+        <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)', opacity: 0.3, marginTop: '0.2rem' }}>
           PDF, Word (.docx), TXT — max 20 MB
         </div>
         <input
@@ -1355,7 +1491,7 @@ const ContextDocumentsSection = memo(() => {
       {loading ? (
         <Loading />
       ) : documents.length === 0 ? (
-        <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.3, textAlign: 'center', padding: '0.5rem' }}>
+        <div style={{ fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)', opacity: 0.3, textAlign: 'center', padding: '0.5rem' }}>
           Geen documenten geüpload. Upload bestanden om de AI kennisbank te vullen.
         </div>
       ) : (
@@ -1371,15 +1507,15 @@ const ContextDocumentsSection = memo(() => {
                 background: 'rgba(255,174,0,0.04)',
                 border: '1px solid rgba(255,174,0,0.1)',
                 borderRadius: '6px',
-                fontSize: 'max(9px, 0.45vw)',
+                fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)',
               }}
             >
-              <span style={{ fontSize: 'max(14px, 0.7vw)' }}>{fileIcon(doc.mimetype)}</span>
+              <span style={{ fontSize: isMobile ? '18px' : 'max(14px, 0.7vw)' }}>{fileIcon(doc.mimetype)}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: C.gold, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {doc.filename}
                 </div>
-                <div style={{ opacity: 0.4, fontSize: 'max(8px, 0.38vw)' }}>
+                <div style={{ opacity: 0.4, fontSize: isMobile ? '12px' : 'max(8px, 0.38vw)' }}>
                   {formatSize(doc.size)} · {doc.charCount?.toLocaleString()} tekens · {new Date(doc.uploadedAt).toLocaleDateString('nl-NL')}
                 </div>
               </div>
@@ -1392,7 +1528,7 @@ const ContextDocumentsSection = memo(() => {
                   borderRadius: '4px',
                   padding: '0.15rem 0.4rem',
                   cursor: 'pointer',
-                  fontSize: 'max(8px, 0.4vw)',
+                  fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)',
                   fontFamily: FONT,
                   letterSpacing: '0.05em',
                 }}
@@ -1403,7 +1539,7 @@ const ContextDocumentsSection = memo(() => {
               </button>
             </div>
           ))}
-          <div style={{ fontSize: 'max(8px, 0.38vw)', opacity: 0.3, textAlign: 'right' }}>
+          <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.38vw)', opacity: 0.3, textAlign: 'right' }}>
             {documents.length} document{documents.length !== 1 ? 'en' : ''} · totaal {documents.reduce((s, d) => s + (d.charCount || 0), 0).toLocaleString()} tekens
           </div>
         </div>
@@ -1439,20 +1575,20 @@ const ContextDocumentsSection = memo(() => {
               background: 'rgba(0,255,157,0.06)',
               border: '1px solid rgba(0,255,157,0.2)',
               borderRadius: '6px',
-              fontSize: 'max(9px, 0.45vw)',
+              fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)',
             }}>
               <div style={{ color: '#00ff9d', fontWeight: 600, marginBottom: '0.3rem' }}>
                 ✓ Alle {verified.totalDocuments} document{verified.totalDocuments !== 1 ? 'en' : ''} succesvol geverifieerd
               </div>
-              <div style={{ opacity: 0.5, fontSize: 'max(8px, 0.4vw)' }}>
+              <div style={{ opacity: 0.5, fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)' }}>
                 {verified.totalChars?.toLocaleString()} tekens worden meegestuurd als AI kennisbank context
               </div>
               {verified.documents?.map((doc) => (
                 <div key={doc._id} style={{ marginTop: '0.3rem', padding: '0.3rem', background: 'rgba(0,255,157,0.03)', borderRadius: '4px' }}>
-                  <div style={{ color: C.gold, fontSize: 'max(8px, 0.4vw)', fontWeight: 600 }}>
+                  <div style={{ color: C.gold, fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)', fontWeight: 600 }}>
                     {doc.filename} — {doc.charCount?.toLocaleString()} tekens
                   </div>
-                  <div style={{ opacity: 0.4, fontSize: 'max(7px, 0.35vw)', marginTop: '0.1rem', fontStyle: 'italic' }}>
+                  <div style={{ opacity: 0.4, fontSize: isMobile ? '11px' : 'max(7px, 0.35vw)', marginTop: '0.1rem', fontStyle: 'italic' }}>
                     "{doc.preview}"
                   </div>
                 </div>
@@ -1873,7 +2009,11 @@ const TYPE_COLORS = {
   excel: { bg: 'rgba(34, 197, 94, 0.12)', text: '#4ade80', label: 'EXCEL' },
 };
 
+const PassThrough = ({ children }) => children;
+
 const FormulierenTab = memo(() => {
+  const isMobile = React.useContext(MobileCtx);
+  const CardWrap = isMobile ? PassThrough : DashboardCard;
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [editorContent, setEditorContent] = useState('');
   const [emailBody, setEmailBody] = useState('');
@@ -1886,6 +2026,7 @@ const FormulierenTab = memo(() => {
   const [showHistory, setShowHistory] = useState(false);
   const [expandedFormId, setExpandedFormId] = useState(null);
   const [sendError, setSendError] = useState('');
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
   const tc = CARD_COLORS.gold;
 
   // Load saved forms on mount
@@ -2014,61 +2155,129 @@ const FormulierenTab = memo(() => {
         </div>
       </div>
 
-      {/* Template grid */}
-      <DashboardCard title="Document Templates" color="gold">
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(min(220px, 100%), 1fr))',
-          gap: '0.6rem',
-        }}>
-          {FORM_TEMPLATES.map((tmpl) => {
-            const typeStyle = TYPE_COLORS[tmpl.type] || TYPE_COLORS.word;
-            const isSelected = selectedTemplate === tmpl.id;
-            return (
-              <button
-                key={tmpl.id}
-                onClick={() => handleSelectTemplate(tmpl.id)}
-                style={{
-                  textAlign: 'left', cursor: 'pointer', border: 'none',
-                  padding: '0.7rem 0.8rem',
-                  backgroundColor: isSelected ? 'rgba(255, 174, 0, 0.08)' : tc.cardBg,
-                  borderRadius: '0.3rem',
-                  borderLeft: `2px solid ${isSelected ? C.gold : tc.border}`,
-                  transition: 'all 0.2s',
-                  display: 'flex', flexDirection: 'column', gap: '0.35rem',
-                  color: C.text,
-                }}
-                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255, 174, 0, 0.05)'; }}
-                onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = tc.cardBg; }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span style={{ fontSize: 'max(14px, 0.75vw)' }}>{tmpl.icon}</span>
-                    <span style={{ fontWeight: 'bold', fontSize: 'max(10px, 0.55vw)', color: C.gold }}>{tmpl.label}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <span style={{
-                      fontSize: 'max(7px, 0.35vw)', padding: '0.1rem 0.3rem',
-                      borderRadius: '0.1rem', backgroundColor: typeStyle.bg,
-                      color: typeStyle.text, fontWeight: 'bold', textTransform: 'uppercase',
-                    }}>{typeStyle.label}</span>
-                    <span style={{
-                      fontSize: 'max(7px, 0.35vw)', padding: '0.1rem 0.3rem',
-                      borderRadius: '0.1rem',
-                      backgroundColor: tmpl.status === 'gereed' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(250, 204, 21, 0.12)',
-                      color: tmpl.status === 'gereed' ? '#4ade80' : '#facc15',
-                      fontWeight: 'bold', textTransform: 'uppercase',
-                    }}>{tmpl.status}</span>
-                  </div>
-                </div>
-                <div style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText, lineHeight: 1.5 }}>
-                  {tmpl.desc}
-                </div>
-              </button>
-            );
-          })}
+      {/* Template selector */}
+      {isMobile ? (
+        <div>
+          {/* Toggle button */}
+          <button
+            onClick={() => setShowTemplateMenu(!showTemplateMenu)}
+            style={{
+              width: '100%', padding: '0.6rem 0.8rem',
+              backgroundColor: 'rgba(255, 174, 0, 0.06)',
+              border: `1px solid ${showTemplateMenu ? 'rgba(255, 174, 0, 0.5)' : 'rgba(255, 174, 0, 0.2)'}`,
+              borderRadius: '0.3rem', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              color: C.gold, fontFamily: FONT, fontSize: 'max(11px, 0.55vw)',
+              fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em',
+              transition: 'all 0.2s',
+            }}
+          >
+            <span>{selectedTemplate
+              ? `${FORM_TEMPLATES.find(t => t.id === selectedTemplate)?.icon || ''} ${FORM_TEMPLATES.find(t => t.id === selectedTemplate)?.label || 'Template'}`
+              : 'Kies een template'}</span>
+            <span style={{ fontSize: '0.7rem', transition: 'transform 0.2s', transform: showTemplateMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+          </button>
+          {/* Slide menu */}
+          <div style={{
+            maxHeight: showTemplateMenu ? '50vh' : '0',
+            overflow: showTemplateMenu ? 'auto' : 'hidden',
+            transition: 'max-height 0.3s ease',
+            display: 'flex', flexDirection: 'column', gap: '0.35rem',
+            marginTop: showTemplateMenu ? '0.4rem' : '0',
+          }}>
+            {FORM_TEMPLATES.map((tmpl) => {
+              const typeStyle = TYPE_COLORS[tmpl.type] || TYPE_COLORS.word;
+              const isSelected = selectedTemplate === tmpl.id;
+              return (
+                <button
+                  key={tmpl.id}
+                  onClick={() => { handleSelectTemplate(tmpl.id); setShowTemplateMenu(false); }}
+                  style={{
+                    textAlign: 'left', cursor: 'pointer', border: 'none',
+                    padding: '0.55rem 0.8rem',
+                    backgroundColor: isSelected ? 'rgba(255, 174, 0, 0.1)' : tc.cardBg,
+                    borderRadius: '0.25rem',
+                    borderLeft: `2px solid ${isSelected ? C.gold : tc.border}`,
+                    transition: 'all 0.15s',
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    color: C.text, fontFamily: FONT,
+                  }}
+                >
+                  <span style={{ fontSize: 'max(14px, 0.75vw)' }}>{tmpl.icon}</span>
+                  <span style={{ fontWeight: 'bold', fontSize: 'max(10px, 0.55vw)', color: C.gold, flex: 1 }}>{tmpl.label}</span>
+                  <span style={{
+                    fontSize: 'max(7px, 0.38vw)', padding: '0.1rem 0.3rem',
+                    borderRadius: '0.1rem', backgroundColor: typeStyle.bg,
+                    color: typeStyle.text, fontWeight: 'bold', textTransform: 'uppercase',
+                  }}>{typeStyle.label}</span>
+                  <span style={{
+                    fontSize: 'max(7px, 0.38vw)', padding: '0.1rem 0.3rem',
+                    borderRadius: '0.1rem',
+                    backgroundColor: tmpl.status === 'gereed' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(250, 204, 21, 0.12)',
+                    color: tmpl.status === 'gereed' ? '#4ade80' : '#facc15',
+                    fontWeight: 'bold', textTransform: 'uppercase',
+                  }}>{tmpl.status}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </DashboardCard>
+      ) : (
+        <CardWrap title="Document Templates" color="gold">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(220px, 100%), 1fr))',
+            gap: '0.6rem',
+          }}>
+            {FORM_TEMPLATES.map((tmpl) => {
+              const typeStyle = TYPE_COLORS[tmpl.type] || TYPE_COLORS.word;
+              const isSelected = selectedTemplate === tmpl.id;
+              return (
+                <button
+                  key={tmpl.id}
+                  onClick={() => handleSelectTemplate(tmpl.id)}
+                  style={{
+                    textAlign: 'left', cursor: 'pointer', border: 'none',
+                    padding: '0.7rem 0.8rem',
+                    backgroundColor: isSelected ? 'rgba(255, 174, 0, 0.08)' : tc.cardBg,
+                    borderRadius: '0.3rem',
+                    borderLeft: `2px solid ${isSelected ? C.gold : tc.border}`,
+                    transition: 'all 0.2s',
+                    display: 'flex', flexDirection: 'column', gap: '0.35rem',
+                    color: C.text,
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255, 174, 0, 0.05)'; }}
+                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = tc.cardBg; }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: 'max(14px, 0.75vw)' }}>{tmpl.icon}</span>
+                      <span style={{ fontWeight: 'bold', fontSize: 'max(10px, 0.55vw)', color: C.gold }}>{tmpl.label}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span style={{
+                        fontSize: 'max(7px, 0.35vw)', padding: '0.1rem 0.3rem',
+                        borderRadius: '0.1rem', backgroundColor: typeStyle.bg,
+                        color: typeStyle.text, fontWeight: 'bold', textTransform: 'uppercase',
+                      }}>{typeStyle.label}</span>
+                      <span style={{
+                        fontSize: 'max(7px, 0.35vw)', padding: '0.1rem 0.3rem',
+                        borderRadius: '0.1rem',
+                        backgroundColor: tmpl.status === 'gereed' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(250, 204, 21, 0.12)',
+                        color: tmpl.status === 'gereed' ? '#4ade80' : '#facc15',
+                        fontWeight: 'bold', textTransform: 'uppercase',
+                      }}>{tmpl.status}</span>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText, lineHeight: 1.5 }}>
+                    {tmpl.desc}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </CardWrap>
+      )}
 
       {/* Editor panel — shows when a template is selected */}
       {selectedTemplate && (() => {
@@ -2079,16 +2288,16 @@ const FormulierenTab = memo(() => {
         // ── Factuur uses dedicated InvoiceTemplate component ──
         if (selectedTemplate === 'factuur') {
           return (
-            <DashboardCard title={`${tmpl.icon} ${tmpl.label}`} color="gold">
-              <InvoiceTemplate />
-            </DashboardCard>
+            <CardWrap title={`${tmpl.icon} ${tmpl.label}`} color="gold">
+              <InvoiceTemplate isMobile={isMobile} />
+            </CardWrap>
           );
         }
 
         // ── All other templates use the generic textarea editor ──
         return (
           <>
-          <DashboardCard title={`${tmpl.icon} ${tmpl.label} — Template`} color="gold">
+          <CardWrap title={`${tmpl.icon} ${tmpl.label} — Template`} color="gold">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               {/* Toolbar */}
               <div style={{
@@ -2146,16 +2355,16 @@ const FormulierenTab = memo(() => {
                 }}
               />
             </div>
-          </DashboardCard>
+          </CardWrap>
 
           {/* E-mail versturen — below the template editor */}
-          <DashboardCard title={`✉ E-mail Versturen — ${tmpl.label}`} color="gold">
+          <CardWrap title={`✉ E-mail Versturen — ${tmpl.label}`} color="gold">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               {/* Recipient fields */}
-              <div style={{
-                display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-                gap: '0.4rem',
-              }}>
+              <div style={isMobile
+                ? { display: 'flex', flexDirection: 'column', gap: '0.4rem' }
+                : { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem' }
+              }>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
                   <label style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase' }}>Ontvanger E-mail *</label>
                   <input
@@ -2249,14 +2458,14 @@ const FormulierenTab = memo(() => {
                 }}>{sendingState === 'sending' ? 'BEZIG MET VERSTUREN...' : '✉ VERSTUREN'}</button>
               </div>
             </div>
-          </DashboardCard>
+          </CardWrap>
           </>
         );
       })()}
 
       {/* Saved forms history */}
       {showHistory && savedForms.length > 0 && (
-        <DashboardCard title={`Opgeslagen Documenten (${savedForms.length})`} color="gold">
+        <CardWrap title={`Opgeslagen Documenten (${savedForms.length})`} color="gold">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             {savedForms.map((form) => {
               const statusColor = form.status === 'verstuurd' ? '#4ade80' : form.status === 'concept' ? '#facc15' : tc.dimText;
@@ -2351,7 +2560,7 @@ const FormulierenTab = memo(() => {
               );
             })}
           </div>
-        </DashboardCard>
+        </CardWrap>
       )}
     </div>
   );

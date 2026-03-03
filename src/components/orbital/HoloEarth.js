@@ -804,21 +804,21 @@ const HoloEarth = ({
         overflow: 'visible',
       }}
     >
-      {/* Depth shadow behind the sphere */}
-      <div style={{
+      {/* Depth shadow behind the sphere (desktop only) */}
+      {!isMobile && <div style={{
         position: 'absolute',
         top: 'calc(50% - 5.85rem)',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: isMobile ? '71vh' : '55vh',
-        height: isMobile ? '71vh' : '55vh',
+        width: '55vh',
+        height: '55vh',
         borderRadius: '50%',
         boxShadow: '0 6px 40px rgba(0,0,0,0.85), 0 12px 80px rgba(0,0,0,0.6), 0 0 110px rgba(0,0,0,0.45), 0 0 170px rgba(0,0,0,0.25)',
         pointerEvents: 'none',
         zIndex: 0,
         opacity: currentFrame > 3 ? 0 : 1,
         transition: 'opacity 0.6s ease',
-      }} />
+      }} />}
 
       {/* Canvas wrapper - Mobile uses simple 100% fill, Desktop uses 200% for map navigation */}
       <div style={isMobile ? {

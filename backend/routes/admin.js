@@ -43,37 +43,78 @@ function buildEmailHTML(templateLabel, bodyContent) {
   return `
 <!DOCTYPE html>
 <html lang="nl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet"></head>
-<body style="margin:0;padding:0;background-color:#ffffff;">
-<div style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;">
-  <!-- Header with logo -->
-  <div style="background: #121212; padding: 24px 30px; position: relative; text-align: center;">
-    <img src="https://gfl-trunk.pages.dev/images/landingpage/logo.png" alt="Garden For Life" style="height:100px;display:block;position:absolute;left:30px;top:50%;transform:translateY(-50%);" />
-    <h1 style="color:#bc13fe;margin:0;font-size:28px;font-weight:700;letter-spacing:1.5px;font-family:'Rajdhani','Segoe UI',Tahoma,sans-serif;text-transform:uppercase;">Garden For Life</h1>
-  </div>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    body, table, td { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    @media only screen and (max-width: 620px) {
+      .email-container { width: 100% !important; }
+      .header-cell { padding: 20px 16px !important; }
+      .header-logo { height: 60px !important; }
+      .header-title { font-size: 20px !important; letter-spacing: 1px !important; }
+      .body-cell { padding: 20px 16px !important; font-size: 14px !important; }
+      .footer-cell { padding: 0 16px 20px !important; }
+      .footer-text { font-size: 11px !important; }
+      .copyright { font-size: 10px !important; }
+      .disclaimer { font-size: 9px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#ffffff;width:100%;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#ffffff;">
+<tr><td align="left" style="padding:0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="width:600px;max-width:600px;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
-  <!-- Body content -->
-  <div style="padding:28px 30px;line-height:1.7;color:#333;font-size:15px;white-space:pre-wrap;">${bodyContent}</div>
+    <!-- Header -->
+    <tr>
+      <td class="header-cell" style="background:#121212;padding:28px 30px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td width="80" valign="middle" style="padding-right:16px;">
+              <img src="https://gfl-trunk.pages.dev/images/landingpage/logo.png" alt="Garden For Life" class="header-logo" style="height:80px;width:auto;display:block;" />
+            </td>
+            <td valign="middle">
+              <h1 class="header-title" style="color:#bc13fe;margin:0;font-size:26px;font-weight:700;letter-spacing:1.5px;font-family:'Rajdhani','Segoe UI',Tahoma,sans-serif;text-transform:uppercase;">Garden For Life</h1>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
 
-  <!-- Signature / Contact block + Footer -->
-  <div style="padding:0 30px 24px;">
-    <div style="border-top:2px solid #bc13fe;padding-top:20px;margin-top:12px;">
-      <div style="font-size:12px;line-height:1.6;color:#555;">
-        <div>\u2709 <a href="mailto:yuanwullink30@gfl.community" style="color:#1a73e8;text-decoration:none;">yuanwullink30@gfl.community</a></div>
-        <div>\ud83c\udf10 <a href="https://gardenforlife.nl/" style="color:#1a73e8;text-decoration:none;">www.gardenforlife.nl</a></div>
-        <div style="margin-top:4px;font-size:11px;color:#888;">KVK: 85125245</div>
-      </div>
-      <div style="margin-top:16px;padding-top:12px;border-top:1px solid #eee;">
-        <p style="margin:0;font-size:11px;color:#999;">
-          \u00a9 ${new Date().getFullYear()} Garden For Life \u00b7 Alle rechten voorbehouden
-        </p>
-        <p style="margin:4px 0 0;font-size:10px;color:#bbb;">
-          Dit bericht is verstuurd vanuit het Garden For Life Verbindingscentrum
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
+    <!-- Body -->
+    <tr>
+      <td class="body-cell" style="padding:28px 30px;line-height:1.7;color:#333;font-size:15px;white-space:pre-wrap;">${bodyContent}</td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td class="footer-cell" style="padding:0 30px 24px;">
+        <div style="border-top:2px solid #bc13fe;padding-top:20px;margin-top:12px;">
+          <div class="footer-text" style="font-size:12px;line-height:1.6;color:#555;">
+            <div>\u2709 <a href="mailto:yuanwullink30@gfl.community" style="color:#1a73e8;text-decoration:none;">yuanwullink30@gfl.community</a></div>
+            <div>\ud83c\udf10 <a href="https://gardenforlife.nl/" style="color:#1a73e8;text-decoration:none;">www.gardenforlife.nl</a></div>
+            <div style="margin-top:4px;font-size:11px;color:#888;">KVK: 85125245</div>
+          </div>
+          <div style="margin-top:16px;padding-top:12px;border-top:1px solid #eee;">
+            <p class="copyright" style="margin:0;font-size:11px;color:#999;">
+              \u00a9 ${new Date().getFullYear()} Garden For Life \u00b7 Alle rechten voorbehouden
+            </p>
+            <p class="disclaimer" style="margin:4px 0 0;font-size:10px;color:#bbb;">
+              Dit bericht is verstuurd vanuit het Garden For Life Verbindingscentrum
+            </p>
+          </div>
+        </div>
+      </td>
+    </tr>
+
+  </table>
+</td></tr>
+</table>
 </body>
 </html>`;
 }

@@ -1569,7 +1569,7 @@ const App = () => {
         >
           {/* --- Logo (top-left) - Inside moving container --- */}
           <div
-            className="absolute pointer-events-auto z-50"
+            className="absolute pointer-events-auto z-10"
             style={{
               top: 'clamp(1.5rem, 2vw, 2rem)',
               left: 'clamp(1rem, 3vw, 2rem)',
@@ -1618,7 +1618,7 @@ const App = () => {
           <NebulaOverlay mapPosition={mapPosition} opacity={0.55} />
 
           {/* --- Overlay UI Layer --- */}
-          <div className="absolute inset-0 z-20 pointer-events-none">
+          <div className="absolute inset-0 z-10 pointer-events-none">
             {/* Header HUD - Flies up based on scroll progress — delayed 2 frames */}
             <header 
               className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-auto"

@@ -97,8 +97,29 @@ const OVERLAY_FRAG = `
     vec2 nA = p1 + warpOffset - vec2(-0.08, 0.18);
     float nebA = exp(-(nA.x * nA.x * 3.5 + nA.y * nA.y * 2.8));
 
-    // Cloud mask — just this nebula
-    float cloudMask = clamp(nebA, 0.0, 1.0);
+    // ── Nebula D: Top-right — magenta-purple, with arms toward center-top ──
+    // Main body — top-right
+    vec2 nD = p1 + warpOffset - vec2(0.38, 0.30);
+    float nebD_body = exp(-(nD.x * nD.x * 5.0 + nD.y * nD.y * 6.0));
+
+    // Arm 1: Long sweep from top-right toward center-top (rotated ~35°)
+    vec2 nD_arm1 = nD - vec2(-0.12, 0.04);
+    float cos35 = 0.819;
+    float sin35 = 0.574;
+    vec2 arm1 = vec2(cos35 * nD_arm1.x + sin35 * nD_arm1.y, -sin35 * nD_arm1.x + cos35 * nD_arm1.y);
+    float nebD_arm1 = exp(-(arm1.x * arm1.x * 3.0 + arm1.y * arm1.y * 22.0));
+
+    // Arm 2: Shorter sweep curving slightly lower (rotated ~55°)
+    vec2 nD_arm2 = nD - vec2(-0.08, -0.03);
+    float cos55 = 0.574;
+    float sin55 = 0.819;
+    vec2 arm2 = vec2(cos55 * nD_arm2.x + sin55 * nD_arm2.y, -sin55 * nD_arm2.x + cos55 * nD_arm2.y);
+    float nebD_arm2 = exp(-(arm2.x * arm2.x * 4.0 + arm2.y * arm2.y * 28.0));
+
+    float nebD = max(max(nebD_body, nebD_arm1), nebD_arm2);
+
+    // Cloud mask — both nebulae
+    float cloudMask = clamp(nebA + nebD * 0.85, 0.0, 1.0);
     cloudMask = pow(cloudMask, 1.5);
 
     // Quick exit if barely visible — skip expensive color grading
@@ -178,8 +199,10 @@ const OVERLAY_FRAG = `
     float breath = 0.93 + 0.07 * sin(t * 2.5 + fbm(p1 * 1.2 + vec2(0.0, t * 0.3)) * 3.0);
     color *= breath;
 
-    // Alpha = gas density, soft edges
-    float alpha = cloudMask * u_opacity;
+    // Alpha = driven by actual gas brightness, not just spatial mask
+    // This prevents dim areas from darkening the lower canvas
+    float lum = dot(color, vec3(0.299, 0.587, 0.114));
+    float alpha = smoothstep(0.003, 0.035, lum) * cloudMask * u_opacity;
     // Soften outer edges further for natural blend
     alpha *= smoothstep(0.008, 0.06, cloudMask);
 

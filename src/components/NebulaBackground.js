@@ -969,7 +969,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
     const wrapper = wrapperRef.current;
     const vpW = wrapper ? wrapper.clientWidth  : window.innerWidth;
     const vpH = wrapper ? wrapper.clientHeight : window.innerHeight;
-    const dpr = isMobileDevice ? 1.0 : Math.min(window.devicePixelRatio, 1.5);
+    const dpr = isMobileDevice ? 2.0 : Math.min(window.devicePixelRatio, 1.5);
     let cw = Math.round(vpW * dpr);
     let ch = Math.round(vpH * dpr);
     canvas.width  = cw;
@@ -1052,7 +1052,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       const w = wrapperRef.current;
       const rVpW = w ? w.clientWidth  : window.innerWidth;
       const rVpH = w ? w.clientHeight : window.innerHeight;
-      const d = mob ? 1.0 : Math.min(window.devicePixelRatio, 1.5);
+      const d = mob ? 2.0 : Math.min(window.devicePixelRatio, 1.5);
       let rw = Math.round(rVpW * d);
       let rh = Math.round(rVpH * d);
       canvas.width  = rw;

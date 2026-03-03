@@ -1,11 +1,6 @@
 /**
  * Garden For Life — Express Server
  */
-
-// Force IPv4-first DNS resolution — Render free tier has no IPv6 connectivity
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');
-
 const express = require('express');
 const cors = require('cors');
 const config = require('./config');
@@ -101,31 +96,18 @@ app.get('/api/debug/smtp', async (_req, res) => {
 // Test SMTP connectivity — actually attempts to connect (no email sent)
 app.get('/api/debug/smtp-test', async (_req, res) => {
   const nodemailer = require('nodemailer');
-  const dnsModule = require('dns');
-  const { promisify } = require('util');
   try {
-    // Resolve to IPv4 manually — same approach as createSMTPTransport
-    let host = config.email.host;
-    const tlsOptions = {};
-    try {
-      const resolve4 = promisify(dnsModule.resolve4);
-      const [ipv4] = await resolve4(host);
-      tlsOptions.servername = host;
-      host = ipv4;
-    } catch (e) { /* fallback to hostname */ }
-
     const transporter = nodemailer.createTransport({
-      host,
+      host: config.email.host,
       port: config.email.port,
       secure: config.email.secure,
       auth: {
         user: config.email.user,
         pass: config.email.pass,
       },
-      tls: tlsOptions,
     });
     await transporter.verify();
-    res.json({ success: true, message: 'SMTP connection verified — ready to send', resolvedHost: host });
+    res.json({ success: true, message: 'SMTP connection verified — ready to send' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message, code: err.code });
   }

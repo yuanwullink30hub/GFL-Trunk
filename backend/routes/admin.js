@@ -23,35 +23,17 @@ const multer = require('multer');
 const mammoth = require('mammoth');
 const pdfParse = require('pdf-parse');
 const nodemailer = require('nodemailer');
-const dns = require('dns');
-const { promisify } = require('util');
-const resolve4 = promisify(dns.resolve4);
 
-// ─── Shared SMTP transporter with forced IPv4 ───
-// Resolve hostname to IPv4 manually — Render free tier has no IPv6
-async function createSMTPTransport() {
-  let host = config.email.host;
-  const tlsOptions = {};
-
-  // Resolve hostname to IPv4 IP address to guarantee no IPv6
-  try {
-    const [ipv4] = await resolve4(host);
-    tlsOptions.servername = host; // TLS cert validation still uses hostname
-    host = ipv4;                  // Connect to raw IPv4 address
-    console.log(`[SMTP] Resolved ${config.email.host} → ${ipv4}`);
-  } catch (e) {
-    console.warn(`[SMTP] IPv4 resolve failed, using hostname: ${e.message}`);
-  }
-
+// ─── Shared SMTP transporter ───
+function createSMTPTransport() {
   return nodemailer.createTransport({
-    host,
+    host: config.email.host,
     port: config.email.port,
     secure: config.email.secure,
     auth: {
       user: config.email.user,
       pass: config.email.pass,
     },
-    tls: tlsOptions,
   });
 }
 
@@ -650,7 +632,7 @@ router.post('/forms/:id/send', authRequired, adminRequired, async (req, res) => 
       return res.status(503).json({ error: 'Email not configured. Set SMTP_USER and SMTP_PASS in environment variables.' });
     }
 
-    const transporter = await createSMTPTransport();
+    const transporter = createSMTPTransport();
 
     const emailSubject = subject || `Garden For Life — ${doc.templateLabel}`;
 
@@ -712,7 +694,7 @@ router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) 
     const saved = await formsCollection().insertOne(doc);
 
     // Send email
-    const transporter = await createSMTPTransport();
+    const transporter = createSMTPTransport();
 
     // Build mail options
     const mailOptions = {

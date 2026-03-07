@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
-import { Mail, Send, Paperclip, X, FileText, User, UserPlus, ChevronDown } from 'lucide-react';
+import { Mail, Send, Paperclip, X, FileText, User, UserPlus, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { sendFormDirect } from '../../utils/apiClient';
 
 // ═══════════════════════════════════════════════════════════
@@ -81,6 +81,7 @@ const EmailTemplate = memo(({ isMobile }) => {
   const [attachments, setAttachments] = useState([]); // { name, size, base64 }
   const [sendingState, setSendingState] = useState(null); // null | 'sending' | 'sent' | 'error'
   const [sendError, setSendError] = useState('');
+  const [previewIdx, setPreviewIdx] = useState(null); // index of attachment being previewed
   const fileInputRef = useRef(null);
 
   // Saved contacts
@@ -127,10 +128,13 @@ const EmailTemplate = memo(({ isMobile }) => {
     for (const file of pdfFiles) {
       try {
         const base64 = await fileToBase64(file);
+        const blob = new Blob([file], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
         newAttachments.push({
           name: file.name,
           size: file.size,
           base64,
+          blobUrl,
         });
       } catch {
         setSendError(`Fout bij inlezen van ${file.name}`);
@@ -143,7 +147,13 @@ const EmailTemplate = memo(({ isMobile }) => {
 
   /* ── Remove attachment ── */
   const removeAttachment = (idx) => {
-    setAttachments(prev => prev.filter((_, i) => i !== idx));
+    setAttachments(prev => {
+      const removed = prev[idx];
+      if (removed?.blobUrl) URL.revokeObjectURL(removed.blobUrl);
+      return prev.filter((_, i) => i !== idx);
+    });
+    if (previewIdx === idx) setPreviewIdx(null);
+    else if (previewIdx !== null && previewIdx > idx) setPreviewIdx(previewIdx - 1);
   };
 
   /* ── Send email ── */
@@ -391,6 +401,23 @@ const EmailTemplate = memo(({ isMobile }) => {
                     </div>
                   </div>
                   <button
+                    onClick={() => setPreviewIdx(previewIdx === idx ? null : idx)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: 24, height: 24,
+                      backgroundColor: previewIdx === idx ? 'rgba(188,19,254,0.15)' : 'rgba(188,19,254,0.06)',
+                      border: `1px solid ${previewIdx === idx ? 'rgba(188,19,254,0.4)' : 'rgba(188,19,254,0.15)'}`,
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      color: previewIdx === idx ? ACCENT : DIM,
+                      flexShrink: 0,
+                      transition: 'all 0.2s',
+                    }}
+                    title={previewIdx === idx ? 'Sluiten' : 'Voorbeeld'}
+                  >
+                    {previewIdx === idx ? <EyeOff size={12} /> : <Eye size={12} />}
+                  </button>
+                  <button
                     onClick={() => removeAttachment(idx)}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -408,6 +435,48 @@ const EmailTemplate = memo(({ isMobile }) => {
                   </button>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Inline PDF preview */}
+          {previewIdx !== null && attachments[previewIdx]?.blobUrl && (
+            <div style={{
+              marginBottom: '0.6rem',
+              borderRadius: '0.65rem',
+              border: `1px solid rgba(188,19,254,0.2)`,
+              overflow: 'hidden',
+              backgroundColor: '#111',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0.4rem 0.7rem',
+                backgroundColor: 'rgba(188,19,254,0.06)',
+                borderBottom: '1px solid rgba(188,19,254,0.12)',
+              }}>
+                <span style={{ fontSize: '0.7rem', color: TEXT, fontWeight: 600 }}>
+                  <Eye size={12} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }} />
+                  {attachments[previewIdx].name}
+                </span>
+                <button
+                  onClick={() => setPreviewIdx(null)}
+                  style={{
+                    background: 'none', border: 'none', color: DIM, cursor: 'pointer',
+                    padding: '0.15rem', display: 'flex',
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <iframe
+                src={attachments[previewIdx].blobUrl}
+                title={`Preview: ${attachments[previewIdx].name}`}
+                style={{
+                  width: '100%',
+                  height: '500px',
+                  border: 'none',
+                  backgroundColor: '#fff',
+                }}
+              />
             </div>
           )}
 

@@ -7,21 +7,33 @@ import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from './contexts/LanguageContext';
 import { hasBetaAccess } from './utils/apiClient';
 
+// Retry wrapper: if a chunk fails (stale deploy), reload the page once.
+const lazyRetry = (fn) => lazy(() =>
+  fn().catch(() => {
+    const reloaded = sessionStorage.getItem('chunk_reload');
+    if (!reloaded) {
+      sessionStorage.setItem('chunk_reload', '1');
+      window.location.reload();
+      return new Promise(() => {}); // hang until reload
+    }
+    sessionStorage.removeItem('chunk_reload');
+    return fn(); // second attempt — surface the real error
+  })
+);
+
 // Lazy-load ALL heavy components so the main bundle stays tiny.
-// These get code-split into separate chunks that load in the background
-// while the loading screen is visible.
-const HoloEarth = lazy(() => import('./components/orbital/HoloEarth'));
-const DesktopLayout = lazy(() => import('./components/orbital/DesktopLayout'));
-const AssessmentIntro = lazy(() => import('./components/assessment/AssessmentIntro'));
-const AssessmentCard = lazy(() => import('./components/assessment/AssessmentCard'));
-const AssessmentUpload = lazy(() => import('./components/assessment/AssessmentUpload'));
-const AssessmentLayerPanel = lazy(() => import('./components/assessment/AssessmentLayerPanel'));
-const AssessmentResultsModal = lazy(() => import('./components/assessment/AssessmentResultsModal'));
-const FilosofiePage = lazy(() => import('./pages/FilosofiePage'));
-const GardensPage = lazy(() => import('./pages/GardensPage'));
-const DataPage = lazy(() => import('./pages/DataPage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const EyedentityPage = lazy(() => import('./pages/EyedentityPage'));
+const HoloEarth = lazyRetry(() => import('./components/orbital/HoloEarth'));
+const DesktopLayout = lazyRetry(() => import('./components/orbital/DesktopLayout'));
+const AssessmentIntro = lazyRetry(() => import('./components/assessment/AssessmentIntro'));
+const AssessmentCard = lazyRetry(() => import('./components/assessment/AssessmentCard'));
+const AssessmentUpload = lazyRetry(() => import('./components/assessment/AssessmentUpload'));
+const AssessmentLayerPanel = lazyRetry(() => import('./components/assessment/AssessmentLayerPanel'));
+const AssessmentResultsModal = lazyRetry(() => import('./components/assessment/AssessmentResultsModal'));
+const FilosofiePage = lazyRetry(() => import('./pages/FilosofiePage'));
+const GardensPage = lazyRetry(() => import('./pages/GardensPage'));
+const DataPage = lazyRetry(() => import('./pages/DataPage'));
+const LoginPage = lazyRetry(() => import('./pages/LoginPage'));
+const EyedentityPage = lazyRetry(() => import('./pages/EyedentityPage'));
 
 // ============================================
 // GRID MAP NAVIGATION CONFIGURATION

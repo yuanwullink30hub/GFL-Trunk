@@ -11,7 +11,7 @@ export default {
 
     try {
       // Try to serve the requested file
-      return await getAssetFromKV(
+      const response = await getAssetFromKV(
         {
           request,
           waitUntil: ctx.waitUntil.bind(ctx),
@@ -20,6 +20,15 @@ export default {
           ASSET_NAMESPACE: env.__STATIC_CONTENT,
         }
       );
+
+      // Set cache headers: never cache index.html, long-cache hashed assets
+      const headers = new Headers(response.headers);
+      if (pathname === '/' || pathname.endsWith('.html')) {
+        headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      } else if (pathname.match(/\/static\//)) {
+        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+      return new Response(response.body, { status: response.status, headers });
     } catch (e) {
       if (e instanceof NotFoundError) {
         // Check if the requested path is a static file
@@ -29,7 +38,7 @@ export default {
         // For client-side routing, serve index.html for all non-file requests
         if (!isStaticFile) {
           try {
-            return await getAssetFromKV(
+            const fallback = await getAssetFromKV(
               {
                 request: new Request(`${url.origin}/index.html`, request),
                 waitUntil: ctx.waitUntil.bind(ctx),
@@ -38,6 +47,9 @@ export default {
                 ASSET_NAMESPACE: env.__STATIC_CONTENT,
               }
             );
+            const headers = new Headers(fallback.headers);
+            headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            return new Response(fallback.body, { status: fallback.status, headers });
           } catch (error) {
             return new Response('Not found', { status: 404 });
           }

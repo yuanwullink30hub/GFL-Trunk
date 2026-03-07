@@ -62,9 +62,7 @@ const LoginFrame = ({ title, children }) => {
     {/* Inner panel — SectorFrame exact */}
     <div style={{
       position: 'relative',
-      backgroundColor: mob ? 'rgba(2, 0, 3, 0.92)' : 'rgba(2, 0, 3, 0.12)',
-      backdropFilter: mob ? 'none' : 'blur(4px)',
-      WebkitBackdropFilter: mob ? 'none' : 'blur(4px)',
+      backgroundColor: 'rgba(2, 0, 3, 0.9)',
       borderRadius: '0.5rem',
       overflow: 'hidden',
       boxShadow: SF_SHADOW,

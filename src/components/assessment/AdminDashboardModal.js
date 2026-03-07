@@ -192,7 +192,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: isMobile ? 'rgba(2, 0, 3, 0.92)' : 'rgba(2, 0, 3, 0.12)',
+        backgroundColor: 'rgba(2, 0, 3, 0.9)',
         backdropFilter: isMobile ? 'none' : 'blur(4px)',
         WebkitBackdropFilter: isMobile ? 'none' : 'blur(4px)',
         borderRadius: 'max(4px, 0.5vw)',

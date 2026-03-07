@@ -30,11 +30,17 @@ function AssessmentPage() {
     removeFile,
     calculateResults,
     reset,
+    autoFillAll,
     totalQuestions,
     answeredQuestions,
   } = useAssessment();
 
   const handleStart = () => setAppState("assessment");
+
+  const handleAutoFillAll = () => {
+    autoFillAll();
+    setAppState("upload");
+  };
 
   const handleAnswerSelect = (answerId) => {
     selectAnswer(answerId);
@@ -191,6 +197,17 @@ function AssessmentPage() {
                 onGoBack={goBack}
                 canGoBack={answeredQuestions > 0}
               />
+              {process.env.NODE_ENV !== 'production' && (
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleAutoFillAll}
+                    className="px-4 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-colors"
+                    style={{ backgroundColor: 'rgba(234,179,8,0.15)', color: '#eab308', border: '1px solid rgba(234,179,8,0.3)' }}
+                  >
+                    DEV: Auto-fill all &amp; skip to results
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

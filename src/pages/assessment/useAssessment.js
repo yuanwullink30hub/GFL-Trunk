@@ -206,6 +206,29 @@ export function useAssessment() {
     setUploadedFiles([]);
   }, []);
 
+  // DEV: Fill all questions across all subjects with random answers
+  const autoFillAll = useCallback(() => {
+    if (!subjects.length) return;
+    const allResponses = [];
+    subjects.forEach((subject) => {
+      subject.questions.forEach((q) => {
+        const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
+        allResponses.push({
+          questionId: q.id,
+          answerId: shuffled[0].id,
+          value: shuffled[0].value,
+          archetype: shuffled[0].archetype,
+          shadowAspect: shuffled[0].shadowAspect,
+        });
+      });
+    });
+    setResponses(allResponses);
+    // Position at end so isLastQuestion check works
+    const lastSubject = subjects[subjects.length - 1];
+    setCurrentSubjectIndex(subjects.length - 1);
+    setCurrentQuestionIndex(lastSubject.questions.length - 1);
+  }, [subjects]);
+
   return {
     subjects,
     questionsReady,
@@ -223,6 +246,7 @@ export function useAssessment() {
     removeFile,
     calculateResults,
     reset,
+    autoFillAll,
     totalQuestions,
     answeredQuestions,
   };

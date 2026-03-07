@@ -373,10 +373,11 @@ const App = () => {
     const endLoadingScreen = () => {
       if (hasEnded || abortController.signal.aborted) return;
       hasEnded = true;
-      // Hand off to passkey gate (defined in index.html)
-      // It will check localStorage → if unlocked, fade out; otherwise show passkey input
-      if (window.__gflShowPasskeyGate) {
-        window.__gflShowPasskeyGate();
+      // Signal to the overlay that the app is ready.
+      // If passkey was already entered, this dismisses immediately.
+      // If user is still typing the passkey, it will dismiss once they unlock.
+      if (window.__gflAppReady) {
+        window.__gflAppReady();
       } else {
         // Fallback: just remove the overlay
         const overlay = document.getElementById('gfl-loading-overlay');

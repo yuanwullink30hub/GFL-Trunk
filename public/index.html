@@ -91,33 +91,8 @@
 
         <!-- Content wrapper (counter-rotated on mobile) -->
         <div id="gfl-loading-content" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:100%">
-          <!-- Phase 1: Spinner + slideshow (shown during loading) -->
-          <div id="gfl-loading-phase1">
-            <!-- Spinner -->
-            <div id="gfl-loading-spinner" style="
-              width: 3rem; height: 3rem;
-              border: 2px solid #a855f7;
-              border-top-color: transparent;
-              border-radius: 50%;
-              margin: 0 auto 1.5rem;
-            "></div>
-
-            <!-- Rotating text slideshow (pure CSS — won't freeze during shader compile) -->
-            <div id="gfl-loading-slideshow" style="
-              position: relative;
-              width: 100%;
-              max-width: 380px;
-              min-height: 3.6rem;
-              overflow: hidden;
-            ">
-              <p class="gfl-slide" style="animation-delay: 0s">Verbinding vaststellen</p>
-              <p class="gfl-slide" style="animation-delay: 2.8s">Exclusieve toegang<br>tot Beta V4.9</p>
-              <p class="gfl-slide" style="animation-delay: 5.6s">Six Seven</p>
-            </div>
-          </div>
-
-          <!-- Phase 2: Passkey input (shown after loading completes) -->
-          <div id="gfl-passkey-phase" style="display:none;width:100%;text-align:center;">
+          <!-- Phase 1: Passkey input (shown FIRST — preloading runs in background) -->
+          <div id="gfl-passkey-phase" style="width:100%;text-align:center;">
             <p style="color:#a855f7;font-family:'Lexend Mega',sans-serif;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 6px">Beta Access</p>
             <p style="color:#666;font-size:11px;margin:0 0 16px;font-family:'Figtree',sans-serif">Voer je passkey in om verder te gaan</p>
             <input
@@ -144,6 +119,31 @@
                 letter-spacing:0.05em;transition:opacity 0.2s;
               "
             >Unlock</button>
+          </div>
+
+          <!-- Phase 2: Spinner + slideshow (shown after passkey accepted, while app loads) -->
+          <div id="gfl-loading-phase2" style="display:none;width:100%;display:none;flex-direction:column;align-items:center">
+            <!-- Spinner -->
+            <div id="gfl-loading-spinner" style="
+              width: 3rem; height: 3rem;
+              border: 2px solid #a855f7;
+              border-top-color: transparent;
+              border-radius: 50%;
+              margin: 0 auto 1.5rem;
+            "></div>
+
+            <!-- Rotating text slideshow -->
+            <div id="gfl-loading-slideshow" style="
+              position: relative;
+              width: 100%;
+              max-width: 380px;
+              min-height: 3.6rem;
+              overflow: hidden;
+            ">
+              <p class="gfl-slide" style="animation-delay: 0s">Omgeving initialiseren</p>
+              <p class="gfl-slide" style="animation-delay: 2.8s">Exclusieve toegang<br>tot Beta V4.9</p>
+              <p class="gfl-slide" style="animation-delay: 5.6s">Six Seven</p>
+            </div>
           </div>
         </div>
 
@@ -197,34 +197,52 @@
       }
     </style>
 
-    <!-- Passkey gate logic — runs after DOM is ready, before React mounts -->
+    <!-- Gate logic — passkey first, then loading spinner if app isn't ready yet -->
     <script>
       (function() {
         var BETA_KEY = 'gfl_beta_access';
         var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        var appReady = false;
+        var unlocked = !!localStorage.getItem(BETA_KEY);
 
-        // Called by React (via window.__gflLoadingDone) when app is ready
-        window.__gflShowPasskeyGate = function() {
-          // If already unlocked, dismiss immediately
-          if (localStorage.getItem(BETA_KEY)) {
+        // Called by React when preloading + nebula are done
+        window.__gflAppReady = function() {
+          appReady = true;
+          // If already unlocked (returning user or localhost auto-skip), dismiss now
+          if (unlocked) {
             window.__gflDismissOverlay();
-            return;
           }
-          // Hide spinner, show passkey input
-          var phase1 = document.getElementById('gfl-loading-phase1');
-          var phase2 = document.getElementById('gfl-passkey-phase');
-          if (phase1) phase1.style.display = 'none';
-          if (phase2) phase2.style.display = 'block';
+        };
 
-          if (isLocal) {
-            // Localhost: show briefly then auto-unlock after 1s
-            setTimeout(function() {
-              localStorage.setItem(BETA_KEY, 'localhost');
-              window.__gflDismissOverlay();
-            }, 1000);
-            return;
+        // After passkey accepted (or auto-skip): show spinner or dismiss
+        function onUnlocked() {
+          unlocked = true;
+          if (appReady) {
+            // App already loaded while user was typing — dismiss immediately
+            window.__gflDismissOverlay();
+          } else {
+            // App still loading — switch to spinner
+            var pk = document.getElementById('gfl-passkey-phase');
+            var p2 = document.getElementById('gfl-loading-phase2');
+            if (pk) pk.style.display = 'none';
+            if (p2) { p2.style.display = 'flex'; }
           }
+        }
 
+        // Already unlocked from previous visit?
+        if (unlocked) {
+          // Skip passkey, show spinner immediately
+          var pk = document.getElementById('gfl-passkey-phase');
+          var p2 = document.getElementById('gfl-loading-phase2');
+          if (pk) pk.style.display = 'none';
+          if (p2) { p2.style.display = 'flex'; }
+        } else if (isLocal) {
+          // Localhost: auto-unlock after 1s
+          setTimeout(function() {
+            localStorage.setItem(BETA_KEY, 'localhost');
+            onUnlocked();
+          }, 1000);
+        } else {
           // Deployed: wire up passkey verification
           var input = document.getElementById('gfl-passkey-input');
           var btn = document.getElementById('gfl-passkey-btn');
@@ -238,10 +256,9 @@
             btn.disabled = true;
             if (err) err.style.display = 'none';
 
-            // Client-side check (no backend round-trip needed)
             if (key === 'Beta-4.9') {
               localStorage.setItem(BETA_KEY, key);
-              window.__gflDismissOverlay();
+              onUnlocked();
             } else {
               if (err) { err.textContent = 'Ongeldige passkey'; err.style.display = 'block'; }
               btn.textContent = 'Unlock';
@@ -252,7 +269,7 @@
 
           if (btn) btn.addEventListener('click', verify);
           if (input) input.addEventListener('keydown', function(e) { if (e.key === 'Enter') verify(); });
-        };
+        }
 
         // Fade out & remove the overlay
         window.__gflDismissOverlay = function() {

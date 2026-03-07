@@ -5,6 +5,7 @@ import { assessmentSubjects } from './pages/assessment/assessmentData';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from './contexts/LanguageContext';
+import { hasBetaAccess } from './utils/apiClient';
 
 // Lazy-load ALL heavy components so the main bundle stays tiny.
 // These get code-split into separate chunks that load in the background
@@ -316,18 +317,21 @@ const App = () => {
     };
   }, [isMapAnimating]);
 
-  // Beta lock: only allow full interaction on localhost
-  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  // Beta lock: passkey-based access control
+  // The passkey gate runs inside the loading modal (index.html) before React is visible.
+  // By the time the user sees the app, localStorage already has gfl_beta_access set.
+  const betaUnlocked = hasBetaAccess();
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const hasLockOverride = urlParams.has('lock');
-  const shouldShowLock = !isLocalhost || hasLockOverride;
+  const shouldShowLock = !betaUnlocked || hasLockOverride;
 
   // Handler for opening sections - navigate on map
   const handleOpenSection = useCallback((section) => {
-    // Beta lock: block locked sections (gardens, monitor, filosofie) on non-localhost
-    // VERBINDINGS_MENU sections (menu, login) remain accessible
+    // Beta lock: block locked sections
     const lockedSections = ['gardens', 'monitor', 'filosofie'];
-    if (shouldShowLock && lockedSections.includes(section)) return;
+    if (shouldShowLock && lockedSections.includes(section)) {
+      return;
+    }
     // Capture current slide when opening gardens section
     if (section === 'gardens') {
       setGardensBrandIndex(currentSlide);
@@ -357,15 +361,18 @@ const App = () => {
     const endLoadingScreen = () => {
       if (hasEnded || abortController.signal.aborted) return;
       hasEnded = true;
-      // Fade out the static HTML overlay
-      const overlay = document.getElementById('gfl-loading-overlay');
-      if (overlay) {
-        overlay.style.opacity = '0';
-        overlay.style.pointerEvents = 'none';
-        // Remove from DOM after fade-out (500ms)
-        setTimeout(() => {
-          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-        }, 500);
+      // Hand off to passkey gate (defined in index.html)
+      // It will check localStorage → if unlocked, fade out; otherwise show passkey input
+      if (window.__gflShowPasskeyGate) {
+        window.__gflShowPasskeyGate();
+      } else {
+        // Fallback: just remove the overlay
+        const overlay = document.getElementById('gfl-loading-overlay');
+        if (overlay) {
+          overlay.style.opacity = '0';
+          overlay.style.pointerEvents = 'none';
+          setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 500);
+        }
       }
     };
 
@@ -2199,6 +2206,7 @@ const App = () => {
         </div>
       </div>
       </Suspense>
+
     </main>
   );
 };

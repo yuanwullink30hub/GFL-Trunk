@@ -36,11 +36,7 @@ import {
 
 const SF_SHADOW =
   '0 6px 30px rgba(0,0,0,0.7), ' +
-  '0 12px 60px rgba(0,0,0,0.5), ' +
-  '0 0 80px rgba(0,0,0,0.35), ' +
-  '0 0 120px rgba(0,0,0,0.15), ' +
-  'inset 0 0 12px rgba(245, 158, 11, 0.06), ' +
-  'inset 0 0 30px rgba(245, 158, 11, 0.03)';
+  '0 0 80px rgba(0,0,0,0.35)';
 
 const CORNER = (pos) => ({
   position: 'absolute',
@@ -66,9 +62,9 @@ const LoginFrame = ({ title, children }) => {
     {/* Inner panel — SectorFrame exact */}
     <div style={{
       position: 'relative',
-      backgroundColor: mob ? 'rgba(2, 0, 3, 0.85)' : 'rgba(2, 0, 3, 0.12)',
-      backdropFilter: mob ? 'blur(14px)' : 'blur(4px)',
-      WebkitBackdropFilter: mob ? 'blur(14px)' : 'blur(4px)',
+      backgroundColor: mob ? 'rgba(2, 0, 3, 0.92)' : 'rgba(2, 0, 3, 0.12)',
+      backdropFilter: mob ? 'none' : 'blur(4px)',
+      WebkitBackdropFilter: mob ? 'none' : 'blur(4px)',
       borderRadius: '0.5rem',
       overflow: 'hidden',
       boxShadow: SF_SHADOW,
@@ -76,30 +72,7 @@ const LoginFrame = ({ title, children }) => {
       fontFamily: FONT,
       fontSize: 'max(12px, 0.65vw)',
     }}>
-      {/* Holographic sheen */}
-      <div style={{
-        position: 'absolute', inset: 0, borderRadius: '0.5rem',
-        pointerEvents: 'none', zIndex: 1,
-        background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
-        backgroundSize: '400% 400%', backgroundRepeat: 'no-repeat',
-        animation: 'holoSheen 45s ease-in-out infinite',
-        mixBlendMode: 'screen',
-      }} />
-      {/* Scanline sweep */}
-      <div style={{
-        position: 'absolute', inset: 0, borderRadius: '0.5rem',
-        pointerEvents: 'none', zIndex: 1,
-        background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
-        backgroundSize: '100% 300%',
-        animation: 'holoScanline 14s linear infinite',
-      }} />
-      {/* Noise texture (SectorFrame exact) */}
-      <div style={{
-        position: 'absolute', inset: 0, borderRadius: '0.5rem',
-        pointerEvents: 'none', zIndex: 1,
-        backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')",
-        opacity: 0.01, mixBlendMode: 'overlay',
-      }} />
+      {/* Decorative overlays removed for performance */}
 
       {/* Title bar */}
       {title && (

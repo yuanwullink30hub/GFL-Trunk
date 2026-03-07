@@ -26,12 +26,20 @@ const router = Router();
  *   oceanScores: { O:4, C:9, E:4, A:3, N:3 },  // optional
  *   systemPrompt: "...",                         // optional full override
  *   maxTokens: 2048,                             // optional
- *   temperature: 0.7                             // optional
+ *   temperature: 0.7,                            // optional
+ *
+ *   // ── Full pipeline fields (sent after 60Q completion) ──
+ *   responses: [...],                            // individual question answers
+ *   subjectResults: [...],                       // per-layer scoring breakdown
+ *   harmonyScore: 72,                            // overall percentage
+ *   consciousnessLevel: "Transpersonal",         // derived level
+ *   overallShadow: "...",                        // dominant shadow aspect
+ *   uploadedFileContents: [{ name, text }]       // user-uploaded file text (OCEAN report etc.)
  * }
  *
  * NOTE: Knowledge context (archetype descriptions, OCEAN profiles, etc.)
- * is now provided via admin-uploaded documents stored in MongoDB
- * (collection: promptDocuments), not hardcoded parameters.
+ * is provided via admin-uploaded documents stored in MongoDB
+ * (collection: promptDocuments). These are automatically included in every analysis.
  */
 router.post('/analyze', async (req, res) => {
   try {
@@ -46,6 +54,13 @@ router.post('/analyze', async (req, res) => {
       systemPrompt,
       maxTokens,
       temperature,
+      // Full pipeline fields
+      responses,
+      subjectResults,
+      harmonyScore,
+      consciousnessLevel,
+      overallShadow,
+      uploadedFileContents,
     } = req.body;
 
     if (!archetypeKey) {
@@ -60,9 +75,13 @@ router.post('/analyze', async (req, res) => {
     const system = systemPrompt || buildDefaultSystemPrompt({
       archetypeKey, supportGroup, extendedArchetypeName,
       oceanScores, contextDocs,
+      responses, subjectResults, harmonyScore,
+      consciousnessLevel, overallShadow, uploadedFileContents,
     });
 
-    const user = userQuestion || buildDefaultUserMessage(archetypeKey, supportGroup);
+    const user = userQuestion || buildDefaultUserMessage(archetypeKey, supportGroup, {
+      subjectResults, harmonyScore, consciousnessLevel,
+    });
 
     const messages = [
       { role: 'system', content: system },
@@ -112,6 +131,8 @@ module.exports = router;
 function buildDefaultSystemPrompt({
   archetypeKey, supportGroup, extendedArchetypeName,
   oceanScores, contextDocs,
+  responses, subjectResults, harmonyScore,
+  consciousnessLevel, overallShadow, uploadedFileContents,
 }) {
   const parts = [
     `Je bent een persoonlijke ontwikkelingscoach gespecialiseerd in Jungiaanse archetypen, ` +
@@ -121,7 +142,7 @@ function buildDefaultSystemPrompt({
     `Wees empathisch, genuanceerd en concreet. Vermijd vage algemeenheden.\n`,
   ];
 
-  // ── Uploaded context documents ──
+  // ── Admin-uploaded context documents (KENNISBANK) ──
   if (contextDocs && contextDocs.length > 0) {
     parts.push(`═══════════════════════════════════════`);
     parts.push(`KENNISBANK / CONTEXT DOCUMENTEN`);
@@ -129,6 +150,18 @@ function buildDefaultSystemPrompt({
     for (const doc of contextDocs) {
       parts.push(`── ${doc.filename} ──`);
       parts.push(doc.extractedText);
+      parts.push('');
+    }
+  }
+
+  // ── User-uploaded files (OCEAN report etc.) ──
+  if (uploadedFileContents && uploadedFileContents.length > 0) {
+    parts.push(`═══════════════════════════════════════`);
+    parts.push(`GEBRUIKER-GEÜPLOADE DOCUMENTEN`);
+    parts.push(`═══════════════════════════════════════`);
+    for (const file of uploadedFileContents) {
+      parts.push(`── ${file.name} ──`);
+      parts.push(file.text);
       parts.push('');
     }
   }
@@ -142,15 +175,59 @@ function buildDefaultSystemPrompt({
   if (supportGroup) parts.push(`Steungroep: ${supportGroup}`);
   if (extendedArchetypeName) parts.push(`Uitgebreid archetype: ${extendedArchetypeName}`);
   if (oceanScores) parts.push(`\nOCEAN Scores: ${JSON.stringify(oceanScores)}`);
+  if (harmonyScore != null) parts.push(`Harmonie Score: ${harmonyScore}%`);
+  if (consciousnessLevel) parts.push(`Bewustzijnsniveau: ${consciousnessLevel}`);
+  if (overallShadow) parts.push(`Dominante Schaduw: ${overallShadow}`);
+
+  // ── Per-layer results ──
+  if (subjectResults && subjectResults.length > 0) {
+    parts.push(`\n═══════════════════════════════════════`);
+    parts.push(`LAAG-VOOR-LAAG RESULTATEN`);
+    parts.push(`═══════════════════════════════════════`);
+    for (const layer of subjectResults) {
+      parts.push(`\n── ${layer.subjectName} ──`);
+      parts.push(`Score: ${layer.totalScore}/${layer.maxScore} (${layer.percentage}%)`);
+      parts.push(`Dominant Archetype: ${layer.dominantArchetype}`);
+      if (layer.shadowAspects && layer.shadowAspects.length > 0) {
+        const unique = [...new Set(layer.shadowAspects)];
+        parts.push(`Schaduwpatronen: ${unique.join(', ')}`);
+      }
+    }
+  }
+
+  // ── Individual question responses (compact summary) ──
+  if (responses && responses.length > 0) {
+    parts.push(`\n═══════════════════════════════════════`);
+    parts.push(`INDIVIDUELE ANTWOORDEN (${responses.length} vragen)`);
+    parts.push(`═══════════════════════════════════════`);
+    const summary = responses.map(r =>
+      `Q${r.questionId}: waarde=${r.value}, archetype=${r.archetype}, schaduw=${r.shadowAspect}`
+    ).join('\n');
+    parts.push(summary);
+  }
 
   return parts.join('\n');
 }
 
-function buildDefaultUserMessage(archetypeKey, supportGroup) {
-  return `Geef een diepgaande persoonlijkheidsanalyse voor het archetype ${archetypeKey}` +
-    (supportGroup ? ` met steungroep ${supportGroup}` : '') +
-    `. Gebruik de OCEAN-dimensies en neurobiologische inzichten. ` +
-    `Geef concrete adviezen voor persoonlijke groei en individuatie.`;
+function buildDefaultUserMessage(archetypeKey, supportGroup, extra = {}) {
+  const { subjectResults, harmonyScore, consciousnessLevel } = extra;
+
+  let msg = `Geef een diepgaande persoonlijkheidsanalyse voor het archetype ${archetypeKey}`;
+  if (supportGroup) msg += ` met steungroep ${supportGroup}`;
+  msg += `. Gebruik de OCEAN-dimensies en neurobiologische inzichten.`;
+
+  if (harmonyScore != null) {
+    msg += ` De harmonie score is ${harmonyScore}% en het bewustzijnsniveau is ${consciousnessLevel || 'onbekend'}.`;
+  }
+
+  if (subjectResults && subjectResults.length > 0) {
+    msg += ` Analyseer de vijf lagen van bewustzijn en geef specifieke adviezen per laag.`;
+  }
+
+  msg += ` Geef concrete adviezen voor persoonlijke groei en individuatie.`;
+  msg += ` Structureer je antwoord met duidelijke kopjes.`;
+
+  return msg;
 }
 
 /**

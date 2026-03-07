@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import TechContainer from './TechContainer';
 import { Activity, Lock } from 'lucide-react';
 
@@ -9,11 +9,13 @@ import tattooshopLogo from '../../images/slideshow images/1111logo.png';
 import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 
 const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, position = 'top', isMobile, TimeSync, setActiveSection, pauseAutoSlide }) => {
-  // Beta lock: only allow full interaction on localhost
-  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  // Beta lock: passkey-based access control (reads from localStorage)
+  const [betaUnlocked] = useState(() => {
+    try { return !!localStorage.getItem('gfl_beta_access'); } catch { return false; }
+  });
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const hasLockOverride = urlParams.has('lock');
-  const shouldShowLock = !isLocalhost || hasLockOverride;
+  const shouldShowLock = !betaUnlocked || hasLockOverride;
 
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
   const containerOpacity = Math.max(0, 1 - animationProgress * 2);

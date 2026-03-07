@@ -158,7 +158,7 @@ export async function getAssessment(id) {
 }
 
 /**
- * Call the AI analysis endpoint with archetype profile data + optional question.
+ * Call the AI analysis endpoint with archetype profile data + full assessment results.
  *
  * @param {Object} params
  * @param {string} params.archetypeKey - e.g. "JUDGE", "LOVER"
@@ -169,6 +169,12 @@ export async function getAssessment(id) {
  * @param {string} [params.userQuestion] - Free-text question
  * @param {Object} [params.oceanScores] - e.g. { O: 4, C: 9, E: 4, A: 3, N: 3 }
  * @param {string} [params.systemPrompt] - Full system prompt override
+ * @param {Array}  [params.responses] - Individual question answers
+ * @param {Array}  [params.subjectResults] - Per-layer scoring breakdown
+ * @param {number} [params.harmonyScore] - Overall percentage
+ * @param {string} [params.consciousnessLevel] - Derived level
+ * @param {string} [params.overallShadow] - Dominant shadow aspect
+ * @param {Array}  [params.uploadedFileContents] - User-uploaded file text [{name, text}]
  * @returns {Promise<{
  *   archetypeKey: string,
  *   supportGroup: string|null,
@@ -189,6 +195,12 @@ export async function analyzeAssessment({
   userQuestion,
   oceanScores,
   systemPrompt,
+  responses,
+  subjectResults,
+  harmonyScore,
+  consciousnessLevel,
+  overallShadow,
+  uploadedFileContents,
 }) {
   const response = await fetch(`${API_BASE}/ai/analyze`, {
     method: 'POST',
@@ -202,6 +214,12 @@ export async function analyzeAssessment({
       userQuestion: userQuestion || undefined,
       oceanScores: oceanScores || undefined,
       systemPrompt: systemPrompt || undefined,
+      responses: responses || undefined,
+      subjectResults: subjectResults || undefined,
+      harmonyScore: harmonyScore != null ? harmonyScore : undefined,
+      consciousnessLevel: consciousnessLevel || undefined,
+      overallShadow: overallShadow || undefined,
+      uploadedFileContents: uploadedFileContents || undefined,
     }),
   });
 
@@ -697,4 +715,42 @@ export async function getEmailStatus() {
     throw new Error(err.error || `Email status check failed (${response.status})`);
   }
   return response.json();
+}
+
+// ── Beta Access ──
+
+const BETA_KEY = 'gfl_beta_access';
+
+/**
+ * Verify a beta passkey against the backend.
+ * On success, stores the validated passkey in localStorage.
+ * @returns {Promise<boolean>} true if valid
+ */
+export async function verifyBetaPasskey(passkey) {
+  const response = await fetch(`${API_BASE}/beta/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ passkey }),
+  });
+  if (!response.ok) return false;
+  const data = await response.json();
+  if (data.valid) {
+    localStorage.setItem(BETA_KEY, passkey);
+  }
+  return data.valid;
+}
+
+/**
+ * Check if the user has a stored beta passkey.
+ * Does NOT re-verify against the server (offline-friendly).
+ */
+export function hasBetaAccess() {
+  return !!localStorage.getItem(BETA_KEY);
+}
+
+/**
+ * Clear stored beta access.
+ */
+export function clearBetaAccess() {
+  localStorage.removeItem(BETA_KEY);
 }

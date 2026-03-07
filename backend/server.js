@@ -43,6 +43,16 @@ app.get('/api/status', (_req, res) => {
   });
 });
 
+// Beta passkey verification
+app.post('/api/beta/verify', (req, res) => {
+  const { passkey } = req.body;
+  if (!passkey || typeof passkey !== 'string') {
+    return res.status(400).json({ valid: false, error: 'Passkey is required' });
+  }
+  const valid = config.betaPasskeys.includes(passkey.trim());
+  res.json({ valid });
+});
+
 // ── Start ──
 async function start() {
   // Connect to MongoDB (skips gracefully if MONGODB_URI not set)

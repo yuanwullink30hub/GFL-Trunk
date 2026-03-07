@@ -2,95 +2,387 @@ import { ARCHETYPES } from './assessmentTypes';
 
 export async function generatePDF(result) {
   const content = generatePDFContent(result);
-  const blob = new Blob([content], { type: "text/html" });
+  const blob = new Blob([content], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
 
-  const printWindow = window.open(url, "_blank");
+  const printWindow = window.open(url, '_blank');
   if (printWindow) {
     printWindow.onload = () => {
-      printWindow.print();
-      URL.revokeObjectURL(url);
+      // Small delay so styles/fonts render before print dialog
+      setTimeout(() => {
+        printWindow.print();
+        URL.revokeObjectURL(url);
+      }, 400);
     };
   }
 }
 
+/* ── Helpers ─────────────────────────────────────────── */
+
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderMarkdownish(text) {
+  if (!text) return '';
+  return text.split('\n').map(line => {
+    if (!line.trim()) return '<br/>';
+    if (line.startsWith('### ')) return `<h5 class="ai-h4">${esc(line.slice(4))}</h5>`;
+    if (line.startsWith('## '))  return `<h4 class="ai-h3">${esc(line.slice(3))}</h4>`;
+    if (line.startsWith('# '))   return `<h3 class="ai-h2">${esc(line.slice(2))}</h3>`;
+    if (line.startsWith('- ') || line.startsWith('* '))
+      return `<p class="ai-bullet">&bull; ${esc(line.slice(2))}</p>`;
+    // bold lines
+    if (line.startsWith('**') && line.endsWith('**'))
+      return `<p class="ai-bold">${esc(line.slice(2, -2))}</p>`;
+    return `<p class="ai-body">${esc(line)}</p>`;
+  }).join('\n');
+}
+
+/* ── Main template ───────────────────────────────────── */
+
 function generatePDFContent(result) {
   const archetypeInfo = ARCHETYPES[result.overallArchetype];
+  const colors = ['#22d3ee', '#a855f7', '#f472b6', '#fbbf24', '#f97316'];
+  const date = result.timestamp?.toLocaleDateString() || new Date().toLocaleDateString();
 
   return `<!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
-  <title>Garden for Life - Consciousness Profile</title>
-  <style>
-    body { font-family: 'Courier New', monospace; background: #050510; color: #f5f5f5; padding: 40px; max-width: 800px; margin: 0 auto; }
-    h1 { color: #22d3ee; font-size: 28px; margin-bottom: 10px; }
-    h2 { color: #a855f7; font-size: 18px; margin-bottom: 30px; }
-    h3 { color: #fbbf24; font-size: 16px; margin-top: 30px; margin-bottom: 15px; }
-    .archetype { font-size: 24px; color: #fff; margin: 20px 0; }
-    .shadow { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 15px; border-radius: 8px; margin: 15px 0; }
-    .stat { display: inline-block; margin-right: 30px; margin-bottom: 15px; }
-    .stat-label { font-size: 12px; color: #888; text-transform: uppercase; }
-    .stat-value { font-size: 18px; color: #22d3ee; }
-    .layer { border: 1px solid #333; padding: 15px; margin: 10px 0; border-radius: 8px; }
-    .layer-header { display: flex; justify-content: space-between; align-items: center; }
-    .progress-bar { height: 8px; background: #222; border-radius: 4px; margin: 10px 0; }
-    .progress-fill { height: 100%; border-radius: 4px; }
-    .insight { font-size: 13px; color: #aaa; margin: 5px 0; }
-    .recommendation { font-size: 13px; color: #22d3ee; margin: 5px 0; }
-    .prompt { background: #0a0a15; border: 1px solid #333; padding: 15px; border-radius: 8px; font-size: 12px; white-space: pre-wrap; }
-    .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #555; }
-  </style>
+<meta charset="UTF-8"/>
+<title>Garden for Life — Consciousness Profile</title>
+<style>
+  /* ── Print-critical ─────────────────────────────── */
+  @page {
+    size: A4;
+    margin: 16mm 14mm 18mm 14mm;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.55;
+    background: #060612;
+    color: #e2e8f0;
+  }
+
+  /* ── Layout container ───────────────────────────── */
+  .page { max-width: 700px; margin: 0 auto; padding: 0 4mm; }
+
+  /* ── Brand header ───────────────────────────────── */
+  .brand {
+    text-align: center;
+    padding: 10mm 0 6mm;
+    border-bottom: 1px solid #22d3ee33;
+    margin-bottom: 6mm;
+  }
+  .brand-name {
+    font-size: 9pt;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: #22d3ee;
+    margin: 0 0 3mm;
+  }
+  .brand-sub {
+    font-size: 7pt;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #64748b;
+    margin: 0;
+  }
+
+  /* ── Cards ──────────────────────────────────────── */
+  .card {
+    background: #0c0c1d;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 5mm 6mm;
+    margin-bottom: 4mm;
+    page-break-inside: avoid;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .card-cyan::before  { background: linear-gradient(90deg, #22d3ee, transparent 70%); }
+  .card-purple::before { background: linear-gradient(90deg, #a855f7, transparent 70%); }
+  .card-emerald::before { background: linear-gradient(90deg, #10b981, transparent 70%); }
+  .card-amber::before { background: linear-gradient(90deg, #f59e0b, transparent 70%); }
+
+  .card-title {
+    font-size: 8pt;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 3mm;
+    display: flex;
+    align-items: center;
+    gap: 2mm;
+  }
+  .card-title .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ── Primary archetype hero ─────────────────────── */
+  .hero-archetype {
+    font-size: 22pt;
+    font-weight: 300;
+    color: #fff;
+    margin: 2mm 0 3mm;
+    line-height: 1.2;
+  }
+  .hero-desc {
+    color: #94a3b8;
+    font-size: 9.5pt;
+    line-height: 1.6;
+    margin: 0 0 4mm;
+  }
+  .shadow-box {
+    background: #1a0a0a;
+    border: 1px solid #7f1d1d;
+    border-radius: 6px;
+    padding: 3mm 4mm;
+    color: #fca5a5;
+    font-size: 9pt;
+  }
+  .shadow-box strong { color: #f87171; }
+
+  /* ── Stats row ──────────────────────────────────── */
+  .stats-grid {
+    display: flex;
+    gap: 3mm;
+    margin-bottom: 4mm;
+  }
+  .stat-card {
+    flex: 1;
+    background: #0c0c1d;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 4mm 4mm;
+    text-align: center;
+    page-break-inside: avoid;
+  }
+  .stat-label {
+    font-size: 6.5pt;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #64748b;
+    margin: 0 0 1.5mm;
+  }
+  .stat-value {
+    font-size: 14pt;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  /* ── Quantum resonance ──────────────────────────── */
+  .quote {
+    font-style: italic;
+    color: #cbd5e1;
+    line-height: 1.7;
+    font-size: 10pt;
+  }
+
+  /* ── Layer bars ─────────────────────────────────── */
+  .layer {
+    background: #0c0c1d;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 3.5mm 4mm;
+    margin-bottom: 2.5mm;
+    page-break-inside: avoid;
+  }
+  .layer-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2mm;
+  }
+  .layer-name {
+    font-weight: 600;
+    font-size: 9.5pt;
+  }
+  .layer-pct {
+    font-size: 9pt;
+    font-weight: 600;
+  }
+  .bar-track {
+    height: 5px;
+    background: #1e293b;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 2mm;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: none;
+  }
+  .layer-detail {
+    font-size: 8pt;
+    color: #64748b;
+    margin: 0.5mm 0;
+  }
+  .layer-insight {
+    font-size: 8.5pt;
+    color: #94a3b8;
+    margin: 0.5mm 0;
+  }
+  .layer-rec {
+    font-size: 8.5pt;
+    color: #22d3ee;
+    margin: 0.5mm 0;
+  }
+
+  /* ── AI Analysis ────────────────────────────────── */
+  .ai-h2 { font-size: 12pt; font-weight: 500; color: #6ee7b7; margin: 4mm 0 2mm; }
+  .ai-h3 { font-size: 10.5pt; font-weight: 500; color: #34d399; margin: 3mm 0 1.5mm; }
+  .ai-h4 { font-size: 9.5pt; font-weight: 500; color: #10b981; margin: 2mm 0 1mm; }
+  .ai-bullet { margin: 0.5mm 0; padding-left: 4mm; color: #cbd5e1; font-size: 9pt; }
+  .ai-bold { font-weight: 600; color: #e2e8f0; margin: 2mm 0; font-size: 9pt; }
+  .ai-body { color: #cbd5e1; margin: 0.5mm 0; font-size: 9pt; line-height: 1.6; }
+  .ai-provider {
+    font-size: 6.5pt;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    float: right;
+    margin-top: -3mm;
+  }
+
+  /* ── Footer ─────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    font-size: 7pt;
+    color: #334155;
+    padding: 6mm 0 2mm;
+    border-top: 1px solid #1e293b;
+    margin-top: 6mm;
+    letter-spacing: 1px;
+  }
+
+  /* ── Page-break hints ───────────────────────────── */
+  .section-break { page-break-before: auto; }
+  .keep-together { page-break-inside: avoid; }
+
+  /* ── Screen preview tweaks (hidden in print) ────── */
+  @media screen {
+    body { padding: 10mm 0; }
+  }
+</style>
 </head>
 <body>
-  <h1>GARDEN FOR LIFE</h1>
-  <h2>CONSCIOUSNESS PROFILE</h2>
-  <p style="color: #666; font-size: 12px;">ID: ${result.id} | Generated: ${result.timestamp.toLocaleDateString()}</p>
+<div class="page">
 
-  <h3>PRIMARY ARCHETYPE</h3>
-  <div class="archetype">${archetypeInfo?.name || result.overallArchetype}</div>
-  <p>${archetypeInfo?.description}</p>
-  <div class="shadow">
-    <strong>Shadow Aspect:</strong> ${archetypeInfo?.shadow}
+  <!-- Brand header -->
+  <div class="brand">
+    <p class="brand-name">Garden for Life</p>
+    <p class="brand-sub">Advanced Consciousness Assessment</p>
   </div>
 
-  <h3>HARMONY METRICS</h3>
-  <div class="stat">
-    <div class="stat-label">Harmony Score</div>
-    <div class="stat-value">${result.harmonyScore}%</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">Consciousness Level</div>
-    <div class="stat-value">${result.consciousnessLevel}</div>
-  </div>
+  <!-- Meta line -->
+  <p style="text-align:center;font-size:7pt;color:#475569;margin:0 0 6mm;">
+    Profile ${esc(result.id)} &nbsp;&middot;&nbsp; ${esc(date)}
+  </p>
 
-  <h3>QUANTUM RESONANCE</h3>
-  <p style="font-style: italic; color: #ccc;">"${result.quantumResonance}"</p>
-
-  <h3>LAYER ANALYSIS</h3>
-  ${result.subjectResults.map((s, i) => {
-    const colors = ["#22d3ee", "#a855f7", "#f472b6", "#fbbf24", "#f97316"];
-    return `
-  <div class="layer">
-    <div class="layer-header">
-      <strong style="color: ${colors[i]}">${i + 1}. ${s.subjectName}</strong>
-      <span>${s.percentage}% Integration</span>
+  <!-- PRIMARY ARCHETYPE -->
+  <div class="card card-cyan">
+    <p class="card-title" style="color:#22d3ee;">
+      <span class="dot" style="background:#22d3ee;"></span>
+      Primary Archetype
+    </p>
+    <h1 class="hero-archetype">${esc(archetypeInfo?.name || result.overallArchetype)}</h1>
+    <p class="hero-desc">${esc(archetypeInfo?.description || '')}</p>
+    <div class="shadow-box">
+      <strong>Shadow Aspect: </strong>${esc(archetypeInfo?.shadow || '')}
     </div>
-    <div class="progress-bar">
-      <div class="progress-fill" style="width: ${s.percentage}%; background: ${colors[i]}"></div>
+  </div>
+
+  <!-- STATS ROW -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <p class="stat-label">Harmony Score</p>
+      <p class="stat-value" style="color:#22d3ee;">${esc(String(result.harmonyScore))}%</p>
     </div>
-    <p style="font-size: 12px; color: #888;">Archetype: ${s.dominantArchetype}</p>
-    ${s.insights.map(insight => `<div class="insight">• ${insight}</div>`).join("")}
-    ${s.recommendations.map(rec => `<div class="recommendation">→ ${rec}</div>`).join("")}
-  </div>`;
-  }).join("")}
+    <div class="stat-card">
+      <p class="stat-label">Consciousness Level</p>
+      <p class="stat-value" style="color:#a855f7;">${esc(result.consciousnessLevel)}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Profile ID</p>
+      <p class="stat-value" style="color:#fbbf24;">${esc(result.id.split('-')[1] || result.id)}</p>
+    </div>
+  </div>
 
-  <h3>AI TRAINING PROMPT</h3>
-  <div class="prompt">${result.aiTrainingPrompt}</div>
+  <!-- QUANTUM RESONANCE -->
+  <div class="card card-purple">
+    <p class="card-title" style="color:#a855f7;">
+      <span class="dot" style="background:#a855f7;"></span>
+      Quantum Resonance
+    </p>
+    <p class="quote">&ldquo;${esc(result.quantumResonance)}&rdquo;</p>
+  </div>
 
+  ${result.aiAnalysis ? `
+  <!-- AI ANALYSIS -->
+  <div class="card card-emerald section-break">
+    <p class="card-title" style="color:#10b981;">
+      <span class="dot" style="background:#10b981;"></span>
+      AI Persoonlijkheidsanalyse
+    </p>
+    ${result.aiProvider ? `<span class="ai-provider">${esc(result.aiProvider)} / ${esc(result.aiModel)}</span>` : ''}
+    <div>${renderMarkdownish(result.aiAnalysis)}</div>
+  </div>
+  ` : ''}
+
+  <!-- LAYER ANALYSIS -->
+  <div class="section-break">
+    <div class="card card-amber" style="margin-bottom:3mm;">
+      <p class="card-title" style="color:#f59e0b;">
+        <span class="dot" style="background:#f59e0b;"></span>
+        Layer Analysis
+      </p>
+    </div>
+
+    ${result.subjectResults.map((s, i) => `
+    <div class="layer keep-together">
+      <div class="layer-head">
+        <span class="layer-name" style="color:${colors[i]};">${i + 1}. ${esc(s.subjectName)}</span>
+        <span class="layer-pct" style="color:${colors[i]};">${s.percentage}%</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${s.percentage}%;background:${colors[i]};"></div>
+      </div>
+      <p class="layer-detail">Archetype: ${esc(s.dominantArchetype)}</p>
+      ${(s.insights || []).map(ins => `<p class="layer-insight">&bull; ${esc(ins)}</p>`).join('')}
+      ${(s.recommendations || []).map(rec => `<p class="layer-rec">&rarr; ${esc(rec)}</p>`).join('')}
+    </div>`).join('')}
+  </div>
+
+  <!-- FOOTER -->
   <div class="footer">
-    www.gardenforlife.nl<br>
-    Cells within Cells Interlinked
+    WWW.GARDENFORLIFE.NL &nbsp;&bull;&nbsp; CONSCIOUSNESS PROFILE
   </div>
+
+</div>
 </body>
 </html>`;
 }

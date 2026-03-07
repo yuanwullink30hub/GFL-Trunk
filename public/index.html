@@ -91,26 +91,59 @@
 
         <!-- Content wrapper (counter-rotated on mobile) -->
         <div id="gfl-loading-content" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:100%">
-          <!-- Spinner -->
-          <div id="gfl-loading-spinner" style="
-            width: 3rem; height: 3rem;
-            border: 2px solid #a855f7;
-            border-top-color: transparent;
-            border-radius: 50%;
-            margin-bottom: 1.5rem;
-          "></div>
+          <!-- Phase 1: Spinner + slideshow (shown during loading) -->
+          <div id="gfl-loading-phase1">
+            <!-- Spinner -->
+            <div id="gfl-loading-spinner" style="
+              width: 3rem; height: 3rem;
+              border: 2px solid #a855f7;
+              border-top-color: transparent;
+              border-radius: 50%;
+              margin: 0 auto 1.5rem;
+            "></div>
 
-          <!-- Rotating text slideshow (pure CSS — won't freeze during shader compile) -->
-          <div id="gfl-loading-slideshow" style="
-            position: relative;
-            width: 100%;
-            max-width: 380px;
-            min-height: 3.6rem;
-            overflow: hidden;
-          ">
-            <p class="gfl-slide" style="animation-delay: 0s">Verbinding vaststellen</p>
-            <p class="gfl-slide" style="animation-delay: 2.8s">Exclusieve toegang<br>tot Beta V2.9</p>
-            <p class="gfl-slide" style="animation-delay: 5.6s">Six Seven</p>
+            <!-- Rotating text slideshow (pure CSS — won't freeze during shader compile) -->
+            <div id="gfl-loading-slideshow" style="
+              position: relative;
+              width: 100%;
+              max-width: 380px;
+              min-height: 3.6rem;
+              overflow: hidden;
+            ">
+              <p class="gfl-slide" style="animation-delay: 0s">Verbinding vaststellen</p>
+              <p class="gfl-slide" style="animation-delay: 2.8s">Exclusieve toegang<br>tot Beta V4.9</p>
+              <p class="gfl-slide" style="animation-delay: 5.6s">Six Seven</p>
+            </div>
+          </div>
+
+          <!-- Phase 2: Passkey input (shown after loading completes) -->
+          <div id="gfl-passkey-phase" style="display:none;width:100%;text-align:center;">
+            <p style="color:#a855f7;font-family:'Lexend Mega',sans-serif;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;margin:0 0 6px">Beta Access</p>
+            <p style="color:#666;font-size:11px;margin:0 0 16px;font-family:'Figtree',sans-serif">Voer je passkey in om verder te gaan</p>
+            <input
+              id="gfl-passkey-input"
+              type="text"
+              placeholder="Passkey..."
+              autocomplete="off"
+              style="
+                width:100%;padding:10px 14px;border-radius:8px;
+                background:rgba(255,255,255,0.06);border:1px solid rgba(168,85,247,0.3);
+                color:#fff;font-size:14px;font-family:'Figtree',sans-serif;
+                outline:none;box-sizing:border-box;margin-bottom:10px;
+                transition:border-color 0.2s;
+              "
+            />
+            <p id="gfl-passkey-error" style="color:#f87171;font-size:11px;margin:0 0 10px;display:none"></p>
+            <button
+              id="gfl-passkey-btn"
+              style="
+                width:100%;padding:10px 0;border-radius:8px;
+                background:linear-gradient(135deg,#a855f7,#7c3aed);
+                color:#fff;border:none;font-size:13px;font-weight:600;
+                cursor:pointer;font-family:'Figtree',sans-serif;
+                letter-spacing:0.05em;transition:opacity 0.2s;
+              "
+            >Unlock</button>
           </div>
         </div>
 
@@ -148,6 +181,12 @@
         opacity: 0;
         animation: gfl-slide-cycle 8.4s ease-in-out infinite;
       }
+      #gfl-passkey-input:focus {
+        border-color: #a855f7 !important;
+        box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+      }
+      #gfl-passkey-btn:hover { opacity: 0.9; }
+      #gfl-passkey-btn:active { opacity: 0.7; }
 
       @media (max-width: 767px) {
         #gfl-loading-modal { padding: 2rem 1.5rem !important; min-width: auto !important; width: 85vw !important; max-width: 85vw !important; box-sizing: border-box !important; transform: rotate(90deg) !important; }
@@ -157,6 +196,74 @@
         #gfl-loading-slideshow { min-height: 3.2rem !important; max-width: 100% !important; overflow: hidden !important; }
       }
     </style>
+
+    <!-- Passkey gate logic — runs after DOM is ready, before React mounts -->
+    <script>
+      (function() {
+        var BETA_KEY = 'gfl_beta_access';
+        var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+        // Called by React (via window.__gflLoadingDone) when app is ready
+        window.__gflShowPasskeyGate = function() {
+          // If already unlocked, dismiss immediately
+          if (localStorage.getItem(BETA_KEY)) {
+            window.__gflDismissOverlay();
+            return;
+          }
+          // Hide spinner, show passkey input
+          var phase1 = document.getElementById('gfl-loading-phase1');
+          var phase2 = document.getElementById('gfl-passkey-phase');
+          if (phase1) phase1.style.display = 'none';
+          if (phase2) phase2.style.display = 'block';
+
+          if (isLocal) {
+            // Localhost: show briefly then auto-unlock after 1s
+            setTimeout(function() {
+              localStorage.setItem(BETA_KEY, 'localhost');
+              window.__gflDismissOverlay();
+            }, 1000);
+            return;
+          }
+
+          // Deployed: wire up passkey verification
+          var input = document.getElementById('gfl-passkey-input');
+          var btn = document.getElementById('gfl-passkey-btn');
+          var err = document.getElementById('gfl-passkey-error');
+          if (input) input.focus();
+
+          function verify() {
+            var key = (input && input.value || '').trim();
+            if (!key) return;
+            btn.textContent = '...';
+            btn.disabled = true;
+            if (err) err.style.display = 'none';
+
+            // Client-side check (no backend round-trip needed)
+            if (key === 'Beta-4.9') {
+              localStorage.setItem(BETA_KEY, key);
+              window.__gflDismissOverlay();
+            } else {
+              if (err) { err.textContent = 'Ongeldige passkey'; err.style.display = 'block'; }
+              btn.textContent = 'Unlock';
+              btn.disabled = false;
+              if (input) { input.value = ''; input.focus(); }
+            }
+          }
+
+          if (btn) btn.addEventListener('click', verify);
+          if (input) input.addEventListener('keydown', function(e) { if (e.key === 'Enter') verify(); });
+        };
+
+        // Fade out & remove the overlay
+        window.__gflDismissOverlay = function() {
+          var overlay = document.getElementById('gfl-loading-overlay');
+          if (!overlay) return;
+          overlay.style.opacity = '0';
+          overlay.style.pointerEvents = 'none';
+          setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 500);
+        };
+      })();
+    </script>
 
     <div id="root"></div>
 </body>

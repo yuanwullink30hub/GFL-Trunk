@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAssessment } from './useAssessment';
+import { analyzeAssessment } from '../../utils/apiClient';
 import IntroScreen from './components/IntroScreen';
 import ProgressBar from './components/ProgressBar';
 import QuestionCard from './components/QuestionCard';
 import FileUpload from './components/FileUpload';
 import ResultsView from './components/ResultsView';
 import PyramidVisualizer from './components/PyramidVisualizer';
-import { FileUp, Sparkles } from 'lucide-react';
+import { FileUp, Sparkles, Loader2 } from 'lucide-react';
 
 function AssessmentPage() {
-  const [appState, setAppState] = useState("intro"); // "intro" | "assessment" | "upload" | "results"
+  const [appState, setAppState] = useState("intro"); // "intro" | "assessment" | "upload" | "analyzing" | "results"
+  const [aiError, setAiError] = useState(null);
+  const [finalResult, setFinalResult] = useState(null);
   const {
     subjects,
     questionsReady,
@@ -41,7 +44,61 @@ function AssessmentPage() {
     if (isLastQuestion) setAppState("upload");
   };
 
-  const handleContinueToResults = () => setAppState("results");
+  const handleContinueToResults = useCallback(async () => {
+    setAppState("analyzing");
+    setAiError(null);
+
+    // Compute local results first
+    const localResult = calculateResults;
+
+    // Extract text from uploaded files to send to AI
+    const uploadedFileContents = [];
+    for (const file of localResult.uploadedFiles || []) {
+      if (file.dataUrl && (file.type === 'application/pdf' || file.type === 'text/plain' || file.type === 'application/json')) {
+        if (file.type === 'text/plain' || file.type === 'application/json') {
+          // For text-based files, decode the dataUrl
+          try {
+            const base64 = file.dataUrl.split(',')[1];
+            const text = atob(base64);
+            uploadedFileContents.push({ name: file.name, text });
+          } catch { /* skip unreadable files */ }
+        } else {
+          // For PDF, send the base64 for backend to parse — or note it's uploaded
+          uploadedFileContents.push({ name: file.name, text: `[PDF bestand geüpload: ${file.name}, ${(file.size / 1024).toFixed(1)}KB]` });
+        }
+      }
+    }
+
+    try {
+      const aiResult = await analyzeAssessment({
+        archetypeKey: localResult.overallArchetype,
+        supportGroup: undefined,
+        extendedArchetypeName: undefined,
+        oceanScores: undefined,
+        responses: localResult.responses,
+        subjectResults: localResult.subjectResults,
+        harmonyScore: localResult.harmonyScore,
+        consciousnessLevel: localResult.consciousnessLevel,
+        overallShadow: localResult.overallShadow,
+        uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
+      });
+
+      // Merge AI analysis into results
+      setFinalResult({
+        ...localResult,
+        aiAnalysis: aiResult.analysis,
+        aiProvider: aiResult.provider,
+        aiModel: aiResult.model,
+      });
+    } catch (err) {
+      console.error('[Assessment] AI analysis failed:', err.message);
+      setAiError(err.message);
+      // Still show results even if AI fails — just without AI analysis
+      setFinalResult({ ...localResult, aiAnalysis: null });
+    }
+
+    setAppState("results");
+  }, [calculateResults]);
 
   const handleReset = () => {
     reset();
@@ -162,7 +219,22 @@ function AssessmentPage() {
             </div>
           )}
 
-          {appState === "results" && <ResultsView result={calculateResults} onReset={handleReset} />}
+          {appState === "analyzing" && (
+            <div className="text-center py-24 animate-fadeIn">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-600/20 mb-6">
+                <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
+              </div>
+              <h2 className="text-2xl font-light text-white mb-3">Analysing Your Profile</h2>
+              <p className="text-slate-400 text-sm max-w-md mx-auto mb-2">
+                Your answers are being analysed by our AI coach using the Garden For Life knowledge base...
+              </p>
+              <p className="text-slate-600 text-xs">This may take 15–30 seconds</p>
+            </div>
+          )}
+
+          {appState === "results" && finalResult && (
+            <ResultsView result={finalResult} onReset={handleReset} aiError={aiError} />
+          )}
         </div>
       </div>
 

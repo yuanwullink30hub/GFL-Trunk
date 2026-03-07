@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Download, RotateCcw, Sparkles, Brain, Eye, Heart } from 'lucide-react';
+import { Download, RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle } from 'lucide-react';
 import { ARCHETYPES } from '../assessmentTypes';
 import { generatePDF } from '../pdfGenerator';
 
-function ResultsView({ result, onReset }) {
+function ResultsView({ result, onReset, aiError }) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleDownloadPDF = async () => {
@@ -62,6 +62,48 @@ function ResultsView({ result, onReset }) {
           </h3>
           <p className="text-slate-300 leading-relaxed italic">&ldquo;{result.quantumResonance}&rdquo;</p>
         </div>
+
+        {/* AI-Generated Analysis */}
+        {result.aiAnalysis && (
+          <div className="rounded-xl p-6 md:p-8 border border-emerald-500/30 backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(16, 185, 129, 0.06), inset 0 0 30px rgba(16, 185, 129, 0.03)' }}>
+            <h3 className="text-lg font-light text-emerald-300 mb-4 flex items-center gap-2">
+              <Bot className="w-5 h-5" />
+              AI Persoonlijkheidsanalyse
+              {result.aiProvider && (
+                <span className="ml-auto text-[10px] text-slate-600 uppercase tracking-wider">
+                  {result.aiProvider} / {result.aiModel}
+                </span>
+              )}
+            </h3>
+            <div className="prose prose-invert prose-sm max-w-none">
+              {result.aiAnalysis.split('\n').map((line, i) => {
+                if (!line.trim()) return <br key={i} />;
+                if (line.startsWith('# ')) return <h2 key={i} className="text-lg font-medium text-emerald-200 mt-4 mb-2">{line.slice(2)}</h2>;
+                if (line.startsWith('## ')) return <h3 key={i} className="text-base font-medium text-emerald-300 mt-3 mb-1">{line.slice(3)}</h3>;
+                if (line.startsWith('### ')) return <h4 key={i} className="text-sm font-medium text-emerald-400 mt-2 mb-1">{line.slice(4)}</h4>;
+                if (line.startsWith('- ') || line.startsWith('* ')) return <p key={i} className="text-slate-300 leading-relaxed ml-4">• {line.slice(2)}</p>;
+                if (line.startsWith('**') && line.endsWith('**')) return <p key={i} className="text-slate-200 font-semibold mt-2">{line.slice(2, -2)}</p>;
+                return <p key={i} className="text-slate-300 leading-relaxed">{line}</p>;
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* AI Error Warning */}
+        {aiError && !result.aiAnalysis && (
+          <div className="rounded-xl p-4 border border-amber-500/30 backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)' }}>
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-amber-300 font-medium">AI Analyse niet beschikbaar</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  De AI-analyse kon niet worden gegenereerd. Hieronder staan je lokaal berekende resultaten.
+                </p>
+                <p className="text-xs text-slate-600 mt-1">{aiError}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
           <h3 className="text-lg font-light text-slate-300 flex items-center gap-2">

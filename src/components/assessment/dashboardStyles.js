@@ -25,15 +25,15 @@ export const C = {
 // ── Typography ──
 export const FONT = "'Lexend Mega', Arial, Helvetica, sans-serif";
 
-// SectorFrame exact box-shadow (single string used everywhere)
-const SECTOR_SHADOW = '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(245, 158, 11, 0.06), inset 0 0 30px rgba(245, 158, 11, 0.03)';
+// Simplified box-shadow (reduced layers for performance)
+const SECTOR_SHADOW = '0 6px 30px rgba(0,0,0,0.7), 0 0 80px rgba(0,0,0,0.35)';
 
 // ── Container / Modal shell ──
 export const MODAL_CONTAINER = {
   borderRadius: '0.5rem',
   backgroundColor: C.bgCard,
-  backdropFilter: 'blur(24px)',
-  WebkitBackdropFilter: 'blur(24px)',
+  backdropFilter: 'blur(4px)',
+  WebkitBackdropFilter: 'blur(4px)',
   display: 'flex',
   flexDirection: 'column',
   color: C.text,

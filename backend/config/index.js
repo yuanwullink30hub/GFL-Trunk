@@ -40,7 +40,7 @@ module.exports = {
     gemini: {
       apiKey: process.env.GEMINI_API_KEY || '',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: 'gemini-2.5-flash-preview-05-20',
+      defaultModel: 'gemini-2.5-flash',
     },
     grok: {
       apiKey: process.env.GROK_API_KEY || '',
@@ -58,4 +58,7 @@ module.exports = {
     pass: process.env.SMTP_PASS || '',
     from: process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@gardenforlife.nl',
   },
+
+  // Beta access passkeys (comma-separated list)
+  betaPasskeys: (process.env.BETA_PASSKEYS || 'Beta-4.9').split(',').map(s => s.trim()),
 };

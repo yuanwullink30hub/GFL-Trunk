@@ -35,6 +35,8 @@ import {
 } from './dashboardStyles';
 import { BRANDS } from '../../pages/GeneralBrandPage/brandData';
 import InvoiceTemplate from './InvoiceTemplate';
+import CreditNoteTemplate from './CreditNoteTemplate';
+import EmailTemplate from './EmailTemplate';
 
 // ── Mobile detection context ──
 const MobileCtx = React.createContext(false);
@@ -1997,6 +1999,8 @@ const QuestionsTab = memo(() => {
 
 const FORM_TEMPLATES = [
   { id: 'factuur', label: 'Factuur', icon: '🧾', type: 'excel', desc: 'Factuur template voor cliënten en zakelijke partners', status: 'gereed' },
+  { id: 'creditnota', label: 'Creditnota', icon: '📋', type: 'excel', desc: 'Creditnota template voor correcties en terugbetalingen', status: 'gereed' },
+  { id: 'email', label: 'E-mail', icon: '📧', type: 'word', desc: 'E-mail verzenden met PDF bijlagen', status: 'gereed' },
   { id: 'intake', label: 'Intake Formulier', icon: '📋', type: 'word', desc: 'Standaard intake formulier voor nieuwe cliënten', status: 'gereed' },
   { id: 'offerte', label: 'Offerte', icon: '📄', type: 'word', desc: 'Offerte template voor diensten en pakketten', status: 'concept' },
   { id: 'verzoek', label: 'Verzoek Indienen', icon: '📨', type: 'word', desc: 'Intern verzoekformulier voor aanvragen en goedkeuringen', status: 'gereed' },
@@ -2293,6 +2297,24 @@ const FormulierenTab = memo(() => {
           return (
             <CardWrap title={`${tmpl.icon} ${tmpl.label}`} color="gold">
               <InvoiceTemplate isMobile={isMobile} />
+            </CardWrap>
+          );
+        }
+
+        // ── Creditnota uses dedicated CreditNoteTemplate component ──
+        if (selectedTemplate === 'creditnota') {
+          return (
+            <CardWrap title={`${tmpl.icon} ${tmpl.label}`} color="gold">
+              <CreditNoteTemplate isMobile={isMobile} />
+            </CardWrap>
+          );
+        }
+
+        // ── Email uses dedicated EmailTemplate component ──
+        if (selectedTemplate === 'email') {
+          return (
+            <CardWrap title={`${tmpl.icon} ${tmpl.label}`} color="gold">
+              <EmailTemplate isMobile={isMobile} />
             </CardWrap>
           );
         }

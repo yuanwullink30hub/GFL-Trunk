@@ -6,28 +6,33 @@ import { Plus, Trash2, Eraser, FileText, User, Hash, Receipt, Mail, Send, Chevro
 import { sendFormDirect } from '../../utils/apiClient';
 
 // ═══════════════════════════════════════════════════════════
-// GFL Invoice Template — faithful replica of AI Studio layout
+// GFL Credit Note Template — identical layout to InvoiceTemplate
 // Left: editor  |  Right: A4-ratio preview
 // ═══════════════════════════════════════════════════════════
 
-const INVOICE_NUM_KEY = 'gfl_invoice_number';
-const getNextInvoiceNumber = () => {
-  const stored = localStorage.getItem(INVOICE_NUM_KEY);
+const CN_NUM_KEY = 'gfl_creditnote_number';
+const getNextCNNumber = () => {
+  const stored = localStorage.getItem(CN_NUM_KEY);
   if (stored) return stored;
   const yr = new Date().getFullYear();
-  return `${yr}0001`;
+  return `CN${yr}0001`;
 };
-const saveInvoiceNumber = (num) => localStorage.setItem(INVOICE_NUM_KEY, num);
-const incrementInvoiceNumber = (num) => {
-  const n = parseInt(num, 10);
+const saveCNNumber = (num) => localStorage.setItem(CN_NUM_KEY, num);
+const incrementCNNumber = (num) => {
+  // Extract numeric suffix after "CN" prefix (or use whole string if no prefix)
+  const match = num.match(/^(CN)?(\d+)$/i);
+  if (!match) return num;
+  const prefix = match[1] || '';
+  const n = parseInt(match[2], 10);
   if (isNaN(n)) return num;
-  const next = String(n + 1);
-  saveInvoiceNumber(next);
+  const next = prefix + String(n + 1);
+  saveCNNumber(next);
   return next;
 };
 
 const INITIAL_DATA = {
-  invoiceNumber: '',
+  creditNoteNumber: '',
+  originalInvoiceNumber: '',
   clientName: '',
   clientEmail: '',
   clientAddress: '',
@@ -43,10 +48,10 @@ const INITIAL_DATA = {
   paymentReference: '',
   logoUrl: '/images/landingpage/logo.png',
   items: [
-    { id: '1', description: '', quantity: 1, price: 0 },
+    { id: '1', description: '', quantity: -1, price: 0 },
   ],
   taxRate: 21,
-  notes: '',
+  notes: 'Het bedrag wordt verrekend met uw openstaande facturen.',
 };
 
 /* ── Style primitives (GFL dark theme) ── */
@@ -104,14 +109,14 @@ const useLiveDate = () => {
   return dateStr;
 };
 
-const CONTACTS_KEY = 'gfl_invoice_contacts';
+const CONTACTS_KEY = 'gfl_creditnote_contacts';
 const loadContacts = () => { try { return JSON.parse(localStorage.getItem(CONTACTS_KEY) || '[]'); } catch { return []; } };
 const persistContacts = (list) => localStorage.setItem(CONTACTS_KEY, JSON.stringify(list));
 
-const InvoiceTemplate = memo(({ isMobile = false }) => {
-  const [invoice, setInvoice] = useState(() => ({
+const CreditNoteTemplate = memo(({ isMobile = false }) => {
+  const [creditNote, setCreditNote] = useState(() => ({
     ...INITIAL_DATA,
-    invoiceNumber: getNextInvoiceNumber(),
+    creditNoteNumber: getNextCNNumber(),
   }));
   const liveDate = useLiveDate();
   const sigCanvas = useRef(null);
@@ -132,13 +137,13 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   }, []);
 
   const selectContact = (c) => {
-    setInvoice(prev => ({ ...prev, clientName: c.name, clientAddress: c.address, clientEmail: c.email || '' }));
+    setCreditNote(prev => ({ ...prev, clientName: c.name, clientAddress: c.address, clientEmail: c.email || '' }));
     setRecipientEmail(c.email || '');
     setShowContactList(false);
   };
   const saveCurrentContact = () => {
-    if (!invoice.clientName.trim()) return;
-    const entry = { id: Date.now().toString(), name: invoice.clientName, address: invoice.clientAddress, email: invoice.clientEmail || recipientEmail || '' };
+    if (!creditNote.clientName.trim()) return;
+    const entry = { id: Date.now().toString(), name: creditNote.clientName, address: creditNote.clientAddress, email: creditNote.clientEmail || recipientEmail || '' };
     const updated = [entry, ...savedContacts.filter(c => c.name !== entry.name)];
     setSavedContacts(updated);
     persistContacts(updated);
@@ -159,7 +164,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   // Preload logo for PDF
   const [logoDataUrl, setLogoDataUrl] = useState(null);
   useEffect(() => {
-    if (!invoice.logoUrl) return;
+    if (!creditNote.logoUrl) return;
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -170,11 +175,11 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
       ctx.drawImage(img, 0, 0, size, size);
       setLogoDataUrl(canvas.toDataURL('image/png'));
     };
-    img.src = invoice.logoUrl;
-  }, [invoice.logoUrl]);
+    img.src = creditNote.logoUrl;
+  }, [creditNote.logoUrl]);
 
   const itemsPerPage = 8;
-  const totalPreviewPages = Math.ceil(invoice.items.length / itemsPerPage) || 1;
+  const totalPreviewPages = Math.ceil(creditNote.items.length / itemsPerPage) || 1;
 
   /* resize fix for SignatureCanvas */
   useEffect(() => {
@@ -195,23 +200,23 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
     return () => { window.removeEventListener('resize', handleResize); clearTimeout(timer); };
   }, []);
 
-  const subtotal = invoice.items.reduce((a, i) => a + i.quantity * i.price, 0);
+  const subtotal = creditNote.items.reduce((a, i) => a + i.quantity * i.price, 0);
   const taxAmount = btwIncluded ? (subtotal * 21) / 100 : 0;
   const total = subtotal + taxAmount;
 
   /* ── handlers ── */
   const handleAddItem = () => {
-    setInvoice({
-      ...invoice,
-      items: [...invoice.items, { id: Math.random().toString(36).substr(2, 9), description: '', quantity: 1, price: 0 }],
+    setCreditNote({
+      ...creditNote,
+      items: [...creditNote.items, { id: Math.random().toString(36).substr(2, 9), description: '', quantity: -1, price: 0 }],
     });
   };
   const handleRemoveItem = (id) => {
-    if (invoice.items.length === 1) return;
-    setInvoice({ ...invoice, items: invoice.items.filter(i => i.id !== id) });
+    if (creditNote.items.length === 1) return;
+    setCreditNote({ ...creditNote, items: creditNote.items.filter(i => i.id !== id) });
   };
   const handleItemChange = (id, field, value) => {
-    setInvoice({ ...invoice, items: invoice.items.map(i => i.id === id ? { ...i, [field]: value } : i) });
+    setCreditNote({ ...creditNote, items: creditNote.items.map(i => i.id === id ? { ...i, [field]: value } : i) });
   };
   const clearSignature = () => { sigCanvas.current?.clear(); setSignatureData(null); };
   const saveSignature = () => {
@@ -231,7 +236,6 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
     const pw = doc.internal.pageSize.getWidth();
     const ph = doc.internal.pageSize.getHeight();
 
-    // Helper: draw header content on a page (background must already be filled)
     const drawHeader = () => {
       // Background
       doc.setFillColor(26, 26, 26);
@@ -239,41 +243,40 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
 
       // Business info — left
       doc.setTextColor(255, 255, 255); doc.setFontSize(15); doc.setFont('helvetica', 'bold');
-      doc.text(invoice.businessName, 14, 25);
+      doc.text(creditNote.businessName, 14, 25);
       doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 200, 200);
-      doc.text(`KVK: ${invoice.businessKvk}`, 14, 32);
-      doc.text(`BTW ID: ${invoice.businessBtwId}`, 14, 37);
-      doc.text(invoice.businessAddress, 14, 42);
-      doc.text(`Tel: ${invoice.businessPhone}`, 14, 47);
-      doc.text(invoice.businessEmail, 14, 52);
+      doc.text(`KVK: ${creditNote.businessKvk}`, 14, 32);
+      doc.text(`BTW ID: ${creditNote.businessBtwId}`, 14, 37);
+      doc.text(creditNote.businessAddress, 14, 42);
+      doc.text(`Tel: ${creditNote.businessPhone}`, 14, 47);
+      doc.text(creditNote.businessEmail, 14, 52);
 
-      // Logo + FACTUUR — right
+      // Logo + CREDITNOTA — right
       if (logoDataUrl) {
         try { doc.addImage(logoDataUrl, 'PNG', pw - 53, 10.5, 39, 39); } catch (e) { /* skip */ }
       }
       doc.setFontSize(20); doc.setTextColor(85, 85, 85);
-      doc.text('FACTUUR', pw - 14, 55, { align: 'right' });
+      doc.text('CREDITNOTA', pw - 14, 55, { align: 'right' });
 
       // Payment info
-      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(255, 255, 255);
-      doc.text(`Rekening: ${invoice.bankAccount} (Ref: ${invoice.invoiceNumber})`, 14, 62);
-      doc.setTextColor(136, 136, 136); doc.setFont('helvetica', 'bold');
-      doc.text('gelieve te betalen binnen 14 werkdagen', 14, 67);
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+      doc.text('Het bedrag wordt verrekend of teruggestort', 14, 62);
       doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-      doc.text(`Nr: ${invoice.invoiceNumber}`, pw - 14, 62, { align: 'right' });
+      doc.text(`Nr: ${creditNote.creditNoteNumber}`, pw - 14, 62, { align: 'right' });
       doc.setFont('helvetica', 'normal'); doc.setTextColor(187, 187, 187);
-      doc.text(`DATUM: ${liveDate}`, pw - 14, 67, { align: 'right' });
+      doc.text(`Ref Factuur: ${creditNote.originalInvoiceNumber}`, pw - 14, 67, { align: 'right' });
+      doc.text(`DATUM: ${liveDate}`, pw - 14, 72, { align: 'right' });
 
-      // ─── Separator line: payment info → table ───
+      // Separator line
       doc.setDrawColor(51, 51, 51); doc.setLineWidth(0.2);
-      doc.line(14, 71, pw - 14, 71);
+      doc.line(14, 75, pw - 14, 75);
     };
 
     // Page 1 header
     drawHeader();
 
     // Table
-    const tableData = invoice.items.map(item => [
+    const tableData = creditNote.items.map(item => [
       item.description || 'Nieuw Item', item.quantity.toString(),
       `${item.price.toFixed(2)}.-`,
       `${(item.quantity * item.price).toFixed(2).replace('.', ',')}`,
@@ -281,7 +284,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
 
     let isFirstPage = true;
     autoTable(doc, {
-      startY: 79,
+      startY: 83,
       head: [['OMSCHRIJVING', 'UUR', 'TARIEF Ex.-', 'BEDRAG']],
       body: tableData,
       theme: 'plain',
@@ -290,12 +293,10 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
       columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20 }, 2: { cellWidth: 30 }, 3: { cellWidth: 30 } },
       margin: { left: 14, right: 14, bottom: 80 },
       didParseCell: (data) => {
-        // Apply alignment to BOTH head and body sections consistently
         if (data.column.index === 0) data.cell.styles.halign = 'left';
         if (data.column.index === 1) data.cell.styles.halign = 'center';
         if (data.column.index === 2) data.cell.styles.halign = 'center';
         if (data.column.index === 3) data.cell.styles.halign = 'right';
-        // Nudge header text right for columns 1-3
         if (data.section === 'head' && data.column.index >= 1) {
           const lp = data.column.index === 3 ? 6 : 3;
           data.cell.styles.cellPadding = { top: 2, bottom: 3, left: lp, right: 0 };
@@ -319,7 +320,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
     let finalY = doc.lastAutoTable?.finalY || 75;
     if (finalY > ph - 90) { doc.addPage(); doc.setFillColor(26, 26, 26); doc.rect(0, 0, pw, ph, 'F'); finalY = 20; }
 
-    // Total rows — right-aligned, matching preview
+    // Total rows
     if (btwIncluded) {
       doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(187, 187, 187);
       doc.text('Subtotaal', 140, finalY + 8);
@@ -337,30 +338,29 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
       doc.text(`€${total.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 10, { align: 'right' });
     }
 
-    // ─── Footer ───
+    // Footer
     const footerY = ph - 49;
     doc.setDrawColor(51, 51, 51); doc.setLineWidth(0.2);
     doc.line(14, footerY, pw - 14, footerY);
 
-    // Factuur voor
+    // Creditnota voor
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(136, 136, 136);
-    doc.text('FACTUUR VOOR:', 14, footerY + 4);
+    doc.text('CREDITNOTA VOOR:', 14, footerY + 4);
     doc.setTextColor(255, 255, 255);
-    doc.text(invoice.clientName || '', 14, footerY + 9);
+    doc.text(creditNote.clientName || '', 14, footerY + 9);
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(187, 187, 187);
-    doc.text(invoice.clientAddress || '', 14, footerY + 14);
+    doc.text(creditNote.clientAddress || '', 14, footerY + 14);
 
-    // Side-by-side: Spell (left) + Signature (right)
+    // Spell (left) + Signature (right)
     const sideY = footerY + 18;
 
-    // Spell (left)
     doc.setFontSize(10); doc.setFont('helvetica', 'italic'); doc.setTextColor(255, 255, 255);
     doc.text('De luide stilte en de intense kalmte', 14, sideY + 4);
     doc.text('Wijzen de euros van jouw Bank naar mijn Hart', 14, sideY + 9);
     doc.setFontSize(9); doc.setTextColor(136, 136, 136);
-    if (invoice.notes) doc.text(invoice.notes, 14, sideY + 14);
+    if (creditNote.notes) doc.text(creditNote.notes, 14, sideY + 14);
 
-    // Signature (right) — aligned with Factuur voor
+    // Signature (right)
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
     doc.text('ONDERTEKEND DOOR:', pw - 14, footerY + 4, { align: 'right' });
     const sigW = 56; const sigH = 18;
@@ -378,7 +378,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
       doc.text('HANDTEKENING', sigX + sigW / 2, sigBoxY + sigH / 2 + 3, { align: 'center' });
     }
 
-    // Bedankt — right-aligned below signature
+    // Bedankt
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(136, 136, 136);
     doc.text('Bedankt voor uw vertrouwen', sigX + sigW / 2, sigBoxY + sigH + 5, { align: 'center' });
 
@@ -386,38 +386,36 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   };
 
   const generatePDF = () => {
-    buildPDF().save(`${invoice.invoiceNumber}.pdf`);
-    const next = incrementInvoiceNumber(invoice.invoiceNumber);
-    setInvoice(prev => ({ ...INITIAL_DATA, invoiceNumber: next }));
+    buildPDF().save(`${creditNote.creditNoteNumber}.pdf`);
+    const next = incrementCNNumber(creditNote.creditNoteNumber);
+    setCreditNote(prev => ({ ...INITIAL_DATA, creditNoteNumber: next }));
   };
 
-  /* ── Send invoice email with PDF attachment ── */
+  /* ── Send credit note email with PDF attachment ── */
   const handleSendEmail = async () => {
     if (!recipientEmail.trim()) { setSendError('Vul een e-mailadres in'); return; }
     setSendingState('sending');
     setSendError('');
     try {
       const doc = buildPDF();
-      // jsPDF v4: output('arraybuffer') is synchronous, convert manually to base64
       const arrayBuf = doc.output('arraybuffer');
       const bytes = new Uint8Array(arrayBuf);
       let binary = '';
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       const pdfBase64 = btoa(binary);
-      console.log('[Invoice] pdfBase64 length:', pdfBase64?.length);
       const payload = {
-        templateId: 'factuur',
-        templateLabel: 'Factuur',
+        templateId: 'creditnota',
+        templateLabel: 'Creditnota',
         type: 'pdf',
-        content: emailBody || `Factuur ${invoice.invoiceNumber}`,
+        content: emailBody || `Creditnota ${creditNote.creditNoteNumber}`,
         recipientEmail,
-        subject: emailSubject || `Garden For Life — Factuur ${invoice.invoiceNumber}`,
+        subject: emailSubject || `Garden For Life — Creditnota ${creditNote.creditNoteNumber}`,
         pdfBase64,
-        attachmentFilename: `${invoice.invoiceNumber}.pdf`,
+        attachmentFilename: `${creditNote.creditNoteNumber}.pdf`,
       };
       await sendFormDirect(payload);
-      const next = incrementInvoiceNumber(invoice.invoiceNumber);
-      setInvoice(prev => ({ ...INITIAL_DATA, invoiceNumber: next }));
+      const next = incrementCNNumber(creditNote.creditNoteNumber);
+      setCreditNote(prev => ({ ...INITIAL_DATA, creditNoteNumber: next }));
       setSendingState('sent');
       setTimeout(() => setSendingState(null), 3000);
     } catch (err) {
@@ -456,22 +454,31 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
           display: 'flex', flexDirection: 'column', gap: '1.2rem',
         }}>
 
-          {/* § Factuur Gegevens */}
+          {/* § Creditnota Gegevens */}
           <section>
             <h2 style={sectionHeading}>
               <FileText size={20} color={ACCENT} />
-              Factuur Gegevens
+              Creditnota Gegevens
             </h2>
             <div style={isMobile
               ? { display: 'flex', flexDirection: 'column', gap: '1rem' }
               : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }
             }>
               <div>
-                <div style={labelCss}>Factuurnummer</div>
+                <div style={labelCss}>Creditnotanummer</div>
                 <div style={{ position: 'relative' }}>
                   <Hash size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input style={input} value={invoice.invoiceNumber}
-                    onChange={(e) => { const v = e.target.value; saveInvoiceNumber(v); setInvoice({ ...invoice, invoiceNumber: v }); }} />
+                  <input style={input} value={creditNote.creditNoteNumber}
+                    onChange={(e) => { const v = e.target.value; saveCNNumber(v); setCreditNote({ ...creditNote, creditNoteNumber: v }); }} />
+                </div>
+              </div>
+              <div>
+                <div style={labelCss}>Origineel Factuurnummer</div>
+                <div style={{ position: 'relative' }}>
+                  <Hash size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input style={input} value={creditNote.originalInvoiceNumber}
+                    placeholder="bijv. 20260002"
+                    onChange={(e) => setCreditNote({ ...creditNote, originalInvoiceNumber: e.target.value })} />
                 </div>
               </div>
               <div>
@@ -489,12 +496,12 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
             </div>
           </section>
 
-          {/* § Factuur Informatie */}
+          {/* § Creditnota Informatie */}
           <section style={{ paddingTop: '1.2rem', borderTop: `1px solid ${BORDER}` }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
               <h2 style={{ ...sectionHeading, marginBottom: 0 }}>
                 <User size={20} color={ACCENT} />
-                Factuur Informatie
+                Creditnota Informatie
               </h2>
               <div style={{ display: 'flex', gap: '0.4rem' }}>
                 <button onClick={saveCurrentContact} title="Contact opslaan" style={{
@@ -584,21 +591,21 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div>
-                <h3 style={{ fontSize: '0.68rem', fontWeight: 700, color: DIM, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.6rem' }}>Factuur Voor</h3>
-                <input style={inputNoPad} placeholder="Klantnaam" value={invoice.clientName}
-                  onChange={(e) => setInvoice({ ...invoice, clientName: e.target.value })} />
+                <h3 style={{ fontSize: '0.68rem', fontWeight: 700, color: DIM, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.6rem' }}>Creditnota Voor</h3>
+                <input style={inputNoPad} placeholder="Klantnaam" value={creditNote.clientName}
+                  onChange={(e) => setCreditNote({ ...creditNote, clientName: e.target.value })} />
               </div>
-              <input style={inputNoPad} placeholder="Klant Adres / Contact" value={invoice.clientAddress}
-                onChange={(e) => setInvoice({ ...invoice, clientAddress: e.target.value })} />
+              <input style={inputNoPad} placeholder="Klant Adres / Contact" value={creditNote.clientAddress}
+                onChange={(e) => setCreditNote({ ...creditNote, clientAddress: e.target.value })} />
             </div>
           </section>
 
-          {/* § Factuurregels */}
+          {/* § Creditnotaregels */}
           <section style={{ paddingTop: '1.2rem', borderTop: `1px solid ${BORDER}` }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
               <h2 style={{ ...sectionHeading, marginBottom: 0 }}>
                 <Receipt size={20} color={ACCENT} />
-                {isMobile ? <span>Factuur<br/>regels</span> : 'Factuurregels'}
+                {isMobile ? <span>Creditnota<br/>regels</span> : 'Creditnotaregels'}
               </h2>
               <button onClick={handleAddItem} style={{
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -615,7 +622,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {invoice.items.map((item) => (
+              {creditNote.items.map((item) => (
                 <div key={item.id} style={isMobile ? {
                   display: 'flex', flexDirection: 'column',
                   gap: '0.5rem',
@@ -735,6 +742,14 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
             </div>
           </section>
 
+          {/* § Notitie */}
+          <section style={{ paddingTop: '1.2rem', borderTop: `1px solid ${BORDER}` }}>
+            <div style={labelCss}>Opmerking creditnota</div>
+            <input style={inputNoPad} placeholder="Het bedrag wordt verrekend met uw openstaande facturen."
+              value={creditNote.notes}
+              onChange={(e) => setCreditNote({ ...creditNote, notes: e.target.value })} />
+          </section>
+
           {/* § Handtekening */}
           <section style={isMobile ? {} : { paddingTop: '1.2rem', borderTop: `1px solid ${BORDER}` }}>
             <h2 style={sectionHeading}>
@@ -801,22 +816,22 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
               {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <div style={{ fontSize: '0.77em', fontWeight: 700, color: '#fff' }}>{invoice.businessName}</div>
+                  <div style={{ fontSize: '0.77em', fontWeight: 700, color: '#fff' }}>{creditNote.businessName}</div>
                   <div style={{ paddingTop: '0.3em' }}>
-                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>KVK: {invoice.businessKvk}</p>
-                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>BTW ID: {invoice.businessBtwId}</p>
-                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>{invoice.businessAddress}</p>
-                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>Tel: {invoice.businessPhone}</p>
-                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>{invoice.businessEmail}</p>
+                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>KVK: {creditNote.businessKvk}</p>
+                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>BTW ID: {creditNote.businessBtwId}</p>
+                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>{creditNote.businessAddress}</p>
+                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>Tel: {creditNote.businessPhone}</p>
+                    <p style={{ fontSize: '0.50em', color: '#bbb', margin: '0.12em 0' }}>{creditNote.businessEmail}</p>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    {invoice.logoUrl && (
-                      <img src={invoice.logoUrl} alt="Logo" referrerPolicy="no-referrer"
+                    {creditNote.logoUrl && (
+                      <img src={creditNote.logoUrl} alt="Logo" referrerPolicy="no-referrer"
                         style={{ width: '2.5em', height: '2.5em', objectFit: 'contain', marginBottom: '0.3em', borderRadius: '0.3em' }} />
                     )}
-                    <div style={{ fontSize: '1.1em', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.03em' }}>FACTUUR</div>
+                    <div style={{ fontSize: '1.1em', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.03em' }}>CREDITNOTA</div>
                   </div>
                 </div>
               </div>
@@ -827,11 +842,11 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                 borderBottom: '1px solid #333', paddingBottom: '0.5em', marginTop: '0.7em',
               }}>
                 <div>
-                  <p style={{ fontSize: '0.44em', color: '#fff', margin: 0 }}>Rekening: {invoice.bankAccount} (Ref: {invoice.invoiceNumber})</p>
-                  <p style={{ fontSize: '0.44em', color: '#888', fontWeight: 700, margin: '0.15em 0 0' }}>gelieve te betalen binnen 14 werkdagen</p>
+                  <p style={{ fontSize: '0.44em', color: '#fff', fontWeight: 700, margin: 0 }}>Het bedrag wordt verrekend of teruggestort</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: 0 }}>Nr: {invoice.invoiceNumber}</p>
+                  <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: 0 }}>Nr: {creditNote.creditNoteNumber}</p>
+                  <p style={{ fontSize: '0.44em', color: '#bbb', textTransform: 'uppercase', margin: '0.1em 0 0' }}>Ref Factuur: {creditNote.originalInvoiceNumber}</p>
                   <p style={{ fontSize: '0.55em', color: '#bbb', textTransform: 'uppercase', margin: '0.1em 0 0' }}>Datum: {liveDate}</p>
                 </div>
               </div>
@@ -848,7 +863,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {invoice.items
+                    {creditNote.items
                       .slice((previewPage - 1) * itemsPerPage, previewPage * itemsPerPage)
                       .map((item) => (
                       <tr key={item.id} style={{ borderBottom: '1px solid #222' }}>
@@ -887,17 +902,17 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
               {/* Footer */}
               {previewPage === totalPreviewPages && (
                 <div style={{ marginTop: 'auto', paddingTop: '0.8em', borderTop: '1px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  {/* Left column: Factuur voor + Spell */}
+                  {/* Left column: Creditnota voor + Spell */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6em' }}>
                     <div>
-                      <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#888', margin: 0 }}>Factuur voor:</p>
-                      <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: '0.15em 0' }}>{invoice.clientName}</p>
-                      <p style={{ fontSize: '0.50em', color: '#bbb', lineHeight: 1.5, margin: 0 }}>{invoice.clientAddress}</p>
+                      <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#888', margin: 0 }}>Creditnota voor:</p>
+                      <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: '0.15em 0' }}>{creditNote.clientName}</p>
+                      <p style={{ fontSize: '0.50em', color: '#bbb', lineHeight: 1.5, margin: 0 }}>{creditNote.clientAddress}</p>
                     </div>
                     <div>
                       <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: 0 }}>De luide stilte en de intense kalmte</p>
                       <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: '0.1em 0 0' }}>Wijzen de euros van jouw Bank naar mijn Hart</p>
-                      <p style={{ fontSize: '0.50em', fontStyle: 'italic', color: '#888', margin: '0.5em 0 0' }}>{invoice.notes}</p>
+                      <p style={{ fontSize: '0.50em', fontStyle: 'italic', color: '#888', margin: '0.5em 0 0' }}>{creditNote.notes}</p>
                     </div>
                   </div>
 
@@ -956,7 +971,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
         border: `1px solid ${BORDER}`,
       }}>
         <div style={{ fontSize: '0.72rem', color: DIM }}>
-          {invoice.items.length} regel{invoice.items.length !== 1 ? 's' : ''} · Totaal: €{total.toFixed(2).replace('.', ',')}
+          {creditNote.items.length} regel{creditNote.items.length !== 1 ? 's' : ''} · Totaal: €{total.toFixed(2).replace('.', ',')}
           {btwIncluded && <span style={{ color: '#4ade80', marginLeft: '0.4rem' }}>(incl. BTW)</span>}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1009,15 +1024,15 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                 type="text"
                 value={emailSubject}
                 onChange={(e) => setEmailSubject(e.target.value)}
-                placeholder={`Garden For Life — Factuur ${invoice.invoiceNumber}`}
+                placeholder={`Garden For Life — Creditnota ${creditNote.creditNoteNumber}`}
                 style={inputNoPad}
               />
               {emailSubject.length > 0 &&
-               emailSubject.length < `Garden For Life — Factuur ${invoice.invoiceNumber}`.length &&
-               `Garden For Life — Factuur ${invoice.invoiceNumber}`.toLowerCase().startsWith(emailSubject.toLowerCase()) && (
+               emailSubject.length < `Garden For Life — Creditnota ${creditNote.creditNoteNumber}`.length &&
+               `Garden For Life — Creditnota ${creditNote.creditNoteNumber}`.toLowerCase().startsWith(emailSubject.toLowerCase()) && (
                 <button
                   type="button"
-                  onClick={() => setEmailSubject(`Garden For Life — Factuur ${invoice.invoiceNumber}`)}
+                  onClick={() => setEmailSubject(`Garden For Life — Creditnota ${creditNote.creditNoteNumber}`)}
                   style={{
                     position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
                     background: 'rgba(138,92,246,0.25)', color: '#c4b5fd', border: '1px solid rgba(138,92,246,0.4)',
@@ -1038,7 +1053,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
           <textarea
             value={emailBody}
             onChange={(e) => setEmailBody(e.target.value)}
-            placeholder={`Beste ${invoice.clientName || 'klant'},\n\nBijgevoegd vindt u factuur ${invoice.invoiceNumber}.\n\nMet vriendelijke groet,\nGarden For Life`}
+            placeholder={`Beste ${creditNote.clientName || 'klant'},\n\nBijgevoegd vindt u creditnota ${creditNote.creditNoteNumber}.\n\nMet vriendelijke groet,\nGarden For Life`}
             rows={4}
             style={{
               ...inputNoPad,
@@ -1063,7 +1078,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
           border: '1px solid rgba(188,19,254,0.1)',
         }}>
           <div style={{ fontSize: '0.7rem', color: DIM }}>
-            📎 {invoice.invoiceNumber}.pdf wordt als bijlage meegestuurd
+            📎 {creditNote.creditNoteNumber}.pdf wordt als bijlage meegestuurd
             {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 700 }}>✓ Verstuurd!</span>}
           </div>
           <button
@@ -1093,4 +1108,4 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   );
 });
 
-export default InvoiceTemplate;
+export default CreditNoteTemplate;

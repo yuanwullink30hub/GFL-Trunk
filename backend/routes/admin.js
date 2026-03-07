@@ -708,7 +708,7 @@ router.post('/forms/:id/send', authRequired, adminRequired, async (req, res) => 
 // Supports optional pdfAttachment (data URI) for invoice emails
 router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) => {
   try {
-    const { templateId, templateLabel, type, content, recipientEmail, recipientName, subject, pdfAttachment, pdfBase64, attachmentFilename } = req.body;
+    const { templateId, templateLabel, type, content, recipientEmail, recipientName, subject, pdfAttachment, pdfBase64, attachmentFilename, additionalAttachments } = req.body;
     if (!recipientEmail) return res.status(400).json({ error: 'recipientEmail required' });
     if (!content) return res.status(400).json({ error: 'content required' });
 
@@ -756,6 +756,22 @@ router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) 
         contentType: 'application/pdf',
       }];
     }
+
+    // Append additional attachments if provided
+    if (Array.isArray(additionalAttachments) && additionalAttachments.length > 0) {
+      if (!mailOptions.attachments) mailOptions.attachments = [];
+      for (const att of additionalAttachments) {
+        if (att.content) {
+          console.log('[Admin] Additional attachment:', att.filename, `${att.content.length} chars base64`);
+          mailOptions.attachments.push({
+            filename: att.filename || 'document.pdf',
+            content: Buffer.from(att.content, 'base64'),
+            contentType: 'application/pdf',
+          });
+        }
+      }
+    }
+    console.log('[Admin] Total attachments:', mailOptions.attachments?.length || 0);
 
     await transporter.sendMail(mailOptions);
 

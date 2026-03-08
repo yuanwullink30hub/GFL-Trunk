@@ -232,6 +232,30 @@ export async function analyzeAssessment({
 }
 
 /**
+ * Send assessment results PDF via email.
+ * @param {{ recipientName: string, recipientEmail: string, result: Object }} data
+ */
+export async function sendResultsEmail({ recipientEmail, result }) {
+  // Serialize the result for the backend — convert Date to ISO string
+  const serialized = {
+    ...result,
+    timestamp: result.timestamp instanceof Date ? result.timestamp.toISOString() : result.timestamp,
+  };
+
+  const response = await fetch(`${API_BASE}/ai/send-results`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipientEmail, result: serialized }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Email failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
  * Get available AI providers and backend status.
  */
 export async function getApiStatus() {
@@ -610,88 +634,9 @@ export async function updateLayer(layerIndex, data) {
   return response.json();
 }
 
-// ── Form Documents (Formulieren) ──
+// ── Form Email (Formulieren) — instant send only, no server storage ──
 
-/** Save a form document to the database */
-export async function saveFormDocument(data) {
-  const response = await fetch(`${API_BASE}/admin/forms`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Form save failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/** List all saved form documents */
-export async function getFormDocuments() {
-  const response = await fetch(`${API_BASE}/admin/forms`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Form list failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/** Get a single form document with full content */
-export async function getFormDocument(id) {
-  const response = await fetch(`${API_BASE}/admin/forms/${id}`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Form get failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/** Update a form document */
-export async function updateFormDocument(id, data) {
-  const response = await fetch(`${API_BASE}/admin/forms/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Form update failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/** Delete a form document */
-export async function deleteFormDocument(id) {
-  const response = await fetch(`${API_BASE}/admin/forms/${id}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Form delete failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/** Send a saved form via email */
-export async function sendFormEmail(id, { recipientEmail, subject }) {
-  const response = await fetch(`${API_BASE}/admin/forms/${id}/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ recipientEmail, subject }),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Form send failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/** Send a form directly without saving first */
+/** Send a form directly via email (no DB storage) */
 export async function sendFormDirect(data) {
   const response = await fetch(`${API_BASE}/admin/forms/send-direct`, {
     method: 'POST',
@@ -713,6 +658,44 @@ export async function getEmailStatus() {
   if (!response.ok) {
     const err = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(err.error || `Email status check failed (${response.status})`);
+  }
+  return response.json();
+}
+
+// ── Dev Activity Audit Log ──
+
+/** Log a dev activity event (no auth — called from git hooks or frontend) */
+export async function logActivity(data) {
+  const response = await fetch(`${API_BASE}/admin/sessions/activity`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) return null;
+  return response.json();
+}
+
+/** Get computed dev sessions (admin only) */
+export async function getSessions(limit = 200) {
+  const response = await fetch(`${API_BASE}/admin/sessions?limit=${limit}`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Session list failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/** Clear all dev activity data (admin only) */
+export async function clearSessions() {
+  const response = await fetch(`${API_BASE}/admin/sessions`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Session clear failed (${response.status})`);
   }
   return response.json();
 }

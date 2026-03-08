@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
-import { Download, RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle } from 'lucide-react';
+import { Mail, RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle, Check } from 'lucide-react';
 import { ARCHETYPES } from '../assessmentTypes';
-import { generatePDF } from '../pdfGenerator';
+import { sendResultsEmail } from '../../../utils/apiClient';
 
 function ResultsView({ result, onReset, aiError }) {
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [sendState, setSendState] = useState('idle'); // idle | sending | sent | error
+  const [sendError, setSendError] = useState(null);
 
-  const handleDownloadPDF = async () => {
-    setIsGenerating(true);
+  const handleSendEmail = async () => {
+    if (!recipientEmail.trim()) return;
+    setSendState('sending');
+    setSendError(null);
     try {
-      await generatePDF(result);
-    } finally {
-      setIsGenerating(false);
+      await sendResultsEmail({
+        recipientEmail: recipientEmail.trim(),
+        result,
+      });
+      setSendState('sent');
+    } catch (err) {
+      setSendError(err.message);
+      setSendState('error');
     }
   };
 
@@ -144,15 +153,53 @@ function ResultsView({ result, onReset, aiError }) {
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-        <button
-          onClick={handleDownloadPDF}
-          disabled={isGenerating}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg text-white font-medium hover:from-cyan-500 hover:to-purple-500 transition-all disabled:opacity-50"
-        >
-          <Download className="w-5 h-5" />
-          {isGenerating ? "Generating..." : "Download PDF Report"}
-        </button>
+      {/* Email delivery form */}
+      <div className="rounded-xl p-6 md:p-8 border border-cyan-500/30 backdrop-blur-xl mt-8" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34, 211, 238, 0.06), inset 0 0 30px rgba(34, 211, 238, 0.03)' }}>
+        <h3 className="text-lg font-light text-cyan-300 mb-2 flex items-center gap-2">
+          <Mail className="w-5 h-5" />
+          Ontvang je resultaten per e-mail
+        </h3>
+        <p className="text-xs text-slate-500 mb-4">Je profiel wordt als PDF-rapport naar je inbox gestuurd.</p>
+
+        {sendState === 'sent' ? (
+          <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+            <Check className="w-5 h-5 text-emerald-400" />
+            <div>
+              <p className="text-sm text-emerald-300 font-medium">Verstuurd!</p>
+              <p className="text-xs text-slate-400">Je rapport is verzonden naar {recipientEmail}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1 uppercase tracking-wider">E-mailadres</label>
+              <input
+                type="email"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                placeholder="naam@voorbeeld.nl"
+                className="w-full px-4 py-2.5 rounded-lg text-sm text-white outline-none transition-colors"
+                style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(34,211,238,0.3)' }}
+                onFocus={(e) => e.target.style.borderColor = '#22d3ee'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(34,211,238,0.3)'}
+              />
+            </div>
+            {sendError && (
+              <p className="text-xs text-red-400">{sendError}</p>
+            )}
+            <button
+              onClick={handleSendEmail}
+              disabled={sendState === 'sending' || !recipientEmail.trim()}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg text-white font-medium hover:from-cyan-500 hover:to-purple-500 transition-all disabled:opacity-50"
+            >
+              <Mail className="w-5 h-5" />
+              {sendState === 'sending' ? 'Verzenden...' : 'Verstuur PDF Rapport'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-center mt-6">
         <button
           onClick={onReset}
           className="flex items-center justify-center gap-2 px-6 py-3 border border-slate-600 rounded-lg text-slate-300 hover:border-slate-400 hover:text-white transition-all"

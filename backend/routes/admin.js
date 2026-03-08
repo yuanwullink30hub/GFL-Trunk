@@ -560,155 +560,14 @@ router.post('/prompts/documents/verify', async (_req, res) => {
 
 
 // ═════════════════════════════════════════════════════════════
-// Form Documents — save, list, retrieve, send via email
+// Form Email — send forms instantly, no data saved to DB
 // ═════════════════════════════════════════════════════════════
 
-function formsCollection() {
-  return getDB().collection('formDocuments');
-}
-
-// POST /api/admin/forms — save a form document
-router.post('/forms', authRequired, adminRequired, async (req, res) => {
-  try {
-    const { templateId, templateLabel, type, content, recipientEmail, recipientName, status } = req.body;
-    if (!templateId || !templateLabel) {
-      return res.status(400).json({ error: 'templateId and templateLabel required' });
-    }
-
-    const doc = {
-      templateId,
-      templateLabel,
-      type: type || 'word',
-      content: content || '',
-      recipientEmail: recipientEmail || null,
-      recipientName: recipientName || null,
-      status: status || 'concept',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: req.user?.id || 'admin',
-    };
-
-    const result = await formsCollection().insertOne(doc);
-    res.json({ success: true, id: result.insertedId, ...doc });
-  } catch (err) {
-    console.error('[Admin] Form save error:', err.message);
-    res.status(500).json({ error: 'Failed to save form' });
-  }
-});
-
-// GET /api/admin/forms — list all saved form documents
-router.get('/forms', authRequired, adminRequired, async (req, res) => {
-  try {
-    const docs = await formsCollection()
-      .find({})
-      .sort({ updatedAt: -1 })
-      .project({ content: 0 }) // exclude large content field from list
-      .toArray();
-    res.json({ forms: docs });
-  } catch (err) {
-    console.error('[Admin] Form list error:', err.message);
-    res.status(500).json({ error: 'Failed to list forms' });
-  }
-});
-
-// GET /api/admin/forms/:id — get full form document
-router.get('/forms/:id', authRequired, adminRequired, async (req, res) => {
-  try {
-    const doc = await formsCollection().findOne({ _id: new ObjectId(req.params.id) });
-    if (!doc) return res.status(404).json({ error: 'Form not found' });
-    res.json(doc);
-  } catch (err) {
-    console.error('[Admin] Form get error:', err.message);
-    res.status(500).json({ error: 'Failed to get form' });
-  }
-});
-
-// PUT /api/admin/forms/:id — update a form document
-router.put('/forms/:id', authRequired, adminRequired, async (req, res) => {
-  try {
-    const { content, recipientEmail, recipientName, status } = req.body;
-    const update = {
-      ...(content !== undefined && { content }),
-      ...(recipientEmail !== undefined && { recipientEmail }),
-      ...(recipientName !== undefined && { recipientName }),
-      ...(status !== undefined && { status }),
-      updatedAt: new Date(),
-    };
-    const result = await formsCollection().updateOne(
-      { _id: new ObjectId(req.params.id) },
-      { $set: update }
-    );
-    if (result.matchedCount === 0) return res.status(404).json({ error: 'Form not found' });
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[Admin] Form update error:', err.message);
-    res.status(500).json({ error: 'Failed to update form' });
-  }
-});
-
-// DELETE /api/admin/forms/:id — delete a form document
-router.delete('/forms/:id', authRequired, adminRequired, async (req, res) => {
-  try {
-    const result = await formsCollection().deleteOne({ _id: new ObjectId(req.params.id) });
-    if (result.deletedCount === 0) return res.status(404).json({ error: 'Form not found' });
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[Admin] Form delete error:', err.message);
-    res.status(500).json({ error: 'Failed to delete form' });
-  }
-});
-
-// POST /api/admin/forms/:id/send — send form via email + save to DB
-router.post('/forms/:id/send', authRequired, adminRequired, async (req, res) => {
-  try {
-    const doc = await formsCollection().findOne({ _id: new ObjectId(req.params.id) });
-    if (!doc) return res.status(404).json({ error: 'Form not found' });
-
-    const { recipientEmail, subject } = req.body;
-    const toEmail = recipientEmail || doc.recipientEmail;
-    if (!toEmail) return res.status(400).json({ error: 'No recipient email specified' });
-
-    // Check SMTP config
-    if (!config.email.user || !config.email.pass) {
-      return res.status(503).json({ error: 'Email not configured. Set SMTP_USER and SMTP_PASS in environment variables.' });
-    }
-
-    const transporter = createSMTPTransport();
-
-    const emailSubject = subject || `Garden For Life — ${doc.templateLabel}`;
-
-    await transporter.sendMail({
-      from: `"Garden For Life" <${config.email.from}>`,
-      to: toEmail,
-      subject: emailSubject,
-      html: buildEmailHTML(doc.templateLabel, doc.content),
-    });
-
-    // Update status to 'verstuurd' in DB
-    await formsCollection().updateOne(
-      { _id: new ObjectId(req.params.id) },
-      {
-        $set: {
-          status: 'verstuurd',
-          sentAt: new Date(),
-          sentTo: toEmail,
-          updatedAt: new Date(),
-        },
-      }
-    );
-
-    res.json({ success: true, sentTo: toEmail });
-  } catch (err) {
-    console.error('[Admin] Form send error:', err.message);
-    res.status(500).json({ error: `Failed to send email: ${err.message}` });
-  }
-});
-
-// POST /api/admin/forms/send-direct — send a form without saving first (quick send)
+// POST /api/admin/forms/send-direct — send a form email instantly
 // Supports optional pdfAttachment (data URI) for invoice emails
 router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) => {
   try {
-    const { templateId, templateLabel, type, content, recipientEmail, recipientName, subject, pdfAttachment, pdfBase64, attachmentFilename, additionalAttachments } = req.body;
+    const { templateLabel, content, recipientEmail, subject, pdfAttachment, pdfBase64, attachmentFilename, additionalAttachments } = req.body;
     if (!recipientEmail) return res.status(400).json({ error: 'recipientEmail required' });
     if (!content) return res.status(400).json({ error: 'content required' });
 
@@ -717,32 +576,15 @@ router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) 
       return res.status(503).json({ error: 'Email not configured. Set SMTP_USER and SMTP_PASS in environment variables.' });
     }
 
-    // Save to DB first
-    const doc = {
-      templateId: templateId || 'custom',
-      templateLabel: templateLabel || 'Direct bericht',
-      type: type || 'word',
-      content,
-      recipientEmail,
-      recipientName: recipientName || null,
-      status: 'verstuurd',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      sentAt: new Date(),
-      sentTo: recipientEmail,
-      createdBy: req.user?.id || 'admin',
-    };
-    const saved = await formsCollection().insertOne(doc);
-
-    // Send email
+    // Send email directly — no DB storage
     const transporter = createSMTPTransport();
 
     // Build mail options
     const mailOptions = {
       from: `"Garden For Life" <${config.email.from}>`,
       to: recipientEmail,
-      subject: subject || `Garden For Life — ${doc.templateLabel}`,
-      html: buildEmailHTML(doc.templateLabel, content),
+      subject: subject || `Garden For Life — ${templateLabel || 'Document'}`,
+      html: buildEmailHTML(templateLabel || 'Document', content),
     };
 
     // If PDF attachment provided, decode and attach
@@ -775,7 +617,7 @@ router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) 
 
     await transporter.sendMail(mailOptions);
 
-    res.json({ success: true, id: saved.insertedId, sentTo: recipientEmail });
+    res.json({ success: true, sentTo: recipientEmail });
   } catch (err) {
     console.error('[Admin] Direct send error:', err.message);
     res.status(500).json({ error: `Failed to send: ${err.message}` });
@@ -790,6 +632,105 @@ router.get('/email/status', authRequired, adminRequired, (_req, res) => {
     from: configured ? config.email.from : null,
     host: config.email.host,
   });
+});
+
+// ═════════════════════════════════════════════════════════════
+// Dev Session Audit Log — track developer activity (edits/commits/pushes)
+// Sessions are computed by grouping events with < 30 min gaps.
+// ═════════════════════════════════════════════════════════════
+
+const SESSION_GAP_MS = 30 * 60 * 1000; // 30 minutes
+const RETENTION_DAYS = 90; // auto-delete events older than 90 days
+
+function activityCollection() {
+  const col = getDB().collection('devActivity');
+  // Ensure TTL index exists (idempotent — MongoDB ignores if already created)
+  col.createIndex({ timestamp: 1 }, { expireAfterSeconds: RETENTION_DAYS * 86400 }).catch(() => {});
+  return col;
+}
+
+/**
+ * Compute sessions from a list of activity events.
+ * Events must be sorted by timestamp ascending.
+ * A session breaks when two consecutive events are > 30 min apart.
+ */
+function computeSessions(events) {
+  if (!events.length) return [];
+  const sessions = [];
+  let current = { startedAt: events[0].timestamp, endedAt: events[0].timestamp, events: [events[0]] };
+
+  for (let i = 1; i < events.length; i++) {
+    const gap = new Date(events[i].timestamp).getTime() - new Date(current.endedAt).getTime();
+    if (gap > SESSION_GAP_MS) {
+      // Close current session, start new one
+      current.durationMs = new Date(current.endedAt).getTime() - new Date(current.startedAt).getTime();
+      sessions.push(current);
+      current = { startedAt: events[i].timestamp, endedAt: events[i].timestamp, events: [events[i]] };
+    } else {
+      current.endedAt = events[i].timestamp;
+      current.events.push(events[i]);
+    }
+  }
+  // Close last session
+  current.durationMs = new Date(current.endedAt).getTime() - new Date(current.startedAt).getTime();
+  sessions.push(current);
+  return sessions;
+}
+
+// POST /api/admin/sessions/activity — log a dev activity event (no auth — called from git hooks)
+router.post('/sessions/activity', async (req, res) => {
+  try {
+    const { type, message, branch, hash } = req.body;
+    const allowed = ['edit', 'commit', 'push'];
+    if (!type || !allowed.includes(type)) {
+      return res.status(400).json({ error: `type must be one of: ${allowed.join(', ')}` });
+    }
+
+    await activityCollection().insertOne({
+      type,
+      timestamp: new Date(),
+      message: (message || '').slice(0, 512),
+      branch: (branch || '').slice(0, 256),
+      hash: (hash || '').slice(0, 64),
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Admin] Activity log error:', err.message);
+    res.status(500).json({ error: 'Failed to log activity' });
+  }
+});
+
+// GET /api/admin/sessions — get computed dev sessions (admin only)
+router.get('/sessions', authRequired, adminRequired, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 200, 1000);
+    // Fetch all events sorted ascending by timestamp
+    const events = await activityCollection()
+      .find({})
+      .sort({ timestamp: 1 })
+      .toArray();
+
+    const allSessions = computeSessions(events);
+    // Return newest sessions first, limited
+    const sessions = allSessions.reverse().slice(0, limit);
+
+    res.json({ sessions, totalEvents: events.length });
+  } catch (err) {
+    console.error('[Admin] Session list error:', err.message);
+    res.status(500).json({ error: 'Failed to list sessions' });
+  }
+});
+
+// DELETE /api/admin/sessions — clear all activity data (admin only)
+router.delete('/sessions', authRequired, adminRequired, async (req, res) => {
+  try {
+    const result = await activityCollection().deleteMany({});
+    res.json({ success: true, deleted: result.deletedCount });
+  } catch (err) {
+    console.error('[Admin] Session clear error:', err.message);
+    res.status(500).json({ error: 'Failed to clear sessions' });
+  }
 });
 
 module.exports = router;

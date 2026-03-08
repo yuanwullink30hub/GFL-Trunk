@@ -24,10 +24,9 @@ import {
   importQuestionsDocx,
   getApiStatus,
   getProviders,
-  saveFormDocument,
-  getFormDocuments,
-  deleteFormDocument,
-  sendFormEmail,
+  sendFormDirect,
+  getSessions,
+  clearSessions,
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
@@ -304,6 +303,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         const bottomRow = [
           { key: 'assessments', label: 'Assessments' },
           { key: 'formulieren', label: 'Formulieren' },
+          { key: 'audit', label: 'Audit Log' },
         ];
         const renderBtn = ({ key, label }) => (
           <button key={key} onClick={() => setTab(key)} style={tabStyle(tab === key)}
@@ -331,6 +331,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
             { key: 'questions', label: 'Vragen' },
             { key: 'prompts', label: 'Prompts' },
             { key: 'formulieren', label: 'Formulieren' },
+            { key: 'audit', label: 'Audit Log' },
             { key: 'feedback', label: 'Feedback' },
             { key: 'contact', label: 'Contact' },
           ].map(({ key, label }) => (
@@ -350,6 +351,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
       {tab === 'questions' && <QuestionsTab />}
       {tab === 'prompts' && <PromptsTab />}
       {tab === 'formulieren' && <FormulierenTab />}
+      {tab === 'audit' && <AuditLogTab />}
       {tab === 'feedback' && <FeedbackTab />}
       {tab === 'contact' && <ContactTab />}
         </div>
@@ -1993,19 +1995,10 @@ const FormulierenTab = memo(() => {
   const [recipientEmail, setRecipientEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
-  const [savedForms, setSavedForms] = useState([]);
-  const [savingState, setSavingState] = useState(null); // null | 'saving' | 'saved' | 'error'
   const [sendingState, setSendingState] = useState(null); // null | 'sending' | 'sent' | 'error'
-  const [showHistory, setShowHistory] = useState(false);
-  const [expandedFormId, setExpandedFormId] = useState(null);
   const [sendError, setSendError] = useState('');
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
   const tc = CARD_COLORS.gold;
-
-  // Load saved forms on mount
-  useEffect(() => {
-    getFormDocuments().then(res => setSavedForms(res.forms || [])).catch(() => {});
-  }, []);
 
   // When selecting a template, reset editor
   const handleSelectTemplate = (tmplId) => {
@@ -2019,51 +2012,11 @@ const FormulierenTab = memo(() => {
     setRecipientEmail('');
     setRecipientName('');
     setEmailSubject('');
-    setSavingState(null);
     setSendingState(null);
     setSendError('');
   };
 
-  // Save document to DB
-  const handleSave = async () => {
-    const tmpl = FORM_TEMPLATES.find(t => t.id === selectedTemplate);
-    if (!tmpl || !editorContent.trim()) return;
-    setSavingState('saving');
-    try {
-      const saved = await saveFormDocument({
-        templateId: tmpl.id,
-        templateLabel: tmpl.label,
-        type: tmpl.type,
-        content: editorContent,
-        recipientEmail: recipientEmail || null,
-        recipientName: recipientName || null,
-        status: 'concept',
-      });
-      setSavedForms(prev => [saved, ...prev]);
-      setSavingState('saved');
-      setTimeout(() => setSavingState(null), 2000);
-    } catch (err) {
-      console.error('Save error:', err);
-      setSavingState('error');
-      setTimeout(() => setSavingState(null), 3000);
-    }
-  };
-
-  // Download as text file
-  const handleDownload = () => {
-    const tmpl = FORM_TEMPLATES.find(t => t.id === selectedTemplate);
-    if (!tmpl || !editorContent.trim()) return;
-    const ext = tmpl.type === 'excel' ? 'txt' : tmpl.type === 'pdf' ? 'txt' : 'txt';
-    const blob = new Blob([editorContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `${tmpl.label}.${ext}`;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  // Send via email (save first, then send)
+  // Send via email directly (no DB save)
   const handleSend = async () => {
     const tmpl = FORM_TEMPLATES.find(t => t.id === selectedTemplate);
     if (!tmpl || !emailBody.trim()) return;
@@ -2071,22 +2024,14 @@ const FormulierenTab = memo(() => {
     setSendingState('sending');
     setSendError('');
     try {
-      // Save first
-      const saved = await saveFormDocument({
+      await sendFormDirect({
         templateId: tmpl.id,
         templateLabel: tmpl.label,
         type: tmpl.type,
         content: emailBody,
         recipientEmail,
-        recipientName: recipientName || null,
-        status: 'concept',
-      });
-      // Then send
-      await sendFormEmail(saved.id, {
-        recipientEmail,
         subject: emailSubject || undefined,
       });
-      setSavedForms(prev => [{ ...saved, status: 'verstuurd', sentAt: new Date().toISOString(), sentTo: recipientEmail }, ...prev]);
       setSendingState('sent');
       setTimeout(() => setSendingState(null), 3000);
     } catch (err) {
@@ -2095,14 +2040,6 @@ const FormulierenTab = memo(() => {
       setSendingState('error');
       setTimeout(() => setSendingState(null), 4000);
     }
-  };
-
-  // Delete a saved form
-  const handleDeleteForm = async (id) => {
-    try {
-      await deleteFormDocument(id);
-      setSavedForms(prev => prev.filter(f => f._id !== id));
-    } catch (err) { console.error('Delete error:', err); }
   };
 
   return (
@@ -2116,15 +2053,6 @@ const FormulierenTab = memo(() => {
         }}>
           <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Templates</div>
           <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold }}>{FORM_TEMPLATES.length}</div>
-        </div>
-        <div style={{
-          flex: 1, minWidth: '120px', padding: '0.6rem 0.8rem',
-          backgroundColor: 'rgba(96, 165, 250, 0.04)', borderRadius: '0.3rem',
-          borderLeft: '2px solid #60a5fa',
-          cursor: 'pointer',
-        }} onClick={() => setShowHistory(!showHistory)}>
-          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Verstuurd / Opgeslagen</div>
-          <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: '#60a5fa' }}>{savedForms.length}</div>
         </div>
       </div>
 
@@ -2308,19 +2236,18 @@ const FormulierenTab = memo(() => {
                   <span style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText }}>
                     {tmpl.label}.{tmpl.type === 'excel' ? 'xlsx' : tmpl.type === 'word' ? 'docx' : 'pdf'}
                   </span>
-                  {savingState === 'saved' && <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80' }}>✓ Opgeslagen</span>}
-                  {savingState === 'error' && <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#f87171' }}>✗ Opslaan mislukt</span>}
                 </div>
                 <div style={{ display: 'flex', gap: '0.3rem' }}>
-                  <button onClick={handleSave} disabled={savingState === 'saving' || !editorContent.trim()} style={{
-                    padding: '0.2rem 0.5rem', fontSize: 'max(8px, 0.4vw)',
-                    backgroundColor: 'rgba(255, 174, 0, 0.08)',
-                    color: C.gold, border: '1px solid rgba(255, 174, 0, 0.15)',
-                    borderRadius: '0.15rem', cursor: savingState === 'saving' || !editorContent.trim() ? 'not-allowed' : 'pointer',
-                    textTransform: 'uppercase', fontWeight: 'bold', transition: 'all 0.2s',
-                    opacity: !editorContent.trim() ? 0.4 : 1,
-                  }}>{savingState === 'saving' ? 'BEZIG...' : 'OPSLAAN'}</button>
-                  <button onClick={handleDownload} disabled={!editorContent.trim()} style={{
+                  <button onClick={() => {
+                    if (!editorContent.trim()) return;
+                    const blob = new Blob([editorContent], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = `${tmpl.label}.txt`;
+                    document.body.appendChild(a); a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }} disabled={!editorContent.trim()} style={{
                     padding: '0.2rem 0.5rem', fontSize: 'max(8px, 0.4vw)',
                     backgroundColor: 'rgba(255, 174, 0, 0.08)',
                     color: C.gold, border: '1px solid rgba(255, 174, 0, 0.15)',
@@ -2453,106 +2380,6 @@ const FormulierenTab = memo(() => {
           </>
         );
       })()}
-
-      {/* Saved forms history */}
-      {showHistory && savedForms.length > 0 && (
-        <CardWrap title={`Opgeslagen Documenten (${savedForms.length})`} color="gold">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            {savedForms.map((form) => {
-              const statusColor = form.status === 'verstuurd' ? '#4ade80' : form.status === 'concept' ? '#facc15' : tc.dimText;
-              const isExpanded = expandedFormId === form._id;
-              // Try to parse content for display
-              let displayContent = form.content || '';
-              let isJson = false;
-              try {
-                const parsed = JSON.parse(displayContent);
-                if (parsed && typeof parsed === 'object') {
-                  isJson = true;
-                  displayContent = parsed;
-                }
-              } catch {}
-              return (
-                <div key={form._id} style={{
-                  backgroundColor: tc.cardBg,
-                  borderLeft: `2px solid ${statusColor}`,
-                  borderRadius: '0 0.15rem 0.15rem 0',
-                  overflow: 'hidden',
-                }}>
-                  <div style={{
-                    padding: '0.5rem 0.6rem',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    cursor: 'pointer',
-                  }} onClick={() => setExpandedFormId(isExpanded ? null : form._id)}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText }}>{isExpanded ? '▾' : '▸'}</span>
-                        <span style={{ fontWeight: 'bold', fontSize: 'max(9px, 0.48vw)', color: C.gold }}>{form.templateLabel}</span>
-                        <span style={{
-                          fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.25rem', borderRadius: '0.1rem',
-                          backgroundColor: form.status === 'verstuurd' ? 'rgba(34,197,94,0.12)' : 'rgba(250,204,21,0.12)',
-                          color: statusColor, textTransform: 'uppercase', fontWeight: 'bold',
-                        }}>{form.status}</span>
-                      </div>
-                      <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText }}>
-                        {form.sentTo && `→ ${form.sentTo} · `}
-                        {new Date(form.updatedAt || form.createdAt).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <button onClick={(e) => { e.stopPropagation(); setExpandedFormId(isExpanded ? null : form._id); }} style={{
-                        background: 'none', border: 'none', color: C.gold,
-                        cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', padding: '0 0.3rem',
-                      }}>👁</button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDeleteForm(form._id); }} style={{
-                        background: 'none', border: 'none', color: 'rgba(239,68,68,0.5)',
-                        cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', padding: '0 0.3rem',
-                      }}
-                        onMouseEnter={(e) => { e.target.style.color = '#ef4444'; }}
-                        onMouseLeave={(e) => { e.target.style.color = 'rgba(239,68,68,0.5)'; }}
-                      >✕</button>
-                    </div>
-                  </div>
-                  {/* Expanded content viewer */}
-                  {isExpanded && (
-                    <div style={{
-                      padding: '0.6rem 0.8rem',
-                      borderTop: `1px solid ${tc.border}`,
-                      backgroundColor: 'rgba(0,0,0,0.2)',
-                    }}>
-                      {isJson ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: 'max(8px, 0.42vw)' }}>
-                          {displayContent.invoiceNumber && <div><span style={{ color: tc.dimText }}>Factuurnr: </span><span style={{ color: C.gold }}>{displayContent.invoiceNumber}</span></div>}
-                          {displayContent.clientName && <div><span style={{ color: tc.dimText }}>Klant: </span><span style={{ color: C.text }}>{displayContent.clientName}</span></div>}
-                          {displayContent.clientEmail && <div><span style={{ color: tc.dimText }}>E-mail: </span><span style={{ color: C.text }}>{displayContent.clientEmail}</span></div>}
-                          {displayContent.date && <div><span style={{ color: tc.dimText }}>Datum: </span><span style={{ color: C.text }}>{displayContent.date}</span></div>}
-                          {displayContent.items && displayContent.items.length > 0 && (
-                            <div style={{ marginTop: '0.3rem' }}>
-                              <div style={{ color: tc.dimText, marginBottom: '0.2rem' }}>Regels:</div>
-                              {displayContent.items.map((item, i) => (
-                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.15rem 0', borderBottom: `1px solid ${tc.border}` }}>
-                                  <span style={{ color: C.text }}>{item.description || '(geen omschrijving)'}</span>
-                                  <span style={{ color: C.gold }}>€{(item.amount || 0).toFixed(2).replace('.', ',')}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <pre style={{
-                          color: C.text, fontSize: 'max(8px, 0.42vw)',
-                          whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                          margin: 0, lineHeight: 1.6,
-                          maxHeight: '300px', overflowY: 'auto',
-                        }}>{displayContent}</pre>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </CardWrap>
-      )}
     </div>
   );
 });
@@ -2945,6 +2772,220 @@ const ContactTab = memo(() => {
 function Loading() {
   return <div style={{ textAlign: 'center', opacity: 0.4, padding: '1.5rem 0' }}>Laden...</div>;
 }
+
+// ═══════════════════════════════════════════════════════════
+// Audit Log Tab — developer session tracking (edits/commits/pushes)
+// ═══════════════════════════════════════════════════════════
+
+function formatDuration(ms) {
+  if (!ms || ms <= 0) return '< 1m';
+  const totalSec = Math.floor(ms / 1000);
+  if (totalSec < 60) return `${totalSec}s`;
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  if (min < 60) return `${min}m ${sec}s`;
+  const hr = Math.floor(min / 60);
+  const rm = min % 60;
+  return `${hr}u ${rm}m`;
+}
+
+const EVENT_ICONS = { edit: '✏️', commit: '📦', push: '🚀' };
+const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc' };
+
+const AuditLogTab = memo(() => {
+  const [sessions, setSessions] = useState([]);
+  const [totalEvents, setTotalEvents] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [expandedIdx, setExpandedIdx] = useState(null);
+  const tc = CARD_COLORS.gold;
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await getSessions(200);
+      setSessions(res.sessions || []);
+      setTotalEvents(res.totalEvents || 0);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const handleClear = async () => {
+    if (!window.confirm('Alle dev-activiteit wissen? Dit kan niet ongedaan worden.')) return;
+    try {
+      await clearSessions();
+      setSessions([]);
+      setTotalEvents(0);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Stats
+  const totalSessions = sessions.length;
+  const totalDuration = sessions.reduce((a, s) => a + (s.durationMs || 0), 0);
+  const avgDuration = totalSessions > 0 ? totalDuration / totalSessions : 0;
+  const todaySessions = sessions.filter(s => {
+    const d = new Date(s.startedAt);
+    const now = new Date();
+    return d.toDateString() === now.toDateString();
+  }).length;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
+        {[
+          { label: 'Vandaag', value: todaySessions, color: '#4ade80' },
+          { label: 'Sessies', value: totalSessions, color: C.gold },
+          { label: 'Events', value: totalEvents, color: '#60a5fa' },
+          { label: 'Gem. Duur', value: formatDuration(avgDuration), color: '#c084fc' },
+        ].map((stat, i) => (
+          <div key={i} style={{
+            padding: '0.6rem 0.8rem',
+            backgroundColor: 'rgba(255, 174, 0, 0.04)',
+            borderRadius: '0.3rem',
+            borderLeft: `2px solid ${stat.color}`,
+          }}>
+            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{stat.label}</div>
+            <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+        <button onClick={fetchData} style={{
+          padding: '0.25rem 0.6rem', fontSize: 'max(8px, 0.4vw)',
+          backgroundColor: 'rgba(255, 174, 0, 0.08)', color: C.gold,
+          border: '1px solid rgba(255, 174, 0, 0.15)', borderRadius: '0.15rem',
+          cursor: 'pointer', textTransform: 'uppercase', fontWeight: 'bold',
+        }}>↻ VERNIEUWEN</button>
+        <button onClick={handleClear} style={{
+          padding: '0.25rem 0.6rem', fontSize: 'max(8px, 0.4vw)',
+          backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#f87171',
+          border: '1px solid rgba(239, 68, 68, 0.15)', borderRadius: '0.15rem',
+          cursor: 'pointer', textTransform: 'uppercase', fontWeight: 'bold',
+        }}>🗑 WISSEN</button>
+      </div>
+
+      {error && <ErrorBox msg={error} />}
+
+      {/* Session list */}
+      <DashboardCard title={`Dev Sessies (${totalSessions})`} color="gold">
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>
+            Laden...
+          </div>
+        ) : sessions.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>
+            Nog geen activiteit geregistreerd
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '60vh', overflowY: 'auto' }}>
+            {/* Header row */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 1.2fr',
+              gap: '0.3rem', padding: '0.35rem 0.5rem',
+              borderBottom: `1px solid ${tc.border}`,
+            }}>
+              {['DATUM', 'DUUR', 'EVENTS', 'TYPES'].map(h => (
+                <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
+              ))}
+            </div>
+            {sessions.map((s, idx) => {
+              const startDate = new Date(s.startedAt);
+              const endDate = new Date(s.endedAt);
+              const events = s.events || [];
+              const types = {};
+              events.forEach(e => { types[e.type] = (types[e.type] || 0) + 1; });
+              const isExpanded = expandedIdx === idx;
+
+              return (
+                <div key={idx}>
+                  <div
+                    onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                    style={{
+                      display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 1.2fr',
+                      gap: '0.3rem', padding: '0.4rem 0.5rem',
+                      backgroundColor: isExpanded ? 'rgba(255, 174, 0, 0.06)' : tc.cardBg,
+                      borderLeft: `2px solid ${C.gold}`,
+                      borderRadius: '0 0.15rem 0.15rem 0',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.15s',
+                    }}>
+                    {/* Date range */}
+                    <div style={{ fontSize: 'max(9px, 0.45vw)', color: C.text }}>
+                      {startDate.toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      {' → '}
+                      {endDate.toLocaleString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    {/* Duration */}
+                    <div style={{ fontSize: 'max(9px, 0.45vw)', color: C.gold, fontWeight: 'bold' }}>
+                      {formatDuration(s.durationMs)}
+                    </div>
+                    {/* Event count */}
+                    <div style={{ fontSize: 'max(9px, 0.45vw)', color: tc.dimText }}>
+                      {events.length}
+                    </div>
+                    {/* Type badges */}
+                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                      {Object.entries(types).map(([type, count]) => (
+                        <span key={type} style={{
+                          fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.3rem', borderRadius: '0.1rem',
+                          backgroundColor: `${EVENT_COLORS[type] || '#888'}20`,
+                          color: EVENT_COLORS[type] || '#888',
+                          fontWeight: 'bold', textTransform: 'uppercase',
+                        }}>{EVENT_ICONS[type] || ''} {type} ×{count}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Expanded: event list */}
+                  {isExpanded && (
+                    <div style={{
+                      padding: '0.4rem 0.5rem 0.4rem 1.2rem',
+                      backgroundColor: 'rgba(255, 174, 0, 0.03)',
+                      borderLeft: `2px solid rgba(255, 174, 0, 0.15)`,
+                      display: 'flex', flexDirection: 'column', gap: '0.2rem',
+                    }}>
+                      {events.map((ev, ei) => (
+                        <div key={ei} style={{
+                          display: 'flex', gap: '0.5rem', alignItems: 'center',
+                          fontSize: 'max(8px, 0.42vw)', color: tc.dimText,
+                          padding: '0.15rem 0',
+                          borderBottom: ei < events.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                        }}>
+                          <span style={{ color: EVENT_COLORS[ev.type] || '#888', minWidth: '1.5em' }}>{EVENT_ICONS[ev.type] || '•'}</span>
+                          <span style={{ color: '#888', minWidth: '4.5em' }}>
+                            {new Date(ev.timestamp).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                          <span style={{ color: EVENT_COLORS[ev.type] || '#888', fontWeight: 'bold', textTransform: 'uppercase', minWidth: '3.5em' }}>
+                            {ev.type}
+                          </span>
+                          {ev.branch && <span style={{ color: '#60a5fa' }}>⎇ {ev.branch}</span>}
+                          {ev.hash && <span style={{ color: '#888', fontFamily: 'monospace' }}>{ev.hash}</span>}
+                          {ev.message && <span style={{ color: C.text, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '20vw' }}>"{ev.message}"</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </DashboardCard>
+    </div>
+  );
+});
 
 function ErrorBox({ msg }) {
   return (

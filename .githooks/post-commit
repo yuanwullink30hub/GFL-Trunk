@@ -1,0 +1,15 @@
+#!/bin/sh
+# GFL Dev Audit — log commit activity
+# Pings the backend to record a dev activity event
+
+API_URL="${GFL_API_URL:-https://gfl-api.onrender.com/api}"
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "")
+MSG=$(git log -1 --pretty=%s 2>/dev/null || echo "")
+
+curl -s -X POST "$API_URL/admin/sessions/activity" \
+  -H "Content-Type: application/json" \
+  -d "{\"type\":\"commit\",\"branch\":\"$BRANCH\",\"hash\":\"$HASH\",\"message\":\"$MSG\"}" \
+  > /dev/null 2>&1 &
+
+exit 0

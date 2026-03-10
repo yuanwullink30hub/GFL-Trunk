@@ -2,11 +2,11 @@ import React from 'react';
 
 function PyramidVisualizer({ activeLayer, progress }) {
   const layers = [
-    { name: "Foundation", color: "#22d3ee" },
-    { name: "Emotional", color: "#a855f7" },
-    { name: "Mental", color: "#f472b6" },
-    { name: "Spiritual", color: "#fbbf24" },
-    { name: "Unity", color: "#f97316" },
+    { name: "Zelf / Zonde", color: "#22d3ee" },
+    { name: "Ander / Attentie", color: "#a855f7" },
+    { name: "Massa / Macht", color: "#f472b6" },
+    { name: "Wereld / Wijsheid", color: "#fbbf24" },
+    { name: "Mysterie / Magie", color: "#f97316" },
   ];
 
   return (

@@ -26,7 +26,7 @@
 /**
  * @typedef {Object} Layer
  * @property {number} id          - Layer ID (1-5)
- * @property {string} name        - Short name (Foundation, Emotional, Mental, Spiritual, Unity)
+ * @property {string} name        - Short name (Zelf / Zonde, Ander / Attentie, Massa / Macht, Wereld / Wijsheid, Mysterie / Magie)
  * @property {string} title       - Stylized title (e.g. "BIOCHEMICAL RESONANCE")
  * @property {string} subtitle    - Layer subtitle
  * @property {string} color       - Hex color code

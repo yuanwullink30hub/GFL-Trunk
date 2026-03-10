@@ -3,7 +3,7 @@ import { ChevronRight, Brain, Sparkles, Eye, Heart } from 'lucide-react';
 
 function IntroScreen({ onStart }) {
   const features = [
-    { icon: <Brain className="w-5 h-5" />, title: "5-Layer Analysis", description: "Explore Foundation, Emotional, Mental, Spiritual, and Unity layers", color: "#22d3ee" },
+    { icon: <Brain className="w-5 h-5" />, title: "5-Layer Analysis", description: "Explore Zelf, Ander, Massa, Wereld, and Mysterie layers", color: "#22d3ee" },
     { icon: <Eye className="w-5 h-5" />, title: "Shadow Integration", description: "Based on the deltawerken framework of FM/MF dynamics", color: "#a855f7" },
     { icon: <Heart className="w-5 h-5" />, title: "Research-Backed", description: "Informed by quantum panpsychism, morphogenesis, and alchemy", color: "#f472b6" },
     { icon: <Sparkles className="w-5 h-5" />, title: "AI Training Ready", description: "Generate prompts to harmonize your AI agents with your psychology", color: "#fbbf24" },
@@ -54,11 +54,11 @@ function IntroScreen({ onStart }) {
         <h2 className="text-center text-lg text-slate-300 mb-6">The Five Layers of Being</h2>
         <div className="flex flex-col items-center gap-2">
           {[
-            { name: "Unity", color: "#f97316", desc: "Bewustzijn" },
-            { name: "Spiritual", color: "#fbbf24", desc: "Resonance" },
-            { name: "Mental", color: "#f472b6", desc: "Geometric Cognition" },
-            { name: "Emotional", color: "#a855f7", desc: "Shadow Integration" },
-            { name: "Foundation", color: "#22d3ee", desc: "Biochemical Resonance" },
+            { name: "Mysterie / Magie", color: "#f97316", desc: "Het Transcendente" },
+            { name: "Wereld / Wijsheid", color: "#fbbf24", desc: "De Buitenwereld" },
+            { name: "Massa / Macht", color: "#f472b6", desc: "Het Collectief" },
+            { name: "Ander / Attentie", color: "#a855f7", desc: "De Relatie" },
+            { name: "Zelf / Zonde", color: "#22d3ee", desc: "Het Innerlijk" },
           ].map((layer, index) => (
             <div
               key={layer.name}

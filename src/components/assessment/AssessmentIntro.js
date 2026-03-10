@@ -241,13 +241,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     },
   ];
 
-  // Updated layer colors: Foundation=green, Emotional=blue, Mental=purple, Spiritual=red, Unity=orange
+  // Updated layer colors: Zelf=green, Ander=blue, Massa=purple, Wereld=red, Mysterie=orange
   const layers = [
-    { nameKey: "assessmentIntro.layers.unity", color: "#f97316", descKey: "assessmentIntro.layers.unity" },
-    { nameKey: "assessmentIntro.layers.spiritual", color: "#ef4444", descKey: "assessmentIntro.layers.spiritual" },
-    { nameKey: "assessmentIntro.layers.mental", color: "#a855f7", descKey: "assessmentIntro.layers.mental" },
-    { nameKey: "assessmentIntro.layers.emotional", color: "#3b82f6", descKey: "assessmentIntro.layers.emotional" },
-    { nameKey: "assessmentIntro.layers.foundation", color: "#22c55e", descKey: "assessmentIntro.layers.foundation" },
+    { nameKey: "assessmentIntro.layers.mysterie", color: "#f97316", descKey: "assessmentIntro.layers.mysterie" },
+    { nameKey: "assessmentIntro.layers.wereld", color: "#ef4444", descKey: "assessmentIntro.layers.wereld" },
+    { nameKey: "assessmentIntro.layers.massa", color: "#a855f7", descKey: "assessmentIntro.layers.massa" },
+    { nameKey: "assessmentIntro.layers.ander", color: "#3b82f6", descKey: "assessmentIntro.layers.ander" },
+    { nameKey: "assessmentIntro.layers.zelf", color: "#22c55e", descKey: "assessmentIntro.layers.zelf" },
   ];
 
   const isMobile = windowWidth < 768;

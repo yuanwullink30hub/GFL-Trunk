@@ -50,7 +50,7 @@ const AssessmentResults = ({
     setExpandedSection(expandedSection === section ? null : section);
   };
 
-  // Updated layer colors: Foundation=green, Emotional=blue, Mental=purple, Spiritual=red, Unity=orange
+  // Updated layer colors: Zelf=green, Ander=blue, Massa=purple, Wereld=red, Mysterie=orange
   const colors = ["#22c55e", "#3b82f6", "#a855f7", "#ef4444", "#f97316"];
 
   return (

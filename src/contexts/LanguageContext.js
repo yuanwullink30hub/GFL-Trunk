@@ -73,7 +73,7 @@ export function LanguageProvider({ children }) {
 
   /**
    * tFunc(key) - Get a translated function (for template strings)
-   * e.g. tFunc('insights.foundationalPatterns')('Foundation') => 'Your Foundation layer...'
+   * e.g. tFunc('insights.foundationalPatterns')('Zelf') => 'Your Zelf layer...'
    */
   const tFunc = useCallback((key) => {
     if (typeof key === 'string') {

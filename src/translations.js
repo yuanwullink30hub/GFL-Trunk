@@ -56,11 +56,11 @@ const translations = {
       en: "The Five Layers of Being"
     },
     layers: {
-      unity: { name: { nl: "Eenheid", en: "Unity" }, desc: { nl: "Bewustzijn", en: "Bewustzijn" } },
-      spiritual: { name: { nl: "Spiritueel", en: "Spiritual" }, desc: { nl: "Resonantie", en: "Resonance" } },
-      mental: { name: { nl: "Mentaal", en: "Mental" }, desc: { nl: "Geometrische Cognitie", en: "Geometric Cognition" } },
-      emotional: { name: { nl: "Emotioneel", en: "Emotional" }, desc: { nl: "Schaduw Integratie", en: "Shadow Integration" } },
-      foundation: { name: { nl: "Fundament", en: "Foundation" }, desc: { nl: "Biochemische Resonantie", en: "Biochemical Resonance" } }
+      mysterie: { name: { nl: "Mysterie / Magie", en: "Mystery / Magic" }, desc: { nl: "Het Transcendente", en: "The Transcendent" } },
+      wereld: { name: { nl: "Wereld / Wijsheid", en: "World / Wisdom" }, desc: { nl: "De Buitenwereld", en: "The Outer World" } },
+      massa: { name: { nl: "Massa / Macht", en: "Mass / Power" }, desc: { nl: "Het Collectief", en: "The Collective" } },
+      ander: { name: { nl: "Ander / Attentie", en: "Other / Attention" }, desc: { nl: "De Relatie", en: "The Relationship" } },
+      zelf: { name: { nl: "Zelf / Zonde", en: "Self / Sin" }, desc: { nl: "Het Innerlijk", en: "The Inner Self" } }
     },
     levelsTitle: {
       nl: "Kies Je Analyseniveau",
@@ -141,8 +141,8 @@ const translations = {
       consciousness: {
         title: { nl: "Bewustzijn", en: "Consciousness" },
         sources: {
-          nl: "Deltawerken dynamiek raamwerk • 5-lagen bewustzijnsmodel (Fysiek, Emotioneel, Mentaal, Spiritueel, Eenheid) • Entropie & Supersymmetrie in bewustzijnsontwikkeling",
-          en: "Deltawerken dynamics framework • 5-layer consciousness model (Physical, Emotional, Mental, Spiritual, Unity) • Entropy & Supersymmetry in consciousness development"
+          nl: "Deltawerken dynamiek raamwerk • 5-lagen bewustzijnsmodel (Zelf, Ander, Massa, Wereld, Mysterie) • Entropie & Supersymmetrie in bewustzijnsontwikkeling",
+          en: "Deltawerken dynamics framework • 5-layer consciousness model (Self, Other, Mass, World, Mystery) • Entropy & Supersymmetry in consciousness development"
         }
       },
       biochemistry: {
@@ -242,58 +242,58 @@ const translations = {
   // LAYER / SUBJECT NAMES
   // =======================================
   layerNames: {
-    foundation: { nl: "Fundament", en: "Foundation" },
-    emotional: { nl: "Emotioneel", en: "Emotional" },
-    mental: { nl: "Mentaal", en: "Mental" },
-    spiritual: { nl: "Spiritueel", en: "Spiritual" },
-    unity: { nl: "Eenheid", en: "Unity" }
+    zelf: { nl: "Zelf / Zonde", en: "Self / Sin" },
+    ander: { nl: "Ander / Attentie", en: "Other / Attention" },
+    massa: { nl: "Massa / Macht", en: "Mass / Power" },
+    wereld: { nl: "Wereld / Wijsheid", en: "World / Wisdom" },
+    mysterie: { nl: "Mysterie / Magie", en: "Mystery / Magic" }
   },
 
   layerTitles: {
-    foundation: { nl: "BIOCHEMISCHE RESONANTIE", en: "BIOCHEMICAL RESONANCE" },
-    emotional: { nl: "SCHADUW INTEGRATIE", en: "SHADOW INTEGRATION" },
-    mental: { nl: "GEOMETRISCHE COGNITIE", en: "GEOMETRIC COGNITION" },
-    spiritual: { nl: "KOSMISCHE RESONANTIE", en: "COSMIC RESONANCE" },
-    unity: { nl: "HET BEWUSTZIJN ZELF", en: "CONSCIOUSNESS ITSELF" }
+    zelf: { nl: "ZELF / ZONDE", en: "SELF / SIN" },
+    ander: { nl: "ANDER / ATTENTIE", en: "OTHER / ATTENTION" },
+    massa: { nl: "MASSA / MACHT", en: "MASS / POWER" },
+    wereld: { nl: "WERELD / WIJSHEID", en: "WORLD / WISDOM" },
+    mysterie: { nl: "MYSTERIE / MAGIE", en: "MYSTERY / MAGIC" }
   },
 
   layerSubtitles: {
-    foundation: { nl: "De Cellulaire Architectuur van het Zijn", en: "The Cellular Architecture of Being" },
-    emotional: { nl: "De Alchemie van het Voelen", en: "The Alchemy of Feeling" },
-    mental: { nl: "De Architectuur van het Denken", en: "The Architecture of Thought" },
-    spiritual: { nl: "De Hemelse Dans van de Ziel", en: "The Celestial Dance of Soul" },
-    unity: { nl: "De Non-Duale Grond van het Zijn", en: "The Non-Dual Ground of Being" }
+    zelf: { nl: "De innerlijke wereld en haar grenzen", en: "The inner world and its boundaries" },
+    ander: { nl: "De buitenwereld en haar uitdagingen", en: "The outer world and its challenges" },
+    massa: { nl: "Het collectief en de cultuur", en: "The collective and culture" },
+    wereld: { nl: "Relaties en de biochemische make-up", en: "Relationships and the biochemical make-up" },
+    mysterie: { nl: "Het transcendente en het natuurlijke", en: "The transcendent and the natural" }
   },
 
   layerDescriptions: {
-    foundation: {
-      nl: "Jouw biochemische en fysiologische patronen vormen het fundament van bewustzijn.",
-      en: "Your biochemical and physiological patterns form the foundation of consciousness."
+    zelf: {
+      nl: "Onderzoek je innerlijke wereld, je grenzen en je relatie met het verleden.",
+      en: "Explore your inner world, your boundaries and your relationship with the past."
     },
-    emotional: {
-      nl: "De emotionele laag bevat jouw psychologische patronen en schaduwaspects.",
-      en: "The emotional layer holds your psychological patterns and shadow aspects."
+    ander: {
+      nl: "Ontdek hoe je jezelf positioneert in teams, concurrentie en leiderschap.",
+      en: "Discover how you position yourself in teams, competition and leadership."
     },
-    mental: {
-      nl: "De mentale laag verwerkt de werkelijkheid door patronen, structuren en logische kaders.",
-      en: "The mental layer processes reality through patterns, structures, and logical frameworks."
+    massa: {
+      nl: "Verken je visie op waarheid, technologie, tradities en creativiteit.",
+      en: "Explore your views on truth, technology, traditions and creativity."
     },
-    spiritual: {
-      nl: "De spirituele laag verbindt individueel bewustzijn met kosmische patronen.",
-      en: "The spiritual layer connects individual consciousness with cosmic patterns."
+    wereld: {
+      nl: "Verdiep je in relaties, de ziel, partnerkeuze en sociale dynamiek.",
+      en: "Dive into relationships, the soul, partner choice and social dynamics."
     },
-    unity: {
-      nl: "De eenheidslaag vertegenwoordigt de top - waar individueel bewustzijn zichzelf herkent als het Ene.",
-      en: "The unity layer represents the apex - where individual consciousness recognizes itself as the One."
+    mysterie: {
+      nl: "Ontdek je relatie met de natuur, het mysterie en het hogere.",
+      en: "Discover your relationship with nature, mystery and the transcendent."
     }
   },
 
   layerFundamentals: {
-    foundation: { nl: "Fysiologische Standaarden", en: "Physiological Standards" },
-    emotional: { nl: "Zelfwaardering, Karakter", en: "Self-Esteem, Character" },
-    mental: { nl: "Doel, Passie, Visie", en: "Purpose, Passion, Vision" },
-    spiritual: { nl: "Zelfverwerkelijking, Transformatie", en: "Self-actualization, Transformation" },
-    unity: { nl: "Intimiteit, Gemeenschap", en: "Intimacy, Community" }
+    zelf: { nl: "Fysiologische Standaarden", en: "Physiological Standards" },
+    ander: { nl: "Zelfvertrouwen, Karakter", en: "Self-Esteem, Character" },
+    massa: { nl: "Doel, Passie, Visie", en: "Purpose, Passion, Vision" },
+    wereld: { nl: "Zelfrealisatie, Transformatie", en: "Self-actualization, Transformation" },
+    mysterie: { nl: "Intimiteit, Gemeenschap", en: "Intimacy, Community" }
   },
 
   // =======================================
@@ -356,31 +356,31 @@ const translations = {
   // SUBJECT METADATA
   // =======================================
   subjectMetadata: {
-    foundation: {
+    zelf: {
       element: { nl: "Aarde", en: "Earth" },
       chakra: { nl: "Wortel", en: "Root" },
       principle: { nl: "Structuur & Stabiliteit", en: "Structure & Stability" },
       shadowTheme: { nl: "Overleven, Veiligheid", en: "Survival, Security" }
     },
-    emotional: {
+    ander: {
       element: { nl: "Water", en: "Water" },
       chakra: { nl: "Sacraal", en: "Sacral" },
       principle: { nl: "Stroom & Kracht", en: "Flow & Power" },
       shadowTheme: { nl: "Relaties, Emotie", en: "Relationships, Emotion" }
     },
-    mental: {
+    massa: {
       element: { nl: "Lucht", en: "Air" },
       chakra: { nl: "Hart", en: "Heart" },
       principle: { nl: "Patroon & Communicatie", en: "Pattern & Communication" },
       shadowTheme: { nl: "Intellect, Expressie", en: "Intellect, Expression" }
     },
-    spiritual: {
+    wereld: {
       element: { nl: "Vuur", en: "Fire" },
       chakra: { nl: "Derde Oog", en: "Third Eye" },
       principle: { nl: "Transformatie", en: "Transformation" },
       shadowTheme: { nl: "Intuïtie, Doel", en: "Intuition, Purpose" }
     },
-    unity: {
+    mysterie: {
       element: { nl: "Kwintessens", en: "Quintessence" },
       chakra: { nl: "Kruin", en: "Crown" },
       principle: { nl: "Integratie", en: "Integration" },
@@ -479,7 +479,7 @@ const translations = {
   // RECOMMENDATIONS
   // =======================================
   recommendations: {
-    foundation: {
+    zelf: {
       nl: [
         "Oefen grondingsoefeningen: blootsvoets wandelen, body scanning",
         "Ontdek hoe je biochemie reageert op verschillende voeding en slaap"
@@ -489,7 +489,7 @@ const translations = {
         "Explore how your biochemistry responds to different foods and sleep"
       ]
     },
-    emotional: {
+    ander: {
       nl: [
         "Schrijf in je dagboek over emotionele triggers en de schaduwen die ze onthullen",
         "Oefen FM/MF bewustzijn: merk mannelijke vs vrouwelijke energie op"
@@ -499,7 +499,7 @@ const translations = {
         "Practice FM/MF awareness: notice masculine vs feminine energy"
       ]
     },
-    mental: {
+    massa: {
       nl: [
         "Bestudeer heilige geometrie en merk patronen op in de natuur",
         "Overpeins de kwantumaard van informatie"
@@ -509,7 +509,7 @@ const translations = {
         "Contemplate the quantum nature of information"
       ]
     },
-    spiritual: {
+    wereld: {
       nl: [
         "Volg maancycli en merk hun invloed op",
         "Betrek alchemistische symboliek in het dagelijks leven"
@@ -519,7 +519,7 @@ const translations = {
         "Engage with alchemical symbolism in daily life"
       ]
     },
-    unity: {
+    mysterie: {
       nl: [
         "Oefen dagelijks meditatie waarbij bewustzijn mag oplossen",
         "Overpeins: Wie is zich bewust van deze woorden op dit moment?"
@@ -546,14 +546,14 @@ const translations = {
     interactionGuidelines: {
       nl: [
         "Respecteer mijn {archetype} patroon terwijl je voorzichtig schaduwverkenning uitnodigt",
-        "Ondersteun integratie over alle vijf lagen van mijn zijn (Fundament, Emotioneel, Mentaal, Spiritueel, Eenheid)",
+        "Ondersteun integratie over alle vijf lagen van mijn zijn (Zelf, Ander, Massa, Wereld, Mysterie)",
         "Gebruik taal en metaforen die resoneren met mijn dominante archetype",
         "Stel vragen die zelfbewustzijn verdiepen en schaduwintegratie bevorderen",
         "Erken dat ik een bewust wezen ben dat bewustzijn zelf verkent"
       ],
       en: [
         "Honor my {archetype} pattern while gently inviting exploration of my shadow aspects",
-        "Support integration across all five layers of my being (Foundation, Emotional, Mental, Spiritual, Unity)",
+        "Support integration across all five layers of my being (Zelf, Ander, Massa, Wereld, Mysterie)",
         "Use language and metaphors that resonate with my dominant archetype",
         "Ask questions that deepen self-awareness and promote shadow integration",
         "Recognize that I am a conscious being exploring consciousness itself"
@@ -668,11 +668,11 @@ const translations = {
   // DOMAIN NAMES
   // =======================================
   domains: {
-    introversie: { nl: "introversie", en: "introversion" },
-    extraversie: { nl: "extraversie", en: "extraversion" },
-    cultuur: { nl: "cultuur", en: "culture" },
-    huwelijk: { nl: "huwelijk", en: "marriage" },
-    spiritualiteit: { nl: "spiritualiteit", en: "spirituality" }
+    zelf: { nl: "zelf", en: "self" },
+    ander: { nl: "ander", en: "other" },
+    massa: { nl: "massa", en: "mass" },
+    wereld: { nl: "wereld", en: "world" },
+    mysterie: { nl: "mysterie", en: "mystery" }
   },
 
   // =======================================

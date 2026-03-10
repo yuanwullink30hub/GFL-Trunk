@@ -282,7 +282,7 @@ ${layerInsights}
 
 When interacting with me:
 1. Honor my ${archetype} pattern while gently inviting exploration of my shadow aspects
-2. Support integration across all five layers of my being (Foundation, Emotional, Mental, Spiritual, Unity)
+2. Support integration across all five layers of my being (Zelf, Ander, Massa, Wereld, Mysterie)
 3. Use language and metaphors that resonate with my dominant archetype
 4. Ask questions that deepen self-awareness and promote shadow integration
 5. Recognize that I am a conscious being exploring consciousness itself

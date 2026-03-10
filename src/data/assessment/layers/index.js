@@ -2,11 +2,11 @@
  * Layer Metadata — Master Index
  * 
  * Centralizes layer configuration for the 5 assessment domains:
- *   1. Introversie / Nurture / Zonde
- *   2. Extraversie / Business / Prestatie
- *   3. Cultuur / Wijsheid / Ideaal
- *   4. Huwelijk / Sociale Balans / De Ziel
- *   5. Spiritualiteit / Humility / Magic / Natural
+ *   1. Zelf / Zonde
+ *   2. Ander / Attentie
+ *   3. Massa / Macht
+ *   4. Wereld / Wijsheid
+ *   5. Mysterie / Magie
  * 
  * Each layer contains 12 questions. Total: 60 questions.
  * Re-exports from the canonical assessmentTypes.js source where appropriate.
@@ -16,13 +16,13 @@ export { subjectMetadata } from '../../../pages/assessment/assessmentTypes';
 
 /**
  * Extended layer definitions with all display/scoring context.
- * layerIndex is 0-based (0 = Foundation/outermost, 4 = Unity/innermost).
+ * layerIndex is 0-based (0 = Zelf/outermost, 4 = Mysterie/innermost).
  */
 export const LAYERS = [
   {
     layerIndex: 0,
-    name: 'Foundation',
-    title: 'INTROVERSIE / NURTURE / ZONDE',
+    name: 'Zelf / Zonde',
+    title: 'ZELF / ZONDE',
     subtitle: 'De innerlijke wereld en haar grenzen',
     color: '#22d3ee',
     element: 'Aarde',
@@ -30,12 +30,12 @@ export const LAYERS = [
     principle: 'Structuur & Stabiliteit',
     shadowTheme: 'Isolatie, Zelfbescherming, Schuldgevoel',
     fundamental: 'Fysiologische Standaarden',
-    domains: ['introversie', 'nurture', 'zonde'],
+    domains: ['zelf', 'zonde'],
   },
   {
     layerIndex: 1,
-    name: 'Emotional',
-    title: 'EXTRAVERSIE / BUSINESS / PRESTATIE',
+    name: 'Ander / Attentie',
+    title: 'ANDER / ATTENTIE',
     subtitle: 'De buitenwereld en haar uitdagingen',
     color: '#a855f7',
     element: 'Vuur',
@@ -43,25 +43,25 @@ export const LAYERS = [
     principle: 'Actie & Kracht',
     shadowTheme: 'Competitie, Status, Burnout',
     fundamental: 'Zelfvertrouwen, Karakter',
-    domains: ['extraversie', 'business', 'prestatie'],
+    domains: ['ander', 'attentie'],
   },
   {
     layerIndex: 2,
-    name: 'Mental',
-    title: 'CULTUUR / WIJSHEID / IDEAAL',
-    subtitle: 'Het denken en de verbeelding',
+    name: 'Massa / Macht',
+    title: 'MASSA / MACHT',
+    subtitle: 'Het collectief en de cultuur',
     color: '#f472b6',
     element: 'Lucht',
     chakra: 'Heart',
     principle: 'Patroon & Communicatie',
     shadowTheme: 'Dogma, Intellectuele Arrogantie',
     fundamental: 'Doel, Passie, Visie',
-    domains: ['cultuur', 'wijsheid', 'ideaal'],
+    domains: ['massa', 'macht'],
   },
   {
     layerIndex: 3,
-    name: 'Spiritual',
-    title: 'HUWELIJK / SOCIALE BALANS / DE ZIEL',
+    name: 'Wereld / Wijsheid',
+    title: 'WERELD / WIJSHEID',
     subtitle: 'Relaties en de biochemische make-up',
     color: '#fbbf24',
     element: 'Water',
@@ -69,12 +69,12 @@ export const LAYERS = [
     principle: 'Harmonie & Verbinding',
     shadowTheme: 'Co-afhankelijkheid, Asymmetrische afhankelijkheid',
     fundamental: 'Zelfrealisatie, Transformatie',
-    domains: ['huwelijk', 'sociale_balans', 'de_ziel'],
+    domains: ['wereld', 'wijsheid'],
   },
   {
     layerIndex: 4,
-    name: 'Unity',
-    title: 'SPIRITUALITEIT / HUMILITY / MAGIC / NATURAL',
+    name: 'Mysterie / Magie',
+    title: 'MYSTERIE / MAGIE',
     subtitle: 'Het transcendente en het natuurlijke',
     color: '#f97316',
     element: 'Quintessence',
@@ -82,7 +82,7 @@ export const LAYERS = [
     principle: 'Integratie & Transcendentie',
     shadowTheme: 'Escapisme, Dissociatie, Superioriteit',
     fundamental: 'Intimiteit, Gemeenschap',
-    domains: ['spiritualiteit', 'humility', 'magie', 'natuur'],
+    domains: ['mysterie', 'magie'],
   },
 ];
 

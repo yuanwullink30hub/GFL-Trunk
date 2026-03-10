@@ -30,7 +30,7 @@ const AssessmentQuestions = ({
   const currentQuestion = questions[currentQuestionIndex];
   const questionNumber = currentQuestionIndex + 1 + (currentSubjectIndex * 6);
   
-  // Updated layer colors: Foundation=green, Emotional=blue, Mental=purple, Spiritual=red, Unity=orange
+  // Updated layer colors: Zelf=green, Ander=blue, Massa=purple, Wereld=red, Mysterie=orange
   const layerColors = ['#22c55e', '#3b82f6', '#a855f7', '#ef4444', '#f97316'];
   const subjectColor = currentSubject?.color || layerColors[currentSubjectIndex] || '#22c55e';
 

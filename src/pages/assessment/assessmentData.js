@@ -63,7 +63,7 @@ function ans(questionNum, pos, text) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// LAYER 1 — Foundation (Introversie / Nurture / Zonde)  Q1-Q12
+// LAYER 1 — Zelf / Zonde  Q1-Q12
 // ═══════════════════════════════════════════════════════════════════════
 
 const layer1Questions = [
@@ -249,7 +249,7 @@ const layer1Questions = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
-// LAYER 2 — Emotional (Extraversie / Business / Prestatie)  Q13-Q24
+// LAYER 2 — Ander / Attentie  Q13-Q24
 // ═══════════════════════════════════════════════════════════════════════
 
 const layer2Questions = [
@@ -435,7 +435,7 @@ const layer2Questions = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
-// LAYER 3 — Mental (Cultuur / Wijsheid / Ideaal)  Q25-Q36
+// LAYER 3 — Massa / Macht  Q25-Q36
 // ═══════════════════════════════════════════════════════════════════════
 
 const layer3Questions = [
@@ -621,7 +621,7 @@ const layer3Questions = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
-// LAYER 4 — Spiritual (Huwelijk / Sociale Balans / De Ziel)  Q37-Q48
+// LAYER 4 — Wereld / Wijsheid  Q37-Q48
 // ═══════════════════════════════════════════════════════════════════════
 
 const layer4Questions = [
@@ -807,7 +807,7 @@ const layer4Questions = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
-// LAYER 5 — Unity (Spiritualiteit / Magie / Natuur)  Q49-Q60
+// LAYER 5 — Mysterie / Magie  Q49-Q60
 // ═══════════════════════════════════════════════════════════════════════
 
 const layer5Questions = [
@@ -998,57 +998,57 @@ const layer5Questions = [
 
 export const assessmentSubjects = [
   {
-    id: 'layer-foundation',
-    name: 'Foundation',
-    title: 'INTROVERSIE / NURTURE / ZONDE',
-    subtitle: 'The Cellular Architecture of Being',
+    id: 'layer-zelf',
+    name: 'Zelf / Zonde',
+    title: 'ZELF / ZONDE',
+    subtitle: 'De innerlijke wereld en haar grenzen',
     color: '#22d3ee',
     layerIndex: 0,
-    fundamental: 'Physiological Standards',
+    fundamental: 'Fysiologische Standaarden',
     description: 'Onderzoek je innerlijke wereld, je grenzen en je relatie met het verleden.',
     questions: layer1Questions,
   },
   {
-    id: 'layer-emotional',
-    name: 'Emotional',
-    title: 'EXTRAVERSIE / BUSINESS / PRESTATIE',
-    subtitle: 'The Alchemy of Feeling',
+    id: 'layer-ander',
+    name: 'Ander / Attentie',
+    title: 'ANDER / ATTENTIE',
+    subtitle: 'De buitenwereld en haar uitdagingen',
     color: '#a855f7',
     layerIndex: 1,
-    fundamental: 'Self-Esteem, Character',
+    fundamental: 'Zelfvertrouwen, Karakter',
     description: 'Ontdek hoe je jezelf positioneert in teams, concurrentie en leiderschap.',
     questions: layer2Questions,
   },
   {
-    id: 'layer-mental',
-    name: 'Mental',
-    title: 'CULTUUR / WIJSHEID / IDEAAL',
-    subtitle: 'The Architecture of Thought',
+    id: 'layer-massa',
+    name: 'Massa / Macht',
+    title: 'MASSA / MACHT',
+    subtitle: 'Het collectief en de cultuur',
     color: '#f472b6',
     layerIndex: 2,
-    fundamental: 'Career & Community Standing',
+    fundamental: 'Doel, Passie, Visie',
     description: 'Verken je visie op waarheid, technologie, tradities en creativiteit.',
     questions: layer3Questions,
   },
   {
-    id: 'layer-spiritual',
-    name: 'Spiritual',
-    title: 'HUWELIJK / SOCIALE BALANS / DE ZIEL',
-    subtitle: 'The Resonance of Soul',
+    id: 'layer-wereld',
+    name: 'Wereld / Wijsheid',
+    title: 'WERELD / WIJSHEID',
+    subtitle: 'Relaties en de biochemische make-up',
     color: '#fbbf24',
     layerIndex: 3,
-    fundamental: 'Belonging & Purpose',
+    fundamental: 'Zelfrealisatie, Transformatie',
     description: 'Verdiep je in relaties, de ziel, partnerkeuze en sociale dynamiek.',
     questions: layer4Questions,
   },
   {
-    id: 'layer-unity',
-    name: 'Unity',
-    title: 'SPIRITUALITEIT / MAGIE / NATUUR',
-    subtitle: 'The Convergence of All',
+    id: 'layer-mysterie',
+    name: 'Mysterie / Magie',
+    title: 'MYSTERIE / MAGIE',
+    subtitle: 'Het transcendente en het natuurlijke',
     color: '#f97316',
     layerIndex: 4,
-    fundamental: 'Transcendence & Legacy',
+    fundamental: 'Intimiteit, Gemeenschap',
     description: 'Ontdek je relatie met de natuur, het mysterie en het hogere.',
     questions: layer5Questions,
   },

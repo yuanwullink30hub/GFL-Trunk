@@ -20,11 +20,11 @@ import { assessmentSubjects } from '../../pages/assessment/assessmentData';
 // Layer configuration matching pyramid (bottom to top)
 // Colors synced with assessmentData.js canonical source
 const LAYERS = [
-  { nameKey: "foundation", color: assessmentSubjects[0]?.color || "#22d3ee", descKey: "foundation" },
-  { nameKey: "emotional", color: assessmentSubjects[1]?.color || "#a855f7", descKey: "emotional" },
-  { nameKey: "mental", color: assessmentSubjects[2]?.color || "#f472b6", descKey: "mental" },
-  { nameKey: "spiritual", color: assessmentSubjects[3]?.color || "#fbbf24", descKey: "spiritual" },
-  { nameKey: "unity", color: assessmentSubjects[4]?.color || "#f97316", descKey: "unity" },
+  { nameKey: "zelf", color: assessmentSubjects[0]?.color || "#22d3ee", descKey: "zelf" },
+  { nameKey: "ander", color: assessmentSubjects[1]?.color || "#a855f7", descKey: "ander" },
+  { nameKey: "massa", color: assessmentSubjects[2]?.color || "#f472b6", descKey: "massa" },
+  { nameKey: "wereld", color: assessmentSubjects[3]?.color || "#fbbf24", descKey: "wereld" },
+  { nameKey: "mysterie", color: assessmentSubjects[4]?.color || "#f97316", descKey: "mysterie" },
 ];
 
 // Get real questions for each layer from assessmentData
@@ -37,11 +37,11 @@ const getLayerQuestions = (layerIndex) => {
 // Vertical positions for SAVED cards on the LEFT side (pyramid layer heights)
 // Follow the pyramid upward trail: bottom layer lowest on screen, top layer highest
 const SAVED_LAYER_POSITIONS = [
-  68, // Foundation (bottom) - low on screen
-  58, // Emotional
-  48, // Mental - center
-  38, // Spiritual
-  28, // Unity (top) - high on screen
+  68, // Zelf (bottom) - low on screen
+  58, // Ander
+  48, // Massa - center
+  38, // Wereld
+  28, // Mysterie (top) - high on screen
 ];
 
 // Where the 3D pyramid layers ACTUALLY render on screen (vh) — Desktop
@@ -52,11 +52,11 @@ const SAVED_LAYER_POSITIONS = [
 //   Camera fov=40°, z=8, worldZ=1.46 → dist=6.54, halfFrustum=2.38
 //   viewportVh = 50 − (worldY / 2.38) × 100   (200% canvas centred)
 const PYRAMID_CENTER_Y = [
-  71, // Foundation  (3D y=-1.0 → worldY -0.50 → 71vh)
-  64, // Emotional   (3D y=-0.5 → worldY -0.34 → 64vh)
-  57, // Mental      (3D y= 0.0 → worldY -0.17 → 57vh)
-  51, // Spiritual   (3D y= 0.5 → worldY -0.01 → 51vh)
-  44, // Unity       (3D y= 1.0 → worldY  0.15 → 44vh)
+  71, // Zelf       (3D y=-1.0 → worldY -0.50 → 71vh)
+  64, // Ander      (3D y=-0.5 → worldY -0.34 → 64vh)
+  57, // Massa      (3D y= 0.0 → worldY -0.17 → 57vh)
+  51, // Wereld     (3D y= 0.5 → worldY -0.01 → 51vh)
+  44, // Mysterie   (3D y= 1.0 → worldY  0.15 → 44vh)
 ];
 
 // All OPEN cards sit at the same vertical center on the RIGHT side
@@ -64,11 +64,11 @@ const OPEN_Y = 50; // vertically centered in viewport
 
 // Scale factors for saved cards on the left side — all stay full size
 const SAVED_SCALES = [
-  1.0, // Foundation (bottom)
-  1.0, // Emotional
-  1.0, // Mental
-  1.0, // Spiritual
-  1.0, // Unity (top)
+  1.0, // Zelf (bottom)
+  1.0, // Ander
+  1.0, // Massa
+  1.0, // Wereld
+  1.0, // Mysterie (top)
 ];
 
 // Animation timing (ms)

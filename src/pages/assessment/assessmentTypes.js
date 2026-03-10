@@ -14,9 +14,9 @@ export const ARCHETYPES = {
 };
 
 export const subjectMetadata = {
-  1: { name: "Foundation", element: "Earth", chakra: "Root", principle: "Structure & Stability", shadowTheme: "Survival, Security" },
-  2: { name: "Emotional", element: "Water", chakra: "Sacral", principle: "Flow & Power", shadowTheme: "Relationships, Emotion" },
-  3: { name: "Mental", element: "Air", chakra: "Heart", principle: "Pattern & Communication", shadowTheme: "Intellect, Expression" },
-  4: { name: "Spiritual", element: "Fire", chakra: "Third Eye", principle: "Transformation", shadowTheme: "Intuition, Purpose" },
-  5: { name: "Unity", element: "Quintessence", chakra: "Crown", principle: "Integration", shadowTheme: "Identity, Liberation" },
+  1: { name: "Zelf / Zonde", element: "Earth", chakra: "Root", principle: "Structure & Stability", shadowTheme: "Survival, Security" },
+  2: { name: "Ander / Attentie", element: "Water", chakra: "Sacral", principle: "Flow & Power", shadowTheme: "Relationships, Emotion" },
+  3: { name: "Massa / Macht", element: "Air", chakra: "Heart", principle: "Pattern & Communication", shadowTheme: "Intellect, Expression" },
+  4: { name: "Wereld / Wijsheid", element: "Fire", chakra: "Third Eye", principle: "Transformation", shadowTheme: "Intuition, Purpose" },
+  5: { name: "Mysterie / Magie", element: "Quintessence", chakra: "Crown", principle: "Integration", shadowTheme: "Identity, Liberation" },
 };

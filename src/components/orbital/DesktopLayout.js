@@ -15,13 +15,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
   const { language, toggleLanguage, t } = useLanguage();
   
-  // Beta lock: passkey-based access control (reads from localStorage)
-  const [betaUnlocked] = useState(() => {
-    try { return !!localStorage.getItem('gfl_beta_access'); } catch { return false; }
-  });
-  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const hasLockOverride = urlParams.has('lock');
-  const shouldShowLock = !betaUnlocked || hasLockOverride;
+  // Section lock: on deployed (non-localhost) sites, sections stay locked regardless of passkey.
+  const isLocalhost = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const shouldShowLock = !isLocalhost;
 
   
   // Touch swipe state for Gardens slideshow

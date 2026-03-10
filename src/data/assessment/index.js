@@ -42,6 +42,13 @@ export {
   EXTENDED_ARCHETYPES,
   getExtendedArchetype,
   isComplementaryPair,
+  // Advanced Scoring Engine (Ontology)
+  GROUP_NEURAL_FOCUS,
+  getStateToggle,
+  getNatureCultureBucket,
+  isHarmonyPair,
+  isShadowPair,
+  computeAdvancedScores,
 } from './scoring';
 
 // Analysis Templates

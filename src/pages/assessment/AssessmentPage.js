@@ -78,14 +78,30 @@ function AssessmentPage() {
     try {
       const aiResult = await analyzeAssessment({
         archetypeKey: localResult.overallArchetype,
-        supportGroup: undefined,
-        extendedArchetypeName: undefined,
-        oceanScores: undefined,
+        supportArchetype: localResult.supportArchetype,
+        supportGroup: localResult.supportGroup,
+        mainGroup: localResult.mainGroup,
+        extendedArchetypeName: localResult.extendedArchetypeName,
+        // Shadow & Blindspot
+        shadowArchetype: localResult.shadowArchetype,
+        blindspotArchetype: localResult.blindspotArchetype,
+        isIndividuated: localResult.isIndividuated,
+        // Harmony
+        hasHarmonyBonus: localResult.hasHarmonyBonus,
+        harmonyBonusApplied: localResult.harmonyBonusApplied,
+        // Advanced metrics (Ontology)
+        polarizationIndex: localResult.polarizationIndex,
+        polarizationLevel: localResult.polarizationLevel,
+        authenticityIndex: localResult.authenticityIndex,
+        authenticityLevel: localResult.authenticityLevel,
+        totalNaturePoints: localResult.totalNaturePoints,
+        totalCulturePoints: localResult.totalCulturePoints,
+        // Detailed breakdown for AI
+        archetypeDetails: localResult.archetypeDetails,
+        scores: localResult.scores,
+        // Legacy fields
         responses: localResult.responses,
         subjectResults: localResult.subjectResults,
-        harmonyScore: localResult.harmonyScore,
-        consciousnessLevel: localResult.consciousnessLevel,
-        overallShadow: localResult.overallShadow,
         uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
       });
 

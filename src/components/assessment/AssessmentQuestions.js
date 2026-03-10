@@ -1,6 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
+/** Strip admin metadata tags [xxx] and (xxx) from display text */
+function stripMeta(text) {
+  if (!text) return '';
+  return text.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 /**
  * AssessmentQuestions - Panel showing assessment questions
  * Displays one question at a time with answer options
@@ -154,9 +160,9 @@ const AssessmentQuestions = ({
 
       {/* Question Text */}
       <h2 className="text-xl md:text-2xl font-light leading-relaxed text-white mb-6">
-        {t(`questions.${currentQuestion.id}`) !== `questions.${currentQuestion.id}` 
+        {stripMeta(t(`questions.${currentQuestion.id}`) !== `questions.${currentQuestion.id}` 
           ? t(`questions.${currentQuestion.id}`) 
-          : currentQuestion.text}
+          : currentQuestion.text)}
       </h2>
 
       {/* Answer Options */}
@@ -203,9 +209,9 @@ const AssessmentQuestions = ({
               
               {/* Answer Text */}
               <span className="text-sm md:text-base leading-relaxed text-slate-200 group-hover:text-white transition-colors">
-                {t(`answers.${answer.id}`) !== `answers.${answer.id}` 
+                {stripMeta(t(`answers.${answer.id}`) !== `answers.${answer.id}` 
                   ? t(`answers.${answer.id}`) 
-                  : answer.text}
+                  : answer.text)}
               </span>
             </div>
           </button>

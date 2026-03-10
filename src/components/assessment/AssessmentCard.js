@@ -2,6 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
+/** Strip admin metadata tags [xxx] and (xxx) from display text */
+function stripMeta(text) {
+  if (!text) return '';
+  return text.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 /**
  * AssessmentCard - Question card matching SectorFrame styling
  * 
@@ -311,9 +317,9 @@ const AssessmentCard = ({
             <div className="relative pl-3" style={{ minHeight: s.questionMinH }}>
             <div className="absolute left-0 top-1 bottom-1 w-[2px]" style={{ background: `linear-gradient(to bottom, ${subjectColor}, transparent)` }} />
             <p style={{ fontSize: s.questionFont, lineHeight: 1.5, color: '#FFFEF0', fontFamily: "'Figtree', sans-serif" }}>
-              {t(`questions.${currentQuestion.id}`) !== `questions.${currentQuestion.id}` 
+              {stripMeta(t(`questions.${currentQuestion.id}`) !== `questions.${currentQuestion.id}` 
                 ? t(`questions.${currentQuestion.id}`) 
-                : currentQuestion.text}
+                : currentQuestion.text)}
             </p>
           </div>
 
@@ -411,9 +417,9 @@ const AssessmentCard = ({
                     }}
                   >
                     <span style={{ fontSize: s.answerFont, fontFamily: "'Figtree', sans-serif" }}>
-                      {t(`answers.${answer.id}`) !== `answers.${answer.id}` 
+                      {stripMeta(t(`answers.${answer.id}`) !== `answers.${answer.id}` 
                         ? t(`answers.${answer.id}`) 
-                        : answer.text}
+                        : answer.text)}
                     </span>
                   </div>
                 </button>

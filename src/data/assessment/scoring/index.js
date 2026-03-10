@@ -8,6 +8,8 @@
  * 4. Subgroup dynamics (6 archetype group polarity pairs)
  * 5. Primary & secondary archetype determination
  * 6. Extended Archetype name (72-outcome matrix)
+ * 7. Nature vs Culture/Force dual-tracking (Advanced Ontology)
+ * 8. Polarization Index & Authenticity Index (Advanced Metrics)
  * 
  * Scoring Rules:
  *   Single choice: +5 pts to the answer's archetype
@@ -16,6 +18,11 @@
  *   Harmony Bonus: +69 to BOTH Main & Support if Neurale Zuil neighbors
  *   Shadow Integration: 180°-as measurement (no scoring bonus)
  *   Total max: 369 pts
+ *
+ * Advanced Dual-Tracking (Nature vs Culture/Force):
+ *   Each point is routed to a Nature or CultureForce sub-score per archetype
+ *   based on the Alpha/Beta state toggle and two fixed ID clusters.
+ *   Tie-breaks are resolved by highest Nature sub-score (biological essence wins).
  */
 
 /**
@@ -390,4 +397,320 @@ export function getExtendedArchetype(mainKey, supportKey) {
  */
 export function isComplementaryPair(key1, key2) {
   return COMPLEMENTARY_PAIRS[key1] === key2;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// ADVANCED SCORING ENGINE — Nature/Culture Dual-Tracking (Ontology)
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Ontologie Routing Clusters (fixed ID sets).
+ * Cluster 1: IDs [1, 4, 8, 12, 5, 9] = Judge, Innocent, Sage, Ruler, Explorer, Artist
+ * Cluster 2: IDs [2, 6, 10, 3, 7, 11] = Lover, Outlaw, Magician, Caregiver, Trickster, Hero
+ */
+const CLUSTER_1_IDS = new Set([1, 4, 8, 12, 5, 9]);
+const CLUSTER_2_IDS = new Set([2, 6, 10, 3, 7, 11]);
+
+/**
+ * Reverse map: archetype key → wheel position ID.
+ */
+const KEY_TO_ID = {};
+Object.entries(ARCHETYPE_NUMBERS).forEach(([key, id]) => { KEY_TO_ID[key] = id; });
+
+/**
+ * Neural Focus per group (for AI analysis context).
+ */
+export const GROUP_NEURAL_FOCUS = {
+  RULING:     'CEN: Externe structuur & Wet',
+  RELATIONAL: 'Limbic: Emotionele fusie',
+  SEEKER:     'Openness: Pure ervaring',
+  CHAOS:      'Salience: Disruptie & Waarheid',
+  ABSTRACT:   'DMN: Interne reflectie',
+  AGENCY:     'Extraversie: Wilskracht',
+};
+
+/**
+ * Determine the Alpha/Beta state toggle for a given question number (1-60).
+ *
+ * 60Q Master Cycle (balanced 50/50 Nature/Culture):
+ *   Subject 1 (Q1-12):  Alpha, Beta, Alpha  (blocks of 4)
+ *   Subject 2 (Q13-24): Beta, Alpha, Beta
+ *   Subject 3 (Q25-36): Alpha, Beta, Alpha
+ *   Subject 4 (Q37-48): Beta, Alpha, Beta
+ *   Subject 5 (Q49-60): Alpha, Beta, Alpha
+ *
+ * @param {number} questionNum - 1-based question number (1-60)
+ * @returns {'ALPHA'|'BETA'}
+ */
+export function getStateToggle(questionNum) {
+  const subjectIdx = Math.floor((questionNum - 1) / 12); // 0-4
+  const blockIdx = Math.floor(((questionNum - 1) % 12) / 4); // 0-2 within subject
+  const subjectStartsAlpha = subjectIdx % 2 === 0; // subjects 0,2,4 start Alpha
+  const isAlpha = subjectStartsAlpha ? (blockIdx % 2 === 0) : (blockIdx % 2 !== 0);
+  return isAlpha ? 'ALPHA' : 'BETA';
+}
+
+/**
+ * Determine whether a score goes to Nature or CultureForce bucket.
+ *
+ * @param {string} archetypeKey - e.g. 'JUDGE'
+ * @param {'ALPHA'|'BETA'} stateToggle
+ * @returns {'NATURE'|'CULTURE'}
+ */
+export function getNatureCultureBucket(archetypeKey, stateToggle) {
+  const id = KEY_TO_ID[archetypeKey];
+  if (!id) return 'NATURE'; // fallback
+  const isCluster1 = CLUSTER_1_IDS.has(id);
+  if (stateToggle === 'ALPHA') {
+    return isCluster1 ? 'NATURE' : 'CULTURE';
+  } else {
+    return isCluster1 ? 'CULTURE' : 'NATURE';
+  }
+}
+
+/**
+ * Harmony Bonus check using circular wheel logic.
+ * Positions 12 and 1 are neighbors (circular wrap).
+ *
+ * @param {string} key1 - archetype key
+ * @param {string} key2 - archetype key
+ * @returns {boolean} true if they are direct neighbors in the same Neurale Zuil
+ */
+export function isHarmonyPair(key1, key2) {
+  const id1 = ARCHETYPE_NUMBERS[key1];
+  const id2 = ARCHETYPE_NUMBERS[key2];
+  if (!id1 || !id2) return false;
+  const diff = Math.abs(id1 - id2);
+  // Must be neighbors (diff 1 or circular wrap diff 11)
+  // AND in the same biological group
+  return (diff === 1 || diff === 11) && ARCHETYPE_TO_GROUP[key1] === ARCHETYPE_TO_GROUP[key2];
+}
+
+/**
+ * Check if two archetypes are 180° shadow opposites on the 12-point wheel.
+ *
+ * @param {string} key1
+ * @param {string} key2
+ * @returns {boolean}
+ */
+export function isShadowPair(key1, key2) {
+  const id1 = ARCHETYPE_NUMBERS[key1];
+  const id2 = ARCHETYPE_NUMBERS[key2];
+  if (!id1 || !id2) return false;
+  return Math.abs(id1 - id2) === 6;
+}
+
+/**
+ * ADVANCED SCORING ENGINE — Full dual-tracking computation.
+ *
+ * Processes all 60 answers and produces:
+ * - Per-archetype total, nature, and culture scores
+ * - Main & Support archetypes (with Nature tie-breaking)
+ * - Harmony Bonus application (+69)
+ * - Shadow & Blindspot identification
+ * - Extended Archetype (72-matrix lookup)
+ * - Polarization Index (Main vs Shadow gap)
+ * - Authenticity Index (Nature ratio)
+ * - Individuation detection (180° opposition between Main & Support)
+ *
+ * @param {Array<{questionId: number, answerId: string, archetype: string, selections?: Array}>} responses
+ *   Each response should include the question number (questionId, 1-based)
+ *   and the archetype key. For dual-choice, pass selections array with 2 entries.
+ * @param {Array} [subjects] - Optional subjects array for cross-referencing questions
+ * @returns {Object} Full advanced scoring result
+ */
+export function computeAdvancedScores(responses) {
+  // Initialize per-archetype tracking
+  const scores = {};
+  ALL_ARCHETYPE_KEYS.forEach(key => {
+    scores[key] = { total: 0, nature: 0, culture: 0 };
+  });
+
+  let totalPointsAwarded = 0;
+  let totalNaturePoints = 0;
+  let totalCulturePoints = 0;
+
+  // Process each response
+  if (responses && responses.length > 0) {
+    for (const response of responses) {
+      const questionNum = typeof response.questionId === 'number'
+        ? response.questionId
+        : parseInt(String(response.questionId), 10);
+
+      if (!questionNum || questionNum < 1 || questionNum > 60) continue;
+
+      const stateToggle = getStateToggle(questionNum);
+
+      // Handle dual-choice: selections array or single archetype
+      const selections = response.selections || [{ archetype: response.archetype, isPrimary: true }];
+
+      for (let i = 0; i < selections.length; i++) {
+        const sel = selections[i];
+        const archetype = sel.archetype || response.archetype;
+        if (!archetype || !scores[archetype]) continue;
+
+        // Points: single choice = +5, dual choice = primary +3, secondary +2
+        let pts;
+        if (selections.length === 1) {
+          pts = 5;
+        } else {
+          pts = i === 0 ? 3 : 2;
+        }
+
+        const bucket = getNatureCultureBucket(archetype, stateToggle);
+
+        scores[archetype].total += pts;
+        if (bucket === 'NATURE') {
+          scores[archetype].nature += pts;
+          totalNaturePoints += pts;
+        } else {
+          scores[archetype].culture += pts;
+          totalCulturePoints += pts;
+        }
+        totalPointsAwarded += pts;
+      }
+    }
+  }
+
+  // ── Determine Main & Support with Nature tie-breaking ──
+  const sorted = ALL_ARCHETYPE_KEYS
+    .map(key => ({ key, ...scores[key] }))
+    .sort((a, b) => {
+      // Primary sort: total score descending
+      if (b.total !== a.total) return b.total - a.total;
+      // Tie-break: highest Nature sub-score wins (biological essence leads)
+      return b.nature - a.nature;
+    });
+
+  const mainArchetype = sorted[0]?.key || 'SAGE';
+  const supportArchetype = sorted[1]?.key || 'EXPLORER';
+
+  // ── Harmony Bonus (+69) ──
+  const hasHarmonyBonus = isHarmonyPair(mainArchetype, supportArchetype);
+  if (hasHarmonyBonus) {
+    scores[mainArchetype].total += 69;
+    scores[supportArchetype].total += 69;
+  }
+
+  // ── Shadow & Blindspot ──
+  const shadowArchetype = SHADOW_PAIRS[mainArchetype] || null;
+  const blindspotArchetype = SHADOW_PAIRS[supportArchetype] || null;
+
+  // ── Extended Archetype (72-matrix) ──
+  const supportGroup = ARCHETYPE_TO_GROUP[supportArchetype];
+  const mainGroup = ARCHETYPE_TO_GROUP[mainArchetype];
+  const extendedArchetypeName = getExtendedArchetype(mainArchetype, supportArchetype);
+
+  // ── Detect 180° Individuation (Main & Support are shadow opposites) ──
+  const isIndividuated = isShadowPair(mainArchetype, supportArchetype);
+
+  // ── Polarization Index (Main vs Shadow gap) ──
+  const mainScore = scores[mainArchetype]?.total || 0;
+  const shadowScore = shadowArchetype ? (scores[shadowArchetype]?.total || 0) : 0;
+  const polarizationIndex = mainScore - shadowScore;
+  let polarizationLevel;
+  if (polarizationIndex > 49) {
+    polarizationLevel = 'HIGH_POLARIZATION'; // Aggressive shadow suppression
+  } else if (polarizationIndex <= 15) {
+    polarizationLevel = 'HIGH_INDIVIDUATION'; // Paradox mastery
+  } else {
+    polarizationLevel = 'MODERATE';
+  }
+
+  // ── Authenticity Index (Nature ratio) ──
+  const authenticityIndex = totalPointsAwarded > 0
+    ? Math.round((totalNaturePoints / totalPointsAwarded) * 100)
+    : 50;
+  let authenticityLevel;
+  if (authenticityIndex > 75) {
+    authenticityLevel = 'NATURE_DOMINANT'; // Biological flow navigation
+  } else if (authenticityIndex < 35) {
+    authenticityLevel = 'CULTURE_DOMINANT'; // Survival/adaptation mode (>65% Culture)
+  } else {
+    authenticityLevel = 'BALANCED';
+  }
+
+  // ── Build radar data (post harmony bonus) ──
+  const radarData = ARCHETYPE_RADAR_LABELS.map(label => {
+    const key = label.toUpperCase();
+    return {
+      subject: label,
+      A: scores[key]?.total || 0,
+      nature: scores[key]?.nature || 0,
+      culture: scores[key]?.culture || 0,
+      fullMark: 369,
+    };
+  });
+
+  // ── Subgroup polarity (6 neural pillars) ──
+  const subgroupDynamics = SUBGROUP_POLARITIES.map(p => {
+    const leftKey = p.leftLabel.toUpperCase();
+    const rightKey = p.rightLabel.toUpperCase();
+    const leftTotal = scores[leftKey]?.total || 0;
+    const rightTotal = scores[rightKey]?.total || 0;
+    const total = leftTotal + rightTotal || 1;
+    return {
+      ...p,
+      leftScore: leftTotal,
+      rightScore: rightTotal,
+      leftPercent: Math.round((leftTotal / total) * 100),
+      rightPercent: Math.round((rightTotal / total) * 100),
+      leftNature: scores[leftKey]?.nature || 0,
+      leftCulture: scores[leftKey]?.culture || 0,
+      rightNature: scores[rightKey]?.nature || 0,
+      rightCulture: scores[rightKey]?.culture || 0,
+    };
+  });
+
+  // ── Nature ratio per archetype (for AI analysis) ──
+  const archetypeDetails = ALL_ARCHETYPE_KEYS.map(key => ({
+    key,
+    position: ARCHETYPE_NUMBERS[key],
+    group: ARCHETYPE_TO_GROUP[key],
+    total: scores[key].total,
+    nature: scores[key].nature,
+    culture: scores[key].culture,
+    natureRatio: scores[key].total > 0
+      ? Math.round((scores[key].nature / scores[key].total) * 100)
+      : 0,
+  }));
+
+  return {
+    // Core result
+    mainArchetype,
+    supportArchetype,
+    mainGroup,
+    supportGroup,
+    extendedArchetypeName,
+
+    // Shadow analysis
+    shadowArchetype,
+    blindspotArchetype,
+    shadowScore,
+    isIndividuated,
+
+    // Harmony
+    hasHarmonyBonus,
+    harmonyBonusApplied: hasHarmonyBonus ? 69 : 0,
+
+    // Advanced metrics
+    polarizationIndex,
+    polarizationLevel,
+    authenticityIndex,
+    authenticityLevel,
+    totalNaturePoints,
+    totalCulturePoints,
+    totalPointsAwarded,
+
+    // Detailed breakdown
+    scores,
+    archetypeDetails,
+    radarData,
+    subgroupDynamics,
+
+    // Max possible
+    baseMaxScore: 300,
+    totalMaxScore: 369,
+  };
 }

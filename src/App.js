@@ -5,7 +5,6 @@ import { assessmentSubjects } from './pages/assessment/assessmentData';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from './contexts/LanguageContext';
-import { hasBetaAccess } from './utils/apiClient';
 
 // Retry wrapper: if a chunk fails (stale deploy), reload the page once.
 const lazyRetry = (fn) => lazy(() =>
@@ -329,13 +328,11 @@ const App = () => {
     };
   }, [isMapAnimating]);
 
-  // Beta lock: passkey-based access control
-  // The passkey gate runs inside the loading modal (index.html) before React is visible.
-  // By the time the user sees the app, localStorage already has gfl_beta_access set.
-  const betaUnlocked = hasBetaAccess();
-  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const hasLockOverride = urlParams.has('lock');
-  const shouldShowLock = !betaUnlocked || hasLockOverride;
+  // Section lock: on deployed (non-localhost) sites, sections stay locked regardless of passkey.
+  // The passkey gate in index.html controls initial site access, but content sections remain disabled.
+  const isLocalhost = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const shouldShowLock = !isLocalhost;
 
   // Handler for opening sections - navigate on map
   const handleOpenSection = useCallback((section) => {

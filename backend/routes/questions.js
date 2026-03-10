@@ -436,7 +436,16 @@ router.get('/export/docx', authRequired, adminRequired, async (_req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/questions/import/docx — Admin: import from Word document
-// Parses .docx and extracts questions using [LAAG], [VRAAG], [A-F] markers
+// Parses .docx using ONDERWERP / Q / bullet-answer markers
+//
+// Expected format:
+//   ONDERWERP 1: ZELF / ZONDE (Nederlandse Spreekwoorden Editie)
+//   Q1: Question text here?
+//   •  A [Judge - 1 - Nature]: "Quoted prefix." Answer text (Label).
+//   •  B [Lover - 2 - Culture]: Answer text (Label).
+//   ...F
+//   Q2: Next question...
+//   ONDERWERP 2: ...
 // ─────────────────────────────────────────────────────────────
 
 router.post('/import/docx', authRequired, adminRequired, upload.single('file'), async (req, res) => {
@@ -454,99 +463,104 @@ router.post('/import/docx', authRequired, adminRequired, upload.single('file'), 
     const layers = [];
     let currentLayer = null;
     let currentQuestion = null;
-    let currentAnswerLetter = null;
 
-    const laagRegex = /^\[LAAG\s+(\d+)\]\s*(.*)$/i;
-    const vraagRegex = /^\[VRAAG\s+(\d+)\]\s*(.*)$/i;
-    const domeinRegex = /Domein:\s*(\w+)/i;
-    const answerRegex = /^\[([A-F])\]\s*(.*)$/i;
+    // ONDERWERP 1: ZELF / ZONDE (Nederlandse Spreekwoorden Editie)
+    const onderwerpRegex = /^ONDERWERP\s+(\d+)\s*:\s*(.+)$/i;
+
+    // Q1: Question text   or   Q12: Question text
+    const questionRegex = /^Q(\d+)\s*:\s*(.+)$/i;
+
+    // •  A [Judge - 1 - Nature]: answer text   or   A [Judge - 1 - Nature]: answer text
+    // Also handles missing bullet: A [...]: text
+    const answerRegex = /^[•·\-\*]?\s*([A-F])\s*\[([^\]]*)\]\s*:\s*(.+)$/i;
+
+    // Archetype tag parser: "Judge - 1 - Nature" → { archetype, position, bucket }
+    function parseArchetypeTag(tag) {
+      const parts = tag.split('-').map(s => s.trim());
+      return {
+        archetype: (parts[0] || '').toUpperCase(),
+        position: parseInt(parts[1]) || 0,
+        bucket: (parts[2] || '').toUpperCase(), // NATURE or CULTURE
+      };
+    }
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      // Check for layer marker
-      const laagMatch = line.match(laagRegex);
-      if (laagMatch) {
+      // Check for ONDERWERP marker (layer/subject)
+      const onderwerpMatch = line.match(onderwerpRegex);
+      if (onderwerpMatch) {
+        // Push last question of previous layer
         if (currentQuestion && currentLayer) {
           currentLayer.questions.push(currentQuestion);
+          currentQuestion = null;
         }
-        currentQuestion = null;
 
-        const layerIndex = parseInt(laagMatch[1]);
-        const rest = laagMatch[2];
-        const parts = rest.split('—').map(s => s.trim());
+        const layerNum = parseInt(onderwerpMatch[1]);
+        const layerIndex = layerNum - 1; // ONDERWERP 1 → layerIndex 0
+        const rawName = onderwerpMatch[2].trim();
+
+        // Split on common separators: "ZELF / ZONDE (label)" or "RELATIE — Verbinding"
+        // Extract parenthetical edition label if present
+        const editionMatch = rawName.match(/\(([^)]+)\)\s*$/);
+        const nameWithoutEdition = editionMatch ? rawName.slice(0, editionMatch.index).trim() : rawName;
 
         currentLayer = {
           layerIndex,
-          name: parts[0] || `Layer ${layerIndex}`,
-          title: parts[1] || '',
+          name: nameWithoutEdition,
+          title: rawName,
+          subtitle: editionMatch ? editionMatch[1] : '',
           questions: [],
         };
         layers.push(currentLayer);
         continue;
       }
 
-      // Check for question marker
-      const vraagMatch = line.match(vraagRegex);
-      if (vraagMatch) {
+      // Check for Q marker (question)
+      const questionMatch = line.match(questionRegex);
+      if (questionMatch) {
+        // Push previous question
         if (currentQuestion && currentLayer) {
           currentLayer.questions.push(currentQuestion);
         }
 
-        const qId = parseInt(vraagMatch[1]);
-        const rest = vraagMatch[2];
-        const domMatch = rest.match(domeinRegex);
+        const qId = parseInt(questionMatch[1]);
+        const questionText = questionMatch[2].trim();
 
         currentQuestion = {
           id: qId,
-          text: '',
-          domain: domMatch ? domMatch[1] : '',
+          text: questionText,
+          domain: '',
           answers: [],
         };
-        currentAnswerLetter = null;
         continue;
       }
 
-      // Check for answer marker
+      // Check for answer marker (• A [...]: text)
       const answerMatch = line.match(answerRegex);
       if (answerMatch && currentQuestion) {
-        currentAnswerLetter = answerMatch[1];
-        const answerText = answerMatch[2];
-        const letterIndex = currentAnswerLetter.charCodeAt(0) - 65;
+        const letter = answerMatch[1].toUpperCase();
+        const tag = answerMatch[2];
+        const answerText = answerMatch[3].trim();
+        const letterIndex = letter.charCodeAt(0) - 65; // A=0, B=1, ...F=5
 
-        // The archetype might be on the same line or in a table cell
+        const parsed = parseArchetypeTag(tag);
+
         currentQuestion.answers[letterIndex] = {
-          id: `${currentQuestion.id}${currentAnswerLetter.toLowerCase()}`,
-          text: answerText,
+          id: `${currentQuestion.id}${letter.toLowerCase()}`,
+          text: `[${tag}] ${answerText}`,  // Store full text with metadata (stripped on frontend)
           value: letterIndex + 1,
-          archetype: '', // Will try to recover from existing data
+          archetype: parsed.archetype,
         };
         continue;
       }
 
-      // If we're in a question but haven't hit answers yet, it's question text
-      if (currentQuestion && currentQuestion.answers.length === 0 && !currentAnswerLetter) {
-        // Skip lines that are just archetype names (typically from table parsing)
-        if (line.length > 2 && !domeinRegex.test(line)) {
+      // Continuation text: if in a question and no answers yet, append to question text
+      if (currentQuestion && currentQuestion.answers.length === 0) {
+        if (line.length > 2) {
           currentQuestion.text = currentQuestion.text
             ? currentQuestion.text + ' ' + line
             : line;
-        }
-        continue;
-      }
-
-      // If we're after an answer marker, this might be continuation text or archetype
-      if (currentQuestion && currentAnswerLetter) {
-        const letterIndex = currentAnswerLetter.charCodeAt(0) - 65;
-        const answer = currentQuestion.answers[letterIndex];
-        if (answer) {
-          // If the answer text is empty, this line is probably the archetype then the answer
-          if (!answer.text && line.length > 0) {
-            answer.text = line;
-          } else if (answer.text && !answer.archetype && line.length < 30) {
-            // Short text after answer is likely archetype
-            answer.archetype = line;
-          }
         }
       }
     }
@@ -558,40 +572,47 @@ router.post('/import/docx', authRequired, adminRequired, upload.single('file'), 
 
     if (layers.length === 0) {
       return res.status(400).json({
-        error: 'Geen [LAAG ...] markers gevonden in dit document. Gebruik het juiste export-format.',
+        error: 'Geen ONDERWERP markers gevonden in dit document. Verwacht formaat: "ONDERWERP 1: Naam"',
       });
     }
 
-    // Try to recover archetypes from existing DB data
+    // Recover layer metadata (colors, descriptions) from existing DB data if available
     const existingLayers = await collections.questions().find({}).sort({ layerIndex: 1 }).toArray();
-    const archetypeMap = {};
-    for (const el of existingLayers) {
-      for (const eq of el.questions) {
-        for (const ea of eq.answers) {
-          archetypeMap[`${eq.id}_${ea.id ? ea.id.slice(-1) : ''}`] = ea.archetype;
-        }
-      }
-    }
 
-    // Fill in archetypes and validate
+    // If archetypes are missing from the document, fall back to rotation key computation
     let totalQuestions = 0;
     for (const layer of layers) {
-      // Recover layer metadata from existing
       const existing = existingLayers.find(l => l.layerIndex === layer.layerIndex);
       if (existing) {
         layer.color = layer.color || existing.color;
-        layer.subtitle = layer.subtitle || existing.subtitle;
         layer.description = layer.description || existing.description;
         layer.fundamental = layer.fundamental || existing.fundamental;
+        if (!layer.subtitle && existing.subtitle) layer.subtitle = existing.subtitle;
+      }
+
+      // Default colors for each layer if no existing data
+      if (!layer.color) {
+        const defaultColors = ['#22d3ee', '#a855f7', '#f472b6', '#fbbf24', '#f97316'];
+        layer.color = defaultColors[layer.layerIndex] || '#22d3ee';
       }
 
       for (const q of layer.questions) {
-        // Fill missing archetypes
+        // Fill missing archetypes from rotation key computation
         for (let i = 0; i < q.answers.length; i++) {
           const a = q.answers[i];
-          if (!a.archetype) {
-            const letter = String.fromCharCode(97 + i); // a-f
-            a.archetype = archetypeMap[`${q.id}_${letter}`] || '';
+          if (!a || !a.archetype) {
+            const letter = String.fromCharCode(97 + i);
+            const computed = getArchetypeForAnswer(q.id, i);
+            if (!a) {
+              q.answers[i] = {
+                id: `${q.id}${letter}`,
+                text: '',
+                value: i + 1,
+                archetype: computed,
+              };
+            } else {
+              a.archetype = computed;
+            }
           }
         }
 
@@ -603,7 +624,7 @@ router.post('/import/docx', authRequired, adminRequired, upload.single('file'), 
             id: `${q.id}${letter}`,
             text: '',
             value: idx + 1,
-            archetype: archetypeMap[`${q.id}_${letter}`] || '',
+            archetype: getArchetypeForAnswer(q.id, idx),
           });
         }
 
@@ -639,15 +660,17 @@ module.exports = router;
 // Default Question Data (for seeding)
 // ─────────────────────────────────────────────────────────────
 
-// Archetype Sets
-const SET_A = ['SAGE', 'HERO', 'LOVER', 'ARTIST', 'RULER', 'INNOCENT'];
-const SET_B = ['EXPLORER', 'OUTLAW', 'CAREGIVER', 'MAGICIAN', 'JUDGE', 'TRICKSTER'];
+// Archetype Sets (Neuraal Schakelbord — must match frontend assessmentData.js)
+// Set Alpha: positions 1,2,4,6,8,10 on the wheel
+const SET_A = ['JUDGE', 'LOVER', 'INNOCENT', 'OUTLAW', 'SAGE', 'MAGICIAN'];
+// Set Beta: positions 7,9,11,12,3,5 on the wheel
+const SET_B = ['TRICKSTER', 'ARTIST', 'HERO', 'RULER', 'CAREGIVER', 'EXPLORER'];
 
 const PATTERNS = [
-  [0, 1, 2, 3, 4, 5],
-  [3, 4, 5, 0, 1, 2],
-  [5, 4, 3, 2, 1, 0],
-  [2, 1, 0, 5, 4, 3],
+  [0, 1, 2, 3, 4, 5], // Q1 (ABCDEF): De Grondhouding — G1→G6 forward
+  [0, 1, 2, 3, 4, 5], // Q2 (DEFABC): De Verschuiving naar Chaos — G4→G3
+  [5, 4, 3, 2, 1, 0], // Q3 (FEDCBA): De Spiegeling van de Geest — G6→G1 mirror
+  [5, 4, 3, 2, 1, 0], // Q4 (CBAFED): De Omgekeerde Orde — G3→G4
 ];
 
 function getArchetypeForAnswer(questionNum, answerPos) {

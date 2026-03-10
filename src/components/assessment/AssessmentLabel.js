@@ -2,6 +2,12 @@ import React, { useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Check, Lock, Sparkles } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
+/** Strip admin metadata tags [xxx] and (xxx) from display text */
+function stripMeta(text) {
+  if (!text) return '';
+  return text.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 /**
  * AssessmentLabel - Enhanced HoloLabel with full assessment integration
  * Replaces the simple input with a question-based assessment flow
@@ -268,7 +274,7 @@ const AssessmentLabel = ({
 
                 {/* Question Text */}
                 <p className="text-white/90 leading-relaxed" style={{fontSize: 'max(31px, 1.4vw)'}}>
-                  {currentQuestion.text}
+                  {stripMeta(currentQuestion.text)}
                 </p>
 
                 {/* Answer Options */}
@@ -311,7 +317,7 @@ const AssessmentLabel = ({
                             {String.fromCharCode(65 + idx)}
                           </span>
                           <span className="text-slate-300 text-sm leading-relaxed flex-1">
-                            {answer.text}
+                            {stripMeta(answer.text)}
                           </span>
                         </div>
                       </button>

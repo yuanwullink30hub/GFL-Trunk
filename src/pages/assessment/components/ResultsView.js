@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle, Check } from 'lucide-react';
-import { ARCHETYPES } from '../assessmentTypes';
+import { Mail, RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle, Check, Shield, Target } from 'lucide-react';
+import { ARCHETYPES } from '../../../data/assessment/archetypes';
 import { sendResultsEmail } from '../../../utils/apiClient';
+import { GROUP_NEURAL_FOCUS } from '../../../data/assessment/scoring';
 
 function ResultsView({ result, onReset, aiError }) {
   const [recipientEmail, setRecipientEmail] = useState('');
@@ -25,52 +26,89 @@ function ResultsView({ result, onReset, aiError }) {
   };
 
   const archetypeInfo = ARCHETYPES[result.overallArchetype];
+  const mainGroup = result.mainGroup;
+  const supportGroup = result.supportGroup;
 
   return (
     <div className="w-full max-w-4xl mx-auto animate-fadeIn">
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 mb-4">
           <Sparkles className="w-4 h-4 text-cyan-400" />
-          <span className="text-xs uppercase tracking-wider text-cyan-300">Assessment Complete</span>
+          <span className="text-xs uppercase tracking-wider text-cyan-300">Advanced Ontological Assessment</span>
         </div>
-        <h1 className="text-3xl md:text-4xl font-light mb-2 holo-text">Your Consciousness Profile</h1>
+        <h1 className="text-3xl md:text-4xl font-light mb-2 holo-text">
+          {result.extendedArchetypeName || 'Your Consciousness Profile'}
+        </h1>
         <p className="text-slate-400 text-sm">Generated on {result.timestamp.toLocaleDateString()}</p>
       </div>
 
       <div className="space-y-6">
+        {/* Main & Support Archetype Identity */}
         <div className="rounded-xl p-6 md:p-8 border border-cyan-500/30 relative overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34, 211, 238, 0.06), inset 0 0 30px rgba(34, 211, 238, 0.03)' }}>
           <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-4">
               <Brain className="w-6 h-6 text-cyan-400" />
-              <h2 className="text-xl font-light text-cyan-300">Primary Archetype</h2>
+              <h2 className="text-xl font-light text-cyan-300">De Essentie — Main Archetype</h2>
             </div>
-            <h3 className="text-3xl md:text-4xl font-light mb-3 text-white">
-              {archetypeInfo?.name || result.overallArchetype}
+            <h3 className="text-3xl md:text-4xl font-light mb-1 text-white">
+              {result.overallArchetype}
             </h3>
+            <p className="text-sm text-slate-500 mb-3">
+              Groep: {mainGroup} — {GROUP_NEURAL_FOCUS?.[mainGroup] || ''}
+            </p>
             <p className="text-slate-300 leading-relaxed mb-4">{archetypeInfo?.description}</p>
-            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <p className="text-sm text-red-300">
-                <span className="font-semibold">Shadow Aspect:</span> {archetypeInfo?.shadow}
-              </p>
+
+            {/* Support Archetype */}
+            {result.supportArchetype && (
+              <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                <p className="text-sm text-purple-300 font-medium mb-1">
+                  De Vermenigvuldiging — Support: {result.supportArchetype}
+                </p>
+                <p className="text-xs text-slate-400">
+                  Groep: {supportGroup} — {GROUP_NEURAL_FOCUS?.[supportGroup] || ''}
+                </p>
+                {result.hasHarmonyBonus && (
+                  <p className="text-xs text-emerald-400 mt-2">✨ Harmony Bonus +{result.harmonyBonusApplied} — Biologische buren in dezelfde Neurale Zuil</p>
+                )}
+              </div>
+            )}
+
+            {/* Shadow & Blindspot */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+              {result.shadowArchetype && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <p className="text-xs text-red-400 uppercase tracking-wider mb-1">Schaduw (Innerlijke Brandstof)</p>
+                  <p className="text-sm text-red-300 font-medium">{result.shadowArchetype}</p>
+                </div>
+              )}
+              {result.blindspotArchetype && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                  <p className="text-xs text-amber-400 uppercase tracking-wider mb-1">Blindspot (De Saboteur)</p>
+                  <p className="text-sm text-amber-300 font-medium">{result.blindspotArchetype}</p>
+                </div>
+              )}
             </div>
+
+            {result.isIndividuated && (
+              <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                <p className="text-sm text-emerald-300 font-medium">⚡ Individuatie Gedetecteerd</p>
+                <p className="text-xs text-slate-400 mt-1">Main en Support zijn 180° tegenpolen — Meesterschap over de Paradox</p>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatCard icon={<Heart className="w-5 h-5" />} label="Harmony Score" value={`${result.harmonyScore}%`} color="#22d3ee" />
-          <StatCard icon={<Eye className="w-5 h-5" />} label="Consciousness Level" value={result.consciousnessLevel} color="#a855f7" />
-          <StatCard icon={<Sparkles className="w-5 h-5" />} label="Profile ID" value={result.id.split("-")[1]} color="#fbbf24" />
+        {/* Advanced Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard icon={<Heart className="w-5 h-5" />} label="Authenticity" value={`${result.authenticityIndex || 0}%`} color="#22d3ee" />
+          <StatCard icon={<Target className="w-5 h-5" />} label="Polarization" value={result.polarizationIndex || 0} color={result.polarizationLevel === 'HIGH_POLARIZATION' ? '#ef4444' : result.polarizationLevel === 'HIGH_INDIVIDUATION' ? '#10b981' : '#a855f7'} />
+          <StatCard icon={<Eye className="w-5 h-5" />} label="Nature" value={result.totalNaturePoints || 0} color="#10b981" />
+          <StatCard icon={<Shield className="w-5 h-5" />} label="Culture" value={result.totalCulturePoints || 0} color="#f59e0b" />
         </div>
 
-        <div className="rounded-xl p-6 border border-purple-500/30 backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168, 85, 247, 0.06), inset 0 0 30px rgba(168, 85, 247, 0.03)' }}>
-          <h3 className="text-lg font-light text-purple-300 mb-3 flex items-center gap-2">
-            <Sparkles className="w-5 h-5" />
-            Quantum Resonance
-          </h3>
-          <p className="text-slate-300 leading-relaxed italic">&ldquo;{result.quantumResonance}&rdquo;</p>
-        </div>
+
 
         {/* AI-Generated Analysis */}
         {result.aiAnalysis && (
@@ -124,22 +162,7 @@ function ResultsView({ result, onReset, aiError }) {
           ))}
         </div>
 
-        <div className="rounded-xl p-6 border border-orange-500/30 backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(245, 158, 11, 0.06), inset 0 0 30px rgba(245, 158, 11, 0.03)' }}>
-          <h3 className="text-lg font-light text-orange-300 mb-3 flex items-center gap-2">
-            <Brain className="w-5 h-5" />
-            AI Training Prompt
-          </h3>
-          <p className="text-xs text-slate-500 mb-3">Use this prompt to train your AI agents:</p>
-          <div className="bg-slate-900/80 p-4 rounded-lg border border-slate-700">
-            <pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed">{result.aiTrainingPrompt}</pre>
-          </div>
-          <button
-            onClick={() => navigator.clipboard.writeText(result.aiTrainingPrompt)}
-            className="mt-3 text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
-          >
-            Copy to clipboard
-          </button>
-        </div>
+
 
         {result.uploadedFiles && result.uploadedFiles.length > 0 && (
           <div className="rounded-xl p-6 border border-slate-700 backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15)' }}>
@@ -246,22 +269,7 @@ function SubjectResultCard({ result, index }) {
       </div>
 
       <div className="text-xs text-slate-400 mb-2">
-        Archetype: <span className="text-slate-300">{result.dominantArchetype}</span>
-      </div>
-
-      <div className="space-y-2 mb-3">
-        {result.insights.map((insight, i) => (
-          <p key={i} className="text-xs text-slate-400 leading-relaxed">• {insight}</p>
-        ))}
-      </div>
-
-      <div className="pt-3 border-t border-slate-700/50">
-        <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Recommendations</p>
-        <div className="space-y-1">
-          {result.recommendations.map((rec, i) => (
-            <p key={i} className="text-xs text-cyan-400/80 leading-relaxed">→ {rec}</p>
-          ))}
-        </div>
+        Dominant Archetype: <span className="text-slate-300">{result.dominantArchetype}</span>
       </div>
     </div>
   );

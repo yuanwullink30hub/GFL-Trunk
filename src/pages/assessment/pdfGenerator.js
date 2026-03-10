@@ -1,4 +1,4 @@
-import { ARCHETYPES } from './assessmentTypes';
+import { ARCHETYPES } from '../../data/assessment/archetypes';
 
 export async function generatePDF(result) {
   const content = generatePDFContent(result);
@@ -307,39 +307,42 @@ function generatePDFContent(result) {
   <div class="card card-cyan">
     <p class="card-title" style="color:#22d3ee;">
       <span class="dot" style="background:#22d3ee;"></span>
-      Primary Archetype
+      De Essentie &mdash; Main Archetype
     </p>
-    <h1 class="hero-archetype">${esc(archetypeInfo?.name || result.overallArchetype)}</h1>
+    <h1 class="hero-archetype">${esc(result.extendedArchetypeName || archetypeInfo?.name || result.overallArchetype)}</h1>
     <p class="hero-desc">${esc(archetypeInfo?.description || '')}</p>
+    ${result.supportArchetype ? `
+    <div style="margin-top:3mm;padding:3mm;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:4px;">
+      <p style="color:#c084fc;font-size:9pt;margin:0;">De Vermenigvuldiging &mdash; Support: <strong>${esc(result.supportArchetype)}</strong></p>
+      ${result.hasHarmonyBonus ? '<p style="color:#34d399;font-size:8pt;margin:2mm 0 0;">&starf; Harmony Bonus toegepast</p>' : ''}
+    </div>` : ''}
     <div class="shadow-box">
-      <strong>Shadow Aspect: </strong>${esc(archetypeInfo?.shadow || '')}
+      <strong>Schaduw: </strong>${esc(result.shadowArchetype || archetypeInfo?.shadow || '')}
+      ${result.blindspotArchetype ? `<br/><strong>Blindspot: </strong>${esc(result.blindspotArchetype)}` : ''}
     </div>
+    ${result.isIndividuated ? '<p style="color:#34d399;font-size:8pt;margin-top:2mm;">&lowast; Individuatie Gedetecteerd &mdash; Meesterschap over de Paradox</p>' : ''}
   </div>
 
   <!-- STATS ROW -->
   <div class="stats-grid">
     <div class="stat-card">
-      <p class="stat-label">Harmony Score</p>
-      <p class="stat-value" style="color:#22d3ee;">${esc(String(result.harmonyScore))}%</p>
+      <p class="stat-label">Authenticity</p>
+      <p class="stat-value" style="color:#22d3ee;">${esc(String(result.authenticityIndex || 0))}%</p>
     </div>
     <div class="stat-card">
-      <p class="stat-label">Consciousness Level</p>
-      <p class="stat-value" style="color:#a855f7;">${esc(result.consciousnessLevel)}</p>
+      <p class="stat-label">Polarization</p>
+      <p class="stat-value" style="color:#a855f7;">${esc(String(result.polarizationIndex || 0))}</p>
     </div>
     <div class="stat-card">
-      <p class="stat-label">Profile ID</p>
-      <p class="stat-value" style="color:#fbbf24;">${esc(result.id.split('-')[1] || result.id)}</p>
+      <p class="stat-label">Nature</p>
+      <p class="stat-value" style="color:#10b981;">${esc(String(result.totalNaturePoints || 0))}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Culture</p>
+      <p class="stat-value" style="color:#fbbf24;">${esc(String(result.totalCulturePoints || 0))}</p>
     </div>
   </div>
 
-  <!-- QUANTUM RESONANCE -->
-  <div class="card card-purple">
-    <p class="card-title" style="color:#a855f7;">
-      <span class="dot" style="background:#a855f7;"></span>
-      Quantum Resonance
-    </p>
-    <p class="quote">&ldquo;${esc(result.quantumResonance)}&rdquo;</p>
-  </div>
 
   ${result.aiAnalysis ? `
   <!-- AI ANALYSIS -->
@@ -372,8 +375,6 @@ function generatePDFContent(result) {
         <div class="bar-fill" style="width:${s.percentage}%;background:${colors[i]};"></div>
       </div>
       <p class="layer-detail">Archetype: ${esc(s.dominantArchetype)}</p>
-      ${(s.insights || []).map(ins => `<p class="layer-insight">&bull; ${esc(ins)}</p>`).join('')}
-      ${(s.recommendations || []).map(rec => `<p class="layer-rec">&rarr; ${esc(rec)}</p>`).join('')}
     </div>`).join('')}
   </div>
 

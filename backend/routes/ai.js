@@ -22,13 +22,30 @@ const router = Router();
  *   provider: "openai" | "gemini" | "grok",   // optional, defaults to openai
  *   model: "gpt-4o",                           // optional, uses provider default
  *   archetypeKey: "JUDGE",                      // required
+ *   supportArchetype: "RULER",                  // optional
  *   supportGroup: "RULING",                     // optional
+ *   mainGroup: "RULING",                        // optional
  *   extendedArchetypeName: "The Arbiter",       // optional
  *   userQuestion: "...",                         // optional
  *   oceanScores: { O:4, C:9, E:4, A:3, N:3 },  // optional
  *   systemPrompt: "...",                         // optional full override
  *   maxTokens: 2048,                             // optional
  *   temperature: 0.7,                            // optional
+ *
+ *   // ── Advanced Ontology fields ──
+ *   shadowArchetype: "TRICKSTER",               // 180° shadow of Main
+ *   blindspotArchetype: "OUTLAW",               // 180° shadow of Support
+ *   isIndividuated: false,                       // Main & Support are 180° opposites
+ *   hasHarmonyBonus: true,                       // +69 bonus applied
+ *   harmonyBonusApplied: 69,                     // actual bonus value
+ *   polarizationIndex: 25,                       // Main - Shadow score gap
+ *   polarizationLevel: "MODERATE",               // HIGH_POLARIZATION | MODERATE | HIGH_INDIVIDUATION
+ *   authenticityIndex: 55,                       // Nature % of total
+ *   authenticityLevel: "BALANCED",               // NATURE_DOMINANT | BALANCED | CULTURE_DOMINANT
+ *   totalNaturePoints: 165,                      // total Nature sub-score
+ *   totalCulturePoints: 135,                     // total CultureForce sub-score
+ *   archetypeDetails: [...],                     // per-archetype breakdown with nature/culture
+ *   scores: {...},                               // raw score object per archetype
  *
  *   // ── Full pipeline fields (sent after 60Q completion) ──
  *   responses: [...],                            // individual question answers
@@ -49,13 +66,29 @@ router.post('/analyze', async (req, res) => {
       provider,
       model,
       archetypeKey,
+      supportArchetype,
       supportGroup,
+      mainGroup,
       extendedArchetypeName,
       userQuestion,
       oceanScores,
       systemPrompt,
       maxTokens,
       temperature,
+      // Advanced Ontology fields
+      shadowArchetype,
+      blindspotArchetype,
+      isIndividuated,
+      hasHarmonyBonus,
+      harmonyBonusApplied,
+      polarizationIndex,
+      polarizationLevel,
+      authenticityIndex,
+      authenticityLevel,
+      totalNaturePoints,
+      totalCulturePoints,
+      archetypeDetails,
+      scores,
       // Full pipeline fields
       responses,
       subjectResults,
@@ -75,13 +108,22 @@ router.post('/analyze', async (req, res) => {
     // Build messages — include uploaded context documents
     const contextDocs = await getContextDocuments();
     const system = systemPrompt || buildDefaultSystemPrompt({
-      archetypeKey, supportGroup, extendedArchetypeName,
-      oceanScores, contextDocs,
+      archetypeKey, supportArchetype, supportGroup, mainGroup,
+      extendedArchetypeName, oceanScores, contextDocs,
+      shadowArchetype, blindspotArchetype, isIndividuated,
+      hasHarmonyBonus, harmonyBonusApplied,
+      polarizationIndex, polarizationLevel,
+      authenticityIndex, authenticityLevel,
+      totalNaturePoints, totalCulturePoints,
+      archetypeDetails, scores,
       responses, subjectResults, harmonyScore,
       consciousnessLevel, overallShadow, uploadedFileContents,
     });
 
-    const user = userQuestion || buildDefaultUserMessage(archetypeKey, supportGroup, {
+    const user = userQuestion || buildDefaultUserMessage(archetypeKey, supportArchetype, {
+      extendedArchetypeName, supportGroup, mainGroup,
+      shadowArchetype, blindspotArchetype, isIndividuated,
+      polarizationLevel, authenticityLevel,
       subjectResults, harmonyScore, consciousnessLevel,
     });
 
@@ -93,7 +135,7 @@ router.post('/analyze', async (req, res) => {
     // Admin config overrides hardcoded defaults; request body overrides admin config
     const finalProvider = provider || adminConfig.defaultProvider || undefined;
     const finalModel = model || adminConfig.defaultModel || undefined;
-    const finalMaxTokens = maxTokens || adminConfig.maxTokens || 2048;
+    const finalMaxTokens = maxTokens || adminConfig.maxTokens || 4096;
     const finalTemperature = temperature ?? adminConfig.temperature ?? 0.7;
 
     const result = await callAI({
@@ -192,22 +234,45 @@ module.exports = router;
 // ─────────────────────────────────────────────────────────────
 
 function buildDefaultSystemPrompt({
-  archetypeKey, supportGroup, extendedArchetypeName,
-  oceanScores, contextDocs,
+  archetypeKey, supportArchetype, supportGroup, mainGroup,
+  extendedArchetypeName, oceanScores, contextDocs,
+  shadowArchetype, blindspotArchetype, isIndividuated,
+  hasHarmonyBonus, harmonyBonusApplied,
+  polarizationIndex, polarizationLevel,
+  authenticityIndex, authenticityLevel,
+  totalNaturePoints, totalCulturePoints,
+  archetypeDetails, scores,
   responses, subjectResults, harmonyScore,
   consciousnessLevel, overallShadow, uploadedFileContents,
 }) {
+  // ── Neural focus labels ──
+  const GROUP_NEURAL_FOCUS = {
+    RULING:     'CEN: Externe structuur & Wet',
+    RELATIONAL: 'Limbic: Emotionele fusie',
+    SEEKER:     'Openness: Pure ervaring',
+    CHAOS:      'Salience: Disruptie & Waarheid',
+    ABSTRACT:   'DMN: Interne reflectie',
+    AGENCY:     'Extraversie: Wilskracht',
+  };
+
   const parts = [
-    `Je bent een persoonlijke ontwikkelingscoach gespecialiseerd in Jungiaanse archetypen, ` +
-    `het OCEAN (Big Five) persoonlijkheidsmodel, en neurobiologische persoonlijkheidstheorie. ` +
-    `Je werkt voor Garden For Life, een bewustzijnsplatform.\n\n` +
-    `Antwoord altijd in het Nederlands tenzij de gebruiker in het Engels schrijft. ` +
-    `Wees empathisch, genuanceerd en concreet. Vermijd vage algemeenheden.\n`,
+    // ═══ SYSTEM ROLE (Advanced Ontological Report Generator) ═══
+    `Je bent een expert in de Jungiaanse dieptepsychologie en de neurowetenschap van het Triple Network Model. ` +
+    `Je analyseert de resultaten van een gevorderde gebruiker die streeft naar individuatie. ` +
+    `Scan de data specifiek op de scheidslijn tussen 'Nature' (biologische flow) en 'Culture/Force' (aangeleerde overleving).\n\n` +
+    `Je werkt voor Garden For Life, een bewustzijnsplatform.\n` +
+    `Antwoord altijd in het Nederlands tenzij de gebruiker in het Engels schrijft.\n\n` +
+    `BELANGRIJKE RICHTLIJNEN:\n` +
+    `- Vermijd zinnen als "Jij bent een X." Gebruik in plaats daarvan: "Jij navigeert de realiteit momenteel via de [Main] lens, versterkt door de [Support] groep."\n` +
+    `- Wanneer Main en Support 180° tegenpolen zijn, presenteer dit als Meesterschap over de Paradox.\n` +
+    `- Gebruik heldere alledaagse taal met zo min mogelijk wetenschappelijk jargon.\n` +
+    `- Shadow (tegenpool van Main) = "Innerlijke Brandstof". Lage score: "Hier ligt je volgende alchemistische transformatie". Hoge score: "Gefeliciteerd met je succesvolle integratie."\n` +
+    `- Blindspot (tegenpool van Support) = "Externe Saboteur" — de eigenschap in anderen die de gebruiker triggert.\n`,
   ];
 
   // ── Admin-uploaded context documents (KENNISBANK) ──
   if (contextDocs && contextDocs.length > 0) {
-    parts.push(`═══════════════════════════════════════`);
+    parts.push(`\n═══════════════════════════════════════`);
     parts.push(`KENNISBANK / CONTEXT DOCUMENTEN`);
     parts.push(`═══════════════════════════════════════`);
     for (const doc of contextDocs) {
@@ -219,7 +284,7 @@ function buildDefaultSystemPrompt({
 
   // ── User-uploaded files (OCEAN report etc.) ──
   if (uploadedFileContents && uploadedFileContents.length > 0) {
-    parts.push(`═══════════════════════════════════════`);
+    parts.push(`\n═══════════════════════════════════════`);
     parts.push(`GEBRUIKER-GEÜPLOADE DOCUMENTEN`);
     parts.push(`═══════════════════════════════════════`);
     for (const file of uploadedFileContents) {
@@ -229,66 +294,192 @@ function buildDefaultSystemPrompt({
     }
   }
 
-  // ── Assessment result data ──
+  // ═══ ASSESSMENT DATA ═══
+  parts.push(`\n═══════════════════════════════════════`);
+  parts.push(`ARCHETYPE PROFIEL (ADVANCED ONTOLOGY)`);
   parts.push(`═══════════════════════════════════════`);
-  parts.push(`ARCHETYPE PROFIEL`);
-  parts.push(`═══════════════════════════════════════`);
-  parts.push(`Archetype: ${archetypeKey}`);
 
-  if (supportGroup) parts.push(`Steungroep: ${supportGroup}`);
-  if (extendedArchetypeName) parts.push(`Uitgebreid archetype: ${extendedArchetypeName}`);
-  if (oceanScores) parts.push(`\nOCEAN Scores: ${JSON.stringify(oceanScores)}`);
-  if (harmonyScore != null) parts.push(`Harmonie Score: ${harmonyScore}%`);
+  // Core identity
+  parts.push(`Main Archetype: ${archetypeKey}`);
+  parts.push(`Main Groep: ${mainGroup || 'onbekend'} (${GROUP_NEURAL_FOCUS[mainGroup] || ''})`);
+  if (supportArchetype) parts.push(`Support Archetype: ${supportArchetype}`);
+  if (supportGroup) parts.push(`Support Groep: ${supportGroup} (${GROUP_NEURAL_FOCUS[supportGroup] || ''})`);
+  if (extendedArchetypeName) parts.push(`Extended Archetype (72-matrix): ${extendedArchetypeName}`);
+
+  // Harmony
+  if (hasHarmonyBonus) {
+    parts.push(`\nHarmony Bonus: +${harmonyBonusApplied} toegekend (Main & Support zijn biologische buren in dezelfde Neurale Zuil)`);
+  } else {
+    parts.push(`\nHarmony Bonus: Niet van toepassing (Main & Support zitten in verschillende Neurale Zuilen)`);
+  }
+
+  // Shadow & Blindspot
+  if (shadowArchetype) parts.push(`Shadow (180° tegenpool van Main): ${shadowArchetype}`);
+  if (blindspotArchetype) parts.push(`Blindspot (180° tegenpool van Support): ${blindspotArchetype}`);
+  if (isIndividuated) {
+    parts.push(`⚡ INDIVIDUATIE GEDETECTEERD: Main (${archetypeKey}) en Support (${supportArchetype}) zijn 180° tegenpolen — Meesterschap over de Paradox!`);
+  }
+
+  // Advanced Metrics
+  parts.push(`\n── GEAVANCEERDE METRICS ──`);
+  if (polarizationIndex != null) {
+    parts.push(`Polarization Index: ${polarizationIndex} (${polarizationLevel})`);
+    if (polarizationLevel === 'HIGH_POLARIZATION') {
+      parts.push(`  → AI-trigger: Gat > 49 punten (Hoge Polarisatie). De gebruiker onderdrukt de schaduw agressief. De AI moet in de output focussen op de blinde paniek en de specifieke stress-trigger (Neuroticisme).`);
+    } else if (polarizationLevel === 'HIGH_INDIVIDUATION') {
+      parts.push(`  → AI-trigger: Gat < 15 punten. De gebruiker heeft de paradox verenigd. Herformuleer het conflict als meesterschap over de paradox.`);
+    }
+  }
+  if (authenticityIndex != null) {
+    parts.push(`Authenticity Index: ${authenticityIndex}% Nature (${authenticityLevel})`);
+    parts.push(`  Nature punten: ${totalNaturePoints || 0} / Culture punten: ${totalCulturePoints || 0}`);
+    if (authenticityLevel === 'NATURE_DOMINANT') {
+      parts.push(`  → AI-trigger: >75% Nature. De gebruiker navigeert grotendeels ongedwongen vanuit biologische flow. De AI benadrukt autonomie en integriteit.`);
+    } else if (authenticityLevel === 'CULTURE_DOMINANT') {
+      parts.push(`  → AI-trigger: >65% Culture/Force. De gebruiker functioneert in "Overlevingsmodus" of past zich excessief aan aan systemische verwachtingen. De AI moet in de output direct interveniëren en waarschuwen voor kritiek energieverlies en naderende burn-out.`);
+    }
+  }
+
+  if (harmonyScore != null) parts.push(`Engagement Score: ${harmonyScore}%`);
   if (consciousnessLevel) parts.push(`Bewustzijnsniveau: ${consciousnessLevel}`);
   if (overallShadow) parts.push(`Dominante Schaduw: ${overallShadow}`);
+  if (oceanScores) parts.push(`OCEAN Scores: ${JSON.stringify(oceanScores)}`);
 
-  // ── Per-layer results ──
+  // Per-archetype breakdown (Nature vs Culture)
+  if (archetypeDetails && archetypeDetails.length > 0) {
+    parts.push(`\n── ARCHETYPE SCOREOVERZICHT (12 Punten) ──`);
+    parts.push(`Archetype       | Pos | Groep       | Totaal | Nature | Culture | Nature%`);
+    parts.push(`----------------|-----|-------------|--------|--------|---------|--------`);
+    for (const a of archetypeDetails) {
+      const name = (a.key || '').padEnd(15);
+      const pos = String(a.position || '').padStart(3);
+      const group = (a.group || '').padEnd(11);
+      const total = String(a.total || 0).padStart(6);
+      const nature = String(a.nature || 0).padStart(6);
+      const culture = String(a.culture || 0).padStart(7);
+      const ratio = String(a.natureRatio || 0).padStart(7) + '%';
+      parts.push(`${name} | ${pos} | ${group} | ${total} | ${nature} | ${culture} | ${ratio}`);
+    }
+  }
+
+  // Per-layer results
   if (subjectResults && subjectResults.length > 0) {
-    parts.push(`\n═══════════════════════════════════════`);
-    parts.push(`LAAG-VOOR-LAAG RESULTATEN`);
-    parts.push(`═══════════════════════════════════════`);
+    parts.push(`\n── LAAG-VOOR-LAAG RESULTATEN ──`);
     for (const layer of subjectResults) {
-      parts.push(`\n── ${layer.subjectName} ──`);
-      parts.push(`Score: ${layer.totalScore}/${layer.maxScore} (${layer.percentage}%)`);
-      parts.push(`Dominant Archetype: ${layer.dominantArchetype}`);
+      parts.push(`\n${layer.subjectName}: Score ${layer.totalScore}/${layer.maxScore} (${layer.percentage}%) — Dominant: ${layer.dominantArchetype}`);
       if (layer.shadowAspects && layer.shadowAspects.length > 0) {
-        const unique = [...new Set(layer.shadowAspects)];
-        parts.push(`Schaduwpatronen: ${unique.join(', ')}`);
+        const unique = [...new Set(layer.shadowAspects)].filter(Boolean);
+        if (unique.length > 0) parts.push(`  Schaduwpatronen: ${unique.join(', ')}`);
       }
     }
   }
 
-  // ── Individual question responses (compact summary) ──
+  // Individual responses (compact)
   if (responses && responses.length > 0) {
-    parts.push(`\n═══════════════════════════════════════`);
-    parts.push(`INDIVIDUELE ANTWOORDEN (${responses.length} vragen)`);
-    parts.push(`═══════════════════════════════════════`);
+    parts.push(`\n── INDIVIDUELE ANTWOORDEN (${responses.length} vragen) ──`);
     const summary = responses.map(r =>
-      `Q${r.questionId}: waarde=${r.value}, archetype=${r.archetype}, schaduw=${r.shadowAspect}`
+      `Q${r.questionId}: archetype=${r.archetype}${r.shadowAspect ? ', schaduw=' + r.shadowAspect : ''}`
     ).join('\n');
     parts.push(summary);
   }
 
+  // ═══ OUTPUT FORMAT INSTRUCTIONS ═══
+  parts.push(`\n═══════════════════════════════════════`);
+  parts.push(`VEREIST OUTPUT FORMAAT (11 SECTIES)`);
+  parts.push(`═══════════════════════════════════════`);
+  parts.push(`
+Genereer het rapport in EXACT deze structuur:
+
+## 1. De Identiteit
+[Extended Archetype Naam: ${extendedArchetypeName || 'bepaal uit data'}]
+Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit.
+
+## 2. Waarom jij het ${extendedArchetypeName || '[Extended Archetype]'} perspectief gebruikt
+Leg uit hoe de twee hoogste scores in deze gebruiker samenwerken. Focus op de unieke kracht die ontstaat wanneer deze twee neurale netwerken elkaar ontmoeten.
+
+## 3. De Essentie (Main Archetype: ${archetypeKey})
+- Groep: ${mainGroup || '?'} — Biologische Focus: ${GROUP_NEURAL_FOCUS[mainGroup] || '?'}
+- Drijfveer: Kijk naar de Nature vs Culture data — is dit Nature (Flow) of Culture/Force (Overleving)? Benoem dit expliciet!
+- Advanced Inzicht: Hoe dit netwerk de primaire lens vormt voor hun wereldbeeld.
+
+## 4. De Vermenigvuldiging (Support Archetype: ${supportArchetype || '?'})
+- Groep: ${supportGroup || '?'} — Biologische Focus: ${GROUP_NEURAL_FOCUS[supportGroup] || '?'}
+- Rol: Hoe dit archetype de Main ondersteunt, uitdaagt of verfijnt.
+- Harmony Check: ${hasHarmonyBonus ? 'JA — +69 Harmony Bonus is actief. Leg uit waarom deze biologische buren elkaar versterken.' : 'GEEN Harmony Bonus — Main en Support zitten in verschillende biologische groepen.'}
+
+## 5. De Matrix van 72 Mogelijkheden
+Toon de complete tabel van de 6 Extended Archetypen voor het Main archetype (${archetypeKey}). Highlight de specifieke uitslag (${extendedArchetypeName || '?'}) met vette tekst.
+
+## 6. De Schaduw (Innerlijke Brandstof)
+Shadow Archetype: ${shadowArchetype || '?'}
+- De Paradox: Leg de spanning uit tussen Main en deze tegenpool op de 180°-as.
+- Individuatie Status: ${polarizationLevel === 'HIGH_INDIVIDUATION' ? 'HOGE INTEGRATIE — prijs hen.' : polarizationLevel === 'HIGH_POLARIZATION' ? 'AGRESSIEVE ONDERDRUKKING — waarschuw en adviseer.' : 'Beschrijf hoe ze dit netwerk optimaler kunnen inzetten als energie.'}
+
+## 7. De Blindspot (De Saboteur)
+Blindspot Archetype: ${blindspotArchetype || '?'}
+Leg uit waarom de gebruiker mogelijk allergisch is voor dit type gedrag in anderen en hoe dit hun plannen onbewust kan dwarsbomen.
+
+## 8. Visuele Analyse
+Beschrijf het webdiagram en de dual core dynamics tekstueel. Welke assen zijn sterk? Welke zijn zwak?
+
+## 9. De Alchemie van Individuatie (Systeem Kernanalyse)
+- De Switch: Hoe effectief schakelt de gebruiker tussen hun 'Aanpak-modus' en 'Reflectie-modus'?
+- Nature vs. Nurture Balans: Analyseer de verhouding Nature (${totalNaturePoints || '?'}) vs Culture (${totalCulturePoints || '?'}). Authenticity Index = ${authenticityIndex || '?'}%. Leven ze vanuit hun kern, of vechten ze tegen hun eigen biologie?
+${isIndividuated ? '- De Paradox: Main en Support zijn 180° tegenpolen — prijs hen voor het overstijgen van labeling en het integreren van hun schaduw.' : ''}
+
+## 10. Het Neurale Schakelbord (Tactische Implementatie)
+Geef 3 concrete 'hendels':
+1. De Focus-hendel: Wanneer ze hun dominante netwerk bewust moeten dempen.
+2. De Schaduw-injectie: Een specifieke oefening om de energie van de Shadow te gebruiken.
+3. De Blindspot-check: Waar moeten ze deze week op letten in sociale interacties?
+
+## 11. Ontologische Evolutie (Toekomstige Integratie)
+- Richting het Centrum: Hoe kunnen ze extreme uitslagen naar het midden bewegen?
+- Ontologische Vraag: Geef één diepe reflectieve vraag die de kern van hun paradox raakt.
+- AI Agent Prompt: Schrijf een prompt die gebruikers kunnen importeren naar hun eigen AI Agent. De prompt stuurt de agent in moraliteit, houding en taalgebruik zodat de individuatie ook digitaal verwerkelijkt wordt. Specifiek gericht op de testresultaten.
+`);
+
   return parts.join('\n');
 }
 
-function buildDefaultUserMessage(archetypeKey, supportGroup, extra = {}) {
-  const { subjectResults, harmonyScore, consciousnessLevel } = extra;
+function buildDefaultUserMessage(archetypeKey, supportArchetype, extra = {}) {
+  const {
+    extendedArchetypeName, supportGroup, mainGroup,
+    shadowArchetype, blindspotArchetype, isIndividuated,
+    polarizationLevel, authenticityLevel,
+    subjectResults, harmonyScore, consciousnessLevel,
+  } = extra;
 
-  let msg = `Geef een diepgaande persoonlijkheidsanalyse voor het archetype ${archetypeKey}`;
-  if (supportGroup) msg += ` met steungroep ${supportGroup}`;
-  msg += `. Gebruik de OCEAN-dimensies en neurobiologische inzichten.`;
+  let msg = `Genereer een volledig Advanced Ontologisch Rapport (alle 11 secties) voor deze gebruiker.\n\n`;
+  msg += `Main Archetype: ${archetypeKey}`;
+  if (supportArchetype) msg += ` | Support: ${supportArchetype}`;
+  if (extendedArchetypeName) msg += ` | Extended: ${extendedArchetypeName}`;
+  msg += `\n`;
+
+  if (mainGroup) msg += `Main Groep: ${mainGroup}`;
+  if (supportGroup) msg += ` | Support Groep: ${supportGroup}`;
+  msg += `\n`;
+
+  if (shadowArchetype) msg += `Shadow: ${shadowArchetype}`;
+  if (blindspotArchetype) msg += ` | Blindspot: ${blindspotArchetype}`;
+  msg += `\n`;
+
+  if (isIndividuated) {
+    msg += `⚡ INDIVIDUATIE: Main en Support zijn 180° tegenpolen — meesterschap over de paradox.\n`;
+  }
+
+  if (polarizationLevel) msg += `Polarisatie: ${polarizationLevel}\n`;
+  if (authenticityLevel) msg += `Authenticiteit: ${authenticityLevel}\n`;
 
   if (harmonyScore != null) {
-    msg += ` De harmonie score is ${harmonyScore}% en het bewustzijnsniveau is ${consciousnessLevel || 'onbekend'}.`;
+    msg += `Engagement Score: ${harmonyScore}% | Bewustzijnsniveau: ${consciousnessLevel || 'onbekend'}\n`;
   }
 
   if (subjectResults && subjectResults.length > 0) {
-    msg += ` Analyseer de vijf lagen van bewustzijn en geef specifieke adviezen per laag.`;
+    msg += `\nAnalyseer de vijf lagen van bewustzijn en integreer dit in de 11-sectie analyse.\n`;
   }
 
-  msg += ` Geef concrete adviezen voor persoonlijke groei en individuatie.`;
-  msg += ` Structureer je antwoord met duidelijke kopjes.`;
+  msg += `\nGebruik het PDF bestand (indien geüpload) voor additionele context. Volg het exacte 11-sectie format uit je systeeminstructies.`;
 
   return msg;
 }

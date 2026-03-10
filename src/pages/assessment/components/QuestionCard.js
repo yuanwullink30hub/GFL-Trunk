@@ -1,6 +1,12 @@
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
 
+/** Strip admin metadata tags [xxx] and (xxx) from display text */
+function stripMeta(text) {
+  if (!text) return '';
+  return text.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 function QuestionCard({
   question,
   subjectName,
@@ -42,7 +48,7 @@ function QuestionCard({
         </div>
 
         <h2 className="text-xl md:text-2xl font-light leading-relaxed text-white">
-          {question.text}
+          {stripMeta(question.text)}
         </h2>
       </div>
 
@@ -88,7 +94,7 @@ function QuestionCard({
                 {String.fromCharCode(65 + index)}
               </span>
               <span className="text-sm md:text-base leading-relaxed text-slate-200 group-hover:text-white transition-colors">
-                {answer.text}
+                {stripMeta(answer.text)}
               </span>
             </div>
           </button>

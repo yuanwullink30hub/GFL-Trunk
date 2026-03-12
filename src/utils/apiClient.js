@@ -186,41 +186,11 @@ export async function getAssessment(id) {
  *   completionTokens: number
  * }>}
  */
-export async function analyzeAssessment({
-  archetypeKey,
-  provider,
-  model,
-  supportGroup,
-  extendedArchetypeName,
-  userQuestion,
-  oceanScores,
-  systemPrompt,
-  responses,
-  subjectResults,
-  harmonyScore,
-  consciousnessLevel,
-  overallShadow,
-  uploadedFileContents,
-}) {
+export async function analyzeAssessment(params) {
   const response = await fetch(`${API_BASE}/ai/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      archetypeKey,
-      provider: provider || undefined,
-      model: model || undefined,
-      supportGroup: supportGroup || undefined,
-      extendedArchetypeName: extendedArchetypeName || undefined,
-      userQuestion: userQuestion || undefined,
-      oceanScores: oceanScores || undefined,
-      systemPrompt: systemPrompt || undefined,
-      responses: responses || undefined,
-      subjectResults: subjectResults || undefined,
-      harmonyScore: harmonyScore != null ? harmonyScore : undefined,
-      consciousnessLevel: consciousnessLevel || undefined,
-      overallShadow: overallShadow || undefined,
-      uploadedFileContents: uploadedFileContents || undefined,
-    }),
+    body: JSON.stringify(params),
   });
 
   if (!response.ok) {

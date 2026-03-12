@@ -54,9 +54,10 @@ async function generatePdf(data) {
 
       let y = MARGIN + 30;
 
-      // Extended Archetype Name
+      // Extended Archetype Name — "Jij navigeert als [name]"
+      const displayName = data.extendedArchetypeName || data.archetypeKey || 'Unknown';
       doc.fontSize(24).fillColor(PURPLE).font('Helvetica-Bold')
-        .text(data.extendedArchetypeName || data.archetypeKey || 'Unknown', MARGIN, y, {
+        .text(`Jij navigeert als ${displayName}`, MARGIN, y, {
           width: CONTENT_W, align: 'center',
         });
       y += 36;
@@ -85,7 +86,7 @@ async function generatePdf(data) {
         .strokeColor(LIGHT_GRAY).lineWidth(0.5).stroke();
       y += 16;
 
-      // ── OCEAN Scores ──
+      // ── OCEAN Scores (0-100) ──
       if (data.oceanScores) {
         y = sectionHeading(doc, 'OCEAN Personality Profile', GREEN, y);
 
@@ -97,45 +98,78 @@ async function generatePdf(data) {
           N: 'Neuroticism (Neuroticisme)',
         };
 
+        const dimColors = {
+          O: '#a855f7', C: '#22d3ee', E: '#fbbf24', A: '#f472b6', N: '#ef4444',
+        };
+
         Object.entries(data.oceanScores).forEach(([dim, score]) => {
           if (y > PAGE_H - MARGIN - 30) {
             doc.addPage();
             y = MARGIN;
           }
           const label = labels[dim] || dim;
-          const barWidth = (score / 10) * (CONTENT_W - 140);
+          const pct = Math.min(Math.max(score, 0), 100);
+          const barWidth = (pct / 100) * (CONTENT_W - 160);
 
           doc.fontSize(9).fillColor(BLACK).font('Helvetica')
-            .text(`${label}:`, MARGIN + 4, y, { width: 140 });
+            .text(`${label}:`, MARGIN + 4, y, { width: 150 });
 
-          // Score bar
-          doc.rect(MARGIN + 142, y + 1, CONTENT_W - 144, 10)
+          // Score bar background
+          doc.rect(MARGIN + 152, y + 1, CONTENT_W - 162, 10)
             .fillColor('#f0f0f0').fill();
-          doc.rect(MARGIN + 142, y + 1, barWidth, 10)
-            .fillColor(dim === 'N' ? RED : GREEN).fill();
+          // Score bar fill
+          doc.rect(MARGIN + 152, y + 1, barWidth, 10)
+            .fillColor(dimColors[dim] || GREEN).fill();
 
           doc.fontSize(8).fillColor(BLACK).font('Helvetica-Bold')
-            .text(`${score}/10`, MARGIN + CONTENT_W - 30, y + 1);
+            .text(`${pct}%`, MARGIN + CONTENT_W - 30, y + 1);
 
           y += 18;
         });
         y += 8;
       }
 
-      // ── AI Analysis ──
+      // ── AI Analysis — 12 Sections ──
       if (data.analysis) {
-        if (y > PAGE_H - MARGIN - 60) {
-          doc.addPage();
-          y = MARGIN;
-        }
-        y = sectionHeading(doc, 'AI Analyse', PURPLE, y);
+        const sections = parseAnalysisSections(data.analysis);
 
-        doc.fontSize(10).fillColor(BLACK).font('Helvetica')
-          .text(data.analysis, MARGIN + 4, y, {
-            width: CONTENT_W - 8,
-            lineGap: 3,
-          });
-        y = doc.y + 16;
+        if (sections.length > 0) {
+          // Section accent colors cycle through brand palette
+          const sectionColors = [
+            PURPLE, GREEN, ORANGE, PURPLE, GREEN, ORANGE,
+            PURPLE, GREEN, ORANGE, PURPLE, GREEN, ORANGE,
+          ];
+
+          for (let i = 0; i < sections.length; i++) {
+            const section = sections[i];
+            const color = sectionColors[i % sectionColors.length];
+
+            // Always start a new page for each section (clean layout)
+            if (i > 0 || y > PAGE_H - MARGIN - 120) {
+              doc.addPage();
+              y = MARGIN;
+            }
+
+            // Section heading with colored sidebar
+            y = sectionHeading(doc, section.title, color, y);
+
+            // Render body with markdown-aware formatting
+            y = renderMarkdownBody(doc, section.body, y);
+          }
+        } else {
+          // Fallback: no parseable sections — render as plain text
+          if (y > PAGE_H - MARGIN - 60) {
+            doc.addPage();
+            y = MARGIN;
+          }
+          y = sectionHeading(doc, 'AI Analyse', PURPLE, y);
+          doc.fontSize(10).fillColor(BLACK).font('Helvetica')
+            .text(data.analysis, MARGIN + 4, y, {
+              width: CONTENT_W - 8,
+              lineGap: 3,
+            });
+          y = doc.y + 16;
+        }
       }
 
       // ── Layer Results ──
@@ -283,6 +317,130 @@ function sectionHeading(doc, title, color, y) {
   doc.fontSize(12).fillColor(color).font('Helvetica-Bold')
     .text(title.toUpperCase(), MARGIN + 8, y);
   return y + 20;
+}
+
+/**
+ * Parse AI analysis text into sections by ## headers.
+ * Returns array of { title, body } objects.
+ */
+function parseAnalysisSections(text) {
+  if (!text) return [];
+  const sections = [];
+  // Split on ## headers (e.g. "## 1. De Identiteit" or "## 12. Genereer een ...")
+  const parts = text.split(/^##\s+/m);
+
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+
+    // First line is the title, rest is body
+    const newlineIdx = trimmed.indexOf('\n');
+    if (newlineIdx === -1) {
+      sections.push({ title: trimmed, body: '' });
+    } else {
+      sections.push({
+        title: trimmed.substring(0, newlineIdx).trim(),
+        body: trimmed.substring(newlineIdx + 1).trim(),
+      });
+    }
+  }
+  return sections;
+}
+
+/**
+ * Render markdown-ish body text into PDFKit with basic formatting:
+ * - **bold** text
+ * - ### sub-headers
+ * - - bullet lists
+ * - Regular paragraphs
+ * Returns updated y position.
+ */
+function renderMarkdownBody(doc, body, startY) {
+  if (!body) return startY;
+
+  let y = startY;
+  const lines = body.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Page overflow check
+    if (y > PAGE_H - MARGIN - 30) {
+      doc.addPage();
+      y = MARGIN;
+    }
+
+    // Skip empty lines (add small gap)
+    if (!line.trim()) {
+      y += 6;
+      continue;
+    }
+
+    // Sub-header (### or ####)
+    const subHeaderMatch = line.match(/^#{3,4}\s+(.+)/);
+    if (subHeaderMatch) {
+      y += 4;
+      doc.fontSize(10).fillColor(PURPLE).font('Helvetica-Bold')
+        .text(subHeaderMatch[1], MARGIN + 4, y, { width: CONTENT_W - 8 });
+      y = doc.y + 6;
+      continue;
+    }
+
+    // Bullet line (- or •)
+    const bulletMatch = line.match(/^\s*[-•]\s+(.+)/);
+    if (bulletMatch) {
+      const bulletText = bulletMatch[1];
+      doc.fontSize(9).fillColor(GREEN).font('Helvetica')
+        .text('•', MARGIN + 8, y);
+      renderInlineFormatted(doc, bulletText, MARGIN + 20, y, CONTENT_W - 28);
+      y = doc.y + 4;
+      continue;
+    }
+
+    // Numbered list (1. 2. 3.)
+    const numberedMatch = line.match(/^\s*(\d+)\.\s+(.+)/);
+    if (numberedMatch) {
+      doc.fontSize(9).fillColor(ORANGE).font('Helvetica-Bold')
+        .text(`${numberedMatch[1]}.`, MARGIN + 8, y);
+      renderInlineFormatted(doc, numberedMatch[2], MARGIN + 24, y, CONTENT_W - 32);
+      y = doc.y + 4;
+      continue;
+    }
+
+    // Regular paragraph
+    renderInlineFormatted(doc, line, MARGIN + 4, y, CONTENT_W - 8);
+    y = doc.y + 4;
+  }
+
+  return y + 8;
+}
+
+/**
+ * Render a single line with inline **bold** formatting.
+ */
+function renderInlineFormatted(doc, text, x, y, width) {
+  // Split on **bold** markers
+  const segments = text.split(/(\*\*[^*]+\*\*)/);
+  let first = true;
+
+  for (const segment of segments) {
+    if (!segment) continue;
+    const boldMatch = segment.match(/^\*\*(.+)\*\*$/);
+    if (boldMatch) {
+      doc.fontSize(9).fillColor(BLACK).font('Helvetica-Bold')
+        .text(boldMatch[1], first ? x : undefined, first ? y : undefined, {
+          width, continued: true,
+        });
+    } else {
+      doc.fontSize(9).fillColor(BLACK).font('Helvetica')
+        .text(segment, first ? x : undefined, first ? y : undefined, {
+          width, continued: true,
+        });
+    }
+    first = false;
+  }
+  // End the line
+  doc.text('', { continued: false });
 }
 
 module.exports = { generatePdf };

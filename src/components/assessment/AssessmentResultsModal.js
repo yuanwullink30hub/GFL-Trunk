@@ -20,7 +20,7 @@ import {
 } from '../../data/assessment';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
-import { getToken, saveAssessment } from '../../utils/apiClient';
+import { getToken, saveAssessment, analyzeAssessment } from '../../utils/apiClient';
 
 /**
  * AssessmentResultsModal - Full-screen sci-fi results modal
@@ -32,24 +32,22 @@ import { getToken, saveAssessment } from '../../utils/apiClient';
  * @param {{
  *   resultsLoadingProgress: number,
  *   resultsModalProgress: number,
- *   resultsPoetryIndex: number,
- *   poetrySlides: Array<{ title: string, lines: string[] }>,
  *   layerAnswers: object,
  *   onClose: () => void,
  *   onDownload: () => void,
  *   onCreateAccount: () => void,
+ *   onAiReady: () => void,
  *   t: (key: string) => string
  * }} props
  */
 const AssessmentResultsModal = ({
   resultsLoadingProgress,
   resultsModalProgress,
-  resultsPoetryIndex,
-  poetrySlides,
   layerAnswers,
   onClose,
   onDownload,
   onCreateAccount,
+  onAiReady,
   t
 }) => {
   // Compute archetype result from layer answers
@@ -64,11 +62,15 @@ const AssessmentResultsModal = ({
   // PDF download state
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
+  // ── AI Analysis state ──
+  const [aiSections, setAiSections] = useState(null);
+  const [aiReady, setAiReady] = useState(false);
+
   // ── Auto-save to backend when user is logged in ──
   const [savedToBackend, setSavedToBackend] = useState(false);
   useEffect(() => {
     if (!result || savedToBackend || !getToken()) return;
-    const oceanScores = result.extendedOcean?.ocean || null;
+    const oceanScores = result.oceanScores || result.extendedOcean?.ocean || null;
     saveAssessment({
       archetypeKey: result.mainArchetype,
       supportGroup: result.supportGroup,
@@ -89,6 +91,50 @@ const AssessmentResultsModal = ({
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
+
+  // ── Fire AI analysis during loading phase ──
+  useEffect(() => {
+    if (!result || aiReady) return;
+    let cancelled = false;
+
+    const oceanScores = result.extendedOcean?.ocean || null;
+
+    analyzeAssessment({
+      archetypeKey: result.mainArchetype,
+      supportArchetype: result.secondaryArchetype || result._secondaryKey,
+      supportGroup: result.supportGroup,
+      extendedArchetypeName: result.extendedName || result.name,
+      shadowArchetype: result.shadowPartner,
+      blindspotArchetype: result.blindspotPartner,
+      isIndividuated: result.shadowBonusActive,
+      hasHarmonyBonus: result.harmonyActive,
+      harmonyBonusApplied: result.harmonyActive ? 69 : 0,
+      oceanScores,
+      scores: result._archetypeScores,
+      responses: result._answerLog,
+      level: 'advanced',
+    })
+      .then((aiResult) => {
+        if (cancelled) return;
+        // Parse the AI response into sections by splitting on ## headings
+        const sections = parseAiSections(aiResult.analysis || '');
+        setAiSections(sections);
+        setAiReady(true);
+        if (onAiReady) onAiReady();
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.warn('[GFL] AI analysis failed, using template:', err.message);
+        // Fall back to template sections — still signal ready so loading completes
+        setAiReady(true);
+        if (onAiReady) onAiReady();
+      });
+
+    return () => { cancelled = true; };
+  }, [result, aiReady, onAiReady]);
+
+  // Displayed sections: AI-generated when available, template fallback otherwise
+  const displaySections = aiSections || result?.analysisSections || [];
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
@@ -566,13 +612,13 @@ const AssessmentResultsModal = ({
       // ═══════════════════════════════════════════════════
       // SECTION 9-11: ANALYSIS SECTIONS
       // ═══════════════════════════════════════════════════
-      if (result.analysisSections) {
+      if (displaySections && displaySections.length > 0) {
         const sectionColors = [green, purple, orange];
-        result.analysisSections.forEach((section, i) => {
+        displaySections.forEach((section, i) => {
           sectionHeading(section.title, sectionColors[i % 3]);
           writeWrapped(section.content, margin + 2, y, contentW - 4, 9.5, black);
           y += 4;
-          if (i < result.analysisSections.length - 1) hr();
+          if (i < displaySections.length - 1) hr();
         });
       }
 
@@ -627,11 +673,11 @@ const AssessmentResultsModal = ({
       onWheelCapture={handleWheelCapture}
     >
       {resultsLoadingProgress < 1 ? (
-        /* ─── Loading Phase: Poetry Slideshow ─── */
+        /* ─── Loading Phase: Simple wait message ─── */
         <div 
           style={{
             position: 'relative',
-          width: rs.poetryWidth,
+            width: rs.poetryWidth,
             padding: rs.poetryPad,
             borderRadius: '0.5rem',
             textAlign: 'center',
@@ -641,84 +687,43 @@ const AssessmentResultsModal = ({
             boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(255, 174, 0, 0.06), inset 0 0 30px rgba(255, 174, 0, 0.03)',
             transform: `translate(0, ${(1 - resultsModalProgress) * -15}vh) scale(${0.3 + resultsModalProgress * 0.7})`,
             opacity: resultsModalProgress,
-            transition: resultsModalProgress >= 1 ? 'opacity 0.3s ease' : 'none',
           }}
         >
           {/* Corner decorations */}
           {renderCorners('#ffae00')}
 
-          {/* Holographic sheen */}
-          <div style={{ position: 'absolute', inset: 0, borderRadius: '0.5rem', pointerEvents: 'none', background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)', backgroundSize: '400% 400%', backgroundRepeat: 'no-repeat', animation: 'holoSheen 45s ease-in-out infinite', mixBlendMode: 'screen' }} />
+          <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '1.25rem', padding: '2rem 1rem' }}>
+            {/* Pulsing dot */}
+            <div style={{
+              width: 12,
+              height: 12,
+              borderRadius: '50%',
+              background: '#f97316',
+              boxShadow: '0 0 12px rgba(249, 115, 22, 0.6)',
+              animation: 'pulse 1.5s ease-in-out infinite',
+            }} />
 
-          {/* Scanline sweep */}
-          <div style={{ position: 'absolute', inset: 0, borderRadius: '0.5rem', pointerEvents: 'none', background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)', backgroundSize: '100% 300%', animation: 'holoScanline 14s linear infinite' }} />
-
-          {/* Noise texture */}
-          <div className="absolute inset-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" style={{ borderRadius: '0.5rem' }} />
-
-          {/* Poetry Content */}}
-          <div style={{ minHeight: '180px', display: 'flex', flexDirection: 'column', justifyContent: 'center', marginBottom: '1rem' }}>
             <h3 style={{
               fontSize: '1rem',
               fontWeight: 'bold',
-              marginBottom: '0.75rem',
               letterSpacing: '0.05em',
               color: '#f97316',
               fontFamily: "'Lexend Mega', sans-serif",
-              opacity: 0.9
+              margin: 0,
             }}>
-              {poetrySlides[resultsPoetryIndex]?.title}
+              {t('results.generatingTitle') || 'Resultaat wordt gegenereerd'}
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              {poetrySlides[resultsPoetryIndex]?.lines.map((line, idx) => (
-                <p key={idx} style={{
-                  fontSize: '0.875rem',
-                  fontStyle: 'italic',
-                  lineHeight: 1.6,
-                  color: 'rgba(255, 254, 240, 0.8)',
-                  animationDelay: `${idx * 0.1}s`
-                }}>
-                  {line}
-                </p>
-              ))}
-            </div>
-          </div>
-          
-          {/* Loading Bar */}
-          <div style={{ marginBottom: '0.75rem' }}>
-            <div style={{
-              height: '4px',
-              borderRadius: '9999px',
-              overflow: 'hidden',
-              background: 'rgba(255, 255, 255, 0.1)'
+
+            <p style={{
+              fontSize: '0.85rem',
+              lineHeight: 1.6,
+              color: 'rgba(255, 254, 240, 0.6)',
+              margin: 0,
+              maxWidth: '20rem',
             }}>
-              <div style={{
-                height: '100%',
-                borderRadius: '9999px',
-                transition: 'width 100ms',
-                width: `${resultsLoadingProgress * 100}%`,
-                background: 'linear-gradient(90deg, #00ff9d, #a855f7, #f97316, #00ff9d)',
-                boxShadow: '0 0 10px rgba(34, 211, 238, 0.5)'
-              }} />
-            </div>
+              {t('results.generatingMessage') || 'De AI analyseert je profiel. Dit kan even duren.'}
+            </p>
           </div>
-          
-          {/* Loading Status */}
-          <p style={{
-            fontSize: '0.75rem',
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            color: 'rgba(255, 254, 240, 0.5)'
-          }}>
-            {resultsLoadingProgress < 0.3 
-              ? t('results.analyzing')
-              : resultsLoadingProgress < 0.6 
-                ? t('results.mapping')
-                : resultsLoadingProgress < 0.9
-                  ? t('results.generating')
-                  : t('results.finalizing')
-            }
-          </p>
         </div>
       ) : (
         /* ─── Full Results Modal ─── */
@@ -1511,12 +1516,12 @@ const AssessmentResultsModal = ({
                     {'/// ARCHETYPE_MATRIX'}
                   </div>
                   <div ref={radarRef} style={{ width: '100%', height: rs.radarHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <SciFiRadarChart data={result.radarData} />
+                    <SciFiRadarChart data={result.radarData} shadow={result.shadowArchetype} blindspot={result.blindspotArchetype} mainArchetype={result.overallArchetype} supportArchetype={result.supportArchetype} />
                   </div>
                 </div>
 
                 {/* ── 7. Analysis Section 1 (Green accent) ── */}
-                {result.analysisSections[0] && (
+                {displaySections[0] && (
                   <div style={{ width: '100%', position: 'relative' }}>
                     <div style={{
                       position: 'absolute',
@@ -1540,7 +1545,7 @@ const AssessmentResultsModal = ({
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
                       </svg>
-                      {result.analysisSections[0].title}
+                      {displaySections[0].title}
                     </h3>
                     <div style={{
                       color: 'rgba(209, 213, 219, 1)',
@@ -1556,13 +1561,13 @@ const AssessmentResultsModal = ({
                       borderBottom: '1px solid rgba(0, 255, 157, 0.2)',
                       boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.5)',
                     }}>
-                      {result.analysisSections[0].content}
+                      {displaySections[0].content}
                     </div>
                   </div>
                 )}
 
                 {/* ── 8. Analysis Section 2 (Purple accent) ── */}
-                {result.analysisSections[1] && (
+                {displaySections[1] && (
                   <div style={{
                     background: 'rgba(168, 85, 247, 0.05)',
                     border: '1px solid rgba(168, 85, 247, 0.2)',
@@ -1584,7 +1589,7 @@ const AssessmentResultsModal = ({
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="4" y="4" width="16" height="16" rx="2" ry="2" /><rect x="9" y="9" width="6" height="6" /><line x1="9" y1="1" x2="9" y2="4" /><line x1="15" y1="1" x2="15" y2="4" /><line x1="9" y1="20" x2="9" y2="23" /><line x1="15" y1="20" x2="15" y2="23" /><line x1="20" y1="9" x2="23" y2="9" /><line x1="20" y1="14" x2="23" y2="14" /><line x1="1" y1="9" x2="4" y2="9" /><line x1="1" y1="14" x2="4" y2="14" />
                       </svg>
-                      {result.analysisSections[1].title}
+                      {displaySections[1].title}
                     </h3>
                     <p style={{
                       color: 'rgba(209, 213, 219, 1)',
@@ -1593,7 +1598,7 @@ const AssessmentResultsModal = ({
                       lineHeight: 1.7,
                       textAlign: 'justify',
                     }}>
-                      {result.analysisSections[1].content}
+                      {displaySections[1].content}
                     </p>
                     {/* Decorative dots */}
                     <div style={{ position: 'absolute', bottom: '1rem', right: '1rem', display: 'flex', gap: '4px' }}>
@@ -1605,7 +1610,7 @@ const AssessmentResultsModal = ({
                 )}
 
                 {/* ── 9. Analysis Section 3 (Cyan accent) ── */}
-                {result.analysisSections[2] && (
+                {displaySections[2] && (
                   <div style={{ width: '100%', position: 'relative' }}>
                     <h3 style={{
                       display: 'flex',
@@ -1623,7 +1628,7 @@ const AssessmentResultsModal = ({
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0022 16z" />
                       </svg>
-                      {result.analysisSections[2].title}
+                      {displaySections[2].title}
                     </h3>
                     <div style={{
                       color: 'rgba(209, 213, 219, 1)',
@@ -1636,7 +1641,7 @@ const AssessmentResultsModal = ({
                       borderBottom: '1px solid rgba(249, 115, 22, 0.1)',
                       background: 'linear-gradient(to right, transparent, rgba(249, 115, 22, 0.05), transparent)',
                     }}>
-                      {result.analysisSections[2].content}
+                      {displaySections[2].content}
                     </div>
                   </div>
                 )}
@@ -1819,6 +1824,58 @@ function renderCorners(color) {
       <div style={{ ...baseStyle, bottom: '-1px', right: '-1px', border: `1.5px solid ${color}`, borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }} />
     </>
   );
+}
+
+/**
+ * Parse the AI analysis response (markdown with ## headings) into 3 display sections.
+ * Maps AI sections 9, 10, 11 to the 3 UI slots. Falls back to splitting into thirds.
+ */
+function parseAiSections(analysisText) {
+  if (!analysisText || typeof analysisText !== 'string') return null;
+
+  // Split on ## headings
+  const sectionRegex = /^##\s+\d+\.\s+(.+)/gm;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  const matches = [];
+  while ((match = sectionRegex.exec(analysisText)) !== null) {
+    matches.push({ title: match[1].trim(), start: match.index, headerEnd: match.index + match[0].length });
+  }
+
+  for (let i = 0; i < matches.length; i++) {
+    const contentStart = matches[i].headerEnd;
+    const contentEnd = i + 1 < matches.length ? matches[i + 1].start : analysisText.length;
+    parts.push({
+      title: matches[i].title,
+      content: analysisText.slice(contentStart, contentEnd).trim(),
+    });
+  }
+
+  if (parts.length === 0) {
+    // No section headers found — return full text as single section
+    return [{ title: 'AI Analyse', content: analysisText.trim() }];
+  }
+
+  // Pick sections 9 (Alchemie), 10 (Neurale Schakelbord), 11 (Ontologische Evolutie)
+  // These are 0-indexed as 8, 9, 10
+  const sec9 = parts[8] || null;
+  const sec10 = parts[9] || null;
+  const sec11 = parts[10] || null;
+
+  const result = [];
+  if (sec9) result.push(sec9);
+  if (sec10) result.push(sec10);
+  if (sec11) result.push(sec11);
+
+  // If we couldn't find sections 9-11, use last 3 available sections
+  if (result.length === 0) {
+    const tail = parts.slice(-3);
+    return tail.length > 0 ? tail : [{ title: 'AI Analyse', content: analysisText.trim() }];
+  }
+
+  return result;
 }
 
 /**

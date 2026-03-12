@@ -6,6 +6,7 @@ import {
   ARCHETYPE_TO_GROUP,
   SHADOW_PAIRS,
   GROUP_NEURAL_FOCUS,
+  SCORING_TIERS,
 } from '../../data/assessment/scoring';
 
 // Custom hook for assessment state management
@@ -17,6 +18,7 @@ export function useAssessment() {
   const [currentSubjectIndex, setCurrentSubjectIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [scoringTier, setScoringTier] = useState('INTERMEDIATE'); // BEGINNER, INTERMEDIATE, ADVANCED
 
   // Fetch questions from backend — API is the sole source of truth
   useEffect(() => {
@@ -132,7 +134,7 @@ export function useAssessment() {
     });
 
     // ── Advanced Scoring Engine (Neuraal Schakelbord + Ontology) ──
-    const advanced = computeAdvancedScores(responses);
+    const advanced = computeAdvancedScores(responses, scoringTier);
 
     // Shadow descriptors
     const allShadows = responses.map((r) => r.shadowAspect).filter(Boolean);
@@ -169,7 +171,11 @@ export function useAssessment() {
       isIndividuated: advanced.isIndividuated,
       overallShadow,
 
-      // Harmony
+      // Bonuses
+      hasBeheersingsBonus: advanced.hasBeheersingsBonus,
+      beheersingsBonus: advanced.beheersingsBonus,
+      hasShadowHarmony: advanced.hasShadowHarmony,
+      harmonyBonus: advanced.harmonyBonus,
       hasHarmonyBonus: advanced.hasHarmonyBonus,
       harmonyBonusApplied: advanced.harmonyBonusApplied,
       harmonyScore: overallPercentage,
@@ -188,10 +194,17 @@ export function useAssessment() {
       subgroupDynamics: advanced.subgroupDynamics,
       scores: advanced.scores,
 
+      // OCEAN scores (0-100, mathematically derived from archetype weights)
+      oceanScores: advanced.oceanScores,
+
       consciousnessLevel,
       uploadedFiles,
+
+      // Scoring tier
+      scoringTier: advanced.tier,
+      scoringTierLabel: advanced.tierLabel,
     };
-  }, [responses, uploadedFiles, totalQuestions, subjects]);
+  }, [responses, uploadedFiles, totalQuestions, subjects, scoringTier]);
 
   const reset = useCallback(() => {
     setResponses([]);
@@ -243,6 +256,9 @@ export function useAssessment() {
     autoFillAll,
     totalQuestions,
     answeredQuestions,
+    scoringTier,
+    setScoringTier,
+    scoringTiers: SCORING_TIERS,
   };
 }
 

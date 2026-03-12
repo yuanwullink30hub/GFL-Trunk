@@ -1,28 +1,42 @@
 /**
  * Scoring Algorithm — Master Index (Neuraal Schakelbord)
- * 
+ *
+ * Triple Network Model Geometry — Tiered Scoring Engine
+ *
  * Contains the scoring logic that converts raw user answers into:
- * 1. Per-archetype scores (12 archetypes, +5 pts per answer, max 300 base)
- * 2. Harmony Bonus (+69 pts to Main & Support if same-pillar neighbors)
+ * 1. Per-archetype scores with line-based distribution (Green, Yellow, Red, Purple)
+ * 2. Beheersings Bonus (+33 pts to Main if Green Line pair)
+ * 2b. Harmony Bonus (+69 pts to Main if Purple Line / 180° shadow)
  * 3. Radar chart data (12 archetype anchors, 0-369 scale)
  * 4. Subgroup dynamics (6 archetype group polarity pairs)
  * 5. Primary & secondary archetype determination
  * 6. Extended Archetype name (72-outcome matrix)
  * 7. Nature vs Culture/Force dual-tracking (Advanced Ontology)
  * 8. Polarization Index & Authenticity Index (Advanced Metrics)
- * 
- * Scoring Rules:
- *   Single choice: +5 pts to the answer's archetype
- *   Dual choice: Primary +3 pts, Secondary +2 pts
- *   Base max: 60 × 5 = 300 pts
- *   Harmony Bonus: +69 to BOTH Main & Support if Neurale Zuil neighbors
- *   Shadow Integration: 180°-as measurement (no scoring bonus)
- *   Total max: 369 pts
+ *
+ * Line Connections (from 12-point Neuro-Archetypal Wheel):
+ *   Green Line:  Hardware Anker (group partner — same biological substrate)
+ *   Blue Line:   Symbiotische Brug (horizontal axis — positions summing to 13)
+ *   Yellow A/B:  Same-cluster archetypes at distance 4 (cognitive network synergy)
+ *   Red Line:    Neurale Kortsluiting (vertical axis — biological hardware conflict)
+ *   Purple Line: 180° shadow (position + 6, neurological tension)
+ *
+ * 3 Scoring Tiers:
+ *   Level 1 (Beginner):     10 pts/click — Nature: +5 Core, +3 Green, +2 Purple(friction)
+ *                                           Culture: +3 Core, +3 Yellow A, +3 Yellow B, +1 Red(friction)
+ *   Level 2 (Intermediate): 10 pts/click — Nature: +7 Core, +3 Green
+ *                                           Culture: +4 Core, +3 Yellow A, +3 Yellow B
+ *   Level 3 (Advanced):     12/11 pts    — Nature: +7 Core, +3 Green, +1 Purple(shadow), +1 Red(blindspot)
+ *                                           Culture: +5 Core, +3 Yellow A, +3 Yellow B
  *
  * Advanced Dual-Tracking (Nature vs Culture/Force):
  *   Each point is routed to a Nature or CultureForce sub-score per archetype
  *   based on the Alpha/Beta state toggle and two fixed ID clusters.
  *   Tie-breaks are resolved by highest Nature sub-score (biological essence wins).
+ *
+ * Beheersings Bonus: +33 to Main if Main & Support are Green Line pair (Neurale Snelweg)
+ * Harmony Bonus:     +69 to Main if Main & Support are 180° shadow opposites (Purple Line)
+ * Total max: Beginner 600, Intermediate 600, Advanced 720 (excl. bonuses)
  */
 
 /**
@@ -82,9 +96,9 @@ export const ARCHETYPE_TRAIT_MAP = {
 
 /**
  * Compute radar chart data from raw answers.
- * Dual-choice scoring: Primary (1st pick) +3 pts, Secondary (2nd pick) +2 pts.
+ * Single-choice scoring: each selected answer adds 5 pts to its archetype.
  * 
- * @param {Object} layerAnswers - { layerIndex: { questionId: [answerId1, answerId2?] }, ... }
+ * @param {Object} layerAnswers - { layerIndex: { questionId: answerId }, ... }
  * @param {Array}  questions    - Full question definitions (from questions/index.js)
  * @returns {Array<{ subject: string, A: number, fullMark: number }>}
  */
@@ -104,13 +118,12 @@ export function computeRadarScores(layerAnswers, questions) {
         if (!question) return;
         // Normalize to array (backward compat with single-value)
         const selections = Array.isArray(answerVal) ? answerVal : [answerVal];
-        selections.forEach((aid, idx) => {
+        selections.forEach((aid) => {
           const selectedAnswer = question.answers.find(a => a.id === aid);
           if (!selectedAnswer) return;
           const archetype = selectedAnswer.archetype;
-          const pts = idx === 0 ? 3 : 2; // Primary +3, Secondary +2
           if (archetype) {
-            archetypeScores[archetype] = (archetypeScores[archetype] || 0) + pts;
+            archetypeScores[archetype] = (archetypeScores[archetype] || 0) + 5;
           }
         });
       });
@@ -122,7 +135,7 @@ export function computeRadarScores(layerAnswers, questions) {
     return {
       subject: label,
       A: archetypeScores[key] || 0,
-      fullMark: 369,
+      fullMark: 720,
     };
   });
 }
@@ -136,7 +149,7 @@ export function computeRadarScores(layerAnswers, questions) {
  * @returns {Array<{ id, leftLabel, leftScore, rightLabel, rightScore, group, axis }>}
  */
 export function computeSubgroups(layerAnswers, questions) {
-  // Tally archetype hits (dual-choice: each selection counts as 1 hit)
+  // Tally archetype hits (each selection counts as 1 hit)
   const archetypeCounts = {};
   if (layerAnswers && questions) {
     Object.entries(layerAnswers).forEach(([layerIdxStr, layerData]) => {
@@ -221,31 +234,30 @@ export function determineArchetype(layerAnswers, questions) {
 
 /**
  * The 12 archetype labels for radar chart anchors.
- * Clockwise "Value Web" starting at 12 o'clock (Ruler).
- * Smooth Big-5 transitions: Structure → Empathy → Creativity → Rebellion → Power → back.
+ * Wheel position order 1→12 (Neuraal Schakelbord).
  */
 export const ARCHETYPE_RADAR_LABELS = [
-  'Ruler',      // 12 — High Conscientiousness, High Extraversion
-  'Judge',      //  1 — High Conscientiousness, Low Agreeableness
-  'Sage',       //  2 — High Conscientiousness, High Openness
-  'Innocent',   //  3 — High Agreeableness, Introverted
-  'Caregiver',  //  4 — High Agreeableness, High Conscientiousness
-  'Lover',      //  5 — High Agreeableness, High Extraversion
-  'Artist',     //  6 — High Openness, High Agreeableness
-  'Explorer',   //  7 — High Openness, Low Conscientiousness
-  'Trickster',  //  8 — High Openness, High Extraversion, Low Conscientiousness
-  'Outlaw',     //  9 — Low Agreeableness, Low Conscientiousness
-  'Magician',   // 10 — High Openness, High Extraversion
-  'Hero',       // 11 — High Extraversion, High Conscientiousness
+  'Judge',      //  1 — G1: Ruling (CEN)
+  'Lover',      //  2 — G2: Relational (Limbisch)
+  'Caregiver',  //  3 — G2: Relational (Limbisch)
+  'Innocent',   //  4 — G3: Seeker (Openness)
+  'Explorer',   //  5 — G3: Seeker (Openness)
+  'Outlaw',     //  6 — G4: Chaos (Salience)
+  'Trickster',  //  7 — G4: Chaos (Salience)
+  'Sage',       //  8 — G5: Abstract (DMN)
+  'Artist',     //  9 — G5: Abstract (DMN)
+  'Magician',   // 10 — G6: Agency (Extraversie)
+  'Hero',       // 11 — G6: Agency (Extraversie)
+  'Ruler',      // 12 — G1: Ruling (CEN)
 ];
 
 /**
- * All 12 archetype keys in radar label order (Value Web clockwise).
+ * All 12 archetype keys in wheel position order 1→12.
  */
 export const ALL_ARCHETYPE_KEYS = [
-  'RULER', 'JUDGE', 'SAGE', 'INNOCENT',
-  'CAREGIVER', 'LOVER', 'ARTIST', 'EXPLORER',
-  'TRICKSTER', 'OUTLAW', 'MAGICIAN', 'HERO',
+  'JUDGE', 'LOVER', 'CAREGIVER', 'INNOCENT',
+  'EXPLORER', 'OUTLAW', 'TRICKSTER', 'SAGE',
+  'ARTIST', 'MAGICIAN', 'HERO', 'RULER',
 ];
 
 /**
@@ -258,25 +270,28 @@ export const ARCHETYPE_NUMBERS = {
 };
 
 /**
- * Complementary archetype pairs for the Harmony Bonus (+69).
- * Harmony is unlocked when Main and Support are direct neighbors
- * within the same Neurale Zuil (biological pillar).
+ * Blue Line pairs — Symbiotische Brug (horizontal axis).
+ * Feedback circuits that complement each other — positions sum to 13.
+ * Triggers +33 Beheersings Bonus when Main & Support form a Blue Line pair.
  *
- * G1 Ruling (CEN):        Judge(1)  ↔ Ruler(12)
- * G2 Relational (Limbisch): Lover(2)  ↔ Caregiver(3)
- * G3 Seeker (Openness):    Innocent(4) ↔ Explorer(5)
- * G4 Chaos (Salience):     Outlaw(6) ↔ Trickster(7)
- * G5 Abstract (DMN):       Sage(8)   ↔ Artist(9)
- * G6 Agency (Extraversie): Magician(10) ↔ Hero(11)
+ * Ruler(12)    ↔ Judge(1)
+ * Lover(2)     ↔ Hero(11)
+ * Caregiver(3) ↔ Magician(10)
+ * Innocent(4)  ↔ Artist(9)
+ * Explorer(5)  ↔ Sage(8)
+ * Outlaw(6)    ↔ Trickster(7)
  */
-export const COMPLEMENTARY_PAIRS = {
-  JUDGE: 'RULER',       RULER: 'JUDGE',        // G1: Ruling (CEN)
-  LOVER: 'CAREGIVER',   CAREGIVER: 'LOVER',    // G2: Relational (Limbisch)
-  INNOCENT: 'EXPLORER', EXPLORER: 'INNOCENT',  // G3: Seeker (Openness)
-  OUTLAW: 'TRICKSTER',  TRICKSTER: 'OUTLAW',   // G4: Chaos (Salience)
-  SAGE: 'ARTIST',       ARTIST: 'SAGE',        // G5: Abstract (DMN)
-  MAGICIAN: 'HERO',     HERO: 'MAGICIAN',      // G6: Agency (Extraversie)
+export const BLUE_LINE = {
+  RULER: 'JUDGE',       JUDGE: 'RULER',        // 12 ↔ 1
+  LOVER: 'HERO',        HERO: 'LOVER',         // 2 ↔ 11
+  CAREGIVER: 'MAGICIAN', MAGICIAN: 'CAREGIVER', // 3 ↔ 10
+  INNOCENT: 'ARTIST',   ARTIST: 'INNOCENT',    // 4 ↔ 9
+  EXPLORER: 'SAGE',     SAGE: 'EXPLORER',      // 5 ↔ 8
+  OUTLAW: 'TRICKSTER',  TRICKSTER: 'OUTLAW',   // 6 ↔ 7
 };
+
+// Legacy alias
+export const COMPLEMENTARY_PAIRS = { ...BLUE_LINE };
 
 /**
  * Shadow archetype pairs (psychological tension / integration point).
@@ -307,6 +322,103 @@ export const ARCHETYPE_TO_GROUP = {
   SAGE: 'ABSTRACT',   ARTIST: 'ABSTRACT',
   // Agency (Extraversie/Wilskracht)
   MAGICIAN: 'AGENCY', HERO: 'AGENCY',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// LINE CONNECTION MAPS — Triple Network Model Geometry
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * GREEN LINE: Hardware Anker (group partner — same biological substrate).
+ * The 6 Groene Bogen / Het Moederbord.
+ * Nature +3 distribution flows to this partner.
+ *
+ * G1 (CEN):      Ruler(12)    ↔ Judge(1)
+ * G2 (Limbisch):  Lover(2)     ↔ Caregiver(3)
+ * G3 (Seeker):    Innocent(4)  ↔ Explorer(5)
+ * G4 (Salience):  Outlaw(6)    ↔ Trickster(7)
+ * G5 (Abstract):  Sage(8)      ↔ Artist(9)
+ * G6 (Agency):    Magician(10) ↔ Hero(11)
+ */
+export const GREEN_LINE = {
+  JUDGE: 'RULER',       RULER: 'JUDGE',        // G1: CEN
+  LOVER: 'CAREGIVER',   CAREGIVER: 'LOVER',    // G2: Limbisch
+  INNOCENT: 'EXPLORER', EXPLORER: 'INNOCENT',  // G3: Seeker
+  OUTLAW: 'TRICKSTER',  TRICKSTER: 'OUTLAW',   // G4: Salience
+  SAGE: 'ARTIST',       ARTIST: 'SAGE',        // G5: Abstract
+  MAGICIAN: 'HERO',     HERO: 'MAGICIAN',      // G6: Agency
+};
+
+/**
+ * YELLOW LINES A & B: Same-cluster archetypes at distance 4 on the wheel.
+ * Cognitive network synergy — shared meta-network (Cluster 1 or 2).
+ *
+ * Cluster 1 (CEN+Openness+DMN): Judge(1), Innocent(4), Explorer(5), Sage(8), Artist(9), Ruler(12)
+ * Cluster 2 (Limbic+Salience+Agency): Lover(2), Caregiver(3), Outlaw(6), Trickster(7), Magician(10), Hero(11)
+ */
+export const YELLOW_LINES = {
+  JUDGE:     ['EXPLORER', 'ARTIST'],     // 1 → 5(dist4), 9(dist4)
+  LOVER:     ['OUTLAW', 'MAGICIAN'],     // 2 → 6(dist4), 10(dist4)
+  CAREGIVER: ['TRICKSTER', 'HERO'],      // 3 → 7(dist4), 11(dist4)
+  INNOCENT:  ['SAGE', 'RULER'],          // 4 → 8(dist4), 12(dist4)
+  EXPLORER:  ['JUDGE', 'ARTIST'],        // 5 → 1(dist4), 9(dist4)
+  OUTLAW:    ['LOVER', 'MAGICIAN'],      // 6 → 2(dist4), 10(dist4)
+  TRICKSTER: ['CAREGIVER', 'HERO'],      // 7 → 3(dist4), 11(dist4)
+  SAGE:      ['INNOCENT', 'RULER'],      // 8 → 4(dist4), 12(dist4)
+  ARTIST:    ['JUDGE', 'EXPLORER'],      // 9 → 1(dist4), 5(dist4)
+  MAGICIAN:  ['LOVER', 'OUTLAW'],        // 10 → 2(dist4), 6(dist4)
+  HERO:      ['CAREGIVER', 'TRICKSTER'], // 11 → 3(dist4), 7(dist4)
+  RULER:     ['INNOCENT', 'SAGE'],       // 12 → 4(dist4), 8(dist4)
+};
+
+/**
+ * RED LINE: Neurale Kortsluiting (vertical axis — biological hardware conflict).
+ * Connects archetypes whose biological networks clash when activated together.
+ */
+export const RED_LINE = {
+  RULER: 'TRICKSTER',    TRICKSTER: 'RULER',      // 12 ↔ 7
+  JUDGE: 'OUTLAW',       OUTLAW: 'JUDGE',         // 1 ↔ 6
+  LOVER: 'EXPLORER',     EXPLORER: 'LOVER',       // 2 ↔ 5
+  CAREGIVER: 'INNOCENT', INNOCENT: 'CAREGIVER',   // 3 ↔ 4
+  HERO: 'SAGE',          SAGE: 'HERO',            // 11 ↔ 8
+  ARTIST: 'MAGICIAN',    MAGICIAN: 'ARTIST',      // 9 ↔ 10
+};
+
+/**
+ * PURPLE LINE: 180° shadow on the wheel (position + 6).
+ * Same as SHADOW_PAIRS — extreme neurological tension/counterpart.
+ */
+export const PURPLE_LINE = { ...SHADOW_PAIRS };
+
+/**
+ * Scoring Tier Definitions.
+ * Each tier defines the point distribution for Nature and Culture picks.
+ */
+export const SCORING_TIERS = {
+  BEGINNER: {
+    id: 'BEGINNER',
+    label: 'Beginner (Gedrag)',
+    description: 'Basis motor — laagdrempelige meting, 10 pts/klik (Nature 5+3+2, Culture 3+3+3+1)',
+    nature:  { core: 5, green: 3, purple: 2 },
+    culture: { core: 3, yellowA: 3, yellowB: 3, red: 1 },
+    baseMax: 600,
+  },
+  INTERMEDIATE: {
+    id: 'INTERMEDIATE',
+    label: 'Intermediate (Motivatie)',
+    description: 'Genormaliseerde motor — 10 pts/klik, scherpe pieken',
+    nature:  { core: 7, green: 3 },
+    culture: { core: 4, yellowA: 3, yellowB: 3 },
+    baseMax: 600,
+  },
+  ADVANCED: {
+    id: 'ADVANCED',
+    label: 'Advanced (Ontologie)',
+    description: 'Schaduw/Frictie motor — 12/11 pts/klik + shadow + blindspot integration',
+    nature:  { core: 7, green: 3, purple: 1, red: 1 },
+    culture: { core: 5, yellowA: 3, yellowB: 3 },
+    baseMax: 720,
+  },
 };
 
 /**
@@ -372,7 +484,7 @@ export const EXTENDED_ARCHETYPES = {
   HERO_CHAOS: 'The Ronin', HERO_ABSTRACT: 'The Strategist',
 
   // Main: RULER (Positie 12)
-  RULER_RULING: 'The Emperor', RULER_RELATIONAL: 'The Patriarch',
+  RULER_RULING: 'The Emperor', RULER_RELATIONAL: 'The Patriarch/Matriarch',
   RULER_SEEKER: 'The Entrepreneur', RULER_CHAOS: 'The Maverick',
   RULER_ABSTRACT: 'The Philosopher-King', RULER_AGENCY: 'The Conqueror',
 };
@@ -433,22 +545,19 @@ export const GROUP_NEURAL_FOCUS = {
 /**
  * Determine the Alpha/Beta state toggle for a given question number (1-60).
  *
- * 60Q Master Cycle (balanced 50/50 Nature/Culture):
- *   Subject 1 (Q1-12):  Alpha, Beta, Alpha  (blocks of 4)
- *   Subject 2 (Q13-24): Beta, Alpha, Beta
- *   Subject 3 (Q25-36): Alpha, Beta, Alpha
- *   Subject 4 (Q37-48): Beta, Alpha, Beta
- *   Subject 5 (Q49-60): Alpha, Beta, Alpha
+ * Keys 1 & 2 (De Grondhouding) → ALPHA: Cluster 1 = Nature, Cluster 2 = Culture
+ * Keys 3 & 4 (De Spiegeling)   → BETA:  Cluster 2 = Nature, Cluster 1 = Culture
+ *
+ * The 4-key cycle repeats every 4 questions (Q1→Key1, Q2→Key2, Q3→Key3, Q4→Key4, Q5→Key1, ...).
+ * Each complete 4-question cycle is perfectly balanced 50/50 Nature/Culture.
  *
  * @param {number} questionNum - 1-based question number (1-60)
  * @returns {'ALPHA'|'BETA'}
  */
 export function getStateToggle(questionNum) {
-  const subjectIdx = Math.floor((questionNum - 1) / 12); // 0-4
-  const blockIdx = Math.floor(((questionNum - 1) % 12) / 4); // 0-2 within subject
-  const subjectStartsAlpha = subjectIdx % 2 === 0; // subjects 0,2,4 start Alpha
-  const isAlpha = subjectStartsAlpha ? (blockIdx % 2 === 0) : (blockIdx % 2 !== 0);
-  return isAlpha ? 'ALPHA' : 'BETA';
+  const patternIndex = (questionNum - 1) % 4;
+  // Keys 1&2 (patterns 0&1) → ALPHA, Keys 3&4 (patterns 2&3) → BETA
+  return patternIndex < 2 ? 'ALPHA' : 'BETA';
 }
 
 /**
@@ -470,21 +579,16 @@ export function getNatureCultureBucket(archetypeKey, stateToggle) {
 }
 
 /**
- * Harmony Bonus check using circular wheel logic.
- * Positions 12 and 1 are neighbors (circular wrap).
+ * Green Line Bonus check (Neurale Snelweg / Hardware Anker).
+ * Returns true if the two archetypes are Green Line partners (same biological group).
+ * Triggers +33 Beheersings Bonus when Main & Support share the same neural substrate.
  *
  * @param {string} key1 - archetype key
  * @param {string} key2 - archetype key
- * @returns {boolean} true if they are direct neighbors in the same Neurale Zuil
+ * @returns {boolean} true if they are a Green Line pair (+33 Beheersings Bonus)
  */
 export function isHarmonyPair(key1, key2) {
-  const id1 = ARCHETYPE_NUMBERS[key1];
-  const id2 = ARCHETYPE_NUMBERS[key2];
-  if (!id1 || !id2) return false;
-  const diff = Math.abs(id1 - id2);
-  // Must be neighbors (diff 1 or circular wrap diff 11)
-  // AND in the same biological group
-  return (diff === 1 || diff === 11) && ARCHETYPE_TO_GROUP[key1] === ARCHETYPE_TO_GROUP[key2];
+  return GREEN_LINE[key1] === key2;
 }
 
 /**
@@ -502,10 +606,14 @@ export function isShadowPair(key1, key2) {
 }
 
 /**
- * ADVANCED SCORING ENGINE — Full dual-tracking computation.
+ * TIERED SCORING ENGINE — Line-based dual-tracking computation.
  *
- * Processes all 60 answers and produces:
- * - Per-archetype total, nature, and culture scores
+ * Processes all 60 answers using the Triple Network Model geometry.
+ * Points are distributed across connected archetypes via line connections
+ * (Green, Yellow A/B, Red, Purple) based on the selected scoring tier.
+ *
+ * Produces:
+ * - Per-archetype total, nature, and culture scores (with line-based distribution)
  * - Main & Support archetypes (with Nature tie-breaking)
  * - Harmony Bonus application (+69)
  * - Shadow & Blindspot identification
@@ -514,22 +622,35 @@ export function isShadowPair(key1, key2) {
  * - Authenticity Index (Nature ratio)
  * - Individuation detection (180° opposition between Main & Support)
  *
- * @param {Array<{questionId: number, answerId: string, archetype: string, selections?: Array}>} responses
- *   Each response should include the question number (questionId, 1-based)
- *   and the archetype key. For dual-choice, pass selections array with 2 entries.
- * @param {Array} [subjects] - Optional subjects array for cross-referencing questions
- * @returns {Object} Full advanced scoring result
+ * @param {Array<{questionId: number, answerId: string, archetype: string}>} responses
+ *   Each response includes questionId (1-based) and archetype key.
+ * @param {'BEGINNER'|'INTERMEDIATE'|'ADVANCED'} [tier='INTERMEDIATE'] - Scoring tier
+ * @returns {Object} Full scoring result
  */
-export function computeAdvancedScores(responses) {
+export function computeAdvancedScores(responses, tier = 'INTERMEDIATE') {
+  const tierConfig = SCORING_TIERS[tier] || SCORING_TIERS.INTERMEDIATE;
+
   // Initialize per-archetype tracking
   const scores = {};
   ALL_ARCHETYPE_KEYS.forEach(key => {
     scores[key] = { total: 0, nature: 0, culture: 0 };
   });
 
-  let totalPointsAwarded = 0;
   let totalNaturePoints = 0;
   let totalCulturePoints = 0;
+
+  // Helper to add points to an archetype and route to the correct bucket
+  function addPoints(archetypeKey, pts, bucket) {
+    if (!scores[archetypeKey]) return;
+    scores[archetypeKey].total += pts;
+    if (bucket === 'NATURE') {
+      scores[archetypeKey].nature += pts;
+      totalNaturePoints += pts;
+    } else {
+      scores[archetypeKey].culture += pts;
+      totalCulturePoints += pts;
+    }
+  }
 
   // Process each response
   if (responses && responses.length > 0) {
@@ -540,35 +661,62 @@ export function computeAdvancedScores(responses) {
 
       if (!questionNum || questionNum < 1 || questionNum > 60) continue;
 
+      const archetype = response.archetype;
+      if (!archetype || !scores[archetype]) continue;
+
       const stateToggle = getStateToggle(questionNum);
+      const bucket = getNatureCultureBucket(archetype, stateToggle);
 
-      // Handle dual-choice: selections array or single archetype
-      const selections = response.selections || [{ archetype: response.archetype, isPrimary: true }];
+      // ── Line-based point distribution per tier ──
+      if (bucket === 'NATURE') {
+        // Nature Pick → DNA-Meter (Hardware/Essentie/Flow)
+        const cfg = tierConfig.nature;
 
-      for (let i = 0; i < selections.length; i++) {
-        const sel = selections[i];
-        const archetype = sel.archetype || response.archetype;
-        if (!archetype || !scores[archetype]) continue;
+        // Core points to the chosen archetype
+        addPoints(archetype, cfg.core, 'NATURE');
 
-        // Points: single choice = +5, dual choice = primary +3, secondary +2
-        let pts;
-        if (selections.length === 1) {
-          pts = 5;
-        } else {
-          pts = i === 0 ? 3 : 2;
+        // Green Line: Hardware Anker (+3 Nature overflow to group partner)
+        const greenPartner = GREEN_LINE[archetype];
+        if (greenPartner && cfg.green) {
+          addPoints(greenPartner, cfg.green, 'NATURE');
         }
 
-        const bucket = getNatureCultureBucket(archetype, stateToggle);
-
-        scores[archetype].total += pts;
-        if (bucket === 'NATURE') {
-          scores[archetype].nature += pts;
-          totalNaturePoints += pts;
-        } else {
-          scores[archetype].culture += pts;
-          totalCulturePoints += pts;
+        // Purple Line: 180° shadow (friction or shadow integration)
+        const purplePartner = PURPLE_LINE[archetype];
+        if (purplePartner && cfg.purple) {
+          // Beginner: +2 (friction — oer-reflex suppresses shadow)
+          // Advanced: +1 (shadow integration / Vonk van Individuatie)
+          addPoints(purplePartner, cfg.purple, 'NATURE');
         }
-        totalPointsAwarded += pts;
+
+        // Red Line: blindspot (Advanced Nature only — beheersing van projecties)
+        const redPartnerNature = RED_LINE[archetype];
+        if (redPartnerNature && cfg.red) {
+          addPoints(redPartnerNature, cfg.red, 'NATURE');
+        }
+      } else {
+        // Culture/Force Pick → Pantser-Meter (Software/Aangeleerd/Dwang)
+        const cfg = tierConfig.culture;
+
+        // Core points to the chosen archetype
+        addPoints(archetype, cfg.core, 'CULTURE');
+
+        // Yellow Line A: cognitive synergy partner 1
+        const yellowPartners = YELLOW_LINES[archetype];
+        if (yellowPartners && cfg.yellowA) {
+          addPoints(yellowPartners[0], cfg.yellowA, 'CULTURE');
+        }
+
+        // Yellow Line B: cognitive synergy partner 2
+        if (yellowPartners && cfg.yellowB) {
+          addPoints(yellowPartners[1], cfg.yellowB, 'CULTURE');
+        }
+
+        // Red Line: neural short-circuit / friction (Beginner Culture)
+        const redPartner = RED_LINE[archetype];
+        if (redPartner && cfg.red) {
+          addPoints(redPartner, cfg.red, 'CULTURE');
+        }
       }
     }
   }
@@ -586,11 +734,17 @@ export function computeAdvancedScores(responses) {
   const mainArchetype = sorted[0]?.key || 'SAGE';
   const supportArchetype = sorted[1]?.key || 'EXPLORER';
 
-  // ── Harmony Bonus (+69) ──
-  const hasHarmonyBonus = isHarmonyPair(mainArchetype, supportArchetype);
-  if (hasHarmonyBonus) {
+  // ── Bonuses ──
+    // +33 Beheersings Bonus: Main & Support connected via Green Line (Neurale Snelweg / same bio group)
+  const hasBeheersingsBonus = isHarmonyPair(mainArchetype, supportArchetype);
+  if (hasBeheersingsBonus) {
+    scores[mainArchetype].total += 33;
+  }
+
+  // +69 Harmony Bonus: Main & Support connected via Purple Line (180° shadow)
+  const hasShadowHarmony = isShadowPair(mainArchetype, supportArchetype);
+  if (hasShadowHarmony) {
     scores[mainArchetype].total += 69;
-    scores[supportArchetype].total += 69;
   }
 
   // ── Shadow & Blindspot ──
@@ -610,15 +764,18 @@ export function computeAdvancedScores(responses) {
   const shadowScore = shadowArchetype ? (scores[shadowArchetype]?.total || 0) : 0;
   const polarizationIndex = mainScore - shadowScore;
   let polarizationLevel;
-  if (polarizationIndex > 49) {
-    polarizationLevel = 'HIGH_POLARIZATION'; // Aggressive shadow suppression
-  } else if (polarizationIndex <= 15) {
+  if (hasBeheersingsBonus || hasShadowHarmony) {
+    polarizationLevel = 'BONUS_ACTIVE'; // Bonus overrides polarization analysis
+  } else if (polarizationIndex > 222) {
+    polarizationLevel = 'HIGH_POLARIZATION'; // Shadow suppression — focus on blinde vlek
+  } else if (polarizationIndex < 123) {
     polarizationLevel = 'HIGH_INDIVIDUATION'; // Paradox mastery
   } else {
     polarizationLevel = 'MODERATE';
   }
 
-  // ── Authenticity Index (Nature ratio) ──
+  // ── Authenticity Index (Nature ratio over total allocated score) ──
+  const totalPointsAwarded = totalNaturePoints + totalCulturePoints;
   const authenticityIndex = totalPointsAwarded > 0
     ? Math.round((totalNaturePoints / totalPointsAwarded) * 100)
     : 50;
@@ -631,7 +788,9 @@ export function computeAdvancedScores(responses) {
     authenticityLevel = 'BALANCED';
   }
 
-  // ── Build radar data (post harmony bonus) ──
+  // ── Build radar data (post bonus, wheel order 1→12) ──
+  // fullMark = baseMax + 69 (max possible bonus)
+  const radarFullMark = (tierConfig.baseMax || 720) + 69;
   const radarData = ARCHETYPE_RADAR_LABELS.map(label => {
     const key = label.toUpperCase();
     return {
@@ -639,7 +798,7 @@ export function computeAdvancedScores(responses) {
       A: scores[key]?.total || 0,
       nature: scores[key]?.nature || 0,
       culture: scores[key]?.culture || 0,
-      fullMark: 369,
+      fullMark: radarFullMark,
     };
   });
 
@@ -690,9 +849,14 @@ export function computeAdvancedScores(responses) {
     shadowScore,
     isIndividuated,
 
-    // Harmony
-    hasHarmonyBonus,
-    harmonyBonusApplied: hasHarmonyBonus ? 69 : 0,
+    // Bonuses
+    hasBeheersingsBonus,          // +33 Blue Line (Symbiotische Brug)
+    beheersingsBonus: hasBeheersingsBonus ? 33 : 0,
+    hasShadowHarmony,             // +69 Purple Line (180° shadow integration)
+    harmonyBonus: hasShadowHarmony ? 69 : 0,
+    // Legacy compatibility fields
+    hasHarmonyBonus: hasBeheersingsBonus || hasShadowHarmony,
+    harmonyBonusApplied: (hasBeheersingsBonus ? 33 : 0) + (hasShadowHarmony ? 69 : 0),
 
     // Advanced metrics
     polarizationIndex,
@@ -703,14 +867,81 @@ export function computeAdvancedScores(responses) {
     totalCulturePoints,
     totalPointsAwarded,
 
+    // Tier info
+    tier: tierConfig.id,
+    tierLabel: tierConfig.label,
+
     // Detailed breakdown
     scores,
     archetypeDetails,
     radarData,
     subgroupDynamics,
 
-    // Max possible
-    baseMaxScore: 300,
-    totalMaxScore: 369,
+    // Max possible (excl. bonuses)
+    baseMaxScore: tierConfig.baseMax || 720,
+    totalMaxScore: (tierConfig.baseMax || 720) + 69, // with max bonus (Purple Line)
+
+    // OCEAN scores (0–100), mathematically derived from archetype weights
+    oceanScores: computeOceanScores(scores),
   };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OCEAN Score Calculator (0-100)
+//
+// Each archetype has a fixed OCEAN profile (1-10 per dimension).
+// The user's archetype scores weight their contribution to each
+// OCEAN dimension. Result is a weighted average normalized to 0-100.
+//
+// Formula per dimension D:
+//   raw_D = Σ (archetype_total × archetype_ocean_D) / Σ archetype_total
+//   score_D = (raw_D - 1) / 9 × 100   (maps 1-10 → 0-100)
+// ═══════════════════════════════════════════════════════════════
+
+const ARCHETYPE_OCEAN_MAP = {
+  JUDGE:     { O: 4, C: 9, E: 4, A: 3, N: 3 },
+  LOVER:     { O: 7, C: 4, E: 7, A: 9, N: 7 },
+  CAREGIVER: { O: 5, C: 7, E: 5, A: 9, N: 7 },
+  INNOCENT:  { O: 7, C: 6, E: 5, A: 9, N: 3 },
+  EXPLORER:  { O: 9, C: 3, E: 6, A: 4, N: 4 },
+  OUTLAW:    { O: 7, C: 3, E: 6, A: 1, N: 7 },
+  TRICKSTER: { O: 9, C: 2, E: 7, A: 4, N: 4 },
+  SAGE:      { O: 9, C: 6, E: 3, A: 4, N: 5 },
+  ARTIST:    { O: 9, C: 4, E: 5, A: 5, N: 7 },
+  MAGICIAN:  { O: 9, C: 4, E: 5, A: 4, N: 3 },
+  HERO:      { O: 4, C: 9, E: 7, A: 4, N: 3 },
+  RULER:     { O: 4, C: 9, E: 6, A: 4, N: 3 },
+};
+
+/**
+ * Compute OCEAN personality scores (0-100) from archetype score breakdown.
+ *
+ * @param {Object} scores - Per-archetype score object { [key]: { total, nature, culture } }
+ * @returns {{ O: number, C: number, E: number, A: number, N: number }}
+ */
+export function computeOceanScores(scores) {
+  const dims = ['O', 'C', 'E', 'A', 'N'];
+  let totalWeight = 0;
+  const weighted = { O: 0, C: 0, E: 0, A: 0, N: 0 };
+
+  for (const key of ALL_ARCHETYPE_KEYS) {
+    const w = scores[key]?.total || 0;
+    totalWeight += w;
+    const profile = ARCHETYPE_OCEAN_MAP[key];
+    if (!profile) continue;
+    for (const d of dims) {
+      weighted[d] += w * profile[d];
+    }
+  }
+
+  if (totalWeight === 0) {
+    return { O: 50, C: 50, E: 50, A: 50, N: 50 };
+  }
+
+  const result = {};
+  for (const d of dims) {
+    const raw = weighted[d] / totalWeight; // 1-10 scale
+    result[d] = Math.round(((raw - 1) / 9) * 100); // normalize to 0-100
+  }
+  return result;
 }

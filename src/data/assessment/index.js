@@ -42,6 +42,13 @@ export {
   EXTENDED_ARCHETYPES,
   getExtendedArchetype,
   isComplementaryPair,
+  // Line Connection Maps (Triple Network Geometry)
+  GREEN_LINE,
+  BLUE_LINE,
+  YELLOW_LINES,
+  RED_LINE,
+  PURPLE_LINE,
+  SCORING_TIERS,
   // Advanced Scoring Engine (Ontology)
   GROUP_NEURAL_FOCUS,
   getStateToggle,
@@ -56,3 +63,12 @@ export { ANALYSIS_TEMPLATES, getAnalysisTemplate, blendAnalysisTemplates } from 
 
 // Extended Archetype Descriptions (72 combination profiles)
 export { getExtendedDescription } from './extendedArchetypeDescriptions';
+
+// Biochemical & Neuro-Integration Deep Dive (12 archetype profiles)
+export { BIOCHEMICAL_PROFILES, getBiochemicalProfile, getBiochemicalPromptBlock } from './biochemical';
+
+// OCEAN Deep-Dive Profiles (12 core + 72 extended)
+export {
+  OCEAN_CORE_PROFILES, getOceanCoreProfile,
+  EXTENDED_OCEAN_PROFILES, getExtendedOceanProfile, getExtendedOceanProfiles,
+} from './ocean';

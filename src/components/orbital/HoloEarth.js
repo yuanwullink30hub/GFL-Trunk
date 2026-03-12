@@ -582,6 +582,16 @@ const HoloEarthSphere = ({
     }
   }
 
+  // Particle sphere fade - starts at frame 37 (eased ~0.641), fully gone by frame 43 (eased ~0.943)
+  const particleFadeStart = 0.641; // Frame 37 eased
+  const particleFadeEnd = 0.943;   // Frame 43 eased
+  let particleFadeValue = 1.0;
+  if (explosionProgress >= particleFadeEnd) {
+    particleFadeValue = 0.0;
+  } else if (explosionProgress > particleFadeStart) {
+    particleFadeValue = 1.0 - (explosionProgress - particleFadeStart) / (particleFadeEnd - particleFadeStart);
+  }
+
   useFrame((state, delta) => {
     const time = state.clock.getElapsedTime();
     
@@ -746,13 +756,12 @@ const HoloEarthSphere = ({
         )}
       </group>
 
-      {/* Earth Particle Waves - has internal visibility logic, becomes visible around frame 9 */}
-      {/* On mobile: fade out completely ~2-3 frames after chunks disappear */}
-      {explosionProgress > 0 && getPerformanceSettings().tier !== 'LOW' && (
+      {/* Earth Particle Waves - same fade schedule as chunks, fully gone by frame 43 */}
+      {explosionProgress > 0 && particleFadeValue > 0 && getPerformanceSettings().tier !== 'LOW' && (
         <EarthParticleWaves 
           explosionProgress={explosionProgress} 
           sphereRadius={2.5}
-          isMobile={isMobile}
+          fadeValue={particleFadeValue}
         />
       )}
 
@@ -852,7 +861,15 @@ const HoloEarth = ({
           }}
           dpr={1}
           performance={{ min: 0.5, max: 1, debounce: 200 }}
-          onCreated={({ gl }) => { glRef.current = gl; }}
+          onCreated={({ gl }) => {
+            glRef.current = gl;
+            // Firefox fix: getProgramInfoLog can return null, crashing Three.js r160's .trim() call
+            const ctx = gl.getContext();
+            const origGetProgramInfoLog = ctx.getProgramInfoLog.bind(ctx);
+            ctx.getProgramInfoLog = (program) => origGetProgramInfoLog(program) || '';
+            const origGetShaderInfoLog = ctx.getShaderInfoLog.bind(ctx);
+            ctx.getShaderInfoLog = (shader) => origGetShaderInfoLog(shader) || '';
+          }}
         >
           <Suspense fallback={null}>
             <ambientLight intensity={0.2} />

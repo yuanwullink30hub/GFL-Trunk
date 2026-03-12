@@ -297,18 +297,19 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
           { key: 'users', label: 'Gebruikers' },
           { key: 'questions', label: 'Vragen' },
           { key: 'prompts', label: 'Prompts' },
-          { key: 'feedback', label: 'Feedback' },
-          { key: 'contact', label: 'Contact' },
         ];
         const bottomRow = [
           { key: 'assessments', label: 'Assessments' },
           { key: 'formulieren', label: 'Formulieren' },
           { key: 'audit', label: 'Audit Log' },
+          { key: 'feedback', label: 'Feedback' },
+          { key: 'contact', label: 'Contact' },
         ];
-        const renderBtn = ({ key, label }) => (
-          <button key={key} onClick={() => setTab(key)} style={tabStyle(tab === key)}
-            onMouseEnter={(e) => { if (tab !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
-            onMouseLeave={(e) => { if (tab !== key) e.target.style.background = tabStyle(false).background; }}>
+        const renderBtn = ({ key, label, disabled }) => (
+          <button key={key} onClick={() => !disabled && setTab(key)} disabled={disabled}
+            style={{ ...tabStyle(tab === key), ...(disabled ? { opacity: 0.25, cursor: 'not-allowed', pointerEvents: 'none' } : {}) }}
+            onMouseEnter={(e) => { if (!disabled && tab !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
+            onMouseLeave={(e) => { if (!disabled && tab !== key) e.target.style.background = tabStyle(false).background; }}>
             {label.toUpperCase()}
           </button>
         );
@@ -317,7 +318,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.9rem' }}>
               {topRows.map(renderBtn)}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.9rem', width: '80%', margin: '0 auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.9rem', width: '100%' }}>
               {bottomRow.map(renderBtn)}
             </div>
           </div>
@@ -334,10 +335,11 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
             { key: 'audit', label: 'Audit Log' },
             { key: 'feedback', label: 'Feedback' },
             { key: 'contact', label: 'Contact' },
-          ].map(({ key, label }) => (
-            <button key={key} onClick={() => setTab(key)} style={tabStyle(tab === key)}
-              onMouseEnter={(e) => { if (tab !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
-              onMouseLeave={(e) => { if (tab !== key) e.target.style.background = tabStyle(false).background; }}>
+          ].map(({ key, label, disabled }) => (
+            <button key={key} onClick={() => !disabled && setTab(key)} disabled={disabled}
+              style={{ ...tabStyle(tab === key), ...(disabled ? { opacity: 0.25, cursor: 'not-allowed' } : {}) }}
+              onMouseEnter={(e) => { if (!disabled && tab !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
+              onMouseLeave={(e) => { if (!disabled && tab !== key) e.target.style.background = tabStyle(false).background; }}>
               {label.toUpperCase()}
             </button>
           ))}
@@ -1188,6 +1190,42 @@ const AssessmentsTab = memo(() => {
 
 const PromptsTab = memo(() => {
   const isMobile = React.useContext(MobileCtx);
+  const [promptLevel, setPromptLevel] = useState('advanced');
+  const subTabStyle = isMobile ? MOBILE_TAB_STYLE : TAB_STYLE;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+      {/* Level sub-tabs */}
+      <div style={{ display: 'flex', gap: '0.4rem' }}>
+        {LEVEL_TABS.map(({ key, label }) => (
+          <button key={key} onClick={() => setPromptLevel(key)}
+            style={subTabStyle(promptLevel === key)}
+            onMouseEnter={(e) => { if (promptLevel !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
+            onMouseLeave={(e) => { if (promptLevel !== key) e.target.style.background = subTabStyle(false).background; }}>
+            {label.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {/* Level content */}
+      {promptLevel === 'advanced' ? (
+        <PromptsTabContent />
+      ) : (
+        <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+          <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold, marginBottom: '0.8rem' }}>
+            PROMPTS — {promptLevel.toUpperCase()}
+          </div>
+          <div style={{ fontSize: 'max(11px, 0.55vw)', opacity: 0.4, maxWidth: '400px', margin: '0 auto' }}>
+            Prompt configuratie voor dit level is nog in ontwikkeling.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+const PromptsTabContent = memo(() => {
+  const isMobile = React.useContext(MobileCtx);
   const [config, setConfig] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -1204,11 +1242,6 @@ const PromptsTab = memo(() => {
     try {
       const updated = await updatePromptConfig({
         systemPromptTemplate: config.systemPromptTemplate,
-        userPromptTemplate: config.userPromptTemplate,
-        defaultProvider: config.defaultProvider,
-        defaultModel: config.defaultModel,
-        temperature: parseFloat(config.temperature) || 0.7,
-        maxTokens: parseInt(config.maxTokens) || 2048,
       });
       setConfig(updated);
       setSaved(true);
@@ -1227,7 +1260,6 @@ const PromptsTab = memo(() => {
 
   const mLABEL = isMobile ? { ...LABEL, fontSize: '13px' } : LABEL;
   const mTEXTAREA = isMobile ? { ...TEXTAREA, fontSize: '14px', padding: '0.6rem' } : TEXTAREA;
-  const mINPUT_SM = isMobile ? { ...INPUT_SM, fontSize: '14px', padding: '0.5rem 0.7rem' } : INPUT_SM;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
@@ -1239,69 +1271,15 @@ const PromptsTab = memo(() => {
       {error && <ErrorBox msg={error} />}
 
       <div>
-        <div style={mLABEL}>SYSTEM PROMPT TEMPLATE</div>
+        <div style={mLABEL}>SYSTEM PROMPT</div>
+        <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)', opacity: 0.3, marginBottom: '0.3rem' }}>
+          Dit is de instructie die de AI ontvangt om alle assessment data te interpreteren.
+        </div>
         <textarea
           value={config.systemPromptTemplate || ''}
           onChange={(e) => update('systemPromptTemplate', e.target.value)}
-          style={{ ...mTEXTAREA, minHeight: '120px' }}
+          style={{ ...mTEXTAREA, minHeight: '160px' }}
         />
-      </div>
-
-      <div>
-        <div style={mLABEL}>USER PROMPT TEMPLATE</div>
-        <textarea
-          value={config.userPromptTemplate || ''}
-          onChange={(e) => update('userPromptTemplate', e.target.value)}
-          style={mTEXTAREA}
-        />
-        <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)', opacity: 0.3, marginTop: '0.2rem' }}>
-          Variables: {'{archetypeKey}'}, {'{supportGroup}'}, {'{extendedArchetypeName}'}, {'{oceanScores}'}
-        </div>
-      </div>
-
-      <div style={isMobile
-        ? { display: 'flex', flexDirection: 'column', gap: '0.5rem' }
-        : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }
-      }>
-        <div>
-          <div style={mLABEL}>DEFAULT PROVIDER</div>
-          <select
-            value={config.defaultProvider || 'openai'}
-            onChange={(e) => update('defaultProvider', e.target.value)}
-            style={mINPUT_SM}
-          >
-            <option value="openai">OpenAI</option>
-            <option value="gemini">Google Gemini</option>
-            <option value="grok">xAI Grok</option>
-          </select>
-        </div>
-        <div>
-          <div style={mLABEL}>DEFAULT MODEL</div>
-          <input
-            value={config.defaultModel || ''}
-            onChange={(e) => update('defaultModel', e.target.value)}
-            style={mINPUT_SM}
-            placeholder="gpt-4o"
-          />
-        </div>
-        <div>
-          <div style={mLABEL}>TEMPERATURE</div>
-          <input
-            type="number" step="0.1" min="0" max="2"
-            value={config.temperature ?? 0.7}
-            onChange={(e) => update('temperature', e.target.value)}
-            style={mINPUT_SM}
-          />
-        </div>
-        <div>
-          <div style={mLABEL}>MAX TOKENS</div>
-          <input
-            type="number" step="256" min="256" max="16384"
-            value={config.maxTokens ?? 2048}
-            onChange={(e) => update('maxTokens', e.target.value)}
-            style={mINPUT_SM}
-          />
-        </div>
       </div>
 
       <button onClick={handleSave} disabled={saving}
@@ -1574,7 +1552,49 @@ const ContextDocumentsSection = memo(() => {
   );
 });
 
+const LEVEL_TABS = [
+  { key: 'beginner', label: 'Beginner' },
+  { key: 'intermediate', label: 'Intermediate' },
+  { key: 'advanced', label: 'Advanced' },
+];
+
 const QuestionsTab = memo(() => {
+  const isMobile = React.useContext(MobileCtx);
+  const [level, setLevel] = useState('advanced');
+  const subTabStyle = isMobile ? MOBILE_TAB_STYLE : TAB_STYLE;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+      {/* Level sub-tabs */}
+      <div style={{ display: 'flex', gap: '0.4rem' }}>
+        {LEVEL_TABS.map(({ key, label }) => (
+          <button key={key} onClick={() => setLevel(key)}
+            style={subTabStyle(level === key)}
+            onMouseEnter={(e) => { if (level !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
+            onMouseLeave={(e) => { if (level !== key) e.target.style.background = subTabStyle(false).background; }}>
+            {label.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {/* Level content */}
+      {level === 'advanced' ? (
+        <QuestionsTabAdvanced />
+      ) : (
+        <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+          <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold, marginBottom: '0.8rem' }}>
+            VRAGEN — {level.toUpperCase()}
+          </div>
+          <div style={{ fontSize: 'max(11px, 0.55vw)', opacity: 0.4, maxWidth: '400px', margin: '0 auto' }}>
+            Dit vragenset is nog in ontwikkeling en wordt binnenkort toegevoegd.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+const QuestionsTabAdvanced = memo(() => {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [seeding, setSeeding] = useState(false);
@@ -1856,7 +1876,7 @@ const QuestionsTab = memo(() => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={LABEL}>ASSESSMENT QUESTIONS ({data.layers.reduce((s, l) => s + l.questions.length, 0)} total)</div>
+        <div style={LABEL}>VRAGEN — ADVANCED ({data.layers.reduce((s, l) => s + l.questions.length, 0)} total)</div>
       </div>
 
       {/* Toolbar: export / import / force re-seed */}

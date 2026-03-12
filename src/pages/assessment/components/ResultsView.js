@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle, Check, Shield, Target } from 'lucide-react';
+import { Mail, RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle, Check, Shield, Target, Activity } from 'lucide-react';
 import { ARCHETYPES } from '../../../data/assessment/archetypes';
 import { sendResultsEmail } from '../../../utils/apiClient';
 import { GROUP_NEURAL_FOCUS } from '../../../data/assessment/scoring';
@@ -37,7 +37,7 @@ function ResultsView({ result, onReset, aiError }) {
           <span className="text-xs uppercase tracking-wider text-cyan-300">Advanced Ontological Assessment</span>
         </div>
         <h1 className="text-3xl md:text-4xl font-light mb-2 holo-text">
-          {result.extendedArchetypeName || 'Your Consciousness Profile'}
+          Jij navigeert als {result.extendedArchetypeName || 'Unknown'}
         </h1>
         <p className="text-slate-400 text-sm">Generated on {result.timestamp.toLocaleDateString()}</p>
       </div>
@@ -69,8 +69,14 @@ function ResultsView({ result, onReset, aiError }) {
                 <p className="text-xs text-slate-400">
                   Groep: {supportGroup} — {GROUP_NEURAL_FOCUS?.[supportGroup] || ''}
                 </p>
-                {result.hasHarmonyBonus && (
-                  <p className="text-xs text-emerald-400 mt-2">✨ Harmony Bonus +{result.harmonyBonusApplied} — Biologische buren in dezelfde Neurale Zuil</p>
+                {result.hasBeheersingsBonus && (
+                  <p className="text-xs text-blue-400 mt-2">🧠 Beheersings Bonus +33 — Symbiotische Brug: feedback-circuits die elkaar versterken (Blauwe Lijn)</p>
+                )}
+                {result.hasShadowHarmony && (
+                  <p className="text-xs text-purple-400 mt-2">⚡ Harmony Bonus +69 — Schaduw Integratie: de ultieme spanning geïntegreerd zonder te breken (Paarse Lijn)</p>
+                )}
+                {!result.hasBeheersingsBonus && !result.hasShadowHarmony && result.hasHarmonyBonus && (
+                  <p className="text-xs text-emerald-400 mt-2">✨ Bonus +{result.harmonyBonusApplied}</p>
                 )}
               </div>
             )}
@@ -107,6 +113,45 @@ function ResultsView({ result, onReset, aiError }) {
           <StatCard icon={<Eye className="w-5 h-5" />} label="Nature" value={result.totalNaturePoints || 0} color="#10b981" />
           <StatCard icon={<Shield className="w-5 h-5" />} label="Culture" value={result.totalCulturePoints || 0} color="#f59e0b" />
         </div>
+
+        {/* OCEAN Personality Profile (0-100) */}
+        {result.oceanScores && (
+          <div className="rounded-xl p-6 md:p-8 border border-purple-500/30 relative overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168, 85, 247, 0.06), inset 0 0 30px rgba(168, 85, 247, 0.03)' }}>
+            <h3 className="text-lg font-light text-purple-300 mb-4 flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              OCEAN Persoonlijkheidsprofiel
+            </h3>
+            <div className="space-y-3">
+              {[
+                { key: 'O', label: 'Openness', sublabel: 'Openheid voor Ervaring', color: '#a855f7' },
+                { key: 'C', label: 'Conscientiousness', sublabel: 'Consciëntieusheid', color: '#22d3ee' },
+                { key: 'E', label: 'Extraversion', sublabel: 'Extraversie', color: '#fbbf24' },
+                { key: 'A', label: 'Agreeableness', sublabel: 'Inschikkelijkheid', color: '#f472b6' },
+                { key: 'N', label: 'Neuroticism', sublabel: 'Neuroticisme', color: '#ef4444' },
+              ].map(({ key, label, sublabel, color }) => {
+                const score = result.oceanScores[key] ?? 0;
+                return (
+                  <div key={key}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div>
+                        <span className="text-sm font-medium" style={{ color }}>{key}</span>
+                        <span className="text-sm text-slate-300 ml-2">{label}</span>
+                        <span className="text-xs text-slate-500 ml-2">({sublabel})</span>
+                      </div>
+                      <span className="text-sm font-mono" style={{ color }}>{score}%</span>
+                    </div>
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-1000"
+                        style={{ width: `${score}%`, backgroundColor: color, boxShadow: `0 0 8px ${color}40` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
 
 

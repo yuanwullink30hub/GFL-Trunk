@@ -117,6 +117,14 @@ const PyramidView = ({ onBack = () => {}, isActive = true }) => {
           toneMapping: THREE.ACESFilmicToneMapping, 
           toneMappingExposure: 1.2 
         }}
+        onCreated={({ gl }) => {
+          // Firefox fix: getProgramInfoLog can return null, crashing Three.js r160's .trim() call
+          const ctx = gl.getContext();
+          const origGPIL = ctx.getProgramInfoLog.bind(ctx);
+          ctx.getProgramInfoLog = (p) => origGPIL(p) || '';
+          const origGSIL = ctx.getShaderInfoLog.bind(ctx);
+          ctx.getShaderInfoLog = (s) => origGSIL(s) || '';
+        }}
       >
         <PerspectiveCamera makeDefault position={[0, 2, 14]} fov={45} />
         

@@ -139,7 +139,44 @@ const docUpload = multer({
 
 const router = Router();
 
-// All admin routes need auth + admin
+// ═════════════════════════════════════════════════════════════
+// UNPROTECTED: Dev activity logging endpoint (called from git hooks / dev-watcher)
+// Must be registered BEFORE the global auth middleware below.
+// ═════════════════════════════════════════════════════════════
+
+const RETENTION_DAYS = 90;
+
+function activityCollection() {
+  const col = getDB().collection('devActivity');
+  col.createIndex({ timestamp: 1 }, { expireAfterSeconds: RETENTION_DAYS * 86400 }).catch(() => {});
+  return col;
+}
+
+// POST /api/admin/sessions/activity — log a dev activity event (no auth — called from git hooks)
+router.post('/sessions/activity', async (req, res) => {
+  try {
+    const { type, message, branch, hash } = req.body;
+    const allowed = ['edit', 'commit', 'push'];
+    if (!type || !allowed.includes(type)) {
+      return res.status(400).json({ error: `type must be one of: ${allowed.join(', ')}` });
+    }
+
+    await activityCollection().insertOne({
+      type,
+      timestamp: new Date(),
+      message: (message || '').slice(0, 512),
+      branch: (branch || '').slice(0, 256),
+      hash: (hash || '').slice(0, 64),
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Admin] Activity log error:', err.message);
+    res.status(500).json({ error: 'Failed to log activity' });
+  }
+});
+
+// All other admin routes need auth + admin
 router.use(authRequired, adminRequired);
 
 // ─────────────────────────────────────────────────────────────
@@ -635,19 +672,12 @@ router.get('/email/status', authRequired, adminRequired, (_req, res) => {
 });
 
 // ═════════════════════════════════════════════════════════════
-// Dev Session Audit Log — track developer activity (edits/commits/pushes)
+// Dev Session Audit Log — session computation & protected read/clear endpoints
 // Sessions are computed by grouping events with < 30 min gaps.
+// (The POST activity endpoint is registered above, before auth middleware.)
 // ═════════════════════════════════════════════════════════════
 
 const SESSION_GAP_MS = 30 * 60 * 1000; // 30 minutes
-const RETENTION_DAYS = 90; // auto-delete events older than 90 days
-
-function activityCollection() {
-  const col = getDB().collection('devActivity');
-  // Ensure TTL index exists (idempotent — MongoDB ignores if already created)
-  col.createIndex({ timestamp: 1 }, { expireAfterSeconds: RETENTION_DAYS * 86400 }).catch(() => {});
-  return col;
-}
 
 /**
  * Compute sessions from a list of activity events.
@@ -662,7 +692,6 @@ function computeSessions(events) {
   for (let i = 1; i < events.length; i++) {
     const gap = new Date(events[i].timestamp).getTime() - new Date(current.endedAt).getTime();
     if (gap > SESSION_GAP_MS) {
-      // Close current session, start new one
       current.durationMs = new Date(current.endedAt).getTime() - new Date(current.startedAt).getTime();
       sessions.push(current);
       current = { startedAt: events[i].timestamp, endedAt: events[i].timestamp, events: [events[i]] };
@@ -671,35 +700,10 @@ function computeSessions(events) {
       current.events.push(events[i]);
     }
   }
-  // Close last session
   current.durationMs = new Date(current.endedAt).getTime() - new Date(current.startedAt).getTime();
   sessions.push(current);
   return sessions;
 }
-
-// POST /api/admin/sessions/activity — log a dev activity event (no auth — called from git hooks)
-router.post('/sessions/activity', async (req, res) => {
-  try {
-    const { type, message, branch, hash } = req.body;
-    const allowed = ['edit', 'commit', 'push'];
-    if (!type || !allowed.includes(type)) {
-      return res.status(400).json({ error: `type must be one of: ${allowed.join(', ')}` });
-    }
-
-    await activityCollection().insertOne({
-      type,
-      timestamp: new Date(),
-      message: (message || '').slice(0, 512),
-      branch: (branch || '').slice(0, 256),
-      hash: (hash || '').slice(0, 64),
-    });
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[Admin] Activity log error:', err.message);
-    res.status(500).json({ error: 'Failed to log activity' });
-  }
-});
 
 // GET /api/admin/sessions — get computed dev sessions (admin only)
 router.get('/sessions', authRequired, adminRequired, async (req, res) => {

@@ -11,11 +11,52 @@ import {
 
 /**
  * SciFiRadarChart - Sci-fi styled radar chart for assessment results
- * @param {{ data: Array<{ subject: string, A: number, fullMark: number }> }} props
+ * @param {{ data: Array<{ subject: string, A: number, fullMark: number }>, shadow?: string, blindspot?: string, mainArchetype?: string, supportArchetype?: string }} props
  */
-const SciFiRadarChart = ({ data }) => {
-  // Dynamic domain: the highest-scoring archetype always reaches the outer border
-  const maxVal = Math.max(1, ...data.map(d => d.A || 0));
+const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchetype }) => {
+  // Fixed domain from tier max (fullMark is set per-tier: 669 Beginner/Intermediate, 789 Advanced)
+  const fullMark = data?.[0]?.fullMark || 789;
+
+  // Custom tick renderer to highlight Shadow (red) and Blindspot (amber) labels
+  const renderPolarAngleAxisTick = (props) => {
+    const { payload, x, y, textAnchor } = props;
+    const label = payload?.value || '';
+    const upperLabel = label.toUpperCase();
+    let fill = '#a5f3fc'; // default cyan
+    let fontWeight = 400;
+    if (shadow && upperLabel === shadow.toUpperCase()) {
+      fill = '#ff4d6a'; // red for shadow
+      fontWeight = 700;
+    } else if (blindspot && upperLabel === blindspot.toUpperCase()) {
+      fill = '#fbbf24'; // amber for blindspot
+      fontWeight = 700;
+    }
+    return (
+      <text x={x} y={y} textAnchor={textAnchor} fill={fill} fontWeight={fontWeight} fontSize={11} fontFamily="'Rajdhani', sans-serif">
+        {label}
+      </text>
+    );
+  };
+
+  // Custom dot renderer: Main = purple, Support = orange, others = green
+  const renderDot = (props) => {
+    const { cx, cy, payload } = props;
+    if (cx == null || cy == null) return null;
+    const label = (payload?.subject || '').toUpperCase();
+    let dotFill = '#00ff9d';
+    let dotStroke = '#003d27';
+    let r = 4;
+    if (mainArchetype && label === mainArchetype.toUpperCase()) {
+      dotFill = '#a855f7'; // purple for Main
+      dotStroke = '#581c87';
+      r = 6;
+    } else if (supportArchetype && label === supportArchetype.toUpperCase()) {
+      dotFill = '#f97316'; // orange for Support
+      dotStroke = '#7c2d12';
+      r = 6;
+    }
+    return <circle cx={cx} cy={cy} r={r} fill={dotFill} stroke={dotStroke} strokeWidth={1.5} />;
+  };
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 300, position: 'relative' }}>
@@ -33,12 +74,12 @@ const SciFiRadarChart = ({ data }) => {
 
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-          <PolarGrid stroke="#00ff9d" strokeOpacity={0.25} />
+          <PolarGrid stroke="#00ff9d" strokeOpacity={0.25} gridType="polygon" polarAngles={undefined} radialLines={true} />
           <PolarAngleAxis 
             dataKey="subject" 
-            tick={{ fill: '#a5f3fc', fontSize: 11, fontFamily: "'Rajdhani', sans-serif" }} 
+            tick={renderPolarAngleAxisTick}
           />
-          <PolarRadiusAxis angle={30} domain={[0, maxVal]} tick={false} axisLine={false} />
+          <PolarRadiusAxis angle={30} domain={[0, fullMark]} tickCount={6} tick={false} axisLine={false} />
           <Radar
             name="Archetype"
             dataKey="A"
@@ -46,8 +87,8 @@ const SciFiRadarChart = ({ data }) => {
             strokeWidth={2.5}
             fill="#00ff9d"
             fillOpacity={0.25}
-            dot={{ r: 4, fill: '#00ff9d', stroke: '#003d27', strokeWidth: 1.5 }}
-            activeDot={{ r: 6, fill: '#a5f3fc', stroke: '#00ff9d', strokeWidth: 2 }}
+            dot={renderDot}
+            activeDot={{ r: 7, fill: '#a5f3fc', stroke: '#00ff9d', strokeWidth: 2 }}
             connectNulls
             isAnimationActive={true}
             animationDuration={800}

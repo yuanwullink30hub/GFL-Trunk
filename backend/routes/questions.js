@@ -661,16 +661,16 @@ module.exports = router;
 // ─────────────────────────────────────────────────────────────
 
 // Archetype Sets (Neuraal Schakelbord — must match frontend assessmentData.js)
-// Set Alpha: positions 1,2,4,6,8,10 on the wheel
+// Set Alpha (odd steps 1&3): positions 1,2,4,6,8,10 on the wheel
 const SET_A = ['JUDGE', 'LOVER', 'INNOCENT', 'OUTLAW', 'SAGE', 'MAGICIAN'];
-// Set Beta: positions 7,9,11,12,3,5 on the wheel
-const SET_B = ['TRICKSTER', 'ARTIST', 'HERO', 'RULER', 'CAREGIVER', 'EXPLORER'];
+// Set Beta (even steps 2&4): positions 12,3,5,7,9,11 on the wheel
+const SET_B = ['RULER', 'CAREGIVER', 'EXPLORER', 'TRICKSTER', 'ARTIST', 'HERO'];
 
 const PATTERNS = [
-  [0, 1, 2, 3, 4, 5], // Q1 (ABCDEF): De Grondhouding — G1→G6 forward
-  [0, 1, 2, 3, 4, 5], // Q2 (DEFABC): De Verschuiving naar Chaos — G4→G3
-  [5, 4, 3, 2, 1, 0], // Q3 (FEDCBA): De Spiegeling van de Geest — G6→G1 mirror
-  [5, 4, 3, 2, 1, 0], // Q4 (CBAFED): De Omgekeerde Orde — G3→G4
+  [0, 1, 2, 3, 4, 5], // Stap 1 — Set A Base: De Grondhouding (A→1, B→2, C→4, D→6, E→8, F→10)
+  [0, 1, 2, 3, 4, 5], // Stap 2 — Set B Base: De Grondhouding (A→12, B→3, C→5, D→7, E→9, F→11)
+  [5, 0, 1, 2, 3, 4], // Stap 3 — Set A +1 Shift: De Spiegeling (A→10, B→1, C→2, D→4, E→6, F→8)
+  [5, 0, 1, 2, 3, 4], // Stap 4 — Set B +1 Shift: De Spiegeling (A→11, B→12, C→3, D→5, E→7, F→9)
 ];
 
 function getArchetypeForAnswer(questionNum, answerPos) {

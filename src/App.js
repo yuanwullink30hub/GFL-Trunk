@@ -150,6 +150,7 @@ const App = () => {
   const [resultsModalProgress, setResultsModalProgress] = useState(0); // 0-1 progress for results modal floating out
   const [resultsLoadingProgress, setResultsLoadingProgress] = useState(0); // 0-1 loading bar progress (AI thinking time)
   const [resultsPoetryIndex, setResultsPoetryIndex] = useState(0); // Current poetry slide index
+  const [aiAnalysisReady, setAiAnalysisReady] = useState(false); // True when AI response received
   const [showLoginFromResults, setShowLoginFromResults] = useState(false); // Show login modal after results
   
   // Poetry slides for the results loading screen
@@ -690,6 +691,7 @@ const App = () => {
     setResultsModalProgress(0);
     setResultsLoadingProgress(0);
     setResultsPoetryIndex(0);
+    setAiAnalysisReady(false);
     setShowLoginFromResults(false);
     setPyramidScrollProgress(0);
     setIntroComplete(false);
@@ -816,44 +818,11 @@ const App = () => {
     requestAnimationFrame(animate);
   }, [assessmentPhase]);
   
-  // Results loading animation - poetry slideshow and loading bar
+  // Show loading screen until AI analysis is ready, then reveal results
   useEffect(() => {
-    if (assessmentPhase !== 'results') return;
-    if (resultsModalProgress < 1) return; // Wait for modal to appear
-    
-    const LOADING_DURATION = 12000; // 12 seconds for AI to "think"
-    const POETRY_INTERVAL = 2000; // Change poetry every 2 seconds
-    const startTime = Date.now();
-    
-    // Reset loading state
-    setResultsLoadingProgress(0);
-    setResultsPoetryIndex(0);
-    
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      
-      // Update loading progress
-      const progress = Math.min(elapsed / LOADING_DURATION, 1);
-      // Ease-in-out for natural feeling
-      const eased = progress < 0.5 
-        ? 2 * progress * progress 
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-      setResultsLoadingProgress(eased);
-      
-      // Update poetry index based on time
-      const poetryIdx = Math.min(
-        Math.floor(elapsed / POETRY_INTERVAL),
-        poetrySlides.length - 1
-      );
-      setResultsPoetryIndex(poetryIdx);
-      
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-    
-    requestAnimationFrame(animate);
-  }, [assessmentPhase, resultsModalProgress, poetrySlides.length]);
+    if (!aiAnalysisReady) return;
+    setResultsLoadingProgress(1);
+  }, [aiAnalysisReady]);
   
   // Handle scroll to next layer (Scroll button clicked)
   // Handle scroll to next layer - triggered by scroll progress during layers phase
@@ -892,7 +861,7 @@ const App = () => {
   
   // Handle answer selection (AssessmentCard passes questionId and selections array)
   const handleAnswerSelect = useCallback((questionId, selections) => {
-    // Record the answer (selections is an array of 0-2 answer IDs)
+    // Record the answer (selections is an array of 0-1 answer IDs — single choice)
     setAssessmentAnswers(prev => {
       // Replace existing entry for this question if present
       const filtered = prev.filter(a => a.questionId !== questionId);
@@ -1616,7 +1585,7 @@ const App = () => {
 
 
           {/* --- Main 3D Scene --- */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ overflow: 'visible' }}>
+          <div className="absolute inset-0 flex items-center justify-center" style={{ overflow: 'visible', zIndex: currentFrame > 6 ? 20 : 10 }}>
             <HoloEarth 
               className="w-full h-full" 
               exploding={isExploding}
@@ -1637,7 +1606,8 @@ const App = () => {
           <NebulaOverlay mapPosition={mapPosition} opacity={0.55} />
 
           {/* --- Overlay UI Layer --- */}
-          <div className="absolute inset-0 z-10 pointer-events-none">
+          {/* z-10 normally (behind HoloEarth z-20), z-30 when assessment active so modals float above */}
+          <div className={`absolute inset-0 ${isSystem ? 'z-30' : 'z-10'} pointer-events-none`}>
             {/* Header HUD - Flies up based on scroll progress — delayed 2 frames */}
             <header 
               className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-auto"
@@ -1903,15 +1873,14 @@ const App = () => {
               </div>
             )}
             
-            {/* Assessment Results - Poetry slideshow during loading, then full results modal */}
+            {/* Assessment Results - wait for AI, then show full results modal */}
             {isSystem && assessmentPhase === 'results' && (
               <AssessmentResultsModal
                 resultsLoadingProgress={resultsLoadingProgress}
                 resultsModalProgress={resultsModalProgress}
-                resultsPoetryIndex={resultsPoetryIndex}
-                poetrySlides={poetrySlides}
                 layerAnswers={layerAnswers}
                 onClose={resetAssessmentState}
+                onAiReady={() => setAiAnalysisReady(true)}
                 onDownload={() => {
                   console.log('Download PDF:', layerAnswers);
                   // TODO: Generate and download PDF

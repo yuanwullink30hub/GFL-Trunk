@@ -11,13 +11,13 @@
  *   9=Artist(G5)  10=Magician(G6)  11=Hero(G6)  12=Ruler(G1)
  *
  * Set Alpha (Odd questions Q1,Q3,Q5,...): Judge, Lover, Innocent, Outlaw, Sage, Magician
- * Set Beta  (Even questions Q2,Q4,Q6,...): Trickster, Artist, Hero, Ruler, Caregiver, Explorer
+ * Set Beta  (Even questions Q2,Q4,Q6,...): Ruler, Caregiver, Explorer, Trickster, Artist, Hero
  *
  * 4 Rotation Keys cycle Q1→Q2→Q3→Q4→Q1→... across all 60 questions:
- *   Q1 (ABCDEF) — De Grondhouding (G1→G6):      A→1  B→2  C→4  D→6  E→8  F→10
- *   Q2 (DEFABC) — De Verschuiving naar Chaos:     A→7  B→9  C→11 D→12 E→3  F→5
- *   Q3 (FEDCBA) — De Spiegeling van de Geest:     A→10 B→8  C→6  D→4  E→2  F→1
- *   Q4 (CBAFED) — De Omgekeerde Orde (G3→G4):    A→5  B→3  C→12 D→11 E→9  F→7
+ *   Stap 1 — Set A (Base / De Grondhouding):     A(N)→1  B(C)→2  C(N)→4  D(C)→6  E(N)→8  F(C)→10
+ *   Stap 2 — Set B (Base / De Grondhouding):     A(N)→12 B(C)→3  C(N)→5  D(C)→7  E(N)→9  F(C)→11
+ *   Stap 3 — Set A (+1 Shift / De Spiegeling):   A(N)→10 B(C)→1  C(N)→2  D(C)→4  E(N)→6  F(C)→8
+ *   Stap 4 — Set B (+1 Shift / De Spiegeling):   A(N)→11 B(C)→12 C(N)→3  D(C)→5  E(N)→7  F(C)→9
  *
  * Harmony Bonus (+69): Main & Support zijn directe buren binnen hun Neurale Zuil
  * Shadow Integration: 180°-as op het wiel (positie + 6)
@@ -26,17 +26,17 @@
  */
 
 // ──────── Archetype Sets (Neuraal Schakelbord) ────────
-// Set Alpha: positions 1,2,4,6,8,10 on the wheel
+// Set Alpha (odd steps 1&3): positions 1,2,4,6,8,10 on the wheel
 const SET_A = ['JUDGE', 'LOVER', 'INNOCENT', 'OUTLAW', 'SAGE', 'MAGICIAN'];
-// Set Beta: positions 7,9,11,12,3,5 on the wheel
-const SET_B = ['TRICKSTER', 'ARTIST', 'HERO', 'RULER', 'CAREGIVER', 'EXPLORER'];
+// Set Beta (even steps 2&4): positions 12,3,5,7,9,11 on the wheel
+const SET_B = ['RULER', 'CAREGIVER', 'EXPLORER', 'TRICKSTER', 'ARTIST', 'HERO'];
 
 // ──────── Rotation Patterns (answer-position → archetype-index) ────────
 const PATTERNS = [
-  [0, 1, 2, 3, 4, 5], // Q1 (ABCDEF): De Grondhouding — G1→G6 forward
-  [0, 1, 2, 3, 4, 5], // Q2 (DEFABC): De Verschuiving naar Chaos — G4→G3
-  [5, 4, 3, 2, 1, 0], // Q3 (FEDCBA): De Spiegeling van de Geest — G6→G1 mirror
-  [5, 4, 3, 2, 1, 0], // Q4 (CBAFED): De Omgekeerde Orde — G3→G4
+  [0, 1, 2, 3, 4, 5], // Stap 1 — Set A Base: De Grondhouding (A→1, B→2, C→4, D→6, E→8, F→10)
+  [0, 1, 2, 3, 4, 5], // Stap 2 — Set B Base: De Grondhouding (A→12, B→3, C→5, D→7, E→9, F→11)
+  [5, 0, 1, 2, 3, 4], // Stap 3 — Set A +1 Shift: De Spiegeling (A→10, B→1, C→2, D→4, E→6, F→8)
+  [5, 0, 1, 2, 3, 4], // Stap 4 — Set B +1 Shift: De Spiegeling (A→11, B→12, C→3, D→5, E→7, F→9)
 ];
 
 /**

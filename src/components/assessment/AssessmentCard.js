@@ -16,11 +16,8 @@ function stripMeta(text) {
  * Features:
  * - SectorFrame-style background (rgba(8,2,12,0.95)) with colored corner accents
  * - 6 answer options (A-F) with skewed connectors
- * - Dual-choice system: pick up to 2 answers per question
- *   Choice 1 = 3 pts, Choice 2 = 2 pts to their linked archetype
- * - Click to select (1st click → "1", 2nd click on another → "2")
- * - Click selected answer to remove; if #1 removed, #2 becomes #1
- * - "1"/"2" indicator shown on the connector line between letter and text
+ * - Single-choice system: pick exactly 1 answer per question
+ * - Click to select; click again to deselect; clicking another replaces selection
  * - Manual "Next" button below 12 question indicators
  * - Save button when all answered → collapses to header-only with "Scroll"
  */
@@ -129,11 +126,11 @@ const AssessmentCard = ({
   // Check if all questions in this card have been answered (at least 1 choice each)
   const isAllAnswered = answeredCount >= totalQuestions;
   
-  // Current question's selections: always an array of 0-2 answer IDs
+  // Current question's selection: array of 0-1 answer IDs (single-choice)
   const currentSelections = (() => {
     const val = allAnswers[currentQuestion?.id];
     if (!val) return [];
-    if (Array.isArray(val)) return val;
+    if (Array.isArray(val)) return val.slice(0, 1);
     return [val]; // legacy single-value compat
   })();
 
@@ -144,23 +141,15 @@ const AssessmentCard = ({
     return () => clearTimeout(timer);
   }, [currentQuestion?.id]);
 
-  // Dual-choice click handler
+  // Single-choice click handler: 1 answer per question
   const handleAnswerClick = useCallback((answerId) => {
-    const idx = currentSelections.indexOf(answerId);
-    let newSelections;
-    
-    if (idx !== -1) {
-      // Already selected → remove it. If it was #1, #2 becomes #1 automatically.
-      newSelections = currentSelections.filter(id => id !== answerId);
-    } else if (currentSelections.length < 2) {
-      // Not selected and room for more → add as next choice
-      newSelections = [...currentSelections, answerId];
+    if (currentSelections.includes(answerId)) {
+      // Already selected → deselect
+      onSelectAnswer(currentQuestion.id, []);
     } else {
-      // Already have 2 selections — ignore
-      return;
+      // Select this answer (replaces any previous selection)
+      onSelectAnswer(currentQuestion.id, [answerId]);
     }
-    
-    onSelectAnswer(currentQuestion.id, newSelections);
   }, [currentQuestion, onSelectAnswer, currentSelections]);
 
   const handleSave = () => {
@@ -171,12 +160,12 @@ const AssessmentCard = ({
     if (onComplete) onComplete();
   };
 
-  // AUTO-fill all questions (DEV only) — picks 2 random answers per question
+  // AUTO-fill all questions (DEV only) — picks 1 random answer per question
   const handleAutoFill = useCallback(() => {
     if (!questions) return;
     questions.forEach((q) => {
       const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
-      onSelectAnswer(q.id, [shuffled[0].id, shuffled[1].id]);
+      onSelectAnswer(q.id, [shuffled[0].id]);
     });
   }, [questions, onSelectAnswer]);
 
@@ -323,12 +312,10 @@ const AssessmentCard = ({
             </p>
           </div>
 
-          {/* Answer Options (A-F) — dual-choice: up to 2 selections */}
+          {/* Answer Options (A-F) — single-choice: 1 selection */}
           <div className="flex flex-col gap-2">
             {currentQuestion.answers.map((answer, idx) => {
-              const selectionIdx = currentSelections.indexOf(answer.id);
-              const isSelected = selectionIdx !== -1;
-              const choiceNumber = selectionIdx !== -1 ? selectionIdx + 1 : null; // 1 or 2
+              const isSelected = currentSelections.includes(answer.id);
               return (
                 <button
                   key={answer.id}
@@ -336,7 +323,6 @@ const AssessmentCard = ({
                   className={`
                     relative group flex items-stretch text-left transition-all duration-200 w-full
                     ${isSelected ? 'translate-x-1' : 'hover:translate-x-0.5'}
-                    ${currentSelections.length >= 2 && !isSelected ? 'opacity-40' : ''}
                   `}
                   style={{ minHeight: s.answerMinH }}
                 >
@@ -355,7 +341,7 @@ const AssessmentCard = ({
                     {String.fromCharCode(65 + idx)}
                   </div>
 
-                  {/* Connector with choice indicator (1 or 2) */}
+                  {/* Connector line */}
                   <div 
                     className="w-5 border-y relative overflow-visible"
                     style={{
@@ -363,33 +349,9 @@ const AssessmentCard = ({
                       backgroundColor: isSelected ? `${subjectColor}15` : 'transparent'
                     }}
                   >
-                    {/* Horizontal line */}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-full h-[1px]" style={{ backgroundColor: isSelected ? subjectColor : `${subjectColor}20` }} />
                     </div>
-                    {/* Choice number indicator — on top of the line */}
-                    {choiceNumber && (
-                      <div 
-                        className="absolute flex items-center justify-center"
-                        style={{
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          width: s.indicatorSize,
-                          height: s.indicatorSize,
-                          borderRadius: '50%',
-                          backgroundColor: subjectColor,
-                          color: '#0f172a',
-                          fontSize: `calc(${s.answerFont} * 0.75)`,
-                          fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                          fontWeight: 'bold',
-                          zIndex: 5,
-                          boxShadow: `0 0 6px ${subjectColor}60`,
-                        }}
-                      >
-                        {choiceNumber}
-                      </div>
-                    )}
                   </div>
 
                   {/* Answer Text */}

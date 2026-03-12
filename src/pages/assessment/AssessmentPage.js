@@ -89,6 +89,8 @@ function AssessmentPage() {
         // Harmony
         hasHarmonyBonus: localResult.hasHarmonyBonus,
         harmonyBonusApplied: localResult.harmonyBonusApplied,
+        // OCEAN scores (0-100)
+        oceanScores: localResult.oceanScores,
         // Advanced metrics (Ontology)
         polarizationIndex: localResult.polarizationIndex,
         polarizationLevel: localResult.polarizationLevel,
@@ -103,6 +105,8 @@ function AssessmentPage() {
         responses: localResult.responses,
         subjectResults: localResult.subjectResults,
         uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
+        // Prompt level
+        level: 'advanced',
       });
 
       // Merge AI analysis into results

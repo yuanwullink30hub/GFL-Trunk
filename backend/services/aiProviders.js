@@ -29,8 +29,7 @@ const PROVIDERS = {
   },
 
   gemini: {
-    name: 'Google Gemini 1.5 Pro (1M–2M context)',
-    // Gemini 1.5 Pro: flagship developer model with massive context window
+    name: 'Google Gemini 2.5 Pro',
     useSDK: true,
   },
 
@@ -170,20 +169,48 @@ async function callGeminiSDK({ messages, model, maxTokens, temperature, provider
         parts: [{ text: m.content }],
       }));
 
-  const config = {
+  // For thinking models (2.5-pro/flash), thinkingConfig budgets internal
+  // reasoning tokens separately so maxOutputTokens only caps visible output.
+  const isThinkingModel = model.includes('2.5');
+  const sdkConfig = {
     maxOutputTokens: maxTokens,
     temperature,
     ...(systemMsg ? { systemInstruction: systemMsg.content } : {}),
+    ...(isThinkingModel ? { thinkingConfig: { thinkingBudget: 16384 } } : {}),
   };
 
-  const response = await ai.models.generateContent({
+  // 5-minute timeout to prevent indefinite hangs
+  const TIMEOUT_MS = 300_000;
+
+  console.log(`[Gemini] Calling model=${model}, maxTokens=${maxTokens}, thinking=${isThinkingModel}, promptChars=${(systemMsg?.content?.length || 0) + (userMsgs[0]?.content?.length || 0)}`);
+  const startTime = Date.now();
+
+  const apiCall = ai.models.generateContent({
     model,
     contents,
-    config,
+    config: sdkConfig,
   });
 
-  // In @google/genai SDK, response.text is a property, not a function
-  const text = response.text || '';
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(
+      `Gemini API timed out after ${TIMEOUT_MS / 1000}s. The model may be overloaded — try again or use a faster model (e.g. gemini-2.0-flash).`
+    )), TIMEOUT_MS)
+  );
+
+  const response = await Promise.race([apiCall, timeout]);
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+  // response.text is a prototype getter in @google/genai SDK (NOT a function)
+  // Fallback: extract directly from candidates if getter returns undefined
+  let text = response.text;
+  if (text == null) {
+    const parts = response.candidates?.[0]?.content?.parts;
+    text = parts?.map(p => p.text).filter(Boolean).join('') || '';
+  }
+
+  const finishReason = response.candidates?.[0]?.finishReason;
+  console.log(`[Gemini] Response in ${elapsed}s, finishReason=${finishReason}, textLen=${text.length}, thinkingTokens=${response.usageMetadata?.thoughtsTokenCount || 0}`);
 
   return {
     analysis: text,

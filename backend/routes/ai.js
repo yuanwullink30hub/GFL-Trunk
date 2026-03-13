@@ -68,6 +68,19 @@ const router = Router();
  * (collection: promptDocuments). These are automatically included in every analysis.
  */
 router.post('/analyze', async (req, res) => {
+  // Set SSE headers — use res.set() so CORS middleware headers are preserved
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.flushHeaders();
+
+  const sendEvent = (event, data) => {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
   try {
     const {
       provider,
@@ -108,11 +121,30 @@ router.post('/analyze', async (req, res) => {
     } = req.body;
 
     if (!archetypeKey) {
-      return res.status(400).json({ error: 'archetypeKey is required' });
+      sendEvent('error', { error: 'archetypeKey is required' });
+      return res.end();
     }
 
     // Fetch admin prompt config from MongoDB for defaults
     const adminConfig = await getAdminPromptConfig();
+
+    // Extract text from any uploaded PDFs (sent as base64)
+    if (uploadedFileContents && uploadedFileContents.length > 0) {
+      const pdfParse = require('pdf-parse');
+      for (let i = 0; i < uploadedFileContents.length; i++) {
+        const item = uploadedFileContents[i];
+        if (item.pdfBase64 && !item.text) {
+          try {
+            const buffer = Buffer.from(item.pdfBase64, 'base64');
+            const parsed = await pdfParse(buffer);
+            uploadedFileContents[i] = { name: item.name, text: parsed.text || '[Geen tekst gevonden in PDF]' };
+          } catch (err) {
+            console.error(`PDF parse error for ${item.name}:`, err.message);
+            uploadedFileContents[i] = { name: item.name, text: `[PDF kon niet worden gelezen: ${item.name}]` };
+          }
+        }
+      }
+    }
 
     // Build messages — include uploaded context documents
     const contextDocs = await getContextDocuments();
@@ -140,10 +172,13 @@ router.post('/analyze', async (req, res) => {
       { role: 'user', content: user },
     ];
 
+    // ── Stage 1: Data compiled, prompt built ──
+    sendEvent('progress', { stage: 1, message: 'Data verwerkt — AI analyse gestart...' });
+
     // Request body overrides defaults; ignore admin model/provider (no UI selector)
     const finalProvider = provider || undefined;
     const finalModel = model || undefined;
-    const finalMaxTokens = maxTokens || adminConfig.maxTokens || 16384;
+    const finalMaxTokens = maxTokens || adminConfig.maxTokens || 18000;
     const finalTemperature = temperature ?? adminConfig.temperature ?? 0.7;
 
     const result = await callAI({
@@ -154,15 +189,24 @@ router.post('/analyze', async (req, res) => {
       temperature: finalTemperature,
     });
 
-    res.json({
+    console.log(`[AI] Analysis complete: provider=${result.provider}, model=${result.model}, tokens=${result.completionTokens}`);
+
+    // ── Stage 2: AI generation complete ──
+    sendEvent('progress', { stage: 2, message: 'AI analyse compleet — resultaten verwerken...' });
+
+    // ── Send final result ──
+    sendEvent('result', {
       archetypeKey,
       supportGroup: supportGroup || null,
       extendedArchetypeName: extendedArchetypeName || null,
       ...result,
     });
+
+    res.end();
   } catch (err) {
     console.error('[AI] Error:', err.message);
-    res.status(500).json({ error: err.message });
+    sendEvent('error', { error: err.message });
+    res.end();
   }
 });
 

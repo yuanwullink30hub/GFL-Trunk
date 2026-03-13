@@ -68,9 +68,12 @@ function AssessmentPage() {
             const text = atob(base64);
             uploadedFileContents.push({ name: file.name, text });
           } catch { /* skip unreadable files */ }
-        } else {
-          // For PDF, send the base64 for backend to parse — or note it's uploaded
-          uploadedFileContents.push({ name: file.name, text: `[PDF bestand geüpload: ${file.name}, ${(file.size / 1024).toFixed(1)}KB]` });
+        } else if (file.type === 'application/pdf') {
+          // For PDF, send the base64 data so the backend can extract text via pdf-parse
+          try {
+            const base64 = file.dataUrl.split(',')[1];
+            uploadedFileContents.push({ name: file.name, text: null, pdfBase64: base64 });
+          } catch { /* skip unreadable files */ }
         }
       }
     }

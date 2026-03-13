@@ -73,7 +73,10 @@ const AssessmentResultsModal = ({
   const [aiSections, setAiSections] = useState(null);
   const [aiReady, setAiReady] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
-  const [loadingSlide, setLoadingSlide] = useState(0);
+  const [aiStage, setAiStage] = useState(0); // 0=waiting, 1=data sent, 2=AI done, 3=integrated
+  const aiCalledRef = useRef(false);
+  const onAiReadyRef = useRef(onAiReady);
+  onAiReadyRef.current = onAiReady;
 
   // ── Auto-save to backend when user is logged in ──
   const [savedToBackend, setSavedToBackend] = useState(false);
@@ -101,10 +104,10 @@ const AssessmentResultsModal = ({
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
 
-  // ── Fire AI analysis during loading phase ──
+  // ── Fire AI analysis during loading phase (with SSE progress) ──
   useEffect(() => {
-    if (!result || aiReady) return;
-    let cancelled = false;
+    if (!result || aiReady || aiCalledRef.current) return;
+    aiCalledRef.current = true;
 
     const oceanScores = result.extendedOcean?.ocean || null;
 
@@ -122,38 +125,31 @@ const AssessmentResultsModal = ({
       scores: result._archetypeScores,
       responses: result._answerLog,
       level: 'advanced',
+    }, (stage, message) => {
+      setAiStage(stage);
+      console.log(`[GFL] AI stage ${stage}: ${message}`);
     })
       .then((aiResult) => {
-        if (cancelled) return;
-        // Parse the AI response into sections by splitting on ## headings
+        // Stage 3: frontend integration
+        setAiStage(3);
         const sections = parseAiSections(aiResult.analysis || '');
         setAiSections(sections);
         setAiReady(true);
-        if (onAiReady) onAiReady();
+        if (onAiReadyRef.current) onAiReadyRef.current();
       })
       .catch((err) => {
-        if (cancelled) return;
         console.warn('[GFL] AI analysis failed, using template:', err.message);
-        // Show error state in loading screen — user can choose to continue without AI
         setAiFailed(true);
+        aiCalledRef.current = false; // allow retry on failure
       });
+  }, [result, aiReady]);
 
-    return () => { cancelled = true; };
-  }, [result, aiReady, onAiReady]);
-
-  // Loading slide rotation (3 slides, 3s each)
-  const loadingSlides = [
-    'Profiel analyseren...',
-    'Neurale patronen in kaart brengen...',
-    'Archetype matrix berekenen...',
+  // Loading stage labels
+  const stageLabels = [
+    { label: 'Data verwerken...', done: 'Data verwerkt ✓' },
+    { label: 'AI analyse genereren...', done: 'AI analyse compleet ✓' },
+    { label: 'Resultaten integreren...', done: 'Klaar ✓' },
   ];
-  useEffect(() => {
-    if (resultsLoadingProgress >= 1) return;
-    const interval = setInterval(() => {
-      setLoadingSlide(prev => (prev + 1) % loadingSlides.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [resultsLoadingProgress, loadingSlides.length]);
 
   // Displayed sections: AI-generated when available, template fallback otherwise
   const displaySections = aiSections || result?.analysisSections || [];
@@ -696,7 +692,7 @@ const AssessmentResultsModal = ({
       onWheelCapture={handleWheelCapture}
     >
       {resultsLoadingProgress < 1 ? (
-        /* ─── Loading Phase: Spinner + rotating text (matches initial web loading) ─── */
+        /* ─── Loading Phase: transparent glass container (matches SectorFrame on landing pages) ─── */
         <div 
           style={{
             position: 'relative',
@@ -704,24 +700,40 @@ const AssessmentResultsModal = ({
             padding: '2.5rem 2rem',
             borderRadius: '0.5rem',
             textAlign: 'center',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
             overflow: 'hidden',
-            background: 'rgba(8, 2, 12, 0.85)',
-            border: '1px solid rgba(168, 85, 247, 0.3)',
-            boxShadow: '0 0 30px rgba(0,0,0,0.8), 0 0 60px rgba(0,0,0,0.4), inset 0 0 12px rgba(168, 85, 247, 0.04)',
+            backgroundColor: 'rgba(1, 0, 2, 0.3)',
+            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168, 85, 247, 0.06), inset 0 0 30px rgba(168, 85, 247, 0.03)',
             transform: `translate(0, ${(1 - resultsModalProgress) * -15}vh) scale(${0.3 + resultsModalProgress * 0.7})`,
             opacity: resultsModalProgress,
           }}
         >
-          {/* Corner decorations (purple, matching web loading) */}
-          {renderCorners('#a855f7')}
+          {/* Corner borders (purple, matching SectorFrame pattern) */}
+          {[
+            { top: '-1px', left: '-1px', borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' },
+            { top: '-1px', right: '-1px', borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' },
+            { bottom: '-1px', left: '-1px', borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' },
+            { bottom: '-1px', right: '-1px', borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' },
+          ].map((corner, i) => (
+            <div key={i} style={{
+              position: 'absolute', width: '1rem', height: '1rem',
+              border: '1.5px solid #a855f7',
+              ...corner,
+            }} />
+          ))}
+
+          {/* Holographic sheen */}
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: '0.5rem',
+            background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
+            backgroundSize: '400% 400%',
+            mixBlendMode: 'screen',
+          }} />
 
           {/* Noise texture overlay */}
           <div style={{
             position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: '0.5rem',
             backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')",
-            opacity: 0.05, mixBlendMode: 'overlay',
+            opacity: 0.03, mixBlendMode: 'overlay',
           }} />
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
@@ -735,37 +747,68 @@ const AssessmentResultsModal = ({
               animation: 'spin 1s linear infinite',
             }} />
 
-            {/* Rotating text slideshow */}
+            {/* 3-Stage Progress Indicator */}
             <div style={{
-              position: 'relative',
               width: '100%',
-              minHeight: '3rem',
-              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+              padding: '0 0.5rem',
             }}>
-              {loadingSlides.map((text, i) => (
-                <p
-                  key={i}
-                  style={{
-                    position: i === 0 ? 'relative' : 'absolute',
-                    inset: 0,
-                    margin: 0,
+              {stageLabels.map((stage, i) => {
+                const stageNum = i + 1;
+                const isComplete = aiStage >= stageNum;
+                const isActive = aiStage === stageNum - 1 || (aiStage === stageNum && !isComplete);
+                const isCurrent = aiStage === i; // currently in progress
+                return (
+                  <div key={i} style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    textAlign: 'center',
-                    letterSpacing: '0.05em',
-                    color: 'rgba(255, 254, 240, 0.9)',
-                    fontFamily: "'Rajdhani', sans-serif",
-                    fontSize: '1rem',
-                    lineHeight: 1.4,
-                    opacity: loadingSlide === i ? 1 : 0,
-                    transform: loadingSlide === i ? 'translateY(0)' : 'translateY(6px)',
-                    transition: 'opacity 0.4s ease, transform 0.4s ease',
-                  }}
-                >
-                  {text}
-                </p>
-              ))}
+                    gap: '0.75rem',
+                    transition: 'opacity 0.4s ease',
+                    opacity: isComplete ? 1 : isCurrent || aiStage === i ? 0.9 : 0.35,
+                  }}>
+                    {/* Stage dot */}
+                    <div style={{
+                      width: '0.6rem',
+                      height: '0.6rem',
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                      backgroundColor: isComplete ? '#a855f7' : 'rgba(168, 85, 247, 0.3)',
+                      boxShadow: isComplete ? '0 0 8px rgba(168, 85, 247, 0.5)' : 'none',
+                      transition: 'all 0.4s ease',
+                    }} />
+                    {/* Stage text */}
+                    <span style={{
+                      fontFamily: "'Rajdhani', sans-serif",
+                      fontSize: '0.85rem',
+                      letterSpacing: '0.04em',
+                      color: isComplete ? 'rgba(168, 85, 247, 0.95)' : 'rgba(255, 254, 240, 0.7)',
+                      transition: 'color 0.4s ease',
+                    }}>
+                      {isComplete ? stage.done : stage.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Progress bar */}
+            <div style={{
+              width: '100%',
+              height: '2px',
+              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+              borderRadius: '1px',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${Math.min((aiStage / 3) * 100, 100)}%`,
+                backgroundColor: '#a855f7',
+                borderRadius: '1px',
+                transition: 'width 0.6s ease',
+                boxShadow: '0 0 6px rgba(168, 85, 247, 0.4)',
+              }} />
             </div>
 
             {/* Error state: AI failed — show continue button */}
@@ -1485,6 +1528,128 @@ const AssessmentResultsModal = ({
                       ))}
                     </div>
 
+                    {/* OCEAN Resonance / Dissonance Analysis */}
+                    {(() => {
+                      const ocean = result.extendedOcean.ocean;
+                      const group = result.group; // e.g. 'RULING', 'RELATIONAL', etc.
+                      // What each pillar biologically expects (high/low per OCEAN trait)
+                      const GROUP_OCEAN_EXPECT = {
+                        RULING:     { O: 'low',  C: 'high', E: 'mid',  A: 'low',  N: 'low'  },
+                        RELATIONAL: { O: 'mid',  C: 'mid',  E: 'high', A: 'high', N: 'mid'  },
+                        SEEKER:     { O: 'high', C: 'low',  E: 'mid',  A: 'mid',  N: 'mid'  },
+                        CHAOS:      { O: 'mid',  C: 'low',  E: 'mid',  A: 'low',  N: 'high' },
+                        ABSTRACT:   { O: 'high', C: 'mid',  E: 'low',  A: 'mid',  N: 'mid'  },
+                        AGENCY:     { O: 'mid',  C: 'high', E: 'high', A: 'mid',  N: 'low'  },
+                      };
+                      const OCEAN_FULL = {
+                        O: 'Openness', C: 'Conscientiousness', E: 'Extraversion',
+                        A: 'Agreeableness', N: 'Neuroticism',
+                      };
+                      const expect = GROUP_OCEAN_EXPECT[group] || GROUP_OCEAN_EXPECT.RULING;
+                      const analyses = ['O', 'C', 'E', 'A', 'N'].map(dim => {
+                        const raw = ocean[dim]; // 0-10
+                        const pct = raw * 10;   // 0-100
+                        const exp = expect[dim];
+                        let status, explanation;
+                        if (exp === 'high') {
+                          if (pct >= 60) {
+                            status = 'resonance';
+                            explanation = `Je ${OCEAN_FULL[dim]} (${pct}) is in resonantie met je ${group}-netwerk. De kans is groot dat dit je geen energie kost, maar functioneert als je Platonische motor.`;
+                          } else {
+                            status = 'dissonance';
+                            explanation = `Je ${group}-profiel verwacht hoge ${OCEAN_FULL[dim]}, maar je scoort ${pct}. Het is aannemelijk dat dit gedrag een gecloakt pantser is — aangeleerd, niet biologisch verankerd.`;
+                          }
+                        } else if (exp === 'low') {
+                          if (pct <= 40) {
+                            status = 'resonance';
+                            explanation = `Je lage ${OCEAN_FULL[dim]} (${pct}) past bij je ${group}-architectuur. Dit is je biologische blauwdruk — geen weerstand, pure flow.`;
+                          } else {
+                            status = 'dissonance';
+                            explanation = `Je ${group}-netwerk verwacht lage ${OCEAN_FULL[dim]}, maar je scoort ${pct}. Houd er rekening mee dat dit aangeleerde compensatie kan zijn die energie kost.`;
+                          }
+                        } else {
+                          status = 'neutral';
+                          explanation = `Je ${OCEAN_FULL[dim]} (${pct}) beweegt in het neutrale spectrum voor je ${group}-netwerk.`;
+                        }
+                        return { dim, pct, status, explanation };
+                      });
+
+                      const hasSignal = analyses.some(a => a.status !== 'neutral');
+                      if (!hasSignal) return null;
+
+                      return (
+                        <div style={{
+                          background: 'rgba(0, 0, 0, 0.25)',
+                          border: '1px solid rgba(168, 85, 247, 0.12)',
+                          borderRadius: '0.5rem',
+                          padding: '0.75rem 1rem',
+                          marginBottom: '1rem',
+                        }}>
+                          <div style={{
+                            fontSize: '0.65rem', color: '#22d3ee',
+                            fontFamily: "'Rajdhani', sans-serif",
+                            fontWeight: 700, textTransform: 'uppercase',
+                            letterSpacing: '0.1em', marginBottom: '0.6rem',
+                          }}>
+                            OCEAN Resonantie & Dissonantie Analyse (0–100 schaal)
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {analyses.filter(a => a.status !== 'neutral').map(({ dim, pct, status }) => {
+                              const isRes = status === 'resonance';
+                              const color = isRes ? '#00ff9d' : '#fbbf24';
+                              const icon = isRes ? '✦' : '⚠';
+                              const label = isRes ? 'Resonantie' : 'Dissonantie';
+                              const expVal = expect[dim];
+                              return (
+                                <div key={dim} style={{
+                                  display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
+                                  padding: '0.5rem 0.6rem',
+                                  background: isRes ? 'rgba(0, 255, 157, 0.06)' : 'rgba(251, 191, 36, 0.06)',
+                                  border: `1px solid ${isRes ? 'rgba(0, 255, 157, 0.15)' : 'rgba(251, 191, 36, 0.15)'}`,
+                                  borderRadius: '0.4rem',
+                                }}>
+                                  <span style={{ fontSize: '0.85rem', color, flexShrink: 0, marginTop: '0.05rem' }}>{icon}</span>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{
+                                      display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem',
+                                    }}>
+                                      <span style={{
+                                        fontFamily: "'Lexend Mega', sans-serif",
+                                        fontSize: '0.7rem', fontWeight: 700,
+                                        color: result.oceanColors[dim],
+                                      }}>
+                                        {dim}
+                                      </span>
+                                      <span style={{
+                                        fontFamily: "'Rajdhani', sans-serif",
+                                        fontSize: '0.65rem', fontWeight: 700,
+                                        color, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                      }}>
+                                        {label}
+                                      </span>
+                                      <span style={{
+                                        fontFamily: "'Rajdhani', sans-serif",
+                                        fontSize: '0.65rem', color: 'rgba(209, 213, 219, 0.5)',
+                                      }}>
+                                        Score: {pct}/100 | Verwacht: {expVal}
+                                      </span>
+                                    </div>
+                                    <p style={{
+                                      fontSize: '0.78rem', color: 'rgba(209, 213, 219, 0.75)',
+                                      fontFamily: "'Figtree', sans-serif",
+                                      lineHeight: 1.5, margin: 0,
+                                    }}>
+                                      {analyses.find(a => a.dim === dim).explanation}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Neuroticism Trigger */}
                     {result.neuroticismTrigger && (
                       <div style={{
@@ -2119,7 +2284,7 @@ function computeResultFromAnswers(layerAnswers) {
   //    Each archetype appears 5 times across 60 questions, so max possible = 5
   //    But we scale the domain dynamically so the highest always reaches the edge
   // ──────────────────────────────────────────────────────────
-  const maxCount = Math.max(1, ...Object.values(archetypeCounts));
+  // Fixed scale: each archetype has exactly 15 nature-eligible and 15 culture-eligible questions
   const radarData = ARCHETYPE_RADAR_LABELS.map(label => {
     const key = label.toUpperCase();
     return {
@@ -2127,7 +2292,7 @@ function computeResultFromAnswers(layerAnswers) {
       A: archetypeCounts[key] || 0,
       nature: archetypeNature[key] || 0,
       culture: archetypeCulture[key] || 0,
-      fullMark: maxCount,
+      fullMark: 15,
     };
   });
 

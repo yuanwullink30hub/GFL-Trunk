@@ -5,6 +5,9 @@ import analyseIcon from '../../images/Import ready/analyseicon.PNG';
 import shadowIcon from '../../images/Import ready/Shadowicon.png';
 import scienceIcon from '../../images/Import ready/Scienceicon.png';
 import aiIcon from '../../images/Import ready/AIicon.PNG';
+import wheelAnatomy from '../../images/TNM wheel PNG.png';
+import triangleHardware from '../../images/Deltawerken png.png';
+import vulnerabilityOrder from '../../images/Nature Nurture png.png';
 
 /**
  * AssessmentIntro - Modal shown when entity appears
@@ -20,7 +23,45 @@ import aiIcon from '../../images/Import ready/AIicon.PNG';
 const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [], onAddFile, onRemoveFile }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef(null);
+  const infoIconRef = useRef(null);
+  const modalRef = useRef(null);
+  const infoOverlayRef = useRef(null);
   const [showReferences, setShowReferences] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+  const [infoClosing, setInfoClosing] = useState(false);
+  const [infoOrigin, setInfoOrigin] = useState('top right');
+
+  const openInfo = () => {
+    if (infoIconRef.current && modalRef.current) {
+      const iconRect = infoIconRef.current.getBoundingClientRect();
+      const modalRect = modalRef.current.getBoundingClientRect();
+      const x = iconRect.left + iconRect.width / 2 - modalRect.left;
+      const y = iconRect.top + iconRect.height / 2 - modalRect.top;
+      setInfoOrigin(`${x}px ${y}px`);
+    }
+    setShowInfo(true);
+  };
+
+  // Native wheel capture on info overlay to block PyramidView's handler
+  useEffect(() => {
+    const el = infoOverlayRef.current;
+    if (!el) return;
+    const stop = (e) => { e.stopPropagation(); };
+    el.addEventListener('wheel', stop, { passive: false, capture: true });
+    el.addEventListener('touchmove', stop, { passive: false, capture: true });
+    return () => {
+      el.removeEventListener('wheel', stop, { capture: true });
+      el.removeEventListener('touchmove', stop, { capture: true });
+    };
+  }, [showInfo]);
+
+  const closeInfo = () => {
+    setInfoClosing(true);
+    setTimeout(() => {
+      setShowInfo(false);
+      setInfoClosing(false);
+    }, 350);
+  };
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -252,10 +293,27 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
 
   const isMobile = windowWidth < 768;
 
+  // CSS keyframes for info overlay expand/contract
+  const infoAnimStyles = `
+    @keyframes infoExpand {
+      0% { transform: scale(0); opacity: 0; }
+      60% { opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes infoContract {
+      0% { transform: scale(1); opacity: 1; }
+      40% { opacity: 0.6; }
+      100% { transform: scale(0); opacity: 0; }
+    }
+  `;
+
   return (
+    <>
+    <style>{infoAnimStyles}</style>
     <div className="fixed inset-0 flex items-center justify-center p-3 pointer-events-auto" style={{ backgroundColor: isMobile ? 'rgba(0,0,0,0.65)' : 'transparent', backdropFilter: isMobile ? 'blur(4px)' : 'none' }}>
       {/* Modal Content - Exact SectorFrame style from GeneralBrandPage */}
       <div 
+        ref={modalRef}
         className="relative w-full rounded-lg backdrop-blur-sm"
         style={{ backgroundColor: 'rgba(8, 2, 12, 0.95)', maxWidth: s.modalMaxWidth, maxHeight: s.modalMaxHeight, overflow: 'hidden' }}
       >
@@ -387,14 +445,55 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
           <>
           {/* Header */}
           <div className="text-center" style={{ marginBottom: s.headerMb }}>
-            <img 
-              src={archetypeHeader} 
-              alt="A+ Archetype Analyse" 
-              style={{ maxWidth: s.headerMaxWidth, width: '100%', margin: '0 auto' }}
-            />
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <img 
+                src={archetypeHeader} 
+                alt="A+ Archetype Analyse" 
+                style={{ maxWidth: s.headerMaxWidth, width: '100%', display: 'block' }}
+              />
+              {/* Info icon — right of header image */}
+              <button
+                ref={infoIconRef}
+                onClick={() => showInfo ? closeInfo() : openInfo()}
+                className="hover:scale-110 transition-all duration-300"
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  right: '-1.5rem',
+                  transform: 'translateY(-50%)',
+                  width: '2.1rem',
+                  height: '2.1rem',
+                  borderRadius: '50%',
+                  border: `1px solid ${showInfo ? '#a855f7' : 'rgba(168,85,247,0.45)'}`,
+                  backgroundColor: showInfo ? 'rgba(168,85,247,0.18)' : 'rgba(168,85,247,0.06)',
+                  boxShadow: showInfo ? '0 0 12px rgba(168,85,247,0.25)' : 'none',
+                  color: '#a855f7',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  fontStyle: 'italic',
+                  fontFamily: 'Georgia, serif',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  zIndex: 10,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#a855f7';
+                  e.currentTarget.style.boxShadow = '0 0 16px rgba(168,85,247,0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = showInfo ? '#a855f7' : 'rgba(168,85,247,0.45)';
+                  e.currentTarget.style.boxShadow = showInfo ? '0 0 12px rgba(168,85,247,0.25)' : 'none';
+                }}
+                title="Info"
+              >
+                i
+              </button>
+            </div>
 
             <p className="mx-auto leading-relaxed" style={{ fontSize: s.descFontSize, marginTop: `calc(${s.descMt} - 1.5rem)`, whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'center', color: '#FFFEF0' }}>
-              {t('assessmentIntro.description')}
+              De meest complete en complexe onderzoekstest voor de synchronisatie van jouw essentie en intelligentie.
             </p>
           </div>
 
@@ -668,9 +767,233 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
           </>
           )}
         </div>
+
+        {/* ═══ INFO OVERLAY ═══ */}
+        {showInfo && (
+          <div
+            ref={infoOverlayRef}
+            className="fixed z-50 rounded-lg"
+            style={{
+              backgroundColor: 'rgba(8, 2, 12, 0.97)',
+              backdropFilter: 'blur(8px)',
+              padding: s.padding,
+              transformOrigin: infoOrigin,
+              animation: `${infoClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              top: modalRef.current ? modalRef.current.getBoundingClientRect().top + 'px' : 0,
+              left: modalRef.current ? modalRef.current.getBoundingClientRect().left + 'px' : 0,
+              width: modalRef.current ? modalRef.current.getBoundingClientRect().width + 'px' : '100%',
+              height: modalRef.current ? modalRef.current.getBoundingClientRect().height + 'px' : '100%',
+            }}
+          >
+            {/* Info title */}
+            <h2 className="text-center font-mono uppercase tracking-wider" style={{
+              fontSize: s.levelTitleFont,
+              color: '#a855f7',
+              textShadow: '0 0 10px rgba(168,85,247,0.3)',
+              marginBottom: '1.5rem',
+            }}>
+              ℹ️ Achter de Schermen: De Ontologische Engine
+            </h2>
+
+            {/* Info content */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+              {/* Waarom deze test anders is */}
+              <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem' }}>
+                <h3 className="font-medium" style={{ color: '#3b82f6', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(59,130,246,0.3)' }}>
+                  Waarom deze test anders is
+                </h3>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize }}>
+                  Traditionele persoonlijkheidstesten (zoals MBTI of DISC) stoppen mensen in statische hokjes. Ze meten je aangeleerde gedrag en vertellen je vervolgens: &quot;Dit is wie je bent.&quot; Wij geloven dat dit een gevaarlijke illusie is die je fixeert in verouderde overlevingspatronen. Deze assessment is gebouwd op een radicaal andere fundering: de kruising tussen neurowetenschap, kwantumbiologie en analytisch idealisme.
+                </p>
+              </div>
+
+              {/* Nature vs. Culture — 50/50 layout with image */}
+              <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem', minHeight: '378px', display: 'flex', alignItems: 'stretch' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', gap: '1.25rem', alignItems: 'stretch', width: '100%' }}>
+                  {/* Left — Text */}
+                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'flex-start' }}>
+                    <h3 className="font-medium" style={{ color: '#eab308', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(234,179,8,0.3)' }}>
+                      Onze Perspectieven: Nature vs. Culture
+                    </h3>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.25rem' }}>
+                      We maken een meedogenloos onderscheid tussen jouw Nature (de ongedwongen, universele oerkracht van je zenuwstelsel) en jouw Culture (het &apos;kantoorpantser&apos;).
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#eab308', fontWeight: 600 }}>De Dashboard-Theorie:</span> We benaderen jouw aangeleerde gedrag en stress-symptomen als de metertjes op een instrumentenpaneel. Het is een interface om te overleven, niet je fundamentele realiteit.
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#eab308', fontWeight: 600 }}>Neuroplasticiteit:</span> Jouw overlevingsmechanismen zijn door neuroplasticiteit zó diep ingesleten dat ze als een &apos;tweede natuur&apos; voelen. Wij leggen bloot waar dit pantser jouw eigenlijke biologie uitput en waar het je versterkt.
+                    </p>
+                  </div>
+                  {/* Right — Vulnerability Image (triangle container, gold glow) */}
+                  <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{
+                      width: 'min(328px, 30.2vw)',
+                      height: 'min(328px, 30.2vw)',
+                      filter: 'drop-shadow(0 0 14px rgba(240,224,0,0.4)) drop-shadow(0 0 30px rgba(240,224,0,0.15))',
+                    }}>
+                      <img
+                        src={vulnerabilityOrder}
+                        alt="The Magical Order of Vulnerability — Nature vs Culture"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Het Geometrische Wiel + Anatomie — 50/50 layout */}
+              <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem', minHeight: '378px', display: 'flex', alignItems: 'stretch' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', gap: '1.25rem', alignItems: 'stretch', width: '100%' }}>
+                  {/* Left — Text (fills remaining space) */}
+                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'center' }}>
+                    <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>
+                      Het Geometrische Wiel &amp; De Anatomie
+                    </h3>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.25rem' }}>
+                      We hebben het wiel niet opnieuw uitgevonden, we hebben het simpelweg geüpdatet naar de tijdgeest van nu.
+                      <br />
+                      De geometrie van onze test is een innovatieve herstructurering van het oude oosterse zodiak-wiel, volledig verankerd in de harde, moderne biologie.
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#22c55e', fontWeight: 600 }}>1. De Groene Bogen (Het Moederbord):</span> Jouw absolute fundament. Eigenschappen die fysiek op exact dezelfde biologische hardware draaien.
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#eab308', fontWeight: 600 }}>2. De Gele Driehoeken (CultureForce):</span> Jouw aangeleerde cognitieve synergie. De software die je hebt geschreven om te overleven; efficiënt, maar niet je ware oernatuur.
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#ef4444', fontWeight: 600 }}>3. De Rode Lijnen (Neurale Kortsluiting):</span> De botsing tussen onverenigbare netwerken. Hier ontstaat destructieve interferentie: je blinde vlekken.
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#3b82f6', fontWeight: 600 }}>4. De Blauwe Lijnen (Symbiotische Brug):</span> Fysiologische snelwegen in je brein. Gedeelde neurale hubs die extreem efficiënt werken.
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#a855f7', fontWeight: 600 }}>5. De Paarse Lijnen (De Paradox / 180°):</span> De ultieme integratie van absolute tegenpolen. Wie deze spanning kan dragen, ontsluit exponentiële energie.
+                    </p>
+                  </div>
+                  {/* Right — Wheel Image (circular container) */}
+                  <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{
+                      width: 'min(328px, 30.2vw)',
+                      height: 'min(328px, 30.2vw)',
+                      borderRadius: '50%',
+                      filter: 'drop-shadow(0 0 14px rgba(34,197,94,0.4)) drop-shadow(0 0 30px rgba(34,197,94,0.15))',
+                    }}>
+                      <img
+                        src={wheelAnatomy}
+                        alt="Het Geometrische Wiel — 12 Archetypen met neurale connecties"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Biologische Hardware (TNM & OCEAN) — 50/50 layout */}
+              <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem', minHeight: '378px', display: 'flex', alignItems: 'stretch' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', gap: '1.25rem', alignItems: 'stretch', width: '100%' }}>
+                  {/* Left — Text */}
+                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'flex-start' }}>
+                    <h3 className="font-medium" style={{ color: '#f97316', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(249,115,22,0.3)' }}>
+                      Biologische Hardware (TNM &amp; OCEAN)
+                    </h3>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#f97316', fontWeight: 600 }}>Triple Network Model (TNM):</span> De drie kernnetwerken van je brein (CEN - Centrale Executief Netwerk, DMN - Default Mode Network, Salience Network) bepalen je informatieverwerking.
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#f97316', fontWeight: 600 }}>CEN (Centrale Executief):</span> Actief denken, planning, focus. De piloot aan het stuur.
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#f97316', fontWeight: 600 }}>DMN (Standaard Modus):</span> Zelfbezorgdheid, meditatie, creatieve vaagheid. De kameel die stil staat.
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      <span style={{ color: '#f97316', fontWeight: 600 }}>Salience Network:</span> Bedreiging-detectie, intuïtie, emotionele relevantie. De wachter.
+                    </p>
+                  </div>
+                  {/* Right — Hardware Image (square container, orange glow) */}
+                  <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{
+                      width: 'min(328px, 30.2vw)',
+                      height: 'min(328px, 30.2vw)',
+                      borderRadius: '0.5rem',
+                      filter: 'drop-shadow(0 0 14px rgba(249,115,22,0.4)) drop-shadow(0 0 30px rgba(249,115,22,0.15))',
+                    }}>
+                      <img
+                        src={triangleHardware}
+                        alt="Biologische Hardware — Triple Network Model &amp; OCEAN"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Waarom dit je perceptie zal breken */}
+              <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem' }}>
+                <h3 className="font-medium" style={{ color: '#ef4444', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(239,68,68,0.3)' }}>
+                  Waarom dit je perceptie zal breken
+                </h3>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
+                  Het doel van dit rapport is niet om je een comfortabel label te geven. Het is een oefening in Mnemonic Improvisation. We herinterpreteren je data in real-time om de illusie van &apos;trouw blijven aan jezelf&apos; te doorbreken.
+                </p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
+                  Zolang je je vastklampt aan verouderde overlevingsscripts, verspil je bandbreedte. Dit assessment is ontworpen als een breekijzer om die vastgeroeste cognitieve scripts te vernietigen, zodat je ruimte kunt maken voor pure, functionele aanpassing in het hier en nu.
+                </p>
+                <p className="text-slate-500 italic leading-relaxed" style={{ fontSize: s.descFontSize }}>
+                  Lees dit rapport niet als een oordeel, maar als de technische handleiding van je eigen zenuwstelsel.
+                </p>
+              </div>
+
+            </div>
+
+            {/* Back button — bottom center */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem', paddingBottom: '0.5rem' }}>
+              <button
+                onClick={closeInfo}
+                className="font-mono uppercase tracking-wider hover:scale-[1.02] transition-all duration-300"
+                style={{
+                  color: '#a855f7',
+                  backgroundColor: 'transparent',
+                  border: '1px solid rgba(168,85,247,0.4)',
+                  borderRadius: '9999px',
+                  padding: s.footerBtnPad,
+                  fontSize: s.footerBtnFont,
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#a855f7';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.19)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(168,85,247,0.4)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                ← {t('assessmentIntro.referencesBack')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
+    </>
   );
 };
 
 export default AssessmentIntro;
+

@@ -16,7 +16,8 @@ import {
  * @param {{ data: Array<{ subject: string, A: number, nature: number, culture: number, fullMark: number }>, shadow?: string, blindspot?: string, mainArchetype?: string, supportArchetype?: string }} props
  */
 const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchetype }) => {
-  const fullMark = data?.[0]?.fullMark || 5;
+  // Fixed scale: each archetype has exactly 15 nature-eligible and 15 culture-eligible questions
+  const fullMark = 15;
 
   // Custom tick renderer to highlight Shadow (red) and Blindspot (amber) labels
   const renderPolarAngleAxisTick = (props) => {
@@ -102,7 +103,13 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
             dataKey="subject" 
             tick={renderPolarAngleAxisTick}
           />
-          <PolarRadiusAxis angle={30} domain={[0, fullMark]} tickCount={6} tick={false} axisLine={false} />
+          <PolarRadiusAxis
+            angle={30}
+            domain={[0, fullMark]}
+            tickCount={4}
+            tick={{ fill: 'rgba(165, 243, 252, 0.25)', fontSize: 9, fontFamily: "'Rajdhani', sans-serif" }}
+            axisLine={false}
+          />
           {/* Nature web — purple */}
           <Radar
             name="Nature"

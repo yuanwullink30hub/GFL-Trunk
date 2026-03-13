@@ -158,35 +158,13 @@ export async function getAssessment(id) {
 }
 
 /**
- * Call the AI analysis endpoint with archetype profile data + full assessment results.
+ * Call the AI analysis endpoint with streaming SSE progress.
  *
- * @param {Object} params
- * @param {string} params.archetypeKey - e.g. "JUDGE", "LOVER"
- * @param {string} [params.provider] - "openai" | "gemini" | "grok" (default: openai)
- * @param {string} [params.model] - override provider default model
- * @param {string} [params.supportGroup] - e.g. "RULING", "RELATIONAL"
- * @param {string} [params.extendedArchetypeName] - e.g. "The Arbiter"
- * @param {string} [params.userQuestion] - Free-text question
- * @param {Object} [params.oceanScores] - e.g. { O: 4, C: 9, E: 4, A: 3, N: 3 }
- * @param {string} [params.systemPrompt] - Full system prompt override
- * @param {Array}  [params.responses] - Individual question answers
- * @param {Array}  [params.subjectResults] - Per-layer scoring breakdown
- * @param {number} [params.harmonyScore] - Overall percentage
- * @param {string} [params.consciousnessLevel] - Derived level
- * @param {string} [params.overallShadow] - Dominant shadow aspect
- * @param {Array}  [params.uploadedFileContents] - User-uploaded file text [{name, text}]
- * @returns {Promise<{
- *   archetypeKey: string,
- *   supportGroup: string|null,
- *   extendedArchetypeName: string|null,
- *   analysis: string,
- *   provider: string,
- *   model: string,
- *   promptTokens: number,
- *   completionTokens: number
- * }>}
+ * @param {Object} params - Assessment data (archetypeKey, supportArchetype, etc.)
+ * @param {(stage: number, message: string) => void} [onProgress] - Progress callback (stage 1-3)
+ * @returns {Promise<{ analysis, provider, model, promptTokens, completionTokens, ... }>}
  */
-export async function analyzeAssessment(params) {
+export async function analyzeAssessment(params, onProgress) {
   const response = await fetch(`${API_BASE}/ai/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -198,7 +176,45 @@ export async function analyzeAssessment(params) {
     throw new Error(err.error || `API error ${response.status}`);
   }
 
-  return response.json();
+  // Parse SSE stream
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let result = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    // Parse complete SSE events from buffer
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || ''; // keep incomplete line in buffer
+
+    let eventType = null;
+    for (const line of lines) {
+      if (line.startsWith('event: ')) {
+        eventType = line.slice(7).trim();
+      } else if (line.startsWith('data: ')) {
+        const data = JSON.parse(line.slice(6));
+        if (eventType === 'progress' && onProgress) {
+          onProgress(data.stage, data.message);
+        } else if (eventType === 'result') {
+          result = data;
+        } else if (eventType === 'error') {
+          throw new Error(data.error || 'AI analysis failed');
+        }
+        eventType = null;
+      }
+    }
+  }
+
+  if (!result) {
+    throw new Error('No result received from AI analysis');
+  }
+
+  return result;
 }
 
 /**

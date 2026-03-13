@@ -24,6 +24,7 @@ module.exports = {
       ...(process.env.CORS_ORIGINS || 'http://localhost:3000')
         .split(',')
         .map(s => s.trim()),
+      'http://localhost:3001',
       'https://gfl-trunk.pages.dev',
       'https://gardenforlife.nl',
       'https://www.gardenforlife.nl',
@@ -40,7 +41,7 @@ module.exports = {
     gemini: {
       apiKey: process.env.GEMINI_API_KEY || '',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: 'gemini-2.5-flash',
+      defaultModel: 'gemini-2.5-pro',
     },
     grok: {
       apiKey: process.env.GROK_API_KEY || '',

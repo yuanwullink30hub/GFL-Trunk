@@ -17,6 +17,8 @@ import {
   getExtendedArchetype,
   isComplementaryPair,
   getExtendedDescription,
+  getStateToggle,
+  getNatureCultureBucket,
 } from '../../data/assessment';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
@@ -51,7 +53,12 @@ const AssessmentResultsModal = ({
   t
 }) => {
   // Compute archetype result from layer answers
-  const result = useMemo(() => computeResultFromAnswers(layerAnswers), [layerAnswers]);
+  const result = useMemo(() => {
+    const keys = layerAnswers ? Object.keys(layerAnswers) : [];
+    const totalAnswers = keys.reduce((sum, k) => sum + Object.keys(layerAnswers[k] || {}).length, 0);
+    console.log('[GFL] computeResultFromAnswers — layers:', keys.length, 'totalAnswers:', totalAnswers, 'sample:', JSON.stringify(layerAnswers).slice(0, 300));
+    return computeResultFromAnswers(layerAnswers);
+  }, [layerAnswers]);
   
   // Ref for the scroll container
   const scrollRef = useRef(null);
@@ -65,6 +72,8 @@ const AssessmentResultsModal = ({
   // ── AI Analysis state ──
   const [aiSections, setAiSections] = useState(null);
   const [aiReady, setAiReady] = useState(false);
+  const [aiFailed, setAiFailed] = useState(false);
+  const [loadingSlide, setLoadingSlide] = useState(0);
 
   // ── Auto-save to backend when user is logged in ──
   const [savedToBackend, setSavedToBackend] = useState(false);
@@ -125,13 +134,26 @@ const AssessmentResultsModal = ({
       .catch((err) => {
         if (cancelled) return;
         console.warn('[GFL] AI analysis failed, using template:', err.message);
-        // Fall back to template sections — still signal ready so loading completes
-        setAiReady(true);
-        if (onAiReady) onAiReady();
+        // Show error state in loading screen — user can choose to continue without AI
+        setAiFailed(true);
       });
 
     return () => { cancelled = true; };
   }, [result, aiReady, onAiReady]);
+
+  // Loading slide rotation (3 slides, 3s each)
+  const loadingSlides = [
+    'Profiel analyseren...',
+    'Neurale patronen in kaart brengen...',
+    'Archetype matrix berekenen...',
+  ];
+  useEffect(() => {
+    if (resultsLoadingProgress >= 1) return;
+    const interval = setInterval(() => {
+      setLoadingSlide(prev => (prev + 1) % loadingSlides.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [resultsLoadingProgress, loadingSlides.length]);
 
   // Displayed sections: AI-generated when available, template fallback otherwise
   const displaySections = aiSections || result?.analysisSections || [];
@@ -673,56 +695,114 @@ const AssessmentResultsModal = ({
       onWheelCapture={handleWheelCapture}
     >
       {resultsLoadingProgress < 1 ? (
-        /* ─── Loading Phase: Simple wait message ─── */
+        /* ─── Loading Phase: Spinner + rotating text (matches initial web loading) ─── */
         <div 
           style={{
             position: 'relative',
-            width: rs.poetryWidth,
-            padding: rs.poetryPad,
+            width: 'min(90vw, 420px)',
+            padding: '2.5rem 2rem',
             borderRadius: '0.5rem',
             textAlign: 'center',
             backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
             overflow: 'hidden',
-            background: 'rgba(2, 0, 3, 0.3)',
-            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(255, 174, 0, 0.06), inset 0 0 30px rgba(255, 174, 0, 0.03)',
+            background: 'rgba(8, 2, 12, 0.85)',
+            border: '1px solid rgba(168, 85, 247, 0.3)',
+            boxShadow: '0 0 30px rgba(0,0,0,0.8), 0 0 60px rgba(0,0,0,0.4), inset 0 0 12px rgba(168, 85, 247, 0.04)',
             transform: `translate(0, ${(1 - resultsModalProgress) * -15}vh) scale(${0.3 + resultsModalProgress * 0.7})`,
             opacity: resultsModalProgress,
           }}
         >
-          {/* Corner decorations */}
-          {renderCorners('#ffae00')}
+          {/* Corner decorations (purple, matching web loading) */}
+          {renderCorners('#a855f7')}
 
-          <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '1.25rem', padding: '2rem 1rem' }}>
-            {/* Pulsing dot */}
+          {/* Noise texture overlay */}
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: '0.5rem',
+            backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')",
+            opacity: 0.05, mixBlendMode: 'overlay',
+          }} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+            {/* Spinner */}
             <div style={{
-              width: 12,
-              height: 12,
+              width: '3rem',
+              height: '3rem',
+              border: '2px solid #a855f7',
+              borderTopColor: 'transparent',
               borderRadius: '50%',
-              background: '#f97316',
-              boxShadow: '0 0 12px rgba(249, 115, 22, 0.6)',
-              animation: 'pulse 1.5s ease-in-out infinite',
+              animation: 'spin 1s linear infinite',
             }} />
 
-            <h3 style={{
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              letterSpacing: '0.05em',
-              color: '#f97316',
-              fontFamily: "'Lexend Mega', sans-serif",
-              margin: 0,
+            {/* Rotating text slideshow */}
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              minHeight: '3rem',
+              overflow: 'hidden',
             }}>
-              {t('results.generatingTitle') || 'Resultaat wordt gegenereerd'}
-            </h3>
+              {loadingSlides.map((text, i) => (
+                <p
+                  key={i}
+                  style={{
+                    position: i === 0 ? 'relative' : 'absolute',
+                    inset: 0,
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    letterSpacing: '0.05em',
+                    color: 'rgba(255, 254, 240, 0.9)',
+                    fontFamily: "'Rajdhani', sans-serif",
+                    fontSize: '1rem',
+                    lineHeight: 1.4,
+                    opacity: loadingSlide === i ? 1 : 0,
+                    transform: loadingSlide === i ? 'translateY(0)' : 'translateY(6px)',
+                    transition: 'opacity 0.4s ease, transform 0.4s ease',
+                  }}
+                >
+                  {text}
+                </p>
+              ))}
+            </div>
 
-            <p style={{
-              fontSize: '0.85rem',
-              lineHeight: 1.6,
-              color: 'rgba(255, 254, 240, 0.6)',
-              margin: 0,
-              maxWidth: '20rem',
-            }}>
-              {t('results.generatingMessage') || 'De AI analyseert je profiel. Dit kan even duren.'}
-            </p>
+            {/* Error state: AI failed — show continue button */}
+            {aiFailed && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <p style={{
+                  fontSize: '0.8rem',
+                  color: 'rgba(251, 191, 36, 0.8)',
+                  fontFamily: "'Figtree', sans-serif",
+                  margin: 0,
+                }}>
+                  AI analyse niet beschikbaar — basisresultaten beschikbaar.
+                </p>
+                <button
+                  onClick={() => {
+                    setAiReady(true);
+                    if (onAiReady) onAiReady();
+                  }}
+                  style={{
+                    padding: '0.6rem 1.5rem',
+                    borderRadius: '0.35rem',
+                    background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+                    color: '#fff',
+                    border: 'none',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    fontFamily: "'Figtree', sans-serif",
+                    cursor: 'pointer',
+                    letterSpacing: '0.05em',
+                    transition: 'opacity 0.2s',
+                  }}
+                  onMouseEnter={e => e.target.style.opacity = '0.85'}
+                  onMouseLeave={e => e.target.style.opacity = '1'}
+                >
+                  Doorgaan zonder AI
+                </button>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -1520,131 +1600,80 @@ const AssessmentResultsModal = ({
                   </div>
                 </div>
 
-                {/* ── 7. Analysis Section 1 (Green accent) ── */}
-                {displaySections[0] && (
-                  <div style={{ width: '100%', position: 'relative' }}>
-                    <div style={{
-                      position: 'absolute',
-                      left: '-1rem',
-                      top: 0,
-                      bottom: 0,
-                      width: '3px',
-                      background: 'linear-gradient(to bottom, transparent, rgba(0, 255, 157, 0.5), transparent)',
-                    }} />
-                    <h3 style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      color: '#00ff9d',
-                      fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '1rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.15em',
-                      marginBottom: '0.75rem',
-                    }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-                      </svg>
-                      {displaySections[0].title}
-                    </h3>
-                    <div style={{
-                      color: 'rgba(209, 213, 219, 1)',
-                      fontFamily: "'Figtree', sans-serif",
-                      fontSize: '0.95rem',
-                      lineHeight: 1.7,
-                      textAlign: 'justify',
-                      background: 'rgba(0, 0, 0, 0.4)',
-                      padding: rs.sectionPad,
-                      borderRadius: '0 0.75rem 0.75rem 0',
-                      borderRight: '1px solid rgba(0, 255, 157, 0.2)',
-                      borderTop: '1px solid rgba(0, 255, 157, 0.2)',
-                      borderBottom: '1px solid rgba(0, 255, 157, 0.2)',
-                      boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.5)',
-                    }}>
-                      {displaySections[0].content}
-                    </div>
-                  </div>
-                )}
+                {/* ── 7+. AI Analysis Sections (dynamic, all sections) ── */}
+                {displaySections.map((section, idx) => {
+                  // Cycle through accent colors for visual variety
+                  const accents = [
+                    { color: '#00ff9d', rgb: '0, 255, 157' },   // green
+                    { color: '#a855f7', rgb: '168, 85, 247' },   // purple
+                    { color: '#f97316', rgb: '249, 115, 22' },   // orange
+                    { color: '#3b82f6', rgb: '59, 130, 246' },   // blue
+                    { color: '#ec4899', rgb: '236, 72, 153' },   // pink
+                    { color: '#14b8a6', rgb: '20, 184, 166' },   // teal
+                  ];
+                  const accent = accents[idx % accents.length];
+                  const isEven = idx % 2 === 0;
 
-                {/* ── 8. Analysis Section 2 (Purple accent) ── */}
-                {displaySections[1] && (
-                  <div style={{
-                    background: 'rgba(168, 85, 247, 0.05)',
-                    border: '1px solid rgba(168, 85, 247, 0.2)',
-                    padding: rs.sectionPad,
-                    borderRadius: '0.75rem',
-                    position: 'relative',
-                  }}>
-                    <h3 style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      color: '#a855f7',
-                      fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '1rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.15em',
-                      marginBottom: '1rem',
+                  return (
+                    <div key={idx} style={{
+                      width: '100%',
+                      position: 'relative',
+                      ...(isEven ? {} : {
+                        background: `rgba(${accent.rgb}, 0.05)`,
+                        border: `1px solid rgba(${accent.rgb}, 0.2)`,
+                        padding: rs.sectionPad,
+                        borderRadius: '0.75rem',
+                      }),
                     }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="4" y="4" width="16" height="16" rx="2" ry="2" /><rect x="9" y="9" width="6" height="6" /><line x1="9" y1="1" x2="9" y2="4" /><line x1="15" y1="1" x2="15" y2="4" /><line x1="9" y1="20" x2="9" y2="23" /><line x1="15" y1="20" x2="15" y2="23" /><line x1="20" y1="9" x2="23" y2="9" /><line x1="20" y1="14" x2="23" y2="14" /><line x1="1" y1="9" x2="4" y2="9" /><line x1="1" y1="14" x2="4" y2="14" />
-                      </svg>
-                      {displaySections[1].title}
-                    </h3>
-                    <p style={{
-                      color: 'rgba(209, 213, 219, 1)',
-                      fontFamily: "'Figtree', sans-serif",
-                      fontSize: '0.95rem',
-                      lineHeight: 1.7,
-                      textAlign: 'justify',
-                    }}>
-                      {displaySections[1].content}
-                    </p>
-                    {/* Decorative dots */}
-                    <div style={{ position: 'absolute', bottom: '1rem', right: '1rem', display: 'flex', gap: '4px' }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(168, 85, 247, 0.5)', animation: 'pulse 2s infinite' }} />
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(168, 85, 247, 0.3)' }} />
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(168, 85, 247, 0.1)' }} />
+                      {/* Left accent bar for even sections */}
+                      {isEven && (
+                        <div style={{
+                          position: 'absolute', left: '-1rem', top: 0, bottom: 0, width: '3px',
+                          background: `linear-gradient(to bottom, transparent, rgba(${accent.rgb}, 0.5), transparent)`,
+                        }} />
+                      )}
+                      <h3 style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem',
+                        color: accent.color,
+                        fontFamily: "'Lexend Mega', sans-serif",
+                        fontSize: '0.85rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.15em',
+                        marginBottom: '0.75rem',
+                        ...(isEven ? {} : {}),
+                      }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: '1.5rem', height: '1.5rem', borderRadius: '50%',
+                          border: `1px solid rgba(${accent.rgb}, 0.4)`,
+                          fontSize: '0.65rem', fontFamily: "'Rajdhani', sans-serif",
+                          color: accent.color, flexShrink: 0,
+                        }}>
+                          {idx + 1}
+                        </span>
+                        {section.title}
+                      </h3>
+                      <div style={{
+                        color: 'rgba(209, 213, 219, 1)',
+                        fontFamily: "'Figtree', sans-serif",
+                        fontSize: '0.95rem',
+                        lineHeight: 1.7,
+                        textAlign: 'justify',
+                        ...(isEven ? {
+                          background: 'rgba(0, 0, 0, 0.4)',
+                          padding: rs.sectionPad,
+                          borderRadius: '0 0.75rem 0.75rem 0',
+                          borderRight: `1px solid rgba(${accent.rgb}, 0.2)`,
+                          borderTop: `1px solid rgba(${accent.rgb}, 0.2)`,
+                          borderBottom: `1px solid rgba(${accent.rgb}, 0.2)`,
+                          boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.5)',
+                        } : {}),
+                      }}>
+                        {renderMarkdownContent(section.content)}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {/* ── 9. Analysis Section 3 (Cyan accent) ── */}
-                {displaySections[2] && (
-                  <div style={{ width: '100%', position: 'relative' }}>
-                    <h3 style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      color: '#f97316',
-                      fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '1rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.15em',
-                      marginBottom: '0.75rem',
-                      paddingLeft: '0.5rem',
-                      borderLeft: '4px solid #f97316',
-                    }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0022 16z" />
-                      </svg>
-                      {displaySections[2].title}
-                    </h3>
-                    <div style={{
-                      color: 'rgba(209, 213, 219, 1)',
-                      fontFamily: "'Figtree', sans-serif",
-                      fontSize: '0.95rem',
-                      lineHeight: 1.7,
-                      textAlign: 'justify',
-                      padding: '1rem',
-                      borderTop: '1px solid rgba(249, 115, 22, 0.1)',
-                      borderBottom: '1px solid rgba(249, 115, 22, 0.1)',
-                      background: 'linear-gradient(to right, transparent, rgba(249, 115, 22, 0.05), transparent)',
-                    }}>
-                      {displaySections[2].content}
-                    </div>
-                  </div>
-                )}
+                  );
+                })}
 
                 {/* ── 6. Footer Actions ── */}
                 <div style={{
@@ -1827,23 +1856,27 @@ function renderCorners(color) {
 }
 
 /**
- * Parse the AI analysis response (markdown with ## headings) into 3 display sections.
- * Maps AI sections 9, 10, 11 to the 3 UI slots. Falls back to splitting into thirds.
+ * Parse the AI analysis response (markdown with ## headings) into display sections.
+ * Returns ALL sections found in the AI response for full dynamic rendering.
  */
 function parseAiSections(analysisText) {
   if (!analysisText || typeof analysisText !== 'string') return null;
 
-  // Split on ## headings
-  const sectionRegex = /^##\s+\d+\.\s+(.+)/gm;
-  const parts = [];
-  let lastIndex = 0;
+  // Split on ## headings (with or without numbering)
+  const sectionRegex = /^##\s+(?:\d+\.\s+)?(.+)/gm;
+  const matches = [];
   let match;
 
-  const matches = [];
   while ((match = sectionRegex.exec(analysisText)) !== null) {
     matches.push({ title: match[1].trim(), start: match.index, headerEnd: match.index + match[0].length });
   }
 
+  if (matches.length === 0) {
+    // No section headers found — return full text as single section
+    return [{ title: 'AI Analyse', content: analysisText.trim() }];
+  }
+
+  const parts = [];
   for (let i = 0; i < matches.length; i++) {
     const contentStart = matches[i].headerEnd;
     const contentEnd = i + 1 < matches.length ? matches[i + 1].start : analysisText.length;
@@ -1853,29 +1886,96 @@ function parseAiSections(analysisText) {
     });
   }
 
-  if (parts.length === 0) {
-    // No section headers found — return full text as single section
-    return [{ title: 'AI Analyse', content: analysisText.trim() }];
+  return parts;
+}
+
+/**
+ * Render markdown-ish content as React elements.
+ * Handles: **bold**, *italic*, - bullet lists, numbered lists, ``` code blocks.
+ */
+function renderMarkdownContent(content) {
+  if (!content) return null;
+  const lines = content.split('\n');
+  const elements = [];
+  let listItems = [];
+  let inCodeBlock = false;
+  let codeLines = [];
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      elements.push(
+        <ul key={`ul-${elements.length}`} style={{ margin: '0.5rem 0', paddingLeft: '1.25rem', listStyleType: 'disc' }}>
+          {listItems.map((li, j) => <li key={j} style={{ marginBottom: '0.25rem' }}>{formatInline(li)}</li>)}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
+
+  const flushCode = () => {
+    if (codeLines.length > 0) {
+      elements.push(
+        <pre key={`code-${elements.length}`} style={{
+          background: 'rgba(0,0,0,0.6)', padding: '0.75rem', borderRadius: '0.5rem',
+          fontSize: '0.8rem', overflowX: 'auto', margin: '0.5rem 0',
+          border: '1px solid rgba(255,255,255,0.1)', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+        }}>
+          {codeLines.join('\n')}
+        </pre>
+      );
+      codeLines = [];
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Code block toggle
+    if (line.trim().startsWith('```')) {
+      if (inCodeBlock) { flushCode(); inCodeBlock = false; }
+      else { flushList(); inCodeBlock = true; }
+      continue;
+    }
+    if (inCodeBlock) { codeLines.push(line); continue; }
+
+    // Bullet list
+    const bulletMatch = line.match(/^\s*[-*]\s+(.+)/);
+    if (bulletMatch) { listItems.push(bulletMatch[1]); continue; }
+
+    // Numbered list
+    const numMatch = line.match(/^\s*\d+\.\s+(.+)/);
+    if (numMatch) { listItems.push(numMatch[1]); continue; }
+
+    // Regular paragraph line
+    flushList();
+    if (line.trim() === '') {
+      // Skip blank lines between paragraphs
+      continue;
+    }
+    elements.push(<p key={`p-${elements.length}`} style={{ margin: '0.4rem 0' }}>{formatInline(line)}</p>);
   }
+  flushList();
+  flushCode();
 
-  // Pick sections 9 (Alchemie), 10 (Neurale Schakelbord), 11 (Ontologische Evolutie)
-  // These are 0-indexed as 8, 9, 10
-  const sec9 = parts[8] || null;
-  const sec10 = parts[9] || null;
-  const sec11 = parts[10] || null;
+  return elements;
+}
 
-  const result = [];
-  if (sec9) result.push(sec9);
-  if (sec10) result.push(sec10);
-  if (sec11) result.push(sec11);
-
-  // If we couldn't find sections 9-11, use last 3 available sections
-  if (result.length === 0) {
-    const tail = parts.slice(-3);
-    return tail.length > 0 ? tail : [{ title: 'AI Analyse', content: analysisText.trim() }];
+/** Format inline markdown: **bold**, *italic* */
+function formatInline(text) {
+  if (!text) return text;
+  // Split on **bold** and *italic* markers
+  const parts = [];
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+  let lastIdx = 0;
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    if (m.index > lastIdx) parts.push(text.slice(lastIdx, m.index));
+    if (m[2]) parts.push(<strong key={m.index}>{m[2]}</strong>);
+    else if (m[3]) parts.push(<em key={m.index}>{m[3]}</em>);
+    lastIdx = m.index + m[0].length;
   }
-
-  return result;
+  if (lastIdx < text.length) parts.push(text.slice(lastIdx));
+  return parts.length > 0 ? parts : text;
 }
 
 /**
@@ -1897,7 +1997,9 @@ function computeResultFromAnswers(layerAnswers) {
   // ──────────────────────────────────────────────────────────
   const archetypeScores = {};
   const archetypeCounts = {};
-  ALL_ARCHETYPE_KEYS.forEach(key => { archetypeScores[key] = 0; archetypeCounts[key] = 0; });
+  const archetypeNature = {};   // Nature-bucket counts per archetype
+  const archetypeCulture = {};  // Culture-bucket counts per archetype
+  ALL_ARCHETYPE_KEYS.forEach(key => { archetypeScores[key] = 0; archetypeCounts[key] = 0; archetypeNature[key] = 0; archetypeCulture[key] = 0; });
 
   const layerScores = {}; // for subgroup bias computation
   const answerLog = [];   // full answer key (backend-only, for account-linked retrieval)
@@ -1912,8 +2014,10 @@ function computeResultFromAnswers(layerAnswers) {
 
       if (!layerScores[layerIdx]) layerScores[layerIdx] = [];
 
-      Object.entries(layerData).forEach(([questionIdStr, answerId]) => {
+      Object.entries(layerData).forEach(([questionIdStr, rawAnswerId]) => {
         const questionId = parseInt(questionIdStr, 10) || questionIdStr;
+        // Safety: unwrap array if stored as [answerId] instead of string
+        const answerId = Array.isArray(rawAnswerId) ? rawAnswerId[0] : rawAnswerId;
         const question = layer.questions.find(q => q.id === questionId);
         if (!question) return;
 
@@ -1926,6 +2030,14 @@ function computeResultFromAnswers(layerAnswers) {
         if (archetype) {
           archetypeScores[archetype] = (archetypeScores[archetype] || 0) + 5;
           archetypeCounts[archetype] = (archetypeCounts[archetype] || 0) + 1;
+          // Nature/Culture dual-tracking via state toggle
+          const stateToggle = getStateToggle(question.id);
+          const bucket = getNatureCultureBucket(archetype, stateToggle);
+          if (bucket === 'NATURE') {
+            archetypeNature[archetype] = (archetypeNature[archetype] || 0) + 1;
+          } else {
+            archetypeCulture[archetype] = (archetypeCulture[archetype] || 0) + 1;
+          }
         }
 
         // Build detailed answer log entry
@@ -2012,6 +2124,8 @@ function computeResultFromAnswers(layerAnswers) {
     return {
       subject: label,
       A: archetypeCounts[key] || 0,
+      nature: archetypeNature[key] || 0,
+      culture: archetypeCulture[key] || 0,
       fullMark: maxCount,
     };
   });
@@ -2082,6 +2196,10 @@ function computeResultFromAnswers(layerAnswers) {
       ...p,
       leftScore: leftPts,
       rightScore: rightPts,
+      leftNature: archetypeNature[leftKey] || 0,
+      leftCulture: archetypeCulture[leftKey] || 0,
+      rightNature: archetypeNature[rightKey] || 0,
+      rightCulture: archetypeCulture[rightKey] || 0,
       harmonyPoints: harmonyPts,
       shadowPoints: shadowPts,
     };

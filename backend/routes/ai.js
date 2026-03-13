@@ -143,8 +143,10 @@ router.post('/analyze', async (req, res) => {
     // Admin config overrides hardcoded defaults; request body overrides admin config
     const finalProvider = provider || adminConfig.defaultProvider || undefined;
     const finalModel = model || adminConfig.defaultModel || undefined;
-    const finalMaxTokens = maxTokens || adminConfig.maxTokens || 4096;
+    const finalMaxTokens = maxTokens || adminConfig.maxTokens || 16384;
     const finalTemperature = temperature ?? adminConfig.temperature ?? 0.7;
+
+    console.log('[AI] Using provider:', finalProvider, 'model:', finalModel, 'adminConfig.defaultModel:', adminConfig.defaultModel);
 
     const result = await callAI({
       provider: finalProvider,

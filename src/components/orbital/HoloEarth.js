@@ -582,9 +582,9 @@ const HoloEarthSphere = ({
     }
   }
 
-  // Particle sphere fade - starts at frame 37 (eased ~0.641), fully gone by frame 43 (eased ~0.943)
-  const particleFadeStart = 0.641; // Frame 37 eased
-  const particleFadeEnd = 0.943;   // Frame 43 eased
+  // Particle sphere fade - starts around eased ~0.641, fully gone by eased ~0.943
+  const particleFadeStart = 0.641;
+  const particleFadeEnd = 0.943;
   let particleFadeValue = 1.0;
   if (explosionProgress >= particleFadeEnd) {
     particleFadeValue = 0.0;

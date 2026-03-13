@@ -29,8 +29,8 @@ const PROVIDERS = {
   },
 
   gemini: {
-    name: 'Google Gemini (SDK + Thinking)',
-    // Gemini now uses @google/genai SDK — no REST helpers needed
+    name: 'Google Gemini 1.5 Pro (1M–2M context)',
+    // Gemini 1.5 Pro: flagship developer model with massive context window
     useSDK: true,
   },
 
@@ -158,29 +158,31 @@ function parseResponse(json) {
 async function callGeminiSDK({ messages, model, maxTokens, temperature, providerConfig }) {
   const ai = new GoogleGenAI({ apiKey: providerConfig.apiKey });
 
-  // Extract system instruction from messages
+  // Extract system instruction and user content from messages
   const systemMsg = messages.find(m => m.role === 'system');
   const userMsgs = messages.filter(m => m.role !== 'system');
 
-  // Build contents array for the SDK
-  const contents = userMsgs.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }],
-  }));
+  // For a single user message, pass as string; for multi-turn, pass array
+  const contents = userMsgs.length === 1
+    ? userMsgs[0].content
+    : userMsgs.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }));
+
+  const config = {
+    maxOutputTokens: maxTokens,
+    temperature,
+    ...(systemMsg ? { systemInstruction: systemMsg.content } : {}),
+  };
 
   const response = await ai.models.generateContent({
     model,
     contents,
-    config: {
-      maxOutputTokens: maxTokens,
-      temperature,
-      thinkingConfig: {
-        thinkingLevel: 'high',
-      },
-      ...(systemMsg ? { systemInstruction: systemMsg.content } : {}),
-    },
+    config,
   });
 
+  // In @google/genai SDK, response.text is a property, not a function
   const text = response.text || '';
 
   return {

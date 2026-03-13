@@ -6,16 +6,17 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   ResponsiveContainer,
-  Tooltip
+  Tooltip,
+  Legend,
 } from 'recharts';
 
 /**
- * SciFiRadarChart - Sci-fi styled radar chart for assessment results
- * @param {{ data: Array<{ subject: string, A: number, fullMark: number }>, shadow?: string, blindspot?: string, mainArchetype?: string, supportArchetype?: string }} props
+ * SciFiRadarChart - Dual-web radar chart: Nature (purple) + Culture (orange)
+ * Shows all 12 archetypes with overlaid Nature and Culture webs.
+ * @param {{ data: Array<{ subject: string, A: number, nature: number, culture: number, fullMark: number }>, shadow?: string, blindspot?: string, mainArchetype?: string, supportArchetype?: string }} props
  */
 const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchetype }) => {
-  // Fixed domain from tier max (fullMark is set per-tier: 669 Beginner/Intermediate, 789 Advanced)
-  const fullMark = data?.[0]?.fullMark || 789;
+  const fullMark = data?.[0]?.fullMark || 5;
 
   // Custom tick renderer to highlight Shadow (red) and Blindspot (amber) labels
   const renderPolarAngleAxisTick = (props) => {
@@ -30,6 +31,12 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
     } else if (blindspot && upperLabel === blindspot.toUpperCase()) {
       fill = '#fbbf24'; // amber for blindspot
       fontWeight = 700;
+    } else if (mainArchetype && upperLabel === mainArchetype.toUpperCase()) {
+      fill = '#a855f7'; // purple for main
+      fontWeight = 700;
+    } else if (supportArchetype && upperLabel === supportArchetype.toUpperCase()) {
+      fill = '#f97316'; // orange for support
+      fontWeight = 700;
     }
     return (
       <text x={x} y={y} textAnchor={textAnchor} fill={fill} fontWeight={fontWeight} fontSize={11} fontFamily="'Rajdhani', sans-serif">
@@ -38,24 +45,40 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
     );
   };
 
-  // Custom dot renderer: Main = purple, Support = orange, others = green
-  const renderDot = (props) => {
-    const { cx, cy, payload } = props;
+  // Nature dots: purple
+  const renderNatureDot = (props) => {
+    const { cx, cy } = props;
     if (cx == null || cy == null) return null;
-    const label = (payload?.subject || '').toUpperCase();
-    let dotFill = '#00ff9d';
-    let dotStroke = '#003d27';
-    let r = 4;
-    if (mainArchetype && label === mainArchetype.toUpperCase()) {
-      dotFill = '#a855f7'; // purple for Main
-      dotStroke = '#581c87';
-      r = 6;
-    } else if (supportArchetype && label === supportArchetype.toUpperCase()) {
-      dotFill = '#f97316'; // orange for Support
-      dotStroke = '#7c2d12';
-      r = 6;
-    }
-    return <circle cx={cx} cy={cy} r={r} fill={dotFill} stroke={dotStroke} strokeWidth={1.5} />;
+    return <circle cx={cx} cy={cy} r={3.5} fill="#a855f7" stroke="#581c87" strokeWidth={1} />;
+  };
+
+  // Culture dots: orange
+  const renderCultureDot = (props) => {
+    const { cx, cy } = props;
+    if (cx == null || cy == null) return null;
+    return <circle cx={cx} cy={cy} r={3.5} fill="#f97316" stroke="#7c2d12" strokeWidth={1} />;
+  };
+
+  // Custom tooltip showing Nature + Culture breakdown
+  const CustomTooltip = ({ active, payload }) => {
+    if (!active || !payload || !payload.length) return null;
+    const d = payload[0]?.payload;
+    if (!d) return null;
+    return (
+      <div style={{
+        backgroundColor: 'rgba(5, 10, 20, 0.95)',
+        border: '1px solid rgba(168, 85, 247, 0.4)',
+        borderRadius: '4px',
+        padding: '0.5rem 0.75rem',
+        fontFamily: "'Rajdhani', sans-serif",
+        boxShadow: '0 0 10px rgba(0, 0, 0, 0.5)',
+      }}>
+        <p style={{ color: '#a5f3fc', fontWeight: 700, margin: '0 0 0.25rem', fontSize: '0.85rem' }}>{d.subject}</p>
+        <p style={{ color: '#a855f7', margin: '0.1rem 0', fontSize: '0.8rem' }}>Nature: {d.nature || 0}</p>
+        <p style={{ color: '#f97316', margin: '0.1rem 0', fontSize: '0.8rem' }}>Culture: {d.culture || 0}</p>
+        <p style={{ color: 'rgba(255,255,255,0.5)', margin: '0.1rem 0', fontSize: '0.75rem' }}>Total: {d.A || 0}</p>
+      </div>
+    );
   };
 
   return (
@@ -64,45 +87,59 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'rgba(0, 255, 157, 0.05)',
-        filter: 'blur(50px)',
+        background: 'radial-gradient(circle, rgba(168, 85, 247, 0.04) 0%, rgba(249, 115, 22, 0.03) 50%, transparent 70%)',
+        filter: 'blur(40px)',
         borderRadius: '50%',
-        transform: 'scale(0.75)',
+        transform: 'scale(0.8)',
         zIndex: 0,
         pointerEvents: 'none'
       }} />
 
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-          <PolarGrid stroke="#00ff9d" strokeOpacity={0.25} gridType="polygon" polarAngles={undefined} radialLines={true} />
+          <PolarGrid stroke="#a5f3fc" strokeOpacity={0.15} gridType="polygon" radialLines={true} />
           <PolarAngleAxis 
             dataKey="subject" 
             tick={renderPolarAngleAxisTick}
           />
           <PolarRadiusAxis angle={30} domain={[0, fullMark]} tickCount={6} tick={false} axisLine={false} />
+          {/* Nature web — purple */}
           <Radar
-            name="Archetype"
-            dataKey="A"
-            stroke="#00ff9d"
-            strokeWidth={2.5}
-            fill="#00ff9d"
-            fillOpacity={0.25}
-            dot={renderDot}
-            activeDot={{ r: 7, fill: '#a5f3fc', stroke: '#00ff9d', strokeWidth: 2 }}
+            name="Nature"
+            dataKey="nature"
+            stroke="#a855f7"
+            strokeWidth={2}
+            fill="#a855f7"
+            fillOpacity={0.15}
+            dot={renderNatureDot}
             connectNulls
             isAnimationActive={true}
             animationDuration={800}
           />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'rgba(5, 10, 20, 0.9)', 
-              borderColor: '#00ff9d',
-              color: '#00ff9d',
+          {/* Culture web — orange */}
+          <Radar
+            name="Culture"
+            dataKey="culture"
+            stroke="#f97316"
+            strokeWidth={2}
+            fill="#f97316"
+            fillOpacity={0.12}
+            dot={renderCultureDot}
+            connectNulls
+            isAnimationActive={true}
+            animationDuration={800}
+            animationBegin={200}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend
+            wrapperStyle={{
               fontFamily: "'Rajdhani', sans-serif",
-              borderRadius: '4px',
-              boxShadow: '0 0 10px rgba(0, 255, 157, 0.3)'
+              fontSize: '0.75rem',
+              letterSpacing: '0.1em',
             }}
-            itemStyle={{ color: '#fff' }}
+            formatter={(value) => (
+              <span style={{ color: value === 'Nature' ? '#a855f7' : '#f97316' }}>{value}</span>
+            )}
           />
         </RadarChart>
       </ResponsiveContainer>

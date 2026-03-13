@@ -100,14 +100,14 @@ const TimeSync = ({ isMobile }) => {
 // ============================================
 // ANIMATION SECTION CONFIGURATION
 // Section 1 (frame 0): Label disappears, chunks become visible
-// Section 2 (frames 1-43): Chunks and particles explosion (43 frames for smooth animation)
-// Section 3 (frames 44-46): Pyramid shifts down, button visible at frame 47
-// Total: 47 frames (0-46)
+// Section 2 (frames 1-47): Chunks and particles explosion (47 frames for smooth animation)
+// Section 3 (frame 48): Pyramid snaps to bottom, system visible — sharp cut
+// Total: 49 frames (0-48)
 // ============================================
 const SECTION_1_FRAMES = 1;     // Label disappears, chunks visible (frame 0)
-const SECTION_2_FRAMES = 43;    // Chunks and particles explosion - maximized for smooth flow
+const SECTION_2_FRAMES = 47;    // Chunks and particles explosion - maximized for smooth flow
 const HEADER_START_FRAME = 12;  // Header/containers start vanishing mid-explosion
-const SECTION_3_FRAMES = 3;     // Pyramid shifts down (frames 44-46)
+const SECTION_3_FRAMES = 1;     // Pyramid snaps down — sharp ending (frame 48)
 // ============================================
 
 const App = () => {
@@ -1154,8 +1154,8 @@ const App = () => {
   const entityCounterOffset = window.innerWidth >= 1100 ? 16 : // Desktop/Laptop: 1rem = 16px down (counteract pyramid's 3rem move)
                               0; // Tablet/Mobile: no adjustment needed
   
-  // Button becomes visible at frame 49 (the very last frame)
-  // section1End=3, section2End=46, section3End=49
+  // Button becomes visible at the very last frame
+  // section1End=1, section2End=46, section3End=49
   const section3End = section2End + SECTION_3_FRAMES;
   const BUTTON_APPEAR_FRAME = section3End; // Frame 49 - the last frame
   const isSystem = currentFrame >= BUTTON_APPEAR_FRAME;
@@ -1824,14 +1824,26 @@ const App = () => {
                     }
                   }}
                   onComplete={() => {
+                    // Convert assessmentAnswers array to layerAnswers format for scoring
+                    const converted = {};
+                    assessmentAnswers.forEach(a => {
+                      if (!converted[a.subjectIndex]) converted[a.subjectIndex] = {};
+                      // answer is [answerId] array — take first (single-choice)
+                      converted[a.subjectIndex][a.questionId] = a.answer[0];
+                    });
+                    console.log('[GFL] onComplete — assessmentAnswers count:', assessmentAnswers.length);
+                    console.log('[GFL] onComplete — converted layerAnswers:', JSON.stringify(converted).slice(0, 500));
+                    setLayerAnswers(converted);
+
                     if (assessmentLevel === 'deep') {
                       setAssessmentPhase('upload');
                     } else {
                       setAssessmentPhase('results');
+                      setResultsModalProgress(1); // Ensure loading screen is visible (not hidden at opacity 0)
                       triggerGoldMode();
                     }
                   }}
-                  allAnswers={assessmentAnswers.reduce((acc, a) => ({ ...acc, [`${a.subjectIndex}-${a.questionIndex}`]: a.answer }), {})}
+                  allAnswers={assessmentAnswers.reduce((acc, a) => ({ ...acc, [a.questionId]: a.answer }), {})}
                 />
               </div>
             )}

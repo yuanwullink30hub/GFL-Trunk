@@ -164,8 +164,8 @@ const AssessmentCard = ({
   const handleAutoFill = useCallback(() => {
     if (!questions) return;
     questions.forEach((q) => {
-      const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
-      onSelectAnswer(q.id, [shuffled[0].id]);
+      const randomIdx = Math.floor(Math.random() * q.answers.length);
+      onSelectAnswer(q.id, [q.answers[randomIdx].id]);
     });
   }, [questions, onSelectAnswer]);
 
@@ -429,7 +429,7 @@ const AssessmentCard = ({
           {/* Next + AUTO Buttons — manual advance (centered below indicators) */}
           {!isAllAnswered && (
             <div className="flex items-center justify-center gap-2">
-              {currentQuestionIndex < totalQuestions - 1 && (
+              {(currentQuestionIndex < questions.length - 1 || currentSubjectIndex < 4) && (
                 <button
                   onClick={() => onNext && onNext()}
                   className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"

@@ -404,7 +404,18 @@ const AssessmentLayerPanel = ({
   const [savedLayers, setSavedLayers] = useState([]);
 
   // Handle answer selection for any layer
-  const handleAnswerSelect = useCallback((layerIndex, questionId, answerId) => {
+  const handleAnswerSelect = useCallback((layerIndex, questionId, selections) => {
+    // selections comes from AssessmentCard as an array [answerId] — unwrap to string
+    const answerId = Array.isArray(selections) ? selections[0] : selections;
+    if (answerId === undefined) {
+      // Deselection — remove this question's answer
+      setAllLayerAnswers(prev => {
+        const layerData = { ...(prev[layerIndex] || {}) };
+        delete layerData[questionId];
+        return { ...prev, [layerIndex]: layerData };
+      });
+      return;
+    }
     setAllLayerAnswers(prev => ({
       ...prev,
       [layerIndex]: {

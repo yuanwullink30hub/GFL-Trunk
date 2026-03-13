@@ -149,38 +149,8 @@ const App = () => {
   const [coreScaleMultiplier, setCoreScaleMultiplier] = useState(1); // 1-5 scale for inner core growth
   const [resultsModalProgress, setResultsModalProgress] = useState(0); // 0-1 progress for results modal floating out
   const [resultsLoadingProgress, setResultsLoadingProgress] = useState(0); // 0-1 loading bar progress (AI thinking time)
-  const [resultsPoetryIndex, setResultsPoetryIndex] = useState(0); // Current poetry slide index
   const [aiAnalysisReady, setAiAnalysisReady] = useState(false); // True when AI response received
   const [showLoginFromResults, setShowLoginFromResults] = useState(false); // Show login modal after results
-  
-  // Poetry slides for the results loading screen
-  const poetrySlides = useMemo(() => [
-    {
-      title: t('poetry.slide1.title'),
-      lines: tArray('poetry.slide1.lines')
-    },
-    {
-      title: t('poetry.slide2.title'),
-      lines: tArray('poetry.slide2.lines')
-    },
-    {
-      title: t('poetry.slide3.title'),
-      lines: tArray('poetry.slide3.lines')
-    },
-    {
-      title: t('poetry.slide4.title'),
-      lines: tArray('poetry.slide4.lines')
-    },
-    {
-      title: t('poetry.slide5.title'),
-      lines: tArray('poetry.slide5.lines')
-    },
-    {
-      title: t('poetry.slide6.title'),
-      lines: tArray('poetry.slide6.lines')
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [language]);
   
   // Assessment data: 5 subjects with 6 questions each (30 total)
   // assessmentSubjects is imported from './pages/assessment/assessmentData' (60 Dutch questions, 12 per layer)
@@ -690,7 +660,6 @@ const App = () => {
     setCoreScaleMultiplier(1);
     setResultsModalProgress(0);
     setResultsLoadingProgress(0);
-    setResultsPoetryIndex(0);
     setAiAnalysisReady(false);
     setShowLoginFromResults(false);
     setPyramidScrollProgress(0);

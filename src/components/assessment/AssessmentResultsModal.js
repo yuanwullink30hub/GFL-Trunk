@@ -670,7 +670,8 @@ const AssessmentResultsModal = ({
     } finally {
       setIsGeneratingPdf(false);
     }
-  }, [result]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, displaySections]);
   
   // Stop wheel events from propagating to the pyramid scroll handler
   const handleWheelCapture = useCallback((e) => {

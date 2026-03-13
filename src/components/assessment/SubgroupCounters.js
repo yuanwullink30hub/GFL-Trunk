@@ -98,7 +98,6 @@ const SubgroupCounters = ({ subgroups }) => {
                 { label: group.leftLabel, nature: leftNature, culture: leftCulture },
                 { label: group.rightLabel, nature: rightNature, culture: rightCulture },
               ].map(arch => {
-                const total = arch.nature + arch.culture;
                 const naturePct = MAX_SELECTIONS > 0 ? (arch.nature / MAX_SELECTIONS) * 100 : 0;
                 const culturePct = MAX_SELECTIONS > 0 ? (arch.culture / MAX_SELECTIONS) * 100 : 0;
 

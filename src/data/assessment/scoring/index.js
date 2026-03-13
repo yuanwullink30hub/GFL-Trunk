@@ -522,7 +522,7 @@ export function isComplementaryPair(key1, key2) {
  * Cluster 2: IDs [2, 6, 10, 3, 7, 11] = Lover, Outlaw, Magician, Caregiver, Trickster, Hero
  */
 const CLUSTER_1_IDS = new Set([1, 4, 8, 12, 5, 9]);
-const CLUSTER_2_IDS = new Set([2, 6, 10, 3, 7, 11]);
+// Cluster 2 is the complement of Cluster 1 (checked via !CLUSTER_1_IDS.has())
 
 /**
  * Reverse map: archetype key → wheel position ID.

@@ -392,6 +392,57 @@ export async function deleteAssessment(id) {
   return response.json();
 }
 
+// ── Assessment Reviews ──
+
+/**
+ * Submit a user review/feedback for an assessment.
+ */
+export async function submitAssessmentReview(data) {
+  const token = getToken();
+  const response = await fetch(`${API_BASE}/assessment/review`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error(`Server error: ${response.status}`);
+  return response.json();
+}
+
+/**
+ * Get all assessment reviews (admin only).
+ * @param {Object} opts - Options (limit, skip, includeAssessment)
+ */
+export async function getAdminReviews(opts = {}) {
+  const params = new URLSearchParams();
+  if (opts.limit) params.set('limit', opts.limit);
+  if (opts.skip) params.set('skip', opts.skip);
+  if (opts.includeAssessment) params.set('includeAssessment', 'true');
+
+  const response = await fetch(`${API_BASE}/admin/reviews?${params}`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error(`Admin reviews failed (${response.status})`);
+  return response.json();
+}
+
+/**
+ * Get single review detail with full assessment context (admin only).
+ * @param {string} id - Review ObjectId
+ */
+export async function getAdminReview(id) {
+  const response = await fetch(`${API_BASE}/admin/reviews/${id}`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Review detail failed (${response.status})`);
+  }
+  return response.json();
+}
+
 /**
  * Get AI prompt configuration (admin only).
  */

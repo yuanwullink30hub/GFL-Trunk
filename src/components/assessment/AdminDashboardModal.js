@@ -27,6 +27,7 @@ import {
   sendFormDirect,
   getSessions,
   clearSessions,
+  getAdminReviews,
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
@@ -333,7 +334,6 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
             { key: 'prompts', label: 'Prompts' },
             { key: 'formulieren', label: 'Formulieren' },
             { key: 'audit', label: 'Audit Log' },
-            { key: 'feedback', label: 'Feedback' },
             { key: 'contact', label: 'Contact' },
           ].map(({ key, label, disabled }) => (
             <button key={key} onClick={() => !disabled && setTab(key)} disabled={disabled}
@@ -354,7 +354,6 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
       {tab === 'prompts' && <PromptsTab />}
       {tab === 'formulieren' && <FormulierenTab />}
       {tab === 'audit' && <AuditLogTab />}
-      {tab === 'feedback' && <FeedbackTab />}
       {tab === 'contact' && <ContactTab />}
         </div>
 
@@ -919,6 +918,7 @@ const AssessmentsTab = memo(() => {
   const [detail, setDetail] = useState(null); // full assessment detail
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [deleting, setDeleting] = useState(null); // id being deleted
+  const [reviews, setReviews] = useState([]); // reviews for this assessment
 
   const load = useCallback(() => {
     setError('');
@@ -932,9 +932,19 @@ const AssessmentsTab = memo(() => {
   const viewDetail = useCallback(async (id) => {
     setLoadingDetail(true);
     setError('');
+    setReviews([]);
     try {
       const d = await getAdminAssessment(id);
       setDetail(d);
+      
+      // Fetch reviews for this assessment
+      try {
+        const reviewsData = await getAdminReviews({ limit: 100 });
+        const assessmentReviews = reviewsData.reviews.filter(r => r.assessmentId === id);
+        setReviews(assessmentReviews);
+      } catch (err) {
+        console.warn('[AssessmentsTab] Could not fetch reviews:', err.message);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -1130,6 +1140,70 @@ const AssessmentsTab = memo(() => {
             }}>
               {d.analysis}
             </div>
+          </div>
+        )}
+
+        {/* User Feedback / Reviews */}
+        {reviews.length > 0 && (
+          <div>
+            <div style={LABEL}>USER FEEDBACK ({reviews.length})</div>
+            {reviews.map((review, idx) => (
+              <div key={review._id || idx} style={{
+                padding: '0.5rem', marginBottom: '0.4rem',
+                borderRadius: '0.2rem',
+                border: '1px solid rgba(100, 200, 100, 0.15)',
+                backgroundColor: 'rgba(100, 200, 100, 0.04)',
+              }}>
+                <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.6, marginBottom: '0.3rem' }}>
+                  <div>{new Date(review.timestamp).toLocaleString()} · {review.userId ? '👤 Registered' : '👤 Anonymous'}</div>
+                </div>
+
+                {review.whatWorked && (
+                  <div style={{ marginBottom: '0.25rem' }}>
+                    <div style={{ ...LABEL, fontSize: 'max(9px, 0.45vw)', marginBottom: '0.1rem' }}>✓ WHAT WORKED</div>
+                    <div style={{
+                      padding: '0.3rem 0.4rem', fontSize: 'max(8px, 0.42vw)',
+                      backgroundColor: 'rgba(100, 200, 100, 0.08)',
+                      borderRadius: '0.15rem', lineHeight: 1.4,
+                    }}>
+                      {review.whatWorked}
+                    </div>
+                  </div>
+                )}
+
+                {review.whatDidntWork && (
+                  <div style={{ marginBottom: '0.25rem' }}>
+                    <div style={{ ...LABEL, fontSize: 'max(9px, 0.45vw)', marginBottom: '0.1rem' }}>✗ WHAT DIDN'T WORK</div>
+                    <div style={{
+                      padding: '0.3rem 0.4rem', fontSize: 'max(8px, 0.42vw)',
+                      backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                      borderRadius: '0.15rem', lineHeight: 1.4,
+                    }}>
+                      {review.whatDidntWork}
+                    </div>
+                  </div>
+                )}
+
+                {review.suggestions && (
+                  <div>
+                    <div style={{ ...LABEL, fontSize: 'max(9px, 0.45vw)', marginBottom: '0.1rem' }}>💡 SUGGESTIONS</div>
+                    <div style={{
+                      padding: '0.3rem 0.4rem', fontSize: 'max(8px, 0.42vw)',
+                      backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                      borderRadius: '0.15rem', lineHeight: 1.4,
+                    }}>
+                      {review.suggestions}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {reviews.length === 0 && (
+          <div style={{ padding: '0.5rem', fontSize: 'max(9px, 0.45vw)', opacity: 0.4, textAlign: 'center' }}>
+            No user feedback yet
           </div>
         )}
       </div>
@@ -2408,107 +2482,6 @@ const FormulierenTab = memo(() => {
 // ═══════════════════════════════════════════════════════════
 // Feedback Tab — audit log only (no inquiry form)
 // ═══════════════════════════════════════════════════════════
-const FEEDBACK_KEY = 'gfl_admin_feedback';
-
-const FeedbackTab = memo(() => {
-  const [items, setItems] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(FEEDBACK_KEY) || '[]'); } catch { return []; }
-  });
-
-  const tc = CARD_COLORS.gold;
-
-  const markRead = (id) => {
-    const updated = items.map((it) => it.id === id ? { ...it, status: it.status === 'gelezen' ? 'nieuw' : 'gelezen' } : it);
-    setItems(updated);
-    localStorage.setItem(FEEDBACK_KEY, JSON.stringify(updated));
-  };
-
-  const remove = (id) => {
-    const updated = items.filter((it) => it.id !== id);
-    setItems(updated);
-    localStorage.setItem(FEEDBACK_KEY, JSON.stringify(updated));
-  };
-
-  const nieuwCount = items.filter((it) => it.status === 'nieuw').length;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Feedback audit log */}
-      <DashboardCard title={`Ontvangen Feedback (${items.length})`} color="gold">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          {nieuwCount > 0 && (
-            <div style={{
-              fontSize: 'max(8px, 0.4vw)', color: C.purple, textTransform: 'uppercase',
-              marginBottom: '0.3rem',
-            }}>
-              {nieuwCount} nieuw{nieuwCount !== 1 ? 'e' : ''} bericht{nieuwCount !== 1 ? 'en' : ''}
-            </div>
-          )}
-          {items.length > 0 ? items.map((it) => (
-            <div key={it.id} style={{
-              padding: '0.5rem 0.6rem',
-              backgroundColor: it.status === 'nieuw' ? 'rgba(188, 19, 254, 0.04)' : tc.cardBg,
-              borderLeft: `2px solid ${it.status === 'nieuw' ? C.purple : tc.border}`,
-              borderRadius: '0 0.15rem 0.15rem 0',
-              transition: 'background-color 0.2s',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ fontWeight: 'bold', fontSize: 'max(10px, 0.5vw)' }}>{it.naam}</span>
-                  {it.status === 'nieuw' && (
-                    <span style={{
-                      fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.25rem', borderRadius: '0.1rem',
-                      backgroundColor: 'rgba(188, 19, 254, 0.2)', color: C.purple,
-                      textTransform: 'uppercase', fontWeight: 'bold',
-                    }}>Nieuw</span>
-                  )}
-                  {it.type && (
-                    <span style={{
-                      fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.25rem', borderRadius: '0.1rem',
-                      backgroundColor: 'rgba(255, 174, 0, 0.12)', color: C.gold,
-                      textTransform: 'uppercase',
-                    }}>{it.type}</span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <span style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText }}>
-                    {new Date(it.ts).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                  <button onClick={() => markRead(it.id)} style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    fontSize: 'max(9px, 0.45vw)', color: it.status === 'gelezen' ? tc.dimText : '#4ade80',
-                    padding: '0 0.2rem',
-                  }} title={it.status === 'gelezen' ? 'Markeer als nieuw' : 'Markeer als gelezen'}>
-                    {it.status === 'gelezen' ? '○' : '●'}
-                  </button>
-                  <button onClick={() => remove(it.id)} style={{
-                    background: 'none', border: 'none', color: 'rgba(239,68,68,0.5)',
-                    cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', padding: '0 0.2rem',
-                  }}
-                    onMouseEnter={(e) => { e.target.style.color = '#ef4444'; }}
-                    onMouseLeave={(e) => { e.target.style.color = 'rgba(239,68,68,0.5)'; }}>
-                    ✕
-                  </button>
-                </div>
-              </div>
-              {it.email !== '—' && it.email && (
-                <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, marginBottom: '0.15rem' }}>{it.email}</div>
-              )}
-              <div style={{ fontSize: 'max(9px, 0.45vw)', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                {it.bericht}
-              </div>
-            </div>
-          )) : (
-            <div style={{ textAlign: 'center', color: tc.dimText, padding: '2rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-              Geen feedback ontvangen
-            </div>
-          )}
-        </div>
-      </DashboardCard>
-    </div>
-  );
-});
-
 
 // ═══════════════════════════════════════════════════════════
 // Contact Tab — clients met detailpages + verzoeken + bewerkfunctie

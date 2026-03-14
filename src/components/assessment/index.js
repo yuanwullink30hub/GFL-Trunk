@@ -7,8 +7,6 @@ export { default as AssessmentUpload } from './AssessmentUpload';
 export { default as AssessmentResults } from './AssessmentResults';
 export { default as AssessmentResultsModal } from './AssessmentResultsModal';
 export { default as AssessmentLayerPanel } from './AssessmentLayerPanel';
-export { default as HoloPyramidAssessment } from './HoloPyramidAssessment';
-export { default as PyramidViewAssessment } from './PyramidViewAssessment';
 export { default as SciFiRadarChart } from './SciFiRadarChart';
 export { default as SubgroupCounters } from './SubgroupCounters';
 export { useAssessmentIntegration } from './useAssessmentIntegration';

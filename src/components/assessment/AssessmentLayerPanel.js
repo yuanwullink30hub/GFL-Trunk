@@ -20,10 +20,10 @@ import { assessmentSubjects } from '../../pages/assessment/assessmentData';
 // Layer configuration matching pyramid (bottom to top)
 // Colors synced with assessmentData.js canonical source
 const LAYERS = [
-  { nameKey: "zelf", color: assessmentSubjects[0]?.color || "#22d3ee", descKey: "zelf" },
-  { nameKey: "ander", color: assessmentSubjects[1]?.color || "#a855f7", descKey: "ander" },
-  { nameKey: "massa", color: assessmentSubjects[2]?.color || "#f472b6", descKey: "massa" },
-  { nameKey: "wereld", color: assessmentSubjects[3]?.color || "#fbbf24", descKey: "wereld" },
+  { nameKey: "zelf", color: assessmentSubjects[0]?.color || "#22c55e", descKey: "zelf" },
+  { nameKey: "ander", color: assessmentSubjects[1]?.color || "#3b82f6", descKey: "ander" },
+  { nameKey: "massa", color: assessmentSubjects[2]?.color || "#a855f7", descKey: "massa" },
+  { nameKey: "wereld", color: assessmentSubjects[3]?.color || "#ef4444", descKey: "wereld" },
   { nameKey: "mysterie", color: assessmentSubjects[4]?.color || "#f97316", descKey: "mysterie" },
 ];
 
@@ -71,6 +71,37 @@ const SAVED_SCALES = [
   1.0, // Mysterie (top)
 ];
 
+// Assessment Level Configurations
+const LEVEL_CONFIGS = {
+  // Beginner - Rapidfire mode with fixed 49s per question
+  quick: {
+    name: 'Beginner',
+    questionsPerLayer: 3,
+    timerType: 'fixed',
+    fixedTimer: 49,
+    allowBacktrack: true,
+    allowQuestionJump: true
+  },
+  // Intermediate/Gevorderd - Quickfire mode with fixed 49s per question
+  standard: {
+    name: 'Gevorderd',
+    questionsPerLayer: 6,
+    timerType: 'fixed',
+    fixedTimer: 49,
+    allowBacktrack: false,
+    allowQuestionJump: false
+  },
+  // Meester - Vuurproef mode with layer-based pyramid timers
+  deep: {
+    name: 'Meester',
+    questionsPerLayer: 6,
+    timerType: 'layered',
+    layerTimers: [90, 75, 60, 45, 30],
+    allowBacktrack: false,
+    allowQuestionJump: false
+  }
+};
+
 // Animation timing (ms)
 const COLLAPSE_WAIT = 900;   // Wait for card collapse before moving
 const MOVE_DURATION = 1200;  // Slide from right to left
@@ -86,6 +117,7 @@ const SingleLayerPanel = ({
   onSave,
   gatherProgress = 0,
   staircaseStep = -1,
+  assessmentLevel,
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const currentQuestionIndexRef = useRef(0);
@@ -311,6 +343,34 @@ const SingleLayerPanel = ({
     };
   }, [layerIndex, animProgress, gatherProgress, staircaseStep, isSaved, savePhase, moveProgress]);
 
+  // Compute layer-aware level config
+  const computedLevelConfig = useMemo(() => {
+    const baseConfig = LEVEL_CONFIGS[assessmentLevel];
+    if (!baseConfig) return {};
+
+    // Beginner: timer only on the first layer (layer 0)
+    if (assessmentLevel === 'quick') {
+      return {
+        ...baseConfig,
+        hasTimer: layerIndex === 0,
+      };
+    }
+    // Gevorderd: restrictions only on the last layer (layer 4)
+    if (assessmentLevel === 'standard') {
+      if (layerIndex === 4) {
+        return { ...baseConfig, hasTimer: true };
+      }
+      return {
+        ...baseConfig,
+        hasTimer: false,
+        allowBacktrack: true,
+        allowQuestionJump: true,
+      };
+    }
+    // Meester: full restrictions on every layer
+    return { ...baseConfig, hasTimer: true };
+  }, [assessmentLevel, layerIndex]);
+
   // Answer selection handler - stores selections (no auto-advance)
   const handleAnswerSelect = useCallback((questionId, answerId) => {
     if (isSaved) return;
@@ -364,6 +424,7 @@ const SingleLayerPanel = ({
       style={{ ...panelStyles, width: cardWrapperWidth, maxWidth: cardMaxWidth }}
     >
       <AssessmentCard
+        key={`${layerIndex}-${assessmentLevel}`}
         questions={questions}
         currentSubject={currentSubject}
         currentSubjectIndex={layerIndex}
@@ -373,15 +434,16 @@ const SingleLayerPanel = ({
         onSelectAnswer={(questionId, answerId) => {
           handleAnswerSelect(questionId, answerId);
         }}
-        onGoBack={handleGoBack}
-        canGoBack={currentQuestionIndex > 0}
+        onGoBack={computedLevelConfig.allowBacktrack !== false ? handleGoBack : undefined}
+        canGoBack={computedLevelConfig.allowBacktrack !== false && currentQuestionIndex > 0}
         onNext={handleNext}
         onComplete={onSave}
-        onJumpTo={(idx) => {
+        onJumpTo={computedLevelConfig.allowQuestionJump !== false ? (idx) => {
           setCurrentQuestionIndex(idx);
           currentQuestionIndexRef.current = idx;
-        }}
+        } : undefined}
         allAnswers={answers}
+        levelConfig={computedLevelConfig}
       />
     </div>
   );
@@ -398,6 +460,7 @@ const AssessmentLayerPanel = ({
   convergenceProgress = 0, // 0-1 progress for assembled pyramid floating to entity
   staircaseStep = -1,      // -1=waiting, 0-3=current staircase step, 4=fully assembled
   isVisible = true,
+  assessmentLevel,
 }) => {
   // Store answers for ALL layers persistently
   const [allLayerAnswers, setAllLayerAnswers] = useState({});
@@ -474,6 +537,7 @@ const AssessmentLayerPanel = ({
           onSave={() => handleSave(layerIndex)}
           gatherProgress={gatherProgress}
           staircaseStep={staircaseStep}
+          assessmentLevel={assessmentLevel}
         />
       ))}
     </>

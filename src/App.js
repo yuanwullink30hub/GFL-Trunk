@@ -1832,6 +1832,7 @@ const App = () => {
                 convergenceProgress={convergenceProgress}
                 staircaseStep={staircaseStep}
                 isVisible={true}
+                assessmentLevel={assessmentLevel}
               />
               </>
             )}

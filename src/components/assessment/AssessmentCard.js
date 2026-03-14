@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -34,11 +34,16 @@ const AssessmentCard = ({
   onNext,
   onComplete,
   onJumpTo,
-  allAnswers = {}
+  allAnswers = {},
+  levelConfig = {}
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showScrollMode, setShowScrollMode] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(null);
+  const [started, setStarted] = useState(false);
+  const levelConfigRef = useRef(levelConfig);
+  levelConfigRef.current = levelConfig;
   const { t } = useLanguage();
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
@@ -141,16 +146,62 @@ const AssessmentCard = ({
     return () => clearTimeout(timer);
   }, [currentQuestion?.id]);
 
-  // Single-choice click handler: 1 answer per question
-  const handleAnswerClick = useCallback((answerId) => {
-    if (currentSelections.includes(answerId)) {
-      // Already selected → deselect
-      onSelectAnswer(currentQuestion.id, []);
-    } else {
-      // Select this answer (replaces any previous selection)
-      onSelectAnswer(currentQuestion.id, [answerId]);
+  // Calculate and countdown timer based on level configuration
+  const hasTimer = levelConfig.hasTimer !== false;
+
+  useEffect(() => {
+    const cfg = levelConfigRef.current;
+    if (!hasTimer || !started) {
+      // No timer for this layer or not started yet — disable countdown
+      setTimeRemaining(null);
+      return;
     }
-  }, [currentQuestion, onSelectAnswer, currentSelections]);
+
+    // Determine the initial timer value
+    let initialTime = 0;
+    
+    if (cfg.timerType === 'layered' && cfg.layerTimers) {
+      // Meester: Use layer-based timer
+      initialTime = cfg.layerTimers[currentSubjectIndex] || 30;
+    } else if (cfg.timerType === 'fixed' && cfg.fixedTimer) {
+      // Beginner & Intermediate: Use fixed timer
+      initialTime = cfg.fixedTimer;
+    } else {
+      // Fallback: 45 seconds
+      initialTime = 45;
+    }
+    
+    setTimeRemaining(initialTime);
+    
+    // Set up countdown interval
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev !== null && prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev !== null ? prev - 1 : null;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [currentQuestion?.id, currentSubjectIndex, hasTimer, started, levelConfig.timerType, levelConfig.fixedTimer, levelConfig.layerTimers]);
+
+  // Auto-advance when timer runs out (with or without answer selected)
+  useEffect(() => {
+    if (hasTimer && timeRemaining !== null && timeRemaining === 0) {
+      // Auto-advance to next question regardless of whether an answer was selected
+      if (onNext) onNext();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeRemaining]);
+
+  // Answer click handler: just select the answer, don't auto-advance
+  const handleAnswerClick = useCallback((answerId) => {
+    // Select this answer
+    onSelectAnswer(currentQuestion.id, [answerId]);
+    // User can now click Next button or wait for timer to expire
+  }, [currentQuestion, onSelectAnswer]);
 
   const handleSave = () => {
     setIsCollapsed(true);
@@ -183,6 +234,74 @@ const AssessmentCard = ({
 
   return (
     <div className="relative w-full mx-auto" style={{ maxWidth: s.cardMaxWidth }}>
+      {/* Manual Start Overlay — blocks interaction until user clicks Start */}
+      {!started && !isCollapsed && (
+        <div
+          className="absolute inset-0 z-[200] flex flex-col items-center justify-center rounded-lg"
+          style={{
+            backgroundColor: 'rgba(1, 0, 2, 1)',
+            border: `1px solid ${subjectColor}30`,
+          }}
+        >
+          <div className="absolute -top-0.5 -left-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }} />
+          <div className="absolute -top-0.5 -right-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }} />
+          <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }} />
+          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }} />
+
+          <p
+            style={{
+              fontFamily: "'Figtree', sans-serif",
+              fontSize: windowWidth >= 1024 ? '1.1rem' : '0.95rem',
+              color: 'rgba(255, 254, 240, 0.7)',
+              textAlign: 'center',
+              marginBottom: '1.5rem',
+              padding: '0 1.5rem',
+            }}
+          >
+            Als je klaar zit, druk op start.
+          </p>
+          {levelConfig.timerType === 'layered' && levelConfig.layerTimers && (
+            <div
+              style={{
+                fontFamily: "'Figtree', sans-serif",
+                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.75rem',
+                color: 'rgba(255, 254, 240, 0.45)',
+                textAlign: 'center',
+                marginBottom: '1.5rem',
+                lineHeight: '1.7',
+              }}
+            >
+              <span style={{ color: subjectColor }}>{levelConfig.layerTimers[currentSubjectIndex] || 30} seconden per vraag</span>
+              <br />Timer loopt zodra je start
+              <br />Zeker van jezelf? NEXT!
+              <br />Geen terugloop
+            </div>
+          )}
+          <button
+            onClick={() => setStarted(true)}
+            className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
+            style={{
+              fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+              fontSize: windowWidth >= 1024 ? '0.95rem' : '0.8rem',
+              backgroundColor: `${subjectColor}20`,
+              border: `2px solid ${subjectColor}`,
+              color: subjectColor,
+              boxShadow: `0 0 20px ${subjectColor}25`,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = `${subjectColor}40`;
+              e.currentTarget.style.boxShadow = `0 0 30px ${subjectColor}50`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = `${subjectColor}20`;
+              e.currentTarget.style.boxShadow = `0 0 20px ${subjectColor}25`;
+            }}
+          >
+            Start
+          </button>
+        </div>
+      )}
+
       {/* Main Card - SectorFrame style */}
       <div 
         className={`
@@ -262,9 +381,33 @@ const AssessmentCard = ({
               >
                 {String(questionNumber).padStart(2, '0')}
               </div>
-              <span className="text-xs" style={{ color: '#FFFEF0', opacity: 0.5, fontFamily: "'Figtree', sans-serif" }}>
-                Q{questionNumber}/{totalQuestions}
-              </span>
+              <div className="flex flex-col items-start gap-0.5">
+                <span className="text-xs" style={{ color: '#FFFEF0', opacity: 0.5, fontFamily: "'Figtree', sans-serif" }}>
+                  Q{questionNumber}/{totalQuestions}
+                </span>
+                {hasTimer && (
+                <div className="flex items-center gap-1.5" style={{ fontSize: s.badgeFont }}>
+                  <span style={{ color: (timeRemaining !== null && timeRemaining <= 10) ? '#ef4444' : subjectColor, fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontWeight: 'bold' }}>
+                    {timeRemaining !== null ? String(timeRemaining).padStart(2, '0') : '--'}s
+                  </span>
+                  <div style={{
+                    width: '30px',
+                    height: '4px',
+                    backgroundColor: `${subjectColor}20`,
+                    borderRadius: '2px',
+                    border: `1px solid ${subjectColor}40`,
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${timeRemaining !== null ? (timeRemaining / (levelConfig.timerType === 'layered' ? (levelConfig.layerTimers?.[currentSubjectIndex] || 30) : (levelConfig.fixedTimer || 45))) * 100 : 100}%`,
+                      height: '100%',
+                      backgroundColor: (timeRemaining !== null && timeRemaining <= 10) ? '#ef4444' : subjectColor,
+                      transition: 'width 1s linear'
+                    }} />
+                  </div>
+                </div>
+                )}
+              </div>
             </div>
 
             {/* Center/Right: Subject Group */}
@@ -398,17 +541,18 @@ const AssessmentCard = ({
           `}
           style={{ borderTop: isCollapsed ? 'none' : `1px solid ${subjectColor}20`, padding: isCollapsed ? 0 : s.footerPad }}
         >
-          {/* 12 Question Indicators - click to jump */}
+          {/* 12 Question Indicators - click to jump (disabled if no backtrack allowed) */}
           <div className="flex items-center justify-center gap-1 mb-2 flex-wrap">
             {questions.map((q, idx) => {
               const isActive = idx === currentQuestionIndex;
               const qAnswers = allAnswers[q.id];
               const isAnswered = Array.isArray(qAnswers) ? qAnswers.length > 0 : qAnswers !== undefined;
+              const canClick = levelConfig.allowQuestionJump !== false; // Default to true if not specified
               return (
                 <button
                   key={q.id}
-                  onClick={() => handleJumpToQuestion(idx)}
-                  className="relative flex-shrink-0 flex items-center justify-center transition-all duration-200"
+                  onClick={() => canClick && handleJumpToQuestion(idx)}
+                  className={`relative flex-shrink-0 flex items-center justify-center transition-all duration-200 ${!canClick ? 'cursor-not-allowed' : ''}`}
                   style={{
                     width: s.indicatorSize,
                     height: s.indicatorSize,
@@ -418,7 +562,9 @@ const AssessmentCard = ({
                     borderRadius: '3px',
                     boxShadow: isActive ? `0 0 8px ${subjectColor}40` : 'none',
                     transform: isActive ? 'scale(1.15)' : 'scale(1)',
+                    opacity: canClick ? 1 : 0.5,
                   }}
+                  disabled={!canClick}
                 >
                   <span className="text-[10px] font-bold" style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}>{idx + 1}</span>
                 </button>

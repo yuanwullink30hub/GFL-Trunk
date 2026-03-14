@@ -32,6 +32,8 @@ async function connectDB() {
   // Create / ensure indexes
   await db.collection('users').createIndex({ emailHash: 1 }, { unique: true });
   await db.collection('assessments').createIndex({ userId: 1, createdAt: -1 });
+  await db.collection('assessmentReviews').createIndex({ createdAt: -1 });
+  await db.collection('assessmentReviews').createIndex({ userId: 1 }, { sparse: true });
 
   console.log('[MongoDB] Connected to', db.databaseName);
   return db;
@@ -99,6 +101,7 @@ const collections = {
   users: () => getDB().collection('users'),
   assessments: () => getDB().collection('assessments'),
   questions: () => getDB().collection('questions'),
+  assessmentReviews: () => getDB().collection('assessmentReviews'),
 };
 
 /**

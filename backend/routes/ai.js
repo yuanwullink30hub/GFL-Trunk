@@ -127,6 +127,8 @@ router.post('/analyze', async (req, res) => {
 
     // Fetch admin prompt config from MongoDB for defaults
     const adminConfig = await getAdminPromptConfig();
+    console.log('[AI] Admin config retrieved from MongoDB');
+    console.log('[AI] System prompt template (first 100 chars):', adminConfig.systemPromptTemplate ? adminConfig.systemPromptTemplate.substring(0, 100) : '(empty)');
 
     // Extract text from any uploaded PDFs (sent as base64)
     if (uploadedFileContents && uploadedFileContents.length > 0) {
@@ -164,8 +166,23 @@ router.post('/analyze', async (req, res) => {
       consciousnessLevel, overallShadow, uploadedFileContents,
     };
 
-    const system = systemPrompt || builder.buildSystemPrompt(promptData);
+    const builderSystem = builder.buildSystemPrompt(promptData);
+    // Admin meta instruction from MongoDB (editable via dashboard) prepends the builder output
+    const adminMeta = adminConfig.systemPromptTemplate || '';
+    const system = systemPrompt || (adminMeta ? adminMeta + '\n\n' + builderSystem : builderSystem);
     const user = userQuestion || builder.buildUserMessage(promptData);
+
+    console.log('[AI] ═══════════════════════════════════════════════════════════');
+    console.log('[AI] FINAL SYSTEM PROMPT BEING SENT TO AI:');
+    console.log('[AI] ───────────────────────────────────────────────────────────');
+    console.log('[AI] Total length:', system.length, 'characters');
+    console.log('[AI] Admin meta instruction included:', adminMeta.length > 0 ? 'YES' : 'NO');
+    if (adminMeta.length > 0) {
+      console.log('[AI] Admin meta (first 150 chars):', adminMeta.substring(0, 150));
+    }
+    console.log('[AI] Builder system prompt (first 150 chars):', builderSystem.substring(0, 150));
+    console.log('[AI] User message length:', user.length, 'characters');
+    console.log('[AI] ═══════════════════════════════════════════════════════════');
 
     const messages = [
       { role: 'system', content: system },
@@ -181,6 +198,13 @@ router.post('/analyze', async (req, res) => {
     const finalMaxTokens = maxTokens || adminConfig.maxTokens || 18000;
     const finalTemperature = temperature ?? adminConfig.temperature ?? 0.7;
 
+    console.log('[AI] Calling AI with config:');
+    console.log('[AI]   Provider:', finalProvider || '(default)');
+    console.log('[AI]   Model:', finalModel || '(default)');
+    console.log('[AI]   Max Tokens:', finalMaxTokens);
+    console.log('[AI]   Temperature:', finalTemperature);
+    console.log('[AI]   Archetype:', archetypeKey);
+
     const result = await callAI({
       provider: finalProvider,
       model: finalModel,
@@ -189,7 +213,7 @@ router.post('/analyze', async (req, res) => {
       temperature: finalTemperature,
     });
 
-    console.log(`[AI] Analysis complete: provider=${result.provider}, model=${result.model}, tokens=${result.completionTokens}`);
+    console.log(`[AI] ✅ Analysis complete: provider=${result.provider}, model=${result.model}, tokens=${result.completionTokens}`);
 
     // ── Stage 2: AI generation complete ──
     sendEvent('progress', { stage: 2, message: 'AI analyse compleet — resultaten verwerken...' });

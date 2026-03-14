@@ -261,21 +261,27 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     {
       id: 'quick',
       nameKey: 'assessmentIntro.levels.quick.name',
+      name: 'Beginner',
       descKey: 'assessmentIntro.levels.quick.description',
+      description: '60 vragen - 45 min - Rapidfire: Zelf/Zonde 49s per vraag',
       questionsPerLayer: 3,
       color: '#22c55e'
     },
     {
       id: 'standard',
       nameKey: 'assessmentIntro.levels.standard.name',
+      name: 'Gevorderd',
       descKey: 'assessmentIntro.levels.standard.description',
+      description: '60 vragen - 50 min - Quickfire: Mysterie/Magie 30s per vraag',
       questionsPerLayer: 6,
       color: '#a855f7'
     },
     {
       id: 'deep',
       nameKey: 'assessmentIntro.levels.deep.name',
+      name: 'Meester',
       descKey: 'assessmentIntro.levels.deep.description',
+      description: '60 vragen - 50 min - Vuurproef: Piramide tijdsdruk in volgorde 90s/75s/60s/45/30s p.v.',
       questionsPerLayer: 6,
       includeUpload: true,
       color: '#f97316'
@@ -744,9 +750,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                     <div className="absolute top-0 left-0 w-2 h-2 border-t border-l opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderColor: level.color }} />
                     <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderColor: level.color }} />
                     
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <h3 className="font-medium" style={{ color: isLocked ? '#64748b' : level.color, fontSize: s.levelTitleFont }}>
-                        {t(level.nameKey)}
+                    <div className="flex flex-col items-center gap-1.5 mb-0.5">
+                      <h3 className="font-medium" style={{ color: isLocked ? '#64748b' : level.color, fontSize: s.levelTitleFont, textAlign: 'center' }}>
+                        {level.name || t(level.nameKey)}
                       </h3>
                       {isLocked && (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -754,7 +760,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                         </svg>
                       )}
                     </div>
-                    <p style={{ color: isLocked ? '#475569' : '#64748b', fontSize: s.levelDescFont }}>{t(level.descKey)}</p>
+                    <p style={{ color: isLocked ? '#475569' : '#64748b', fontSize: s.levelDescFont, textAlign: 'center' }}>{level.description || t(level.descKey)}</p>
                   </button>
                 );
               })}
@@ -794,7 +800,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
               textShadow: '0 0 10px rgba(168,85,247,0.3)',
               marginBottom: '1.5rem',
             }}>
-              ℹ️ Achter de Schermen: De Ontologische Engine
+              ℹ️ Achter de Analyse: De Symetrische Synergie
             </h2>
 
             {/* Info content */}
@@ -853,7 +859,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
               <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem', minHeight: '378px', display: 'flex', alignItems: 'stretch' }}>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '1.25rem', alignItems: 'stretch', width: '100%' }}>
                   {/* Left — Text (fills remaining space) */}
-                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'center' }}>
+                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'flex-start' }}>
                     <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>
                       Het Geometrische Wiel &amp; De Anatomie
                     </h3>
@@ -866,16 +872,16 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                       <span style={{ color: '#22c55e', fontWeight: 600 }}>1. De Groene Bogen (Het Moederbord):</span> Jouw absolute fundament. Eigenschappen die fysiek op exact dezelfde biologische hardware draaien.
                     </p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#eab308', fontWeight: 600 }}>2. De Gele Driehoeken (CultureForce):</span> Jouw aangeleerde cognitieve synergie. De software die je hebt geschreven om te overleven; efficiënt, maar niet je ware oernatuur.
+                      <span style={{ color: '#3b82f6', fontWeight: 600 }}>2. De Blauwe Lijnen (Symbiotische Brug):</span> Fysiologische snelwegen in je brein. Gedeelde neurale hubs die extreem efficiënt werken.
                     </p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#ef4444', fontWeight: 600 }}>3. De Rode Lijnen (Neurale Kortsluiting):</span> De botsing tussen onverenigbare netwerken. Hier ontstaat destructieve interferentie: je blinde vlekken.
+                      <span style={{ color: '#a855f7', fontWeight: 600 }}>3. De Paarse Lijnen (De Paradox / 180°):</span> De ultieme integratie van absolute tegenpolen. Wie deze spanning kan dragen, ontsluit exponentiële energie.
                     </p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#3b82f6', fontWeight: 600 }}>4. De Blauwe Lijnen (Symbiotische Brug):</span> Fysiologische snelwegen in je brein. Gedeelde neurale hubs die extreem efficiënt werken.
+                      <span style={{ color: '#ef4444', fontWeight: 600 }}>4. De Rode Lijnen (A-typische projectie):</span> De archetype die van nature botst met jouw neurale netwerk. Hier ontstaan mogelijk sterke projecties wanneer patronen nog niet in kaart zijn gebracht.
                     </p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#a855f7', fontWeight: 600 }}>5. De Paarse Lijnen (De Paradox / 180°):</span> De ultieme integratie van absolute tegenpolen. Wie deze spanning kan dragen, ontsluit exponentiële energie.
+                      <span style={{ color: '#eab308', fontWeight: 600 }}>5. De Gele Driehoeken (CultureForce):</span> Jouw aangeleerde cognitieve synergie. De software die je hebt geschreven om te overleven; efficiënt, maar niet je ware oernatuur.
                     </p>
                   </div>
                   {/* Right — Wheel Image (circular container) */}

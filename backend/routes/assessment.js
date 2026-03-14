@@ -1,25 +1,49 @@
 /**
  * Garden For Life — Assessment Routes
  *
- * POST /api/assessment          — Save assessment result
- * GET  /api/assessment/history  — List user's past assessments
- * GET  /api/assessment/:id      — Get single assessment detail
+ * POST /api/assessment          — Save assessment result (requires auth)
+ * GET  /api/assessment/history  — List user's past assessments (requires auth)
+ * POST /api/assessment/review   — Save assessment feedback (optional auth)
+ * GET  /api/assessment/:id      — Get single assessment detail (requires auth)
  */
 const { Router } = require('express');
 const { ObjectId } = require('mongodb');
 const { collections } = require('../db');
 const { authRequired } = require('../middleware/auth');
+const jwt = require('jsonwebtoken');
+const config = require('../config');
 
 const router = Router();
 
-// All assessment routes require auth
-router.use(authRequired);
+/**
+ * Optional auth middleware — attaches req.user if token is provided,
+ * but doesn't fail if token is missing. Allows anonymous submissions.
+ */
+function authOptional(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) {
+    // No token provided — continue as anonymous
+    req.user = null;
+    return next();
+  }
+
+  try {
+    const token = header.slice(7);
+    const payload = jwt.verify(token, config.jwtSecret);
+    req.user = { userId: payload.sub, email: payload.email, role: payload.role || 'client' };
+  } catch (err) {
+    // Invalid token — still continue as anonymous
+    console.warn('[Assessment] Invalid token in review submission, continuing as anonymous');
+    req.user = null;
+  }
+  next();
+}
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/assessment — Save an assessment result
+// POST /api/assessment — Save an assessment result (requires auth)
 // ─────────────────────────────────────────────────────────────
 
-router.post('/', async (req, res) => {
+router.post('/', authRequired, async (req, res) => {
   try {
     const {
       archetypeKey,
@@ -75,10 +99,10 @@ router.post('/', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/assessment/history — List past assessments
+// GET /api/assessment/history — List past assessments (requires auth)
 // ─────────────────────────────────────────────────────────────
 
-router.get('/history', async (req, res) => {
+router.get('/history', authRequired, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 50, 100);
     const skip = parseInt(req.query.skip) || 0;
@@ -111,10 +135,60 @@ router.get('/history', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/assessment/:id — Get single assessment
+// POST /api/assessment/review — Save assessment feedback (optional auth)
 // ─────────────────────────────────────────────────────────────
 
-router.get('/:id', async (req, res) => {
+router.post('/review', authOptional, async (req, res) => {
+  console.log('[Assessment] POST /review received');
+  try {
+    const {
+      assessmentId,
+      whatWorked,
+      whatDidntWork,
+      suggestions,
+      archetypeKey,
+      timestamp,
+    } = req.body;
+
+    console.log('[Assessment] Review data:', { assessmentId, whatWorked: whatWorked?.slice(0, 50), archetypeKey });
+
+    // Validate at least one field is filled
+    if (!whatWorked?.trim() && !whatDidntWork?.trim() && !suggestions?.trim()) {
+      console.log('[Assessment] ❌ Review validation failed — no data provided');
+      return res.status(400).json({ error: 'At least one feedback field is required' });
+    }
+
+    // Create review document
+    const review = {
+      userId: req.user?.userId || null,
+      assessmentId: assessmentId || 'anonymous',
+      archetypeKey: archetypeKey || null,
+      whatWorked: whatWorked?.trim() || '',
+      whatDidntWork: whatDidntWork?.trim() || '',
+      suggestions: suggestions?.trim() || '',
+      timestamp: timestamp ? new Date(timestamp) : new Date(),
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    };
+
+    const result = await collections.assessmentReviews().insertOne(review);
+    console.log('[Assessment] ✅ Review saved:', result.insertedId);
+
+    res.status(201).json({
+      id: result.insertedId,
+      ...review,
+    });
+  } catch (err) {
+    console.error('[Assessment] ❌ Review save error:', err.message);
+    res.status(500).json({ error: 'Failed to save review' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/assessment/:id — Get single assessment (requires auth)
+// ─────────────────────────────────────────────────────────────
+
+router.get('/:id', authRequired, async (req, res) => {
   try {
     if (!ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: 'Invalid assessment ID' });

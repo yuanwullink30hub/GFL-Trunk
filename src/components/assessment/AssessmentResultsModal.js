@@ -22,7 +22,7 @@ import {
 } from '../../data/assessment';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
-import { getToken, saveAssessment, analyzeAssessment } from '../../utils/apiClient';
+import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview } from '../../utils/apiClient';
 
 /**
  * AssessmentResultsModal - Full-screen sci-fi results modal
@@ -101,6 +101,49 @@ const AssessmentResultsModal = ({
     });
   }, [result, savedToBackend]);
 
+  // ── Review/Feedback form state ──
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewFormData, setReviewFormData] = useState({
+    whatWorked: '',
+    whatDidntWork: '',
+    suggestions: '',
+  });
+  const [reviewError, setReviewError] = useState('');
+
+  // ── Review form submission handler ──
+  const handleReviewSubmit = useCallback(async (e) => {
+    e?.preventDefault();
+    const { whatWorked, whatDidntWork, suggestions } = reviewFormData;
+    
+    // Validate at least one field is filled
+    if (!whatWorked.trim() && !whatDidntWork.trim() && !suggestions.trim()) {
+      setReviewError('Please fill in at least one field');
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    setReviewError('');
+
+    try {
+      await submitAssessmentReview({
+        assessmentId: result?.id || 'anonymous',
+        whatWorked: whatWorked.trim(),
+        whatDidntWork: whatDidntWork.trim(),
+        suggestions: suggestions.trim(),
+        archetypeKey: result?.mainArchetype || '',
+        timestamp: new Date().toISOString(),
+      });
+      setReviewSubmitted(true);
+      console.log('[GFL] Review submitted successfully');
+    } catch (err) {
+      console.error('[GFL] Review submission failed:', err);
+      setReviewError(err.message || 'Failed to submit review. Please try again.');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  }, [reviewFormData, result]);
+
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
 
@@ -144,12 +187,7 @@ const AssessmentResultsModal = ({
       });
   }, [result, aiReady]);
 
-  // Loading stage labels
-  const stageLabels = [
-    { label: 'Data verwerken...', done: 'Data verwerkt ✓' },
-    { label: 'AI analyse genereren...', done: 'AI analyse compleet ✓' },
-    { label: 'Resultaten integreren...', done: 'Klaar ✓' },
-  ];
+  // Removed: stageLabels (using simpler single-message loading state now)
 
   // Displayed sections: AI-generated when available, template fallback otherwise
   const displaySections = aiSections || result?.analysisSections || [];
@@ -747,69 +785,18 @@ const AssessmentResultsModal = ({
               animation: 'spin 1s linear infinite',
             }} />
 
-            {/* 3-Stage Progress Indicator */}
-            <div style={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-              padding: '0 0.5rem',
+            {/* Simple text message */}
+            <p style={{
+              fontFamily: "'Figtree', sans-serif",
+              fontSize: '0.95rem',
+              color: 'rgba(255, 254, 240, 0.8)',
+              margin: 0,
+              letterSpacing: '0.02em',
+              lineHeight: '1.6',
+              maxWidth: '320px',
             }}>
-              {stageLabels.map((stage, i) => {
-                const stageNum = i + 1;
-                const isComplete = aiStage >= stageNum;
-                const isActive = aiStage === stageNum - 1 || (aiStage === stageNum && !isComplete);
-                const isCurrent = aiStage === i; // currently in progress
-                return (
-                  <div key={i} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    transition: 'opacity 0.4s ease',
-                    opacity: isComplete ? 1 : isCurrent || aiStage === i ? 0.9 : 0.35,
-                  }}>
-                    {/* Stage dot */}
-                    <div style={{
-                      width: '0.6rem',
-                      height: '0.6rem',
-                      borderRadius: '50%',
-                      flexShrink: 0,
-                      backgroundColor: isComplete ? '#a855f7' : 'rgba(168, 85, 247, 0.3)',
-                      boxShadow: isComplete ? '0 0 8px rgba(168, 85, 247, 0.5)' : 'none',
-                      transition: 'all 0.4s ease',
-                    }} />
-                    {/* Stage text */}
-                    <span style={{
-                      fontFamily: "'Rajdhani', sans-serif",
-                      fontSize: '0.85rem',
-                      letterSpacing: '0.04em',
-                      color: isComplete ? 'rgba(168, 85, 247, 0.95)' : 'rgba(255, 254, 240, 0.7)',
-                      transition: 'color 0.4s ease',
-                    }}>
-                      {isComplete ? stage.done : stage.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Progress bar */}
-            <div style={{
-              width: '100%',
-              height: '2px',
-              backgroundColor: 'rgba(168, 85, 247, 0.15)',
-              borderRadius: '1px',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                height: '100%',
-                width: `${Math.min((aiStage / 3) * 100, 100)}%`,
-                backgroundColor: '#a855f7',
-                borderRadius: '1px',
-                transition: 'width 0.6s ease',
-                boxShadow: '0 0 6px rgba(168, 85, 247, 0.4)',
-              }} />
-            </div>
+              Wij berekenen niet wie je bent. We berekenen de fysiologische prijs van wie je probeert te zijn.
+            </p>
 
             {/* Error state: AI failed — show continue button */}
             {aiFailed && (
@@ -1529,7 +1516,7 @@ const AssessmentResultsModal = ({
                     </div>
 
                     {/* OCEAN Resonance / Dissonance Analysis */}
-                    {(() => {
+                    {result.oceanImported && (() => {
                       const ocean = result.extendedOcean.ocean;
                       const group = result.group; // e.g. 'RULING', 'RELATIONAL', etc.
                       // What each pillar biologically expects (high/low per OCEAN trait)
@@ -1849,6 +1836,208 @@ const AssessmentResultsModal = ({
                   alignItems: 'center',
                   gap: '1.5rem',
                 }}>
+
+                  {/* ── Review/Feedback Form (gates download) ── */}
+                  {!reviewSubmitted && (
+                    <div style={{
+                      width: '100%',
+                      background: 'rgba(0, 0, 0, 0.6)',
+                      border: '1px solid rgba(168, 85, 247, 0.3)',
+                      borderRadius: '0.75rem',
+                      padding: '1.5rem',
+                      boxShadow: 'inset 0 0 20px rgba(168, 85, 247, 0.05)',
+                    }}>
+                      <h3 style={{
+                        color: '#a855f7',
+                        fontFamily: "'Lexend Mega', sans-serif",
+                        fontSize: '0.95rem',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        marginBottom: '1rem',
+                        marginTop: 0,
+                      }}>
+                        Feedback / QA
+                      </h3>
+                      <p style={{
+                        color: 'rgba(209, 213, 219, 0.8)',
+                        fontFamily: "'Figtree', sans-serif",
+                        fontSize: '0.85rem',
+                        marginBottom: '1rem',
+                        marginTop: 0,
+                      }}>
+                        Please share your feedback to help us improve
+                      </p>
+
+                      <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {/* What Worked */}
+                        <div>
+                          <label style={{
+                            display: 'block',
+                            color: '#00ff9d',
+                            fontFamily: "'Figtree', sans-serif",
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            marginBottom: '0.5rem',
+                          }}>
+                            What worked well?
+                          </label>
+                          <textarea
+                            value={reviewFormData.whatWorked}
+                            onChange={(e) => setReviewFormData({ ...reviewFormData, whatWorked: e.target.value })}
+                            placeholder="e.g., questions were clear, flow was smooth..."
+                            style={{
+                              width: '100%',
+                              minHeight: '60px',
+                              padding: '0.75rem',
+                              background: 'rgba(0, 0, 0, 0.8)',
+                              border: '1px solid rgba(0, 255, 157, 0.2)',
+                              borderRadius: '0.5rem',
+                              color: '#fff',
+                              fontFamily: "'Figtree', sans-serif",
+                              fontSize: '0.85rem',
+                              resize: 'vertical',
+                              boxSizing: 'border-box',
+                            }}
+                          />
+                        </div>
+
+                        {/* What Didn't Work */}
+                        <div>
+                          <label style={{
+                            display: 'block',
+                            color: '#ff6b6b',
+                            fontFamily: "'Figtree', sans-serif",
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            marginBottom: '0.5rem',
+                          }}>
+                            What could be improved?
+                          </label>
+                          <textarea
+                            value={reviewFormData.whatDidntWork}
+                            onChange={(e) => setReviewFormData({ ...reviewFormData, whatDidntWork: e.target.value })}
+                            placeholder="e.g., some terms were unclear, timer too short..."
+                            style={{
+                              width: '100%',
+                              minHeight: '60px',
+                              padding: '0.75rem',
+                              background: 'rgba(0, 0, 0, 0.8)',
+                              border: '1px solid rgba(255, 107, 107, 0.2)',
+                              borderRadius: '0.5rem',
+                              color: '#fff',
+                              fontFamily: "'Figtree', sans-serif",
+                              fontSize: '0.85rem',
+                              resize: 'vertical',
+                              boxSizing: 'border-box',
+                            }}
+                          />
+                        </div>
+
+                        {/* Suggestions */}
+                        <div>
+                          <label style={{
+                            display: 'block',
+                            color: '#3b82f6',
+                            fontFamily: "'Figtree', sans-serif",
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            marginBottom: '0.5rem',
+                          }}>
+                            Additional suggestions?
+                          </label>
+                          <textarea
+                            value={reviewFormData.suggestions}
+                            onChange={(e) => setReviewFormData({ ...reviewFormData, suggestions: e.target.value })}
+                            placeholder="e.g., add more context, include examples..."
+                            style={{
+                              width: '100%',
+                              minHeight: '60px',
+                              padding: '0.75rem',
+                              background: 'rgba(0, 0, 0, 0.8)',
+                              border: '1px solid rgba(59, 130, 246, 0.2)',
+                              borderRadius: '0.5rem',
+                              color: '#fff',
+                              fontFamily: "'Figtree', sans-serif",
+                              fontSize: '0.85rem',
+                              resize: 'vertical',
+                              boxSizing: 'border-box',
+                            }}
+                          />
+                        </div>
+
+                        {/* Error message */}
+                        {reviewError && (
+                          <div style={{
+                            color: '#ff6b6b',
+                            fontFamily: "'Figtree', sans-serif",
+                            fontSize: '0.85rem',
+                            padding: '0.75rem',
+                            background: 'rgba(255, 107, 107, 0.1)',
+                            borderRadius: '0.5rem',
+                            border: '1px solid rgba(255, 107, 107, 0.3)',
+                          }}>
+                            {reviewError}
+                          </div>
+                        )}
+
+                        {/* Submit button */}
+                        <button
+                          type="submit"
+                          disabled={isSubmittingReview}
+                          style={{
+                            padding: '0.75rem 1.5rem',
+                            background: '#a855f7',
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            color: '#fff',
+                            fontFamily: "'Lexend Mega', sans-serif",
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            cursor: isSubmittingReview ? 'wait' : 'pointer',
+                            opacity: isSubmittingReview ? 0.6 : 1,
+                            transition: 'all 0.3s',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSubmittingReview) {
+                              e.currentTarget.style.background = '#9333ea';
+                              e.currentTarget.style.boxShadow = '0 0 20px rgba(168, 85, 247, 0.6)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#a855f7';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
+                        >
+                          {isSubmittingReview ? 'Submitting...' : 'Submit Feedback'}
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* ── Success message after review submission ── */}
+                  {reviewSubmitted && (
+                    <div style={{
+                      width: '100%',
+                      padding: '1rem',
+                      background: 'rgba(34, 197, 94, 0.1)',
+                      border: '1px solid rgba(34, 197, 94, 0.5)',
+                      borderRadius: '0.75rem',
+                      textAlign: 'center',
+                    }}>
+                      <p style={{
+                        color: '#22c55e',
+                        fontFamily: "'Figtree', sans-serif",
+                        fontSize: '0.9rem',
+                        margin: 0,
+                      }}>
+                        ✓ Feedback submitted successfully
+                      </p>
+                    </div>
+                  )}
+
                   <div data-pdf-hide style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -1859,7 +2048,8 @@ const AssessmentResultsModal = ({
                     {/* Download PDF */}
                     <button
                       onClick={handleDownloadPdf}
-                      disabled={isGeneratingPdf}
+                      disabled={isGeneratingPdf || !reviewSubmitted}
+                      title={!reviewSubmitted ? 'Please submit feedback first' : undefined}
                       style={{
                         flex: '1 1 0',
                         minWidth: rs.btnMinWidth,
@@ -1874,13 +2064,13 @@ const AssessmentResultsModal = ({
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         fontSize: rs.btnFont,
-                        cursor: isGeneratingPdf ? 'wait' : 'pointer',
+                        cursor: (isGeneratingPdf || !reviewSubmitted) ? 'not-allowed' : 'pointer',
                         transition: 'all 0.3s',
                         boxShadow: '0 0 15px rgba(0, 255, 157, 0.1)',
-                        opacity: isGeneratingPdf ? 0.6 : 1,
+                        opacity: (isGeneratingPdf || !reviewSubmitted) ? 0.5 : 1,
                       }}
                       onMouseEnter={e => {
-                        if (!isGeneratingPdf) {
+                        if (!isGeneratingPdf && reviewSubmitted) {
                           e.currentTarget.style.background = '#00ff9d';
                           e.currentTarget.style.color = '#000';
                         }
@@ -1912,6 +2102,8 @@ const AssessmentResultsModal = ({
                     {/* Save & Create Account */}
                     <button
                       onClick={onCreateAccount}
+                      disabled={!reviewSubmitted}
+                      title={!reviewSubmitted ? 'Please submit feedback first' : undefined}
                       style={{
                         flex: '1 1 0',
                         minWidth: rs.btnMinWidth,
@@ -1926,11 +2118,14 @@ const AssessmentResultsModal = ({
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         fontSize: rs.btnFont,
-                        cursor: 'pointer',
+                        cursor: !reviewSubmitted ? 'not-allowed' : 'pointer',
+                        opacity: !reviewSubmitted ? 0.5 : 1,
                         transition: 'all 0.3s',
                       }}
                       onMouseEnter={e => {
-                        e.currentTarget.style.boxShadow = '0 0 25px rgba(168, 85, 247, 0.6)';
+                        if (reviewSubmitted) {
+                          e.currentTarget.style.boxShadow = '0 0 25px rgba(168, 85, 247, 0.6)';
+                        }
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.boxShadow = 'none';
@@ -2454,6 +2649,7 @@ function computeResultFromAnswers(layerAnswers) {
     oceanLabels: OCEAN_LABELS,                         // Dimension label map (short/full/dutch)
     oceanColors: OCEAN_COLORS,                         // Dimension color map for UI
     neuroticismTrigger: extendedOcean?.neuroticismTrigger || null,
+    oceanImported: false,                              // Flag: only true if user explicitly imported OCEAN report
     // Raw data for future API agent
     _archetypeScores: archetypeScores,
     _primaryKey: mainKey,

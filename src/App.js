@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import NebulaBackground from './components/NebulaBackground';
 import NebulaOverlay from './components/NebulaOverlay';
 import { assessmentSubjects } from './pages/assessment/assessmentData';
@@ -114,7 +114,7 @@ const App = () => {
   const [mounted, setMounted] = useState(false);
   const [mountNebula, setMountNebula] = useState(false); // Mount nebula after imports are done
   const nebulaReadyRef = useRef(null); // resolves when NebulaBackground fires onReady
-  const { language, toggleLanguage, t, tArray } = useLanguage();
+  const { language, toggleLanguage, t } = useLanguage();
   const [currentFrame, setCurrentFrame] = useState(0); // 0 to 29 discrete frames
   const [currentSlide, setCurrentSlide] = useState(0);
   const [pyramidScrollProgress, setPyramidScrollProgress] = useState(0); // Separate scroll for pyramid layers (0-1)

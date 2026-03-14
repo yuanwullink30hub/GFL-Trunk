@@ -252,36 +252,47 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // ── Spatial confinement: nebulae across the viewport ──
 
+    // Large shared gas envelope — connects all clouds into one continuous mass
+    vec2 nEnv = p1 + warpOffset * 0.5 - vec2(0.0, -0.02);
+    float nebEnvelope = exp(-(nEnv.x * nEnv.x * 0.4 + nEnv.y * nEnv.y * 0.35));
 
-    // Nebula A: Upper-center — magenta-purple, main feature
-    vec2 nA = p1 + warpOffset - vec2(-0.08, 0.18);
-    float nebA = exp(-(nA.x * nA.x * 4.5 + nA.y * nA.y * 3.6));
+    // Nebula A: Upper-center — magenta-purple, main feature (wide, pulled toward center)
+    vec2 nA = p1 + warpOffset - vec2(-0.05, 0.12);
+    float nebA = exp(-(nA.x * nA.x * 1.4 + nA.y * nA.y * 1.2));
 
-    // Nebula B: Lower-left — warm orange-gold
-    vec2 nB = p1 + warpOffset - vec2(-0.28, -0.25);
-    float nebB = exp(-(nB.x * nB.x * 5.2 + nB.y * nB.y * 4.5));
+    // Nebula B: Lower-left — warm orange-gold (wide, pulled toward center)
+    vec2 nB = p1 + warpOffset - vec2(-0.18, -0.16);
+    float nebB = exp(-(nB.x * nB.x * 1.6 + nB.y * nB.y * 1.4));
 
-    // Nebula C: Right — phoenix warm, compact
-    vec2 nC_base = p1 + warpOffset - vec2(0.30, -0.12);
-    float nebC_body = exp(-(nC_base.x * nC_base.x * 10.0 + nC_base.y * nC_base.y * 8.0));
+    // Nebula C: Right — phoenix warm, wider base (pulled toward center)
+    vec2 nC_base = p1 + warpOffset - vec2(0.20, -0.06);
+    float nebC_body = exp(-(nC_base.x * nC_base.x * 2.8 + nC_base.y * nC_base.y * 2.2));
     vec2 nC_lw = nC_base - vec2(-0.06, -0.02);
     vec2 lw = vec2(0.866 * nC_lw.x + 0.5 * nC_lw.y, -0.5 * nC_lw.x + 0.866 * nC_lw.y);
-    float nebC_lw = exp(-(lw.x * lw.x * 6.0 + lw.y * lw.y * 28.0));
+    float nebC_lw = exp(-(lw.x * lw.x * 2.5 + lw.y * lw.y * 10.0));
     vec2 nC_rw = nC_base - vec2(0.07, -0.02);
     vec2 rw = vec2(0.866 * nC_rw.x - 0.5 * nC_rw.y, 0.5 * nC_rw.x + 0.866 * nC_rw.y);
-    float nebC_rw = exp(-(rw.x * rw.x * 6.0 + rw.y * rw.y * 28.0));
+    float nebC_rw = exp(-(rw.x * rw.x * 2.5 + rw.y * rw.y * 10.0));
     vec2 nC_hd = nC_base - vec2(0.01, 0.05);
     vec2 hd = vec2(0.966 * nC_hd.x + 0.259 * nC_hd.y, -0.259 * nC_hd.x + 0.966 * nC_hd.y);
-    float nebC_hd = exp(-(hd.x * hd.x * 24.0 + hd.y * hd.y * 6.0));
+    float nebC_hd = exp(-(hd.x * hd.x * 8.0 + hd.y * hd.y * 2.5));
     vec2 nC_tl = nC_base - vec2(-0.015, -0.07);
     vec2 tl = vec2(0.985 * nC_tl.x + 0.174 * nC_tl.y, -0.174 * nC_tl.x + 0.985 * nC_tl.y);
-    float nebC_tl = exp(-(tl.x * tl.x * 20.0 + tl.y * tl.y * 4.0));
+    float nebC_tl = exp(-(tl.x * tl.x * 7.0 + tl.y * tl.y * 2.0));
     float nebC = max(max(max(nebC_body, nebC_lw), max(nebC_rw, nebC_hd)), nebC_tl);
 
+    // Noise-driven breakup — sculpts organic holes and tendrils in the gas
+    float breakup = warpedFbm(p1 * 2.8 + vec2(3.3, 7.7) + t * 0.3, t * 0.8);
+    float breakupMask = smoothstep(0.28, 0.52, breakup);
 
-    // Combined cloud mask — warm clouds contribute equally
-    float cloudMask = clamp(nebA + nebB * 1.0 + nebC * 0.85, 0.0, 1.0);
-    cloudMask = pow(cloudMask, 1.8); // sharpen edges
+    // Combined cloud mask — envelope connects, clouds overlap and add up
+    // Allow values above 1.0 before clamping so overlaps create brighter collision zones
+    float rawCloud = nebA + nebB * 1.0 + nebC * 0.85 + nebEnvelope * 0.35;
+    float cloudMask = clamp(rawCloud, 0.0, 1.0);
+    // Gentle edge softening instead of harsh sharpening
+    cloudMask = pow(cloudMask, 1.1);
+    // Apply organic breakup — creates holes and tendrils
+    cloudMask *= mix(0.65, 1.0, breakupMask);
 
     // Per-nebula color identity: 0 = purple/magenta, 1 = warm orange
     // Each nebula leans toward a hue but all contain both colors swirling through
@@ -543,7 +554,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Compose nebula with depth layering — bg stars show through voids
     vec3 bgStars = color; // save accumulated background stars
-    color = deepColor + bgStars * (1.0 - cloudMask); // stars visible in voids, hidden behind gas
+    float starOcclusion = pow(1.0 - cloudMask, 1.8); // moderate curve — stars fade in dense gas
+    color = deepColor + bgStars * starOcclusion; // stars visible in voids, hidden behind gas
 
     // ── Background Gaussian glow — deep-space luminosity behind main gas ──
     // Adds subtle color wash visible in voids and partially through thin gas
@@ -554,8 +566,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     bgGlow += mix(vec3(0.028, 0.010, 0.005), vec3(0.048, 0.022, 0.010), n1) * nebBG2;
     // Cool blue — right haze
     bgGlow += mix(vec3(0.007, 0.010, 0.025), vec3(0.016, 0.022, 0.045), n1) * nebBG3;
-    // Show through voids, partially dimmed behind dense foreground gas
-    color += bgGlow * (1.0 - cloudMask * 0.6);
+    // Show through voids, mostly hidden behind dense foreground gas
+    color += bgGlow * pow(1.0 - cloudMask, 1.4);
 
     color = mix(color, backGasColor, backMask * 0.50);
     color *= (1.0 - absorption);
@@ -599,7 +611,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // ── MIDGROUND STARS (partially occluded by gas) ──
     vec2 midStarUv = uv + mapOff * 0.35; // medium parallax
-    float gasOcclusion = 1.0 - cloudMask * 0.65; // dimmed inside dense gas
+    float gasOcclusion = pow(1.0 - cloudMask, 1.6); // moderate — dim in dense gas, visible at edges
 
     // Medium midground stars — partially hidden by nebula
     float mS1 = stars(midStarUv, 45.0, 1.0);
@@ -648,10 +660,11 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // ── FOREGROUND STARS (in front of everything) ──
     vec2 fgStarUv = uv + mapOff * 0.55; // fastest parallax — closest layer
 
-    // Foreground small bright stars
+    // Foreground small bright stars — slightly dimmed in densest gas
+    float fgOcclusion = mix(1.0, 0.5, smoothstep(0.6, 0.95, cloudMask));
     float fgS1 = stars(fgStarUv, 30.0, 1.0);
     vec3 fgSc1 = mix(vec3(0.85, 0.85, 1.0), vec3(1.0, 0.9, 0.6), hash(floor(fgStarUv * 30.0) + 77.0));
-    color += fgSc1 * fgS1 * 0.50;
+    color += fgSc1 * fgS1 * 0.50 * fgOcclusion;
 
     // ── Large bright foreground stars — with diffraction spikes ──
     {
@@ -682,7 +695,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
                                          vec3(1.0, 0.7, 0.4);
             brightness *= (0.85 + 0.15 * sin(u_time * (1.0 + 2.0 * hash(cell + 8.0)) + hash(cell + 9.0) * 6.28));
             brightness *= (0.4 + 0.6 * distFactor);
-            color += starColor * max(brightness, 0.0);
+            color += starColor * max(brightness, 0.0) * fgOcclusion;
           }
         }
       }
@@ -714,11 +727,11 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
                 float starSize = (0.012 + 0.012 * cDist) * (0.7 + 0.3 * hash(cell + fi + 325.0));
                 float subBright = smoothstep(starSize, starSize * 0.1, subDist) * (0.3 + 0.4 * cDist) * (0.6 + 0.4 * hash(cell + fi + 320.0));
                 vec3 subColor = mix(vec3(0.7, 0.75, 1.0), vec3(1.0, 0.9, 0.6), hash(cell + fi + 330.0));
-                color += subColor * max(subBright, 0.0);
+                color += subColor * max(subBright, 0.0) * fgOcclusion;
               }
               // Cluster ambient glow — stronger for closer clusters
               float clGlow = exp(-clusterDist * clusterDist * (12.0 / (cDist * cDist))) * 0.04 * cDist;
-              color += vec3(0.6, 0.6, 0.8) * clGlow;
+              color += vec3(0.6, 0.6, 0.8) * clGlow * fgOcclusion;
             }
           }
         }

@@ -73,7 +73,7 @@ const AssessmentResultsModal = ({
   const [aiSections, setAiSections] = useState(null);
   const [aiReady, setAiReady] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
-  const [aiStage, setAiStage] = useState(0); // 0=waiting, 1=data sent, 2=AI done, 3=integrated
+  const [, setAiStage] = useState(0); // 0=waiting, 1=data sent, 2=AI done, 3=integrated
   const aiCalledRef = useRef(false);
   const onAiReadyRef = useRef(onAiReady);
   onAiReadyRef.current = onAiReady;
@@ -190,7 +190,8 @@ const AssessmentResultsModal = ({
   // Removed: stageLabels (using simpler single-message loading state now)
 
   // Displayed sections: AI-generated when available, template fallback otherwise
-  const displaySections = aiSections || result?.analysisSections || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const displaySections = useMemo(() => aiSections || result?.analysisSections || [], [aiSections, result]);
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);

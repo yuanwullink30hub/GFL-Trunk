@@ -871,7 +871,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                   style={{ marginTop: '0.15rem', accentColor: '#a855f7', width: '1rem', height: '1rem', flexShrink: 0, cursor: 'pointer' }}
                 />
                 <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureDescFont, lineHeight: 1.6 }}>
-                  Ik heb de <strong style={{ color: '#c4b5fd' }}>Algemene Voorwaarden</strong> en het <strong style={{ color: '#c4b5fd' }}>Privacybeleid</strong> gelezen en ga hiermee akkoord. Ik begrijp dat GardenForLife mijn e-mailadres en accountgegevens verwerkt om de dienst te leveren.
+                  Ik heb de <a href="#/algemene-voorwaarden" style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Algemene Voorwaarden</a> en het <a href="#/privacybeleid" style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Privacybeleid</a> gelezen en ga hiermee akkoord. Ik begrijp dat GardenForLife mijn e-mailadres en accountgegevens verwerkt om de dienst te leveren.
                 </span>
               </label>
 

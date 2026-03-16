@@ -29,6 +29,7 @@ import {
   getAdminReviews,
   logActivity,
   getAccessLog,
+  clearSessions,
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
@@ -350,7 +351,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
       {/* ── Tab Inhoud ── */}
       {tab === 'overview' && <OverviewTab user={user} />}
       {tab === 'users' && <UsersTab currentUserId={user.id} />}
-      {tab === 'assessments' && <AssessmentsTab />}
+      {tab === 'assessments' && <AssessmentsTab adminEmail={user?.email} />}
       {tab === 'questions' && <QuestionsTab />}
       {tab === 'prompts' && <PromptsTab />}
       {tab === 'formulieren' && <FormulierenTab />}
@@ -912,7 +913,7 @@ const UsersTab = memo(({ currentUserId }) => {
   );
 });
 
-const AssessmentsTab = memo(() => {
+const AssessmentsTab = memo(({ adminEmail }) => {
   const isMobile = React.useContext(MobileCtx);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -944,6 +945,7 @@ const AssessmentsTab = memo(() => {
         reportId: String(id),
         reportType: 'assessment',
         message: d?.archetypeKey || '',
+        email: adminEmail || '',
       }).catch((e) => console.warn('[GFL] logActivity failed:', e));
       
       // Fetch reviews for this assessment
@@ -2900,14 +2902,14 @@ const AuditLogTab = memo(() => {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '35vh', overflowY: 'auto' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 1fr 1.4fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(74,222,128,0.15)' }}>
-                  {['TIJDSTIP', 'TYPE', 'REPORT ID', 'DETAIL'].map(h => (
+                <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.5fr 1fr 1.6fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(74,222,128,0.15)' }}>
+                  {['TIJDSTIP', 'TYPE', 'REPORT ID', 'ADMIN / DETAIL'].map(h => (
                     <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#4ade8080', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
                   ))}
                 </div>
                 {accessEvents.map((ev, i) => (
                   <div key={i} style={{
-                    display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 1fr 1.4fr',
+                    display: 'grid', gridTemplateColumns: '1.6fr 0.5fr 1fr 1.6fr',
                     gap: '0.3rem', padding: '0.3rem 0.5rem', alignItems: 'center',
                     backgroundColor: i % 2 === 0 ? 'rgba(74,222,128,0.02)' : 'transparent',
                     borderLeft: `2px solid ${EVENT_COLORS[ev.type] || '#888'}`,
@@ -2920,10 +2922,14 @@ const AuditLogTab = memo(() => {
                       {EVENT_ICONS[ev.type]} {ev.type === 'report_view' ? 'rapport' : 'login'}
                     </div>
                     <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#34d399', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {ev.reportId || '—'}
+                      {ev.reportId || (ev.message && ev.type !== 'report_view' ? ev.message : '—')}
                     </div>
-                    <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {ev.message || ev.email || '—'}
+                    <div style={{ fontSize: 'max(7px, 0.38vw)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {ev.email ? (
+                        <span style={{ color: '#f59e0b' }}>👤 {ev.email}{ev.message && ev.type === 'report_view' ? <span style={{ color: '#64748b' }}> · {ev.message}</span> : null}</span>
+                      ) : (
+                        <span style={{ color: '#64748b' }}>{ev.message || '—'}</span>
+                      )}
                     </div>
                   </div>
                 ))}

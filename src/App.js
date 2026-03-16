@@ -321,7 +321,22 @@ const App = () => {
 
   // Handler for closing sections - navigate back to main
   const handleCloseSection = useCallback(() => {
+    window.history.replaceState(null, '', window.location.pathname);
     navigateToSection('main');
+  }, [navigateToSection]);
+
+  // Deep-link: #/algemene-voorwaarden etc. opens the Eyedentity page with correct tab
+  useEffect(() => {
+    const POLICY_SLUGS = ['algemene-voorwaarden','privacybeleid','toestemming-art9','cookiebeleid','ai-transparantie','intellectueel-eigendom','gebruiksvoorwaarden-misbruik','profiel'];
+    const checkHash = () => {
+      const slug = window.location.hash.replace('#/', '').replace('#', '');
+      if (slug && POLICY_SLUGS.includes(slug)) {
+        navigateToSection('menu');
+      }
+    };
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+    return () => window.removeEventListener('hashchange', checkHash);
   }, [navigateToSection]);
 
   useEffect(() => {

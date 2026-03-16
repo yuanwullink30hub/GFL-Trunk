@@ -549,9 +549,9 @@ const EXTENDED_DESCRIPTIONS = {
   },
   RULER_CHAOS: {
     name: 'The Maverick',
-    subtitle: 'Ruler + Chaos',
+    subtitle: 'De onorthodoxe heerser. Ik navigeer de realiteit via het bouwen van robuuste structuren, maar behoudt de ruimte om mijn eigen patronen te doorbreken wanneer evolutie daarom vraagt.',
     harmony: false,
-    combination: 'De Maverick is de Heerser die niet regeert volgens het boekje. De Chaos-groep geeft de Ruler onconventionele methoden. Je leidt niet door traditie maar door disruptieve innovatie.',
+    combination: 'Mijn profiel suggereert binnen dit model een uiterst zeldzame samenwerking tussen de drang naar orde (Ruler) en de drang naar de onthullende waarheid (Outlaw). De kracht die ontstaat wanneer deze twee fundamenteel tegengestelde gedragspatronen elkaar ontmoeten, is uitzonderlijk. ik hoef niet te kiezen tussen keiharde controle en radicale disruptie; het is uiterst aannemelijk dat mijn zenuwstelsel deze uitersten simultaan kan inzetten zonder fysiologische kortsluiting. Dit levert massieve, onvoorspelbare daadkracht op.',
     shadow: 'Onconventioneel leiderschap kan instabiliteit creëren. De Outlaw herinnert je: zelfs de meest disruptieve leider heeft een anker nodig.',
   },
   RULER_ABSTRACT: {

@@ -33,6 +33,7 @@ module.exports = {
 
   // AI provider keys
   ai: {
+    defaultProvider: process.env.DEFAULT_AI_PROVIDER || 'gemini',
     openai: {
       apiKey: process.env.OPENAI_API_KEY || '',
       baseUrl: 'https://api.openai.com/v1',
@@ -47,6 +48,10 @@ module.exports = {
       apiKey: process.env.GROK_API_KEY || '',
       baseUrl: 'https://api.x.ai/v1',
       defaultModel: 'grok-3',
+    },
+    claude: {
+      apiKey: process.env.ANTHROPIC_API_KEY || '',
+      defaultModel: 'claude-opus-4-5',
     },
   },
 

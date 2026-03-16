@@ -16,6 +16,133 @@ const S = {
   td: { border: '1px solid rgba(168,85,247,0.2)', padding: '0.5rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: '0.8rem' },
 };
 
+const RetentionForm = () => {
+  const [email, setEmail] = React.useState('');
+  const fullSubject = email ? `Verwijderingsverzoek — ${email}` : 'Verwijderingsverzoek — [uw e-mailadres]';
+  const mailtoHref = `mailto:yuanwullink30@gfl.community?subject=${encodeURIComponent(fullSubject)}`;
+  const cyanBox = { background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '0.5rem', padding: '1.25rem', margin: '1rem 0' };
+  return (
+    <>
+      <h2 style={{ color: '#e2e8f0', fontSize: '1.05rem', marginBottom: '0.3rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold', textTransform: 'none', letterSpacing: '0.01em' }}>Garden For Life — Uw data, uw rechten</h2>
+      <p style={S.updated}>Versiedatum: 16 maart 2026&nbsp;&nbsp;|&nbsp;&nbsp;Versie 1.0&nbsp;&nbsp;|&nbsp;&nbsp;Taal: Nederlands</p>
+      <p style={S.p}>U heeft het recht uw gegevens in te zien, te corrigeren of te laten verwijderen. Op deze pagina vindt u een volledig overzicht van wat wij bewaren, hoe lang, en hoe u een verwijderingsverzoek kunt indienen. Wij verwerken uw verzoek binnen 30 dagen.</p>
+
+      <h2 style={S.h2}>Direct een Verwijderingsverzoek Indienen</h2>
+      <p style={S.p}>Wilt u uw gegevens laten verwijderen? Stuur een e-mail naar:</p>
+      <div style={cyanBox}>
+        <p style={{ ...S.p, margin: '0 0 0.5rem', color: '#00d4ff', fontWeight: 'bold' }}>📧 yuanwullink30@gfl.community</p>
+        <p style={{ ...S.p, margin: '0 0 0.75rem' }}>Onderwerp: Verwijderingsverzoek — <strong style={S.strong}>[uw e-mailadres]</strong></p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0 0.75rem' }}>
+          <input
+            type="email"
+            placeholder="uw@e-mailadres.nl"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            style={{ flex: 1, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,212,255,0.35)', borderRadius: '0.35rem', padding: '0.5rem 0.75rem', color: '#e2e8f0', fontFamily: "'Figtree', sans-serif", fontSize: '0.82rem', outline: 'none' }}
+          />
+          <a
+            href={mailtoHref}
+            style={{ display: 'inline-block', background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.4)', borderRadius: '0.35rem', padding: '0.5rem 1rem', color: '#00d4ff', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.72rem', textDecoration: 'none', whiteSpace: 'nowrap' }}
+          >
+            E-MAIL OPENEN →
+          </a>
+        </div>
+        <p style={{ ...S.p, margin: 0, fontSize: '0.76rem', color: '#94a3b8' }}>Vul uw e-mailadres in om het onderwerp automatisch in te vullen, en klik op "E-MAIL OPENEN".</p>
+      </div>
+      <p style={S.p}>Vermeld in uw e-mail:</p>
+      <ul style={S.ul}>
+        <li style={S.li}>Het e-mailadres waarmee u bent geregistreerd</li>
+        <li style={S.li}>Wat u wilt laten verwijderen — uw volledige account, alleen het rapport, of specifieke gegevens</li>
+        <li style={S.li}>Optioneel: de reden voor uw verzoek</li>
+      </ul>
+      <p style={S.p}>Garden For Life bevestigt ontvangst binnen <strong style={S.strong}>2 werkdagen</strong> en voert de verwijdering uit binnen <strong style={S.strong}>30 dagen</strong>. U ontvangt een bevestiging zodra uw gegevens zijn verwijderd.</p>
+
+      <h2 style={S.h2}>1. Wat Bewaren Wij en Hoe Lang?</h2>
+      <p style={S.p}>Garden For Life maakt onderscheid tussen twee typen opslag: gegevens op onze servers en gegevens in uw eigen browser.</p>
+
+      <h3 style={S.h3}>1.1 Serveropslag — Gegevens bij Garden For Life</h3>
+      <table style={S.table}>
+        <thead><tr><th style={S.th}>Categorie</th><th style={S.th}>Bewaartermijn</th><th style={S.th}>Wat gebeurt er bij verwijdering?</th></tr></thead>
+        <tbody>
+          <tr><td style={S.td}>E-mailadres &amp; accountgegevens</td><td style={S.td}>Zolang uw account actief is</td><td style={S.td}>Permanent verwijderd binnen 30 dagen na verzoek</td></tr>
+          <tr><td style={S.td}>Volledig rapport (betafase)</td><td style={S.td}>Tot uiterlijk 27-09-2026</td><td style={S.td}>Automatisch verwijderd op betaeinddatum — ook eerder op verzoek</td></tr>
+          <tr><td style={S.td}>Samenvattingskaart (liveversie)</td><td style={S.td}>Zolang uw account actief is</td><td style={S.td}>Permanent verwijderd binnen 30 dagen na verzoek</td></tr>
+          <tr><td style={S.td}>Auditloggegevens (server)</td><td style={S.td}>12 maanden</td><td style={S.td}>Automatisch verwijderd na 12 maanden</td></tr>
+          <tr><td style={S.td}>Assessmentantwoorden (invoer AI)</td><td style={S.td}>Niet opgeslagen</td><td style={S.td}>Worden nooit bewaard na rapportgeneratie</td></tr>
+        </tbody>
+      </table>
+      <div style={S.box}>
+        <p style={{ ...S.p, margin: 0 }}><strong style={S.strong}>Betafase:</strong> Alle betadata wordt uiterlijk op <strong style={S.strong}>27-09-2026</strong> permanent en onherroepelijk verwijderd — ook zonder dat u een verzoek hoeft in te dienen. Garden For Life documenteert deze verwijdering intern.</p>
+      </div>
+
+      <h3 style={{ ...S.h3, marginTop: '1.5rem' }}>1.2 Lokale Browseropslag — Gegevens op Uw Eigen Apparaat</h3>
+      <p style={S.p}>Garden For Life gebruikt geen HTTP-cookies maar wel <strong style={S.strong}>localStorage</strong> — browseropslag die uitsluitend op uw apparaat staat. Garden For Life heeft geen toegang tot deze gegevens en kan ze ook niet voor u verwijderen.</p>
+      <table style={S.table}>
+        <thead><tr><th style={S.th}>Sleutel</th><th style={S.th}>Bewaartermijn</th><th style={S.th}>Hoe verwijderen?</th></tr></thead>
+        <tbody>
+          <tr><td style={S.td}>gfl_token (inlogtoken)</td><td style={S.td}>Tot uitloggen</td><td style={S.td}>Automatisch bij uitloggen</td></tr>
+          <tr><td style={S.td}>gfl_assessment_session</td><td style={S.td}>Tot nieuwe assessment</td><td style={S.td}>Automatisch overschreven</td></tr>
+          <tr><td style={S.td}>gfl_assessment_history</td><td style={S.td}>Lokaal permanent</td><td style={S.td}>Zelf wissen via browserinstellingen</td></tr>
+          <tr><td style={S.td}>gfl_beta_access</td><td style={S.td}>Lokaal permanent</td><td style={S.td}>Zelf wissen via browserinstellingen</td></tr>
+          <tr><td style={S.td}>Werkruimtedata (notities, contacten, agenda)</td><td style={S.td}>Lokaal permanent</td><td style={S.td}>Zelf wissen via browserinstellingen</td></tr>
+        </tbody>
+      </table>
+      <p style={{ ...S.p, marginTop: '0.75rem' }}>Lokale opslag wissen via uw browser:</p>
+      <ul style={S.ul}>
+        <li style={S.li}><strong style={S.strong}>Chrome:</strong> Instellingen → Privacy en beveiliging → Browsegegevens verwijderen → Cookies en andere sitegegevens → gardenforlife.nl</li>
+        <li style={S.li}><strong style={S.strong}>Firefox:</strong> Instellingen → Privacy &amp; Beveiliging → Cookies en sitegegevens → gardenforlife.nl → Verwijder</li>
+        <li style={S.li}><strong style={S.strong}>Safari:</strong> Voorkeuren → Privacy → Beheer websitegegevens → gardenforlife.nl → Verwijder</li>
+        <li style={S.li}><strong style={S.strong}>Edge:</strong> Instellingen → Privacy, zoeken en services → Browsegegevens wissen</li>
+      </ul>
+      <div style={S.warn}>
+        <p style={{ ...S.p, margin: 0 }}><strong style={{ color: '#fb923c' }}>Let op:</strong> het wissen van lokale opslag verwijdert ook uw inlogstatus, werkruimtedata en assessmentgeschiedenis. Deze gegevens zijn daarna niet herstelbaar — ook niet door Garden For Life.</p>
+      </div>
+
+      <h2 style={S.h2}>2. Al Uw Rechten op een Rij</h2>
+      <p style={S.p}>Op grond van de AVG heeft u de volgende rechten. U kunt ze allemaal uitoefenen via <strong style={{ color: '#00d4ff' }}>yuanwullink30@gfl.community</strong>:</p>
+      <table style={S.table}>
+        <thead><tr><th style={S.th}>Recht</th><th style={S.th}>Wat kunt u doen?</th><th style={S.th}>Termijn</th></tr></thead>
+        <tbody>
+          <tr><td style={S.td}>Inzage (Art. 15)</td><td style={S.td}>Opvragen welke servergegevens wij over u hebben opgeslagen</td><td style={S.td}>Binnen 30 dagen</td></tr>
+          <tr><td style={S.td}>Rectificatie (Art. 16)</td><td style={S.td}>Onjuiste gegevens laten corrigeren</td><td style={S.td}>Binnen 30 dagen</td></tr>
+          <tr><td style={S.td}>Verwijdering (Art. 17)</td><td style={S.td}>Uw volledige account en serverdata laten verwijderen</td><td style={S.td}>Binnen 30 dagen</td></tr>
+          <tr><td style={S.td}>Beperking (Art. 18)</td><td style={S.td}>Verwerking tijdelijk laten pauzeren tijdens een bezwaarprocedure</td><td style={S.td}>Binnen 30 dagen</td></tr>
+          <tr><td style={S.td}>Dataportabiliteit (Art. 20)</td><td style={S.td}>Uw opgeslagen serverdata opvragen als JSON-bestand</td><td style={S.td}>Binnen 30 dagen</td></tr>
+          <tr><td style={S.td}>Bezwaar (Art. 21)</td><td style={S.td}>Bezwaar maken tegen verwerking op basis van gerechtvaardigd belang</td><td style={S.td}>Binnen 30 dagen</td></tr>
+          <tr><td style={S.td}>Toestemming intrekken (Art. 7 &amp; 9)</td><td style={S.td}>Toestemming voor verwerking van psychologische profieldata intrekken</td><td style={S.td}>Direct van kracht — data verwijderd binnen 30 dagen</td></tr>
+        </tbody>
+      </table>
+      <p style={S.p}>Klacht indienen: Bent u niet tevreden met hoe Garden For Life omgaat met uw gegevens? U kunt een klacht indienen bij de <strong style={S.strong}>Autoriteit Persoonsgegevens</strong> via <a href="https://www.autoriteitpersoonsgegevens.nl" target="_blank" rel="noopener noreferrer" style={{ color: '#00d4ff' }}>www.autoriteitpersoonsgegevens.nl</a> of 088 – 1805 250.</p>
+
+      <h2 style={S.h2}>3. Uw Volledige Account Verwijderen</h2>
+      <p style={S.p}>Bij een volledig accountverwijderingsverzoek verwijdert Garden For Life het volgende van onze servers:</p>
+      <ul style={S.ul}>
+        <li style={S.li}>Uw e-mailadres en accountgegevens</li>
+        <li style={S.li}>Uw opgeslagen rapport (betafase) of samenvattingskaart (liveversie)</li>
+        <li style={S.li}>Alle gekoppelde toestemmingsregistraties</li>
+        <li style={S.li}>Auditloggegevens na de wettelijke bewaartermijn van 12 maanden</li>
+      </ul>
+      <p style={S.p}><strong style={S.strong}>Wat niet automatisch wordt verwijderd bij accountverwijdering:</strong></p>
+      <ul style={S.ul}>
+        <li style={S.li}>Uw lokale browseropslag (localStorage) — dit staat op uw eigen apparaat en kunt u zelf wissen zoals beschreven in Artikel 1.2</li>
+      </ul>
+      <p style={S.p}>Na volledige verwijdering ontvangt u een bevestigingse-mail. Uw account kan daarna niet worden hersteld.</p>
+
+      <h2 style={S.h2}>4. Betafase — Automatische Verwijdering</h2>
+      <p style={S.p}>Alle data die tijdens de betafase is verzameld wordt automatisch verwijderd op <strong style={S.strong}>27 september 2026</strong>, ongeacht of u een verzoek indient. Dit omvat:</p>
+      <ul style={S.ul}>
+        <li style={S.li}>Alle gegenereerde rapporten opgeslagen op onze servers</li>
+        <li style={S.li}>Alle accountgegevens van betadeelnemers die hun account niet hebben omgezet naar een liveaccount</li>
+        <li style={S.li}>Alle toestemmingsregistraties uit de betafase</li>
+      </ul>
+      <p style={S.p}>Garden For Life documenteert de verwijdering en stuurt een bevestiging naar geregistreerde betadeelnemers.</p>
+      <div style={S.box}>
+        <p style={{ ...S.p, margin: 0 }}>Wilt u uw data eerder verwijderd hebben dan 27-09-2026? Dien een verwijderingsverzoek in via <strong style={{ color: '#00d4ff' }}>yuanwullink30@gfl.community</strong> — wij verwijderen uw data dan binnen 30 dagen na ontvangst van uw verzoek.</p>
+      </div>
+    </>
+  );
+};
+
 export const POLICY_CONTENT = {
   terms: (
     <>
@@ -699,40 +826,5 @@ export const POLICY_CONTENT = {
     </>
   ),
 
-  retention: (
-    <>
-      <p style={S.updated}>Versie 1.0 — {new Date().toLocaleDateString('nl-NL')}</p>
-      <p style={S.p}>Dit beleid beschrijft hoe lang Garden for Life jouw persoonsgegevens bewaart en hoe je verwijdering kunt aanvragen, in overeenstemming met de AVG (GDPR).</p>
-      <h2 style={S.h2}>1. Bewaartermijnen per Gegevenscategorie</h2>
-      <table style={S.table}>
-        <thead><tr><th style={S.th}>Categorie</th><th style={S.th}>Bewaartermijn</th><th style={S.th}>Grondslag</th></tr></thead>
-        <tbody>
-          <tr><td style={S.td}>Accountgegevens</td><td style={S.td}>Tot verwijdering account + 30 dagen</td><td style={S.td}>Contractuele noodzaak</td></tr>
-          <tr><td style={S.td}>Assessmentresultaten</td><td style={S.td}>Tot verwijdering account</td><td style={S.td}>Toestemming</td></tr>
-          <tr><td style={S.td}>Bijzondere persoonsgegevens (Art. 9)</td><td style={S.td}>Tot intrekking toestemming</td><td style={S.td}>Expliciete toestemming</td></tr>
-          <tr><td style={S.td}>Betaalgegevens</td><td style={S.td}>7 jaar</td><td style={S.td}>Wettelijke verplichting (belasting)</td></tr>
-          <tr><td style={S.td}>Logbestanden / beveiliging</td><td style={S.td}>90 dagen</td><td style={S.td}>Gerechtvaardigd belang</td></tr>
-          <tr><td style={S.td}>Backups</td><td style={S.td}>30 dagen na primaire verwijdering</td><td style={S.td}>Technische noodzaak</td></tr>
-        </tbody>
-      </table>
-      <h2 style={S.h2}>2. Jouw Recht op Verwijdering</h2>
-      <p style={S.p}>Op grond van de AVG heb je het recht om verwijdering van jouw persoonsgegevens te verzoeken (<strong style={S.strong}>"recht op vergetelheid"</strong>). Wij handelen jouw verzoek af binnen <strong style={S.strong}>30 dagen</strong>.</p>
-      <div style={S.box}>
-        <p style={{...S.p, margin: 0}}><strong style={S.strong}>Verzoek indienen via:</strong><br/>📧 privacy@gardenforlife.nl<br/>Onderwerp: "Verzoek tot gegevensverwijdering"</p>
-      </div>
-      <h2 style={S.h2}>3. Uitzonderingen op Verwijdering</h2>
-      <p style={S.p}>Wij kunnen verwijdering weigeren of uitstellen wanneer:</p>
-      <ul style={S.ul}>
-        <li style={S.li}>Er een wettelijke bewaarplicht van toepassing is (bijv. fiscale wetgeving)</li>
-        <li style={S.li}>De gegevens noodzakelijk zijn voor een lopende juridische procedure</li>
-        <li style={S.li}>Er een gerechtvaardigd belang bestaat dat zwaarder weegt dan jouw belang</li>
-      </ul>
-      <h2 style={S.h2}>4. Automatische Verwijdering</h2>
-      <p style={S.p}>Na het verlopen van de bewaartermijn worden gegevens automatisch en veilig verwijderd of geanonimiseerd. Backupsystemen worden gesynchroniseerd binnen 30 dagen na primaire verwijdering.</p>
-      <h2 style={S.h2}>5. Account Zelf Verwijderen</h2>
-      <p style={S.p}>Je kunt je account en alle bijbehorende gegevens zelf verwijderen via je profielinstellingen. Na bevestiging wordt je account onmiddellijk gedeactiveerd en alle gegevens verwijderd binnen de hierboven genoemde termijnen.</p>
-      <h2 style={S.h2}>6. Contact</h2>
-      <p style={S.p}><strong style={S.strong}>Functionaris Gegevensbescherming:</strong><br/>📧 privacy@gardenforlife.nl<br/>📬 Garden for Life, Nederland</p>
-    </>
-  ),
+  retention: <RetentionForm />,
 };

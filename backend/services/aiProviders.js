@@ -11,6 +11,7 @@
  */
 const config = require('../config');
 const { GoogleGenAI } = require('@google/genai');
+const Anthropic = require('@anthropic-ai/sdk');
 
 // ─────────────────────────────────────────────────────────────
 // Provider registry
@@ -43,6 +44,11 @@ const PROVIDERS = {
       'Content-Type': 'application/json',
     }),
   },
+
+  claude: {
+    name: 'Claude van Anthropic',
+    useClaudeSDK: true,
+  },
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -61,7 +67,7 @@ const PROVIDERS = {
  * @returns {Promise<{ analysis: string, model: string, provider: string, promptTokens: number, completionTokens: number }>}
  */
 async function callAI({
-  provider = 'gemini',
+  provider = config.ai.defaultProvider || 'gemini',
   model,
   messages,
   maxTokens = 2048,
@@ -78,6 +84,11 @@ async function callAI({
   }
 
   const selectedModel = model || providerConfig.defaultModel;
+
+  // ── Claude: use @anthropic-ai/sdk ──
+  if (providerDef.useClaudeSDK) {
+    return callClaudeSDK({ messages, model: selectedModel, maxTokens, temperature, providerConfig });
+  }
 
   // ── Gemini: use @google/genai SDK with Thinking mode ──
   if (providerDef.useSDK) {
@@ -218,5 +229,45 @@ async function callGeminiSDK({ messages, model, maxTokens, temperature, provider
     provider: 'gemini',
     promptTokens: response.usageMetadata?.promptTokenCount || 0,
     completionTokens: response.usageMetadata?.candidatesTokenCount || 0,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Anthropic Claude — @anthropic-ai/sdk
+// ─────────────────────────────────────────────────────────────
+
+async function callClaudeSDK({ messages, model, maxTokens, temperature, providerConfig }) {
+  const client = new Anthropic({ apiKey: providerConfig.apiKey });
+
+  const systemMsg = messages.find(m => m.role === 'system');
+  const userMsgs  = messages.filter(m => m.role !== 'system');
+
+  const anthropicMessages = userMsgs.map(m => ({
+    role: m.role === 'assistant' ? 'assistant' : 'user',
+    content: m.content,
+  }));
+
+  console.log(`[Claude] Calling model=${model}, maxTokens=${maxTokens}, promptChars=${(systemMsg?.content?.length || 0) + (userMsgs[0]?.content?.length || 0)}`);
+  const startTime = Date.now();
+
+  const response = await client.messages.create({
+    model,
+    max_tokens: maxTokens,
+    temperature,
+    ...(systemMsg ? { system: systemMsg.content } : {}),
+    messages: anthropicMessages,
+  });
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  const text = response.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
+
+  console.log(`[Claude] Response in ${elapsed}s, stop_reason=${response.stop_reason}, textLen=${text.length}`);
+
+  return {
+    analysis: text,
+    model,
+    provider: 'claude',
+    promptTokens: response.usage?.input_tokens || 0,
+    completionTokens: response.usage?.output_tokens || 0,
   };
 }

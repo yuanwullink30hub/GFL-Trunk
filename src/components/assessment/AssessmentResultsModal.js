@@ -394,7 +394,6 @@ const AssessmentResultsModal = ({
       y += 16;
 
       // Large profile image (centered, ~90mm)
-      let imageLoaded = false;
       try {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -419,7 +418,6 @@ const AssessmentResultsModal = ({
         const imgX = W / 2 - pdfImgSize / 2;
         pdf.addImage(imgData, 'PNG', imgX, y, pdfImgSize, pdfImgSize);
         y += pdfImgSize + 12;
-        imageLoaded = true;
       } catch {
         y += 8;
       }

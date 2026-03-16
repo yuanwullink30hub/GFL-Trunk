@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useState, useCallback } from 'react';
 import { ARCHETYPES, SHADOW_PAIRS, ARCHETYPE_TO_GROUP, getExtendedDescription } from '../data/assessment';
 import { getArchetypeImage } from '../data/assessment/archetypeImages';
-import { getCoreProfile, getExtendedOcean, OCEAN_COLORS } from '../data/assessment/oceanProfiles';
+import { getCoreProfile } from '../data/assessment/oceanProfiles';
 import { POLICY_CONTENT } from '../data/policyContent';
 
 /**
@@ -36,11 +36,9 @@ const ProfileResultCard = () => {
   const shadowKey = SHADOW_PAIRS[mainKey];
   const shadow = shadowKey ? ARCHETYPES[shadowKey] : null;
   const blindspotKey = SHADOW_PAIRS[supportKey];
-  const blindspot = blindspotKey ? ARCHETYPES[blindspotKey] : null;
   const harmonyActive = session.harmonyActive;
   const shadowBonusActive = session.shadowBonusActive;
   const coreProfile = getCoreProfile(mainKey);
-  const extendedOcean = getExtendedOcean(mainKey, supportGroup);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

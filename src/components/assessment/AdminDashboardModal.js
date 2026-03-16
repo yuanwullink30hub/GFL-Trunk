@@ -961,7 +961,7 @@ const AssessmentsTab = memo(({ adminEmail }) => {
     } finally {
       setLoadingDetail(false);
     }
-  }, []);
+  }, [adminEmail]);
 
   const handleDelete = useCallback(async (id) => {
     if (!window.confirm('Permanently delete this assessment? This cannot be undone.')) return;
@@ -2835,6 +2835,7 @@ const AuditLogTab = memo(() => {
 
   useEffect(() => { fetchData(); fetchAccess(); }, []);
 
+  // eslint-disable-next-line no-unused-vars
   const handleClear = async () => {
     if (!window.confirm('Alle dev-activiteit wissen? Dit kan niet ongedaan worden.')) return;
     try {

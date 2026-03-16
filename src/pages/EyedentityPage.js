@@ -496,24 +496,24 @@ const NAV_ITEMS = [
 const SLUG_TO_ID = Object.fromEntries(NAV_ITEMS.map(item => [item.slug, item.id]));
 
 const EyedentityPage = memo(({ isVisible, onBack }) => {
-  const getTabFromHash = useCallback(() => {
-    const hash = window.location.hash.replace('#/', '').replace('#', '');
-    if (hash && SLUG_TO_ID[hash]) return SLUG_TO_ID[hash];
+  const getTabFromPath = useCallback(() => {
+    const slug = window.location.pathname.replace(/^\//, '');
+    if (slug && SLUG_TO_ID[slug]) return SLUG_TO_ID[slug];
     return 'profile';
   }, []);
 
-  const [selectedId, setSelectedId] = useState(getTabFromHash);
+  const [selectedId, setSelectedId] = useState(getTabFromPath);
 
   useEffect(() => {
-    const onHashChange = () => setSelectedId(getTabFromHash());
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, [getTabFromHash]);
+    const onPopState = () => setSelectedId(getTabFromPath());
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [getTabFromPath]);
 
   const handleTabClick = useCallback((id) => {
     const item = NAV_ITEMS.find(i => i.id === id);
     setSelectedId(id);
-    window.history.replaceState(null, '', `#/${item?.slug || 'profiel'}`);
+    window.history.pushState(null, '', `/${item?.slug || 'profiel'}`);
   }, []);
 
   const selectedItem = NAV_ITEMS.find(item => item.id === selectedId);

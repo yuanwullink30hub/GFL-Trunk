@@ -321,22 +321,22 @@ const App = () => {
 
   // Handler for closing sections - navigate back to main
   const handleCloseSection = useCallback(() => {
-    window.history.replaceState(null, '', window.location.pathname);
+    window.history.pushState(null, '', '/');
     navigateToSection('main');
   }, [navigateToSection]);
 
-  // Deep-link: #/algemene-voorwaarden etc. opens the Eyedentity page with correct tab
+  // Deep-link: /algemene-voorwaarden etc. opens the Eyedentity page with correct tab
   useEffect(() => {
-    const POLICY_SLUGS = ['algemene-voorwaarden','privacybeleid','toestemming-art9','cookiebeleid','ai-transparantie','intellectueel-eigendom','gebruiksvoorwaarden-misbruik','profiel'];
-    const checkHash = () => {
-      const slug = window.location.hash.replace('#/', '').replace('#', '');
+    const POLICY_SLUGS = ['algemene-voorwaarden','privacybeleid','toestemming-art9','cookiebeleid','ai-transparantie','intellectueel-eigendom','gebruiksvoorwaarden-misbruik','profiel','gegevensbehoud-en-verwijdering'];
+    const checkPath = () => {
+      const slug = window.location.pathname.replace(/^\//, '');
       if (slug && POLICY_SLUGS.includes(slug)) {
         navigateToSection('menu');
       }
     };
-    checkHash();
-    window.addEventListener('hashchange', checkHash);
-    return () => window.removeEventListener('hashchange', checkHash);
+    checkPath();
+    window.addEventListener('popstate', checkPath);
+    return () => window.removeEventListener('popstate', checkPath);
   }, [navigateToSection]);
 
   useEffect(() => {

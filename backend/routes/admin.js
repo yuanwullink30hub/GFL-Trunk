@@ -152,23 +152,30 @@ function activityCollection() {
   return col;
 }
 
-// POST /api/admin/sessions/activity — log a dev activity event (no auth — called from git hooks)
+// POST /api/admin/sessions/activity — log a dev or admin activity event (no auth — called from git hooks and frontend)
 router.post('/sessions/activity', async (req, res) => {
   try {
-    const { type, message, branch, hash } = req.body;
-    const allowed = ['edit', 'commit', 'push'];
+    const { type, message, branch, hash, userId, email, reportId, reportType } = req.body;
+    const allowed = ['edit', 'commit', 'push', 'admin_login', 'report_view'];
     if (!type || !allowed.includes(type)) {
       return res.status(400).json({ error: `type must be one of: ${allowed.join(', ')}` });
     }
 
-    await activityCollection().insertOne({
+    const doc = {
       type,
       timestamp: new Date(),
+      // dev fields
       message: (message || '').slice(0, 512),
       branch: (branch || '').slice(0, 256),
       hash: (hash || '').slice(0, 64),
-    });
+      // admin fields
+      userId: userId || null,
+      email: (email || '').slice(0, 256),
+      reportId: reportId || null,
+      reportType: (reportType || '').slice(0, 64),
+    };
 
+    await activityCollection().insertOne(doc);
     res.json({ success: true });
   } catch (err) {
     console.error('[Admin] Activity log error:', err.message);
@@ -738,6 +745,22 @@ function computeSessions(events) {
 }
 
 // GET /api/admin/sessions — get computed dev sessions (admin only)
+// GET /api/admin/sessions/access — direct access log (report views + admin logins, newest first)
+router.get('/sessions/access', authRequired, adminRequired, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 500, 2000);
+    const events = await activityCollection()
+      .find({ type: { $in: ['report_view', 'admin_login'] } })
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .toArray();
+    res.json({ events, total: events.length });
+  } catch (err) {
+    console.error('[Admin] Access log error:', err.message);
+    res.status(500).json({ error: 'Failed to load access log' });
+  }
+});
+
 router.get('/sessions', authRequired, adminRequired, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 200, 1000);
@@ -758,15 +781,9 @@ router.get('/sessions', authRequired, adminRequired, async (req, res) => {
   }
 });
 
-// DELETE /api/admin/sessions — clear all activity data (admin only)
-router.delete('/sessions', authRequired, adminRequired, async (req, res) => {
-  try {
-    const result = await activityCollection().deleteMany({});
-    res.json({ success: true, deleted: result.deletedCount });
-  } catch (err) {
-    console.error('[Admin] Session clear error:', err.message);
-    res.status(500).json({ error: 'Failed to clear sessions' });
-  }
+// DELETE /api/admin/sessions — DISABLED: audit log is immutable, deletion not permitted
+router.delete('/sessions', (_req, res) => {
+  res.status(405).json({ error: 'Audit log deletion is not permitted.' });
 });
 
 // ─────────────────────────────────────────────────────────────

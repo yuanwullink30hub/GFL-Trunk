@@ -102,6 +102,28 @@ export function logout() {
   clearToken();
 }
 
+/**
+ * Permanently delete the authenticated user's own account, all their
+ * assessments, and all their assessment reviews (GDPR right-to-erasure).
+ * Clears the stored token on success.
+ * @returns {Promise<{ success: boolean, deletedAssessments: number, deletedReviews: number }>}
+ */
+export async function deleteOwnAccount() {
+  const response = await fetch(`${API_BASE}/auth/account`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Account deletion failed (${response.status})`);
+  }
+
+  const data = await response.json();
+  clearToken(); // account is gone — token is no longer valid
+  return data;
+}
+
 // ── Assessment Persistence ──
 
 /**
@@ -709,6 +731,18 @@ export async function logActivity(data) {
     body: JSON.stringify(data),
   });
   if (!response.ok) return null;
+  return response.json();
+}
+
+/** Get access log events (report views + admin logins) directly (admin only) */
+export async function getAccessLog(limit = 500) {
+  const response = await fetch(`${API_BASE}/admin/sessions/access?limit=${limit}`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Access log failed (${response.status})`);
+  }
   return response.json();
 }
 

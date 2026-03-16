@@ -35,6 +35,18 @@ async function connectDB() {
   await db.collection('assessmentReviews').createIndex({ createdAt: -1 });
   await db.collection('assessmentReviews').createIndex({ userId: 1 }, { sparse: true });
 
+  // ── BETA data retention: auto-expire assessment data after 90 days ──
+  // MongoDB's TTL index removes documents automatically — no cron job needed.
+  const BETA_RETENTION_SECONDS = 90 * 24 * 60 * 60; // 90 days
+  await db.collection('assessments').createIndex(
+    { createdAt: 1 },
+    { expireAfterSeconds: BETA_RETENTION_SECONDS, name: 'assessments_ttl_90d' }
+  );
+  await db.collection('assessmentReviews').createIndex(
+    { createdAt: 1 },
+    { expireAfterSeconds: BETA_RETENTION_SECONDS, name: 'assessmentReviews_ttl_90d' }
+  );
+
   console.log('[MongoDB] Connected to', db.databaseName);
   return db;
 }

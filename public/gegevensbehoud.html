@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gegevensbehoud & Verwijdering - Garden for Life</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0a0a0e;
+      color: #cbd5e1;
+      font-family: 'Lexend Mega', Arial, Helvetica, sans-serif;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+    h1 {
+      color: #a855f7;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    h2 {
+      color: #a855f7;
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    h3 {
+      color: #c4b5fd;
+      font-size: 1.1rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    p {
+      margin-bottom: 1rem;
+      color: #cbd5e1;
+    }
+    ul, ol {
+      margin-left: 2rem;
+      margin-bottom: 1rem;
+    }
+    li {
+      margin-bottom: 0.5rem;
+      color: #cbd5e1;
+    }
+    .last-updated {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      font-style: italic;
+    }
+    strong {
+      color: #c4b5fd;
+    }
+    .highlight-box {
+      background: rgba(249, 115, 22, 0.08);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      border-radius: 0.35rem;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .highlight-box strong {
+      color: #fdba74;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+    th, td {
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      padding: 0.75rem;
+      text-align: left;
+      color: #cbd5e1;
+    }
+    th {
+      background: rgba(168, 85, 247, 0.1);
+      color: #c4b5fd;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⏰ Gegevensbehoud & Verwijdering</h1>
+    <p class="last-updated">Laatst bijgewerkt: 1 januari 2026</p>
+
+    <h2>1. Overzicht</h2>
+    <p>
+      Garden for Life onderschrijft het AVG-principe van gegevensminialisatie: wij slaan alleen de gegevens op
+      die noodzakelijk zijn voor het functioneren van het Platform. Deze gegevens worden verwijderd zodra ze
+      niet langer nodig zijn.
+    </p>
+
+    <h2>2. Behoudduur per Gegevenstype</h2>
+    
+    <h3>2.1 Assessmentgegevens (Art. 9 Gevoelige Gegevens)</h3>
+    <div class="highlight-box">
+      <p>
+        <strong>⏬ AUTOMATISCHE VERWIJDERING: 27 SEPTEMBER 2026</strong>
+      </p>
+    </div>
+    <table>
+      <tr>
+        <th>Gegevenstype</th>
+        <th>Behoudperiode</th>
+        <th>Reden</th>
+        <th>Verwijdermethode</th>
+      </tr>
+      <tr>
+        <td>Assessmentantwoorden</td>
+        <td>90 dagen</td>
+        <td>Bètatesting & systeemvalidatie</td>
+        <td>Volledige gegevensverwijdering uit database</td>
+      </tr>
+      <tr>
+        <td>Gegenereerde Profiel</td>
+        <td>90 dagen</td>
+        <td>Bètatesting & algoritmevalidatie</td>
+        <td>Cryptografische vernietiging</td>
+      </tr>
+      <tr>
+        <td>Resultaat PDF/Export</td>
+        <td>90 dagen</td>
+        <td>Gebruiker kan rapportage beschikken</td>
+        <td>Verwijdering alle backups inclusief logs</td>
+      </tr>
+      <tr>
+        <td>Auditlogs (toegang)</td>
+        <td>90 dagen</td>
+        <td>Naleving & transparantie</td>
+        <td>Verwijdering na TTL-afloop</td>
+      </tr>
+    </table>
+
+    <h3>2.2 Accountgegevens</h3>
+    <table>
+      <tr>
+        <th>Gegevenstype</th>
+        <th>Behoudperiode</th>
+        <th>Reden</th>
+      </tr>
+      <tr>
+        <td>Emai/Wachtwoord</td>
+        <td>Zolang account actief is</td>
+        <td>Accountbeheer & authenticatie</td>
+      </tr>
+      <tr>
+        <td>Profilnaam</td>
+        <td>Zolang account actief is</td>
+        <td>Gebruikersidentificatie</td>
+      </tr>
+      <tr>
+        <td>Taalvoorkeur</td>
+        <td>Zolang account actief is</td>
+        <td>Gebruikerservaring</td>
+      </tr>
+      <tr>
+        <td>Gaat van Aanmaaking</td>
+        <td>Zolang account actief is</td>
+        <td>Accountuit-/inloggegevens</td>
+      </tr>
+    </table>
+
+    <h3>2.3 Technische Logboeken</h3>
+    <table>
+      <tr>
+        <th>Logtype</th>
+        <th>Behoudperiode</th>
+        <th>Reden</th>
+      </tr>
+      <tr>
+        <td>Server logs (IP, browser)</td>
+        <td>30 dagen</td>
+        <td>Beveiliging & debugging</td>
+      </tr>
+      <tr>
+        <td>Error logs</td>
+        <td>30 dagen</td>
+        <td>Systeemstabiliteit</td>
+      </tr>
+      <tr>
+        <td>API request logs</td>
+        <td>30 dagen</td>
+        <td>Performance monitoring</td>
+      </tr>
+    </table>
+
+    <h2>3. Chronologie: Wat Gebeurt Wanneer?</h2>
+    
+    <h3>Dag 0: Assessment Afgerond</h3>
+    <ul>
+      <li>✅ Antwoorden opgeslagen in versleutelde database</li>
+      <li>✅ Profiel gegenereerd door AI-model</li>
+      <li>✅ Beveiligd auditlog schrijft: "Assessment voltooid"</li>
+      <li>✅ Gebruiker ontvangt rapportage (PDF + online)</li>
+      <li>✅ TTL-timer ingesteld: 90 dagen</li>
+    </ul>
+
+    <h3>Dag 1-90: Behoardperiode</h3>
+    <ul>
+      <li>✅ Gebruiker kan rapport opnieuw downloaden</li>
+      <li>✅ Admin kan rapport inzien (voor bètaevaluatie)</li>
+      <li>✅ Alle toegang geregistreerd in auditlog</li>
+      <li>✅ Gegevens beschermd via versleuteling</li>
+      <li>✅ Backups gehouden voor disaster recovery</li>
+    </ul>
+
+    <h3>Dag 90+: Aanvraag Vervaldatum</h3>
+    <ul>
+      <li>⚠️ Automatische verwijderfunctie bereikt TTL</li>
+      <li>⚠️ Rapport verwijderd uit live-database</li>
+      <li>⚠️ Auditlog ingesneden: "Assessment verwijderd (TTL)"</li>
+      <li>⚠️ Backups en archieven leeggemaakt</li>
+      <li>⚠️ Gebruiker krijgt geen toegang meer tot rapport</li>
+    </ul>
+
+    <h3>27 September 2026: Landingsdatum</h3>
+    <div class="highlight-box">
+      <p>
+        <strong>🔐 Alle bètagegevens permanent verwijderd</strong>
+      </p>
+      <ul>
+        <li>Alle assessmentantwoorden</li>
+        <li>Alle gegenereerde profielen</li>
+        <li>Alle PDF-exports</li>
+        <li>Alle auditlogs (voor deze periode)</li>
+        <li>Alle technische backups</li>
+      </ul>
+    </div>
+
+    <h2>4. Vroegarken Verwijdering</h2>
+    <p>
+      Je kunt <strong>op elk moment</strong> verzoeken dat je gegevens vóór de 90-daagse termijn worden verwijderd:
+    </p>
+    <h3>Hoe Aanvragen?</h3>
+    <ol>
+      <li>Ga naar je EyedentityPage in het Platform</li>
+      <li>Klik op "Verwijder mijn gegevens"</li>
+      <li>Bevestig de verwijdering (niet ongedaan te maken)</li>
+      <li>Je ontvangt bevestiging per e-mail</li>
+    </ol>
+    <p>
+      <strong>Alternatief:</strong> Email privacy@gardenforlife.nl met "Verwijder mijn gegevens" in het onderwerp.
+    </p>
+
+    <h3>Verwijderingsprocédé:</h3>
+    <ul>
+      <li>Onmiddellijke verwijdering uit live-database</li>
+      <li>Verwijdering uit alle backups binnen 7 dagen</li>
+      <li>Verwijdering uit archiven en offsite opslag</li>
+      <li>Bevestigingsmail met verwijderingsdatum</li>
+    </ul>
+
+    <h2>5. Intrekking van Toestemming</h2>
+    <p>
+      Als je je toestemming voor Art. 9 gegevensverwerking intrekt:
+    </p>
+    <ul>
+      <li>Je psychologische profielgegevens worden <strong>onmiddellijk</strong> verwijderd</li>
+      <li>Je assessmentantwoorden blijven 30 dagen voor integriteit</li>
+      <li>Na 30 dagen worden alle gegevens permanent verwijderd</li>
+      <li>Je krijgt schriftelijke bevestiging</li>
+    </ul>
+
+    <h2>6. Verwijderingsmethodes</h2>
+    <p>
+      Garden for Life gebourt de volgende beveiligde verwijderingsmethodes:
+    </p>
+    <ul>
+      <li><strong>Zachteopslag verwijdering:</strong> Secure delete-functies (TRIM op SSD, wiping op HD)</li>
+      <li><strong>Databaseverwijdering:</strong> Database-niveau record deletion + index vacuuming</li>
+      <li><strong>Backupverwijdering:</strong> Backups met gemarkeerde records opnieuw ingespoten</li>
+      <li><strong>Cryptografische vernietiging:</strong> Versleutelings-sleutels vernietigde voor gegevens</li>
+      <li><strong>Derde-parij archiven:</strong> Requests naar cloud-providers voor verwijdering</li>
+    </ul>
+
+    <h2>7. Naleving & Verificatie</h2>
+    <p>
+      Garden for Life valideert correct verwijdering door:
+    </p>
+    <ul>
+      <li>Dagelijkse TTL-scans op verval gegevens</li>
+      <li>Wekelijkse verificatie van verwijderde records</li>
+      <li>Maandelijks auditlogverslag naar compliance team</li>
+      <li>Jaarlijkse derde-partij audit door externe DPA</li>
+    </ul>
+
+    <h2>8. Data Retention Audit Trail</h2>
+    <p>
+      Alle verwijderingen worden geregistreerd met:
+    </p>
+    <ul>
+      <li>⏰ Timestamp van verwijdering</li>
+      <li>👤 Wie verwijderingrapport initieerde (user/admin/automated)</li>
+      <li>🔍 Reden voor verwijdering (TTL/user request/withdrawal)</li>
+      <li>✅ Verificatiestatus van volledige verwijdering</li>
+    </ul>
+
+    <h2>9. Wettelijke Onderhoudsverplichtingen</h2>
+    <p>
+      Ondanks de 90-daagse retentieperiode kan Garden for Life gegevens langer behouden als:
+    </p>
+    <ul>
+      <li><strong>Wettelijk vereist:</strong> Belastingwetten (6+ jaren), strafwetten</li>
+      <li><strong>Juridische procedure:</strong> Gerechtsdecrees, onderzoeken</li>
+      <li><strong>Gerechtvaardigd belang:</strong> Rechtsclaims of geschillenbeslechting</li>
+    </ul>
+    <p>
+      Je ontvangt voorafgaande kennisgeving van dergelijke retentie.
+    </p>
+
+    <h2>10. Contact & Verzoeken</h2>
+    <p>
+      Voor vragen over gegevensbehoud of verwijderingsverzoeken:
+    </p>
+    <p>
+      <strong>Email:</strong> privacy@gardenforlife.nl<br>
+      <strong>Onderwerp:</strong> "Verwijdering van gegevens" of "Data retention vraag"<br>
+      <strong>Verwachte respons:</strong> 48 uur
+    </p>
+
+    <h2>11. Updates</h2>
+    <p>
+      Dit beleid wordt jaarlijks gereviewd en kan worden bijgewerkt.
+      Het automatische verwijderingsdatum (27 september 2026) is vastgesteld voor alle huiden bètates.
+    </p>
+  </div>
+</body>
+</html>

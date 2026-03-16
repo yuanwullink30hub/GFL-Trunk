@@ -30,6 +30,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
   const [showInfo, setShowInfo] = useState(false);
   const [infoClosing, setInfoClosing] = useState(false);
   const [infoOrigin, setInfoOrigin] = useState('top right');
+  // Consent gate: set when user clicks a level card
+  const [consentLevelId, setConsentLevelId] = useState(null);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [consentAiPromptChecked, setConsentAiPromptChecked] = useState(false);
+  const [consentClosing, setConsentClosing] = useState(false);
+  const [consentOrigin, setConsentOrigin] = useState('center center');
+  const consentOverlayRef = useRef(null);
 
   const openInfo = () => {
     if (infoIconRef.current && modalRef.current) {
@@ -62,6 +69,41 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
       setInfoClosing(false);
     }, 350);
   };
+
+  // Open consent overlay with zoom-from-card animation
+  const openConsent = (levelId, e) => {
+    if (e && e.currentTarget && modalRef.current) {
+      const btnRect = e.currentTarget.getBoundingClientRect();
+      const modalRect = modalRef.current.getBoundingClientRect();
+      const x = btnRect.left + btnRect.width / 2 - modalRect.left;
+      const y = btnRect.top + btnRect.height / 2 - modalRect.top;
+      setConsentOrigin(`${x}px ${y}px`);
+    }
+    setConsentChecked(false);
+    setConsentAiPromptChecked(false);
+    setConsentLevelId(levelId);
+  };
+
+  const closeConsent = () => {
+    setConsentClosing(true);
+    setTimeout(() => {
+      setConsentLevelId(null);
+      setConsentClosing(false);
+    }, 350);
+  };
+
+  // Native wheel capture on consent overlay
+  useEffect(() => {
+    const el = consentOverlayRef.current;
+    if (!el) return;
+    const stop = (e) => { e.stopPropagation(); };
+    el.addEventListener('wheel', stop, { passive: false, capture: true });
+    el.addEventListener('touchmove', stop, { passive: false, capture: true });
+    return () => {
+      el.removeEventListener('wheel', stop, { capture: true });
+      el.removeEventListener('touchmove', stop, { capture: true });
+    };
+  }, [consentLevelId]);
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -726,7 +768,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                 return (
                   <button
                     key={level.id}
-                    onClick={() => !isLocked && onStart(level.id)}
+                    onClick={(e) => !isLocked && openConsent(level.id, e)}
                     className={`relative rounded-lg border transition-all duration-300 text-left group ${isLocked ? 'cursor-not-allowed' : 'hover:scale-[1.02]'}`}
                     style={{
                       borderColor: isLocked ? 'rgba(100,116,139,0.25)' : `${level.color}40`,
@@ -773,6 +815,126 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
           </>
           )}
         </div>
+
+        {/* ═══ CONSENT OVERLAY ═══ */}
+        {consentLevelId && (
+          <div
+            ref={consentOverlayRef}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) closeConsent(); }}
+          >
+            <div
+              className="rounded-xl"
+              style={{
+                backgroundColor: 'rgba(8, 2, 12, 0.98)',
+                border: '1px solid rgba(168,85,247,0.2)',
+                padding: s.padding,
+                transformOrigin: consentOrigin,
+                animation: `${consentClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                maxWidth: '42rem',
+                maxHeight: '85vh',
+                width: '90vw',
+                boxShadow: '0 0 40px rgba(168,85,247,0.15), 0 0 80px rgba(0,0,0,0.5)',
+              }}
+            >
+              {/* Title */}
+              <h2 className="text-center font-mono uppercase tracking-wider" style={{
+                fontSize: s.levelTitleFont, color: '#a855f7', marginBottom: '0.2rem',
+                textShadow: '0 0 10px rgba(168,85,247,0.35)',
+              }}>
+                Toestemming & Transparantie
+              </h2>
+              <p className="text-center" style={{ color: 'rgba(148,163,184,0.5)', fontSize: s.featureDescFont, marginBottom: '1.5rem', fontStyle: 'italic' }}>
+                Lees dit door voordat je begint — je hebt het recht dit te weten
+              </p>
+
+              {/* Pre-text: Wat we doen */}
+              <div style={{ borderLeft: '2px solid rgba(168,85,247,0.4)', paddingLeft: '1rem', marginBottom: '1.5rem' }}>
+                <p style={{ color: '#c4b5fd', fontSize: s.featureTitleFont, fontWeight: 600, marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Wat we doen</p>
+                <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, marginBottom: '0.6rem' }}>
+                  Je antwoorden worden verwerkt door het AI-model <strong style={{ color: '#c4b5fd' }}>Gemini 2.5 Pro</strong> om een persoonlijk zelfreflectierapport te genereren op basis van het Garden For Life Deltawerken Model. Dit rapport is uitsluitend bedoeld als persoonlijk zelfinzichtinstrument — <strong style={{ color: '#c4b5fd' }}>geen klinische diagnose, geen medisch oordeel</strong>.
+                </p>
+                <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7 }}>
+                  Wij bewaren het volledig rapport tijdelijk op beveiligde servers in <strong style={{ color: '#c4b5fd' }}>Frankfurt</strong>, uitsluitend ten behoeve van betaevaluatie. De beheerder van Garden For Life heeft toegang via een beveiligd beheerderspaneel. Dit wordt geregistreerd in een auditlog.
+                </p>
+              </div>
+
+              {/* Checkbox 1: Algemene voorwaarden & privacybeleid */}
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginBottom: '0.8rem' }}>
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  style={{ marginTop: '0.15rem', accentColor: '#a855f7', width: '1rem', height: '1rem', flexShrink: 0, cursor: 'pointer' }}
+                />
+                <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureDescFont, lineHeight: 1.6 }}>
+                  Ik heb de <strong style={{ color: '#c4b5fd' }}>Algemene Voorwaarden</strong> en het <strong style={{ color: '#c4b5fd' }}>Privacybeleid</strong> gelezen en ga hiermee akkoord. Ik begrijp dat GardenForLife mijn e-mailadres en accountgegevens verwerkt om de dienst te leveren.
+                </span>
+              </label>
+
+              {/* Checkbox 2: Uitdrukkelijke toestemming Art. 9 AVG */}
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginBottom: '0.5rem' }}>
+                <input
+                  type="checkbox"
+                  checked={consentAiPromptChecked}
+                  onChange={(e) => setConsentAiPromptChecked(e.target.checked)}
+                  style={{ marginTop: '0.15rem', accentColor: '#a855f7', width: '1rem', height: '1rem', flexShrink: 0, cursor: 'pointer' }}
+                />
+                <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureDescFont, lineHeight: 1.6 }}>
+                  Ik geef uitdrukkelijke toestemming voor de verwerking van mijn <strong style={{ color: '#c4b5fd' }}>persoonlijkheidsprofieldata</strong> zoals bedoeld in artikel 9 van de AVG. Ik begrijp dat:
+                </span>
+              </label>
+              <ul style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, paddingLeft: '2.75rem', listStyle: 'none', marginBottom: '1.5rem' }}>
+                {[
+                  'Mijn antwoorden volledig geautomatiseerd worden geanalyseerd door een AI-model om een persoonlijk profiel te genereren',
+                  <>Dit profiel psychologische kenmerken bevat zoals <strong style={{ color: '#c4b5fd' }}>archetypepatronen</strong>, <strong style={{ color: '#c4b5fd' }}>gedragstendensen</strong> en <strong style={{ color: '#c4b5fd' }}>persoonlijkheidsoriëntaties</strong></>,
+                  'Het volledige rapport wordt tijdelijk opgeslagen uitsluitend ten behoeve van de betaevaluatie — niet voor commerciële doeleinden',
+                  'De beheerder van GardenForLife toegang heeft tot opgeslagen rapporten uitsluitend ten behoeve van betaevaluatie en systeemverbetering — dit wordt bijgehouden in een beveiligd auditlog',
+                  <>Alle rapportdata wordt uiterlijk op <strong style={{ color: '#fdba74' }}>27-09-2026</strong> permanent en onherroepelijk verwijderd</>,
+                  'Ik het recht heb mijn toestemming op elk moment in te trekken via het contactformulier',
+                  'Intrekking betekent dat mijn volledige profieldata binnen 30 dagen wordt verwijderd',
+                  'Dit rapport geen klinische diagnose is en professionele psychologische of medische begeleiding niet vervangt',
+                ].map((item, i) => (
+                  <li key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.2rem' }}>
+                    <span style={{ color: '#a855f7', flexShrink: 0 }}>·</span><span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => closeConsent()}
+                  className="font-mono uppercase tracking-wider transition-all duration-300"
+                  style={{ background: 'none', border: '1px solid rgba(100,116,139,0.4)', color: '#64748b', borderRadius: '9999px', padding: s.footerBtnPad, fontSize: s.footerBtnFont, cursor: 'pointer' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#94a3b8'; e.currentTarget.style.color = '#94a3b8'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(100,116,139,0.4)'; e.currentTarget.style.color = '#64748b'; }}
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={() => { if (consentChecked && consentAiPromptChecked) { const lvl = consentLevelId; closeConsent(); onStart(lvl); } }}
+                  disabled={!consentChecked || !consentAiPromptChecked}
+                  className="font-mono uppercase tracking-wider transition-all duration-300"
+                  style={{
+                    border: `1px solid ${(consentChecked && consentAiPromptChecked) ? '#a855f7' : 'rgba(168,85,247,0.2)'}`,
+                    color: (consentChecked && consentAiPromptChecked) ? '#a855f7' : 'rgba(168,85,247,0.3)',
+                    backgroundColor: (consentChecked && consentAiPromptChecked) ? 'rgba(168,85,247,0.1)' : 'transparent',
+                    borderRadius: '9999px', padding: s.footerBtnPad, fontSize: s.footerBtnFont,
+                    cursor: (consentChecked && consentAiPromptChecked) ? 'pointer' : 'not-allowed',
+                  }}
+                  onMouseEnter={(e) => { if (consentChecked && consentAiPromptChecked) { e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.3)'; } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  Ik ga akkoord — Start
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ═══ INFO OVERLAY ═══ */}
         {showInfo && (

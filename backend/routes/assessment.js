@@ -167,7 +167,6 @@ router.post('/review', authOptional, async (req, res) => {
       whatDidntWork: whatDidntWork?.trim() || '',
       suggestions: suggestions?.trim() || '',
       timestamp: timestamp ? new Date(timestamp) : new Date(),
-      ipAddress: req.ip,
       userAgent: req.get('user-agent'),
     };
 

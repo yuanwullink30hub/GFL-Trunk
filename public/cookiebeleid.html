@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cookiebeleid - Garden for Life</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0a0a0e;
+      color: #cbd5e1;
+      font-family: 'Lexend Mega', Arial, Helvetica, sans-serif;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+    h1 {
+      color: #a855f7;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    h2 {
+      color: #a855f7;
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    h3 {
+      color: #c4b5fd;
+      font-size: 1.1rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    p {
+      margin-bottom: 1rem;
+      color: #cbd5e1;
+    }
+    ul, ol {
+      margin-left: 2rem;
+      margin-bottom: 1rem;
+    }
+    li {
+      margin-bottom: 0.5rem;
+      color: #cbd5e1;
+    }
+    .last-updated {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      font-style: italic;
+    }
+    strong {
+      color: #c4b5fd;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+    th, td {
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      padding: 0.75rem;
+      text-align: left;
+      color: #cbd5e1;
+    }
+    th {
+      background: rgba(168, 85, 247, 0.1);
+      color: #c4b5fd;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🍪 Cookiebeleid &amp; Lokale Opslag</h1>
+    <p class="last-updated">Versiedatum: 16 maart 2026 &nbsp;|&nbsp; Versie 1.1 &nbsp;|&nbsp; Taal: Nederlands</p>
+
+    <p>
+      Garden For Life gebruikt geen HTTP-cookies. Het platform werkt uitsluitend met
+      <strong>localStorage</strong> en <strong>sessionStorage</strong> — browseropslag die alleen op uw eigen
+      apparaat staat en nooit automatisch naar onze servers wordt verstuurd. Er is geen cookiebanner op deze
+      website omdat hiervoor wettelijk geen toestemming vereist is.
+    </p>
+
+    <h2>1. Geen Cookies — Wel Lokale Browseropslag</h2>
+    <p>
+      Een traditionele cookie is een klein bestandje dat een website op uw apparaat plaatst en bij elk bezoek
+      automatisch terugstuurt naar de server. Garden For Life gebruikt geen HTTP-cookies van welke aard dan ook.
+    </p>
+    <p>
+      In plaats daarvan maakt Garden For Life gebruik van <strong>localStorage</strong> en
+      <strong>sessionStorage</strong> — twee opslagmechanismen die standaard in uw browser ingebouwd zijn.
+      Het essentiële verschil:
+    </p>
+    <ul>
+      <li>Lokale opslag blijft op uw apparaat. Het wordt nooit naar onze servers verzonden.</li>
+      <li>De data is alleen leesbaar door de Garden For Life website zelf — niet door derden.</li>
+      <li>U heeft volledige controle: u kunt de opslag op elk moment wissen via uw browserinstellingen.</li>
+    </ul>
+    <p>
+      <strong>Juridische basis:</strong> Hoewel localStorage geen cookie is in de traditionele zin, valt opslag
+      van persoonsgegevens op een apparaat onder de Telecommunicatiewet art. 11.7a en de ePrivacy-richtlijn.
+      Voor strikt noodzakelijke opslag is geen toestemming vereist. Garden For Life gebruikt lokale opslag
+      uitsluitend voor de werking van het platform.
+    </p>
+
+    <h2>2. Wat Slaan Wij Op in Uw Browser?</h2>
+
+    <h3>2.1 Strikt Noodzakelijke Opslag (localStorage)</h3>
+    <p>
+      De volgende items worden opgeslagen om het platform correct te laten werken. Zonder deze opslag kan
+      het platform niet functioneren.
+    </p>
+    <table>
+      <tr>
+        <th>Sleutel</th>
+        <th>Bewaartermijn</th>
+        <th>Doel</th>
+      </tr>
+      <tr>
+        <td>gfl_beta_access</td>
+        <td>Lokaal permanent (tot handmatig wissen)</td>
+        <td>Validatie van de betapasskey — geeft toegang tot de besloten betafase. Blijft bewaard totdat browserdata wordt gewist.</td>
+      </tr>
+      <tr>
+        <td>gfl_token</td>
+        <td>Tot uitloggen</td>
+        <td>JWT authenticatietoken — identificeert uw ingelogde sessie. Bevat geen wachtwoord of persoonsgegevens anders dan een gebruikers-ID.</td>
+      </tr>
+      <tr>
+        <td>gfl_assessment_session</td>
+        <td>Lokaal permanent (overschreven bij nieuw assessment)</td>
+        <td>Slaat de huidige assessmentsessie op. Blijft bewaard totdat een nieuwe assessment wordt gestart of browserdata wordt gewist.</td>
+      </tr>
+      <tr>
+        <td>gfl_assessment_history</td>
+        <td>Lokaal permanent</td>
+        <td>Bewaart de laatste 10 assessmentsessies lokaal op uw apparaat voor uw eigen raadpleging. Deze data staat alleen op uw apparaat.</td>
+      </tr>
+      <tr>
+        <td>gfl_error_audit_log</td>
+        <td>Lokaal, max 100 entries</td>
+        <td>Foutlog voor technische diagnose. Wordt alleen lokaal opgeslagen en is alleen zichtbaar voor de beheerder via het adminpaneel op uw eigen apparaat.</td>
+      </tr>
+    </table>
+
+    <h3>2.2 Persoonlijke Werkruimte (localStorage)</h3>
+    <p>
+      De volgende items worden opgeslagen als onderdeel van de persoonlijke werkruimtefunctionaliteit van het
+      platform. Deze data staat uitsluitend op uw apparaat en wordt niet naar onze servers verzonden.
+    </p>
+    <table>
+      <tr>
+        <th>Sleutel</th>
+        <th>Bewaartermijn</th>
+        <th>Doel</th>
+      </tr>
+      <tr>
+        <td>gfl_admin_notes</td>
+        <td>Lokaal permanent</td>
+        <td>Persoonlijke notities van de beheerder — lokaal opgeslagen werkaantekeningen.</td>
+      </tr>
+      <tr>
+        <td>gfl_client_notes</td>
+        <td>Lokaal permanent</td>
+        <td>Persoonlijke notities per cliënt — lokaal opgeslagen.</td>
+      </tr>
+      <tr>
+        <td>gfl_admin_feedback</td>
+        <td>Lokaal permanent</td>
+        <td>Feedback en vragen van cliënten — lokaal opgeslagen.</td>
+      </tr>
+      <tr>
+        <td>gfl_client_contacts</td>
+        <td>Lokaal permanent</td>
+        <td>Contactboek — lokaal opgeslagen contactgegevens.</td>
+      </tr>
+      <tr>
+        <td>gfl_client_agenda</td>
+        <td>Lokaal permanent</td>
+        <td>Agenda en afspraken — lokaal opgeslagen.</td>
+      </tr>
+      <tr>
+        <td>gfl_client_inbox</td>
+        <td>Lokaal permanent</td>
+        <td>Inkomende berichten — lokaal opgeslagen.</td>
+      </tr>
+      <tr>
+        <td>gfl_contact_requests</td>
+        <td>Lokaal permanent</td>
+        <td>Contactaanvragen beheerd door de administrator — lokaal opgeslagen.</td>
+      </tr>
+      <tr>
+        <td>gfl_brand_edits</td>
+        <td>Lokaal permanent</td>
+        <td>Aanpassingen aan merkgegevens door de administrator — lokaal opgeslagen.</td>
+      </tr>
+      <tr>
+        <td>gfl_invoice_contacts</td>
+        <td>Lokaal permanent</td>
+        <td>Factuurcontacten — lokaal opgeslagen.</td>
+      </tr>
+      <tr>
+        <td>gfl_creditnote_contacts</td>
+        <td>Lokaal permanent</td>
+        <td>Creditnota-contacten — lokaal opgeslagen.</td>
+      </tr>
+      <tr>
+        <td>gfl_email_contacts</td>
+        <td>Lokaal permanent</td>
+        <td>E-mailcontacten — lokaal opgeslagen.</td>
+      </tr>
+      <tr>
+        <td>gfl_invoice_num</td>
+        <td>Lokaal permanent</td>
+        <td>Factuurnummerteller — lokaal opgeslagen.</td>
+      </tr>
+      <tr>
+        <td>gfl_creditnote_num</td>
+        <td>Lokaal permanent</td>
+        <td>Creditnotanummerteller — lokaal opgeslagen.</td>
+      </tr>
+    </table>
+
+    <h3>2.3 SessionStorage</h3>
+    <p>
+      SessionStorage werkt identiek aan localStorage maar wordt automatisch gewist zodra u het browservenster
+      of tabblad sluit.
+    </p>
+    <table>
+      <tr>
+        <th>Sleutel</th>
+        <th>Bewaartermijn</th>
+        <th>Doel</th>
+      </tr>
+      <tr>
+        <td>chunk_reload</td>
+        <td>Browservenster of tabblad sluit</td>
+        <td>Eenmalige herlaadbeveiliging bij een verouderde deployversie — voorkomt oneindige herlaadbewegingen na een platformupdate.</td>
+      </tr>
+    </table>
+
+    <h2>3. Wat Wij Niet Gebruiken</h2>
+    <p>
+      Garden For Life gebruikt geen van het volgende:
+    </p>
+    <ul>
+      <li>HTTP-cookies van welke aard dan ook</li>
+      <li>Google Analytics, Google Tag Manager of andere Google-trackers</li>
+      <li>Facebook Pixel of andere sociale media tracking</li>
+      <li>Sentry of andere externe foutregistratiediensten</li>
+      <li>Advertentienetwerken of retargeting</li>
+      <li>Third-party embeds die opslag plaatsen</li>
+    </ul>
+    <p>
+      <strong>Toekomstige analytics:</strong> Garden For Life overweegt mogelijk de toevoeging van
+      Plausible Analytics — een cookieloze, privacy-vriendelijke analyticsdienst die geen persoonsgegevens
+      verwerkt en geen opslag op uw apparaat plaatst. Bij implementatie wordt dit beleid bijgewerkt.
+      Plausible vereist geen toestemming.
+    </p>
+
+    <h2>4. Lokale Opslag Wissen</h2>
+    <p>
+      U kunt de lokale opslag van Garden For Life op elk moment wissen via uw browserinstellingen.
+      Let op: dit verwijdert uw inlogstatus, lokale notities, contacten, agenda en overige lokaal opgeslagen
+      werkruimtedata. Garden For Life kan deze gegevens niet herstellen.
+    </p>
+    <ul>
+      <li><strong>Chrome:</strong> Instellingen → Privacy en beveiliging → Browsegegevens verwijderen → Cookies en andere sitegegevens</li>
+      <li><strong>Firefox:</strong> Instellingen → Privacy &amp; Beveiliging → Cookies en sitegegevens → Gegevens verwijderen</li>
+      <li><strong>Safari:</strong> Voorkeuren → Privacy → Beheer websitegegevens → gardenforlife.nl → Verwijder</li>
+      <li><strong>Edge:</strong> Instellingen → Privacy, zoeken en services → Browsegegevens wissen</li>
+    </ul>
+    <p>
+      U kunt ook specifiek de Garden For Life opslag wissen via de Developer Tools van uw browser
+      (F12 → Application → Local Storage → gardenforlife.nl).
+    </p>
+
+    <h2>5. Wijzigingen in Dit Beleid</h2>
+    <ol>
+      <li>Garden For Life behoudt zich het recht voor dit beleid te wijzigen bij uitbreiding van de platformfunctionaliteit.</li>
+      <li>Bij toevoeging van diensten die tracking of niet-noodzakelijke opslag vereisen, wordt een passend toestemmingsmechanisme geïmplementeerd vóór de wijziging van kracht wordt.</li>
+      <li>De versiedatum bovenaan dit document geeft aan wanneer het beleid voor het laatst is gewijzigd.</li>
+    </ol>
+
+    <h2>6. Contact</h2>
+    <p>
+      Voor vragen over dit beleid:
+    </p>
+    <p>
+      <strong>E-mail:</strong> yuanwullink30@gfl.community<br>
+      <strong>Adres:</strong> De Taxushaag 2, Zutphen, 7207MB
+    </p>
+    <p>
+      Dit beleid maakt onderdeel uit van het bredere privacybeleid van Garden For Life, te raadplegen via
+      <a href="/privacybeleid.html" style="color: #a855f7;">gardenforlife.nl/privacybeleid.html</a>.
+    </p>
+
+    <p style="text-align: center; color: #64748b; font-size: 0.85rem; margin-top: 3rem; border-top: 1px solid rgba(168, 85, 247, 0.2); padding-top: 1.5rem;">
+      Garden For Life — Cookiebeleid &amp; Lokale Opslag | Versie 1.1 | 16 maart 2026
+    </p>
+  </div>
+</body>
+</html>

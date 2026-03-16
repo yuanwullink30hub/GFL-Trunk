@@ -44,47 +44,173 @@ async function generatePdf(data) {
       doc.on('error', reject);
 
       // ── Page 1: Cover / Identity ──
-      // Brand line
+      // Brand line — centered, top of page
       doc.fontSize(8).fillColor(LIGHT_GRAY)
-        .text('GARDEN FOR LIFE  —  Advanced Consciousness Assessment', MARGIN, MARGIN);
+        .text('GARDEN FOR LIFE', MARGIN, MARGIN + 40, {
+          width: CONTENT_W, align: 'center',
+          characterSpacing: 5,
+        });
+      doc.fontSize(7).fillColor(GRAY)
+        .text('Advanced Consciousness Assessment', MARGIN, MARGIN + 56, {
+          width: CONTENT_W, align: 'center',
+          characterSpacing: 2,
+        });
 
-      doc.moveTo(MARGIN, MARGIN + 14)
-        .lineTo(PAGE_W - MARGIN, MARGIN + 14)
-        .strokeColor(GREEN).lineWidth(1).stroke();
+      // Profile image circle (centered, below brand)
+      const imgCenterX = PAGE_W / 2;
+      const imgCenterY = 260;
+      const imgRadius = 80;
+      doc.save();
+      doc.circle(imgCenterX, imgCenterY, imgRadius).clip();
+      // Placeholder circle with purple fill (actual image would replace this)
+      doc.circle(imgCenterX, imgCenterY, imgRadius)
+        .fillColor('#1a1a2e').fill();
+      doc.restore();
+      // Circle border
+      doc.circle(imgCenterX, imgCenterY, imgRadius)
+        .strokeColor(PURPLE).lineWidth(2).stroke();
 
-      let y = MARGIN + 30;
-
-      // Extended Archetype Name — "Jij navigeert als [name]"
+      // Extended Archetype Name — large centered
       const displayName = data.extendedArchetypeName || data.archetypeKey || 'Unknown';
-      doc.fontSize(24).fillColor(PURPLE).font('Helvetica-Bold')
-        .text(`Jij navigeert als ${displayName}`, MARGIN, y, {
+      let y = imgCenterY + imgRadius + 30;
+      doc.fontSize(28).fillColor('#ffffff').font('Helvetica-Bold')
+        .text(displayName, MARGIN, y, {
           width: CONTENT_W, align: 'center',
         });
-      y += 36;
+      y += 40;
 
-      // Subtitle (support group)
+      // Support archetype subtitle
       if (data.supportGroup) {
-        doc.fontSize(11).fillColor(ORANGE).font('Helvetica')
-          .text(`Support Group: ${data.supportGroup}`, MARGIN, y, {
+        doc.fontSize(11).fillColor(PURPLE).font('Helvetica')
+          .text(`Support: ${data.supportGroup}`, MARGIN, y, {
             width: CONTENT_W, align: 'center',
           });
-        y += 20;
+        y += 24;
+      }
+
+      // Quote / archetype description
+      const quote = data.archetypeDescription || '';
+      if (quote) {
+        y += 10;
+        // Purple left bar
+        doc.rect(MARGIN + 80, y, 3, 60).fillColor(PURPLE).fill();
+        doc.fontSize(10).fillColor(LIGHT_GRAY).font('Helvetica-Oblique')
+          .text(`"${quote}"`, MARGIN + 92, y + 6, {
+            width: CONTENT_W - 180, align: 'left',
+            lineGap: 4,
+          });
+        y = Math.max(y + 70, doc.y + 10);
       }
 
       // Date
       const dateStr = data.createdAt
         ? new Date(data.createdAt).toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' })
         : new Date().toLocaleDateString('nl-NL');
-      doc.fontSize(9).fillColor(GRAY).font('Helvetica')
-        .text(`Datum: ${dateStr}`, MARGIN, y, {
+      doc.fontSize(8).fillColor(GRAY).font('Helvetica')
+        .text(`Datum: ${dateStr}`, MARGIN, PAGE_H - MARGIN - 30, {
           width: CONTENT_W, align: 'center',
         });
-      y += 30;
 
-      // Horizontal rule
+      // ── Page 2: Juridische Informatie ──
+      doc.addPage();
+      y = MARGIN;
+
+      // Legal header
+      doc.fontSize(14).fillColor(ORANGE).font('Helvetica-Bold')
+        .text('JURIDISCHE INFORMATIE', MARGIN, y, {
+          width: CONTENT_W, align: 'center',
+          characterSpacing: 2,
+        });
+      y += 22;
+      doc.fontSize(7).fillColor(GRAY).font('Helvetica')
+        .text('Lees deze pagina zorgvuldig door voordat u verder leest', MARGIN, y, {
+          width: CONTENT_W, align: 'center',
+        });
+      y += 16;
       doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y)
         .strokeColor(LIGHT_GRAY).lineWidth(0.5).stroke();
-      y += 16;
+      y += 12;
+
+      // Main disclaimer box
+      doc.rect(MARGIN, y, CONTENT_W, 52)
+        .fillColor('#1a1308').fill();
+      doc.rect(MARGIN, y, CONTENT_W, 52)
+        .strokeColor(ORANGE).lineWidth(0.5).stroke();
+      doc.fontSize(8).fillColor(ORANGE).font('Helvetica-Bold')
+        .text('Dit rapport is gegenereerd door een AI-model en vormt geen klinische diagnose, medisch advies of psychologisch oordeel. De resultaten zijn indicatief binnen het Garden for Life-model en mogen niet worden gebruikt als vervanging voor professionele hulpverlening.',
+          MARGIN + 10, y + 8, { width: CONTENT_W - 20, align: 'center', lineGap: 3 });
+      y += 64;
+
+      // Legal sections
+      const legalSections = [
+        {
+          title: '1. MODELDISCLAIMER',
+          text: 'Garden for Life gebruikt het Deltawerken-Model, een metaforisch raamwerk gebaseerd op 12 archetypische patronen. Alle termen zoals "Nature", "Culture", "Shadow" en "Polarization" zijn modelconcepten — geen biologische, neurologische of medische feiten. De analyse beschrijft antwoordpatronen, niet uw persoonlijkheid als vaststaand gegeven.',
+        },
+        {
+          title: '2. AI-TRANSPARANTIE (EU AI ACT)',
+          text: 'De persoonlijkheidsanalyse is gegenereerd door een groot taalmodel (LLM). De analyse is gebaseerd op uw antwoorden en eventueel geüploade documenten. Het AI-systeem kan onnauwkeurigheden of hallucinaties bevatten. De output mag niet worden beschouwd als objectieve waarheid. Er vindt géén geautomatiseerde besluitvorming plaats.',
+        },
+        {
+          title: '3. GEGEVENSBESCHERMING (AVG / GDPR)',
+          text: 'Uw gegevens worden verwerkt op grond van uitdrukkelijke toestemming (Art. 6 lid 1a AVG). Bijzondere persoonsgegevens worden verwerkt op grond van Art. 9 lid 2a AVG. U heeft recht op inzage, rectificatie, verwijdering, intrekking van toestemming, dataportabiliteit, en het indienen van een klacht bij de Autoriteit Persoonsgegevens.',
+        },
+        {
+          title: '4. GEGEVENSBEWARING',
+          text: 'Uw assessment-resultaten worden maximaal 90 dagen bewaard op beveiligde servers, waarna ze automatisch en onherroepelijk worden verwijderd. Dit rapport is uw persoonlijke kopie. Garden for Life bewaart na verwijdering geen kopie.',
+        },
+        {
+          title: '5. INTELLECTUEEL EIGENDOM',
+          text: 'Het Deltawerken-Model, de archetypische geometrie, de vragenlijst en de visuele ontwerpen zijn intellectueel eigendom van Garden for Life / Yuan Wu. Dit rapport is uitsluitend voor persoonlijk gebruik. Reproductie, distributie of commerciële exploitatie zonder toestemming is verboden.',
+        },
+        {
+          title: '6. BEPERKINGEN & AANSPRAKELIJKHEID',
+          text: 'Garden for Life aanvaardt geen aansprakelijkheid voor beslissingen genomen op basis van dit rapport. Bij psychische klachten wordt u dringend aangeraden contact op te nemen met een gekwalificeerde zorgprofessional. De resultaten zijn een startpunt voor zelfreflectie, niet een eindoordeel.',
+        },
+      ];
+
+      legalSections.forEach((section) => {
+        if (y > PAGE_H - MARGIN - 70) {
+          doc.addPage();
+          y = MARGIN;
+        }
+        doc.fontSize(8).fillColor(GREEN).font('Helvetica-Bold')
+          .text(section.title, MARGIN, y);
+        y += 12;
+        doc.fontSize(7.5).fillColor(GRAY).font('Helvetica')
+          .text(section.text, MARGIN + 4, y, {
+            width: CONTENT_W - 8,
+            lineGap: 2,
+          });
+        y = doc.y + 10;
+      });
+
+      // Legal footer
+      y += 4;
+      doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y)
+        .strokeColor(LIGHT_GRAY).lineWidth(0.5).stroke();
+      y += 8;
+      doc.fontSize(6.5).fillColor(GRAY).font('Helvetica')
+        .text('Door dit rapport te downloaden bevestigt u kennis te hebben genomen van bovenstaande voorwaarden.', MARGIN, y, {
+          width: CONTENT_W, align: 'center',
+        });
+      y += 10;
+      doc.fontSize(6.5).fillColor(GRAY).font('Helvetica')
+        .text('Volledige juridische documenten: www.gardenforlife.nl  •  Contact: info@gardenforlife.nl', MARGIN, y, {
+          width: CONTENT_W, align: 'center',
+        });
+
+      // ── Page 3+: Assessment Results ──
+      doc.addPage();
+      y = MARGIN;
+
+      // Brand line for results pages
+      doc.fontSize(8).fillColor(LIGHT_GRAY)
+        .text('GARDEN FOR LIFE  —  Advanced Consciousness Assessment', MARGIN, y);
+      doc.moveTo(MARGIN, y + 14)
+        .lineTo(PAGE_W - MARGIN, y + 14)
+        .strokeColor(GREEN).lineWidth(1).stroke();
+      y += 30;
 
       // ── OCEAN Scores (0-100) ──
       if (data.oceanScores) {

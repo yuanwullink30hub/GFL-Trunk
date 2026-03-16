@@ -10,7 +10,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { ObjectId } = require('mongodb');
 const config = require('../config');
-const { collections } = require('../db');
+const { collections, getDB } = require('../db');
 const { authRequired } = require('../middleware/auth');
 const { encrypt, decrypt, hash, decryptUser } = require('../services/encryption');
 
@@ -107,6 +107,18 @@ router.post('/login', async (req, res) => {
     const decryptedDisplayName = decrypt(user.displayName);
     const token = signToken(user._id, decryptedEmail, user.role || 'client');
 
+    // Audit log: record admin logins asynchronously (fire-and-forget)
+    if (user.role === 'admin') {
+      getDB().collection('devActivity').insertOne({
+        type: 'admin_login',
+        timestamp: new Date(),
+        userId: String(user._id),
+        email: decryptedEmail,
+        message: '', branch: '', hash: '', reportId: null, reportType: '',
+        userAgent: req.get('user-agent') || '',
+      }).catch((err) => console.warn('[Auth] Audit log failed:', err.message));
+    }
+
     res.json({
       token,
       user: {
@@ -150,6 +162,50 @@ router.get('/me', authRequired, async (req, res) => {
   } catch (err) {
     console.error('[Auth] Me error:', err.message);
     res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// DELETE /api/auth/account  (auth required)
+// GDPR right-to-erasure: deletes the authenticated user's account,
+// all their assessments, and all their assessment reviews.
+// ─────────────────────────────────────────────────────────────
+
+router.delete('/account', authRequired, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Prevent the sole admin from deleting themselves
+    const user = await collections.users().findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    if (user.role === 'admin') {
+      const adminCount = await collections.users().countDocuments({ role: 'admin' });
+      if (adminCount <= 1) {
+        return res.status(400).json({ error: 'Cannot delete the only admin account' });
+      }
+    }
+
+    // Delete all associated data
+    const [assessmentResult, reviewResult] = await Promise.all([
+      collections.assessments().deleteMany({ userId }),
+      getDB().collection('assessmentReviews').deleteMany({ userId }),
+    ]);
+
+    // Delete the user record last
+    await collections.users().deleteOne({ _id: new ObjectId(userId) });
+
+    console.log(`[Auth] Account deleted: ${userId} — ${assessmentResult.deletedCount} assessments, ${reviewResult.deletedCount} reviews`);
+
+    res.json({
+      success: true,
+      deletedAssessments: assessmentResult.deletedCount,
+      deletedReviews: reviewResult.deletedCount,
+    });
+  } catch (err) {
+    console.error('[Auth] Delete account error:', err.message);
+    res.status(500).json({ error: 'Failed to delete account' });
   }
 });
 

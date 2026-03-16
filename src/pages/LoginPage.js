@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { login, register, getMe, logout, getToken } from '../utils/apiClient';
+import { login, register, getMe, logout, getToken, logActivity } from '../utils/apiClient';
 import ClientProfileModal from '../components/assessment/ClientProfileModal';
 import AdminDashboardModal from '../components/assessment/AdminDashboardModal';
 import {
@@ -134,6 +134,14 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         ? await login({ email, password })
         : await register({ email, password, displayName });
       setUser(data.user);
+      // Audit log: record admin logins (fire-and-forget)
+      if (mode === 'login' && data.user?.role === 'admin') {
+        logActivity({
+          type: 'admin_login',
+          userId: data.user.id,
+          email: data.user.email,
+        }).catch(() => {});
+      }
       setEmail(''); setPassword(''); setDisplayName('');
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }

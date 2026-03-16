@@ -95,7 +95,7 @@ const OVERLAY_FRAG = `
     // ── Nebula A: Top-left corner — magenta-purple, covers logo & header ──
     // Anchored at the top-left corner so gas extends from the very edge
     vec2 nA = p1 + warpOffset - vec2(-0.55, 0.35);
-    float nebA = exp(-(nA.x * nA.x * 0.9 + nA.y * nA.y * 1.2));
+    float nebA = exp(-(nA.x * nA.x * 1.5 + nA.y * nA.y * 1.88));
 
     // Cloud mask — higher starting value for denser coverage from the start
     float cloudMask = clamp(nebA * 1.6, 0.0, 1.0);

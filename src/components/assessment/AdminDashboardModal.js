@@ -26,8 +26,9 @@ import {
   getProviders,
   sendFormDirect,
   getSessions,
-  clearSessions,
   getAdminReviews,
+  logActivity,
+  getAccessLog,
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
@@ -936,6 +937,14 @@ const AssessmentsTab = memo(() => {
     try {
       const d = await getAdminAssessment(id);
       setDetail(d);
+
+      // Audit log: record which assessment report was viewed
+      logActivity({
+        type: 'report_view',
+        reportId: String(id),
+        reportType: 'assessment',
+        message: d?.archetypeKey || '',
+      }).catch((e) => console.warn('[GFL] logActivity failed:', e));
       
       // Fetch reviews for this assessment
       try {
@@ -2782,13 +2791,15 @@ function formatDuration(ms) {
   return `${hr}u ${rm}m`;
 }
 
-const EVENT_ICONS = { edit: '✏️', commit: '📦', push: '🚀' };
-const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc' };
+const EVENT_ICONS  = { edit: '✏️', commit: '📦', push: '🚀', admin_login: '🔐', report_view: '📋' };
+const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc', admin_login: '#f59e0b', report_view: '#34d399' };
 
 const AuditLogTab = memo(() => {
   const [sessions, setSessions] = useState([]);
+  const [accessEvents, setAccessEvents] = useState([]);
   const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [accessLoading, setAccessLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedIdx, setExpandedIdx] = useState(null);
   const tc = CARD_COLORS.gold;
@@ -2807,7 +2818,20 @@ const AuditLogTab = memo(() => {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  const fetchAccess = async () => {
+    setAccessLoading(true);
+    try {
+      const res = await getAccessLog(500);
+      setAccessEvents(res.events || []);
+    } catch (err) {
+      // non-critical — show empty
+      setAccessEvents([]);
+    } finally {
+      setAccessLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchData(); fetchAccess(); }, []);
 
   const handleClear = async () => {
     if (!window.confirm('Alle dev-activiteit wissen? Dit kan niet ongedaan worden.')) return;
@@ -2854,24 +2878,63 @@ const AuditLogTab = memo(() => {
 
       {/* Controls */}
       <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
-        <button onClick={fetchData} style={{
+        <button onClick={() => { fetchData(); fetchAccess(); }} style={{
           padding: '0.25rem 0.6rem', fontSize: 'max(8px, 0.4vw)',
           backgroundColor: 'rgba(255, 174, 0, 0.08)', color: C.gold,
           border: '1px solid rgba(255, 174, 0, 0.15)', borderRadius: '0.15rem',
           cursor: 'pointer', textTransform: 'uppercase', fontWeight: 'bold',
         }}>↻ VERNIEUWEN</button>
-        <button onClick={handleClear} style={{
-          padding: '0.25rem 0.6rem', fontSize: 'max(8px, 0.4vw)',
-          backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#f87171',
-          border: '1px solid rgba(239, 68, 68, 0.15)', borderRadius: '0.15rem',
-          cursor: 'pointer', textTransform: 'uppercase', fontWeight: 'bold',
-        }}>🗑 WISSEN</button>
       </div>
 
       {error && <ErrorBox msg={error} />}
 
+      {/* Access Log — report views and admin logins */}
+      {(() => {
+        return (
+          <DashboardCard title={`Toegangslog — Raadplegingen & Logins (${accessEvents.length})`} color="green">
+            {accessLoading ? (
+              <div style={{ textAlign: 'center', padding: '1rem', color: '#4ade8060', fontSize: 'max(10px, 0.5vw)' }}>Laden...</div>
+            ) : accessEvents.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '1rem', color: '#4ade8060', fontSize: 'max(10px, 0.5vw)' }}>
+                Nog geen toegang geregistreerd
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '35vh', overflowY: 'auto' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 1fr 1.4fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(74,222,128,0.15)' }}>
+                  {['TIJDSTIP', 'TYPE', 'REPORT ID', 'DETAIL'].map(h => (
+                    <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#4ade8080', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
+                  ))}
+                </div>
+                {accessEvents.map((ev, i) => (
+                  <div key={i} style={{
+                    display: 'grid', gridTemplateColumns: '1.6fr 0.6fr 1fr 1.4fr',
+                    gap: '0.3rem', padding: '0.3rem 0.5rem', alignItems: 'center',
+                    backgroundColor: i % 2 === 0 ? 'rgba(74,222,128,0.02)' : 'transparent',
+                    borderLeft: `2px solid ${EVENT_COLORS[ev.type] || '#888'}`,
+                    borderRadius: '0 0.15rem 0.15rem 0',
+                  }}>
+                    <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>
+                      {new Date(ev.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </div>
+                    <div style={{ fontSize: 'max(8px, 0.42vw)', color: EVENT_COLORS[ev.type], fontWeight: 'bold', textTransform: 'uppercase' }}>
+                      {EVENT_ICONS[ev.type]} {ev.type === 'report_view' ? 'rapport' : 'login'}
+                    </div>
+                    <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#34d399', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {ev.reportId || '—'}
+                    </div>
+                    <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {ev.message || ev.email || '—'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </DashboardCard>
+        );
+      })()}
+
       {/* Session list */}
-      <DashboardCard title={`Dev Sessies (${totalSessions})`} color="gold">
+      <DashboardCard title={`Audit Log — Sessies (${totalSessions})`} color="gold">
         {loading ? (
           <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>
             Laden...
@@ -2966,6 +3029,9 @@ const AuditLogTab = memo(() => {
                           {ev.branch && <span style={{ color: '#60a5fa' }}>⎇ {ev.branch}</span>}
                           {ev.hash && <span style={{ color: '#888', fontFamily: 'monospace' }}>{ev.hash}</span>}
                           {ev.message && <span style={{ color: C.text, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '20vw' }}>"{ev.message}"</span>}
+                          {ev.email && <span style={{ color: '#f59e0b' }}>👤 {ev.email}</span>}
+                          {ev.reportId && <span style={{ color: '#34d399', fontFamily: 'monospace', fontSize: 'max(7px, 0.34vw)' }}>ID: {ev.reportId}</span>}
+                          {ev.reportType && <span style={{ color: '#34d399', textTransform: 'uppercase' }}>{ev.reportType}</span>}
                         </div>
                       ))}
                     </div>

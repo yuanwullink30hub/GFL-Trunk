@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { getHistory, getAssessment, downloadPdf } from '../../utils/apiClient';
+import { getHistory, getAssessment, downloadPdf, deleteOwnAccount } from '../../utils/apiClient';
 import { BTN, TAB_STYLE, ERROR_STYLE, hover, C, FONT } from './dashboardStyles';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 
@@ -92,6 +92,26 @@ const CORNER = (pos) => ({
 const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
   useLanguage();
   const [tab, setTab] = useState('overview');
+  const [deleteStep, setDeleteStep] = useState(0); // 0=hidden 1=confirm 2=typing
+  const [deleteInput, setDeleteInput] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (deleteInput !== 'VERWIJDER') {
+      setDeleteError('Typ precies "VERWIJDER" om te bevestigen');
+      return;
+    }
+    setDeleteLoading(true);
+    setDeleteError('');
+    try {
+      await deleteOwnAccount();
+      onLogout(); // token is cleared — return to logged-out state
+    } catch (err) {
+      setDeleteError(err.message || 'Verwijderen mislukt');
+      setDeleteLoading(false);
+    }
+  }, [deleteInput, onLogout]);
 
   return (
     /* Outer shell — fixed size */
@@ -199,32 +219,112 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
           {tab === 'agenda' && <AgendaTab />}
         </div>
 
-        {/* Footer — return + logout */}
+        {/* Footer — return + logout + delete account */}
         <div style={{
-          display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.5rem 1rem',
           borderTop: '1px solid rgba(255,255,255,0.05)',
           backgroundColor: 'rgba(42, 10, 56, 0.35)',
           position: 'relative', zIndex: 2,
         }}>
-          <button onClick={onClose} style={{
-            ...BTN, width: 'auto', padding: '0.35rem 1rem',
-            fontSize: 'max(9px, 0.48vw)',
-          }}
-            onMouseEnter={(e) => hover(e, true)}
-            onMouseLeave={(e) => hover(e, false)}>
-            ← Terug
-          </button>
-          <button onClick={onLogout} style={{
-            ...BTN, width: 'auto', padding: '0.35rem 1rem',
-            fontSize: 'max(9px, 0.48vw)',
-            borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
-          }}
-            onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-            onMouseLeave={(e) => { e.target.style.background = BTN.background; e.target.style.color = '#fca5a5'; }}>
-            Uitloggen
-          </button>
+          {/* Delete confirmation panel (steps 1 & 2) */}
+          {deleteStep >= 1 && (
+            <div style={{
+              padding: '0.75rem 1rem',
+              borderBottom: '1px solid rgba(239, 68, 68, 0.2)',
+              backgroundColor: 'rgba(239, 68, 68, 0.05)',
+            }}>
+              {deleteStep === 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#fca5a5', fontSize: 'max(9px, 0.48vw)', fontFamily: FONT }}>
+                    ⚠ Dit verwijdert je account én alle bijbehorende assessments permanent. Weet je het zeker?
+                  </span>
+                  <button
+                    onClick={() => setDeleteStep(2)}
+                    style={{ ...BTN, width: 'auto', padding: '0.25rem 0.7rem', fontSize: 'max(9px, 0.46vw)', borderColor: 'rgba(239, 68, 68, 0.6)', color: '#fca5a5' }}
+                    onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.25)'; }}
+                    onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
+                    Ja, doorgaan
+                  </button>
+                  <button
+                    onClick={() => { setDeleteStep(0); setDeleteError(''); }}
+                    style={{ ...BTN, width: 'auto', padding: '0.25rem 0.7rem', fontSize: 'max(9px, 0.46vw)' }}
+                    onMouseEnter={(e) => hover(e, true)}
+                    onMouseLeave={(e) => hover(e, false)}>
+                    Annuleren
+                  </button>
+                </div>
+              )}
+              {deleteStep === 2 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#fca5a5', fontSize: 'max(9px, 0.48vw)', fontFamily: FONT }}>
+                    Typ <strong>VERWIJDER</strong> om te bevestigen:
+                  </span>
+                  <input
+                    value={deleteInput}
+                    onChange={(e) => setDeleteInput(e.target.value)}
+                    placeholder="VERWIJDER"
+                    style={{
+                      background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(239,68,68,0.4)',
+                      color: '#fca5a5', fontFamily: FONT, fontSize: 'max(9px, 0.48vw)',
+                      padding: '0.2rem 0.5rem', borderRadius: '0.2rem', outline: 'none', width: '9rem',
+                    }}
+                  />
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteLoading}
+                    style={{ ...BTN, width: 'auto', padding: '0.25rem 0.7rem', fontSize: 'max(9px, 0.46vw)', borderColor: 'rgba(239, 68, 68, 0.7)', color: '#fca5a5', opacity: deleteLoading ? 0.5 : 1 }}
+                    onMouseEnter={(e) => { if (!deleteLoading) e.target.style.background = 'rgba(239, 68, 68, 0.3)'; }}
+                    onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
+                    {deleteLoading ? 'Bezig...' : 'Account verwijderen'}
+                  </button>
+                  <button
+                    onClick={() => { setDeleteStep(0); setDeleteInput(''); setDeleteError(''); }}
+                    style={{ ...BTN, width: 'auto', padding: '0.25rem 0.7rem', fontSize: 'max(9px, 0.46vw)' }}
+                    onMouseEnter={(e) => hover(e, true)}
+                    onMouseLeave={(e) => hover(e, false)}>
+                    Annuleren
+                  </button>
+                  {deleteError && <span style={{ color: '#f87171', fontSize: 'max(8px, 0.44vw)', fontFamily: FONT }}>{deleteError}</span>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action row */}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '0.5rem 1rem',
+          }}>
+            <button
+              onClick={() => { setDeleteStep(1); setDeleteInput(''); setDeleteError(''); }}
+              style={{
+                background: 'none', border: 'none', color: 'rgba(239, 68, 68, 0.4)',
+                fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', cursor: 'pointer',
+                textDecoration: 'underline', letterSpacing: '0.05em', padding: 0,
+              }}
+              onMouseEnter={(e) => { e.target.style.color = '#fca5a5'; }}
+              onMouseLeave={(e) => { e.target.style.color = 'rgba(239, 68, 68, 0.4)'; }}>
+              Account verwijderen
+            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button onClick={onClose} style={{
+                ...BTN, width: 'auto', padding: '0.35rem 1rem',
+                fontSize: 'max(9px, 0.48vw)',
+              }}
+                onMouseEnter={(e) => hover(e, true)}
+                onMouseLeave={(e) => hover(e, false)}>
+                ← Terug
+              </button>
+              <button onClick={onLogout} style={{
+                ...BTN, width: 'auto', padding: '0.35rem 1rem',
+                fontSize: 'max(9px, 0.48vw)',
+                borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
+              }}
+                onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+                onMouseLeave={(e) => { e.target.style.background = BTN.background; e.target.style.color = '#fca5a5'; }}>
+                Uitloggen
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

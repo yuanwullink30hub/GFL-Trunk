@@ -237,15 +237,15 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // BG1: Upper — cool violet wash
     vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
-    float nebBG1 = exp(-(bgN1.x * bgN1.x * 1.7 + bgN1.y * bgN1.y * 1.4));
+    float nebBG1 = exp(-(bgN1.x * bgN1.x * 2.6 + bgN1.y * bgN1.y * 2.25));
 
     // BG2: Lower-left — warm ember
     vec2 bgN2 = p0 + bgWarpOff - vec2(-0.25, -0.22);
-    float nebBG2 = exp(-(bgN2.x * bgN2.x * 2.1 + bgN2.y * bgN2.y * 1.7));
+    float nebBG2 = exp(-(bgN2.x * bgN2.x * 3.15 + bgN2.y * bgN2.y * 2.6));
 
     // BG3: Right — blue haze
     vec2 bgN3 = p0 + bgWarpOff - vec2(0.28, -0.10);
-    float nebBG3 = exp(-(bgN3.x * bgN3.x * 2.5 + bgN3.y * bgN3.y * 2.1));
+    float nebBG3 = exp(-(bgN3.x * bgN3.x * 3.75 + bgN3.y * bgN3.y * 3.15));
 
 
     float bgGaussMask = clamp(nebBG1 + nebBG2 * 0.8 + nebBG3 * 0.6, 0.0, 1.0);
@@ -254,31 +254,31 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Large shared gas envelope — connects all clouds into one continuous mass
     vec2 nEnv = p1 + warpOffset * 0.5 - vec2(0.0, -0.02);
-    float nebEnvelope = exp(-(nEnv.x * nEnv.x * 0.4 + nEnv.y * nEnv.y * 0.35));
+    float nebEnvelope = exp(-(nEnv.x * nEnv.x * 0.68 + nEnv.y * nEnv.y * 0.6));
 
     // Nebula A: Upper-center — magenta-purple, main feature (wide, pulled toward center)
     vec2 nA = p1 + warpOffset - vec2(-0.05, 0.12);
-    float nebA = exp(-(nA.x * nA.x * 1.4 + nA.y * nA.y * 1.2));
+    float nebA = exp(-(nA.x * nA.x * 2.1 + nA.y * nA.y * 1.88));
 
     // Nebula B: Lower-left — warm orange-gold (wide, pulled toward center)
     vec2 nB = p1 + warpOffset - vec2(-0.18, -0.16);
-    float nebB = exp(-(nB.x * nB.x * 1.6 + nB.y * nB.y * 1.4));
+    float nebB = exp(-(nB.x * nB.x * 2.4 + nB.y * nB.y * 2.1));
 
     // Nebula C: Right — phoenix warm, wider base (pulled toward center)
     vec2 nC_base = p1 + warpOffset - vec2(0.20, -0.06);
-    float nebC_body = exp(-(nC_base.x * nC_base.x * 2.8 + nC_base.y * nC_base.y * 2.2));
+    float nebC_body = exp(-(nC_base.x * nC_base.x * 3.75 + nC_base.y * nC_base.y * 3.4));
     vec2 nC_lw = nC_base - vec2(-0.06, -0.02);
     vec2 lw = vec2(0.866 * nC_lw.x + 0.5 * nC_lw.y, -0.5 * nC_lw.x + 0.866 * nC_lw.y);
-    float nebC_lw = exp(-(lw.x * lw.x * 2.5 + lw.y * lw.y * 10.0));
+    float nebC_lw = exp(-(lw.x * lw.x * 3.4 + lw.y * lw.y * 7.5));
     vec2 nC_rw = nC_base - vec2(0.07, -0.02);
     vec2 rw = vec2(0.866 * nC_rw.x - 0.5 * nC_rw.y, 0.5 * nC_rw.x + 0.866 * nC_rw.y);
-    float nebC_rw = exp(-(rw.x * rw.x * 2.5 + rw.y * rw.y * 10.0));
+    float nebC_rw = exp(-(rw.x * rw.x * 3.4 + rw.y * rw.y * 7.5));
     vec2 nC_hd = nC_base - vec2(0.01, 0.05);
     vec2 hd = vec2(0.966 * nC_hd.x + 0.259 * nC_hd.y, -0.259 * nC_hd.x + 0.966 * nC_hd.y);
-    float nebC_hd = exp(-(hd.x * hd.x * 8.0 + hd.y * hd.y * 2.5));
+    float nebC_hd = exp(-(hd.x * hd.x * 6.0 + hd.y * hd.y * 3.4));
     vec2 nC_tl = nC_base - vec2(-0.015, -0.07);
     vec2 tl = vec2(0.985 * nC_tl.x + 0.174 * nC_tl.y, -0.174 * nC_tl.x + 0.985 * nC_tl.y);
-    float nebC_tl = exp(-(tl.x * tl.x * 7.0 + tl.y * tl.y * 2.0));
+    float nebC_tl = exp(-(tl.x * tl.x * 5.25 + tl.y * tl.y * 3.0));
     float nebC = max(max(max(nebC_body, nebC_lw), max(nebC_rw, nebC_hd)), nebC_tl);
 
     // Noise-driven breakup — sculpts organic holes and tendrils in the gas

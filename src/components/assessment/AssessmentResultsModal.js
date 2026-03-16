@@ -68,6 +68,8 @@ const AssessmentResultsModal = ({
   
   // PDF download state
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [showPdfConsent, setShowPdfConsent] = useState(false);
+  const [pdfConsentChecked, setPdfConsentChecked] = useState(false);
 
   // ── AI Analysis state ──
   const [aiSections, setAiSections] = useState(null);
@@ -80,6 +82,7 @@ const AssessmentResultsModal = ({
 
   // ── Auto-save to backend when user is logged in ──
   const [savedToBackend, setSavedToBackend] = useState(false);
+  const [savedAssessmentId, setSavedAssessmentId] = useState(null);
   useEffect(() => {
     if (!result || savedToBackend || !getToken()) return;
     const oceanScores = result.oceanScores || result.extendedOcean?.ocean || null;
@@ -93,9 +96,10 @@ const AssessmentResultsModal = ({
       harmonyScore: result.harmonyScore ?? null,
       consciousnessLevel: result.consciousnessLevel || null,
       overallShadow: result.overallShadow || null,
-    }).then(() => {
+    }).then((saved) => {
       setSavedToBackend(true);
-      console.log('[GFL] Assessment saved to account');
+      if (saved?.id) setSavedAssessmentId(String(saved.id));
+      console.log('[GFL] Assessment saved to account, id:', saved?.id);
     }).catch((err) => {
       console.warn('[GFL] Could not save assessment:', err.message);
     });
@@ -118,7 +122,7 @@ const AssessmentResultsModal = ({
     
     // Validate at least one field is filled
     if (!whatWorked.trim() && !whatDidntWork.trim() && !suggestions.trim()) {
-      setReviewError('Please fill in at least one field');
+      setReviewError('Vul minimaal één veld in');
       return;
     }
 
@@ -127,7 +131,7 @@ const AssessmentResultsModal = ({
 
     try {
       await submitAssessmentReview({
-        assessmentId: result?.id || 'anonymous',
+        assessmentId: savedAssessmentId || 'anonymous',
         whatWorked: whatWorked.trim(),
         whatDidntWork: whatDidntWork.trim(),
         suggestions: suggestions.trim(),
@@ -142,7 +146,7 @@ const AssessmentResultsModal = ({
     } finally {
       setIsSubmittingReview(false);
     }
-  }, [reviewFormData, result]);
+  }, [reviewFormData, result, savedAssessmentId]);
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -283,26 +287,36 @@ const AssessmentResultsModal = ({
       const contentW = W - margin * 2;
       let y = margin;
 
-      // Colors (only used for accents, not background)
+      // Dark theme palette
+      const bg = [10, 10, 14];
       const orange = [249, 115, 22];
       const purple = [168, 85, 247];
       const green = [0, 180, 110];
       const red = [220, 60, 60];
-      const black = [30, 30, 30];
-      const gray = [100, 100, 100];
-      const lightGray = [180, 180, 180];
+      const white = [240, 240, 245];
+      const dimWhite = [180, 180, 190];
+      const mutedGray = [120, 120, 130];
+      const cardBg = [22, 22, 28];
+
+      // ── Helper: paint page background ──
+      const paintBg = () => {
+        pdf.setFillColor(...bg);
+        pdf.rect(0, 0, W, H, 'F');
+      };
+      paintBg(); // first page
 
       // ── Helper: add page if needed ──
       const ensureSpace = (needed) => {
         if (y + needed > H - margin) {
           pdf.addPage();
+          paintBg();
           y = margin;
           return true;
         }
         return false;
       };
 
-      // ── Helper: wrapped text that returns lines used ──
+      // ── Helper: wrapped text ──
       const writeWrapped = (text, x, startY, maxW, fontSize, color, style = 'normal') => {
         pdf.setFontSize(fontSize);
         pdf.setTextColor(...color);
@@ -336,18 +350,18 @@ const AssessmentResultsModal = ({
         ensureSpace(6);
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(...gray);
+        pdf.setTextColor(...mutedGray);
         pdf.text(key + ':', margin + 2, y);
         const keyW = pdf.getTextWidth(key + ':  ');
         pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(...black);
+        pdf.setTextColor(...white);
         const valLines = pdf.splitTextToSize(value, contentW - keyW - 4);
         pdf.text(valLines, margin + 2 + keyW, y);
         y += valLines.length * 4.2;
       };
 
       // ── Thin horizontal rule ──
-      const hr = (color = lightGray) => {
+      const hr = (color = mutedGray) => {
         ensureSpace(4);
         y += 2;
         pdf.setDrawColor(...color);
@@ -356,22 +370,31 @@ const AssessmentResultsModal = ({
         y += 4;
       };
 
+      // ── Helper: page footer ──
+      const pageFooter = () => {
+        pdf.setFontSize(6.5);
+        pdf.setTextColor(...mutedGray);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Garden for Life  \u2022  Advanced Consciousness Assessment', W / 2, H - 10, { align: 'center' });
+      };
+
       // ═══════════════════════════════════════════════════
-      // PAGE 1: COVER / IDENTITY
+      // PAGE 1: COVER — Large profile + archetype combo
       // ═══════════════════════════════════════════════════
 
       // Top brand line
       pdf.setFontSize(8);
-      pdf.setTextColor(...lightGray);
+      pdf.setTextColor(...mutedGray);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('GARDEN FOR LIFE  —  Advanced Consciousness Assessment', margin, y);
+      pdf.text('GARDEN FOR LIFE', margin, y);
       y += 3;
       pdf.setDrawColor(...green);
       pdf.setLineWidth(0.4);
       pdf.line(margin, y, W - margin, y);
-      y += 10;
+      y += 16;
 
-      // Profile image (try to load)
+      // Large profile image (centered, ~90mm)
+      let imageLoaded = false;
       try {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -381,98 +404,249 @@ const AssessmentResultsModal = ({
           img.src = result.imageUrl;
         });
         const imgCanvas = document.createElement('canvas');
-        const imgSize = 300;
+        const imgSize = 600;
         imgCanvas.width = imgSize;
         imgCanvas.height = imgSize;
         const ctx = imgCanvas.getContext('2d');
-        // Draw circular mask
+        // Circular mask
         ctx.beginPath();
         ctx.arc(imgSize / 2, imgSize / 2, imgSize / 2, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
         ctx.drawImage(img, 0, 0, imgSize, imgSize);
         const imgData = imgCanvas.toDataURL('image/png');
-        const pdfImgSize = 42;
+        const pdfImgSize = 90;
         const imgX = W / 2 - pdfImgSize / 2;
         pdf.addImage(imgData, 'PNG', imgX, y, pdfImgSize, pdfImgSize);
-        y += pdfImgSize + 6;
+        y += pdfImgSize + 12;
+        imageLoaded = true;
       } catch {
-        // Skip image if it can't be loaded
-        y += 4;
+        y += 8;
       }
 
-      // Extended Archetype Name (colored, centered)
-      pdf.setFontSize(22);
+      // Extended Archetype Name — large, centered
+      pdf.setFontSize(26);
       pdf.setTextColor(...purple);
       pdf.setFont('helvetica', 'bold');
       pdf.text(result.name || '', W / 2, y, { align: 'center' });
-      y += 8;
+      y += 10;
 
       if (result.extendedSubtitle) {
-        pdf.setFontSize(11);
+        pdf.setFontSize(12);
         pdf.setTextColor(...orange);
         pdf.setFont('helvetica', 'normal');
         pdf.text(result.extendedSubtitle, W / 2, y, { align: 'center' });
-        y += 6;
+        y += 8;
       }
 
-      // Description
-      if (result.description) {
-        pdf.setFontSize(10);
-        pdf.setTextColor(...gray);
-        pdf.setFont('helvetica', 'italic');
-        const descLines = pdf.splitTextToSize(`"${result.description}"`, contentW - 20);
-        descLines.forEach(line => {
-          pdf.text(line, W / 2, y, { align: 'center' });
-          y += 4.5;
-        });
-        y += 2;
-      }
-
-      // Main + Support indicator
+      // Main + Support combination — prominent display
       if (result.secondaryName) {
-        pdf.setFontSize(9);
-        pdf.setTextColor(...green);
+        y += 4;
+        // Decorative line
+        pdf.setDrawColor(...green);
+        pdf.setLineWidth(0.3);
+        const lineW = 40;
+        pdf.line(W / 2 - lineW, y, W / 2 + lineW, y);
+        y += 10;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(...dimWhite);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('MAIN ARCHETYPE', W / 2, y, { align: 'center' });
+        y += 6;
+        pdf.setFontSize(16);
+        pdf.setTextColor(...orange);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(
-          `${result.mainName} ${result.harmonyActive ? '\u27F7' : '+'} ${result.secondaryName}`,
-          W / 2, y, { align: 'center' }
-        );
-        y += 5;
+        pdf.text(result.mainName || '', W / 2, y, { align: 'center' });
+        y += 10;
+
+        // Connector symbol
+        pdf.setFontSize(14);
+        pdf.setTextColor(...green);
+        pdf.text(result.harmonyActive ? '\u27F7' : '+', W / 2, y, { align: 'center' });
+        y += 8;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(...dimWhite);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('SUPPORT ARCHETYPE', W / 2, y, { align: 'center' });
+        y += 6;
+        pdf.setFontSize(16);
+        pdf.setTextColor(...purple);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(result.secondaryName || '', W / 2, y, { align: 'center' });
+        y += 10;
       }
 
+      // Bonus badges
       if (result.harmonyActive) {
         pdf.setFontSize(8);
         pdf.setTextColor(...green);
-        pdf.text('Harmony Bonus Active (+33)', W / 2, y, { align: 'center' });
-        y += 4;
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('HARMONY BONUS ACTIVE (+33)', W / 2, y, { align: 'center' });
+        y += 5;
       }
       if (result.shadowBonusActive) {
         pdf.setFontSize(8);
         pdf.setTextColor(...orange);
-        pdf.text('Shadow Bonus Active (+69)', W / 2, y, { align: 'center' });
-        y += 4;
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('SHADOW BONUS ACTIVE (+69)', W / 2, y, { align: 'center' });
+        y += 5;
       }
 
-      hr(green);
+      // Score at bottom of cover
+      pdf.setFontSize(9);
+      pdf.setTextColor(...mutedGray);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Score: ${result.totalScore} / ${result.maxScore}`, W / 2, H - 22, { align: 'center' });
+      pdf.setFontSize(7);
+      pdf.text(`Gegenereerd op ${new Date().toLocaleDateString('nl-NL')}`, W / 2, H - 17, { align: 'center' });
+
+      pageFooter();
 
       // ═══════════════════════════════════════════════════
-      // SECTION 2: WHY THIS COMBINATION
+      // PAGE 2: LEGAL / COMPLIANCE
       // ═══════════════════════════════════════════════════
+      pdf.addPage();
+      paintBg();
+      y = margin;
+
+      // Header
+      pdf.setFontSize(16);
+      pdf.setTextColor(...white);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Juridische Informatie & Disclaimer', margin, y);
+      y += 4;
+      pdf.setDrawColor(...green);
+      pdf.setLineWidth(0.4);
+      pdf.line(margin, y, W - margin, y);
+      y += 10;
+
+      // ── Legal section helper (card-style) ──
+      const legalSection = (title, body, accentColor) => {
+        const bodyLines = pdf.splitTextToSize(body, contentW - 16);
+        const blockH = 12 + bodyLines.length * 4;
+        ensureSpace(blockH + 4);
+        // Card background
+        pdf.setFillColor(...cardBg);
+        pdf.roundedRect(margin, y - 2, contentW, blockH, 2, 2, 'F');
+        // Left accent bar
+        pdf.setFillColor(...accentColor);
+        pdf.rect(margin, y - 2, 2, blockH, 'F');
+        // Title
+        pdf.setFontSize(10);
+        pdf.setTextColor(...accentColor);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(title, margin + 8, y + 4);
+        // Body
+        pdf.setFontSize(8);
+        pdf.setTextColor(...dimWhite);
+        pdf.setFont('helvetica', 'normal');
+        const bodyY = y + 10;
+        bodyLines.forEach((line, i) => {
+          pdf.text(line, margin + 8, bodyY + i * 4);
+        });
+        y += blockH + 6;
+      };
+
+      legalSection(
+        '1. Productomschrijving',
+        'Dit document is gegenereerd door het Garden for Life Assessment System, een zelfreflectie-instrument gebaseerd op het Deltawerken model. ' +
+        'De resultaten in dit rapport zijn gebaseerd op een AI-gestuurd archetyperingsmodel en vormen geen klinische diagnose, psychologisch advies of medische beoordeling. ' +
+        'Het systeem kent op basis van uw antwoorden een archetypecombinatie toe die bedoeld is als spiegel voor persoonlijke reflectie.',
+        green
+      );
+
+      legalSection(
+        '2. Metaforisch Kader & Wetenschappelijke Context',
+        'Dit systeem maakt gebruik van termen en concepten uit de neurowetenschappen, kwantumbiologie en Zero Point Energy (ZPE). ' +
+        'Deze worden uitsluitend metaforisch ingezet als denkkader en worden niet gepresenteerd als gevestigde wetenschap. ' +
+        'Verwijzingen naar neurotransmitters, kwantumvelden of energetische patronen dienen als beeldspraak om gedragspatronen te duiden, niet als wetenschappelijke claims.',
+        purple
+      );
+
+      legalSection(
+        '3. AI Agent Prompt — Verantwoordelijkheid',
+        'De AI Agent Prompt die in dit document is opgenomen, is een experimenteel gegenereerd stijlprofiel. ' +
+        'De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. ' +
+        'Gebruik in externe AI-tools (zoals ChatGPT, Claude of andere) valt volledig buiten de verantwoordelijkheid van Garden For Life. ' +
+        'De gebruiker aanvaardt volledige verantwoordelijkheid voor het gebruik van deze prompt buiten het Garden for Life platform.',
+        orange
+      );
+
+      legalSection(
+        '4. Gegevensbescherming (AVG/GDPR)',
+        'Garden for Life verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). ' +
+        'Assessment-resultaten worden maximaal 90 dagen bewaard op beveiligde servers binnen de EU (Frankfurt, Duitsland). ' +
+        'E-mailadressen en weergavenamen worden versleuteld opgeslagen (AES-256-GCM). ' +
+        'Na de bewaartermijn worden gegevens automatisch en onherroepelijk verwijderd. ' +
+        'U heeft te allen tijde het recht om uw account en alle bijbehorende gegevens direct te verwijderen via uw profielinstellingen.',
+        green
+      );
+
+      legalSection(
+        '5. Intellectueel Eigendom',
+        'Het Deltawerken model, de archetypenstructuur, het scoringssysteem en alle bijbehorende teksten en visualisaties zijn intellectueel eigendom van Garden For Life. ' +
+        'Dit document is uitsluitend bedoeld voor persoonlijk gebruik door de ontvanger. ' +
+        'Reproductie, publicatie of commercieel gebruik van (delen van) dit rapport zonder schriftelijke toestemming is niet toegestaan.',
+        purple
+      );
+
+      legalSection(
+        '6. Aansprakelijkheid',
+        'Garden for Life aanvaardt geen aansprakelijkheid voor beslissingen genomen op basis van de resultaten in dit rapport. ' +
+        'Dit instrument is geen vervanging voor professioneel psychologisch, medisch of therapeutisch advies. ' +
+        'Bij psychische klachten of zorgen wordt geadviseerd contact op te nemen met een gekwalificeerde zorgverlener. ' +
+        'Het gebruik van dit rapport en de daarin opgenomen AI Agent Prompt geschiedt geheel op eigen risico van de gebruiker.',
+        red
+      );
+
+      // Consent acknowledgment
+      y += 2;
+      pdf.setFillColor(...cardBg);
+      pdf.roundedRect(margin, y - 2, contentW, 18, 2, 2, 'F');
+      pdf.setDrawColor(...green);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(margin, y - 2, contentW, 18, 2, 2, 'S');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...green);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Toestemming bevestigd', margin + 8, y + 4);
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...dimWhite);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('De gebruiker heeft bij het downloaden van dit document bevestigd kennis te hebben', margin + 8, y + 9);
+      pdf.text('genomen van bovenstaande voorwaarden en de verantwoordelijkheid voor gebruik te aanvaarden.', margin + 8, y + 13);
+      y += 22;
+
+      // Contact
+      pdf.setFontSize(7);
+      pdf.setTextColor(...mutedGray);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Vragen of verzoeken? Neem contact op via het Garden for Life platform.', W / 2, y, { align: 'center' });
+
+      pageFooter();
+
+      // ═══════════════════════════════════════════════════
+      // PAGE 3+: CONTENT PAGES
+      // ═══════════════════════════════════════════════════
+      pdf.addPage();
+      paintBg();
+      y = margin;
+
+      // ── WHY THIS COMBINATION ──
       if (result.combinationText) {
         sectionHeading(`Waarom jij ${result.name} bent`, green);
-        writeWrapped(result.combinationText, margin + 2, y, contentW - 4, 9.5, black);
+        writeWrapped(result.combinationText, margin + 2, y, contentW - 4, 9.5, white);
         y += 4;
         hr();
       }
 
-      // ═══════════════════════════════════════════════════
-      // SECTION 3: MAIN ARCHETYPE
-      // ═══════════════════════════════════════════════════
+      // ── MAIN ARCHETYPE ──
       sectionHeading(`De Essentie — ${result.mainName} (${result.mainNameEn})`, orange);
       if (result.group) {
         pdf.setFontSize(8);
-        pdf.setTextColor(...gray);
+        pdf.setTextColor(...mutedGray);
         pdf.text(`Groep: ${result.group}`, margin + 5, y);
         y += 5;
       }
@@ -482,13 +656,11 @@ const AssessmentResultsModal = ({
       y += 2;
       hr();
 
-      // ═══════════════════════════════════════════════════
-      // SECTION 4: SUPPORT ARCHETYPE
-      // ═══════════════════════════════════════════════════
+      // ── SUPPORT ARCHETYPE ──
       sectionHeading(`De Vermenigvuldiging — ${result.secondaryName} (${result.secondaryNameEn})`, purple);
       if (result.supportGroup) {
         pdf.setFontSize(8);
-        pdf.setTextColor(...gray);
+        pdf.setTextColor(...mutedGray);
         pdf.text(`Support Groep: ${result.supportGroup}`, margin + 5, y);
         y += 5;
       }
@@ -508,9 +680,7 @@ const AssessmentResultsModal = ({
       y += 2;
       hr();
 
-      // ═══════════════════════════════════════════════════
-      // SECTION 5: ALL 6 OUTCOMES TABLE
-      // ═══════════════════════════════════════════════════
+      // ── ALL 6 OUTCOMES TABLE ──
       if (result.allSupportArchetypes) {
         sectionHeading(`Alle Uitkomsten voor ${result.mainName}`, green);
         ensureSpace(28);
@@ -523,15 +693,15 @@ const AssessmentResultsModal = ({
           const cy = y;
           // Highlight active
           if (sa.isActive) {
-            pdf.setFillColor(240, 230, 255);
+            pdf.setFillColor(40, 30, 60);
             pdf.roundedRect(cx, cy - 3.5, colW - 2, 11, 1.5, 1.5, 'F');
           }
           pdf.setFontSize(7);
-          pdf.setTextColor(...(sa.isActive ? purple : gray));
+          pdf.setTextColor(...(sa.isActive ? purple : mutedGray));
           pdf.setFont('helvetica', 'bold');
           pdf.text(sa.group, cx + 2, cy);
           pdf.setFontSize(9);
-          pdf.setTextColor(...(sa.isActive ? purple : black));
+          pdf.setTextColor(...(sa.isActive ? purple : dimWhite));
           pdf.setFont('helvetica', sa.isActive ? 'bold' : 'normal');
           pdf.text(sa.extendedName, cx + 2, cy + 4.2);
           if (sa.isActive) {
@@ -544,9 +714,7 @@ const AssessmentResultsModal = ({
         hr();
       }
 
-      // ═══════════════════════════════════════════════════
-      // SECTION 6: SHADOW
-      // ═══════════════════════════════════════════════════
+      // ── SHADOW ──
       if (result.shadowPartner) {
         sectionHeading(`De Schaduw — ${result.shadowName} (${result.shadowNameEn})`, orange);
         if (result.mainShadowTension) {
@@ -554,17 +722,15 @@ const AssessmentResultsModal = ({
           y += 2;
         }
         if (result.shadowInsight) {
-          writeWrapped(result.shadowInsight, margin + 2, y, contentW - 4, 9.5, black);
+          writeWrapped(result.shadowInsight, margin + 2, y, contentW - 4, 9.5, white);
         } else if (result.shadowDescription) {
-          writeWrapped(result.shadowDescription, margin + 2, y, contentW - 4, 9.5, black);
+          writeWrapped(result.shadowDescription, margin + 2, y, contentW - 4, 9.5, white);
         }
         y += 4;
         hr();
       }
 
-      // ═══════════════════════════════════════════════════
-      // SECTION 7: BLINDSPOT
-      // ═══════════════════════════════════════════════════
+      // ── BLINDSPOT ──
       if (result.blindspotPartner) {
         sectionHeading(`De Blindspot — ${result.blindspotName} (${result.blindspotNameEn})`, red);
         ensureSpace(6);
@@ -574,7 +740,7 @@ const AssessmentResultsModal = ({
         pdf.text(`De tegenhanger van je Support (${result.secondaryNameEn}) — jouw externe blinde vlek`, margin + 5, y);
         y += 5;
         if (result.blindspotDescription) {
-          writeWrapped(result.blindspotDescription, margin + 2, y, contentW - 4, 9.5, black);
+          writeWrapped(result.blindspotDescription, margin + 2, y, contentW - 4, 9.5, white);
           y += 2;
         }
         if (result.blindspotShadowTrait) {
@@ -584,14 +750,12 @@ const AssessmentResultsModal = ({
         hr();
       }
 
-      // ═══════════════════════════════════════════════════
-      // SECTION 8a: RADAR CHART (captured from DOM)
-      // ═══════════════════════════════════════════════════
+      // ── RADAR CHART ──
       if (radarRef.current) {
         sectionHeading('Visuele Analyse — Archetype Matrix', green);
         try {
           const radarCanvas = await html2canvas(radarRef.current, {
-            backgroundColor: '#ffffff',
+            backgroundColor: '#0a0a0e',
             scale: 2,
             useCORS: true,
             logging: false,
@@ -608,9 +772,7 @@ const AssessmentResultsModal = ({
         hr();
       }
 
-      // ═══════════════════════════════════════════════════
-      // SECTION 8b: DUAL-CORE DYNAMICS (drawn natively)
-      // ═══════════════════════════════════════════════════
+      // ── DUAL-CORE DYNAMICS ──
       if (result.subgroups && result.subgroups.length > 0) {
         sectionHeading('Dual-Core Dynamics', purple);
         const MAX_PTS = 25;
@@ -624,31 +786,28 @@ const AssessmentResultsModal = ({
           const centerX = W / 2;
           const barY = y - 1;
 
-          // Left bar (purple, grows from center to left)
+          // Left bar (purple)
           pdf.setFillColor(...purple);
           const leftBarW = leftPct * barMaxW;
           pdf.rect(centerX - leftBarW - 1, barY, leftBarW, 4, 'F');
 
-          // Right bar (orange, grows from center to right)
+          // Right bar (orange)
           pdf.setFillColor(...orange);
           const rightBarW = rightPct * barMaxW;
           pdf.rect(centerX + 1, barY, rightBarW, 4, 'F');
 
           // Center divider
-          pdf.setFillColor(200, 200, 200);
+          pdf.setFillColor(60, 60, 70);
           pdf.rect(centerX - 0.3, barY - 0.5, 0.6, 5, 'F');
 
           // Labels & scores
           pdf.setFontSize(7.5);
           pdf.setFont('helvetica', 'bold');
-          // Left label
           pdf.setTextColor(...purple);
           pdf.text(`${sg.leftLabel}  ${sg.leftScore}`, centerX - barMaxW - 2, y + 1.5, { align: 'right' });
-          // Right label
           pdf.setTextColor(...orange);
           pdf.text(`${sg.rightScore}  ${sg.rightLabel}`, centerX + barMaxW + 2, y + 1.5);
 
-          // Bonus indicators
           if (sg.harmonyPoints > 0) {
             pdf.setFontSize(5.5);
             pdf.setTextColor(...green);
@@ -666,21 +825,19 @@ const AssessmentResultsModal = ({
         hr();
       }
 
-      // ═══════════════════════════════════════════════════
-      // SECTION 9-11: ANALYSIS SECTIONS
-      // ═══════════════════════════════════════════════════
+      // ── ANALYSIS SECTIONS ──
       if (displaySections && displaySections.length > 0) {
         const sectionColors = [green, purple, orange];
         displaySections.forEach((section, i) => {
           sectionHeading(section.title, sectionColors[i % 3]);
-          writeWrapped(section.content, margin + 2, y, contentW - 4, 9.5, black);
+          writeWrapped(section.content, margin + 2, y, contentW - 4, 9.5, white);
           y += 4;
           if (i < displaySections.length - 1) hr();
         });
       }
 
       // ═══════════════════════════════════════════════════
-      // FOOTER
+      // FINAL FOOTER (last page)
       // ═══════════════════════════════════════════════════
       ensureSpace(14);
       y += 4;
@@ -689,7 +846,7 @@ const AssessmentResultsModal = ({
       pdf.line(margin, y, W - margin, y);
       y += 5;
       pdf.setFontSize(7);
-      pdf.setTextColor(...lightGray);
+      pdf.setTextColor(...mutedGray);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Garden for Life  \u2022  Advanced Consciousness Assessment', W / 2, y, { align: 'center' });
       y += 3.5;
@@ -1858,7 +2015,7 @@ const AssessmentResultsModal = ({
                         marginBottom: '1rem',
                         marginTop: 0,
                       }}>
-                        Feedback / QA
+                        Feedback
                       </h3>
                       <p style={{
                         color: 'rgba(209, 213, 219, 0.8)',
@@ -1867,11 +2024,11 @@ const AssessmentResultsModal = ({
                         marginBottom: '1rem',
                         marginTop: 0,
                       }}>
-                        Please share your feedback to help us improve
+                        Jouw feedback helpt ons het systeem verbeteren
                       </p>
 
                       <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {/* What Worked */}
+                        {/* Vraag 1: Accuraatheid */}
                         <div>
                           <label style={{
                             display: 'block',
@@ -1881,15 +2038,15 @@ const AssessmentResultsModal = ({
                             fontWeight: 'bold',
                             marginBottom: '0.5rem',
                           }}>
-                            What worked well?
+                            Hoe accuraat is het resultaat volgens jouw kennis en gevoel?
                           </label>
                           <textarea
                             value={reviewFormData.whatWorked}
                             onChange={(e) => setReviewFormData({ ...reviewFormData, whatWorked: e.target.value })}
-                            placeholder="e.g., questions were clear, flow was smooth..."
+                            placeholder="Beschrijf in hoeverre het resultaat klopt met wie jij bent..."
                             style={{
                               width: '100%',
-                              minHeight: '60px',
+                              minHeight: '80px',
                               padding: '0.75rem',
                               background: 'rgba(0, 0, 0, 0.8)',
                               border: '1px solid rgba(0, 255, 157, 0.2)',
@@ -1903,7 +2060,7 @@ const AssessmentResultsModal = ({
                           />
                         </div>
 
-                        {/* What Didn't Work */}
+                        {/* Vraag 2: Niet overeenkomend */}
                         <div>
                           <label style={{
                             display: 'block',
@@ -1913,15 +2070,15 @@ const AssessmentResultsModal = ({
                             fontWeight: 'bold',
                             marginBottom: '0.5rem',
                           }}>
-                            What could be improved?
+                            Waar ben je zeker van dat niet overeenkomt met jouw persoonlijkheid? Wees specifiek — en hoe weet je dit?
                           </label>
                           <textarea
                             value={reviewFormData.whatDidntWork}
                             onChange={(e) => setReviewFormData({ ...reviewFormData, whatDidntWork: e.target.value })}
-                            placeholder="e.g., some terms were unclear, timer too short..."
+                            placeholder="Bijv: ik ben helemaal niet competitief, want in groepswerk neem ik altijd een ondersteunende rol..."
                             style={{
                               width: '100%',
-                              minHeight: '60px',
+                              minHeight: '80px',
                               padding: '0.75rem',
                               background: 'rgba(0, 0, 0, 0.8)',
                               border: '1px solid rgba(255, 107, 107, 0.2)',
@@ -1935,7 +2092,7 @@ const AssessmentResultsModal = ({
                           />
                         </div>
 
-                        {/* Suggestions */}
+                        {/* Vraag 3: Suggesties */}
                         <div>
                           <label style={{
                             display: 'block',
@@ -1945,15 +2102,15 @@ const AssessmentResultsModal = ({
                             fontWeight: 'bold',
                             marginBottom: '0.5rem',
                           }}>
-                            Additional suggestions?
+                            Wat zou jij anders doen of toevoegen aan dit systeem?
                           </label>
                           <textarea
                             value={reviewFormData.suggestions}
                             onChange={(e) => setReviewFormData({ ...reviewFormData, suggestions: e.target.value })}
-                            placeholder="e.g., add more context, include examples..."
+                            placeholder="Bijv: meer context bij de vragen, andere formulering, kortere assessment..."
                             style={{
                               width: '100%',
-                              minHeight: '60px',
+                              minHeight: '80px',
                               padding: '0.75rem',
                               background: 'rgba(0, 0, 0, 0.8)',
                               border: '1px solid rgba(59, 130, 246, 0.2)',
@@ -2012,7 +2169,7 @@ const AssessmentResultsModal = ({
                             e.currentTarget.style.boxShadow = 'none';
                           }}
                         >
-                          {isSubmittingReview ? 'Submitting...' : 'Submit Feedback'}
+                          {isSubmittingReview ? 'Versturen...' : 'Verstuur Feedback'}
                         </button>
                       </form>
                     </div>
@@ -2046,9 +2203,74 @@ const AssessmentResultsModal = ({
                     width: '100%',
                     flexWrap: 'wrap',
                   }}>
+                    {/* PDF consent micro-modal */}
+                    {showPdfConsent && (
+                      <div style={{
+                        position: 'fixed', inset: 0, zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)',
+                        padding: '1rem',
+                      }}>
+                        <div style={{
+                          maxWidth: '34rem', width: '100%',
+                          backgroundColor: 'rgba(6, 2, 10, 0.98)',
+                          border: '1px solid rgba(0,255,157,0.2)',
+                          borderRadius: '0.5rem',
+                          padding: '1.75rem',
+                          boxShadow: '0 0 40px rgba(0,255,157,0.08)',
+                          fontFamily: "'Lexend Mega', sans-serif",
+                        }}>
+                          <h3 style={{ color: '#00ff9d', fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
+                            Verantwoordelijkheid PDF & AI Prompt
+                          </h3>
+                          <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.6rem', fontStyle: 'italic', marginBottom: '1.25rem' }}>
+                            Lees dit door voordat je de PDF downloadt
+                          </p>
+
+                          <div style={{ borderLeft: '2px solid rgba(0,255,157,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
+                            <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: '0.65rem', lineHeight: 1.75 }}>
+                              Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik in externe AI-tools valt buiten de verantwoordelijkheid van Garden For Life.
+                            </p>
+                          </div>
+
+                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginBottom: '1.25rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={pdfConsentChecked}
+                              onChange={(e) => setPdfConsentChecked(e.target.checked)}
+                              style={{ marginTop: '0.1rem', accentColor: '#00ff9d', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
+                            />
+                            <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: '0.65rem', lineHeight: 1.65 }}>
+                              Ik begrijp dat de AI Agent Prompt in deze PDF experimenteel is en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.
+                            </span>
+                          </label>
+
+                          <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => { setShowPdfConsent(false); setPdfConsentChecked(false); }}
+                              style={{ background: 'none', border: '1px solid rgba(100,116,139,0.4)', color: '#64748b', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#94a3b8'; e.currentTarget.style.color = '#94a3b8'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(100,116,139,0.4)'; e.currentTarget.style.color = '#64748b'; }}
+                            >
+                              Annuleren
+                            </button>
+                            <button
+                              onClick={() => { if (pdfConsentChecked) { setShowPdfConsent(false); handleDownloadPdf(); } }}
+                              disabled={!pdfConsentChecked}
+                              style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#00ff9d' : 'rgba(0,255,157,0.2)'}`, color: pdfConsentChecked ? '#00ff9d' : 'rgba(0,255,157,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(0,255,157,0.07)' : 'none' }}
+                              onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(0,255,157,0.25)'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                            >
+                              Begrepen en akkoord — Download PDF
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Download PDF */}
                     <button
-                      onClick={handleDownloadPdf}
+                      onClick={() => { if (!isGeneratingPdf && reviewSubmitted) { setPdfConsentChecked(false); setShowPdfConsent(true); } }}
                       disabled={isGeneratingPdf || !reviewSubmitted}
                       title={!reviewSubmitted ? 'Please submit feedback first' : undefined}
                       style={{

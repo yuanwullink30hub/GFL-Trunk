@@ -330,6 +330,9 @@ const LayerResultCard = ({ result, color, t }) => (
 // PDF Content Generator
 function generatePDFContent(result, archetypeInfo, t) {
   const colors = ["#22c55e", "#3b82f6", "#a855f7", "#ef4444", "#f97316"];
+  const dateStr = result.timestamp?.toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' }) || new Date().toLocaleDateString('nl-NL');
+  const displayName = result.extendedArchetypeName || archetypeInfo?.name || result.overallArchetype;
+  const profileImage = archetypeInfo?.imageUrl || '';
   
   return `<!DOCTYPE html>
 <html>
@@ -354,12 +357,233 @@ function generatePDFContent(result, archetypeInfo, t) {
     .prompt { background: #0a0a15; border: 1px solid #333; padding: 15px; border-radius: 8px; font-size: 11px; white-space: pre-wrap; font-family: 'Courier New', monospace; }
     .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #555; border-top: 1px solid #333; padding-top: 20px; }
     .quantum { font-style: italic; color: #ccc; padding: 15px; border-left: 3px solid #a855f7; background: rgba(168, 85, 247, 0.1); margin: 15px 0; }
+
+    /* ── Cover Page ──────────────────────────────── */
+    .cover-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90vh;
+      text-align: center;
+      page-break-after: always;
+    }
+    .cover-brand {
+      font-size: 9pt;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: #22d3ee;
+      margin: 0 0 6mm;
+    }
+    .cover-brand-sub {
+      font-size: 7pt;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #64748b;
+      margin: 0 0 12mm;
+    }
+    .cover-image {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid rgba(168, 85, 247, 0.5);
+      box-shadow: 0 0 40px rgba(168, 85, 247, 0.2), 0 0 80px rgba(34, 211, 238, 0.1);
+      margin-bottom: 10mm;
+    }
+    .cover-name {
+      font-size: 28pt;
+      font-weight: 300;
+      color: #fff;
+      margin: 0 0 3mm;
+      letter-spacing: 1px;
+    }
+    .cover-subtitle {
+      font-size: 11pt;
+      color: #a855f7;
+      margin: 0 0 10mm;
+    }
+    .cover-quote {
+      font-style: italic;
+      font-size: 11pt;
+      color: #cbd5e1;
+      max-width: 480px;
+      line-height: 1.7;
+      border-left: 3px solid #a855f7;
+      padding: 12px 20px;
+      background: rgba(168, 85, 247, 0.06);
+      text-align: left;
+    }
+    .cover-date {
+      font-size: 8pt;
+      color: #475569;
+      margin-top: 12mm;
+      letter-spacing: 1px;
+    }
+
+    /* ── Legal Page ──────────────────────────────── */
+    .legal-page {
+      page-break-after: always;
+      padding: 0;
+    }
+    .legal-header {
+      text-align: center;
+      margin-bottom: 8mm;
+      padding-bottom: 4mm;
+      border-bottom: 1px solid #1e293b;
+    }
+    .legal-header h2 {
+      font-size: 14pt;
+      color: #f59e0b;
+      margin: 0 0 2mm;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .legal-header p {
+      font-size: 8pt;
+      color: #64748b;
+      margin: 0;
+    }
+    .legal-section {
+      margin-bottom: 5mm;
+      page-break-inside: avoid;
+    }
+    .legal-section h4 {
+      font-size: 9pt;
+      color: #22d3ee;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin: 0 0 2mm;
+      padding-bottom: 1mm;
+      border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+    }
+    .legal-section p, .legal-section li {
+      font-size: 8pt;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin: 1mm 0;
+    }
+    .legal-section ul {
+      margin: 1mm 0;
+      padding-left: 5mm;
+    }
+    .legal-highlight {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 6px;
+      padding: 3mm 4mm;
+      margin: 3mm 0;
+    }
+    .legal-highlight p {
+      font-size: 8.5pt;
+      color: #fbbf24;
+      margin: 0;
+      text-align: center;
+    }
+    .legal-footer-note {
+      text-align: center;
+      font-size: 7pt;
+      color: #334155;
+      margin-top: 8mm;
+      padding-top: 4mm;
+      border-top: 1px solid #1e293b;
+      letter-spacing: 1px;
+    }
   </style>
 </head>
 <body>
-  <h1>${t('pdf.mainTitle')}</h1>
-  <h2>${t('pdf.subtitle')}</h2>
-  <p style="color: #666; font-size: 11px; margin-bottom: 30px;">${t('pdf.profileId')}: ${result.id} | ${t('pdf.generated')}: ${result.timestamp.toLocaleDateString()}</p>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- PAGE 1: COVER                               -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="cover-page">
+    <p class="cover-brand">Garden for Life</p>
+    <p class="cover-brand-sub">Advanced Consciousness Assessment</p>
+    ${profileImage ? `<img class="cover-image" src="${profileImage}" alt="${displayName}" />` : ''}
+    <h1 class="cover-name">${displayName}</h1>
+    ${result.supportArchetype ? `<p class="cover-subtitle">Support: ${result.supportArchetype}</p>` : ''}
+    ${result.quantumResonance ? `<div class="cover-quote">&ldquo;${result.quantumResonance}&rdquo;</div>` : ''}
+    <p class="cover-date">${dateStr}</p>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- PAGE 2: JURIDISCHE INFORMATIE               -->
+  <!-- ════════════════════════════════════════════ -->
+  <div class="legal-page">
+    <div class="legal-header">
+      <h2>Juridische Informatie</h2>
+      <p>Lees deze pagina zorgvuldig door voordat u verder leest</p>
+    </div>
+
+    <div class="legal-highlight">
+      <p>Dit rapport is gegenereerd door een AI-model en vormt <strong>geen klinische diagnose</strong>,
+      medisch advies of psychologisch oordeel. De resultaten zijn indicatief binnen het
+      Garden for Life-model en mogen niet worden gebruikt als vervanging voor professionele hulpverlening.</p>
+    </div>
+
+    <div class="legal-section">
+      <h4>1. Modeldisclaimer</h4>
+      <p>Garden for Life gebruikt het Deltawerken-Model, een metaforisch raamwerk gebaseerd op 12 archetypische
+      patronen. Alle termen zoals &ldquo;Nature&rdquo;, &ldquo;Culture&rdquo;, &ldquo;Shadow&rdquo; en
+      &ldquo;Polarization&rdquo; zijn <em>modelconcepten</em> &mdash; geen biologische, neurologische of
+      medische feiten. De analyse beschrijft antwoordpatronen, niet uw persoonlijkheid als vaststaand gegeven.</p>
+    </div>
+
+    <div class="legal-section">
+      <h4>2. AI-Transparantie (EU AI Act)</h4>
+      <p>De persoonlijkheidsanalyse in dit rapport is gegenereerd door een groot taalmodel (LLM).
+      Conform de EU AI Act informeren wij u dat:</p>
+      <ul>
+        <li>De analyse is gebaseerd op uw antwoorden op de assessment-vragen en eventueel ge&uuml;ploade documenten</li>
+        <li>Het AI-systeem kan onnauwkeurigheden, vooroordelen of hallucinaties bevatten</li>
+        <li>De output mag niet worden beschouwd als objectieve waarheid of wetenschappelijk bewijs</li>
+        <li>Er vindt g&eacute;&eacute;n geautomatiseerde besluitvorming plaats op basis van deze resultaten</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h4>3. Gegevensbescherming (AVG / GDPR)</h4>
+      <p>Uw assessment-gegevens worden verwerkt op grond van uw uitdrukkelijke toestemming (Art. 6 lid 1a AVG).
+      Bijzondere persoonsgegevens (antwoordpatronen die indirect psychologische kenmerken kunnen onthullen) worden
+      verwerkt op grond van Art. 9 lid 2a AVG. U heeft te allen tijde het recht op:</p>
+      <ul>
+        <li>Inzage, rectificatie en verwijdering van uw gegevens</li>
+        <li>Intrekking van uw toestemming</li>
+        <li>Overdraagbaarheid van uw gegevens (dataportabiliteit)</li>
+        <li>Het indienen van een klacht bij de Autoriteit Persoonsgegevens</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h4>4. Gegevensbewaring</h4>
+      <p>Uw assessment-resultaten worden maximaal <strong>90 dagen</strong> bewaard op beveiligde servers,
+      waarna ze automatisch en onherroepelijk worden verwijderd. Dit rapport is uw persoonlijke kopie.
+      Garden for Life bewaart na verwijdering geen kopie van uw resultaten.</p>
+    </div>
+
+    <div class="legal-section">
+      <h4>5. Intellectueel Eigendom</h4>
+      <p>Het Deltawerken-Model, de archetypische geometrie, de vragenlijst en de visuele ontwerpen zijn
+      intellectueel eigendom van Garden for Life / Yuan Wu. Dit rapport is uitsluitend voor persoonlijk gebruik.
+      Reproductie, distributie of commerci&euml;le exploitatie zonder schriftelijke toestemming is verboden.</p>
+    </div>
+
+    <div class="legal-section">
+      <h4>6. Beperkingen &amp; Aansprakelijkheid</h4>
+      <p>Garden for Life aanvaardt geen aansprakelijkheid voor beslissingen genomen op basis van dit rapport.
+      Bij psychische klachten of zorgen wordt u dringend aangeraden contact op te nemen met een gekwalificeerde
+      zorgprofessional. De resultaten zijn een startpunt voor zelfreflectie, niet een eindoordeel.</p>
+    </div>
+
+    <div class="legal-footer-note">
+      Door dit rapport te downloaden bevestigt u kennis te hebben genomen van bovenstaande voorwaarden.<br/>
+      Volledige juridische documenten: www.gardenforlife.nl &nbsp;&bull;&nbsp; Contact: info@gardenforlife.nl
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- PAGE 3+: ASSESSMENT RESULTATEN              -->
+  <!-- ════════════════════════════════════════════ -->
 
   <h3>${t('pdf.primaryArchetype')}</h3>
   <div class="archetype-name">${archetypeInfo?.name || result.overallArchetype}</div>

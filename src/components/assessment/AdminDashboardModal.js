@@ -29,6 +29,7 @@ import {
   getAdminReviews,
   logActivity,
   getAccessLog,
+  getConsentLog,
   clearSessions,
 } from '../../utils/apiClient';
 import {
@@ -90,6 +91,24 @@ const CARD_COLORS = {
     rowBorder: 'rgba(188, 19, 254, 0.12)',
     cardBg: 'rgba(188, 19, 254, 0.04)',
     iconBg: 'rgba(188, 19, 254, 0.08)',
+  },
+  green: {
+    border: '#4ade80',
+    shadow: '0 0 15px rgba(74, 222, 128, 0.3)',
+    titleColor: '#4ade80',
+    dimText: 'rgba(74, 222, 128, 0.35)',
+    rowBorder: 'rgba(74, 222, 128, 0.12)',
+    cardBg: 'rgba(74, 222, 128, 0.04)',
+    iconBg: 'rgba(74, 222, 128, 0.08)',
+  },
+  cyan: {
+    border: '#06b6d4',
+    shadow: '0 0 15px rgba(6, 182, 212, 0.3)',
+    titleColor: '#06b6d4',
+    dimText: 'rgba(6, 182, 212, 0.35)',
+    rowBorder: 'rgba(6, 182, 212, 0.12)',
+    cardBg: 'rgba(6, 182, 212, 0.04)',
+    iconBg: 'rgba(6, 182, 212, 0.08)',
   },
 };
 
@@ -868,7 +887,9 @@ const UsersTab = memo(({ currentUserId }) => {
           <div>
             <div style={{ fontWeight: 'bold' }}>{u.displayName || u.email}</div>
             <div style={{ opacity: 0.4, fontSize: 'max(9px, 0.4vw)' }}>
-              {u.email} · {new Date(u.createdAt).toLocaleDateString()}
+              {u.email} · Aangemaakt: {new Date(u.createdAt).toLocaleDateString('nl-NL')}
+              {u.lastLogin && <> · Laatste login: {new Date(u.lastLogin).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+              {!u.lastLogin && <> · <span style={{ color: '#f59e0b' }}>Nog niet ingelogd</span></>}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', ...(isMobile ? { flexWrap: 'wrap' } : {}) }}>
@@ -2778,7 +2799,7 @@ function Loading() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// Audit Log Tab — developer session tracking (edits/commits/pushes)
+// Audit Log Tab — categorized audit trail with folder sub-tabs
 // ═══════════════════════════════════════════════════════════
 
 function formatDuration(ms) {
@@ -2793,26 +2814,39 @@ function formatDuration(ms) {
   return `${hr}u ${rm}m`;
 }
 
-const EVENT_ICONS  = { edit: '✏️', commit: '📦', push: '🚀', admin_login: '🔐', report_view: '📋' };
-const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc', admin_login: '#f59e0b', report_view: '#34d399' };
+const EVENT_ICONS  = { edit: '✏️', commit: '📦', push: '🚀', admin_login: '🔐', report_view: '📋', consent_given: '✅' };
+const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc', admin_login: '#f59e0b', report_view: '#34d399', consent_given: '#06b6d4' };
+
+const AUDIT_FOLDERS = [
+  { key: 'admin',   label: '📂 Admin & Toegang',  icon: '🔐', color: '#f59e0b', desc: 'Admin logins & rapportraadplegingen' },
+  { key: 'compliance', label: '📂 Compliance',     icon: '✅', color: '#06b6d4', desc: 'Toestemmingsregistratie (AVG Art. 7)' },
+  { key: 'sessions', label: '📂 Sessies',          icon: '📊', color: C.gold,    desc: 'Alle events gegroepeerd per sessie' },
+];
 
 const AuditLogTab = memo(() => {
+  const [folder, setFolder] = useState('admin');
   const [sessions, setSessions] = useState([]);
   const [accessEvents, setAccessEvents] = useState([]);
+  const [consentEvents, setConsentEvents] = useState([]);
   const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [accessLoading, setAccessLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedIdx, setExpandedIdx] = useState(null);
   const tc = CARD_COLORS.gold;
 
-  const fetchData = async () => {
+  const fetchAll = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await getSessions(200);
-      setSessions(res.sessions || []);
-      setTotalEvents(res.totalEvents || 0);
-      setError(null);
+      const [sessRes, accRes, conRes] = await Promise.all([
+        getSessions(200).catch(() => ({ sessions: [], totalEvents: 0 })),
+        getAccessLog(500).catch(() => ({ events: [] })),
+        getConsentLog(500).catch(() => ({ events: [] })),
+      ]);
+      setSessions(sessRes.sessions || []);
+      setTotalEvents(sessRes.totalEvents || 0);
+      setAccessEvents(accRes.events || []);
+      setConsentEvents(conRes.events || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -2820,20 +2854,7 @@ const AuditLogTab = memo(() => {
     }
   };
 
-  const fetchAccess = async () => {
-    setAccessLoading(true);
-    try {
-      const res = await getAccessLog(500);
-      setAccessEvents(res.events || []);
-    } catch (err) {
-      // non-critical — show empty
-      setAccessEvents([]);
-    } finally {
-      setAccessLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchData(); fetchAccess(); }, []);
+  useEffect(() => { fetchAll(); }, []);
 
   // eslint-disable-next-line no-unused-vars
   const handleClear = async () => {
@@ -2847,25 +2868,28 @@ const AuditLogTab = memo(() => {
     }
   };
 
+  // Folder counts for badges
+  const folderCounts = {
+    admin: accessEvents.length,
+    compliance: consentEvents.length,
+    sessions: sessions.length,
+  };
+
   // Stats
   const totalSessions = sessions.length;
   const totalDuration = sessions.reduce((a, s) => a + (s.durationMs || 0), 0);
   const avgDuration = totalSessions > 0 ? totalDuration / totalSessions : 0;
-  const todaySessions = sessions.filter(s => {
-    const d = new Date(s.startedAt);
-    const now = new Date();
-    return d.toDateString() === now.toDateString();
-  }).length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
         {[
-          { label: 'Vandaag', value: todaySessions, color: '#4ade80' },
+          { label: 'Admin', value: accessEvents.length, color: '#f59e0b' },
+          { label: 'Compliance', value: consentEvents.length, color: '#06b6d4' },
           { label: 'Sessies', value: totalSessions, color: C.gold },
-          { label: 'Events', value: totalEvents, color: '#60a5fa' },
-          { label: 'Gem. Duur', value: formatDuration(avgDuration), color: '#c084fc' },
+          { label: 'Totaal', value: totalEvents, color: '#60a5fa' },
+          { label: 'Gem. Duur', value: formatDuration(avgDuration), color: '#4ade80' },
         ].map((stat, i) => (
           <div key={i} style={{
             padding: '0.6rem 0.8rem',
@@ -2879,9 +2903,36 @@ const AuditLogTab = memo(() => {
         ))}
       </div>
 
-      {/* Controls */}
-      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
-        <button onClick={() => { fetchData(); fetchAccess(); }} style={{
+      {/* Folder tabs */}
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        {AUDIT_FOLDERS.map(f => {
+          const active = folder === f.key;
+          return (
+            <button key={f.key} onClick={() => { setFolder(f.key); setExpandedIdx(null); }}
+              style={{
+                padding: '0.35rem 0.7rem', fontSize: 'max(9px, 0.45vw)',
+                backgroundColor: active ? `${f.color}18` : 'rgba(255,255,255,0.03)',
+                color: active ? f.color : '#888',
+                border: `1px solid ${active ? `${f.color}40` : 'rgba(255,255,255,0.06)'}`,
+                borderRadius: '0.2rem', cursor: 'pointer',
+                fontWeight: active ? 'bold' : 'normal',
+                textTransform: 'uppercase', letterSpacing: '0.03em',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { if (!active) e.target.style.backgroundColor = `${f.color}10`; }}
+              onMouseLeave={e => { if (!active) e.target.style.backgroundColor = 'rgba(255,255,255,0.03)'; }}>
+              {f.label}
+              <span style={{
+                marginLeft: '0.4rem', padding: '0.05rem 0.3rem',
+                backgroundColor: `${f.color}25`, borderRadius: '0.1rem',
+                fontSize: 'max(7px, 0.35vw)', fontWeight: 'bold',
+              }}>{folderCounts[f.key]}</span>
+            </button>
+          );
+        })}
+
+        <button onClick={fetchAll} style={{
+          marginLeft: 'auto',
           padding: '0.25rem 0.6rem', fontSize: 'max(8px, 0.4vw)',
           backgroundColor: 'rgba(255, 174, 0, 0.08)', color: C.gold,
           border: '1px solid rgba(255, 174, 0, 0.15)', borderRadius: '0.15rem',
@@ -2889,166 +2940,202 @@ const AuditLogTab = memo(() => {
         }}>↻ VERNIEUWEN</button>
       </div>
 
+      {/* Folder description */}
+      <div style={{ fontSize: 'max(8px, 0.4vw)', color: '#888', fontStyle: 'italic', marginTop: '-0.6rem' }}>
+        {AUDIT_FOLDERS.find(f => f.key === folder)?.desc}
+      </div>
+
       {error && <ErrorBox msg={error} />}
 
-      {/* Access Log — report views and admin logins */}
-      {(() => {
-        return (
-          <DashboardCard title={`Toegangslog — Raadplegingen & Logins (${accessEvents.length})`} color="green">
-            {accessLoading ? (
-              <div style={{ textAlign: 'center', padding: '1rem', color: '#4ade8060', fontSize: 'max(10px, 0.5vw)' }}>Laden...</div>
-            ) : accessEvents.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '1rem', color: '#4ade8060', fontSize: 'max(10px, 0.5vw)' }}>
-                Nog geen toegang geregistreerd
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '35vh', overflowY: 'auto' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.5fr 1fr 1.6fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(74,222,128,0.15)' }}>
-                  {['TIJDSTIP', 'TYPE', 'REPORT ID', 'ADMIN / DETAIL'].map(h => (
-                    <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#4ade8080', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>Laden...</div>
+      ) : (
+        <>
+          {/* ────── Admin & Toegang ────── */}
+          {folder === 'admin' && (
+            <DashboardCard title={`Admin & Toegang — Logins & Raadplegingen (${accessEvents.length})`} color="green">
+              {accessEvents.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1rem', color: '#4ade8060', fontSize: 'max(10px, 0.5vw)' }}>Nog geen toegang geregistreerd</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '55vh', overflowY: 'auto' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.5fr 1fr 1.6fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(74,222,128,0.15)' }}>
+                    {['TIJDSTIP', 'TYPE', 'REPORT ID', 'ADMIN / DETAIL'].map(h => (
+                      <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#4ade8080', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
+                    ))}
+                  </div>
+                  {accessEvents.map((ev, i) => (
+                    <div key={i} style={{
+                      display: 'grid', gridTemplateColumns: '1.6fr 0.5fr 1fr 1.6fr',
+                      gap: '0.3rem', padding: '0.3rem 0.5rem', alignItems: 'center',
+                      backgroundColor: i % 2 === 0 ? 'rgba(74,222,128,0.02)' : 'transparent',
+                      borderLeft: `2px solid ${EVENT_COLORS[ev.type] || '#888'}`,
+                      borderRadius: '0 0.15rem 0.15rem 0',
+                    }}>
+                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>
+                        {new Date(ev.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </div>
+                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: EVENT_COLORS[ev.type], fontWeight: 'bold', textTransform: 'uppercase' }}>
+                        {EVENT_ICONS[ev.type]} {ev.type === 'report_view' ? 'rapport' : 'login'}
+                      </div>
+                      <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#34d399', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ev.reportId || (ev.message && ev.type !== 'report_view' ? ev.message : '—')}
+                      </div>
+                      <div style={{ fontSize: 'max(7px, 0.38vw)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ev.email ? (
+                          <span style={{ color: '#f59e0b' }}>👤 {ev.email}{ev.message && ev.type === 'report_view' ? <span style={{ color: '#64748b' }}> · {ev.message}</span> : null}</span>
+                        ) : (
+                          <span style={{ color: '#64748b' }}>{ev.message || '—'}</span>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
-                {accessEvents.map((ev, i) => (
-                  <div key={i} style={{
-                    display: 'grid', gridTemplateColumns: '1.6fr 0.5fr 1fr 1.6fr',
-                    gap: '0.3rem', padding: '0.3rem 0.5rem', alignItems: 'center',
-                    backgroundColor: i % 2 === 0 ? 'rgba(74,222,128,0.02)' : 'transparent',
-                    borderLeft: `2px solid ${EVENT_COLORS[ev.type] || '#888'}`,
-                    borderRadius: '0 0.15rem 0.15rem 0',
-                  }}>
-                    <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>
-                      {new Date(ev.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </div>
-                    <div style={{ fontSize: 'max(8px, 0.42vw)', color: EVENT_COLORS[ev.type], fontWeight: 'bold', textTransform: 'uppercase' }}>
-                      {EVENT_ICONS[ev.type]} {ev.type === 'report_view' ? 'rapport' : 'login'}
-                    </div>
-                    <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#34d399', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {ev.reportId || (ev.message && ev.type !== 'report_view' ? ev.message : '—')}
-                    </div>
-                    <div style={{ fontSize: 'max(7px, 0.38vw)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {ev.email ? (
-                        <span style={{ color: '#f59e0b' }}>👤 {ev.email}{ev.message && ev.type === 'report_view' ? <span style={{ color: '#64748b' }}> · {ev.message}</span> : null}</span>
-                      ) : (
-                        <span style={{ color: '#64748b' }}>{ev.message || '—'}</span>
-                      )}
-                    </div>
+              )}
+            </DashboardCard>
+          )}
+
+          {/* ────── Compliance ────── */}
+          {folder === 'compliance' && (
+            <DashboardCard title={`Compliance — Toestemmingsregistratie (${consentEvents.length})`} color="cyan">
+              {consentEvents.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1rem', color: '#06b6d460', fontSize: 'max(10px, 0.5vw)' }}>Nog geen toestemmingen geregistreerd</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '55vh', overflowY: 'auto' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.8fr 0.6fr 2fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(6,182,212,0.15)' }}>
+                    {['TIJDSTIP', 'TYPE TOESTEMMING', 'NIVEAU', 'USER AGENT'].map(h => (
+                      <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#06b6d480', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </DashboardCard>
-        );
-      })()}
-
-      {/* Session list */}
-      <DashboardCard title={`Audit Log — Sessies (${totalSessions})`} color="gold">
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>
-            Laden...
-          </div>
-        ) : sessions.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>
-            Nog geen activiteit geregistreerd
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '60vh', overflowY: 'auto' }}>
-            {/* Header row */}
-            <div style={{
-              display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 1.2fr',
-              gap: '0.3rem', padding: '0.35rem 0.5rem',
-              borderBottom: `1px solid ${tc.border}`,
-            }}>
-              {['DATUM', 'DUUR', 'EVENTS', 'TYPES'].map(h => (
-                <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
-              ))}
-            </div>
-            {sessions.map((s, idx) => {
-              const startDate = new Date(s.startedAt);
-              const endDate = new Date(s.endedAt);
-              const events = s.events || [];
-              const types = {};
-              events.forEach(e => { types[e.type] = (types[e.type] || 0) + 1; });
-              const isExpanded = expandedIdx === idx;
-
-              return (
-                <div key={idx}>
-                  <div
-                    onClick={() => setExpandedIdx(isExpanded ? null : idx)}
-                    style={{
-                      display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 1.2fr',
-                      gap: '0.3rem', padding: '0.4rem 0.5rem',
-                      backgroundColor: isExpanded ? 'rgba(255, 174, 0, 0.06)' : tc.cardBg,
-                      borderLeft: `2px solid ${C.gold}`,
+                  {consentEvents.map((ev, i) => (
+                    <div key={i} style={{
+                      display: 'grid', gridTemplateColumns: '1.6fr 0.8fr 0.6fr 2fr',
+                      gap: '0.3rem', padding: '0.3rem 0.5rem', alignItems: 'center',
+                      backgroundColor: i % 2 === 0 ? 'rgba(6,182,212,0.02)' : 'transparent',
+                      borderLeft: '2px solid #06b6d4',
                       borderRadius: '0 0.15rem 0.15rem 0',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.15s',
                     }}>
-                    {/* Date range */}
-                    <div style={{ fontSize: 'max(9px, 0.45vw)', color: C.text }}>
-                      {startDate.toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                      {' → '}
-                      {endDate.toLocaleString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>
+                        {new Date(ev.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </div>
+                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#06b6d4', fontWeight: 'bold' }}>
+                        ✅ {ev.consentType || 'art9_assessment'}
+                      </div>
+                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#c084fc', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                        {ev.level || '—'}
+                      </div>
+                      <div style={{ fontSize: 'max(7px, 0.35vw)', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ev.userAgent || '—'}
+                      </div>
                     </div>
-                    {/* Duration */}
-                    <div style={{ fontSize: 'max(9px, 0.45vw)', color: C.gold, fontWeight: 'bold' }}>
-                      {formatDuration(s.durationMs)}
-                    </div>
-                    {/* Event count */}
-                    <div style={{ fontSize: 'max(9px, 0.45vw)', color: tc.dimText }}>
-                      {events.length}
-                    </div>
-                    {/* Type badges */}
-                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-                      {Object.entries(types).map(([type, count]) => (
-                        <span key={type} style={{
-                          fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.3rem', borderRadius: '0.1rem',
-                          backgroundColor: `${EVENT_COLORS[type] || '#888'}20`,
-                          color: EVENT_COLORS[type] || '#888',
-                          fontWeight: 'bold', textTransform: 'uppercase',
-                        }}>{EVENT_ICONS[type] || ''} {type} ×{count}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Expanded: event list */}
-                  {isExpanded && (
-                    <div style={{
-                      padding: '0.4rem 0.5rem 0.4rem 1.2rem',
-                      backgroundColor: 'rgba(255, 174, 0, 0.03)',
-                      borderLeft: `2px solid rgba(255, 174, 0, 0.15)`,
-                      display: 'flex', flexDirection: 'column', gap: '0.2rem',
-                    }}>
-                      {events.map((ev, ei) => (
-                        <div key={ei} style={{
-                          display: 'flex', gap: '0.5rem', alignItems: 'center',
-                          fontSize: 'max(8px, 0.42vw)', color: tc.dimText,
-                          padding: '0.15rem 0',
-                          borderBottom: ei < events.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
-                        }}>
-                          <span style={{ color: EVENT_COLORS[ev.type] || '#888', minWidth: '1.5em' }}>{EVENT_ICONS[ev.type] || '•'}</span>
-                          <span style={{ color: '#888', minWidth: '4.5em' }}>
-                            {new Date(ev.timestamp).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                          </span>
-                          <span style={{ color: EVENT_COLORS[ev.type] || '#888', fontWeight: 'bold', textTransform: 'uppercase', minWidth: '3.5em' }}>
-                            {ev.type}
-                          </span>
-                          {ev.branch && <span style={{ color: '#60a5fa' }}>⎇ {ev.branch}</span>}
-                          {ev.hash && <span style={{ color: '#888', fontFamily: 'monospace' }}>{ev.hash}</span>}
-                          {ev.message && <span style={{ color: C.text, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '20vw' }}>"{ev.message}"</span>}
-                          {ev.email && <span style={{ color: '#f59e0b' }}>👤 {ev.email}</span>}
-                          {ev.reportId && <span style={{ color: '#34d399', fontFamily: 'monospace', fontSize: 'max(7px, 0.34vw)' }}>ID: {ev.reportId}</span>}
-                          {ev.reportType && <span style={{ color: '#34d399', textTransform: 'uppercase' }}>{ev.reportType}</span>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </DashboardCard>
+              )}
+            </DashboardCard>
+          )}
+
+          {/* ────── Sessions (all events grouped) ────── */}
+          {folder === 'sessions' && (
+            <DashboardCard title={`Sessies — Alle Events Gegroepeerd (${totalSessions})`} color="gold">
+              {sessions.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>Nog geen activiteit geregistreerd</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '55vh', overflowY: 'auto' }}>
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 1.2fr',
+                    gap: '0.3rem', padding: '0.35rem 0.5rem',
+                    borderBottom: `1px solid ${tc.border}`,
+                  }}>
+                    {['DATUM', 'DUUR', 'EVENTS', 'TYPES'].map(h => (
+                      <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
+                    ))}
+                  </div>
+                  {sessions.map((s, idx) => {
+                    const startDate = new Date(s.startedAt);
+                    const endDate = new Date(s.endedAt);
+                    const events = s.events || [];
+                    const types = {};
+                    events.forEach(e => { types[e.type] = (types[e.type] || 0) + 1; });
+                    const isExpanded = expandedIdx === idx;
+
+                    return (
+                      <div key={idx}>
+                        <div
+                          onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                          style={{
+                            display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 1.2fr',
+                            gap: '0.3rem', padding: '0.4rem 0.5rem',
+                            backgroundColor: isExpanded ? 'rgba(255, 174, 0, 0.06)' : tc.cardBg,
+                            borderLeft: `2px solid ${C.gold}`,
+                            borderRadius: '0 0.15rem 0.15rem 0',
+                            alignItems: 'center',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s',
+                          }}>
+                          <div style={{ fontSize: 'max(9px, 0.45vw)', color: C.text }}>
+                            {startDate.toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            {' → '}
+                            {endDate.toLocaleString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          <div style={{ fontSize: 'max(9px, 0.45vw)', color: C.gold, fontWeight: 'bold' }}>
+                            {formatDuration(s.durationMs)}
+                          </div>
+                          <div style={{ fontSize: 'max(9px, 0.45vw)', color: tc.dimText }}>
+                            {events.length}
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                            {Object.entries(types).map(([type, count]) => (
+                              <span key={type} style={{
+                                fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.3rem', borderRadius: '0.1rem',
+                                backgroundColor: `${EVENT_COLORS[type] || '#888'}20`,
+                                color: EVENT_COLORS[type] || '#888',
+                                fontWeight: 'bold', textTransform: 'uppercase',
+                              }}>{EVENT_ICONS[type] || ''} {type} ×{count}</span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {isExpanded && (
+                          <div style={{
+                            padding: '0.4rem 0.5rem 0.4rem 1.2rem',
+                            backgroundColor: 'rgba(255, 174, 0, 0.03)',
+                            borderLeft: `2px solid rgba(255, 174, 0, 0.15)`,
+                            display: 'flex', flexDirection: 'column', gap: '0.2rem',
+                          }}>
+                            {events.map((ev, ei) => (
+                              <div key={ei} style={{
+                                display: 'flex', gap: '0.5rem', alignItems: 'center',
+                                fontSize: 'max(8px, 0.42vw)', color: tc.dimText,
+                                padding: '0.15rem 0',
+                                borderBottom: ei < events.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                              }}>
+                                <span style={{ color: EVENT_COLORS[ev.type] || '#888', minWidth: '1.5em' }}>{EVENT_ICONS[ev.type] || '•'}</span>
+                                <span style={{ color: '#888', minWidth: '4.5em' }}>
+                                  {new Date(ev.timestamp).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </span>
+                                <span style={{ color: EVENT_COLORS[ev.type] || '#888', fontWeight: 'bold', textTransform: 'uppercase', minWidth: '3.5em' }}>
+                                  {ev.type}
+                                </span>
+                                {ev.branch && <span style={{ color: '#60a5fa' }}>⎇ {ev.branch}</span>}
+                                {ev.hash && <span style={{ color: '#888', fontFamily: 'monospace' }}>{ev.hash}</span>}
+                                {ev.message && <span style={{ color: C.text, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '20vw' }}>"{ev.message}"</span>}
+                                {ev.email && <span style={{ color: '#f59e0b' }}>👤 {ev.email}</span>}
+                                {ev.reportId && <span style={{ color: '#34d399', fontFamily: 'monospace', fontSize: 'max(7px, 0.34vw)' }}>ID: {ev.reportId}</span>}
+                                {ev.reportType && <span style={{ color: '#34d399', textTransform: 'uppercase' }}>{ev.reportType}</span>}
+                                {ev.consentType && <span style={{ color: '#06b6d4' }}>✅ {ev.consentType}</span>}
+                                {ev.level && <span style={{ color: '#c084fc', textTransform: 'uppercase' }}>{ev.level}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </DashboardCard>
+          )}
+        </>
+      )}
     </div>
   );
 });

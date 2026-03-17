@@ -93,6 +93,8 @@ const AssessmentResultsModal = ({
       oceanScores,
       responses: result._answerLog || [],
       subjectResults: result.subjectResults || [],
+      scores: result.scores || null,
+      archetypeDetails: result.archetypeDetails || null,
       harmonyScore: result.harmonyScore ?? null,
       consciousnessLevel: result.consciousnessLevel || null,
       overallShadow: result.overallShadow || null,
@@ -109,6 +111,7 @@ const AssessmentResultsModal = ({
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewFormData, setReviewFormData] = useState({
+    email: '',
     whatWorked: '',
     whatDidntWork: '',
     suggestions: '',
@@ -118,8 +121,14 @@ const AssessmentResultsModal = ({
   // ── Review form submission handler ──
   const handleReviewSubmit = useCallback(async (e) => {
     e?.preventDefault();
-    const { whatWorked, whatDidntWork, suggestions } = reviewFormData;
+    const { email, whatWorked, whatDidntWork, suggestions } = reviewFormData;
     
+    // Validate email is provided
+    if (!email.trim()) {
+      setReviewError('Vul je e-mailadres in');
+      return;
+    }
+
     // Validate at least one field is filled
     if (!whatWorked.trim() && !whatDidntWork.trim() && !suggestions.trim()) {
       setReviewError('Vul minimaal één veld in');
@@ -132,6 +141,7 @@ const AssessmentResultsModal = ({
     try {
       await submitAssessmentReview({
         assessmentId: savedAssessmentId || 'anonymous',
+        email: email.trim(),
         whatWorked: whatWorked.trim(),
         whatDidntWork: whatDidntWork.trim(),
         suggestions: suggestions.trim(),
@@ -2026,6 +2036,38 @@ const AssessmentResultsModal = ({
                       </p>
 
                       <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {/* E-mailadres */}
+                        <div>
+                          <label style={{
+                            display: 'block',
+                            color: '#c4b5fd',
+                            fontFamily: "'Figtree', sans-serif",
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            marginBottom: '0.5rem',
+                          }}>
+                            E-mailadres *
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={reviewFormData.email}
+                            onChange={(e) => setReviewFormData({ ...reviewFormData, email: e.target.value })}
+                            placeholder="jouw@email.nl"
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem',
+                              background: 'rgba(0, 0, 0, 0.8)',
+                              border: '1px solid rgba(196, 181, 253, 0.3)',
+                              borderRadius: '0.5rem',
+                              color: '#fff',
+                              fontFamily: "'Figtree', sans-serif",
+                              fontSize: '0.85rem',
+                              boxSizing: 'border-box',
+                            }}
+                          />
+                        </div>
+
                         {/* Vraag 1: Accuraatheid */}
                         <div>
                           <label style={{

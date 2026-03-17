@@ -327,7 +327,7 @@ const App = () => {
 
   // Deep-link: /algemene-voorwaarden etc. opens the Eyedentity page with correct tab
   useEffect(() => {
-    const POLICY_SLUGS = ['algemene-voorwaarden','privacybeleid','toestemming-art9','cookiebeleid','ai-transparantie','intellectueel-eigendom','gebruiksvoorwaarden-misbruik','profiel','gegevensbehoud-en-verwijdering'];
+    const POLICY_SLUGS = ['algemene-voorwaarden','privacybeleid','cookiebeleid','ai-transparantie','intellectueel-eigendom','gebruiksvoorwaarden-misbruik','profiel','gegevensbehoud-en-verwijdering','verwerkingsregister'];
     const checkPath = () => {
       const slug = window.location.pathname.replace(/^\//, '');
       if (slug && POLICY_SLUGS.includes(slug)) {

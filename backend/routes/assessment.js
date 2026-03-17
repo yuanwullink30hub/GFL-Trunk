@@ -52,6 +52,8 @@ router.post('/', authRequired, async (req, res) => {
       oceanScores,
       responses,
       subjectResults,
+      scores,
+      archetypeDetails,
       harmonyScore,
       consciousnessLevel,
       overallShadow,
@@ -74,6 +76,8 @@ router.post('/', authRequired, async (req, res) => {
       oceanScores: oceanScores || null,
       responses: Array.isArray(responses) ? responses : [],
       subjectResults: Array.isArray(subjectResults) ? subjectResults : [],
+      scores: scores || null,
+      archetypeDetails: Array.isArray(archetypeDetails) ? archetypeDetails : null,
       harmonyScore: harmonyScore ?? null,
       consciousnessLevel: consciousnessLevel || null,
       overallShadow: overallShadow || null,
@@ -143,6 +147,7 @@ router.post('/review', authOptional, async (req, res) => {
   try {
     const {
       assessmentId,
+      email,
       whatWorked,
       whatDidntWork,
       suggestions,
@@ -161,6 +166,7 @@ router.post('/review', authOptional, async (req, res) => {
     // Create review document
     const review = {
       userId: req.user?.userId || null,
+      email: email?.trim() || null,
       assessmentId: assessmentId || 'anonymous',
       archetypeKey: archetypeKey || null,
       whatWorked: whatWorked?.trim() || '',

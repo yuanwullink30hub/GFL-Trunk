@@ -53,12 +53,61 @@ app.post('/api/beta/verify', (req, res) => {
   res.json({ valid });
 });
 
+// ── BETA END: delete all assessment data on 27-08-2026 12:00 UTC ──
+// Keeps: user accounts, audit logs (devActivity), questions.
+// Deletes: assessments, assessmentReviews.
+const BETA_WIPE_DATE = new Date('2026-09-27T12:00:00Z');
+
+function scheduleBetaWipe() {
+  const now = Date.now();
+  const msUntilWipe = BETA_WIPE_DATE.getTime() - now;
+
+  if (msUntilWipe <= 0) {
+    // Already past the deadline — run immediately on startup
+    console.log('[GFL-API] ⚠️  Beta wipe deadline has passed — executing now');
+    executeBetaWipe();
+    return;
+  }
+
+  console.log(`[GFL-API] Beta data wipe scheduled for ${BETA_WIPE_DATE.toISOString()} (in ${Math.round(msUntilWipe / 86400000)}d)`);
+  setTimeout(() => executeBetaWipe(), msUntilWipe);
+}
+
+async function executeBetaWipe() {
+  try {
+    const { getDB } = require('./db');
+    const db = getDB();
+
+    const [assessments, reviews] = await Promise.all([
+      db.collection('assessments').deleteMany({}),
+      db.collection('assessmentReviews').deleteMany({}),
+    ]);
+
+    // Log the wipe in the audit trail
+    db.collection('devActivity').insertOne({
+      type: 'admin_login',
+      timestamp: new Date(),
+      userId: 'SYSTEM',
+      email: 'system@gardenforlife.nl',
+      message: `BETA WIPE: deleted ${assessments.deletedCount} assessments, ${reviews.deletedCount} reviews`,
+      branch: '', hash: '', reportId: null, reportType: '',
+    }).catch(() => {});
+
+    console.log(`[GFL-API] ✅ Beta wipe complete: ${assessments.deletedCount} assessments, ${reviews.deletedCount} reviews deleted`);
+  } catch (err) {
+    console.error('[GFL-API] ❌ Beta wipe failed:', err.message);
+  }
+}
+
 // ── Start ──
 async function start() {
   // Connect to MongoDB (skips gracefully if MONGODB_URI not set)
   if (config.mongoUri) {
     await connectDB();
     console.log('[GFL-API] MongoDB connected');
+
+    // ── BETA END: hard-coded wipe of all assessment data on 27-08-2026 12:00 UTC ──
+    scheduleBetaWipe();
   } else {
     console.log('[GFL-API] MONGODB_URI not set — auth & assessment routes will fail');
   }

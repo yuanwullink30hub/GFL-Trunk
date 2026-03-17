@@ -155,8 +155,8 @@ function activityCollection() {
 // POST /api/admin/sessions/activity — log a dev or admin activity event (no auth — called from git hooks and frontend)
 router.post('/sessions/activity', async (req, res) => {
   try {
-    const { type, message, branch, hash, userId, email, reportId, reportType } = req.body;
-    const allowed = ['edit', 'commit', 'push', 'admin_login', 'report_view'];
+    const { type, message, branch, hash, userId, email, reportId, reportType, consentType, level } = req.body;
+    const allowed = ['edit', 'commit', 'push', 'admin_login', 'report_view', 'consent_given'];
     if (!type || !allowed.includes(type)) {
       return res.status(400).json({ error: `type must be one of: ${allowed.join(', ')}` });
     }
@@ -173,6 +173,12 @@ router.post('/sessions/activity', async (req, res) => {
       email: (email || '').slice(0, 256),
       reportId: reportId || null,
       reportType: (reportType || '').slice(0, 64),
+      // consent fields
+      ...(type === 'consent_given' && {
+        consentType: (consentType || 'art9_assessment').slice(0, 64),
+        level: (level || '').slice(0, 32),
+        userAgent: req.get('user-agent') || '',
+      }),
     };
 
     await activityCollection().insertOne(doc);
@@ -669,9 +675,8 @@ router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) 
     console.log('[Admin] PDF attachment:', rawB64 ? `${rawB64.length} chars base64` : 'NONE');
     if (rawB64) {
       mailOptions.attachments = [{
-        filename: attachmentFilename || 'factuur.pdf',
+        filename: attachmentFilename || 'document',
         content: Buffer.from(rawB64, 'base64'),
-        contentType: 'application/pdf',
       }];
     }
 
@@ -682,9 +687,8 @@ router.post('/forms/send-direct', authRequired, adminRequired, async (req, res) 
         if (att.content) {
           console.log('[Admin] Additional attachment:', att.filename, `${att.content.length} chars base64`);
           mailOptions.attachments.push({
-            filename: att.filename || 'document.pdf',
+            filename: att.filename || 'document',
             content: Buffer.from(att.content, 'base64'),
-            contentType: 'application/pdf',
           });
         }
       }
@@ -758,6 +762,38 @@ router.get('/sessions/access', authRequired, adminRequired, async (req, res) => 
   } catch (err) {
     console.error('[Admin] Access log error:', err.message);
     res.status(500).json({ error: 'Failed to load access log' });
+  }
+});
+
+// GET /api/admin/sessions/consent — consent audit log (consent_given events, newest first)
+router.get('/sessions/consent', authRequired, adminRequired, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 500, 2000);
+    const events = await activityCollection()
+      .find({ type: 'consent_given' })
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .toArray();
+    res.json({ events, total: events.length });
+  } catch (err) {
+    console.error('[Admin] Consent log error:', err.message);
+    res.status(500).json({ error: 'Failed to load consent log' });
+  }
+});
+
+// GET /api/admin/sessions/dev — development activity log (edit/commit/push events, newest first)
+router.get('/sessions/dev', authRequired, adminRequired, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 500, 2000);
+    const events = await activityCollection()
+      .find({ type: { $in: ['edit', 'commit', 'push'] } })
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .toArray();
+    res.json({ events, total: events.length });
+  } catch (err) {
+    console.error('[Admin] Dev log error:', err.message);
+    res.status(500).json({ error: 'Failed to load dev log' });
   }
 });
 

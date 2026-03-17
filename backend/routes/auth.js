@@ -107,6 +107,12 @@ router.post('/login', async (req, res) => {
     const decryptedDisplayName = decrypt(user.displayName);
     const token = signToken(user._id, decryptedEmail, user.role || 'client');
 
+    // Update lastLogin timestamp for all users (fire-and-forget)
+    collections.users().updateOne(
+      { _id: user._id },
+      { $set: { lastLogin: new Date() } }
+    ).catch((err) => console.warn('[Auth] lastLogin update failed:', err.message));
+
     // Audit log: record admin logins asynchronously (fire-and-forget)
     if (user.role === 'admin') {
       getDB().collection('devActivity').insertOne({

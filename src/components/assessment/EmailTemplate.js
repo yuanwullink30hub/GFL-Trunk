@@ -117,22 +117,18 @@ const EmailTemplate = memo(({ isMobile }) => {
   /* ── Handle file selection ── */
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files || []);
-    const pdfFiles = files.filter(f => f.type === 'application/pdf');
-    if (pdfFiles.length === 0) {
-      setSendError('Alleen PDF-bestanden zijn toegestaan');
-      setTimeout(() => setSendError(''), 3000);
-      return;
-    }
+    if (files.length === 0) return;
 
     const newAttachments = [];
-    for (const file of pdfFiles) {
+    for (const file of files) {
       try {
         const base64 = await fileToBase64(file);
-        const blob = new Blob([file], { type: 'application/pdf' });
+        const blob = new Blob([file], { type: file.type || 'application/octet-stream' });
         const blobUrl = URL.createObjectURL(blob);
         newAttachments.push({
           name: file.name,
           size: file.size,
+          type: file.type || 'application/octet-stream',
           base64,
           blobUrl,
         });
@@ -159,7 +155,14 @@ const EmailTemplate = memo(({ isMobile }) => {
   /* ── Send email ── */
   const handleSendEmail = async () => {
     if (!recipientEmail.trim()) {
-      setSendError('Vul een e-mailadres in');
+      setSendError('Vul minimaal één e-mailadres in');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
+    const invalid = emails.filter(e => !emailRegex.test(e));
+    if (invalid.length > 0) {
+      setSendError(`Ongeldig e-mailadres: ${invalid[0]}`);
       return;
     }
     setSendingState('sending');
@@ -327,14 +330,14 @@ const EmailTemplate = memo(({ isMobile }) => {
             </div>
           </div>
           <div>
-            <div style={labelCss}>Ontvanger E-mail *</div>
+            <div style={labelCss}>Ontvanger E-mail(s) *</div>
             <div style={{ position: 'relative' }}>
               <Mail size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input
-                type="email"
+                type="text"
                 value={recipientEmail}
                 onChange={(e) => { setRecipientEmail(e.target.value); setSendError(''); }}
-                placeholder="naam@voorbeeld.nl"
+                placeholder="naam@voorbeeld.nl, naam2@voorbeeld.nl"
                 style={input}
               />
             </div>
@@ -438,7 +441,7 @@ const EmailTemplate = memo(({ isMobile }) => {
             </div>
           )}
 
-          {/* Inline PDF preview */}
+          {/* Inline file preview */}
           {previewIdx !== null && attachments[previewIdx]?.blobUrl && (
             <div style={{
               marginBottom: '0.6rem',
@@ -467,16 +470,38 @@ const EmailTemplate = memo(({ isMobile }) => {
                   <X size={14} />
                 </button>
               </div>
-              <iframe
-                src={attachments[previewIdx].blobUrl}
-                title={`Preview: ${attachments[previewIdx].name}`}
-                style={{
-                  width: '100%',
-                  height: '500px',
-                  border: 'none',
-                  backgroundColor: '#fff',
-                }}
-              />
+              {attachments[previewIdx].type?.startsWith('image/') ? (
+                <img
+                  src={attachments[previewIdx].blobUrl}
+                  alt={attachments[previewIdx].name}
+                  style={{
+                    width: '100%',
+                    maxHeight: '500px',
+                    objectFit: 'contain',
+                    backgroundColor: '#fff',
+                  }}
+                />
+              ) : attachments[previewIdx].type === 'application/pdf' ? (
+                <iframe
+                  src={attachments[previewIdx].blobUrl}
+                  title={`Preview: ${attachments[previewIdx].name}`}
+                  style={{
+                    width: '100%',
+                    height: '500px',
+                    border: 'none',
+                    backgroundColor: '#fff',
+                  }}
+                />
+              ) : (
+                <div style={{
+                  padding: '2rem',
+                  textAlign: 'center',
+                  color: DIM,
+                  fontSize: '0.75rem',
+                }}>
+                  Preview niet beschikbaar voor dit bestandstype
+                </div>
+              )}
             </div>
           )}
 
@@ -484,7 +509,7 @@ const EmailTemplate = memo(({ isMobile }) => {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf,application/pdf"
+            accept="*/*"
             multiple
             onChange={handleFileSelect}
             style={{ display: 'none' }}
@@ -517,7 +542,7 @@ const EmailTemplate = memo(({ isMobile }) => {
             }}
           >
             <Paperclip size={14} />
-            PDF Bijlage Toevoegen
+            Bijlage Toevoegen
           </button>
         </div>
 

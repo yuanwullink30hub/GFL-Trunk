@@ -207,7 +207,7 @@ const translations = {
     dropFiles: { nl: "Sleep bestanden hierheen", en: "Drop files here" },
     dragDrop: { nl: "Sleep bestanden hierheen", en: "Drag & drop files here" },
     orClickBrowse: { nl: "of klik om te bladeren • PDF, DOC, TXT, Afbeeldingen", en: "or click to browse • PDF, DOC, TXT, Images" },
-    filesProcessed: { nl: "Bestanden worden lokaal verwerkt en gebruikt om je profielanalyse te verbeteren", en: "Files are processed locally and used to enhance your profile analysis" },
+    filesProcessed: { nl: "Let op: de inhoud van dit bestand wordt verwerkt door het Claude AI-model (Anthropic, VS). Upload geen bestanden met gevoelige persoonsgegevens van anderen. Garden For Life is niet verantwoordelijk voor de informatie die u in geüploade bestanden opneemt.", en: "Note: the contents of this file will be processed by the Claude AI model (Anthropic, US). Do not upload files containing sensitive personal data of others. Garden For Life is not responsible for the information you include in uploaded files." },
     generateProfile: { nl: "Genereer Je Profiel", en: "Generate Your Profile" },
     skipUpload: { nl: "Upload overslaan en doorgaan →", en: "Skip upload and continue →" }
   },

@@ -483,14 +483,14 @@ const CornerStone = ({ variant = 'purple' }) => {
 
 const NAV_ITEMS = [
   { id: 'profile', slug: 'profiel', title: 'PERSOONLIJK PROFIEL', icon: '🧬', version: 'v1.0' },
-  { id: 'terms', slug: 'algemene-voorwaarden', title: 'ALGEMENE VOORWAARDEN', icon: '📋', version: 'v1.0' },
+  { id: 'terms', slug: 'algemene-voorwaarden', title: 'ALGEMENE VOORWAARDEN', icon: '📋', version: 'Beta 1.0' },
   { id: 'privacy', slug: 'privacybeleid', title: 'PRIVACYBELEID', icon: '🔒', version: 'v1.0' },
-  { id: 'consent', slug: 'toestemming-art9', title: 'TOESTEMMING ART. 9', icon: '✓', version: 'v1.0' },
   { id: 'cookies', slug: 'cookiebeleid', title: 'COOKIEBELEID', icon: '🍪', version: 'v1.1' },
   { id: 'ai', slug: 'ai-transparantie', title: 'AI-TRANSPARANTIE', icon: '🤖', version: 'v1.0' },
-  { id: 'ip', slug: 'intellectueel-eigendom', title: 'INTELLECTUEEL EIGENDOM', icon: '©', version: 'v1.0' },
-  { id: 'usage', slug: 'gebruiksvoorwaarden-misbruik', title: 'GEBRUIKSVOORWAARDEN', icon: '⚖', version: 'v1.0' },
+  { id: 'ip', slug: 'intellectueel-eigendom', title: 'INTELLECTUEEL EIGENDOM', icon: '©', version: 'v2.0' },
+  { id: 'usage', slug: 'gebruiksvoorwaarden-misbruik', title: 'GEBRUIKSVOORWAARDEN', icon: '⚖', version: 'v2.1' },
   { id: 'retention', slug: 'gegevensbehoud-en-verwijdering', title: 'GEGEVENSBEHOUD & VERWIJDERING', icon: '🗂', version: 'v1.0' },
+  { id: 'register', slug: 'verwerkingsregister', title: 'VERWERKINGSREGISTER', icon: '📜', version: 'v2.0' },
 ];
 
 const SLUG_TO_ID = Object.fromEntries(NAV_ITEMS.map(item => [item.slug, item.id]));

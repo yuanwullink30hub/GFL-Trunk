@@ -746,6 +746,30 @@ export async function getAccessLog(limit = 500) {
   return response.json();
 }
 
+/** Get consent audit log events (admin only) */
+export async function getConsentLog(limit = 500) {
+  const response = await fetch(`${API_BASE}/admin/sessions/consent?limit=${limit}`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Consent log failed (${response.status})`);
+  }
+  return response.json();
+}
+
+/** Get dev activity log events — edits, commits, pushes (admin only) */
+export async function getDevLog(limit = 500) {
+  const response = await fetch(`${API_BASE}/admin/sessions/dev?limit=${limit}`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Dev log failed (${response.status})`);
+  }
+  return response.json();
+}
+
 /** Get computed dev sessions (admin only) */
 export async function getSessions(limit = 200) {
   const response = await fetch(`${API_BASE}/admin/sessions?limit=${limit}`, {

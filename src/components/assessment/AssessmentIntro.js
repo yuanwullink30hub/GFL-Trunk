@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { getToken } from '../../utils/apiClient';
 import archetypeHeader from '../../images/Import ready/Archetype header.png';
 import analyseIcon from '../../images/Import ready/analyseicon.PNG';
 import shadowIcon from '../../images/Import ready/Shadowicon.png';
@@ -37,6 +38,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
   const [consentClosing, setConsentClosing] = useState(false);
   const [consentOrigin, setConsentOrigin] = useState('center center');
   const consentOverlayRef = useRef(null);
+  const [showUploadWarning, setShowUploadWarning] = useState(false);
 
   const openInfo = () => {
     if (infoIconRef.current && modalRef.current) {
@@ -90,6 +92,30 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
       setConsentLevelId(null);
       setConsentClosing(false);
     }, 350);
+  };
+
+  // Log consent to audit trail (fire-and-forget)
+  const logConsent = (levelId) => {
+    try {
+      const token = getToken();
+      let userId = null;
+      if (token) {
+        try { userId = JSON.parse(atob(token.split('.')[1])).sub; } catch {}
+      }
+      const API_BASE = process.env.REACT_APP_API_URL ||
+        (window.location.hostname === 'localhost' ? 'http://localhost:8080/api' : 'https://gfl-api.onrender.com/api');
+      fetch(`${API_BASE}/admin/sessions/activity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'consent_given',
+          userId,
+          consentType: 'art9_assessment',
+          level: levelId,
+          message: 'User accepted both consent checkboxes (terms + Art.9 psychological data)',
+        }),
+      }).catch(() => {});
+    } catch {}
   };
 
   // Native wheel capture on consent overlay
@@ -677,6 +703,43 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                         : t('assessmentIntro.footerUpload')}
                     </span>
                   </button>
+                  {uploadedFiles.length > 0 && (
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <span
+                        onClick={() => setShowUploadWarning(v => !v)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: '1.25rem', height: '1.25rem', borderRadius: '50%',
+                          border: '1px solid rgba(251,146,60,0.5)', color: '#fb923c',
+                          fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
+                          flexShrink: 0, lineHeight: 1,
+                        }}
+                        title="Upload informatie"
+                      >
+                        i
+                      </span>
+                      {showUploadWarning && (
+                        <div style={{
+                          position: 'absolute', bottom: 'calc(100% + 0.5rem)', right: 0,
+                          width: '18rem', padding: '0.75rem 1rem', borderRadius: '0.5rem',
+                          backgroundColor: 'rgba(15,23,42,0.97)', border: '1px solid rgba(251,146,60,0.3)',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.4)', zIndex: 50,
+                          color: 'rgba(148,163,184,0.9)', fontSize: '0.7rem', lineHeight: 1.6,
+                        }}>
+                          <span style={{ color: '#fb923c', fontWeight: 600 }}>Let op: </span>
+                          De volledige tekst van dit bestand wordt meegestuurd naar het Claude AI-model (Anthropic, VS). Als dit bestand persoonlijke informatie bevat — zoals uw naam — bereikt die informatie de servers van Anthropic. Garden For Life is niet verantwoordelijk voor persoonsgegevens die u in geüploade bestanden opneemt.
+                          <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
+                            <span
+                              onClick={() => setShowUploadWarning(false)}
+                              style={{ color: '#a78bfa', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600 }}
+                            >
+                              Sluiten
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -871,7 +934,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                   style={{ marginTop: '0.15rem', accentColor: '#a855f7', width: '1rem', height: '1rem', flexShrink: 0, cursor: 'pointer' }}
                 />
                 <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureDescFont, lineHeight: 1.6 }}>
-                  Ik heb de <a href="#/algemene-voorwaarden" style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Algemene Voorwaarden</a> en het <a href="#/privacybeleid" style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Privacybeleid</a> gelezen en ga hiermee akkoord. Ik begrijp dat GardenForLife mijn e-mailadres en accountgegevens verwerkt om de dienst te leveren.
+                  Ik heb de <a href="#/algemene-voorwaarden" style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Algemene Voorwaarden</a> en het <a href="#/privacybeleid" style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Privacybeleid</a> gelezen en ga hiermee akkoord. Ik begrijp dat Garden For Life mijn e-mailadres en accountgegevens verwerkt om de dienst te leveren.
                 </span>
               </label>
 
@@ -889,12 +952,15 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
               </label>
               <ul style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, paddingLeft: '2.75rem', listStyle: 'none', marginBottom: '1.5rem' }}>
                 {[
-                  'Mijn antwoorden volledig geautomatiseerd worden geanalyseerd door een AI-model om een persoonlijk profiel te genereren',
+                  'Mijn antwoorden en het berekende scoreprofiel worden opgeslagen op beveiligde servers in Frankfurt en verwerkt door het Claude AI-model (Anthropic) voor rapportgeneratie',
+                  'Het AI-model ontvangt mijn antwoorden, scores en profieldata — maar geen naam, e-mailadres of andere directe identificatoren vanuit het platform',
+                  'Als ik een bestand upload (bijv. een OCEAN-rapport als PDF), wordt de volledige tekst van dat bestand meegestuurd naar Claude. Ik ben zelf verantwoordelijk voor welke informatie ik in geüploade bestanden opneem. Garden For Life is niet verantwoordelijk voor persoonsgegevens die ik daarin opneem.',
                   <>Dit profiel psychologische kenmerken bevat zoals <strong style={{ color: '#c4b5fd' }}>archetypepatronen</strong>, <strong style={{ color: '#c4b5fd' }}>gedragstendensen</strong> en <strong style={{ color: '#c4b5fd' }}>persoonlijkheidsoriëntaties</strong></>,
                   'Het volledige rapport wordt tijdelijk opgeslagen uitsluitend ten behoeve van de betaevaluatie — niet voor commerciële doeleinden',
-                  'De beheerder van GardenForLife toegang heeft tot opgeslagen rapporten uitsluitend ten behoeve van betaevaluatie en systeemverbetering — dit wordt bijgehouden in een beveiligd auditlog',
+                  'De beheerder van Garden For Life toegang heeft tot opgeslagen rapporten en assessmentdata uitsluitend ten behoeve van betaevaluatie en systeemverbetering — dit wordt bijgehouden in een beveiligd auditlog',
                   <>Alle rapportdata wordt uiterlijk op <strong style={{ color: '#fdba74' }}>27-09-2026</strong> permanent en onherroepelijk verwijderd</>,
-                  'Ik het recht heb mijn toestemming op elk moment in te trekken via het contactformulier',
+                  'Mijn laatste assessmentsessies worden lokaal opgeslagen op mijn eigen apparaat uitsluitend voor mijn eigen raadpleging — Garden For Life heeft geen toegang tot deze lokale opslag',
+                  'Ik het recht heb mijn toestemming op elk moment in te trekken via yuanwullink30@gfl.community',
                   'Intrekking betekent dat mijn volledige profieldata binnen 30 dagen wordt verwijderd',
                   'Dit rapport geen klinische diagnose is en professionele psychologische of medische begeleiding niet vervangt',
                 ].map((item, i) => (
@@ -916,7 +982,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                   Annuleren
                 </button>
                 <button
-                  onClick={() => { if (consentChecked && consentAiPromptChecked) { const lvl = consentLevelId; closeConsent(); onStart(lvl); } }}
+                  onClick={() => { if (consentChecked && consentAiPromptChecked) { const lvl = consentLevelId; closeConsent(); logConsent(lvl); onStart(lvl); } }}
                   disabled={!consentChecked || !consentAiPromptChecked}
                   className="font-mono uppercase tracking-wider transition-all duration-300"
                   style={{

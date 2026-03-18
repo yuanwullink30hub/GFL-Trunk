@@ -11,7 +11,7 @@ assessment/
 ├── index.js                   ← Barrel export for all assessment document modules
 │
 ├── questions/
-│   ├── index.js               ← All 60 questions (5 layers × 12 questions, 6 answers each)
+│   ├── index.js               ← All 36 questions (5 layers, 6 answers each, 72 picks)
 │   └── questionSchema.js      ← Question/answer structure definition
 │
 ├── archetypes/

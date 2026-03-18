@@ -139,13 +139,9 @@ function scoreAnswers(answers) {
   const supportKey = sorted[1][0];
   const supportGroup = GROUP_FOR[supportKey];
   
-  // Check bonuses
-  const harmonyActive = COMPLEMENTARY_PAIRS[mainKey] === supportKey;
+  // Check bonuses (Geometric Bleed — no separate counters)
+  const harmonyActive = false;
   const shadowBonusActive = SHADOW_PAIRS[mainKey] === supportKey;
-  if (harmonyActive) {
-    scores[mainKey] += 69;
-    scores[supportKey] += 69;
-  }
 
   const shadowKey = SHADOW_PAIRS[mainKey];
   const blindspotKey = SHADOW_PAIRS[supportKey];
@@ -183,8 +179,8 @@ async function callAssessmentAPI(result) {
     shadowArchetype: result.shadowKey,
     blindspotArchetype: result.blindspotKey,
     isIndividuated: result.shadowBonusActive,
-    hasHarmonyBonus: result.harmonyActive,
-    harmonyBonusApplied: result.harmonyActive ? 69 : 0,
+    hasHarmonyBonus: false,
+    harmonyBonusApplied: 0,
     scores: result.scores,
     responses: result.answerLog,
     level: 'advanced',
@@ -261,7 +257,6 @@ async function main() {
   console.log(`Extended: ${result.extendedName}`);
   console.log(`Shadow:   ${result.shadowKey}`);
   console.log(`Blindspot:${result.blindspotKey}`);
-  console.log(`Harmony:  ${result.harmonyActive ? 'YES (+69)' : 'No'}`);
   console.log(`Shadow Integration: ${result.shadowBonusActive ? 'YES' : 'No'}`);
   console.log(`Total:    ${result.totalScore} pts`);
   console.log('\nAll scores:');

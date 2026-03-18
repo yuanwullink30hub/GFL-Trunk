@@ -17,9 +17,9 @@ import {
   getExtendedArchetype,
   isComplementaryPair,
   getExtendedDescription,
-  getStateToggle,
-  getNatureCultureBucket,
+  computeAdvancedScores,
 } from '../../data/assessment';
+import { isNatureSlot } from '../../pages/assessment/assessmentData';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
 import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview } from '../../utils/apiClient';
@@ -176,8 +176,8 @@ const AssessmentResultsModal = ({
       shadowArchetype: result.shadowPartner,
       blindspotArchetype: result.blindspotPartner,
       isIndividuated: result.shadowBonusActive,
-      hasHarmonyBonus: result.harmonyActive,
-      harmonyBonusApplied: result.harmonyActive ? 69 : 0,
+      hasHarmonyBonus: false,
+      harmonyBonusApplied: 0,
       oceanScores,
       scores: result._archetypeScores,
       responses: result._answerLog,
@@ -471,7 +471,7 @@ const AssessmentResultsModal = ({
         // Connector symbol
         pdf.setFontSize(14);
         pdf.setTextColor(...green);
-        pdf.text(result.harmonyActive ? '\u27F7' : '+', W / 2, y, { align: 'center' });
+        pdf.text('+', W / 2, y, { align: 'center' });
         y += 8;
 
         pdf.setFontSize(10);
@@ -486,21 +486,7 @@ const AssessmentResultsModal = ({
         y += 10;
       }
 
-      // Bonus badges
-      if (result.harmonyActive) {
-        pdf.setFontSize(8);
-        pdf.setTextColor(...green);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('HARMONY BONUS ACTIVE (+33)', W / 2, y, { align: 'center' });
-        y += 5;
-      }
-      if (result.shadowBonusActive) {
-        pdf.setFontSize(8);
-        pdf.setTextColor(...orange);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('SHADOW BONUS ACTIVE (+69)', W / 2, y, { align: 'center' });
-        y += 5;
-      }
+      // Bonus badges removed — Geometric Bleed has no separate counters
 
       // Score at bottom of cover
       pdf.setFontSize(9);
@@ -1174,33 +1160,7 @@ const AssessmentResultsModal = ({
                         letterSpacing: '0.15em',
                         marginTop: '0.75rem',
                       }}>
-                        {result.mainName} {result.harmonyActive ? '⟷' : '+'} {result.secondaryName}
-                      </p>
-                    )}
-                    {result.harmonyActive && (
-                      <p style={{
-                        fontSize: '0.75rem',
-                        color: '#00ff9d',
-                        fontFamily: "'Rajdhani', sans-serif",
-                        fontWeight: 600,
-                        letterSpacing: '0.1em',
-                        marginTop: '0.5rem',
-                        textTransform: 'uppercase',
-                      }}>
-                        ✦ Harmony Bonus Active (+33) ✦
-                      </p>
-                    )}
-                    {result.shadowBonusActive && (
-                      <p style={{
-                        fontSize: '0.75rem',
-                        color: '#f97316',
-                        fontFamily: "'Rajdhani', sans-serif",
-                        fontWeight: 600,
-                        letterSpacing: '0.1em',
-                        marginTop: '0.5rem',
-                        textTransform: 'uppercase',
-                      }}>
-                        ✦ Shadow Bonus Active (+69) ✦
+                        {result.mainName} + {result.secondaryName}
                       </p>
                     )}
                   </div>
@@ -2607,26 +2567,27 @@ function formatInline(text) {
  * Uses the 12-archetype scoring engine:
  *   - Single choice: +5 pts to the selected archetype
  *   - Dual choice: Primary +3 pts, Secondary +2 pts (future)
- *   - Harmony Bonus: +69 pts to BOTH if Main & Support are complementary
- *   - Max per archetype: 150 base + 69 harmony = 219
- *   - Total max score: 369
+ *   - Geometric Bleed: Core + Green + Blue + Purple + Yellow per pick
+ *   - Max per archetype depends on pick routing and bleed geometry
+ *   - Total score: sum of all Core + Bleed across 12 archetypes
  *
  * Accepts: { layerIndex: { questionId: answerId } }
  * e.g. { 0: { 1: "1a", 2: "2c" }, 1: { 7: "7b" }, ... }
  */
 function computeResultFromAnswers(layerAnswers) {
   // ──────────────────────────────────────────────────────────
-  // 1. Score each archetype: +5 points per selected answer
-  //    Also track raw selection counts for radar chart
+  // 1. Convert layerAnswers → flat response array for scoring engine
+  //    Handles dual-pick arrays [pick1, pick2] per question
   // ──────────────────────────────────────────────────────────
   const archetypeScores = {};
   const archetypeCounts = {};
-  const archetypeNature = {};   // Nature-bucket counts per archetype
-  const archetypeCulture = {};  // Culture-bucket counts per archetype
+  const archetypeNature = {};
+  const archetypeCulture = {};
   ALL_ARCHETYPE_KEYS.forEach(key => { archetypeScores[key] = 0; archetypeCounts[key] = 0; archetypeNature[key] = 0; archetypeCulture[key] = 0; });
 
-  const layerScores = {}; // for subgroup bias computation
-  const answerLog = [];   // full answer key (backend-only, for account-linked retrieval)
+  const layerScores = {};
+  const answerLog = [];
+  const flatResponses = []; // for computeAdvancedScores
 
   if (layerAnswers && typeof layerAnswers === 'object') {
     Object.entries(layerAnswers).forEach(([layerIdxStr, layerData]) => {
@@ -2640,75 +2601,71 @@ function computeResultFromAnswers(layerAnswers) {
 
       Object.entries(layerData).forEach(([questionIdStr, rawAnswerId]) => {
         const questionId = parseInt(questionIdStr, 10) || questionIdStr;
-        // Safety: unwrap array if stored as [answerId] instead of string
-        const answerId = Array.isArray(rawAnswerId) ? rawAnswerId[0] : rawAnswerId;
+        // Handle dual-pick arrays: [pick1, pick2] or single value
+        const picks = Array.isArray(rawAnswerId) ? rawAnswerId : (rawAnswerId ? [rawAnswerId] : []);
         const question = layer.questions.find(q => q.id === questionId);
         if (!question) return;
 
-        const selectedAnswer = question.answers.find(a => a.id === answerId);
-        if (!selectedAnswer) return;
+        picks.forEach((answerId, pickIdx) => {
+          const selectedAnswer = question.answers.find(a => a.id === answerId);
+          if (!selectedAnswer) return;
 
-        layerScores[layerIdx].push(selectedAnswer.value || 3);
+          layerScores[layerIdx].push(selectedAnswer.value || 3);
 
-        const archetype = selectedAnswer.archetype;
-        if (archetype) {
-          archetypeScores[archetype] = (archetypeScores[archetype] || 0) + 5;
-          archetypeCounts[archetype] = (archetypeCounts[archetype] || 0) + 1;
-          // Nature/Culture dual-tracking via state toggle
-          const stateToggle = getStateToggle(question.id);
-          const bucket = getNatureCultureBucket(archetype, stateToggle);
-          if (bucket === 'NATURE') {
-            archetypeNature[archetype] = (archetypeNature[archetype] || 0) + 1;
-          } else {
-            archetypeCulture[archetype] = (archetypeCulture[archetype] || 0) + 1;
+          const archetype = selectedAnswer.archetype;
+          if (archetype) {
+            archetypeScores[archetype] = (archetypeScores[archetype] || 0) + (pickIdx === 0 ? 5 : 3);
+            archetypeCounts[archetype] = (archetypeCounts[archetype] || 0) + 1;
+            const slotPos = selectedAnswer.value - 1; // 0-based answer position (A=0..F=5)
+            const isNature = isNatureSlot(question.id, slotPos);
+            if (isNature) {
+              archetypeNature[archetype] = (archetypeNature[archetype] || 0) + 1;
+            } else {
+              archetypeCulture[archetype] = (archetypeCulture[archetype] || 0) + 1;
+            }
           }
-        }
 
-        // Build detailed answer log entry
-        const archetypeData = ARCHETYPES[archetype] || {};
-        answerLog.push({
-          questionNumber: question.id,
-          layerIndex: layerIdx,
-          layerName: layer.name || `Layer ${layerIdx}`,
-          questionText: question.text,
-          answerId: selectedAnswer.id,
-          answerText: selectedAnswer.text,
-          answerPosition: selectedAnswer.value,       // position 1-6 within the question
-          pointsAwarded: 5,
-          archetype: archetype,
-          archetypeName: archetypeData.nameEn || archetype,     // e.g. "The Sage"
-          archetypeNameNl: archetypeData.name || archetype,     // e.g. "De Wijze"
-          archetypeGroup: archetypeData.group || null,          // e.g. "Wisdom"
-          archetypeSet: archetypeData.set || null,              // "A" or "B"
-          archetypeDescription: archetypeData.description || null,
-          archetypeMotivation: archetypeData.motivation || null,
+          // Build flat response for scoring engine
+          flatResponses.push({
+            questionId: question.id,
+            answerId: selectedAnswer.id,
+            archetype: selectedAnswer.archetype,
+            pickOrder: pickIdx,
+          });
+
+          // Build detailed answer log entry
+          const archetypeData = ARCHETYPES[archetype] || {};
+          answerLog.push({
+            questionNumber: question.id,
+            layerIndex: layerIdx,
+            layerName: layer.name || `Layer ${layerIdx}`,
+            questionText: question.text,
+            answerId: selectedAnswer.id,
+            answerText: selectedAnswer.text,
+            answerPosition: selectedAnswer.value,
+            pickOrder: pickIdx + 1, // 1=first pick, 2=second pick
+            archetype: archetype,
+            archetypeName: archetypeData.nameEn || archetype,
+            archetypeNameNl: archetypeData.name || archetype,
+            archetypeGroup: archetypeData.group || null,
+            archetypeSet: archetypeData.set || null,
+            archetypeDescription: archetypeData.description || null,
+            archetypeMotivation: archetypeData.motivation || null,
+          });
         });
       });
     });
   }
 
-  // Sort answer log by question number
-  answerLog.sort((a, b) => a.questionNumber - b.questionNumber);
+  // Sort answer log by question number then pick order
+  answerLog.sort((a, b) => a.questionNumber - b.questionNumber || a.pickOrder - b.pickOrder);
 
   // ──────────────────────────────────────────────────────────
-  // 2. Determine Main (highest) & Support (2nd highest) archetypes
+  // 2. Run advanced scoring engine (3-layer dual-pick)
   // ──────────────────────────────────────────────────────────
-  const sorted = Object.entries(archetypeScores)
-    .sort((a, b) => b[1] - a[1]);
-  const mainKey = sorted[0]?.[0] || 'SAGE';
-  const supportKey = sorted[1]?.[0] || 'EXPLORER';
-
-  // ──────────────────────────────────────────────────────────
-  // 3. Harmony Bonus (+69): unlocked when Main and Support are
-  //    direct neighbors within their Neurale Zuil (biological pillar)
-  //    Shadow Integration: measured on 180°-axis (no scoring bonus)
-  // ──────────────────────────────────────────────────────────
-  const harmonyActive = isComplementaryPair(mainKey, supportKey);
-  const shadowBonusActive = SHADOW_PAIRS[mainKey] === supportKey; // flag only, no bonus
-  if (harmonyActive) {
-    archetypeScores[mainKey] += 69;
-    archetypeScores[supportKey] += 69;
-  }
+  const advanced = computeAdvancedScores(flatResponses, 'ADVANCED');
+  const mainKey = advanced.mainArchetype;
+  const supportKey = advanced.supportArchetype;
 
   // ──────────────────────────────────────────────────────────
   // 4. Extended Archetype Name (72-outcome matrix)
@@ -2738,21 +2695,11 @@ function computeResultFromAnswers(layerAnswers) {
   const supportArchetype = ARCHETYPES[supportKey] || ARCHETYPES.EXPLORER;
 
   // ──────────────────────────────────────────────────────────
-  // 6. Generate radar data: 12 anchors = 12 archetypes (raw counts)
-  //    Each archetype appears 5 times across 60 questions, so max possible = 5
-  //    But we scale the domain dynamically so the highest always reaches the edge
+  // 6. Radar data: use 5-basket stacked bands from advanced scoring engine
+  //    Each data point has cumulative band boundaries (green→orange→blue→gold→purple)
+  //    plus raw basket values for tooltip display.
   // ──────────────────────────────────────────────────────────
-  // Fixed scale: each archetype has exactly 15 nature-eligible and 15 culture-eligible questions
-  const radarData = ARCHETYPE_RADAR_LABELS.map(label => {
-    const key = label.toUpperCase();
-    return {
-      subject: label,
-      A: archetypeCounts[key] || 0,
-      nature: archetypeNature[key] || 0,
-      culture: archetypeCulture[key] || 0,
-      fullMark: 15,
-    };
-  });
+  const radarData = advanced.radarData;
 
   // ──────────────────────────────────────────────────────────
   // 6b. All possible support archetypes for this main archetype
@@ -2797,7 +2744,6 @@ function computeResultFromAnswers(layerAnswers) {
 
   // ──────────────────────────────────────────────────────────
   // 7. Subgroup dynamics: Set A vs Set B raw point scores per group
-  //    Also compute shadow & harmony bonus points per group
   // ──────────────────────────────────────────────────────────
   const subgroups = SUBGROUP_POLARITIES.map(p => {
     const leftKey = p.leftLabel.toUpperCase();   // Set A archetype
@@ -2807,14 +2753,14 @@ function computeResultFromAnswers(layerAnswers) {
     const leftPts = leftRaw * 5;   // points scored
     const rightPts = rightRaw * 5;
     
-    // Check if this group's pair earns shadow or harmony bonus
+    // Check if this group's pair is complementary or shadow
     const pairIsComplementary = isComplementaryPair(leftKey, rightKey);
     const pairIsShadow = SHADOW_PAIRS[leftKey] === rightKey;
-    // Bonus only if BOTH archetypes in the pair are Main+Support
+    // Bonus fields kept for backward compatibility but set to 0 (Geometric Bleed has no counters)
     const pairKeys = [leftKey, rightKey];
     const isActivePair = pairKeys.includes(mainKey) && pairKeys.includes(supportKey);
-    const harmonyPts = (pairIsComplementary && isActivePair) ? 33 : 0;
-    const shadowPts = (pairIsShadow && isActivePair) ? 69 : 0;
+    const harmonyPts = 0;
+    const shadowPts = 0;
     
     return {
       ...p,
@@ -2842,9 +2788,11 @@ function computeResultFromAnswers(layerAnswers) {
       ];
 
   // ──────────────────────────────────────────────────────────
-  // 9. Compute total score
+  // 9. Compute total score from advanced engine
   // ──────────────────────────────────────────────────────────
-  const totalScore = Object.values(archetypeScores).reduce((s, v) => s + v, 0);
+  const totalScore = advanced.totalPointsAwarded || 0;
+  const harmonyActive = advanced.hasHarmonyBonus;
+  const shadowBonusActive = advanced.hasShadowHarmony;
 
   // ──────────────────────────────────────────────────────────
   // 8b. OCEAN Personality Profiles
@@ -2888,12 +2836,12 @@ function computeResultFromAnswers(layerAnswers) {
     blindspotDescription: blindspotKey ? (ARCHETYPES[blindspotKey]?.description || null) : null,
     blindspotShadowTrait: blindspotKey ? (ARCHETYPES[blindspotKey]?.shadow || null) : null,
     blindspotTension: blindspotKey ? (ARCHETYPES[blindspotKey]?.shadowTension || null) : null,
-    // Harmony
-    harmonyActive,
-    shadowBonusActive,
-    harmonyPairName: harmonyActive
-      ? `${primaryArchetype.nameEn || mainKey} + ${supportArchetype.nameEn || supportKey}`
-      : null,
+    // Harmony & Bonuses (Geometric Bleed — no separate counters, kept for backward compat)
+    harmonyActive: false,
+    shadowBonusActive: false,
+    harmonyBonus: 0,
+    beheersingsBonus: 0,
+    harmonyPairName: null,
     // Metadata
     group: primaryArchetype.group || null,
     supportGroup: supportGroup,
@@ -2905,7 +2853,7 @@ function computeResultFromAnswers(layerAnswers) {
     fullMatrix72,
     analysisSections,
     totalScore,
-    maxScore: harmonyActive ? 369 : 300,
+    maxScore: advanced.totalMaxScore || 369,
     // OCEAN Personality Profile
     coreProfile,                                       // Full core archetype psychological portrait
     extendedOcean,                                     // OCEAN scores + trigger for this extended archetype
@@ -2922,7 +2870,7 @@ function computeResultFromAnswers(layerAnswers) {
     // Full answer log (backend-only, for account-linked retrieval)
     _answerLog: answerLog,
     // AI Agent prompt (for Ontologische Evolutie section)
-    _aiAgentPrompt: `Je bent een persoonlijke ontwikkelingscoach gespecialiseerd in Jungiaanse archetypen en het OCEAN persoonlijkheidsmodel. Mijn profiel: Extended Archetype "${extendedName}" (Main: ${primaryArchetype.nameEn || mainKey}, Support: ${supportArchetype.nameEn || supportKey}, Support Group: ${supportGroup}). Mijn schaduw (180° individuatie) is ${shadowKey ? (ARCHETYPES[shadowKey]?.nameEn || shadowKey) : 'onbekend'}, mijn blindspot is ${blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn || blindspotKey) : 'onbekend'}. Harmony bonus: ${harmonyActive ? 'actief' : 'niet actief'}. OCEAN profiel: O=${extendedOcean?.ocean?.O || '?'}, C=${extendedOcean?.ocean?.C || '?'}, E=${extendedOcean?.ocean?.E || '?'}, A=${extendedOcean?.ocean?.A || '?'}, N=${extendedOcean?.ocean?.N || '?'}. Neuroticisme-trigger: ${extendedOcean?.neuroticismTrigger || 'onbekend'}. ${coreProfile ? `Werkplek superkracht: ${coreProfile.workplaceSuperpower} Conflictstijl: ${coreProfile.conflictStyle} Individuatiepad: ${coreProfile.individuationPath}` : ''} Help me mijn schaduw te integreren en mijn blindspot te herkennen in dagelijkse situaties.`,
+    _aiAgentPrompt: `Je bent een persoonlijke ontwikkelingscoach gespecialiseerd in Jungiaanse archetypen en het OCEAN persoonlijkheidsmodel. Mijn profiel: Extended Archetype "${extendedName}" (Main: ${primaryArchetype.nameEn || mainKey}, Support: ${supportArchetype.nameEn || supportKey}, Support Group: ${supportGroup}). Mijn schaduw (180° individuatie) is ${shadowKey ? (ARCHETYPES[shadowKey]?.nameEn || shadowKey) : 'onbekend'}, mijn blindspot is ${blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn || blindspotKey) : 'onbekend'}. OCEAN profiel: O=${extendedOcean?.ocean?.O || '?'}, C=${extendedOcean?.ocean?.C || '?'}, E=${extendedOcean?.ocean?.E || '?'}, A=${extendedOcean?.ocean?.A || '?'}, N=${extendedOcean?.ocean?.N || '?'}. Neuroticisme-trigger: ${extendedOcean?.neuroticismTrigger || 'onbekend'}. ${coreProfile ? `Werkplek superkracht: ${coreProfile.workplaceSuperpower} Conflictstijl: ${coreProfile.conflictStyle} Individuatiepad: ${coreProfile.individuationPath}` : ''} Help me mijn schaduw te integreren en mijn blindspot te herkennen in dagelijkse situaties.`,
   };
 
   // ──────────────────────────────────────────────────────────
@@ -2939,7 +2887,7 @@ function computeResultFromAnswers(layerAnswers) {
       shadowBonusActive,
       totalScore,
       maxScore: resultObj.maxScore,
-      archetypeScores: { ...archetypeScores },
+      archetypeScores: advanced.scores || archetypeScores,
       answerLog,
     };
     // Store current session

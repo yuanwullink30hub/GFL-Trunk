@@ -7,7 +7,7 @@
  *   import { questions, ARCHETYPES, LAYERS, RADAR_TRAITS, ... } from '../data/assessment';
  * 
  * Folder structure:
- *   questions/    — 60 questions across 5 layers (12 per layer, 6 answers each)
+ *   questions/    — 36 questions across 5 layers (6 answers each, 72 picks total)
  *   archetypes/   — 12 archetype definitions (Set A + Set B) with traits, shadows & group pairings
  *   layers/       — Layer metadata (colors, elements, chakras, domains)
  *   scoring/      — Scoring algorithms (radar, subgroups, archetype determination)
@@ -53,6 +53,7 @@ export {
   GROUP_NEURAL_FOCUS,
   getStateToggle,
   getNatureCultureBucket,
+  getQuestionBucket,
   isHarmonyPair,
   isShadowPair,
   computeAdvancedScores,

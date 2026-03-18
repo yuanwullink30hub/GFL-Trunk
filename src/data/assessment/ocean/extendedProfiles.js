@@ -1,29 +1,29 @@
-/**
- * Extended Archetype OCEAN Profiles — 72 Combinations
+﻿/**
+ * Extended Archetype OCEAN Profiles â€” 72 Combinations
  *
- * Each core archetype (12) × each support group (6) = 72 extended archetypes.
+ * Each core archetype (12) Ã— each support group (6) = 72 extended archetypes.
  * Provides the OCEAN trait shifts and stress triggers for every combination.
  *
  * Support Groups:
- *   Ruling     — CEN Dominantie
- *   Relational — Limbische Koppeling
- *   Seeker     — Openness / Vertrouwen & Beweging
- *   Chaos      — Salience Network
- *   Abstract   — DMN Hyper-connectie
- *   Agency     — Extraversie & Wilskracht
+ *   Ruling     â€” CEN Dominantie
+ *   Relational â€” Limbische Koppeling
+ *   Seeker     â€” Openness / Vertrouwen & Beweging
+ *   Chaos      â€” Salience Network
+ *   Abstract   â€” DMN Hyper-connectie
+ *   Agency     â€” Extraversie & Wilskracht
  */
 
 export const EXTENDED_OCEAN_PROFILES = {
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 1. JUDGE — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 1. JUDGE â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   JUDGE: {
     RULING: {
       name: 'Arbiter',
       supportGroup: 'Ruling',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Laag-Gemiddeld', C: 'Extreem Hoog', E: 'Laag-Gemiddeld', A: 'Laag', N: 'Onrecht / Systeemfouten' },
       stressTrigger: 'Gestrest door het moeten oplossen van onrecht of systeemfouten.',
     },
@@ -64,9 +64,9 @@ export const EXTENDED_OCEAN_PROFILES = {
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 2. LOVER — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 2. LOVER â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   LOVER: {
     RULING: {
       name: 'Companion',
@@ -79,7 +79,7 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Soulmate',
       supportGroup: 'Relational',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Hoog', C: 'Gemiddeld-Laag', E: 'Hoog', A: 'Extreem Hoog', N: 'Verlatingsangst / Afstand' },
       stressTrigger: 'Zeer gevoelig voor waargenomen afstand van anderen en verlatingsangst.',
     },
@@ -113,9 +113,9 @@ export const EXTENDED_OCEAN_PROFILES = {
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 3. CAREGIVER — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 3. CAREGIVER â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   CAREGIVER: {
     RULING: {
       name: 'Advocate',
@@ -128,7 +128,7 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Healer',
       supportGroup: 'Relational',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Hoog', C: 'Laag', E: 'Hoog', A: 'Extreem Hoog', N: 'Emotionele disharmonie' },
       stressTrigger: 'Gevoelig voor waargenomen afstand of emotionele disharmonie.',
     },
@@ -162,9 +162,9 @@ export const EXTENDED_OCEAN_PROFILES = {
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 4. INNOCENT — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 4. INNOCENT â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   INNOCENT: {
     RULING: {
       name: 'Shepherd',
@@ -184,7 +184,7 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Saint',
       supportGroup: 'Seeker',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Hoog', C: 'Hoog', E: 'Gemiddeld', A: 'Extreem Hoog', N: '"Fout" zijn / Bestraffing' },
       stressTrigger: 'Gewelddadige reactie op "fout" zijn of het idee gestraft te worden.',
     },
@@ -199,8 +199,8 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Disciple',
       supportGroup: 'Abstract',
       harmony: false,
-      ocean: { O: 'Gemiddeld', C: 'Hoog', E: 'Laag', A: 'Hoog', N: 'Ambiguïteit / Gebrek aan waarheid' },
-      stressTrigger: 'Begint onrustig de "juiste" variabelen te berekenen bij ambiguïteit.',
+      ocean: { O: 'Gemiddeld', C: 'Hoog', E: 'Laag', A: 'Hoog', N: 'AmbiguÃ¯teit / Gebrek aan waarheid' },
+      stressTrigger: 'Begint onrustig de "juiste" variabelen te berekenen bij ambiguÃ¯teit.',
     },
     AGENCY: {
       name: 'Pioneer',
@@ -211,9 +211,9 @@ export const EXTENDED_OCEAN_PROFILES = {
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 5. EXPLORER — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 5. EXPLORER â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   EXPLORER: {
     RULING: {
       name: 'Scout',
@@ -233,7 +233,7 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Navigator',
       supportGroup: 'Seeker',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Extreem Hoog', C: 'Gemiddeld', E: 'Laag', A: 'Laag-Gemiddeld', N: 'Stagnatie / Stilstand' },
       stressTrigger: 'Vreest stagnatie en begint wanhopig variabelen te berekenen.',
     },
@@ -241,8 +241,8 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Innovator',
       supportGroup: 'Chaos',
       harmony: false,
-      ocean: { O: 'Extreem Hoog', C: 'Laag', E: 'Contextueel', A: 'Gemiddeld', N: 'Vastgeroeste ideeën' },
-      stressTrigger: 'Zeer gevoelig en kwetsbaar voor emotionele turbulentie en vastgeroeste ideeën.',
+      ocean: { O: 'Extreem Hoog', C: 'Laag', E: 'Contextueel', A: 'Gemiddeld', N: 'Vastgeroeste ideeÃ«n' },
+      stressTrigger: 'Zeer gevoelig en kwetsbaar voor emotionele turbulentie en vastgeroeste ideeÃ«n.',
     },
     ABSTRACT: {
       name: 'Scholar',
@@ -260,9 +260,9 @@ export const EXTENDED_OCEAN_PROFILES = {
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 6. OUTLAW — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 6. OUTLAW â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   OUTLAW: {
     RULING: {
       name: 'Reformer',
@@ -289,7 +289,7 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Anarchist',
       supportGroup: 'Chaos',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Hoog', C: 'Laag', E: 'Hoog', A: 'Extreem Laag', N: 'Systeemcorruptie' },
       stressTrigger: 'Woede en stress worden gevoed door diepgewortelde systemische corruptie.',
     },
@@ -309,9 +309,9 @@ export const EXTENDED_OCEAN_PROFILES = {
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 7. TRICKSTER — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 7. TRICKSTER â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   TRICKSTER: {
     RULING: {
       name: 'Jester',
@@ -338,7 +338,7 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Fool',
       supportGroup: 'Chaos',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Hoog', C: 'Gemiddeld-Hoog', E: 'Gemiddeld', A: 'Extreem Hoog', N: 'Verraad van de bubbel' },
       stressTrigger: 'Gewelddadige paniekreactie wanneer het veilige "paradijs" verraden wordt.',
     },
@@ -358,16 +358,16 @@ export const EXTENDED_OCEAN_PROFILES = {
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 8. SAGE — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 8. SAGE â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   SAGE: {
     RULING: {
       name: 'Analyst',
       supportGroup: 'Ruling',
       harmony: false,
-      ocean: { O: 'Gemiddeld', C: 'Extreem Hoog', E: 'Laag', A: 'Laag', N: 'Ambiguïteit' },
-      stressTrigger: 'Onrustig door ambiguïteit of onkwantificeerbare variabelen.',
+      ocean: { O: 'Gemiddeld', C: 'Extreem Hoog', E: 'Laag', A: 'Laag', N: 'AmbiguÃ¯teit' },
+      stressTrigger: 'Onrustig door ambiguÃ¯teit of onkwantificeerbare variabelen.',
     },
     RELATIONAL: {
       name: 'Mentor',
@@ -394,22 +394,22 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Enlightened',
       supportGroup: 'Abstract',
       harmony: true,
-      harmonyBonus: 69,
-      ocean: { O: 'Extreem Hoog', C: 'Gemiddeld', E: 'Laag', A: 'Hoog', N: 'Materiële beknelling' },
-      stressTrigger: 'Naar buiten toe rustig; getriggerd door materiële beknelling of trivialiteit.',
+      harmonyBonus: 0,
+      ocean: { O: 'Extreem Hoog', C: 'Gemiddeld', E: 'Laag', A: 'Hoog', N: 'MateriÃ«le beknelling' },
+      stressTrigger: 'Naar buiten toe rustig; getriggerd door materiÃ«le beknelling of trivialiteit.',
     },
     AGENCY: {
       name: 'Detective',
       supportGroup: 'Agency',
       harmony: false,
-      ocean: { O: 'Hoog', C: 'Uitzonderlijk Hoog', E: 'Gemiddeld', A: 'Zeer Laag', N: 'Onopgeloste anomalieën' },
-      stressTrigger: 'Raakt geobsedeerd en gestrest door onopgeloste anomalieën.',
+      ocean: { O: 'Hoog', C: 'Uitzonderlijk Hoog', E: 'Gemiddeld', A: 'Zeer Laag', N: 'Onopgeloste anomalieÃ«n' },
+      stressTrigger: 'Raakt geobsedeerd en gestrest door onopgeloste anomalieÃ«n.',
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 9. ARTIST — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 9. ARTIST â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   ARTIST: {
     RULING: {
       name: 'Architect',
@@ -443,7 +443,7 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Demiurge',
       supportGroup: 'Abstract',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Extreem Hoog', C: 'Variabel', E: 'Gemiddeld', A: 'Gemiddeld-Laag', N: 'Vaste beperkingen' },
       stressTrigger: 'Gevoelig voor overdenken, piekeren of "analyse verlamming".',
     },
@@ -452,13 +452,13 @@ export const EXTENDED_OCEAN_PROFILES = {
       supportGroup: 'Agency',
       harmony: false,
       ocean: { O: 'Hoog', C: 'Gemiddeld-Laag', E: 'Hoog', A: 'Laag-Gemiddeld', N: 'Tunnelvisie' },
-      stressTrigger: 'Hoge stresstolerantie, maar onderdrukt angst agressief door een tunnelvisie te creëren.',
+      stressTrigger: 'Hoge stresstolerantie, maar onderdrukt angst agressief door een tunnelvisie te creÃ«ren.',
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 10. MAGICIAN — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 10. MAGICIAN â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   MAGICIAN: {
     RULING: {
       name: 'Engineer',
@@ -499,22 +499,22 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Alchemist',
       supportGroup: 'Agency',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Extreem Hoog', C: 'Laag-Gemiddeld', E: 'Gemiddeld', A: 'Laag-Gemiddeld', N: 'Wil-conflict' },
       stressTrigger: 'Psychologische instorting als de realiteit zich niet wil aanpassen aan hun wil.',
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 11. HERO — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 11. HERO â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   HERO: {
     RULING: {
       name: 'Commander',
       supportGroup: 'Ruling',
       harmony: false,
-      ocean: { O: 'Laag', C: 'Extreem Hoog', E: 'Hoog', A: 'Laag', N: 'Verlies van hiërarchie' },
-      stressTrigger: 'Intern doodsbang voor anarchie of het verlies van hiërarchische controle.',
+      ocean: { O: 'Laag', C: 'Extreem Hoog', E: 'Hoog', A: 'Laag', N: 'Verlies van hiÃ«rarchie' },
+      stressTrigger: 'Intern doodsbang voor anarchie of het verlies van hiÃ«rarchische controle.',
     },
     RELATIONAL: {
       name: 'Guardian',
@@ -548,21 +548,21 @@ export const EXTENDED_OCEAN_PROFILES = {
       name: 'Legend',
       supportGroup: 'Agency',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Gemiddeld', C: 'Hoog', E: 'Hoog', A: 'Laag', N: 'Corruptie / Tegenwerking' },
       stressTrigger: 'Stress slaat om in woede over corruptie of tegenwerking.',
     },
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 12. RULER — Extended Archetypes
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // 12. RULER â€” Extended Archetypes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   RULER: {
     RULING: {
       name: 'Emperor',
       supportGroup: 'Ruling',
       harmony: true,
-      harmonyBonus: 69,
+      harmonyBonus: 0,
       ocean: { O: 'Laag-Gemiddeld', C: 'Uitzonderlijk Hoog', E: 'Gemiddeld-Hoog', A: 'Laag-Gemiddeld', N: 'Pure anarchie' },
       stressTrigger: 'Rots van stabiliteit, maar is intern doodsbang voor pure anarchie.',
     },
@@ -606,8 +606,8 @@ export const EXTENDED_OCEAN_PROFILES = {
 
 /**
  * Look up the extended OCEAN profile for a specific Main + Support Group combination.
- * @param {string} mainKey — e.g. 'JUDGE', 'SAGE'
- * @param {string} supportGroup — e.g. 'RULING', 'RELATIONAL', 'SEEKER', 'CHAOS', 'ABSTRACT', 'AGENCY'
+ * @param {string} mainKey â€” e.g. 'JUDGE', 'SAGE'
+ * @param {string} supportGroup â€” e.g. 'RULING', 'RELATIONAL', 'SEEKER', 'CHAOS', 'ABSTRACT', 'AGENCY'
  * @returns {object|undefined}
  */
 export function getExtendedOceanProfile(mainKey, supportGroup) {

@@ -43,15 +43,15 @@ const router = Router();
  *   shadowArchetype: "TRICKSTER",               // 180° shadow of Main
  *   blindspotArchetype: "OUTLAW",               // 180° shadow of Support
  *   isIndividuated: false,                       // Main & Support are 180° opposites
- *   hasHarmonyBonus: true,                       // +69 bonus applied
- *   harmonyBonusApplied: 69,                     // actual bonus value
+ *   hasHarmonyBonus: false,                       // deprecated (Geometric Bleed has no counters)
+ *   harmonyBonusApplied: 0,                        // deprecated
  *   polarizationIndex: 25,                       // Main - Shadow score gap
  *   polarizationLevel: "MODERATE",               // HIGH_POLARIZATION | MODERATE | HIGH_INDIVIDUATION
  *   authenticityIndex: 55,                       // Nature % of total
  *   authenticityLevel: "BALANCED",               // NATURE_DOMINANT | BALANCED | CULTURE_DOMINANT
  *   totalNaturePoints: 165,                      // total Nature sub-score
  *   totalCulturePoints: 135,                     // total CultureForce sub-score
- *   archetypeDetails: [...],                     // per-archetype breakdown with nature/culture
+ *   archetypeDetails: [...],                     // per-archetype breakdown with core/bleed sub-scores
  *   scores: {...},                               // raw score object per archetype
  *
  *   // ── Full pipeline fields (sent after 60Q completion) ──

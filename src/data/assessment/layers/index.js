@@ -8,7 +8,7 @@
  *   4. Wereld / Wijsheid
  *   5. Mysterie / Magie
  * 
- * Each layer contains 12 questions. Total: 60 questions.
+ * Each layer contains 6–9 questions. Total: 36 questions.
  * Re-exports from the canonical assessmentTypes.js source where appropriate.
  */
 

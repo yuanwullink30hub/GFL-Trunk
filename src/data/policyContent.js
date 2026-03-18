@@ -167,7 +167,7 @@ export const POLICY_CONTENT = {
         <li style={S.li}><strong style={S.strong}>Garden For Life:</strong> Handelsnaam van de onderneming gevestigd te Zutphen, De Taxushaag 2, 7207MB, ingeschreven in het Handelsregister van de Kamer van Koophandel onder nummer 85125245. Hierna: 'Garden For Life', 'wij' of 'ons'.</li>
         <li style={S.li}><strong style={S.strong}>Platform:</strong> De website en digitale omgeving van Garden For Life, bereikbaar via https://gardenforlife.nl/.</li>
         <li style={S.li}><strong style={S.strong}>Gebruiker:</strong> Iedere natuurlijke persoon van 18 jaar of ouder die op uitnodiging toegang heeft gekregen tot de betafase van het Platform.</li>
-        <li style={S.li}><strong style={S.strong}>Assessment:</strong> De digitale vragenlijst van 60 vragen op basis van het Garden For Life Deltawerken Model, die de Gebruiker invult om een persoonlijk zelfreflectierapport te genereren.</li>
+        <li style={S.li}><strong style={S.strong}>Assessment:</strong> De digitale vragenlijst van 36 vragen (72 picks — 2 keuzes per vraag) op basis van het Garden For Life Deltawerken Model, die de Gebruiker invult om een persoonlijk zelfreflectierapport te genereren.</li>
         <li style={S.li}><strong style={S.strong}>Rapport:</strong> Het AI-gegenereerde persoonlijke zelfreflectierapport dat na voltooiing van de Assessment wordt aangemaakt op basis van de antwoorden van de Gebruiker.</li>
         <li style={S.li}><strong style={S.strong}>Betafase:</strong> De besloten testperiode van het Platform, uitsluitend toegankelijk via uitnodiging, die loopt tot en met 27-09-2026.</li>
         <li style={S.li}><strong style={S.strong}>AVG:</strong> De Algemene Verordening Gegevensbescherming (EU) 2016/679.</li>
@@ -334,7 +334,7 @@ export const POLICY_CONTENT = {
         <li style={S.li}><strong style={S.strong}>Ruwe assessmentantwoorden:</strong> uw individuele keuzes per vraag (responses array) — opgeslagen als onderdeel van de assessmentsessie</li>
         <li style={S.li}><strong style={S.strong}>Subjectresultaten per thema:</strong> geaggregeerde scores per van de 5 thema's (subjectResults)</li>
         <li style={S.li}><strong style={S.strong}>Archetype-scores:</strong> het berekende scoreprofiel per archetype (scores)</li>
-        <li style={S.li}><strong style={S.strong}>Archetypedetails:</strong> de uitgewerkte archetypenanalyse inclusief Nature/CultureForce-verdeling (archetypeDetails)</li>
+        <li style={S.li}><strong style={S.strong}>Archetypedetails:</strong> de uitgewerkte archetypenanalyse inclusief 5-mandje decompositie per archetype — Nature Core, Green Hardware, Culture Core, Blue Feedback, Yellow Cognitief, Purple Schaduw (archetypeDetails)</li>
         <li style={S.li}><strong style={S.strong}>Volledig gegenereerd rapport:</strong> inclusief Main/Support Archetype, Extended Archetype, schaduw/blindspot analyse, tactische aanbevelingen en AI Agent Prompt</li>
         <li style={S.li}><strong style={S.strong}>Inhoud geüploade bestanden (uploadedFileContents):</strong> indien van toepassing — de geëxtraheerde tekst uit bestanden die de gebruiker optioneel uploadt (bijv. een OCEAN-rapport als PDF). Garden For Life slaat deze inhoud niet op — zij wordt uitsluitend verwerkt door het Claude AI-model voor rapportgeneratie. De gebruiker is zelf verantwoordelijk voor de inhoud van geüploade bestanden.</li>
       </ul>
@@ -517,10 +517,10 @@ export const POLICY_CONTENT = {
       <table style={S.table}>
         <thead><tr><th style={S.th}>Data</th><th style={S.th}>Toelichting</th></tr></thead>
         <tbody>
-          <tr><td style={S.td}>responses</td><td style={S.td}>De ruwe antwoordenreeks — uw individuele keuzes per vraag (A–F) voor alle 60 vragen</td></tr>
+          <tr><td style={S.td}>responses</td><td style={S.td}>De ruwe antwoordenreeks — uw individuele keuzes per vraag (A–F) voor alle 36 vragen (72 picks)</td></tr>
           <tr><td style={S.td}>subjectResults</td><td style={S.td}>Geaggregeerde scores per van de 5 thema's (Zelf, Ander, Massa, Wereld, Mysterie)</td></tr>
           <tr><td style={S.td}>scores</td><td style={S.td}>Het berekende scoreprofiel per archetype</td></tr>
-          <tr><td style={S.td}>archetypeDetails</td><td style={S.td}>Uitgewerkte archetypenanalyse inclusief Nature/CultureForce-verdeling per archetype</td></tr>
+          <tr><td style={S.td}>archetypeDetails</td><td style={S.td}>Uitgewerkte archetypenanalyse inclusief 5-mandje decompositie per archetype (Nature Core, Green Hardware, Culture Core, Blue Feedback, Yellow Cognitief, Purple Schaduw)</td></tr>
           <tr><td style={S.td}>OCEAN-scores (indien aangeleverd)</td><td style={S.td}>Zelfingevulde persoonlijkheidsscores — optioneel</td></tr>
           <tr><td style={S.td}>uploadedFileContents (indien bestand geüpload)</td><td style={S.td}>De geëxtraheerde tekst uit geüploade bestanden, zoals een OCEAN-rapport in PDF-formaat. De gebruiker bepaalt zelf welke bestanden worden geüpload en is verantwoordelijk voor de inhoud daarvan.</td></tr>
           <tr><td style={S.td}>Systeeminstructies</td><td style={S.td}>De Garden For Life rapportinstructies — bevatten geen persoonsgegevens</td></tr>
@@ -708,9 +708,9 @@ export const POLICY_CONTENT = {
       <p style={S.p}><strong style={S.strong}>De vijf relatielijnensystemen — kern van de claim</strong><br/>Het meest originele element van dit model is het vijfvoudige, kleurgecodeerde verbindingssysteem dat de psychologische relaties tussen alle 12 posities definieert:</p>
       <ul style={S.ul}>
         <li style={S.li}><strong style={S.strong}>Gele lijnen — Cognitieve Synergie</strong> (Zelfde getrainde software-mechanisme): Vier driehoekige verbindingspatronen die cognitieve synergiemodi definiëren: Idealisme, Exploratie, Impact en Engagement. Elke driehoek verbindt drie specifieke archetypen die via aangeleerde gedragspatronen samenwerken.</li>
-        <li style={S.li}><strong style={S.strong}>Blauwe lijnen — Symbiotische Brug</strong> (Feedback-circuits die elkaar aanvullen): Zes horizontale dwarsverbindingen die gedeelde feedback-circuits definiëren tussen tegenoverliggende maar complementaire archetypen. Elke blauwe lijn definieert een +33 Beheersingsbonus in het scoremodel.</li>
+        <li style={S.li}><strong style={S.strong}>Blauwe lijnen — Feedback Brug</strong> (Feedback-circuits die door de gedeelde hardware reizen): Zes horizontale dwarsverbindingen die gedeelde feedback-circuits definiëren tussen tegenoverliggende maar complementaire archetypen. Blauwe bleed distribueert per-pick punten naar de same-group partner in het scoremodel.</li>
         <li style={S.li}><strong style={S.strong}>Groene bogen — Hardware Anker</strong> (Gebruik van zelfde biologische netwerk): Zes gebogen verbindingen langs de buitenrand die de zes biologische supportgroepen markeren — paren van archetypen die binnen hetzelfde neurologische netwerkpatroon opereren.</li>
-        <li style={S.li}><strong style={S.strong}>Paarse lijnen — Schaduw Archetypen</strong> (Uiterst psychologische vloek en gift): Zes 180°-diametrische verbindingen die de schaduw-tegenpool van elk Main Archetype definiëren. Elke paarse lijn definieert een +69 Harmony Bonus in het scoremodel.</li>
+        <li style={S.li}><strong style={S.strong}>Paarse lijnen — Schaduw Archetypen</strong> (Uiterst psychologische vloek en gift): Zes 180°-diametrische verbindingen die de schaduw-tegenpool van elk Main Archetype definiëren. Paarse drip distribueert passief +1 punt per Nature-1e-pick naar de 180° schaduw-partner.</li>
         <li style={S.li}><strong style={S.strong}>Rode lijnen — Neurale Kortsluiting</strong> (Biologische hardware botst): Zes verticale spanningsassen die de Blindspot-tegenpool van elk Support Archetype definiëren — de externe saboteur in het systeem.</li>
       </ul>
       <p style={S.p}><strong style={S.strong}>De 12 archetypische posities en hun specifieke plaatsing</strong><br/>De specifieke toewijzing van de 12 archetypen aan de circulaire posities en hun onderverdeling in 6 biologische supportgroepen is een originele creatie van Garden For Life:</p>
@@ -725,10 +725,10 @@ export const POLICY_CONTENT = {
       <p style={S.p}><strong style={S.strong}>Wat Garden For Life claimt</strong></p>
       <ul style={S.ul}>
         <li style={S.li}>Het vijfvoudige kleurgecodeerde relatielijnensysteem als geheel — de combinatie van vijf specifieke relatiecategorieën met elk hun eigen psychologische betekenis en scorewaarde</li>
-        <li style={S.li}>De specifieke scorelogica die aan elke lijn is gekoppeld (+33, +69, +1 en de CultureForce-spreiding)</li>
+        <li style={S.li}>De specifieke scorelogica die aan elke lijn is gekoppeld (Per-Pick Geometric Bleed: +9/+6 Nature Core, +3/+1 Green Hardware, +7/+4 Culture Core, +2/+1 Blue Feedback, +2/+1 Yellow Cognitief, +1 Purple Schaduw)</li>
         <li style={S.li}>De specifieke toewijzing van de 12 archetypen aan hun posities en de indeling in 6 supportgroepen</li>
         <li style={S.li}>De shadow/blindspot-logica als ingebouwd psychologisch navigatiesysteem</li>
-        <li style={S.li}>De scorestructuur van 720 basispunten en de geometrische onderbouwing daarvan</li>
+        <li style={S.li}>De 5-mandje accumulatiestructuur (72 picks × geometrische distributie ≈ 720 punten) en de stacked radar chart architectuur</li>
         <li style={S.li}>Het visuele geheel inclusief de specifieke kleurkeuzen, de diktes van de verbindingslijnen en de opmaak van de legenda</li>
       </ul>
       <p style={S.p}><strong style={S.strong}>Wat Garden For Life niet claimt:</strong> De 12-positie circulaire structuur als zodanig, de individuele archetypennamen gebaseerd op Jungiaanse theorie (Judge, Lover, Hero etc.), en de associatie van archetypen met neurologische netwerken als concept zijn niet exclusief eigendom van Garden For Life. De specifieke uitwerking, de vijfvoudige relatielogica en het scoremodel zijn dat wel.</p>
@@ -754,11 +754,11 @@ export const POLICY_CONTENT = {
         <p style={{...S.p, marginBottom: 0}}><strong style={S.strong}>Bewijs van makerschap:</strong> De .PSD-bronbestanden bevatten de volledige lagenstructuur, bewerkingsgeschiedenis en versies. Dit vormt het primaire bewijs van oorspronkelijk makerschap conform artikel 1 Auteurswet.</p>
       </div>
 
-      <h3 style={S.h3}>2.6 Het Webdiagram & Dual-Core Dynamics Visualisatie</h3>
-      <p style={S.p}>De specifieke visuele weergave van de assessmentresultaten — het 12-punts webdiagram met gelaagde schilstructuur, de kleurcodering (Paars voor Main, Oranje voor Support) en de Dual-Core Dynamics balkvisualisatie — zijn originele ontwerpwerken van Garden For Life.</p>
+      <h3 style={S.h3}>2.6 De Stacked Radar Chart & Dual-Core Dynamics Visualisatie</h3>
+      <p style={S.p}>De specifieke visuele weergave van de assessmentresultaten — de 12-as stacked radar chart met 5 gestapelde kleurlagen (Groen: Biologische Kern, Oranje: Aangeleerde Strategie, Blauw: Hardware Feedback, Goud: Cognitieve Lens, Paars: Schaduw Echo) en de Dual-Core Dynamics balkvisualisatie — zijn originele ontwerpwerken van Garden For Life.</p>
 
       <h3 style={S.h3}>2.7 De Assessmentvragen & Rotatiemethodiek</h3>
-      <p style={S.p}>De 60 assessmentvragen, de indeling in 5 thema's (Zelf/Zonde, Ander/Attentie, Massa/Macht, Wereld/Wijsheid, Mysterie/Magie), de antwoordopties en de rotatiesleutellogica (Set A/B, Nature/CultureForce-codering per vraag) vormen een origineel meetinstrument van Garden For Life.</p>
+      <p style={S.p}>De 36 assessmentvragen (72 picks), de indeling in 5 thema's (Zelf/Zonde, Ander/Attentie, Massa/Macht, Wereld/Wijsheid, Mysterie/Magie), de antwoordopties, de 6-sleutel rotatiemethodiek en de Standard/Mirror Nature/Culture-routering per vraag vormen een origineel meetinstrument van Garden For Life.</p>
 
       <h3 style={S.h3}>2.8 De Rapportstructuur, Teksten & AI-Instructielaag</h3>
       <p style={S.p}>De structuur van het gegenereerde rapport — inclusief de vaste secties, de narratieve opbouw, de specifieke terminologie ('De Alchemie van Individuatie', 'Het Neurale Schakelbord', 'Ontologische Evolutie') en de AI-prompts die de rapportgeneratie aansturen — zijn originele werken van Garden For Life.</p>
@@ -876,7 +876,7 @@ export const POLICY_CONTENT = {
       <p style={S.p}>Herkenbaar gebruik omvat onder meer:</p>
       <ul style={S.ul}>
         <li style={S.li}><strong style={S.strong}>Deltawerken Model:</strong> de FM/MF-polariteitsgeometrie, de vier-apex driehoeksstructuur met subdriehoeken, de inhoudelijke benaming van apices en vlakken, de drieledige vraagstructuur (met wie/wat/waarom)</li>
-        <li style={S.li}><strong style={S.strong}>12-Archetype Verbindingswiel:</strong> het vijfvoudige kleurgecodeerde relatielijnensysteem (Geel/Blauw/Groen/Paars/Rood) met bijbehorende psychologische betekenis, de specifieke toewijzing van archetypen aan posities, de scorelogica gekoppeld aan de lijnen (+33, +69 bonusstructuur)</li>
+        <li style={S.li}><strong style={S.strong}>12-Archetype Verbindingswiel:</strong> het vijfvoudige kleurgecodeerde relatielijnensysteem (Geel/Blauw/Groen/Paars/Rood) met bijbehorende psychologische betekenis, de specifieke toewijzing van archetypen aan posities, de Per-Pick Geometric Bleed scorelogica gekoppeld aan de lijnen (5-mandje distributie per pick)</li>
         <li style={S.li}><strong style={S.strong}>Cells within Cells Interlinked:</strong> de vijflaagse hiërarchische opbouw (One Manna t/m Seven Modern Arts), de specifieke knooppuntposities en benamingen, de kleurcodering per laag</li>
         <li style={S.li}><strong style={S.strong}>72 Extended Archetypes:</strong> de combinatielogica, de specifieke Extended Archetype-titels, de schaduw- en blindspot-koppelingen</li>
         <li style={S.li}><strong style={S.strong}>Rapportstructuur:</strong> de specifieke terminologie en sectieopbouw van het Garden For Life rapport</li>
@@ -995,7 +995,7 @@ export const POLICY_CONTENT = {
           <tr><td style={S.td}>Rechtsgrond (Art. 6 AVG)</td><td style={S.td}>Toestemming — Art. 6 lid 1 sub a AVG</td></tr>
           <tr><td style={S.td}>Rechtsgrond (Art. 9 AVG)</td><td style={S.td}>Uitdrukkelijke toestemming — Art. 9 lid 2 sub a AVG (bijzondere categorie: psychologische profieldata)</td></tr>
           <tr><td style={S.td}>Categorieën betrokkenen</td><td style={S.td}>Betafase deelnemers (vrijwilligers / uitgenodigde testgebruikers)</td></tr>
-          <tr><td style={S.td}>Categorieën persoonsgegevens</td><td style={S.td}>E-mailadres — accountidentificator<br/>Ruwe assessmentantwoorden (responses) — individuele keuzes per vraag — Art. 9<br/>Subjectresultaten per thema (subjectResults) — geaggregeerde scores per thema — Art. 9<br/>Archetype-scores (scores) — scoreprofiel per archetype — Art. 9<br/>Archetypedetails (archetypeDetails) — Nature/CultureForce-verdeling — Art. 9<br/>Volledig gegenereerd rapport — inclusief Extended Archetype, schaduw/blindspot, AI Agent Prompt — Art. 9</td></tr>
+          <tr><td style={S.td}>Categorieën persoonsgegevens</td><td style={S.td}>E-mailadres — accountidentificator<br/>Ruwe assessmentantwoorden (responses) — individuele keuzes per vraag — Art. 9<br/>Subjectresultaten per thema (subjectResults) — geaggregeerde scores per thema — Art. 9<br/>Archetype-scores (scores) — scoreprofiel per archetype — Art. 9<br/>Archetypedetails (archetypeDetails) — 5-mandje decompositie per archetype — Art. 9<br/>Volledig gegenereerd rapport — inclusief Extended Archetype, schaduw/blindspot, AI Agent Prompt — Art. 9</td></tr>
           <tr><td style={S.td}>Bijzondere categorieën (Art. 9)</td><td style={S.td}><strong style={S.strong}>JA</strong> — Psychologische karakteristieken en gedragsprofielen. Valt onder de definitie van bijzondere persoonsgegevens conform de UAVG en AP-richtlijnen.</td></tr>
           <tr><td style={S.td}>Bewaartermijn</td><td style={S.td}>Uitsluitend gedurende de betaperiode. Uiterste verwijderdatum: <strong style={S.strong}>27-09-2026</strong>. Na afloop worden alle assessmentdata hard-deleted uit MongoDB Atlas (Frankfurt). Verwijdering wordt gedocumenteerd.</td></tr>
           <tr><td style={S.td}>Geautomatiseerde besluitvorming (Art. 22)</td><td style={S.td}>Het rapport wordt volledig gegenereerd door Claude (Anthropic). Er worden geen beslissingen over betrokkenen genomen op basis van uitsluitend geautomatiseerde verwerking. Het rapport dient als zelfreflectie-instrument; de interpretatie berust bij de gebruiker zelf.</td></tr>

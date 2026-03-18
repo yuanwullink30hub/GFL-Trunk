@@ -69,15 +69,15 @@ const translations = {
     levels: {
       quick: {
         name: { nl: "Beginner", en: "Starter" },
-        description: { nl: "60 vragen — 50 min • Basis niveau", en: "60 questions — 50 min • Foundation knowledge" }
+        description: { nl: "36 vragen — 25 min • Basis niveau", en: "36 questions — 25 min • Foundation knowledge" }
       },
       standard: {
         name: { nl: "Gevorderd", en: "Intermediate" },
-        description: { nl: "60 vragen — 50 min • Diepere zelfinzicht", en: "60 questions — 50 min • Deeper self-understanding" }
+        description: { nl: "36 vragen — 25 min • Diepere zelfinzicht", en: "36 questions — 25 min • Deeper self-understanding" }
       },
       deep: {
         name: { nl: "Meester", en: "Advanced" },
-        description: { nl: "60 vragen — 50 min • Volledige zelfbeheersing", en: "60 questions — 50 min • Complete self-mastery" }
+        description: { nl: "36 vragen — 25 min • Volledige zelfbeheersing", en: "36 questions — 25 min • Complete self-mastery" }
       }
     },
     footerResearch: {
@@ -643,7 +643,7 @@ const translations = {
     downloadPDF: { nl: "Download PDF Rapport", en: "Download PDF Report" },
     startNew: { nl: "Begin Nieuwe Analyse", en: "Start New Assessment" },
     beginAssessment: { nl: "Begin Analyse", en: "Begin Assessment" },
-    assessmentDesc: { nl: "60 vragen • ~25 minuten • Optionele bestandsupload", en: "60 questions • ~25 minutes • Optional file upload" }
+    assessmentDesc: { nl: "36 vragen • ~25 minuten • Optionele bestandsupload", en: "36 questions • ~25 minutes • Optional file upload" }
   },
 
   // =======================================

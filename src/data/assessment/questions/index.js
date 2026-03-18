@@ -1,7 +1,7 @@
 /**
  * Assessment Questions — Master Index
  * 
- * Re-exports all 60 questions (5 layers × 12 questions) from the
+ * Re-exports all 36 questions (5 layers) from the
  * canonical source in pages/assessment/assessmentData.js.
  * 
  * The API agent should import questions from here rather than
@@ -24,7 +24,7 @@ export function getQuestionsForLayer(layerIndex) {
 }
 
 /**
- * Helper: Get a flat list of all 60 questions with their layer context.
+ * Helper: Get a flat list of all 36 questions with their layer context.
  * @returns {Array<{ layerIndex: number, layerName: string, ...question }>}
  */
 export function getAllQuestionsFlat() {

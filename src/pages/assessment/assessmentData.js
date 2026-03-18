@@ -1,54 +1,125 @@
 /**
- * Garden for Life — Assessment Data (Level: Meester)
+ * Garden for Life — Assessment Data (Level: Meester — Neurobiological Edition)
  *
- * 60 questions × 6 answers, split across 5 layers (12 questions each).
+ * 36 questions × 6 answers × 2 picks = 72 datapunten
+ * 5 subjects: Zelf/Zonde (Q1-Q9), Ander/Attentie (Q10-Q18),
+ *             Massa/Macht (Q19-Q24), Wereld/Wijsheid (Q25-Q30),
+ *             Mysterie/Magie (Q31-Q36)
  *
- * ─── Neuraal Schakelbord — 12-Archetype Rotation System ───
+ * ─── Neuraal Schakelbord v3 — 6 Numbered Rotation Keys (1-6) ───
  *
  * Archetype Nummering (1-12 op het wiel):
  *   1=Judge(G1)  2=Lover(G2)  3=Caregiver(G2)  4=Innocent(G3)
  *   5=Explorer(G3)  6=Outlaw(G4)  7=Trickster(G4)  8=Sage(G5)
  *   9=Artist(G5)  10=Magician(G6)  11=Hero(G6)  12=Ruler(G1)
  *
- * Set Alpha (Odd questions Q1,Q3,Q5,...): Judge, Lover, Innocent, Outlaw, Sage, Magician
- * Set Beta  (Even questions Q2,Q4,Q6,...): Ruler, Caregiver, Explorer, Trickster, Artist, Hero
+ * 6 Rotation Keys (Slot A→F per key):
+ *   Key 1: Judge(1), Trickster(7), Lover(2),     Sage(8),      Innocent(4),  Hero(11)
+ *   Key 2: Explorer(5), Artist(9), Judge(1),      Trickster(7), Lover(2),     Magician(10)
+ *   Key 3: Caregiver(3), Hero(11), Innocent(4),   Artist(9),    Judge(1),     Trickster(7)
+ *   Key 4: Lover(2), Ruler(12),    Explorer(5),   Hero(11),     Outlaw(6),    Sage(8)
+ *   Key 5: Innocent(4), Magician(10), Outlaw(6),  Ruler(12),    Caregiver(3), Artist(9)
+ *   Key 6: Outlaw(6), Sage(8),     Caregiver(3),  Magician(10), Explorer(5),  Ruler(12)
  *
- * 4 Rotation Keys cycle Q1→Q2→Q3→Q4→Q1→... across all 60 questions:
- *   Stap 1 — Set A (Base / De Grondhouding):     A(N)→1  B(C)→2  C(N)→4  D(C)→6  E(N)→8  F(C)→10
- *   Stap 2 — Set B (Base / De Grondhouding):     A(N)→12 B(C)→3  C(N)→5  D(C)→7  E(N)→9  F(C)→11
- *   Stap 3 — Set A (+1 Shift / De Spiegeling):   A(N)→10 B(C)→1  C(N)→2  D(C)→4  E(N)→6  F(C)→8
- *   Stap 4 — Set B (+1 Shift / De Spiegeling):   A(N)→11 B(C)→12 C(N)→3  D(C)→5  E(N)→7  F(C)→9
+ * N/C Routing (PER SLOT, not per question):
+ *   Standard (S): Slot A,C,E = Nature; Slot B,D,F = Culture
+ *   Mirror   (M): Slot A,C,E = Culture; Slot B,D,F = Nature
  *
- * Harmony Bonus (+69): Main & Support zijn directe buren binnen hun Neurale Zuil
- * Shadow Integration: 180°-as op het wiel (positie + 6)
+ * Mode per question follows 36Q rotation matrix:
+ *   Block 0 (Q1-Q6):   S,M,S,M,S,M    Block 3 (Q19-Q24): M,S,M,S,M,S
+ *   Block 1 (Q7-Q12):  M,S,M,S,M,S    Block 4 (Q25-Q30): S,M,S,M,S,M
+ *   Block 2 (Q13-Q18): S,M,S,M,S,M    Block 5 (Q31-Q36): M,S,M,S,M,S
  *
- * Each of the 12 archetypes appears exactly 30 times across all 360 answer slots.
+ * Dual-Pick scoring per question (1st = Identity, 2nd = Navigation):
+ *   Core: 1st pick +9(Nature)/+7(Culture), 2nd pick +6(Nature)/+4(Culture)
+ *   Shadow Drip: 1st pick + Nature slot only → +1 to 180° partner
+ *   Relations (between pick 1 & pick 2): Green +4, Blue +3, Purple +5, Yellow +2×2, Red +1
+ *
+ * Beheersing Counter: +7 per question where both picks share a bio group (Green+Blue)
+ * Harmony Counter: +5 per question where picks are 180° shadow opposites (Purple)
+ * Frictie Counter: +1 per question where picks are Red Line pairs
+ *
+ * Symmetrie: each archetype has exactly 9 Nature + 9 Culture appearances = 50/50
  */
 
-// ──────── Archetype Sets (Neuraal Schakelbord) ────────
-// Set Alpha (odd steps 1&3): positions 1,2,4,6,8,10 on the wheel
-const SET_A = ['JUDGE', 'LOVER', 'INNOCENT', 'OUTLAW', 'SAGE', 'MAGICIAN'];
-// Set Beta (even steps 2&4): positions 12,3,5,7,9,11 on the wheel
-const SET_B = ['RULER', 'CAREGIVER', 'EXPLORER', 'TRICKSTER', 'ARTIST', 'HERO'];
-
-// ──────── Rotation Patterns (answer-position → archetype-index) ────────
-const PATTERNS = [
-  [0, 1, 2, 3, 4, 5], // Stap 1 — Set A Base: De Grondhouding (A→1, B→2, C→4, D→6, E→8, F→10)
-  [0, 1, 2, 3, 4, 5], // Stap 2 — Set B Base: De Grondhouding (A→12, B→3, C→5, D→7, E→9, F→11)
-  [5, 0, 1, 2, 3, 4], // Stap 3 — Set A +1 Shift: De Spiegeling (A→10, B→1, C→2, D→4, E→6, F→8)
-  [5, 0, 1, 2, 3, 4], // Stap 4 — Set B +1 Shift: De Spiegeling (A→11, B→12, C→3, D→5, E→7, F→9)
-];
+// ──────── 6 Rotation Keys (Neuraal Schakelbord v3) ────────
+// Each key maps slots A-F (positions 0-5) to archetypes.
+// Keys cycle 1→2→3→4→5→6 per block of 6 questions.
+const ROTATION_KEYS = {
+  1: ['JUDGE', 'TRICKSTER', 'LOVER', 'SAGE', 'INNOCENT', 'HERO'],
+  2: ['EXPLORER', 'ARTIST', 'JUDGE', 'TRICKSTER', 'LOVER', 'MAGICIAN'],
+  3: ['CAREGIVER', 'HERO', 'INNOCENT', 'ARTIST', 'JUDGE', 'TRICKSTER'],
+  4: ['LOVER', 'RULER', 'EXPLORER', 'HERO', 'OUTLAW', 'SAGE'],
+  5: ['INNOCENT', 'MAGICIAN', 'OUTLAW', 'RULER', 'CAREGIVER', 'ARTIST'],
+  6: ['OUTLAW', 'SAGE', 'CAREGIVER', 'MAGICIAN', 'EXPLORER', 'RULER'],
+};
 
 /**
- * Returns the archetype key for a given question number (1-60) and
- * answer position (0-5 = A-F).
+ * Get the rotation key number (1-6) for a given question number (1-based).
+ * Keys cycle 1→2→3→4→5→6 repeatedly across all 36 questions.
+ */
+function getKeyForQuestion(questionNum) {
+  return ((questionNum - 1) % 6) + 1;
+}
+
+/**
+ * Get the Standard/Mirror mode for a given question number (1-based).
+ * Based on a 2-factor pattern: block parity × position parity.
+ *   Even blocks (0,2,4): even positions = Standard, odd = Mirror
+ *   Odd  blocks (1,3,5): even positions = Mirror,   odd = Standard
+ *
+ * @returns {boolean} true = Standard, false = Mirror
+ */
+function isStandardMode(questionNum) {
+  const block = Math.floor((questionNum - 1) / 6);
+  const posInBlock = (questionNum - 1) % 6;
+  return (posInBlock % 2) === (block % 2);
+}
+
+/**
+ * Determine N/C routing for a specific answer SLOT within a question.
+ * Standard: even slots (A=0, C=2, E=4) → Nature, odd slots (B=1, D=3, F=5) → Culture
+ * Mirror:   reversed — even slots → Culture, odd slots → Nature
+ *
+ * @param {number} questionNum - 1-based question number
+ * @param {number} slotPos     - 0-based answer slot position (0=A, 1=B, ..., 5=F)
+ * @returns {boolean} true if this slot routes to Nature
+ */
+function isNatureSlot(questionNum, slotPos) {
+  const standard = isStandardMode(questionNum);
+  const isEvenSlot = slotPos % 2 === 0;
+  return standard ? isEvenSlot : !isEvenSlot;
+}
+
+/**
+ * Get the layer index for a given question number (1-based).
+ * Layer 0: Q1-Q9, Layer 1: Q10-Q18, Layer 2: Q19-Q24,
+ * Layer 3: Q25-Q30, Layer 4: Q31-Q36.
+ */
+function getLayerForQuestion(questionNum) {
+  if (questionNum <= 9) return 0;
+  if (questionNum <= 18) return 1;
+  if (questionNum <= 24) return 2;
+  if (questionNum <= 30) return 3;
+  return 4;
+}
+
+/**
+ * Legacy isNatureRouting — returns Nature status for the QUESTION overall.
+ * In the new system, routing is per-slot. This returns Nature for Position 0 (Slot A).
+ * @deprecated Use isNatureSlot(questionNum, slotPos) instead.
+ */
+function isNatureRouting(questionNum) {
+  return isNatureSlot(questionNum, 0);
+}
+
+/**
+ * Returns the archetype key for a given question number (1-36) and
+ * answer position (0-5 = slots A-F).
  */
 function getArchetypeForAnswer(questionNum, answerPos) {
-  const isOdd = questionNum % 2 !== 0;
-  const set = isOdd ? SET_A : SET_B;
-  const patternIndex = (questionNum - 1) % 4;
-  const archetypeIdx = PATTERNS[patternIndex][answerPos];
-  return set[archetypeIdx];
+  const keyNum = getKeyForQuestion(questionNum);
+  return ROTATION_KEYS[keyNum][answerPos];
 }
 
 // ──────── Helper: build an answer object ────────
@@ -63,146 +134,152 @@ function ans(questionNum, pos, text) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// LAYER 1 — Zelf / Zonde  Q1-Q12
+// LAYER 1 — Zelf / Zonde  Q1-Q9
 // ═══════════════════════════════════════════════════════════════════════
 
 const layer1Questions = [
-  // ─── Q1 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
+  // ─── Q1 (Key 1, Standard) ───
   {
     id: 1,
-    text: 'Hoe bewaak je de grens tussen jouw rijke binnenwereld en de verwachtingen van de buitenwereld?',
+    text: 'Wat vergeef je jezelf het moeilijkst?',
     domain: 'introversie',
     answers: [
-      ans(1, 0, 'Ik gebruik mijn binnenwereld als een laboratorium; ik trek me terug om de data van buiten te analyseren voordat ik reageer.'),
-      ans(1, 1, 'Ik zie mijn binnenwereld als een vesting; ik train mezelf in stilte om sterker en gedisciplineerder naar buiten te treden.'),
-      ans(1, 2, 'Ik vind de grens moeilijk; ik wil mijn diepste gevoelens delen, maar ben bang dat de rauwheid ervan de harmonie verstoort.'),
-      ans(1, 3, 'De grens is mijn canvas; ik vertaal mijn innerlijke beelden naar buiten, zodat anderen mijn unieke realiteit kunnen zien.'),
-      ans(1, 4, 'Ik bewaak de grens strak; mijn privéleven is een soeverein gebied waar ik alleen mensen toelaat die mijn regels respecteren.'),
-      ans(1, 5, 'Ik ervaar nauwelijks een grens; ik geloof dat als ik puur en eerlijk ben de wereld mij ook zo behandelt.'),
+      ans(1, 0, 'Dat ik wist dat het niet klopte en er toch in meeging. Niet de fout zelf \u2014 maar dat ik mijn eigen kompas negeerde.'),
+      ans(1, 1, 'Dat ik er een grap van maakte terwijl het ertoe deed. Ergens heb ik geleerd dat lichtheid me beschermt \u2014 maar soms beschermt het me tegen precies dat wat ik had moeten voelen.'),
+      ans(1, 2, 'Dat ik afstand hield terwijl iemand dichtbij wilde komen. Het besef dat iemand zich naar me uitstrekte en ik er niet was \u2014 dat blijft hangen.'),
+      ans(1, 3, 'Dat ik begrijpen ben gaan gebruiken als excuus om niet te bewegen. Ergens heb ik mezelf aangeleerd dat zolang ik het nog aan het analyseren ben, ik nog niet hoef te kiezen. Dat voelt als scherpte, maar het werkt als uitstel.'),
+      ans(1, 4, 'Dat ik cynisch werd. Dat er een moment was waarop ik stopte met geloven dat het goed zou komen. Niet de tegenslag \u2014 maar dat ik mijn eigen hoop liet varen.'),
+      ans(1, 5, 'Dat ik prestatie gelijk ben gaan stellen aan waarde. Ergens heb ik geleerd dat stilstaan falen is \u2014 en nu veroordeel ik mezelf voor elke keer dat ik rust nam.'),
     ],
   },
 
-  // ─── Q2 (even, pattern 2 → A:Magician B:Judge C:Trickster D:Explorer E:Outlaw F:Caregiver) ───
+  // ─── Q2 (Key 2, Mirror) ───
   {
     id: 2,
-    text: 'Hoe navigeer je door sociale hiërarchieën en ongeschreven groepsregels?',
+    text: 'Je ontdekt dat iets waar je lang in geloofde niet klopt. Wat is je eerste beweging?',
     domain: 'introversie',
     answers: [
-      ans(2, 0, 'Ik speel met de groepsbalans om mijn eigen plek vast te stellen, goedschiks of kwaadschiks.'),
-      ans(2, 1, 'Ik toets de structuur en vind overal wel wat van, ik krijg snel de neiging om te sturen in de ongeschreven regels.'),
-      ans(2, 2, 'Ik relativeer de status; ik prik met humor door de opgeblazen ego\'s van de leiders heen.'),
-      ans(2, 3, 'Ik bemoei me er niet mee; ik observeer de vreemde gewoontes van de groep zonder er echt deel van te worden.'),
-      ans(2, 4, 'Ik voel instinctief weerstand; ik weiger mee te doen aan sociale spelletjes die mijn autonomie beperken.'),
-      ans(2, 5, 'Ik zoek naar degenen die buiten de boot vallen; mijn drang is om de buitenbeentjes op te vangen.'),
+      ans(2, 0, 'Ik scan meteen wat er nu mogelijk is. Want een overtuiging die valt maakt altijd meer ruimte vrij dan ze innam \u2014 dat is inmiddels een reflex.'),
+      ans(2, 1, 'Het voelt alsof er iets scheurt. Niet in mijn hoofd \u2014 dieper. Dat gat moet ik eerst voelen voordat ik er iets mee kan.'),
+      ans(2, 2, 'Ik ga na welke beslissingen op die overtuiging rustten. Want als het fundament niet klopt, wil ik weten wat er nog overeind staat voordat ik verder bouw.'),
+      ans(2, 3, 'Eerlijk gezegd vind ik het grappig \u2014 dat ik er zo lang in trapte. Geloven is sowieso een tijdelijk contract.'),
+      ans(2, 4, 'Mijn eerste gedachte gaat naar de mensen met wie ik dit deelde. Inmiddels herken ik dat patroon \u2014 eerst zij, dan pas ik.'),
+      ans(2, 5, 'Ik word wakker. Alsof er een laag wegvalt en ik scherper zie. Een illusie minder is een hefboom meer.'),
     ],
   },
 
-  // ─── Q3 (odd, pattern 3 → A:Innocent B:Ruler C:Artist D:Lover E:Hero F:Sage) ───
+  // ─── Q3 (Key 3, Standard) ───
   {
     id: 3,
-    text: 'Wat is jouw natuurlijke rol in de sociale hiërarchie van een vriendengroep?',
+    text: 'Welk deel van jezelf bescherm je het felst \u2014 ook tegen de mensen die het dichtst bij je staan?',
     domain: 'introversie',
     answers: [
-      ans(3, 0, 'De trouwe volger die vertrouwt op de goede bedoelingen van de groep.'),
-      ans(3, 1, 'De manager die de structuur neerzet en zorgt dat alles ordelijk verloopt.'),
-      ans(3, 2, 'De smaakmaker die de groep kleur geeft met explosieve energie en \'extreme\' ideeën.'),
-      ans(3, 3, 'De verbinder die zorgt voor de emotionele harmonie en de vriendschappen in de groep.'),
-      ans(3, 4, 'De stille kracht op de achtergrond, vaak een rol die onzichtbaar of onnodig is.'),
-      ans(3, 5, 'De serieuze vriend, jij verrast je vrienden nog wel eens met de kennis die je in huis hebt.'),
+      ans(3, 0, 'Hoeveel het me kost. Als ze zouden weten hoe leeg de tank soms is, zouden ze zich inhouden \u2014 en dat kan ik niet hebben.'),
+      ans(3, 1, 'Mijn twijfel. Want zodra mensen die zien, leunen ze minder op me \u2014 en ergens onderweg is dat het laatste geworden dat ik wil.'),
+      ans(3, 2, 'Dat ik nog steeds geloof dat het goed komt. In een wereld die daar cynisch over doet, voelt die hoop kwetsbaar \u2014 alsof ik het moet bewaken.'),
+      ans(3, 3, 'Mijn binnenwereld. Wat ik naar buiten breng is altijd al vertaald \u2014 want het ruwe origineel verdampt zodra ik het te vroeg deel. Dat weet ik inmiddels.'),
+      ans(3, 4, 'Hoe hard ik over mezelf oordeel. Die interne rechtbank draait dag en nacht. Als mensen dat zouden zien, zouden ze schrikken.'),
+      ans(3, 5, 'Hoe serieus het er vanbinnen aan toe gaat. Want zodra ik dat laat zien, worden mensen voorzichtig \u2014 en dan verlies ik de enige ruimte waarin ik eerlijk kan zijn.'),
     ],
   },
 
-  // ─── Q4 (even, pattern 4 → A:Caregiver B:Outlaw C:Explorer D:Trickster E:Judge F:Magician) ───
+  // ─── Q4 (Key 4, Mirror) ───
   {
     id: 4,
-    text: 'Hoe draag je de \'belasting\' van de geschiedenis en voorouders met je mee?',
+    text: 'Wanneer voel jij je het verst van jezelf verwijderd?',
     domain: 'introversie',
     answers: [
-      ans(4, 0, 'Als een wond die ik moet verzorgen; ik probeer de pijn van mijn familie en gemeenschap te helen met liefde.'),
-      ans(4, 1, 'Als een ketting die ik moet breken; ik weiger de fouten van mijn voorouders te herhalen.'),
-      ans(4, 2, 'Als een zoektocht; ik moet uitzoeken wat van mij is en wat van hen, om mijn eigen pad te vinden.'),
-      ans(4, 3, 'Als een absurd verhaal; ik laat me niet raken door de zwaarte en bekijk het met een korrel zout.'),
-      ans(4, 4, 'Als een balans; ik weeg wat er is gebeurd en probeer het onrecht uit het verleden recht te zetten.'),
-      ans(4, 5, 'Als brandstof; ik transformeer het oude verdriet in nieuwe kracht en wijsheid.'),
+      ans(4, 0, 'Als ik functioneer in plaats van voel. Inmiddels herken ik dat moment \u2014 het is hoe ik overleef, niet hoe ik leef.'),
+      ans(4, 1, 'Als het chaos is en ik er niks aan kan doen. Niet andermans chaos \u2014 die van mijzelf. Dat is geen ongemak, dat is alarm.'),
+      ans(4, 2, 'Als ik te lang op dezelfde plek zit. Over de jaren is dat mijn betrouwbaarste waarschuwing geworden \u2014 herhaling is mijn signaal dat ik vastzit.'),
+      ans(4, 3, 'Als ik niks heb om voor te vechten. Geen doel, geen weerstand. Die leegte is het engste \u2014 alsof ik zonder strijd verdamp.'),
+      ans(4, 4, 'Als ik meedoe aan iets waar ik niet achter sta. Want elke dag dat ik mijn mond hou, merk ik dat er iets in me stilvalt.'),
+      ans(4, 5, 'Als ik niet meer kan denken. Niet vermoeidheid \u2014 ruis. Te veel prikkels, te weinig stilte. Dan verlies ik het signaal.'),
     ],
   },
 
-  // ─── Q5 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
+  // ─── Q5 (Key 5, Standard) ───
   {
     id: 5,
-    text: 'Wat is jouw fundamentele houding tegenover \'Tekort\' versus \'Overvloed\'?',
+    text: 'Er is iets in je leven dat je al maanden uitstelt. Waar wacht je eigenlijk op?',
     domain: 'introversie',
     answers: [
-      ans(5, 0, 'Ik zie het als een logische puzzel; ik wil de wetmatigheden begrijpen van hoe middelen verdeeld worden.'),
-      ans(5, 1, 'Ik zie schaarste als een uitdaging die ik moet overwinnen door hard te werken en te presteren.'),
-      ans(5, 2, 'Ik zie overvloed in de rijkdom van relaties; als we elkaar hebben, hebben we genoeg.'),
-      ans(5, 3, 'Ik zie zoveel potentie in de leegte; met mijn creativiteit maak ik van niets iets bijzonders.'),
-      ans(5, 4, 'Ik zie een voorraad als iets dat ik moet beheren en strategisch moet verdelen.'),
-      ans(5, 5, 'Ik vertrouw erop dat er altijd genoeg zal zijn en dat er voor mij gezorgd wordt.'),
+      ans(5, 0, 'Op een teken dat het veilig is. Niet rationeel \u2014 ik weet dat het er misschien nooit komt. Maar iets in mij weigert te springen zolang de landing onzeker is.'),
+      ans(5, 1, 'Op het juiste moment. Want timing is alles \u2014 te vroeg bewegen verspilt de impact. Inmiddels weet ik dat \u00e9\u00e9n goed getimede zet meer doet dan tien gehaaste.'),
+      ans(5, 2, 'Op niks. Ik stel het niet uit omdat ik wacht \u2014 ik stel het uit omdat het systeem eromheen niet deugt. Bouwen op een rot fundament gaat me niet gebeuren.'),
+      ans(5, 3, 'Op het moment dat ik de uitvoering volledig kan regisseren. Want half werk levert dubbele schade \u2014 dat is over de jaren mijn duurste les geweest.'),
+      ans(5, 4, 'Op een moment waarop het niemand raakt. Ik weet wat ik moet doen, maar elke optie heeft gevolgen voor iemand anders. Dus ik wacht.'),
+      ans(5, 5, 'Op het gevoel dat het klopt. Ik kan het technisch uitvoeren wanneer ik wil, maar zonder die innerlijke resonantie wordt het een lege handeling. Dat verschil herken ik inmiddels feilloos.'),
     ],
   },
 
-  // ─── Q6 (even, pattern 2 → A:Magician B:Judge C:Trickster D:Explorer E:Outlaw F:Caregiver) ───
+  // ─── Q6 (Key 6, Mirror) ───
   {
     id: 6,
-    text: 'Wat doet het besef van sterfelijkheid en de dood met jouw levenshouding?',
+    text: 'Wat is het gevaarlijkste dat je ooit tegen jezelf hebt gezegd \u2014 en geloofde?',
     domain: 'introversie',
     answers: [
-      ans(6, 0, 'Het is een overgang; ik zie de dood als een transformatie naar een andere vorm van energie.'),
-      ans(6, 1, 'Het roept de vraag op naar het eind-oordeel; heb ik rechtvaardig en integer geleefd?'),
-      ans(6, 2, 'Het laat zien hoe absurd onze zorgen zijn; ik lach om de ernst van het leven omdat het toch eindigt.'),
-      ans(6, 3, 'Het is de ultieme grens; de gedachte aan het einde drijft me om nu alles te ontdekken wat er is.'),
-      ans(6, 4, 'Het is de enige autoriteit die ik niet kan verslaan, dus ik leef radicaal vrij zolang het kan.'),
-      ans(6, 5, 'Het maakt me beschermend; ik wil alles wat kwetsbaar is behoeden voor pijn en verlies.'),
+      ans(6, 0, '"Het maakt niet uit wat ik vind." Want zodra ik dat geloofde, ging ik meedoen met dingen die niet klopten \u2014 en het duurde lang voor ik doorhad dat het stilzwijgen de schade was.'),
+      ans(6, 1, '"Ik snap het." Terwijl ik het helemaal niet snapte \u2014 ik had alleen een model dat klopte. Het gevaarlijkste moment is wanneer begrip aanvoelt als controle.'),
+      ans(6, 2, '"Ze hebben me nodig." Dat klonk als liefde, maar over de jaren is het een ketting geworden. Zolang ik onmisbaar was, hoefde ik niet naar mezelf te kijken.'),
+      ans(6, 3, '"Ik kan dit fixen." Alles. Altijd. Het gevaarlijke is niet de arrogantie \u2014 het is dat het vaak klopt. En juist omdat het klopt, stopte ik met vragen of ik het ook m\u00f3est.'),
+      ans(6, 4, '"Ik hoef nergens bij te horen." Want dat voelde als vrijheid, maar inmiddels weet ik dat het een verdedigingslinie was. Achter die linie werd het steeds stiller.'),
+      ans(6, 5, '"Als ik het niet doe, doet niemand het." En het klopt \u2014 meestal. Maar die overtuiging vult elke ruimte. Er blijft niks over voor de twijfel, de rust, het loslaten.'),
     ],
   },
 
-  // ─── Q7 (odd, pattern 3 → A:Innocent B:Ruler C:Artist D:Lover E:Hero F:Sage) ───
+  // ─── Q7 (Key 1, Mirror) ───
   {
     id: 7,
-    text: 'Hoe ga je om met strikte morele regels, religie of dogma\'s uit je opvoeding?',
+    text: 'Wanneer heb je voor het laatst iets over jezelf ontdekt dat je liever niet had geweten?',
     domain: 'introversie',
     answers: [
-      ans(7, 0, 'Ik vertrouw op de intentie ervan en vaker wel dan niet volg ik ze blindelings.'),
-      ans(7, 1, 'Ik omarm ze als noodzakelijk; zonder morele wetten en vrees voor oordeel vervalt de mens in chaos.'),
-      ans(7, 2, 'Ik zie ze als referentie waarbuiten ik zoek naar mijn eigen, unieke vrijheid.'),
-      ans(7, 3, 'Ik volg ze om de harmonie te bewaren; ik wil niemand kwetsen of de relatie verstoren.'),
-      ans(7, 4, 'Ik volg plichtsgetrouw morele regels zolang ze in lijn staan met mijn eigen ervaring.'),
-      ans(7, 5, 'Ik analyseer ze eerst; ik volg ze alleen als ik de logica en het nut ervan begrijp.'),
+      ans(7, 0, 'Toen ik merkte dat mijn strengheid naar anderen een omweg was om mezelf niet aan te kijken. Dat inzicht bouwde zich over maanden op.'),
+      ans(7, 1, 'Dat ik grappen maak als het pijn doet. Niet als strategie \u2014 het gebeurt gewoon. De lach zit er eerder dan de traan, en ik weet niet of dat kracht is of een reflex waar ik niks aan kan doen.'),
+      ans(7, 2, 'Dat ik soms geef om te krijgen. Het voelde als een klap \u2014 want ik had altijd gedacht dat mijn warmte onvoorwaardelijk was.'),
+      ans(7, 3, 'Dat ik meer weet dan ik durf toe te passen. De kennis is er, het inzicht is er \u2014 maar de moed om ernaar te handelen blijft achter.'),
+      ans(7, 4, 'Dat mijn optimisme soms een schild is. Er zijn momenten waarop ik het positieve opzoek niet omdat ik erin geloof, maar omdat het alternatief te zwaar voelt.'),
+      ans(7, 5, 'Dat ik niet stop omdat ik gedreven ben, maar omdat ik bang ben voor wat er overblijft als ik stilsta. Die motor draait niet op ambitie \u2014 hij draait op vermijding.'),
     ],
   },
 
-  // ─── Q8 (even, pattern 4 → A:Caregiver B:Outlaw C:Explorer D:Trickster E:Judge F:Magician) ───
+  // ─── Q8 (Key 2, Standard) ───
   {
     id: 8,
-    text: 'Waarom heb je behoefte aan momenten van stilte en afzondering?',
+    text: 'Wat is de prijs die je betaalt voor wie je bent \u2014 en die je nooit hardop uitspreekt?',
     domain: 'introversie',
     answers: [
-      ans(8, 0, 'Om op te laden, zodat ik daarna weer met volle energie voor anderen kan zorgen.'),
-      ans(8, 1, 'Om te ontsnappen aan de druk van de maatschappij en mijn autonomie te voelen.'),
-      ans(8, 2, 'Om op expeditie te gaan in mijn eigen geest en nieuwe ideeën te ontdekken.'),
-      ans(8, 3, 'Om even mijn masker af te zetten en niet mee te hoeven doen aan het sociale spel.'),
-      ans(8, 4, 'Om mijn eigen gedrag en keuzes in alle rust te toetsen aan mijn geweten.'),
-      ans(8, 5, 'Om mijn innerlijke energie te focussen en te transformeren zonder afleiding.'),
+      ans(8, 0, 'Dat ik nergens helemaal land. Mensen, plekken, projecten \u2014 ik ben er altijd net niet helemaal. De vrijheid die dat oplevert is dezelfde vrijheid die me eenzaam maakt.'),
+      ans(8, 1, 'Dat de intensiteit waarmee ik de wereld zie me soms ongeschikt maakt voor het gewone leven. Over de jaren heb ik dat leren verpakken \u2014 maar de grondstof is rauw.'),
+      ans(8, 2, 'Dat mensen me respecteren maar zelden warmte geven. Mijn eerlijkheid schept afstand \u2014 niet omdat ik dat wil, maar omdat de waarheid scherper snijdt dan een leugen.'),
+      ans(8, 3, 'Dat niemand me helemaal serieus neemt. Zelfs als ik iets meen, zoeken mensen naar de grap. Inmiddels besef ik dat ik die dynamiek zelf heb opgebouwd \u2014 en nu zit ik erin.'),
+      ans(8, 4, 'Dat ik te veel voel. De wereld raakt me harder dan anderen, en dat maakt me goed in verbinden maar kwetsbaar op plekken waar anderen beschermd zijn.'),
+      ans(8, 5, 'Dat ik altijd bezig ben met de volgende versie. Van alles \u2014 van mezelf, van het plan. Die constante transformatie betekent dat ik zelden aanwezig ben in wat er nu is. Dat patroon herken ik, maar stoppen kan ik niet.'),
     ],
   },
 
-  // ─── Q9 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
+  // ─── Q9 (Key 3, Mirror) ───
   {
     id: 9,
-    text: 'Welke invloed heeft je opvoeding op wie je nu bent?',
+    text: 'Als je alles zou verliezen \u2014 status, bezit, relaties \u2014 wat blijft er dan over?',
     domain: 'introversie',
     answers: [
-      ans(9, 0, 'Het heeft me de kennis gegeven waarmee ik de wereld nu begrijp en analyseer.'),
-      ans(9, 1, 'Het was de training die mij sterk heeft gemaakt en heeft geleerd om door te zetten.'),
-      ans(9, 2, 'Het heeft me geleerd hoe belangrijk liefde en verbinding zijn in het leven.'),
-      ans(9, 3, 'Het heeft me de ruimte gegeven (of juist niet) om mijn eigen unieke vorm te maken.'),
-      ans(9, 4, 'Het heeft me de structuur geboden die ik nu gebruik om mijn eigen leven te leiden.'),
-      ans(9, 5, 'Het heeft me het basisvertrouwen gegeven in mensen.'),
+      ans(9, 0, 'De drang om iets voor iemand te betekenen. Want zelfs zonder al het andere blijf ik overeind zolang er iemand is die me nodig heeft. Dat klinkt mooi, maar inmiddels weet ik dat het ook een val is.'),
+      ans(9, 1, 'De weigering om te stoppen. Alles kan weg \u2014 als die motor maar blijft draaien. Het is geen keuze, het is wat er overblijft als al het andere stilvalt.'),
+      ans(9, 2, 'De overtuiging dat het weer goed komt. Niet blind \u2014 ik heb genoeg meegemaakt om te weten dat hoop geen garantie is. Maar ergens onderweg is het kiezen voor die hoop een bewuste houding geworden.'),
+      ans(9, 3, 'De binnenkant. Alles wat ik van buiten opbouwde is een vertaling \u2014 het origineel zit in mij. Dat kan niemand afpakken, niet omdat ik het bescherm, maar omdat het nergens anders bestaat.'),
+      ans(9, 4, 'Mijn code. Want alles wat ik bezat was gebouwd op een fundament van principes. Als het gebouw instort, toets ik wat overblijft aan datzelfde fundament \u2014 zo heb ik het altijd gedaan.'),
+      ans(9, 5, 'De lach. Serieus. Neem alles weg en ik zit in een leeg veld en vind het grappig. Niet cynisch \u2014 \u00e9cht grappig. Omdat alles absurd is. En in die absurditeit zit iets onverwoestbaars.'),
     ],
   },
+];
 
-  // ─── Q10 (even, pattern 2 → A:Magician B:Judge C:Trickster D:Explorer E:Outlaw F:Caregiver) ───
+// ═══════════════════════════════════════════════════════════════════════
+// LAYER 2 — Ander / Attentie  Q10-Q18
+// ═══════════════════════════════════════════════════════════════════════
+
+const layer2Questions = [
+  // ─── Q10 (Key 4, Standard) ───
   {
     id: 10,
     text: 'Hoe ervaar je de constante prikkels van de moderne wereld?',
@@ -246,14 +323,8 @@ const layer1Questions = [
       ans(12, 5, 'Macht is energie; het is een middel om dingen in beweging te zetten en te veranderen.'),
     ],
   },
-];
 
-// ═══════════════════════════════════════════════════════════════════════
-// LAYER 2 — Ander / Attentie  Q13-Q24
-// ═══════════════════════════════════════════════════════════════════════
-
-const layer2Questions = [
-  // ─── Q13 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
+  // ─── Q13 (Key 1, Standard) ───
   {
     id: 13,
     text: 'Hoe positioneer jij jezelf in een team dat onder hoge druk staat?',
@@ -342,8 +413,14 @@ const layer2Questions = [
       ans(18, 5, 'Door er onvoorwaardelijk te zijn en mensen te helpen groeien.'),
     ],
   },
+];
 
-  // ─── Q19 (odd, pattern 3 → A:Innocent B:Ruler C:Artist D:Lover E:Hero F:Sage) ───
+// ═══════════════════════════════════════════════════════════════════════
+// LAYER 3 — Massa / Macht  Q19-Q24
+// ═══════════════════════════════════════════════════════════════════════
+
+const layer3Questions = [
+  // ─── Q19 (Key 1, Mirror) ───
   {
     id: 19,
     text: 'Hoe neem je beslissingen als de belangen groot zijn en de uitkomst onzeker?',
@@ -435,11 +512,11 @@ const layer2Questions = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
-// LAYER 3 — Massa / Macht  Q25-Q36
+// LAYER 4 — Wereld / Wijsheid  Q25-Q30
 // ═══════════════════════════════════════════════════════════════════════
 
-const layer3Questions = [
-  // ─── Q25 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
+const layer4Questions = [
+  // ─── Q25 (Key 1, Standard) ───
   {
     id: 25,
     text: 'Hoe zoek jij naar \'waarheid\' in een tijd waarin media en algoritmes bepalen wat we zien?',
@@ -528,8 +605,14 @@ const layer3Questions = [
       ans(30, 5, 'Als een risico; we moeten zorgen dat kwetsbare mensen niet gemanipuleerd worden.'),
     ],
   },
+];
 
-  // ─── Q31 (odd, pattern 3 → A:Innocent B:Ruler C:Artist D:Lover E:Hero F:Sage) ───
+// ═══════════════════════════════════════════════════════════════════════
+// LAYER 5 — Mysterie / Magie  Q31-Q36
+// ═══════════════════════════════════════════════════════════════════════
+
+const layer5Questions = [
+  // ─── Q31 (Key 1, Mirror) ───
   {
     id: 31,
     text: 'Wat leert de geschiedenis ons over vooruitgang?',
@@ -620,382 +703,6 @@ const layer3Questions = [
   },
 ];
 
-// ═══════════════════════════════════════════════════════════════════════
-// LAYER 4 — Wereld / Wijsheid  Q37-Q48
-// ═══════════════════════════════════════════════════════════════════════
-
-const layer4Questions = [
-  // ─── Q37 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
-  {
-    id: 37,
-    text: 'Hoe ga je in een relatie om met ongelijke behandeling?',
-    domain: 'huwelijk',
-    answers: [
-      ans(37, 0, 'Ik analyseer de onderliggende dynamiek; ik wil de oorzaak van de scheefgroei begrijpen om de situatie met objectieve argumenten recht te zetten.'),
-      ans(37, 1, 'Ik zie het als een uitdaging voor mijn karakter.'),
-      ans(37, 2, 'Het raakt me in mijn kern; ik zoek onmiddellijk de diepe verbinding op om de passie te herstellen.'),
-      ans(37, 3, 'Ik gebruik mijn eigenzinnigheid en creatieve expressie om de verhoudingen binnen onze relatie op een unieke manier open te breken.'),
-      ans(37, 4, 'Ik trek een harde grens; ik eis heldere rollen en verantwoordelijkheden binnen een kader dat voor beide partijen eerlijk en stabiel is.'),
-      ans(37, 5, 'Ik blijf zachtmoedig en geduldig; ik focus op het behoud van de vrede en vertrouw erop dat intenties goed bedoeld zijn.'),
-    ],
-  },
-
-  // ─── Q38 (even, pattern 2 → A:Magician B:Judge C:Trickster D:Explorer E:Outlaw F:Caregiver) ───
-  {
-    id: 38,
-    text: 'Hoe kijk je naar technologie die onze ziel beïnvloedt?',
-    domain: 'huwelijk',
-    answers: [
-      ans(38, 0, 'Ik zie het als alchemie; we kunnen onszelf transformeren naar een hogere vorm.'),
-      ans(38, 1, 'Ik ben voorzichtig; we mogen de integriteit van de menselijke vorm niet schenden.'),
-      ans(38, 2, 'Ik vind het bizar; we slikken pillen om gelukkig te zijn in plaats van onszelf uit te vinden.'),
-      ans(38, 3, 'Ik ben nieuwsgierig; wat kunnen we bereiken als we onze realiteit optimaliseren?'),
-      ans(38, 4, 'Ik verdoem het; ik laat niet rommelen aan mijn natuurlijke staat van zijn.'),
-      ans(38, 5, 'Ik steun het als het helpt; als het lijden verlicht, is het een zegen.'),
-    ],
-  },
-
-  // ─── Q39 (odd, pattern 3 → A:Innocent B:Ruler C:Artist D:Lover E:Hero F:Sage) ───
-  {
-    id: 39,
-    text: 'Wat betekent muziek voor jouw persoonlijkheid?',
-    domain: 'huwelijk',
-    answers: [
-      ans(39, 0, 'Muziek is vreugde; ik word er simpelweg blij van.'),
-      ans(39, 1, 'Muziek is cultuur; het is een ritueel die de groep samenbindt en verheft.'),
-      ans(39, 2, 'Muziek is expressie; het is de taal van de ziel in tastbare vorm.'),
-      ans(39, 3, 'Muziek is emotie; het verbindt onze harten zonder woorden.'),
-      ans(39, 4, 'Muziek is energie; het versterkt de vibe waar ik al in zit.'),
-      ans(39, 5, 'Muziek is harmonie, het is een raam naar diepere waarheden.'),
-    ],
-  },
-
-  // ─── Q40 (even, pattern 4 → A:Caregiver B:Outlaw C:Explorer D:Trickster E:Judge F:Magician) ───
-  {
-    id: 40,
-    text: 'Wat is jouw ideaalbeeld van een huwelijk of partnerschap?',
-    domain: 'huwelijk',
-    answers: [
-      ans(40, 0, 'Een veilige haven; voor elkaar zorgen in voor- en tegenspoed.'),
-      ans(40, 1, 'Een verbond; bonnie en clyde, joker en harley, volgens onze eigen regels.'),
-      ans(40, 2, 'Een avontuur; samen de wereld ontdekken en elkaar vrijlaten om te groeien.'),
-      ans(40, 3, 'Een feestje; het moet vooral leuk en speels blijven, leef en laat.'),
-      ans(40, 4, 'Een contract; een afspraak gebaseerd op trouw en wederzijds respect.'),
-      ans(40, 5, 'Een transformatie; elkaar helpen om de beste versie van onszelf te worden.'),
-    ],
-  },
-
-  // ─── Q41 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
-  {
-    id: 41,
-    text: 'Hoe zie jij de menselijke ziel?',
-    domain: 'huwelijk',
-    answers: [
-      ans(41, 0, 'Als stroming; een complex patroon van bewustzijn en geheugen.'),
-      ans(41, 1, 'Als een vlam; de bron van mijn wilskracht en moed.'),
-      ans(41, 2, 'Als een mysterie; datgene wat resoneert met de ziel van een ander.'),
-      ans(41, 3, 'Als een kunstwerk; uniek, schoon en steeds in verandering.'),
-      ans(41, 4, 'Als een verantwoordelijkheid; de morele kern die ik zuiver moet houden.'),
-      ans(41, 5, 'Als een lichtje; puur en onsterfelijk.'),
-    ],
-  },
-
-  // ─── Q42 (even, pattern 2 → A:Magician B:Judge C:Trickster D:Explorer E:Outlaw F:Caregiver) ───
-  {
-    id: 42,
-    text: 'Hoe beïnvloedt jouw sociale klasse/achtergrond je relaties?',
-    domain: 'huwelijk',
-    answers: [
-      ans(42, 0, 'Ik transformeer het; ik bepaal zelf mijn status, los van mijn afkomst.'),
-      ans(42, 1, 'Ik ben me ervan bewust; ik vind dat iedereen gelijke kansen verdient, ongeacht afkomst.'),
-      ans(42, 2, 'Ik speel ermee; ik beweeg als een kameleon met elke laag mee.'),
-      ans(42, 3, 'Ik stap eroverheen; ik vind het interessant om mensen uit andere milieus te ontmoeten.'),
-      ans(42, 4, 'Ik heb sch*t; ik laat me niet beoordelen op waar ik vandaan kom.'),
-      ans(42, 5, 'Ik zorg voor mijn directe kring; ik voel me verantwoordelijk voor mijn gemeenschap.'),
-    ],
-  },
-
-  // ─── Q43 (odd, pattern 3 → A:Innocent B:Ruler C:Artist D:Lover E:Hero F:Sage) ───
-  {
-    id: 43,
-    text: 'Hoe ga je om met asymmetrie (ongelijkheid) in geven en nemen?',
-    domain: 'huwelijk',
-    answers: [
-      ans(43, 0, 'Ik merk het niet eens; ik ben dankbaar voor wat ik krijg en geef wat ik kan.'),
-      ans(43, 1, 'Ik herstel de balans; een relatie moet uiteindelijk in evenwicht zijn om stabiel te blijven.'),
-      ans(43, 2, 'Ik geef wat ik kan creëren; mijn bijdrage is uniek en niet in geld uit te drukken.'),
-      ans(43, 3, 'Ik reken niet; als je van iemand houdt, geef je alles wat je hebt.'),
-      ans(43, 4, 'Ik geef graag meer; het bewijst mijn kracht en onafhankelijkheid.'),
-      ans(43, 5, 'Ik bekijk het over de lange termijn; het hoeft niet elke dag gelijk te zijn, als het totaal maar ongeveer klopt.'),
-    ],
-  },
-
-  // ─── Q44 (even, pattern 4 → A:Caregiver B:Outlaw C:Explorer D:Trickster E:Judge F:Magician) ───
-  {
-    id: 44,
-    text: 'Hoe belangrijk is biochemie (aantrekkingskracht) versus verstand bij partnerkeuze?',
-    domain: 'huwelijk',
-    answers: [
-      ans(44, 0, 'Ik kies voor de stabiele basis; hoewel de chemie een prikkel is, zoek ik primair naar een partner op wie ik een veilige en zorgzame toekomst kan bouwen.'),
-      ans(44, 1, 'Ik volg de rauwe biologische impuls; ik weiger mijn verlangen te laten temmen door wat de maatschappij \'verstandig\' of \'gepast\' vindt.'),
-      ans(44, 2, 'Ik zie chemie als mijn gids; de sterke biochemische prikkel is voor mij het signaal dat er een nieuw gebied in mezelf ontdekt wil worden via de ander.'),
-      ans(44, 3, 'Ik omarm de onlogica; verliefdheid is de ultieme grap van de natuur die alle rationele plannen en verstandige keuzes in één klap zinloos maakt.'),
-      ans(44, 4, 'Ik zoek naar cognitieve en morele symmetrie; voor mij is een relatie pas werkelijk \'chemisch\' als de waarden, het karakter en het verstand van de ander naadloos op de mijne aansluiten.'),
-      ans(44, 5, 'Ik zoek de alchemistische vonk; een partner moet mijn hele wezen — zowel mijn lichaam als mijn geest — in een staat van transformatie en bezieling brengen.'),
-    ],
-  },
-
-  // ─── Q45 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
-  {
-    id: 45,
-    text: 'Welke rol speelt competentie in jouw eigenwaarde?',
-    domain: 'huwelijk',
-    answers: [
-      ans(45, 0, 'Ik wil de dingen begrijpen en beheersen.'),
-      ans(45, 1, 'Ik ben wat ik doe.'),
-      ans(45, 2, 'Het gaat erom dat ik liefdevol ben.'),
-      ans(45, 3, 'Ik wil mijn visie kunnen uiten.'),
-      ans(45, 4, 'Leiderschap vereist dat je competent en bekwaam bent.'),
-      ans(45, 5, 'Ik ben goed zoals ik ben, ook als ik niks bijzonders kan.'),
-    ],
-  },
-
-  // ─── Q46 (even, pattern 2 → A:Magician B:Judge C:Trickster D:Explorer E:Outlaw F:Caregiver) ───
-  {
-    id: 46,
-    text: 'Hoe kijk je naar de \'ziel\' van je partner?',
-    domain: 'huwelijk',
-    answers: [
-      ans(46, 0, 'Als een spiegel die mij dingen over mezelf laat zien.'),
-      ans(46, 1, 'Als een moreel kompas; ik bewonder de integriteit van de ander.'),
-      ans(46, 2, 'Als een verrassing; je weet nooit wat er morgen uitkomt.'),
-      ans(46, 3, 'Als een landschap dat ik nooit helemaal in kaart zal kunnen brengen.'),
-      ans(46, 4, 'Als een wilde kracht die ik niet wil temmen, maar wel wil ontmoeten.'),
-      ans(46, 5, 'Als iets kwetsbaars dat ik wil koesteren en beschermen.'),
-    ],
-  },
-
-  // ─── Q47 (odd, pattern 3 → A:Innocent B:Ruler C:Artist D:Lover E:Hero F:Sage) ───
-  {
-    id: 47,
-    text: 'Hoe belangrijk is een gedeelde culturele achtergrond?',
-    domain: 'huwelijk',
-    answers: [
-      ans(47, 0, 'Maakt niet uit, liefde spreekt alle talen.'),
-      ans(47, 1, 'Belangrijk, het zorgt voor stabiliteit en continuïteit van de waarden.'),
-      ans(47, 2, 'Saai, ik word liever geprikkeld door iemand die anders is.'),
-      ans(47, 3, 'Fijn, het geeft een diepere laag van herkenning en verbinding.'),
-      ans(47, 4, 'Onbelangrijk; ik kies mijn eigen weg, los van waar ik vandaan kom.'),
-      ans(47, 5, 'Handig, het maakt de communicatie efficiënter, maar niet noodzakelijk.'),
-    ],
-  },
-
-  // ─── Q48 (even, pattern 4 → A:Caregiver B:Outlaw C:Explorer D:Trickster E:Judge F:Magician) ───
-  {
-    id: 48,
-    text: 'Sommige relaties zijn tijdelijk; wat betekenen deze in jouw verhaal?',
-    domain: 'huwelijk',
-    answers: [
-      ans(48, 0, 'Het zijn periodes waarin ik mijn warmte en steun heb kunnen geven aan een ander, ook al was het pad dat we deelden eindig.'),
-      ans(48, 1, 'Ondanks mijn drang naar vrijheid heb ik wel moeite met het accepteren van het lot.'),
-      ans(48, 2, 'Mijn levensreis heeft geen einde, de gedeelde momenten koester ik.'),
-      ans(48, 3, 'Tijdelijke verbindingen laten zien hoe komisch onze pogingen zijn om de veranderlijke stroom te manipuleren.'),
-      ans(48, 4, 'Ik zie ze als afgesloten lessen in integriteit; elke relatie die stopt is een steen op de weegschaal van waarde.'),
-      ans(48, 5, 'Elke interactie transformeert mij en de ander, ik geef de relatie pas op als ik het nut er niet meer van in zie.'),
-    ],
-  },
-];
-
-// ═══════════════════════════════════════════════════════════════════════
-// LAYER 5 — Mysterie / Magie  Q49-Q60
-// ═══════════════════════════════════════════════════════════════════════
-
-const layer5Questions = [
-  // ─── Q49 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
-  {
-    id: 49,
-    text: 'Wat ervaar je als je alleen in de overweldigende natuur bent?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(49, 0, 'De orde; ik zie de complexe ecosystemen en de wetten van de natuur.'),
-      ans(49, 1, 'De kwetsbaarheid; ik voel de kracht van de elementen en mijn eigen nietigheid.'),
-      ans(49, 2, 'De eenheid; ik voel me versmelten met alles wat leeft en ademt.'),
-      ans(49, 3, 'De schoonheid; ik word geraakt door de kleuren, vormen en het licht.'),
-      ans(49, 4, 'De grootsheid; ik voel respect voor de schepping die groter is dan wij.'),
-      ans(49, 5, 'De vrede; ik voel me thuis en veilig in de schoot van de natuur.'),
-    ],
-  },
-
-  // ─── Q50 (even, pattern 2 → A:Magician B:Judge C:Trickster D:Explorer E:Outlaw F:Caregiver) ───
-  {
-    id: 50,
-    text: 'Is er een grens tussen technologie en magie?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(50, 0, 'Technologie IS magie; het is het manipuleren van de werkelijkheid met symbolen (code).'),
-      ans(50, 1, 'Weet ik niet, maar we moeten ethische kaders opzetten voor onze tech.'),
-      ans(50, 2, 'We denken dat we tovenaars zijn met onze gadgets, maar zoals wij ermee omgaan lijken we eerder clowns.'),
-      ans(50, 3, 'Nee, magie is gewoon technologie die we nog niet begrijpen.'),
-      ans(50, 4, 'De grens is irrelevant; voor mij telt alleen of ik de ongekende kracht van nieuwe technologie kan gebruiken voor mijn eigen idealen.'),
-      ans(50, 5, 'De grens is de menselijke ziel; technologie kan wonderen verrichten, maar de magie van echte zorg en empathie is gebonden aan ons.'),
-    ],
-  },
-
-  // ─── Q51 (odd, pattern 3 → A:Innocent B:Ruler C:Artist D:Lover E:Hero F:Sage) ───
-  {
-    id: 51,
-    text: 'Hoe ga je om met de elementen (aarde, water, vuur, lucht)?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(51, 0, 'Ik bewonder ze.'),
-      ans(51, 1, 'Ik beheer ze.'),
-      ans(51, 2, 'Ik gebruik ze.'),
-      ans(51, 3, 'Ik voel ze.'),
-      ans(51, 4, 'Ik trotseer ze.'),
-      ans(51, 5, 'Ik bestudeer ze.'),
-    ],
-  },
-
-  // ─── Q52 (even, pattern 4 → A:Caregiver B:Outlaw C:Explorer D:Trickster E:Judge F:Magician) ───
-  {
-    id: 52,
-    text: 'Hoe verhoud jij je tot het \'Grote Mysterie\'?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(52, 0, 'Als iets dat nederig maakt; in het besef dat we zo weinig weten, zoek ik houvast in verbinding en de hoop dat we gedragen worden.'),
-      ans(52, 1, 'Als de ultieme vrijheid; in het mysterie gelden geen regels, wetten of dogma\'s van anderen, en daar vind ik mijn radicale autonomie.'),
-      ans(52, 2, 'Als een onontgonnen gebied; het niet-weten maakt me niet bang, maar juist nieuwsgierig om steeds diepere lagen van het bestaan te verkennen.'),
-      ans(52, 3, 'Als een kosmische relativering; het feit dat we de essentie niet begrijpen, laat zien hoe lachwekkend onze menselijke arrogantie en serieuze plannen eigenlijk zijn.'),
-      ans(52, 4, 'Als een vraagstuk van geloof; waar de feitelijke kennis ophoudt, biedt een moreel of spiritueel kader de noodzakelijke structuur en richting.'),
-      ans(52, 5, 'Als de bron van creatie; ik zie het \'niets\' niet als leegte, maar als de pure potentie waaruit ik door intentie een nieuwe werkelijkheid kan laten ontstaan.'),
-    ],
-  },
-
-  // ─── Q53 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
-  {
-    id: 53,
-    text: 'Wat betekent nederigheid voor jou?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(53, 0, 'Erkennen hoeveel ik nog niet weet.'),
-      ans(53, 1, 'Mijn kracht gebruiken om te dienen, niet om te heersen.'),
-      ans(53, 2, 'Mezelf openstellen en kwetsbaar durven zijn.'),
-      ans(53, 3, 'Weten dat mijn inspiratie niet van mij komt, maar door mij heen stroomt.'),
-      ans(53, 4, 'Beseffen dat macht slechts geleend is en tijdelijk.'),
-      ans(53, 5, 'Simpelweg dankbaar zijn voor wat er is.'),
-    ],
-  },
-
-  // ─── Q54 (even, pattern 2 → A:Magician B:Judge C:Trickster D:Explorer E:Outlaw F:Caregiver) ───
-  {
-    id: 54,
-    text: 'Hoe positioneer jij de mens in de natuurlijke hiërarchie?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(54, 0, 'Als de alchemist; de mens staat bovenaan, niet om te heersen, maar om de ruwe materie van de natuur bewustzijn te geven en naar een hoger plan te tillen.'),
-      ans(54, 1, 'Als de rentmeester; onze hoge positie in de rangorde is geen vrijbrief voor macht, maar een zware morele verplichting om rechtvaardig over de aarde te waken.'),
-      ans(54, 2, 'Als een arrogante passant; we wanen ons de koningen van de schepping, maar de natuur zal ons uiteindelijk lachend van de troon stoten als we niet oppassen.'),
-      ans(54, 3, 'Als de grensverlegger; ik zie de hiërarchie niet als een ladder maar als een speelveld, waarbij de mens de unieke rol heeft om de uiterste grenzen van het mogelijke te verkennen.'),
-      ans(54, 4, 'Als een overwinnaar; de natuur is wreed en de enige hiërarchie die telt is kracht; wij moeten ons constant invechten om niet door de elementen overheerst te worden.'),
-      ans(54, 5, 'Als een onderdeel van het web; er is geen boven of onder, wij zijn slechts één draad in het weefsel en volledig afhankelijk van het welzijn van het geheel.'),
-    ],
-  },
-
-  // ─── Q55 (odd, pattern 3 → A:Innocent B:Ruler C:Artist D:Lover E:Hero F:Sage) ───
-  {
-    id: 55,
-    text: 'Hoe verklaar je wonderen of onverklaarbare toevalligheden?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(55, 0, 'Ik geloof in wonderen, ze maken het leven magisch.'),
-      ans(55, 1, 'Ik ben sceptisch; ik vertrouw liever op wat bewijsbaar is.'),
-      ans(55, 2, 'Als pure poëzie van de werkelijkheid.'),
-      ans(55, 3, 'Als een knipoog van het universum.'),
-      ans(55, 4, 'Als een teken dat ik op de goede weg ben.'),
-      ans(55, 5, 'Als statistische onwaarschijnlijkheden die we nog niet kunnen uitleggen.'),
-    ],
-  },
-
-  // ─── Q56 (even, pattern 4 → A:Caregiver B:Outlaw C:Explorer D:Trickster E:Judge F:Magician) ───
-  {
-    id: 56,
-    text: 'Hoe kijk je naar de dood?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(56, 0, 'Als rust; een vredig einde na een leven van verbinding.'),
-      ans(56, 1, 'Ik ga niet zonder slag of stoot; ik wil leven tot de laatste snik.'),
-      ans(56, 2, 'Als het volgende grote avontuur naar het onbekende.'),
-      ans(56, 3, 'Als de punchline van de grap die het leven is.'),
-      ans(56, 4, 'Als het moment van de waarheid; wat heb ik van mijn leven gemaakt?'),
-      ans(56, 5, 'Als het afpellen van een schil; de essentie gaat verder.'),
-    ],
-  },
-
-  // ─── Q57 (odd, pattern 1 → A:Sage B:Hero C:Lover D:Artist E:Ruler F:Innocent) ───
-  {
-    id: 57,
-    text: 'Hoe ervaar jij de leiding van jouw innerlijke kompas of spirituele intuïtie?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(57, 0, 'Als de stem van de ratio; ik vertrouw op de helderheid van mijn eigen logica en de analyse van universele wetmatigheden om mijn weg te vinden.'),
-      ans(57, 1, 'Als de roep van de strijd; ik voel een interne, instinctieve drang om op te staan en krachtig te handelen wanneer mijn waarden of doelen in het geding zijn.'),
-      ans(57, 2, 'Als het kloppen van mijn hart; ik word geleid door een diepe, emotionele resonantie en het verlangen naar werkelijke versmelting met het geheel.'),
-      ans(57, 3, 'Als een stroom van beelden en symbolen; ik vertrouw op de plotselinge visioenen uit mijn verbeelding die een nieuwe werkelijkheid aankondigen.'),
-      ans(57, 4, 'Als een onwrikbaar moreel dictaat; ik voel een soevereine plicht om de juiste orde te bewaren en verantwoordelijkheid te dragen voor de toekomst.'),
-      ans(57, 5, 'Als een stil, onschuldig weten; ik vertrouw intuïtief op de fundamentele goedheid van het leven en geloof dat de juiste weg zich vanzelf ontvouwt.'),
-    ],
-  },
-
-  // ─── Q58 (even, pattern 2 → A:Magician B:Judge C:Trickster D:Explorer E:Outlaw F:Caregiver) ───
-  {
-    id: 58,
-    text: 'Hoe ervaar jij de invloed van onzichtbare informatievelden op jouw leven?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(58, 0, 'Als een actieve krachtbron; ik stem me bewust af op dit veld om intenties te zetten en de werkelijkheid om mij heen vorm te geven.'),
-      ans(58, 1, 'Met gezonde scepsis; ik erken dat er krachten zijn die we niet zien, maar ik vertrouw pas op informatie als deze getoetst is aan de feitelijke realiteit.'),
-      ans(58, 2, 'Als een bron van chaos; ik vind het fascinerend hoe \'toevallige\' informatie uit de omgeving mijn plannen overhoop gooit en me dwingt om te relativeren.'),
-      ans(58, 3, 'Als een kompas voor ontdekking; ik gebruik subtiele signalen als aanwijzingen om nieuwe wegen te verkennen die buiten het bereik van mijn vijf zintuigen liggen.'),
-      ans(58, 4, 'Ik voel instinctief wanneer de collectieve energie gemanipuleerd wordt, en gebruik dat inzicht om mijn autonome koers te varen.'),
-      ans(58, 5, 'Als een diepe, emotionele verbondenheid; unus mundus.'),
-    ],
-  },
-
-  // ─── Q59 (odd, pattern 3 → A:Innocent B:Ruler C:Artist D:Lover E:Hero F:Sage) ───
-  {
-    id: 59,
-    text: 'Hoe ga je om met de donkere kant van de natuur (rampen, ziekte)?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(59, 0, 'Ik bid dat het mij en mijn naasten bespaard blijft.'),
-      ans(59, 1, 'We moeten systemen bouwen die bestand zijn tegen chaos.'),
-      ans(59, 2, 'Zelfs in de vernietiging zit een vreselijke schoonheid.'),
-      ans(59, 3, 'Het maakt me verdrietig, ik wil de pijn verzachten.'),
-      ans(59, 4, 'We moeten ons wapenen en beschermen tegen het noodlot.'),
-      ans(59, 5, 'Het is onderdeel van de cyclus van opbouw en afbraak.'),
-    ],
-  },
-
-  // ─── Q60 (even, pattern 4 → A:Caregiver B:Outlaw C:Explorer D:Trickster E:Judge F:Magician) ───
-  {
-    id: 60,
-    text: 'Wat is de waarde van rituelen?',
-    domain: 'spiritualiteit',
-    answers: [
-      ans(60, 0, 'Ze brengen mensen samen en geven troost.'),
-      ans(60, 1, 'Ik heb mijn eigen rituelen, ik volg die van anderen niet.'),
-      ans(60, 2, 'Ze geven inzicht in de cultuur waar je bent.'),
-      ans(60, 3, 'Ze zijn theater, maar soms heb je theater nodig om het leven zin te geven.'),
-      ans(60, 4, 'Ze markeren belangrijke overgangen en bevestigen de orde.'),
-      ans(60, 5, 'Ze zijn krachtige tools om energie te focussen en intenties te zetten.'),
-    ],
-  },
-];
-
-// ═══════════════════════════════════════════════════════════════════════
-// Assembled Subject / Layer Definitions
-// ═══════════════════════════════════════════════════════════════════════
-
 export const assessmentSubjects = [
   {
     id: 'layer-zelf',
@@ -1065,5 +772,4 @@ export function getLayerQuestions(layerIndex) {
 /**
  * Archetype rotation metadata — exported for scoring/analysis modules.
  */
-export const ARCHETYPE_SETS = { SET_A, SET_B };
-export const ROTATION_PATTERNS = PATTERNS;
+export { ROTATION_KEYS, getKeyForQuestion, getLayerForQuestion, isStandardMode, isNatureRouting, isNatureSlot };

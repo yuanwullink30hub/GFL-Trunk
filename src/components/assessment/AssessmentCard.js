@@ -16,10 +16,10 @@ function stripMeta(text) {
  * Features:
  * - SectorFrame-style background (rgba(8,2,12,0.95)) with colored corner accents
  * - 6 answer options (A-F) with skewed connectors
- * - Single-choice system: pick exactly 1 answer per question
- * - Click to select; click again to deselect; clicking another replaces selection
- * - Manual "Next" button below 12 question indicators
- * - Save button when all answered → collapses to header-only with "Scroll"
+ * - Dual-pick system: pick 1st and 2nd choice per question
+ * - Click to select 1st pick; click again for 2nd pick; click selected to deselect
+ * - Manual "Next" button below question indicators
+ * - Save button on last question or when all answered → collapses to header-only with "Scroll"
  */
 const AssessmentCard = ({ 
   questions,
@@ -130,12 +130,13 @@ const AssessmentCard = ({
 
   // Check if all questions in this card have been answered (at least 1 choice each)
   const isAllAnswered = answeredCount >= totalQuestions;
+  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
   
-  // Current question's selection: array of 0-1 answer IDs (single-choice)
+  // Current question's selection: array of 0-2 answer IDs (dual-pick: 1st & 2nd choice)
   const currentSelections = (() => {
     const val = allAnswers[currentQuestion?.id];
     if (!val) return [];
-    if (Array.isArray(val)) return val.slice(0, 1);
+    if (Array.isArray(val)) return val.slice(0, 2);
     return [val]; // legacy single-value compat
   })();
 
@@ -196,12 +197,25 @@ const AssessmentCard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRemaining]);
 
-  // Answer click handler: just select the answer, don't auto-advance
+  // Answer click handler: dual-pick system (1st choice, then 2nd choice)
   const handleAnswerClick = useCallback((answerId) => {
-    // Select this answer
-    onSelectAnswer(currentQuestion.id, [answerId]);
-    // User can now click Next button or wait for timer to expire
-  }, [currentQuestion, onSelectAnswer]);
+    const val = allAnswers[currentQuestion?.id];
+    const current = !val ? [] : Array.isArray(val) ? [...val] : [val];
+    
+    const idx = current.indexOf(answerId);
+    if (idx !== -1) {
+      // Clicking a selected answer: remove it, shift remaining up
+      current.splice(idx, 1);
+    } else if (current.length < 2) {
+      // Add as next pick (1st or 2nd)
+      current.push(answerId);
+    } else {
+      // Already 2 picks — replace 2nd pick
+      current[1] = answerId;
+    }
+    
+    onSelectAnswer(currentQuestion.id, current);
+  }, [currentQuestion, allAnswers, onSelectAnswer]);
 
   const handleSave = () => {
     setIsCollapsed(true);
@@ -211,12 +225,17 @@ const AssessmentCard = ({
     if (onComplete) onComplete();
   };
 
-  // AUTO-fill all questions (DEV only) — picks 1 random answer per question
+  // AUTO-fill all questions (DEV only) — picks 2 random answers per question (dual-pick)
   const handleAutoFill = useCallback(() => {
     if (!questions) return;
     questions.forEach((q) => {
-      const randomIdx = Math.floor(Math.random() * q.answers.length);
-      onSelectAnswer(q.id, [q.answers[randomIdx].id]);
+      const indices = [...Array(q.answers.length).keys()];
+      // Fisher-Yates shuffle, pick first 2
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      onSelectAnswer(q.id, [q.answers[indices[0]].id, q.answers[indices[1]].id]);
     });
   }, [questions, onSelectAnswer]);
 
@@ -241,6 +260,7 @@ const AssessmentCard = ({
           style={{
             backgroundColor: 'rgba(1, 0, 2, 1)',
             border: `1px solid ${subjectColor}30`,
+            overflow: 'hidden',
           }}
         >
           <div className="absolute -top-0.5 -left-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }} />
@@ -248,57 +268,174 @@ const AssessmentCard = ({
           <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }} />
           <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }} />
 
-          <p
-            style={{
-              fontFamily: "'Figtree', sans-serif",
-              fontSize: windowWidth >= 1024 ? '1.1rem' : '0.95rem',
-              color: 'rgba(255, 254, 240, 0.7)',
-              textAlign: 'center',
-              marginBottom: '1.5rem',
-              padding: '0 1.5rem',
-            }}
-          >
-            Als je klaar zit, druk op start.
-          </p>
-          {levelConfig.timerType === 'layered' && levelConfig.layerTimers && (
-            <div
-              style={{
-                fontFamily: "'Figtree', sans-serif",
-                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.75rem',
-                color: 'rgba(255, 254, 240, 0.45)',
+          {currentSubjectIndex === 0 ? (
+            /* ── First subject: full "Voordat je begint" briefing ── */
+            <div style={{
+              padding: windowWidth >= 1024 ? '2rem 2rem 1.5rem' : '1.5rem 1.25rem 1rem',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: windowWidth >= 1024 ? '1rem' : '0.75rem',
+            }}>
+              <h3 style={{
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                fontSize: windowWidth >= 1024 ? '1.15rem' : '1rem',
+                color: '#f97316',
+                textTransform: 'uppercase',
+                letterSpacing: '0.15em',
+                marginBottom: '0.25rem',
                 textAlign: 'center',
-                marginBottom: '1.5rem',
-                lineHeight: '1.7',
-              }}
-            >
-              <span style={{ color: subjectColor }}>{levelConfig.layerTimers[currentSubjectIndex] || 30} seconden per vraag</span>
-              <br />Timer loopt zodra je start
-              <br />Zeker van jezelf? NEXT!
-              <br />Geen terugloop
+              }}>
+                Voordat je begint
+              </h3>
+
+              <p style={{
+                fontFamily: "'Figtree', sans-serif",
+                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+                color: 'rgba(255, 254, 240, 0.6)',
+                textAlign: 'center',
+                lineHeight: 1.7,
+              }}>
+                Elk <span style={{ color: '#f97316' }}>woord</span> is met <span style={{ color: '#a855f7' }}>intentie</span> gezet. Twee opties die op elkaar lijken kunnen fundamenteel anders zijn.
+                Lees niet alleen wát er staat, maar hoe het <span style={{ color: '#a855f7' }}>voelt</span>.
+                De timer is er om je hoofd uit te schakelen.
+              </p>
+
+              <p style={{
+                fontFamily: "'Figtree', sans-serif",
+                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+                color: 'rgba(255, 254, 240, 0.6)',
+                textAlign: 'center',
+                lineHeight: 1.7,
+              }}>
+                Zes antwoorden per vraag. Kies eerst wat het dichtst bij je <span style={{ color: '#a855f7' }}>kern</span> zit.
+                Kies daarna wat je ook raakt, maar minder.
+              </p>
+
+              <p style={{
+                fontFamily: "'Figtree', sans-serif",
+                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+                color: 'rgba(255, 254, 240, 0.6)',
+                textAlign: 'center',
+                lineHeight: 1.7,
+              }}>
+                Elke keuze resoneert door naar verbonden punten op het wiel.
+                Een eerste keuze weegt zwaarder dan een tweede.
+                Het resultaat is geen plat getal maar een gelaagd profiel.
+              </p>
+
+              <p style={{
+                fontFamily: "'Figtree', sans-serif",
+                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+                color: 'rgba(255, 254, 240, 0.5)',
+                textAlign: 'center',
+                lineHeight: 1.7,
+              }}>
+                36 vragen over 5 onderwerpen.
+                <br />
+                Timer per onderwerp:
+                <br />
+                <span style={{ color: '#a855f7' }}>
+                {levelConfig.timerType === 'layered' && levelConfig.layerTimers
+                  ? <>{levelConfig.layerTimers.join('s → ')}s</>
+                  : <>90s → 75s → 60s → 45s → 30s</>
+                }
+                </span>
+                <br />
+                Bij het aflopen van de timer gaat de vraag automatisch door, ook met 0 of 1 antwoord.
+                Je kunt altijd zelf doorklikken.
+              </p>
+
+              <p style={{
+                fontFamily: "'Figtree', sans-serif",
+                fontSize: windowWidth >= 1024 ? '0.9rem' : '0.82rem',
+                color: 'rgba(255, 254, 240, 0.75)',
+                textAlign: 'center',
+                lineHeight: 1.7,
+                fontStyle: 'italic',
+                marginTop: '0.25rem',
+              }}>
+                Er zijn geen <span style={{ color: '#f97316' }}>goede</span> of <span style={{ color: '#f97316' }}>foute</span> antwoorden. Er is alleen <span style={{ color: '#a855f7' }}>eerlijkheid</span>.
+              </p>
+
+              <button
+                onClick={() => setStarted(true)}
+                className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
+                style={{
+                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                  fontSize: windowWidth >= 1024 ? '0.95rem' : '0.8rem',
+                  backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                  border: '2px solid #a855f7',
+                  color: '#a855f7',
+                  boxShadow: '0 0 20px rgba(168, 85, 247, 0.15)',
+                  marginTop: '0.5rem',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
+                  e.currentTarget.style.boxShadow = '0 0 30px rgba(168, 85, 247, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.12)';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(168, 85, 247, 0.15)';
+                }}
+              >
+                Start
+              </button>
             </div>
+          ) : (
+            /* ── Subsequent subjects: compact start overlay ── */
+            <>
+              <p
+                style={{
+                  fontFamily: "'Figtree', sans-serif",
+                  fontSize: windowWidth >= 1024 ? '1.1rem' : '0.95rem',
+                  color: 'rgba(255, 254, 240, 0.7)',
+                  textAlign: 'center',
+                  marginBottom: '1.5rem',
+                  padding: '0 1.5rem',
+                }}
+              >
+                Als je klaar zit, druk op start.
+              </p>
+              {levelConfig.timerType === 'layered' && levelConfig.layerTimers && (
+                <div
+                  style={{
+                    fontFamily: "'Figtree', sans-serif",
+                    fontSize: windowWidth >= 1024 ? '0.85rem' : '0.75rem',
+                    color: 'rgba(255, 254, 240, 0.45)',
+                    textAlign: 'center',
+                    marginBottom: '1.5rem',
+                    lineHeight: '1.7',
+                  }}
+                >
+                  <span style={{ color: subjectColor }}>{levelConfig.layerTimers[currentSubjectIndex] || 30} seconden per vraag</span>
+                  <br />Timer loopt zodra je start
+                  <br />Zeker van jezelf? NEXT!
+                  <br />Geen terugloop
+                </div>
+              )}
+              <button
+                onClick={() => setStarted(true)}
+                className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
+                style={{
+                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                  fontSize: windowWidth >= 1024 ? '0.95rem' : '0.8rem',
+                  backgroundColor: `${subjectColor}20`,
+                  border: `2px solid ${subjectColor}`,
+                  color: subjectColor,
+                  boxShadow: `0 0 20px ${subjectColor}25`,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = `${subjectColor}40`;
+                  e.currentTarget.style.boxShadow = `0 0 30px ${subjectColor}50`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = `${subjectColor}20`;
+                  e.currentTarget.style.boxShadow = `0 0 20px ${subjectColor}25`;
+                }}
+              >
+                Start
+              </button>
+            </>
           )}
-          <button
-            onClick={() => setStarted(true)}
-            className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
-            style={{
-              fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-              fontSize: windowWidth >= 1024 ? '0.95rem' : '0.8rem',
-              backgroundColor: `${subjectColor}20`,
-              border: `2px solid ${subjectColor}`,
-              color: subjectColor,
-              boxShadow: `0 0 20px ${subjectColor}25`,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = `${subjectColor}40`;
-              e.currentTarget.style.boxShadow = `0 0 30px ${subjectColor}50`;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = `${subjectColor}20`;
-              e.currentTarget.style.boxShadow = `0 0 20px ${subjectColor}25`;
-            }}
-          >
-            Start
-          </button>
         </div>
       )}
 
@@ -455,10 +592,12 @@ const AssessmentCard = ({
             </p>
           </div>
 
-          {/* Answer Options (A-F) — single-choice: 1 selection */}
+          {/* Answer Options (A-F) — dual-pick: 1st & 2nd choice */}
           <div className="flex flex-col gap-2">
             {currentQuestion.answers.map((answer, idx) => {
-              const isSelected = currentSelections.includes(answer.id);
+              const pickIndex = currentSelections.indexOf(answer.id); // -1=not picked, 0=1st, 1=2nd
+              const isSelected = pickIndex !== -1;
+              const pickLabel = pickIndex === 0 ? '1' : pickIndex === 1 ? '2' : String.fromCharCode(65 + idx);
               return (
                 <button
                   key={answer.id}
@@ -469,19 +608,19 @@ const AssessmentCard = ({
                   `}
                   style={{ minHeight: s.answerMinH }}
                 >
-                  {/* Letter Badge */}
+                  {/* Pick Badge — shows "1" (1st pick), "2" (2nd pick), or letter (A-F) */}
                   <div 
                     className="flex items-center justify-center font-bold border-y border-l rounded-l-sm transition-colors duration-300"
                     style={{
                       width: s.letterBadgeW,
                       fontSize: s.answerFont,
                       fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                      backgroundColor: isSelected ? subjectColor : 'rgba(8, 2, 12, 0.95)',
+                      backgroundColor: pickIndex === 0 ? subjectColor : pickIndex === 1 ? `${subjectColor}60` : 'rgba(8, 2, 12, 0.95)',
                       color: isSelected ? '#0f172a' : '#FFFEF0',
                       borderColor: isSelected ? subjectColor : `${subjectColor}30`,
                     }}
                   >
-                    {String.fromCharCode(65 + idx)}
+                    {pickLabel}
                   </div>
 
                   {/* Connector line */}
@@ -541,7 +680,7 @@ const AssessmentCard = ({
           `}
           style={{ borderTop: isCollapsed ? 'none' : `1px solid ${subjectColor}20`, padding: isCollapsed ? 0 : s.footerPad }}
         >
-          {/* 12 Question Indicators - click to jump (disabled if no backtrack allowed) */}
+          {/* Question Indicators - click to jump (disabled if no backtrack allowed) */}
           <div className="flex items-center justify-center gap-1 mb-2 flex-wrap">
             {questions.map((q, idx) => {
               const isActive = idx === currentQuestionIndex;
@@ -572,38 +711,36 @@ const AssessmentCard = ({
             })}
           </div>
 
-          {/* Next + AUTO Buttons — manual advance (centered below indicators) */}
-          {!isAllAnswered && (
+          {/* Next + AUTO Buttons — manual advance (not on last question, not all answered) */}
+          {!isAllAnswered && !isLastQuestion && (
             <div className="flex items-center justify-center gap-2">
-              {(currentQuestionIndex < questions.length - 1 || currentSubjectIndex < 4) && (
-                <button
-                  onClick={() => onNext && onNext()}
-                  className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"
-                  style={{
-                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                    fontSize: s.answerFont,
-                    fontWeight: 'bold',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    backgroundColor: `${subjectColor}15`,
-                    border: `1px solid ${subjectColor}40`,
-                    color: subjectColor,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = `${subjectColor}30`;
-                    e.currentTarget.style.borderColor = subjectColor;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = `${subjectColor}15`;
-                    e.currentTarget.style.borderColor = `${subjectColor}40`;
-                  }}
-                >
-                  Next
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              )}
+              <button
+                onClick={() => onNext && onNext()}
+                className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"
+                style={{
+                  fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                  fontSize: s.answerFont,
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  backgroundColor: `${subjectColor}15`,
+                  border: `1px solid ${subjectColor}40`,
+                  color: subjectColor,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = `${subjectColor}30`;
+                  e.currentTarget.style.borderColor = subjectColor;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = `${subjectColor}15`;
+                  e.currentTarget.style.borderColor = `${subjectColor}40`;
+                }}
+              >
+                Next
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
               {process.env.NODE_ENV !== 'production' && (
                 <button
                   onClick={handleAutoFill}
@@ -634,8 +771,8 @@ const AssessmentCard = ({
             </div>
           )}
 
-          {/* Save Button - appears when all 12 answered */}
-          {isAllAnswered && (
+          {/* Save Button — appears on last question OR when all answered */}
+          {(isAllAnswered || isLastQuestion) && (
             <button
               onClick={handleSave}
               className="w-full py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300 relative overflow-hidden text-sm mb-1"

@@ -331,7 +331,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
       nameKey: 'assessmentIntro.levels.quick.name',
       name: 'Beginner',
       descKey: 'assessmentIntro.levels.quick.description',
-      description: '60 vragen - 45 min - Rapidfire: Zelf/Zonde 49s per vraag',
+      description: '15 vragen - 45 min - Rapidfire: Zelf/Zonde 49s per vraag',
       questionsPerLayer: 3,
       color: '#22c55e'
     },
@@ -340,7 +340,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
       nameKey: 'assessmentIntro.levels.standard.name',
       name: 'Gevorderd',
       descKey: 'assessmentIntro.levels.standard.description',
-      description: '60 vragen - 50 min - Quickfire: Mysterie/Magie 30s per vraag',
+      description: '30 vragen - 50 min - Quickfire: Mysterie/Magie 30s per vraag',
       questionsPerLayer: 6,
       color: '#a855f7'
     },
@@ -349,7 +349,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
       nameKey: 'assessmentIntro.levels.deep.name',
       name: 'Meester',
       descKey: 'assessmentIntro.levels.deep.description',
-      description: '60 vragen - 50 min - Vuurproef: Piramide tijdsdruk in volgorde 90s/75s/60s/45/30s p.v.',
+      description: '30 vragen - 50 min - Vuurproef: Piramide tijdsdruk in volgorde 90s/75s/60s/45/30s p.v.',
       questionsPerLayer: 6,
       includeUpload: true,
       color: '#f97316'

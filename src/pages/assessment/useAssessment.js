@@ -171,13 +171,13 @@ export function useAssessment() {
       isIndividuated: advanced.isIndividuated,
       overallShadow,
 
-      // Bonuses
-      hasBeheersingsBonus: advanced.hasBeheersingsBonus,
-      beheersingsBonus: advanced.beheersingsBonus,
+      // Bonuses (Geometric Bleed — no separate counters, kept for backward compat)
+      hasBeheersingsBonus: false,
+      beheersingsBonus: 0,
       hasShadowHarmony: advanced.hasShadowHarmony,
-      harmonyBonus: advanced.harmonyBonus,
-      hasHarmonyBonus: advanced.hasHarmonyBonus,
-      harmonyBonusApplied: advanced.harmonyBonusApplied,
+      harmonyBonus: 0,
+      hasHarmonyBonus: false,
+      harmonyBonusApplied: 0,
       harmonyScore: overallPercentage,
 
       // Advanced metrics (Ontology)

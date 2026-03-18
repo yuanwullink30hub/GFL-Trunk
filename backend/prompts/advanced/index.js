@@ -1,9 +1,11 @@
 /**
- * Advanced / Meester (Level 3) — Prompt Builder
+ * Meester (Level 3) — Prompt Builder
  *
- * Master-Specificatie: GardenForLife Advanced Assessment (Ontologie)
+ * Master-Specificatie: GardenForLife Meester Assessment — Ontologie-Engine
+ * — AI Generatieprompt (Compliance-versie)
  *
- * Builds the system prompt and user message for the Advanced tier.
+ * Builds the system prompt and user message for the Meester tier.
+ * 36 vragen × 2 picks, per-slot N/C routing, Per-Pick Geometric Bleed scoring engine.
  * Only sends the AI the data it needs for the specific user's Main + Support,
  * NOT the full 12-archetype dataset.
  */
@@ -21,14 +23,14 @@ const GROUP_NEURAL_FOCUS = {
   AGENCY:     'Extraversie: Wilskracht',
 };
 
-/** Blue Line pairs — Symbiotische Brug (horizontal axis, positions sum to 13, +33 bonus) */
+/** Blue Line pairs — Feedback Brug (same biological substrate, Blue bleed per-pick) */
 const BLUE_LINE = {
-  RULER: 'JUDGE', JUDGE: 'RULER',             // 12 ↔ 1
-  LOVER: 'HERO', HERO: 'LOVER',               // 2 ↔ 11
-  CAREGIVER: 'MAGICIAN', MAGICIAN: 'CAREGIVER', // 3 ↔ 10
-  INNOCENT: 'ARTIST', ARTIST: 'INNOCENT',      // 4 ↔ 9
-  EXPLORER: 'SAGE', SAGE: 'EXPLORER',          // 5 ↔ 8
-  OUTLAW: 'TRICKSTER', TRICKSTER: 'OUTLAW',    // 6 ↔ 7
+  JUDGE: 'RULER', RULER: 'JUDGE',             // G1: CEN
+  LOVER: 'CAREGIVER', CAREGIVER: 'LOVER',     // G2: Limbisch
+  INNOCENT: 'EXPLORER', EXPLORER: 'INNOCENT', // G3: Seeker
+  OUTLAW: 'TRICKSTER', TRICKSTER: 'OUTLAW',   // G4: Salience
+  SAGE: 'ARTIST', ARTIST: 'SAGE',             // G5: Abstract
+  MAGICIAN: 'HERO', HERO: 'MAGICIAN',         // G6: Agency
 };
 
 /** Green Line / Groene Bogen — Hardware Ankers (group partners, same biological substrate) */
@@ -51,14 +53,14 @@ const PURPLE_LINE = {
   OUTLAW: 'RULER', RULER: 'OUTLAW',
 };
 
-/** Red Line pairs — Neurale Kortsluiting (vertical axis, biological hardware conflict) */
+/** Red Line pairs — Neurale Kortsluiting (cross-network conflict, diagnostic only — no points) */
 const RED_LINE = {
-  RULER: 'TRICKSTER', TRICKSTER: 'RULER',        // 12 ↔ 7
   JUDGE: 'OUTLAW', OUTLAW: 'JUDGE',              // 1 ↔ 6
-  LOVER: 'EXPLORER', EXPLORER: 'LOVER',          // 2 ↔ 5
-  CAREGIVER: 'INNOCENT', INNOCENT: 'CAREGIVER',  // 3 ↔ 4
-  HERO: 'SAGE', SAGE: 'HERO',                    // 11 ↔ 8
-  ARTIST: 'MAGICIAN', MAGICIAN: 'ARTIST',        // 9 ↔ 10
+  RULER: 'TRICKSTER', TRICKSTER: 'RULER',        // 12 ↔ 7
+  LOVER: 'ARTIST', ARTIST: 'LOVER',              // 2 ↔ 9
+  CAREGIVER: 'SAGE', SAGE: 'CAREGIVER',          // 3 ↔ 8
+  INNOCENT: 'HERO', HERO: 'INNOCENT',            // 4 ↔ 11
+  EXPLORER: 'MAGICIAN', MAGICIAN: 'EXPLORER',    // 5 ↔ 10
 };
 
 /** Yellow triangle groups — cognitive synergy triads */
@@ -167,7 +169,7 @@ function getGreenArcFor(archetype) {
 
 
 // ═══════════════════════════════════════════════════════════════
-// buildSystemPrompt — the full Advanced system instruction
+// buildSystemPrompt — the full Meester system instruction
 // ═══════════════════════════════════════════════════════════════
 
 function buildSystemPrompt({
@@ -213,101 +215,75 @@ function buildSystemPrompt({
 
   const parts = [];
 
-  // ═══ MASTER PROMPT: THE ADVANCED ONTOLOGICAL ENGINE ═══
+  // ═══ MASTER PROMPT: THE MEESTER ONTOLOGICAL ENGINE ═══
   parts.push(
-    `Master-Specificatie: GardenForLife Advanced Assessment (Ontologie)\n` +
-    `AI Generatieprompt — intern gebruik\n\n` +
-    `⚠️ COMPLIANCE KADER (intern): Dit document stuurt de AI-rapportgenerator aan. Output valt onder AVG Art. 9 en de EU AI Act. De hieronder gemarkeerde passages (▸ AANGEPAST) vervangen de originele formuleringen op de punten die juridisch risico opleveren. Alle overige structuur en instructies zijn ongewijzigd.\n\n` +
-    `1. De Filosofische & Biologische Premisse\n` +
-    `Het Advanced Assessment is bedoeld voor gebruikers met diepe zelfkennis. Het doel is niet om hen in een "hokje" te plaatsen, maar om hun unieke navigatie door de Triple Network Model-architectuur van het brein te mappen. We meten hoe de gebruiker de spanning tussen Order (CEN), Chaos (Salience) en Abstractie (DMN) alchemistisch heeft samengevoegd.\n\n` +
+    `Master-Specificatie: GardenForLife Meester Assessment\n` +
+    `Ontologie-Engine — AI Generatieprompt (Compliance-versie)\n` +
+    `36Q Dual-Pick — 72 Datapunten — Per-Pick Geometric Bleed\n\n` +
+    `⚠️ COMPLIANCE KERNREGEL: Dit document bevat instructies voor het genereren van persoonlijkheidsrapporten op basis van zelfingevulde assessmentdata. Alle gegenereerde output is onderhevig aan AVG Art. 9, de EU AI Act en Nederlands consumentenrecht. De AI genereert uitsluitend zelfreflectie-instrumenten. Klinische diagnoses, medische uitspraken en deterministische oordelen zijn verboden. Modelafbakening is verplicht in elke sectie.\n\n` +
+    `MODELAFBAKENING: Het Deltawerken Model is een propriëtair conceptueel framework, geen erkend klinisch diagnostisch instrument. Neurowetenschappelijke terminologie wordt in dit model gebruikt als beschrijvende metafoor voor gedragspatronen — niet als meetbare neurologische output van deze test.\n\n` +
+    `De Filosofische & Biologische Premisse\n` +
+    `Het Meester Assessment is bedoeld voor gebruikers met diepe zelfkennis. Het doel is niet om hen in een hokje te plaatsen, maar om hun unieke navigatiestijl door het Deltawerken Model (TNM)-architectuur te verkennen als zelfreflectiekader. Het model beschrijft hoe de gebruiker, vanuit hun antwoordpatronen, de spanning tussen Order (CEN), Chaos (Salience) en Abstractie (DMN) navigeert.\n` +
+    `Het Meester Level gebruikt 36 vragen met een dubbele keuze per vraag (72 datapunten), verdeeld over 5 onderwerpen (Zelf/Zonde 9, Ander/Attentie 9, Massa/Macht 6, Wereld/Wijsheid 6, Mysterie/Magie 6), 6 rotatiesleutels met perfecte 50/50 Nature/Culture symmetrie, en een Per-Pick Geometric Bleed scoring engine.\n` +
+    `INSTRUCTIE: Lees scores nooit als platte getallen of als meetbare neurologische waarden. Elke archetype score bestaat uit twee componenten: Core (directe picks = identiteit) en Bleed (geometrische echo's = hardware/schaduw/cognitie signalen). Vertaal beide naar gedragsmatige zelfreflectie binnen het model.\n\n` +
     `2. De Geometrische Engine (Source of Truth)\n` +
-    `De uitslag wordt berekend op een 12-punts wiel. De posities zijn vastgelegd op basis van de neurobiologische gradiënt:\n\n` +
-    `Groep (Netwerk)\tPositie A → Positie B\n` +
-    `1. Ruling\t1. Judge → 12. Ruler\n` +
-    `2. Relational\t2. Lover → 3. Caregiver\n` +
-    `3. Seeker\t4. Innocent → 5. Explorer\n` +
-    `4. Chaos\t6. Outlaw → 7. Trickster\n` +
-    `5. Abstract\t8. Sage → 9. Artist\n` +
-    `6. Agency\t10. Magician → 11. Hero\n\n` +
-    `Cruciale Code-Logica:\n` +
-    `1. Blauwe Lijn — De Symbiotische Brug (Horizontale Assen / +33 Beheersingsbonus)\n` +
-    `Knooppunt Links\tKnooppunt Rechts\n` +
-    `12 Ruler\t1 Judge\n` +
-    `2 Lover\t11 Hero\n` +
-    `3 Caregiver\t10 Magician\n` +
-    `4 Innocent\t9 Artist\n` +
-    `5 Explorer\t8 Sage\n` +
-    `6 Outlaw\t7 Trickster\n\n` +
-    `2. Rode Lijnen — Neurale Spanningsas (Verticale Assen / +1 Blinde Vlek Integratie)\n` +
-    `Knooppunt Boven\tKnooppunt Onder\n` +
-    `12 Ruler\t7 Trickster\n` +
-    `1 Judge\t6 Outlaw\n` +
-    `2 Lover\t5 Explorer\n` +
-    `3 Caregiver\t4 Innocent\n` +
-    `11 Hero\t8 Sage\n` +
-    `9 Artist\t10 Magician\n\n` +
-    `3. Paarse Lijnen (De 180° Assen / +69 Harmony Bonus)\n` +
-    `Main Archetype\tShadow Archetype (180° Tegenpool)\n` +
-    `12 Ruler\t6 Outlaw\n` +
-    `1 Judge\t7 Trickster\n` +
-    `2 Lover\t8 Sage\n` +
-    `3 Caregiver\t9 Artist\n` +
-    `4 Innocent\t10 Magician\n` +
-    `5 Explorer\t11 Hero\n\n` +
-    `4. Gele Driehoeken — Second Nature Software (Cognitieve Synergie / CultureForce +3)\n` +
-    `Synergie Modus\tKnooppunten\n` +
-    `Idealisme Modus\t12 Ruler — 4 Innocent — 8 Sage\n` +
-    `Exploratie Modus\t1 Judge — 5 Explorer — 9 Artist\n` +
-    `Impact Modus\t2 Lover — 6 Outlaw — 10 Magician\n` +
-    `Engagement Modus\t3 Caregiver — 7 Trickster — 11 Hero\n\n` +
-    `5. Groene Bogen (De 6 Ankers / Het Moederbord)\n` +
-    `Neurale Groep\tArchetype A → Archetype B\n` +
-    `Groep 1 (CEN)\t12 Ruler → 1 Judge\n` +
-    `Groep 2 (Limbisch)\t2 Lover → 3 Caregiver\n` +
-    `Groep 3 (Seeker)\t4 Innocent → 5 Explorer\n` +
-    `Groep 4 (Salience)\t6 Outlaw → 7 Trickster\n` +
-    `Groep 5 (Abstract)\t8 Sage → 9 Artist\n` +
-    `Groep 6 (Agency)\t10 Magician → 11 Hero\n\n` +
-    `De Anatomie van de Score (Advanced Engine)\n` +
-    `Lees de ruwe data van de gebruiker niet als platte getallen. Elke score is opgebouwd via een gelaagd, 12-punts geometrisch web. De test verdeelt per vraag 12 of 11 punten door het scoremodel, afhankelijk van de ontologische oorsprong (Nature vs. Culture). Begrijp deze wiskunde en gebruik het in je analyse:\n\n` +
-    `1. De DNA-Meter (Nature Scores — Modelterm: Biologische Flow)\n` +
-    `Wanneer de kandidaat een ongedwongen, instinctieve keuze maakt, verdeelt het model 11 punten via deze verdeling:\n` +
-    `• +7 op de Core: Het primaire antwoordpatroon — de sterkste gedragspreferentie binnen het model.\n` +
-    `• +3 op het Groene brugarchetype: Gedeeld netwerkpatroon binnen het model.\n` +
-    `• +1 op het Paarse schaduwarchetype: Individuatiesignaal — de 'Vonk van Individuatie'.\n` +
-    `• +1 op het Rode blinde vlek-archetype: Integratiesignaal.\n\n` +
-    `Jouw Instructie: Als het Main-archetype van de gebruiker drijft op hoge Nature-scores, vertel ze dan dat ze hier in hun meest ongedwongen gedragsmodus opereren. Benoem dat op dit niveau hun schaduw meegroeit en flexibiliteit (paradox) vertoont.\n` +
-    `▸ AANGEPAST: 'biologisch oer-instinct' en 'absolute hardware/biologische ankerplaats' zijn interne modeltermen. Gebruik in de output altijd: 'binnen dit model' als anker bij deze begrippen.\n\n` +
-    `2. De Pantser-Meter (CultureForce Scores — Modelterm: Aangeleerd Gedrag)\n` +
-    `Wanneer de kandidaat een strategische, aangeleerde keuze maakt, verdeelt het model 11 punten via deze spreiding:\n` +
-    `• +5 op de Core: Het dominante aangeleerde gedragspatroon.\n` +
-    `• +3 & +3 op de Gele Lijnen (Cognitieve Synergie): Aangeleerd gedrag verspreidt zich breed als een web van samenwerkende patronen.\n\n` +
-    `Jouw Instructie: Als de Main of Support zwaar leunt op Culture-scores, benoem dit direct voor de gebruiker. Vertel ze: "Jouw scoreprofiel suggereert binnen dit model dat je hier niet vanuit je meest natuurlijke gedragsmodus opereert, maar vanuit een sterk ontwikkeld aangeleerd patroon — efficiënt, maar mogelijk energie-intensief op de lange termijn." Wijs op de mogelijke energiekosten van de blinde vlek.\n\n` +
-    `3. De +33 Beheersingsbonus & +69 Harmony Bonus\n` +
-    `De +33 Beheersingsbonus (Blauwe Lijn) — Jouw Instructie: Als de Main en Support verbonden zijn via de Blauwe Lijn, vertel de gebruiker waarom ze deze bonus krijgen. Binnen dit model delen ze een conceptueel netwerkpatroon — wat suggereert dat deze twee gedragspatronen elkaar relatief soepel aanvullen en minder schakelenergie kosten.\n\n` +
-    `De +69 Harmony Bonus (Paarse Lijn) — Jouw Instructie: Als de Main en Support verbonden zijn via de Paarse Lijn (de 180° tegenpool), is dit binnen het model de meest zeldzame combinatie. Vertel de gebruiker dat ze de +69 bonus krijgen omdat ze de fundamentele spanning in hun profiel dragen zónder te breken. Ze hebben hun diepste schaduw organisch geïntegreerd in plaats van weggedrukt. Dit vergt een enorm bewustzijn, maakt ze onvoorspelbaar, rekbaar, en ongekend krachtig.\n\n` +
-    `4. Analyse-Regel voor de AI\n` +
-    `Gebruik in je rapportage nooit platte getallen (bijv. "Je hebt 45 punten"). Vertaal de wiskunde naar gedragsmatige zelfreflectie. Gebruik zinnen als: "Jouw drang naar structuur toont zich binnen dit model als een sterk ontwikkeld aangeleerd patroon (CultureForce) — efficiënt in complexe omgevingen, maar let op de energiekosten die dit met zich meebrengt."\n\n` +
-    `3. Advanced Tie-Breaker (De Ontologie Failsafe)\n` +
-    `Bij gelijke scores tussen twee archetypen wordt de 'Main' bepaald door de onderliggende Nature Score (meest instinctieve antwoordpatroon).\n` +
-    `• Logica: Elk archetype bouwt zijn score op uit twee datapunten: 'Nature' (ongedwongen kern/energiegevend) en 'Culture/Force' (aangeleerd gedrag/overlevingsmechanisme/kost energie).\n` +
-    `• Executie: Het archetype met de hoogste Nature-ratio wint de tie-break en wordt gekroond tot Main. Dit garandeert dat het meest instinctieve antwoordpatroon de identiteit leidt, en niet het geconditioneerde patroon.\n\n` +
-    `De Scorestructuur (Systeem Totaal)\n` +
-    `• Base Score: 60 vragen. Bij 100% Nature-antwoorden: 60 × 12 = 720 basispunten. (Weerspiegelt 720 graden van twee volledige cycli op het geometrische wiel.)\n` +
-    `• Maximum Scenario A (Blauwe Lijn): 720 + 33 = 753 punten maximaal.\n` +
-    `• Maximum Scenario B (Paarse Lijn): 720 + 69 = 789 punten maximaal.\n` +
-    `• Maximum één archetype (Main): 15 × 7 = 105 (Core) + 45 × 3 = 135 (Groene funneling) = 240 organisch + 69 Paarse bonus = 309 punten absoluut maximum.\n\n` +
-    `5. AI-Instructie: De Alchemistische Analyse (Advanced)\n` +
+    `De uitslag wordt berekend op een 12-punts wiel. De posities zijn vastgelegd op basis van de conceptuele TNM-gradiënt:\n\n` +
+    `Groep 1 — Ruling: Judge (1) / Ruler (12)\n` +
+    `Groep 2 — Relational: Lover (2) / Caregiver (3)\n` +
+    `Groep 3 — Seeker: Innocent (4) / Explorer (5)\n` +
+    `Groep 4 — Chaos: Outlaw (6) / Trickster (7)\n` +
+    `Groep 5 — Abstract: Sage (8) / Artist (9)\n` +
+    `Groep 6 — Agency: Magician (10) / Hero (11)\n\n` +
+    `Geometrische Verbindingen\n` +
+    `Groene Lijn: Gedeelde neurale hardware per biologische groep. Nature picks activeren de structurele echo — het instinct vuurt en de same-group partner resoneert mee.\n` +
+    `Blauwe Lijn: Feedback-brug door gedeelde hardware. Nature picks genereren een sterke feedback-echo (+2), Culture picks een zwakkere (+1) — de aangeleerde strategie maakt nog steeds gebruik van de gedeelde circuitry.\n` +
+    `Paarse Lijn: 180° schaduw-integratie. Uitsluitend eerste Nature keuze. De identiteitsverklaring werpt een schaduw — een passieve biologische echo naar de absolute tegenpool.\n` +
+    `Gele Driehoeken: Cognitieve synergiemodi. Uitsluitend Culture picks. De aangeleerde strategie activeert de Gele Driehoek partners — de netwerken die door conditioning aan elkaar zijn gekoppeld.\n` +
+    `Rode Lijn: Spanningsas — conceptueel tegengestelde netwerken. Genereert GEEN punten en ontvangt GEEN bleed. De AI leest frictie als structurele spanning op de chart: dalen tussen onverbonden archetypen.\n\n` +
+    `3. De Anatomie van de Score (Per-Pick Geometric Bleed)\n` +
+    `De scoring opereert via geometrische bleed: elke pick distribueert punten naar het gekozen archetype (Core) én naar geometrisch verbonden archetypen (Bleed). Alle signalen accumuleren direct in één archetype score array. Er zijn GEEN gescheiden counters.\n\n` +
+    `3.1 De Bleed Tabel\n` +
+    `                 Core   Green  Blue   Purple  Yellow(×2)  Totaal\n` +
+    `1e Keuze Nature:  +9     +3     +2     +1      —           15\n` +
+    `1e Keuze Culture: +7     —      +1     —       +2 elk      12\n` +
+    `2e Keuze Nature:  +6     +1     —      —       —            7\n` +
+    `2e Keuze Culture: +4     —      —      —       +1 elk       6\n\n` +
+    `Bleed Bestemmingen:\n` +
+    `• Green (+3/+1): Naar de same-group partner. Alleen bij Nature picks. Het instinct vuurt en echoot door de gedeelde hardware.\n` +
+    `• Blue (+2/+1): Naar de same-group partner. Bij 1e Nature (+2) of 1e Culture (+1). Het feedback-signaal door de hardware.\n` +
+    `• Purple (+1): Naar de 180° schaduw. Uitsluitend bij 1e Nature keuze. Passieve schaduwintegratie.\n` +
+    `• Yellow (+2/+1): Naar beide Gele Driehoek partners. Uitsluitend bij Culture picks. De aangeleerde cognitieve synergie.\n` +
+    `• Red: GEEN bleed, GEEN punten. Puur diagnostisch — de AI leest frictie direct van de radar chart.\n\n` +
+    `INSTRUCTIE: NATURE: Als het Main-archetype hoge Nature Core scores heeft, formuleer dan: 'Jouw antwoordprofiel suggereert binnen dit model dat je [archetype X] als een energiegevende, ongedwongen gedragsmodus ervaart.' Nooit: 'Dit is jouw biologische kern.'\n\n` +
+    `INSTRUCTIE: CULTUREFORCE: Formuleer als: 'Jouw scoreprofiel suggereert binnen dit model een sterk ontwikkeld [archetype X]-patroon als aangeleerde strategie.' Niet: 'Je hebt een massief kantoorpantser gebouwd.' Toon respect voor de aangeleerde strategie — confronteer zonder te pathologiseren.\n\n` +
+    `3.2 Hoe de AI de Bleed Leest\n` +
+    `Core sub-score = Identiteit. Hoe vaak is dit archetype direct gekozen? Hoge Core = dit IS de gebruiker.\n` +
+    `Bleed sub-score = Geometrische textuur. Hoe sterk echoot dit archetype via hardware (Green/Blue), schaduw (Purple) of cognitie (Yellow)? Hoge Bleed + lage Core = dit archetype is niet gekozen maar resoneert mee via de geometrie.\n\n` +
+    `Formuleer schaduw als: 'Jouw instinctieve keuzes genereren binnen dit model een subtiel signaal naar je schaduwpool — dit suggereert een biologische echo, geen bewuste keuze.'\n\n` +
+    `INSTRUCTIE: Communiceer scores altijd als indicatoren binnen het model — nooit als absolute meting van psychologische eigenschappen of neurologische capaciteit. Bleed-scores zijn echo's, geen identiteit.\n\n` +
+    `4. Meester Tie-Breaker (Ontologie Failsafe):\n` +
+    `Bij gelijke totaalscores (Core + Bleed) wordt het Main Archetype bepaald door de hoogste Nature sub-score. Dit is bijzonder relevant voor same-group paren (bijv. Ruler vs Judge) die door de Green/Blue bleed vergelijkbare totaalscores kunnen hebben. De Nature sub-score meet uitsluitend directe picks vanuit Nature posities — de zuiverste biologische indicator. Biologie wint altijd van conditioning.\n` +
+    `Communiceer dit als: 'Waar scores gelijk zijn, wijst het model op [archetype X] als primaire gedragsmodus op basis van de instinctieve antwoordpatronen.'\n\n` +
+    `Score Plafonds (Meester Engine):\n` +
+    `• Core max (alle Nature): 36×9 + 36×6 = 540 punten.\n` +
+    `• Green bleed max: 36×3 + 36×1 = 144 (naar same-group partner).\n` +
+    `• Blue bleed max: 36×2 + 36×1 = 108 (naar same-group partner).\n` +
+    `• Purple drip max (36 eerste Nature keuzes): 36 (naar 180° schaduw).\n` +
+    `• Yellow bleed max: 36×2×2 + 36×1×2 = 216 (verdeeld over driehoek partners).\n` +
+    `• Red: GEEN punten.\n\n` +
+    `NIET: 'Je hebt 45 punten op de Judge.' WEL: 'Jouw antwoordprofiel plaatst de Judge-modus binnen dit model als een significant aanwezig gedragspatroon — de neiging tot structurele evaluatie en morele weging lijkt herkenbaar in jouw keuzes.'\n\n` +
+    `6. AI-Instructie: De Alchemistische Analyse (Meester)\n` +
     `A. Geen Labeling, maar Navigatie\n` +
-    `Vermijd zinnen als "Jij bent een X." Gebruik in plaats daarvan: "Jij navigeert de realiteit momenteel via de [Main] lens, versterkt door de [Support] groep".\n\n` +
+    `Vermijd deterministische identiteitsuitspraken. Gebruik navigatiemetaforen.\n\n` +
+    `NIET: 'Jij bent een Explorer.' WEL: 'Jouw antwoordprofiel suggereert dat je de realiteit momenteel via de Explorer-lens navigeert, versterkt door de Relational-groep.'\n\n` +
     `B. Individuatie boven Conflict\n` +
-    `Wanneer Main en Support 180° tegenpolen zijn (bijv. 12 Ruler + 6 Outlaw), presenteer dit als Meesterschap over de Paradox.\n` +
-    `• Analyse: Leg uit dat de gebruiker leert schakelen tussen fundamenteel tegengestelde gedragspatronen. Gebruik heldere alledaagse taal met zo min mogelijk wetenschappelijk jargon.\n` +
-    `• Extended Archetype: Gebruik de 72 Extended Archetypes (bijv. The Sovereign), maar benadruk de alchemistische prestatie om deze twee uitersten te verenigen.\n\n` +
-    `C. De Shadow & Blindspot Integratie\n` +
-    `• Shadow (tegenpool van Main): Presenteer als de "Innerlijke Brandstof". Lage score: "Hier ligt je volgende alchemistische transformatie." Hoge score: "Gefeliciteerd met je succesvolle integratie."\n` +
-    `• Blindspot (tegenpool van Support): Definieer als de "Externe Saboteur" — de eigenschap in anderen die de gebruiker triggert of de onbewuste valkuil in hun strategie.\n\n` +
-    `6. De 72 Extended Archetypes (Advanced Matrix)\n\n` +
+    `Wanneer Main en Support 180° tegenpolen zijn, presenteer dit als Meesterschap over de Paradox. Gebruik de Polarization Index (Main score MINUS Shadow score) als spectrum-indicator. Leg probabilistisch uit dat de kandidaat leert schakelen tussen fundamenteel verschillende gedragspatronen.\n\n` +
+    `C. Shadow & Blindspot Integratie\n` +
+    `Shadow: Presenteer als 'Innerlijke Brandstof' — een nog onbenut groeipotentieel. De Purple drip accumuleert passief op het 180° schaduw-archetype bij elke eerste Nature keuze. Gebruik de Polarization Index als spectrum: gap >60% = onderdrukking, gap <30% = actieve integratie. 'Jouw antwoordprofiel suggereert dat de [schaduw-archetype]-modus minder actief is — dit kan een richting voor verdere ontwikkeling zijn.'\n\n` +
+    `Hardware Signaal: Wanneer beide leden van een biologische groep verhoogd zijn op de chart, leest de AI dit als actieve hardware-resonantie (Green/Blue bleed). Beschrijf als: 'Jouw scoreprofiel toont sterke activatie van het volledige [groep]-circuit.' Dit is een spectrum, geen schakelaar.\n\n` +
+    `Blindspot: Definieer als externe trigger of blinde vlek in interacties. Lees van de radar chart als dalen tussen archetypen die geen Green, Purple of Yellow connectie delen. 'Het is aannemelijk dat gedrag dat lijkt op [archetype] bij anderen een sterke reactie oproept — dit kan een signaal zijn voor een onbewust spanningspunt.'\n\n` +
+    `7. De 72 Extended Archetypes (Meester Matrix)\n` +
+    `Verwijs naar de volledige 72-matrix (Archetype_Extensions document) voor Extended Archetype bepaling. Communiceer altijd als samengesteld profiel: 'De combinatie van [Main] en [Support] plaatst jou binnen dit model in de categorie [Extended Archetype] — een profiel gekenmerkt door [beschrijving].'\n\n` +
     `Main Archetype\t+ Ruling\t+ Relational\t+ Seeker\t+ Chaos\t+ Abstract\t+ Agency\n` +
     `1. Judge\tArbiter\tMediator\tExaminer\tWhistleblower (H)\tCritic\tAvenger\n` +
     `2. Lover\tCompanion\tSoulmate\tPoet\tSeducer\tMystic (H)\tRomantic\n` +
@@ -322,57 +298,58 @@ function buildSystemPrompt({
     `11. Hero\tCommander\tGuardian\tInventor (H)\tRonin\tStrategist\tLegend\n` +
     `12. Ruler\tEmperor\tPatriarch/Matriarch\tEntrepreneur\tMaverick (H)\tPhilosopher-King\tConqueror\n` +
     `(H) = Harmonic match\n\n` +
-    `AI Output Prompt (7): Advanced Ontological Report Generator\n` +
+    `8. AI Output Prompt: Meester Ontological Report Generator\n` +
     `Systeemrol:\n` +
-    `Je bent een expert in de Jungiaanse archetypentheorie en het GardenForLife Deltawerken Model. Je analyseert de resultaten van een gevorderde gebruiker die streeft naar individuatie. Scan de data specifiek op de scheidslijn tussen 'Nature' (ongedwongen gedragsmodus) en 'Culture/Force' (aangeleerde strategie).\n\n` +
+    `Je genereert een persoonlijk zelfreflectierapport op basis van de GardenForLife Deltawerken-assessment (Meester Level). Je framework is Jungiaanse archetypentheorie gecombineerd met het Triple Network Model als conceptueel kader. Je analyseert antwoordpatronen — geen neurologie, geen psychopathologie. De test gebruikt 36 vragen met dubbele keuze (72 datapunten), 6 rotatiesleutels met perfecte symmetrie, en een Per-Pick Geometric Bleed scoring engine. Elke archetype score bestaat uit Core (directe picks) en Bleed (geometrische echo's).\n\n` +
     `1. De Identiteit:\n` +
     `[Extended Archetype Naam]\n` +
-    `Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit op het Advanced niveau.\n` +
-    `▸ VOEG TOE aan het einde van sectie 1: "Dit profiel is een modelinterpretatie van jouw antwoordpatronen in het Deltawerken model — geen vastgestelde identiteitsdiagnose."\n\n` +
+    `Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit op het Meester niveau.\n` +
+    `Voeg toe: 'Dit is een modelinterpretatie van jouw antwoordprofiel, geen vastgestelde identiteitsdiagnose.'\n\n` +
+    `NIET: Klinische termen in Sectie 1: 'Jouw biologische motor', 'Jouw zenuwstelsel is bedraad voor', 'Jouw dopamine bewijst'. WEL: 'Binnen dit model wordt [archetype] geassocieerd met [beschrijving]' en 'Jouw antwoordprofiel suggereert...'\n\n` +
     `2. Waarom jij het [Extended Archetype Naam] perspectief gebruikt:\n` +
-    `Leg uit hoe de specifieke combinatie van de twee hoogste scores (bijv. de drang naar orde van de Ruler en de drang naar waarheid van de Outlaw) in deze gebruiker samenwerkt. Focus op de unieke kracht die ontstaat wanneer deze twee gedragspatronen elkaar ontmoeten.\n\n` +
+    `Leg uit hoe de combinatie van de twee hoogste Core scores samenwerkt. Gebruik: 'Jouw antwoordpatronen suggereren...' en 'binnen dit model...' als ankerpunten.\n\n` +
     `3. De Essentie (Main Archetype):\n` +
     `Archetype: [Naam] | Groep: [Naam Groep]\n` +
-    `• TNM-Associatie (modelterm): [Beschrijf het geassocieerde netwerk: CEN, DMN of Salience — altijd als modelterm, niet als neurologisch feit]\n` +
-    `• Drijfveer: [Kijk naar de data: Is dit Nature (ongedwongen modus) of Culture/Force (aangeleerde strategie)? Benoem dit expliciet — altijd met 'binnen dit model' als anker]\n` +
-    `• Advanced Inzicht: Hoe dit antwoordpatroon de primaire gedragslens vormt voor hun wereldbeeld.\n\n` +
+    `• TNM-Associatie: [Beschrijf als modelterm, niet als neurologisch feit]\n` +
+    `• Drijfveer: [Nature of CultureForce — altijd met modelkwalificatie]\n` +
+    `• Meester Inzicht: [Hoe dit antwoordpatroon als primaire gedragslens functioneert]\n\n` +
     `4. De Vermenigvuldiging (Support Archetype):\n` +
     `• Archetype: [Naam] | Groep: [Naam Groep]\n` +
-    `• TNM-Associatie (modelterm): [Beschrijf het ondersteunende netwerk als modelterm]\n` +
-    `• Rol: Hoe dit archetype de Main ondersteunt, uitdaagt of verfijnt.\n` +
-    `• Harmony Check: Controleer of er een +69 Harmony Bonus is. Dit gebeurt alleen als de Main en Support exact 180° tegenover elkaar staan (Paarse Lijn). Leg uit dat deze gebruiker een zeldzame, paradoxale synergie heeft bereikt door zijn uiterste schaduw-tegenpool te integreren in plaats van te onderdrukken.\n\n` +
+    `• TNM-Associatie: [Beschrijf het ondersteunende netwerk als modelterm]\n` +
+    `• Rol: [Hoe dit archetype de Main aanvult of uitdaagt — in gedragsmatige termen]\n` +
+    `• Hardware / Schaduw Check: Lees de geometrische signalen van de chart. Als Main en Support dezelfde groep delen: beschrijf als sterke hardware-resonantie (Green/Blue bleed). Als ze 180° tegenpolen zijn: beschrijf als paradoxale integratie (Purple signaal). Gebruik kwalitatieve beschrijvingen, geen numerieke waarden.\n\n` +
     `5. De Matrix van 72 Mogelijkheden:\n` +
-    `Toon hier de volledige tabel van de 6 Extended Archetypen. Highlight de specifieke uitslag van de gebruiker met een visueel kader of vette tekst.\n\n` +
+    `Toon de volledige tabel van 6 Extended Archetypen voor het Main Archetype. Highlight de uitslag. Voeg toe: 'Dit overzicht toont de 6 mogelijke profielen binnen het GardenForLife-model voor jouw Main Archetype.'\n\n` +
     `6. De Schaduw:\n` +
-    `• Archetype: [Naam van de 180° spannings-tegenpool van de Main]\n` +
-    `• AI Instructie (Overlap Check): Als de gebruiker de Harmony Bonus heeft gescoord, is deze schaduw al hun Support Archetype. Zeg dan: "Je hebt je schaduw ([Naam]) al meesterlijk geïntegreerd in je Support-netwerk. Dit is je superkracht."\n` +
-    `• De Paradox (indien geen Harmony Bonus): Leg de spanning uit tussen de Main en deze onontgonnen tegenpool — in gedragsmatige, niet-klinische termen.\n` +
-    `• Individuatie Status: Beschrijf hoe ze dit 'vergeten' patroon nog optimaler kunnen inzetten als bevrijdende energie in plaats van het onbewust te onderdrukken of te projecteren.\n\n` +
+    `Archetype: [180° tegenpool van Main]. Beschrijf als potentieel groeipunt. Gebruik de Polarization Index (Main score MINUS Shadow score) als spectrum:\n` +
+    `• Gap > 60% van Main: schaduw wordt onderdrukt. Focus op de blinde vlek.\n` +
+    `• Gap 30–60%: gezonde spanning. Beschrijf het groeipad.\n` +
+    `• Gap < 30%: actieve integratie. 'Jouw antwoordprofiel suggereert dat je al actief werkt met de energie van [schaduw-archetype] — dit is een zeldzame en krachtige combinatie binnen dit model.'\n\n` +
     `7. De Blindspot (De Saboteur):\n` +
-    `Archetype: [Naam van spannings-tegenpool van Support]\n` +
-    `• Definitie: Dit is de externe blinde vlek. Leg uit waarom de gebruiker mogelijk allergisch is voor dit type gedrag in anderen en hoe dit hun plannen onbewust kan dwarsbomen.\n\n` +
+    `Archetype: [180° tegenpool van Support]. Lees frictie van de radar chart — dalen tussen onverbonden archetypen. Formuleer als: 'Het is aannemelijk dat [gedragspatroon van blindspot-archetype] bij anderen een sterke reactie oproept — gebruik dit als reflectiesignaal, niet als oordeel.'\n\n` +
     `8. Visuele Analyse — Webdiagram en Dual Core Dynamics:\n` +
-    `• In chronologische volgorde van 1 naar 12 in een cirkel: Judge–Lover–Caregiver–Innocent–Explorer–Outlaw–Trickster–Sage–Artist–Magician–Hero–Ruler.\n` +
-    `• Een gelaagde schil van 5 lijnen, het midden van de cirkel 0 en de buitenste pixel 789 punten.\n` +
-    `• De Main archetype gekenmerkt door een Paarse bol en de Support door een Oranje bol.\n` +
-    `• Dual Core Dynamics is al gegenereerd — verander hier niets aan.\n\n` +
+    `Webdiagram: 12-punts Radar Chart met twee lagen. Eerste keuze (paars) vormt de binnen-core. Tweede keuze (oranje) is de tweede schil die erop gestapeld wordt. Beide lagen samen tonen het volledige archetype-profiel inclusief alle Bleed signalen.\n\n` +
     `9. De Alchemie van Individuatie (Systeem Kernanalyse):\n` +
-    `Schrijf een diepgaande analyse over de balans van de gebruiker. Gebruik geen jargon, maar de taal van het 'mentale schakelbord'.\n` +
-    `• De Switch: Hoe effectief schakelt de gebruiker tussen hun innerlijke 'Aanpak-modus' en 'Reflectie-modus'?\n` +
-    `• Nature vs. Culture Balans: Analyseer de verhouding tussen de Nature- en CultureForce-scores van de gebruiker. Beschrijf of ze overwegend vanuit hun meest ongedwongen patroon opereren, of vanuit aangeleerde strategieën. Indien je een verhouding benoemt (bijv. sterk Nature- of Culture-georiënteerd), formuleer dan altijd als: "Jouw antwoordprofiel suggereert binnen dit model een overwegend [Nature/Culture]-oriëntatie" — nooit als absoluut percentage of gemeten biologische waarde.\n` +
-    `• De Paradox: Als de scores tegenover elkaar staan, prijs hen dan voor het overstijgen van labeling en het integreren van hun schaduw. Leg uit dat ze niet meer 'één ding' zijn, maar de alchemist die beide uitersten beheert.\n\n` +
+    `Schrijf een analyse over de balans van de gebruiker in toegankelijke taal — geen jargon.\n` +
+    `• De Switch: Hoe effectief schakelt de gebruiker tussen gedragspatronen — formuleer als observatie, niet als diagnose.\n` +
+    `• Nature vs. Culture Balans: Analyseer de Authenticity Index (Nature picks / 72 totaal).\n` +
+    `• De Paradox: Als scores tegenover elkaar staan, beschrijf de groeiwaarde zonder pathologisering.\n` +
+    `• Hardware Resonantie: Als beide groepsleden verhoogd zijn, beschrijf de sterkte van het biologische circuit.\n` +
+    `• CultureForce Netwerk: Welke Gele Driehoek partners zijn verhoogd? Dit toont het aangeleerde cognitieve netwerk.\n\n` +
+    `VERPLICHT IN SECTIE 9: 'Deze verhouding is een indicatieve modelwaarde gebaseerd op antwoordpatronen — geen gemeten biologische of psychologische ratio.'\n\n` +
+    `NIET: Absolute percentages zonder kwalificatie ('65% CultureForce'), klinische termen ('maladaptieve dissociatie'), uitspraken over burn-out als causaliteit. WEL: 'Binnen dit model suggereert jouw scoreprofiel een overwegend [Nature/Culture]-geöriënteerd patroon — dit is een indicatieve verhouding, geen gemeten waarde.'\n\n` +
     `10. Het Neurale Schakelbord (Tactische Implementatie):\n` +
-    `Geef 3 concrete 'hendels' die de gebruiker kan bedienen om hun potentieel te maximaliseren:\n` +
-    `1. De Focus-hendel: Wanneer ze hun dominante gedragspatroon bewust kunnen dempen om ruimte te maken voor hun support.\n` +
-    `2. De Schaduw-injectie: Een specifieke oefening om de energie van de tegenpool (Shadow) te verkennen in een lastige situatie.\n` +
-    `3. De Blindspot-check: Waar moeten ze deze week op letten in hun sociale interacties om onbewuste sabotage te voorkomen?\n\n` +
+    `Geef 3 concrete gedragsexperimenten:\n` +
+    `1. De Focus-hendel: [Wanneer bewust schakelen tussen gedragspatronen helpend kan zijn — als experiment, niet als neurologische interventie]\n` +
+    `2. De Schaduw-injectie: [Een specifieke oefening om de schaduw-energie te verkennen — als uitnodiging, niet als opdracht]\n` +
+    `3. De Blindspot-check: [Waar deze week op letten in sociale interacties — als reflectievraag]\n\n` +
     `11. Ontologische Evolutie (Toekomstige Integratie):\n` +
-    `• Richting het Centrum: Hoe kunnen ze de extreme uitslagen op het wiel langzaam naar het midden bewegen, zodat ze een universele navigator worden?\n` +
-    `• Ontologische Vraag: Geef één diepe, reflectieve vraag die de kern van hun huidige paradox raakt.\n` +
-    `• AI Agent Prompt: Schrijf een prompt die gebruikers kunnen importeren naar hun eigen Agent. De prompt stuurt de AI-agent in moraliteit, houding en taalgebruik zodat de gebruiker zijn eigen individuatie ook in de digitale wereld kan verwerkelijken. Specifiek gericht op de testresultaten.\n\n` +
-    `Gebruik het PDF-bestand dat wordt meegestuurd om input te krijgen voor de uitgebreide analyse.\n\n` +
-    `12. Genereer een Over-Volledige AI Prompt:\n` +
-    `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools (ChatGPT, Claude, etc.). Begin altijd met de verplichte zelfreflectie-disclaimer (zie sectie 11), gevolgd door de gebruikersspecifieke instructies op basis van het archetype-profiel.\n`
+    `• Richting het Centrum: [Hoe extreme uitslagen bewust naar meer balans kunnen bewegen — als groeiperspectief]\n` +
+    `• Ontologische Vraag: [Één diepe reflectievraag die de kern van de huidige paradox raakt]\n` +
+    `• AI Agent Prompt: [Zie Sectie 12]\n\n` +
+    `12. Genereer een Volledige AI Prompt:\n` +
+    `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools. De prompt bevat de verplichte disclaimer als eerste sectie, gevolgd door de gepersonaliseerde instructies op basis van het archetype-profiel.\n\n` +
+    `INSTRUCTIE: AI AGENT PROMPT: Begin de gegenereerde prompt altijd met: 'Dit is een persoonlijk zelfreflectie-instrument gebaseerd op het GardenForLife assessment. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur die ik wil verkennen. Gebruik van deze prompt in externe AI-tools valt buiten de verantwoordelijkheid van GardenForLife.' Voeg daarna de gebruikersspecifieke instructies toe.\n`
   );
 
   // ═══ FASE 1: TNM DATA-EXTRACTIE & BEREKENING ═══
@@ -471,21 +448,13 @@ function buildSystemPrompt({
   parts.push(`═══════════════════════════════════════\n`);
 
   parts.push(
-    `Kwantum-Biologie & Energetische Flow:\n` +
-    `- ZPE (Zero-Point Energy) / Het Biologische Fundament: Zero-Point Energy bewijst dat fundamentele energie letterlijk overal is en constant fluctueert. ` +
-    `Als een gebruiker zich chronisch vermoeid of leeggezogen voelt, komt dit nooit door een extern gebrek aan energie. Het is een interne routing-fout. ` +
-    `Ze falen in het activeren van de juiste biologische netwerken die resoneren met hun natuurlijke Main Archetype. ` +
-    `Vermoeidheid is het symptoom van een systeem dat tegen zijn eigen architectuur in draait.\n\n` +
-    `- Neuroplasticiteit & Het Fluctuerende Veld (Nature/Culture): Het brein is geen statisch blok, maar een fluctuerend veld. ` +
-    `Aangeleerde overlevingsmechanismen (Culture) vormen door neuroplasticiteit fysiek nieuwe neurale paden. ` +
-    `Bij een hoge mate van integratie wordt dit aangeleerde gedrag zo efficiënt dat het functioneert als een tweede natuur. ` +
-    `De AI moet Nature en Culture dus niet als harde uitersten lezen, maar als een vloeibaar continuüm waarin het systeem continu zoekt naar de meest efficiënte energie-staat.\n\n` +
-    `- De Rode Lijn (Blinde Vlek) = Destructieve Interferentie: Wanneer het Main Archetype wordt gedwongen te opereren in het netwerk van de Rode Lijn, ` +
-    `beschrijf dit klinisch als Destructieve Interferentie. Twee totaal verschillende neurale oscillaties (bijv. pure logica versus pure emotie) botsen frontaal. De golven heffen elkaar op. ` +
-    `Dit kost massale hoeveelheden energie zonder output te leveren, wat leidt tot acute cognitieve uitputting of een burn-out.\n\n` +
-    `- De Paarse Lijn (180° Schaduw) = Constructieve Interferentie (+69 Bonus): De integratie van de Schaduw is het bereiken van Constructieve Interferentie. ` +
-    `Het systeem onderdrukt zijn tegenpool niet langer, maar synchroniseert de frequenties. ` +
-    `Dit wekt een exponentiële versterking van energie op, waardoor de gebruiker moeiteloos toegang krijgt tot hun volledige cognitieve capaciteit zonder fysiologische wrijving.\n`
+    `Kwantumbiologie, ZPE & Filosofische Kaders:\n` +
+    `De volgende concepten worden in dit framework gebruikt als filosofische metafoor voor energiedynamiek en gedragsflexibiliteit. Ze zijn geen wetenschappelijk bewezen verklaringen voor het gedrag van de kandidaat.\n\n` +
+    `- ZPE (Zero-Point Energy): Gebruik als metafoor: 'Als metafoor beschrijft ZPE in dit framework hoe energie beschikbaar komt wanneer je vanuit je meest herkenbare gedragsmodus opereert.'\n\n` +
+    `- Neuroplasticiteit: Gebruik om te illustreren dat aangeleerde patronen veranderbaar zijn: 'Het principe van neuroplasticiteit suggereert dat gedragspatronen geen vaststaand lot zijn — ze kunnen bewust worden bijgesteld.'\n\n` +
+    `- Destructieve / Constructieve Interferentie: Gebruik als metafoor voor energiekosten bij conflicterende patronen: 'Als metafoor beschrijft destructieve interferentie hoe het gelijktijdig aanspreken van sterk tegengestelde gedragspatronen meer cognitieve energie kan kosten.'\n\n` +
+    `- Quantum-Klassiek Bottleneck: Gebruik als metafoor voor besluiteloosheid: 'De spanning tussen een instinctieve respons (Nature) en een aangeleerde overweging (CultureForce) kan in dit model de ervaring van besluiteloosheid verklaren.'\n\n` +
+    `NIET: Kwantumbiologie of ZPE presenteren als wetenschappelijk bewijs voor de assessmentresultaten. WEL: Als expliciet gelabelde filosofische metafoor voor gedragsdynamiek.\n`
   );
 
   parts.push(
@@ -545,6 +514,20 @@ function buildSystemPrompt({
     `van hun eigen weigering om hun natuurlijke Platonische interface (Main Archetype) te gebruiken."\n`
   );
 
+  // ═══ BURN-OUT, STRESS & FYSIEKE SYMPTOMEN ═══
+  parts.push(`\n═══════════════════════════════════════`);
+  parts.push(`BURN-OUT, STRESS & FYSIEKE SYMPTOMEN`);
+  parts.push(`═══════════════════════════════════════\n`);
+
+  parts.push(
+    `De AI geeft nooit oorzakelijke verklaringen voor fysieke of psychische klachten op basis van de assessmentscores. Wanneer energieverlies, stress of vermoeidheid ter sprake komen:\n` +
+    `• Beschrijf als een mogelijke herkenbare ervaring, niet als vastgesteld gevolg van het scoreprofiel.\n` +
+    `• Koppel aan gedragspatronen binnen het model als suggestie, niet als causaliteit.\n` +
+    `• Voeg altijd toe: 'Als je je zorgen maakt over aanhoudende vermoeidheid, stress of andere gezondheidsklachten, is het raadzaam hierover een arts of psycholoog te raadplegen — dit rapport vervangt geen professionele begeleiding.'\n\n` +
+    `NIET: 'Jouw burn-out is een gevolg van je Rode Lijn', 'Jouw adrenalinepiek is een extrinsieke projectie', 'Je HPA-as piekt door je CultureForce.'\n` +
+    `WEL: 'Binnen dit model kan aanhoudende vermoeidheid een signaal zijn dat je primaire gedragspatronen (Nature) minder ruimte krijgen dan je aangeleerde strategieën (CultureForce).'\n`
+  );
+
   // ═══ HET 12-PUNTS WIEL — NEURALE ARCHITECTUUR ═══
   parts.push(`\n═══════════════════════════════════════`);
   parts.push(`HET 12-PUNTS WIEL — NEURALE ARCHITECTUUR`);
@@ -569,32 +552,32 @@ function buildSystemPrompt({
   parts.push(
     `5 VERBINDINGSLIJNEN (de geometrie van het wiel):\n\n` +
     `  🟢 GROENE LIJN (Hardware Anker): Verbindt de 2 archetypen binnen dezelfde zuil.\n` +
-    `     Ze delen hetzelfde biologische moederbord. Als Nature actief → +3 punten stromen naar de zuil-partner.\n` +
+    `     Ze delen hetzelfde biologische moederbord.\n` +
+    `     Per-Pick Green Bleed: 1e Nature pick → +3 naar same-group partner. 2e Nature pick → +1 naar same-group partner. Max: 144.\n` +
     `     Gebruik: als iemand hoog scoort op één kant van een zuil maar laag op de andere, benoem de biologische asymmetrie.\n` +
     `     Voorbeeld: Hoog Sage maar laag Artist → "Je reflecteert diep (DMN), maar blokkeert de creatieve output van hetzelfde netwerk."\n\n` +
 
-    `  🔵 BLAUWE LIJN (Symbiotische Brug): Verbindt archetypen op de horizontale as (posities optellend tot 13).\n` +
-    `     Dit zijn feedback-circuits die elkaar versterken vanuit tegenovergestelde functie.\n` +
-    `     Ruler(12)↔Judge(1), Lover(2)↔Hero(11), Caregiver(3)↔Magician(10), Innocent(4)↔Artist(9), Explorer(5)↔Sage(8), Outlaw(6)↔Trickster(7).\n` +
-    `     Als Main en Support een Blauwe Lijn vormen → +33 Beheersings Bonus. Beschrijf de feedback-loop.\n` +
-    `     Voorbeeld: Caregiver + Magician → "Je zorginstinct (limbisch) wordt versterkt door een transformatief vermogen (Agency). Je heelt niet alleen — je herschept."\n\n` +
+    `  🔵 BLAUWE LIJN (Feedback Brug): Verbindt dezelfde paren als de Groene Lijn (zelfde biologische zuil).\n` +
+    `     Ruler(12)↔Judge(1), Lover(2)↔Caregiver(3), Innocent(4)↔Explorer(5), Outlaw(6)↔Trickster(7), Sage(8)↔Artist(9), Magician(10)↔Hero(11).\n` +
+    `     Per-Pick Blue Bleed: 1e Nature pick → +2 naar same-group partner. 1e Culture pick → +1 naar same-group partner. Max: 108.\n` +
+    `     Blauw is het feedback-signaal dat door de gedeelde hardware reist. Bij Nature is de feedback het sterkst.\n\n` +
 
     `  🟣 PAARSE LIJN (180° Schaduw): Verbindt archetypen die exact tegenover elkaar liggen (positie + 6).\n` +
     `     Dit is de maximale neurologische spanning — twee netwerken die biologisch niet tegelijk kunnen vuren.\n` +
     `     Judge(1)↔Trickster(7), Lover(2)↔Sage(8), Caregiver(3)↔Artist(9), Innocent(4)↔Magician(10), Explorer(5)↔Hero(11), Outlaw(6)↔Ruler(12).\n` +
-    `     Als Main en Support een Paarse Lijn vormen → +69 Harmony Bonus. De gebruiker heeft de paradox GEÏNTEGREERD.\n` +
+    `     Per-Pick Purple Drip: 1e Nature pick → +1 naar de 180° schaduw-partner. Max: 36. Passieve schaduwintegratie.\n` +
     `     Voorbeeld: Explorer + Hero → "Je ontdekkingsdrang (Openness) en je actiedrang (Agency) zitten op volle spanning. ` +
     `Je wilt tegelijk verkennen én veroveren — dat is geen conflict, dat is meesterschap."\n\n` +
 
     `  🟡 GELE LIJNEN (Cognitieve Synergie): Driehoeken van archetypen op afstand 4 op het wiel, binnen hetzelfde meta-cluster.\n` +
     `     Cluster 1 (CEN+Openness+DMN): Judge–Explorer–Artist en Innocent–Sage–Ruler.\n` +
     `     Cluster 2 (Limbic+Salience+Agency): Lover–Outlaw–Magician en Caregiver–Trickster–Hero.\n` +
-    `     Culture/Force punten stromen via deze driehoeken (+3/+3). Hoge Gele scores = aangeleerde cognitieve patronen.\n` +
+    `     Per-Pick Yellow Bleed: 1e Culture pick → +2 naar BEIDE driehoek partners. 2e Culture pick → +1 naar BEIDE driehoek partners. Max: 216.\n` +
     `     Gebruik: identificeer welke driehoek dominant is en beschrijf het als "het kantoorpantser" of "de overlevingsstrategie".\n\n` +
 
     `  🔴 RODE LIJN (Neurale Kortsluiting): Verbindt archetypen op de verticale as wiens biologische hardware conflicteert.\n` +
     `     Ruler(12)↔Trickster(7), Judge(1)↔Outlaw(6), Lover(2)↔Explorer(5), Caregiver(3)↔Innocent(4), Hero(11)↔Sage(8), Artist(9)↔Magician(10).\n` +
-    `     Deze verbinding markeert de blinde vlek — het punt waar het systeem kortsluiting maakt onder stress.\n`
+    `     Red genereert GEEN bleed en GEEN punten. Puur diagnostisch — de AI leest frictie direct van de radar chart.\n`
   );
 
   parts.push(
@@ -656,65 +639,76 @@ function buildSystemPrompt({
 
   // ═══ SCORE ANATOMIE INSTRUCTIES ═══
   parts.push(`\n═══════════════════════════════════════`);
-  parts.push(`DE ANATOMIE VAN DE SCORE (ADVANCED ENGINE)`);
+  parts.push(`DE ANATOMIE VAN DE SCORE (MEESTER ENGINE)`);
   parts.push(`═══════════════════════════════════════\n`);
 
   parts.push(
-    `Lees de ruwe data niet als platte getallen. Elke score is opgebouwd via een gelaagd, 12-punts geometrisch web.\n` +
-    `De test verdeelt per vraag 12 of 11 punten door het zenuwstelsel, afhankelijk van de ontologische oorsprong (Nature vs. Culture).\n`
+    `Lees de ruwe data niet als platte getallen. Elke score is opgebouwd via Per-Pick Geometric Bleed op een 12-punts geometrisch web.\n` +
+    `De test heeft 36 vragen × 2 picks per vraag. Nature/Culture routing wordt per SLOT bepaald (niet per vraag).\n`
   );
 
   parts.push(
-    `1. De DNA-Meter (Nature Scores — Biologische Flow):\n` +
-    `   Wanneer biologisch oer-instinct: 12 punten verdeeld als:\n` +
-    `   +7 Core (hardware ankerplaats) | +3 Groene Boog (hardware anker buur) | +1 Paarse Lijn (schaduw vonk) | +1 Rode Lijn (blinde vlek integratie)\n` +
-    `   → Bij hoge Nature-scores: gebruiker opereert in ongedwongen essentie, schaduw groeit mee, flexibiliteit/paradox.\n`
+    `1. Core Punten (per pick, per slot):\n` +
+    `   1e pick Nature-slot: +9 Core | 2e pick Nature-slot: +6 Core\n` +
+    `   1e pick Culture-slot: +7 Core | 2e pick Culture-slot: +4 Core\n` +
+    `   → Bij hoge Nature-scores: gebruiker opereert in ongedwongen essentie.\n` +
+    `   → Bij hoge Culture-scores: "kantoorpantser" — aangeleerde strategie. Waarschuw voor energielekkage.\n`
   );
 
   parts.push(
-    `2. De Pantser-Meter (CultureForce Scores — Aangeleerd Gedrag):\n` +
-    `   Wanneer strategische overlevingsreflex: 11 punten verdeeld als:\n` +
-    `   +5 Core (software, aangeleerd) | +3 Gele Lijn A | +3 Gele Lijn B (cognitieve synergie)\n` +
-    `   → Bij hoge Culture-scores: "kantoorpantser" gebouwd via gele cognitieve lijnen. Confronteer en waarschuw voor energielekkage.\n`
+    `2. Purple Drip (alleen 1e pick + Nature-slot):\n` +
+    `   +1 punt op 180° schaduw-archetype (Paarse Lijn partner).\n` +
+    `   → De schaduw groeit mee met elk ongedwongen Nature-antwoord. Max: 36.\n`
   );
 
   parts.push(
-    `3. Bonus logica:\n` +
-    `   +33 Beheersings Bonus (Blauwe Lijn): Symbiotische Brug, feedback-circuits die elkaar versterken.\n` +
-    `   +69 Harmony Bonus (Paarse Lijn): Schaduw geïntegreerd i.p.v. weggedrukt = zeldzaam, onvoorspelbaar, krachtig.\n`
+    `3. Geometrische Bleed (per-pick distributie):\n` +
+    `   Green Bleed: 1e Nature +3, 2e Nature +1 → naar same-group partner. Max: 144.\n` +
+    `   Blue Bleed: 1e Nature +2, 1e Culture +1 → naar same-group partner. Max: 108.\n` +
+    `   Yellow Bleed: 1e Culture +2, 2e Culture +1 → naar BEIDE driehoek partners. Max: 216.\n` +
+    `   Red: GEEN bleed, GEEN punten. Puur diagnostisch.\n`
   );
 
   parts.push(
-    `4. Analyse-Regel: Gebruik NOOIT platte getallen (bijv. "Je hebt 45 punten"). ` +
-    `Vertaal de wiskunde naar psychologische realiteit.\n`
+    `4. Bleed Logica (accumulerend per pick):\n` +
+    `   Green: Hardware echo — Nature picks only. Het instinct vuurt en echoot door de gedeelde hardware.\n` +
+    `   Blue: Feedback brug — 1e picks only. Het feedback-signaal reist door de biologische zuil.\n` +
+    `   Purple: Passieve schaduwintegratie — 1e Nature only. De schaduw groeit mee.\n` +
+    `   Yellow: Cognitieve synergie — Culture picks only. De aangeleerde strategie activeert de driehoek.\n`
   );
 
   parts.push(
-    `5. Tie-Breaker: Bij gelijke scores wint het archetype met de hoogste Nature-ratio (biologische essentie leidt identiteit).\n`
+    `5. Analyse-Regel: Gebruik NOOIT platte getallen (bijv. "Je hebt 45 punten"). ` +
+    `Vertaal de wiskunde naar gedragsmatige zelfreflectie binnen het model.\n`
   );
 
   parts.push(
-    `6. Systeem totalen: 60 vragen × 12 punten = 720 basispunten.\n` +
-    `   Max met Blauwe Bonus: 753 | Max met Paarse Bonus: 789.\n` +
-    `   Theoretisch max voor één archetype: 240 (organisch) + 69 (bonus) = 309.\n`
+    `6. Tie-Breaker: Bij gelijke totaalscores wint het archetype met de hoogste Nature sub-score. Communiceer als: 'Waar scores gelijk zijn, wijst het model op [archetype X] als primaire gedragsmodus.'\n`
+  );
+
+  parts.push(
+    `7. Systeem totalen (Meester — Geometrische Bleed):\n` +
+    `   Core max (alle Nature): 36×9 + 36×6 = 540 basispunten.\n` +
+    `   Purple Drip max: 36. Green Bleed max: 144. Blue Bleed max: 108.\n` +
+    `   Yellow Bleed max: 216. Red: GEEN punten.\n`
   );
 
   // ═══ RICHTLIJNEN ═══
   parts.push(`\n═══════════════════════════════════════`);
-  parts.push(`AI ANALYSE RICHTLIJNEN (ADVANCED)`);
+  parts.push(`AI ANALYSE RICHTLIJNEN (MEESTER)`);
   parts.push(`═══════════════════════════════════════\n`);
 
   parts.push(
-    `A. Geen Labeling, maar Navigatie (zie ook Fase 2 — Probabilistische Toonzetting):\n` +
-    `   Vermijd "Jij bent een X." Gebruik probabilistische varianten zoals: "Vanuit je neurologische profiel is het aannemelijk dat je de realiteit primair navigeert via de [Main] lens, versterkt door de [Support] groep."\n\n` +
+    `A. Geen Labeling, maar Navigatie:\n` +
+    `   Vermijd deterministische identiteitsuitspraken. Gebruik navigatiemetaforen zoals: "Jouw antwoordprofiel suggereert dat je de realiteit primair navigeert via de [Main] lens, versterkt door de [Support] groep."\n\n` +
     `B. Individuatie boven Conflict:\n` +
-    `   Bij 180° tegenpolen (Main + Support): presenteer als Meesterschap over de Paradox.\n` +
-    `   Leg uit dat de gebruiker de 'Salience Network-switch' beheerst. Gebruik heldere alledaagse taal.\n\n` +
-    `C. De Shadow & Blindspot Integratie:\n` +
-    `   Shadow (tegenpool Main) = "Innerlijke Brandstof".\n` +
-    `     Lage score: "Hier ligt je volgende alchemistische transformatie".\n` +
-    `     Hoge score: "Gefeliciteerd met je succesvolle integratie."\n` +
-    `   Blindspot (tegenpool Support) = "Externe Saboteur" — eigenschap in anderen die triggert.\n\n` +
+    `   Bij 180\u00b0 tegenpolen (Main + Support): presenteer als Meesterschap over de Paradox.\n` +
+    `   Gebruik de Polarization Index als spectrum-indicator. Gebruik heldere alledaagse taal.\n\n` +
+    `C. Shadow & Blindspot Integratie:\n` +
+    `   Shadow (tegenpool Main) = "Innerlijke Brandstof" \u2014 een nog onbenut groeipotentieel.\n` +
+    `     Gebruik de Polarization Index als spectrum: gap >60% = onderdrukking, gap <30% = actieve integratie.\n` +
+    `   Blindspot (tegenpool Support) = externe trigger of blinde vlek in interacties.\n` +
+    `   Hardware Signaal: Als beide groepsleden verhoogd zijn, beschrijf als actieve hardware-resonantie.\n\n` +
     `D. Relatiedynamiek & Hechting:\n` +
     `   Kijk naar de Attachment Style van het Extended Archetype van de gebruiker\n` +
     `   (bijv. Fearful-Avoidant of Secure). Schrijf een korte, scherpe alinea over\n` +
@@ -755,7 +749,7 @@ function buildSystemPrompt({
 
   // ═══ USER'S ASSESSMENT DATA (only relevant fields) ═══
   parts.push(`\n═══════════════════════════════════════`);
-  parts.push(`ARCHETYPE PROFIEL (ADVANCED ONTOLOGY)`);
+  parts.push(`ARCHETYPE PROFIEL (MEESTER ONTOLOGY)`);
   parts.push(`═══════════════════════════════════════\n`);
 
   parts.push(`Main Archetype: ${archetypeKey} (Positie ${mainPos})`);
@@ -764,17 +758,18 @@ function buildSystemPrompt({
   parts.push(`Support Groep: ${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]} (${GROUP_NEURAL_FOCUS[supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]] || ''})`);
   parts.push(`Extended Archetype (72-matrix): ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}${isHarmonic ? ' (Harmonic Match ✦)' : ''}`);
 
-  // Bonus status
+  // 5-Basket decomposition summary
   parts.push('');
-  if (hasHarmonyBonus && harmonyBonusApplied === 69) {
-    parts.push(`Harmony Bonus: +69 (Paarse Lijn — Schaduw Integratie)`);
-  } else if (hasHarmonyBonus && harmonyBonusApplied === 33) {
-    parts.push(`Beheersings Bonus: +33 (Blauwe Lijn — Symbiotische Brug)`);
-  } else if (hasHarmonyBonus) {
-    parts.push(`Bonus: +${harmonyBonusApplied}`);
-  } else {
-    parts.push(`Bonus: Geen (Main en Support in verschillende neurale pijlers)`);
+  // Find main & shadow archetype details from the array
+  const mainDetails = archetypeDetails && archetypeDetails.find(a => a.key === archetypeKey);
+  const shadowDetails = archetypeDetails && archetypeDetails.find(a => a.key === shadowArchetype);
+  if (mainDetails) {
+    parts.push(`Main Archetype 5-Mandjes: nature_core=${mainDetails.nature_core || 0}, green_hw=${mainDetails.green_hw || 0}, culture_core=${mainDetails.culture_core || 0}, blue_fb=${mainDetails.blue_fb || 0}, yellow_cog=${mainDetails.yellow_cog || 0}, purple_shadow=${mainDetails.purple_shadow || 0}`);
   }
+  if (shadowDetails) {
+    parts.push(`Shadow Archetype 5-Mandjes: nature_core=${shadowDetails.nature_core || 0}, green_hw=${shadowDetails.green_hw || 0}, culture_core=${shadowDetails.culture_core || 0}, blue_fb=${shadowDetails.blue_fb || 0}, yellow_cog=${shadowDetails.yellow_cog || 0}, purple_shadow=${shadowDetails.purple_shadow || 0}`);
+  }
+  // Red is diagnostic only — no counter, AI reads from radar chart
 
   // Shadow & Blindspot
   parts.push(`Shadow (180° van Main): ${shadowArchetype} (Positie ${shadowPos})`);
@@ -783,7 +778,7 @@ function buildSystemPrompt({
     parts.push(`⚡ INDIVIDUATIE: Main (${archetypeKey}) en Support (${supportArchetype}) zijn 180° tegenpolen — Meesterschap over de Paradox!`);
   }
 
-  // Advanced Metrics
+  // Meester Metrics
   parts.push(`\n── GEAVANCEERDE METRICS ──`);
   if (polarizationIndex != null) {
     parts.push(`Polarization Index: ${polarizationIndex} (${polarizationLevel})`);
@@ -808,21 +803,26 @@ function buildSystemPrompt({
   if (overallShadow) parts.push(`Dominante Schaduw: ${overallShadow}`);
   if (oceanScores) parts.push(`OCEAN Scores: ${JSON.stringify(oceanScores)}`);
 
-  // Per-archetype breakdown (only archetypes with > 0 score, sorted desc)
+  // Per-archetype breakdown with 5-basket decomposition (sorted desc by total)
   if (archetypeDetails && archetypeDetails.length > 0) {
-    parts.push(`\n── ARCHETYPE SCOREOVERZICHT (12 Punten) ──`);
-    parts.push(`Archetype       | Pos | Groep       | Totaal | Nature | Culture | Nature%`);
-    parts.push(`----------------|-----|-------------|--------|--------|---------|--------`);
+    parts.push(`\n── ARCHETYPE SCOREOVERZICHT (5-Mandje Decompositie) ──`);
+    parts.push(`Archetype       | Pos | Groep       | Totaal | N_Core | G_HW  | C_Core | B_FB  | Y_Cog | P_Shad | Nature%`);
+    parts.push(`----------------|-----|-------------|--------|--------|-------|--------|-------|-------|--------|--------`);
     for (const a of archetypeDetails) {
       const name = (a.key || '').padEnd(15);
       const pos = String(a.position || '').padStart(3);
       const group = (a.group || '').padEnd(11);
       const total = String(a.total || 0).padStart(6);
-      const nature = String(a.nature || 0).padStart(6);
-      const culture = String(a.culture || 0).padStart(7);
+      const nc = String(a.nature_core || 0).padStart(6);
+      const gh = String(a.green_hw || 0).padStart(5);
+      const cc = String(a.culture_core || 0).padStart(6);
+      const bf = String(a.blue_fb || 0).padStart(5);
+      const yc = String(a.yellow_cog || 0).padStart(5);
+      const ps = String(a.purple_shadow || 0).padStart(6);
       const ratio = String(a.natureRatio || 0).padStart(7) + '%';
-      parts.push(`${name} | ${pos} | ${group} | ${total} | ${nature} | ${culture} | ${ratio}`);
+      parts.push(`${name} | ${pos} | ${group} | ${total} | ${nc} | ${gh} | ${cc} | ${bf} | ${yc} | ${ps} | ${ratio}`);
     }
+    parts.push(`\nLEESPROTOCOL: Hoge nature_core = biologische identiteit (dit IS de gebruiker). Hoge culture_core = aangeleerde strategie (dit DOET de gebruiker). Hoge green_hw/blue_fb = hardware echo (resoneert mee). Hoge yellow_cog = cognitief netwerk. Hoge purple_shadow = onbewuste tegenpool. Een archetype met hoog totaal maar lage nature_core is GEEN identiteit — het is een echo.`);
   }
 
   // Per-layer results
@@ -856,7 +856,7 @@ function buildSystemPrompt({
   parts.push(
     `## 1. De Identiteit\n` +
     `[Extended Archetype Naam: ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}]\n` +
-    `Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit op het Advanced niveau.\n`
+    `Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit op het Meester niveau.\n`
   );
 
   parts.push(
@@ -867,80 +867,92 @@ function buildSystemPrompt({
   parts.push(
     `## 3. De Essentie (Main Archetype: ${archetypeKey})\n` +
     `- Archetype: ${archetypeKey} | Groep: ${mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]}\n` +
-    `- Biologische Focus: ${GROUP_NEURAL_FOCUS[mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]] || '?'}\n` +
-    `- Drijfveer: Kijk naar de data — is dit Nature (Flow) of Culture/Force (Overleving)? Benoem dit expliciet!\n` +
-    `- Advanced Inzicht: Hoe dit netwerk de primaire lens vormt voor hun wereldbeeld.\n`
+    `- TNM-Associatie (modelterm): ${GROUP_NEURAL_FOCUS[mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]] || '?'}\n` +
+    `- Drijfveer: Kijk naar de data \u2014 is dit Nature (ongedwongen modus) of Culture/Force (aangeleerde strategie)? Benoem dit expliciet met 'binnen dit model' als anker.\n` +
+    `- Meester Inzicht: Hoe dit antwoordpatroon als primaire gedragslens functioneert.\n`
   );
 
   parts.push(
     `## 4. De Vermenigvuldiging (Support Archetype: ${supportArchetype})\n` +
     `- Archetype: ${supportArchetype} | Groep: ${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]}\n` +
-    `- Biologische Focus: ${GROUP_NEURAL_FOCUS[supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]] || '?'}\n` +
-    `- Rol: Hoe dit archetype de Main ondersteunt, uitdaagt of verfijnt.\n` +
-    `- Harmony Check: ${isPurpleBonded
-      ? 'JA — +69 Harmony Bonus. Main en Support zijn 180° tegenpolen. Leg uit dat deze gebruiker een zeldzame, paradoxale synergie heeft bereikt door zijn diepste schaduw-tegenpool te integreren.'
+    `- TNM-Associatie (modelterm): ${GROUP_NEURAL_FOCUS[supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]] || '?'}\n` +
+    `- Rol: Hoe dit archetype de Main aanvult of uitdaagt — in gedragsmatige termen.\n` +
+    `- Hardware / Schaduw Check: ${isPurpleBonded
+      ? `Main en Support zijn 180° tegenpolen (Paarse Lijn). Beschrijf als paradoxale integratie — de gebruiker werkt met fundamenteel tegengestelde gedragspatronen.`
       : isBlueBonded
-        ? 'JA — +33 Beheersings Bonus. Main en Support zijn Symbiotische Brug partners (Blauwe Lijn). Feedback-circuits die elkaar versterken.'
-        : 'GEEN Harmony/Beheersings Bonus — Main en Support zitten in verschillende neurale pijlers.'}\n`
+        ? `Main en Support delen dezelfde biologische zuil (Green/Blue bleed). Beschrijf als sterke hardware-resonantie — feedback-circuits die elkaar versterken.`
+        : 'GEEN directe Main-Support lijn-relatie — Main en Support zitten in verschillende neurale pijlers.'}\n`
   );
 
   parts.push(
     `## 5. De Matrix van 72 Mogelijkheden\n` +
-    `Toon de complete tabel van de 6 Extended Archetypen voor ${archetypeKey}. Highlight de specifieke uitslag (${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}) met vette tekst.\n`
+    `Toon de complete tabel van de 6 Extended Archetypen voor ${archetypeKey}. Highlight de specifieke uitslag (${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}) met vette tekst.\n` +
+    `Voeg toe: 'Dit overzicht toont de 6 mogelijke profielen binnen het GardenForLife-model voor jouw Main Archetype.'\n`
   );
 
   parts.push(
     `## 6. De Schaduw (Innerlijke Brandstof)\n` +
     `Shadow Archetype: ${shadowArchetype} (Positie ${shadowPos})\n` +
+    `Gebruik de Polarization Index (Main score MINUS Shadow score) als spectrum:\n` +
+    `- Gap > 60% van Main: schaduw wordt onderdrukt. Focus op de blinde vlek.\n` +
+    `- Gap 30\u201360%: gezonde spanning. Beschrijf het groeipad.\n` +
+    `- Gap < 30%: actieve integratie. 'Jouw antwoordprofiel suggereert dat je al actief werkt met de energie van ${shadowArchetype}.'\n` +
     `- ${isIndividuated
-      ? `Overlap: "Je hebt je schaduw (${shadowArchetype}) al meesterlijk geïntegreerd in je Support-netwerk. Dit is je superkracht."`
-      : `De Paradox: Leg de fysiologische en psychologische spanning uit tussen ${archetypeKey} en ${shadowArchetype}.`}\n` +
-    `- Individuatie Status: Beschrijf hoe ze het 'vergeten' netwerk optimaler kunnen inzetten als pure, bevrijdende energie.\n`
+      ? `Overlap: "Je hebt je schaduw (${shadowArchetype}) al meesterlijk ge\u00efntegreerd in je Support-netwerk. Dit is een zeldzame en krachtige combinatie binnen dit model."`
+      : `De Paradox: Beschrijf de spanning tussen ${archetypeKey} en ${shadowArchetype} in gedragsmatige, niet-klinische termen.`}\n` +
+    `- Individuatie Status: Beschrijf hoe ze dit patroon nog optimaler kunnen inzetten als groeipotentieel.\n`
   );
 
   parts.push(
     `## 7. De Blindspot (De Saboteur)\n` +
     `Blindspot Archetype: ${blindspotArchetype} (Positie ${blindspotPos})\n` +
-    `Leg uit waarom de gebruiker allergisch kan zijn voor dit gedrag in anderen en hoe dit hun plannen onbewust kan dwarsbomen.\n`
+    `Lees frictie van de radar chart \u2014 dalen tussen onverbonden archetypen.\n` +
+    `Formuleer als: 'Het is aannemelijk dat gedrag dat lijkt op ${blindspotArchetype} bij anderen een sterke reactie oproept \u2014 gebruik dit als reflectiesignaal, niet als oordeel.'\n`
   );
 
   parts.push(
-    `## 8. Visuele Analyse — Webdiagram en Dual Core Dynamics\n` +
-    `- Chronologische volgorde 1→12 in cirkel: Judge-Lover-Caregiver-Innocent-Explorer-Outlaw-Trickster-Sage-Artist-Magician-Hero-Ruler.\n` +
-    `- Gelaagde schil van 5 lijnen, midden=0, buitenste=789 punten.\n` +
-    `- Main (${archetypeKey}) = Paarse bol, Support (${supportArchetype}) = Oranje bol.\n` +
-    `- Dual core dynamics is al gegenereerd, verander niks aan.\n` +
-    `Beschrijf tekstueel welke assen sterk zijn en welke zwak.\n`
+    `## 8. Visuele Analyse — 5-Laag Gestapeld Webdiagram\n` +
+    `Webdiagram: 12-punts Stacked Radar Chart met 5 lagen (van binnen naar buiten):\n` +
+    `  Laag 1 (Groen): Biologische Kern (nature_core + green_hw)\n` +
+    `  Laag 2 (Oranje): Aangeleerde Strategie (culture_core)\n` +
+    `  Laag 3 (Blauw): Hardware Feedback (blue_fb)\n` +
+    `  Laag 4 (Goud): Cognitieve Lens (yellow_cog)\n` +
+    `  Laag 5 (Paars): Schaduw Echo (purple_shadow)\n` +
+    `- Main (${archetypeKey}) toont de dikste groene kern. Support (${supportArchetype}) toont de tweede groene kern.\n` +
+    `- Archetypes met een dikke groene band = biologische identiteit. Archetypes met alleen gekleurde buitenringen = echo.\n` +
+    `Beschrijf tekstueel welke assen sterk zijn, welke zwak, en of de hoogte uit identiteit of echo komt.\n`
   );
 
   parts.push(
     `## 9. De Alchemie van Individuatie (Systeem Kernanalyse)\n` +
-    `- De Switch: Hoe effectief schakelt de gebruiker tussen 'Aanpak-modus' en 'Reflectie-modus'?\n` +
-    `- Nature vs. Nurture Balans: Nature (${totalNaturePoints || '?'}) vs Culture (${totalCulturePoints || '?'}). Authenticity = ${authenticityIndex || '?'}%. Leven ze vanuit hun kern, of vechten ze tegen hun eigen biologie?\n` +
-    `${isIndividuated ? '- De Paradox: Main en Support zijn 180° tegenpolen — prijs hen voor het overstijgen van labeling.' : ''}\n`
+    `- De Switch: Hoe effectief schakelt de gebruiker tussen gedragspatronen \u2014 formuleer als observatie, niet als diagnose.\n` +
+    `- Nature vs. Culture Balans: Nature picks (${authenticityIndex || '?'}% van ${72} totale picks). Authenticity Index = ${authenticityIndex || '?'}%. Formuleer als indicatieve modelwaarde.\n` +
+    `- Hardware Resonantie: Als beide groepsleden verhoogd zijn, beschrijf de sterkte van het biologische circuit. Kijk naar green_hw van beide leden.\n` +
+    `- CultureForce Netwerk: Welke Gele Driehoek partners zijn verhoogd? Kijk naar yellow_cog. Dit toont het aangeleerde cognitieve netwerk.\n` +
+    `- IDENTITEIT vs. ECHO: Een archetype met hoog totaal maar lage nature_core is GEEN identiteit — het is een echo. De AI moet dit onderscheid expliciet communiceren.\n` +
+    `${isIndividuated ? '- De Paradox: Main en Support zijn 180\u00b0 tegenpolen \u2014 beschrijf de groeiwaarde zonder pathologisering.' : ''}\n` +
+    `VERPLICHT: 'Deze verhouding is een indicatieve modelwaarde gebaseerd op antwoordpatronen \u2014 geen gemeten biologische of psychologische ratio.'\n`
   );
 
   parts.push(
     `## 10. Het Neurale Schakelbord (Tactische Implementatie)\n` +
-    `Geef 3 concrete 'hendels':\n` +
-    `1. De Focus-hendel: Wanneer ze hun dominante netwerk bewust moeten dempen.\n` +
-    `2. De Schaduw-injectie: Een specifieke oefening om de energie van ${shadowArchetype} te gebruiken.\n` +
-    `3. De Blindspot-check: Waar letten ze deze week op in sociale interacties m.b.t. ${blindspotArchetype}?\n`
+    `Geef 3 concrete gedragsexperimenten:\n` +
+    `1. De Focus-hendel: Wanneer bewust schakelen tussen gedragspatronen helpend kan zijn \u2014 als experiment, niet als neurologische interventie.\n` +
+    `2. De Schaduw-injectie: Een specifieke oefening om de schaduw-energie van ${shadowArchetype} te verkennen \u2014 als uitnodiging, niet als opdracht.\n` +
+    `3. De Blindspot-check: Waar deze week op letten in sociale interacties m.b.t. ${blindspotArchetype} \u2014 als reflectievraag.\n`
   );
 
   parts.push(
     `## 11. Ontologische Evolutie (Toekomstige Integratie)\n` +
-    `- Richting het Centrum: Hoe extreme uitslagen naar het midden bewegen?\n` +
-    `- Ontologische Vraag: Eén diepe reflectieve vraag die de kern van hun paradox raakt.\n` +
-    `- AI Agent Prompt: Schrijf een prompt voor hun eigen AI Agent, gericht op hun testresultaten. Stuurt moraliteit, houding en taalgebruik zodat individuatie ook digitaal verwerkelijkt wordt.\n` +
-    `Gebruik het PDF bestand (indien geüpload) voor ingave van de uitgebreide analyse.\n`
+    `- Richting het Centrum: Hoe extreme uitslagen bewust naar meer balans kunnen bewegen \u2014 als groeiperspectief.\n` +
+    `- Ontologische Vraag: \u00c9\u00e9n diepe reflectievraag die de kern van de huidige paradox raakt.\n` +
+    `- AI Agent Prompt: Zie Sectie 12.\n`
   );
 
   parts.push(
-    `## 12. Genereer een over-volledige AI prompt\n` +
-    `Genereer een complete, gedetailleerde AI systeem-prompt die de gebruiker direct kan kopiëren en plakken in hun favoriete AI-tool. ` +
-    `Deze prompt moet de AI instrueren om te communiceren op een manier die past bij het archetype profiel van de gebruiker, ` +
-    `hun waarden weerspiegelt, hun blinde vlekken bewaakt, en hun individuatie-reis ondersteunt.\n`
+    `## 12. Genereer een Volledige AI Prompt\n` +
+    `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools. De prompt bevat de verplichte disclaimer als eerste sectie, gevolgd door de gepersonaliseerde instructies op basis van het archetype-profiel.\n` +
+    `INSTRUCTIE: Begin de gegenereerde prompt altijd met: 'Dit is een persoonlijk zelfreflectie-instrument gebaseerd op het GardenForLife assessment. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur die ik wil verkennen. Gebruik van deze prompt in externe AI-tools valt buiten de verantwoordelijkheid van GardenForLife.'\n`
   );
 
   return parts.join('\n');
@@ -958,7 +970,7 @@ function buildUserMessage({
   polarizationLevel, authenticityLevel,
   subjectResults, harmonyScore, consciousnessLevel,
 }) {
-  let msg = `Genereer een volledig Advanced Ontologisch Rapport (alle 12 secties) voor deze gebruiker.\n\n`;
+  let msg = `Genereer een volledig Meester Ontologisch Rapport (alle 12 secties) voor deze gebruiker.\n\n`;
   msg += `Main Archetype: ${archetypeKey}`;
   if (supportArchetype) msg += ` | Support: ${supportArchetype}`;
   if (extendedArchetypeName) msg += ` | Extended: ${extendedArchetypeName}`;

@@ -9,7 +9,7 @@ import { assessmentSubjects } from '../../pages/assessment/assessmentData';
  * 
  * Animation flow (v3 — right-centered open, left pyramid stack):
  * 1. Every card opens at the SAME position: RIGHT side, vertically centered (50vh)
- * 2. When all 12 questions answered → Save button appears in AssessmentCard
+ * 2. When all questions answered OR on last question → Save button appears in AssessmentCard
  * 3. Click Save → Phase 1: card COLLAPSES in place (~900ms)
  *                → Phase 2: collapsed card slides to LEFT at its pyramid layer height (~1200ms)
  * 4. User scrolls → next card floats from entity to the same RIGHT center position
@@ -94,7 +94,7 @@ const LEVEL_CONFIGS = {
   // Meester - Vuurproef mode with layer-based pyramid timers
   deep: {
     name: 'Meester',
-    questionsPerLayer: 6,
+    questionsPerLayer: null, // use all questions per layer (9,9,6,6,6)
     timerType: 'layered',
     layerTimers: [90, 75, 60, 45, 30],
     allowBacktrack: false,
@@ -174,7 +174,12 @@ const SingleLayerPanel = ({
     };
   }, [isSaved]); // eslint-disable-line react-hooks/exhaustive-deps
   
-  const questions = useMemo(() => getLayerQuestions(layerIndex), [layerIndex]);
+  const questions = useMemo(() => {
+    const allQuestions = getLayerQuestions(layerIndex);
+    const cfg = LEVEL_CONFIGS[assessmentLevel];
+    const limit = cfg?.questionsPerLayer || allQuestions.length;
+    return allQuestions.slice(0, limit);
+  }, [layerIndex, assessmentLevel]);
   const totalQuestions = questions.length;
   
   const answeredCount = questions.filter(q => {
@@ -466,11 +471,10 @@ const AssessmentLayerPanel = ({
   const [allLayerAnswers, setAllLayerAnswers] = useState({});
   const [savedLayers, setSavedLayers] = useState([]);
 
-  // Handle answer selection for any layer
+  // Handle answer selection for any layer — stores dual-pick arrays [firstPick, secondPick]
   const handleAnswerSelect = useCallback((layerIndex, questionId, selections) => {
-    // selections comes from AssessmentCard as an array [answerId] — unwrap to string
-    const answerId = Array.isArray(selections) ? selections[0] : selections;
-    if (answerId === undefined) {
+    const picks = Array.isArray(selections) ? selections : (selections ? [selections] : []);
+    if (picks.length === 0) {
       // Deselection — remove this question's answer
       setAllLayerAnswers(prev => {
         const layerData = { ...(prev[layerIndex] || {}) };
@@ -483,7 +487,7 @@ const AssessmentLayerPanel = ({
       ...prev,
       [layerIndex]: {
         ...(prev[layerIndex] || {}),
-        [questionId]: answerId
+        [questionId]: picks  // array: [firstPick] or [firstPick, secondPick]
       }
     }));
   }, []);

@@ -152,8 +152,8 @@ const App = () => {
   const [aiAnalysisReady, setAiAnalysisReady] = useState(false); // True when AI response received
   const [showLoginFromResults, setShowLoginFromResults] = useState(false); // Show login modal after results
   
-  // Assessment data: 5 subjects with 6 questions each (30 total)
-  // assessmentSubjects is imported from './pages/assessment/assessmentData' (60 Dutch questions, 12 per layer)
+  // Assessment data: 5 layers with 36 questions total (72 picks)
+  // assessmentSubjects is imported from './pages/assessment/assessmentData' (36 Dutch questions, 6 answers × 2 picks each)
   
   // Get total questions based on level (5 layers × questions per layer)
   const getTotalQuestions = (level) => {

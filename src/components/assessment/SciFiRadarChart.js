@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Radar,
   RadarChart,
@@ -11,13 +11,43 @@ import {
 } from 'recharts';
 
 /**
- * SciFiRadarChart - Dual-web radar chart: Nature (purple) + Culture (orange)
- * Shows all 12 archetypes with overlaid Nature and Culture webs.
- * @param {{ data: Array<{ subject: string, A: number, nature: number, culture: number, fullMark: number }>, shadow?: string, blindspot?: string, mainArchetype?: string, supportArchetype?: string }} props
+ * 5-layer stacked band colors (spec §4).
+ * Layers are rendered largest-first (painter's algorithm):
+ * Purple → Gold → Blue → Orange → Green
+ */
+const LAYER_COLORS = {
+  green:  '#2E7D32',   // Laag 1: Biologische Kern (nature_core + green_hw)
+  orange: '#E65100',   // Laag 2: Aangeleerde Strategie (culture_core)
+  blue:   '#0D47A1',   // Laag 3: Hardware Feedback (blue_fb)
+  gold:   '#F57F17',   // Laag 4: Cognitieve Lens (yellow_cog)
+  purple: '#4A148C',   // Laag 5: Schaduw Echo (purple_shadow)
+};
+
+const LAYER_META = [
+  { key: 'purple', label: 'Schaduw Echo',        color: LAYER_COLORS.purple, field: 'purple_shadow' },
+  { key: 'gold',   label: 'Cognitieve Lens',     color: LAYER_COLORS.gold,   field: 'yellow_cog'    },
+  { key: 'blue',   label: 'Hardware Feedback',    color: LAYER_COLORS.blue,   field: 'blue_fb'       },
+  { key: 'orange', label: 'Aangeleerde Strategie',color: LAYER_COLORS.orange, field: 'culture_core'  },
+  { key: 'green',  label: 'Biologische Kern',     color: LAYER_COLORS.green,  field: null            },
+];
+
+/**
+ * SciFiRadarChart — 5-Layer Stacked Radar (Painter's Algorithm)
+ *
+ * Renders 5 opaque polygons from largest (purple) to smallest (green).
+ * Each polygon's data represents the cumulative band outer boundary.
+ * The painter's algorithm ensures each smaller polygon covers the inner
+ * area of the larger one, creating visible colour bands.
+ *
+ * @param {{ data: Array, shadow?: string, blindspot?: string, mainArchetype?: string, supportArchetype?: string }} props
  */
 const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchetype }) => {
-  // Fixed scale: each archetype has exactly 15 nature-eligible and 15 culture-eligible questions
-  const fullMark = 15;
+  // Dynamic domain: find max total across all archetypes, round up to next 50
+  const fullMark = useMemo(() => {
+    if (!data || !data.length) return 200;
+    const maxVal = Math.max(...data.map(d => d.purple || d.A || 0));
+    return Math.max(50, Math.ceil(maxVal / 50) * 50);
+  }, [data]);
 
   // Custom tick renderer to highlight Shadow (red) and Blindspot (amber) labels
   const renderPolarAngleAxisTick = (props) => {
@@ -27,17 +57,13 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
     let fill = '#a5f3fc'; // default cyan
     let fontWeight = 400;
     if (shadow && upperLabel === shadow.toUpperCase()) {
-      fill = '#ff4d6a'; // red for shadow
-      fontWeight = 700;
+      fill = '#ff4d6a'; fontWeight = 700;
     } else if (blindspot && upperLabel === blindspot.toUpperCase()) {
-      fill = '#fbbf24'; // amber for blindspot
-      fontWeight = 700;
+      fill = '#fbbf24'; fontWeight = 700;
     } else if (mainArchetype && upperLabel === mainArchetype.toUpperCase()) {
-      fill = '#a855f7'; // purple for main
-      fontWeight = 700;
+      fill = '#a855f7'; fontWeight = 700;
     } else if (supportArchetype && upperLabel === supportArchetype.toUpperCase()) {
-      fill = '#f97316'; // orange for support
-      fontWeight = 700;
+      fill = '#f97316'; fontWeight = 700;
     }
     return (
       <text x={x} y={y} textAnchor={textAnchor} fill={fill} fontWeight={fontWeight} fontSize={11} fontFamily="'Rajdhani', sans-serif">
@@ -46,41 +72,49 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
     );
   };
 
-  // Nature dots: purple
-  const renderNatureDot = (props) => {
-    const { cx, cy } = props;
-    if (cx == null || cy == null) return null;
-    return <circle cx={cx} cy={cy} r={3.5} fill="#a855f7" stroke="#581c87" strokeWidth={1} />;
-  };
-
-  // Culture dots: orange
-  const renderCultureDot = (props) => {
-    const { cx, cy } = props;
-    if (cx == null || cy == null) return null;
-    return <circle cx={cx} cy={cy} r={3.5} fill="#f97316" stroke="#7c2d12" strokeWidth={1} />;
-  };
-
-  // Custom tooltip showing Nature + Culture breakdown
+  // Custom tooltip showing 5-basket breakdown
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload || !payload.length) return null;
     const d = payload[0]?.payload;
     if (!d) return null;
+    const rows = [
+      { label: 'Nature Core',  value: d.nature_core,    color: '#4CAF50' },
+      { label: 'Green HW',     value: d.green_hw,       color: '#66BB6A' },
+      { label: 'Culture Core', value: d.culture_core,   color: LAYER_COLORS.orange },
+      { label: 'Blue FB',      value: d.blue_fb,        color: LAYER_COLORS.blue },
+      { label: 'Yellow Cog',   value: d.yellow_cog,     color: LAYER_COLORS.gold },
+      { label: 'Purple Shadow',value: d.purple_shadow,  color: LAYER_COLORS.purple },
+    ];
     return (
       <div style={{
         backgroundColor: 'rgba(5, 10, 20, 0.95)',
-        border: '1px solid rgba(168, 85, 247, 0.4)',
+        border: '1px solid rgba(46, 125, 50, 0.4)',
         borderRadius: '4px',
         padding: '0.5rem 0.75rem',
         fontFamily: "'Rajdhani', sans-serif",
         boxShadow: '0 0 10px rgba(0, 0, 0, 0.5)',
       }}>
         <p style={{ color: '#a5f3fc', fontWeight: 700, margin: '0 0 0.25rem', fontSize: '0.85rem' }}>{d.subject}</p>
-        <p style={{ color: '#a855f7', margin: '0.1rem 0', fontSize: '0.8rem' }}>Nature: {d.nature || 0}</p>
-        <p style={{ color: '#f97316', margin: '0.1rem 0', fontSize: '0.8rem' }}>Culture: {d.culture || 0}</p>
-        <p style={{ color: 'rgba(255,255,255,0.5)', margin: '0.1rem 0', fontSize: '0.75rem' }}>Total: {d.A || 0}</p>
+        {rows.map(r => (
+          <p key={r.label} style={{ color: r.color, margin: '0.1rem 0', fontSize: '0.8rem' }}>
+            {r.label}: {r.value || 0}
+          </p>
+        ))}
+        <p style={{ color: 'rgba(255,255,255,0.5)', margin: '0.25rem 0 0', fontSize: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.2rem' }}>
+          Total: {d.A || d.purple || 0}
+        </p>
       </div>
     );
   };
+
+  // Legend items for the 5 layers (display order: green→orange→blue→gold→purple)
+  const legendPayload = [
+    { value: 'Biologische Kern',      type: 'square', color: LAYER_COLORS.green },
+    { value: 'Aangeleerde Strategie', type: 'square', color: LAYER_COLORS.orange },
+    { value: 'Hardware Feedback',     type: 'square', color: LAYER_COLORS.blue },
+    { value: 'Cognitieve Lens',       type: 'square', color: LAYER_COLORS.gold },
+    { value: 'Schaduw Echo',          type: 'square', color: LAYER_COLORS.purple },
+  ];
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 300, position: 'relative' }}>
@@ -88,7 +122,7 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'radial-gradient(circle, rgba(168, 85, 247, 0.04) 0%, rgba(249, 115, 22, 0.03) 50%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(46, 125, 50, 0.04) 0%, rgba(74, 20, 140, 0.03) 50%, transparent 70%)',
         filter: 'blur(40px)',
         borderRadius: '50%',
         transform: 'scale(0.8)',
@@ -99,8 +133,8 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
           <PolarGrid stroke="#a5f3fc" strokeOpacity={0.15} gridType="polygon" radialLines={true} />
-          <PolarAngleAxis 
-            dataKey="subject" 
+          <PolarAngleAxis
+            dataKey="subject"
             tick={renderPolarAngleAxisTick}
           />
           <PolarRadiusAxis
@@ -110,43 +144,48 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
             tick={{ fill: 'rgba(165, 243, 252, 0.25)', fontSize: 9, fontFamily: "'Rajdhani', sans-serif" }}
             axisLine={false}
           />
-          {/* Nature web — purple */}
-          <Radar
-            name="Nature"
-            dataKey="nature"
-            stroke="#a855f7"
-            strokeWidth={2}
-            fill="#a855f7"
-            fillOpacity={0.15}
-            dot={renderNatureDot}
-            connectNulls
-            isAnimationActive={true}
-            animationDuration={800}
-          />
-          {/* Culture web — orange */}
-          <Radar
-            name="Culture"
-            dataKey="culture"
-            stroke="#f97316"
-            strokeWidth={2}
-            fill="#f97316"
-            fillOpacity={0.12}
-            dot={renderCultureDot}
-            connectNulls
-            isAnimationActive={true}
-            animationDuration={800}
-            animationBegin={200}
-          />
+
+          {/* Painter's Algorithm: draw largest polygon first, smallest last.
+              Each layer is opaque (fillOpacity=1) — smaller layers cover inner area. */}
+
+          {/* Layer 5: Purple — Schaduw Echo (outermost = total) */}
+          <Radar name="Schaduw Echo" dataKey="purple"
+            stroke={LAYER_COLORS.purple} strokeWidth={1} strokeOpacity={0.6}
+            fill={LAYER_COLORS.purple} fillOpacity={1}
+            isAnimationActive={true} animationDuration={800} />
+
+          {/* Layer 4: Gold — Cognitieve Lens */}
+          <Radar name="Cognitieve Lens" dataKey="gold"
+            stroke={LAYER_COLORS.gold} strokeWidth={1} strokeOpacity={0.6}
+            fill={LAYER_COLORS.gold} fillOpacity={1}
+            isAnimationActive={true} animationDuration={800} animationBegin={100} />
+
+          {/* Layer 3: Blue — Hardware Feedback */}
+          <Radar name="Hardware Feedback" dataKey="blue"
+            stroke={LAYER_COLORS.blue} strokeWidth={1} strokeOpacity={0.6}
+            fill={LAYER_COLORS.blue} fillOpacity={1}
+            isAnimationActive={true} animationDuration={800} animationBegin={200} />
+
+          {/* Layer 2: Orange — Aangeleerde Strategie */}
+          <Radar name="Aangeleerde Strategie" dataKey="orange"
+            stroke={LAYER_COLORS.orange} strokeWidth={1} strokeOpacity={0.6}
+            fill={LAYER_COLORS.orange} fillOpacity={1}
+            isAnimationActive={true} animationDuration={800} animationBegin={300} />
+
+          {/* Layer 1: Green — Biologische Kern (innermost, drawn last = on top) */}
+          <Radar name="Biologische Kern" dataKey="green"
+            stroke={LAYER_COLORS.green} strokeWidth={2}
+            fill={LAYER_COLORS.green} fillOpacity={1}
+            isAnimationActive={true} animationDuration={800} animationBegin={400} />
+
           <Tooltip content={<CustomTooltip />} />
           <Legend
+            payload={legendPayload}
             wrapperStyle={{
               fontFamily: "'Rajdhani', sans-serif",
-              fontSize: '0.75rem',
-              letterSpacing: '0.1em',
+              fontSize: '0.7rem',
+              letterSpacing: '0.05em',
             }}
-            formatter={(value) => (
-              <span style={{ color: value === 'Nature' ? '#a855f7' : '#f97316' }}>{value}</span>
-            )}
           />
         </RadarChart>
       </ResponsiveContainer>

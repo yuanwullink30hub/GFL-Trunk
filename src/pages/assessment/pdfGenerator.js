@@ -527,7 +527,6 @@ function generatePDFContent(result) {
     ${result.supportArchetype ? `
     <div style="margin-top:3mm;padding:3mm;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:4px;">
       <p style="color:#c084fc;font-size:9pt;margin:0;">De Vermenigvuldiging &mdash; Support: <strong>${esc(result.supportArchetype)}</strong></p>
-      ${result.hasHarmonyBonus ? '<p style="color:#34d399;font-size:8pt;margin:2mm 0 0;">&starf; Harmony Bonus toegepast</p>' : ''}
     </div>` : ''}
     <div class="shadow-box">
       <strong>Schaduw: </strong>${esc(result.shadowArchetype || archetypeInfo?.shadow || '')}

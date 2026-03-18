@@ -1,43 +1,41 @@
 /**
  * Scoring Algorithm — Master Index (Neuraal Schakelbord)
  *
- * Triple Network Model Geometry — Tiered Scoring Engine
+ * Triple Network Model Geometry — Per-Pick Geometric Bleed Engine
  *
  * Contains the scoring logic that converts raw user answers into:
- * 1. Per-archetype scores with line-based distribution (Green, Yellow, Red, Purple)
- * 2. Beheersings Bonus (+33 pts to Main if Green Line pair)
- * 2b. Harmony Bonus (+69 pts to Main if Purple Line / 180° shadow)
- * 3. Radar chart data (12 archetype anchors, 0-369 scale)
- * 4. Subgroup dynamics (6 archetype group polarity pairs)
- * 5. Primary & secondary archetype determination
- * 6. Extended Archetype name (72-outcome matrix)
- * 7. Nature vs Culture/Force dual-tracking (Advanced Ontology)
- * 8. Polarization Index & Authenticity Index (Advanced Metrics)
+ * 1. Per-archetype scores via Geometric Bleed (Core + Green + Blue + Purple + Yellow)
+ * 2. Radar chart data (12 archetype anchors)
+ * 3. Subgroup dynamics (6 archetype group polarity pairs)
+ * 4. Primary & secondary archetype determination
+ * 5. Extended Archetype name (72-outcome matrix)
+ * 6. Nature vs Culture/Force dual-tracking (Meester Ontology)
+ * 7. Polarization Index & Authenticity Index (Meester Metrics)
  *
  * Line Connections (from 12-point Neuro-Archetypal Wheel):
  *   Green Line:  Hardware Anker (group partner — same biological substrate)
- *   Blue Line:   Symbiotische Brug (horizontal axis — positions summing to 13)
+ *   Blue Line:   Feedback Brug (same partner as Green — activation signal)
  *   Yellow A/B:  Same-cluster archetypes at distance 4 (cognitive network synergy)
- *   Red Line:    Neurale Kortsluiting (vertical axis — biological hardware conflict)
- *   Purple Line: 180° shadow (position + 6, neurological tension)
+ *   Red Line:    Neurale Kortsluiting (cross-network conflict, diagnostic only)
+ *   Purple Line: 180° shadow (position + 6, passive shadow integration)
  *
- * 3 Scoring Tiers:
- *   Level 1 (Beginner):     10 pts/click — Nature: +5 Core, +3 Green, +2 Purple(friction)
- *                                           Culture: +3 Core, +3 Yellow A, +3 Yellow B, +1 Red(friction)
- *   Level 2 (Intermediate): 10 pts/click — Nature: +7 Core, +3 Green
- *                                           Culture: +4 Core, +3 Yellow A, +3 Yellow B
- *   Level 3 (Advanced):     12/11 pts    — Nature: +7 Core, +3 Green, +1 Purple(shadow), +1 Red(blindspot)
- *                                           Culture: +5 Core, +3 Yellow A, +3 Yellow B
+ * Per-Pick Geometric Bleed (36 vragen × 2 picks, per-slot N/C routing):
+ *   1st Nature:  +9 Core, +3 Green, +2 Blue, +1 Purple  = 15 pts
+ *   1st Culture: +7 Core, +1 Blue, +2 Yellow ×2          = 12 pts
+ *   2nd Nature:  +6 Core, +1 Green                       =  7 pts
+ *   2nd Culture: +4 Core, +1 Yellow ×2                   =  6 pts
  *
- * Advanced Dual-Tracking (Nature vs Culture/Force):
- *   Each point is routed to a Nature or CultureForce sub-score per archetype
- *   based on the Alpha/Beta state toggle and two fixed ID clusters.
+ * Nature/Culture Dual-Tracking:
+ *   Per-SLOT routing via 6 numbered rotation keys and Standard/Spiegel mode per layer.
  *   Tie-breaks are resolved by highest Nature sub-score (biological essence wins).
  *
- * Beheersings Bonus: +33 to Main if Main & Support are Green Line pair (Neurale Snelweg)
- * Harmony Bonus:     +69 to Main if Main & Support are 180° shadow opposites (Purple Line)
- * Total max: Beginner 600, Intermediate 600, Advanced 720 (excl. bonuses)
+ * Score Ceilings: Core max 540, Green max 144, Blue max 108, Purple max 36, Yellow max 216.
+ * Red: NO points — purely diagnostic (AI reads from radar chart).
  */
+
+import {
+  ROTATION_KEYS, getKeyForQuestion, isNatureRouting, isNatureSlot
+} from '../../../pages/assessment/assessmentData';
 
 /**
  * The 12 radar traits displayed on the result chart.
@@ -269,25 +267,45 @@ export const ARCHETYPE_NUMBERS = {
   ARTIST: 9, MAGICIAN: 10, HERO: 11, RULER: 12,
 };
 
+// ═══════════════════════════════════════════════════════════════════════
+// LINE CONNECTION MAPS — Triple Network Model Geometry
+// ═══════════════════════════════════════════════════════════════════════
+
 /**
- * Blue Line pairs — Symbiotische Brug (horizontal axis).
- * Feedback circuits that complement each other — positions sum to 13.
- * Triggers +33 Beheersings Bonus when Main & Support form a Blue Line pair.
+ * GREEN LINE: Hardware Anker (group partner — same biological substrate).
+ * The 6 Groene Bogen / Het Moederbord.
+ * Green Bleed: Nature picks echo to same-group partner (+3 for 1st, +1 for 2nd).
  *
- * Ruler(12)    ↔ Judge(1)
- * Lover(2)     ↔ Hero(11)
- * Caregiver(3) ↔ Magician(10)
- * Innocent(4)  ↔ Artist(9)
- * Explorer(5)  ↔ Sage(8)
- * Outlaw(6)    ↔ Trickster(7)
+ * G1 (CEN):      Ruler(12)    ↔ Judge(1)
+ * G2 (Limbisch):  Lover(2)     ↔ Caregiver(3)
+ * G3 (Seeker):    Innocent(4)  ↔ Explorer(5)
+ * G4 (Salience):  Outlaw(6)    ↔ Trickster(7)
+ * G5 (Abstract):  Sage(8)      ↔ Artist(9)
+ * G6 (Agency):    Magician(10) ↔ Hero(11)
+ */
+export const GREEN_LINE = {
+  JUDGE: 'RULER',       RULER: 'JUDGE',        // G1: CEN
+  LOVER: 'CAREGIVER',   CAREGIVER: 'LOVER',    // G2: Limbisch
+  INNOCENT: 'EXPLORER', EXPLORER: 'INNOCENT',  // G3: Seeker
+  OUTLAW: 'TRICKSTER',  TRICKSTER: 'OUTLAW',   // G4: Salience
+  SAGE: 'ARTIST',       ARTIST: 'SAGE',        // G5: Abstract
+  MAGICIAN: 'HERO',     HERO: 'MAGICIAN',      // G6: Agency
+};
+
+/**
+ * BLUE LINE: Feedback Brug — same partner as GREEN (shared biological substrate).
+ * Blue Bleed: 1st pick echoes to same-group partner (+2 Nature, +1 Culture).
+ *
+ * B1 (CEN):      Ruler(12)    ↔ Judge(1)
+ * B2 (Limbisch):  Lover(2)     ↔ Caregiver(3)
+ * B3 (Seeker):    Innocent(4)  ↔ Explorer(5)
+ * B4 (Salience):  Outlaw(6)    ↔ Trickster(7)
+ * B5 (Abstract):  Sage(8)      ↔ Artist(9)
+ * B6 (Agency):    Magician(10) ↔ Hero(11)
  */
 export const BLUE_LINE = {
-  RULER: 'JUDGE',       JUDGE: 'RULER',        // 12 ↔ 1
-  LOVER: 'HERO',        HERO: 'LOVER',         // 2 ↔ 11
-  CAREGIVER: 'MAGICIAN', MAGICIAN: 'CAREGIVER', // 3 ↔ 10
-  INNOCENT: 'ARTIST',   ARTIST: 'INNOCENT',    // 4 ↔ 9
-  EXPLORER: 'SAGE',     SAGE: 'EXPLORER',      // 5 ↔ 8
-  OUTLAW: 'TRICKSTER',  TRICKSTER: 'OUTLAW',   // 6 ↔ 7
+  // Blauw = identiek aan Groen (hyper-activatie van zelfde bio-groep)
+  ...GREEN_LINE,
 };
 
 // Legacy alias
@@ -324,31 +342,6 @@ export const ARCHETYPE_TO_GROUP = {
   MAGICIAN: 'AGENCY', HERO: 'AGENCY',
 };
 
-// ═══════════════════════════════════════════════════════════════════════
-// LINE CONNECTION MAPS — Triple Network Model Geometry
-// ═══════════════════════════════════════════════════════════════════════
-
-/**
- * GREEN LINE: Hardware Anker (group partner — same biological substrate).
- * The 6 Groene Bogen / Het Moederbord.
- * Nature +3 distribution flows to this partner.
- *
- * G1 (CEN):      Ruler(12)    ↔ Judge(1)
- * G2 (Limbisch):  Lover(2)     ↔ Caregiver(3)
- * G3 (Seeker):    Innocent(4)  ↔ Explorer(5)
- * G4 (Salience):  Outlaw(6)    ↔ Trickster(7)
- * G5 (Abstract):  Sage(8)      ↔ Artist(9)
- * G6 (Agency):    Magician(10) ↔ Hero(11)
- */
-export const GREEN_LINE = {
-  JUDGE: 'RULER',       RULER: 'JUDGE',        // G1: CEN
-  LOVER: 'CAREGIVER',   CAREGIVER: 'LOVER',    // G2: Limbisch
-  INNOCENT: 'EXPLORER', EXPLORER: 'INNOCENT',  // G3: Seeker
-  OUTLAW: 'TRICKSTER',  TRICKSTER: 'OUTLAW',   // G4: Salience
-  SAGE: 'ARTIST',       ARTIST: 'SAGE',        // G5: Abstract
-  MAGICIAN: 'HERO',     HERO: 'MAGICIAN',      // G6: Agency
-};
-
 /**
  * YELLOW LINES A & B: Same-cluster archetypes at distance 4 on the wheel.
  * Cognitive network synergy — shared meta-network (Cluster 1 or 2).
@@ -372,16 +365,17 @@ export const YELLOW_LINES = {
 };
 
 /**
- * RED LINE: Neurale Kortsluiting (vertical axis — biological hardware conflict).
- * Connects archetypes whose biological networks clash when activated together.
+ * RED LINE: Neurale Kortsluiting — Frictie counter (+1).
+ * Cross-network conflict pairs: same-half opposites on wheel.
+ * 1↔6, 12↔7, 2↔9, 3↔8, 4↔11, 5↔10
  */
 export const RED_LINE = {
-  RULER: 'TRICKSTER',    TRICKSTER: 'RULER',      // 12 ↔ 7
   JUDGE: 'OUTLAW',       OUTLAW: 'JUDGE',         // 1 ↔ 6
-  LOVER: 'EXPLORER',     EXPLORER: 'LOVER',       // 2 ↔ 5
-  CAREGIVER: 'INNOCENT', INNOCENT: 'CAREGIVER',   // 3 ↔ 4
-  HERO: 'SAGE',          SAGE: 'HERO',            // 11 ↔ 8
-  ARTIST: 'MAGICIAN',    MAGICIAN: 'ARTIST',      // 9 ↔ 10
+  RULER: 'TRICKSTER',    TRICKSTER: 'RULER',      // 12 ↔ 7
+  LOVER: 'ARTIST',       ARTIST: 'LOVER',         // 2 ↔ 9
+  CAREGIVER: 'SAGE',     SAGE: 'CAREGIVER',       // 3 ↔ 8
+  INNOCENT: 'HERO',      HERO: 'INNOCENT',        // 4 ↔ 11
+  EXPLORER: 'MAGICIAN',  MAGICIAN: 'EXPLORER',    // 5 ↔ 10
 };
 
 /**
@@ -517,18 +511,14 @@ export function isComplementaryPair(key1, key2) {
 // ═══════════════════════════════════════════════════════════════════════
 
 /**
- * Ontologie Routing Clusters (fixed ID sets).
- * Cluster 1: IDs [1, 4, 8, 12, 5, 9] = Judge, Innocent, Sage, Ruler, Explorer, Artist
- * Cluster 2: IDs [2, 6, 10, 3, 7, 11] = Lover, Outlaw, Magician, Caregiver, Trickster, Hero
+ * Ontologie Routing — 6-Key Rotation System.
+ *
+ * Uses the 6 rotation keys (A-F) from assessmentData.js to determine
+ * Nature/Culture routing per question.
+ *
+ * Standard mode (layers 0,2,4): Keys A,C,E → Nature; Keys B,D,F → Culture
+ * Spiegel  mode (layers 1,3):   Keys A,C,E → Culture; Keys B,D,F → Nature
  */
-const CLUSTER_1_IDS = new Set([1, 4, 8, 12, 5, 9]);
-// Cluster 2 is the complement of Cluster 1 (checked via !CLUSTER_1_IDS.has())
-
-/**
- * Reverse map: archetype key → wheel position ID.
- */
-const KEY_TO_ID = {};
-Object.entries(ARCHETYPE_NUMBERS).forEach(([key, id]) => { KEY_TO_ID[key] = id; });
 
 /**
  * Neural Focus per group (for AI analysis context).
@@ -543,49 +533,46 @@ export const GROUP_NEURAL_FOCUS = {
 };
 
 /**
- * Determine the Alpha/Beta state toggle for a given question number (1-60).
+ * Determine whether a question routes to Nature or Culture.
+ * Uses the 6-key rotation system: question's key + layer's Standard/Spiegel mode.
  *
- * Keys 1 & 2 (De Grondhouding) → ALPHA: Cluster 1 = Nature, Cluster 2 = Culture
- * Keys 3 & 4 (De Spiegeling)   → BETA:  Cluster 2 = Nature, Cluster 1 = Culture
- *
- * The 4-key cycle repeats every 4 questions (Q1→Key1, Q2→Key2, Q3→Key3, Q4→Key4, Q5→Key1, ...).
- * Each complete 4-question cycle is perfectly balanced 50/50 Nature/Culture.
- *
- * @param {number} questionNum - 1-based question number (1-60)
+ * @param {number} questionNum - 1-based question number
+ * @returns {'NATURE'|'CULTURE'}
+ */
+export function getQuestionBucket(questionNum) {
+  return isNatureRouting(questionNum) ? 'NATURE' : 'CULTURE';
+}
+
+/**
+ * Legacy wrapper — returns 'ALPHA' or 'BETA' for backward compatibility.
+ * ALPHA = Nature-favoring keys in Standard mode.
+ * @param {number} questionNum
  * @returns {'ALPHA'|'BETA'}
  */
 export function getStateToggle(questionNum) {
-  const patternIndex = (questionNum - 1) % 4;
-  // Keys 1&2 (patterns 0&1) → ALPHA, Keys 3&4 (patterns 2&3) → BETA
-  return patternIndex < 2 ? 'ALPHA' : 'BETA';
+  return isNatureRouting(questionNum) ? 'ALPHA' : 'BETA';
 }
 
 /**
- * Determine whether a score goes to Nature or CultureForce bucket.
+ * Determine routing bucket for an answer.
+ * In the new 6-key system, routing is determined by the QUESTION (not the archetype).
+ * Kept for backward compatibility but now delegates to question-based routing.
  *
- * @param {string} archetypeKey - e.g. 'JUDGE'
+ * @param {string} _archetypeKey - ignored in new system
  * @param {'ALPHA'|'BETA'} stateToggle
  * @returns {'NATURE'|'CULTURE'}
  */
-export function getNatureCultureBucket(archetypeKey, stateToggle) {
-  const id = KEY_TO_ID[archetypeKey];
-  if (!id) return 'NATURE'; // fallback
-  const isCluster1 = CLUSTER_1_IDS.has(id);
-  if (stateToggle === 'ALPHA') {
-    return isCluster1 ? 'NATURE' : 'CULTURE';
-  } else {
-    return isCluster1 ? 'CULTURE' : 'NATURE';
-  }
+export function getNatureCultureBucket(_archetypeKey, stateToggle) {
+  return stateToggle === 'ALPHA' ? 'NATURE' : 'CULTURE';
 }
 
 /**
- * Green Line Bonus check (Neurale Snelweg / Hardware Anker).
+ * Green Line check (Neurale Snelweg / Hardware Anker).
  * Returns true if the two archetypes are Green Line partners (same biological group).
- * Triggers +33 Beheersings Bonus when Main & Support share the same neural substrate.
  *
  * @param {string} key1 - archetype key
  * @param {string} key2 - archetype key
- * @returns {boolean} true if they are a Green Line pair (+33 Beheersings Bonus)
+ * @returns {boolean} true if they are a Green Line pair
  */
 export function isHarmonyPair(key1, key2) {
   return GREEN_LINE[key1] === key2;
@@ -606,120 +593,151 @@ export function isShadowPair(key1, key2) {
 }
 
 /**
- * TIERED SCORING ENGINE — Line-based dual-tracking computation.
+ * TIERED SCORING ENGINE v4 — Per-Pick Geometric Bleed (Neurobiological Edition).
  *
- * Processes all 60 answers using the Triple Network Model geometry.
- * Points are distributed across connected archetypes via line connections
- * (Green, Yellow A/B, Red, Purple) based on the selected scoring tier.
+ * Processes 36 questions × 2 picks per question using 6 numbered rotation keys.
  *
- * Produces:
- * - Per-archetype total, nature, and culture scores (with line-based distribution)
- * - Main & Support archetypes (with Nature tie-breaking)
- * - Harmony Bonus application (+69)
- * - Shadow & Blindspot identification
- * - Extended Archetype (72-matrix lookup)
- * - Polarization Index (Main vs Shadow gap)
- * - Authenticity Index (Nature ratio)
- * - Individuation detection (180° opposition between Main & Support)
+ * N/C routing is PER-SLOT (not per-question):
+ *   Standard mode: even slots (A=0,C=2,E=4) → Nature; odd slots (B=1,D=3,F=5) → Culture
+ *   Mirror mode:   reversed
  *
- * @param {Array<{questionId: number, answerId: string, archetype: string}>} responses
- *   Each response includes questionId (1-based) and archetype key.
- * @param {'BEGINNER'|'INTERMEDIATE'|'ADVANCED'} [tier='INTERMEDIATE'] - Scoring tier
+ * Per-Pick Geometric Bleed:
+ *   Each pick distributes points to the chosen archetype (Core) AND to
+ *   geometrically connected archetypes (Bleed). No separate counters.
+ *
+ *   1st Nature:  +9 Core, +3 Green, +2 Blue, +1 Purple          = 15 pts
+ *   1st Culture: +7 Core, +1 Blue, +2 Yellow (×2 partners)      = 12 pts
+ *   2nd Nature:  +6 Core, +1 Green                               =  7 pts
+ *   2nd Culture: +4 Core, +1 Yellow (×2 partners)                =  6 pts
+ *
+ *   Green → same-group partner (hardware echo)
+ *   Blue  → same-group partner (feedback signal)
+ *   Purple → 180° shadow partner (passive shadow integration)
+ *   Yellow → both Yellow Triangle partners (cognitive synergy)
+ *   Red   → NO points (purely diagnostic — AI reads from radar chart)
+ *
+ * @param {Array<{questionId: number, archetype: string, pickOrder?: number}>} responses
+ * @param {'BEGINNER'|'INTERMEDIATE'|'ADVANCED'} [tier='ADVANCED']
  * @returns {Object} Full scoring result
  */
-export function computeAdvancedScores(responses, tier = 'INTERMEDIATE') {
-  const tierConfig = SCORING_TIERS[tier] || SCORING_TIERS.INTERMEDIATE;
+export function computeAdvancedScores(responses, tier = 'ADVANCED') {
+  const tierConfig = SCORING_TIERS[tier] || SCORING_TIERS.ADVANCED;
 
-  // Initialize per-archetype tracking
+  // ── 5-Basket Accumulation: per-archetype separated score accumulators ──
   const scores = {};
   ALL_ARCHETYPE_KEYS.forEach(key => {
-    scores[key] = { total: 0, nature: 0, culture: 0 };
+    scores[key] = {
+      nature_core:   0,  // Mandje 1a: Directe Nature picks (+9 of +6)
+      green_hw:      0,  // Mandje 1b: Green hardware bleed ontvangen (+3 of +1)
+      culture_core:  0,  // Mandje 2:  Directe Culture picks (+7 of +4)
+      blue_fb:       0,  // Mandje 3:  Blue feedback bleed ontvangen (+2 of +1)
+      yellow_cog:    0,  // Mandje 4:  Yellow cognitieve bleed ontvangen (+2 of +1)
+      purple_shadow: 0,  // Mandje 5:  Purple schaduw drip ontvangen (+1)
+    };
   });
 
-  let totalNaturePoints = 0;
-  let totalCulturePoints = 0;
+  // Nature pick counter for Authenticity Index (pure pick count, not points)
+  let naturePickCount = 0;
+  let totalPickCount = 0;
 
-  // Helper to add points to an archetype and route to the correct bucket
-  function addPoints(archetypeKey, pts, bucket) {
-    if (!scores[archetypeKey]) return;
-    scores[archetypeKey].total += pts;
-    if (bucket === 'NATURE') {
-      scores[archetypeKey].nature += pts;
-      totalNaturePoints += pts;
-    } else {
-      scores[archetypeKey].culture += pts;
-      totalCulturePoints += pts;
-    }
+  // Reverse-derive slot position (0-5) from question number + archetype
+  function getSlotPos(questionNum, archetype) {
+    const key = getKeyForQuestion(questionNum);
+    const slots = ROTATION_KEYS[key];
+    return slots ? slots.indexOf(archetype) : 0;
   }
 
-  // Process each response
+  // Group responses by questionId
+  const questionResponses = {};
   if (responses && responses.length > 0) {
     for (const response of responses) {
-      const questionNum = typeof response.questionId === 'number'
+      const qId = typeof response.questionId === 'number'
         ? response.questionId
         : parseInt(String(response.questionId), 10);
-
-      if (!questionNum || questionNum < 1 || questionNum > 60) continue;
-
-      const archetype = response.archetype;
-      if (!archetype || !scores[archetype]) continue;
-
-      const stateToggle = getStateToggle(questionNum);
-      const bucket = getNatureCultureBucket(archetype, stateToggle);
-
-      // ── Line-based point distribution per tier ──
-      if (bucket === 'NATURE') {
-        // Nature Pick → DNA-Meter (Hardware/Essentie/Flow)
-        const cfg = tierConfig.nature;
-
-        // Core points to the chosen archetype
-        addPoints(archetype, cfg.core, 'NATURE');
-
-        // Green Line: Hardware Anker (+3 Nature overflow to group partner)
-        const greenPartner = GREEN_LINE[archetype];
-        if (greenPartner && cfg.green) {
-          addPoints(greenPartner, cfg.green, 'NATURE');
-        }
-
-        // Purple Line: 180° shadow (friction or shadow integration)
-        const purplePartner = PURPLE_LINE[archetype];
-        if (purplePartner && cfg.purple) {
-          // Beginner: +2 (friction — oer-reflex suppresses shadow)
-          // Advanced: +1 (shadow integration / Vonk van Individuatie)
-          addPoints(purplePartner, cfg.purple, 'NATURE');
-        }
-
-        // Red Line: blindspot (Advanced Nature only — beheersing van projecties)
-        const redPartnerNature = RED_LINE[archetype];
-        if (redPartnerNature && cfg.red) {
-          addPoints(redPartnerNature, cfg.red, 'NATURE');
-        }
-      } else {
-        // Culture/Force Pick → Pantser-Meter (Software/Aangeleerd/Dwang)
-        const cfg = tierConfig.culture;
-
-        // Core points to the chosen archetype
-        addPoints(archetype, cfg.core, 'CULTURE');
-
-        // Yellow Line A: cognitive synergy partner 1
-        const yellowPartners = YELLOW_LINES[archetype];
-        if (yellowPartners && cfg.yellowA) {
-          addPoints(yellowPartners[0], cfg.yellowA, 'CULTURE');
-        }
-
-        // Yellow Line B: cognitive synergy partner 2
-        if (yellowPartners && cfg.yellowB) {
-          addPoints(yellowPartners[1], cfg.yellowB, 'CULTURE');
-        }
-
-        // Red Line: neural short-circuit / friction (Beginner Culture)
-        const redPartner = RED_LINE[archetype];
-        if (redPartner && cfg.red) {
-          addPoints(redPartner, cfg.red, 'CULTURE');
-        }
-      }
+      if (!qId || qId < 1) continue;
+      if (!questionResponses[qId]) questionResponses[qId] = [];
+      questionResponses[qId].push(response);
     }
   }
+
+  // Process each question's picks with 5-Basket Geometric Bleed routing
+  Object.entries(questionResponses).forEach(([qIdStr, picks]) => {
+    const questionNum = parseInt(qIdStr, 10);
+
+    // Sort by pickOrder (0=1st, 1=2nd)
+    picks.sort((a, b) => (a.pickOrder || 0) - (b.pickOrder || 0));
+
+    picks.forEach((response, pickIdx) => {
+      const archetype = response.archetype;
+      if (!archetype || !scores[archetype]) return;
+
+      const isFirstPick = pickIdx === 0;
+      const slotPos = getSlotPos(questionNum, archetype);
+      const isNature = isNatureSlot(questionNum, slotPos);
+
+      // Count picks for Authenticity Index
+      totalPickCount++;
+      if (isNature) naturePickCount++;
+
+      if (isNature) {
+        // ══════════════════════════════════════════════════
+        // NATURE PICK — routes to nature_core, green_hw, blue_fb, purple_shadow
+        // ══════════════════════════════════════════════════
+
+        // Core Nature → nature_core
+        scores[archetype].nature_core += isFirstPick ? 9 : 6;
+
+        // Green Hardware → green_hw (same-group partner)
+        const greenPartner = GREEN_LINE[archetype];
+        if (greenPartner && scores[greenPartner]) {
+          scores[greenPartner].green_hw += isFirstPick ? 3 : 1;
+        }
+
+        // Blue Feedback → blue_fb (1st pick only → same-group partner)
+        if (isFirstPick && greenPartner && scores[greenPartner]) {
+          scores[greenPartner].blue_fb += 2;
+        }
+
+        // Purple Shadow → purple_shadow (1st pick only → 180° shadow)
+        if (isFirstPick) {
+          const shadowPartner = PURPLE_LINE[archetype];
+          if (shadowPartner && scores[shadowPartner]) {
+            scores[shadowPartner].purple_shadow += 1;
+          }
+        }
+      } else {
+        // ══════════════════════════════════════════════════
+        // CULTURE PICK — routes to culture_core, blue_fb, yellow_cog
+        // ══════════════════════════════════════════════════
+
+        // Core Culture → culture_core
+        scores[archetype].culture_core += isFirstPick ? 7 : 4;
+
+        // Blue Feedback → blue_fb (1st pick only → same-group partner)
+        if (isFirstPick) {
+          const bluePartner = GREEN_LINE[archetype];
+          if (bluePartner && scores[bluePartner]) {
+            scores[bluePartner].blue_fb += 1;
+          }
+        }
+
+        // Yellow Cognitive → yellow_cog (both triangle partners)
+        const yellowPartners = YELLOW_LINES[archetype];
+        if (yellowPartners) {
+          const yellowPts = isFirstPick ? 2 : 1;
+          for (const yp of yellowPartners) {
+            if (scores[yp]) scores[yp].yellow_cog += yellowPts;
+          }
+        }
+      }
+    });
+  });
+
+  // ── Compute totals from 5 baskets ──
+  ALL_ARCHETYPE_KEYS.forEach(key => {
+    const s = scores[key];
+    s.total = s.nature_core + s.green_hw + s.culture_core + s.blue_fb + s.yellow_cog + s.purple_shadow;
+  });
 
   // ── Determine Main & Support with Nature tie-breaking ──
   const sorted = ALL_ARCHETYPE_KEYS
@@ -727,25 +745,12 @@ export function computeAdvancedScores(responses, tier = 'INTERMEDIATE') {
     .sort((a, b) => {
       // Primary sort: total score descending
       if (b.total !== a.total) return b.total - a.total;
-      // Tie-break: highest Nature sub-score wins (biological essence leads)
-      return b.nature - a.nature;
+      // Tie-break: highest nature_core wins (biological essence leads)
+      return b.nature_core - a.nature_core;
     });
 
   const mainArchetype = sorted[0]?.key || 'SAGE';
   const supportArchetype = sorted[1]?.key || 'EXPLORER';
-
-  // ── Bonuses ──
-    // +33 Beheersings Bonus: Main & Support connected via Green Line (Neurale Snelweg / same bio group)
-  const hasBeheersingsBonus = isHarmonyPair(mainArchetype, supportArchetype);
-  if (hasBeheersingsBonus) {
-    scores[mainArchetype].total += 33;
-  }
-
-  // +69 Harmony Bonus: Main & Support connected via Purple Line (180° shadow)
-  const hasShadowHarmony = isShadowPair(mainArchetype, supportArchetype);
-  if (hasShadowHarmony) {
-    scores[mainArchetype].total += 69;
-  }
 
   // ── Shadow & Blindspot ──
   const shadowArchetype = SHADOW_PAIRS[mainArchetype] || null;
@@ -763,42 +768,71 @@ export function computeAdvancedScores(responses, tier = 'INTERMEDIATE') {
   const mainScore = scores[mainArchetype]?.total || 0;
   const shadowScore = shadowArchetype ? (scores[shadowArchetype]?.total || 0) : 0;
   const polarizationIndex = mainScore - shadowScore;
+  // Polarization as percentage of Main score for level thresholds
+  const polarizationPct = mainScore > 0 ? Math.round((polarizationIndex / mainScore) * 100) : 0;
   let polarizationLevel;
-  if (hasBeheersingsBonus || hasShadowHarmony) {
-    polarizationLevel = 'BONUS_ACTIVE'; // Bonus overrides polarization analysis
-  } else if (polarizationIndex > 222) {
-    polarizationLevel = 'HIGH_POLARIZATION'; // Shadow suppression — focus on blinde vlek
-  } else if (polarizationIndex < 123) {
-    polarizationLevel = 'HIGH_INDIVIDUATION'; // Paradox mastery
+  if (polarizationPct > 60) {
+    polarizationLevel = 'HIGH_POLARIZATION';
+  } else if (polarizationPct < 30) {
+    polarizationLevel = 'HIGH_INDIVIDUATION';
   } else {
     polarizationLevel = 'MODERATE';
   }
 
-  // ── Authenticity Index (Nature ratio over total allocated score) ──
-  const totalPointsAwarded = totalNaturePoints + totalCulturePoints;
-  const authenticityIndex = totalPointsAwarded > 0
-    ? Math.round((totalNaturePoints / totalPointsAwarded) * 100)
+  // ── Authenticity Index (Nature pick count / total picks — pure pick counter) ──
+  const authenticityIndex = totalPickCount > 0
+    ? Math.round((naturePickCount / totalPickCount) * 100)
     : 50;
+  // Also compute total Nature/Culture points for backward compat
+  let totalNaturePoints = 0;
+  let totalCulturePoints = 0;
+  ALL_ARCHETYPE_KEYS.forEach(key => {
+    const s = scores[key];
+    totalNaturePoints += s.nature_core + s.green_hw + s.purple_shadow;
+    totalCulturePoints += s.culture_core + s.blue_fb + s.yellow_cog;
+  });
+  const totalPointsAwarded = totalNaturePoints + totalCulturePoints;
   let authenticityLevel;
   if (authenticityIndex > 75) {
-    authenticityLevel = 'NATURE_DOMINANT'; // Biological flow navigation
+    authenticityLevel = 'NATURE_DOMINANT';
   } else if (authenticityIndex < 35) {
-    authenticityLevel = 'CULTURE_DOMINANT'; // Survival/adaptation mode (>65% Culture)
+    authenticityLevel = 'CULTURE_DOMINANT';
   } else {
     authenticityLevel = 'BALANCED';
   }
 
-  // ── Build radar data (post bonus, wheel order 1→12) ──
-  // fullMark = baseMax + 69 (max possible bonus)
-  const radarFullMark = (tierConfig.baseMax || 720) + 69;
+  // ── Relationship flags (for UI & AI — detected from bleed accumulation) ──
+  const hasShadowHarmony = isShadowPair(mainArchetype, supportArchetype);
+  const hasGreenHarmony = isHarmonyPair(mainArchetype, supportArchetype);
+
+  // ── Build radar data (wheel order 1→12) — 5-layer stacked bands ──
   const radarData = ARCHETYPE_RADAR_LABELS.map(label => {
     const key = label.toUpperCase();
+    const s = scores[key] || {};
+    // Cumulative band boundaries (painter's algorithm: draw purple first, green last)
+    const band1 = (s.nature_core || 0) + (s.green_hw || 0);          // Green band outer
+    const band2 = band1 + (s.culture_core || 0);                      // Orange band outer
+    const band3 = band2 + (s.blue_fb || 0);                           // Blue band outer
+    const band4 = band3 + (s.yellow_cog || 0);                        // Gold band outer
+    const band5 = band4 + (s.purple_shadow || 0);                     // Purple band outer = total
     return {
       subject: label,
-      A: scores[key]?.total || 0,
-      nature: scores[key]?.nature || 0,
-      culture: scores[key]?.culture || 0,
-      fullMark: radarFullMark,
+      // Cumulative band boundaries for stacked radar
+      green: band1,
+      orange: band2,
+      blue: band3,
+      gold: band4,
+      purple: band5,
+      // Raw 5-basket values (for tooltip)
+      nature_core: s.nature_core || 0,
+      green_hw: s.green_hw || 0,
+      culture_core: s.culture_core || 0,
+      blue_fb: s.blue_fb || 0,
+      yellow_cog: s.yellow_cog || 0,
+      purple_shadow: s.purple_shadow || 0,
+      // Backward compat
+      A: band5,
+      fullMark: 500,
     };
   });
 
@@ -815,25 +849,41 @@ export function computeAdvancedScores(responses, tier = 'INTERMEDIATE') {
       rightScore: rightTotal,
       leftPercent: Math.round((leftTotal / total) * 100),
       rightPercent: Math.round((rightTotal / total) * 100),
-      leftNature: scores[leftKey]?.nature || 0,
-      leftCulture: scores[leftKey]?.culture || 0,
-      rightNature: scores[rightKey]?.nature || 0,
-      rightCulture: scores[rightKey]?.culture || 0,
+      leftNature: (scores[leftKey]?.nature_core || 0) + (scores[leftKey]?.green_hw || 0),
+      leftCulture: scores[leftKey]?.culture_core || 0,
+      rightNature: (scores[rightKey]?.nature_core || 0) + (scores[rightKey]?.green_hw || 0),
+      rightCulture: scores[rightKey]?.culture_core || 0,
     };
   });
 
-  // ── Nature ratio per archetype (for AI analysis) ──
-  const archetypeDetails = ALL_ARCHETYPE_KEYS.map(key => ({
-    key,
-    position: ARCHETYPE_NUMBERS[key],
-    group: ARCHETYPE_TO_GROUP[key],
-    total: scores[key].total,
-    nature: scores[key].nature,
-    culture: scores[key].culture,
-    natureRatio: scores[key].total > 0
-      ? Math.round((scores[key].nature / scores[key].total) * 100)
-      : 0,
-  }));
+  // ── Per-archetype detail (for AI analysis — 5-basket decomposition) ──
+  const archetypeDetails = ALL_ARCHETYPE_KEYS.map(key => {
+    const s = scores[key];
+    return {
+      key,
+      position: ARCHETYPE_NUMBERS[key],
+      group: ARCHETYPE_TO_GROUP[key],
+      total: s.total,
+      // 5-Basket decomposition
+      nature_core: s.nature_core,
+      green_hw: s.green_hw,
+      culture_core: s.culture_core,
+      blue_fb: s.blue_fb,
+      yellow_cog: s.yellow_cog,
+      purple_shadow: s.purple_shadow,
+      // Backward compat (derived from baskets)
+      nature: s.nature_core + s.green_hw,
+      culture: s.culture_core,
+      core: s.nature_core + s.culture_core,
+      greenBleed: s.green_hw,
+      blueBleed: s.blue_fb,
+      purpleBleed: s.purple_shadow,
+      yellowBleed: s.yellow_cog,
+      natureRatio: s.total > 0
+        ? Math.round(((s.nature_core + s.green_hw) / s.total) * 100)
+        : 0,
+    };
+  });
 
   return {
     // Core result
@@ -849,20 +899,24 @@ export function computeAdvancedScores(responses, tier = 'INTERMEDIATE') {
     shadowScore,
     isIndividuated,
 
-    // Bonuses
-    hasBeheersingsBonus,          // +33 Blue Line (Symbiotische Brug)
-    beheersingsBonus: hasBeheersingsBonus ? 33 : 0,
-    hasShadowHarmony,             // +69 Purple Line (180° shadow integration)
-    harmonyBonus: hasShadowHarmony ? 69 : 0,
-    // Legacy compatibility fields
-    hasHarmonyBonus: hasBeheersingsBonus || hasShadowHarmony,
-    harmonyBonusApplied: (hasBeheersingsBonus ? 33 : 0) + (hasShadowHarmony ? 69 : 0),
+    // Relationship flags (backward-compatible keys)
+    hasShadowHarmony,
+    hasHarmonyBonus: hasShadowHarmony || hasGreenHarmony,
+    harmonyBonusApplied: 0, // No separate bonuses in Geometric Bleed — all in score array
+    hasBeheersingsBonus: hasGreenHarmony,
+    beheersingsBonus: 0,
+    harmonyBonus: 0,
+    harmonyCounter: 0,
+    frictieCounter: 0,
 
-    // Advanced metrics
+    // Meester metrics
     polarizationIndex,
+    polarizationPct,
     polarizationLevel,
     authenticityIndex,
     authenticityLevel,
+    naturePickCount,
+    totalPickCount,
     totalNaturePoints,
     totalCulturePoints,
     totalPointsAwarded,
@@ -877,9 +931,9 @@ export function computeAdvancedScores(responses, tier = 'INTERMEDIATE') {
     radarData,
     subgroupDynamics,
 
-    // Max possible (excl. bonuses)
+    // Max possible
     baseMaxScore: tierConfig.baseMax || 720,
-    totalMaxScore: (tierConfig.baseMax || 720) + 69, // with max bonus (Purple Line)
+    totalMaxScore: tierConfig.baseMax || 720,
 
     // OCEAN scores (0–100), mathematically derived from archetype weights
     oceanScores: computeOceanScores(scores),

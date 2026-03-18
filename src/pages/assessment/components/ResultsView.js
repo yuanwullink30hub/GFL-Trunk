@@ -69,14 +69,8 @@ function ResultsView({ result, onReset, aiError }) {
                 <p className="text-xs text-slate-400">
                   Groep: {supportGroup} — {GROUP_NEURAL_FOCUS?.[supportGroup] || ''}
                 </p>
-                {result.hasBeheersingsBonus && (
-                  <p className="text-xs text-blue-400 mt-2">🧠 Beheersings Bonus +33 — Symbiotische Brug: feedback-circuits die elkaar versterken (Blauwe Lijn)</p>
-                )}
-                {result.hasShadowHarmony && (
-                  <p className="text-xs text-purple-400 mt-2">⚡ Harmony Bonus +69 — Schaduw Integratie: de ultieme spanning geïntegreerd zonder te breken (Paarse Lijn)</p>
-                )}
-                {!result.hasBeheersingsBonus && !result.hasShadowHarmony && result.hasHarmonyBonus && (
-                  <p className="text-xs text-emerald-400 mt-2">✨ Bonus +{result.harmonyBonusApplied}</p>
+                {result.supportArchetype && result.overallArchetype && (
+                  <p className="text-xs text-slate-400 mt-2">Geometrische Bleed: scores zijn opgebouwd uit Core + Green/Blue/Purple/Yellow bleed</p>
                 )}
               </div>
             )}

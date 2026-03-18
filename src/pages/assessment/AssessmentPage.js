@@ -89,9 +89,9 @@ function AssessmentPage() {
         shadowArchetype: localResult.shadowArchetype,
         blindspotArchetype: localResult.blindspotArchetype,
         isIndividuated: localResult.isIndividuated,
-        // Harmony
-        hasHarmonyBonus: localResult.hasHarmonyBonus,
-        harmonyBonusApplied: localResult.harmonyBonusApplied,
+        // Harmony (Geometric Bleed — no separate counters)
+        hasHarmonyBonus: false,
+        harmonyBonusApplied: 0,
         // OCEAN scores (0-100)
         oceanScores: localResult.oceanScores,
         // Advanced metrics (Ontology)

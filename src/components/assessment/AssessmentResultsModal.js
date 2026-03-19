@@ -9,7 +9,6 @@ import {
   SUBGROUP_POLARITIES,
   getAnalysisTemplate,
   // Archetype-based scoring
-  ARCHETYPE_RADAR_LABELS,
   ALL_ARCHETYPE_KEYS,
   SHADOW_PAIRS,
   ARCHETYPE_TO_GROUP,
@@ -2754,10 +2753,13 @@ function computeResultFromAnswers(layerAnswers) {
     const rightPts = rightRaw * 5;
     
     // Check if this group's pair is complementary or shadow
+    // eslint-disable-next-line no-unused-vars
     const pairIsComplementary = isComplementaryPair(leftKey, rightKey);
+    // eslint-disable-next-line no-unused-vars
     const pairIsShadow = SHADOW_PAIRS[leftKey] === rightKey;
     // Bonus fields kept for backward compatibility but set to 0 (Geometric Bleed has no counters)
     const pairKeys = [leftKey, rightKey];
+    // eslint-disable-next-line no-unused-vars
     const isActivePair = pairKeys.includes(mainKey) && pairKeys.includes(supportKey);
     const harmonyPts = 0;
     const shadowPts = 0;

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Extended Archetype OCEAN Profiles â€” 72 Combinations
  *
  * Each core archetype (12) Ã— each support group (6) = 72 extended archetypes.

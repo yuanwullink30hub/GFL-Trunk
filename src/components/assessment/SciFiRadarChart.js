@@ -23,6 +23,7 @@ const LAYER_COLORS = {
   purple: '#4A148C',   // Laag 5: Schaduw Echo (purple_shadow)
 };
 
+// eslint-disable-next-line no-unused-vars
 const LAYER_META = [
   { key: 'purple', label: 'Schaduw Echo',        color: LAYER_COLORS.purple, field: 'purple_shadow' },
   { key: 'gold',   label: 'Cognitieve Lens',     color: LAYER_COLORS.gold,   field: 'yellow_cog'    },

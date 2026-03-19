@@ -35,6 +35,7 @@ const ProfileResultCard = () => {
   const imageUrl = getArchetypeImage(mainKey, supportGroup) || main.imageUrl;
   const shadowKey = SHADOW_PAIRS[mainKey];
   const shadow = shadowKey ? ARCHETYPES[shadowKey] : null;
+  // eslint-disable-next-line no-unused-vars
   const blindspotKey = SHADOW_PAIRS[supportKey];
   const harmonyActive = session.harmonyActive;
   const shadowBonusActive = session.shadowBonusActive;

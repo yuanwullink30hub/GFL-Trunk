@@ -21,7 +21,7 @@
  *
  * Per-Pick Geometric Bleed (36 vragen × 2 picks, per-slot N/C routing):
  *   1st Nature:  +9 Core, +3 Green, +2 Blue, +1 Purple  = 15 pts
- *   1st Culture: +7 Core, +1 Blue, +2 Yellow ×2          = 12 pts
+ *   1st Culture: +8 Core, +1 Blue, +2 Yellow ×2          = 13 pts
  *   2nd Nature:  +6 Core, +1 Green                       =  7 pts
  *   2nd Culture: +4 Core, +1 Yellow ×2                   =  6 pts
  *
@@ -606,7 +606,7 @@ export function isShadowPair(key1, key2) {
  *   geometrically connected archetypes (Bleed). No separate counters.
  *
  *   1st Nature:  +9 Core, +3 Green, +2 Blue, +1 Purple          = 15 pts
- *   1st Culture: +7 Core, +1 Blue, +2 Yellow (×2 partners)      = 12 pts
+ *   1st Culture: +8 Core, +1 Blue, +2 Yellow (×2 partners)      = 13 pts
  *   2nd Nature:  +6 Core, +1 Green                               =  7 pts
  *   2nd Culture: +4 Core, +1 Yellow (×2 partners)                =  6 pts
  *
@@ -629,7 +629,7 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
     scores[key] = {
       nature_core:   0,  // Mandje 1a: Directe Nature picks (+9 of +6)
       green_hw:      0,  // Mandje 1b: Green hardware bleed ontvangen (+3 of +1)
-      culture_core:  0,  // Mandje 2:  Directe Culture picks (+7 of +4)
+      culture_core:  0,  // Mandje 2:  Directe Culture picks (+8 of +4)
       blue_fb:       0,  // Mandje 3:  Blue feedback bleed ontvangen (+2 of +1)
       yellow_cog:    0,  // Mandje 4:  Yellow cognitieve bleed ontvangen (+2 of +1)
       purple_shadow: 0,  // Mandje 5:  Purple schaduw drip ontvangen (+1)
@@ -711,7 +711,7 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
         // ══════════════════════════════════════════════════
 
         // Core Culture → culture_core
-        scores[archetype].culture_core += isFirstPick ? 7 : 4;
+        scores[archetype].culture_core += isFirstPick ? 8 : 4;
 
         // Blue Feedback → blue_fb (1st pick only → same-group partner)
         if (isFirstPick) {

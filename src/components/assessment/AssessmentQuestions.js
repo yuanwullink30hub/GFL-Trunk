@@ -7,6 +7,43 @@ function stripMeta(text) {
   return text.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s{2,}/g, ' ').trim();
 }
 
+/** Parse color markers {PURPLE>word} and {ORANGE>word} and convert to JSX spans, after stripping metadata */
+function parseColoredText(text) {
+  if (!text) return '';
+  
+  // First strip metadata
+  const cleanText = stripMeta(text);
+  
+  const parts = [];
+  let lastIndex = 0;
+  const regex = /\{(PURPLE|ORANGE)>(.*?)\}/g;
+  let match;
+  
+  while ((match = regex.exec(cleanText)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(cleanText.substring(lastIndex, match.index));
+    }
+    
+    const color = match[1] === 'PURPLE' ? '#a855f7' : '#f97316';
+    const word = match[2];
+    parts.push(
+      <span key={`${match[1]}-${match.index}`} style={{ color }}>
+        {word}
+      </span>
+    );
+    
+    lastIndex = regex.lastIndex;
+  }
+  
+  // Add remaining text
+  if (lastIndex < cleanText.length) {
+    parts.push(cleanText.substring(lastIndex));
+  }
+  
+  return parts.length === 0 ? cleanText : parts;
+}
+
 /**
  * AssessmentQuestions - Panel showing assessment questions
  * Displays one question at a time with answer options
@@ -209,7 +246,7 @@ const AssessmentQuestions = ({
               
               {/* Answer Text */}
               <span className="text-sm md:text-base leading-relaxed text-slate-200 group-hover:text-white transition-colors">
-                {stripMeta(t(`answers.${answer.id}`) !== `answers.${answer.id}` 
+                {parseColoredText(t(`answers.${answer.id}`) !== `answers.${answer.id}` 
                   ? t(`answers.${answer.id}`) 
                   : answer.text)}
               </span>

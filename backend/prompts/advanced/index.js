@@ -245,7 +245,7 @@ function buildSystemPrompt({
     `3.1 De Bleed Tabel\n` +
     `                 Core   Green  Blue   Purple  Yellow(×2)  Totaal\n` +
     `1e Keuze Nature:  +9     +3     +2     +1      —           15\n` +
-    `1e Keuze Culture: +7     —      +1     —       +2 elk      12\n` +
+    `1e Keuze Culture: +8     —      +1     —       +2 elk      13\n` +
     `2e Keuze Nature:  +6     +1     —      —       —            7\n` +
     `2e Keuze Culture: +4     —      —      —       +1 elk       6\n\n` +
     `Bleed Bestemmingen:\n` +

@@ -186,12 +186,13 @@ export const POLICY_CONTENT = {
         <li style={S.li}>Deelname aan de Betafase is uitsluitend mogelijk na uitdrukkelijke uitnodiging door Garden For Life.</li>
         <li style={S.li}>De Gebruiker dient minimaal 18 jaar oud te zijn.</li>
         <li style={S.li}>Het gebruik van het Platform tijdens de Betafase is kosteloos.</li>
+        <li style={S.li}>De resultaat-PDF bevat een optionele donatie-link via Tikkie (KNAB). Donaties zijn volledig vrijwillig, niet restitueerbaar en verlenen geen aanvullende rechten, toegang of diensten. Het assessment, de resultaten en de PDF worden onvoorwaardelijk en kosteloos aangeboden, ongeacht of er een donatie wordt gedaan.</li>
         <li style={S.li}>Garden For Life behoudt zich het recht voor de toegang van een Gebruiker te beëindigen of te beperken, zonder opgave van reden.</li>
         <li style={S.li}>De Betafase eindigt op 27-09-2026. Na afloop van de Betafase is het Platform openbaar toegankelijk. Betadata wordt beëindigd conform Artikel 6.</li>
       </ol>
 
       <h2 style={S.h2}>Artikel 4 — Aard van het Platform & AI-Gegenereerde Content</h2>
-      <ol style={S.ol} start={10}>
+      <ol style={S.ol} start={11}>
         <li style={S.li}>Het Platform biedt een zelfreflectie-instrument op basis van het Garden For Life Deltawerken Model. Het Platform is uitsluitend bedoeld voor persoonlijke groei en zelfinzicht.</li>
         <li style={S.li}>Het Rapport is geen klinische diagnose, geen psychologisch advies en geen medisch oordeel. Het vervangt geen professionele psychologische, psychiatrische of medische begeleiding.</li>
         <li style={S.li}>De Rapporten worden volledig geautomatiseerd gegenereerd door een AI-model (Claude, ontwikkeld door Anthropic). Garden For Life is verantwoordelijk voor de configuratie van dit model, maar kan niet garanderen dat de gegenereerde inhoud in alle gevallen volledig accuraat of van toepassing is op de individuele situatie van de Gebruiker.</li>
@@ -202,7 +203,7 @@ export const POLICY_CONTENT = {
 
       <h2 style={S.h2}>Artikel 5 — Het Rapport & Éénmalige Download (Liveversie)</h2>
       <p style={S.p}>De volgende bepalingen zijn van toepassing op de liveversie van het Platform na afloop van de Betafase:</p>
-      <ol style={S.ol} start={15}>
+      <ol style={S.ol} start={16}>
         <li style={S.li}>Na voltooiing van de Assessment wordt het Rapport éénmalig beschikbaar gesteld voor download.</li>
         <li style={S.li}>Garden For Life bewaart het volledige Rapport niet na de download of na het verlopen van de downloadtoken.</li>
         <li style={S.li}>De downloadtoken vervalt na de eerste download of bij het verlaten van de applicatie, afhankelijk van wat eerder plaatsvindt.</li>
@@ -214,7 +215,7 @@ export const POLICY_CONTENT = {
       </div>
 
       <h2 style={S.h2}>Artikel 6 — Verwerking van Persoonsgegevens</h2>
-      <ol style={S.ol} start={20}>
+      <ol style={S.ol} start={21}>
         <li style={S.li}>Garden For Life verwerkt persoonsgegevens van de Gebruiker conform de AVG en het geldende Privacybeleid van Garden For Life, te raadplegen via <PolicyLink to="/privacybeleid">gardenforlife.nl/privacybeleid</PolicyLink>.</li>
         <li style={S.li}>De Assessment genereert psychologische profieldata als bedoeld in artikel 9 AVG. De Gebruiker geeft hiervoor uitdrukkelijke toestemming via het toestemmingsscherm voorafgaand aan de Assessment.</li>
         <li style={S.li}>Tijdens de Betafase wordt het volledige Rapport opgeslagen op beveiligde servers in Frankfurt, Duitsland, uitsluitend ten behoeve van betaevaluatie en systeemverbetering.</li>
@@ -226,7 +227,7 @@ export const POLICY_CONTENT = {
       </ol>
 
       <h2 style={S.h2}>Artikel 7 — Intellectueel Eigendom</h2>
-      <ol style={S.ol} start={28}>
+      <ol style={S.ol} start={29}>
         <li style={S.li}>Alle intellectuele eigendomsrechten op het Platform, de assessmentmethodiek, het Garden For Life Deltawerken Model, de archetypensystematiek, de visuele archetypemodellen en de gegenereerde rapportstructuur berusten uitsluitend bij Garden For Life.</li>
         <li style={S.li}>Het gegenereerde Rapport is uitsluitend bestemd voor persoonlijk gebruik van de Gebruiker. Commerciële exploitatie, reproductie of verspreiding van het Rapport of onderdelen daarvan zonder voorafgaande schriftelijke toestemming van Garden For Life is niet toegestaan.</li>
         <li style={S.li}>Voor een volledig overzicht van beschermde werken, toegestaan gebruik en verboden misbruik — waaronder commerciële exploitatie, manipulatief misbruik van resultaten en AI-training — verwijst Garden For Life naar de pagina Gebruiksvoorwaarden & Misbruikbeleid via <PolicyLink to="/gebruiksvoorwaarden-misbruik">gardenforlife.nl/gebruiksvoorwaarden-misbruik</PolicyLink> en de pagina Intellectueel Eigendom via <PolicyLink to="/intellectueel-eigendom">gardenforlife.nl/intellectueel-eigendom</PolicyLink>.</li>
@@ -234,7 +235,7 @@ export const POLICY_CONTENT = {
       </ol>
 
       <h2 style={S.h2}>Artikel 8 — Aansprakelijkheid</h2>
-      <ol style={S.ol} start={32}>
+      <ol style={S.ol} start={33}>
         <li style={S.li}>Garden For Life spant zich in het Platform naar behoren te laten functioneren, maar geeft geen garantie voor ononderbroken of foutloze werking, in het bijzonder tijdens de Betafase.</li>
         <li style={S.li}>Garden For Life is niet aansprakelijk voor schade die voortvloeit uit het gebruik of de interpretatie van het Rapport, waaronder doch niet beperkt tot beslissingen op het gebied van werk, relaties, gezondheid of persoonlijk welzijn.</li>
         <li style={S.li}>Garden For Life is niet aansprakelijk voor indirecte schade, gevolgschade of gederfde winst.</li>
@@ -254,7 +255,7 @@ export const POLICY_CONTENT = {
       <p style={S.p}>Bij overtreding behoudt Garden For Life zich het recht voor de toegang van de Gebruiker onmiddellijk te beëindigen.</p>
 
       <h2 style={S.h2}>Artikel 10 — Beschikbaarheid & Wijzigingen</h2>
-      <ol style={S.ol} start={37}>
+      <ol style={S.ol} start={38}>
         <li style={S.li}>Garden For Life behoudt zich het recht voor het Platform, de assessmentmethodiek of de rapportstructuur op elk moment te wijzigen, tijdelijk buiten gebruik te stellen of te beëindigen, in het bijzonder tijdens de Betafase.</li>
         <li style={S.li}>Garden For Life streeft naar een beschikbaarheid van het Platform van minimaal 96% per maand, maar geeft hierover geen garantie tijdens de Betafase.</li>
         <li style={S.li}>Gepland onderhoud wordt waar mogelijk vooraf gecommuniceerd via e-mail.</li>
@@ -262,7 +263,7 @@ export const POLICY_CONTENT = {
       </ol>
 
       <h2 style={S.h2}>Artikel 11 — Toepasselijk Recht & Geschillen</h2>
-      <ol style={S.ol} start={41}>
+      <ol style={S.ol} start={42}>
         <li style={S.li}>Op deze Algemene Voorwaarden en alle overeenkomsten tussen Garden For Life en de Gebruiker is Nederlands recht van toepassing.</li>
         <li style={S.li}>Geschillen worden in eerste instantie geprobeerd op te lossen via overleg. Indien dit niet slaagt, worden geschillen voorgelegd aan de bevoegde rechter in het arrondissement Zutphen.</li>
         <li style={S.li}>Onverminderd het voorgaande heeft de Gebruiker het recht een klacht in te dienen bij de Autoriteit Persoonsgegevens (AP) via www.autoriteitpersoonsgegevens.nl.</li>
@@ -376,6 +377,7 @@ export const POLICY_CONTENT = {
         </tbody>
       </table>
       <p style={S.p}>Indien de gebruiker een bestand uploadt (bijv. een OCEAN-rapport), wordt de geëxtraheerde tekst van dat bestand eveneens verwerkt door Claude. Als dat bestand persoonlijke informatie bevat, wordt die informatie doorgegeven aan Anthropic. Garden For Life is niet verantwoordelijk voor de persoonsgegevens die de gebruiker opneemt in geüploade bestanden. Gebruikers worden hierop gewezen in het toestemmingsscherm en bij het uploadmoment.</p>
+      <p style={S.p}>De resultaat-PDF bevat een optionele donatie-link via Tikkie (KNAB). Garden For Life ontvangt, verwerkt of bewaart geen betaalgegevens van de Gebruiker in verband met donaties. De volledige transactie verloopt via Tikkie en valt onder het privacybeleid van Tikkie/KNAB (ABN AMRO). Er worden geen persoonsgegevens door Garden For Life gekoppeld aan donaties.</p>
       <h2 style={S.h2}>8. Je Rechten</h2>
       <p style={S.p}>Onder de AVG heb je de volgende rechten:</p>
       <ul style={S.ul}>

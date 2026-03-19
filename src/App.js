@@ -142,6 +142,7 @@ const App = () => {
   const [currentLayerIndex, setCurrentLayerIndex] = useState(0); // 0-4 for 5 layers
   const [layerAnswers, setLayerAnswers] = useState({}); // { layerIndex: { questionId: answerId } }
   const [assessmentScrollEnabled, setAssessmentScrollEnabled] = useState(false); // Controls when user can scroll to next layer
+  const [layerAnimatingRef, setLayerAnimating] = useState(false); // Track if any layer is saving/animating
   const [convergenceProgress, setConvergenceProgress] = useState(0); // 0-1 progress for panels floating back to entity
   const [gatherProgress, setGatherProgress] = useState(0); // 0-1 progress for cards gathering to center stack
   const [staircaseStep, setStaircaseStep] = useState(-1); // -1=waiting, 0=absorb cards into pyramid, 1=fold pyramid up, 2=done
@@ -533,6 +534,10 @@ const App = () => {
     // Don't process scroll when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
     
+    // STRICT: Don't process scroll if any layer panel is animating its save (collapse/move phases)
+    // This prevents race conditions between scroll animation and card save animation
+    if (layerAnimatingRef) return;
+    
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     
@@ -616,7 +621,7 @@ const App = () => {
     setTimeout(() => {
       isScrolling.current = false;
     }, 50);
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection, mobileActiveIndex, assessmentPhase, assessmentScrollEnabled, currentLayerIndex]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection, mobileActiveIndex, assessmentPhase, assessmentScrollEnabled, currentLayerIndex, layerAnimatingRef]);
 
   // Callback when pyramid intro animation completes
   const handleIntroComplete = useCallback(() => {
@@ -1843,6 +1848,7 @@ const App = () => {
                 onLayerComplete={handleLayerComplete}
                 onScrollEnabled={handleAssessmentScrollEnabled}
                 onAllLayersComplete={handleAllLayersComplete}
+                onLayerAnimationStateChange={setLayerAnimating}
                 gatherProgress={gatherProgress}
                 convergenceProgress={convergenceProgress}
                 staircaseStep={staircaseStep}

@@ -115,6 +115,7 @@ const SingleLayerPanel = ({
   isSaved,
   scrollProgress,
   onSave,
+  onLayerAnimationStateChange,
   gatherProgress = 0,
   staircaseStep = -1,
   assessmentLevel,
@@ -173,6 +174,15 @@ const SingleLayerPanel = ({
       if (moveAnimRef.current) cancelAnimationFrame(moveAnimRef.current);
     };
   }, [isSaved]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // Notify parent (App.js) when this layer is animating
+  // TRUE during collapse and move phases, FALSE when done
+  useEffect(() => {
+    const isAnimating = savePhase === 'collapsing' || savePhase === 'moving';
+    if (onLayerAnimationStateChange) {
+      onLayerAnimationStateChange(isAnimating);
+    }
+  }, [savePhase, onLayerAnimationStateChange]);
   
   const questions = useMemo(() => {
     const allQuestions = getLayerQuestions(layerIndex);
@@ -461,6 +471,7 @@ const AssessmentLayerPanel = ({
   onLayerComplete,
   onScrollEnabled,
   onAllLayersComplete, // Callback when layer 4 is saved - triggers convergence
+  onLayerAnimationStateChange, // Callback to notify App.js when any layer is animating
   gatherProgress = 0,    // 0-1 progress within current staircase step
   convergenceProgress = 0, // 0-1 progress for assembled pyramid floating to entity
   staircaseStep = -1,      // -1=waiting, 0-3=current staircase step, 4=fully assembled
@@ -539,6 +550,7 @@ const AssessmentLayerPanel = ({
           isSaved={savedLayers.includes(layerIndex)}
           scrollProgress={scrollProgress}
           onSave={() => handleSave(layerIndex)}
+          onLayerAnimationStateChange={onLayerAnimationStateChange}
           gatherProgress={gatherProgress}
           staircaseStep={staircaseStep}
           assessmentLevel={assessmentLevel}

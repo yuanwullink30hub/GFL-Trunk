@@ -8,6 +8,43 @@ function stripMeta(text) {
   return text.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s{2,}/g, ' ').trim();
 }
 
+/** Parse color markers {PURPLE>word} and {ORANGE>word} and convert to JSX spans, after stripping metadata */
+function parseColoredText(text) {
+  if (!text) return '';
+  
+  // First strip metadata
+  const cleanText = stripMeta(text);
+  
+  const parts = [];
+  let lastIndex = 0;
+  const regex = /\{(PURPLE|ORANGE)>(.*?)\}/g;
+  let match;
+  
+  while ((match = regex.exec(cleanText)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(cleanText.substring(lastIndex, match.index));
+    }
+    
+    const color = match[1] === 'PURPLE' ? '#a855f7' : '#f97316';
+    const word = match[2];
+    parts.push(
+      <span key={`${match[1]}-${match.index}`} style={{ color }}>
+        {word}
+      </span>
+    );
+    
+    lastIndex = regex.lastIndex;
+  }
+  
+  // Add remaining text
+  if (lastIndex < cleanText.length) {
+    parts.push(cleanText.substring(lastIndex));
+  }
+  
+  return parts.length === 0 ? cleanText : parts;
+}
+
 /**
  * AssessmentCard - Question card matching SectorFrame styling
  * 
@@ -41,6 +78,7 @@ const AssessmentCard = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showScrollMode, setShowScrollMode] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(null);
+  const [showIntro, setShowIntro] = useState(true);
   const [started, setStarted] = useState(false);
   const levelConfigRef = useRef(levelConfig);
   levelConfigRef.current = levelConfig;
@@ -253,10 +291,10 @@ const AssessmentCard = ({
 
   return (
     <div className="relative w-full mx-auto" style={{ maxWidth: s.cardMaxWidth }}>
-      {/* Manual Start Overlay — blocks interaction until user clicks Start */}
-      {!started && !isCollapsed && (
+      {/* ── First Overlay — "Voordat je begint" for subject 0, layer intro for others ── */}
+      {showIntro && !started && !isCollapsed && (
         <div
-          className="absolute inset-0 z-[200] flex flex-col items-center justify-center rounded-lg"
+          className="absolute inset-0 z-[210] flex flex-col items-center justify-center rounded-lg"
           style={{
             backgroundColor: 'rgba(1, 0, 2, 1)',
             border: `1px solid ${subjectColor}30`,
@@ -269,7 +307,7 @@ const AssessmentCard = ({
           <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }} />
 
           {currentSubjectIndex === 0 ? (
-            /* ── First subject: full "Voordat je begint" briefing ── */
+            /* ── Subject 0: "Voordat je begint" briefing with → arrow ── */
             <div style={{
               padding: windowWidth >= 1024 ? '2rem 2rem 1.5rem' : '1.5rem 1.25rem 1rem',
               display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -357,16 +395,17 @@ const AssessmentCard = ({
               </p>
 
               <button
-                onClick={() => setStarted(true)}
+                onClick={() => setShowIntro(false)}
                 className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
                 style={{
                   fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                  fontSize: windowWidth >= 1024 ? '0.95rem' : '0.8rem',
+                  fontSize: windowWidth >= 1024 ? '1.1rem' : '0.95rem',
                   backgroundColor: 'rgba(168, 85, 247, 0.12)',
                   border: '2px solid #a855f7',
                   color: '#a855f7',
                   boxShadow: '0 0 20px rgba(168, 85, 247, 0.15)',
                   marginTop: '0.5rem',
+                  minWidth: '4rem',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
@@ -377,65 +416,185 @@ const AssessmentCard = ({
                   e.currentTarget.style.boxShadow = '0 0 20px rgba(168, 85, 247, 0.15)';
                 }}
               >
-                Start
+                →
               </button>
             </div>
           ) : (
-            /* ── Subsequent subjects: compact start overlay ── */
-            <>
-              <p
-                style={{
-                  fontFamily: "'Figtree', sans-serif",
-                  fontSize: windowWidth >= 1024 ? '1.1rem' : '0.95rem',
-                  color: 'rgba(255, 254, 240, 0.7)',
-                  textAlign: 'center',
-                  marginBottom: '1.5rem',
-                  padding: '0 1.5rem',
-                }}
-              >
-                Als je klaar zit, druk op start.
-              </p>
+            /* ── Subjects 1-4: layer intro with → arrow ── */
+            <div style={{
+              padding: windowWidth >= 1024 ? '2rem 2rem 1.5rem' : '1.5rem 1.25rem 1rem',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: windowWidth >= 1024 ? '0.75rem' : '0.5rem',
+            }}>
+              <h3 style={{
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                fontSize: windowWidth >= 1024 ? '1.15rem' : '1rem',
+                color: subjectColor,
+                textTransform: 'uppercase',
+                letterSpacing: '0.15em',
+                textAlign: 'center',
+                marginBottom: '0.25rem',
+              }}>
+                {currentSubject?.name || `Laag ${currentSubjectIndex + 1}`}
+              </h3>
+
               {levelConfig.timerType === 'layered' && levelConfig.layerTimers && (
-                <div
-                  style={{
-                    fontFamily: "'Figtree', sans-serif",
-                    fontSize: windowWidth >= 1024 ? '0.85rem' : '0.75rem',
-                    color: 'rgba(255, 254, 240, 0.45)',
-                    textAlign: 'center',
-                    marginBottom: '1.5rem',
-                    lineHeight: '1.7',
-                  }}
-                >
-                  <span style={{ color: subjectColor }}>{levelConfig.layerTimers[currentSubjectIndex] || 30} seconden per vraag</span>
-                  <br />Timer loopt zodra je start
-                  <br />Zeker van jezelf? NEXT!
-                  <br />Geen terugloop
+                <div style={{
+                  fontFamily: "'Figtree', sans-serif",
+                  fontSize: windowWidth >= 1024 ? '0.85rem' : '0.75rem',
+                  color: 'rgba(255, 254, 240, 0.5)',
+                  textAlign: 'center',
+                  lineHeight: '1.7',
+                }}>
+                  <span style={{ color: subjectColor }}>{levelConfig.layerTimers[currentSubjectIndex] || 30}s per vraag</span>
+                  {' · '}{totalQuestions} vragen
                 </div>
               )}
+
+              <p style={{
+                fontFamily: "'Figtree', sans-serif",
+                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+                color: 'rgba(255, 254, 240, 0.55)',
+                textAlign: 'center',
+                lineHeight: 1.7,
+                maxWidth: '26rem',
+                marginTop: '0.25rem',
+              }}>
+                <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '1rem' }}>LET OP!</span>
+                <br />
+                Er is geen één maat voor allen. Kies dus wat het meest synchroniseert.
+                <br />
+                <span style={{ color: subjectColor }}>Gekleurde woorden</span> zijn een middel voor de eerste snelle scan, dit is geen waarde systeem voor de intentionele woorden.
+                <br /><br />
+                <em style={{ color: 'rgba(255, 254, 240, 0.55)' }}>"Stereotype vergroot om het archetype te onderscheiden:"</em>
+                <br />
+                {currentSubjectIndex === 1 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>aandacht en actie</span>}
+                {currentSubjectIndex === 2 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>projectie</span>}
+                {currentSubjectIndex === 3 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>verharding</span>}
+                {currentSubjectIndex === 4 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>extremisme</span>}
+              </p>
+
               <button
-                onClick={() => setStarted(true)}
+                onClick={() => {
+                  setShowIntro(false);
+                  setStarted(true);
+                }}
                 className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
                 style={{
                   fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                  fontSize: windowWidth >= 1024 ? '0.95rem' : '0.8rem',
-                  backgroundColor: `${subjectColor}20`,
+                  fontSize: windowWidth >= 1024 ? '1.1rem' : '0.95rem',
+                  backgroundColor: `${subjectColor}12`,
                   border: `2px solid ${subjectColor}`,
                   color: subjectColor,
                   boxShadow: `0 0 20px ${subjectColor}25`,
+                  marginTop: '0.75rem',
+                  minWidth: '4rem',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = `${subjectColor}40`;
+                  e.currentTarget.style.backgroundColor = `${subjectColor}30`;
                   e.currentTarget.style.boxShadow = `0 0 30px ${subjectColor}50`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = `${subjectColor}20`;
+                  e.currentTarget.style.backgroundColor = `${subjectColor}12`;
                   e.currentTarget.style.boxShadow = `0 0 20px ${subjectColor}25`;
                 }}
               >
-                Start
+                →
               </button>
-            </>
+            </div>
           )}
+        </div>
+      )}
+
+      {/* ── Second Overlay (subject 0 only) — layer info + Start button ── */}
+      {!showIntro && !started && !isCollapsed && (
+        <div
+          className="absolute inset-0 z-[200] flex flex-col items-center justify-center rounded-lg"
+          style={{
+            backgroundColor: 'rgba(1, 0, 2, 1)',
+            border: `1px solid ${subjectColor}30`,
+            overflow: 'hidden',
+          }}
+        >
+          <div className="absolute -top-0.5 -left-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }} />
+          <div className="absolute -top-0.5 -right-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }} />
+          <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }} />
+          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }} />
+
+          <div style={{
+            padding: windowWidth >= 1024 ? '2rem 2rem 1.5rem' : '1.5rem 1.25rem 1rem',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: windowWidth >= 1024 ? '0.75rem' : '0.5rem',
+          }}>
+            <h3 style={{
+              fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+              fontSize: windowWidth >= 1024 ? '1.15rem' : '1rem',
+              color: subjectColor,
+              textTransform: 'uppercase',
+              letterSpacing: '0.15em',
+              textAlign: 'center',
+              marginBottom: '0.25rem',
+            }}>
+              {currentSubject?.name || `Laag ${currentSubjectIndex + 1}`}
+            </h3>
+
+            {levelConfig.timerType === 'layered' && levelConfig.layerTimers && (
+              <div style={{
+                fontFamily: "'Figtree', sans-serif",
+                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.75rem',
+                color: 'rgba(255, 254, 240, 0.5)',
+                textAlign: 'center',
+                lineHeight: '1.7',
+              }}>
+                <span style={{ color: subjectColor }}>{levelConfig.layerTimers[currentSubjectIndex] || 30}s per vraag</span>
+                {' · '}{totalQuestions} vragen
+              </div>
+            )}
+
+            <p style={{
+              fontFamily: "'Figtree', sans-serif",
+              fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+              color: 'rgba(255, 254, 240, 0.55)',
+              textAlign: 'center',
+              lineHeight: 1.7,
+              maxWidth: '26rem',
+              marginTop: '0.25rem',
+            }}>
+              <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '1rem' }}>LET OP!</span>
+              <br />
+              Er is geen één maat voor allen. Kies dus wat het meest synchroniseert.
+              <br />
+              <span style={{ color: subjectColor }}>Gekleurde woorden</span> zijn een middel voor de eerste snelle scan, dit is geen waarde systeem voor de intentionele woorden.
+              <br /><br />
+              <em style={{ color: 'rgba(255, 254, 240, 0.55)' }}>"Stereotype vergroot om het archetype te onderscheiden:"</em>
+              <br />
+              <span style={{ color: subjectColor, fontWeight: 'bold' }}>intentie en potentie</span>
+            </p>
+
+            <button
+              onClick={() => setStarted(true)}
+              className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
+              style={{
+                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                fontSize: windowWidth >= 1024 ? '0.95rem' : '0.8rem',
+                backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                border: '2px solid #a855f7',
+                color: '#a855f7',
+                boxShadow: '0 0 20px rgba(168, 85, 247, 0.15)',
+                marginTop: '0.75rem',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
+                e.currentTarget.style.boxShadow = '0 0 30px rgba(168, 85, 247, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.12)';
+                e.currentTarget.style.boxShadow = '0 0 20px rgba(168, 85, 247, 0.15)';
+              }}
+            >
+              Start
+            </button>
+          </div>
         </div>
       )}
 
@@ -661,7 +820,7 @@ const AssessmentCard = ({
                     }}
                   >
                     <span style={{ fontSize: s.answerFont, fontFamily: "'Figtree', sans-serif" }}>
-                      {stripMeta(t(`answers.${answer.id}`) !== `answers.${answer.id}` 
+                      {parseColoredText(t(`answers.${answer.id}`) !== `answers.${answer.id}` 
                         ? t(`answers.${answer.id}`) 
                         : answer.text)}
                     </span>

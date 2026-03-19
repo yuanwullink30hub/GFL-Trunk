@@ -8,6 +8,43 @@ function stripMeta(text) {
   return text.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s{2,}/g, ' ').trim();
 }
 
+/** Parse color markers {PURPLE>word} and {ORANGE>word} and convert to JSX spans, after stripping metadata */
+function parseColoredText(text) {
+  if (!text) return '';
+  
+  // First strip metadata
+  const cleanText = stripMeta(text);
+  
+  const parts = [];
+  let lastIndex = 0;
+  const regex = /\{(PURPLE|ORANGE)>(.*?)\}/g;
+  let match;
+  
+  while ((match = regex.exec(cleanText)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(cleanText.substring(lastIndex, match.index));
+    }
+    
+    const color = match[1] === 'PURPLE' ? '#a855f7' : '#f97316';
+    const word = match[2];
+    parts.push(
+      <span key={`${match[1]}-${match.index}`} style={{ color }}>
+        {word}
+      </span>
+    );
+    
+    lastIndex = regex.lastIndex;
+  }
+  
+  // Add remaining text
+  if (lastIndex < cleanText.length) {
+    parts.push(cleanText.substring(lastIndex));
+  }
+  
+  return parts.length === 0 ? cleanText : parts;
+}
+
 /**
  * AssessmentLabel - Enhanced HoloLabel with full assessment integration
  * Replaces the simple input with a question-based assessment flow
@@ -317,7 +354,7 @@ const AssessmentLabel = ({
                             {String.fromCharCode(65 + idx)}
                           </span>
                           <span className="text-slate-300 text-sm leading-relaxed flex-1">
-                            {stripMeta(answer.text)}
+                            {parseColoredText(answer.text)}
                           </span>
                         </div>
                       </button>

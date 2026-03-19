@@ -1168,6 +1168,23 @@ const App = () => {
   // When isSystem becomes true, the 3s intro starts automatically in PyramidInner
   // After intro, scroll continues to control layer positions
 
+  // Set global crosshair cursor on mount — uses !important style tag to override
+  // all inline cursor:pointer and Tailwind cursor-* classes everywhere on the site.
+  useEffect(() => {
+    const crosshairSVG = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="3" fill="none" stroke="%2315b315" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="12" stroke="%2315b315" stroke-width="1.5"/><line x1="16" y1="20" x2="16" y2="28" stroke="%2315b315" stroke-width="1.5"/><line x1="4" y1="16" x2="12" y2="16" stroke="%2315b315" stroke-width="1.5"/><line x1="20" y1="16" x2="28" y2="16" stroke="%2315b315" stroke-width="1.5"/></svg>') 16 16, crosshair`;
+    let style = document.getElementById('gfl-cursor-style');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'gfl-cursor-style';
+      document.head.appendChild(style);
+    }
+    style.textContent = `* { cursor: ${crosshairSVG} !important; }`;
+    return () => {
+      const el = document.getElementById('gfl-cursor-style');
+      if (el) el.remove();
+    };
+  }, []);
+
   // Reset to frame 0
   const handleReset = () => {
     // Full reset of all assessment/pyramid state

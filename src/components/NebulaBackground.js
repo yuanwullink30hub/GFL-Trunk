@@ -192,12 +192,16 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec2 cell = floor(uv * density);
     vec2 local = fract(uv * density);
     float h = hash(cell);
-    if (h > 0.15) return 0.0;
+    if (h > 0.20) return 0.0; // slightly more stars
     vec2 sp = vec2(hash(cell + 0.1), hash(cell + 0.2));
     float d = length(local - sp);
-    float sz = (0.015 + 0.025 * hash(cell + 0.3)) * 1.1 * sizeScale;
-    float b = smoothstep(sz, sz * 0.1, d);
-    b *= 0.6 + 0.4 * sin(u_time * (2.0 + 4.0 * hash(cell + 0.5)) + hash(cell + 0.7) * 6.28);
+    // Size variety: from pinpricks to small bright dots
+    float sz = (0.010 + 0.030 * hash(cell + 0.3)) * sizeScale;
+    float b = smoothstep(sz, sz * 0.05, d);
+    // Twinkle: very slow, gentle drift — no rapid flashing
+    // Small stars (high density calls) get slower multipliers via sizeScale being small
+    float twinkleRate = 0.18 + 0.22 * hash(cell + 0.5); // 0.18–0.40 rad/s
+    b *= 0.70 + 0.30 * sin(u_time * twinkleRate + hash(cell + 0.7) * 6.28);
     return b;
   }
 
@@ -322,15 +326,24 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec2 bgStarUv = uv + mapOff * 0.15; // slowest parallax — deepest layer
 
 
-    // Tiny distant background stars — dense field
-    float bgS1 = stars(bgStarUv, 120.0, 1.1);
-    vec3 bgSc1 = mix(vec3(0.5, 0.5, 0.75), vec3(0.7, 0.65, 0.5), hash(floor(bgStarUv * 120.0)));
-    color += bgSc1 * bgS1 * 0.24;
+    // Ultra-distant micro-star deep field — raised from pinpricks to faint but legible dots
+    float bgS0 = stars(bgStarUv * 1.7 + 0.37, 137.0, 1.45);
+    color += vec3(0.45, 0.47, 0.65) * bgS0 * 0.95;
 
-    // Small background stars — brighter
-    float bgS2 = stars(bgStarUv, 80.0, 1.1);
-    vec3 bgSc2 = mix(vec3(0.55, 0.55, 0.8), vec3(0.8, 0.7, 0.45), hash(floor(bgStarUv * 80.0) + 44.0));
-    color += bgSc2 * bgS2 * 0.34;
+    // Tiny distant background stars — dense field, now more visible
+    float bgS1 = stars(bgStarUv, 74.0, 1.95);
+    vec3 bgSc1 = mix(vec3(0.55, 0.55, 0.85), vec3(0.75, 0.70, 0.55), hash(floor(bgStarUv * 74.0)));
+    color += bgSc1 * bgS1 * 1.30;
+
+    // Small background stars — clearly visible points
+    float bgS2 = stars(bgStarUv + 0.03, 47.0, 2.05);
+    vec3 bgSc2 = mix(vec3(0.62, 0.65, 0.92), vec3(0.88, 0.78, 0.50), hash(floor((bgStarUv + 0.03) * 47.0) + 44.0));
+    color += bgSc2 * bgS2 * 1.45;
+
+    // Medium background stars — sparse but clearly visible points
+    float bgS3 = stars(bgStarUv + 0.07, 29.0, 1.80);
+    vec3 bgSc3 = mix(vec3(0.72, 0.74, 1.00), vec3(1.00, 0.87, 0.54), hash(floor((bgStarUv + 0.07) * 29.0) + 99.0));
+    color += bgSc3 * bgS3 * 1.10;
 
     // Background galaxies — very distant, dim ellipses
     {
@@ -392,6 +405,63 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
           }
         }
       }
+    }
+
+    // ── HAND-PLACED GALAXIES — 5 distinct types, scattered across viewport ──
+    // Uses bgStarUv (slowest parallax) so they sit deep behind the nebulae.
+    // Each galaxy is a function of distance from a fixed UV center.
+    {
+      // Helper: rotate a 2D vector
+      // Galaxy 2: Spiral — right side, mid-height (same shape as top-left, amber color)
+      {
+        vec2 gCenter = vec2(0.88, 0.52);
+        vec2 d = (bgStarUv - gCenter) * vec2(1.0, 1.0);
+        float angle = 0.62;
+        float ca = cos(angle), sa = sin(angle);
+        vec2 rd = vec2(ca * d.x + sa * d.y, -sa * d.x + ca * d.y);
+        float axisRatio = 0.56;
+        vec2 ed = vec2(rd.x, rd.y / axisRatio);
+        float r = length(ed);
+        float core = exp(-r * r * 380.0) * 0.62;
+        float disk = exp(-r * r * 60.0) * 0.33;
+        float theta = atan(ed.y, ed.x);
+        float da1 = mod(theta - r * 10.0 + 3.14159, 6.28318) - 3.14159;
+        float da2 = mod(theta - r * 10.0 - 3.14159 + 3.14159, 6.28318) - 3.14159;
+        float arm1 = exp(-da1 * da1 * 1.8) * exp(-r * r * 105.0) * 0.26;
+        float arm2 = exp(-da2 * da2 * 1.8) * exp(-r * r * 105.0) * 0.24;
+        float gal = core + disk + arm1 + arm2;
+        // Warm amber core, golden arms — elliptical color palette
+        vec3 coreCol = mix(vec3(1.00, 0.88, 0.58), vec3(0.72, 0.62, 0.42), smoothstep(0.0, 0.022, r));
+        color += coreCol * max(gal, 0.0);
+      }
+
+      // Galaxy 3: Barred spiral — lower-center
+      {
+        vec2 gCenter = vec2(0.48, 0.10);
+        vec2 d = bgStarUv - gCenter;
+        float angle = -0.4;
+        float ca = cos(angle), sa = sin(angle);
+        vec2 rd = vec2(ca * d.x + sa * d.y, -sa * d.x + ca * d.y);
+        float axisRatio = 0.42;
+        vec2 ed = vec2(rd.x, rd.y / axisRatio);
+        float r = length(ed);
+        float core = exp(-r * r * 300.0) * 1.05;
+        float disk = exp(-r * r * 45.0) * 0.56;
+        // Central bar — elongated along x axis
+        float bar = exp(-ed.x * ed.x * 22.0 - ed.y * ed.y * 480.0) * 0.60;
+        // Outer arms sweeping from bar ends
+        float thetaB = atan(ed.y, ed.x);
+        float daA = mod(thetaB - r * 10.0 - 0.5 + 3.14159, 6.28318) - 3.14159;
+        float daB = mod(thetaB - r * 10.0 + 2.64 + 3.14159, 6.28318) - 3.14159;
+        float armA = exp(-daA * daA * 2.0) * exp(-r * r * 82.0) * 0.41;
+        float armB = exp(-daB * daB * 2.0) * exp(-r * r * 82.0) * 0.37;
+        float gal = core + disk + bar + armA + armB;
+        vec3 col = mix(vec3(1.00, 0.85, 0.55), vec3(0.65, 0.75, 1.00), smoothstep(0.0, 0.022, r));
+        color += col * max(gal, 0.0);
+      }
+
+
+
     }
 
     vec3 deepPurple = mix(vec3(0.008, 0.002, 0.018), vec3(0.025, 0.008, 0.04), n1);
@@ -554,8 +624,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Compose nebula with depth layering — bg stars show through voids
     vec3 bgStars = color; // save accumulated background stars
-    float starOcclusion = pow(1.0 - cloudMask, 1.8); // moderate curve — stars fade in dense gas
-    color = deepColor + bgStars * starOcclusion; // stars visible in voids, hidden behind gas
+    // Stars peek through nebula: min 12% visible even in densest gas → looks like real astrophoto
+    float starOcclusion = mix(0.12, 1.0, pow(1.0 - cloudMask, 1.1));
+    color = deepColor + bgStars * starOcclusion; // stars behind gas — faintly glow through
 
     // ── Background Gaussian glow — deep-space luminosity behind main gas ──
     // Adds subtle color wash visible in voids and partially through thin gas
@@ -611,17 +682,38 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // ── MIDGROUND STARS (partially occluded by gas) ──
     vec2 midStarUv = uv + mapOff * 0.35; // medium parallax
-    float gasOcclusion = pow(1.0 - cloudMask, 1.6); // moderate — dim in dense gas, visible at edges
+    // Midground stars partially visible through gas — 8% minimum so they glow inside nebula
+    float gasOcclusion = mix(0.08, 1.0, pow(1.0 - cloudMask, 1.2));
 
-    // Medium midground stars — partially hidden by nebula
-    float mS1 = stars(midStarUv, 45.0, 1.0);
-    vec3 mSc1 = mix(vec3(0.7, 0.7, 0.9), vec3(0.9, 0.8, 0.55), hash(floor(midStarUv * 45.0) + 55.0));
-    color += mSc1 * mS1 * 0.42 * gasOcclusion;
+    // Medium midground stars — layer 1
+    float mS1 = stars(midStarUv, 50.0, 1.35);
+    vec3 mSc1 = mix(vec3(0.72, 0.74, 0.95), vec3(0.92, 0.82, 0.58), hash(floor(midStarUv * 50.0) + 55.0));
+    color += mSc1 * mS1 * 0.85 * gasOcclusion;
 
-    // Medium-bright stars — some shine through gas edges
-    float mS2 = stars(midStarUv + 0.01, 25.0, 1.0);
-    vec3 mSc2 = mix(vec3(0.8, 0.78, 0.72), vec3(0.95, 0.7, 0.4), hash(floor((midStarUv + 0.01) * 25.0) + 88.0));
-    color += mSc2 * mS2 * 0.52 * gasOcclusion;
+    // Medium midground stars — layer 2
+    float mS1b = stars(midStarUv + 0.05, 45.0, 1.35);
+    vec3 mSc1b = mix(vec3(0.65, 0.68, 0.90), vec3(0.88, 0.76, 0.50), hash(floor((midStarUv + 0.05) * 45.0) + 123.0));
+    color += mSc1b * mS1b * 0.80 * gasOcclusion;
+
+    // Medium midground stars — layer 3
+    float mS1c = stars(midStarUv + 0.13, 40.0, 1.35);
+    vec3 mSc1c = mix(vec3(0.68, 0.72, 0.92), vec3(0.90, 0.78, 0.52), hash(floor((midStarUv + 0.13) * 40.0) + 177.0));
+    color += mSc1c * mS1c * 0.78 * gasOcclusion;
+
+    // Medium-bright stars — pass 1
+    float mS2 = stars(midStarUv + 0.01, 29.0, 1.45);
+    vec3 mSc2 = mix(vec3(0.82, 0.80, 0.76), vec3(0.98, 0.74, 0.42), hash(floor((midStarUv + 0.01) * 29.0) + 88.0));
+    color += mSc2 * mS2 * 0.95 * gasOcclusion;
+
+    // Medium-bright stars — pass 2
+    float mS2b = stars(midStarUv + 0.09, 24.0, 1.50);
+    vec3 mSc2b = mix(vec3(0.78, 0.80, 1.00), vec3(1.00, 0.88, 0.55), hash(floor((midStarUv + 0.09) * 24.0) + 211.0));
+    color += mSc2b * mS2b * 0.95 * gasOcclusion;
+
+    // Medium-bright stars — pass 3
+    float mS2c = stars(midStarUv + 0.17, 21.0, 1.45);
+    vec3 mSc2c = mix(vec3(0.75, 0.78, 0.98), vec3(0.96, 0.85, 0.48), hash(floor((midStarUv + 0.17) * 21.0) + 251.0));
+    color += mSc2c * mS2c * 0.92 * gasOcclusion;
 
     // Midground galaxies — partially visible through gas
     {
@@ -675,6 +767,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
           float h = hash(cell + 77.0);
           if (h < 0.12) {
             vec2 sp = (cell + vec2(hash(cell + 0.3), hash(cell + 0.4))) / density;
+            // Exclude bright stars too close to the right galaxy
+            if (length(sp - vec2(0.88, 0.52)) < 0.10) { h = 0.0; }
+            if (h >= 0.12) {
             vec2 toStar = fgStarUv - sp;
             float d = length(toStar) * density;
             // Distance factor: 0.4 (far/small) to 1.0 (close/large)
@@ -696,9 +791,25 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
             brightness *= (0.85 + 0.15 * sin(u_time * (1.0 + 2.0 * hash(cell + 8.0)) + hash(cell + 9.0) * 6.28));
             brightness *= (0.4 + 0.6 * distFactor);
             color += starColor * max(brightness, 0.0) * fgOcclusion;
+            }
           }
         }
       }
+    }
+
+    // ── Hand-placed bright star — top-left, where galaxy was ──
+    {
+      vec2 hpCenter = vec2(0.13, 0.80);
+      vec2 toStar = fgStarUv - hpCenter;
+      float d = length(toStar) * 10.0;
+      float core = smoothstep(0.030, 0.0, d);
+      float glow = exp(-d * d * 52.0) * 0.28;
+      float spikeAngle = 0.42;
+      float sc = sin(spikeAngle), cc = cos(spikeAngle);
+      vec2 rotDiff = abs(vec2(cc * toStar.x + sc * toStar.y, -sc * toStar.x + cc * toStar.y)) * 10.0;
+      float spike = exp(-min(rotDiff.x, rotDiff.y) * 22.0) * exp(-max(rotDiff.x, rotDiff.y) * 4.2) * 0.18;
+      float brightness = (core + glow + spike) * (0.88 + 0.12 * sin(u_time * 1.3 + 1.1));
+      color += vec3(1.0, 0.48, 0.10) * max(brightness, 0.0) * fgOcclusion;
     }
 
     // (old single-layer galaxies removed — now split into bg + midground layers above)
@@ -1131,6 +1242,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
           zIndex: 0,
           pointerEvents: 'none',
           overflow: 'hidden',
+          cursor: 'inherit',
           background: 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)',
         }}
       >
@@ -1170,6 +1282,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
         zIndex: 0,
         pointerEvents: 'none',
         overflow: 'hidden',
+        cursor: 'inherit',
       }}
     >
       <canvas

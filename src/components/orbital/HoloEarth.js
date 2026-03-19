@@ -7,6 +7,16 @@ import { getPerformanceSettings } from '../../utils/performanceMonitor';
 import PyramidInner from '../holoearth/PyramidInner';
 import EarthParticleWaves from './EarthParticleWaves';
 
+// ─── Global cursor helpers (updates the !important style tag set by App.js) ──
+const CURSOR_CROSSHAIR = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="3" fill="none" stroke="%2315b315" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="12" stroke="%2315b315" stroke-width="1.5"/><line x1="16" y1="20" x2="16" y2="28" stroke="%2315b315" stroke-width="1.5"/><line x1="4" y1="16" x2="12" y2="16" stroke="%2315b315" stroke-width="1.5"/><line x1="20" y1="16" x2="28" y2="16" stroke="%2315b315" stroke-width="1.5"/></svg>') 16 16, crosshair`;
+// Heart icon: hollow when hovering, filled when dragging
+const CURSOR_GRAB = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="none" stroke="%2315b315" stroke-width="2" stroke-linejoin="round" d="M16 27C16 27 4 19.5 4 11.5A7 7 0 0 1 16 8a7 7 0 0 1 12 3.5C28 19.5 16 27 16 27z"/></svg>') 16 16, pointer`;
+const CURSOR_GRABBING = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="%2315b315" stroke="%2315b315" stroke-width="1.5" stroke-linejoin="round" d="M16 27C16 27 4 19.5 4 11.5A7 7 0 0 1 16 8a7 7 0 0 1 12 3.5C28 19.5 16 27 16 27z"/></svg>') 16 16, pointer`;
+const setGlobalCursor = (cursorValue) => {
+  const style = document.getElementById('gfl-cursor-style');
+  if (style) style.textContent = `* { cursor: ${cursorValue} !important; }`;
+};
+
 // --- Generate landmass chunks from actual sphere surface with thickness ---
 const generateChunkGeometries = (radius = 2.5, segments = 48) => {
   const baseSphere = new THREE.SphereGeometry(radius, segments, segments);
@@ -641,25 +651,24 @@ const HoloEarthSphere = ({
     e.stopPropagation();
     isDragging.current = true;
     previousMouse.current = { x: e.clientX, y: e.clientY };
-    document.body.style.cursor = 'grabbing';
+    setGlobalCursor(CURSOR_GRABBING);
   };
 
   const handlePointerUp = () => {
     isDragging.current = false;
-    document.body.style.cursor = 'grab';
+    setGlobalCursor(CURSOR_GRAB);
   };
 
   const handlePointerEnter = (e) => {
     if (exploding) return;
     e.stopPropagation();
-    onSphereHoverChange(true);
+    setGlobalCursor(CURSOR_GRAB);
   };
 
   const handlePointerLeave = (e) => {
     e.stopPropagation();
-    onSphereHoverChange(false);
     if (!isDragging.current) {
-      document.body.style.cursor = 'auto';
+      setGlobalCursor(CURSOR_CROSSHAIR);
     }
   };
 
@@ -801,15 +810,6 @@ const HoloEarth = ({
   onLayerStateChange = () => {}
 }) => {
   const glRef = useRef(null);
-  const canvasWrapperRef = useRef(null);
-  const [isHoveringSphere, setIsHoveringSphere] = React.useState(false);
-
-  // Update cursor style when hovering over sphere
-  useEffect(() => {
-    if (canvasWrapperRef.current) {
-      canvasWrapperRef.current.style.cursor = isHoveringSphere ? 'grab' : 'auto';
-    }
-  }, [isHoveringSphere]);
 
   // Force-release WebGL context on unmount (prevents context leak during hot-reload)
   useEffect(() => {
@@ -871,7 +871,6 @@ const HoloEarth = ({
         top: '-50%',
         overflow: 'visible',
       }}
-      ref={canvasWrapperRef}
       >
         <Canvas 
           camera={{ position: [0, 0, 8], fov: 40 }}
@@ -914,7 +913,7 @@ const HoloEarth = ({
                 foldProgress={foldProgress}
                 onIntroComplete={onIntroComplete}
                 onLayerStateChange={onLayerStateChange}
-                onSphereHoverChange={setIsHoveringSphere}
+                onSphereHoverChange={() => {}}
                 isMobile={isMobile}
               />
             </group>

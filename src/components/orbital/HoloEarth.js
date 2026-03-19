@@ -447,7 +447,8 @@ const HoloEarthSphere = ({
   foldProgress = 0, // 0-1 for pyramid fold-up animation
   onIntroComplete = () => {},
   onLayerStateChange = () => {},
-  isMobile = false
+  isMobile = false,
+  onSphereHoverChange = () => {}, // Callback when hovering over sphere
 }) => {
   const groupRef = useRef(null);
   const coreRef = useRef(null);
@@ -645,7 +646,21 @@ const HoloEarthSphere = ({
 
   const handlePointerUp = () => {
     isDragging.current = false;
-    document.body.style.cursor = 'auto';
+    document.body.style.cursor = 'grab';
+  };
+
+  const handlePointerEnter = (e) => {
+    if (exploding) return;
+    e.stopPropagation();
+    onSphereHoverChange(true);
+  };
+
+  const handlePointerLeave = (e) => {
+    e.stopPropagation();
+    onSphereHoverChange(false);
+    if (!isDragging.current) {
+      document.body.style.cursor = 'auto';
+    }
   };
 
   const handlePointerMove = (e) => {
@@ -685,7 +700,8 @@ const HoloEarthSphere = ({
       <group ref={groupRef}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
+        onPointerEnter={handlePointerEnter}
         onPointerMove={handlePointerMove}
       >
         {/* Solid Complete Earth - visible only before explosion starts */}
@@ -785,6 +801,15 @@ const HoloEarth = ({
   onLayerStateChange = () => {}
 }) => {
   const glRef = useRef(null);
+  const canvasWrapperRef = useRef(null);
+  const [isHoveringSphere, setIsHoveringSphere] = React.useState(false);
+
+  // Update cursor style when hovering over sphere
+  useEffect(() => {
+    if (canvasWrapperRef.current) {
+      canvasWrapperRef.current.style.cursor = isHoveringSphere ? 'grab' : 'auto';
+    }
+  }, [isHoveringSphere]);
 
   // Force-release WebGL context on unmount (prevents context leak during hot-reload)
   useEffect(() => {
@@ -845,7 +870,9 @@ const HoloEarth = ({
         left: '-50%',
         top: '-50%',
         overflow: 'visible',
-      }}>
+      }}
+      ref={canvasWrapperRef}
+      >
         <Canvas 
           camera={{ position: [0, 0, 8], fov: 40 }}
           style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}
@@ -887,6 +914,7 @@ const HoloEarth = ({
                 foldProgress={foldProgress}
                 onIntroComplete={onIntroComplete}
                 onLayerStateChange={onLayerStateChange}
+                onSphereHoverChange={setIsHoveringSphere}
                 isMobile={isMobile}
               />
             </group>

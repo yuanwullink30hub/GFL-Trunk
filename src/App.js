@@ -142,7 +142,8 @@ const App = () => {
   const [currentLayerIndex, setCurrentLayerIndex] = useState(0); // 0-4 for 5 layers
   const [layerAnswers, setLayerAnswers] = useState({}); // { layerIndex: { questionId: answerId } }
   const [assessmentScrollEnabled, setAssessmentScrollEnabled] = useState(false); // Controls when user can scroll to next layer
-  const [layerAnimatingRef, setLayerAnimating] = useState(false); // Track if any layer is saving/animating
+  const animatingLayersRef = useRef(new Set()); // Track which layers are currently animating (use Set to handle multiple simultaneous)
+  const [, setAnimatingLayersCounter] = useState(0); // Dummy state to trigger re-renders when layers animate
   const [convergenceProgress, setConvergenceProgress] = useState(0); // 0-1 progress for panels floating back to entity
   const [gatherProgress, setGatherProgress] = useState(0); // 0-1 progress for cards gathering to center stack
   const [staircaseStep, setStaircaseStep] = useState(-1); // -1=waiting, 0=absorb cards into pyramid, 1=fold pyramid up, 2=done
@@ -534,9 +535,9 @@ const App = () => {
     // Don't process scroll when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
     
-    // STRICT: Don't process scroll if any layer panel is animating its save (collapse/move phases)
+    // STRICT: Don't process scroll if ANY layer panel is animating its save (collapse/move phases)
     // This prevents race conditions between scroll animation and card save animation
-    if (layerAnimatingRef) return;
+    if (animatingLayersRef.current.size > 0) return;
     
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
@@ -621,7 +622,7 @@ const App = () => {
     setTimeout(() => {
       isScrolling.current = false;
     }, 50);
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection, mobileActiveIndex, assessmentPhase, assessmentScrollEnabled, currentLayerIndex, layerAnimatingRef]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection, mobileActiveIndex, assessmentPhase, assessmentScrollEnabled, currentLayerIndex]);
 
   // Callback when pyramid intro animation completes
   const handleIntroComplete = useCallback(() => {
@@ -830,6 +831,19 @@ const App = () => {
   const handleAssessmentScrollEnabled = useCallback((enabled) => {
     setAssessmentScrollEnabled(enabled);
   }, []);
+  
+  // Handle layer animation state changes - track which layers are currently animating (collapse/move phases)
+  // This allows the scroll guard to block scroll for ANY animating layer, not just one
+  const handleLayerAnimationStateChange = useCallback((layerIndex, isAnimating) => {
+    if (isAnimating) {
+      animatingLayersRef.current.add(layerIndex);
+    } else {
+      animatingLayersRef.current.delete(layerIndex);
+    }
+    // Force re-render so scroll guard sees the updated set
+    setAnimatingLayersCounter(prev => prev + 1);
+  }, []);
+  
   
   // Update current layer based on pyramid scroll progress when in layers phase
   // Only advances ONE layer at a time: after saving layer N, scrolling reveals layer N+1
@@ -1848,7 +1862,7 @@ const App = () => {
                 onLayerComplete={handleLayerComplete}
                 onScrollEnabled={handleAssessmentScrollEnabled}
                 onAllLayersComplete={handleAllLayersComplete}
-                onLayerAnimationStateChange={setLayerAnimating}
+                onLayerAnimationStateChange={handleLayerAnimationStateChange}
                 gatherProgress={gatherProgress}
                 convergenceProgress={convergenceProgress}
                 staircaseStep={staircaseStep}

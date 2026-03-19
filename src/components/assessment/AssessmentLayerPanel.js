@@ -176,13 +176,13 @@ const SingleLayerPanel = ({
   }, [isSaved]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Notify parent (App.js) when this layer is animating
-  // TRUE during collapse and move phases, FALSE when done
+  // Pass layerIndex so App can track which layers are currently animating
   useEffect(() => {
     const isAnimating = savePhase === 'collapsing' || savePhase === 'moving';
     if (onLayerAnimationStateChange) {
-      onLayerAnimationStateChange(isAnimating);
+      onLayerAnimationStateChange(layerIndex, isAnimating);
     }
-  }, [savePhase, onLayerAnimationStateChange]);
+  }, [savePhase, layerIndex, onLayerAnimationStateChange]);
   
   const questions = useMemo(() => {
     const allQuestions = getLayerQuestions(layerIndex);

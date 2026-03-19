@@ -2095,7 +2095,7 @@ const App = () => {
           className="fixed top-4 right-4 z-50 text-xs font-mono pointer-events-none"
           style={{ color: 'rgba(147, 51, 234, 0.6)' }}
         >
-          Map: ({mapPosition.x.toFixed(2)}, {mapPosition.y.toFixed(2)}) {isMapAnimating ? '⟳' : '●'}
+          Map: ({(72 + mapPosition.x * 100).toFixed(2)}, {(43200 + mapPosition.y * 100).toFixed(2)}) {isMapAnimating ? '⟳' : '●'}
         </div>
       )}
 

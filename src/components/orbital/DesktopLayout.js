@@ -138,6 +138,42 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
   return (
     <>
+      <style>{`
+        .gfl-eye-btn { position: relative; }
+        .gfl-eye-btn::before {
+          content: 'Identiteit';
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 11px;
+          color: rgba(255, 220, 160, 0);
+          white-space: nowrap;
+          pointer-events: none;
+          font-weight: bold;
+          letter-spacing: 0.05em;
+          transition: color 0.3s ease;
+          margin-bottom: 2px;
+        }
+        .gfl-eye-btn:hover::before { color: rgba(255, 220, 160, 0.9); }
+        .gfl-blackhole-btn { position: relative; }
+        .gfl-blackhole-btn::before {
+          content: 'Inloggen';
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 11px;
+          color: rgba(255, 220, 160, 0);
+          white-space: nowrap;
+          pointer-events: none;
+          font-weight: bold;
+          letter-spacing: 0.05em;
+          transition: color 0.3s ease;
+          margin-bottom: 2px;
+        }
+        .gfl-blackhole-btn:hover::before { color: rgba(255, 220, 160, 0.9); }
+      `}</style>
       {/* 1. Top Left - Filosofie */}
       <div 
         className="absolute pointer-events-auto"
@@ -723,7 +759,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '14.95vh' }} headerRight={langToggle}>
               <div className="w-full h-full flex items-center justify-around opacity-90 relative" style={{ padding: '0 1vw' }}>
                 {/* Left: Logo - Button */}
-                <button 
+                <button
+                  className="gfl-eye-btn"
                   onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
@@ -751,7 +788,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Right: Login Button */}
                 <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
-                  <button 
+                  <button
+                    className="gfl-blackhole-btn"
                     onClick={(e) => setActiveSection('login', e)}
                     style={{
                     padding: '0',
@@ -782,7 +820,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }} headerRight={langToggle}>
               <div className="w-full h-full flex items-center justify-around opacity-90 relative" style={{ padding: '0 1vw' }}>
                 {/* Left: Logo - Button */}
-                <button 
+                <button
+                  className="gfl-eye-btn"
                   onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
@@ -810,7 +849,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Right: Login Button */}
                 <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
-                  <button 
+                  <button
+                    className="gfl-blackhole-btn"
                     onClick={(e) => setActiveSection('login', e)}
                     style={{
                     padding: '0',
@@ -841,7 +881,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }} headerRight={langToggle}>
               <div className="w-full h-full flex items-center justify-evenly opacity-90 relative" style={{ padding: '0 0.5vw' }}>
                 {/* Left: Logo - Button */}
-                <button 
+                <button
+                  className="gfl-eye-btn"
                   onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
@@ -869,7 +910,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Right: Login Button */}
                 <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
-                  <button 
+                  <button
+                    className="gfl-blackhole-btn"
                     onClick={(e) => setActiveSection('login', e)}
                     style={{
                     padding: '0',

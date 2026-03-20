@@ -499,7 +499,7 @@ const AssessmentCard = ({
                   e.currentTarget.style.boxShadow = `0 0 20px ${subjectColor}25`;
                 }}
               >
-                →
+                Start
               </button>
             </div>
           )}
@@ -577,19 +577,19 @@ const AssessmentCard = ({
               style={{
                 fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                 fontSize: windowWidth >= 1024 ? '0.95rem' : '0.8rem',
-                backgroundColor: 'rgba(168, 85, 247, 0.12)',
-                border: '2px solid #a855f7',
-                color: '#a855f7',
-                boxShadow: '0 0 20px rgba(168, 85, 247, 0.15)',
+                backgroundColor: `${subjectColor}12`,
+                border: `2px solid ${subjectColor}`,
+                color: subjectColor,
+                boxShadow: `0 0 20px ${subjectColor}25`,
                 marginTop: '0.75rem',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.25)';
-                e.currentTarget.style.boxShadow = '0 0 30px rgba(168, 85, 247, 0.3)';
+                e.currentTarget.style.backgroundColor = `${subjectColor}30`;
+                e.currentTarget.style.boxShadow = `0 0 30px ${subjectColor}50`;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.12)';
-                e.currentTarget.style.boxShadow = '0 0 20px rgba(168, 85, 247, 0.15)';
+                e.currentTarget.style.backgroundColor = `${subjectColor}12`;
+                e.currentTarget.style.boxShadow = `0 0 20px ${subjectColor}25`;
               }}
             >
               Start

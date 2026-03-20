@@ -74,21 +74,40 @@ const Linkedin = ({ size = 24, className = '' }) => (
 /**
  * NavWheel - Rotating navigation wheel for brand selection
  */
-const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
+const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const wheelRef = useRef(null);
-  
-  // Wheel Configuration - Original aistudios values
-  const wheelSize = 900; 
-  const radius = wheelSize / 2; // 450px
-  const placementRadius = radius * 0.85; // 382.5px - logos placed 15% inward
-  const bottomOffset = -690; // Shows only ~210px of wheel = ~3 logos visible
+  const [vpW, setVpW] = useState(typeof window !== 'undefined' ? window.innerWidth : 1440);
+  const [vpH, setVpH] = useState(typeof window !== 'undefined' ? window.innerHeight : 900);
+
+  // Viewport resize listener
+  useEffect(() => {
+    const onVpResize = () => { setVpW(window.innerWidth); setVpH(window.innerHeight); };
+    window.addEventListener('resize', onVpResize);
+    return () => window.removeEventListener('resize', onVpResize);
+  }, []);
+
+  // Wheel Configuration - dynamically sized from viewport
+  const wheelSize = Math.min(900, Math.round(vpW * 0.70));
+  const placementRadius = (wheelSize / 2) * 0.85;
+  const visibleWheelH = Math.max(170, Math.round(vpH * 0.22));
+  const bottomOffset = -(wheelSize - visibleWheelH);
+  const hubSize = Math.max(56, Math.min(74, Math.round(vpW * 0.052)));
+  const hubBottom = -Math.round(hubSize * 0.22);
+  const sideBottom = Math.max(12, Math.round(hubSize * 0.24));
+  const hubHalf = Math.round(hubSize / 2);
+  const sideOffset = Math.min(130, Math.round(hubHalf + Math.max(75, vpW * 0.058)));
+  const sideOffsetRight = Math.min(142, Math.round(hubHalf + Math.max(82, vpW * 0.063)));
+  const listHeight = Math.max(240, Math.round(vpH * 0.30));
+  const cardWidth = Math.max(130, Math.round(vpW * 0.109));
+  const logoSize = Math.max(64, Math.round(wheelSize * 0.107));
 
   // Calculate continuous rotation
   const rotation = -virtualIndex * (360 / brands.length);
   
   // Handle direct click (shortest path logic)
   const handleItemClick = (targetIndex) => {
+    if (locked) return;
     const currentMod = ((virtualIndex % brands.length) + brands.length) % brands.length;
     let diff = targetIndex - currentMod;
     if (diff > 6) diff -= 12;
@@ -98,6 +117,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
 
   // Scoped Wheel Event Listener
   useEffect(() => {
+    if (locked) return;
     const handleWheel = (e) => {
       e.preventDefault();
       const direction = e.deltaY > 0 ? 1 : -1;
@@ -111,7 +131,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
     return () => {
       if (el) el.removeEventListener('wheel', handleWheel);
     };
-  }, [virtualIndex, onUpdateIndex]);
+  }, [virtualIndex, onUpdateIndex, locked]);
 
   return (
     <>
@@ -119,18 +139,18 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
       <div 
         className={`fixed inset-x-0 bottom-0 z-50 p-8 pt-12 flex items-center overflow-x-auto gap-4 transition-all duration-500 backdrop-blur-xl border-t ${isExpanded ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}
         style={{ 
-          height: '300px',
+          height: `${listHeight}px`,
           backgroundColor: 'rgba(0, 0, 0, 0.9)',
           borderColor: 'rgba(255, 174, 0, 0.5)'
         }}
       >
-        {brands.map((brand, i) => (
+        {!locked && brands.map((brand, i) => (
           <button 
             key={brand.id}
             onClick={() => { handleItemClick(i); setIsExpanded(false); }}
             className="flex-shrink-0 h-full border rounded relative group overflow-hidden text-left transition-all duration-300"
             style={{
-              width: '160px',
+              width: `${cardWidth}px`,
               borderColor: i === ((virtualIndex % brands.length) + brands.length) % brands.length 
                 ? '#ffae00' 
                 : 'rgba(255, 255, 255, 0.1)',
@@ -199,6 +219,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
           }}
         >
           {brands.map((brand, i) => {
+            if (locked && i !== ((virtualIndex % brands.length) + brands.length) % brands.length) return null;
             const angle = i * (360 / brands.length);
             const currentIndex = ((virtualIndex % brands.length) + brands.length) % brands.length;
             const isActive = i === currentIndex;
@@ -209,7 +230,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
             
             if (i === 0) logoScale = 0.8; // Karman
             if (i === 1) logoScale = 0.8; // Code49
-            if (i === 2) wrapperTranslate = -16; // Eleven Eleven - move up 1rem (16px)
+            if (i === 2) wrapperTranslate = -Math.round(logoSize / 6); // Eleven Eleven
             if (i === 3) logoScale = 0.85; // Rengi
             
             return (
@@ -220,7 +241,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
                   transform: `rotate(${angle}deg) translateY(-${placementRadius}px)`
                 }}
               >
-                <div className="absolute -top-12 -left-12 w-24 h-24">
+                <div style={{ position: 'absolute', top: -(logoSize / 2), left: -(logoSize / 2), width: logoSize, height: logoSize }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleItemClick(i); }}
                     className={`w-full h-full flex items-center justify-center transition-all duration-300 relative border-0`}
@@ -273,8 +294,8 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
         className={`fixed z-50 flex items-center justify-center transition-all duration-300 border-0 outline-none gap-2 ${isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         style={{
           backgroundColor: 'transparent',
-          bottom: 'calc(21px - 0.2rem)',
-          left: 'calc(50% - 130px)',
+          bottom: `${sideBottom}px`,
+          left: `calc(50% - ${sideOffset}px)`,
           color: '#ffae00',
           fontSize: '12px',
           fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
@@ -299,8 +320,8 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
         className={`fixed z-50 flex items-center justify-center transition-all duration-300 border-0 outline-none gap-2 ${isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         style={{
           backgroundColor: 'transparent',
-          bottom: 'calc(21px - 0.2rem)',
-          right: 'calc(50% - 142px)',
+          bottom: `${sideBottom}px`,
+          right: `calc(50% - ${sideOffsetRight}px)`,
           color: '#ffae00',
           fontSize: '12px',
           fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
@@ -321,16 +342,17 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
 
       {/* STATIC HUB BUTTON - Simple centered orange button, no rings, no border */}
       <button
-        onClick={() => setIsExpanded(true)}
+        onClick={() => { if (!locked) setIsExpanded(true); }}
         className={`fixed z-50 rounded-full flex items-center justify-center transition-all duration-300 border-0 outline-none ${isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         style={{
-          width: '74px',
-          height: '74px',
+          width: `${hubSize}px`,
+          height: `${hubSize}px`,
           backgroundColor: '#ffae00',
           boxShadow: '0 0 30px rgba(255, 174, 0, 0.5)',
-          bottom: '-16px',
+          bottom: `${hubBottom}px`,
           left: '50%',
-          transform: 'translateX(-50%)'
+          transform: 'translateX(-50%)',
+          cursor: locked ? 'default' : 'pointer'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.boxShadow = '0 0 50px rgba(255, 174, 0, 0.7)';
@@ -339,7 +361,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack }) => {
           e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 174, 0, 0.5)';
         }}
       >
-        <List className="text-black w-8 h-8" />
+        <List size={Math.max(24, Math.round(hubSize * 0.43))} className="text-black" />
       </button>
     </>
   );
@@ -490,7 +512,7 @@ const GeneralBrandPage = React.memo(({
         <div className="w-full h-full flex gap-6 pointer-events-auto relative z-10">
 
           {/* LEFT COLUMN: Identity & Tabs */}
-          <div className="w-1/3 flex flex-col gap-4" style={{ height: '125%', transform: 'translateY(-7.5rem) translateX(-2%)', paddingTop: '0.84rem', paddingBottom: '0.36rem' }}>
+          <div className="w-1/3 flex flex-col gap-4" style={{ height: '125%', transform: 'translateY(max(-7.5rem, -8.5vh)) translateX(-2%)', paddingTop: '0.84rem', paddingBottom: '0.36rem' }}>
             <SectorFrame>
               {/* Header */}
               <div className="flex gap-6 mb-6 border-b border-white/10 pb-6">
@@ -742,34 +764,7 @@ const GeneralBrandPage = React.memo(({
       </main>
 
       {/* EXPANDABLE NAV WHEEL */}
-      {!hideNavWheel && <NavWheel brands={BRANDS} virtualIndex={virtualIndex} onUpdateIndex={setVirtualIndex} onBack={() => onBack()} />}
-
-      {/* BACK BUTTON (shown only when NavWheel is hidden) */}
-      {hideNavWheel && (
-        <button
-          onClick={() => onBack()}
-          className="fixed z-50 flex items-center justify-center gap-2"
-          style={{
-            backgroundColor: 'transparent',
-            bottom: '1.5rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            color: '#ffae00',
-            fontSize: '12px',
-            fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-            fontWeight: 'bold',
-            letterSpacing: '0.1em',
-            border: 'none',
-            outline: 'none',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = '#ffc955'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = '#ffae00'; }}
-        >
-          <ChevronLeft size={16} />
-          <span>TERUG</span>
-        </button>
-      )}
+      <NavWheel brands={BRANDS} virtualIndex={virtualIndex} onUpdateIndex={setVirtualIndex} onBack={() => onBack()} locked={hideNavWheel} />
 
       {/* MODAL - Contact */}
       <Modal isOpen={showContactModal} onClose={() => setShowContactModal(false)}>

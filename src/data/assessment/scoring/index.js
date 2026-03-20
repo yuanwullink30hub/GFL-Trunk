@@ -805,33 +805,36 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
   const hasShadowHarmony = isShadowPair(mainArchetype, supportArchetype);
   const hasGreenHarmony = isHarmonyPair(mainArchetype, supportArchetype);
 
-  // ── Build radar data (wheel order 1→12) — 5-layer stacked bands ──
+  // ── Build radar data (wheel order 1→12) — 6-layer stacked bands ──
   const radarData = ARCHETYPE_RADAR_LABELS.map(label => {
     const key = label.toUpperCase();
     const s = scores[key] || {};
-    // Cumulative band boundaries (painter's algorithm: draw purple first, green last)
-    const band1 = (s.nature_core || 0) + (s.green_hw || 0);          // Green band outer
-    const band2 = band1 + (s.culture_core || 0);                      // Orange band outer
-    const band3 = band2 + (s.blue_fb || 0);                           // Blue band outer
-    const band4 = band3 + (s.yellow_cog || 0);                        // Gold band outer
-    const band5 = band4 + (s.purple_shadow || 0);                     // Purple band outer = total
+    // Cumulative band boundaries (painter's algorithm: draw shadow first, nature-core last)
+    // Inside → outside: Nature Core > Bio HW > Culture Core > Feedback > Cognitief > Schaduw
+    const band1 = (s.nature_core    || 0);                             // Green  — direct nature picks (innermost, dark green)
+    const band2 = band1 + (s.green_hw      || 0);                     // Lime   — bio hardware bleed (+3, light green)
+    const band3 = band2 + (s.culture_core  || 0);                     // Orange — direct culture picks
+    const band4 = band3 + (s.blue_fb       || 0);                     // Blue   — feedback bleed (+2)
+    const band5 = band4 + (s.yellow_cog    || 0);                     // Gold   — cognitive lens bleed (+2)
+    const band6 = band5 + (s.purple_shadow || 0);                     // Purple — shadow drip (+1, outermost = total)
     return {
       subject: label,
       // Cumulative band boundaries for stacked radar
-      green: band1,
-      orange: band2,
-      blue: band3,
-      gold: band4,
-      purple: band5,
-      // Raw 5-basket values (for tooltip)
-      nature_core: s.nature_core || 0,
-      green_hw: s.green_hw || 0,
-      culture_core: s.culture_core || 0,
-      blue_fb: s.blue_fb || 0,
-      yellow_cog: s.yellow_cog || 0,
-      purple_shadow: s.purple_shadow || 0,
+      green:  band1,
+      lime:   band2,
+      orange: band3,
+      blue:   band4,
+      gold:   band5,
+      purple: band6,
+      // Raw basket values (for tooltip)
+      nature_core:   s.nature_core    || 0,
+      culture_core:  s.culture_core   || 0,
+      green_hw:      s.green_hw       || 0,
+      blue_fb:       s.blue_fb        || 0,
+      yellow_cog:    s.yellow_cog     || 0,
+      purple_shadow: s.purple_shadow  || 0,
       // Backward compat
-      A: band5,
+      A: band6,
       fullMark: 500,
     };
   });

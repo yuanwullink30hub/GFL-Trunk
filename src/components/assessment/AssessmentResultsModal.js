@@ -180,6 +180,7 @@ const AssessmentResultsModal = ({
       oceanScores,
       scores: result._archetypeScores,
       responses: result._answerLog,
+      subgroups: result.subgroups,
       level: 'advanced',
     }, (stage, message) => {
       setAiStage(stage);
@@ -700,18 +701,20 @@ const AssessmentResultsModal = ({
       // ── WHY THIS COMBINATION ──
       if (result.combinationText) {
         sectionHeading(`Waarom jij ${result.name} bent`, green);
-        writeWrapped(result.combinationText, margin + 2, y, contentW - 4, 9.5, white);
+        writeWrapped(result.combinationText, margin + 2, y, contentW - 4, 9, white);
         y += 4;
         hr();
       }
 
       // ── MAIN ARCHETYPE ──
-      sectionHeading(`De Essentie — ${result.mainName} (${result.mainNameEn})`, orange);
+      sectionHeading(`De Essentie — ${result.mainName} (${result.mainNameEn})`, purple);
       if (result.group) {
-        pdf.setFontSize(8);
+        pdf.setFontSize(11);
         pdf.setTextColor(...white);
-        pdf.text(`Groep: ${result.group}`, margin + 5, y);
-        y += 5;
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`Groep: ${result.group}`, margin + 2, y);
+        y += 6;
+        pdf.setFont('helvetica', 'normal');
       }
       keyValue('Motivatie', result.mainMotivation);
       keyValue('Kracht', result.mainPositive);
@@ -720,12 +723,14 @@ const AssessmentResultsModal = ({
       hr();
 
       // ── SUPPORT ARCHETYPE ──
-      sectionHeading(`De Vermenigvuldiging — ${result.secondaryName} (${result.secondaryNameEn})`, purple);
+      sectionHeading(`De Vermenigvuldiging — ${result.secondaryName} (${result.secondaryNameEn})`, orange);
       if (result.supportGroup) {
-        pdf.setFontSize(8);
+        pdf.setFontSize(11);
         pdf.setTextColor(...white);
-        pdf.text(`Support Groep: ${result.supportGroup}`, margin + 5, y);
-        y += 5;
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`Support Groep: ${result.supportGroup}`, margin + 2, y);
+        y += 6;
+        pdf.setFont('helvetica', 'normal');
       }
       keyValue('Motivatie', result.secondaryMotivation);
       keyValue('Kracht', result.secondaryPositive);
@@ -734,7 +739,7 @@ const AssessmentResultsModal = ({
       }
       if (result.harmonyActive) {
         ensureSpace(6);
-        pdf.setFontSize(8);
+        pdf.setFontSize(9);
         pdf.setTextColor(...green);
         pdf.setFont('helvetica', 'bold');
         pdf.text(`\u2666 Harmony: ${result.mainNameEn} + ${result.secondaryNameEn} — complementaire as`, margin + 2, y);
@@ -743,41 +748,145 @@ const AssessmentResultsModal = ({
       y += 2;
       hr();
 
-      // ── ALL 6 OUTCOMES TABLE ──
+      // ── ALL 6 OUTCOMES TABLE (6 columns: one per support group) ──
       if (result.allSupportArchetypes) {
         sectionHeading(`Alle Uitkomsten voor ${result.mainName}`, green);
-        ensureSpace(28);
-        const colW = contentW / 3;
-        result.allSupportArchetypes.forEach((sa, i) => {
-          const col = i % 3;
-          const row = Math.floor(i / 3);
-          if (col === 0 && row > 0) y += 12;
-          const cx = margin + col * colW;
-          const cy = y;
-          // Highlight active
+        const cols = result.allSupportArchetypes;
+        const colCount = cols.length; // 6
+        const gap = 1.5;
+        const colW = (contentW - gap * (colCount - 1)) / colCount;
+
+        // Helper: split combination text into meaning (1st sentence) and gift (rest)
+        const splitMeaningGift = (text) => {
+          if (!text) return { meaning: '', gift: '' };
+          const match = text.match(/^([^.!?]+[.!?])\s*(.*)$/);
+          if (match) return { meaning: match[1].trim(), gift: match[2].trim() };
+          return { meaning: text, gift: '' };
+        };
+
+        // Helper: draw wrapped text in a cell, returns height consumed
+        const cellText = (txt, cx, cy, cw, fontSize, color, fontStyle = 'normal') => {
+          if (!txt) return 0;
+          pdf.setFontSize(fontSize);
+          pdf.setFont('helvetica', fontStyle);
+          pdf.setTextColor(...color);
+          const lines = pdf.splitTextToSize(txt, cw - 2);
+          const lh = fontSize * 0.42;
+          lines.forEach((line, li) => {
+            pdf.text(line, cx + 1, cy + li * lh);
+          });
+          return lines.length * lh;
+        };
+
+        // ── Row 0: Group header + Extension name ──
+        const nameRowData = cols.map(sa => {
+          const { meaning, gift } = splitMeaningGift(sa.combination);
+          return { ...sa, meaning, gift };
+        });
+
+        // Measure all rows to find max height per row
+        const measureCellH = (txt, cw, fontSize) => {
+          if (!txt) return 0;
+          pdf.setFontSize(fontSize);
+          const lines = pdf.splitTextToSize(txt, cw - 2);
+          return lines.length * (fontSize * 0.42);
+        };
+
+        // Row heights
+        const nameFontSize = 9;
+        const dataFontSize = 8;
+        const rowLabelW = 0; // no label column, rows are labeled inline
+
+        // Row 0: Group + Name
+        let maxH0 = 0;
+        nameRowData.forEach(sa => {
+          const h = 4 + measureCellH(sa.extendedName, colW, nameFontSize);
+          if (h > maxH0) maxH0 = h;
+        });
+
+        // Row 1: Betekenis (meaning)
+        let maxH1 = 0;
+        nameRowData.forEach(sa => {
+          const h = 4 + measureCellH(sa.meaning, colW, dataFontSize);
+          if (h > maxH1) maxH1 = h;
+        });
+
+        // Row 2: Gift
+        let maxH2 = 0;
+        nameRowData.forEach(sa => {
+          const h = 4 + measureCellH(sa.gift, colW, dataFontSize);
+          if (h > maxH2) maxH2 = h;
+        });
+
+        // Row 3: Valkuil (shadow/curse)
+        let maxH3 = 0;
+        nameRowData.forEach(sa => {
+          const h = 4 + measureCellH(sa.shadow, colW, dataFontSize);
+          if (h > maxH3) maxH3 = h;
+        });
+
+        const totalTableH = maxH0 + maxH1 + maxH2 + maxH3 + 16; // + row label space
+        ensureSpace(totalTableH + 4);
+
+        // Draw columns
+        nameRowData.forEach((sa, i) => {
+          const cx = margin + i * (colW + gap);
+
+          // Column background
           if (sa.isActive) {
             pdf.setFillColor(40, 30, 60);
-            pdf.roundedRect(cx, cy - 3.5, colW - 2, 11, 1.5, 1.5, 'F');
+            pdf.roundedRect(cx, y - 2, colW, totalTableH, 1.5, 1.5, 'F');
+          } else {
+            pdf.setFillColor(18, 18, 28);
+            pdf.roundedRect(cx, y - 2, colW, totalTableH, 1.5, 1.5, 'F');
           }
+
+          let rowY = y;
+
+          // ── Row 0: Group label + Extension name ──
           pdf.setFontSize(7);
-          pdf.setTextColor(...(sa.isActive ? purple : white));
           pdf.setFont('helvetica', 'bold');
-          pdf.text(sa.group, cx + 2, cy);
-          pdf.setFontSize(9);
-          pdf.setTextColor(...(sa.isActive ? purple : white));
-          pdf.setFont('helvetica', sa.isActive ? 'bold' : 'normal');
-          pdf.text(sa.extendedName, cx + 2, cy + 4.2);
-          if (sa.isActive) {
-            pdf.setFontSize(6);
-            pdf.setTextColor(...green);
-            pdf.text('\u25B8 JOUW RESULTAAT', cx + 2, cy + 7.5);
-          }
+          pdf.setTextColor(...(sa.isActive ? green : [150, 150, 160]));
+          pdf.text(sa.group, cx + 1, rowY);
+          rowY += 3.5;
+          cellText(sa.extendedName, cx, rowY, colW, nameFontSize, sa.isActive ? purple : white, 'bold');
+          rowY = y + maxH0;
+
+          // ── Row 1: Betekenis ──
+          pdf.setFontSize(7);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...orange);
+          pdf.text('BETEKENIS', cx + 1, rowY);
+          rowY += 3;
+          cellText(sa.meaning, cx, rowY, colW, dataFontSize, white);
+          rowY = y + maxH0 + maxH1 + 4;
+
+          // ── Row 2: Gift ──
+          pdf.setFontSize(7);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...green);
+          pdf.text('GIFT', cx + 1, rowY);
+          rowY += 3;
+          cellText(sa.gift, cx, rowY, colW, dataFontSize, white);
+          rowY = y + maxH0 + maxH1 + maxH2 + 8;
+
+          // ── Row 3: Valkuil ──
+          pdf.setFontSize(7);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...red);
+          pdf.text('VALKUIL', cx + 1, rowY);
+          rowY += 3;
+          cellText(sa.shadow, cx, rowY, colW, dataFontSize, [200, 200, 210]);
         });
-        y += 24;
+
+        y += totalTableH + 4;
         hr();
       }
 
-      // ── SHADOW ──
+      // ── SHADOW (new page) ──
+      pdf.addPage();
+      paintBg();
+      y = margin;
       if (result.shadowPartner) {
         sectionHeading(`De Schaduw — ${result.shadowName} (${result.shadowNameEn})`, orange);
         if (result.mainShadowTension) {
@@ -785,9 +894,9 @@ const AssessmentResultsModal = ({
           y += 2;
         }
         if (result.shadowInsight) {
-          writeWrapped(result.shadowInsight, margin + 2, y, contentW - 4, 9.5, white);
+          writeWrapped(result.shadowInsight, margin + 2, y, contentW - 4, 9, white);
         } else if (result.shadowDescription) {
-          writeWrapped(result.shadowDescription, margin + 2, y, contentW - 4, 9.5, white);
+          writeWrapped(result.shadowDescription, margin + 2, y, contentW - 4, 9, white);
         }
         y += 4;
         hr();
@@ -797,13 +906,13 @@ const AssessmentResultsModal = ({
       if (result.blindspotPartner) {
         sectionHeading(`De Blindspot — ${result.blindspotName} (${result.blindspotNameEn})`, red);
         ensureSpace(6);
-        pdf.setFontSize(8);
+        pdf.setFontSize(11);
         pdf.setTextColor(...red);
         pdf.setFont('helvetica', 'italic');
         pdf.text(`De tegenhanger van je Support (${result.secondaryNameEn}) — jouw externe blinde vlek`, margin + 5, y);
-        y += 5;
+        y += 6;
         if (result.blindspotDescription) {
-          writeWrapped(result.blindspotDescription, margin + 2, y, contentW - 4, 9.5, white);
+          writeWrapped(result.blindspotDescription, margin + 2, y, contentW - 4, 9, white);
           y += 2;
         }
         if (result.blindspotShadowTrait) {
@@ -966,89 +1075,211 @@ const AssessmentResultsModal = ({
         hr();
       }
 
-      // ── DUAL-CORE DYNAMICS ──
+      // ── DUAL-CORE DYNAMICS + RADAR CHART (page 5) ──
+      pdf.addPage();
+      paintBg();
+      y = margin;
       if (result.subgroups && result.subgroups.length > 0) {
         sectionHeading('Dual-Core Dynamics', purple);
-        const MAX_PTS = 25;
-        const barMaxW = 50;
-        const rowH = 10;
+
+        // Legend
+        const legY = y;
+        pdf.setFillColor(...purple);
+        pdf.rect(margin, legY - 1, 3, 3, 'F');
+        pdf.setFontSize(7); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...purple);
+        pdf.text('NATURE', margin + 4.5, legY + 1.2);
+        pdf.setFillColor(...orange);
+        pdf.rect(margin + 26, legY - 1, 3, 3, 'F');
+        pdf.setTextColor(...orange);
+        pdf.text('CULTURE', margin + 30.5, legY + 1.2);
+        pdf.setFontSize(6); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(100, 110, 130);
+        pdf.text('( /30 max )', margin + 55, legY + 1.2);
+        y += 7;
+
+        const GROUP_META_PDF = {
+          Ruling:     { network: 'CEN Dominantie',          drive: 'Externe structuur en orde' },
+          Relational: { network: 'Limbic Coupling',          drive: 'Emotionele fusie en empathie' },
+          Seeker:     { network: 'Hoge Openness',            drive: 'Zuiverheid en ontdekking' },
+          Chaos:      { network: 'Salience Network',         drive: 'Disruptie en lage consciëntieusheid' },
+          Abstract:   { network: 'DMN Hyper-connectie',      drive: 'Interne reflectie en subjectiviteit' },
+          Agency:     { network: 'Extraversie / Wilskracht', drive: 'Actie en transformatie' },
+        };
+        const ARCH_POS_PDF = {
+          Judge: 1, Ruler: 12, Lover: 2, Caregiver: 3,
+          Innocent: 4, Explorer: 5, Outlaw: 6, Trickster: 7,
+          Sage: 8, Artist: 9, Magician: 10, Hero: 11,
+        };
+
+        const MAX_NAT  = 30; // 15 per archetype × 2 archetypes
+        const labelW   = 38;
+        const scoreW   = 16;
+        const gap      = 3;
+        const barAreaW = contentW - labelW - scoreW - gap * 2;
+        const barX     = margin + labelW + gap;
+        const scoreX   = barX + barAreaW + gap;
+        const barH     = 2.2;
 
         result.subgroups.forEach(sg => {
-          ensureSpace(rowH + 2);
-          const leftPct = MAX_PTS > 0 ? sg.leftScore / MAX_PTS : 0;
-          const rightPct = MAX_PTS > 0 ? sg.rightScore / MAX_PTS : 0;
-          const centerX = W / 2;
-          const barY = y - 1;
+          const hasBonus = sg.harmonyPoints > 0 || sg.shadowPoints > 0;
+          const rowH = 14 + (hasBonus ? 5 : 0);
+          ensureSpace(rowH);
 
-          // Left bar (purple)
-          pdf.setFillColor(...purple);
-          const leftBarW = leftPct * barMaxW;
-          pdf.rect(centerX - leftBarW - 1, barY, leftBarW, 4, 'F');
+          const meta     = GROUP_META_PDF[sg.group] || { network: sg.group, drive: sg.axis || '' };
+          const natTotal = (sg.leftNature  || 0) + (sg.rightNature  || 0);
+          const cultTotal= (sg.leftCulture || 0) + (sg.rightCulture || 0);
+          const natPct   = Math.min(natTotal  / MAX_NAT, 1);
+          const cultPct  = Math.min(cultTotal / MAX_NAT, 1);
 
-          // Right bar (orange)
-          pdf.setFillColor(...orange);
-          const rightBarW = rightPct * barMaxW;
-          pdf.rect(centerX + 1, barY, rightBarW, 4, 'F');
+          // Network name (right-aligned in label area)
+          pdf.setFontSize(7); pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(150, 220, 240);
+          pdf.text(meta.network.toUpperCase(), margin + labelW, y + 1.5, { align: 'right' });
 
-          // Center divider
-          pdf.setFillColor(60, 60, 70);
-          pdf.rect(centerX - 0.3, barY - 0.5, 0.6, 5, 'F');
+          // Drive subtitle
+          pdf.setFontSize(5.5); pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(100, 120, 140);
+          const driveText = pdf.splitTextToSize(meta.drive, labelW - 1)[0] || meta.drive;
+          pdf.text(driveText, margin + labelW, y + 5, { align: 'right' });
 
-          // Labels & scores
-          pdf.setFontSize(7.5);
-          pdf.setFont('helvetica', 'bold');
+          const natBarY  = y;
+          const cultBarY = y + barH + 1.5;
+
+          // Bar track backgrounds (dark)
+          pdf.setFillColor(28, 33, 48);
+          pdf.rect(barX, natBarY,  barAreaW, barH, 'F');
+          pdf.rect(barX, cultBarY, barAreaW, barH, 'F');
+
+          // Nature fill (purple)
+          if (natPct > 0) {
+            pdf.setFillColor(...purple);
+            pdf.rect(barX, natBarY, natPct * barAreaW, barH, 'F');
+          }
+          // Culture fill (orange)
+          if (cultPct > 0) {
+            pdf.setFillColor(...orange);
+            pdf.rect(barX, cultBarY, cultPct * barAreaW, barH, 'F');
+          }
+
+          // Scores column (right of bars)
+          pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold');
           pdf.setTextColor(...purple);
-          pdf.text(`${sg.leftLabel}  ${sg.leftScore}`, centerX - barMaxW - 2, y + 1.5, { align: 'right' });
+          pdf.text(`${natTotal}`, scoreX, natBarY + 1.8);
+          pdf.setFontSize(5); pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(130, 90, 180);
+          pdf.text('/30', scoreX + 5.5, natBarY + 1.8);
+
+          pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold');
           pdf.setTextColor(...orange);
-          pdf.text(`${sg.rightScore}  ${sg.rightLabel}`, centerX + barMaxW + 2, y + 1.5);
+          pdf.text(`${cultTotal}`, scoreX, cultBarY + 1.8);
+          pdf.setFontSize(5); pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(170, 110, 60);
+          pdf.text('/30', scoreX + 5.5, cultBarY + 1.8);
 
-          if (sg.harmonyPoints > 0) {
-            pdf.setFontSize(5.5);
-            pdf.setTextColor(...green);
-            pdf.text(`+${sg.harmonyPoints} harmony`, centerX, y + 5, { align: 'center' });
-          }
-          if (sg.shadowPoints > 0) {
-            pdf.setFontSize(5.5);
-            pdf.setTextColor(...orange);
-            pdf.text(`+${sg.shadowPoints} shadow`, centerX, y + (sg.harmonyPoints > 0 ? 7.5 : 5), { align: 'center' });
+          // Archetype badges
+          const badgeY = cultBarY + barH + 2;
+          pdf.setFontSize(6); pdf.setFont('helvetica', 'bold');
+          let bx = barX;
+          [
+            { label: sg.leftLabel,  isNat: (sg.leftNature  || 0) >= (sg.leftCulture  || 0) },
+            { label: sg.rightLabel, isNat: (sg.rightNature || 0) >= (sg.rightCulture || 0) },
+          ].forEach(arch => {
+            const pos = ARCH_POS_PDF[arch.label] || '';
+            const txt = `${arch.label.toUpperCase()} (${pos})`;
+            const tw  = pdf.getTextWidth(txt) + 3;
+            pdf.setFillColor(arch.isNat ? 40 : 45, arch.isNat ? 20 : 25, arch.isNat ? 65 : 20);
+            pdf.rect(bx, badgeY - 1.5, tw, 3.8, 'F');
+            if (arch.isNat) { pdf.setTextColor(...purple); } else { pdf.setTextColor(...orange); }
+            pdf.text(txt, bx + 1.5, badgeY + 1.5);
+            bx += tw + 2;
+          });
+
+          // Bonus points (harmony / shadow)
+          if (hasBonus) {
+            const bonusY = badgeY + 4.5;
+            pdf.setFontSize(6); pdf.setFont('helvetica', 'normal');
+            let bxB = barX;
+            if (sg.harmonyPoints > 0) {
+              pdf.setTextColor(...green);
+              pdf.text(`✦ Harmony +${sg.harmonyPoints} pts`, bxB, bonusY);
+              bxB += 36;
+            }
+            if (sg.shadowPoints > 0) {
+              pdf.setTextColor(...orange);
+              pdf.text(`✦ Shadow +${sg.shadowPoints} pts`, bxB, bonusY);
+            }
           }
 
-          y += rowH + (sg.harmonyPoints > 0 || sg.shadowPoints > 0 ? 4 : 0);
+          y += rowH;
         });
         y += 4;
         hr();
       }
 
-      // ── RADAR CHART ──
+      // ── GROEP DYNAMIEK AI SECTION (between Dual-Core bars and radar) ──
+      const groepDynSection = displaySections?.find(s =>
+        s.title?.toLowerCase().includes('groep dynamiek') ||
+        s.title?.toLowerCase().includes('neurobiologische interpretatie')
+      );
+      if (groepDynSection) {
+        sectionHeading('Groep Dynamiek — Neurobiologische Interpretatie', cyan);
+        writePdfMarkdown(groepDynSection.content, margin + 2, contentW - 4);
+        y += 3;
+        hr();
+      }
+
+      // ── RADAR CHART (same page as Dual-Core) ──
       if (radarRef.current) {
         sectionHeading('Visuele Analyse — Archetype Matrix', green);
         try {
           const radarCanvas = await html2canvas(radarRef.current, {
-            backgroundColor: '#0a0a0e',
-            scale: 2,
+            backgroundColor: null,
+            scale: 3,
             useCORS: true,
             logging: false,
           });
           const radarImg = radarCanvas.toDataURL('image/png');
-          const radarW = Math.min(contentW, 120);
+          const radarMargin = 8;
+          const radarW = W - radarMargin * 2;
           const radarH = (radarCanvas.height / radarCanvas.width) * radarW;
-          ensureSpace(radarH + 4);
-          pdf.addImage(radarImg, 'PNG', W / 2 - radarW / 2, y, radarW, radarH);
-          y += radarH + 6;
+          // If it fits on this page, center vertically in remaining space
+          const availH = H - y - radarMargin;
+          const finalH = Math.min(radarH, availH);
+          const finalW = finalH === radarH ? radarW : (radarCanvas.width / radarCanvas.height) * finalH;
+          const offsetX = W / 2 - finalW / 2;
+          pdf.addImage(radarImg, 'PNG', offsetX, y, finalW, finalH);
+          y += finalH + 6;
         } catch {
           y += 4;
         }
-        hr();
       }
 
-      // ── ANALYSIS SECTIONS ──
+      // ── ANALYSIS SECTIONS (dedicated page) ──
       if (displaySections && displaySections.length > 0) {
-        const sectionColors = [green, purple, orange];
-        displaySections.forEach((section, i) => {
-          sectionHeading(section.title, sectionColors[i % 3]);
-          writePdfMarkdown(section.content, margin + 2, contentW - 4);
-          if (i < displaySections.length - 1) hr();
-        });
+        // Filter out the Groep Dynamiek section — already rendered on page 5
+        const mainSections = displaySections.filter(s =>
+          !s.title?.toLowerCase().includes('groep dynamiek') &&
+          !s.title?.toLowerCase().includes('neurobiologische interpretatie')
+        );
+        if (mainSections.length > 0) {
+          pdf.addPage();
+          paintBg();
+          y = margin;
+          const sectionColors = [green, purple, orange];
+          mainSections.forEach((section, i) => {
+            sectionHeading(section.title, sectionColors[i % 3]);
+            writePdfMarkdown(section.content, margin + 2, contentW - 4);
+            if (i < mainSections.length - 1) hr();
+          });
+        }
+      }
+
+      // ── AI AGENT PROMPT (dedicated page) ──
+      if (result?._aiAgentPrompt) {
+        pdf.addPage();
+        paintBg();
+        y = margin;
+        sectionHeading('Genereer een volledige AI Prompt', green);
+        writePdfMarkdown(result._aiAgentPrompt, margin + 2, contentW - 4);
       }
 
       // ═══════════════════════════════════════════════════
@@ -1579,15 +1810,15 @@ const AssessmentResultsModal = ({
                     </h3>
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                      gap: '0.75rem',
+                      gridTemplateColumns: 'repeat(6, 1fr)',
+                      gap: '0.4rem',
                     }}>
                       {result.allSupportArchetypes.map((sa) => (
                         <div key={sa.group} style={{
                           background: sa.isActive ? 'rgba(168, 85, 247, 0.15)' : 'rgba(0, 255, 157, 0.05)',
                           border: sa.isActive ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid rgba(0, 255, 157, 0.15)',
                           borderRadius: '0.5rem',
-                          padding: '0.75rem',
+                          padding: '0.4rem 0.3rem',
                           textAlign: 'center',
                           transition: 'all 0.3s',
                         }}>
@@ -1597,13 +1828,13 @@ const AssessmentResultsModal = ({
                             fontFamily: "'Rajdhani', sans-serif",
                             fontWeight: 700,
                             textTransform: 'uppercase',
-                            letterSpacing: '0.1em',
-                            marginBottom: '0.25rem',
+                            letterSpacing: '0.08em',
+                            marginBottom: '0.15rem',
                           }}>
                             {sa.group}
                           </div>
                           <div style={{
-                            fontSize: '0.85rem',
+                            fontSize: '0.78rem',
                             color: sa.isActive ? '#fff' : 'rgba(0, 255, 157, 0.7)',
                             fontFamily: "'Figtree', sans-serif",
                             fontWeight: sa.isActive ? 'bold' : 'normal',
@@ -1615,14 +1846,14 @@ const AssessmentResultsModal = ({
                             color: sa.isActive ? 'rgba(168, 85, 247, 0.7)' : 'rgba(0, 255, 157, 0.4)',
                             fontFamily: "'Rajdhani', sans-serif",
                             fontStyle: 'italic',
-                            marginTop: '0.15rem',
+                            marginTop: '0.1rem',
                           }}>
                             {sa.subtitle}
                           </div>
                           {sa.isActive && (
                             <div style={{
                               marginTop: '0.4rem',
-                              fontSize: '0.55rem',
+                              fontSize: '0.62rem',
                               color: '#00ff9d',
                               fontFamily: "'Rajdhani', sans-serif",
                               fontWeight: 700,
@@ -2070,6 +2301,59 @@ const AssessmentResultsModal = ({
                   <div ref={subgroupRef}>
                     <SubgroupCounters subgroups={result.subgroups} />
                   </div>
+                </div>
+
+                {/* ── 5b. Gele Driehoeken — Cognitieve Synergiepatronen ── */}
+                <div style={{
+                  width: '100%',
+                  background: 'rgba(234, 179, 8, 0.04)',
+                  border: '1px solid rgba(234, 179, 8, 0.18)',
+                  borderRadius: '0.75rem',
+                  padding: rs.sectionPad,
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}>
+                  {/* Corner accent */}
+                  <div style={{ position: 'absolute', top: 0, right: 0, width: '3rem', height: '3rem', opacity: 0.12, background: 'radial-gradient(circle at top right, rgba(234,179,8,0.6), transparent 70%)' }} />
+
+                  {/* Header */}
+                  <div style={{ marginBottom: '0.85rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                      <span style={{ fontSize: '0.6rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>/// CULTURA_FORCE</span>
+                    </div>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 0 12px rgba(234,179,8,0.3)' }}>
+                      De Vier Gele Driehoeken
+                    </h3>
+                    <p style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: 'rgba(148,163,184,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6 }}>
+                      Cognitieve synergiegroepen gevormd door elke 4e positie op het wiel. Gele driehoeken vuren uitsluitend op <strong style={{ color: 'rgba(234,179,8,0.85)' }}>Culture picks</strong> — ze representeren aangeleerd cognitief gedrag, niet biologische hardware. Groene en blauwe signalen tonen wie je <em>bent</em>; gele signalen tonen hoe je hebt <em>leren navigeren</em>.
+                    </p>
+                  </div>
+
+                  {/* Four triangles grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                    {[
+                      { num: 1, name: 'De Analytische Estheet', members: 'Judge · Explorer · Artist', networks: 'CEN + Openness + DMN', color: '#3b82f6' },
+                      { num: 2, name: 'De Passionele Alchemist', members: 'Lover · Outlaw · Magician', networks: 'Limbisch + Salience + Agency', color: '#ec4899' },
+                      { num: 3, name: 'De Strategische Bewaker', members: 'Caregiver · Trickster · Hero', networks: 'Limbisch + Salience + Agency', color: '#22c55e' },
+                      { num: 4, name: 'De Wijze Bouwmeester', members: 'Innocent · Sage · Ruler', networks: 'Openness + DMN + CEN', color: '#a855f7' },
+                    ].map(({ num, name, members, networks, color }) => (
+                      <div key={num} style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid rgba(234,179,8,0.1)`, borderRadius: '0.5rem', padding: '0.6rem 0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
+                          <span style={{ width: '1.1rem', height: '1.1rem', borderRadius: '50%', background: `rgba(234,179,8,0.15)`, border: `1px solid rgba(234,179,8,0.35)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', flexShrink: 0 }}>
+                            {num}
+                          </span>
+                          <span style={{ fontSize: '0.65rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color, letterSpacing: '0.05em', textTransform: 'uppercase', lineHeight: 1.2 }}>{name}</span>
+                        </div>
+                        <div style={{ fontSize: '0.62rem', color: 'rgba(209,213,219,0.7)', fontFamily: "'Figtree', sans-serif", marginBottom: '0.15rem' }}>{members}</div>
+                        <div style={{ fontSize: '0.58rem', color: 'rgba(148,163,184,0.5)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.05em' }}>{networks}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bottom note */}
+                  <p style={{ margin: '0.65rem 0 0', fontSize: '0.65rem', color: 'rgba(148,163,184,0.5)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.5, borderTop: '1px solid rgba(234,179,8,0.08)', paddingTop: '0.6rem' }}>
+                    <span style={{ color: 'rgba(234,179,8,0.55)', fontWeight: 600 }}>Hoog geel profiel →</span> Het aangeleerde cognitieve netwerk domineert. <span style={{ color: 'rgba(234,179,8,0.55)', fontWeight: 600 }}>Afwezige driehoek →</span> Maximale groeirichting — onbekend, oncomfortabel, en daarom het meest transformatief.
+                  </p>
                 </div>
 
                 {/* ── 6. Radar Chart (full width) ── */}
@@ -2667,8 +2951,9 @@ function renderCorners(color) {
 function parseAiSections(analysisText) {
   if (!analysisText || typeof analysisText !== 'string') return null;
 
-  // Split on ## headings (with or without numbering)
-  const sectionRegex = /^##\s+(?:\d+\.\s+)?(.+)/gm;
+  // Split on ## or ### top-level headings (with or without numbering).
+  // The AI prompt requests `## N.` but models sometimes return `### N.` instead.
+  const sectionRegex = /^#{2,3}\s+(?:\d+\.\s+)?(.+)/gm;
   const matches = [];
   let match;
 
@@ -2681,7 +2966,13 @@ function parseAiSections(analysisText) {
     return [{ title: 'AI Analyse', content: analysisText.trim() }];
   }
 
+  // Capture any preamble text before the first heading (e.g. disclaimer)
   const parts = [];
+  const preamble = analysisText.slice(0, matches[0].start).trim();
+  if (preamble) {
+    parts.push({ title: 'Introductie', content: preamble });
+  }
+
   for (let i = 0; i < matches.length; i++) {
     const contentStart = matches[i].headerEnd;
     const contentEnd = i + 1 < matches.length ? matches[i + 1].start : analysisText.length;
@@ -2703,6 +2994,8 @@ function renderMarkdownContent(content) {
   const lines = content.split('\n');
   const elements = [];
   let listItems = [];
+  let blockquoteLines = [];
+  let tableRows = [];
   let inCodeBlock = false;
   let codeLines = [];
 
@@ -2732,16 +3025,112 @@ function renderMarkdownContent(content) {
     }
   };
 
+  const flushBlockquote = () => {
+    if (blockquoteLines.length > 0) {
+      elements.push(
+        <blockquote key={`bq-${elements.length}`} style={{
+          margin: '0.75rem 0', padding: '0.75rem 1rem',
+          borderLeft: '3px solid rgba(168, 85, 247, 0.5)',
+          background: 'rgba(168, 85, 247, 0.06)', borderRadius: '0 0.5rem 0.5rem 0',
+          color: 'rgba(209, 213, 219, 0.85)', fontStyle: 'italic', fontSize: '0.88rem', lineHeight: 1.7,
+        }}>
+          {blockquoteLines.map((bq, j) => <p key={j} style={{ margin: '0.2rem 0' }}>{formatInline(bq)}</p>)}
+        </blockquote>
+      );
+      blockquoteLines = [];
+    }
+  };
+
+  const flushTable = () => {
+    if (tableRows.length === 0) return;
+    // Filter out separator rows (e.g. | :--- | :--- |)
+    const dataRows = tableRows.filter(r => !r.match(/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/));
+    if (dataRows.length === 0) { tableRows = []; return; }
+    const parseCells = (row) => row.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+    const headerCells = parseCells(dataRows[0]);
+    const bodyRows = dataRows.slice(1).map(parseCells);
+    elements.push(
+      <div key={`tbl-${elements.length}`} style={{ margin: '0.75rem 0', overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+          <thead>
+            <tr>
+              {headerCells.map((cell, ci) => (
+                <th key={ci} style={{
+                  padding: '0.4rem 0.6rem', textAlign: 'left', borderBottom: '1px solid rgba(168,85,247,0.3)',
+                  color: '#a855f7', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.7rem',
+                  letterSpacing: '0.05em', whiteSpace: 'nowrap',
+                }}>{formatInline(cell)}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {bodyRows.map((cells, ri) => (
+              <tr key={ri} style={{ background: ri % 2 === 0 ? 'rgba(0,0,0,0.2)' : 'transparent' }}>
+                {cells.map((cell, ci) => (
+                  <td key={ci} style={{
+                    padding: '0.35rem 0.6rem', borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    color: ci === 0 ? 'rgba(209,213,219,1)' : 'rgba(209,213,219,0.8)',
+                    fontWeight: ci === 0 ? 600 : 400,
+                  }}>{formatInline(cell)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+    tableRows = [];
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     // Code block toggle
     if (line.trim().startsWith('```')) {
       if (inCodeBlock) { flushCode(); inCodeBlock = false; }
-      else { flushList(); inCodeBlock = true; }
+      else { flushList(); flushBlockquote(); flushTable(); inCodeBlock = true; }
       continue;
     }
     if (inCodeBlock) { codeLines.push(line); continue; }
+
+    // Blockquote
+    const bqMatch = line.match(/^>\s?(.*)/);
+    if (bqMatch) { flushList(); flushTable(); blockquoteLines.push(bqMatch[1]); continue; }
+    if (blockquoteLines.length > 0 && line.trim() !== '') {
+      // continuation of blockquote without > prefix? flush it
+      flushBlockquote();
+    } else if (blockquoteLines.length > 0) {
+      flushBlockquote();
+    }
+
+    // Table row (contains | delimiters)
+    if (line.trim().startsWith('|') || (line.includes('|') && line.trim().match(/^.+\|.+/))) {
+      flushList();
+      tableRows.push(line);
+      continue;
+    }
+    if (tableRows.length > 0) flushTable();
+
+    // Horizontal rule
+    if (line.trim().match(/^(\*{3,}|-{3,}|_{3,})$/)) {
+      flushList();
+      elements.push(<hr key={`hr-${elements.length}`} style={{ border: 'none', borderTop: '1px solid rgba(168,85,247,0.2)', margin: '1rem 0' }} />);
+      continue;
+    }
+
+    // Sub-heading (### or ####) within a section
+    const subHeadingMatch = line.match(/^#{3,4}\s+(.+)/);
+    if (subHeadingMatch) {
+      flushList();
+      elements.push(
+        <h4 key={`h-${elements.length}`} style={{
+          color: '#c084fc', fontFamily: "'Lexend Mega', sans-serif",
+          fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase',
+          marginTop: '1rem', marginBottom: '0.4rem',
+        }}>{formatInline(subHeadingMatch[1])}</h4>
+      );
+      continue;
+    }
 
     // Bullet list
     const bulletMatch = line.match(/^\s*[-*]\s+(.+)/);
@@ -2751,16 +3140,29 @@ function renderMarkdownContent(content) {
     const numMatch = line.match(/^\s*\d+\.\s+(.+)/);
     if (numMatch) { listItems.push(numMatch[1]); continue; }
 
-    // Regular paragraph line
-    flushList();
-    if (line.trim() === '') {
-      // Skip blank lines between paragraphs
+    // Indented key-value lines (e.g. "    Archetype: ARTIST | Groep: ABSTRACT")
+    const indentedMatch = line.match(/^\s{4,}(.+)/);
+    if (indentedMatch) {
+      flushList();
+      elements.push(
+        <p key={`ind-${elements.length}`} style={{
+          margin: '0.25rem 0', paddingLeft: '1rem',
+          borderLeft: '2px solid rgba(255,255,255,0.1)',
+          color: 'rgba(209, 213, 219, 0.9)', fontSize: '0.9rem',
+        }}>{formatInline(indentedMatch[1])}</p>
+      );
       continue;
     }
+
+    // Regular paragraph line
+    flushList();
+    if (line.trim() === '') continue;
     elements.push(<p key={`p-${elements.length}`} style={{ margin: '0.4rem 0' }}>{formatInline(line)}</p>);
   }
   flushList();
   flushCode();
+  flushBlockquote();
+  flushTable();
 
   return elements;
 }
@@ -2934,6 +3336,8 @@ function computeResultFromAnswers(layerAnswers) {
       group,
       extendedName: extName,
       subtitle: desc?.subtitle || group,
+      combination: desc?.combination || '',
+      shadow: desc?.shadow || '',
       isActive: group === supportGroup,
     };
   });

@@ -118,6 +118,8 @@ router.post('/analyze', async (req, res) => {
       uploadedFileContents,
       // Level selection
       level,
+      // Group dynamics (Dual-Core)
+      subgroups,
     } = req.body;
 
     if (!archetypeKey) {
@@ -164,6 +166,7 @@ router.post('/analyze', async (req, res) => {
       archetypeDetails, scores,
       responses, subjectResults, harmonyScore,
       consciousnessLevel, overallShadow, uploadedFileContents,
+      subgroups,
     };
 
     const builderSystem = builder.buildSystemPrompt(promptData);

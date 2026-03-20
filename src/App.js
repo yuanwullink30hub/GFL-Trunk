@@ -1488,7 +1488,7 @@ const App = () => {
 
           {/* Mobile Back Button - HoloPyramid return (matches login button position) */}
           {isSystem && (
-            <div style={{ position: 'fixed', bottom: '5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 10001 }}>
+            <div style={{ position: 'fixed', bottom: '5rem', left: '50%', transform: 'translateX(-50%) scaleX(0.98)', zIndex: 10001 }}>
               <SciFiButton onClick={handleReset} variant="purple" size="sm">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
@@ -2042,7 +2042,7 @@ const App = () => {
               zIndex: 10001,
               bottom: window.innerWidth >= 1280 ? '2rem' : window.innerWidth >= 768 ? '0.5rem' : '5rem',
               left: '50%',
-              transform: 'translateX(-50%)',
+              transform: 'translateX(-50%) scaleX(0.98)',
               pointerEvents: isSystem ? 'auto' : 'none',
               opacity: isSystem ? 1 : 0,
               visibility: isSystem ? 'visible' : 'hidden',

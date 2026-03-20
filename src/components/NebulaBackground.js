@@ -426,10 +426,13 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
         float axisRatio = 0.14;  // highly flattened — Andromeda-style tilted disk
         vec2 ed = vec2(rd.x, rd.y / axisRatio);
         float r = length(ed);
+        float rSph2 = length(rd); // unflattened radius — drives spherical bulge for 3D depth
 
         // Nucleus + bulge — boosted core
         float core  = exp(-r * r * 260.0) * 2.20;
-        float bulge = exp(-r * r * 50.0)  * 1.05;
+        float bulge = exp(-r * r * 50.0)  * 3.00;  // increased bulge
+        // Spherical nuclear glow — extends above/below the disk plane, giving volumetric depth
+        float sphBulge2 = exp(-rSph2 * rSph2 * 2.8) * 0.28;  // larger, stronger spherical bulge
         // Two distinct brightness rings
         float ring1 = exp(-(r - 0.25) * (r - 0.25) * 500.0) * 0.58;
         float ring2 = exp(-(r - 0.45) * (r - 0.45) * 180.0) * 0.28;
@@ -450,17 +453,23 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
         float spiralDust2 = exp(-dsd2 * dsd2 * 9.0) * exp(-r * r * 12.0) *
                             smoothstep(0.12, 0.22, r) * 0.50;
 
-        float gal = (core + bulge + ring1 + ring2 + halo)
+        // Near/far depth gradient — near side slightly brighter, reinforces perceived tilt
+        float nearFar2 = 1.0 + 0.35 * smoothstep(-0.12, 0.30, rd.y);
+
+        float gal = (core + bulge + sphBulge2 + ring1 + ring2 + halo)
+                  * nearFar2
                   * (1.0 - dustLane)
                   * (1.0 - spiralDust1)
                   * (1.0 - spiralDust2);
 
+        // Round nucleus: inner color uses rSph2 (spherical), blends to disk r outward
+        float rCol2 = mix(rSph2, r, smoothstep(0.0, 0.60, r));  // wider round-nucleus zone
         // White nucleus → warm amber → orange-red disk → muted red → dark outer halo
         vec3 col = vec3(1.00, 0.98, 0.94);
-        col = mix(col, vec3(0.96, 0.82, 0.50), smoothstep(0.0,  0.10, r));
-        col = mix(col, vec3(0.85, 0.48, 0.25), smoothstep(0.10, 0.28, r));
-        col = mix(col, vec3(0.55, 0.22, 0.16), smoothstep(0.28, 0.50, r));
-        col = mix(col, vec3(0.18, 0.07, 0.09), smoothstep(0.50, 0.70, r));
+        col = mix(col, vec3(0.96, 0.82, 0.50), smoothstep(0.0,  0.10, rCol2));
+        col = mix(col, vec3(0.85, 0.48, 0.25), smoothstep(0.10, 0.28, rCol2));
+        col = mix(col, vec3(0.55, 0.22, 0.16), smoothstep(0.28, 0.50, rCol2));
+        col = mix(col, vec3(0.18, 0.07, 0.09), smoothstep(0.50, 0.70, rCol2));
 
         color += col * max(gal, 0.0);
       }
@@ -475,11 +484,14 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
         float axisRatio = 0.30;           // clearly tilted ellipse
         vec2 ed = vec2(rd.x, rd.y / axisRatio);
         float r = length(ed);
+        float rSph3 = length(rd); // unflattened radius — drives spherical bulge for 3D depth
         float theta = atan(ed.y, ed.x);
 
         // Elliptical nucleus — restored larger core
-        float core  = exp(-r * r * 120.0) * 3.20;  // boosted core — clearly dominant
-        float bulge = exp(-r * r * 28.0)  * 1.00;  // stronger bulge transition
+        float core  = exp(-r * r * 48.0) * 3.20;  // boosted core — clearly dominant (wider)
+        float bulge = exp(-r * r * 14.0) * 2.70;  // increased bulge (wider)
+        // Spherical nuclear glow — bulge pops out of the disk plane for volumetric 3D depth
+        float sphBulge3 = exp(-rSph3 * rSph3 * 3.2) * 0.25;  // larger, stronger spherical bulge
         // Dim background fill
         float disk  = exp(-r * r * 5.0)   * 0.03;
 
@@ -511,16 +523,21 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
         vec2 k5 = rd - vec2( 0.05,  0.08);  float knot5 = exp(-dot(k5,k5) * 2500.0) * 1.0;
         float knots = knot1 + knot2 + knot3 + knot4 + knot5;
 
-        float gal = core + bulge + disk + arms + arms2 + arms3 + knots;
+        // Near/far depth gradient along minor axis — near side slightly brighter
+        float nearFar3 = 1.0 + 0.28 * smoothstep(-0.20, 0.35, rd.y);
 
+        float gal = (core + bulge + sphBulge3 + disk + arms + arms2 + arms3 + knots) * nearFar3;
+
+        // Round nucleus: inner color uses rSph3 (spherical), blends to disk r outward
+        float rCol3 = mix(rSph3, r, smoothstep(0.0, 0.65, r));  // wider round-nucleus zone
         // White-amber grades: blazing white core → warm amber haze → amber-grey → dark warm outer
         vec3 col = vec3(1.00, 1.00, 1.00);
-        col = mix(col, vec3(0.98, 0.95, 0.84), smoothstep(0.0,  0.10, r));
-        col = mix(col, vec3(0.80, 0.72, 0.52), smoothstep(0.10, 0.25, r));
-        col = mix(col, vec3(0.52, 0.46, 0.34), smoothstep(0.25, 0.42, r));
-        col = mix(col, vec3(0.18, 0.14, 0.10), smoothstep(0.42, 0.58, r));
+        col = mix(col, vec3(0.98, 0.95, 0.84), smoothstep(0.0,  0.10, rCol3));
+        col = mix(col, vec3(0.80, 0.72, 0.52), smoothstep(0.10, 0.25, rCol3));
+        col = mix(col, vec3(0.52, 0.46, 0.34), smoothstep(0.25, 0.42, rCol3));
+        col = mix(col, vec3(0.18, 0.14, 0.10), smoothstep(0.42, 0.58, rCol3));
 
-        color += col * max(gal, 0.0);
+        color += col * max(gal, 0.0) * 0.70;  // -30% overall brightness
       }
 
 
@@ -831,8 +848,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
           if (h < 0.12) {
             vec2 sp = (cell + vec2(hash(cell + 0.3), hash(cell + 0.4))) / density;
             // Exclude bright stars within either galaxy's footprint
-            if (length(sp - vec2(0.88, 0.60)) < 0.04 || length(sp - vec2(0.447, 0.10)) < 0.08) { h = 0.0; }
-            if (h >= 0.12) {
+            // and the left-center zone occupied by hand-placed stars
+            if (length(sp - vec2(0.88, 0.60)) > 0.12 && length(sp - vec2(0.447, 0.10)) > 0.08
+                && !(sp.x < 0.50 && sp.y > 0.30 && sp.y < 0.75)) {
             vec2 toStar = fgStarUv - sp;
             float d = length(toStar) * density;
             // Distance factor: 0.4 (far/small) to 1.0 (close/large)
@@ -853,14 +871,14 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
                                          vec3(1.0, 0.7, 0.4);
             brightness *= (0.85 + 0.15 * sin(u_time * (1.0 + 2.0 * hash(cell + 8.0)) + hash(cell + 9.0) * 6.28));
             brightness *= (0.4 + 0.6 * distFactor);
-            color += starColor * max(brightness, 0.0) * fgOcclusion;
+            color += starColor * max(brightness, 0.0);
             }
           }
         }
       }
     }
 
-    // ── Hand-placed bright star — top-left, where galaxy was ──
+    // ── Hand-placed bright star — top-left, where galaxy was ── (warm red dwarf)
     {
       vec2 hpCenter = vec2(0.13, 0.80);
       vec2 toStar = fgStarUv - hpCenter;
@@ -872,7 +890,69 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
       vec2 rotDiff = abs(vec2(cc * toStar.x + sc * toStar.y, -sc * toStar.x + cc * toStar.y)) * 10.0;
       float spike = exp(-min(rotDiff.x, rotDiff.y) * 22.0) * exp(-max(rotDiff.x, rotDiff.y) * 4.2) * 0.18;
       float brightness = (core + glow + spike) * (0.88 + 0.12 * sin(u_time * 1.3 + 1.1));
-      color += vec3(1.0, 0.48, 0.10) * max(brightness, 0.0) * fgOcclusion;
+      color += vec3(1.0, 0.48, 0.10) * max(brightness, 0.0);
+    }
+
+    // ── Hand-placed large stars — prominent foreground stars scattered across the scene ──
+
+    // Blue-white O-type giant — upper-right quadrant
+    {
+      vec2 hpCenter = vec2(0.72, 0.68);
+      vec2 toStar = fgStarUv - hpCenter;
+      float d = length(toStar) * 11.0;
+      float core = smoothstep(0.028, 0.0, d);
+      float glow = exp(-d * d * 44.0) * 0.34;
+      float spikeAngle = 0.94;
+      float sc = sin(spikeAngle), cc = cos(spikeAngle);
+      vec2 rotDiff = abs(vec2(cc * toStar.x + sc * toStar.y, -sc * toStar.x + cc * toStar.y)) * 11.0;
+      float spike = exp(-min(rotDiff.x, rotDiff.y) * 18.0) * exp(-max(rotDiff.x, rotDiff.y) * 3.8) * 0.22;
+      float brightness = (core + glow + spike) * (0.90 + 0.10 * sin(u_time * 0.8 + 2.3));
+      color += vec3(0.75, 0.88, 1.0) * max(brightness, 0.0);
+    }
+
+    // White A-type main sequence — blazing white, center-left
+    {
+      vec2 hpCenter = vec2(0.28, 0.55);
+      vec2 toStar = fgStarUv - hpCenter;
+      float d = length(toStar) * 10.5;
+      float core = smoothstep(0.032, 0.0, d);
+      float glow = exp(-d * d * 38.0) * 0.40;
+      float spikeAngle = 1.57;  // 90° — clean cross spikes
+      float sc = sin(spikeAngle), cc = cos(spikeAngle);
+      vec2 rotDiff = abs(vec2(cc * toStar.x + sc * toStar.y, -sc * toStar.x + cc * toStar.y)) * 10.5;
+      float spike = exp(-min(rotDiff.x, rotDiff.y) * 16.0) * exp(-max(rotDiff.x, rotDiff.y) * 3.2) * 0.28;
+      float brightness = (core + glow + spike) * (0.92 + 0.08 * sin(u_time * 1.1 + 0.7));
+      color += vec3(1.0, 0.97, 0.90) * max(brightness, 0.0);
+    }
+
+    // Blue giant — upper-left area
+    {
+      vec2 hpCenter = vec2(0.18, 0.42);
+      vec2 toStar = fgStarUv - hpCenter;
+      float d = length(toStar) * 10.0;
+      float core = smoothstep(0.024, 0.0, d);
+      float glow = exp(-d * d * 50.0) * 0.30;
+      float spikeAngle = 2.10;
+      float sc = sin(spikeAngle), cc = cos(spikeAngle);
+      vec2 rotDiff = abs(vec2(cc * toStar.x + sc * toStar.y, -sc * toStar.x + cc * toStar.y)) * 10.0;
+      float spike = exp(-min(rotDiff.x, rotDiff.y) * 20.0) * exp(-max(rotDiff.x, rotDiff.y) * 4.0) * 0.19;
+      float brightness = (core + glow + spike) * (0.89 + 0.11 * sin(u_time * 1.5 + 1.8));
+      color += vec3(0.60, 0.76, 1.0) * max(brightness, 0.0);
+    }
+
+    // Orange-yellow K giant — right-center
+    {
+      vec2 hpCenter = vec2(0.80, 0.38);
+      vec2 toStar = fgStarUv - hpCenter;
+      float d = length(toStar) * 10.0;
+      float core = smoothstep(0.022, 0.0, d);
+      float glow = exp(-d * d * 58.0) * 0.24;
+      float spikeAngle = 0.75;
+      float sc = sin(spikeAngle), cc = cos(spikeAngle);
+      vec2 rotDiff = abs(vec2(cc * toStar.x + sc * toStar.y, -sc * toStar.x + cc * toStar.y)) * 10.0;
+      float spike = exp(-min(rotDiff.x, rotDiff.y) * 22.0) * exp(-max(rotDiff.x, rotDiff.y) * 4.8) * 0.14;
+      float brightness = (core + glow + spike) * (0.91 + 0.09 * sin(u_time * 0.9 + 3.2));
+      color += vec3(1.0, 0.78, 0.38) * max(brightness, 0.0);
     }
 
     // (old single-layer galaxies removed — now split into bg + midground layers above)

@@ -129,7 +129,7 @@ function DashboardCard({ children, title, color = 'gold', className, style = {} 
       color: C.text,
       fontSize: 'max(12px, 0.65vw)',
       ...(isMobile
-        ? { overflowX: 'hidden', overflowY: 'visible', maxWidth: '100%', boxSizing: 'border-box' }
+        ? { overflow: 'hidden', maxWidth: '100%', boxSizing: 'border-box' }
         : { overflow: 'hidden' }
       ),
       ...style,

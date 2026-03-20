@@ -12,24 +12,26 @@ import {
 
 /**
  * 5-layer stacked band colors (spec §4).
- * Layers are rendered largest-first (painter's algorithm):
- * Purple → Gold → Blue → Orange → Green
+ * Layers rendered largest-first (painter's algorithm): Shadow → Cognitief → Feedback → Bio → Core
  */
 const LAYER_COLORS = {
-  green:  '#2E7D32',   // Laag 1: Biologische Kern (nature_core + green_hw)
-  orange: '#E65100',   // Laag 2: Aangeleerde Strategie (culture_core)
-  blue:   '#0D47A1',   // Laag 3: Hardware Feedback (blue_fb)
-  gold:   '#F57F17',   // Laag 4: Cognitieve Lens (yellow_cog)
-  purple: '#4A148C',   // Laag 5: Schaduw Echo (purple_shadow)
+  green:  '#14532d',   // Natuur Kern — innermost, direct nature picks (dark green)
+  lime:   '#4ade80',   // Bio Hardware (green_hw) — +3 bleed, light green (between nature & culture)
+  orange: '#c2410c',   // Cultuur Kern — direct culture picks
+  blue:   '#1d4ed8',   // Hardware Feedback (blue_fb) — +2 bleed
+  gold:   '#EAB308',   // Cognitieve Lens (yellow_cog) — +2 cognitive pair bleed
+  purple: '#7e22ce',   // Schaduw (purple_shadow) — +1 shadow drip (outermost)
 };
 
 // eslint-disable-next-line no-unused-vars
 const LAYER_META = [
-  { key: 'purple', label: 'Schaduw Echo',        color: LAYER_COLORS.purple, field: 'purple_shadow' },
-  { key: 'gold',   label: 'Cognitieve Lens',     color: LAYER_COLORS.gold,   field: 'yellow_cog'    },
-  { key: 'blue',   label: 'Hardware Feedback',    color: LAYER_COLORS.blue,   field: 'blue_fb'       },
-  { key: 'orange', label: 'Aangeleerde Strategie',color: LAYER_COLORS.orange, field: 'culture_core'  },
-  { key: 'green',  label: 'Biologische Kern',     color: LAYER_COLORS.green,  field: null            },
+  // draw order: largest polygon first (outermost → innermost)
+  { key: 'purple', label: 'Schaduw',          color: LAYER_COLORS.purple, field: 'purple_shadow' },
+  { key: 'gold',   label: 'Cognitieve Lens',  color: LAYER_COLORS.gold,   field: 'yellow_cog'    },
+  { key: 'blue',   label: 'Feedback loop',      color: LAYER_COLORS.blue,   field: 'blue_fb'       },
+  { key: 'orange', label: 'Cultuur Kern',     color: LAYER_COLORS.orange, field: 'culture_core'  },
+  { key: 'lime',   label: 'Bio Hardware',     color: LAYER_COLORS.lime,   field: 'green_hw'      },
+  { key: 'green',  label: 'Natuur Kern',      color: LAYER_COLORS.green,  field: 'nature_core'   },
 ];
 
 /**
@@ -46,7 +48,7 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
   // Dynamic domain: find max total across all archetypes, round up to next 50
   const fullMark = useMemo(() => {
     if (!data || !data.length) return 200;
-    const maxVal = Math.max(...data.map(d => d.purple || d.A || 0));
+    const maxVal = Math.max(...data.map(d => d.purple || d.A || 0)); // purple = outermost = total
     return Math.max(50, Math.ceil(maxVal / 50) * 50);
   }, [data]);
 
@@ -67,7 +69,7 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
       fill = '#f97316'; fontWeight = 700;
     }
     return (
-      <text x={x} y={y} textAnchor={textAnchor} fill={fill} fontWeight={fontWeight} fontSize={11} fontFamily="'Rajdhani', sans-serif">
+      <text x={x} y={y} textAnchor={textAnchor} fill={fill} fontWeight={fontWeight} fontSize={18} fontFamily="'Segoe UI', Arial, sans-serif">
         {label}
       </text>
     );
@@ -79,12 +81,12 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
     const d = payload[0]?.payload;
     if (!d) return null;
     const rows = [
-      { label: 'Nature Core',  value: d.nature_core,    color: '#4CAF50' },
-      { label: 'Green HW',     value: d.green_hw,       color: '#66BB6A' },
-      { label: 'Culture Core', value: d.culture_core,   color: LAYER_COLORS.orange },
-      { label: 'Blue FB',      value: d.blue_fb,        color: LAYER_COLORS.blue },
-      { label: 'Yellow Cog',   value: d.yellow_cog,     color: LAYER_COLORS.gold },
-      { label: 'Purple Shadow',value: d.purple_shadow,  color: LAYER_COLORS.purple },
+      { label: 'Natuur Kern',   value: d.nature_core,    color: LAYER_COLORS.green },
+      { label: 'Bio HW',        value: d.green_hw,       color: LAYER_COLORS.lime },
+      { label: 'Cultuur Kern',  value: d.culture_core,   color: LAYER_COLORS.orange },
+      { label: 'Feedback loop',   value: d.blue_fb,        color: LAYER_COLORS.blue },
+      { label: 'Cognitief',     value: d.yellow_cog,     color: LAYER_COLORS.gold },
+      { label: 'Schaduw',       value: d.purple_shadow,  color: LAYER_COLORS.purple },
     ];
     return (
       <div style={{
@@ -108,13 +110,14 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
     );
   };
 
-  // Legend items for the 5 layers (display order: green→orange→blue→gold→purple)
+  // Legend items (display order: innermost → outermost, matching visual layer order)
   const legendPayload = [
-    { value: 'Biologische Kern',      type: 'square', color: LAYER_COLORS.green },
-    { value: 'Aangeleerde Strategie', type: 'square', color: LAYER_COLORS.orange },
-    { value: 'Hardware Feedback',     type: 'square', color: LAYER_COLORS.blue },
-    { value: 'Cognitieve Lens',       type: 'square', color: LAYER_COLORS.gold },
-    { value: 'Schaduw Echo',          type: 'square', color: LAYER_COLORS.purple },
+    { value: 'Natuur Kern',   type: 'square', color: LAYER_COLORS.green },   // dark green — innermost
+    { value: 'Bio HW',        type: 'square', color: LAYER_COLORS.lime },    // light green
+    { value: 'Cultuur Kern',  type: 'square', color: LAYER_COLORS.orange },  // orange
+    { value: 'Feedback loop', type: 'square', color: LAYER_COLORS.blue },    // blue
+    { value: 'Cognitief',     type: 'square', color: LAYER_COLORS.gold },    // yellow
+    { value: 'Schaduw',       type: 'square', color: LAYER_COLORS.purple },  // purple — outermost
   ];
 
   return (
@@ -142,49 +145,56 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
             angle={30}
             domain={[0, fullMark]}
             tickCount={4}
-            tick={{ fill: 'rgba(165, 243, 252, 0.25)', fontSize: 9, fontFamily: "'Rajdhani', sans-serif" }}
+            tick={{ fill: 'rgba(165, 243, 252, 0.25)', fontSize: 14, fontFamily: "'Segoe UI', Arial, sans-serif" }}
             axisLine={false}
           />
 
           {/* Painter's Algorithm: draw largest polygon first, smallest last.
-              Each layer is opaque (fillOpacity=1) — smaller layers cover inner area. */}
+              Each layer is opaque (fillOpacity=1) — smaller layers cover inner area.
+              Order (outermost → innermost): purple > gold > blue > lime > orange > green */}
 
-          {/* Layer 5: Purple — Schaduw Echo (outermost = total) */}
-          <Radar name="Schaduw Echo" dataKey="purple"
+          {/* Layer 6: Purple — Schaduw drip (outermost = total) */}
+          <Radar name="Schaduw" dataKey="purple"
             stroke={LAYER_COLORS.purple} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.purple} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} />
 
-          {/* Layer 4: Gold — Cognitieve Lens */}
-          <Radar name="Cognitieve Lens" dataKey="gold"
+          {/* Layer 5: Gold — Cognitieve Lens */}
+          <Radar name="Cognitief" dataKey="gold"
             stroke={LAYER_COLORS.gold} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.gold} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} animationBegin={100} />
 
-          {/* Layer 3: Blue — Hardware Feedback */}
-          <Radar name="Hardware Feedback" dataKey="blue"
+          {/* Layer 4: Blue — Hardware Feedback */}
+          <Radar name="Feedback loop" dataKey="blue"
             stroke={LAYER_COLORS.blue} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.blue} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} animationBegin={200} />
 
-          {/* Layer 2: Orange — Aangeleerde Strategie */}
-          <Radar name="Aangeleerde Strategie" dataKey="orange"
+          {/* Layer 3: Orange — Cultuur Kern (direct culture picks) */}
+          <Radar name="Cultuur Kern" dataKey="orange"
             stroke={LAYER_COLORS.orange} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.orange} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} animationBegin={300} />
 
-          {/* Layer 1: Green — Biologische Kern (innermost, drawn last = on top) */}
-          <Radar name="Biologische Kern" dataKey="green"
+          {/* Layer 2: Lime — Bio Hardware bleed (light green, between nature & culture) */}
+          <Radar name="Bio HW" dataKey="lime"
+            stroke={LAYER_COLORS.lime} strokeWidth={1} strokeOpacity={0.6}
+            fill={LAYER_COLORS.lime} fillOpacity={1}
+            isAnimationActive={true} animationDuration={800} animationBegin={400} />
+
+          {/* Layer 1: Green — Natuur Kern (innermost, drawn last = on top) */}
+          <Radar name="Natuur Kern" dataKey="green"
             stroke={LAYER_COLORS.green} strokeWidth={2}
             fill={LAYER_COLORS.green} fillOpacity={1}
-            isAnimationActive={true} animationDuration={800} animationBegin={400} />
+            isAnimationActive={true} animationDuration={800} animationBegin={500} />
 
           <Tooltip content={<CustomTooltip />} />
           <Legend
             payload={legendPayload}
             wrapperStyle={{
-              fontFamily: "'Rajdhani', sans-serif",
-              fontSize: '0.7rem',
+              fontFamily: "'Segoe UI', Arial, sans-serif",
+              fontSize: '1rem',
               letterSpacing: '0.05em',
             }}
           />

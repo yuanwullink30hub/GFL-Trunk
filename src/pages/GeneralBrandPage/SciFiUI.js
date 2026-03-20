@@ -189,10 +189,11 @@ export const SectionHeader = ({ title, subtitle }) => (
  */
 export const SectorFrame = ({ children, className = '' }) => (
   <div 
-    className={`relative h-full w-full rounded-lg backdrop-blur-xl overflow-hidden ${className}`} 
+    className={`relative h-full w-full rounded-lg backdrop-blur-xl flex flex-col ${className}`} 
     style={{ 
       backgroundColor: 'rgba(2, 0, 3, 0.3)',
       boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(245, 158, 11, 0.06), inset 0 0 30px rgba(245, 158, 11, 0.03)',
+      overflow: 'visible',
     }}
   >
     {/* Top-Left Corner Border */}

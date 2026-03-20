@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
+import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
+import HoloPyramid from './HoloPyramid';
+import PyramidOverlay from './PyramidOverlay';
 
 function checkWebGL() {
   try {
@@ -11,10 +15,6 @@ function checkWebGL() {
     return true;
   } catch { return false; }
 }
-import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
-import HoloPyramid from './HoloPyramid';
-import PyramidOverlay from './PyramidOverlay';
 
 // Total frames for animation (discrete scroll points)
 // Doubled to 360 to accommodate 2x slower layer animations (ANIMATION_SPEED_DIVISOR = 2)

@@ -519,10 +519,14 @@ const AssessmentLayerPanel = ({
     if (layerIndex === 4) {
       onAllLayersComplete?.(allLayerAnswers);
     } else {
+      // Pre-set the animation guard BEFORE enabling scroll, closing the race
+      // window where scroll could be unblocked before the animation useEffect fires.
+      // The useEffect in SingleLayerPanel will also set this (idempotent via Set).
+      onLayerAnimationStateChange?.(layerIndex, true);
       onScrollEnabled?.(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete]);
+  }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete, onLayerAnimationStateChange]);
 
   if (!isVisible) return null;
   

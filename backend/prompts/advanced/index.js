@@ -186,6 +186,7 @@ function buildSystemPrompt({
   responses, subjectResults, harmonyScore,
   consciousnessLevel, overallShadow, uploadedFileContents,
   oceanScores,
+  subgroups,
 }) {
   const mainPos = ARCHETYPE_POSITIONS[archetypeKey] || '?';
   const supportPos = ARCHETYPE_POSITIONS[supportArchetype] || '?';
@@ -803,6 +804,33 @@ function buildSystemPrompt({
   if (overallShadow) parts.push(`Dominante Schaduw: ${overallShadow}`);
   if (oceanScores) parts.push(`OCEAN Scores: ${JSON.stringify(oceanScores)}`);
 
+  // ── DUAL-CORE DYNAMICS PER NEURAL GROEP ──
+  if (subgroups && subgroups.length > 0) {
+    const GROUP_NEURAL_NAMES = {
+      Ruling: 'CEN Dominantie', Relational: 'Limbic Coupling',
+      Seeker: 'Hoge Openness', Chaos: 'Salience Netwerk',
+      Abstract: 'DMN Hyper-connectie', Agency: 'Extraversie/Wilskracht',
+    };
+    parts.push(`\n── DUAL-CORE DYNAMICS PER NEURAAL NETWERK ──`);
+    parts.push(`(Nature = biologische kern; Culture = aangeleerde strategie; /30 max per kolom)`);
+    parts.push(`Netwerk               | Links        | Rechts       | Nat  | Cult | Nat% `);
+    parts.push(`----------------------|--------------|--------------|------|------|------`);
+    for (const sg of subgroups) {
+      const natTotal  = (sg.leftNature  || 0) + (sg.rightNature  || 0);
+      const cultTotal = (sg.leftCulture || 0) + (sg.rightCulture || 0);
+      const total     = natTotal + cultTotal;
+      const ratio     = total > 0 ? Math.round((natTotal / total) * 100) : 0;
+      const netName   = (GROUP_NEURAL_NAMES[sg.group] || sg.group || '').padEnd(21);
+      const left      = (sg.leftLabel  || '').padEnd(12);
+      const right     = (sg.rightLabel || '').padEnd(12);
+      const natStr    = String(natTotal).padStart(4);
+      const cultStr   = String(cultTotal).padStart(4);
+      const ratioStr  = String(ratio).padStart(4) + '%';
+      parts.push(`${netName} | ${left} | ${right} | ${natStr} | ${cultStr} | ${ratioStr}`);
+    }
+    parts.push(`\nLEESPROTOCOL DUAL-CORE: Nat% >60% = biologische stroom dominant in dit netwerk. Nat% <40% = aangeleerde strategie dominant. 40-60% = actieve integratie. Gebruik deze data als de empirische basis voor de sectie 'Groep Dynamiek — Neurobiologische Interpretatie'. Koppel de uitslag per groep aan de OCEAN-correlaties van de archetypen in dat netwerk (CEN=Consciëntieusheid/structuur, Limbisch=Vriendelijkheid/hechting, Salience=Neuroticisme/alertheid, DMN=Openheid/abstractie, Agency=Extraversie/wilskracht).`);
+  }
+
   // Per-archetype breakdown with 5-basket decomposition (sorted desc by total)
   if (archetypeDetails && archetypeDetails.length > 0) {
     parts.push(`\n── ARCHETYPE SCOREOVERZICHT (5-Mandje Decompositie) ──`);
@@ -823,6 +851,102 @@ function buildSystemPrompt({
       parts.push(`${name} | ${pos} | ${group} | ${total} | ${nc} | ${gh} | ${cc} | ${bf} | ${yc} | ${ps} | ${ratio}`);
     }
     parts.push(`\nLEESPROTOCOL: Hoge nature_core = biologische identiteit (dit IS de gebruiker). Hoge culture_core = aangeleerde strategie (dit DOET de gebruiker). Hoge green_hw/blue_fb = hardware echo (resoneert mee). Hoge yellow_cog = cognitief netwerk. Hoge purple_shadow = onbewuste tegenpool. Een archetype met hoog totaal maar lage nature_core is GEEN identiteit — het is een echo.`);
+
+    // ── GELE DRIEHOEKEN ACTIVATIE (pre-computed for AI) ──
+    const YELLOW_TRIANGLE_PROFILES = [
+      {
+        id: 1, name: 'De Analytische Estheet', members: ['JUDGE', 'EXPLORER', 'ARTIST'],
+        networks: 'CEN (executieve controle) + Openness (ontdekking) + DMN (reflectie)',
+        superpower: 'Convergent-divergent integratie — ontdekken (Explorer), beoordelen (Judge), vertalen naar betekenis (Artist).',
+        fallacies: 'Esthetische Bias (schoonheid = waarheid), Paralysis by Perfection, Intellectueel Elitisme.',
+        growth: 'Aangeleerd in kenniswerkers, academici, ontwerpers — voelt als tweede natuur maar is geconditioneerd.',
+      },
+      {
+        id: 2, name: 'De Passionele Alchemist', members: ['LOVER', 'OUTLAW', 'MAGICIAN'],
+        networks: 'Limbisch (emotionele fusie) + Salience (disruptie) + Agency (transformatie)',
+        superpower: 'Emotionele alchemie — voelen wat niet klopt (Lover), breken (Outlaw), herbouwen met intentie (Magician).',
+        fallacies: 'Messias-Complex, Emotionele Reactiviteit als Strategie, Burn-and-Build Cyclus.',
+        growth: 'Startup-cultuur, activisme, therapeutische settings — dopamine-cocktail van rebellie + transformatie.',
+      },
+      {
+        id: 3, name: 'De Strategische Bewaker', members: ['CAREGIVER', 'TRICKSTER', 'HERO'],
+        networks: 'Limbisch (zorg) + Salience (speelse disruptie) + Agency (actie/bescherming)',
+        superpower: 'Beschermende intelligentie — zien wie pijn lijdt (Caregiver), onverwachte route vinden (Trickster), uitvoeren (Hero).',
+        fallacies: 'Nobele Manipulator, Humor als Vermijding, Martelaar-Held Fusie (architectuur van burn-out).',
+        growth: 'NL verzorgingscultuur, teamgerichte settings — oxytocine + dopamine + testosteron combinatie.',
+      },
+      {
+        id: 4, name: 'De Wijze Bouwmeester', members: ['INNOCENT', 'SAGE', 'RULER'],
+        networks: 'Openness (vertrouwen) + DMN (inzicht) + CEN (structurele controle)',
+        superpower: 'Institutionele intelligentie — vertrouwen (Innocent), begrijpen (Sage), structureren (Ruler) voor duurzaam bestuur.',
+        fallacies: 'Systeemblindheid (kan systeem niet deconstrueren), Conservatieve Bias, Paternalistische Val.',
+        growth: 'Bestuursstructuren, kerkelijk leiderschap, familiebedrijven — meest cultureel gerespecteerd maar kwetsbaar voor chaos.',
+      },
+    ];
+
+    if (archetypeDetails && archetypeDetails.length > 0) {
+      parts.push(`\n── GELE DRIEHOEKEN — CULTUREFORCE ACTIVATIE ──`);
+      parts.push(`(Scores aggregeren yellow_cog van alle 3 driehoekleden. Vuurt ALLEEN op Culture picks.)`);
+      parts.push(`Driehoek                 | Leden                       | Y_Cog Totaal | Activatie`);
+      parts.push(`-------------------------|-----------------------------|--------------|-----------`);
+
+      const triangleActivations = YELLOW_TRIANGLE_PROFILES.map(tri => {
+        const memberScores = tri.members.map(m => {
+          const d = archetypeDetails.find(a => a.key === m);
+          return { key: m, yellowCog: d ? (d.yellow_cog || 0) : 0, natureCoreRatio: d ? (d.natureRatio || 0) : 0 };
+        });
+        const totalYellow = memberScores.reduce((s, m) => s + m.yellowCog, 0);
+        const maxPossiblePerMember = 72; // rough ceiling for context
+        const dominance = totalYellow === 0 ? 'AFWEZIG' : totalYellow < 30 ? 'ZWAK' : totalYellow < 80 ? 'ACTIEF' : 'DOMINANT';
+        return { ...tri, memberScores, totalYellow, dominance };
+      }).sort((a, b) => b.totalYellow - a.totalYellow);
+
+      for (const tri of triangleActivations) {
+        const name = tri.name.padEnd(24);
+        const members = tri.members.join(' · ').padEnd(27);
+        const total = String(tri.totalYellow).padStart(12);
+        parts.push(`${name} | ${members} | ${total} | ${tri.dominance}`);
+      }
+
+      // Dominant triangle
+      const dominant = triangleActivations[0];
+      const absent = triangleActivations[triangleActivations.length - 1];
+
+      parts.push(`\nDOMINANT COGNITIEF NETWERK: ${dominant.name} (Driehoek ${dominant.id})`);
+      parts.push(`  Netwerken: ${dominant.networks}`);
+      parts.push(`  Superkracht: ${dominant.superpower}`);
+      parts.push(`  Cognitieve Valkuilen: ${dominant.fallacies}`);
+      parts.push(`  Culturele Context: ${dominant.growth}`);
+      if (dominant.totalYellow > 0) {
+        // Determine if members are Nature-elevated (identity) vs Culture-only (lens)
+        for (const ms of dominant.memberScores) {
+          const d = archetypeDetails.find(a => a.key === ms.key);
+          const nc = d ? (d.nature_core || 0) : 0;
+          const src = nc > 30 ? 'NATURE+CULTURE (biologische grondtoon versterkt door cognitief netwerk)' : 'CULTURE-ONLY (puur aangeleerde lens — energiekosten bij druk)';
+          parts.push(`  ${ms.key}: yellow_cog=${ms.yellowCog}, nature_core=${nc} → ${src}`);
+        }
+      }
+
+      if (absent.totalYellow === 0) {
+        parts.push(`\nCOGNITIEVE BLINDE VLEK: ${absent.name} (Driehoek ${absent.id}) — NIET geactiveerd`);
+        parts.push(`  Dit netwerk is zowel biologisch als aangeleerd afwezig. Maximale groeirichting — maar ook maximale weerstand.`);
+        parts.push(`  Netwerken: ${absent.networks}`);
+        parts.push(`  Formuleer als: "De ${absent.name} vertegenwoordigt in jouw profiel een cognitief pad dat nauwelijks geactiveerd wordt. Dit is geen tekort maar een richting."`);
+      }
+
+      // Cross-triangle dynamics
+      const [t1, t2] = triangleActivations;
+      if (t1.id === 1 && t2.id === 2 || t1.id === 2 && t2.id === 1) {
+        parts.push(`\nCROSS-DRIEHOEK: Analytische Estheet ↔ Passionele Alchemist (Denken vs. Voelen). Integreer beide polen — briljant én emotioneel verbonden.`);
+      } else if (t1.id === 3 && t2.id === 4 || t1.id === 4 && t2.id === 3) {
+        parts.push(`\nCROSS-DRIEHOEK: Strategische Bewaker ↔ Wijze Bouwmeester (Bewegen vs. Bewaken). Tactische actie én institutionele structuur.`);
+      }
+
+      parts.push(`\nINSTRUCTIE GELE DRIEHOEKEN (Secties 8 & 9):`);
+      parts.push(`In Sectie 8 (Visuele Analyse): beschrijf de gouden Laag 4 (yellow_cog) op de radar chart — welke assen vertonen een goudkleurige aureool? Dit zijn de aangeleerde cognitieve netwerken.`);
+      parts.push(`In Sectie 9 (Alchemie van Individuatie): integreer de dominante driehoek als CultureForce-signaal. Decomponeer de bron (Nature+Culture vs. Culture-only) per driehoeklid. Benoem de afwezige driehoek als groeirichting.`);
+      parts.push(`TAALREGEL: Formuleer als 'Jouw scoreprofiel suggereert (binnen dit model) dat je het aangeleerde cognitieve netwerk van ${dominant.name} dominant activeert.' Nooit als absolute identiteitsuitspraak.`);
+    }
   }
 
   // Per-layer results
@@ -921,6 +1045,17 @@ function buildSystemPrompt({
     `- Main (${archetypeKey}) toont de dikste groene kern. Support (${supportArchetype}) toont de tweede groene kern.\n` +
     `- Archetypes met een dikke groene band = biologische identiteit. Archetypes met alleen gekleurde buitenringen = echo.\n` +
     `Beschrijf tekstueel welke assen sterk zijn, welke zwak, en of de hoogte uit identiteit of echo komt.\n`
+  );
+
+  parts.push(
+    `## Groep Dynamiek — Neurobiologische Interpretatie\n` +
+    `Schrijf een vloeiende analyse (max 280 woorden, geen lijsten) van de 6 neurale netwerken op basis van de Dual-Core Dynamics data hierboven.\n` +
+    `- Noem welke netwerken biologisch dominant zijn (hoge Nat%) en wat dat gedragsmatig betekent.\n` +
+    `- Benoem netwerken waar de aangeleerde strategie domineert (lage Nat%) en de energiekosten die dat met zich meebrengt.\n` +
+    `- Beschrijf evenwichtige netwerken (40-60%) als actieve integratiepunten.\n` +
+    `- Koppel het patroon aan de OCEAN-basislijn van het Main+Support archetype.\n` +
+    `TAALREGEL: Gebruik uitsluitend 'jouw scoreprofiel suggereert' en 'binnen dit model'. Geen absolute diagnoses.\n` +
+    `VERPLICHT: 'De verhoudingen in deze tabel zijn indicatieve modelwaarden gebaseerd op antwoordpatronen — geen gemeten biologische of neurologische ratio.'\n`
   );
 
   parts.push(

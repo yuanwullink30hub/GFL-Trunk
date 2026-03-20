@@ -242,6 +242,8 @@ const runGPUBenchmark = () => {
     gl.deleteShader(vertexShader);
     gl.deleteShader(fragmentShader);
     gl.deleteProgram(program);
+    const loseExt = gl.getExtension('WEBGL_lose_context');
+    if (loseExt) loseExt.loseContext();
     
     console.log(`[Performance Monitor] GPU Benchmark: ${avgFrameTime.toFixed(2)}ms avg frame time`);
     
@@ -308,6 +310,8 @@ const detectPerformanceSync = () => {
   const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
   const debugInfo = gl?.getExtension('WEBGL_debug_renderer_info');
   const renderer = debugInfo ? gl?.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'unknown';
+  const loseExt = gl?.getExtension('WEBGL_lose_context');
+  if (loseExt) loseExt.loseContext();
   
   console.log(`[Performance Monitor] GPU Renderer: ${renderer}`);
   
@@ -369,6 +373,8 @@ const detectPerformanceAsync = async () => {
   const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
   const debugInfo = gl?.getExtension('WEBGL_debug_renderer_info');
   const renderer = debugInfo ? gl?.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'unknown';
+  const loseExt2 = gl?.getExtension('WEBGL_lose_context');
+  if (loseExt2) loseExt2.loseContext();
   
   detectionResults.renderer = parseRendererString(renderer);
   

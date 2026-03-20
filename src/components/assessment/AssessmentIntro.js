@@ -26,9 +26,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
   const { t } = useLanguage();
   const fileInputRef = useRef(null);
   const infoIconRef = useRef(null);
+  const referentiesRef = useRef(null);
   const modalRef = useRef(null);
   const infoOverlayRef = useRef(null);
   const [showReferences, setShowReferences] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [leaveConfirmClosing, setLeaveConfirmClosing] = useState(false);
+  const [leaveConfirmPos, setLeaveConfirmPos] = useState({ top: 0, left: 0 });
   const [showInfo, setShowInfo] = useState(false);
   const [infoClosing, setInfoClosing] = useState(false);
   const [infoOrigin, setInfoOrigin] = useState('top right');
@@ -50,6 +54,23 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
       setInfoOrigin(`${x}px ${y}px`);
     }
     setShowInfo(true);
+  };
+
+  const openLeaveConfirm = () => {
+    if (referentiesRef.current && modalRef.current) {
+      const btnRect = referentiesRef.current.getBoundingClientRect();
+      const modalRect = modalRef.current.getBoundingClientRect();
+      setLeaveConfirmPos({ top: btnRect.top - 8 - modalRect.top, left: btnRect.left - modalRect.left });
+    }
+    setShowLeaveConfirm(true);
+  };
+
+  const closeLeaveConfirm = () => {
+    setLeaveConfirmClosing(true);
+    setTimeout(() => {
+      setShowLeaveConfirm(false);
+      setLeaveConfirmClosing(false);
+    }, 350);
   };
 
   // Native wheel capture on info overlay to block PyramidView's handler
@@ -75,12 +96,15 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
 
   // Open consent overlay with zoom-from-card animation
   const openConsent = (levelId, e) => {
-    if (e && e.currentTarget && modalRef.current) {
+    if (e && e.currentTarget) {
       const btnRect = e.currentTarget.getBoundingClientRect();
-      const modalRect = modalRef.current.getBoundingClientRect();
-      const x = btnRect.left + btnRect.width / 2 - modalRect.left;
-      const y = btnRect.top + btnRect.height / 2 - modalRect.top;
-      setConsentOrigin(`${x}px ${y}px`);
+      // Origin relative to the card, which is centered in the viewport
+      const cardCenterX = window.innerWidth / 2;
+      const cardCenterY = window.innerHeight / 2;
+      const x = btnRect.left + btnRect.width / 2 - cardCenterX;
+      const y = btnRect.top + btnRect.height / 2 - cardCenterY;
+      // Express as offset from card center (50% 50%)
+      setConsentOrigin(`calc(50% + ${x}px) calc(50% + ${y}px)`);
     }
     setConsentChecked(false);
     setConsentAiPromptChecked(false);
@@ -394,14 +418,10 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     <>
     <style>{infoAnimStyles}</style>
     <div className="fixed inset-0 flex items-center justify-center p-3 pointer-events-auto" style={{ backgroundColor: isMobile ? 'rgba(0,0,0,0.65)' : 'transparent', backdropFilter: isMobile ? 'blur(4px)' : 'none' }}>
-      {/* Modal Content - Exact SectorFrame style from GeneralBrandPage */}
-      <div 
-        ref={modalRef}
-        className="relative w-full rounded-lg backdrop-blur-sm"
-        style={{ backgroundColor: 'rgba(8, 2, 12, 0.95)', maxWidth: s.modalMaxWidth, minHeight: s.modalMinHeight, maxHeight: s.modalMaxHeight, overflow: 'hidden' }}
-      >
+      {/* Outer wrapper: holds corner brackets; no overflow clip so they're visible */}
+      <div className="relative w-full" style={{ maxWidth: s.modalMaxWidth }}>
         {/* Top-Left Corner Border */}
-        <div className="absolute -top-0.5 -left-0.5 w-4 h-4" style={{
+        <div className="absolute -top-0.5 -left-0.5 w-4 h-4 z-10" style={{
           border: '1.5px solid #a855f7',
           borderRadius: '10px 0 0 0',
           borderBottom: 'none',
@@ -409,7 +429,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
         }}></div>
         
         {/* Top-Right Corner Border */}
-        <div className="absolute -top-0.5 -right-0.5 w-4 h-4" style={{
+        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 z-10" style={{
           border: '1.5px solid #a855f7',
           borderRadius: '0 10px 0 0',
           borderBottom: 'none',
@@ -417,7 +437,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
         }}></div>
         
         {/* Bottom-Left Corner Border */}
-        <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4" style={{
+        <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4 z-10" style={{
           border: '1.5px solid #a855f7',
           borderRadius: '0 0 0 10px',
           borderTop: 'none',
@@ -425,15 +445,21 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
         }}></div>
         
         {/* Bottom-Right Corner Border */}
-        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4" style={{
+        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 z-10" style={{
           border: '1.5px solid #a855f7',
           borderRadius: '0 0 10px 0',
           borderTop: 'none',
           borderLeft: 'none'
         }}></div>
-        
+
+        {/* Inner glass panel: overflow hidden properly clips content */}
+        <div 
+          ref={modalRef}
+          className="relative w-full rounded-lg"
+          style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', minHeight: s.modalMinHeight, maxHeight: s.modalMaxHeight, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)' }}
+        >
         {/* Content - matches SectorFrame inner structure */}
-        <div className="relative z-10 w-full flex flex-col" style={{ padding: s.padding }}>
+        <div className="relative z-10 w-full flex flex-col" style={{ padding: s.padding, flex: '1 1 auto' }}>
 
           {/* ═══ REFERENCES VIEW ═══ */}
           {showReferences ? (
@@ -600,10 +626,10 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
           {/* Referenties button + research text + upload button row */}
           <div className={isMobile ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between'} style={{ marginTop: s.referentiesMt, marginBottom: s.featureMb }}>
             {/* Left: Referenties button */}
-            <div style={{ width: isMobile ? 'auto' : '10rem', flexShrink: 0 }}>
+            <div ref={referentiesRef} style={{ width: isMobile ? 'auto' : '10rem', flexShrink: 0 }}>
               {
                 <SciFiButton
-                  onClick={() => setShowReferences(true)}
+                  onClick={openLeaveConfirm}
                   color="#22c55e"
                   rgb="34, 197, 94"
                   size="sm"
@@ -706,7 +732,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
           </div>
 
           {/* Pyramid Layers Visual */}
-          <div style={{ marginBottom: s.pyramidMb }}>
+          <div style={{ marginBottom: s.pyramidMb, marginTop: 'auto' }}>
             <h2 className="text-center text-slate-400 font-mono uppercase tracking-wider" style={{ display: 'none', fontSize: s.levelsTitleFont, marginBottom: s.levelsTitleMb }}>
               {t('assessmentIntro.layersTitle')}
             </h2>
@@ -839,6 +865,70 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
           )}
         </div>
 
+        {/* ═══ LEAVE CONFIRMATION ═══ */}
+        {showLeaveConfirm && (
+          <div
+            className="absolute z-50"
+            style={{
+              top: `calc(${leaveConfirmPos.top}px + 1.5rem)`,
+              left: `calc(${leaveConfirmPos.left}px + 4rem)`,
+              transform: 'translateY(-100%)',
+              transformOrigin: 'left top',
+              animation: `${leaveConfirmClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
+            }}
+          >
+            {/* Card */}
+            <div style={{
+              position: 'relative',
+              backgroundColor: 'rgba(2, 0, 3, 0.3)',
+              backdropFilter: 'blur(32px)',
+              WebkitBackdropFilter: 'blur(32px)',
+              borderRadius: '0.5rem',
+              padding: '1.25rem 1.5rem',
+              boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34,197,94,0.06), inset 0 0 30px rgba(34,197,94,0.03)',
+              whiteSpace: 'nowrap',
+            }}>
+              {/* Corner accents */}
+              {[['tl',{top:-2,left:-3,borderTop:'1px solid rgba(34,197,94,0.6)',borderLeft:'1px solid rgba(34,197,94,0.6)',borderTopLeftRadius:'2px'}],
+                ['tr',{top:-2,right:-3,borderTop:'1px solid rgba(34,197,94,0.6)',borderRight:'1px solid rgba(34,197,94,0.6)',borderTopRightRadius:'2px'}],
+                ['bl',{bottom:-2,left:-3,borderBottom:'1px solid rgba(34,197,94,0.6)',borderLeft:'1px solid rgba(34,197,94,0.6)',borderBottomLeftRadius:'2px'}],
+                ['br',{bottom:-2,right:-3,borderBottom:'1px solid rgba(34,197,94,0.6)',borderRight:'1px solid rgba(34,197,94,0.6)',borderBottomRightRadius:'2px'}],
+              ].map(([k,s]) => (
+                <div key={k} style={{ position:'absolute', width:'0.55rem', height:'0.55rem', pointerEvents:'none', ...s }} />
+              ))}
+              <p style={{
+                color: 'rgba(209,213,219,0.9)',
+                fontSize: '0.65rem',
+                lineHeight: 1.8,
+                marginBottom: '1rem',
+                fontFamily: "'Lexend Mega', sans-serif",
+                letterSpacing: '0.05em',
+                textAlign: 'center',
+              }}>
+                Je verlaat de test, weet je het zeker?
+              </p>
+              <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center' }}>
+                <SciFiButton
+                  onClick={closeLeaveConfirm}
+                  color="#64748b"
+                  rgb="100, 116, 139"
+                  size="sm"
+                >
+                  Terug
+                </SciFiButton>
+                <SciFiButton
+                  onClick={() => { closeLeaveConfirm(); setTimeout(() => { onNavigateToData && onNavigateToData(); }, 360); }}
+                  color="#22c55e"
+                  rgb="34, 197, 94"
+                  size="sm"
+                >
+                  Door
+                </SciFiButton>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ═══ CONSENT OVERLAY ═══ */}
         {consentLevelId && (
           <div
@@ -850,17 +940,19 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
             <div
               className="rounded-xl"
               style={{
-                backgroundColor: 'rgba(8, 2, 12, 0.98)',
+                backgroundColor: 'rgba(2, 0, 3, 0.3)',
+                backdropFilter: 'blur(32px)',
+                WebkitBackdropFilter: 'blur(32px)',
                 border: '1px solid rgba(168,85,247,0.2)',
                 padding: s.padding,
                 transformOrigin: consentOrigin,
                 animation: `${consentClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
                 overflowY: 'auto',
-                overflowX: 'hidden',
-                maxWidth: '42rem',
-                maxHeight: '85vh',
-                width: '90vw',
-                boxShadow: '0 0 40px rgba(168,85,247,0.15), 0 0 80px rgba(0,0,0,0.5)',
+                width: `calc(0.8 * ${s.modalMaxWidth})`,
+                maxWidth: '90vw',
+                minHeight: `calc(0.7 * ${s.modalMinHeight})`,
+                maxHeight: `calc(0.7 * ${s.modalMaxHeight})`,
+                boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
               }}
             >
               {/* Title */}
@@ -954,22 +1046,22 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
         )}
 
         {/* ═══ INFO OVERLAY ═══ */}
+        {/* Positioned absolute within modalRef (backdrop-filter creates a containing block for fixed children) */}
         {showInfo && (
           <div
             ref={infoOverlayRef}
-            className="fixed z-50 rounded-lg"
+            className="absolute z-50 rounded-lg"
             style={{
-              backgroundColor: 'rgba(8, 2, 12, 0.97)',
-              backdropFilter: 'blur(8px)',
+              backgroundColor: 'rgba(2, 0, 3, 0.9)',
+              backdropFilter: 'blur(120px)',
+              WebkitBackdropFilter: 'blur(120px)',
+              boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
               padding: s.padding,
               transformOrigin: infoOrigin,
               animation: `${infoClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
               overflowY: 'auto',
               overflowX: 'hidden',
-              top: modalRef.current ? modalRef.current.getBoundingClientRect().top + 'px' : 0,
-              left: modalRef.current ? modalRef.current.getBoundingClientRect().left + 'px' : 0,
-              width: modalRef.current ? modalRef.current.getBoundingClientRect().width + 'px' : '100%',
-              height: modalRef.current ? modalRef.current.getBoundingClientRect().height + 'px' : '100%',
+              inset: 0,
             }}
           >
             {/* Info title */}
@@ -1158,6 +1250,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
     </>

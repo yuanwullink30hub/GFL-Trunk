@@ -34,7 +34,7 @@ import {
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
-  hover, C, FONT,
+  hover, C, FONT, SciFiButton,
 } from './dashboardStyles';
 import { BRANDS } from '../../pages/GeneralBrandPage/brandData';
 import InvoiceTemplate from './InvoiceTemplate';
@@ -75,22 +75,22 @@ const MOBILE_TAB_STYLE = (active) => ({
 // ═══════════════════════════════════════════════════════════
 const CARD_COLORS = {
   gold: {
-    border: '#ffae00',
-    shadow: '0 0 15px rgba(255, 174, 0, 0.3)',
-    titleColor: '#ffae00',
-    dimText: 'rgba(255, 174, 0, 0.35)',
-    rowBorder: 'rgba(255, 174, 0, 0.12)',
-    cardBg: 'rgba(255, 174, 0, 0.04)',
-    iconBg: 'rgba(255, 174, 0, 0.08)',
+    border: '#f97316',
+    shadow: '0 0 15px rgba(249, 115, 22, 0.3)',
+    titleColor: '#f97316',
+    dimText: 'rgba(249, 115, 22, 0.35)',
+    rowBorder: 'rgba(249, 115, 22, 0.12)',
+    cardBg: 'rgba(249, 115, 22, 0.04)',
+    iconBg: 'rgba(249, 115, 22, 0.08)',
   },
   purple: {
-    border: '#bc13fe',
-    shadow: '0 0 15px rgba(188, 19, 254, 0.3)',
-    titleColor: '#bc13fe',
-    dimText: 'rgba(188, 19, 254, 0.35)',
-    rowBorder: 'rgba(188, 19, 254, 0.12)',
-    cardBg: 'rgba(188, 19, 254, 0.04)',
-    iconBg: 'rgba(188, 19, 254, 0.08)',
+    border: '#a855f7',
+    shadow: '0 0 15px rgba(168, 85, 247, 0.3)',
+    titleColor: '#a855f7',
+    dimText: 'rgba(168, 85, 247, 0.35)',
+    rowBorder: 'rgba(168, 85, 247, 0.12)',
+    cardBg: 'rgba(168, 85, 247, 0.04)',
+    iconBg: 'rgba(168, 85, 247, 0.08)',
   },
   green: {
     border: '#4ade80',
@@ -118,7 +118,9 @@ function DashboardCard({ children, title, color = 'gold', className, style = {} 
   return (
     <div style={{
       position: 'relative',
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      backgroundColor: 'rgba(1, 0, 2, 0.3)',
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
       border: `1px solid ${t.border}`,
       boxShadow: t.shadow,
       borderRadius: '0.5rem',
@@ -175,7 +177,7 @@ const CORNER = (pos, mobile) => {
   return {
     position: 'absolute',
     width: 'max(0.7rem, 1vw)', height: 'max(0.7rem, 1vw)',
-    border: '1.5px solid #ffae00',
+    border: '1.5px solid #a855f7',
     pointerEvents: 'none', zIndex: 3,
     ...(pos === 'tl' && { top: off, left: off, borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }),
     ...(pos === 'tr' && { top: off, right: off, borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }),
@@ -199,6 +201,17 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
 
   return (
     <MobileCtx.Provider value={isMobile}>
+    <style>{`
+      @keyframes dashHoloSheen {
+        0%   { background-position: 200% 200%; }
+        50%  { background-position: 0% 0%; }
+        100% { background-position: 200% 200%; }
+      }
+      @keyframes dashHoloScanline {
+        0%   { background-position: 0 -200%; }
+        100% { background-position: 0 200%; }
+      }
+    `}</style>
     {/* Outer shell — fixed size, positioning context for corners */}
     <div style={{ position: 'relative', width: isMobile ? '96vw' : '90vw', maxWidth: '1280px', height: isMobile ? '82vh' : '85vh', padding: isMobile ? '0.6rem' : 0 }}>
       {/* Corner brackets — positioned on the inner panel edge */}
@@ -213,17 +226,31 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: 'rgba(2, 0, 3, 0.9)',
-        backdropFilter: isMobile ? 'none' : 'blur(4px)',
-        WebkitBackdropFilter: isMobile ? 'none' : 'blur(4px)',
+        backgroundColor: 'rgba(1, 0, 2, 0.3)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         borderRadius: 'max(4px, 0.5vw)',
-        boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 0 80px rgba(0,0,0,0.35)',
+        boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
         color: C.text,
         fontFamily: FONT,
         fontSize: 'max(12px, 0.65vw)',
         ...(isMobile ? {} : { overflow: 'hidden' }),
       }}>
-        {/* Decorative overlays removed for performance */}
+        {/* Holographic sheen — Eyedentity glass skin */}
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: 'max(4px, 0.5vw)', pointerEvents: 'none', zIndex: 1,
+          background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
+          backgroundSize: '400% 400%',
+          animation: 'dashHoloSheen 45s ease-in-out infinite',
+          mixBlendMode: 'screen',
+        }} />
+        {/* Scanline sweep */}
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: 'max(4px, 0.5vw)', pointerEvents: 'none', zIndex: 1,
+          background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
+          backgroundSize: '100% 300%',
+          animation: 'dashHoloScanline 12s linear infinite',
+        }} />
 
         {/* Title bar */}
         <div style={{
@@ -237,46 +264,16 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
             <>
               <div />
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <button onClick={onClose} style={{
-                  ...BTN, width: 'auto', padding: '0.35rem 1rem',
-                  fontSize: 'max(9px, 0.48vw)',
-                }}
-                  onMouseEnter={(e) => hover(e, true)}
-                  onMouseLeave={(e) => hover(e, false)}>
-                  ← Terug
-                </button>
-                <button onClick={onLogout} style={{
-                  ...BTN, width: 'auto', padding: '0.35rem 1rem',
-                  fontSize: 'max(9px, 0.48vw)',
-                  borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
-                }}
-                  onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-                  onMouseLeave={(e) => { e.target.style.background = BTN.background; e.target.style.color = '#fca5a5'; }}>
-                  Uitloggen
-                </button>
+                <SciFiButton onClick={onClose} size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">← Terug</SciFiButton>
+                <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">Uitloggen</SciFiButton>
               </div>
             </>
           ) : (
             <>
               <div />
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <button onClick={onClose} style={{
-                  ...BTN, width: 'auto', padding: '0.35rem 1rem',
-                  fontSize: 'max(9px, 0.48vw)',
-                }}
-                  onMouseEnter={(e) => hover(e, true)}
-                  onMouseLeave={(e) => hover(e, false)}>
-                  ← Terug
-                </button>
-                <button onClick={onLogout} style={{
-                  ...BTN, width: 'auto', padding: '0.35rem 1rem',
-                  fontSize: 'max(9px, 0.48vw)',
-                  borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
-                }}
-                  onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-                  onMouseLeave={(e) => { e.target.style.background = BTN.background; e.target.style.color = '#fca5a5'; }}>
-                  Uitloggen
-                </button>
+                <SciFiButton onClick={onClose} size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">← Terug</SciFiButton>
+                <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">Uitloggen</SciFiButton>
               </div>
             </>
           )}
@@ -297,7 +294,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
       {/* ── Koptekst — HoloAuth Dashboard structuur ── */}
       <header style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        borderBottom: '1px solid rgba(255, 174, 0, 0.15)',
+        borderBottom: '1px solid rgba(168, 85, 247, 0.15)',
         paddingBottom: isMobile ? 'max(0.8rem, 1.2vw)' : '0.8rem',
       }}>
         <div>
@@ -305,7 +302,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
             fontSize: isMobile ? 'max(18px, 1.4vw)' : 'max(22px, 1.4vw)', fontWeight: 'bold',
             color: C.gold, textTransform: 'uppercase',
             letterSpacing: '0.2em', fontFamily: FONT, margin: 0,
-            textShadow: '0 0 5px #ffae00, 0 0 10px #ffae00',
+            textShadow: '0 0 5px #f97316, 0 0 10px #f97316',
           }}>
             Commandocentrum
           </h1>
@@ -328,12 +325,9 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
           { key: 'contact', label: 'Contact' },
         ];
         const renderBtn = ({ key, label, disabled }) => (
-          <button key={key} onClick={() => !disabled && setTab(key)} disabled={disabled}
-            style={{ ...tabStyle(tab === key), ...(disabled ? { opacity: 0.25, cursor: 'not-allowed', pointerEvents: 'none' } : {}) }}
-            onMouseEnter={(e) => { if (!disabled && tab !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
-            onMouseLeave={(e) => { if (!disabled && tab !== key) e.target.style.background = tabStyle(false).background; }}>
+          <SciFiButton key={key} onClick={() => !disabled && setTab(key)} disabled={disabled} active={tab === key} fullWidth>
             {label.toUpperCase()}
-          </button>
+          </SciFiButton>
         );
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
@@ -357,12 +351,9 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
             { key: 'audit', label: 'Audit Log' },
             { key: 'contact', label: 'Contact' },
           ].map(({ key, label, disabled }) => (
-            <button key={key} onClick={() => !disabled && setTab(key)} disabled={disabled}
-              style={{ ...tabStyle(tab === key), ...(disabled ? { opacity: 0.25, cursor: 'not-allowed' } : {}) }}
-              onMouseEnter={(e) => { if (!disabled && tab !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
-              onMouseLeave={(e) => { if (!disabled && tab !== key) e.target.style.background = tabStyle(false).background; }}>
+            <SciFiButton key={key} onClick={() => !disabled && setTab(key)} disabled={disabled} active={tab === key}>
               {label.toUpperCase()}
-            </button>
+            </SciFiButton>
           ))}
         </div>
       )}
@@ -625,14 +616,7 @@ const OverviewTab = memo(({ user }) => {
                 onFocus={(e) => { e.target.style.borderColor = C.purple; }}
                 onBlur={(e) => { e.target.style.borderColor = pc.rowBorder; }}
               />
-              <button onClick={addNote} style={{
-                ...BTN, borderColor: C.purple, color: C.purple,
-                fontSize: 'max(9px, 0.45vw)', padding: isMobile ? 'max(0.25rem, 0.35vw) max(0.4rem, 0.6vw)' : '0.35rem 0.6rem',
-              }}
-                onMouseEnter={(e) => { e.target.style.background = 'rgba(188, 19, 254, 0.2)'; }}
-                onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
-                +
-              </button>
+              <SciFiButton onClick={addNote} variant="purple" size="sm" padding={isMobile ? 'max(0.25rem, 0.35vw) max(0.4rem, 0.6vw)' : '0.35rem 0.6rem'} fontSize="max(9px, 0.45vw)">+</SciFiButton>
             </div>
             {notesSaved && (
               <div style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase' }}>
@@ -680,14 +664,7 @@ const OverviewTab = memo(({ user }) => {
                 <span style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase' }}>
                   {errorLog.length} fout{errorLog.length !== 1 ? 'en' : ''} vastgelegd
                 </span>
-                <button onClick={clearLog} style={{
-                  ...BTN, fontSize: 'max(7px, 0.38vw)', padding: '0.2rem 0.4rem',
-                  borderColor: 'rgba(239,68,68,0.4)', color: '#fca5a5',
-                }}
-                  onMouseEnter={(e) => { e.target.style.background = 'rgba(239,68,68,0.2)'; }}
-                  onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
-                  Log Wissen
-                </button>
+                <SciFiButton onClick={clearLog} variant="danger" size="xs" padding="0.2rem 0.4rem" fontSize="max(7px, 0.38vw)">Log Wissen</SciFiButton>
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '280px', overflowY: 'auto' }}>
@@ -904,27 +881,12 @@ const UsersTab = memo(({ currentUserId }) => {
             </span>
             {u._id !== currentUserId && (
               <>
-                <button
-                  onClick={() => toggleRole(u._id, u.role || 'client')}
-                  disabled={busy === u._id}
-                  style={{ ...BTN, padding: '0.2rem 0.5rem', fontSize: 'max(8px, 0.4vw)', opacity: busy === u._id ? 0.4 : 1 }}
-                  onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-                >
+                <SciFiButton onClick={() => toggleRole(u._id, u.role || 'client')} disabled={busy === u._id} size="xs" padding="0.2rem 0.5rem" fontSize="max(8px, 0.4vw)">
                   {u.role === 'admin' ? '→ CLIENT' : '→ ADMIN'}
-                </button>
-                <button
-                  onClick={() => handleDeleteUser(u._id, u.displayName || u.email)}
-                  disabled={deleting === u._id}
-                  style={{
-                    ...BTN, padding: '0.2rem 0.5rem', fontSize: 'max(8px, 0.4vw)',
-                    borderColor: 'rgba(239, 68, 68, 0.4)', color: '#fca5a5',
-                    opacity: deleting === u._id ? 0.4 : 1,
-                  }}
-                  onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.15)'; }}
-                  onMouseLeave={(e) => { e.target.style.background = 'linear-gradient(135deg, rgba(255, 174, 0, 0.1), rgba(255, 174, 0, 0.2))'; e.target.style.color = '#fca5a5'; }}
-                >
+                </SciFiButton>
+                <SciFiButton onClick={() => handleDeleteUser(u._id, u.displayName || u.email)} disabled={deleting === u._id} variant="danger" size="xs" padding="0.2rem 0.5rem" fontSize="max(8px, 0.4vw)">
                   {deleting === u._id ? '...' : '✕'}
-                </button>
+                </SciFiButton>
               </>
             )}
           </div>
@@ -1017,11 +979,7 @@ const AssessmentsTab = memo(({ adminEmail }) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={LABEL}>ASSESSMENT DETAIL</div>
-          <button onClick={() => setDetail(null)}
-            style={{ ...BTN, padding: '0.2rem 0.6rem', fontSize: 'max(8px, 0.4vw)' }}
-            onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-            ← BACK
-          </button>
+          <SciFiButton onClick={() => setDetail(null)} size="xs" padding="0.2rem 0.6rem" fontSize="max(8px, 0.4vw)">← BACK</SciFiButton>
         </div>
 
         {error && <ErrorBox msg={error} />}
@@ -1064,21 +1022,10 @@ const AssessmentsTab = memo(({ adminEmail }) => {
 
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: '0.4rem', ...(isMobile ? { flexWrap: 'wrap' } : {}) }}>
-          <button onClick={() => handleDownloadPdf(d._id)}
-            style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)' }}
-            onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-            PDF ↓
-          </button>
-          <button onClick={() => handleDelete(d._id)} disabled={deleting === d._id}
-            style={{
-              ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)',
-              borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
-              opacity: deleting === d._id ? 0.4 : 1,
-            }}
-            onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-            onMouseLeave={(e) => { e.target.style.background = 'linear-gradient(135deg, rgba(255, 174, 0, 0.1), rgba(255, 174, 0, 0.2))'; e.target.style.color = '#fca5a5'; }}>
+          <SciFiButton onClick={() => handleDownloadPdf(d._id)} size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)">PDF ↓</SciFiButton>
+          <SciFiButton onClick={() => handleDelete(d._id)} disabled={deleting === d._id} variant="danger" size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)">
             {deleting === d._id ? 'DELETING...' : 'DELETE'}
-          </button>
+          </SciFiButton>
         </div>
 
         {/* Per-layer results */}
@@ -1271,21 +1218,10 @@ const AssessmentsTab = memo(({ adminEmail }) => {
               }}>
                 {a.supportGroup || '—'}
               </span>
-              <button onClick={() => viewDetail(a._id)} disabled={loadingDetail}
-                style={{ ...BTN, padding: '0.15rem 0.5rem', fontSize: 'max(8px, 0.4vw)' }}
-                onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-                VIEW
-              </button>
-              <button onClick={() => handleDelete(a._id)} disabled={deleting === a._id}
-                style={{
-                  ...BTN, padding: '0.15rem 0.5rem', fontSize: 'max(8px, 0.4vw)',
-                  borderColor: 'rgba(239, 68, 68, 0.4)', color: '#fca5a5',
-                  opacity: deleting === a._id ? 0.4 : 1,
-                }}
-                onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.15)'; }}
-                onMouseLeave={(e) => { e.target.style.background = 'linear-gradient(135deg, rgba(255, 174, 0, 0.1), rgba(255, 174, 0, 0.2))'; e.target.style.color = '#fca5a5'; }}>
+              <SciFiButton onClick={() => viewDetail(a._id)} disabled={loadingDetail} size="xs" padding="0.15rem 0.5rem" fontSize="max(8px, 0.4vw)">VIEW</SciFiButton>
+              <SciFiButton onClick={() => handleDelete(a._id)} disabled={deleting === a._id} variant="danger" size="xs" padding="0.15rem 0.5rem" fontSize="max(8px, 0.4vw)">
                 {deleting === a._id ? '...' : '✕'}
-              </button>
+              </SciFiButton>
             </div>
           </div>
         ))
@@ -1304,12 +1240,9 @@ const PromptsTab = memo(() => {
       {/* Level sub-tabs */}
       <div style={{ display: 'flex', gap: '0.4rem' }}>
         {LEVEL_TABS.map(({ key, label }) => (
-          <button key={key} onClick={() => setPromptLevel(key)}
-            style={subTabStyle(promptLevel === key)}
-            onMouseEnter={(e) => { if (promptLevel !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
-            onMouseLeave={(e) => { if (promptLevel !== key) e.target.style.background = subTabStyle(false).background; }}>
+          <SciFiButton key={key} onClick={() => setPromptLevel(key)} active={promptLevel === key}>
             {label.toUpperCase()}
-          </button>
+          </SciFiButton>
         ))}
       </div>
 
@@ -1388,13 +1321,9 @@ const PromptsTabContent = memo(() => {
         />
       </div>
 
-      <button onClick={handleSave} disabled={saving}
-        style={{ ...BTN, width: '100%', marginTop: '0.3rem', opacity: saving ? 0.5 : 1,
-          borderColor: saved ? 'rgba(255, 174, 0, 0.8)' : undefined }}
-        onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}
-      >
+      <SciFiButton onClick={handleSave} disabled={saving} fullWidth size="lg" style={{ marginTop: '0.3rem' }} active={saved}>
         {saving ? 'SAVING...' : saved ? '✓ SAVED' : 'SAVE PROMPT CONFIG'}
-      </button>
+      </SciFiButton>
 
       {/* ── Context Documents Section ── */}
       <div style={{ marginTop: '1.2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem' }}>
@@ -1576,24 +1505,7 @@ const ContextDocumentsSection = memo(() => {
                   {formatSize(doc.size)} · {doc.charCount?.toLocaleString()} tekens · {new Date(doc.uploadedAt).toLocaleDateString('nl-NL')}
                 </div>
               </div>
-              <button
-                onClick={() => handleDelete(doc._id, doc.filename)}
-                style={{
-                  background: 'none',
-                  border: '1px solid rgba(255,60,60,0.3)',
-                  color: '#ff4444',
-                  borderRadius: '4px',
-                  padding: '0.15rem 0.4rem',
-                  cursor: 'pointer',
-                  fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)',
-                  fontFamily: FONT,
-                  letterSpacing: '0.05em',
-                }}
-                onMouseEnter={(e) => { e.target.style.background = 'rgba(255,60,60,0.1)'; }}
-                onMouseLeave={(e) => { e.target.style.background = 'none'; }}
-              >
-                ✕
-              </button>
+              <SciFiButton onClick={() => handleDelete(doc._id, doc.filename)} variant="danger" size="xs" padding="0.15rem 0.4rem" fontSize={isMobile ? '12px' : 'max(8px, 0.4vw)'}>✕</SciFiButton>
             </div>
           ))}
           <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.38vw)', opacity: 0.3, textAlign: 'right' }}>
@@ -1605,25 +1517,16 @@ const ContextDocumentsSection = memo(() => {
       {/* Verify / Save button */}
       {documents.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.3rem' }}>
-          <button
-            onClick={handleVerify}
-            disabled={verifying}
-            style={{
-              ...BTN,
-              width: '100%',
-              opacity: verifying ? 0.5 : 1,
-              borderColor: verified?.verified ? 'rgba(0,255,157,0.6)' : undefined,
-              color: verified?.verified ? '#00ff9d' : undefined,
-            }}
-            onMouseEnter={(e) => hover(e, true)}
-            onMouseLeave={(e) => hover(e, false)}
-          >
-            {verifying
-              ? '⏳ VERIFYING...'
-              : verified?.verified
-                ? '✓ DOCUMENTEN GEVERIFIEERD'
-                : '💾 SAVE & VERIFY DOCUMENTEN'}
-          </button>
+              <SciFiButton
+                onClick={handleVerify}
+                disabled={verifying}
+                fullWidth size="lg"
+                color={verified?.verified ? '#00ff9d' : undefined}
+                rgb={verified?.verified ? '0, 255, 157' : undefined}
+                active={verified?.verified}
+              >
+                {verifying ? '⏳ VERIFYING...' : verified?.verified ? '✓ DOCUMENTEN GEVERIFIEERD' : '💾 SAVE & VERIFY DOCUMENTEN'}
+              </SciFiButton>
 
           {/* Verification result */}
           {verified && verified.verified && (
@@ -1674,12 +1577,9 @@ const QuestionsTab = memo(() => {
       {/* Level sub-tabs */}
       <div style={{ display: 'flex', gap: '0.4rem' }}>
         {LEVEL_TABS.map(({ key, label }) => (
-          <button key={key} onClick={() => setLevel(key)}
-            style={subTabStyle(level === key)}
-            onMouseEnter={(e) => { if (level !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
-            onMouseLeave={(e) => { if (level !== key) e.target.style.background = subTabStyle(false).background; }}>
+          <SciFiButton key={key} onClick={() => setLevel(key)} active={level === key}>
             {label.toUpperCase()}
-          </button>
+          </SciFiButton>
         ))}
       </div>
 
@@ -1875,11 +1775,9 @@ const QuestionsTabAdvanced = memo(() => {
           Click below to import the 60 default questions into MongoDB.
           <br />Once seeded, you can edit them directly from this panel.
         </div>
-        <button onClick={handleSeed} disabled={seeding}
-          style={{ ...BTN, padding: '0.6rem 1.5rem', opacity: seeding ? 0.5 : 1 }}
-          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
+        <SciFiButton onClick={handleSeed} disabled={seeding} size="lg">
           {seeding ? 'SEEDING...' : 'SEED DEFAULT QUESTIONS'}
-        </button>
+        </SciFiButton>
         {error && <div style={{ marginTop: '0.5rem' }}><ErrorBox msg={error} /></div>}
       </div>
     );
@@ -1891,11 +1789,7 @@ const QuestionsTabAdvanced = memo(() => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={LABEL}>EDITING Q{editingQuestion.questionId}</div>
-          <button onClick={() => setEditingQuestion(null)}
-            style={{ ...BTN, padding: '0.2rem 0.6rem', fontSize: 'max(8px, 0.4vw)' }}
-            onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-            ← BACK
-          </button>
+          <SciFiButton onClick={() => setEditingQuestion(null)} size="xs" padding="0.2rem 0.6rem" fontSize="max(8px, 0.4vw)">← BACK</SciFiButton>
         </div>
 
         {error && <ErrorBox msg={error} />}
@@ -1937,12 +1831,9 @@ const QuestionsTabAdvanced = memo(() => {
           </div>
         ))}
 
-        <button onClick={handleSaveQuestion} disabled={saving}
-          style={{ ...BTN, width: '100%', marginTop: '0.3rem', opacity: saving ? 0.5 : 1,
-            borderColor: saved ? 'rgba(255, 174, 0, 0.8)' : undefined }}
-          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
+        <SciFiButton onClick={handleSaveQuestion} disabled={saving} fullWidth size="lg" style={{ marginTop: '0.3rem' }} active={saved}>
           {saving ? 'SAVING...' : saved ? '✓ SAVED' : 'SAVE QUESTION'}
-        </button>
+        </SciFiButton>
       </div>
     );
   }
@@ -1953,11 +1844,7 @@ const QuestionsTabAdvanced = memo(() => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={LABEL}>IMPORT QUESTIONS (JSON)</div>
-          <button onClick={() => { setShowImport(false); setImportJson(''); }}
-            style={{ ...BTN, padding: '0.2rem 0.6rem', fontSize: 'max(8px, 0.4vw)' }}
-            onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-            ← BACK
-          </button>
+          <SciFiButton onClick={() => { setShowImport(false); setImportJson(''); }} size="xs" padding="0.2rem 0.6rem" fontSize="max(8px, 0.4vw)">← BACK</SciFiButton>
         </div>
         <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.4 }}>
           Paste the full JSON export below. This will REPLACE all existing questions.
@@ -1969,11 +1856,9 @@ const QuestionsTabAdvanced = memo(() => {
           placeholder='[{ "layerIndex": 0, "name": "...", "questions": [...] }, ...]'
           style={{ ...TEXTAREA, minHeight: '200px', fontFamily: 'monospace', fontSize: 'max(9px, 0.45vw)' }}
         />
-        <button onClick={handleImport} disabled={importing || !importJson.trim()}
-          style={{ ...BTN, width: '100%', opacity: (importing || !importJson.trim()) ? 0.4 : 1 }}
-          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
+        <SciFiButton onClick={handleImport} disabled={importing || !importJson.trim()} fullWidth size="lg">
           {importing ? 'IMPORTING...' : 'IMPORT & REPLACE ALL'}
-        </button>
+        </SciFiButton>
       </div>
     );
   }
@@ -1987,12 +1872,9 @@ const QuestionsTabAdvanced = memo(() => {
 
       {/* Toolbar: export / import / force re-seed */}
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-        <button onClick={handleExportDocx} disabled={exportingDocx}
-          style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)',
-            borderColor: 'rgba(188, 19, 254, 0.5)', opacity: exportingDocx ? 0.4 : 1 }}
-          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
+        <SciFiButton onClick={handleExportDocx} disabled={exportingDocx} variant="purple" size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)">
           {exportingDocx ? 'EXPORTEREN...' : '📄 EXPORT WORD'}
-        </button>
+        </SciFiButton>
         <label style={{ display: 'inline-flex' }}>
           <input type="file" accept=".docx" style={{ display: 'none' }}
             onChange={(e) => { handleImportDocx(e.target.files[0]); e.target.value = ''; }}
@@ -2006,22 +1888,11 @@ const QuestionsTabAdvanced = memo(() => {
           </span>
         </label>
         <div style={{ borderLeft: '1px solid rgba(255,174,0,0.15)', margin: '0 0.1rem' }} />
-        <button onClick={handleExport}
-          style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)', opacity: 0.6 }}
-          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-          EXPORT JSON
-        </button>
-        <button onClick={() => setShowImport(true)}
-          style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)', opacity: 0.6 }}
-          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-          IMPORT JSON
-        </button>
-        <button onClick={handleForceReseed} disabled={seeding}
-          style={{ ...BTN, padding: '0.3rem 0.7rem', fontSize: 'max(8px, 0.4vw)',
-            borderColor: 'rgba(239, 68, 68, 0.4)', opacity: seeding ? 0.4 : 1 }}
-          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
+        <SciFiButton onClick={handleExport} size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)" style={{ opacity: 0.6 }}>EXPORT JSON</SciFiButton>
+        <SciFiButton onClick={() => setShowImport(true)} size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)" style={{ opacity: 0.6 }}>IMPORT JSON</SciFiButton>
+        <SciFiButton onClick={handleForceReseed} disabled={seeding} variant="danger" size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)">
           {seeding ? 'RE-SEEDING...' : 'FORCE RE-SEED'}
-        </button>
+        </SciFiButton>
       </div>
 
       {error && <ErrorBox msg={error} />}
@@ -2071,12 +1942,7 @@ const QuestionsTabAdvanced = memo(() => {
                     <span style={{ opacity: 0.4, marginRight: '0.4rem' }}>Q{q.id}</span>
                     {q.text.length > 80 ? q.text.slice(0, 80) + '...' : q.text}
                   </div>
-                  <button
-                    onClick={() => startEdit(layer.layerIndex, q)}
-                    style={{ ...BTN, padding: '0.15rem 0.5rem', fontSize: 'max(8px, 0.4vw)', marginLeft: '0.4rem' }}
-                    onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-                    EDIT
-                  </button>
+                  <SciFiButton onClick={() => startEdit(layer.layerIndex, q)} size="xs" padding="0.15rem 0.5rem" fontSize="max(8px, 0.4vw)" style={{ marginLeft: '0.4rem' }}>EDIT</SciFiButton>
                 </div>
               ))}
             </div>
@@ -2364,7 +2230,7 @@ const FormulierenTab = memo(() => {
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: '0.3rem' }}>
-                  <button onClick={() => {
+                  <SciFiButton onClick={() => {
                     if (!editorContent.trim()) return;
                     const blob = new Blob([editorContent], { type: 'text/plain;charset=utf-8' });
                     const url = URL.createObjectURL(blob);
@@ -2373,14 +2239,7 @@ const FormulierenTab = memo(() => {
                     document.body.appendChild(a); a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
-                  }} disabled={!editorContent.trim()} style={{
-                    padding: '0.2rem 0.5rem', fontSize: 'max(8px, 0.4vw)',
-                    backgroundColor: 'rgba(255, 174, 0, 0.08)',
-                    color: C.gold, border: '1px solid rgba(255, 174, 0, 0.15)',
-                    borderRadius: '0.15rem', cursor: !editorContent.trim() ? 'not-allowed' : 'pointer',
-                    textTransform: 'uppercase', fontWeight: 'bold', transition: 'all 0.2s',
-                    opacity: !editorContent.trim() ? 0.4 : 1,
-                  }}>DOWNLOADEN</button>
+                  }} disabled={!editorContent.trim()} size="xs" padding="0.2rem 0.5rem" fontSize="max(8px, 0.4vw)">DOWNLOADEN</SciFiButton>
                 </div>
               </div>
 
@@ -2491,15 +2350,7 @@ const FormulierenTab = memo(() => {
                     : 'Schrijf de e-mailtekst in het veld hierboven'}
                   {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 'bold' }}>✓ Verstuurd!</span>}
                 </div>
-                <button onClick={handleSend} disabled={sendingState === 'sending' || !emailBody.trim() || !recipientEmail.trim()} style={{
-                  padding: '0.3rem 0.8rem', fontSize: 'max(9px, 0.45vw)',
-                  backgroundColor: (!emailBody.trim() || !recipientEmail.trim()) ? 'rgba(188, 19, 254, 0.06)' : 'rgba(188, 19, 254, 0.15)',
-                  color: C.purple, border: '1px solid rgba(188, 19, 254, 0.3)',
-                  borderRadius: '0.15rem',
-                  cursor: (sendingState === 'sending' || !emailBody.trim() || !recipientEmail.trim()) ? 'not-allowed' : 'pointer',
-                  textTransform: 'uppercase', fontWeight: 'bold', transition: 'all 0.2s',
-                  opacity: (!emailBody.trim() || !recipientEmail.trim()) ? 0.4 : 1,
-                }}>{sendingState === 'sending' ? 'BEZIG MET VERSTUREN...' : '✉ VERSTUREN'}</button>
+                <SciFiButton onClick={handleSend} disabled={sendingState === 'sending' || !emailBody.trim() || !recipientEmail.trim()} variant="purple" size="sm" padding="0.3rem 0.8rem" fontSize="max(9px, 0.45vw)">{sendingState === 'sending' ? 'BEZIG MET VERSTUREN...' : '✉ VERSTUREN'}</SciFiButton>
               </div>
             </div>
           </CardWrap>
@@ -2598,11 +2449,9 @@ const ContactTab = memo(() => {
           { key: 'clients', label: `Detailpagina Klanten (${BRANDS.length})` },
           { key: 'requests', label: `Verzoeken${nieuwRequests > 0 ? ` (${nieuwRequests} nieuw)` : ''}` },
         ].map(({ key, label }) => (
-          <button key={key} onClick={() => setSection(key)} style={TAB_STYLE(section === key)}
-            onMouseEnter={(e) => { if (section !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
-            onMouseLeave={(e) => { if (section !== key) e.target.style.background = TAB_STYLE(false).background; }}>
+          <SciFiButton key={key} onClick={() => setSection(key)} active={section === key}>
             {label}
-          </button>
+          </SciFiButton>
         ))}
       </div>
 
@@ -2657,18 +2506,9 @@ const ContactTab = memo(() => {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
-                        <button onClick={() => startEdit(brand)}
-                          style={{ ...BTN, padding: '0.25rem 0.5rem', fontSize: 'max(8px, 0.4vw)' }}
-                          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-                          ✏ Bewerken
-                        </button>
+                        <SciFiButton onClick={() => startEdit(brand)} size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">✏ Bewerken</SciFiButton>
                         {hasEdits && (
-                          <button onClick={() => resetBrand(brand.id)}
-                            style={{ ...BTN, padding: '0.25rem 0.5rem', fontSize: 'max(8px, 0.4vw)', borderColor: 'rgba(239,68,68,0.5)', color: '#fca5a5' }}
-                            onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-                            onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
-                            ↩ Reset
-                          </button>
+                          <SciFiButton onClick={() => resetBrand(brand.id)} variant="danger" size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">↩ Reset</SciFiButton>
                         )}
                       </div>
                     </div>
@@ -2703,12 +2543,8 @@ const ContactTab = memo(() => {
                           onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
                       </div>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <button onClick={saveEdit} style={{ ...BTN, fontSize: 'max(9px, 0.45vw)' }}
-                          onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>✓ Opslaan</button>
-                        <button onClick={() => setEditingBrand(null)}
-                          style={{ ...BTN, fontSize: 'max(9px, 0.45vw)', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)' }}
-                          onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.05)'; }}
-                          onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>Annuleren</button>
+                        <SciFiButton onClick={saveEdit} size="sm" fontSize="max(9px, 0.45vw)">✓ Opslaan</SciFiButton>
+                        <SciFiButton onClick={() => setEditingBrand(null)} variant="white" size="sm" fontSize="max(9px, 0.45vw)">Annuleren</SciFiButton>
                       </div>
                     </div>
                   )}
@@ -2931,13 +2767,7 @@ const AuditLogTab = memo(() => {
           );
         })}
 
-        <button onClick={fetchAll} style={{
-          marginLeft: 'auto',
-          padding: '0.25rem 0.6rem', fontSize: 'max(8px, 0.4vw)',
-          backgroundColor: 'rgba(255, 174, 0, 0.08)', color: C.gold,
-          border: '1px solid rgba(255, 174, 0, 0.15)', borderRadius: '0.15rem',
-          cursor: 'pointer', textTransform: 'uppercase', fontWeight: 'bold',
-        }}>↻ VERNIEUWEN</button>
+        <SciFiButton onClick={fetchAll} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)" style={{ marginLeft: 'auto' }}>↻ VERNIEUWEN</SciFiButton>
       </div>
 
       {/* Folder description */}

@@ -8,6 +8,7 @@ import scienceIcon from '../../images/Import ready/Scienceicon.png';
 import aiIcon from '../../images/Import ready/AIicon.PNG';
 import wheelAnatomy from '../../images/TNM wheel PNG.png';
 import triangleHardware from '../../images/Deltawerken png.png';
+import { SciFiButton } from './dashboardStyles';
 import vulnerabilityOrder from '../../images/Nature Nurture png.png';
 
 /**
@@ -141,156 +142,164 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
 
   // Breakpoint-based sizing:  Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
   const s = windowWidth >= 1441 ? {
-    // ── Desktop ── increased spacing, same fonts
-    modalMaxWidth: '106.5rem',
-    modalMaxHeight: '90vh',
-    padding: '1.875rem',
-    headerMaxWidth: '26.25rem',
-    headerMb: '3rem',
+    // ── Desktop ── all vertical spacings in vh so they track viewport height
+    modalMaxWidth: '64.4vw',
+    modalMinHeight: '82vh',
+    modalMaxHeight: '99vh',
+    padding: '1.8vh 2rem',
+    headerMaxWidth: '22rem',
+    headerMb: '2vh',
     descFontSize: '0.875rem',
-    descMt: '1.5rem',
-    featureGap: '0.6rem',
-    featureMb: '3rem',
-    contentShiftUp: '-3rem',
-    featurePadding: '0.75rem',
-    featureIconSize: '2.75rem',
-    featureIconFont: '1rem',
+    descMt: '0.5vh',
+    featureGap: '0.5vh',
+    featureMb: '1.8vh',
+    contentShiftUp: '-1.5vh',
+    referentiesMt: '-1vh',
+    featurePadding: '0.7vh 0.75rem',
+    featureIconSize: '4.5vh',
+    featureIconFont: '0.875rem',
     featureTitleFont: '0.875rem',
     featureDescFont: '0.75rem',
     featureItemGap: '0.6rem',
-    pyramidMb: '3rem',
-    pyramidGap: '0.5rem',
-    pyramidBaseWidth: 280, pyramidStepWidth: 56, // increased for spacing
-    pyramidPadY: '0.75rem', pyramidPadX: '1.5rem',
-    pyramidDotSize: '0.5rem',
+    pyramidMb: '1.8vh',
+    pyramidGap: '0.4vh',
+    pyramidBaseWidth: 240, pyramidStepWidth: 48,
+    pyramidPadY: '0.5vh', pyramidPadX: '1.25rem',
+    pyramidDotSize: '0.4rem',
     pyramidLabelFont: '0.75rem',
-    pyramidDescFont: '0.625rem',
-    pyramidLabelGap: '0.75rem',
-    pyramidItemGap: '1rem',
-    levelsMb: '2.25rem',
+    pyramidDescFont: '0.6rem',
+    pyramidLabelGap: '0.5rem',
+    pyramidItemGap: '0.75rem',
+    levelsMb: '1.2vh',
     levelsTitleFont: '0.875rem',
-    levelsTitleMb: '1.5rem',
+    levelsTitleMb: '1vh',
     levelsGap: '1rem',
-    levelPadding: '1.5rem',
-    levelTitleFont: '1rem',
-    levelDescFont: '0.75rem',
-    footerPt: '1.5rem',
+    levelPadding: '0.8vh 1rem',
+    levelTitleFont: '0.875rem',
+    levelDescFont: '0.7rem',
+    footerPt: '0.8vh',
     footerFont: '0.625rem',
-    footerBtnPad: '0.5rem 1.5rem',
+    footerBtnPad: '0.5vh 1.25rem',
     footerBtnFont: '0.75rem',
   } : windowWidth >= 1024 ? {
-    // ── Laptop ── vw-based ×1.35 × 0.75 height reduction
-    modalMaxWidth: '67.2vw',
-    modalMaxHeight: '70vh',
-    padding: '1.05vw',
+    // ── Laptop ── vh for vertical, vw for horizontal
+    modalMaxWidth: '48.1vw',
+    modalMinHeight: '82vh',
+    modalMaxHeight: '99vh',
+    padding: '1.4vh 1.05vw',
     headerMaxWidth: '17.03vw',
-    headerMb: '1.05vw',
+    headerMb: '1.6vh',
     descFontSize: '0.85vw',
-    descMt: '0.63vw',
-    featureGap: '0.4vw',
-    featureMb: '1.05vw',
-    contentShiftUp: '-2.4vw',
-    featurePadding: '0.52vw',
-    featureIconSize: '1.89vw',
+    descMt: '0.3vh',
+    featureGap: '0.4vh',
+    featureMb: '1.4vh',
+    contentShiftUp: '-1.2vh',
+    referentiesMt: '-0.8vh',
+    featurePadding: '0.6vh 0.52vw',
+    featureIconSize: '3.8vh',
     featureIconFont: '0.71vw',
     featureTitleFont: '0.78vw',
     featureDescFont: '0.71vw',
     featureItemGap: '0.4vw',
-    pyramidMb: '1.05vw',
-    pyramidGap: '0.45vw',
+    pyramidMb: '1.4vh',
+    pyramidGap: '0.35vh',
     pyramidBaseWidth: Math.round(windowWidth * 0.085), pyramidStepWidth: Math.round(windowWidth * 0.017),
-    pyramidPadY: '0.42vw', pyramidPadX: '0.84vw',
+    pyramidPadY: '0.4vh', pyramidPadX: '0.84vw',
     pyramidDotSize: '0.29vw',
     pyramidLabelFont: '0.57vw',
     pyramidDescFont: '0.57vw',
     pyramidLabelGap: '0.42vw',
     pyramidItemGap: '0.65vw',
-    levelsMb: '1.05vw',
+    levelsMb: '1.0vh',
     levelsTitleFont: '0.78vw',
-    levelsTitleMb: '0.84vw',
+    levelsTitleMb: '0.8vh',
     levelsGap: '0.65vw',
-    levelPadding: '0.84vw',
+    levelPadding: '0.7vh 0.84vw',
     levelTitleFont: '0.99vw',
     levelDescFont: '0.78vw',
-    footerPt: '0.84vw',
+    footerPt: '0.6vh',
     footerFont: '0.57vw',
-    footerBtnPad: '0.42vw 0.84vw',
+    footerBtnPad: '0.4vh 0.84vw',
     footerBtnFont: '0.71vw',
   } : windowWidth >= 768 ? {
-    // ── Tablet ── increased spacing, same fonts
-    modalMaxWidth: '55rem',
-    modalMaxHeight: '85vh',
-    padding: '1.2rem',
+    // ── Tablet ── vh for vertical, rem for horizontal
+    modalMaxWidth: '39.6rem',
+    modalMinHeight: '82vh',
+    modalMaxHeight: '99vh',
+    padding: '1.4vh 1.2rem',
     headerMaxWidth: '17rem',
-    headerMb: '1.875rem',
+    headerMb: '1.6vh',
     descFontSize: '0.75rem',
-    descMt: '0.9rem',
-    featureGap: '0.36rem',
-    featureMb: '1.875rem',
-    contentShiftUp: '-2rem',
-    featurePadding: '0.49rem',
-    featureIconSize: '1.95rem',
+    descMt: '0.3vh',
+    featureGap: '0.4vh',
+    featureMb: '1.4vh',
+    contentShiftUp: '-1vh',
+    referentiesMt: '-0.8vh',
+    featurePadding: '0.6vh 0.49rem',
+    featureIconSize: '3.5vh',
     featureIconFont: '0.65rem',
     featureTitleFont: '0.65rem',
     featureDescFont: '0.55rem',
     featureItemGap: '0.36rem',
-    pyramidMb: '1.875rem',
-    pyramidGap: '0.375rem',
+    pyramidMb: '1.4vh',
+    pyramidGap: '0.35vh',
     pyramidBaseWidth: 97.5, pyramidStepWidth: 19.5,
-    pyramidPadY: '0.5rem', pyramidPadX: '0.975rem',
+    pyramidPadY: '0.4vh', pyramidPadX: '0.975rem',
     pyramidDotSize: '0.33rem',
     pyramidLabelFont: '0.65rem',
     pyramidDescFont: '0.55rem',
     pyramidLabelGap: '0.5rem',
     pyramidItemGap: '0.6rem',
-    levelsMb: '1.5rem',
+    levelsMb: '1.0vh',
     levelsTitleFont: '0.65rem',
-    levelsTitleMb: '0.975rem',
+    levelsTitleMb: '0.8vh',
     levelsGap: '0.6rem',
-    levelPadding: '0.975rem',
+    levelPadding: '0.7vh 0.975rem',
     levelTitleFont: '0.75rem',
     levelDescFont: '0.6rem',
-    footerPt: '0.975rem',
+    footerPt: '0.6vh',
     footerFont: '0.5rem',
-    footerBtnPad: '0.375rem 0.975rem',
+    footerBtnPad: '0.4vh 0.975rem',
     footerBtnFont: '0.6rem',
   } : {
-    // ── Mobile ── full-width, comfortable touch sizes, proper viewport fit
-    modalMaxWidth: '94vw',
-    modalMaxHeight: '88vh',
-    padding: '1rem 0.85rem',
+    // ── Mobile ── vh for vertical, rem for horizontal
+    modalMaxWidth: '97vw',
+    modalMinHeight: '80vh',
+    modalMaxHeight: '99vh',
+    padding: '1.2vh 0.85rem',
     headerMaxWidth: '11rem',
-    headerMb: '0.75rem',
+    headerMb: '1.2vh',
     descFontSize: '0.72rem',
-    descMt: '0.5rem',
-    featureGap: '0.35rem',
-    featureMb: '0.75rem',
-    contentShiftUp: '-0.5rem',
-    featurePadding: '0.5rem',
-    featureIconSize: '1.75rem',
+    descMt: '0.2vh',
+    featureGap: '0.35vh',
+    featureMb: '0.9vh',
+    contentShiftUp: '-0.5vh',
+    referentiesMt: '-0.5rem',
+    featurePadding: '0.5vh 0.5rem',
+    featureIconSize: '3.2vh',
     featureIconFont: '0.65rem',
     featureTitleFont: '0.65rem',
     featureDescFont: '0.55rem',
     featureItemGap: '0.35rem',
-    pyramidMb: '0.75rem',
-    pyramidGap: '0.25rem',
+    pyramidMb: '0.9vh',
+    pyramidGap: '0.25vh',
     pyramidBaseWidth: 100, pyramidStepWidth: 20,
-    pyramidPadY: '0.35rem', pyramidPadX: '0.75rem',
+    pyramidPadY: '0.35vh', pyramidPadX: '0.75rem',
     pyramidDotSize: '0.3rem',
     pyramidLabelFont: '0.6rem',
     pyramidDescFont: '0.5rem',
     pyramidLabelGap: '0.4rem',
     pyramidItemGap: '0.5rem',
-    levelsMb: '0.75rem',
+    levelsMb: '0.8vh',
     levelsTitleFont: '0.7rem',
-    levelsTitleMb: '0.5rem',
+    levelsTitleMb: '0.5vh',
     levelsGap: '0.5rem',
-    levelPadding: '0.75rem',
+    levelPadding: '0.5vh 0.75rem',
     levelTitleFont: '0.8rem',
     levelDescFont: '0.65rem',
-    footerPt: '0.5rem',
+    footerPt: '0.4vh',
     footerFont: '0.5rem',
-    footerBtnPad: '0.4rem 0.85rem',
+    footerBtnPad: '0.35vh 0.85rem',
     footerBtnFont: '0.6rem',
   };
 
@@ -389,7 +398,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
       <div 
         ref={modalRef}
         className="relative w-full rounded-lg backdrop-blur-sm"
-        style={{ backgroundColor: 'rgba(8, 2, 12, 0.95)', maxWidth: s.modalMaxWidth, maxHeight: s.modalMaxHeight, overflow: 'hidden' }}
+        style={{ backgroundColor: 'rgba(8, 2, 12, 0.95)', maxWidth: s.modalMaxWidth, minHeight: s.modalMinHeight, maxHeight: s.modalMaxHeight, overflow: 'hidden' }}
       >
         {/* Top-Left Corner Border */}
         <div className="absolute -top-0.5 -left-0.5 w-4 h-4" style={{
@@ -424,36 +433,20 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
         }}></div>
         
         {/* Content - matches SectorFrame inner structure */}
-        <div className="relative z-10 h-full w-full flex flex-col overflow-y-auto" style={{ padding: s.padding }}>
+        <div className="relative z-10 w-full flex flex-col" style={{ padding: s.padding }}>
 
           {/* ═══ REFERENCES VIEW ═══ */}
           {showReferences ? (
             <div style={{ animation: 'fadeIn 0.3s ease' }}>
               {/* Back button */}
-              <button
+              <SciFiButton
                 onClick={() => setShowReferences(false)}
-                className="font-mono uppercase tracking-wider hover:scale-[1.02] transition-all duration-300"
-                style={{
-                  color: '#a855f7',
-                  backgroundColor: 'transparent',
-                  border: '1px solid rgba(168,85,247,0.4)',
-                  borderRadius: '9999px',
-                  padding: s.footerBtnPad,
-                  fontSize: s.footerBtnFont,
-                  marginBottom: '1.5rem',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#a855f7';
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.19)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(168,85,247,0.4)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
+                variant="purple"
+                size="sm"
+                style={{ marginBottom: '1.5rem' }}
               >
                 ← {t('assessmentIntro.referencesBack')}
-              </button>
+              </SciFiButton>
 
               {/* References title */}
               <h2 className="text-center font-mono uppercase tracking-wider" style={{
@@ -566,13 +559,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
               </button>
             </div>
 
-            <p className="mx-auto leading-relaxed" style={{ fontSize: s.descFontSize, marginTop: `calc(${s.descMt} - 1.5rem)`, whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'center', color: '#FFFEF0' }}>
+            <p className="mx-auto leading-relaxed" style={{ fontSize: s.descFontSize, marginTop: s.descMt, whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'center', color: '#FFFEF0' }}>
               De meest complete en complexe onderzoekstest voor de synchronisatie van jouw essentie en intelligentie.
             </p>
           </div>
 
           {/* Features Grid — shifted up */}
-          <div className={`grid grid-cols-1 ${windowWidth >= 768 ? 'md:grid-cols-2' : ''}`} style={{ gap: s.featureGap, marginBottom: s.featureMb, marginTop: `calc(${s.contentShiftUp} + 2rem)` }}>
+          <div className={`grid grid-cols-1 ${windowWidth >= 768 ? 'md:grid-cols-2' : ''}`} style={{ gap: s.featureGap, marginBottom: s.featureMb, marginTop: s.contentShiftUp }}>
             {features.map((feature) => (
               <div
                 key={feature.titleKey}
@@ -605,35 +598,19 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
           </div>
 
           {/* Referenties button + research text + upload button row */}
-          <div className={isMobile ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between'} style={{ marginTop: isMobile ? '-0.5rem' : '-2.5rem', marginBottom: s.featureMb }}>
+          <div className={isMobile ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between'} style={{ marginTop: s.referentiesMt, marginBottom: s.featureMb }}>
             {/* Left: Referenties button */}
             <div style={{ width: isMobile ? 'auto' : '10rem', flexShrink: 0 }}>
               {
-                <button
+                <SciFiButton
                   onClick={() => setShowReferences(true)}
-                  className="border border-green-500/40 rounded-full
-                             hover:scale-[1.02] transition-all duration-300 
-                             font-mono uppercase tracking-wider"
-                  style={{
-                    padding: s.footerBtnPad,
-                    fontSize: s.footerBtnFont,
-                    color: '#22c55e',
-                    backgroundColor: 'transparent',
-                    width: '10rem',
-                    display: 'block',
-                    textAlign: 'center',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#22c55e';
-                    e.currentTarget.style.boxShadow = '0 0 20px rgba(34,197,94,0.19)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(34,197,94,0.4)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
+                  color="#22c55e"
+                  rgb="34, 197, 94"
+                  size="sm"
+                  fullWidth
                 >
                   {t('assessmentIntro.footerButton')}
-                </button>
+                </SciFiButton>
               }
             </div>
 
@@ -660,49 +637,32 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                       }
                     }}
                   />
-                  <button
+                  <SciFiButton
                     onClick={() => fileInputRef.current?.click()}
-                    className="border rounded-full
-                               hover:scale-[1.02] transition-all duration-300 
-                               font-mono uppercase tracking-wider"
-                    style={{
-                      padding: s.footerBtnPad,
-                      fontSize: s.footerBtnFont,
-                      color: '#a78bfa',
-                      backgroundColor: 'transparent',
-                      borderColor: 'rgba(167,139,250,0.4)',
-                      width: '10rem',
-                      overflow: 'hidden',
-                      whiteSpace: 'nowrap',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#a78bfa';
-                      e.currentTarget.style.boxShadow = '0 0 20px rgba(167,139,250,0.19)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(167,139,250,0.4)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
+                    color="#a78bfa"
+                    rgb="167, 139, 250"
+                    size="sm"
+                    fullWidth
+                    style={{ width: '10rem' }}
                   >
-                    {uploadedFiles.length > 0 && onRemoveFile && (
-                      <span
-                        onClick={(e) => { e.stopPropagation(); onRemoveFile(0); }}
-                        className="text-slate-500 hover:text-red-400 transition-colors"
-                        style={{ fontSize: '0.65rem', lineHeight: 1, marginRight: '0.25rem', flexShrink: 0, cursor: 'pointer' }}
-                        title="Remove file"
-                      >
-                        ✕
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+                      {uploadedFiles.length > 0 && onRemoveFile && (
+                        <span
+                          onClick={(e) => { e.stopPropagation(); onRemoveFile(0); }}
+                          className="text-slate-500 hover:text-red-400 transition-colors"
+                          style={{ fontSize: '0.65rem', lineHeight: 1, marginRight: '0.25rem', flexShrink: 0, cursor: 'pointer' }}
+                          title="Remove file"
+                        >
+                          ✕
+                        </span>
+                      )}
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {uploadedFiles.length > 0
+                          ? uploadedFiles[0].name
+                          : t('assessmentIntro.footerUpload')}
                       </span>
-                    )}
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {uploadedFiles.length > 0
-                        ? uploadedFiles[0].name
-                        : t('assessmentIntro.footerUpload')}
                     </span>
-                  </button>
+                  </SciFiButton>
                   {uploadedFiles.length > 0 && (
                     <div style={{ position: 'relative', display: 'inline-block' }}>
                       <span
@@ -972,31 +932,22 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
 
               {/* Buttons */}
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                <button
+                <SciFiButton
                   onClick={() => closeConsent()}
-                  className="font-mono uppercase tracking-wider transition-all duration-300"
-                  style={{ background: 'none', border: '1px solid rgba(100,116,139,0.4)', color: '#64748b', borderRadius: '9999px', padding: s.footerBtnPad, fontSize: s.footerBtnFont, cursor: 'pointer' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#94a3b8'; e.currentTarget.style.color = '#94a3b8'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(100,116,139,0.4)'; e.currentTarget.style.color = '#64748b'; }}
+                  variant="white"
+                  size="sm"
                 >
                   Annuleren
-                </button>
-                <button
+                </SciFiButton>
+                <SciFiButton
                   onClick={() => { if (consentChecked && consentAiPromptChecked) { const lvl = consentLevelId; closeConsent(); logConsent(lvl); onStart(lvl); } }}
                   disabled={!consentChecked || !consentAiPromptChecked}
-                  className="font-mono uppercase tracking-wider transition-all duration-300"
-                  style={{
-                    border: `1px solid ${(consentChecked && consentAiPromptChecked) ? '#a855f7' : 'rgba(168,85,247,0.2)'}`,
-                    color: (consentChecked && consentAiPromptChecked) ? '#a855f7' : 'rgba(168,85,247,0.3)',
-                    backgroundColor: (consentChecked && consentAiPromptChecked) ? 'rgba(168,85,247,0.1)' : 'transparent',
-                    borderRadius: '9999px', padding: s.footerBtnPad, fontSize: s.footerBtnFont,
-                    cursor: (consentChecked && consentAiPromptChecked) ? 'pointer' : 'not-allowed',
-                  }}
-                  onMouseEnter={(e) => { if (consentChecked && consentAiPromptChecked) { e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.3)'; } }}
-                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                  variant="purple"
+                  size="sm"
+                  active={consentChecked && consentAiPromptChecked}
                 >
                   Ik ga akkoord — Start
-                </button>
+                </SciFiButton>
               </div>
             </div>
           </div>
@@ -1197,29 +1148,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
 
             {/* Back button — bottom center */}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem', paddingBottom: '0.5rem' }}>
-              <button
+              <SciFiButton
                 onClick={closeInfo}
-                className="font-mono uppercase tracking-wider hover:scale-[1.02] transition-all duration-300"
-                style={{
-                  color: '#a855f7',
-                  backgroundColor: 'transparent',
-                  border: '1px solid rgba(168,85,247,0.4)',
-                  borderRadius: '9999px',
-                  padding: s.footerBtnPad,
-                  fontSize: s.footerBtnFont,
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#a855f7';
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.19)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(168,85,247,0.4)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
+                variant="purple"
+                size="sm"
               >
                 ← {t('assessmentIntro.referencesBack')}
-              </button>
+              </SciFiButton>
             </div>
           </div>
         )}

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TechContainer from './TechContainer';
 import { Activity, Database, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { SciFiButton } from '../assessment/dashboardStyles';
 
 // Import garden logos
 import karmanLogo from '../../images/slideshow images/karmaneventsPNG.png';
@@ -24,7 +25,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   // Touch swipe state for Gardens slideshow
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
-  const gardensDataLength = 4; // Total number of garden slides
+  const gardensDataLength = 5; // Total number of garden slides
+  const prevSlideRef = useRef(null);
   
   const handleTouchStart = useCallback((e) => {
     touchStartX.current = e.touches[0].clientX;
@@ -38,16 +40,10 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
     const swipeThreshold = 50;
     const diff = touchStartX.current - touchEndX.current;
     
-    if (Math.abs(diff) > swipeThreshold) {
-      // User manually swiped - pause auto-slide
+    if (diff > swipeThreshold) {
+      // Swiped left — forward only
       if (pauseAutoSlide) pauseAutoSlide();
-      if (diff > 0) {
-        // Swiped left - go to next slide
-        setCurrentSlide(prev => (prev + 1) % gardensDataLength);
-      } else {
-        // Swiped right - go to previous slide
-        setCurrentSlide(prev => (prev - 1 + gardensDataLength) % gardensDataLength);
-      }
+      setCurrentSlide(prev => (prev + 1) % gardensDataLength);
     }
     
     // Reset
@@ -63,6 +59,11 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Track previous slide so exit animation always goes left
+  useEffect(() => {
+    prevSlideRef.current = currentSlide;
+  });
 
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
   // animationProgress goes from 0 to 1 as containers fly away
@@ -229,29 +230,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             </div>
 
             {/* Button */}
-            <button
-              className="rounded-sm font-bold tracking-widest transition-all duration-300"
-              style={{
-                background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))',
-                border: '0.05vw solid rgba(167, 139, 250, 0.5)',
-                color: '#c4b5fd',
-                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontSize: 'max(8.5px, 0.45vw)',
-                padding: '0.4vw 0.8vw',
-                width: 'fit-content',
-                borderRadius: '0.1vw',
-                boxShadow: '0 0 0px 0px rgba(167,139,250,0.5)',
-                opacity: shouldShowLock ? 0.35 : 1,
-                pointerEvents: shouldShowLock ? 'none' : 'auto',
-                cursor: shouldShowLock ? 'default' : 'pointer'
-              }}
-              onMouseEnter={shouldShowLock ? undefined : (e) => { e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(167,139,250,0.6)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.5), rgba(168, 85, 247, 0.4))'; }}
-              onMouseLeave={shouldShowLock ? undefined : (e) => { e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(167,139,250,0.5)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))'; }}
-              onClick={shouldShowLock ? undefined : (e) => setActiveSection('filosofie', e)}
+            <SciFiButton
+              variant="purple"
+              size="sm"
               disabled={shouldShowLock}
+              onClick={shouldShowLock ? undefined : (e) => setActiveSection('filosofie', e)}
+              style={{ transform: 'scaleY(1.04)', marginTop: '0.4rem' }}
             >
-              LEARN MORE
-            </button>
+              Leer meer
+            </SciFiButton>
             </div>{/* end content wrapper */}
           </div>
         </TechContainer>
@@ -316,37 +303,40 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           {(() => {
             const gardensData = [
               {
-                id: 'karman',
-                name: 'KARMAN',
-                tagline: t('desktopLayout.gardens.karman.tagline'),
-                description: t('desktopLayout.gardens.karman.description'),
-                accentColor: '#8b5cf6',
-                logo: karmanLogo
+                id: 'green',
+                name: 'ARTIEST',
+                description: 'Verbinden met ons platform? Maak de test en benader ons team.',
+                color: '#22c55e',
+                rgb: '34, 197, 94',
               },
               {
-                id: 'code49',
-                name: 'CODE49',
-                tagline: t('desktopLayout.gardens.code49.tagline'),
-                description: t('desktopLayout.gardens.code49.description'),
-                accentColor: '#06b6d4',
-                logo: code49Logo
+                id: 'blue',
+                name: 'ZZP',
+                description: 'Verbinden met ons platform? Maak de test en benader ons team.',
+                color: '#3b82f6',
+                rgb: '59, 130, 246',
               },
               {
-                id: 'tattooshop',
-                name: 'ELEVEN ELEVEN TATTOOS',
-                tagline: t('desktopLayout.gardens.elevenEleven.tagline'),
-                description: t('desktopLayout.gardens.elevenEleven.description'),
-                accentColor: '#ec4899',
-                logo: tattooshopLogo
+                id: 'purple',
+                name: 'EENMANSZAAK',
+                description: 'Verbinden met ons platform? Maak de test en benader ons team.',
+                color: '#a855f7',
+                rgb: '168, 85, 247',
               },
               {
-                id: 'rengifoods',
-                name: 'RENGI FOODS',
-                tagline: t('desktopLayout.gardens.rengiFoods.tagline'),
-                description: t('desktopLayout.gardens.rengiFoods.description'),
-                accentColor: '#10b981',
-                logo: rengiLogo
-              }
+                id: 'red',
+                name: 'BV',
+                description: 'Verbinden met ons platform? Maak de test en benader ons team.',
+                color: '#ef4444',
+                rgb: '239, 68, 68',
+              },
+              {
+                id: 'orange',
+                name: 'INTERNATIONAL',
+                description: 'Verbinden met ons platform? Maak de test en benader ons team.',
+                color: '#f97316',
+                rgb: '249, 115, 22',
+              },
             ];
             return (
               <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '1vw' }}>
@@ -356,130 +346,57 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   style={{ 
                     height: 'calc(100% - 2.5vw)', 
                     marginBottom: '0.5vw',
-                    touchAction: 'pan-y', // Allow vertical scroll but capture horizontal swipe
-                    visibility: shouldShowLock ? 'hidden' : 'visible',
+                    touchAction: 'pan-y',
+                    visibility: 'visible',
                   }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                 >
-                  {/* Slides */}
                   {gardensData.map((garden, i) => {
-                    let translateX = 0;
-                    if (i > currentSlide) {
-                      translateX = 100;
-                    } else if (i < currentSlide) {
-                      translateX = -100;
-                    }
+                    // Always-right infinite: active=0, previous=−100 (exits left), rest=+100 (wait right)
+                    let translateX = 100;
+                    if (i === currentSlide) translateX = 0;
+                    else if (i === prevSlideRef.current) translateX = -100;
                     return (
                       <div
                         key={garden.id}
                         className={`absolute inset-0 transition-all duration-500 ${i === currentSlide ? 'opacity-100 translate-x-0' : 'opacity-0'}`}
-                        style={{transform: `translateX(${translateX}%)`}}
+                        style={{ transform: `translateX(${translateX}%)` }}
                       >
-                        {/* Garden Card Content */}
-                        <div className="w-full flex flex-col items-center justify-center relative" style={{
+                        {/* Circle placeholder (logo area) */}
+                        <div className="w-full flex flex-col items-center justify-center" style={{
                           height: windowWidth >= 1024 ? '70%' : '70%'
                         }}>
-                          
-                          {/* Logo Image */}
-                          <img 
-                            src={garden.logo} 
-                            alt={`${garden.name} logo`}
-                            className="object-contain"
-                            style={{
-                              width: (() => {
-                                const baseSize = 7;
-                                let scale = 1;
-                                
-                                if (windowWidth >= 1280) {
-                                  // Desktop
-                                  if (garden.id === 'code49') scale = 1.2;
-                                  else if (garden.id === 'tattooshop') scale = 2.5;
-                                  else if (garden.id === 'rengifoods') scale = 1.25;
-                                  else if (garden.id === 'karman') scale = 1.2;
-                                } else if (windowWidth >= 1024) {
-                                  // Laptop - responsive scaling
-                                  if (garden.id === 'tattooshop') scale = 1.8 + (windowWidth - 1024) / 256 * 0.4;
-                                  else if (garden.id === 'rengifoods') scale = 1.2 + (windowWidth - 1024) / 256 * 0.3;
-                                  else if (garden.id === 'code49') scale = 1.15 + (windowWidth - 1024) / 256 * 0.3;
-                                  else if (garden.id === 'karman') scale = 1.0 + (windowWidth - 1024) / 256 * 0.25;
-                                } else if (windowWidth >= 768) {
-                                  // Tablet - responsive scaling
-                                  if (garden.id === 'rengifoods') scale = 1.8 + (windowWidth - 768) / 256 * 0.3;
-                                  else if (garden.id === 'karman') scale = 1.5 + (windowWidth - 768) / 256 * 0.3;
-                                  else if (garden.id === 'code49') scale = 1.5 + (windowWidth - 768) / 256 * 0.3;
-                                  else if (garden.id === 'tattooshop') scale = 2.4 + (windowWidth - 768) / 256 * 0.6;
-                                }
-                                
-                                return `calc(${baseSize}vw * ${scale})`;
-                              })(),
-                              height: (() => {
-                                const baseSize = 7;
-                                let scale = 1;
-                                
-                                if (windowWidth >= 1280) {
-                                  // Desktop
-                                  if (garden.id === 'code49') scale = 1.2;
-                                  else if (garden.id === 'tattooshop') scale = 2.5;
-                                  else if (garden.id === 'rengifoods') scale = 1.25;
-                                  else if (garden.id === 'karman') scale = 1.15;
-                                } else if (windowWidth >= 1024) {
-                                  // Laptop
-                                  if (garden.id === 'tattooshop') scale = 2.2;
-                                  else if (garden.id === 'rengifoods') scale = 1.5;
-                                  else if (garden.id === 'code49') scale = 1.45;
-                                  else if (garden.id === 'karman') scale = 1.25;
-                                } else if (windowWidth >= 768) {
-                                  // Tablet
-                                  if (garden.id === 'rengifoods') scale = 2.4;
-                                  else if (garden.id === 'karman') scale = 1.875;
-                                  else if (garden.id === 'code49') scale = 1.875;
-                                  else if (garden.id === 'tattooshop') scale = 3;
-                                }
-                                
-                                return `calc(${baseSize}vw * ${scale})`;
-                              })(),
-                              marginBottom: '0.5vw',
-                               transform: (() => {
-                                 if (windowWidth >= 1280) {
-                                   // Desktop
-                                   if (garden.id === 'tattooshop') return 'translateY(-4rem)';
-                                   else if (garden.id === 'karman') return 'translateY(-1.2rem)';
-                                   else if (garden.id === 'rengifoods') return 'translateY(-1.2rem)';
-                                   else if (garden.id === 'code49') return 'translateY(-1.2rem)';
-                                   return 'translateY(0)';
-                                } else if (windowWidth >= 1024) {
-                                  // Laptop - responsive positioning
-                                  const laptopProgress = (windowWidth - 1024) / 256;
-                                  if (garden.id === 'tattooshop') return `translateY(${-3.5 - laptopProgress * 0.5}rem)`;
-                                  else if (garden.id === 'karman') return `translateY(${-0.8 - laptopProgress * 0.4}rem)`;
-                                  else if (garden.id === 'code49') return `translateY(${-0.6 - laptopProgress * 0.6}rem)`;
-                                  else if (garden.id === 'rengifoods') return `translateY(${-0.8 - laptopProgress * 0.4}rem)`;
-                                  return 'translateY(0)';
-                                } else if (windowWidth >= 768) {
-                                  // Tablet - responsive positioning (each logo independent)
-                                  const tabletProgress = (windowWidth - 768) / 256;
-                                  if (garden.id === 'tattooshop') return `translateY(${-0.5 * tabletProgress}rem)`; // Original position
-                                  else if (garden.id === 'karman') return `translateY(${1.1 + tabletProgress * 0.3}rem)`;
-                                  else if (garden.id === 'code49') return `translateY(${1.1 + tabletProgress * 0.3}rem)`;
-                                  else if (garden.id === 'rengifoods') return `translateY(${0.5 + tabletProgress * 0.3}rem)`;
-                                  return 'translateY(0)';
-                                }
-                              })(),
-                              filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))'
-                            }}
-                          />
+                          <div style={{
+                            width: 'max(52px, 5.5vw)',
+                            height: 'max(52px, 5.5vw)',
+                            borderRadius: '50%',
+                            border: `1px solid rgba(${garden.rgb}, 0.5)`,
+                            background: `rgba(${garden.rgb}, 0.12)`,
+                            boxShadow: `0 0 16px rgba(${garden.rgb}, 0.25)`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '0.5vw',
+                          }}>
+                            <span style={{
+                              fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+                              fontSize: 'max(7px, 0.38vw)',
+                              color: `rgba(${garden.rgb}, 0.6)`,
+                              letterSpacing: '0.12em',
+                              fontWeight: 700,
+                            }}>LOGO</span>
+                          </div>
                         </div>
-                        
-                        {/* Header - Positioned between logo and description */}
+
+                        {/* Header */}
                         <div className="text-center absolute" style={{
-                          top: windowWidth >= 768 && windowWidth < 1024 ? 'auto' : windowWidth >= 1024 && windowWidth < 1280 ? 'auto' : '70%',
-                          bottom: windowWidth >= 768 && windowWidth < 1024 ? '-0.5vw' : windowWidth >= 1024 && windowWidth < 1280 ? '6.5vw' : 'auto',
+                          top: windowWidth >= 1280 ? '70%' : 'auto',
+                          bottom: windowWidth >= 1024 && windowWidth < 1280 ? '6.5vw' : windowWidth >= 768 && windowWidth < 1024 ? '-0.5vw' : 'auto',
                           left: '50%',
                           transform: 'translateX(-50%)',
-                          paddingBottom: windowWidth >= 768 && windowWidth < 1024 ? '0.6vw' : '0.4vw',
-                          paddingTop: windowWidth >= 768 && windowWidth < 1024 ? '0.4vw' : '0',
+                          paddingBottom: '0.4vw',
                           marginTop: windowWidth >= 1280 ? '-2rem' : '0',
                           zIndex: 10,
                           display: windowWidth < 768 ? 'none' : 'block'
@@ -487,39 +404,25 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                           <div style={{
                             fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                             fontWeight: 700,
-                            fontSize: 'max(13px, 0.7vw)',
-                            color: '#f59e0b',
-                            letterSpacing: '0.2em',
+                            fontSize: 'max(11px, 0.62vw)',
+                            color: garden.color,
+                            letterSpacing: '0.15em',
                             marginBottom: '0.2vw',
                             whiteSpace: windowWidth >= 1024 ? 'nowrap' : 'normal',
                             maxWidth: windowWidth < 1024 ? '90%' : 'none',
                             textAlign: 'center',
-                            opacity: 0.8
+                            opacity: 0.85,
                           }}>
-                            {(() => {
-                              // Tablet: show only "TATTOOS"
-                              if (garden.id === 'tattooshop' && windowWidth >= 768 && windowWidth < 1024) {
-                                return 'TATTOOS';
-                              }
-                              // Tablet: show only "RENGI"
-                              if (garden.id === 'rengifoods' && windowWidth >= 768 && windowWidth < 1024) {
-                                return 'RENGI';
-                              }
-                              // Laptop: show only "TATTOOS" (remove ELEVEN ELEVEN)
-                              if (garden.id === 'tattooshop' && windowWidth >= 1024 && windowWidth < 1280) {
-                                return 'TATTOOS';
-                              }
-                              return garden.name;
-                            })()}
+                            {garden.name}
                           </div>
                         </div>
-                        
+
                         {/* Description */}
-                        <div className="flex flex-col items-center justify-center relative w-full" style={{ 
-                          height: windowWidth >= 1024 ? '30%' : '30%',
+                        <div className="flex flex-col items-center justify-center relative w-full" style={{
+                          height: '30%',
                           padding: '0.4vw 0.8vw',
                           display: windowWidth >= 1024 ? 'flex' : 'none',
-                          backgroundColor: 'rgb(25, 5, 41)',
+                          backgroundColor: 'transparent',
                           borderRadius: '0.2vw'
                         }}>
                           <span style={{
@@ -535,7 +438,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                             WebkitLineClamp: 3,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis'
-                         }}>
+                          }}>
                             {garden.description}
                           </span>
                         </div>
@@ -545,7 +448,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 </div>
                 
                 {/* Circle Indicators with Arrow Navigation */}
-                <div className="flex justify-center items-center relative" style={{ gap: '0.8vw', zIndex: 100, position: 'relative', visibility: shouldShowLock ? 'hidden' : 'visible' }}>
+                <div className="flex justify-center items-center relative" style={{ gap: '0.8vw', zIndex: 100, position: 'relative', visibility: 'visible' }}>
                   {/* Left Arrow */}
                   <button
                     type="button"
@@ -582,34 +485,20 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   </div>
                   
                   {/* Learn More Button */}
-                  <button
+                  <SciFiButton
                     type="button"
-                    className="rounded-sm font-bold tracking-widest transition-all duration-300"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.2))',
-                      border: '0.05vw solid rgba(245, 158, 11, 0.5)',
-                      color: '#fbbf24',
-                      fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                      fontSize: 'max(8.5px, 0.45vw)',
-                      padding: '0.6vw 1.2vw',
-                      minHeight: '1.5vw',
-                      borderRadius: '0.1vw',
-                      boxShadow: '0 0 0px 0px rgba(245,158,11,0.5)',
-                      pointerEvents: 'auto',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      zIndex: 100
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(245,158,11,0.6)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.5), rgba(245, 158, 11, 0.4))'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(245,158,11,0.5)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.2))'; }}
+                    color="#fbbf24"
+                    rgb="245, 158, 11"
+                    size="sm"
                     onClick={(e) => setActiveSection('gardens', e)}
+                    style={{ position: 'relative', zIndex: 100, transform: 'scaleY(1.04)' }}
                   >
-                    LEARN MORE
-                  </button>
+                    Zie meer
+                  </SciFiButton>
                   
-                  {/* Right Indicators */}
+                  {/* Right Indicators (only 2 — total 4 shown, hint there's more) */}
                   <div className="flex items-center" style={{ gap: '0.4vw' }}>
-                    {gardensData.slice(2).map((garden, i) => (
+                    {gardensData.slice(2, 4).map((garden, i) => (
                       <div
                         key={garden.id}
                         onClick={(e) => {
@@ -708,37 +597,16 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             </div>
 
             {/* Button */}
-            <button
-              className="rounded-sm font-bold tracking-widest transition-all duration-300"
-              style={{
-                background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(34, 211, 238, 0.2))',
-                border: '0.05vw solid rgba(34, 211, 238, 0.5)',
-                color: '#a5f3fc',
-                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontSize: 'max(8.5px, 0.45vw)',
-                padding: '0.4vw 0.8vw',
-                width: 'fit-content',
-                borderRadius: '0.1vw',
-                boxShadow: '0 0 0px 0px rgba(34,211,238,0.5)',
-                cursor: shouldShowLock ? 'default' : 'pointer',
-                zIndex: 100,
-                pointerEvents: shouldShowLock ? 'none' : 'auto',
-                position: 'relative',
-                opacity: shouldShowLock ? 0.35 : 1
-              }}
-              onMouseEnter={shouldShowLock ? undefined : (e) => { 
-                e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(34,211,238,0.6)'; 
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(34, 211, 238, 0.5), rgba(34, 211, 238, 0.4))'; 
-              }}
-              onMouseLeave={shouldShowLock ? undefined : (e) => { 
-                e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(34,211,238,0.5)'; 
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(34, 211, 238, 0.2))'; 
-              }}
-              onClick={shouldShowLock ? undefined : (e) => setActiveSection('monitor', e)}
+            <SciFiButton
+              color="#a5f3fc"
+              rgb="34, 211, 238"
+              size="sm"
               disabled={shouldShowLock}
+              style={{ position: 'relative', zIndex: 100, transform: 'scaleY(1.04)', marginTop: '0.4rem' }}
+              onClick={shouldShowLock ? undefined : (e) => setActiveSection('monitor', e)}
             >
-              {t('desktopLayout.monitor')}
-            </button>
+              onderzoek
+            </SciFiButton>
             </div>{/* end content wrapper */}
           </div>
         </TechContainer>

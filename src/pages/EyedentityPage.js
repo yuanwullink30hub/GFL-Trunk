@@ -560,9 +560,9 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
           flexDirection: 'column',
           overflow: 'hidden',
           borderRadius: '0.5rem',
-          backgroundColor: 'rgba(1, 0, 2, 0.3)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          backgroundColor: 'rgba(2, 0, 3, 0.3)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
           boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
         }}>
         {/* Holographic sheen */}

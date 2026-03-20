@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
+
+function checkWebGL() {
+  try {
+    const t = document.createElement('canvas');
+    const ctx = t.getContext('webgl2') || t.getContext('webgl') || t.getContext('experimental-webgl');
+    if (!ctx) return false;
+    const ext = ctx.getExtension && ctx.getExtension('WEBGL_lose_context');
+    if (ext) ext.loseContext();
+    return true;
+  } catch { return false; }
+}
 import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import HoloPyramid from './HoloPyramid';
@@ -13,8 +24,11 @@ const TOTAL_FRAMES = 360;
 // When true (orbit button visible), the 3s timer starts and layers will float up
 const PyramidView = ({ onBack = () => {}, isActive = true }) => {
   const [currentFrame, setCurrentFrame] = useState(0);
+  const [webglOk, setWebglOk] = useState(true);
   const containerRef = useRef(null);
   const isScrolling = useRef(false);
+
+  useEffect(() => { setWebglOk(checkWebGL()); }, []);
 
   // Calculate progress from frame (0-1)
   const scrollProgress = currentFrame / (TOTAL_FRAMES - 1);
@@ -109,13 +123,16 @@ const PyramidView = ({ onBack = () => {}, isActive = true }) => {
       }}
     >
       {/* 3D Scene */}
-      <Canvas 
+      {webglOk && <Canvas 
         shadows 
         dpr={[1, 2]} 
         gl={{ 
           antialias: true, 
           toneMapping: THREE.ACESFilmicToneMapping, 
-          toneMappingExposure: 1.2 
+          toneMappingExposure: 1.2,
+          powerPreference: 'default',
+          failIfMajorPerformanceCaveat: false,
+          precision: 'mediump',
         }}
         onCreated={({ gl }) => {
           // Firefox fix: getProgramInfoLog can return null, crashing Three.js r160's .trim() call
@@ -143,7 +160,7 @@ const PyramidView = ({ onBack = () => {}, isActive = true }) => {
           enableRotate={true}
           enablePan={false}
         />
-      </Canvas>
+      </Canvas>}
 
       {/* UI Overlay */}
       <PyramidOverlay animate={isAnimating} scrollProgress={scrollProgress} />

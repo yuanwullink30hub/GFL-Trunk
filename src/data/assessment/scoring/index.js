@@ -931,9 +931,11 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
     radarData,
     subgroupDynamics,
 
-    // Max possible
+    // Max possible — true theoretical max based on per-pick bleed totals
+    // 1st Nature=15, 2nd Nature=7 → max per question pair = 22
+    // 36 questions × 22 = 792 (ADVANCED)
     baseMaxScore: tierConfig.baseMax || 720,
-    totalMaxScore: tierConfig.baseMax || 720,
+    totalMaxScore: Object.keys(questionResponses).length * 22 || tierConfig.baseMax || 720,
 
     // OCEAN scores (0–100), mathematically derived from archetype weights
     oceanScores: computeOceanScores(scores),

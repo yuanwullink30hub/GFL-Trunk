@@ -4,7 +4,7 @@ import { login, register, getMe, logout, getToken, logActivity } from '../utils/
 import ClientProfileModal from '../components/assessment/ClientProfileModal';
 import AdminDashboardModal from '../components/assessment/AdminDashboardModal';
 import {
-  C, BTN_LG, INPUT, FIELD_LABEL, ERROR_STYLE,
+  C, BTN_LG, INPUT, FIELD_LABEL, ERROR_STYLE, SciFiButton,
   PAGE_WRAPPER, SEPARATOR, hover, inputFocus, inputBlur, FONT,
 } from '../components/assessment/dashboardStyles';
 
@@ -62,7 +62,9 @@ const LoginFrame = ({ title, children }) => {
     {/* Inner panel — SectorFrame exact */}
     <div style={{
       position: 'relative',
-      backgroundColor: 'rgba(2, 0, 3, 0.9)',
+      backgroundColor: 'rgba(2, 0, 3, 0.3)',
+      backdropFilter: 'blur(24px)',
+      WebkitBackdropFilter: 'blur(24px)',
       borderRadius: '0.5rem',
       overflow: 'hidden',
       boxShadow: SF_SHADOW,
@@ -213,14 +215,9 @@ const LoginPage = memo(({ isVisible, onBack }) => {
 
           <div style={{ ...SEPARATOR, marginTop: '0.3rem' }} />
 
-          <button type="submit" disabled={loading} style={{
-            ...BTN_LG, opacity: loading ? 0.5 : 1,
-            boxShadow: loading ? 'none' : '0 0 15px rgba(255, 174, 0, 0.08)',
-          }}
-            onMouseEnter={(e) => { if (!loading) hover(e, true); }}
-            onMouseLeave={(e) => { if (!loading) hover(e, false); }}>
+          <SciFiButton type="submit" disabled={loading} fullWidth size="xl">
             {loading ? t('pages.loginPage.loading') : mode === 'login' ? 'IDENTIFICEER' : t('pages.loginPage.registerButton')}
-          </button>
+          </SciFiButton>
         </form>
 
         {/* Switch mode */}
@@ -248,10 +245,9 @@ const LoginPage = memo(({ isVisible, onBack }) => {
               Versleutelde Verbinding
             </span>
           </div>
-          <button onClick={onBack} style={{ ...BTN_LG, width: 'auto', padding: '0.35rem 1rem', fontSize: 'max(9px, 0.48vw)' }}
-            onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
+          <SciFiButton onClick={onBack} size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">
             {t('pages.loginPage.back')}
-          </button>
+          </SciFiButton>
         </div>
 
       </LoginFrame>

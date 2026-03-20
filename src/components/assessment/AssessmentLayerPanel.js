@@ -182,6 +182,12 @@ const SingleLayerPanel = ({
     if (onLayerAnimationStateChange) {
       onLayerAnimationStateChange(layerIndex, isAnimating);
     }
+    // Cleanup: ensure layer is removed from animating set on unmount
+    return () => {
+      if (onLayerAnimationStateChange) {
+        onLayerAnimationStateChange(layerIndex, false);
+      }
+    };
   }, [savePhase, layerIndex, onLayerAnimationStateChange]);
   
   const questions = useMemo(() => {

@@ -3,6 +3,7 @@ import { Mail, RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle, Check
 import { ARCHETYPES } from '../../../data/assessment/archetypes';
 import { sendResultsEmail } from '../../../utils/apiClient';
 import { GROUP_NEURAL_FOCUS } from '../../../data/assessment/scoring';
+import { SciFiButton } from '../../../components/assessment/dashboardStyles';
 
 function ResultsView({ result, onReset, aiError }) {
   const [recipientEmail, setRecipientEmail] = useState('');
@@ -249,26 +250,27 @@ function ResultsView({ result, onReset, aiError }) {
             {sendError && (
               <p className="text-xs text-red-400">{sendError}</p>
             )}
-            <button
+            <SciFiButton
               onClick={handleSendEmail}
               disabled={sendState === 'sending' || !recipientEmail.trim()}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg text-white font-medium hover:from-cyan-500 hover:to-purple-500 transition-all disabled:opacity-50"
+              variant="purple"
+              size="md"
+              fullWidth
             >
-              <Mail className="w-5 h-5" />
               {sendState === 'sending' ? 'Verzenden...' : 'Verstuur PDF Rapport'}
-            </button>
+            </SciFiButton>
           </div>
         )}
       </div>
 
       <div className="flex justify-center mt-6">
-        <button
+        <SciFiButton
           onClick={onReset}
-          className="flex items-center justify-center gap-2 px-6 py-3 border border-slate-600 rounded-lg text-slate-300 hover:border-slate-400 hover:text-white transition-all"
+          variant="white"
+          size="md"
         >
-          <RotateCcw className="w-5 h-5" />
           Start New Assessment
-        </button>
+        </SciFiButton>
       </div>
     </div>
   );

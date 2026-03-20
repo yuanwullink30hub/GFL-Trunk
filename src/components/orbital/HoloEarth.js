@@ -843,7 +843,7 @@ const HoloEarth = ({
       {/* Depth shadow behind the sphere (desktop only) */}
       {!isMobile && <div style={{
         position: 'absolute',
-        top: 'calc(50% - 5.85rem)',
+        top: 'calc(50% - 6.5vh - 0.5rem)',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         width: '55vh',

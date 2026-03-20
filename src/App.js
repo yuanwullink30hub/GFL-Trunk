@@ -5,6 +5,7 @@ import { assessmentSubjects } from './pages/assessment/assessmentData';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from './contexts/LanguageContext';
+import { SciFiButton } from './components/assessment/dashboardStyles';
 
 // Retry wrapper: if a chunk fails (stale deploy), reload the page once.
 const lazyRetry = (fn) => lazy(() =>
@@ -310,7 +311,7 @@ const App = () => {
   // Handler for opening sections - navigate on map
   const handleOpenSection = useCallback((section) => {
     // Beta lock: block locked sections
-    const lockedSections = ['gardens', 'monitor', 'filosofie'];
+    const lockedSections = ['monitor', 'filosofie'];
     if (shouldShowLock && lockedSections.includes(section)) {
       return;
     }
@@ -573,15 +574,18 @@ const App = () => {
         let newProgress = Math.max(0, Math.min(1, prev + (direction * step)));
         
         // SCROLL GATING via dynamic cap:
-        // - Scroll enabled (layer saved): allow forward to next layer threshold
-        // - Scroll disabled (layer unsaved): cap at CURRENT layer threshold
-        //   so the user can scroll the card back out but not beyond
-        if (assessmentPhase === 'layers' && direction > 0) {
-          const maxProgress = assessmentScrollEnabled
-            ? Math.min(1, (currentLayerIndex + 1) / 4)
-            : (currentLayerIndex / 4);
-          newProgress = Math.min(newProgress, maxProgress);
-          // (scroll progress updated)
+        // - Forward: allow up to next layer threshold (if saved) or current (if unsaved)
+        // - Backward: never below current layer threshold (keeps active card interactive)
+        if (assessmentPhase === 'layers') {
+          if (direction > 0) {
+            const maxProgress = assessmentScrollEnabled
+              ? Math.min(1, (currentLayerIndex + 1) / 4)
+              : (currentLayerIndex / 4);
+            newProgress = Math.min(newProgress, maxProgress);
+          } else {
+            const minProgress = currentLayerIndex / 4;
+            newProgress = Math.max(newProgress, minProgress);
+          }
         }
         
         // Mobile: If scrolling down and at end, unlock scroll to continue page scroll
@@ -674,6 +678,7 @@ const App = () => {
     setCurrentLayerIndex(0);
     setLayerAnswers({});
     setAssessmentScrollEnabled(false);
+    animatingLayersRef.current.clear(); // Clear stale animation tracking
     setConvergenceProgress(0);
     setGatherProgress(0);
     setStaircaseStep(-1);
@@ -933,6 +938,9 @@ const App = () => {
     // Don't process touch when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
     
+    // STRICT: Don't process touch if ANY layer panel is animating its save
+    if (animatingLayersRef.current.size > 0) return;
+    
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     
@@ -969,13 +977,18 @@ const App = () => {
           let newProgress = Math.max(0, Math.min(1, prev + (accDirection * step)));
           
           // SCROLL GATING via dynamic cap:
-          // - Scroll enabled (layer saved): allow forward to next layer threshold
-          // - Scroll disabled (layer unsaved): cap at CURRENT layer threshold
-          if (assessmentPhase === 'layers' && accDirection > 0) {
-            const maxProgress = assessmentScrollEnabled
-              ? Math.min(1, (currentLayerIndex + 1) / 4)
-              : (currentLayerIndex / 4);
-            newProgress = Math.min(newProgress, maxProgress);
+          // - Forward: allow up to next layer threshold (if saved) or current (if unsaved)
+          // - Backward: never below current layer threshold (keeps active card interactive)
+          if (assessmentPhase === 'layers') {
+            if (accDirection > 0) {
+              const maxProgress = assessmentScrollEnabled
+                ? Math.min(1, (currentLayerIndex + 1) / 4)
+                : (currentLayerIndex / 4);
+              newProgress = Math.min(newProgress, maxProgress);
+            } else {
+              const minProgress = currentLayerIndex / 4;
+              newProgress = Math.max(newProgress, minProgress);
+            }
           }
           
           // Mobile: If scrolling down and at end, unlock scroll to continue page scroll
@@ -1033,7 +1046,7 @@ const App = () => {
     if (!autoSlideEnabled) return; // Don't run if auto-slide is paused
     
     const slideInterval = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % 4);
+      setCurrentSlide(prev => (prev + 1) % 5);
     }, 3300);
     return () => clearInterval(slideInterval);
   }, [autoSlideEnabled]);
@@ -1475,29 +1488,16 @@ const App = () => {
 
           {/* Mobile Back Button - HoloPyramid return (matches login button position) */}
           {isSystem && (
-            <button 
-              onClick={handleReset}
-              className="group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2"
-              style={{
-                position: 'fixed',
-                bottom: '5rem',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 10001,
-                border: '1px solid rgba(147, 51, 234, 0.3)',
-                background: 'rgba(10, 5, 16, 0.6)',
-                pointerEvents: 'auto',
-              }}
-            >
-              <div className="flex items-center justify-center w-5 h-5" style={{color: 'rgba(147, 51, 234, 0.8)'}}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform w-4 h-4">
-                  <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-              </div>
-              <span className="tracking-[0.2em] uppercase text-xs" style={{color: 'rgba(255, 254, 240, 0.7)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>DELTAWERKEN</span>
-              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
-              <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
-            </button>
+            <div style={{ position: 'fixed', bottom: '5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 10001 }}>
+              <SciFiButton onClick={handleReset} variant="purple" size="sm">
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                  DELTAWERKEN
+                </span>
+              </SciFiButton>
+            </div>
           )}
 
           {/* Mobile Language Toggle — hidden when login/dashboard modal is open */}
@@ -2037,37 +2037,25 @@ const App = () => {
             )}
               
             {/* Back Button - positioned separately from entity transforms */}
-            <button 
-              onClick={handleReset}
-              className="absolute z-[10001] group flex items-center gap-3 rounded-sm transition-all duration-300 backdrop-blur-sm px-4 py-2 mb-3"
-              style={{
-                border: '1px solid rgba(147, 51, 234, 0.3)',
-                background: 'rgba(10, 5, 16, 0.6)',
-                bottom: window.innerWidth >= 1280 ? '2rem' : window.innerWidth >= 768 ? '0.5rem' : '5rem', // Mobile matches login button position
-                left: '50%',
-                transform: 'translateX(-50%)',
-                pointerEvents: isSystem ? 'auto' : 'none',
-                opacity: isSystem ? 1 : 0,
-                visibility: isSystem ? 'visible' : 'hidden'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.6)';
-                e.currentTarget.style.background = 'rgba(147, 51, 234, 0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.3)';
-                e.currentTarget.style.background = 'rgba(10, 5, 16, 0.6)';
-              }}
-            >
-              <div className="flex items-center justify-center w-5 h-5" style={{color: 'rgba(147, 51, 234, 0.8)'}}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform w-4 h-4">
-                  <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-              </div>
-              <span className="tracking-[0.2em] uppercase text-xs" style={{color: 'rgba(255, 254, 240, 0.7)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"}}>DELTAWERKEN</span>
-              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
-              <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r" style={{borderColor: 'rgba(147, 51, 234, 0.5)'}}></div>
-            </button>
+            <div style={{
+              position: 'absolute',
+              zIndex: 10001,
+              bottom: window.innerWidth >= 1280 ? '2rem' : window.innerWidth >= 768 ? '0.5rem' : '5rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              pointerEvents: isSystem ? 'auto' : 'none',
+              opacity: isSystem ? 1 : 0,
+              visibility: isSystem ? 'visible' : 'hidden',
+            }}>
+              <SciFiButton onClick={handleReset} variant="purple" size="sm">
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                  DELTAWERKEN
+                </span>
+              </SciFiButton>
+            </div>
           </div>
         </div>
       )}

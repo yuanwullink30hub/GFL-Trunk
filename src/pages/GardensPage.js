@@ -2,20 +2,16 @@ import React from 'react';
 import GeneralBrandPage from './GeneralBrandPage';
 
 /**
- * GardensPage - Wrapper component that renders the GeneralBrandPage
- * This now uses the full NeonNexus brand discovery experience
- * 
- * Props:
- * - isVisible: boolean - whether the page should be displayed
- * - onBack: function - callback to close the page and return
- * - brandIndex: number - which brand (0-11) to show (controlled by parent via brand ring)
+ * GardensPage — Shows the brand page template (index 4 in BRANDS array).
+ * Always displays the template brand regardless of which slide was clicked.
  */
-const GardensPage = ({ isVisible, onBack, brandIndex = 0 }) => {
+const GardensPage = ({ isVisible, onBack }) => {
   return (
-    <GeneralBrandPage 
+    <GeneralBrandPage
       isVisible={isVisible}
       onBack={onBack}
-      initialBrandIndex={brandIndex}
+      initialBrandIndex={4}
+      hideNavWheel={true}
     />
   );
 };

@@ -296,16 +296,31 @@ const AssessmentResultsModal = ({
       const contentW = W - margin * 2;
       let y = margin;
 
-      // Dark theme palette
-      const bg = [10, 10, 14];
-      const orange = [249, 115, 22];
-      const purple = [168, 85, 247];
-      const green = [0, 180, 110];
-      const red = [220, 60, 60];
-      const white = [240, 240, 245];
-      const dimWhite = [180, 180, 190];
-      const mutedGray = [120, 120, 130];
-      const cardBg = [22, 22, 28];
+      // ── Color palette — exact match to website CSS values ──
+      // bg     = #060612  modal/page background
+      // green  = #00ff9d  primary accent (borders, headings, combinationText)
+      // purple = #a855f7  archetype name, support, OCEAN header
+      // orange = #f97316  main archetype, shadow headers, brand labels
+      // red    = #ef4444  blindspot, error, neuroticism
+      // cyan   = #22d3ee  OCEAN resonance label, stats
+      // amber  = #fbbf24  conflict style accent, dissonance indicator
+      // pink   = #f472b6  relationship pattern accent
+      // white  = rgba(209,213,219)  primary body text
+      // dimWhite = rgba(156,163,175) secondary body text
+      // mutedGray = #64748b  metadata, labels, footers
+      // cardBg = #0c0c1d  card backgrounds
+      const bg        = [6, 6, 18];
+      const orange    = [249, 115, 22];
+      const purple    = [168, 85, 247];
+      const green     = [0, 255, 157];
+      const red       = [239, 68, 68];
+      const cyan      = [34, 211, 238];
+      const amber     = [251, 191, 36];
+      const pink      = [244, 114, 182];
+      const white     = [209, 213, 219];
+      const dimWhite  = [156, 163, 175];
+      const mutedGray = [100, 116, 139];
+      const cardBg    = [12, 12, 29];
 
       // ── Helper: paint page background ──
       const paintBg = () => {
@@ -359,7 +374,7 @@ const AssessmentResultsModal = ({
         ensureSpace(6);
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(...mutedGray);
+        pdf.setTextColor(...white);
         pdf.text(key + ':', margin + 2, y);
         const keyW = pdf.getTextWidth(key + ':  ');
         pdf.setFont('helvetica', 'normal');
@@ -379,23 +394,104 @@ const AssessmentResultsModal = ({
         y += 4;
       };
 
+      // ── Helper: markdown-aware AI content renderer ──
+      const writePdfMarkdown = (mdText, x, maxW) => {
+        if (!mdText) return;
+        const strip = (s) => s.replace(/\*\*/g, '').replace(/^[*\-]\s+/, '').trim();
+        const lines = mdText.split('\n');
+        for (const raw of lines) {
+          const trimmed = raw.trim();
+          // Blank line → small gap
+          if (!trimmed) { y += 2; continue; }
+          // ## / ### heading
+          if (/^#{2,}\s/.test(trimmed)) {
+            const headText = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim();
+            ensureSpace(10);
+            y += 3;
+            pdf.setFontSize(10);
+            pdf.setTextColor(...orange);
+            pdf.setFont('helvetica', 'bold');
+            const hLines = pdf.splitTextToSize(headText, maxW);
+            hLines.forEach(hl => { ensureSpace(5); pdf.text(hl, x, y); y += 5; });
+            continue;
+          }
+          // Table separator — skip
+          if (/^\|[\s\-:]+\|/.test(trimmed)) continue;
+          // Table row
+          if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+            const cells = trimmed.slice(1, -1).split('|').map(c => c.replace(/\*\*/g, '').trim()).filter(Boolean);
+            if (!cells.length) continue;
+            ensureSpace(4);
+            pdf.setFontSize(7.5);
+            pdf.setFont('helvetica', 'normal');
+            pdf.setTextColor(...white);
+            const rowTxt = cells.join('  |  ');
+            const rLines = pdf.splitTextToSize(rowTxt, maxW);
+            rLines.forEach(rl => { ensureSpace(3.8); pdf.text(rl, x, y); y += 3.8; });
+            continue;
+          }
+          // Bullet: * or -
+          if (/^[*\-]\s/.test(trimmed)) {
+            const content = trimmed.replace(/^[*\-]\s+/, '').replace(/\*\*/g, '');
+            const colonIdx = content.indexOf(':');
+            ensureSpace(5);
+            pdf.setFontSize(8.5);
+            if (colonIdx > 0 && colonIdx < 35) {
+              const label = content.slice(0, colonIdx + 1);
+              const value = content.slice(colonIdx + 1).trim();
+              pdf.setFont('helvetica', 'normal');
+              pdf.setTextColor(...white);
+              pdf.text('\u2022', x, y);
+              pdf.setFont('helvetica', 'bold');
+              pdf.setTextColor(...white);
+              const lw = pdf.getTextWidth(label + ' ');
+              pdf.text(label, x + 4, y);
+              pdf.setFont('helvetica', 'normal');
+              pdf.setTextColor(...white);
+              const vLines = pdf.splitTextToSize(value, maxW - 4 - lw);
+              pdf.text(vLines[0] || '', x + 4 + lw, y);
+              y += 4.2;
+              for (let vi = 1; vi < vLines.length; vi++) { ensureSpace(4.2); pdf.text(vLines[vi], x + 4, y); y += 4.2; }
+            } else {
+              pdf.setFont('helvetica', 'normal');
+              pdf.setTextColor(...white);
+              pdf.text('\u2022', x, y);
+              pdf.setTextColor(...white);
+              const bLines = pdf.splitTextToSize(content, maxW - 5);
+              bLines.forEach(bl => { ensureSpace(4.2); pdf.text(bl, x + 5, y); y += 4.2; });
+            }
+            continue;
+          }
+          // Regular paragraph — strip bold markers, render in white
+          const text = trimmed.replace(/\*\*/g, '').replace(/\*/g, '');
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...white);
+          const pLines = pdf.splitTextToSize(text, maxW);
+          pLines.forEach(pl => { ensureSpace(4.3); pdf.text(pl, x, y); y += 4.3; });
+        }
+        y += 3;
+      };
+
       // ── Helper: page footer ──
       const pageFooter = () => {
         pdf.setFontSize(6.5);
-        pdf.setTextColor(...mutedGray);
+        pdf.setTextColor(...white);
         pdf.setFont('helvetica', 'normal');
         pdf.text('Garden for Life  \u2022  Advanced Consciousness Assessment', W / 2, H - 10, { align: 'center' });
       };
 
       // ═══════════════════════════════════════════════════
-      // PAGE 1: COVER — Large profile + archetype combo
+      // PAGE 1: COVER — Large profile + extended archetype
       // ═══════════════════════════════════════════════════
 
-      // Top brand line
+      // Top brand line — "GARDEN FOR LIFE: Archetype Analyse" left, date right
+      const coverDate = new Date().toLocaleDateString('nl-NL');
       pdf.setFontSize(8);
-      pdf.setTextColor(...mutedGray);
+      pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('GARDEN FOR LIFE', margin, y);
+      pdf.text('GARDEN FOR LIFE: Archetype Analyse', margin, y);
+      pdf.text(coverDate, W - margin, y, { align: 'right' });
       y += 3;
       pdf.setDrawColor(...green);
       pdf.setLineWidth(0.4);
@@ -426,18 +522,23 @@ const AssessmentResultsModal = ({
         const pdfImgSize = 90;
         const imgX = W / 2 - pdfImgSize / 2;
         pdf.addImage(imgData, 'PNG', imgX, y, pdfImgSize, pdfImgSize);
+        // Green border ring around circular image
+        pdf.setDrawColor(...green);
+        pdf.setLineWidth(1.5);
+        pdf.circle(W / 2, y + pdfImgSize / 2, pdfImgSize / 2, 'S');
         y += pdfImgSize + 12;
       } catch {
         y += 8;
       }
 
-      // Extended Archetype Name — large, centered
+      // Extended Archetype Name — large, centered (1 of 72)
       pdf.setFontSize(26);
       pdf.setTextColor(...purple);
       pdf.setFont('helvetica', 'bold');
       pdf.text(result.name || '', W / 2, y, { align: 'center' });
       y += 10;
 
+      // Subtitle (extendedSubtitle)
       if (result.extendedSubtitle) {
         pdf.setFontSize(12);
         pdf.setTextColor(...orange);
@@ -446,56 +547,33 @@ const AssessmentResultsModal = ({
         y += 8;
       }
 
-      // Main + Support combination — prominent display
-      if (result.secondaryName) {
-        y += 4;
-        // Decorative line
-        pdf.setDrawColor(...green);
-        pdf.setLineWidth(0.3);
-        const lineW = 40;
-        pdf.line(W / 2 - lineW, y, W / 2 + lineW, y);
-        y += 10;
-
+      // Quote — italic description under the archetype name
+      if (result.description) {
+        y += 2;
+        const quoteText = `\u201C${result.description}\u201D`;
+        const quoteLines = pdf.splitTextToSize(quoteText, contentW - 30);
         pdf.setFontSize(10);
-        pdf.setTextColor(...dimWhite);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('MAIN ARCHETYPE', W / 2, y, { align: 'center' });
+        pdf.setTextColor(...white);
+        pdf.setFont('helvetica', 'italic');
+        quoteLines.forEach(line => {
+          pdf.text(line, W / 2, y, { align: 'center' });
+          y += 5.5;
+        });
         y += 6;
-        pdf.setFontSize(16);
-        pdf.setTextColor(...orange);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(result.mainName || '', W / 2, y, { align: 'center' });
-        y += 10;
-
-        // Connector symbol
-        pdf.setFontSize(14);
-        pdf.setTextColor(...green);
-        pdf.text('+', W / 2, y, { align: 'center' });
-        y += 8;
-
-        pdf.setFontSize(10);
-        pdf.setTextColor(...dimWhite);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('SUPPORT ARCHETYPE', W / 2, y, { align: 'center' });
-        y += 6;
-        pdf.setFontSize(16);
-        pdf.setTextColor(...purple);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(result.secondaryName || '', W / 2, y, { align: 'center' });
-        y += 10;
       }
 
-      // Bonus badges removed — Geometric Bleed has no separate counters
-
-      // Score at bottom of cover
-      pdf.setFontSize(9);
-      pdf.setTextColor(...mutedGray);
+      // Score — large, placed directly below the archetype quote
+      y += 4;
+      pdf.setFontSize(22);
+      pdf.setTextColor(...green);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`${result.totalScore} / ${result.maxScore}`, W / 2, y, { align: 'center' });
+      y += 9;
+      pdf.setFontSize(8);
+      pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`Score: ${result.totalScore} / ${result.maxScore}`, W / 2, H - 22, { align: 'center' });
-      pdf.setFontSize(7);
-      pdf.text(`Gegenereerd op ${new Date().toLocaleDateString('nl-NL')}`, W / 2, H - 17, { align: 'center' });
-
-      pageFooter();
+      pdf.text('BEWUSTZIJNS SCORE', W / 2, y, { align: 'center' });
+      y += 10;
 
       // ═══════════════════════════════════════════════════
       // PAGE 2: LEGAL / COMPLIANCE
@@ -516,24 +594,24 @@ const AssessmentResultsModal = ({
       y += 10;
 
       // ── Legal section helper (card-style) ──
-      const legalSection = (title, body, accentColor) => {
+      const legalSection = (title, body) => {
         const bodyLines = pdf.splitTextToSize(body, contentW - 16);
         const blockH = 12 + bodyLines.length * 4;
         ensureSpace(blockH + 4);
         // Card background
         pdf.setFillColor(...cardBg);
         pdf.roundedRect(margin, y - 2, contentW, blockH, 2, 2, 'F');
-        // Left accent bar
-        pdf.setFillColor(...accentColor);
+        // Left accent bar — neutral grey
+        pdf.setFillColor(...mutedGray);
         pdf.rect(margin, y - 2, 2, blockH, 'F');
-        // Title
+        // Title — white
         pdf.setFontSize(10);
-        pdf.setTextColor(...accentColor);
+        pdf.setTextColor(...white);
         pdf.setFont('helvetica', 'bold');
         pdf.text(title, margin + 8, y + 4);
         // Body
         pdf.setFontSize(8);
-        pdf.setTextColor(...dimWhite);
+        pdf.setTextColor(...white);
         pdf.setFont('helvetica', 'normal');
         const bodyY = y + 10;
         bodyLines.forEach((line, i) => {
@@ -546,16 +624,14 @@ const AssessmentResultsModal = ({
         '1. Productomschrijving',
         'Dit document is gegenereerd door het Garden for Life Assessment System, een zelfreflectie-instrument gebaseerd op het Deltawerken model. ' +
         'De resultaten in dit rapport zijn gebaseerd op een AI-gestuurd archetyperingsmodel en vormen geen klinische diagnose, psychologisch advies of medische beoordeling. ' +
-        'Het systeem kent op basis van uw antwoorden een archetypecombinatie toe die bedoeld is als spiegel voor persoonlijke reflectie.',
-        green
+        'Het systeem kent op basis van uw antwoorden een archetypecombinatie toe die bedoeld is als spiegel voor persoonlijke reflectie.'
       );
 
       legalSection(
         '2. Metaforisch Kader & Wetenschappelijke Context',
         'Dit systeem maakt gebruik van termen en concepten uit de neurowetenschappen, kwantumbiologie en Zero Point Energy (ZPE). ' +
         'Deze worden uitsluitend metaforisch ingezet als denkkader en worden niet gepresenteerd als gevestigde wetenschap. ' +
-        'Verwijzingen naar neurotransmitters, kwantumvelden of energetische patronen dienen als beeldspraak om gedragspatronen te duiden, niet als wetenschappelijke claims.',
-        purple
+        'Verwijzingen naar neurotransmitters, kwantumvelden of energetische patronen dienen als beeldspraak om gedragspatronen te duiden, niet als wetenschappelijke claims.'
       );
 
       legalSection(
@@ -563,8 +639,7 @@ const AssessmentResultsModal = ({
         'De AI Agent Prompt die in dit document is opgenomen, is een experimenteel gegenereerd stijlprofiel. ' +
         'De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. ' +
         'Gebruik in externe AI-tools (zoals ChatGPT, Claude of andere) valt volledig buiten de verantwoordelijkheid van Garden For Life. ' +
-        'De gebruiker aanvaardt volledige verantwoordelijkheid voor het gebruik van deze prompt buiten het Garden for Life platform.',
-        orange
+        'De gebruiker aanvaardt volledige verantwoordelijkheid voor het gebruik van deze prompt buiten het Garden for Life platform.'
       );
 
       legalSection(
@@ -573,16 +648,14 @@ const AssessmentResultsModal = ({
         'Assessment-resultaten worden maximaal 90 dagen bewaard op beveiligde servers binnen de EU (Frankfurt, Duitsland). ' +
         'E-mailadressen en weergavenamen worden versleuteld opgeslagen (AES-256-GCM). ' +
         'Na de bewaartermijn worden gegevens automatisch en onherroepelijk verwijderd. ' +
-        'U heeft te allen tijde het recht om uw account en alle bijbehorende gegevens direct te verwijderen via uw profielinstellingen.',
-        green
+        'U heeft te allen tijde het recht om uw account en alle bijbehorende gegevens direct te verwijderen via uw profielinstellingen.'
       );
 
       legalSection(
         '5. Intellectueel Eigendom',
         'Het Deltawerken model, de archetypenstructuur, het scoringssysteem en alle bijbehorende teksten en visualisaties zijn intellectueel eigendom van Garden For Life. ' +
         'Dit document is uitsluitend bedoeld voor persoonlijk gebruik door de ontvanger. ' +
-        'Reproductie, publicatie of commercieel gebruik van (delen van) dit rapport zonder schriftelijke toestemming is niet toegestaan.',
-        purple
+        'Reproductie, publicatie of commercieel gebruik van (delen van) dit rapport zonder schriftelijke toestemming is niet toegestaan.'
       );
 
       legalSection(
@@ -590,8 +663,7 @@ const AssessmentResultsModal = ({
         'Garden for Life aanvaardt geen aansprakelijkheid voor beslissingen genomen op basis van de resultaten in dit rapport. ' +
         'Dit instrument is geen vervanging voor professioneel psychologisch, medisch of therapeutisch advies. ' +
         'Bij psychische klachten of zorgen wordt geadviseerd contact op te nemen met een gekwalificeerde zorgverlener. ' +
-        'Het gebruik van dit rapport en de daarin opgenomen AI Agent Prompt geschiedt geheel op eigen risico van de gebruiker.',
-        red
+        'Het gebruik van dit rapport en de daarin opgenomen AI Agent Prompt geschiedt geheel op eigen risico van de gebruiker.'
       );
 
       // Consent acknowledgment
@@ -606,7 +678,7 @@ const AssessmentResultsModal = ({
       pdf.setFont('helvetica', 'bold');
       pdf.text('Toestemming bevestigd', margin + 8, y + 4);
       pdf.setFontSize(7.5);
-      pdf.setTextColor(...dimWhite);
+      pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
       pdf.text('De gebruiker heeft bij het downloaden van dit document bevestigd kennis te hebben', margin + 8, y + 9);
       pdf.text('genomen van bovenstaande voorwaarden en de verantwoordelijkheid voor gebruik te aanvaarden.', margin + 8, y + 13);
@@ -614,11 +686,9 @@ const AssessmentResultsModal = ({
 
       // Contact
       pdf.setFontSize(7);
-      pdf.setTextColor(...mutedGray);
+      pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Vragen of verzoeken? Neem contact op via het Garden for Life platform.', W / 2, y, { align: 'center' });
-
-      pageFooter();
 
       // ═══════════════════════════════════════════════════
       // PAGE 3+: CONTENT PAGES
@@ -639,7 +709,7 @@ const AssessmentResultsModal = ({
       sectionHeading(`De Essentie — ${result.mainName} (${result.mainNameEn})`, orange);
       if (result.group) {
         pdf.setFontSize(8);
-        pdf.setTextColor(...mutedGray);
+        pdf.setTextColor(...white);
         pdf.text(`Groep: ${result.group}`, margin + 5, y);
         y += 5;
       }
@@ -653,7 +723,7 @@ const AssessmentResultsModal = ({
       sectionHeading(`De Vermenigvuldiging — ${result.secondaryName} (${result.secondaryNameEn})`, purple);
       if (result.supportGroup) {
         pdf.setFontSize(8);
-        pdf.setTextColor(...mutedGray);
+        pdf.setTextColor(...white);
         pdf.text(`Support Groep: ${result.supportGroup}`, margin + 5, y);
         y += 5;
       }
@@ -690,11 +760,11 @@ const AssessmentResultsModal = ({
             pdf.roundedRect(cx, cy - 3.5, colW - 2, 11, 1.5, 1.5, 'F');
           }
           pdf.setFontSize(7);
-          pdf.setTextColor(...(sa.isActive ? purple : mutedGray));
+          pdf.setTextColor(...(sa.isActive ? purple : white));
           pdf.setFont('helvetica', 'bold');
           pdf.text(sa.group, cx + 2, cy);
           pdf.setFontSize(9);
-          pdf.setTextColor(...(sa.isActive ? purple : dimWhite));
+          pdf.setTextColor(...(sa.isActive ? purple : white));
           pdf.setFont('helvetica', sa.isActive ? 'bold' : 'normal');
           pdf.text(sa.extendedName, cx + 2, cy + 4.2);
           if (sa.isActive) {
@@ -743,25 +813,156 @@ const AssessmentResultsModal = ({
         hr();
       }
 
-      // ── RADAR CHART ──
-      if (radarRef.current) {
-        sectionHeading('Visuele Analyse — Archetype Matrix', green);
-        try {
-          const radarCanvas = await html2canvas(radarRef.current, {
-            backgroundColor: '#0a0a0e',
-            scale: 2,
-            useCORS: true,
-            logging: false,
-          });
-          const radarImg = radarCanvas.toDataURL('image/png');
-          const radarW = Math.min(contentW, 120);
-          const radarH = (radarCanvas.height / radarCanvas.width) * radarW;
-          ensureSpace(radarH + 4);
-          pdf.addImage(radarImg, 'PNG', W / 2 - radarW / 2, y, radarW, radarH);
-          y += radarH + 6;
-        } catch {
-          y += 4;
+      // ── OCEAN PERSONALITY PROFILE ──
+      if (result.extendedOcean) {
+        const ocean = result.extendedOcean.ocean;
+        const oceanText = result.extendedOcean.oceanText;
+        const OCEAN_DIMS = ['O', 'C', 'E', 'A', 'N'];
+        const OCEAN_FULL_NL = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
+        const OCEAN_COLORS_PDF = {
+          O: purple, C: cyan, E: amber, A: pink, N: red,
+        };
+
+        sectionHeading('OCEAN Persoonlijkheidsprofiel', purple);
+
+        // Legend row
+        ensureSpace(6);
+        pdf.setFontSize(7);
+        pdf.setFont('helvetica', 'normal');
+        let legX = margin + 2;
+        OCEAN_DIMS.forEach(dim => {
+          pdf.setTextColor(...OCEAN_COLORS_PDF[dim]);
+          const legTxt = `${dim}=${OCEAN_FULL_NL[dim]}   `;
+          pdf.text(legTxt, legX, y);
+          legX += pdf.getTextWidth(legTxt);
+        });
+        y += 6;
+
+        // Dimension bars
+        const oceanBarTrackW = contentW - 46;
+        const oceanBarH = 4;
+        OCEAN_DIMS.forEach(dim => {
+          ensureSpace(9);
+          const score = (ocean && ocean[dim]) != null ? ocean[dim] : 0; // 0–10
+          const pct = score / 10;
+          const col = OCEAN_COLORS_PDF[dim];
+          // Label
+          pdf.setFontSize(8.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
+          pdf.text(dim, margin + 2, y + 1.5);
+          pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+          pdf.text(OCEAN_FULL_NL[dim], margin + 9, y + 1.5);
+          // Track background
+          const bx = margin + 40;
+          pdf.setFillColor(22, 22, 30);
+          pdf.roundedRect(bx, y - 1.5, oceanBarTrackW, oceanBarH, 1, 1, 'F');
+          // Fill
+          pdf.setFillColor(...col);
+          pdf.roundedRect(bx, y - 1.5, Math.max(pct * oceanBarTrackW, 2), oceanBarH, 1, 1, 'F');
+          // Score label
+          pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
+          pdf.text(`${score}/10`, W - margin - 2, y + 1.5, { align: 'right' });
+          // Text rating (after bar fill, if space allows)
+          if (oceanText?.[dim]) {
+            const ratingX = bx + pct * oceanBarTrackW + 3;
+            if (ratingX + 18 < W - margin - 14) {
+              pdf.setFontSize(6); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+              pdf.text(oceanText[dim], ratingX, y + 1);
+            }
+          }
+          y += 9;
+        });
+        y += 2;
+
+        // Resonantie / Dissonantie analysis (only when ocean data was imported)
+        if (result.oceanImported) {
+          const GROUP_OCEAN_EXPECT = {
+            RULING:     { O: 'low',  C: 'high', E: 'mid',  A: 'low',  N: 'low'  },
+            RELATIONAL: { O: 'mid',  C: 'mid',  E: 'high', A: 'high', N: 'mid'  },
+            SEEKER:     { O: 'high', C: 'low',  E: 'mid',  A: 'mid',  N: 'mid'  },
+            CHAOS:      { O: 'mid',  C: 'low',  E: 'mid',  A: 'low',  N: 'high' },
+            ABSTRACT:   { O: 'high', C: 'mid',  E: 'low',  A: 'mid',  N: 'mid'  },
+            AGENCY:     { O: 'mid',  C: 'high', E: 'high', A: 'mid',  N: 'low'  },
+          };
+          const OCEAN_FULL_EN = {
+            O: 'Openness', C: 'Conscientiousness', E: 'Extraversion', A: 'Agreeableness', N: 'Neuroticism',
+          };
+          const expect = GROUP_OCEAN_EXPECT[result.group] || GROUP_OCEAN_EXPECT.RULING;
+          const analyses = OCEAN_DIMS.map(dim => {
+            const pct100 = (ocean[dim] || 0) * 10;
+            const exp = expect[dim];
+            let status = 'neutral', explanation = '';
+            if (exp === 'high') {
+              if (pct100 >= 60) { status = 'resonance'; explanation = `Je ${OCEAN_FULL_EN[dim]} (${pct100}) is in resonantie met je ${result.group}-netwerk.`; }
+              else { status = 'dissonance'; explanation = `Je ${result.group}-profiel verwacht hoge ${OCEAN_FULL_EN[dim]}, maar je scoort ${pct100}. Dit gedrag is mogelijk aangeleerd.`; }
+            } else if (exp === 'low') {
+              if (pct100 <= 40) { status = 'resonance'; explanation = `Je lage ${OCEAN_FULL_EN[dim]} (${pct100}) past bij je ${result.group}-architectuur.`; }
+              else { status = 'dissonance'; explanation = `Je ${result.group}-netwerk verwacht lage ${OCEAN_FULL_EN[dim]}, maar je scoort ${pct100}. Mogelijk aangeleerde compensatie.`; }
+            }
+            return { dim, pct100, status, explanation };
+          }).filter(a => a.status !== 'neutral');
+
+          if (analyses.length > 0) {
+            ensureSpace(10);
+            pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...cyan);
+            pdf.text('OCEAN RESONANTIE & DISSONANTIE', margin + 2, y);
+            y += 7;
+
+            analyses.forEach(({ dim, pct100, status, explanation }) => {
+              const isRes = status === 'resonance';
+              const ac = isRes ? green : amber;
+              const expLines = pdf.splitTextToSize(explanation, contentW - 18);
+              const bh = 10 + expLines.length * 3.8;
+              ensureSpace(bh + 3);
+              pdf.setFillColor(...(isRes ? [0, 25, 12] : [28, 22, 0]));
+              pdf.roundedRect(margin + 2, y - 2, contentW - 4, bh, 1.5, 1.5, 'F');
+              pdf.setFillColor(...OCEAN_COLORS_PDF[dim]);
+              pdf.rect(margin + 2, y - 2, 2, bh, 'F');
+              pdf.setFontSize(8.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...OCEAN_COLORS_PDF[dim]);
+              pdf.text(`${dim}`, margin + 7, y + 3.5);
+              pdf.setTextColor(...ac);
+              pdf.text(` — ${isRes ? 'Resonantie' : 'Dissonantie'} (${pct100}/100)`, margin + 12, y + 3.5);
+              pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+              expLines.forEach((line, li) => pdf.text(line, margin + 7, y + 9 + li * 3.8));
+              y += bh + 4;
+            });
+            y += 2;
+          }
         }
+
+        // Neuroticism Trigger
+        if (result.neuroticismTrigger) {
+          const tLines = pdf.splitTextToSize(result.neuroticismTrigger, contentW - 18);
+          const bh = 10 + tLines.length * 4.2;
+          ensureSpace(bh + 3);
+          pdf.setFillColor(25, 8, 8);
+          pdf.roundedRect(margin, y - 2, contentW, bh, 2, 2, 'F');
+          pdf.setFillColor(...red); pdf.rect(margin, y - 2, 2, bh, 'F');
+          pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...red);
+          pdf.text('NEUROTICISME TRIGGER', margin + 8, y + 3.5);
+          pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+          tLines.forEach((line, li) => pdf.text(line, margin + 8, y + 9 + li * 4.2));
+          y += bh + 5;
+        }
+
+        // Core Profile (Workplace, Conflict, Relationship, Individuation)
+        if (result.coreProfile) {
+          const coreItems = [
+            { label: 'Superkracht op de Werkvloer', text: result.coreProfile.workplaceSuperpower, color: green },
+            { label: 'Conflictstijl',               text: result.coreProfile.conflictStyle,        color: amber },
+            { label: 'Relatiepatroon',              text: result.coreProfile.relationshipPattern,  color: pink },
+            { label: 'Individuatiepad',             text: result.coreProfile.individuationPath,    color: purple },
+          ];
+          coreItems.forEach(({ label, text, color: c }) => {
+            if (!text) return;
+            ensureSpace(14);
+            pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...c);
+            pdf.text(label.toUpperCase(), margin + 2, y);
+            y += 5;
+            writeWrapped(text, margin + 2, y, contentW - 4, 9, dimWhite);
+            y += 3;
+          });
+        }
+
         hr();
       }
 
@@ -818,13 +1019,34 @@ const AssessmentResultsModal = ({
         hr();
       }
 
+      // ── RADAR CHART ──
+      if (radarRef.current) {
+        sectionHeading('Visuele Analyse — Archetype Matrix', green);
+        try {
+          const radarCanvas = await html2canvas(radarRef.current, {
+            backgroundColor: '#0a0a0e',
+            scale: 2,
+            useCORS: true,
+            logging: false,
+          });
+          const radarImg = radarCanvas.toDataURL('image/png');
+          const radarW = Math.min(contentW, 120);
+          const radarH = (radarCanvas.height / radarCanvas.width) * radarW;
+          ensureSpace(radarH + 4);
+          pdf.addImage(radarImg, 'PNG', W / 2 - radarW / 2, y, radarW, radarH);
+          y += radarH + 6;
+        } catch {
+          y += 4;
+        }
+        hr();
+      }
+
       // ── ANALYSIS SECTIONS ──
       if (displaySections && displaySections.length > 0) {
         const sectionColors = [green, purple, orange];
         displaySections.forEach((section, i) => {
           sectionHeading(section.title, sectionColors[i % 3]);
-          writeWrapped(section.content, margin + 2, y, contentW - 4, 9.5, white);
-          y += 4;
+          writePdfMarkdown(section.content, margin + 2, contentW - 4);
           if (i < displaySections.length - 1) hr();
         });
       }
@@ -839,7 +1061,7 @@ const AssessmentResultsModal = ({
       pdf.line(margin, y, W - margin, y);
       y += 5;
       pdf.setFontSize(7);
-      pdf.setTextColor(...mutedGray);
+      pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Garden for Life  \u2022  Advanced Consciousness Assessment', W / 2, y, { align: 'center' });
       y += 3.5;

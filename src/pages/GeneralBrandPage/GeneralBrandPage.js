@@ -428,7 +428,8 @@ const GeneralBrandPage = React.memo(({
   isVisible, 
   onBack, 
   initialBrandIndex = 0,
-  brandSlug = null // Optional: can specify brand by slug instead
+  brandSlug = null, // Optional: can specify brand by slug instead
+  hideNavWheel = false // When true, hides the rotating brand selection wheel
 }) => {
   // Use a virtual index for infinite scrolling
   const [virtualIndex, setVirtualIndex] = useState(1008 + initialBrandIndex);
@@ -741,7 +742,34 @@ const GeneralBrandPage = React.memo(({
       </main>
 
       {/* EXPANDABLE NAV WHEEL */}
-      <NavWheel brands={BRANDS} virtualIndex={virtualIndex} onUpdateIndex={setVirtualIndex} onBack={() => onBack()} />
+      {!hideNavWheel && <NavWheel brands={BRANDS} virtualIndex={virtualIndex} onUpdateIndex={setVirtualIndex} onBack={() => onBack()} />}
+
+      {/* BACK BUTTON (shown only when NavWheel is hidden) */}
+      {hideNavWheel && (
+        <button
+          onClick={() => onBack()}
+          className="fixed z-50 flex items-center justify-center gap-2"
+          style={{
+            backgroundColor: 'transparent',
+            bottom: '1.5rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: '#ffae00',
+            fontSize: '12px',
+            fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+            fontWeight: 'bold',
+            letterSpacing: '0.1em',
+            border: 'none',
+            outline: 'none',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#ffc955'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#ffae00'; }}
+        >
+          <ChevronLeft size={16} />
+          <span>TERUG</span>
+        </button>
+      )}
 
       {/* MODAL - Contact */}
       <Modal isOpen={showContactModal} onClose={() => setShowContactModal(false)}>

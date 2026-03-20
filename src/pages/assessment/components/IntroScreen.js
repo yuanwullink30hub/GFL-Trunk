@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronRight, Brain, Sparkles, Eye, Heart } from 'lucide-react';
+import { SciFiButton } from '../../../components/assessment/dashboardStyles';
 
 function IntroScreen({ onStart }) {
   const features = [
@@ -83,18 +84,13 @@ function IntroScreen({ onStart }) {
       </div>
 
       <div className="text-center">
-        <button
+        <SciFiButton
           onClick={onStart}
-          className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg text-white font-medium text-lg hover:from-cyan-500 hover:to-purple-500 transition-all overflow-hidden"
+          variant="purple"
+          size="lg"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity" />
-          <span className="relative z-10">Begin Assessment</span>
-          <ChevronRight className="relative z-10 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-purple-400" />
-          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-purple-400" />
-          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-purple-400" />
-          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-purple-400" />
-        </button>
+          Begin Assessment
+        </SciFiButton>
         <p className="mt-4 text-xs text-slate-500">Assessment • ~15 minutes • Optional file upload</p>
       </div>
 

@@ -1682,7 +1682,7 @@ const AssessmentResultsModal = ({
                       fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em',
                       textTransform: 'uppercase', marginBottom: '0.75rem',
                     }}>
-                      {/* MAIN ARCHETYPE */
+                      {/* MAIN ARCHETYPE */}
                     </div>
                     <h4 style={{
                       color: '#a855f7',

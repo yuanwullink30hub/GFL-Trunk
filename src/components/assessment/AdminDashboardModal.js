@@ -2831,14 +2831,14 @@ const AuditLogTab = memo(() => {
                 <div style={{ textAlign: 'center', padding: '1rem', color: '#06b6d460', fontSize: 'max(10px, 0.5vw)' }}>Nog geen toestemmingen geregistreerd</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '55vh', overflowY: 'auto' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.8fr 0.6fr 2fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(6,182,212,0.15)' }}>
-                    {['TIJDSTIP', 'TYPE TOESTEMMING', 'NIVEAU', 'USER AGENT'].map(h => (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1.5fr 0.8fr 0.6fr 1.5fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(6,182,212,0.15)' }}>
+                    {['TIJDSTIP', 'EMAIL', 'TYPE TOESTEMMING', 'NIVEAU', 'USER AGENT'].map(h => (
                       <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#06b6d480', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
                     ))}
                   </div>
                   {consentEvents.map((ev, i) => (
                     <div key={i} style={{
-                      display: 'grid', gridTemplateColumns: '1.6fr 0.8fr 0.6fr 2fr',
+                      display: 'grid', gridTemplateColumns: '1.6fr 1.5fr 0.8fr 0.6fr 1.5fr',
                       gap: '0.3rem', padding: '0.3rem 0.5rem', alignItems: 'center',
                       backgroundColor: i % 2 === 0 ? 'rgba(6,182,212,0.02)' : 'transparent',
                       borderLeft: '2px solid #06b6d4',
@@ -2846,6 +2846,9 @@ const AuditLogTab = memo(() => {
                     }}>
                       <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>
                         {new Date(ev.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </div>
+                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#f59e0b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ev.email || <span style={{ color: '#64748b' }}>—</span>}
                       </div>
                       <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#06b6d4', fontWeight: 'bold' }}>
                         ✅ {ev.consentType || 'art9_assessment'}

@@ -319,8 +319,6 @@ function buildSystemPrompt({
     `• TNM-Associatie: [Beschrijf het ondersteunende netwerk als modelterm]\n` +
     `• Rol: [Hoe dit archetype de Main aanvult of uitdaagt — in gedragsmatige termen]\n` +
     `• Hardware / Schaduw Check: Lees de geometrische signalen van de chart. Als Main en Support dezelfde groep delen: beschrijf als sterke hardware-resonantie (Green/Blue bleed). Als ze 180° tegenpolen zijn: beschrijf als paradoxale integratie (Purple signaal). Gebruik kwalitatieve beschrijvingen, geen numerieke waarden.\n\n` +
-    `5. De Matrix van 72 Mogelijkheden:\n` +
-    `Toon de volledige tabel van 6 Extended Archetypen voor het Main Archetype. Highlight de uitslag. Voeg toe: 'Dit overzicht toont de 6 mogelijke profielen binnen het GardenForLife-model voor jouw Main Archetype.'\n\n` +
     `6. De Schaduw:\n` +
     `Archetype: [180° tegenpool van Main]. Beschrijf als potentieel groeipunt. Gebruik de Polarization Index (Main score MINUS Shadow score) als spectrum:\n` +
     `• Gap > 60% van Main: schaduw wordt onderdrukt. Focus op de blinde vlek.\n` +
@@ -1006,12 +1004,6 @@ function buildSystemPrompt({
       : isBlueBonded
         ? `Main en Support delen dezelfde biologische zuil (Green/Blue bleed). Beschrijf als sterke hardware-resonantie — feedback-circuits die elkaar versterken.`
         : 'GEEN directe Main-Support lijn-relatie — Main en Support zitten in verschillende neurale pijlers.'}\n`
-  );
-
-  parts.push(
-    `## 5. De Matrix van 72 Mogelijkheden\n` +
-    `Toon de complete tabel van de 6 Extended Archetypen voor ${archetypeKey}. Highlight de specifieke uitslag (${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}) met vette tekst.\n` +
-    `Voeg toe: 'Dit overzicht toont de 6 mogelijke profielen binnen het GardenForLife-model voor jouw Main Archetype.'\n`
   );
 
   parts.push(

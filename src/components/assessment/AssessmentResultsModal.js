@@ -21,7 +21,7 @@ import {
 import { isNatureSlot } from '../../pages/assessment/assessmentData';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
-import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview } from '../../utils/apiClient';
+import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity } from '../../utils/apiClient';
 
 /**
  * AssessmentResultsModal - Full-screen sci-fi results modal
@@ -203,9 +203,13 @@ const AssessmentResultsModal = ({
 
   // Removed: stageLabels (using simpler single-message loading state now)
 
-  // Displayed sections: AI-generated when available, template fallback otherwise
+  // Displayed sections: AI-generated when available, template fallback otherwise.
+  // Filter out "Matrix van 72 Mogelijkheden" — it duplicates "Alle Uitkomsten" already shown above.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const displaySections = useMemo(() => aiSections || result?.analysisSections || [], [aiSections, result]);
+  const displaySections = useMemo(() => {
+    const raw = aiSections || result?.analysisSections || [];
+    return raw.filter(s => !s.title?.toLowerCase().includes('matrix van 72'));
+  }, [aiSections, result]);
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
@@ -283,6 +287,8 @@ const AssessmentResultsModal = ({
   const radarRef = useRef(null);
   // ── Ref for the subgroup dynamics element ──
   const subgroupRef = useRef(null);
+  // ── Ref for the CulturaForce / Cognitieve Driehoek card (captured as image for PDF) ──
+  const culturaForceRef = useRef(null);
 
   // Generate and download a clean, document-style PDF
   const handleDownloadPdf = useCallback(async () => {
@@ -707,7 +713,7 @@ const AssessmentResultsModal = ({
       }
 
       // ── MAIN ARCHETYPE ──
-      sectionHeading(`De Essentie — ${result.mainName} (${result.mainNameEn})`, purple);
+      sectionHeading(`De Essentie — ${result.mainName} (${result.mainNameEn})`, green);
       if (result.group) {
         pdf.setFontSize(11);
         pdf.setTextColor(...white);
@@ -723,7 +729,7 @@ const AssessmentResultsModal = ({
       hr();
 
       // ── SUPPORT ARCHETYPE ──
-      sectionHeading(`De Vermenigvuldiging — ${result.secondaryName} (${result.secondaryNameEn})`, orange);
+      sectionHeading(`De Vermenigvuldiging — ${result.secondaryName} (${result.secondaryNameEn})`, amber);
       if (result.supportGroup) {
         pdf.setFontSize(11);
         pdf.setTextColor(...white);
@@ -752,10 +758,6 @@ const AssessmentResultsModal = ({
       if (result.allSupportArchetypes) {
         sectionHeading(`Alle Uitkomsten voor ${result.mainName}`, green);
         const cols = result.allSupportArchetypes;
-        const colCount = cols.length; // 6
-        const gap = 1.5;
-        const colW = (contentW - gap * (colCount - 1)) / colCount;
-
         // Helper: split combination text into meaning (1st sentence) and gift (rest)
         const splitMeaningGift = (text) => {
           if (!text) return { meaning: '', gift: '' };
@@ -778,13 +780,6 @@ const AssessmentResultsModal = ({
           return lines.length * lh;
         };
 
-        // ── Row 0: Group header + Extension name ──
-        const nameRowData = cols.map(sa => {
-          const { meaning, gift } = splitMeaningGift(sa.combination);
-          return { ...sa, meaning, gift };
-        });
-
-        // Measure all rows to find max height per row
         const measureCellH = (txt, cw, fontSize) => {
           if (!txt) return 0;
           pdf.setFontSize(fontSize);
@@ -792,94 +787,85 @@ const AssessmentResultsModal = ({
           return lines.length * (fontSize * 0.42);
         };
 
-        // Row heights
-        const nameFontSize = 9;
-        const dataFontSize = 8;
-        const rowLabelW = 0; // no label column, rows are labeled inline
+        // ── NEW LAYOUT: archetypes as rows, Betekenis / Gift / Valkuil as columns ──
+        const gap = 1.5;
+        const nameColW = contentW * 0.20;
+        const dataColW = (contentW - nameColW - gap * 3) / 3;
+        const nameFontSize = 8;
+        const dataFontSize = 7.5;
 
-        // Row 0: Group + Name
-        let maxH0 = 0;
-        nameRowData.forEach(sa => {
-          const h = 4 + measureCellH(sa.extendedName, colW, nameFontSize);
-          if (h > maxH0) maxH0 = h;
+        const nameRowData = cols.map(sa => {
+          const { meaning, gift } = splitMeaningGift(sa.combination);
+          return { ...sa, meaning, gift };
         });
 
-        // Row 1: Betekenis (meaning)
-        let maxH1 = 0;
-        nameRowData.forEach(sa => {
-          const h = 4 + measureCellH(sa.meaning, colW, dataFontSize);
-          if (h > maxH1) maxH1 = h;
+        // Column x positions
+        const col0x = margin;
+        const col1x = margin + nameColW + gap;
+        const col2x = col1x + dataColW + gap;
+        const col3x = col2x + dataColW + gap;
+
+        // Header row
+        const headerH = 5;
+        ensureSpace(headerH + 4);
+        pdf.setFillColor(15, 15, 25);
+        pdf.rect(col0x, y - 1, contentW, headerH + 1, 'F');
+        pdf.setFontSize(7);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...[120, 120, 140]);
+        pdf.text('ARCHETYPE', col0x + 1, y + 3.5);
+        pdf.setTextColor(...orange);
+        pdf.text('BETEKENIS', col1x + 1, y + 3.5);
+        pdf.setTextColor(...green);
+        pdf.text('GIFT', col2x + 1, y + 3.5);
+        pdf.setTextColor(...red);
+        pdf.text('VALKUIL', col3x + 1, y + 3.5);
+        y += headerH + gap;
+
+        // Measure row heights
+        const rowHeights = nameRowData.map(sa => {
+          const hName = 6 + measureCellH(sa.extendedName, nameColW, nameFontSize);
+          const hMeaning = 2 + measureCellH(sa.meaning, dataColW, dataFontSize);
+          const hGift = 2 + measureCellH(sa.gift, dataColW, dataFontSize);
+          const hShadow = 2 + measureCellH(sa.shadow, dataColW, dataFontSize);
+          return Math.max(hName, hMeaning, hGift, hShadow) + 4;
         });
 
-        // Row 2: Gift
-        let maxH2 = 0;
-        nameRowData.forEach(sa => {
-          const h = 4 + measureCellH(sa.gift, colW, dataFontSize);
-          if (h > maxH2) maxH2 = h;
-        });
-
-        // Row 3: Valkuil (shadow/curse)
-        let maxH3 = 0;
-        nameRowData.forEach(sa => {
-          const h = 4 + measureCellH(sa.shadow, colW, dataFontSize);
-          if (h > maxH3) maxH3 = h;
-        });
-
-        const totalTableH = maxH0 + maxH1 + maxH2 + maxH3 + 16; // + row label space
-        ensureSpace(totalTableH + 4);
-
-        // Draw columns
+        // Draw rows
         nameRowData.forEach((sa, i) => {
-          const cx = margin + i * (colW + gap);
+          const rowH = rowHeights[i];
+          ensureSpace(rowH + gap);
 
-          // Column background
+          if (sa.isActive) { pdf.setFillColor(40, 30, 60); }
+          else { pdf.setFillColor(18, 18, 28); }
+          pdf.roundedRect(col0x, y - 1, contentW, rowH, 1, 1, 'F');
+
+          // Column dividers
+          pdf.setDrawColor(40, 40, 55);
+          pdf.line(col1x - gap * 0.5, y - 1, col1x - gap * 0.5, y - 1 + rowH);
+          pdf.line(col2x - gap * 0.5, y - 1, col2x - gap * 0.5, y - 1 + rowH);
+          pdf.line(col3x - gap * 0.5, y - 1, col3x - gap * 0.5, y - 1 + rowH);
+
+          // Name column: group label + extended name
+          pdf.setFontSize(7);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...(sa.isActive ? [168, 85, 247] : [100, 160, 140]));
+          pdf.text(sa.group, col0x + 1, y + 2.5);
+          cellText(sa.extendedName, col0x, y + 5, nameColW, nameFontSize, sa.isActive ? white : [160, 185, 175], 'bold');
           if (sa.isActive) {
-            pdf.setFillColor(40, 30, 60);
-            pdf.roundedRect(cx, y - 2, colW, totalTableH, 1.5, 1.5, 'F');
-          } else {
-            pdf.setFillColor(18, 18, 28);
-            pdf.roundedRect(cx, y - 2, colW, totalTableH, 1.5, 1.5, 'F');
+            pdf.setFontSize(6);
+            pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(...green);
+            pdf.text('\u25b8 JOUW RESULTAAT', col0x + 1, y + rowH - 2);
           }
 
-          let rowY = y;
+          // Data columns
+          cellText(sa.meaning, col1x, y + 2, dataColW, dataFontSize, [215, 215, 220]);
+          cellText(sa.gift,    col2x, y + 2, dataColW, dataFontSize, [215, 215, 220]);
+          cellText(sa.shadow,  col3x, y + 2, dataColW, dataFontSize, [195, 195, 205]);
 
-          // ── Row 0: Group label + Extension name ──
-          pdf.setFontSize(7);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(...(sa.isActive ? green : [150, 150, 160]));
-          pdf.text(sa.group, cx + 1, rowY);
-          rowY += 3.5;
-          cellText(sa.extendedName, cx, rowY, colW, nameFontSize, sa.isActive ? purple : white, 'bold');
-          rowY = y + maxH0;
-
-          // ── Row 1: Betekenis ──
-          pdf.setFontSize(7);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(...orange);
-          pdf.text('BETEKENIS', cx + 1, rowY);
-          rowY += 3;
-          cellText(sa.meaning, cx, rowY, colW, dataFontSize, white);
-          rowY = y + maxH0 + maxH1 + 4;
-
-          // ── Row 2: Gift ──
-          pdf.setFontSize(7);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(...green);
-          pdf.text('GIFT', cx + 1, rowY);
-          rowY += 3;
-          cellText(sa.gift, cx, rowY, colW, dataFontSize, white);
-          rowY = y + maxH0 + maxH1 + maxH2 + 8;
-
-          // ── Row 3: Valkuil ──
-          pdf.setFontSize(7);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(...red);
-          pdf.text('VALKUIL', cx + 1, rowY);
-          rowY += 3;
-          cellText(sa.shadow, cx, rowY, colW, dataFontSize, [200, 200, 210]);
+          y += rowH + gap;
         });
-
-        y += totalTableH + 4;
         hr();
       }
 
@@ -888,7 +874,7 @@ const AssessmentResultsModal = ({
       paintBg();
       y = margin;
       if (result.shadowPartner) {
-        sectionHeading(`De Schaduw — ${result.shadowName} (${result.shadowNameEn})`, orange);
+        sectionHeading(`De Schaduw — ${result.shadowName} (${result.shadowNameEn})`, purple);
         if (result.mainShadowTension) {
           writeWrapped(result.mainShadowTension, margin + 2, y, contentW - 4, 9, orange, 'italic');
           y += 2;
@@ -929,7 +915,7 @@ const AssessmentResultsModal = ({
         const OCEAN_DIMS = ['O', 'C', 'E', 'A', 'N'];
         const OCEAN_FULL_NL = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
         const OCEAN_COLORS_PDF = {
-          O: purple, C: cyan, E: amber, A: pink, N: red,
+          O: [167, 139, 250], C: cyan, E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253],
         };
 
         sectionHeading('OCEAN Persoonlijkheidsprofiel', purple);
@@ -1056,10 +1042,10 @@ const AssessmentResultsModal = ({
         // Core Profile (Workplace, Conflict, Relationship, Individuation)
         if (result.coreProfile) {
           const coreItems = [
-            { label: 'Superkracht op de Werkvloer', text: result.coreProfile.workplaceSuperpower, color: green },
-            { label: 'Conflictstijl',               text: result.coreProfile.conflictStyle,        color: amber },
-            { label: 'Relatiepatroon',              text: result.coreProfile.relationshipPattern,  color: pink },
-            { label: 'Individuatiepad',             text: result.coreProfile.individuationPath,    color: purple },
+            { label: 'Superkracht op de Werkvloer', text: result.coreProfile.workplaceSuperpower, color: orange },
+            { label: 'Conflictstijl',               text: result.coreProfile.conflictStyle,        color: orange },
+            { label: 'Relatiepatroon',              text: result.coreProfile.relationshipPattern,  color: orange },
+            { label: 'Individuatiepad',             text: result.coreProfile.individuationPath,    color: orange },
           ];
           coreItems.forEach(({ label, text, color: c }) => {
             if (!text) return;
@@ -1093,7 +1079,7 @@ const AssessmentResultsModal = ({
         pdf.setTextColor(...orange);
         pdf.text('CULTURE', margin + 30.5, legY + 1.2);
         pdf.setFontSize(6); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(100, 110, 130);
-        pdf.text('( /30 max )', margin + 55, legY + 1.2);
+        pdf.text('( /33 max )', margin + 55, legY + 1.2);
         y += 7;
 
         const GROUP_META_PDF = {
@@ -1105,30 +1091,30 @@ const AssessmentResultsModal = ({
           Agency:     { network: 'Extraversie / Wilskracht', drive: 'Actie en transformatie' },
         };
         const ARCH_POS_PDF = {
-          Judge: 1, Ruler: 12, Lover: 2, Caregiver: 3,
-          Innocent: 4, Explorer: 5, Outlaw: 6, Trickster: 7,
-          Sage: 8, Artist: 9, Magician: 10, Hero: 11,
+          Ruler: 1, Judge: 2, Lover: 3, Caregiver: 4,
+          Innocent: 5, Explorer: 6, Outlaw: 7, Trickster: 8,
+          Sage: 9, Artist: 10, Magician: 11, Hero: 12,
         };
 
-        const MAX_NAT  = 30; // 15 per archetype × 2 archetypes
-        const labelW   = 38;
-        const scoreW   = 16;
-        const gap      = 3;
-        const barAreaW = contentW - labelW - scoreW - gap * 2;
-        const barX     = margin + labelW + gap;
-        const scoreX   = barX + barAreaW + gap;
-        const barH     = 2.2;
+        const MAX_TOTAL = 36;
+        const labelW    = 38;
+        const scoreW    = 22;
+        const gap       = 3;
+        const barAreaW  = contentW - labelW - scoreW - gap * 2;
+        const barX      = margin + labelW + gap;
+        const scoreX    = barX + barAreaW + gap;
+        const barH      = 2.5;
 
         result.subgroups.forEach(sg => {
           const hasBonus = sg.harmonyPoints > 0 || sg.shadowPoints > 0;
           const rowH = 14 + (hasBonus ? 5 : 0);
           ensureSpace(rowH);
 
-          const meta     = GROUP_META_PDF[sg.group] || { network: sg.group, drive: sg.axis || '' };
-          const natTotal = (sg.leftNature  || 0) + (sg.rightNature  || 0);
-          const cultTotal= (sg.leftCulture || 0) + (sg.rightCulture || 0);
-          const natPct   = Math.min(natTotal  / MAX_NAT, 1);
-          const cultPct  = Math.min(cultTotal / MAX_NAT, 1);
+          const meta      = GROUP_META_PDF[sg.group] || { network: sg.group, drive: sg.axis || '' };
+          const natTotal  = (sg.leftNature  || 0) + (sg.rightNature  || 0);
+          const cultTotal = (sg.leftCulture || 0) + (sg.rightCulture || 0);
+          const natPct    = Math.min(natTotal  / MAX_TOTAL, 1);
+          const cultPct   = Math.min(cultTotal / MAX_TOTAL, 1);
 
           // Network name (right-aligned in label area)
           pdf.setFontSize(7); pdf.setFont('helvetica', 'bold');
@@ -1141,55 +1127,52 @@ const AssessmentResultsModal = ({
           const driveText = pdf.splitTextToSize(meta.drive, labelW - 1)[0] || meta.drive;
           pdf.text(driveText, margin + labelW, y + 5, { align: 'right' });
 
-          const natBarY  = y;
-          const cultBarY = y + barH + 1.5;
+          const barY = y + 1;
 
-          // Bar track backgrounds (dark)
+          // Single stacked bar track (dark background)
           pdf.setFillColor(28, 33, 48);
-          pdf.rect(barX, natBarY,  barAreaW, barH, 'F');
-          pdf.rect(barX, cultBarY, barAreaW, barH, 'F');
+          pdf.rect(barX, barY, barAreaW, barH, 'F');
 
-          // Nature fill (purple)
+          // Nature segment (purple) from left
           if (natPct > 0) {
             pdf.setFillColor(...purple);
-            pdf.rect(barX, natBarY, natPct * barAreaW, barH, 'F');
+            pdf.rect(barX, barY, natPct * barAreaW, barH, 'F');
           }
-          // Culture fill (orange)
+          // Culture segment (orange) immediately after nature
           if (cultPct > 0) {
             pdf.setFillColor(...orange);
-            pdf.rect(barX, cultBarY, cultPct * barAreaW, barH, 'F');
+            pdf.rect(barX + natPct * barAreaW, barY, cultPct * barAreaW, barH, 'F');
           }
 
-          // Scores column (right of bars)
-          pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold');
+          // Scores — N{n} C{c} on line 1, total/33 on line 2
+          pdf.setFontSize(6.5); pdf.setFont('helvetica', 'bold');
           pdf.setTextColor(...purple);
-          pdf.text(`${natTotal}`, scoreX, natBarY + 1.8);
-          pdf.setFontSize(5); pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(130, 90, 180);
-          pdf.text('/30', scoreX + 5.5, natBarY + 1.8);
-
-          pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold');
+          const natLabel = `N${natTotal}`;
+          pdf.text(natLabel, scoreX, barY + 1.5);
           pdf.setTextColor(...orange);
-          pdf.text(`${cultTotal}`, scoreX, cultBarY + 1.8);
-          pdf.setFontSize(5); pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(170, 110, 60);
-          pdf.text('/30', scoreX + 5.5, cultBarY + 1.8);
+          pdf.text(` C${cultTotal}`, scoreX + pdf.getTextWidth(natLabel), barY + 1.5);
 
-          // Archetype badges
-          const badgeY = cultBarY + barH + 2;
+          const sgTotal = natTotal + cultTotal;
+          pdf.setFontSize(6); pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(150, 220, 240);
+          const totalStr = `${sgTotal}`;
+          pdf.text(totalStr, scoreX, barY + barH + 2.8);
+          pdf.setFontSize(5); pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(100, 130, 150);
+          pdf.text('/33', scoreX + pdf.getTextWidth(totalStr) + 0.5, barY + barH + 2.8);
+
+          // Archetype badges — uniform cyan (matches UI)
+          const badgeY = barY + barH + 6;
           pdf.setFontSize(6); pdf.setFont('helvetica', 'bold');
           let bx = barX;
-          [
-            { label: sg.leftLabel,  isNat: (sg.leftNature  || 0) >= (sg.leftCulture  || 0) },
-            { label: sg.rightLabel, isNat: (sg.rightNature || 0) >= (sg.rightCulture || 0) },
-          ].forEach(arch => {
-            const pos = ARCH_POS_PDF[arch.label] || '';
-            const txt = `${arch.label.toUpperCase()} (${pos})`;
-            const tw  = pdf.getTextWidth(txt) + 3;
-            pdf.setFillColor(arch.isNat ? 40 : 45, arch.isNat ? 20 : 25, arch.isNat ? 65 : 20);
-            pdf.rect(bx, badgeY - 1.5, tw, 3.8, 'F');
-            if (arch.isNat) { pdf.setTextColor(...purple); } else { pdf.setTextColor(...orange); }
-            pdf.text(txt, bx + 1.5, badgeY + 1.5);
+          [sg.leftLabel, sg.rightLabel].forEach(label => {
+            const txt = label.toUpperCase();
+            const tw  = pdf.getTextWidth(txt) + 4;
+            pdf.setFillColor(12, 28, 38);
+            pdf.setDrawColor(55, 110, 135);
+            pdf.rect(bx, badgeY - 1.8, tw, 4, 'FD');
+            pdf.setTextColor(150, 220, 240);
+            pdf.text(txt, bx + 2, badgeY + 1.3);
             bx += tw + 2;
           });
 
@@ -1215,7 +1198,32 @@ const AssessmentResultsModal = ({
         hr();
       }
 
-      // ── GROEP DYNAMIEK AI SECTION (between Dual-Core bars and radar) ──
+      // ── CULTURAFORCE — COGNITIEVE DRIEHOEK (captured from result card UI) ──
+      if (culturaForceRef.current) {
+        try {
+          const cfCanvas = await html2canvas(culturaForceRef.current, {
+            backgroundColor: '#020003',
+            scale: 3,
+            useCORS: true,
+            logging: false,
+          });
+          const cfImg = cfCanvas.toDataURL('image/png');
+          const cfW = contentW;
+          const cfH = (cfCanvas.height / cfCanvas.width) * cfW;
+          ensureSpace(cfH + 6);
+          pdf.addImage(cfImg, 'PNG', margin, y, cfW, cfH);
+          y += cfH + 6;
+          hr();
+        } catch {
+          y += 4;
+        }
+      }
+
+      // ── GROEP DYNAMIEK + RADAR CHART — always together on page 6 ──
+      pdf.addPage();
+      paintBg();
+      y = margin;
+
       const groepDynSection = displaySections?.find(s =>
         s.title?.toLowerCase().includes('groep dynamiek') ||
         s.title?.toLowerCase().includes('neurobiologische interpretatie')
@@ -1227,9 +1235,10 @@ const AssessmentResultsModal = ({
         hr();
       }
 
-      // ── RADAR CHART (same page as Dual-Core) ──
+      // ── RADAR CHART — same page as Groep Dynamiek (page 6) ──
       if (radarRef.current) {
-        sectionHeading('Visuele Analyse — Archetype Matrix', green);
+        y += 4;
+        sectionHeading('Visuele Analyse — Triple Network Wiel', green);
         try {
           const radarCanvas = await html2canvas(radarRef.current, {
             backgroundColor: null,
@@ -1271,15 +1280,6 @@ const AssessmentResultsModal = ({
             if (i < mainSections.length - 1) hr();
           });
         }
-      }
-
-      // ── AI AGENT PROMPT (dedicated page) ──
-      if (result?._aiAgentPrompt) {
-        pdf.addPage();
-        paintBg();
-        y = margin;
-        sectionHeading('Genereer een volledige AI Prompt', green);
-        writePdfMarkdown(result._aiAgentPrompt, margin + 2, contentW - 4);
       }
 
       // ═══════════════════════════════════════════════════
@@ -1399,7 +1399,7 @@ const AssessmentResultsModal = ({
               lineHeight: '1.6',
               maxWidth: '320px',
             }}>
-              Wij berekenen niet wie je bent. We berekenen de fysiologische prijs van wie je probeert te zijn.
+              We berekenen niet wie je bent.<br/>We berekenen de fysiologische prijs van wie je probeert te zijn.
             </p>
 
             {/* Error state: AI failed — show continue button */}
@@ -1622,7 +1622,7 @@ const AssessmentResultsModal = ({
                 {result.combinationText && (
                   <div style={{
                     width: '100%',
-                    background: 'linear-gradient(135deg, rgba(0, 255, 157, 0.08), rgba(0, 255, 157, 0.03))',
+                    background: 'transparent',
                     border: '1px solid rgba(0, 255, 157, 0.25)',
                     borderRadius: '0.75rem',
                     padding: rs.sectionPad,
@@ -1667,25 +1667,25 @@ const AssessmentResultsModal = ({
                 }}>
                   {/* Main Archetype Card */}
                   <div style={{
-                    background: 'rgba(249, 115, 22, 0.05)',
-                    border: '1px solid rgba(249, 115, 22, 0.2)',
+                    background: 'transparent',
+                    border: '1px solid rgba(168, 85, 247, 0.2)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
                     position: 'relative',
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, #f97316, transparent)',
+                      background: 'linear-gradient(to right, #a855f7, transparent)',
                     }} />
                     <div style={{
-                      fontSize: '0.65rem', color: 'rgba(249, 115, 22, 0.5)',
+                      fontSize: '0.75rem', color: 'rgba(168, 85, 247, 0.5)',
                       fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em',
                       textTransform: 'uppercase', marginBottom: '0.75rem',
                     }}>
-                      {/* MAIN ARCHETYPE */}
+                      {/* MAIN ARCHETYPE */
                     </div>
                     <h4 style={{
-                      color: '#f97316',
+                      color: '#a855f7',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '1.1rem',
                       fontWeight: 'bold',
@@ -1703,19 +1703,19 @@ const AssessmentResultsModal = ({
                     </p>
                     {result.mainMotivation && (
                       <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Motivatie: </span>
+                        <span style={{ fontSize: '0.7rem', color: '#a855f7', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Motivatie: </span>
                         <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif" }}>{result.mainMotivation}</span>
                       </div>
                     )}
                     {result.mainPositive && (
                       <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Kracht: </span>
+                        <span style={{ fontSize: '0.7rem', color: '#a855f7', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Kracht: </span>
                         <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif" }}>{result.mainPositive}</span>
                       </div>
                     )}
                     {result.mainShadowTrait && (
                       <div>
-                        <span style={{ fontSize: '0.7rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Schaduw: </span>
+                        <span style={{ fontSize: '0.7rem', color: '#a855f7', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Schaduw: </span>
                         <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.7)', fontFamily: "'Figtree', sans-serif" }}>{result.mainShadowTrait}</span>
                       </div>
                     )}
@@ -1723,25 +1723,25 @@ const AssessmentResultsModal = ({
 
                   {/* Support Archetype Card */}
                   <div style={{
-                    background: 'rgba(168, 85, 247, 0.05)',
-                    border: '1px solid rgba(168, 85, 247, 0.2)',
+                    background: 'transparent',
+                    border: '1px solid rgba(249, 115, 22, 0.2)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
                     position: 'relative',
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, #a855f7, transparent)',
+                      background: 'linear-gradient(to right, #f97316, transparent)',
                     }} />
                     <div style={{
-                      fontSize: '0.65rem', color: 'rgba(168, 85, 247, 0.5)',
+                      fontSize: '0.75rem', color: 'rgba(249, 115, 22, 0.5)',
                       fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em',
                       textTransform: 'uppercase', marginBottom: '0.75rem',
                     }}>
                       {/* SUPPORT ARCHETYPE */}
                     </div>
                     <h4 style={{
-                      color: '#a855f7',
+                      color: '#f97316',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '1.1rem',
                       fontWeight: 'bold',
@@ -1759,20 +1759,20 @@ const AssessmentResultsModal = ({
                     </p>
                     {result.secondaryMotivation && (
                       <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#a855f7', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Motivatie: </span>
+                        <span style={{ fontSize: '0.7rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Motivatie: </span>
                         <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif" }}>{result.secondaryMotivation}</span>
                       </div>
                     )}
                     {result.secondaryPositive && (
                       <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#00ff9d', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Kracht: </span>
+                        <span style={{ fontSize: '0.7rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Kracht: </span>
                         <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif" }}>{result.secondaryPositive}</span>
                       </div>
                     )}
                     {result.secondaryDescription && (
                       <div>
-                        <span style={{ fontSize: '0.7rem', color: 'rgba(156, 163, 175, 0.5)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Profiel: </span>
-                        <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.7)', fontFamily: "'Figtree', sans-serif" }}>{result.secondaryDescription}</span>
+                        <span style={{ fontSize: '0.7rem', color: '#a855f7', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Profiel: </span>
+                        <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif" }}>{result.secondaryDescription}</span>
                       </div>
                     )}
                   </div>
@@ -1782,7 +1782,7 @@ const AssessmentResultsModal = ({
                 {result.allSupportArchetypes && (
                   <div style={{
                     width: '100%',
-                    background: 'rgba(0, 255, 157, 0.05)',
+                    background: 'transparent',
                     border: '1px solid rgba(0, 255, 157, 0.15)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
@@ -1808,63 +1808,69 @@ const AssessmentResultsModal = ({
                       </svg>
                       Alle Uitkomsten voor {result.mainName}
                     </h3>
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(6, 1fr)',
-                      gap: '0.4rem',
-                    }}>
-                      {result.allSupportArchetypes.map((sa) => (
-                        <div key={sa.group} style={{
-                          background: sa.isActive ? 'rgba(168, 85, 247, 0.15)' : 'rgba(0, 255, 157, 0.05)',
-                          border: sa.isActive ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid rgba(0, 255, 157, 0.15)',
-                          borderRadius: '0.5rem',
-                          padding: '0.4rem 0.3rem',
-                          textAlign: 'center',
-                          transition: 'all 0.3s',
-                        }}>
-                          <div style={{
-                            fontSize: '0.65rem',
-                            color: sa.isActive ? '#a855f7' : 'rgba(0, 255, 157, 0.5)',
-                            fontFamily: "'Rajdhani', sans-serif",
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.08em',
-                            marginBottom: '0.15rem',
-                          }}>
-                            {sa.group}
+                    {/* Archetypes as rows, Betekenis / Gift / Valkuil as columns */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {/* Column header row */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                        gap: '0',
+                        padding: '0.2rem 0',
+                        borderBottom: '1px solid rgba(255,255,255,0.07)',
+                        marginBottom: '0.1rem',
+                      }}>
+                        {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(0,255,157,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
+                          <div key={label} style={{ fontSize: '0.75rem', color, fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', paddingLeft: '0.4rem' }}>
+                            {label}
                           </div>
-                          <div style={{
-                            fontSize: '0.78rem',
-                            color: sa.isActive ? '#fff' : 'rgba(0, 255, 157, 0.7)',
-                            fontFamily: "'Figtree', sans-serif",
-                            fontWeight: sa.isActive ? 'bold' : 'normal',
+                        ))}
+                      </div>
+                      {result.allSupportArchetypes.map((sa) => {
+                        const splitCombo = (text) => {
+                          if (!text) return { meaning: '', gift: '' };
+                          const m = text.match(/^([^.!?]+[.!?])\s*(.*)$/s);
+                          return m ? { meaning: m[1].trim(), gift: m[2].trim() } : { meaning: text, gift: '' };
+                        };
+                        const { meaning, gift } = splitCombo(sa.combination);
+                        return (
+                          <div key={sa.group} style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                            gap: '0',
+                            background: 'transparent',
+                            border: sa.isActive ? '1px solid rgba(168,85,247,0.35)' : '1px solid rgba(0,255,157,0.08)',
+                            borderRadius: '0.35rem',
+                            overflow: 'hidden',
                           }}>
-                            {sa.extendedName}
-                          </div>
-                          <div style={{
-                            fontSize: '0.65rem',
-                            color: sa.isActive ? 'rgba(168, 85, 247, 0.7)' : 'rgba(0, 255, 157, 0.4)',
-                            fontFamily: "'Rajdhani', sans-serif",
-                            fontStyle: 'italic',
-                            marginTop: '0.1rem',
-                          }}>
-                            {sa.subtitle}
-                          </div>
-                          {sa.isActive && (
-                            <div style={{
-                              marginTop: '0.4rem',
-                              fontSize: '0.62rem',
-                              color: '#00ff9d',
-                              fontFamily: "'Rajdhani', sans-serif",
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.15em',
-                            }}>
-                              ▸ JOUW RESULTAAT
+                            {/* Archetype name */}
+                            <div style={{ padding: '0.4rem 0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#a855f7' : 'rgba(0,255,157,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                {sa.group}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: sa.isActive ? '#fff' : 'rgba(0,255,157,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.3, marginTop: '0.1rem' }}>
+                                {sa.extendedName}
+                              </div>
+                              {sa.isActive && (
+                                <div style={{ marginTop: '0.2rem', fontSize: '0.7rem', color: '#00ff9d', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                  ▸ JOUW RESULTAAT
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            {/* Betekenis */}
+                            <div style={{ padding: '0.4rem 0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ fontSize: '0.7rem', color: 'rgba(209,213,219,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.4 }}>{meaning}</div>
+                            </div>
+                            {/* Gift */}
+                            <div style={{ padding: '0.4rem 0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ fontSize: '0.7rem', color: 'rgba(209,213,219,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.4 }}>{gift}</div>
+                            </div>
+                            {/* Valkuil */}
+                            <div style={{ padding: '0.4rem 0.5rem' }}>
+                              <div style={{ fontSize: '0.7rem', color: 'rgba(209,213,219,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.4 }}>{sa.shadow}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -1873,7 +1879,7 @@ const AssessmentResultsModal = ({
                 {result.shadowPartner && (
                   <div style={{
                     width: '100%',
-                    background: 'rgba(249, 115, 22, 0.05)',
+                    background: 'transparent',
                     border: '1px solid rgba(249, 115, 22, 0.2)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
@@ -1939,7 +1945,7 @@ const AssessmentResultsModal = ({
                 {result.blindspotPartner && (
                   <div style={{
                     width: '100%',
-                    background: 'rgba(239, 68, 68, 0.05)',
+                    background: 'transparent',
                     border: '1px solid rgba(239, 68, 68, 0.2)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
@@ -2000,7 +2006,7 @@ const AssessmentResultsModal = ({
                 {result.extendedOcean && (
                   <div style={{
                     width: '100%',
-                    background: 'rgba(168, 85, 247, 0.04)',
+                    background: 'transparent',
                     border: '1px solid rgba(168, 85, 247, 0.15)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
@@ -2013,7 +2019,7 @@ const AssessmentResultsModal = ({
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#a855f7',
+                      color: '#22d3ee',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.85rem',
                       textTransform: 'uppercase',
@@ -2057,7 +2063,7 @@ const AssessmentResultsModal = ({
                               }} />
                               <span style={{
                                 position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)',
-                                fontSize: '0.6rem', fontFamily: "'Rajdhani', sans-serif",
+                                fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif",
                                 color: 'rgba(209, 213, 219, 0.6)', fontWeight: 600,
                               }}>
                                 {textRating}
@@ -2084,7 +2090,7 @@ const AssessmentResultsModal = ({
                     }}>
                       {['O', 'C', 'E', 'A', 'N'].map(dim => (
                         <span key={dim} style={{
-                          fontSize: '0.65rem', fontFamily: "'Rajdhani', sans-serif",
+                          fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif",
                           color: 'rgba(209, 213, 219, 0.5)',
                         }}>
                           <span style={{ color: result.oceanColors[dim], fontWeight: 700 }}>{dim}</span>
@@ -2144,14 +2150,14 @@ const AssessmentResultsModal = ({
 
                       return (
                         <div style={{
-                          background: 'rgba(0, 0, 0, 0.25)',
+                          background: 'transparent',
                           border: '1px solid rgba(168, 85, 247, 0.12)',
                           borderRadius: '0.5rem',
                           padding: '0.75rem 1rem',
-                          marginBottom: '1rem',
+                          marginBottom: '1rem'
                         }}>
                           <div style={{
-                            fontSize: '0.65rem', color: '#22d3ee',
+                            fontSize: '0.75rem', color: '#22d3ee',
                             fontFamily: "'Rajdhani', sans-serif",
                             fontWeight: 700, textTransform: 'uppercase',
                             letterSpacing: '0.1em', marginBottom: '0.6rem',
@@ -2169,7 +2175,7 @@ const AssessmentResultsModal = ({
                                 <div key={dim} style={{
                                   display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
                                   padding: '0.5rem 0.6rem',
-                                  background: isRes ? 'rgba(0, 255, 157, 0.06)' : 'rgba(251, 191, 36, 0.06)',
+                                  background: 'transparent',
                                   border: `1px solid ${isRes ? 'rgba(0, 255, 157, 0.15)' : 'rgba(251, 191, 36, 0.15)'}`,
                                   borderRadius: '0.4rem',
                                 }}>
@@ -2187,14 +2193,14 @@ const AssessmentResultsModal = ({
                                       </span>
                                       <span style={{
                                         fontFamily: "'Rajdhani', sans-serif",
-                                        fontSize: '0.65rem', fontWeight: 700,
+                                        fontSize: '0.75rem', fontWeight: 700,
                                         color, textTransform: 'uppercase', letterSpacing: '0.05em',
                                       }}>
                                         {label}
                                       </span>
                                       <span style={{
                                         fontFamily: "'Rajdhani', sans-serif",
-                                        fontSize: '0.65rem', color: 'rgba(209, 213, 219, 0.5)',
+                                        fontSize: '0.75rem', color: 'rgba(209, 213, 219, 0.5)',
                                       }}>
                                         Score: {pct}/100 | Verwacht: {expVal}
                                       </span>
@@ -2218,14 +2224,14 @@ const AssessmentResultsModal = ({
                     {/* Neuroticism Trigger */}
                     {result.neuroticismTrigger && (
                       <div style={{
-                        background: 'rgba(239, 68, 68, 0.08)',
+                        background: 'transparent',
                         border: '1px solid rgba(239, 68, 68, 0.15)',
                         borderRadius: '0.5rem',
                         padding: '0.75rem 1rem',
-                        marginBottom: '1rem',
+                        marginBottom: '1rem'
                       }}>
                         <div style={{
-                          fontSize: '0.65rem', color: '#ef4444',
+                          fontSize: '0.75rem', color: '#ef4444',
                           fontFamily: "'Rajdhani', sans-serif",
                           fontWeight: 700, textTransform: 'uppercase',
                           letterSpacing: '0.1em', marginBottom: '0.35rem',
@@ -2253,7 +2259,7 @@ const AssessmentResultsModal = ({
                         ].map(({ label, text, color: c }) => (
                           <div key={label}>
                             <div style={{
-                              fontSize: '0.65rem', color: c,
+                              fontSize: '0.75rem', color: c,
                               fontFamily: "'Rajdhani', sans-serif",
                               fontWeight: 700, textTransform: 'uppercase',
                               letterSpacing: '0.1em', marginBottom: '0.25rem',
@@ -2279,7 +2285,7 @@ const AssessmentResultsModal = ({
                 {/* ── 5. Subgroup Dynamics ── */}
                 <div style={{
                   width: '100%',
-                  background: 'rgba(168, 85, 247, 0.05)',
+                  background: 'transparent',
                   border: '1px solid rgba(168, 85, 247, 0.1)',
                   borderRadius: '0.75rem',
                   padding: rs.sectionPad,
@@ -2303,58 +2309,180 @@ const AssessmentResultsModal = ({
                   </div>
                 </div>
 
-                {/* ── 5b. Gele Driehoeken — Cognitieve Synergiepatronen ── */}
-                <div style={{
-                  width: '100%',
-                  background: 'rgba(234, 179, 8, 0.04)',
-                  border: '1px solid rgba(234, 179, 8, 0.18)',
-                  borderRadius: '0.75rem',
-                  padding: rs.sectionPad,
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}>
-                  {/* Corner accent */}
-                  <div style={{ position: 'absolute', top: 0, right: 0, width: '3rem', height: '3rem', opacity: 0.12, background: 'radial-gradient(circle at top right, rgba(234,179,8,0.6), transparent 70%)' }} />
+                {/* ── 5b. Gele Driehoek — Cognitieve Deepdive ── */}
+                {(() => {
+                  const COG_TRIANGLES = {
+                    RULER:     { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
+                      tagline: 'Jij navigeert via principes, visie en structuur.',
+                      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
+                      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+                      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
+                      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+                    },
+                    INNOCENT:  { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
+                      tagline: 'Jij navigeert via principes, visie en structuur.',
+                      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
+                      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+                      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
+                      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+                    },
+                    SAGE:      { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
+                      tagline: 'Jij navigeert via principes, visie en structuur.',
+                      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
+                      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+                      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
+                      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+                    },
+                    JUDGE:    { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
+                      tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
+                      what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
+                      drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
+                      high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
+                      growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
+                    },
+                    EXPLORER: { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
+                      tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
+                      what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
+                      drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
+                      high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
+                      growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
+                    },
+                    ARTIST:   { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
+                      tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
+                      what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
+                      drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
+                      high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
+                      growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
+                    },
+                    LOVER:    { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
+                      tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
+                      what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
+                      drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
+                      high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
+                      growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
+                    },
+                    OUTLAW:   { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
+                      tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
+                      what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
+                      drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
+                      high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
+                      growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
+                    },
+                    MAGICIAN: { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
+                      tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
+                      what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
+                      drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
+                      high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
+                      growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
+                    },
+                    CAREGIVER: { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
+                      tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
+                      what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
+                      drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
+                      high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
+                      growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
+                    },
+                    TRICKSTER: { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
+                      tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
+                      what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
+                      drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
+                      high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
+                      growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
+                    },
+                    HERO:     { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
+                      tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
+                      what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
+                      drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
+                      high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
+                      growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
+                    },
+                  };
 
-                  {/* Header */}
-                  <div style={{ marginBottom: '0.85rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                      <span style={{ fontSize: '0.6rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>/// CULTURA_FORCE</span>
-                    </div>
-                    <h3 style={{ margin: 0, fontSize: '0.9rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 0 12px rgba(234,179,8,0.3)' }}>
-                      De Vier Gele Driehoeken
-                    </h3>
-                    <p style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: 'rgba(148,163,184,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6 }}>
-                      Cognitieve synergiegroepen gevormd door elke 4e positie op het wiel. Gele driehoeken vuren uitsluitend op <strong style={{ color: 'rgba(234,179,8,0.85)' }}>Culture picks</strong> — ze representeren aangeleerd cognitief gedrag, niet biologische hardware. Groene en blauwe signalen tonen wie je <em>bent</em>; gele signalen tonen hoe je hebt <em>leren navigeren</em>.
-                    </p>
-                  </div>
+                  const archKey = (result.mainArchetype || '').toUpperCase();
+                  const tri = COG_TRIANGLES[archKey];
+                  if (!tri) return null;
 
-                  {/* Four triangles grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
-                    {[
-                      { num: 1, name: 'De Analytische Estheet', members: 'Judge · Explorer · Artist', networks: 'CEN + Openness + DMN', color: '#3b82f6' },
-                      { num: 2, name: 'De Passionele Alchemist', members: 'Lover · Outlaw · Magician', networks: 'Limbisch + Salience + Agency', color: '#ec4899' },
-                      { num: 3, name: 'De Strategische Bewaker', members: 'Caregiver · Trickster · Hero', networks: 'Limbisch + Salience + Agency', color: '#22c55e' },
-                      { num: 4, name: 'De Wijze Bouwmeester', members: 'Innocent · Sage · Ruler', networks: 'Openness + DMN + CEN', color: '#a855f7' },
-                    ].map(({ num, name, members, networks, color }) => (
-                      <div key={num} style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid rgba(234,179,8,0.1)`, borderRadius: '0.5rem', padding: '0.6rem 0.75rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
-                          <span style={{ width: '1.1rem', height: '1.1rem', borderRadius: '50%', background: `rgba(234,179,8,0.15)`, border: `1px solid rgba(234,179,8,0.35)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', flexShrink: 0 }}>
-                            {num}
-                          </span>
-                          <span style={{ fontSize: '0.65rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color, letterSpacing: '0.05em', textTransform: 'uppercase', lineHeight: 1.2 }}>{name}</span>
+                  const ALL_TRIANGLES = [
+                    { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: 'Ruler · Innocent · Sage' },
+                    { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: 'Judge · Explorer · Artist' },
+                    { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: 'Lover · Outlaw · Magician' },
+                    { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: 'Caregiver · Trickster · Hero' },
+                  ];
+
+                  return (
+                    <div ref={culturaForceRef} style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: '1px solid rgba(234, 179, 8, 0.18)',
+                      borderRadius: '0.75rem',
+                      padding: rs.sectionPad,
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}>
+                      {/* Corner accent */}
+                      <div style={{ position: 'absolute', top: 0, right: 0, width: '3rem', height: '3rem', opacity: 0.12, background: 'radial-gradient(circle at top right, rgba(234,179,8,0.6), transparent 70%)' }} />
+
+                      {/* Header */}
+                      <div style={{ marginBottom: '0.85rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>/// CULTURELE_BRIL</span>
                         </div>
-                        <div style={{ fontSize: '0.62rem', color: 'rgba(209,213,219,0.7)', fontFamily: "'Figtree', sans-serif", marginBottom: '0.15rem' }}>{members}</div>
-                        <div style={{ fontSize: '0.58rem', color: 'rgba(148,163,184,0.5)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.05em' }}>{networks}</div>
+                        <h3 style={{ margin: 0, fontSize: '1.05rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 0 12px rgba(234,179,8,0.3)' }}>
+                          Cognitieve Driehoek
+                        </h3>
+                        <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: 'rgba(148,163,184,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6 }}>
+                          Gele driehoeken vuren uitsluitend op <strong style={{ color: 'rgba(234,179,8,0.85)' }}>Culture picks</strong> — ze representeren aangeleerd cognitief gedrag, niet biologische hardware. Groene en blauwe signalen tonen wie je <em>bent</em>; gele signalen tonen hoe je hebt <em>leren navigeren</em>.
+                        </p>
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Bottom note */}
-                  <p style={{ margin: '0.65rem 0 0', fontSize: '0.65rem', color: 'rgba(148,163,184,0.5)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.5, borderTop: '1px solid rgba(234,179,8,0.08)', paddingTop: '0.6rem' }}>
-                    <span style={{ color: 'rgba(234,179,8,0.55)', fontWeight: 600 }}>Hoog geel profiel →</span> Het aangeleerde cognitieve netwerk domineert. <span style={{ color: 'rgba(234,179,8,0.55)', fontWeight: 600 }}>Afwezige driehoek →</span> Maximale groeirichting — onbekend, oncomfortabel, en daarom het meest transformatief.
-                  </p>
-                </div>
+                      {/* Active triangle — deep dive */}
+                      <div style={{
+                        background: `rgba(0,0,0,0.3)`,
+                        border: `1px solid ${tri.color}44`,
+                        borderLeft: `3px solid ${tri.color}`,
+                        borderRadius: '0.5rem',
+                        padding: '0.75rem 0.9rem',
+                        marginBottom: '0.75rem',
+                      }}>
+                        {/* Triangle header */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <span style={{ width: '1.4rem', height: '1.4rem', borderRadius: '50%', background: `${tri.color}22`, border: `1px solid ${tri.color}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: tri.color, flexShrink: 0 }}>
+                            {tri.id}
+                          </span>
+                          <div>
+                            <div style={{ fontSize: '0.9rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: tri.color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{tri.mode}</div>
+                            <div style={{ fontSize: '0.82rem', color: 'rgba(209,213,219,0.6)', fontFamily: "'Figtree', sans-serif" }}>{tri.members.join(' · ')} — {tri.networks}</div>
+                          </div>
+                        </div>
+                        <p style={{ margin: '0 0 0.1rem', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(234,179,8,0.9)', fontWeight: 600, fontStyle: 'italic' }}>
+                          {tri.tagline}
+                        </p>
+                        <p style={{ margin: '0.45rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.85)', lineHeight: 1.65 }}>
+                          {tri.what}
+                        </p>
+                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(148,163,184,0.75)', lineHeight: 1.6 }}>
+                          <span style={{ color: `${tri.color}cc`, fontWeight: 600 }}>Aangeleerde navigatie: </span>{tri.drive}
+                        </p>
+                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(148,163,184,0.75)', lineHeight: 1.6 }}>
+                          <span style={{ color: 'rgba(234,179,8,0.7)', fontWeight: 600 }}>Hoog geel profiel: </span>{tri.high}
+                        </p>
+                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(148,163,184,0.75)', lineHeight: 1.6 }}>
+                          <span style={{ color: 'rgba(165,243,252,0.6)', fontWeight: 600 }}>Groeirichting: </span>{tri.growth}
+                        </p>
+                      </div>
+
+                      {/* Other triangles — compact reference row */}
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        {ALL_TRIANGLES.filter(t => t.id !== tri.id).map(t => (
+                          <div key={t.id} style={{ flex: 1, background: 'transparent', border: `1px solid rgba(234,179,8,0.08)`, borderRadius: '0.4rem', padding: '0.4rem 0.5rem', opacity: 0.6 }}>
+                            <div style={{ fontSize: '0.8rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: t.color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t.mode}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'rgba(148,163,184,0.55)', fontFamily: "'Figtree', sans-serif" }}>{t.members}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* ── 6. Radar Chart (full width) ── */}
                 <div style={{
@@ -2377,7 +2505,7 @@ const AssessmentResultsModal = ({
                     color: 'rgba(0, 255, 157, 0.6)',
                     letterSpacing: '0.2em',
                   }}>
-                    {'/// ARCHETYPE_MATRIX'}
+                    {'/// TRIPLE_NETWORK_WIEL'}
                   </div>
                   <div ref={radarRef} style={{ width: '100%', height: rs.radarHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <SciFiRadarChart data={result.radarData} shadow={result.shadowArchetype} blindspot={result.blindspotArchetype} mainArchetype={result.overallArchetype} supportArchetype={result.supportArchetype} />
@@ -2386,6 +2514,52 @@ const AssessmentResultsModal = ({
 
                 {/* ── 7+. AI Analysis Sections (dynamic, all sections) ── */}
                 {displaySections.map((section, idx) => {
+                  // AI Agent Prompt section: always render as a single unified monospace block
+                  if (section.isAgentPrompt || /ai agent|persoonlijke.*agent|agent.*prompt/i.test(section.title)) {
+                    return (
+                      <div key={idx} style={{ width: '100%' }}>
+                        <h3 style={{
+                          display: 'flex', alignItems: 'center', gap: '0.5rem',
+                          color: '#eab308',
+                          fontFamily: "'Lexend Mega', sans-serif",
+                          fontSize: '0.85rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.15em',
+                          marginBottom: '0.75rem',
+                        }}>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '1.5rem', height: '1.5rem', borderRadius: '50%',
+                            border: '1px solid rgba(234,179,8,0.4)',
+                            fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif",
+                            color: '#eab308', flexShrink: 0,
+                          }}>
+                            {idx + 1}
+                          </span>
+                          {section.title}
+                        </h3>
+                        <p style={{ fontSize: '0.75rem', color: 'rgba(148,163,184,0.7)', fontFamily: "'Figtree', sans-serif", marginBottom: '0.75rem', lineHeight: 1.6 }}>
+                          Genereer een kant-en-klare systeemprompt die je kunt gebruiken om externe AI-tools (zoals ChatGPT, Claude, etc.) af te stemmen op jouw unieke profiel.
+                        </p>
+                        <pre style={{
+                          background: 'rgba(0,0,0,0.7)',
+                          border: '1px solid rgba(234,179,8,0.2)',
+                          borderRadius: '0.5rem',
+                          padding: '1.25rem',
+                          fontFamily: "'Courier New', Courier, monospace",
+                          fontSize: '0.78rem',
+                          color: 'rgba(209,213,219,0.9)',
+                          lineHeight: 1.75,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          overflowX: 'auto',
+                          textAlign: 'left',
+                        }}>
+                          {section.content}
+                        </pre>
+                      </div>
+                    );
+                  }
                   // Cycle through accent colors for visual variety
                   const accents = [
                     { color: '#00ff9d', rgb: '0, 255, 157' },   // green
@@ -2403,7 +2577,7 @@ const AssessmentResultsModal = ({
                       width: '100%',
                       position: 'relative',
                       ...(isEven ? {} : {
-                        background: `rgba(${accent.rgb}, 0.05)`,
+                        background: 'transparent',
                         border: `1px solid rgba(${accent.rgb}, 0.2)`,
                         padding: rs.sectionPad,
                         borderRadius: '0.75rem',
@@ -2430,7 +2604,7 @@ const AssessmentResultsModal = ({
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                           width: '1.5rem', height: '1.5rem', borderRadius: '50%',
                           border: `1px solid rgba(${accent.rgb}, 0.4)`,
-                          fontSize: '0.65rem', fontFamily: "'Rajdhani', sans-serif",
+                          fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif",
                           color: accent.color, flexShrink: 0,
                         }}>
                           {idx + 1}
@@ -2725,15 +2899,15 @@ const AssessmentResultsModal = ({
                           boxShadow: '0 0 40px rgba(0,255,157,0.08)',
                           fontFamily: "'Lexend Mega', sans-serif",
                         }}>
-                          <h3 style={{ color: '#00ff9d', fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
+                          <h3 style={{ color: '#00ff9d', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
                             Verantwoordelijkheid PDF & AI Prompt
                           </h3>
-                          <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.6rem', fontStyle: 'italic', marginBottom: '1.25rem' }}>
+                          <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', fontStyle: 'italic', marginBottom: '1.25rem' }}>
                             Lees dit door voordat je de PDF downloadt
                           </p>
 
                           <div style={{ borderLeft: '2px solid rgba(0,255,157,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
-                            <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: '0.65rem', lineHeight: 1.75 }}>
+                            <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: '0.75rem', lineHeight: 1.75 }}>
                               Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik in externe AI-tools valt buiten de verantwoordelijkheid van Garden For Life.
                             </p>
                           </div>
@@ -2745,7 +2919,7 @@ const AssessmentResultsModal = ({
                               onChange={(e) => setPdfConsentChecked(e.target.checked)}
                               style={{ marginTop: '0.1rem', accentColor: '#00ff9d', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
                             />
-                            <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: '0.65rem', lineHeight: 1.65 }}>
+                            <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: '0.75rem', lineHeight: 1.65 }}>
                               Ik begrijp dat de AI Agent Prompt in deze PDF experimenteel is en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.
                             </span>
                           </label>
@@ -2760,7 +2934,7 @@ const AssessmentResultsModal = ({
                               Annuleren
                             </button>
                             <button
-                              onClick={() => { if (pdfConsentChecked) { setShowPdfConsent(false); handleDownloadPdf(); } }}
+                              onClick={() => { if (pdfConsentChecked) { setShowPdfConsent(false); logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {}); handleDownloadPdf(); } }}
                               disabled={!pdfConsentChecked}
                               style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#00ff9d' : 'rgba(0,255,157,0.2)'}`, color: pdfConsentChecked ? '#00ff9d' : 'rgba(0,255,157,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(0,255,157,0.07)' : 'none' }}
                               onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(0,255,157,0.25)'; }}
@@ -2974,12 +3148,20 @@ function parseAiSections(analysisText) {
   }
 
   for (let i = 0; i < matches.length; i++) {
+    const title = matches[i].title;
+    // Section 12 (AI Agent Prompt) must never be split further —
+    // consume everything from here to end of text as one block.
+    const isAgentPrompt = /ai agent|persoonlijke.*agent|agent.*prompt/i.test(title) || /^12[^\d]/i.test(title);
     const contentStart = matches[i].headerEnd;
-    const contentEnd = i + 1 < matches.length ? matches[i + 1].start : analysisText.length;
+    const contentEnd = isAgentPrompt
+      ? analysisText.length
+      : (i + 1 < matches.length ? matches[i + 1].start : analysisText.length);
     parts.push({
-      title: matches[i].title,
+      title,
       content: analysisText.slice(contentStart, contentEnd).trim(),
+      isAgentPrompt,
     });
+    if (isAgentPrompt) break; // stop — everything after belongs to this section
   }
 
   return parts;
@@ -3491,6 +3673,7 @@ function computeResultFromAnswers(layerAnswers) {
     oceanImported: false,                              // Flag: only true if user explicitly imported OCEAN report
     // Raw data for future API agent
     _archetypeScores: archetypeScores,
+    archetypeDetails: advanced.archetypeDetails || null,
     _primaryKey: mainKey,
     _secondaryKey: supportKey,
     _extendedName: extendedName,

@@ -235,36 +235,36 @@ export function determineArchetype(layerAnswers, questions) {
  * Wheel position order 1→12 (Neuraal Schakelbord).
  */
 export const ARCHETYPE_RADAR_LABELS = [
-  'Judge',      //  1 — G1: Ruling (CEN)
-  'Lover',      //  2 — G2: Relational (Limbisch)
-  'Caregiver',  //  3 — G2: Relational (Limbisch)
-  'Innocent',   //  4 — G3: Seeker (Openness)
-  'Explorer',   //  5 — G3: Seeker (Openness)
-  'Outlaw',     //  6 — G4: Chaos (Salience)
-  'Trickster',  //  7 — G4: Chaos (Salience)
-  'Sage',       //  8 — G5: Abstract (DMN)
-  'Artist',     //  9 — G5: Abstract (DMN)
-  'Magician',   // 10 — G6: Agency (Extraversie)
-  'Hero',       // 11 — G6: Agency (Extraversie)
-  'Ruler',      // 12 — G1: Ruling (CEN)
+  'Ruler',      //  1 — G1: Ruling (CEN)
+  'Judge',      //  2 — G1: Ruling (CEN)
+  'Lover',      //  3 — G2: Relational (Limbisch)
+  'Caregiver',  //  4 — G2: Relational (Limbisch)
+  'Innocent',   //  5 — G3: Seeker (Openness)
+  'Explorer',   //  6 — G3: Seeker (Openness)
+  'Outlaw',     //  7 — G4: Chaos (Salience)
+  'Trickster',  //  8 — G4: Chaos (Salience)
+  'Sage',       //  9 — G5: Abstract (DMN)
+  'Artist',     // 10 — G5: Abstract (DMN)
+  'Magician',   // 11 — G6: Agency (Extraversie)
+  'Hero',       // 12 — G6: Agency (Extraversie)
 ];
 
 /**
  * All 12 archetype keys in wheel position order 1→12.
  */
 export const ALL_ARCHETYPE_KEYS = [
-  'JUDGE', 'LOVER', 'CAREGIVER', 'INNOCENT',
-  'EXPLORER', 'OUTLAW', 'TRICKSTER', 'SAGE',
-  'ARTIST', 'MAGICIAN', 'HERO', 'RULER',
+  'RULER', 'JUDGE', 'LOVER', 'CAREGIVER',
+  'INNOCENT', 'EXPLORER', 'OUTLAW', 'TRICKSTER',
+  'SAGE', 'ARTIST', 'MAGICIAN', 'HERO',
 ];
 
 /**
  * Archetype numbering on the 12-position wheel (Neuraal Schakelbord).
  */
 export const ARCHETYPE_NUMBERS = {
-  JUDGE: 1, LOVER: 2, CAREGIVER: 3, INNOCENT: 4,
-  EXPLORER: 5, OUTLAW: 6, TRICKSTER: 7, SAGE: 8,
-  ARTIST: 9, MAGICIAN: 10, HERO: 11, RULER: 12,
+  RULER: 1, JUDGE: 2, LOVER: 3, CAREGIVER: 4,
+  INNOCENT: 5, EXPLORER: 6, OUTLAW: 7, TRICKSTER: 8,
+  SAGE: 9, ARTIST: 10, MAGICIAN: 11, HERO: 12,
 };
 
 // ═══════════════════════════════════════════════════════════════════════

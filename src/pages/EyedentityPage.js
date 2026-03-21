@@ -53,26 +53,31 @@ const ProfileResultCard = () => {
         paddingBottom: '1.5rem',
         borderBottom: '1px solid rgba(0, 255, 157, 0.2)',
       }}>
-        {/* Profile Image with Holographic Rings */}
+        {/* Profile Image */}
         <div style={{ position: 'relative', width: '14rem', height: '14rem', flexShrink: 0 }}>
+          {/* Triangle clip — pointed top, flat bottom */}
           <div style={{
-            position: 'absolute', inset: 0, borderRadius: '50%',
-            border: '1px dashed rgba(0, 255, 157, 0.4)',
-            animation: 'spin 20s linear infinite',
-          }} />
-          <div style={{
-            position: 'absolute', inset: '-0.75rem', borderRadius: '50%',
-            border: '1px dotted rgba(168, 85, 247, 0.4)',
-            animation: 'spin 15s linear infinite reverse',
-          }} />
-          <div style={{
-            width: '100%', height: '100%', borderRadius: '50%',
-            overflow: 'hidden', border: '2px solid #00ff9d',
-            background: '#000', position: 'relative',
+            width: '100%', height: '100%',
+            clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)',
+            overflow: 'hidden', background: '#000', position: 'relative',
           }}>
-            {imageUrl && <img src={imageUrl} alt={extendedName} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.25) sepia(0.2)' }} />}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
+            {imageUrl && <img src={imageUrl} alt={extendedName} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', transform: 'scale(0.72) translateY(5rem)', transformOrigin: 'center top', filter: 'contrast(1.25) sepia(0.2)' }} />}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)' }} />
           </div>
+          {/* Triangle border via SVG */}
+          <svg
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', pointerEvents: 'none' }}
+          >
+            <polygon
+              points="50,0 100,100 0,100"
+              vectorEffect="non-scaling-stroke"
+              fill="none"
+              stroke="#00ff9d"
+              strokeWidth="2"
+            />
+          </svg>
         </div>
 
         <div style={{ maxWidth: '40rem' }}>
@@ -89,16 +94,14 @@ const ProfileResultCard = () => {
           }}>
             {extendedName}
           </h1>
-          {extendedDesc?.subtitle && (
-            <p style={{
-              fontSize: '0.9rem', color: 'rgba(249, 115, 22, 0.9)',
-              fontFamily: "'Rajdhani', sans-serif", fontWeight: 600,
-              letterSpacing: '0.15em', textTransform: 'uppercase',
-              marginBottom: '0.5rem',
-            }}>
-              {extendedDesc.subtitle}
-            </p>
-          )}
+          <p style={{
+            fontSize: '0.9rem', color: 'rgba(249, 115, 22, 0.9)',
+            fontFamily: "'Rajdhani', sans-serif", fontWeight: 600,
+            letterSpacing: '0.15em', textTransform: 'uppercase',
+            marginBottom: '0.5rem',
+          }}>
+            De onorthodoxe heerser. Ik navigeer de realiteit via het bouwen van robuuste structuren, maar behoudt de ruimte om mijn eigen patronen te doorbreken wanneer evolutie daarom vraagt.
+          </p>
           <p style={{
             fontSize: '1rem', color: 'rgba(156, 163, 175, 1)',
             fontFamily: "'Figtree', sans-serif", fontStyle: 'italic',
@@ -237,8 +240,7 @@ const ProfileResultCard = () => {
       })()}
 
       {/* ── 2. Combination Profile ── */}
-      {extendedDesc?.combination && (
-        <div style={{
+      <div style={{
           width: '100%',
           background: 'linear-gradient(135deg, rgba(0, 255, 157, 0.08), rgba(0, 255, 157, 0.03))',
           border: '1px solid rgba(0, 255, 157, 0.25)',
@@ -262,10 +264,9 @@ const ProfileResultCard = () => {
             fontFamily: "'Figtree', sans-serif",
             fontSize: '0.95rem', lineHeight: 1.7, textAlign: 'justify',
           }}>
-            {extendedDesc.combination}
+            Mijn profiel suggereert binnen dit model een uiterst zeldzame samenwerking tussen de drang naar orde (Ruler) en de drang naar de onthullende waarheid (Outlaw). De kracht die ontstaat wanneer deze twee fundamenteel tegengestelde gedragspatronen elkaar ontmoeten, is uitzonderlijk. ik hoef niet te kiezen tussen keiharde controle en radicale disruptie; het is uiterst aannemelijk dat mijn zenuwstelsel deze uitersten simultaan kan inzetten zonder fysiologische kortsluiting. Dit levert massieve, onvoorspelbare daadkracht op.
           </p>
         </div>
-      )}
 
       {/* ── 3. Main & Support Archetype Cards ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

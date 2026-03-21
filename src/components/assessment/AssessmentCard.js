@@ -45,6 +45,69 @@ function parseColoredText(text) {
   return parts.length === 0 ? cleanText : parts;
 }
 
+// ═══ DEV AUTO-FILL: 72-OUTCOME WEIGHTED SYSTEM ═══
+// 12 main archetypes × 6 support groups = 72 possible outcomes
+// Target persists across layers; resets on layer 0 AUTO click
+const DEV_ALL_ARCHETYPES = [
+  'JUDGE','LOVER','CAREGIVER','INNOCENT','EXPLORER','OUTLAW',
+  'TRICKSTER','SAGE','ARTIST','MAGICIAN','HERO','RULER'
+];
+const DEV_ALL_GROUPS = ['RULING','RELATIONAL','SEEKER','CHAOS','ABSTRACT','AGENCY'];
+const DEV_GROUP_MEMBERS = {
+  RULING: ['JUDGE','RULER'], RELATIONAL: ['LOVER','CAREGIVER'],
+  SEEKER: ['INNOCENT','EXPLORER'], CHAOS: ['OUTLAW','TRICKSTER'],
+  ABSTRACT: ['SAGE','ARTIST'], AGENCY: ['MAGICIAN','HERO'],
+};
+const DEV_GROUP_FOR = {
+  JUDGE:'RULING', RULER:'RULING', LOVER:'RELATIONAL', CAREGIVER:'RELATIONAL',
+  INNOCENT:'SEEKER', EXPLORER:'SEEKER', OUTLAW:'CHAOS', TRICKSTER:'CHAOS',
+  SAGE:'ABSTRACT', ARTIST:'ABSTRACT', MAGICIAN:'AGENCY', HERO:'AGENCY',
+};
+const DEV_EXTENDED_NAMES = {
+  JUDGE_RULING:'Arbiter', JUDGE_RELATIONAL:'Mediator', JUDGE_SEEKER:'Examiner',
+  JUDGE_CHAOS:'Whistleblower', JUDGE_ABSTRACT:'Critic', JUDGE_AGENCY:'Avenger',
+  LOVER_RULING:'Companion', LOVER_RELATIONAL:'Soulmate', LOVER_SEEKER:'Poet',
+  LOVER_CHAOS:'Seducer', LOVER_ABSTRACT:'Mystic', LOVER_AGENCY:'Romantic',
+  CAREGIVER_RULING:'Advocate', CAREGIVER_RELATIONAL:'Healer', CAREGIVER_SEEKER:'Pathfinder',
+  CAREGIVER_CHAOS:'Cultivator', CAREGIVER_ABSTRACT:'Therapist', CAREGIVER_AGENCY:'Protector',
+  INNOCENT_RULING:'Shepherd', INNOCENT_RELATIONAL:'Samaritan', INNOCENT_SEEKER:'Saint',
+  INNOCENT_CHAOS:'Free Spirit', INNOCENT_ABSTRACT:'Disciple', INNOCENT_AGENCY:'Pioneer',
+  EXPLORER_RULING:'Scout', EXPLORER_RELATIONAL:'Networker', EXPLORER_SEEKER:'Navigator',
+  EXPLORER_CHAOS:'Innovator', EXPLORER_ABSTRACT:'Scholar', EXPLORER_AGENCY:'Sailor',
+  OUTLAW_RULING:'Reformer', OUTLAW_RELATIONAL:'Liberator', OUTLAW_SEEKER:'Renegade',
+  OUTLAW_CHAOS:'Anarchist', OUTLAW_ABSTRACT:'Iconoclast', OUTLAW_AGENCY:'Revolutionary',
+  TRICKSTER_RULING:'Jester', TRICKSTER_RELATIONAL:'Clown', TRICKSTER_SEEKER:'Shapeshifter',
+  TRICKSTER_CHAOS:'Fool', TRICKSTER_ABSTRACT:'Comedian', TRICKSTER_AGENCY:'Saboteur',
+  SAGE_RULING:'Analyst', SAGE_RELATIONAL:'Mentor', SAGE_SEEKER:'Dreamer',
+  SAGE_CHAOS:'Hermit', SAGE_ABSTRACT:'Enlightened', SAGE_AGENCY:'Detective',
+  ARTIST_RULING:'Architect', ARTIST_RELATIONAL:'Storyteller', ARTIST_SEEKER:'Visionary',
+  ARTIST_CHAOS:'Illusionist', ARTIST_ABSTRACT:'Demiurge', ARTIST_AGENCY:'Forgemaster',
+  MAGICIAN_RULING:'Engineer', MAGICIAN_RELATIONAL:'Shaman', MAGICIAN_SEEKER:'Oracle',
+  MAGICIAN_CHAOS:'Enchanter', MAGICIAN_ABSTRACT:'Sorcerer', MAGICIAN_AGENCY:'Alchemist',
+  HERO_RULING:'Commander', HERO_RELATIONAL:'Guardian', HERO_SEEKER:'Inventor',
+  HERO_CHAOS:'Ronin', HERO_ABSTRACT:'Strategist', HERO_AGENCY:'Legend',
+  RULER_RULING:'Emperor', RULER_RELATIONAL:'Patriarch/Matriarch', RULER_SEEKER:'Entrepreneur',
+  RULER_CHAOS:'Maverick', RULER_ABSTRACT:'Philosopher-King', RULER_AGENCY:'Conqueror',
+};
+
+let devAutoFillTarget = null;
+
+function devPickRandomTarget() {
+  const main = DEV_ALL_ARCHETYPES[Math.floor(Math.random() * 12)];
+  const supportGroup = DEV_ALL_GROUPS[Math.floor(Math.random() * 6)];
+  const members = DEV_GROUP_MEMBERS[supportGroup];
+  const opts = members.filter(a => a !== main);
+  const support = opts.length > 0 ? opts[Math.floor(Math.random() * opts.length)] : members[0];
+  const extended = DEV_EXTENDED_NAMES[`${main}_${supportGroup}`] || main;
+  return { mainArchetype: main, supportArchetype: support, supportGroup, extended };
+}
+
+function devRandomExcluding(max, exclude) {
+  let idx;
+  do { idx = Math.floor(Math.random() * max); } while (exclude.includes(idx));
+  return idx;
+}
+
 /**
  * AssessmentCard - Question card matching SectorFrame styling
  * 
@@ -263,19 +326,71 @@ const AssessmentCard = ({
     if (onComplete) onComplete();
   };
 
-  // AUTO-fill all questions (DEV only) — picks 2 random answers per question (dual-pick)
+  // AUTO-fill all questions (DEV only) — 80/20 weighted toward a target outcome
+  // On layer 0: picks 1 of 72 possible outcomes (12 archetypes × 6 groups)
+  // On subsequent layers: reuses the same target
   const handleAutoFill = useCallback(() => {
     if (!questions) return;
+
+    // Layer 0 always picks a fresh target; other layers reuse
+    if (currentSubjectIndex === 0 || !devAutoFillTarget) {
+      devAutoFillTarget = devPickRandomTarget();
+      console.log(
+        `[DEV AUTO-FILL] Target: ${devAutoFillTarget.mainArchetype} + ${devAutoFillTarget.supportGroup} ` +
+        `(support: ${devAutoFillTarget.supportArchetype}) → "${devAutoFillTarget.extended}"`
+      );
+    }
+
+    const { mainArchetype, supportArchetype, supportGroup } = devAutoFillTarget;
+    const groupMembers = DEV_GROUP_MEMBERS[supportGroup];
+
     questions.forEach((q) => {
-      const indices = [...Array(q.answers.length).keys()];
-      // Fisher-Yates shuffle, pick first 2
-      for (let i = indices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [indices[i], indices[j]] = [indices[j], indices[i]];
+      const ans = q.answers;
+      const mainIdx = ans.findIndex(a => a.archetype === mainArchetype);
+      const supportIdx = ans.findIndex(a => a.archetype === supportArchetype);
+      const altSupportIdx = ans.findIndex(a =>
+        groupMembers.includes(a.archetype) && a.archetype !== mainArchetype
+      );
+
+      let pick1, pick2;
+
+      if (Math.random() < 0.8) {
+        // ── 80% path: primary = main archetype ──
+        if (mainIdx >= 0) {
+          pick1 = mainIdx;
+          pick2 = supportIdx >= 0 ? supportIdx
+                : altSupportIdx >= 0 ? altSupportIdx
+                : devRandomExcluding(ans.length, [pick1]);
+        } else if (supportIdx >= 0) {
+          pick1 = supportIdx;
+          pick2 = devRandomExcluding(ans.length, [pick1]);
+        } else if (altSupportIdx >= 0) {
+          pick1 = altSupportIdx;
+          pick2 = devRandomExcluding(ans.length, [pick1]);
+        } else {
+          pick1 = Math.floor(Math.random() * ans.length);
+          pick2 = devRandomExcluding(ans.length, [pick1]);
+        }
+      } else {
+        // ── 20% path: primary = support archetype ──
+        if (supportIdx >= 0) {
+          pick1 = supportIdx;
+          pick2 = mainIdx >= 0 ? mainIdx : devRandomExcluding(ans.length, [pick1]);
+        } else if (altSupportIdx >= 0) {
+          pick1 = altSupportIdx;
+          pick2 = mainIdx >= 0 ? mainIdx : devRandomExcluding(ans.length, [pick1]);
+        } else if (mainIdx >= 0) {
+          pick1 = mainIdx;
+          pick2 = devRandomExcluding(ans.length, [pick1]);
+        } else {
+          pick1 = Math.floor(Math.random() * ans.length);
+          pick2 = devRandomExcluding(ans.length, [pick1]);
+        }
       }
-      onSelectAnswer(q.id, [q.answers[indices[0]].id, q.answers[indices[1]].id]);
+
+      onSelectAnswer(q.id, [ans[pick1].id, ans[pick2].id]);
     });
-  }, [questions, onSelectAnswer]);
+  }, [questions, onSelectAnswer, currentSubjectIndex]);
 
   const handleJumpToQuestion = useCallback((idx) => {
     if (onJumpTo) onJumpTo(idx);
@@ -922,7 +1037,9 @@ const AssessmentCard = ({
                     e.currentTarget.style.backgroundColor = 'rgba(250, 204, 21, 0.12)';
                     e.currentTarget.style.borderColor = 'rgba(250, 204, 21, 0.4)';
                   }}
-                  title="DEV: Auto-fill all questions with random answers"
+                  title={devAutoFillTarget
+                    ? `DEV: Re-fill → ${devAutoFillTarget.mainArchetype} / ${devAutoFillTarget.supportGroup} ("${devAutoFillTarget.extended}")`
+                    : 'DEV: Auto-fill → picks 1 of 72 outcomes (80/20 weighted)'}
                 >
                   AUTO
                 </button>

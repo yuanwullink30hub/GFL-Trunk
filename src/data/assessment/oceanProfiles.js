@@ -786,11 +786,11 @@ export const OCEAN_LABELS = {
  * OCEAN dimension color mapping for UI.
  */
 export const OCEAN_COLORS = {
-  O: '#a855f7', // purple — Openness
+  O: '#a78bfa', // soft violet-purple — Openness
   C: '#22d3ee', // cyan — Conscientiousness
-  E: '#fbbf24', // amber — Extraversion
-  A: '#f472b6', // pink — Agreeableness
-  N: '#ef4444', // red — Neuroticism
+  E: '#67e8f9', // light cyan — Extraversion
+  A: '#818cf8', // indigo-purple — Agreeableness
+  N: '#c4b5fd', // pale lavender — Neuroticism
 };
 
 /**

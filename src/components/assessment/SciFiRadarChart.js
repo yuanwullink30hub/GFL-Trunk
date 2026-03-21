@@ -7,7 +7,6 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from 'recharts';
 
 /**
@@ -81,12 +80,12 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
     const d = payload[0]?.payload;
     if (!d) return null;
     const rows = [
-      { label: 'Natuur Kern',   value: d.nature_core,    color: LAYER_COLORS.green },
-      { label: 'Bio HW',        value: d.green_hw,       color: LAYER_COLORS.lime },
-      { label: 'Cultuur Kern',  value: d.culture_core,   color: LAYER_COLORS.orange },
-      { label: 'Feedback loop',   value: d.blue_fb,        color: LAYER_COLORS.blue },
-      { label: 'Cognitief',     value: d.yellow_cog,     color: LAYER_COLORS.gold },
-      { label: 'Schaduw',       value: d.purple_shadow,  color: LAYER_COLORS.purple },
+      { label: 'Natuur Kern',  value: d.nature_core,    color: LAYER_COLORS.green },
+      { label: 'Hardware',     value: d.green_hw,       color: LAYER_COLORS.lime },
+      { label: 'Cultuur Kern', value: d.culture_core,   color: LAYER_COLORS.orange },
+      { label: 'HW Feedback',  value: d.blue_fb,        color: LAYER_COLORS.blue },
+      { label: 'Cognitief',    value: d.yellow_cog,     color: LAYER_COLORS.gold },
+      { label: 'Schaduw',      value: d.purple_shadow,  color: LAYER_COLORS.purple },
     ];
     return (
       <div style={{
@@ -112,28 +111,16 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
 
   // Legend items (display order: innermost → outermost, matching visual layer order)
   const legendPayload = [
-    { value: 'Natuur Kern',   type: 'square', color: LAYER_COLORS.green },   // dark green — innermost
-    { value: 'Bio HW',        type: 'square', color: LAYER_COLORS.lime },    // light green
-    { value: 'Cultuur Kern',  type: 'square', color: LAYER_COLORS.orange },  // orange
-    { value: 'Feedback loop', type: 'square', color: LAYER_COLORS.blue },    // blue
-    { value: 'Cognitief',     type: 'square', color: LAYER_COLORS.gold },    // yellow
-    { value: 'Schaduw',       type: 'square', color: LAYER_COLORS.purple },  // purple — outermost
+    { value: 'Natuur Kern',  type: 'square', color: LAYER_COLORS.green, labelColor: '#4ade80' },  // swatch = dark green, text = bright green
+    { value: 'Hardware',     type: 'square', color: LAYER_COLORS.lime },    // light green
+    { value: 'Cultuur Kern', type: 'square', color: LAYER_COLORS.orange },  // orange
+    { value: 'HW Feedback',  type: 'square', color: LAYER_COLORS.blue },    // blue
+    { value: 'Cognitief',    type: 'square', color: LAYER_COLORS.gold },    // yellow
+    { value: 'Schaduw',      type: 'square', color: LAYER_COLORS.purple },  // purple — outermost
   ];
 
   return (
-    <div style={{ width: '100%', height: '100%', minHeight: 300, position: 'relative' }}>
-      {/* Decorative glowing circle behind the chart */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'radial-gradient(circle, rgba(46, 125, 50, 0.04) 0%, rgba(74, 20, 140, 0.03) 50%, transparent 70%)',
-        filter: 'blur(40px)',
-        borderRadius: '50%',
-        transform: 'scale(0.8)',
-        zIndex: 0,
-        pointerEvents: 'none'
-      }} />
-
+    <div style={{ width: '100%', height: '100%', minHeight: 300, position: 'relative', background: 'transparent' }}>
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
           <PolarGrid stroke="#a5f3fc" strokeOpacity={0.15} gridType="polygon" radialLines={true} />
@@ -166,7 +153,7 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
             isAnimationActive={true} animationDuration={800} animationBegin={100} />
 
           {/* Layer 4: Blue — Hardware Feedback */}
-          <Radar name="Feedback loop" dataKey="blue"
+          <Radar name="HW Feedback" dataKey="blue"
             stroke={LAYER_COLORS.blue} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.blue} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} animationBegin={200} />
@@ -178,7 +165,7 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
             isAnimationActive={true} animationDuration={800} animationBegin={300} />
 
           {/* Layer 2: Lime — Bio Hardware bleed (light green, between nature & culture) */}
-          <Radar name="Bio HW" dataKey="lime"
+          <Radar name="Hardware" dataKey="lime"
             stroke={LAYER_COLORS.lime} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.lime} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} animationBegin={400} />
@@ -190,16 +177,34 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
             isAnimationActive={true} animationDuration={800} animationBegin={500} />
 
           <Tooltip content={<CustomTooltip />} />
-          <Legend
-            payload={legendPayload}
-            wrapperStyle={{
-              fontFamily: "'Segoe UI', Arial, sans-serif",
-              fontSize: '1rem',
-              letterSpacing: '0.05em',
-            }}
-          />
         </RadarChart>
       </ResponsiveContainer>
+
+      {/* Custom legend — rendered outside Recharts so order is fully controlled */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: '0.5rem 1rem',
+        marginTop: '0.5rem',
+        fontFamily: "'Segoe UI', Arial, sans-serif",
+        fontSize: '0.85rem',
+        letterSpacing: '0.04em',
+      }}>
+        {legendPayload.map(item => (
+          <span key={item.value} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span style={{
+              display: 'inline-block',
+              width: 12,
+              height: 12,
+              borderRadius: 2,
+              background: item.color,
+              flexShrink: 0,
+            }} />
+            <span style={{ color: item.labelColor || item.color }}>{item.value}</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 };

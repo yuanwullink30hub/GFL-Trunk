@@ -16,12 +16,12 @@ const GROUP_META = {
 };
 
 const ARCHETYPE_POSITIONS = {
-  Judge: 1, Ruler: 12,
-  Lover: 2, Caregiver: 3,
-  Innocent: 4, Explorer: 5,
-  Outlaw: 6, Trickster: 7,
-  Sage: 8, Artist: 9,
-  Magician: 10, Hero: 11,
+  Ruler: 1, Judge: 2,
+  Lover: 3, Caregiver: 4,
+  Innocent: 5, Explorer: 6,
+  Outlaw: 7, Trickster: 8,
+  Sage: 9, Artist: 10,
+  Magician: 11, Hero: 12,
 };
 
 const SubgroupCounters = ({ subgroups }) => {
@@ -96,7 +96,7 @@ const SubgroupCounters = ({ subgroups }) => {
           return (
             <div key={group.id}>
               {/* Row: [network label] [bars] [counts] */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
 
                 {/* Left: network hardware name */}
                 <div style={{
@@ -130,12 +130,12 @@ const SubgroupCounters = ({ subgroups }) => {
                 {(() => {
                   const totalNature  = leftNature  + rightNature;
                   const totalCulture = leftCulture + rightCulture;
-                  const MAX_TOTAL = 33;
+                  const MAX_TOTAL = 36;
                   const naturePct  = Math.min((totalNature  / MAX_TOTAL) * 100, 100);
                   const culturePct = Math.min((totalCulture / MAX_TOTAL) * 100, 100);
                   return (
                     <>
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px', paddingTop: '0.15rem' }}>
                         {/* Stacked bar track */}
                         <div style={{
                           height: '0.55rem',
@@ -167,10 +167,29 @@ const SubgroupCounters = ({ subgroups }) => {
                             flexShrink: 0,
                           }} />
                         </div>
+                        {/* Archetype badges — inline under the bar, aligns with drive label */}
+                        <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.1rem' }}>
+                          {archs.map((arch) => (
+                            <span key={arch.label} style={{
+                              fontSize: '0.7rem',
+                              fontFamily: "'Rajdhani', sans-serif",
+                              fontWeight: 700,
+                              letterSpacing: '0.07em',
+                              textTransform: 'uppercase',
+                              color: 'rgba(165,243,252,0.8)',
+                              background: 'rgba(165,243,252,0.05)',
+                              border: '1px solid rgba(165,243,252,0.2)',
+                              borderRadius: '3px',
+                              padding: '0.05rem 0.3rem',
+                            }}>
+                              {arch.label}
+                            </span>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Right: individual values + total */}
-                      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px', width: '4rem' }}>
+                      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px', width: '4rem', paddingTop: '0.15rem' }}>
                         <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'baseline' }}>
                           <span style={{ fontSize: '0.8rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#a855f7' }}>
                             N{totalNature}
@@ -188,31 +207,7 @@ const SubgroupCounters = ({ subgroups }) => {
                 })()}
               </div>
 
-              {/* Archetype name badges below the bars */}
-              <div style={{
-                display: 'flex', gap: '0.4rem', marginTop: '0.3rem',
-                paddingLeft: '8.1rem', /* align under bars */
-              }}>
-                {archs.map((arch) => {
-                  const pos = ARCHETYPE_POSITIONS[arch.label] || '';
-                  return (
-                    <span key={arch.label} style={{
-                      fontSize: '0.8rem',
-                      fontFamily: "'Rajdhani', sans-serif",
-                      fontWeight: 700,
-                      letterSpacing: '0.07em',
-                      textTransform: 'uppercase',
-                      color: 'rgba(165,243,252,0.8)',
-                      background: 'rgba(165,243,252,0.05)',
-                      border: '1px solid rgba(165,243,252,0.2)',
-                      borderRadius: '3px',
-                      padding: '0.05rem 0.35rem',
-                    }}>
-                      {arch.label} <span style={{ opacity: 0.5, fontWeight: 400 }}>({pos})</span>
-                    </span>
-                  );
-                })}
-              </div>
+
             </div>
           );
         })}

@@ -143,6 +143,8 @@ const App = () => {
   const [currentLayerIndex, setCurrentLayerIndex] = useState(0); // 0-4 for 5 layers
   const [layerAnswers, setLayerAnswers] = useState({}); // { layerIndex: { questionId: answerId } }
   const [assessmentScrollEnabled, setAssessmentScrollEnabled] = useState(false); // Controls when user can scroll to next layer
+  const assessmentScrollEnabledRef = useRef(false); // Mirror for use in event handlers (avoids stale closures)
+  const currentLayerIndexRef = useRef(0); // Mirror for use in event handlers (avoids stale closures)
   const animatingLayersRef = useRef(new Set()); // Track which layers are currently animating (use Set to handle multiple simultaneous)
   const [, setAnimatingLayersCounter] = useState(0); // Dummy state to trigger re-renders when layers animate
   const [convergenceProgress, setConvergenceProgress] = useState(0); // 0-1 progress for panels floating back to entity
@@ -471,6 +473,16 @@ const App = () => {
     };
   }, [isMobile]);
 
+  // ALWAYS sync assessment state to refs — ensures scroll handlers always read fresh values
+  // These effects run whenever state changes and synchronously update refs
+  useEffect(() => {
+    assessmentScrollEnabledRef.current = assessmentScrollEnabled;
+  }, [assessmentScrollEnabled]);
+
+  useEffect(() => {
+    currentLayerIndexRef.current = currentLayerIndex;
+  }, [currentLayerIndex]);
+
   // Calculate progress from frame (0-1)
   
   // Total frames needed for all three sections
@@ -574,16 +586,18 @@ const App = () => {
         let newProgress = Math.max(0, Math.min(1, prev + (direction * step)));
         
         // SCROLL GATING via dynamic cap:
-        // - Forward: allow up to next layer threshold (if saved) or current (if unsaved)
-        // - Backward: never below current layer threshold (keeps active card interactive)
+        // Read from REFS to always get the latest values, avoiding stale closures
+        // that can cause deadlocks between layer save and scroll handler recreation.
+        const scrollEn = assessmentScrollEnabledRef.current;
+        const layerIdx = currentLayerIndexRef.current;
         if (assessmentPhase === 'layers') {
           if (direction > 0) {
-            const maxProgress = assessmentScrollEnabled
-              ? Math.min(1, (currentLayerIndex + 1) / 4)
-              : (currentLayerIndex / 4);
+            const maxProgress = scrollEn
+              ? Math.min(1, (layerIdx + 1) / 4)
+              : (layerIdx / 4);
             newProgress = Math.min(newProgress, maxProgress);
           } else {
-            const minProgress = currentLayerIndex / 4;
+            const minProgress = layerIdx / 4;
             newProgress = Math.max(newProgress, minProgress);
           }
         }
@@ -626,7 +640,7 @@ const App = () => {
     setTimeout(() => {
       isScrolling.current = false;
     }, 50);
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection, mobileActiveIndex, assessmentPhase, assessmentScrollEnabled, currentLayerIndex]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection, mobileActiveIndex, assessmentPhase]);
 
   // Callback when pyramid intro animation completes
   const handleIntroComplete = useCallback(() => {
@@ -660,9 +674,11 @@ const App = () => {
     setCurrentSubjectIndex(0);
     setCurrentQuestionIndex(0);
     setAssessmentAnswers([]);
+    currentLayerIndexRef.current = 0;
     setCurrentLayerIndex(0);
     setLayerAnswers({});
     setPyramidScrollProgress(0); // Reset scroll so layers start from zero
+    assessmentScrollEnabledRef.current = false;
     setAssessmentScrollEnabled(false);
     setAssessmentPhase('layers');
   }, []);
@@ -675,8 +691,10 @@ const App = () => {
     setCurrentQuestionIndex(0);
     setAssessmentAnswers([]);
     setUploadedFiles([]);
+    currentLayerIndexRef.current = 0;
     setCurrentLayerIndex(0);
     setLayerAnswers({});
+    assessmentScrollEnabledRef.current = false;
     setAssessmentScrollEnabled(false);
     animatingLayersRef.current.clear(); // Clear stale animation tracking
     setConvergenceProgress(0);
@@ -709,6 +727,13 @@ const App = () => {
       ...prev,
       [layerIndex]: answers
     }));
+    // If the user just saved layer N, ensure currentLayerIndex is at least N.
+    // This prevents the advancement effect from consuming the scroll-enable
+    // meant for the next scroll phase (layer N → layer N+1).
+    // Without this, saving at the exact scroll threshold causes the advancement
+    // to fire and immediately disable scroll, creating a deadlock.
+    currentLayerIndexRef.current = Math.max(currentLayerIndexRef.current, layerIndex);
+    setCurrentLayerIndex(prev => Math.max(prev, layerIndex));
   }, []);
   
   // Handle all layers complete - triggers convergence animation
@@ -824,7 +849,9 @@ const App = () => {
   // eslint-disable-next-line no-unused-vars
   const handleScrollToNextLayer = useCallback((nextLayerIndex) => {
     if (nextLayerIndex < 5) {
+      currentLayerIndexRef.current = nextLayerIndex;
       setCurrentLayerIndex(nextLayerIndex);
+      assessmentScrollEnabledRef.current = false;
       setAssessmentScrollEnabled(false); // Disable scroll until next save
     } else {
       // All layers complete, show results
@@ -834,6 +861,7 @@ const App = () => {
   
   // Handle scroll enabled toggle from assessment panel
   const handleAssessmentScrollEnabled = useCallback((enabled) => {
+    assessmentScrollEnabledRef.current = enabled;
     setAssessmentScrollEnabled(enabled);
   }, []);
   
@@ -861,7 +889,9 @@ const App = () => {
       // Layer N+1 is fully animated when scroll reaches (N+1)/4
       const threshold = nextLayer / 4;
       if (pyramidScrollProgress >= threshold) {
+        currentLayerIndexRef.current = nextLayer;
         setCurrentLayerIndex(nextLayer);
+        assessmentScrollEnabledRef.current = false;
         setAssessmentScrollEnabled(false); // Disable until next save
       }
     }
@@ -977,16 +1007,17 @@ const App = () => {
           let newProgress = Math.max(0, Math.min(1, prev + (accDirection * step)));
           
           // SCROLL GATING via dynamic cap:
-          // - Forward: allow up to next layer threshold (if saved) or current (if unsaved)
-          // - Backward: never below current layer threshold (keeps active card interactive)
+          // Read from REFS to always get the latest values, avoiding stale closures.
+          const scrollEn = assessmentScrollEnabledRef.current;
+          const layerIdx = currentLayerIndexRef.current;
           if (assessmentPhase === 'layers') {
             if (accDirection > 0) {
-              const maxProgress = assessmentScrollEnabled
-                ? Math.min(1, (currentLayerIndex + 1) / 4)
-                : (currentLayerIndex / 4);
+              const maxProgress = scrollEn
+                ? Math.min(1, (layerIdx + 1) / 4)
+                : (layerIdx / 4);
               newProgress = Math.min(newProgress, maxProgress);
             } else {
-              const minProgress = currentLayerIndex / 4;
+              const minProgress = layerIdx / 4;
               newProgress = Math.max(newProgress, minProgress);
             }
           }
@@ -1023,7 +1054,7 @@ const App = () => {
       }
       touchAccumulator.current = 0;
     }
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, mobileActiveIndex, assessmentPhase, assessmentScrollEnabled, currentLayerIndex]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, mobileActiveIndex, assessmentPhase]);
 
   // Attach wheel/touch listeners - also needed on mobile when scroll is locked
   useEffect(() => {

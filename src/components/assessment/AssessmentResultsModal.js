@@ -1971,7 +1971,7 @@ const AssessmentResultsModal = ({
           }}>
 
             {/* SectorFrame-style corner borders */}
-            {renderCorners('#00ff9d')}
+            {renderCorners('#22d3ee')}
 
             {/* Holographic sheen */}
             <div style={{ position: 'absolute', inset: 0, borderRadius: '0.75rem', pointerEvents: 'none', background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)', backgroundSize: '400% 400%', backgroundRepeat: 'no-repeat', animation: 'holoSheen 45s ease-in-out infinite', mixBlendMode: 'screen' }} />
@@ -3011,112 +3011,7 @@ const AssessmentResultsModal = ({
                   </div>
                 </div>
 
-                {/* ── 7+. AI Analysis Sections (dynamic, all sections) ── */}
-                {displaySections.map((section, idx) => {
-                  // Persoonlijkheidsrapport Vergelijking: PDF-only, never shown on result card
-                  if (/persoonlijkheidsrapport.*vergelijk/i.test(section.title)) return null;
-                  // AI Agent Prompt section: always render as a single unified monospace block
-                  if (section.isAgentPrompt || /ai agent|persoonlijke.*agent|agent.*prompt/i.test(section.title)) {
-                    return (
-                      <div key={idx} style={{ width: '100%' }}>
-                        <h3 style={{
-                          display: 'flex', alignItems: 'center', gap: '0.5rem',
-                          color: '#f97316',
-                          fontFamily: "'Lexend Mega', sans-serif",
-                          fontSize: '0.85rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.15em',
-                          marginBottom: '0.75rem',
-                        }}>
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: '1.5rem', height: '1.5rem', borderRadius: '50%',
-                            border: '1px solid rgba(249,115,22,0.4)',
-                            fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif",
-                            color: '#f97316', flexShrink: 0,
-                          }}>
-                            {idx + 1}
-                          </span>
-                          {cleanTitle(section.title)}
-                        </h3>
-                        <p style={{ fontSize: '0.85rem', color: 'rgba(148,163,184,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, fontStyle: 'italic' }}>
-                          Download het volledige rapport voor deze prompt
-                        </p>
-                      </div>
-                    );
-                  }
-                  // Cycle through accent colors for visual variety
-                  const accents = [
-                    { color: '#00ff9d', rgb: '0, 255, 157' },    // green
-                    { color: '#a855f7', rgb: '168, 85, 247' },   // purple
-                    { color: '#f97316', rgb: '249, 115, 22' },   // orange
-                    { color: '#3b82f6', rgb: '59, 130, 246' },   // blue
-                    { color: '#ec4899', rgb: '236, 72, 153' },   // pink
-                    { color: '#14b8a6', rgb: '20, 184, 166' },   // teal
-                  ];
-                  const accent = getSectionAccent(section.title) || accents[idx % accents.length];
-                  const isEven = idx % 2 === 0;
-
-                  return (
-                    <div key={idx} style={{
-                      width: '100%',
-                      position: 'relative',
-                      ...(isEven ? {} : {
-                        background: 'transparent',
-                        border: `1px solid rgba(${accent.rgb}, 0.2)`,
-                        padding: rs.sectionPad,
-                        borderRadius: '0.75rem',
-                      }),
-                    }}>
-                      {/* Left accent bar for even sections */}
-                      {isEven && (
-                        <div style={{
-                          position: 'absolute', left: '-1rem', top: 0, bottom: 0, width: '3px',
-                          background: `linear-gradient(to bottom, transparent, rgba(${accent.rgb}, 0.5), transparent)`,
-                        }} />
-                      )}
-                      <h3 style={{
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        color: accent.color,
-                        fontFamily: "'Lexend Mega', sans-serif",
-                        fontSize: '0.85rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.15em',
-                        marginBottom: '0.75rem',
-                        ...(isEven ? {} : {}),
-                      }}>
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          width: '1.5rem', height: '1.5rem', borderRadius: '50%',
-                          border: `1px solid rgba(${accent.rgb}, 0.4)`,
-                          fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif",
-                          color: accent.color, flexShrink: 0,
-                        }}>
-                          {idx + 1}
-                        </span>
-                        {cleanTitle(section.title)}
-                      </h3>
-                      <div style={{
-                        color: 'rgba(209, 213, 219, 1)',
-                        fontFamily: "'Figtree', sans-serif",
-                        fontSize: '0.95rem',
-                        lineHeight: 1.7,
-                        textAlign: 'justify',
-                        ...(isEven ? {
-                          background: 'rgba(0, 0, 0, 0.4)',
-                          padding: rs.sectionPad,
-                          borderRadius: '0 0.75rem 0.75rem 0',
-                          borderRight: `1px solid rgba(${accent.rgb}, 0.2)`,
-                          borderTop: `1px solid rgba(${accent.rgb}, 0.2)`,
-                          borderBottom: `1px solid rgba(${accent.rgb}, 0.2)`,
-                          boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.5)',
-                        } : {}),
-                      }}>
-                        {renderMarkdownContent(section.content)}
-                      </div>
-                    </div>
-                  );
-                })}
+                {/* AI Analysis Sections are PDF-only — not shown on result card */}
 
                 {/* ── 6. Footer Actions ── */}
                 <div style={{

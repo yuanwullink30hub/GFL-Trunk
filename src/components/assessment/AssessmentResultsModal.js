@@ -22,6 +22,7 @@ import { isNatureSlot } from '../../pages/assessment/assessmentData';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
 import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity } from '../../utils/apiClient';
+import tnmWheelImg from '../../images/Model imports/TNM wheel PNG.png';
 
 /**
  * AssessmentResultsModal - Full-screen sci-fi results modal
@@ -938,28 +939,25 @@ const AssessmentResultsModal = ({
       // ─── Separate page: 72 archetypes cross-reference ───
       pdf.addPage(); paintBg(); y = margin;
 
-      // ── TN WHEEL — radar chart image above the 72 archetypes table ──
-      if (radarRef.current) {
-        try {
-          const tnCanvas = await html2canvas(radarRef.current, {
-            backgroundColor: null,
-            scale: 3,
-            useCORS: true,
-            logging: false,
-          });
-          const tnImg = tnCanvas.toDataURL('image/png');
-          // Max height: leave room for heading (10) + bullet (8) + hr (4) + table (~90) + footer (14) = ~126mm
-          const maxH = H - margin * 2 - 126;
-          const naturalH = (tnCanvas.height / tnCanvas.width) * contentW;
-          const finalH = Math.min(naturalH, maxH);
-          const finalW = finalH === naturalH ? contentW : (tnCanvas.width / tnCanvas.height) * finalH;
-          const offsetX = margin + (contentW - finalW) / 2;
-          pdf.addImage(tnImg, 'PNG', offsetX, y, finalW, finalH);
-          y += finalH + 4;
-          hr();
-        } catch {
-          y += 4;
-        }
+      // ── TNM WHEEL — static model image above the 72 archetypes table ──
+      try {
+        const tnmImgEl = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = tnmWheelImg;
+        });
+        // Max height: leave room for heading (10) + bullet (8) + hr (4) + table (~105mm for 13 rows) + footer (14) = ~141mm
+        const maxH = H - margin * 2 - 141;
+        const naturalH = (tnmImgEl.naturalHeight / tnmImgEl.naturalWidth) * contentW;
+        const finalH = Math.min(naturalH, maxH);
+        const finalW = finalH === naturalH ? contentW : (tnmImgEl.naturalWidth / tnmImgEl.naturalHeight) * finalH;
+        const offsetX = margin + (contentW - finalW) / 2;
+        pdf.addImage(tnmWheelImg, 'PNG', offsetX, y, finalW, finalH);
+        y += finalH + 4;
+        hr();
+      } catch {
+        y += 4;
       }
 
       sectionHeading('72 Archetypes \u2014 Culturele & Mythologische Kruisverwijzing', orange);
@@ -2908,9 +2906,9 @@ const AssessmentResultsModal = ({
                       {/* Other triangles — compact reference row */}
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         {ALL_TRIANGLES.filter(t => t.id !== tri.id).map(t => (
-                          <div key={t.id} style={{ flex: 1, background: 'transparent', border: `1px solid rgba(234,179,8,0.08)`, borderRadius: '0.4rem', padding: '0.4rem 0.5rem', opacity: 0.6 }}>
+                          <div key={t.id} style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: `1px solid rgba(234,179,8,0.15)`, borderRadius: '0.4rem', padding: '0.4rem 0.5rem' }}>
                             <div style={{ fontSize: '0.8rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: t.color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t.mode}</div>
-                            <div style={{ fontSize: '0.78rem', color: 'rgba(148,163,184,0.55)', fontFamily: "'Figtree', sans-serif" }}>{t.members}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'rgba(148,163,184,0.8)', fontFamily: "'Figtree', sans-serif" }}>{t.members}</div>
                           </div>
                         ))}
                       </div>

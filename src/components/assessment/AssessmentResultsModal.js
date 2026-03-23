@@ -41,8 +41,18 @@ import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, lo
  *   t: (key: string) => string
  * }} props
  */
-// ── Utility: strip "SECTIE N:" / "SECTIE N." prefix from AI section titles ──
-const cleanTitle = (title) => title ? title.replace(/^SECTIE\s+\d+[:.]\s*/i, '').trim() : title;
+// ── Utility: strip "SECTIE N:" / "**SECTIE N**" prefix + surrounding ** bold markers ──
+const cleanTitle = (title) => {
+  if (!title) return title;
+  let t = title.trim();
+  // Strip outer ** bold markers wrapping the whole string (e.g. "**De Identiteit**")
+  t = t.replace(/^\*\*(.+)\*\*$/, '$1').trim();
+  // Strip "SECTIE N" prefix in all forms: "SECTIE 1:", "SECTIE 1.", "**SECTIE 1**:", "**SECTIE 1**"
+  t = t.replace(/^\*?\*?SECTIE\s+\d+\*?\*?[\s:.—\-]*\s*/i, '').trim();
+  // Strip any remaining stray ** at start or end
+  t = t.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
+  return t;
+};
 
 // ── Utility: map cleaned section title to accent color for JSX card (returns {color, rgb} or null) ──
 const getSectionAccent = (title) => {

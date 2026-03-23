@@ -1666,7 +1666,6 @@ const AssessmentResultsModal = ({
           const barH = 3;
           const labelW = 28;
           const scoreW = 16;
-          const barW = halfW - labelW - scoreW - 4;
 
           // ── Helper: draw one OCEAN panel ──
           const drawOceanPanel = (panelX, panelW, title, getScore, formatScore, maxVal) => {
@@ -3416,7 +3415,7 @@ const AssessmentResultsModal = ({
                       {/* Header */}
                       <div style={{ marginBottom: '0.85rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                          <span style={{ fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>/// CULTURELE_BRIL</span>
+                          <span style={{ fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{'/// CULTURELE_BRIL'}</span>
                         </div>
                         <h3 style={{ margin: 0, fontSize: '1.05rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 0 12px rgba(234,179,8,0.3)' }}>
                           Cognitieve Driehoek

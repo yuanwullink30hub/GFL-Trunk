@@ -35,7 +35,7 @@ import {
   updateFeedbackEmailSettings,
 } from '../../utils/apiClient';
 import {
-  BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
+  BTN, LABEL, TEXTAREA, INPUT_SM,
   C, FONT, SciFiButton,
 } from './dashboardStyles';
 import { BRANDS } from '../../pages/GeneralBrandPage/brandData';
@@ -47,6 +47,7 @@ import EmailTemplate from './EmailTemplate';
 const MobileCtx = React.createContext(false);
 
 // Mobile-only tab style (standalone, no BTN spread)
+// eslint-disable-next-line no-unused-vars
 const MOBILE_TAB_STYLE = (active) => ({
   fontSize: 'max(10px, 0.55vw)',
   padding: '0.3rem 0',
@@ -1242,7 +1243,6 @@ const AssessmentsTab = memo(({ adminEmail }) => {
 });
 
 const PromptsTab = memo(() => {
-  const isMobile = React.useContext(MobileCtx);
   const [promptLevel, setPromptLevel] = useState('advanced');
 
   return (
@@ -1578,7 +1578,6 @@ const LEVEL_TABS = [
 ];
 
 const QuestionsTab = memo(() => {
-  const isMobile = React.useContext(MobileCtx);
   const [level, setLevel] = useState('advanced');
 
   return (

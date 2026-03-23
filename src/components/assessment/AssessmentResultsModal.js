@@ -41,10 +41,27 @@ import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, lo
  *   t: (key: string) => string
  * }} props
  */
+// ── Utility: strip "SECTIE N:" / "SECTIE N." prefix from AI section titles ──
+const cleanTitle = (title) => title ? title.replace(/^SECTIE\s+\d+[:.]\s*/i, '').trim() : title;
+
+// ── Utility: map cleaned section title to accent color for JSX card (returns {color, rgb} or null) ──
+const getSectionAccent = (title) => {
+  const t = cleanTitle(title || '').toLowerCase();
+  if (t.includes('identiteit') || t.includes('waarom')) return { color: '#00ff9d', rgb: '0, 255, 157' };
+  if (t.includes('essentie') || t.includes('schaduw') || t.includes('evolutie')) return { color: '#a855f7', rgb: '168, 85, 247' };
+  if (t.includes('vermenigvuldiging')) return { color: '#f97316', rgb: '249, 115, 22' };
+  if (t.includes('blindspot')) return { color: '#ef4444', rgb: '239, 68, 68' };
+  if (t.includes('visuele') || t.includes('alchemie') || t.includes('schakelbord')) return { color: '#fbbf24', rgb: '251, 191, 36' };
+  if (t.includes('introductie')) return { color: '#d1d5db', rgb: '209, 213, 219' };
+  if (t.includes('prompt') || t.includes('agent')) return { color: '#f97316', rgb: '249, 115, 22' };
+  return null; // fallback to cycle
+};
+
 const AssessmentResultsModal = ({
   resultsLoadingProgress,
   resultsModalProgress,
   layerAnswers,
+  uploadedFiles,
   onClose,
   onDownload,
   onCreateAccount,
@@ -115,8 +132,6 @@ const AssessmentResultsModal = ({
     whatDidntWork: '',
     suggestions: '',
   });
-  const [starRating, setStarRating] = useState(0);
-  const [starHover, setStarHover] = useState(0);
   const [reviewError, setReviewError] = useState('');
 
   // ── Review form submission handler ──
@@ -146,7 +161,6 @@ const AssessmentResultsModal = ({
         whatWorked: whatWorked.trim(),
         whatDidntWork: whatDidntWork.trim(),
         suggestions: suggestions.trim(),
-        starRating: starRating || null,
         archetypeKey: result?.mainArchetype || '',
         timestamp: new Date().toISOString(),
       });
@@ -158,7 +172,7 @@ const AssessmentResultsModal = ({
     } finally {
       setIsSubmittingReview(false);
     }
-  }, [reviewFormData, result, savedAssessmentId, starRating]);
+  }, [reviewFormData, result, savedAssessmentId]);
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -168,40 +182,77 @@ const AssessmentResultsModal = ({
     if (!result || aiReady || aiCalledRef.current) return;
     aiCalledRef.current = true;
 
-    const oceanScores = result.extendedOcean?.ocean || null;
+    const runAnalysis = async () => {
+      const oceanScores = result.extendedOcean?.ocean || null;
 
-    analyzeAssessment({
-      archetypeKey: result.mainArchetype,
-      supportArchetype: result.secondaryArchetype || result._secondaryKey,
-      supportGroup: result.supportGroup,
-      extendedArchetypeName: result.extendedName || result.name,
-      shadowArchetype: result.shadowPartner,
-      blindspotArchetype: result.blindspotPartner,
-      isIndividuated: result.shadowBonusActive,
-      hasHarmonyBonus: false,
-      harmonyBonusApplied: 0,
-      oceanScores,
-      scores: result._archetypeScores,
-      responses: result._answerLog,
-      subgroups: result.subgroups,
-      level: 'advanced',
-    }, (stage, message) => {
-      setAiStage(stage);
-      console.log(`[GFL] AI stage ${stage}: ${message}`);
-    })
-      .then((aiResult) => {
+      // Convert any uploaded OCEAN profile files to the format the AI API expects
+      const uploadedFileContents = [];
+      for (const file of uploadedFiles || []) {
+        try {
+          if (file.type === 'application/pdf') {
+            const base64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+            uploadedFileContents.push({ name: file.name, pdfBase64: base64 });
+          } else if (file.type === 'text/plain' || file.type === 'application/json') {
+            const text = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target.result);
+              reader.onerror = reject;
+              reader.readAsText(file);
+            });
+            uploadedFileContents.push({ name: file.name, text });
+          } else if (file.type.startsWith('image/')) {
+            const base64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+            uploadedFileContents.push({ name: file.name, imageBase64: base64, mimeType: file.type });
+          }
+        } catch { /* skip unreadable files */ }
+      }
+
+      try {
+        const aiResult = await analyzeAssessment({
+          archetypeKey: result.mainArchetype,
+          supportArchetype: result.secondaryArchetype || result._secondaryKey,
+          supportGroup: result.supportGroup,
+          extendedArchetypeName: result.extendedName || result.name,
+          shadowArchetype: result.shadowPartner,
+          blindspotArchetype: result.blindspotPartner,
+          isIndividuated: result.shadowBonusActive,
+          hasHarmonyBonus: false,
+          harmonyBonusApplied: 0,
+          oceanScores,
+          scores: result._archetypeScores,
+          responses: result._answerLog,
+          subgroups: result.subgroups,
+          level: 'advanced',
+          uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
+        }, (stage, message) => {
+          setAiStage(stage);
+          console.log(`[GFL] AI stage ${stage}: ${message}`);
+        });
         // Stage 3: frontend integration
         setAiStage(3);
         const sections = parseAiSections(aiResult.analysis || '');
         setAiSections(sections);
         setAiReady(true);
         if (onAiReadyRef.current) onAiReadyRef.current();
-      })
-      .catch((err) => {
+      } catch (err) {
         console.warn('[GFL] AI analysis failed, using template:', err.message);
         setAiFailed(true);
         aiCalledRef.current = false; // allow retry on failure
-      });
+      }
+    };
+
+    runAnalysis();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, aiReady]);
 
   // Removed: stageLabels (using simpler single-message loading state now)
@@ -306,6 +357,11 @@ const AssessmentResultsModal = ({
       const contentW = W - margin * 2;
       let y = margin;
 
+      // ── Enforce minimum font size of 8pt across all PDF text ──
+      const PDF_MIN_FONT = 8;
+      const _origSetFontSize = pdf.setFontSize.bind(pdf);
+      pdf.setFontSize = (size) => _origSetFontSize(Math.max(size, PDF_MIN_FONT));
+
       // ── Color palette — exact match to website CSS values ──
       // bg     = #060612  modal/page background
       // green  = #00ff9d  primary accent (borders, headings, combinationText)
@@ -326,8 +382,10 @@ const AssessmentResultsModal = ({
       const red       = [239, 68, 68];
       const cyan      = [34, 211, 238];
       const amber     = [251, 191, 36];
+      const pink      = [244, 114, 182];
       const white     = [209, 213, 219];
       const dimWhite  = [156, 163, 175];
+      const blue      = [59, 130, 246];
       const mutedGray = [100, 116, 139];
       const cardBg    = [12, 12, 29];
 
@@ -406,6 +464,7 @@ const AssessmentResultsModal = ({
       // ── Helper: markdown-aware AI content renderer ──
       const writePdfMarkdown = (mdText, x, maxW) => {
         if (!mdText) return;
+        const strip = (s) => s.replace(/\*\*/g, '').replace(/^[*\-]\s+/, '').trim();
         const lines = mdText.split('\n');
         for (const raw of lines) {
           const trimmed = raw.trim();
@@ -420,7 +479,7 @@ const AssessmentResultsModal = ({
             pdf.setTextColor(...orange);
             pdf.setFont('helvetica', 'bold');
             const hLines = pdf.splitTextToSize(headText, maxW);
-            for (const hl of hLines) { ensureSpace(5); pdf.text(hl, x, y); y += 5; }
+            hLines.forEach(hl => { ensureSpace(5); pdf.text(hl, x, y); y += 5; });
             continue;
           }
           // Table separator — skip
@@ -435,12 +494,12 @@ const AssessmentResultsModal = ({
             pdf.setTextColor(...white);
             const rowTxt = cells.join('  |  ');
             const rLines = pdf.splitTextToSize(rowTxt, maxW);
-            for (const rl of rLines) { ensureSpace(3.8); pdf.text(rl, x, y); y += 3.8; }
+            rLines.forEach(rl => { ensureSpace(3.8); pdf.text(rl, x, y); y += 3.8; });
             continue;
           }
           // Bullet: * or -
-          if (/^[-*]\s/.test(trimmed)) {
-            const content = trimmed.replace(/^[-*]\s+/, '').replace(/\*\*/g, '');
+          if (/^[*\-]\s/.test(trimmed)) {
+            const content = trimmed.replace(/^[*\-]\s+/, '').replace(/\*\*/g, '');
             const colonIdx = content.indexOf(':');
             ensureSpace(5);
             pdf.setFontSize(8.5);
@@ -466,7 +525,7 @@ const AssessmentResultsModal = ({
               pdf.text('\u2022', x, y);
               pdf.setTextColor(...white);
               const bLines = pdf.splitTextToSize(content, maxW - 5);
-              for (const bl of bLines) { ensureSpace(4.2); pdf.text(bl, x + 5, y); y += 4.2; }
+              bLines.forEach(bl => { ensureSpace(4.2); pdf.text(bl, x + 5, y); y += 4.2; });
             }
             continue;
           }
@@ -476,9 +535,17 @@ const AssessmentResultsModal = ({
           pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(...white);
           const pLines = pdf.splitTextToSize(text, maxW);
-          for (const pl of pLines) { ensureSpace(4.3); pdf.text(pl, x, y); y += 4.3; }
+          pLines.forEach(pl => { ensureSpace(4.3); pdf.text(pl, x, y); y += 4.3; });
         }
         y += 3;
+      };
+
+      // ── Helper: page footer ──
+      const pageFooter = () => {
+        pdf.setFontSize(6.5);
+        pdf.setTextColor(...white);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Garden for Life  \u2022  Advanced Consciousness Assessment', W / 2, H - 10, { align: 'center' });
       };
 
       // ═══════════════════════════════════════════════════
@@ -706,7 +773,7 @@ const AssessmentResultsModal = ({
       }
 
       // ── MAIN ARCHETYPE ──
-      sectionHeading(`De Essentie — ${result.mainName} (${result.mainNameEn})`, green);
+      sectionHeading(`De Essentie — ${result.mainName} (${result.mainNameEn})`, purple);
       if (result.group) {
         pdf.setFontSize(11);
         pdf.setTextColor(...white);
@@ -722,7 +789,7 @@ const AssessmentResultsModal = ({
       hr();
 
       // ── SUPPORT ARCHETYPE ──
-      sectionHeading(`De Vermenigvuldiging — ${result.secondaryName} (${result.secondaryNameEn})`, amber);
+      sectionHeading(`De Vermenigvuldiging — ${result.secondaryName} (${result.secondaryNameEn})`, orange);
       if (result.supportGroup) {
         pdf.setFontSize(11);
         pdf.setTextColor(...white);
@@ -911,7 +978,7 @@ const AssessmentResultsModal = ({
           O: [167, 139, 250], C: cyan, E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253],
         };
 
-        sectionHeading('OCEAN Persoonlijkheidsprofiel', purple);
+        sectionHeading('OCEAN Persoonlijkheidsprofiel', blue);
 
         // Legend row
         ensureSpace(6);
@@ -991,7 +1058,7 @@ const AssessmentResultsModal = ({
 
           if (analyses.length > 0) {
             ensureSpace(10);
-            pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...cyan);
+            pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...blue);
             pdf.text('OCEAN RESONANTIE & DISSONANTIE', margin + 2, y);
             y += 7;
 
@@ -1054,20 +1121,79 @@ const AssessmentResultsModal = ({
         hr();
       }
 
-      // ── PERSOONLIJKHEIDSRAPPORT VERGELIJKING — right after OCEAN/coreProfile, one page only ──
-      if (displaySections) {
-        const reportCompSection = displaySections.find(s => /persoonlijkheidsrapport.*vergelijk/i.test(s.title));
+      // ── PERSOONLIJKHEIDSRAPPORT VERGELIJKING — page 5: comparison with uploaded OCEAN profile ──
+      const reportCompSection = displaySections
+        ? displaySections.find(s => /persoonlijkheidsrapport.*vergelijk/i.test(s.title))
+        : null;
+      const hasUploadedFiles = (uploadedFiles || []).length > 0;
+
+      if (reportCompSection || hasUploadedFiles) {
+        pdf.addPage();
+        paintBg();
+        y = margin;
+        const reportMaxY = H - margin - 8; // hard ceiling
+
+        // ── Page heading ──
+        sectionHeading('Persoonlijkheidsrapport Vergelijking', purple);
+
+        // ── Uploaded file label ──
+        const fileNames = (uploadedFiles || []).map(f => f.name).join(', ');
+        if (fileNames) {
+          ensureSpace(10);
+          pdf.setFontSize(7.5);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...mutedGray);
+          pdf.text(`Geüpload rapport: ${fileNames}`, margin + 2, y);
+          y += 7;
+        }
+
+        // ── GFL OCEAN reference bars (compact, half-page width) for reference ──
+        if (result.extendedOcean?.ocean) {
+          ensureSpace(12);
+          pdf.setFontSize(7);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...cyan);
+          pdf.text('GFL TEST — OCEAN REFERENTIE', margin + 2, y);
+          y += 6;
+
+          const OCEAN_DIMS_REF = ['O', 'C', 'E', 'A', 'N'];
+          const OCEAN_LABEL_SHORT = { O: 'O', C: 'C', E: 'E', A: 'A', N: 'N' };
+          const OCEAN_COLORS_REF = {
+            O: [167, 139, 250], C: [34, 211, 238], E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253],
+          };
+          const refBarW = (contentW / 2) - 30;
+          const refBarH = 3;
+
+          OCEAN_DIMS_REF.forEach(dim => {
+            ensureSpace(7);
+            const score = result.extendedOcean.ocean[dim] ?? 0;
+            const pct = score / 10;
+            const col = OCEAN_COLORS_REF[dim];
+            pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
+            pdf.text(OCEAN_LABEL_SHORT[dim], margin + 2, y + 1.5);
+            const bx = margin + 10;
+            pdf.setFillColor(22, 22, 30);
+            pdf.roundedRect(bx, y - 1.5, refBarW, refBarH, 1, 1, 'F');
+            pdf.setFillColor(...col);
+            pdf.roundedRect(bx, y - 1.5, Math.max(pct * refBarW, 1.5), refBarH, 1, 1, 'F');
+            pdf.setFontSize(7); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
+            pdf.text(`${score}/10`, bx + refBarW + 3, y + 1.5);
+            y += 6.5;
+          });
+          y += 4;
+
+          pdf.setDrawColor(...mutedGray);
+          pdf.setLineWidth(0.15);
+          pdf.line(margin, y, W - margin, y);
+          y += 6;
+        }
+
+        // ── AI comparison text ──
         if (reportCompSection) {
-          pdf.addPage();
-          paintBg();
-          y = margin;
-          const reportMaxY = H - margin - 8; // hard ceiling: never overflow onto next page
-          sectionHeading(reportCompSection.title, purple);
-          // Strip markdown headings/bullets, render as plain wrapped paragraphs
           const plainText = reportCompSection.content
-            .replace(/^#{1,4}[^\n]*/gm, '')   // remove any sub-headers the AI may have generated
-            .replace(/\*\*/g, '')               // remove bold markers
-            .replace(/\*/g, '')                 // remove italic markers
+            .replace(/^#{1,4}[^\n]*/gm, '')
+            .replace(/\*\*/g, '')
+            .replace(/\*/g, '')
             .trim();
           const paragraphs = plainText.split(/\n{2,}/).filter(p => p.trim());
           pdf.setFontSize(8.5);
@@ -1081,8 +1207,18 @@ const AssessmentResultsModal = ({
               pdf.text(line, margin + 2, y);
               y += 4.3;
             }
-            y += 2; // paragraph gap
+            y += 2;
           }
+        } else if (hasUploadedFiles) {
+          // AI didn't generate the section (e.g. AI failed) — show placeholder
+          ensureSpace(30);
+          pdf.setFontSize(8.5);
+          pdf.setFont('helvetica', 'italic');
+          pdf.setTextColor(...mutedGray);
+          pdf.text(
+            'De vergelijkingsanalyse kon niet worden gegenereerd. Start het assessment opnieuw met het geüploade bestand om een volledige vergelijking te ontvangen.',
+            margin + 2, y, { maxWidth: contentW - 4 }
+          );
         }
       }
 
@@ -1115,6 +1251,12 @@ const AssessmentResultsModal = ({
           Abstract:   { network: 'DMN Hyper-connectie',      drive: 'Interne reflectie en subjectiviteit' },
           Agency:     { network: 'Extraversie / Wilskracht', drive: 'Actie en transformatie' },
         };
+        const ARCH_POS_PDF = {
+          Ruler: 1, Judge: 2, Lover: 3, Caregiver: 4,
+          Innocent: 5, Explorer: 6, Outlaw: 7, Trickster: 8,
+          Sage: 9, Artist: 10, Magician: 11, Hero: 12,
+        };
+
         const MAX_TOTAL = 36;
         const labelW    = 38;
         const scoreW    = 22;
@@ -1293,9 +1435,18 @@ const AssessmentResultsModal = ({
           pdf.addPage();
           paintBg();
           y = margin;
-          const sectionColors = [green, purple, orange];
+          const getPdfSectionColor = (title) => {
+            const t = cleanTitle(title || '').toLowerCase();
+            if (t.includes('identiteit') || t.includes('waarom')) return green;
+            if (t.includes('essentie') || t.includes('schaduw') || t.includes('evolutie')) return purple;
+            if (t.includes('vermenigvuldiging') || t.includes('prompt') || t.includes('agent')) return orange;
+            if (t.includes('blindspot')) return red;
+            if (t.includes('visuele') || t.includes('alchemie') || t.includes('schakelbord')) return amber;
+            if (t.includes('introductie')) return white;
+            return green; // fallback
+          };
           mainSections.forEach((section, i) => {
-            sectionHeading(section.title, sectionColors[i % 3]);
+            sectionHeading(cleanTitle(section.title), getPdfSectionColor(section.title));
             writePdfMarkdown(section.content, margin + 2, contentW - 4);
             if (i < mainSections.length - 1) hr();
           });
@@ -1331,7 +1482,7 @@ const AssessmentResultsModal = ({
       setIsGeneratingPdf(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, displaySections]);
+  }, [result, displaySections, uploadedFiles]);
   
   // Stop wheel events from propagating to the pyramid scroll handler
   const handleWheelCapture = useCallback((e) => {
@@ -1480,9 +1631,9 @@ const AssessmentResultsModal = ({
             maxHeight: rs.modalMaxHeight,
             background: 'rgba(2, 0, 3, 0.3)',
             backdropFilter: 'blur(24px)',
-            border: '1px solid rgba(0, 255, 157, 0.3)',
+            border: '1px solid rgba(34, 211, 238, 0.3)',
             borderRadius: '0.75rem',
-            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(0, 255, 157, 0.06), inset 0 0 30px rgba(0, 255, 157, 0.03)',
+            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34, 211, 238, 0.06), inset 0 0 30px rgba(34, 211, 238, 0.03)',
             display: 'flex',
             flexDirection: 'column',
             color: '#fff',
@@ -1490,7 +1641,7 @@ const AssessmentResultsModal = ({
           }}>
 
             {/* SectorFrame-style corner borders */}
-            {renderCorners('#00ff9d')}
+            {renderCorners('#22d3ee')}
 
             {/* Holographic sheen */}
             <div style={{ position: 'absolute', inset: 0, borderRadius: '0.75rem', pointerEvents: 'none', background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)', backgroundSize: '400% 400%', backgroundRepeat: 'no-repeat', animation: 'holoSheen 45s ease-in-out infinite', mixBlendMode: 'screen' }} />
@@ -1516,7 +1667,7 @@ const AssessmentResultsModal = ({
               left: 0,
               width: '100%',
               height: '1px',
-              background: 'linear-gradient(to right, transparent, #00ff9d, transparent)',
+              background: 'linear-gradient(to right, transparent, #22d3ee, transparent)',
               zIndex: 50
             }} />
             
@@ -1541,7 +1692,7 @@ const AssessmentResultsModal = ({
                   alignItems: 'center',
                   gap: '2rem',
                   paddingBottom: '1.5rem',
-                  borderBottom: '1px solid rgba(0, 255, 157, 0.2)',
+                  borderBottom: '1px solid rgba(34, 211, 238, 0.2)',
                 }}>
                   {/* Profile Image with Holographic Rings — responsive size */}
                   <div style={{ position: 'relative', width: rs.profileImgSize, height: rs.profileImgSize, flexShrink: 0 }}>
@@ -1550,7 +1701,7 @@ const AssessmentResultsModal = ({
                       position: 'absolute',
                       inset: 0,
                       borderRadius: '50%',
-                      border: '1px dashed rgba(0, 255, 157, 0.4)',
+                      border: '1px dashed rgba(34, 211, 238, 0.4)',
                       animation: 'spin 20s linear infinite',
                     }} />
                     {/* Dotted reverse-spinning ring */}
@@ -1567,7 +1718,7 @@ const AssessmentResultsModal = ({
                       height: '100%',
                       borderRadius: '50%',
                       overflow: 'hidden',
-                      border: '2px solid #00ff9d',
+                      border: '2px solid #22d3ee',
                       background: '#000',
                       position: 'relative',
                     }}>
@@ -1628,7 +1779,7 @@ const AssessmentResultsModal = ({
                     {result.secondaryName && (
                       <p style={{
                         fontSize: '0.85rem',
-                        color: 'rgba(0, 255, 157, 0.7)',
+                        color: 'rgba(34, 211, 238, 0.7)',
                         fontFamily: "'Rajdhani', sans-serif",
                         fontWeight: 600,
                         textTransform: 'uppercase',
@@ -1646,7 +1797,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     width: '100%',
                     background: 'transparent',
-                    border: '1px solid rgba(0, 255, 157, 0.25)',
+                    border: '1px solid rgba(34, 211, 238, 0.25)',
                     borderRadius: '0.75rem',
                     padding: rs.sectionPad,
                     position: 'relative',
@@ -1654,11 +1805,11 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #00ff9d, transparent)',
+                      background: 'linear-gradient(to right, transparent, #22d3ee, transparent)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#00ff9d',
+                      color: '#22d3ee',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.85rem',
                       textTransform: 'uppercase',
@@ -1806,7 +1957,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     width: '100%',
                     background: 'transparent',
-                    border: '1px solid rgba(0, 255, 157, 0.15)',
+                    border: '1px solid rgba(34, 211, 238, 0.15)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
                     position: 'relative',
@@ -1814,11 +1965,11 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #00ff9d, transparent)',
+                      background: 'linear-gradient(to right, transparent, #22d3ee, transparent)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#00ff9d',
+                      color: '#22d3ee',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.8rem',
                       textTransform: 'uppercase',
@@ -1842,7 +1993,7 @@ const AssessmentResultsModal = ({
                         borderBottom: '1px solid rgba(255,255,255,0.07)',
                         marginBottom: '0.1rem',
                       }}>
-                        {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(0,255,157,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
+                        {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(34,211,238,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
                           <div key={label} style={{ fontSize: '0.75rem', color, fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', paddingLeft: '0.4rem' }}>
                             {label}
                           </div>
@@ -1861,23 +2012,18 @@ const AssessmentResultsModal = ({
                             gridTemplateColumns: '1fr 1fr 1fr 1fr',
                             gap: '0',
                             background: 'transparent',
-                            border: sa.isActive ? '1px solid rgba(168,85,247,0.35)' : '1px solid rgba(0,255,157,0.08)',
+                            border: sa.isActive ? '1px solid rgba(168,85,247,0.35)' : '1px solid rgba(34,211,238,0.08)',
                             borderRadius: '0.35rem',
                             overflow: 'hidden',
                           }}>
                             {/* Archetype name */}
                             <div style={{ padding: '0.4rem 0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#a855f7' : 'rgba(0,255,157,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#a855f7' : 'rgba(34,211,238,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                                 {sa.group}
                               </div>
-                              <div style={{ fontSize: '0.75rem', color: sa.isActive ? '#fff' : 'rgba(0,255,157,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.3, marginTop: '0.1rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: sa.isActive ? '#fff' : 'rgba(34,211,238,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.3, marginTop: '0.1rem' }}>
                                 {sa.extendedName}
                               </div>
-                              {sa.isActive && (
-                                <div style={{ marginTop: '0.2rem', fontSize: '0.7rem', color: '#00ff9d', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                                  ▸ JOUW RESULTAAT
-                                </div>
-                              )}
                             </div>
                             {/* Betekenis */}
                             <div style={{ padding: '0.4rem 0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
@@ -1903,7 +2049,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     width: '100%',
                     background: 'transparent',
-                    border: '1px solid rgba(249, 115, 22, 0.2)',
+                    border: '1px solid rgba(168, 85, 247, 0.2)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
                     position: 'relative',
@@ -1911,11 +2057,11 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #f97316, transparent)',
+                      background: 'linear-gradient(to right, transparent, #a855f7, transparent)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#f97316',
+                      color: '#a855f7',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.85rem',
                       textTransform: 'uppercase',
@@ -1929,7 +2075,7 @@ const AssessmentResultsModal = ({
                     </h3>
                     {result.mainShadowTension && (
                       <p style={{
-                        color: 'rgba(249, 115, 22, 0.8)',
+                        color: 'rgba(168, 85, 247, 0.8)',
                         fontFamily: "'Rajdhani', sans-serif",
                         fontSize: '0.8rem',
                         fontWeight: 600,
@@ -2030,7 +2176,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     width: '100%',
                     background: 'transparent',
-                    border: '1px solid rgba(168, 85, 247, 0.15)',
+                    border: '1px solid rgba(59, 130, 246, 0.15)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
                     position: 'relative',
@@ -2042,7 +2188,7 @@ const AssessmentResultsModal = ({
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#22d3ee',
+                      color: '#3b82f6',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.85rem',
                       textTransform: 'uppercase',
@@ -2109,7 +2255,7 @@ const AssessmentResultsModal = ({
                     <div style={{
                       display: 'flex', flexWrap: 'wrap', gap: '0.25rem 0.75rem',
                       marginBottom: '1rem', paddingBottom: '0.75rem',
-                      borderBottom: '1px solid rgba(168, 85, 247, 0.1)',
+                      borderBottom: '1px solid rgba(59, 130, 246, 0.1)',
                     }}>
                       {['O', 'C', 'E', 'A', 'N'].map(dim => (
                         <span key={dim} style={{
@@ -2174,13 +2320,13 @@ const AssessmentResultsModal = ({
                       return (
                         <div style={{
                           background: 'transparent',
-                          border: '1px solid rgba(168, 85, 247, 0.12)',
+                          border: '1px solid rgba(59, 130, 246, 0.12)',
                           borderRadius: '0.5rem',
                           padding: '0.75rem 1rem',
                           marginBottom: '1rem'
                         }}>
                           <div style={{
-                            fontSize: '0.75rem', color: '#22d3ee',
+                            fontSize: '0.75rem', color: '#3b82f6',
                             fontFamily: "'Rajdhani', sans-serif",
                             fontWeight: 700, textTransform: 'uppercase',
                             letterSpacing: '0.1em', marginBottom: '0.6rem',
@@ -2190,7 +2336,7 @@ const AssessmentResultsModal = ({
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             {analyses.filter(a => a.status !== 'neutral').map(({ dim, pct, status }) => {
                               const isRes = status === 'resonance';
-                              const color = isRes ? '#00ff9d' : '#fbbf24';
+                              const color = isRes ? '#22d3ee' : '#fbbf24';
                               const icon = isRes ? '✦' : '⚠';
                               const label = isRes ? 'Resonantie' : 'Dissonantie';
                               const expVal = expect[dim];
@@ -2199,7 +2345,7 @@ const AssessmentResultsModal = ({
                                   display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
                                   padding: '0.5rem 0.6rem',
                                   background: 'transparent',
-                                  border: `1px solid ${isRes ? 'rgba(0, 255, 157, 0.15)' : 'rgba(251, 191, 36, 0.15)'}`,
+                                  border: `1px solid ${isRes ? 'rgba(34, 211, 238, 0.15)' : 'rgba(251, 191, 36, 0.15)'}`,
                                   borderRadius: '0.4rem',
                                 }}>
                                   <span style={{ fontSize: '0.85rem', color, flexShrink: 0, marginTop: '0.05rem' }}>{icon}</span>
@@ -2275,10 +2421,10 @@ const AssessmentResultsModal = ({
                     {result.coreProfile && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {[
-                          { label: 'Superkracht op de Werkvloer', text: result.coreProfile.workplaceSuperpower, color: '#00ff9d' },
-                          { label: 'Conflictstijl', text: result.coreProfile.conflictStyle, color: '#fbbf24' },
-                          { label: 'Relatiepatroon', text: result.coreProfile.relationshipPattern, color: '#f472b6' },
-                          { label: 'Individuatiepad', text: result.coreProfile.individuationPath, color: '#a855f7' },
+                          { label: 'Superkracht op de Werkvloer', text: result.coreProfile.workplaceSuperpower, color: '#f97316' },
+                          { label: 'Conflictstijl', text: result.coreProfile.conflictStyle, color: '#f97316' },
+                          { label: 'Relatiepatroon', text: result.coreProfile.relationshipPattern, color: '#f97316' },
+                          { label: 'Individuatiepad', text: result.coreProfile.individuationPath, color: '#f97316' },
                         ].map(({ label, text, color: c }) => (
                           <div key={label}>
                             <div style={{
@@ -2428,7 +2574,7 @@ const AssessmentResultsModal = ({
                   const ALL_TRIANGLES = [
                     { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: 'Ruler · Innocent · Sage' },
                     { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: 'Judge · Explorer · Artist' },
-                    { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: 'Lover · Outlaw · Magician' },
+                    { id: 3, mode: 'Impact Modus',     color: '#f97316', members: 'Lover · Outlaw · Magician' },
                     { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: 'Caregiver · Trickster · Hero' },
                   ];
 
@@ -2448,7 +2594,7 @@ const AssessmentResultsModal = ({
                       {/* Header */}
                       <div style={{ marginBottom: '0.85rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                          <span style={{ fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{'/// CULTURELE_BRIL'}</span>
+                          <span style={{ fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>/// CULTURELE_BRIL</span>
                         </div>
                         <h3 style={{ margin: 0, fontSize: '1.05rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 0 12px rgba(234,179,8,0.3)' }}>
                           Cognitieve Driehoek
@@ -2512,9 +2658,9 @@ const AssessmentResultsModal = ({
                   position: 'relative',
                   background: 'rgba(0, 0, 0, 0.6)',
                   borderRadius: '0.75rem',
-                  border: '1px solid rgba(0, 255, 157, 0.2)',
+                  border: '1px solid rgba(34, 211, 238, 0.2)',
                   padding: '0.5rem',
-                  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 255, 157, 0.05)',
+                  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(34, 211, 238, 0.05)',
                   minHeight: '350px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -2525,7 +2671,7 @@ const AssessmentResultsModal = ({
                     left: '1rem',
                     fontSize: '0.7rem',
                     fontFamily: "'Rajdhani', sans-serif",
-                    color: 'rgba(0, 255, 157, 0.6)',
+                    color: 'rgba(34, 211, 238, 0.6)',
                     letterSpacing: '0.2em',
                   }}>
                     {'/// TRIPLE_NETWORK_WIEL'}
@@ -2545,7 +2691,7 @@ const AssessmentResultsModal = ({
                       <div key={idx} style={{ width: '100%' }}>
                         <h3 style={{
                           display: 'flex', alignItems: 'center', gap: '0.5rem',
-                          color: '#eab308',
+                          color: '#f97316',
                           fontFamily: "'Lexend Mega', sans-serif",
                           fontSize: '0.85rem',
                           textTransform: 'uppercase',
@@ -2555,13 +2701,13 @@ const AssessmentResultsModal = ({
                           <span style={{
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                             width: '1.5rem', height: '1.5rem', borderRadius: '50%',
-                            border: '1px solid rgba(234,179,8,0.4)',
+                            border: '1px solid rgba(249,115,22,0.4)',
                             fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif",
-                            color: '#eab308', flexShrink: 0,
+                            color: '#f97316', flexShrink: 0,
                           }}>
                             {idx + 1}
                           </span>
-                          {section.title}
+                          {cleanTitle(section.title)}
                         </h3>
                         <p style={{ fontSize: '0.75rem', color: 'rgba(148,163,184,0.7)', fontFamily: "'Figtree', sans-serif", marginBottom: '0.75rem', lineHeight: 1.6 }}>
                           Genereer een kant-en-klare systeemprompt die je kunt gebruiken om externe AI-tools (zoals ChatGPT, Claude, etc.) af te stemmen op jouw unieke profiel.
@@ -2587,14 +2733,14 @@ const AssessmentResultsModal = ({
                   }
                   // Cycle through accent colors for visual variety
                   const accents = [
-                    { color: '#00ff9d', rgb: '0, 255, 157' },   // green
+                    { color: '#22d3ee', rgb: '34, 211, 238' },   // green
                     { color: '#a855f7', rgb: '168, 85, 247' },   // purple
                     { color: '#f97316', rgb: '249, 115, 22' },   // orange
                     { color: '#3b82f6', rgb: '59, 130, 246' },   // blue
                     { color: '#ec4899', rgb: '236, 72, 153' },   // pink
                     { color: '#14b8a6', rgb: '20, 184, 166' },   // teal
                   ];
-                  const accent = accents[idx % accents.length];
+                  const accent = getSectionAccent(section.title) || accents[idx % accents.length];
                   const isEven = idx % 2 === 0;
 
                   return (
@@ -2634,7 +2780,7 @@ const AssessmentResultsModal = ({
                         }}>
                           {idx + 1}
                         </span>
-                        {section.title}
+                        {cleanTitle(section.title)}
                       </h3>
                       <div style={{
                         color: 'rgba(209, 213, 219, 1)',
@@ -2732,55 +2878,11 @@ const AssessmentResultsModal = ({
                           />
                         </div>
 
-                        {/* Sterrenbeoordeling */}
-                        <div>
-                          <label style={{
-                            display: 'block',
-                            color: '#f59e0b',
-                            fontFamily: "'Figtree', sans-serif",
-                            fontSize: '0.85rem',
-                            fontWeight: 'bold',
-                            marginBottom: '0.5rem',
-                          }}>
-                            Hoe beoordeel je het systeem overall?
-                          </label>
-                          <div style={{ display: 'flex', gap: '0.25rem' }}>
-                            {[1,2,3,4,5,6,7,8,9].map((n) => (
-                              <button
-                                key={n}
-                                type="button"
-                                onClick={() => setStarRating(n)}
-                                onMouseEnter={() => setStarHover(n)}
-                                onMouseLeave={() => setStarHover(0)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  padding: '0.1rem',
-                                  cursor: 'pointer',
-                                  fontSize: '1.35rem',
-                                  lineHeight: 1,
-                                  color: n <= (starHover || starRating) ? '#f59e0b' : 'rgba(245,158,11,0.2)',
-                                  transition: 'color 0.1s',
-                                  filter: n <= (starHover || starRating) ? 'drop-shadow(0 0 4px rgba(245,158,11,0.5))' : 'none',
-                                }}
-                                aria-label={`${n} sterren`}
-                              >
-                                ★
-                              </button>
-                            ))}
-                            {starRating > 0 && (
-                              <span style={{ alignSelf: 'center', marginLeft: '0.4rem', color: 'rgba(245,158,11,0.7)', fontSize: '0.78rem', fontFamily: "'Figtree', sans-serif" }}>
-                                {starRating}/9
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
                         {/* Vraag 1: Accuraatheid */}
                         <div>
                           <label style={{
                             display: 'block',
-                            color: '#00ff9d',
+                            color: '#22d3ee',
                             fontFamily: "'Figtree', sans-serif",
                             fontSize: '0.85rem',
                             fontWeight: 'bold',
@@ -2797,7 +2899,7 @@ const AssessmentResultsModal = ({
                               minHeight: '80px',
                               padding: '0.75rem',
                               background: 'rgba(0, 0, 0, 0.8)',
-                              border: '1px solid rgba(0, 255, 157, 0.2)',
+                              border: '1px solid rgba(34, 211, 238, 0.2)',
                               borderRadius: '0.5rem',
                               color: '#fff',
                               fontFamily: "'Figtree', sans-serif",
@@ -2962,20 +3064,20 @@ const AssessmentResultsModal = ({
                         <div style={{
                           maxWidth: '34rem', width: '100%',
                           backgroundColor: 'rgba(6, 2, 10, 0.98)',
-                          border: '1px solid rgba(0,255,157,0.2)',
+                          border: '1px solid rgba(34,211,238,0.2)',
                           borderRadius: '0.5rem',
                           padding: '1.75rem',
-                          boxShadow: '0 0 40px rgba(0,255,157,0.08)',
+                          boxShadow: '0 0 40px rgba(34,211,238,0.08)',
                           fontFamily: "'Lexend Mega', sans-serif",
                         }}>
-                          <h3 style={{ color: '#00ff9d', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
+                          <h3 style={{ color: '#22d3ee', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
                             Verantwoordelijkheid PDF & AI Prompt
                           </h3>
                           <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', fontStyle: 'italic', marginBottom: '1.25rem' }}>
                             Lees dit door voordat je de PDF downloadt
                           </p>
 
-                          <div style={{ borderLeft: '2px solid rgba(0,255,157,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
+                          <div style={{ borderLeft: '2px solid rgba(34,211,238,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
                             <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: '0.75rem', lineHeight: 1.75 }}>
                               Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik in externe AI-tools valt buiten de verantwoordelijkheid van Garden For Life.
                             </p>
@@ -2986,7 +3088,7 @@ const AssessmentResultsModal = ({
                               type="checkbox"
                               checked={pdfConsentChecked}
                               onChange={(e) => setPdfConsentChecked(e.target.checked)}
-                              style={{ marginTop: '0.1rem', accentColor: '#00ff9d', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
+                              style={{ marginTop: '0.1rem', accentColor: '#22d3ee', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
                             />
                             <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: '0.75rem', lineHeight: 1.65 }}>
                               Ik begrijp dat de AI Agent Prompt in deze PDF experimenteel is en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.
@@ -3005,8 +3107,8 @@ const AssessmentResultsModal = ({
                             <button
                               onClick={() => { if (pdfConsentChecked) { setShowPdfConsent(false); logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {}); handleDownloadPdf(); } }}
                               disabled={!pdfConsentChecked}
-                              style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#00ff9d' : 'rgba(0,255,157,0.2)'}`, color: pdfConsentChecked ? '#00ff9d' : 'rgba(0,255,157,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(0,255,157,0.07)' : 'none' }}
-                              onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(0,255,157,0.25)'; }}
+                              style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#22d3ee' : 'rgba(34,211,238,0.2)'}`, color: pdfConsentChecked ? '#22d3ee' : 'rgba(34,211,238,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(34,211,238,0.07)' : 'none' }}
+                              onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(34,211,238,0.25)'; }}
                               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
                             >
                               Begrepen en akkoord — Download PDF
@@ -3028,8 +3130,8 @@ const AssessmentResultsModal = ({
                         overflow: 'hidden',
                         padding: rs.btnPad,
                         background: '#000',
-                        border: '1px solid #00ff9d',
-                        color: '#00ff9d',
+                        border: '1px solid #22d3ee',
+                        color: '#22d3ee',
                         fontFamily: "'Lexend Mega', sans-serif",
                         fontWeight: 'bold',
                         textTransform: 'uppercase',
@@ -3037,18 +3139,18 @@ const AssessmentResultsModal = ({
                         fontSize: rs.btnFont,
                         cursor: (isGeneratingPdf || !reviewSubmitted) ? 'not-allowed' : 'pointer',
                         transition: 'all 0.3s',
-                        boxShadow: '0 0 15px rgba(0, 255, 157, 0.1)',
+                        boxShadow: '0 0 15px rgba(34, 211, 238, 0.1)',
                         opacity: (isGeneratingPdf || !reviewSubmitted) ? 0.5 : 1,
                       }}
                       onMouseEnter={e => {
                         if (!isGeneratingPdf && reviewSubmitted) {
-                          e.currentTarget.style.background = '#00ff9d';
+                          e.currentTarget.style.background = '#22d3ee';
                           e.currentTarget.style.color = '#000';
                         }
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.background = '#000';
-                        e.currentTarget.style.color = '#00ff9d';
+                        e.currentTarget.style.color = '#22d3ee';
                       }}
                     >
                       <span style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
@@ -3153,15 +3255,15 @@ const AssessmentResultsModal = ({
           background: transparent;
         }
         .results-modal-scroll::-webkit-scrollbar-thumb {
-          background: rgba(0, 255, 157, 0.3);
+          background: rgba(34, 211, 238, 0.3);
           border-radius: 3px;
         }
         .results-modal-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 255, 157, 0.5);
+          background: rgba(34, 211, 238, 0.5);
         }
         .results-modal-scroll {
           scrollbar-width: thin;
-          scrollbar-color: rgba(0, 255, 157, 0.3) transparent;
+          scrollbar-color: rgba(34, 211, 238, 0.3) transparent;
         }
       `}</style>
     </div>
@@ -3209,12 +3311,10 @@ function parseAiSections(analysisText) {
     return [{ title: 'AI Analyse', content: analysisText.trim() }];
   }
 
-  // Capture any preamble text before the first heading (e.g. disclaimer)
+  // Always prepend fixed disclaimer as Introductie — suppress any AI preamble
   const parts = [];
-  const preamble = analysisText.slice(0, matches[0].start).trim();
-  if (preamble) {
-    parts.push({ title: 'Introductie', content: preamble });
-  }
+  const INTRO_TEXT = 'Dit rapport is gegenereerd door het Garden For Life Deltawerken Model — een zelfreflectie-instrument, geen klinische diagnose. De gebruikte neurobiologische termen zijn metaforen binnen dit specifieke model. Raadpleeg een professional voor medisch of psychologisch advies.';
+  parts.push({ title: 'Introductie', content: INTRO_TEXT });
 
   for (let i = 0; i < matches.length; i++) {
     const title = matches[i].title;

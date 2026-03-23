@@ -947,8 +947,8 @@ const AssessmentResultsModal = ({
           img.onerror = reject;
           img.src = tnmWheelImg;
         });
-        // Max height: leave room for heading (10) + bullet (8) + hr (4) + table (~105mm for 13 rows) + footer (14) = ~141mm
-        const maxH = H - margin * 2 - 141;
+        // Hard cap at 75mm — table rows wrap and need ~180mm, image gets the rest
+        const maxH = 75;
         const naturalH = (tnmImgEl.naturalHeight / tnmImgEl.naturalWidth) * contentW;
         const finalH = Math.min(naturalH, maxH);
         const finalW = finalH === naturalH ? contentW : (tnmImgEl.naturalWidth / tnmImgEl.naturalHeight) * finalH;

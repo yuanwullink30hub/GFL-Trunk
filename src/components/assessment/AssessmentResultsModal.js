@@ -988,15 +988,14 @@ const AssessmentResultsModal = ({
           img.onerror = reject;
           img.src = tnmWheelImg;
         });
-        // Hard cap at 75mm — table rows wrap and need ~180mm, image gets the rest
-        const maxH = 75;
+        // Hard cap at 60mm (75mm × 0.8) — fixed size
+        const maxH = 60;
         const naturalH = (tnmImgEl.naturalHeight / tnmImgEl.naturalWidth) * contentW;
         const finalH = Math.min(naturalH, maxH);
         const finalW = finalH === naturalH ? contentW : (tnmImgEl.naturalWidth / tnmImgEl.naturalHeight) * finalH;
         const offsetX = margin + (contentW - finalW) / 2;
         pdf.addImage(tnmWheelImg, 'PNG', offsetX, y, finalW, finalH);
         y += finalH + 4;
-        hr();
       } catch {
         y += 4;
       }
@@ -1012,7 +1011,6 @@ const AssessmentResultsModal = ({
       );
       fBullet1.forEach(bl => { ensureSpace(4.5); pdf.text(bl, margin + 7, y); y += 4.5; });
       y += 5;
-      hr(mutedGray);
 
       drawTable(
         ['Traditie / Discipline', 'Het Concept', 'Betekenis & Belang', 'Thematische Kruisverwijzing'],
@@ -1738,17 +1736,26 @@ const AssessmentResultsModal = ({
             if (i < regularSections.length - 1) hr();
           });
 
-          // Disclaimer + AI Agent Prompt: always together on their own page
+          // AI Prompt: dedicated final page — fixed heading, no intro text
           if (disclaimerSection || agentSection) {
             pdf.addPage();
             paintBg();
             y = margin;
+            // Always use a fixed heading (never the AI-generated section title)
+            sectionHeading('De volledige AI prompt', orange);
+            // Disclaimer content directly — no section heading
             if (disclaimerSection) {
-              renderSection(disclaimerSection.title, disclaimerSection.content, getPdfSectionColor(disclaimerSection.title));
+              writePdfMarkdown(disclaimerSection.content, margin + 2, contentW - 4);
               hr();
             }
+            // Agent prompt: strip intro paragraph and top-level # heading, start from first ## sub-heading
             if (agentSection) {
-              renderSection(agentSection.title, agentSection.content, getPdfSectionColor(agentSection.title));
+              let promptContent = (agentSection.content || '').trim();
+              const firstSubHeading = promptContent.search(/(^|\n)##[ \t]/m);
+              if (firstSubHeading >= 0) {
+                promptContent = promptContent.slice(firstSubHeading).replace(/^\n/, '').trim();
+              }
+              writePdfMarkdown(promptContent, margin + 2, contentW - 4);
             }
           }
         }

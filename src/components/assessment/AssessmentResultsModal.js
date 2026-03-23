@@ -551,12 +551,15 @@ const AssessmentResultsModal = ({
 
       // ── Helper: draw a basic data table ──
       const drawTable = (headers, rows, colWidths, options = {}) => {
-        const { fontSize = 8, headerColor = green, rowColor = white } = options;
+        const { fontSize = 8, headerColor = green, rowColor = white, vPad = 5 } = options;
         const totalW = colWidths.reduce((a, b) => a + b, 0);
         const lh = fontSize * 0.45;
+        const hPad = vPad <= 3 ? 1.5 : 2;
+        const baseline = lh * 0.75; // jsPDF text y is baseline
+
         // Header
-        const hCells = headers.map((h, i) => pdf.splitTextToSize(h, colWidths[i] - 4));
-        const hRowH = Math.max(...hCells.map(c => c.length)) * lh + 5;
+        const hCells = headers.map((h, i) => pdf.splitTextToSize(h, colWidths[i] - hPad * 2));
+        const hRowH = Math.max(...hCells.map(c => c.length)) * lh + vPad;
         ensureSpace(hRowH + 2);
         pdf.setFillColor(...cardBg);
         pdf.rect(margin, y, totalW, hRowH, 'F');
@@ -567,13 +570,19 @@ const AssessmentResultsModal = ({
         colWidths.forEach((cw, i) => { if (i < colWidths.length - 1) { cxh += cw; pdf.line(cxh, y, cxh, y + hRowH); } });
         pdf.setFontSize(fontSize); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...headerColor);
         let colX = margin;
-        hCells.forEach((lines, i) => { lines.forEach((line, li) => pdf.text(line, colX + 2, y + 3.5 + li * lh)); colX += colWidths[i]; });
+        hCells.forEach((lines, i) => {
+          const blockH = lines.length * lh;
+          const startY = y + (hRowH - blockH) / 2 + baseline;
+          lines.forEach((line, li) => pdf.text(line, colX + hPad, startY + li * lh));
+          colX += colWidths[i];
+        });
         y += hRowH;
+
         // Rows
         rows.forEach((row, ri) => {
-          const cells = row.map((cell, i) => pdf.splitTextToSize(String(cell || ''), colWidths[i] - 4));
+          const cells = row.map((cell, i) => pdf.splitTextToSize(String(cell || ''), colWidths[i] - hPad * 2));
           const lineCount = Math.max(...cells.map(c => c.length));
-          const cellH = lineCount * lh + 5;
+          const cellH = lineCount * lh + vPad;
           ensureSpace(cellH + 0.5);
           pdf.setFillColor(...(ri % 2 === 0 ? bg : cardBg));
           pdf.rect(margin, y, totalW, cellH, 'F');
@@ -583,10 +592,15 @@ const AssessmentResultsModal = ({
           colWidths.forEach((cw, i) => { if (i < colWidths.length - 1) { cx += cw; pdf.line(cx, y, cx, y + cellH); } });
           pdf.setFontSize(fontSize); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...rowColor);
           colX = margin;
-          cells.forEach((lines, i) => { lines.forEach((line, li) => pdf.text(line, colX + 2, y + 3.5 + li * lh)); colX += colWidths[i]; });
+          cells.forEach((lines, i) => {
+            const blockH = lines.length * lh;
+            const startY = y + (cellH - blockH) / 2 + baseline;
+            lines.forEach((line, li) => pdf.text(line, colX + hPad, startY + li * lh));
+            colX += colWidths[i];
+          });
           y += cellH;
         });
-        y += 4;
+        y += vPad <= 3 ? 2 : 4;
       };
 
       // ═══════════════════════════════════════════════════
@@ -803,7 +817,7 @@ const AssessmentResultsModal = ({
       // ═══════════════════════════════════════════════════
       pdf.addPage(); paintBg(); y = margin;
 
-      sectionHeading('De Fundering van de Test', cyan);
+      sectionHeading('De Fundering van de Test', purple);
 
       writeWrapped(
         'De fundering voor de test is gebouwd op universele geometrie, eeuwenoude wijsheid vertaald met moderne jargon. ' +
@@ -846,7 +860,7 @@ const AssessmentResultsModal = ({
           ['Agency',     'Extraversie / Wilskracht','Magician (10), Hero (11)',   'Actie en transformatie'],
         ],
         [30, 42, 50, 52],
-        { fontSize: 7 }
+        { fontSize: 7, vPad: 3 }
       );
 
       drawTable(
@@ -859,9 +873,10 @@ const AssessmentResultsModal = ({
           ['4', '72 = 3\u00B2 \u00D7 2\u00B3','binaire verdubbeling',        '72 keuzes, 72 uitgebreide uitkomsten'],
         ],
         [16, 42, 52, 64],
-        { fontSize: 7 }
+        { fontSize: 7, vPad: 3 }
       );
 
+      y += 5;
       writeWrapped(
         '3 is het ware atoom. Al het andere is 3, maar dan verdubbeld, gekwadrateerd of als faculteit berekend:',
         margin + 2, y, contentW - 4, 9, white, 'bold'
@@ -884,10 +899,11 @@ const AssessmentResultsModal = ({
         ['Hoeken', 'Toepassing', 'Weergave'],
         [['30\u00B0 = 360/12', 'Boog per archetype', 'Hoekafstand in het radardiagram']],
         [42, 50, 82],
-        { fontSize: 7 }
+        { fontSize: 7, vPad: 3 }
       );
 
       ensureSpace(8);
+      y += 5;
       pdf.setFontSize(9); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...white);
       pdf.text('Geometrische / heilige verbindingen:', margin + 2, y);
       y += 5;

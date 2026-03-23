@@ -610,6 +610,7 @@ const AssessmentResultsModal = ({
         const baseline = lh * 0.75; // jsPDF text y is baseline
 
         // Header
+        pdf.setFontSize(fontSize); pdf.setFont('helvetica', 'bold');
         const hCells = headers.map((h, i) => pdf.splitTextToSize(h, colWidths[i] - hPad * 2));
         const hRowH = Math.max(...hCells.map(c => c.length)) * lh + vPad;
         ensureSpace(hRowH + 2);
@@ -620,7 +621,7 @@ const AssessmentResultsModal = ({
         pdf.rect(margin, y, totalW, hRowH, 'S');
         let cxh = margin;
         colWidths.forEach((cw, i) => { if (i < colWidths.length - 1) { cxh += cw; pdf.line(cxh, y, cxh, y + hRowH); } });
-        pdf.setFontSize(fontSize); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...headerColor);
+        pdf.setTextColor(...headerColor);
         let colX = margin;
         hCells.forEach((lines, i) => {
           const blockH = lines.length * lh;
@@ -632,6 +633,7 @@ const AssessmentResultsModal = ({
 
         // Rows
         rows.forEach((row, ri) => {
+          pdf.setFontSize(fontSize); pdf.setFont('helvetica', 'normal');
           const cells = row.map((cell, i) => pdf.splitTextToSize(String(cell || ''), colWidths[i] - hPad * 2));
           const lineCount = Math.max(...cells.map(c => c.length));
           const cellH = lineCount * lh + vPad;
@@ -642,7 +644,7 @@ const AssessmentResultsModal = ({
           pdf.rect(margin, y, totalW, cellH, 'S');
           let cx = margin;
           colWidths.forEach((cw, i) => { if (i < colWidths.length - 1) { cx += cw; pdf.line(cx, y, cx, y + cellH); } });
-          pdf.setFontSize(fontSize); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...rowColor);
+          pdf.setTextColor(...rowColor);
           colX = margin;
           cells.forEach((lines, i) => {
             const blockH = lines.length * lh;
@@ -696,6 +698,8 @@ const AssessmentResultsModal = ({
         const pdfImgSize = 90;
         const imgX = W / 2 - pdfImgSize / 2;
         pdf.addImage(imgData, 'PNG', imgX, y, pdfImgSize, pdfImgSize);
+        // Clickable hyperlink over the image — opens full-res in browser
+        if (result.imageUrl) pdf.link(imgX, y, pdfImgSize, pdfImgSize, { url: result.imageUrl });
         // Green border ring around circular image
         pdf.setDrawColor(...green);
         pdf.setLineWidth(1.5);
@@ -1735,26 +1739,26 @@ const AssessmentResultsModal = ({
             renderSection(section.title, section.content, getPdfSectionColor(section.title));
             if (i < regularSections.length - 1) hr();
           });
+          // Close last regular section with a divider before the AI prompt page
+          if (regularSections.length > 0 && (disclaimerSection || agentSection)) hr();
 
-          // AI Prompt: dedicated final page — fixed heading, no intro text
+          // AI Prompt: dedicated final page — fixed heading, KERN DISCLAIMER body first (no heading), then rest
           if (disclaimerSection || agentSection) {
             pdf.addPage();
             paintBg();
             y = margin;
-            // Always use a fixed heading (never the AI-generated section title)
+            // Fixed heading in orange
             sectionHeading('De volledige AI prompt', orange);
-            // Disclaimer content directly — no section heading
-            if (disclaimerSection) {
-              writePdfMarkdown(disclaimerSection.content, margin + 2, contentW - 4);
-              hr();
-            }
-            // Agent prompt: strip intro paragraph and top-level # heading, start from first ## sub-heading
+            // Agent prompt: strip intro text + first ## heading (KERN DISCLAIMER), show its body, then rest with headings
             if (agentSection) {
               let promptContent = (agentSection.content || '').trim();
-              const firstSubHeading = promptContent.search(/(^|\n)##[ \t]/m);
-              if (firstSubHeading >= 0) {
-                promptContent = promptContent.slice(firstSubHeading).replace(/^\n/, '').trim();
+              // Remove everything before the first ## sub-heading
+              const firstSubIdx = promptContent.search(/(^|\n)##[ \t]/m);
+              if (firstSubIdx >= 0) {
+                promptContent = promptContent.slice(firstSubIdx).replace(/^\n/, '').trim();
               }
+              // Strip the first ## heading line itself (KERN DISCLAIMER), keep its body
+              promptContent = promptContent.replace(/^##[^\n]*\n+/, '').trim();
               writePdfMarkdown(promptContent, margin + 2, contentW - 4);
             }
           }

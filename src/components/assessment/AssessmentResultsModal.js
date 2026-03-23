@@ -845,15 +845,9 @@ const AssessmentResultsModal = ({
           ['Abstract',   'DMN Hyper-connectie',    'Sage (8), Artist (9)',       'Interne reflectie en subjectiviteit'],
           ['Agency',     'Extraversie / Wilskracht','Magician (10), Hero (11)',   'Actie en transformatie'],
         ],
-        [30, 42, 50, 52]
+        [30, 42, 50, 52],
+        { fontSize: 7 }
       );
-
-      ensureSpace(8);
-      pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
-      pdf.text('\u2022', margin + 2, y);
-      const fBullet2 = pdf.splitTextToSize('Deze test bestond uit 36 vragen, elk met 6 antwoorden.', contentW - 8);
-      fBullet2.forEach(bl => { ensureSpace(4.5); pdf.text(bl, margin + 7, y); y += 4.5; });
-      y += 5;
 
       drawTable(
         ['Diepte', 'Getal', 'Afleiding', 'Manifestatie'],
@@ -864,7 +858,8 @@ const AssessmentResultsModal = ({
           ['3', '36 = 3\u00B2 \u00D7 2\u00B2','3 in het kwadraat \u00D7 4',  '36 vragen (3 per archetype)'],
           ['4', '72 = 3\u00B2 \u00D7 2\u00B3','binaire verdubbeling',        '72 keuzes, 72 uitgebreide uitkomsten'],
         ],
-        [16, 42, 52, 64]
+        [16, 42, 52, 64],
+        { fontSize: 7 }
       );
 
       writeWrapped(
@@ -873,8 +868,8 @@ const AssessmentResultsModal = ({
       );
       y += 2;
       writeWrapped(
-        '3 verdrievoudigde netwerken \u2192 verdubbeld door polariteit \u2192 verdubbeld door archetype-individuatie \u2192 gekwadrateerd voor vragen \u2192 verdubbeld voor keuzes \u2192 als faculteit berekend voor punten.',
-        margin + 2, y, contentW - 4, 8.5, dimWhite
+        '3 verdrievoudigde netwerken -> verdubbeld door polariteit -> verdubbeld door archetype-individuatie -> gekwadrateerd voor vragen -> verdubbeld voor keuzes -> als faculteit berekend voor punten.',
+        margin + 2, y, contentW - 4, 8.5, white
       );
       y += 3;
       writeWrapped(
@@ -888,7 +883,8 @@ const AssessmentResultsModal = ({
       drawTable(
         ['Hoeken', 'Toepassing', 'Weergave'],
         [['30\u00B0 = 360/12', 'Boog per archetype', 'Hoekafstand in het radardiagram']],
-        [42, 50, 82]
+        [42, 50, 82],
+        { fontSize: 7 }
       );
 
       ensureSpace(8);

@@ -447,6 +447,47 @@ const AssessmentResultsModal = ({
         y += 8;
       };
 
+      // ── Helper: estimate rendered height of a markdown section (heading + content) ──
+      // Used to decide whether to start a new page before rendering.
+      const estimateSectionHeight = (title, content, maxW) => {
+        let h = 14 + 4 + 8; // sectionHeading: ensureSpace(14) + y+=4 + y+=8
+        if (!content) return h;
+        const lines = content.split('\n');
+        for (const raw of lines) {
+          const trimmed = raw.trim();
+          if (!trimmed) { h += 2; continue; }
+          if (/^#{2,}\s/.test(trimmed)) { h += 3 + 5; continue; }
+          if (/^\|[\s\-:]+\|/.test(trimmed)) continue;
+          if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+            const cells = trimmed.slice(1, -1).split('|').map(c => c.trim()).filter(Boolean);
+            const rowTxt = cells.join('  |  ');
+            const rLines = pdf.splitTextToSize(rowTxt, maxW);
+            h += rLines.length * 3.8;
+            continue;
+          }
+          if (/^[*\-]\s/.test(trimmed)) {
+            const bLines = pdf.splitTextToSize(trimmed.replace(/^[*\-]\s+/, '').replace(/\*\*/g, ''), maxW - 5);
+            h += Math.max(1, bLines.length) * 4.2;
+            continue;
+          }
+          const pLines = pdf.splitTextToSize(trimmed.replace(/\*\*/g, '').replace(/\*/g, ''), maxW);
+          h += Math.max(1, pLines.length) * 4.3;
+        }
+        return h + 3; // trailing y+=3 in writePdfMarkdown
+      };
+
+      // ── Helper: start new page if section won't fit, then render it ──
+      const renderSection = (title, content, color) => {
+        const needed = estimateSectionHeight(title, content, contentW - 4);
+        if (y + needed > H - margin) {
+          pdf.addPage();
+          paintBg();
+          y = margin;
+        }
+        sectionHeading(cleanTitle(title), color);
+        writePdfMarkdown(content, margin + 2, contentW - 4);
+      };
+
       // ── Helper: key-value line ──
       const keyValue = (key, value) => {
         if (!value) return;
@@ -1693,8 +1734,7 @@ const AssessmentResultsModal = ({
           );
 
           regularSections.forEach((section, i) => {
-            sectionHeading(cleanTitle(section.title), getPdfSectionColor(section.title));
-            writePdfMarkdown(section.content, margin + 2, contentW - 4);
+            renderSection(section.title, section.content, getPdfSectionColor(section.title));
             if (i < regularSections.length - 1) hr();
           });
 
@@ -1704,13 +1744,11 @@ const AssessmentResultsModal = ({
             paintBg();
             y = margin;
             if (disclaimerSection) {
-              sectionHeading(cleanTitle(disclaimerSection.title), getPdfSectionColor(disclaimerSection.title));
-              writePdfMarkdown(disclaimerSection.content, margin + 2, contentW - 4);
+              renderSection(disclaimerSection.title, disclaimerSection.content, getPdfSectionColor(disclaimerSection.title));
               hr();
             }
             if (agentSection) {
-              sectionHeading(cleanTitle(agentSection.title), getPdfSectionColor(agentSection.title));
-              writePdfMarkdown(agentSection.content, margin + 2, contentW - 4);
+              renderSection(agentSection.title, agentSection.content, getPdfSectionColor(agentSection.title));
             }
           }
         }

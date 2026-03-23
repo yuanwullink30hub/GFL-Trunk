@@ -219,16 +219,24 @@ const TraitRow = ({ trait, vals, expanded, onToggle, onChange }) => {
               onClick={() => onToggle(trait.key)}
               title="Sub-scores tonen/verbergen"
               style={{
-                background: 'none', border: 'none', cursor: 'pointer', padding: '0.1rem 0.2rem',
-                color: isOpen ? trait.color : 'rgba(148,163,184,0.35)',
-                fontSize: '0.7rem',
+                background: isOpen ? `rgba(${trait.rgb},0.12)` : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${isOpen ? `rgba(${trait.rgb},0.4)` : 'rgba(255,255,255,0.12)'}`,
+                borderRadius: '0.25rem',
+                cursor: 'pointer',
+                padding: '0.15rem 0.35rem',
+                color: isOpen ? trait.color : 'rgba(148,163,184,0.55)',
+                fontSize: '0.58rem',
+                fontFamily: 'monospace',
+                fontWeight: 600,
+                letterSpacing: '0.04em',
                 lineHeight: 1,
-                transition: 'color 0.15s, transform 0.2s',
-                transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                display: 'inline-flex', alignItems: 'center',
+                display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
+                transition: 'background 0.2s, border-color 0.2s, color 0.2s',
+                flexShrink: 0,
               }}
             >
-              ▾
+              <span style={{ display: 'inline-block', transition: 'transform 0.2s', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▸</span>
+              <span>sub</span>
             </button>
           )}
           {/* Spacer to align rows without subTraits toggle */}
@@ -355,7 +363,7 @@ const OceanManualInputModal = ({ onClose, onConfirm, initialValues }) => {
       <style>{modalStyles}</style>
       <div
         className="fixed inset-0 z-[60] flex items-center justify-center"
-        style={{ backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(5px)' }}
+        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
         onClick={(e) => { if (e.target === e.currentTarget) close(); }}
       >
         <div style={{
@@ -363,11 +371,13 @@ const OceanManualInputModal = ({ onClose, onConfirm, initialValues }) => {
           minWidth: '360px',
           maxHeight: '88vh',
           overflowY: 'auto',
-          backgroundColor: 'rgba(5, 7, 22, 0.98)',
-          border: '1px solid rgba(120,90,220,0.4)',
-          borderRadius: '0.875rem',
+          backgroundColor: 'rgba(2, 0, 3, 0.3)',
+          backdropFilter: 'blur(32px)',
+          WebkitBackdropFilter: 'blur(32px)',
+          border: '1px solid rgba(168,85,247,0.2)',
+          borderRadius: '0.75rem',
           padding: '1.5rem 1.75rem',
-          boxShadow: '0 16px 70px rgba(0,0,0,0.8), 0 0 0 1px rgba(120,90,220,0.1)',
+          boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
           animation: `${closing ? 'oceanContract' : 'oceanExpand'} 0.36s cubic-bezier(0.4,0,0.2,1) forwards`,
           transformOrigin: 'center center',
         }}>

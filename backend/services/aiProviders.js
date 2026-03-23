@@ -247,6 +247,14 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
     content: m.content,
   }));
 
+  // Build system as a content-block array with cache_control on the last block.
+  // Anthropic will cache everything up to (and including) that block for 5 minutes,
+  // so repeated calls with the same large system prompt (context docs + admin meta +
+  // builder) pay only ~10 % of the normal input-token cost on cache hits.
+  const systemBlocks = systemMsg
+    ? [{ type: 'text', text: systemMsg.content, cache_control: { type: 'ephemeral' } }]
+    : undefined;
+
   console.log(`[Claude] Calling model=${model}, maxTokens=${maxTokens}, promptChars=${(systemMsg?.content?.length || 0) + (userMsgs[0]?.content?.length || 0)}`);
   const startTime = Date.now();
 
@@ -254,20 +262,26 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
     model,
     max_tokens: maxTokens,
     temperature,
-    ...(systemMsg ? { system: systemMsg.content } : {}),
+    ...(systemBlocks ? { system: systemBlocks } : {}),
     messages: anthropicMessages,
   });
 
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  const text = response.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
+  const elapsed         = ((Date.now() - startTime) / 1000).toFixed(1);
+  const text            = response.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
+  const cacheCreated    = response.usage?.cache_creation_input_tokens || 0;
+  const cacheRead       = response.usage?.cache_read_input_tokens     || 0;
 
   console.log(`[Claude] Response in ${elapsed}s, stop_reason=${response.stop_reason}, textLen=${text.length}`);
+  if (cacheCreated > 0) console.log(`[Claude] Cache WRITE : ${cacheCreated} tokens written to cache`);
+  if (cacheRead    > 0) console.log(`[Claude] Cache HIT   : ${cacheRead} tokens served from cache (~90 % cheaper)`);
 
   return {
     analysis: text,
     model,
     provider: 'claude',
-    promptTokens: response.usage?.input_tokens || 0,
-    completionTokens: response.usage?.output_tokens || 0,
+    promptTokens:      response.usage?.input_tokens  || 0,
+    completionTokens:  response.usage?.output_tokens || 0,
+    cacheCreationTokens: cacheCreated,
+    cacheReadTokens:     cacheRead,
   };
 }

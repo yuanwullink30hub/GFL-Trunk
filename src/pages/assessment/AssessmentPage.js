@@ -125,6 +125,9 @@ function AssessmentPage() {
         aiProvider: aiResult.provider,
         aiModel: aiResult.model,
       });
+      if (aiResult.pdfWarnings?.length > 0) {
+        setAiError(`PDF niet leesbaar: "${aiResult.pdfWarnings.join(', ')}". Upload een .txt of extern rapport (Big Five, MBTI, etc.) — geen GardenForLife PDF.`);
+      }
     } catch (err) {
       console.error('[Assessment] AI analysis failed:', err.message);
       setAiError(err.message);

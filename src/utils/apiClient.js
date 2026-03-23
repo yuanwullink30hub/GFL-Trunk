@@ -203,6 +203,19 @@ export async function analyzeAssessment(params, onProgress) {
   const decoder = new TextDecoder();
   let buffer = '';
   let result = null;
+  let pdfWarnings = [];
+
+  const handleEvent = (eventType, data) => {
+    if (eventType === 'progress' && onProgress) {
+      onProgress(data.stage, data.message);
+    } else if (eventType === 'result') {
+      result = data;
+    } else if (eventType === 'error') {
+      throw new Error(data.error || 'AI analysis failed');
+    } else if (eventType === 'pdf_warning') {
+      pdfWarnings = [...pdfWarnings, ...(data.files || [])];
+    }
+  };
 
   while (true) {
     const { done, value } = await reader.read();
@@ -220,13 +233,7 @@ export async function analyzeAssessment(params, onProgress) {
         eventType = line.slice(7).trim();
       } else if (line.startsWith('data: ')) {
         const data = JSON.parse(line.slice(6));
-        if (eventType === 'progress' && onProgress) {
-          onProgress(data.stage, data.message);
-        } else if (eventType === 'result') {
-          result = data;
-        } else if (eventType === 'error') {
-          throw new Error(data.error || 'AI analysis failed');
-        }
+        handleEvent(eventType, data);
         eventType = null;
       }
     }
@@ -241,13 +248,7 @@ export async function analyzeAssessment(params, onProgress) {
         eventType = line.slice(7).trim();
       } else if (line.startsWith('data: ')) {
         const data = JSON.parse(line.slice(6));
-        if (eventType === 'progress' && onProgress) {
-          onProgress(data.stage, data.message);
-        } else if (eventType === 'result') {
-          result = data;
-        } else if (eventType === 'error') {
-          throw new Error(data.error || 'AI analysis failed');
-        }
+        handleEvent(eventType, data);
         eventType = null;
       }
     }
@@ -255,6 +256,10 @@ export async function analyzeAssessment(params, onProgress) {
 
   if (!result) {
     throw new Error('No result received from AI analysis');
+  }
+
+  if (pdfWarnings.length > 0) {
+    result.pdfWarnings = pdfWarnings;
   }
 
   return result;

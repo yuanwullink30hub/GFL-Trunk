@@ -1139,7 +1139,10 @@ function buildUserMessage({
   parts.push(
     `Genereer een volledig Meester Ontologisch Rapport ` +
     `(${hasReport ? 'alle 12 secties + Persoonlijkheidsrapport Vergelijking' : 'alle 12 secties'}) ` +
-    `voor deze gebruiker.\n`
+    `voor deze gebruiker.\n` +
+    `BELANGRIJK: Begin je output DIRECT met "## 1. De Identiteit". ` +
+    `Schrijf GEEN overkoepelende titel zoals "Meester Ontologisch Rapport" of een inleiding vóór sectie 1. ` +
+    `De eerste regel van je output moet "## 1. De Identiteit" zijn.\n`
   );
 
   // ═══ ARCHETYPE PROFIEL ═══

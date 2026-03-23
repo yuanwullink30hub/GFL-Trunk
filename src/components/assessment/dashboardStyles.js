@@ -221,13 +221,13 @@ export const SciFiButton = ({
       >
         {/* Scanline sweep — matches scroll-label pattern */}
         <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
+          position: 'absolute', inset: '0 2%', pointerEvents: 'none',
           background: `linear-gradient(180deg, transparent 0%, rgba(${rgb},0.04) 45%, rgba(${rgb},0.08) 50%, rgba(${rgb},0.04) 55%, transparent 100%)`,
           animation: 'scifiBtnScanline 4s linear infinite',
         }} />
         {/* Horizontal data lines */}
         <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
+          position: 'absolute', inset: '0 2%', pointerEvents: 'none',
           backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(${rgb},0.025) 3px, rgba(${rgb},0.025) 4px)`,
         }} />
         <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>

@@ -200,7 +200,10 @@ async function generatePdf(data) {
           width: CONTENT_W, align: 'center',
         });
 
-      // ── Page 3+: Assessment Results ──
+      // ── Pages 3–4: Methodological Context ──
+      drawContextPages(doc);
+
+      // ── Page 5+: Assessment Results ──
       doc.addPage();
       y = MARGIN;
 
@@ -260,6 +263,10 @@ async function generatePdf(data) {
         const sections = parseAnalysisSections(data.analysis);
 
         if (sections.length > 0) {
+          // Disclaimer block before sections
+          if (y > PAGE_H - MARGIN - 100) { doc.addPage(); y = MARGIN; }
+          y = drawDisclaimer(doc, y);
+
           // Section accent colors cycle through brand palette
           const sectionColors = [
             PURPLE, GREEN, ORANGE, PURPLE, GREEN, ORANGE,
@@ -497,11 +504,170 @@ async function generatePdf(data) {
   });
 }
 
+/**
+ * Draw the two fixed context/methodology pages (Belangrijke Context).
+ */
+function drawContextPages(doc) {
+  const ctxSections = [
+    {
+      heading: 'Belangrijke Context',
+      headingColor: PURPLE,
+      body: [
+        { type: 'para', text: 'Waar traditionele persoonlijkheidstesten je in één hokje plaatsen, brengt het Deltawerken Model in kaart hoe jouw zenuwstelsel navigeert tussen instinct en aanpassing — en wat dat je kost.' },
+        { type: 'para', text: 'Het theoretische fundament combineert drie onderzoekstradities: de archetypische psychologie van Carl Jung, het neurobiologische Triple Network Model, en de Big Five persoonlijkheidstheorie (OCEAN). Deze worden samengebracht in het Deltawerken framework dat niet alleen meet wát je doet, maar vanuit welke laag je opereert.' },
+      ],
+    },
+    {
+      heading: 'Garden For Life Bronmodellen',
+      headingColor: GREEN,
+      body: [
+        { type: 'sub', text: 'De Deltawerken Driehoek' },
+        { type: 'para', text: 'Structureert de verhouding tussen drie fundamentele waardenoriëntaties: waarheid, goedheid en schoonheid. Verwant aan Plato\u2019s transcendentalia bepaalt deze driehoek de dieptelaag van de assessment. In dit model navigeert elk archetype op deze driehoek: niet alleen als gedragskenmerken, maar als oriëntatie op wat er werkelijk toe doet.' },
+        { type: 'sub', text: 'Het Triple Network Wiel' },
+        { type: 'para', text: 'Positioneert de 12 kern-archetypen op een geometrisch wiel op basis van de drie grote hersennetwerken die Vinod Menon en collega\u2019s beschreven: het Central Executive Network (orde, executie), het Default Mode Network (reflectie, betekenisgeving) en het Salience Network (responsiviteit, adaptatie). De 12 posities zijn verbonden via vijf lijntypes \u2014 gedeelde hardware, feedback-bruggen, schaduwassen, cognitieve synergiedriehoeken en frictie-assen.' },
+        { type: 'sub', text: 'Cells within Cells Interlinked' },
+        { type: 'para', text: 'Het hiërarchische model dat de ontologische lagen relateert naar de maatschappij: van fysiologische basisbehoeften (verwant aan Maslows behoeftehiërarchie) via zelfactualisatie en collectief geheugen naar intimiteit en transcendentie. Dit model verklaart waarom onze test niet alleen persoonlijkheid meet, maar de ontwikkelingslaag waarop iemand primair opereert.' },
+      ],
+    },
+    {
+      heading: 'Van Vraag Naar Score',
+      headingColor: ORANGE,
+      body: [
+        { type: 'para', text: 'Het onderzoek bestaat uit 36 vragen verdeeld over vijf onderwerpen: Zelf, Ander, Macht, Wijsheid en Mysterie. Elke vraag biedt zes antwoorden \u2014 drie vanuit Nature (het ongedwongen instinct) en drie vanuit Culture (de aangeleerde strategie). Je kiest er twee: de eerste is je kern, de tweede resoneert maar minder sterk. Dit levert 72 datapunten.' },
+        { type: 'para', text: 'Het onderscheid tussen Nature en Culture is gebaseerd op John Vervaeke\u2019s 4P-framework: participatory en perspectival knowing (je weet het doordat je het BENT \u2014 Nature) versus propositional en procedural knowing (je weet DAT je het hebt en HOE je ermee navigeert \u2014 Culture).' },
+        { type: 'para', text: 'Elke keuze distribueert punten niet alleen naar het gekozen archetype, maar vloeit via de geometrische verbindingen van het wiel. Een Nature-keuze activeert de biologische hardware (groene en blauwe verbindingen) en werpt een schaduw naar de 180\u00b0 tegenpool (paarse verbinding). Een Culture-keuze activeert het aangeleerde cognitieve netwerk (gele driehoeken).' },
+      ],
+    },
+    {
+      heading: 'De Archetypische Laag',
+      headingColor: PURPLE,
+      body: [
+        { type: 'para', text: 'De 12 archetypen zijn geen hokjes maar navigatiestijlen, geworteld in Jungs archetypische theorie en geactualiseerd via de OCEAN-dimensies van Paul Costa en Robert McCrae. Elk archetype heeft een specifiek Big Five-profiel: de Judge scoort hoog op Conscientiousness en laag op Agreeableness; de Lover hoog op Agreeableness en Openness; de Trickster hoog op Openness en laag op Conscientiousness.' },
+        { type: 'para', text: 'De zes biologische groepen (Ruling, Relational, Seeker, Chaos, Abstract, Agency) delen neurale hardware. De 180\u00b0 schaduwparen (Judge\u2194Trickster, Lover\u2194Sage, Caregiver\u2194Artist, Innocent\u2194Magician, Explorer\u2194Hero, Outlaw\u2194Ruler) volgen Jungs schaduwtheorie: je grootste groeirichting zit in de integratie van je absolute tegenpool.' },
+      ],
+    },
+    {
+      heading: 'Hoe Het Rapport Ontstaat',
+      headingColor: GREEN,
+      body: [
+        { type: 'para', text: 'Na het assessment berekent het systeem je volledige scoreprofiel inclusief de geometrische echo\u2019s. Een AI-model (Claude, Anthropic) analyseert dit profiel aan de hand van het volledige Deltawerken-framework: de drie bronmodellen, de biochemische archetypeprofielen, de 72 Extended Archetypes (Main \u00d7 Support-groep), en \u2014 indien aangeleverd \u2014 je OCEAN-data als externe validatie.' },
+        { type: 'para', text: 'Het rapport is geen generieke beschrijving van een type. Het is een dynamische analyse van jouw specifieke scoreprofiel: waar je hardware het sterkst resoneert, welke aangeleerde strategieën je inzet, waar je blinde vlekken zitten, en welke schaduw-integratie je groeirichting vormt.' },
+        { type: 'italic', text: 'En mocht je nog twijfelen over de gegenereerde content, alles wat je zojuist hebt gelezen is geschreven door hetzelfde model dat jouw score heeft geanalyseerd.' },
+      ],
+    },
+    {
+      heading: 'Wetenschappelijke Context',
+      headingColor: ORANGE,
+      body: [
+        { type: 'para', text: 'Het Deltawerken Model is een zelfreflectie-instrument, geen klinisch diagnostisch systeem. De neurobiologische termen zijn conceptuele metaforen die wetenschappelijk onderzoek als inspiratiebron gebruiken \u2014 geen diagnostische claims.' },
+        { type: 'bullet', text: 'Archetypische psychologie: C.G. Jung (1921), Collected Works Vol. 6; Carol Pearson (1991), Awakening the Heroes Within.' },
+        { type: 'bullet', text: 'Neurale netwerken: V. Menon (2011), Large-scale brain networks in cognition, Trends in Cognitive Sciences; M.E. Raichle (2001), A default mode of brain function, PNAS.' },
+        { type: 'bullet', text: 'Persoonlijkheidstheorie: P.T. Costa & R.R. McCrae (1992), Revised NEO Personality Inventory; L.R. Goldberg (1993), The structure of phenotypic personality traits, American Psychologist.' },
+        { type: 'bullet', text: 'Cognitieve ontwikkeling: J. Piaget (1954), The Construction of Reality in the Child; J. Vervaeke (2019), Awakening from the Meaning Crisis; J. Peterson (1999), Maps of Meaning.' },
+        { type: 'bullet', text: 'Affectieve neurowetenschappen: J. Panksepp (1998), Affective Neuroscience; S. Porges (2011), The Polyvagal Theory.' },
+        { type: 'bullet', text: 'Creativiteit & neurale integratie: M. Benedek et al. (2014), Brain connectivity during creative cognition, Neuropsychologia; R.E. Beaty et al. (2018), Robust prediction of creativity from brain activity, PNAS.' },
+      ],
+    },
+  ];
+
+  doc.addPage();
+  let y = MARGIN;
+
+  // Page header
+  doc.fontSize(8).fillColor(LIGHT_GRAY).font('Helvetica')
+    .text('GARDEN FOR LIFE  \u2014  Methodologische Achtergrond', MARGIN, y);
+  doc.moveTo(MARGIN, y + 14).lineTo(PAGE_W - MARGIN, y + 14)
+    .strokeColor(PURPLE).lineWidth(0.5).stroke();
+  y += 28;
+
+  for (const section of ctxSections) {
+    // New page if not enough space for heading + a few lines
+    if (y > PAGE_H - MARGIN - 80) {
+      doc.addPage();
+      y = MARGIN;
+      doc.fontSize(8).fillColor(LIGHT_GRAY).font('Helvetica')
+        .text('GARDEN FOR LIFE  \u2014  Methodologische Achtergrond', MARGIN, y);
+      doc.moveTo(MARGIN, y + 14).lineTo(PAGE_W - MARGIN, y + 14)
+        .strokeColor(PURPLE).lineWidth(0.5).stroke();
+      y += 28;
+    }
+
+    // Section heading with colored left bar
+    doc.rect(MARGIN, y, 3, 13).fillColor(section.headingColor).fill();
+    doc.fontSize(11).fillColor(section.headingColor).font('Helvetica-Bold')
+      .text(section.heading, MARGIN + 8, y);
+    y += 18;
+
+    for (const item of section.body) {
+      if (y > PAGE_H - MARGIN - 40) {
+        doc.addPage();
+        y = MARGIN;
+        doc.fontSize(8).fillColor(LIGHT_GRAY).font('Helvetica')
+          .text('GARDEN FOR LIFE  \u2014  Methodologische Achtergrond', MARGIN, y);
+        doc.moveTo(MARGIN, y + 14).lineTo(PAGE_W - MARGIN, y + 14)
+          .strokeColor(PURPLE).lineWidth(0.5).stroke();
+        y += 28;
+      }
+
+      if (item.type === 'sub') {
+        y += 2;
+        doc.fontSize(9).fillColor(BLACK).font('Helvetica-Bold')
+          .text(item.text, MARGIN + 6, y);
+        y = doc.y + 3;
+      } else if (item.type === 'para') {
+        doc.fontSize(8.5).fillColor(GRAY).font('Helvetica')
+          .text(item.text, MARGIN + 6, y, { width: CONTENT_W - 6, lineGap: 2 });
+        y = doc.y + 7;
+      } else if (item.type === 'italic') {
+        y += 2;
+        doc.fontSize(8.5).fillColor(GRAY).font('Helvetica-Oblique')
+          .text(item.text, MARGIN + 6, y, { width: CONTENT_W - 6, lineGap: 2 });
+        y = doc.y + 7;
+      } else if (item.type === 'bullet') {
+        doc.fontSize(8).fillColor(GRAY).font('Helvetica')
+          .text('\u2022  ' + item.text, MARGIN + 10, y, { width: CONTENT_W - 10, lineGap: 2 });
+        y = doc.y + 4;
+      }
+    }
+    y += 8;
+  }
+}
+
 function sectionHeading(doc, title, color, y) {
   doc.rect(MARGIN, y - 2, 3, 14).fillColor(color).fill();
   doc.fontSize(12).fillColor(color).font('Helvetica-Bold')
     .text(title.toUpperCase(), MARGIN + 8, y);
   return y + 20;
+}
+
+/**
+ * Draw a disclaimer block with a red left-side annotation bar.
+ * Returns updated y position.
+ */
+function drawDisclaimer(doc, y) {
+  const DISCLAIMER = 'Dit rapport is gegenereerd door het Garden For Life Deltawerken Model \u2014 een zelfreflectie-instrument, geen klinische diagnose. De gebruikte neurobiologische termen zijn metaforen binnen dit specifieke model. Raadpleeg een professional voor medisch of psychologisch advies.';
+  const BAR_W = 3;
+  const PAD_LEFT = 10;
+  const PAD_V = 7;
+  const textX = MARGIN + BAR_W + PAD_LEFT;
+  const textW = CONTENT_W - BAR_W - PAD_LEFT;
+
+  // Measure text height first
+  const textHeight = doc.heightOfString(DISCLAIMER, { width: textW, lineGap: 2 });
+  const boxH = textHeight + PAD_V * 2;
+
+  // Light red background fill
+  doc.save();
+  doc.rect(MARGIN, y, CONTENT_W, boxH).fillColor('#fff5f5').fill();
+  // Red left bar
+  doc.rect(MARGIN, y, BAR_W, boxH).fillColor(RED).fill();
+  doc.restore();
+
+  // Disclaimer text
+  doc.fontSize(8.5).fillColor('#7a1f1f').font('Helvetica')
+    .text(DISCLAIMER, textX, y + PAD_V, { width: textW, lineGap: 2 });
+
+  return y + boxH + 12;
 }
 
 /**
@@ -520,14 +686,14 @@ function parseAnalysisSections(text) {
 
     // First line is the title, rest is body
     const newlineIdx = trimmed.indexOf('\n');
-    if (newlineIdx === -1) {
-      sections.push({ title: trimmed, body: '' });
-    } else {
-      sections.push({
-        title: trimmed.substring(0, newlineIdx).trim(),
-        body: trimmed.substring(newlineIdx + 1).trim(),
-      });
-    }
+    const title = newlineIdx === -1 ? trimmed : trimmed.substring(0, newlineIdx).trim();
+    const body  = newlineIdx === -1 ? ''      : trimmed.substring(newlineIdx + 1).trim();
+
+    // Skip "Meester Ontologisch Rapport" or standalone "Introductie"/"Inleiding" headers
+    if (/meester\s+ontologisch/i.test(title)) continue;
+    if (/^(introductie|inleiding)$/i.test(title)) continue;
+
+    sections.push({ title, body });
   }
   return sections;
 }
@@ -549,8 +715,8 @@ function renderMarkdownBody(doc, body, startY) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Page overflow check
-    if (y > PAGE_H - MARGIN - 30) {
+    // Page overflow check — 100pt safety margin to prevent long paragraphs overflowing off page
+    if (y > PAGE_H - MARGIN - 100) {
       doc.addPage();
       y = MARGIN;
     }
@@ -564,6 +730,8 @@ function renderMarkdownBody(doc, body, startY) {
     // Sub-header (### or ####)
     const subHeaderMatch = line.match(/^#{3,4}\s+(.+)/);
     if (subHeaderMatch) {
+      // Extra safety for headers — needs more space
+      if (y > PAGE_H - MARGIN - 60) { doc.addPage(); y = MARGIN; }
       y += 4;
       doc.fontSize(10).fillColor(PURPLE).font('Helvetica-Bold')
         .text(subHeaderMatch[1], MARGIN + 4, y, { width: CONTENT_W - 8 });
@@ -579,6 +747,7 @@ function renderMarkdownBody(doc, body, startY) {
         .text('•', MARGIN + 8, y);
       renderInlineFormatted(doc, bulletText, MARGIN + 20, y, CONTENT_W - 28);
       y = doc.y + 4;
+      if (y > PAGE_H - MARGIN - 20) { doc.addPage(); y = MARGIN; }
       continue;
     }
 
@@ -589,12 +758,18 @@ function renderMarkdownBody(doc, body, startY) {
         .text(`${numberedMatch[1]}.`, MARGIN + 8, y);
       renderInlineFormatted(doc, numberedMatch[2], MARGIN + 24, y, CONTENT_W - 32);
       y = doc.y + 4;
+      if (y > PAGE_H - MARGIN - 20) { doc.addPage(); y = MARGIN; }
       continue;
     }
 
     // Regular paragraph
     renderInlineFormatted(doc, line, MARGIN + 4, y, CONTENT_W - 8);
     y = doc.y + 4;
+    // Post-render overflow: if we went past the safe zone, start fresh on next iteration
+    if (y > PAGE_H - MARGIN - 20) {
+      doc.addPage();
+      y = MARGIN;
+    }
   }
 
   return y + 8;

@@ -189,12 +189,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     featureDescFont: '0.75rem',
     featureItemGap: '0.6rem',
     pyramidMb: '1.8vh',
-    pyramidGap: '0.4vh',
-    pyramidBaseWidth: 240, pyramidStepWidth: 48,
-    pyramidPadY: '0.5vh', pyramidPadX: '1.25rem',
-    pyramidDotSize: '0.4rem',
-    pyramidLabelFont: '0.75rem',
-    pyramidDescFont: '0.6rem',
+    pyramidGap: '0.56vh',
+    pyramidBaseWidth: 336, pyramidStepWidth: 67,
+    pyramidPadY: '0.7vh', pyramidPadX: '1.25rem',
+    pyramidDotSize: '0.56rem',
+    pyramidLabelFont: '1.05rem',
+    pyramidDescFont: '0.84rem',
     pyramidLabelGap: '0.5rem',
     pyramidItemGap: '0.75rem',
     levelsMb: '1.2vh',
@@ -229,12 +229,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     featureDescFont: '0.71vw',
     featureItemGap: '0.4vw',
     pyramidMb: '1.4vh',
-    pyramidGap: '0.35vh',
-    pyramidBaseWidth: Math.round(windowWidth * 0.085), pyramidStepWidth: Math.round(windowWidth * 0.017),
-    pyramidPadY: '0.4vh', pyramidPadX: '0.84vw',
-    pyramidDotSize: '0.29vw',
-    pyramidLabelFont: '0.57vw',
-    pyramidDescFont: '0.57vw',
+    pyramidGap: '0.49vh',
+    pyramidBaseWidth: Math.round(windowWidth * 0.119), pyramidStepWidth: Math.round(windowWidth * 0.0238),
+    pyramidPadY: '0.56vh', pyramidPadX: '0.84vw',
+    pyramidDotSize: '0.41vw',
+    pyramidLabelFont: '0.8vw',
+    pyramidDescFont: '0.8vw',
     pyramidLabelGap: '0.42vw',
     pyramidItemGap: '0.65vw',
     levelsMb: '1.0vh',
@@ -269,12 +269,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     featureDescFont: '0.55rem',
     featureItemGap: '0.36rem',
     pyramidMb: '1.4vh',
-    pyramidGap: '0.35vh',
-    pyramidBaseWidth: 97.5, pyramidStepWidth: 19.5,
-    pyramidPadY: '0.4vh', pyramidPadX: '0.975rem',
-    pyramidDotSize: '0.33rem',
-    pyramidLabelFont: '0.65rem',
-    pyramidDescFont: '0.55rem',
+    pyramidGap: '0.49vh',
+    pyramidBaseWidth: 136.5, pyramidStepWidth: 27.3,
+    pyramidPadY: '0.56vh', pyramidPadX: '0.975rem',
+    pyramidDotSize: '0.46rem',
+    pyramidLabelFont: '0.91rem',
+    pyramidDescFont: '0.77rem',
     pyramidLabelGap: '0.5rem',
     pyramidItemGap: '0.6rem',
     levelsMb: '1.0vh',
@@ -309,12 +309,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     featureDescFont: '0.55rem',
     featureItemGap: '0.35rem',
     pyramidMb: '0.9vh',
-    pyramidGap: '0.25vh',
-    pyramidBaseWidth: 100, pyramidStepWidth: 20,
-    pyramidPadY: '0.35vh', pyramidPadX: '0.75rem',
-    pyramidDotSize: '0.3rem',
-    pyramidLabelFont: '0.6rem',
-    pyramidDescFont: '0.5rem',
+    pyramidGap: '0.35vh',
+    pyramidBaseWidth: 140, pyramidStepWidth: 28,
+    pyramidPadY: '0.49vh', pyramidPadX: '0.75rem',
+    pyramidDotSize: '0.42rem',
+    pyramidLabelFont: '0.84rem',
+    pyramidDescFont: '0.7rem',
     pyramidLabelGap: '0.4rem',
     pyramidItemGap: '0.5rem',
     levelsMb: '0.8vh',
@@ -547,45 +547,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                 alt="A+ Archetype Analyse" 
                 style={{ maxWidth: s.headerMaxWidth, width: '100%', display: 'block' }}
               />
-              {/* Info icon — right of header image */}
-              <button
-                ref={infoIconRef}
-                onClick={() => showInfo ? closeInfo() : openInfo()}
-                className="hover:scale-110 transition-all duration-300"
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  right: '-1.5rem',
-                  transform: 'translateY(-50%)',
-                  width: '2.1rem',
-                  height: '2.1rem',
-                  borderRadius: '50%',
-                  border: `1px solid ${showInfo ? '#a855f7' : 'rgba(168,85,247,0.45)'}`,
-                  backgroundColor: showInfo ? 'rgba(168,85,247,0.18)' : 'rgba(168,85,247,0.06)',
-                  boxShadow: showInfo ? '0 0 12px rgba(168,85,247,0.25)' : 'none',
-                  color: '#a855f7',
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  fontStyle: 'italic',
-                  fontFamily: 'Georgia, serif',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  zIndex: 10,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#a855f7';
-                  e.currentTarget.style.boxShadow = '0 0 16px rgba(168,85,247,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = showInfo ? '#a855f7' : 'rgba(168,85,247,0.45)';
-                  e.currentTarget.style.boxShadow = showInfo ? '0 0 12px rgba(168,85,247,0.25)' : 'none';
-                }}
-                title="Info"
-              >
-                i
-              </button>
+
             </div>
 
             <p className="mx-auto leading-relaxed" style={{ fontSize: s.descFontSize, marginTop: s.descMt, whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'center', color: '#FFFEF0' }}>
@@ -668,6 +630,40 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                       }
                     }}
                   />
+                  <div style={{ position: 'relative', width: '10rem' }}>
+                  {uploadedFiles.length > 0 && (
+                    <div style={{ position: 'absolute', right: 'calc(100% + 0.85rem)', top: '50%', transform: 'translateY(-50%)' }}>
+                      <span
+                        onMouseEnter={() => setShowUploadWarning(true)}
+                        onMouseLeave={() => setShowUploadWarning(false)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: '1.25rem', height: '1.25rem', borderRadius: '50%',
+                          border: '1px solid rgba(251,146,60,0.5)', color: '#fb923c',
+                          fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
+                          flexShrink: 0, lineHeight: 1,
+                        }}
+                        title="Upload informatie"
+                      >
+                        i
+                      </span>
+                      {showUploadWarning && (
+                        <div
+                          onMouseEnter={() => setShowUploadWarning(true)}
+                          onMouseLeave={() => setShowUploadWarning(false)}
+                          style={{
+                          position: 'absolute', bottom: 'calc(100% + 0.5rem)', left: '50%', transform: 'translateX(-50%)',
+                          width: '18rem', padding: '0.75rem 1rem', borderRadius: '0.5rem',
+                          backgroundColor: 'rgba(15,23,42,0.97)', border: '1px solid rgba(251,146,60,0.3)',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.4)', zIndex: 50,
+                          color: 'rgba(148,163,184,0.9)', fontSize: '0.7rem', lineHeight: 1.6,
+                        }}>
+                          <span style={{ color: '#fb923c', fontWeight: 600 }}>Let op: </span>
+                          De volledige tekst van dit bestand wordt meegestuurd naar het Claude AI-model (Anthropic, VS). Als dit bestand persoonlijke informatie bevat — zoals uw naam — bereikt die informatie de servers van Anthropic. Garden For Life is niet verantwoordelijk voor persoonsgegevens die u in geüploade bestanden opneemt.
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <SciFiButton
                     onClick={() => fileInputRef.current?.click()}
                     color="#a78bfa"
@@ -694,43 +690,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                       </span>
                     </span>
                   </SciFiButton>
-                  {uploadedFiles.length > 0 && (
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                      <span
-                        onClick={() => setShowUploadWarning(v => !v)}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          width: '1.25rem', height: '1.25rem', borderRadius: '50%',
-                          border: '1px solid rgba(251,146,60,0.5)', color: '#fb923c',
-                          fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
-                          flexShrink: 0, lineHeight: 1,
-                        }}
-                        title="Upload informatie"
-                      >
-                        i
-                      </span>
-                      {showUploadWarning && (
-                        <div style={{
-                          position: 'absolute', bottom: 'calc(100% + 0.5rem)', right: 0,
-                          width: '18rem', padding: '0.75rem 1rem', borderRadius: '0.5rem',
-                          backgroundColor: 'rgba(15,23,42,0.97)', border: '1px solid rgba(251,146,60,0.3)',
-                          boxShadow: '0 4px 20px rgba(0,0,0,0.4)', zIndex: 50,
-                          color: 'rgba(148,163,184,0.9)', fontSize: '0.7rem', lineHeight: 1.6,
-                        }}>
-                          <span style={{ color: '#fb923c', fontWeight: 600 }}>Let op: </span>
-                          De volledige tekst van dit bestand wordt meegestuurd naar het Claude AI-model (Anthropic, VS). Als dit bestand persoonlijke informatie bevat — zoals uw naam — bereikt die informatie de servers van Anthropic. Garden For Life is niet verantwoordelijk voor persoonsgegevens die u in geüploade bestanden opneemt.
-                          <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
-                            <span
-                              onClick={() => setShowUploadWarning(false)}
-                              style={{ color: '#a78bfa', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600 }}
-                            >
-                              Sluiten
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  </div>
 
                   {/* Divider label */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '10rem' }}>
@@ -756,7 +716,44 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
           </div>
 
           {/* Pyramid Layers Visual */}
-          <div style={{ marginBottom: s.pyramidMb, marginTop: 'auto' }}>
+          <div style={{ marginBottom: s.pyramidMb, marginTop: 'auto', position: 'relative', top: '-2rem' }}>
+            {/* Info icon — top of pyramid */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
+              <button
+                ref={infoIconRef}
+                onClick={() => showInfo ? closeInfo() : openInfo()}
+                className="hover:scale-110 transition-all duration-300"
+                style={{
+                  width: '2.1rem',
+                  height: '2.1rem',
+                  borderRadius: '50%',
+                  border: `1px solid ${showInfo ? '#eab308' : 'rgba(234,179,8,0.45)'}`,
+                  backgroundColor: showInfo ? 'rgba(234,179,8,0.18)' : 'rgba(234,179,8,0.06)',
+                  boxShadow: showInfo ? '0 0 12px rgba(234,179,8,0.35)' : 'none',
+                  color: '#eab308',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  fontStyle: 'italic',
+                  fontFamily: 'Georgia, serif',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  zIndex: 10,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#eab308';
+                  e.currentTarget.style.boxShadow = '0 0 16px rgba(234,179,8,0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = showInfo ? '#eab308' : 'rgba(234,179,8,0.45)';
+                  e.currentTarget.style.boxShadow = showInfo ? '0 0 12px rgba(234,179,8,0.35)' : 'none';
+                }}
+                title="Info"
+              >
+                i
+              </button>
+            </div>
             <h2 className="text-center text-slate-400 font-mono uppercase tracking-wider" style={{ display: 'none', fontSize: s.levelsTitleFont, marginBottom: s.levelsTitleMb }}>
               {t('assessmentIntro.layersTitle')}
             </h2>
@@ -1106,8 +1103,11 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                 <h3 className="font-medium" style={{ color: '#3b82f6', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(59,130,246,0.3)' }}>
                   Waarom deze test anders is
                 </h3>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
+                  Waar traditionele persoonlijkheidstesten je in één hokje plaatsen, brengt het Deltawerken Model in kaart hoe jouw zenuwstelsel navigeert tussen instinct en aanpassing — en wat dat je kost.
+                </p>
                 <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize }}>
-                  Traditionele persoonlijkheidstesten (zoals MBTI of DISC) stoppen mensen in statische hokjes. Ze meten je aangeleerde gedrag en vertellen je vervolgens: &quot;Dit is wie je bent.&quot; Wij geloven dat dit een gevaarlijke illusie is die je fixeert in verouderde overlevingspatronen. Deze assessment is gebouwd op een radicaal andere fundering: de kruising tussen neurowetenschap, kwantumbiologie en analytisch idealisme.
+                  Het theoretische fundament combineert drie onderzoekstradities: de archetypische psychologie van Carl Jung, het neurobiologische Triple Network Model, en de Big Five persoonlijkheidstheorie (OCEAN). Deze worden samengebracht in het eerste persoonlijkheidsframework dat niet alleen meet wát je doet, maar vanuit welke laag je opereert.
                 </p>
               </div>
 
@@ -1210,6 +1210,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                       Biologische Hardware (TNM &amp; OCEAN)
                     </h3>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
+                      De Deltawerken Driehoek structureert de verhouding tussen drie fundamentele waardenoriëntaties: waarheid, goedheid en schoonheid. Deze driehoek — verwant aan Plato&apos;s transcendentalia — bepaalt de dieptelaag van de assessment. In dit model navigeert elke archetype op deze driehoek: niet alleen als gedragskenmerken, maar als oriëntatie op wat er werkelijk toe doet.
+                    </p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
                       <span style={{ color: '#f97316', fontWeight: 600 }}>Triple Network Model (TNM):</span> De drie kernnetwerken van je brein (CEN - Centrale Executief Netwerk, DMN - Default Mode Network, Salience Network) bepalen je informatieverwerking.
                     </p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
@@ -1244,19 +1247,42 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                 </div>
               </div>
 
-              {/* Waarom dit je perceptie zal breken */}
+              {/* Waarom dit je perceptie zal breken: Van Vraag Naar Score */}
               <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem' }}>
                 <h3 className="font-medium" style={{ color: '#ef4444', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(239,68,68,0.3)' }}>
-                  Waarom dit je perceptie zal breken
+                  Waarom dit je perceptie zal breken: Van Vraag Naar Score
                 </h3>
                 <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
-                  Het doel van dit rapport is niet om je een comfortabel label te geven. Het is een oefening in Mnemonic Improvisation. We herinterpreteren je data in real-time om de illusie van &apos;trouw blijven aan jezelf&apos; te doorbreken.
+                  Het onderzoek bestaat uit 36 vragen verdeeld over vijf onderwerpen: Zelf, Ander, Macht, Wijsheid en Mysterie. Elke vraag biedt zes antwoorden — drie vanuit Nature (het ongedwongen instinct) en drie vanuit Culture (de aangeleerde strategie). Je kiest er twee: de eerste is je kern, de tweede resoneert maar minder sterk. Dit levert 72 datapunten.
                 </p>
                 <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
-                  Zolang je je vastklampt aan verouderde overlevingsscripts, verspil je bandbreedte. Dit assessment is ontworpen als een breekijzer om die vastgeroeste cognitieve scripts te vernietigen, zodat je ruimte kunt maken voor pure, functionele aanpassing in het hier en nu.
+                  Het onderscheid tussen Nature en Culture is gebaseerd op John Vervaeke&apos;s 4P-framework: participatory en perspectival knowing (je weet het doordat je het BENT — Nature) versus propositional en procedural knowing (je weet DAT je het hebt en HOE je ermee navigeert — Culture). De antwoorden zijn zo geschreven dat beide even authentiek aanvoelen — het verschil zit in de korrel van de taal, niet in de oppervlakte.
+                </p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.75rem' }}>
+                  Elke keuze distribueert punten niet alleen naar het gekozen archetype, maar vloeit via de geometrische verbindingen van het wiel. Een Nature-keuze activeert de biologische hardware (de groene en blauwe verbindingen) en werpt een schaduw naar de 180° tegenpool (de paarse verbinding). Een Culture-keuze activeert het aangeleerde cognitieve netwerk (de gele driehoeken). Dit principe — dat gedrag niet geïsoleerd opereert maar door neurale netwerken resoneert — is consistent met het werk van Menon over cross-network connectivity en de Default Mode-hypothese van Marcus Raichle.
+                </p>
+
+                <h4 className="font-medium" style={{ color: '#a855f7', fontSize: s.descFontSize, marginBottom: '0.4rem', textShadow: '0 0 8px rgba(168,85,247,0.3)' }}>
+                  De Archetypische Laag
+                </h4>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
+                  De 12 archetypen zijn geen hokjes maar navigatiestijlen, geworteld in Jungs oorspronkelijke archetypische theorie en geactualiseerd via de OCEAN-dimensies van Paul Costa en Robert McCrae. Elk archetype heeft een specifiek Big Five-profiel: de Judge scoort hoog op Conscientiousness en laag op Agreeableness; de Lover hoog op Agreeableness en Openness; de Trickster hoog op Openness en laag op Conscientiousness. Deze mapping maakt de archetypische taal meetbaar zonder de diepte te verliezen.
+                </p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.75rem' }}>
+                  De zes biologische groepen (Ruling, Relational, Seeker, Chaos, Abstract, Agency) delen neurale hardware — een principe geïnspireerd op Jaak Panksepp&apos;s affectieve neurowetenschappen en de biochemische stressrespons-profielen per archetype (HPA-as activatie, oxytocine/dopamine/serotonine-dynamiek). De 180° schaduwparen (Judge↔Trickster, Lover↔Sage, Caregiver↔Artist, Innocent↔Magician, Explorer↔Hero, Outlaw↔Ruler) volgen Jungs schaduwtheorie: je grootste groeirichting zit in de integratie van je absolute tegenpool.
+                </p>
+
+                <h4 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.4rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>
+                  Hoe Het Rapport Ontstaat
+                </h4>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
+                  Na het assessment berekent het systeem je volledige scoreprofiel inclusief de geometrische echo&apos;s. Een AI-model (Claude, Anthropic) analyseert dit profiel aan de hand van het volledige Deltawerken-framework: de drie bronmodellen, de biochemische archetypeprofielen, de 72 Extended Archetypes (Main × Support-groep), en — indien aangeleverd — je OCEAN-data als externe validatie.
+                </p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
+                  Het rapport dat je leest is geen generieke beschrijving van een type. Het is een dynamische analyse van jouw specifieke scoreprofiel: waar je hardware het sterkst resoneert, welke aangeleerde strategieën je inzet, waar je blinde vlekken zitten, en welke schaduw-integratie je groeirichting vormt. De taal en structuur worden aangepast aan je dominante netwerkprofiel — analytisch voor CEN-dominante profielen, reflectief voor DMN-dominant, dynamisch voor Salience-dominant.
                 </p>
                 <p className="text-slate-500 italic leading-relaxed" style={{ fontSize: s.descFontSize }}>
-                  Lees dit rapport niet als een oordeel, maar als de technische handleiding van je eigen zenuwstelsel.
+                  En mocht je nog twijfelen over de gegenereerde content, alles wat je zojuist hebt gelezen is geschreven door hetzelfde model die jouw score heeft geanalyseerd.
                 </p>
               </div>
 

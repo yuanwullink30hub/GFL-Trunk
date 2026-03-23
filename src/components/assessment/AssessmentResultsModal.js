@@ -23,6 +23,8 @@ import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
 import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity } from '../../utils/apiClient';
 import tnmWheelImg from '../../images/Model imports/TNM wheel PNG.png';
+import deltawerkenImg from '../../images/Model imports/Deltawerken png.png';
+import cellsImg from '../../images/Model imports/Cells within Cells png.png';
 
 /**
  * AssessmentResultsModal - Full-screen sci-fi results modal
@@ -869,7 +871,87 @@ const AssessmentResultsModal = ({
       pdf.text('Vragen of verzoeken? Neem contact op via het Garden for Life platform.', W / 2, y, { align: 'center' });
 
       // ═══════════════════════════════════════════════════
-      // PAGE 2b: FUNDERING VAN DE TEST
+      // PAGE 3: BELANGRIJKE CONTEXT
+      // ═══════════════════════════════════════════════════
+      pdf.addPage(); paintBg(); y = margin;
+
+      sectionHeading('Belangrijke Context', green);
+
+      writeWrapped(
+        'Waar traditionele persoonlijkheidstesten je in \u00E9\u00E9n hokje plaatsen, brengt het Deltawerken Model in kaart hoe jouw zenuwstelsel navigeert tussen instinct en aanpassing \u2014 en wat dat je kost.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 3;
+      writeWrapped(
+        'Het theoretische fundament combineert drie onderzoekstradities: de archetypische psychologie van Carl Jung, het neurobiologische Triple Network Model, en de Big Five persoonlijkheidstheorie (OCEAN). Deze worden samengebracht in HET oosterse persoonlijkheids framework dat niet alleen meet w\u00E1t je doet, maar vanuit welke laag je opereert.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 6;
+
+      // ── Garden For Life Bronmodellen ──
+      ensureSpace(14);
+      pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...purple);
+      pdf.text('Garden For Life Bronmodellen', margin + 2, y);
+      y += 6;
+
+      writeWrapped(
+        'De Deltawerken Driehoek structureert de verhouding tussen drie fundamentele waarden\u00F6ri\u00EBntaties: waarheid, goedheid en schoonheid. Deze driehoek \u2014 verwant aan Plato\u2019s transcendentalia \u2014 bepaalt de dieptelaag van de assessment. In dit model navigeert elke archetype op deze driehoek: niet alleen als gedragskenmerken, maar als ori\u00EBntatie op wat er werkelijk toe doet.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 3;
+      writeWrapped(
+        'Het Triple Network Wiel positioneert de 12 kern-archetypen op een geometrisch wiel op basis van de drie grote hersennetwerken die Vinod Menon en collega\u2019s beschreven: het Central Executive Network (orde, executie), het Default Mode Network (reflectie, betekenisgeving) en het Salience Network (responsiviteit, adaptatie). De 12 posities zijn verbonden via vijf lijntypes \u2014 gedeelde hardware, feedback-bruggen, schaduwassen, cognitieve synergiedriehoeken en frictie-assen \u2014 die samen het volledige netwerk van het archetype-systeem vormen.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 3;
+      writeWrapped(
+        'Cells within Cells Interlinked is het hi\u00EBrarchische model dat de ontologische lagen relationeert naar de maatschappij: van fysiologische basisbehoeften (verwant aan Maslows behoeftehi\u00EBrarchie) via zelfactualisatie en collectief geheugen naar intimiteit en transcendentie. Dit model verklaart waarom onze test niet alleen persoonlijkheid meet, maar de ontwikkelingslaag waarop iemand primair opereert \u2014 een principe dat Jean Piaget beschreef als cognitieve stadia en dat Carl Jung benaderde als individuatie.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 6;
+
+      // ── Deltawerken image — between Bronmodellen and Van Vraag Naar Score ──
+      try {
+        const dwImgEl = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = deltawerkenImg;
+        });
+        const dwNaturalH = (dwImgEl.naturalHeight / dwImgEl.naturalWidth) * contentW;
+        const dwAvail = H - margin - y - 120; // reserve ~120mm for Van Vraag Naar Score below
+        const dwH = Math.min(dwNaturalH, dwAvail, 55);
+        const dwW = (dwImgEl.naturalWidth / dwImgEl.naturalHeight) * dwH;
+        const dwX = margin + (contentW - dwW) / 2;
+        pdf.addImage(deltawerkenImg, 'PNG', dwX, y, dwW, dwH);
+        y += dwH + 4;
+      } catch {
+        y += 4;
+      }
+
+      // ── Van Vraag Naar Score ──
+      ensureSpace(14);
+      pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...blue);
+      pdf.text('Van Vraag Naar Score', margin + 2, y);
+      y += 6;
+
+      writeWrapped(
+        'Het onderzoek bestaat uit 36 vragen verdeeld over vijf onderwerpen: Zelf, Ander, Macht, Wijsheid en Mysterie. Elke vraag biedt zes antwoorden \u2014 drie vanuit Nature (het ongedwongen instinct) en drie vanuit Culture (de aangeleerde strategie). Je kiest er twee: de eerste is je kern, de tweede resoneert maar minder sterk. Dit levert 72 datapunten.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 3;
+      writeWrapped(
+        'Het onderscheid tussen Nature en Culture is gebaseerd op John Vervaeke\u2019s 4P-framework: participatory en perspectival knowing (je weet het doordat je het BENT \u2014 Nature) versus propositional en procedural knowing (je weet DAT je het hebt en HOE je ermee navigeert \u2014 Culture). De antwoorden zijn zo geschreven dat beide even authentiek aanvoelen \u2014 het verschil zit in de korrel van de taal, niet in de oppervlakte.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 3;
+      writeWrapped(
+        'Elke keuze distribueert punten niet alleen naar het gekozen archetype, maar vloeit via de geometrische verbindingen van het wiel. Een Nature-keuze activeert de biologische hardware (de groene en blauwe verbindingen) en werpt een schaduw naar de 180\u00B0 tegenpool (de paarse verbinding). Een Culture-keuze activeert het aangeleerde cognitieve netwerk (de gele driehoeken). Dit principe \u2014 dat gedrag niet ge\u00EFsoleerd opereert maar door neurale netwerken resoneert \u2014 is consistent met het werk van Menon over cross-network connectivity en de Default Mode-hypothese van Marcus Raichle.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+
+      // ═══════════════════════════════════════════════════
+      // PAGE 4: FUNDERING VAN DE TEST (was page 5)
       // ═══════════════════════════════════════════════════
       pdf.addPage(); paintBg(); y = margin;
 
@@ -981,28 +1063,10 @@ const AssessmentResultsModal = ({
       pdf.text('Niet slecht voor een psychologische test.', margin + 2, y);
       y += 10;
 
-      // ─── Separate page: 72 archetypes cross-reference ───
+      // ═══════════════════════════════════════════════════
+      // PAGE 5: 72 ARCHETYPES CROSS-REFERENCE (was page 6)
+      // ═══════════════════════════════════════════════════
       pdf.addPage(); paintBg(); y = margin;
-
-      // ── TNM WHEEL — static model image above the 72 archetypes table ──
-      try {
-        const tnmImgEl = await new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = tnmWheelImg;
-        });
-        // Hard cap at 60mm (75mm × 0.8) — fixed size
-        const maxH = 60;
-        const naturalH = (tnmImgEl.naturalHeight / tnmImgEl.naturalWidth) * contentW;
-        const finalH = Math.min(naturalH, maxH);
-        const finalW = finalH === naturalH ? contentW : (tnmImgEl.naturalWidth / tnmImgEl.naturalHeight) * finalH;
-        const offsetX = margin + (contentW - finalW) / 2;
-        pdf.addImage(tnmWheelImg, 'PNG', offsetX, y, finalW, finalH);
-        y += finalH + 4;
-      } catch {
-        y += 4;
-      }
 
       sectionHeading('72 Archetypes \u2014 Culturele & Mythologische Kruisverwijzing', orange);
 
@@ -1037,8 +1101,126 @@ const AssessmentResultsModal = ({
         { fontSize: 7.5 }
       );
 
+      // ── TNM WHEEL — static model image below the table ──
+      try {
+        const tnmImgEl = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = tnmWheelImg;
+        });
+        // Hard cap at 60mm (75mm × 0.8) — fixed size
+        const maxH = 60;
+        const naturalH = (tnmImgEl.naturalHeight / tnmImgEl.naturalWidth) * contentW;
+        const finalH = Math.min(naturalH, maxH);
+        const finalW = finalH === naturalH ? contentW : (tnmImgEl.naturalWidth / tnmImgEl.naturalHeight) * finalH;
+        const offsetX = margin + (contentW - finalW) / 2;
+        pdf.addImage(tnmWheelImg, 'PNG', offsetX, y, finalW, finalH);
+        y += finalH + 4;
+      } catch {
+        y += 4;
+      }
+
       // ═══════════════════════════════════════════════════
-      // PAGE 3+: CONTENT PAGES
+      // PAGE 6: DE ARCHETYPISCHE LAAG + HOE HET RAPPORT ONTSTAAT + WETENSCHAPPELIJKE CONTEXT (was page 4)
+      // ═══════════════════════════════════════════════════
+      pdf.addPage(); paintBg(); y = margin;
+
+      sectionHeading('De Archetypische Laag', purple);
+
+      writeWrapped(
+        'De 12 archetypen zijn geen hokjes maar navigatiestijlen, geworteld in Jungs oorspronkelijke archetypische theorie en geactualiseerd via de OCEAN-dimensies van Paul Costa en Robert McCrae. Elk archetype heeft een specifiek Big Five-profiel: de Judge scoort hoog op Conscientiousness en laag op Agreeableness; de Lover hoog op Agreeableness en Openness; de Trickster hoog op Openness en laag op Conscientiousness. Deze mapping maakt de archetypische taal meetbaar zonder de diepte te verliezen.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 3;
+      writeWrapped(
+        'De zes biologische groepen (Ruling, Relational, Seeker, Chaos, Abstract, Agency) delen neurale hardware \u2014 een principe ge\u00EFnspireerd op Jaak Panksepp\u2019s affectieve neurowetenschappen en de biochemische stressrespons-profielen per archetype (HPA-as activatie, oxytocine/dopamine/serotonine-dynamiek). De 180\u00B0 schaduwparen (Judge\u2013Trickster, Lover\u2013Sage, Caregiver\u2013Artist, Innocent\u2013Magician, Explorer\u2013Hero, Outlaw\u2013Ruler) volgen Jungs schaduwtheorie: je grootste groeirichting zit in de integratie van je absolute tegenpool.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 6;
+
+      // ── Hoe Het Rapport Ontstaat ──
+      ensureSpace(14);
+      pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...amber);
+      pdf.text('Hoe Het Rapport Ontstaat', margin + 2, y);
+      y += 6;
+
+      writeWrapped(
+        'Na het assessment berekent het systeem je volledige scoreprofiel inclusief de geometrische echo\u2019s. Een AI-model (Claude, Anthropic) analyseert dit profiel aan de hand van het volledige Deltawerken-framework: de drie bronmodellen, de biochemische archetypeprofielen, de 72 Extended Archetypes (Main \u00D7 Support-groep), en \u2014 indien aangeleverd \u2014 je OCEAN-data als externe validatie.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 3;
+      writeWrapped(
+        'Het rapport dat je leest is geen generieke beschrijving van een type. Het is een dynamische analyse van jouw specifieke scoreprofiel: waar je hardware het sterkst resoneert, welke aangeleerde strategie\u00EBn je inzet, waar je blinde vlekken zitten, en welke schaduw-integratie je groeirichting vormt. De taal en structuur worden aangepast aan je dominante netwerkprofiel \u2014 analytisch voor CEN-dominante profielen, reflectief voor DMN-dominant, dynamisch voor Salience-dominant.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 3;
+      writeWrapped(
+        'En mocht je nog twijfelen over de gegenereerde content, alles wat je zojuist hebt gelezen is geschreven door hetzelfde model die jouw score heeft geanalyseerd.',
+        margin + 2, y, contentW - 4, 8.5, dimWhite, 'italic'
+      );
+      y += 6;
+
+      // ── Cells within Cells image — between Hoe Het Rapport Ontstaat and Wetenschappelijke Context ──
+      try {
+        const cellsImgEl = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = cellsImg;
+        });
+        const cellsNaturalH = (cellsImgEl.naturalHeight / cellsImgEl.naturalWidth) * contentW;
+        const cellsAvail = H - margin - y - 80; // reserve ~80mm for Wetenschappelijke Context + refs below
+        const cellsH = Math.min(cellsNaturalH, cellsAvail, 55);
+        const cellsW = (cellsImgEl.naturalWidth / cellsImgEl.naturalHeight) * cellsH;
+        // draw 1.2x larger, anchored at bottom edge (grows upward + sideways)
+        const cellsScale = 1.2;
+        const drawH = cellsH * cellsScale;
+        const drawW = cellsW * cellsScale;
+        const cellsX = margin + (contentW - drawW) / 2;
+        const cellsY = y - (drawH - cellsH); // shift up so bottom stays at y + cellsH
+        pdf.addImage(cellsImg, 'PNG', cellsX, cellsY, drawW, drawH);
+        y += cellsH + 4;
+      } catch {
+        y += 4;
+      }
+
+      // ── Wetenschappelijke Context ──
+      ensureSpace(14);
+      pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...orange);
+      pdf.text('Wetenschappelijke Context', margin + 2, y);
+      y += 6;
+
+      writeWrapped(
+        'Het Deltawerken Model is een zelfreflectie-instrument, geen klinisch diagnostisch systeem. De neurobiologische termen zijn conceptuele metaforen die wetenschappelijk onderzoek als inspiratiebron gebruiken \u2014 geen diagnostische claims. Het model integreert inzichten uit:',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 4;
+
+      const sciRefs = [
+        { color: white, text: 'Archetypische psychologie: C.G. Jung (1921), Collected Works Vol. 6 \u2014 Psychological Types; Carol Pearson (1991), Awakening the Heroes Within.' },
+        { color: white, text: 'Neurale netwerken: V. Menon (2011), Large-scale brain networks in cognition, Trends in Cognitive Sciences; M.E. Raichle (2001), A default mode of brain function, PNAS.' },
+        { color: white, text: 'Persoonlijkheidstheorie: P.T. Costa & R.R. McCrae (1992), Revised NEO Personality Inventory (NEO-PI-R); L.R. Goldberg (1993), The structure of phenotypic personality traits, American Psychologist.' },
+        { color: white, text: 'Cognitieve ontwikkeling: J. Piaget (1954), The Construction of Reality in the Child; J. Vervaeke (2019), Awakening from the Meaning Crisis (lecture series); J. Peterson (1999), Maps of Meaning.' },
+        { color: white, text: 'Affectieve neurowetenschappen: J. Panksepp (1998), Affective Neuroscience; S. Porges (2011), The Polyvagal Theory. Biochemische stressrespons en HPA-as dynamiek per archetype.' },
+        { color: white, text: 'Creativiteit & neurale integratie: M. Benedek et al. (2014), Brain connectivity during creative cognition, Neuropsychologia; R.E. Beaty et al. (2018), Robust prediction of creativity from brain activity, PNAS.' },
+      ];
+
+      sciRefs.forEach(({ color: refColor, text }) => {
+        ensureSpace(12);
+        pdf.setFontSize(8); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...refColor);
+        pdf.text('\u2022', margin + 2, y);
+        const refLines = pdf.splitTextToSize(text, contentW - 10);
+        refLines.forEach(rl => {
+          ensureSpace(4.3);
+          pdf.text(rl, margin + 7, y);
+          y += 4.3;
+        });
+        y += 1.5;
+      });
+
+      // ═══════════════════════════════════════════════════
+      // CONTENT PAGES
       // ═══════════════════════════════════════════════════
       pdf.addPage();
       paintBg();
@@ -1107,12 +1289,16 @@ const AssessmentResultsModal = ({
         };
 
         // Helper: draw wrapped text in a cell, returns height consumed
+        const MAX_CELL_LINES = 5;
         const cellText = (txt, cx, cy, cw, fontSize, color, fontStyle = 'normal') => {
           if (!txt) return 0;
           pdf.setFontSize(fontSize);
           pdf.setFont('helvetica', fontStyle);
           pdf.setTextColor(...color);
-          const lines = pdf.splitTextToSize(txt, cw - 2);
+          const allLines = pdf.splitTextToSize(txt, cw - 2);
+          const lines = allLines.length > MAX_CELL_LINES
+            ? [...allLines.slice(0, MAX_CELL_LINES - 1), allLines[MAX_CELL_LINES - 1] + '\u2026']
+            : allLines;
           const lh = fontSize * 0.42;
           lines.forEach((line, li) => {
             pdf.text(line, cx + 1, cy + li * lh);
@@ -1124,7 +1310,7 @@ const AssessmentResultsModal = ({
           if (!txt) return 0;
           pdf.setFontSize(fontSize);
           const lines = pdf.splitTextToSize(txt, cw - 2);
-          return lines.length * (fontSize * 0.42);
+          return Math.min(lines.length, MAX_CELL_LINES) * (fontSize * 0.42);
         };
 
         // ── NEW LAYOUT: archetypes as rows, Betekenis / Gift / Valkuil as columns ──
@@ -1145,23 +1331,6 @@ const AssessmentResultsModal = ({
         const col2x = col1x + dataColW + gap;
         const col3x = col2x + dataColW + gap;
 
-        // Header row
-        const headerH = 5;
-        ensureSpace(headerH + 4);
-        pdf.setFillColor(15, 15, 25);
-        pdf.rect(col0x, y - 1, contentW, headerH + 1, 'F');
-        pdf.setFontSize(7);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(...[120, 120, 140]);
-        pdf.text('ARCHETYPE', col0x + 1, y + 3.5);
-        pdf.setTextColor(...orange);
-        pdf.text('BETEKENIS', col1x + 1, y + 3.5);
-        pdf.setTextColor(...green);
-        pdf.text('GIFT', col2x + 1, y + 3.5);
-        pdf.setTextColor(...red);
-        pdf.text('VALKUIL', col3x + 1, y + 3.5);
-        y += headerH + gap;
-
         // Measure row heights
         const rowHeights = nameRowData.map(sa => {
           const hName = 6 + measureCellH(sa.extendedName, nameColW, nameFontSize);
@@ -1179,12 +1348,6 @@ const AssessmentResultsModal = ({
           if (sa.isActive) { pdf.setFillColor(40, 30, 60); }
           else { pdf.setFillColor(18, 18, 28); }
           pdf.roundedRect(col0x, y - 1, contentW, rowH, 1, 1, 'F');
-
-          // Column dividers
-          pdf.setDrawColor(40, 40, 55);
-          pdf.line(col1x - gap * 0.5, y - 1, col1x - gap * 0.5, y - 1 + rowH);
-          pdf.line(col2x - gap * 0.5, y - 1, col2x - gap * 0.5, y - 1 + rowH);
-          pdf.line(col3x - gap * 0.5, y - 1, col3x - gap * 0.5, y - 1 + rowH);
 
           // Name column: group label + extended name
           pdf.setFontSize(7);
@@ -1252,7 +1415,7 @@ const AssessmentResultsModal = ({
         const OCEAN_DIMS = ['O', 'C', 'E', 'A', 'N'];
         const OCEAN_FULL_NL = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
         const OCEAN_COLORS_PDF = {
-          O: [167, 139, 250], C: cyan, E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253],
+          O: [167, 139, 250], C: [34, 211, 238], E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253],
         };
 
         sectionHeading('OCEAN Persoonlijkheidsprofiel', blue);
@@ -1270,37 +1433,76 @@ const AssessmentResultsModal = ({
         });
         y += 6;
 
-        // Dimension bars
-        const oceanBarTrackW = contentW - 46;
+        // ── Side-by-side OCEAN panels: left = archetype profile (X/10), right = user score (X/100) ──
+        const userOceanMain = result.oceanScores || null;
+        const hasRightPanel = userOceanMain && Object.keys(userOceanMain).length > 0;
+        const gapMm = 6;
+        const halfPanelW = hasRightPanel ? (contentW - gapMm) / 2 : contentW;
+        const leftPanelX = margin;
+        const rightPanelX = margin + halfPanelW + gapMm;
+
+        // Panel header labels
+        ensureSpace(8);
+        pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...cyan);
+        pdf.text('GFL TEST — ARCHETYPE PROFIEL', leftPanelX + 2, y);
+        if (hasRightPanel) {
+          pdf.text('JOUW SCORE', rightPanelX + 2, y);
+        }
+        y += 6;
+
+        // Dimension bars — both panels
         const oceanBarH = 4;
+        const labelW = 26;
+        const scoreColW = 14;
+        const leftBarW = halfPanelW - labelW - scoreColW - 4;
+        const rightBarW = hasRightPanel ? halfPanelW - labelW - scoreColW - 4 : 0;
+
         OCEAN_DIMS.forEach(dim => {
           ensureSpace(9);
-          const score = (ocean && ocean[dim]) != null ? ocean[dim] : 0; // 0–10
-          const pct = score / 10;
           const col = OCEAN_COLORS_PDF[dim];
-          // Label
+
+          // ── LEFT panel: archetype OCEAN (0-10) ──
+          const score10 = (ocean && ocean[dim]) != null ? ocean[dim] : 0;
+          const pct10 = score10 / 10;
+          // Dim letter
           pdf.setFontSize(8.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
-          pdf.text(dim, margin + 2, y + 1.5);
+          pdf.text(dim, leftPanelX + 2, y + 1.5);
+          // Label
           pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
-          pdf.text(OCEAN_FULL_NL[dim], margin + 9, y + 1.5);
+          pdf.text(OCEAN_FULL_NL[dim], leftPanelX + 9, y + 1.5);
           // Track background
-          const bx = margin + 40;
+          const bxL = leftPanelX + labelW;
           pdf.setFillColor(22, 22, 30);
-          pdf.roundedRect(bx, y - 1.5, oceanBarTrackW, oceanBarH, 1, 1, 'F');
+          pdf.roundedRect(bxL, y - 1.5, leftBarW, oceanBarH, 1, 1, 'F');
           // Fill
           pdf.setFillColor(...col);
-          pdf.roundedRect(bx, y - 1.5, Math.max(pct * oceanBarTrackW, 2), oceanBarH, 1, 1, 'F');
-          // Score label
+          pdf.roundedRect(bxL, y - 1.5, Math.max(pct10 * leftBarW, 2), oceanBarH, 1, 1, 'F');
+          // Score
           pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
-          pdf.text(`${score}/10`, W - margin - 2, y + 1.5, { align: 'right' });
-          // Text rating (after bar fill, if space allows)
-          if (oceanText?.[dim]) {
-            const ratingX = bx + pct * oceanBarTrackW + 3;
-            if (ratingX + 18 < W - margin - 14) {
-              pdf.setFontSize(6); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
-              pdf.text(oceanText[dim], ratingX, y + 1);
-            }
+          pdf.text(`${score10}/10`, bxL + leftBarW + 3, y + 1.5);
+
+          // ── RIGHT panel: user OCEAN (0-100) ──
+          if (hasRightPanel) {
+            const score100 = userOceanMain[dim] ?? 0;
+            const pct100 = Math.min(score100 / 100, 1);
+            // Dim letter
+            pdf.setFontSize(8.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
+            pdf.text(dim, rightPanelX + 2, y + 1.5);
+            // Label
+            pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+            pdf.text(OCEAN_FULL_NL[dim], rightPanelX + 9, y + 1.5);
+            // Track background
+            const bxR = rightPanelX + labelW;
+            pdf.setFillColor(22, 22, 30);
+            pdf.roundedRect(bxR, y - 1.5, rightBarW, oceanBarH, 1, 1, 'F');
+            // Fill
+            pdf.setFillColor(...col);
+            pdf.roundedRect(bxR, y - 1.5, Math.max(pct100 * rightBarW, 2), oceanBarH, 1, 1, 'F');
+            // Score
+            pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
+            pdf.text(`${score100}/100`, bxR + rightBarW + 3, y + 1.5);
           }
+
           y += 9;
         });
         y += 2;
@@ -1424,58 +1626,107 @@ const AssessmentResultsModal = ({
           y += 7;
         }
 
-        // ── GFL OCEAN reference bars + user score column ──
+        // ── GFL OCEAN reference bars + user OCEAN bars — SIDE BY SIDE ──
         if (result.extendedOcean?.ocean) {
           const OCEAN_DIMS_REF = ['O', 'C', 'E', 'A', 'N'];
           const OCEAN_FULL_REF = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
           const OCEAN_COLORS_REF = {
             O: [167, 139, 250], C: [34, 211, 238], E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253],
           };
-          const userOcean = result.oceanScores || null; // 0-100 scale from assessment
 
-          // ── Column headers ──
-          ensureSpace(16);
-          const barColStart = margin + 2;
-          const scoreColX = W - margin - 2; // right-aligned
-          pdf.setFontSize(7); pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(...cyan);
-          pdf.text('GFL TEST — OCEAN REFERENTIE', barColStart, y);
-          if (userOcean) {
-            pdf.setTextColor(...white);
-            pdf.text('JOUW SCORE', scoreColX, y, { align: 'right' });
-          }
-          y += 6;
-
-          const refBarW = contentW - 80; // leave room for label, score/10, and user score
-          const refBarH = 3;
-
-          OCEAN_DIMS_REF.forEach(dim => {
-            ensureSpace(7);
-            const score = result.extendedOcean.ocean[dim] ?? 0;
-            const pct = score / 10;
-            const col = OCEAN_COLORS_REF[dim];
-            // Dimension label
-            pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
-            pdf.text(dim, barColStart, y + 1.5);
-            pdf.setFontSize(6.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...mutedGray);
-            pdf.text(OCEAN_FULL_REF[dim], barColStart + 7, y + 1.5);
-            // Bar
-            const bx = barColStart + 32;
-            pdf.setFillColor(22, 22, 30);
-            pdf.roundedRect(bx, y - 1.5, refBarW, refBarH, 1, 1, 'F');
-            pdf.setFillColor(...col);
-            pdf.roundedRect(bx, y - 1.5, Math.max(pct * refBarW, 1.5), refBarH, 1, 1, 'F');
-            // Archetype score
-            pdf.setFontSize(7); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
-            pdf.text(`${score}/10`, bx + refBarW + 3, y + 1.5);
-            // User's actual score (right column)
-            if (userOcean && userOcean[dim] != null) {
-              pdf.setFontSize(8.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...white);
-              pdf.text(`${userOcean[dim]}`, scoreColX, y + 1.5, { align: 'right' });
+          // ── Uploaded OCEAN scores: parse from uploaded files (separate from assessment-derived scores) ──
+          let userOcean = null;
+          for (const file of uploadedFiles || []) {
+            if (file.type === 'text/plain' && userOcean === null) {
+              try {
+                const txt = await new Promise((resolve, reject) => {
+                  const r = new FileReader();
+                  r.onload = (e) => resolve(e.target.result);
+                  r.onerror = reject;
+                  r.readAsText(file);
+                });
+                const parsed = {};
+                for (const dim of OCEAN_DIMS_REF) {
+                  const rx = new RegExp(`${dim}[^:]*:\\s*(\\d{1,3})\\s*/\\s*100`, 'i');
+                  const m = txt.match(rx);
+                  if (m) parsed[dim] = parseInt(m[1], 10);
+                }
+                if (Object.keys(parsed).length >= 3) userOcean = parsed;
+              } catch { /* ignore read errors */ }
             }
-            y += 6.5;
-          });
-          y += 4;
+          }
+
+          // ── Layout constants ──
+          const halfW = (contentW - 6) / 2; // 6mm gap between the two panels
+          const leftX = margin;
+          const rightX = margin + halfW + 6;
+          const barH = 3;
+          const labelW = 28;
+          const scoreW = 16;
+          const barW = halfW - labelW - scoreW - 4;
+
+          // ── Helper: draw one OCEAN panel ──
+          const drawOceanPanel = (panelX, panelW, title, getScore, formatScore, maxVal) => {
+            const panelBarW = panelW - labelW - scoreW - 4;
+            pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...cyan);
+            pdf.text(title, panelX + 2, y);
+            const headerY = y;
+
+            let rowY = headerY + 6;
+            OCEAN_DIMS_REF.forEach(dim => {
+              const score = getScore(dim);
+              if (score == null) return;
+              const pct = Math.min(score / maxVal, 1);
+              const col = OCEAN_COLORS_REF[dim];
+              // Dim letter
+              pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
+              pdf.text(dim, panelX + 2, rowY + 1.5);
+              // Label
+              pdf.setFontSize(8); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...mutedGray);
+              pdf.text(OCEAN_FULL_REF[dim], panelX + 9, rowY + 1.5);
+              // Bar track
+              const bx = panelX + labelW;
+              pdf.setFillColor(22, 22, 30);
+              pdf.roundedRect(bx, rowY - 1.5, panelBarW, barH, 1, 1, 'F');
+              // Bar fill
+              pdf.setFillColor(...col);
+              pdf.roundedRect(bx, rowY - 1.5, Math.max(pct * panelBarW, 1.5), barH, 1, 1, 'F');
+              // Score label
+              pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
+              pdf.text(formatScore(dim, score), bx + panelBarW + 3, rowY + 1.5);
+
+              rowY += 6.5;
+            });
+            return rowY;
+          };
+
+          // ── Draw both panels ──
+          ensureSpace(50);
+          const savedY = y;
+
+          // LEFT: GFL Assessment result (0-100, derived from archetype weights)
+          drawOceanPanel(
+            leftX, halfW,
+            'GFL TEST — JOUW SCORE',
+            (dim) => result.oceanScores?.[dim] ?? 0,
+            (_dim, score) => `${score}/100`,
+            100
+          );
+
+          // RIGHT: Uploaded OCEAN profile (0-100) — only shown when parsed from uploaded file
+          if (userOcean) {
+            y = savedY; // reset y to draw at same vertical position
+            drawOceanPanel(
+              rightX, halfW,
+              'GEÜPLOAD PROFIEL',
+              (dim) => userOcean[dim] ?? null,
+              (_dim, score) => `${score}/100`,
+              100
+            );
+          }
+
+          // Advance y past both panels
+          y = savedY + 6 + OCEAN_DIMS_REF.length * 6.5 + 4;
 
           pdf.setDrawColor(...mutedGray);
           pdf.setLineWidth(0.15);
@@ -1745,12 +1996,12 @@ const AssessmentResultsModal = ({
           // Separate intro/disclaimer and AI agent prompt — they always share one dedicated page
           const regularSections = mainSections.filter(s =>
             !s.isAgentPrompt &&
-            !/ai agent|persoonlijke.*agent|genereer.*ai prompt/i.test(s.title) &&
+            !/ai agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt/i.test(s.title) &&
             !s.title?.toLowerCase().includes('introductie')
           );
           const disclaimerSection = mainSections.find(s => s.title?.toLowerCase().includes('introductie'));
           const agentSection = mainSections.find(s =>
-            s.isAgentPrompt || /ai agent|persoonlijke.*agent|genereer.*ai prompt/i.test(s.title)
+            s.isAgentPrompt || /ai agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt/i.test(s.title)
           );
 
           regularSections.forEach((section, i) => {
@@ -1970,9 +2221,6 @@ const AssessmentResultsModal = ({
             overflow: 'hidden',
           }}>
 
-            {/* SectorFrame-style corner borders */}
-            {renderCorners('#22d3ee')}
-
             {/* Holographic sheen */}
             <div style={{ position: 'absolute', inset: 0, borderRadius: '0.75rem', pointerEvents: 'none', background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)', backgroundSize: '400% 400%', backgroundRepeat: 'no-repeat', animation: 'holoSheen 45s ease-in-out infinite', mixBlendMode: 'screen' }} />
 
@@ -2022,7 +2270,7 @@ const AssessmentResultsModal = ({
                   alignItems: 'center',
                   gap: '2rem',
                   paddingBottom: '1.5rem',
-                  borderBottom: '1px solid rgba(34, 211, 238, 0.2)',
+                  borderBottom: '1px solid rgba(0, 255, 157, 0.2)',
                 }}>
                   {/* Profile Image with Holographic Rings — responsive size */}
                   <div style={{ position: 'relative', width: rs.profileImgSize, height: rs.profileImgSize, flexShrink: 0 }}>
@@ -2031,7 +2279,7 @@ const AssessmentResultsModal = ({
                       position: 'absolute',
                       inset: 0,
                       borderRadius: '50%',
-                      border: '1px dashed rgba(34, 211, 238, 0.4)',
+                      border: '1px dashed rgba(0, 255, 157, 0.4)',
                       animation: 'spin 20s linear infinite',
                     }} />
                     {/* Dotted reverse-spinning ring */}
@@ -2109,7 +2357,7 @@ const AssessmentResultsModal = ({
                     {result.secondaryName && (
                       <p style={{
                         fontSize: '0.85rem',
-                        color: 'rgba(34, 211, 238, 0.7)',
+                        color: 'rgba(0, 255, 157, 0.7)',
                         fontFamily: "'Rajdhani', sans-serif",
                         fontWeight: 600,
                         textTransform: 'uppercase',
@@ -2323,7 +2571,7 @@ const AssessmentResultsModal = ({
                         borderBottom: '1px solid rgba(255,255,255,0.07)',
                         marginBottom: '0',
                       }}>
-                        {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(34,211,238,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
+                        {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(0,255,157,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
                           <div key={label} style={{ fontSize: '0.75rem', color, fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', paddingLeft: '0.4rem' }}>
                             {label}
                           </div>
@@ -2336,36 +2584,39 @@ const AssessmentResultsModal = ({
                           return m ? { meaning: m[1].trim(), gift: m[2].trim() } : { meaning: text, gift: '' };
                         };
                         const { meaning, gift } = splitCombo(sa.combination);
+                        const cellText = { fontSize: '0.65rem', fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 };
                         return (
                           <div key={sa.group} style={{
                             display: 'grid',
                             gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                            alignItems: 'start',
                             gap: '0',
-                            background: 'transparent',
-                            border: sa.isActive ? '1px solid rgba(168,85,247,0.35)' : '1px solid rgba(34,211,238,0.08)',
-                            borderRadius: '0.2rem',
+                            background: sa.isActive ? 'rgba(168,85,247,0.05)' : 'transparent',
+                            borderBottom: sa.isActive ? '1px solid rgba(168,85,247,0.25)' : '1px solid rgba(255,255,255,0.06)',
+                            borderLeft: sa.isActive ? '2px solid rgba(168,85,247,0.5)' : '2px solid transparent',
+                            maxHeight: '4.5rem',
                             overflow: 'hidden',
                           }}>
                             {/* Archetype name */}
-                            <div style={{ padding: '0.25rem 0.4rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: '0.65rem', color: sa.isActive ? '#a855f7' : 'rgba(34,211,238,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: 1.2 }}>
-                                {sa.group}
+                            <div style={{ padding: '0.2rem 0.4rem 0', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ fontSize: '0.65rem', color: sa.isActive ? '#a855f7' : 'rgba(0,255,157,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: 1.2 }}>
+                                {(sa.group || '').trim()}
                               </div>
-                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#fff' : 'rgba(34,211,238,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.2, marginTop: '0.05rem' }}>
-                                {sa.extendedName}
+                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#fff' : 'rgba(0,255,157,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.2, marginTop: '0.05rem' }}>
+                                {(sa.extendedName || '').trim()}
                               </div>
                             </div>
                             {/* Betekenis */}
-                            <div style={{ padding: '0.25rem 0.4rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: '0.65rem', color: 'rgba(209,213,219,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 }}>{meaning}</div>
+                            <div style={{ padding: '0.2rem 0.4rem 0', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ ...cellText, color: 'rgba(209,213,219,0.85)' }}>{meaning.trim()}</div>
                             </div>
                             {/* Gift */}
-                            <div style={{ padding: '0.25rem 0.4rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: '0.65rem', color: 'rgba(209,213,219,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 }}>{gift}</div>
+                            <div style={{ padding: '0.2rem 0.4rem 0', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ ...cellText, color: 'rgba(209,213,219,0.85)' }}>{gift.trim()}</div>
                             </div>
                             {/* Valkuil */}
-                            <div style={{ padding: '0.25rem 0.4rem' }}>
-                              <div style={{ fontSize: '0.65rem', color: 'rgba(209,213,219,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 }}>{sa.shadow}</div>
+                            <div style={{ padding: '0.2rem 0.4rem 0' }}>
+                              <div style={{ ...cellText, color: 'rgba(209,213,219,0.75)' }}>{(sa.shadow || '').trim()}</div>
                             </div>
                           </div>
                         );
@@ -2462,7 +2713,7 @@ const AssessmentResultsModal = ({
                       fontSize: '0.85rem',
                       textTransform: 'uppercase',
                       letterSpacing: '0.15em',
-                      marginBottom: '0.75rem',
+                      marginBottom: '0.25rem',
                     }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="1" y1="1" x2="23" y2="23"/>
@@ -2514,7 +2765,7 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, #a855f7, #22d3ee, #fbbf24, #f472b6, #ef4444)',
+                      background: 'linear-gradient(to right, #f97316, #a855f7, #fbbf24, #ef4444, #00ff9d)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
@@ -2929,7 +3180,7 @@ const AssessmentResultsModal = ({
                         <h3 style={{ margin: 0, fontSize: '1.05rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 0 12px rgba(234,179,8,0.3)' }}>
                           Cognitieve Driehoek
                         </h3>
-                        <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: 'rgba(148,163,184,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6 }}>
+                        <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: 'rgba(148,163,184,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
                           Gele driehoeken vuren uitsluitend op <strong style={{ color: 'rgba(234,179,8,0.85)' }}>Culture picks</strong> — ze representeren aangeleerd cognitief gedrag, niet biologische hardware. Groene en blauwe signalen tonen wie je <em>bent</em>; gele signalen tonen hoe je hebt <em>leren navigeren</em>.
                         </p>
                       </div>
@@ -2956,16 +3207,16 @@ const AssessmentResultsModal = ({
                         <p style={{ margin: '0 0 0.1rem', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(234,179,8,0.9)', fontWeight: 600, fontStyle: 'italic' }}>
                           {tri.tagline}
                         </p>
-                        <p style={{ margin: '0.45rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.85)', lineHeight: 1.65 }}>
+                        <p style={{ margin: '0.45rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.85)', lineHeight: 1.65, textAlign: 'justify', overflowWrap: 'break-word' }}>
                           {tri.what}
                         </p>
-                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(148,163,184,0.75)', lineHeight: 1.6 }}>
+                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(148,163,184,0.75)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
                           <span style={{ color: `${tri.color}cc`, fontWeight: 600 }}>Aangeleerde navigatie: </span>{tri.drive}
                         </p>
-                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(148,163,184,0.75)', lineHeight: 1.6 }}>
+                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(148,163,184,0.75)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
                           <span style={{ color: 'rgba(234,179,8,0.7)', fontWeight: 600 }}>Hoog geel profiel: </span>{tri.high}
                         </p>
-                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(148,163,184,0.75)', lineHeight: 1.6 }}>
+                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(148,163,184,0.75)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
                           <span style={{ color: 'rgba(165,243,252,0.6)', fontWeight: 600 }}>Groeirichting: </span>{tri.growth}
                         </p>
                       </div>
@@ -2988,9 +3239,9 @@ const AssessmentResultsModal = ({
                   position: 'relative',
                   background: 'rgba(0, 0, 0, 0.6)',
                   borderRadius: '0.75rem',
-                  border: '1px solid rgba(34, 211, 238, 0.2)',
+                  border: '1px solid rgba(0, 255, 157, 0.2)',
                   padding: '0.5rem',
-                  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(34, 211, 238, 0.05)',
+                  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 255, 157, 0.05)',
                   minHeight: '350px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -3001,7 +3252,7 @@ const AssessmentResultsModal = ({
                     left: '1rem',
                     fontSize: '0.7rem',
                     fontFamily: "'Rajdhani', sans-serif",
-                    color: 'rgba(34, 211, 238, 0.6)',
+                    color: 'rgba(0, 255, 157, 0.6)',
                     letterSpacing: '0.2em',
                   }}>
                     {'/// TRIPLE_NETWORK_WIEL'}
@@ -3011,7 +3262,112 @@ const AssessmentResultsModal = ({
                   </div>
                 </div>
 
-                {/* AI Analysis Sections are PDF-only — not shown on result card */}
+                {/* ── 7+. AI Analysis Sections (dynamic, all sections) ── */}
+                {displaySections.map((section, idx) => {
+                  // Persoonlijkheidsrapport Vergelijking: PDF-only, never shown on result card
+                  if (/persoonlijkheidsrapport.*vergelijk/i.test(section.title)) return null;
+                  // AI Agent Prompt section: always render as a single unified monospace block
+                  if (section.isAgentPrompt || /ai agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt/i.test(section.title)) {
+                    return (
+                      <div key={idx} style={{ width: '100%' }}>
+                        <h3 style={{
+                          display: 'flex', alignItems: 'center', gap: '0.5rem',
+                          color: '#f97316',
+                          fontFamily: "'Lexend Mega', sans-serif",
+                          fontSize: '0.85rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.15em',
+                          marginBottom: '0.75rem',
+                        }}>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '1.5rem', height: '1.5rem', borderRadius: '50%',
+                            border: '1px solid rgba(249,115,22,0.4)',
+                            fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif",
+                            color: '#f97316', flexShrink: 0,
+                          }}>
+                            {idx + 1}
+                          </span>
+                          {cleanTitle(section.title)}
+                        </h3>
+                        <p style={{ fontSize: '0.85rem', color: 'rgba(148,163,184,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, fontStyle: 'italic' }}>
+                          Download het volledige rapport voor deze prompt
+                        </p>
+                      </div>
+                    );
+                  }
+                  // Cycle through accent colors for visual variety
+                  const accents = [
+                    { color: '#00ff9d', rgb: '0, 255, 157' },    // green
+                    { color: '#a855f7', rgb: '168, 85, 247' },   // purple
+                    { color: '#f97316', rgb: '249, 115, 22' },   // orange
+                    { color: '#3b82f6', rgb: '59, 130, 246' },   // blue
+                    { color: '#ec4899', rgb: '236, 72, 153' },   // pink
+                    { color: '#14b8a6', rgb: '20, 184, 166' },   // teal
+                  ];
+                  const accent = getSectionAccent(section.title) || accents[idx % accents.length];
+                  const isEven = idx % 2 === 0;
+
+                  return (
+                    <div key={idx} style={{
+                      width: '100%',
+                      position: 'relative',
+                      ...(isEven ? {} : {
+                        background: 'transparent',
+                        border: `1px solid rgba(${accent.rgb}, 0.2)`,
+                        padding: rs.sectionPad,
+                        borderRadius: '0.75rem',
+                      }),
+                    }}>
+                      {/* Left accent bar for even sections */}
+                      {isEven && (
+                        <div style={{
+                          position: 'absolute', left: '-1rem', top: 0, bottom: 0, width: '3px',
+                          background: `linear-gradient(to bottom, transparent, rgba(${accent.rgb}, 0.5), transparent)`,
+                        }} />
+                      )}
+                      <h3 style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem',
+                        color: accent.color,
+                        fontFamily: "'Lexend Mega', sans-serif",
+                        fontSize: '0.85rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.15em',
+                        marginBottom: '0.75rem',
+                        ...(isEven ? {} : {}),
+                      }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: '1.5rem', height: '1.5rem', borderRadius: '50%',
+                          border: `1px solid rgba(${accent.rgb}, 0.4)`,
+                          fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif",
+                          color: accent.color, flexShrink: 0,
+                        }}>
+                          {idx + 1}
+                        </span>
+                        {cleanTitle(section.title)}
+                      </h3>
+                      <div style={{
+                        color: 'rgba(209, 213, 219, 1)',
+                        fontFamily: "'Figtree', sans-serif",
+                        fontSize: '0.95rem',
+                        lineHeight: 1.7,
+                        textAlign: 'justify',
+                        ...(isEven ? {
+                          background: 'rgba(0, 0, 0, 0.4)',
+                          padding: rs.sectionPad,
+                          borderRadius: '0 0.75rem 0.75rem 0',
+                          borderRight: `1px solid rgba(${accent.rgb}, 0.2)`,
+                          borderTop: `1px solid rgba(${accent.rgb}, 0.2)`,
+                          borderBottom: `1px solid rgba(${accent.rgb}, 0.2)`,
+                          boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.5)',
+                        } : {}),
+                      }}>
+                        {renderMarkdownContent(section.content, accent.color)}
+                      </div>
+                    </div>
+                  );
+                })}
 
                 {/* ── 6. Footer Actions ── */}
                 <div style={{
@@ -3108,7 +3464,7 @@ const AssessmentResultsModal = ({
                               minHeight: '80px',
                               padding: '0.75rem',
                               background: 'rgba(0, 0, 0, 0.8)',
-                              border: '1px solid rgba(34, 211, 238, 0.2)',
+                              border: '1px solid rgba(0, 255, 157, 0.2)',
                               borderRadius: '0.5rem',
                               color: '#fff',
                               fontFamily: "'Figtree', sans-serif",
@@ -3464,15 +3820,15 @@ const AssessmentResultsModal = ({
           background: transparent;
         }
         .results-modal-scroll::-webkit-scrollbar-thumb {
-          background: rgba(34, 211, 238, 0.3);
+          background: rgba(0, 255, 157, 0.3);
           border-radius: 3px;
         }
         .results-modal-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(34, 211, 238, 0.5);
+          background: rgba(0, 255, 157, 0.5);
         }
         .results-modal-scroll {
           scrollbar-width: thin;
-          scrollbar-color: rgba(34, 211, 238, 0.3) transparent;
+          scrollbar-color: rgba(0, 255, 157, 0.3) transparent;
         }
       `}</style>
     </div>
@@ -3520,23 +3876,29 @@ function parseAiSections(analysisText) {
     return [{ title: 'AI Analyse', content: analysisText.trim() }];
   }
 
-  // Always prepend fixed disclaimer as Introductie — suppress any AI preamble
-  const parts = [];
   const INTRO_TEXT = 'Dit rapport is gegenereerd door het Garden For Life Deltawerken Model — een zelfreflectie-instrument, geen klinische diagnose. De gebruikte neurobiologische termen zijn metaforen binnen dit specifieke model. Raadpleeg een professional voor medisch of psychologisch advies.';
-  parts.push({ title: 'Introductie', content: INTRO_TEXT });
+  const parts = [];
 
   for (let i = 0; i < matches.length; i++) {
     const title = matches[i].title;
-    // Section 12 (AI Agent Prompt) must never be split further —
-    // consume everything from here to end of text as one block.
-    const isAgentPrompt = /ai agent|persoonlijke.*agent|agent.*prompt/i.test(title) || /^12[^\d]/i.test(title);
+    // Skip any "Meester Ontologisch Rapport" preamble the AI may inject
+    if (/meester\s+ontologisch/i.test(title)) continue;
+    // Skip any standalone "Introductie" / "Inleiding" the AI may generate
+    if (/^(introductie|inleiding)$/i.test(title)) continue;
+    // AI Agent Prompt section — consume everything from here to end of text as one block.
+    const isAgentPrompt = /ai agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt/i.test(title) || /^12[^\d]/i.test(title);
     const contentStart = matches[i].headerEnd;
     const contentEnd = isAgentPrompt
       ? analysisText.length
       : (i + 1 < matches.length ? matches[i + 1].start : analysisText.length);
+    const content = analysisText.slice(contentStart, contentEnd).trim();
+    // Prepend the fixed disclaimer into the very first real section (De Identiteit)
+    const finalContent = parts.length === 0
+      ? INTRO_TEXT + '\n\n' + content
+      : content;
     parts.push({
       title,
-      content: analysisText.slice(contentStart, contentEnd).trim(),
+      content: finalContent,
       isAgentPrompt,
     });
     if (isAgentPrompt) break; // stop — everything after belongs to this section
@@ -3549,7 +3911,7 @@ function parseAiSections(analysisText) {
  * Render markdown-ish content as React elements.
  * Handles: **bold**, *italic*, - bullet lists, numbered lists, ``` code blocks.
  */
-function renderMarkdownContent(content) {
+function renderMarkdownContent(content, accentColor) {
   if (!content) return null;
   const lines = content.split('\n');
   const elements = [];
@@ -3684,7 +4046,7 @@ function renderMarkdownContent(content) {
       flushList();
       elements.push(
         <h4 key={`h-${elements.length}`} style={{
-          color: '#c084fc', fontFamily: "'Lexend Mega', sans-serif",
+          color: accentColor || '#c084fc', fontFamily: "'Lexend Mega', sans-serif",
           fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase',
           marginTop: '1rem', marginBottom: '0.4rem',
         }}>{formatInline(subHeadingMatch[1])}</h4>

@@ -22,7 +22,7 @@ const { decryptUser, decryptUsers } = require('../services/encryption');
 const config = require('../config');
 const multer = require('multer');
 const mammoth = require('mammoth');
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const nodemailer = require('nodemailer');
 
 // ─── Shared SMTP transporter ───
@@ -502,8 +502,10 @@ router.post('/prompts/documents', docUpload.single('document'), async (req, res)
 
     // Extract text based on file type
     if (mimetype === 'application/pdf') {
-      const pdfData = await pdfParse(buffer);
+      const parser = new PDFParse({ data: buffer });
+      const pdfData = await parser.getText();
       extractedText = pdfData.text;
+      await parser.destroy();
     } else if (
       mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       mimetype === 'application/msword'

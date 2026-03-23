@@ -1427,13 +1427,13 @@ const App = () => {
                 transform: 'scale(1.02) scaleY(1.045)',
               }}>
                 <div style={{
-                  position: 'absolute', inset: 0,
+                  position: 'absolute', inset: '0 1%',
                   background: 'linear-gradient(180deg, transparent 0%, rgba(21, 179, 21, 0.04) 45%, rgba(21, 179, 21, 0.08) 50%, rgba(21, 179, 21, 0.04) 55%, transparent 100%)',
                   animation: 'scrollPromptScanline 4s linear infinite',
                   pointerEvents: 'none',
                 }} />
                 <div style={{
-                  position: 'absolute', inset: 0,
+                  position: 'absolute', inset: '0 1%',
                   backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(21, 179, 21, 0.025) 3px, rgba(21, 179, 21, 0.025) 4px)',
                   pointerEvents: 'none',
                 }} />
@@ -1479,14 +1479,14 @@ const App = () => {
                 }}>
                   {/* Scanline sweep */}
                   <div style={{
-                    position: 'absolute', inset: 0,
+                    position: 'absolute', inset: '0 1%',
                     background: 'linear-gradient(180deg, transparent 0%, rgba(255, 174, 0, 0.04) 45%, rgba(255, 174, 0, 0.08) 50%, rgba(255, 174, 0, 0.04) 55%, transparent 100%)',
                     animation: 'scrollPromptScanline 4s linear infinite',
                     pointerEvents: 'none',
                   }} />
                   {/* CRT lines */}
                   <div style={{
-                    position: 'absolute', inset: 0,
+                    position: 'absolute', inset: '0 1%',
                     backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255, 174, 0, 0.025) 3px, rgba(255, 174, 0, 0.025) 4px)',
                     pointerEvents: 'none',
                   }} />
@@ -1768,14 +1768,14 @@ const App = () => {
                   }}>
                     {/* Scanline sweep */}
                     <div style={{
-                      position: 'absolute', inset: 0,
+                      position: 'absolute', inset: '0 1%',
                       background: 'linear-gradient(180deg, transparent 0%, rgba(21, 179, 21, 0.04) 45%, rgba(21, 179, 21, 0.08) 50%, rgba(21, 179, 21, 0.04) 55%, transparent 100%)',
                       animation: 'scrollPromptScanline 4s linear infinite',
                       pointerEvents: 'none',
                     }} />
                     {/* Horizontal data lines */}
                     <div style={{
-                      position: 'absolute', inset: 0,
+                      position: 'absolute', inset: '0 1%',
                       backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(21, 179, 21, 0.025) 3px, rgba(21, 179, 21, 0.025) 4px)',
                       pointerEvents: 'none',
                     }} />

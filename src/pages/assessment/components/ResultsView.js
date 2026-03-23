@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Mail, RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle, Check, Shield, Target, Activity } from 'lucide-react';
 import { ARCHETYPES } from '../../../data/assessment/archetypes';
 import { sendResultsEmail } from '../../../utils/apiClient';
@@ -30,12 +30,34 @@ function ResultsView({ result, onReset, aiError }) {
   const mainGroup = result.mainGroup;
   const supportGroup = result.supportGroup;
 
+  // Parse uploaded OCEAN scores from text files
+  const uploadedOcean = useMemo(() => {
+    if (!result.uploadedFiles || result.uploadedFiles.length === 0) return null;
+    const DIMS = ['O', 'C', 'E', 'A', 'N'];
+    for (const file of result.uploadedFiles) {
+      if (file.type === 'text/plain' && file.dataUrl) {
+        try {
+          const base64 = file.dataUrl.split(',')[1];
+          const txt = atob(base64);
+          const parsed = {};
+          for (const dim of DIMS) {
+            const rx = new RegExp(`${dim}[^:]*:\\s*(\\d{1,3})\\s*/\\s*100`, 'i');
+            const m = txt.match(rx);
+            if (m) parsed[dim] = parseInt(m[1], 10);
+          }
+          if (Object.keys(parsed).length >= 3) return parsed;
+        } catch { /* ignore */ }
+      }
+    }
+    return null;
+  }, [result.uploadedFiles]);
+
   return (
     <div className="w-full max-w-4xl mx-auto animate-fadeIn">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 mb-4">
-          <Sparkles className="w-4 h-4 text-cyan-400" />
-          <span className="text-xs uppercase tracking-wider text-cyan-300">Advanced Ontological Assessment</span>
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-purple-500/20 border border-emerald-500/30 mb-4">
+          <Sparkles className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs uppercase tracking-wider text-emerald-300">Advanced Ontological Assessment</span>
         </div>
         <h1 className="text-3xl md:text-4xl font-light mb-2 holo-text">
           Jij navigeert als {result.extendedArchetypeName || 'Unknown'}
@@ -45,13 +67,13 @@ function ResultsView({ result, onReset, aiError }) {
 
       <div className="space-y-6">
         {/* Main & Support Archetype Identity */}
-        <div className="rounded-xl p-6 md:p-8 border border-cyan-500/30 relative overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34, 211, 238, 0.06), inset 0 0 30px rgba(34, 211, 238, 0.03)' }}>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="rounded-xl p-6 md:p-8 border border-emerald-500/30 relative overflow-hidden backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(16, 185, 129, 0.06), inset 0 0 30px rgba(16, 185, 129, 0.03)' }}>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-4">
-              <Brain className="w-6 h-6 text-cyan-400" />
-              <h2 className="text-xl font-light text-cyan-300">De Essentie — Main Archetype</h2>
+              <Brain className="w-6 h-6 text-emerald-400" />
+              <h2 className="text-xl font-light text-emerald-300">De Essentie — Main Archetype</h2>
             </div>
             <h3 className="text-3xl md:text-4xl font-light mb-1 text-white">
               {result.overallArchetype}
@@ -103,7 +125,7 @@ function ResultsView({ result, onReset, aiError }) {
 
         {/* Advanced Metrics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={<Heart className="w-5 h-5" />} label="Authenticity" value={`${result.authenticityIndex || 0}%`} color="#22d3ee" />
+          <StatCard icon={<Heart className="w-5 h-5" />} label="Authenticity" value={`${result.authenticityIndex || 0}%`} color="#10b981" />
           <StatCard icon={<Target className="w-5 h-5" />} label="Polarization" value={result.polarizationIndex || 0} color={result.polarizationLevel === 'HIGH_POLARIZATION' ? '#ef4444' : result.polarizationLevel === 'HIGH_INDIVIDUATION' ? '#10b981' : '#a855f7'} />
           <StatCard icon={<Eye className="w-5 h-5" />} label="Nature" value={result.totalNaturePoints || 0} color="#10b981" />
           <StatCard icon={<Shield className="w-5 h-5" />} label="Culture" value={result.totalCulturePoints || 0} color="#f59e0b" />
@@ -116,34 +138,77 @@ function ResultsView({ result, onReset, aiError }) {
               <Activity className="w-5 h-5" />
               OCEAN Persoonlijkheidsprofiel
             </h3>
-            <div className="space-y-3">
-              {[
-                { key: 'O', label: 'Openness', sublabel: 'Openheid voor Ervaring', color: '#a855f7' },
-                { key: 'C', label: 'Conscientiousness', sublabel: 'Consciëntieusheid', color: '#22d3ee' },
-                { key: 'E', label: 'Extraversion', sublabel: 'Extraversie', color: '#fbbf24' },
-                { key: 'A', label: 'Agreeableness', sublabel: 'Inschikkelijkheid', color: '#f472b6' },
-                { key: 'N', label: 'Neuroticism', sublabel: 'Neuroticisme', color: '#ef4444' },
-              ].map(({ key, label, sublabel, color }) => {
-                const score = result.oceanScores[key] ?? 0;
-                return (
-                  <div key={key}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div>
-                        <span className="text-sm font-medium" style={{ color }}>{key}</span>
-                        <span className="text-sm text-slate-300 ml-2">{label}</span>
-                        <span className="text-xs text-slate-500 ml-2">({sublabel})</span>
+            <div className={uploadedOcean ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : ''}>
+              {/* LEFT: GFL Test Scores */}
+              <div>
+                {uploadedOcean && (
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">GFL Assessment</p>
+                )}
+                <div className="space-y-3">
+                  {[
+                    { key: 'O', label: 'Openness', sublabel: 'Openheid voor Ervaring', color: '#a855f7' },
+                    { key: 'C', label: 'Conscientiousness', sublabel: 'Consciëntieusheid', color: '#22d3ee' },
+                    { key: 'E', label: 'Extraversion', sublabel: 'Extraversie', color: '#fbbf24' },
+                    { key: 'A', label: 'Agreeableness', sublabel: 'Inschikkelijkheid', color: '#f472b6' },
+                    { key: 'N', label: 'Neuroticism', sublabel: 'Neuroticisme', color: '#ef4444' },
+                  ].map(({ key, label, sublabel, color }) => {
+                    const score = result.oceanScores[key] ?? 0;
+                    return (
+                      <div key={key}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div>
+                            <span className="text-sm font-medium" style={{ color }}>{key}</span>
+                            <span className="text-sm text-slate-300 ml-2">{label}</span>
+                            {!uploadedOcean && <span className="text-xs text-slate-500 ml-2">({sublabel})</span>}
+                          </div>
+                          <span className="text-sm font-mono" style={{ color }}>{score}%</span>
+                        </div>
+                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-1000"
+                            style={{ width: `${score}%`, backgroundColor: color, boxShadow: `0 0 8px ${color}40` }}
+                          />
+                        </div>
                       </div>
-                      <span className="text-sm font-mono" style={{ color }}>{score}%</span>
-                    </div>
-                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-1000"
-                        style={{ width: `${score}%`, backgroundColor: color, boxShadow: `0 0 8px ${color}40` }}
-                      />
-                    </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* RIGHT: Uploaded OCEAN Scores */}
+              {uploadedOcean && (
+                <div>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">Geüpload Profiel</p>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'O', label: 'Openness', color: '#a855f7' },
+                      { key: 'C', label: 'Conscientiousness', color: '#22d3ee' },
+                      { key: 'E', label: 'Extraversion', color: '#fbbf24' },
+                      { key: 'A', label: 'Agreeableness', color: '#f472b6' },
+                      { key: 'N', label: 'Neuroticism', color: '#ef4444' },
+                    ].map(({ key, label, color }) => {
+                      const score = uploadedOcean[key] ?? 0;
+                      return (
+                        <div key={key}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div>
+                              <span className="text-sm font-medium" style={{ color }}>{key}</span>
+                              <span className="text-sm text-slate-300 ml-2">{label}</span>
+                            </div>
+                            <span className="text-sm font-mono" style={{ color }}>{score}%</span>
+                          </div>
+                          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-1000"
+                              style={{ width: `${score}%`, backgroundColor: color, boxShadow: `0 0 8px ${color}40` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -176,15 +241,19 @@ function ResultsView({ result, onReset, aiError }) {
           </div>
         )}
 
-        {/* AI Error Warning */}
-        {aiError && !result.aiAnalysis && (
+        {/* AI Error / PDF Warning */}
+        {aiError && (
           <div className="rounded-xl p-4 border border-amber-500/30 backdrop-blur-xl" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)' }}>
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm text-amber-300 font-medium">AI Analyse niet beschikbaar</p>
+                <p className="text-sm text-amber-300 font-medium">
+                  {result.aiAnalysis ? 'Bestand niet verwerkt' : 'AI Analyse niet beschikbaar'}
+                </p>
                 <p className="text-xs text-slate-400 mt-1">
-                  De AI-analyse kon niet worden gegenereerd. Hieronder staan je lokaal berekende resultaten.
+                  {result.aiAnalysis
+                    ? 'Het geüploade bestand kon niet worden gelezen. Upload een .txt of extern persoonlijkheidsrapport (Big Five, MBTI, etc.) — geen GardenForLife PDF.'
+                    : 'De AI-analyse kon niet worden gegenereerd. Hieronder staan je lokaal berekende resultaten.'}
                 </p>
                 <p className="text-xs text-slate-600 mt-1">{aiError}</p>
               </div>
@@ -194,7 +263,7 @@ function ResultsView({ result, onReset, aiError }) {
 
         <div className="space-y-4">
           <h3 className="text-lg font-light text-slate-300 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-cyan-400" />
+            <div className="w-2 h-2 rounded-full bg-emerald-400" />
             Layer Analysis
           </h3>
           {result.subjectResults.map((subject, index) => (
@@ -217,8 +286,8 @@ function ResultsView({ result, onReset, aiError }) {
       </div>
 
       {/* Email delivery form */}
-      <div className="rounded-xl p-6 md:p-8 border border-cyan-500/30 backdrop-blur-xl mt-8" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34, 211, 238, 0.06), inset 0 0 30px rgba(34, 211, 238, 0.03)' }}>
-        <h3 className="text-lg font-light text-cyan-300 mb-2 flex items-center gap-2">
+      <div className="rounded-xl p-6 md:p-8 border border-emerald-500/30 backdrop-blur-xl mt-8" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(16, 185, 129, 0.06), inset 0 0 30px rgba(16, 185, 129, 0.03)' }}>
+        <h3 className="text-lg font-light text-emerald-300 mb-2 flex items-center gap-2">
           <Mail className="w-5 h-5" />
           Ontvang je resultaten per e-mail
         </h3>
@@ -242,9 +311,9 @@ function ResultsView({ result, onReset, aiError }) {
                 onChange={(e) => setRecipientEmail(e.target.value)}
                 placeholder="naam@voorbeeld.nl"
                 className="w-full px-4 py-2.5 rounded-lg text-sm text-white outline-none transition-colors"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(34,211,238,0.3)' }}
-                onFocus={(e) => e.target.style.borderColor = '#22d3ee'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(34,211,238,0.3)'}
+                style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(16,185,129,0.3)' }}
+                onFocus={(e) => e.target.style.borderColor = '#10b981'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(16,185,129,0.3)'}
               />
             </div>
             {sendError && (
@@ -289,7 +358,7 @@ function StatCard({ icon, label, value, color }) {
 }
 
 function SubjectResultCard({ result, index }) {
-  const colors = ["#22d3ee", "#a855f7", "#f472b6", "#fbbf24", "#f97316"];
+  const colors = ["#10b981", "#a855f7", "#f472b6", "#fbbf24", "#f97316"];
   const color = colors[index % colors.length];
 
   return (

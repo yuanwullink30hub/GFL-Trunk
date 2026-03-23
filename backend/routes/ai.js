@@ -133,21 +133,38 @@ router.post('/analyze', async (req, res) => {
     console.log('[AI] System prompt template (first 100 chars):', adminConfig.systemPromptTemplate ? adminConfig.systemPromptTemplate.substring(0, 100) : '(empty)');
 
     // Extract text from any uploaded PDFs (sent as base64)
+    // pdf-parse v2 exports a PDFParse class (not a function).
+    // PDFs that fail to parse are removed so the AI never receives error placeholder text.
+    const pdfWarnings = [];
     if (uploadedFileContents && uploadedFileContents.length > 0) {
-      const pdfParse = require('pdf-parse');
-      for (let i = 0; i < uploadedFileContents.length; i++) {
+      const { PDFParse } = require('pdf-parse');
+      for (let i = uploadedFileContents.length - 1; i >= 0; i--) {
         const item = uploadedFileContents[i];
         if (item.pdfBase64 && !item.text) {
+          let extracted = null;
           try {
             const buffer = Buffer.from(item.pdfBase64, 'base64');
-            const parsed = await pdfParse(buffer);
-            uploadedFileContents[i] = { name: item.name, text: parsed.text || '[Geen tekst gevonden in PDF]' };
+            const parser = new PDFParse({ data: buffer });
+            const parsed = await parser.getText();
+            extracted = parsed.text?.trim();
+            await parser.destroy();
           } catch (err) {
             console.error(`PDF parse error for ${item.name}:`, err.message);
-            uploadedFileContents[i] = { name: item.name, text: `[PDF kon niet worden gelezen: ${item.name}]` };
+          }
+          if (extracted && extracted.length >= 30) {
+            uploadedFileContents[i] = { name: item.name, text: extracted };
+          } else {
+            // Empty or unreadable — remove from list so the AI is not given garbage content
+            console.warn(`PDF produced no usable text, removing from prompt: ${item.name}`);
+            pdfWarnings.push(item.name);
+            uploadedFileContents.splice(i, 1);
           }
         }
       }
+    }
+    // Notify the client about unreadable PDFs before the AI call
+    if (pdfWarnings.length > 0) {
+      sendEvent('pdf_warning', { files: pdfWarnings });
     }
 
     // Build messages — include uploaded context documents

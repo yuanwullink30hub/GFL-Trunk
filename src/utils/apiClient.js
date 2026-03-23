@@ -232,6 +232,27 @@ export async function analyzeAssessment(params, onProgress) {
     }
   }
 
+  // Parse any remaining data left in buffer after stream ends
+  if (buffer.trim()) {
+    const remaining = buffer.split('\n');
+    let eventType = null;
+    for (const line of remaining) {
+      if (line.startsWith('event: ')) {
+        eventType = line.slice(7).trim();
+      } else if (line.startsWith('data: ')) {
+        const data = JSON.parse(line.slice(6));
+        if (eventType === 'progress' && onProgress) {
+          onProgress(data.stage, data.message);
+        } else if (eventType === 'result') {
+          result = data;
+        } else if (eventType === 'error') {
+          throw new Error(data.error || 'AI analysis failed');
+        }
+        eventType = null;
+      }
+    }
+  }
+
   if (!result) {
     throw new Error('No result received from AI analysis');
   }

@@ -198,7 +198,7 @@ router.post('/analyze', async (req, res) => {
     // Request body overrides defaults; ignore admin model/provider (no UI selector)
     const finalProvider = provider || undefined;
     const finalModel = model || undefined;
-    const finalMaxTokens = maxTokens || adminConfig.maxTokens || 18000;
+    const finalMaxTokens = maxTokens || adminConfig.maxTokens || 16000;
     const finalTemperature = temperature ?? adminConfig.temperature ?? 0.7;
 
     console.log('[AI] Calling AI with config:');

@@ -169,10 +169,10 @@ router.post('/analyze', async (req, res) => {
       subgroups,
     };
 
-    const builderSystem = builder.buildSystemPrompt(promptData);
-    // Admin meta instruction from MongoDB (editable via dashboard) prepends the builder output
+    // Admin meta instruction from MongoDB (editable via dashboard) is the sole system prompt.
+    // The backend hardcoded prompt is no longer used — all instructions live in the admin dashboard.
     const adminMeta = adminConfig.systemPromptTemplate || '';
-    const system = systemPrompt || (adminMeta ? adminMeta + '\n\n' + builderSystem : builderSystem);
+    const system = systemPrompt || adminMeta || '';
     const user = userQuestion || builder.buildUserMessage(promptData);
 
     console.log('[AI] ═══════════════════════════════════════════════════════════');
@@ -183,14 +183,14 @@ router.post('/analyze', async (req, res) => {
     if (adminMeta.length > 0) {
       console.log('[AI] Admin meta (first 150 chars):', adminMeta.substring(0, 150));
     }
-    console.log('[AI] Builder system prompt (first 150 chars):', builderSystem.substring(0, 150));
     console.log('[AI] User message length:', user.length, 'characters');
     console.log('[AI] ═══════════════════════════════════════════════════════════');
 
-    const messages = [
-      { role: 'system', content: system },
-      { role: 'user', content: user },
-    ];
+    // Only include system message if there is actual content — an empty
+    // systemInstruction causes Gemini to return "Error in input stream".
+    const messages = [];
+    if (system) messages.push({ role: 'system', content: system });
+    messages.push({ role: 'user', content: user });
 
     // ── Stage 1: Data compiled, prompt built ──
     sendEvent('progress', { stage: 1, message: 'Data verwerkt — AI analyse gestart...' });
@@ -208,12 +208,18 @@ router.post('/analyze', async (req, res) => {
     console.log('[AI]   Temperature:', finalTemperature);
     console.log('[AI]   Archetype:', archetypeKey);
 
+    // Extract user-uploaded images to pass directly to vision-capable models
+    const uploadedImages = (uploadedFileContents || [])
+      .filter(item => item.imageBase64 && item.mimeType)
+      .map(item => ({ base64: item.imageBase64, mimeType: item.mimeType, name: item.name }));
+
     const result = await callAI({
       provider: finalProvider,
       model: finalModel,
       messages,
       maxTokens: finalMaxTokens,
       temperature: finalTemperature,
+      uploadedImages,
     });
 
     console.log(`[AI] ✅ Analysis complete: provider=${result.provider}, model=${result.model}, tokens=${result.completionTokens}`);

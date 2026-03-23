@@ -14,7 +14,7 @@ const ElevenElevenPage = ({ isVisible, onBack }) => {
       isVisible={isVisible}
       onBack={onBack}
       initialBrandIndex={2}
-      brandSlug="eleven-eleven"
+      brandSlug="template-03"
     />
   );
 };

@@ -75,6 +75,12 @@ function AssessmentPage() {
             uploadedFileContents.push({ name: file.name, text: null, pdfBase64: base64 });
           } catch { /* skip unreadable files */ }
         }
+      } else if (file.dataUrl && file.type.startsWith('image/')) {
+        // For images, send as base64 so Claude/Gemini can see them directly
+        try {
+          const base64 = file.dataUrl.split(',')[1];
+          uploadedFileContents.push({ name: file.name, imageBase64: base64, mimeType: file.type });
+        } catch { /* skip unreadable files */ }
       }
     }
 

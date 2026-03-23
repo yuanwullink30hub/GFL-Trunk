@@ -382,14 +382,21 @@ function generatePDFContent(result, archetypeInfo, t) {
       color: #64748b;
       margin: 0 0 12mm;
     }
-    .cover-image {
+    .cover-image-wrap {
       width: 220px;
       height: 220px;
       border-radius: 50%;
-      object-fit: cover;
+      overflow: hidden;
       border: 3px solid rgba(168, 85, 247, 0.5);
       box-shadow: 0 0 40px rgba(168, 85, 247, 0.2), 0 0 80px rgba(34, 211, 238, 0.1);
       margin-bottom: 10mm;
+    }
+    .cover-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transform: scale(1.05);
     }
     .cover-name {
       font-size: 28pt;
@@ -499,7 +506,7 @@ function generatePDFContent(result, archetypeInfo, t) {
   <div class="cover-page">
     <p class="cover-brand">Garden for Life</p>
     <p class="cover-brand-sub">Advanced Consciousness Assessment</p>
-    ${profileImage ? `<img class="cover-image" src="${profileImage}" alt="${displayName}" />` : ''}
+    ${profileImage ? `<div class="cover-image-wrap"><img class="cover-image" src="${profileImage}" alt="${displayName}" /></div>` : ''}
     <h1 class="cover-name">${displayName}</h1>
     ${result.supportArchetype ? `<p class="cover-subtitle">Support: ${result.supportArchetype}</p>` : ''}
     ${result.quantumResonance ? `<div class="cover-quote">&ldquo;${result.quantumResonance}&rdquo;</div>` : ''}

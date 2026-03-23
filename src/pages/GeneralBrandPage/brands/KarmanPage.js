@@ -14,7 +14,7 @@ const KarmanPage = ({ isVisible, onBack }) => {
       isVisible={isVisible}
       onBack={onBack}
       initialBrandIndex={0}
-      brandSlug="karman"
+      brandSlug="template-01"
     />
   );
 };

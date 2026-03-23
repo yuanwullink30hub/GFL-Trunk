@@ -115,6 +115,8 @@ const AssessmentResultsModal = ({
     whatDidntWork: '',
     suggestions: '',
   });
+  const [starRating, setStarRating] = useState(0);
+  const [starHover, setStarHover] = useState(0);
   const [reviewError, setReviewError] = useState('');
 
   // ── Review form submission handler ──
@@ -144,6 +146,7 @@ const AssessmentResultsModal = ({
         whatWorked: whatWorked.trim(),
         whatDidntWork: whatDidntWork.trim(),
         suggestions: suggestions.trim(),
+        starRating: starRating || null,
         archetypeKey: result?.mainArchetype || '',
         timestamp: new Date().toISOString(),
       });
@@ -1061,6 +1064,38 @@ const AssessmentResultsModal = ({
         hr();
       }
 
+      // ── PERSOONLIJKHEIDSRAPPORT VERGELIJKING — right after OCEAN/coreProfile, one page only ──
+      if (displaySections) {
+        const reportCompSection = displaySections.find(s => /persoonlijkheidsrapport.*vergelijk/i.test(s.title));
+        if (reportCompSection) {
+          pdf.addPage();
+          paintBg();
+          y = margin;
+          const reportMaxY = H - margin - 8; // hard ceiling: never overflow onto next page
+          sectionHeading(reportCompSection.title, purple);
+          // Strip markdown headings/bullets, render as plain wrapped paragraphs
+          const plainText = reportCompSection.content
+            .replace(/^#{1,4}[^\n]*/gm, '')   // remove any sub-headers the AI may have generated
+            .replace(/\*\*/g, '')               // remove bold markers
+            .replace(/\*/g, '')                 // remove italic markers
+            .trim();
+          const paragraphs = plainText.split(/\n{2,}/).filter(p => p.trim());
+          pdf.setFontSize(8.5);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...white);
+          for (const para of paragraphs) {
+            if (y >= reportMaxY) break;
+            const lines = pdf.splitTextToSize(para.trim(), contentW - 4);
+            for (const line of lines) {
+              if (y >= reportMaxY) break;
+              pdf.text(line, margin + 2, y);
+              y += 4.3;
+            }
+            y += 2; // paragraph gap
+          }
+        }
+      }
+
       // ── DUAL-CORE DYNAMICS + RADAR CHART (page 5) ──
       pdf.addPage();
       paintBg();
@@ -1079,7 +1114,7 @@ const AssessmentResultsModal = ({
         pdf.setTextColor(...orange);
         pdf.text('CULTURE', margin + 30.5, legY + 1.2);
         pdf.setFontSize(6); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(100, 110, 130);
-        pdf.text('( /33 max )', margin + 55, legY + 1.2);
+        pdf.text('( /36 max )', margin + 55, legY + 1.2);
         y += 7;
 
         const GROUP_META_PDF = {
@@ -1159,7 +1194,7 @@ const AssessmentResultsModal = ({
           pdf.text(totalStr, scoreX, barY + barH + 2.8);
           pdf.setFontSize(5); pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(100, 130, 150);
-          pdf.text('/33', scoreX + pdf.getTextWidth(totalStr) + 0.5, barY + barH + 2.8);
+          pdf.text('/36', scoreX + pdf.getTextWidth(totalStr) + 0.5, barY + barH + 2.8);
 
           // Archetype badges — uniform cyan (matches UI)
           const badgeY = barY + barH + 6;
@@ -1264,10 +1299,11 @@ const AssessmentResultsModal = ({
 
       // ── ANALYSIS SECTIONS (dedicated page) ──
       if (displaySections && displaySections.length > 0) {
-        // Filter out the Groep Dynamiek section — already rendered on page 5
+        // Filter out Groep Dynamiek (rendered on page 5) and report comparison (own page below)
         const mainSections = displaySections.filter(s =>
           !s.title?.toLowerCase().includes('groep dynamiek') &&
-          !s.title?.toLowerCase().includes('neurobiologische interpretatie')
+          !s.title?.toLowerCase().includes('neurobiologische interpretatie') &&
+          !/persoonlijkheidsrapport.*vergelijk/i.test(s.title)
         );
         if (mainSections.length > 0) {
           pdf.addPage();
@@ -1280,6 +1316,8 @@ const AssessmentResultsModal = ({
             if (i < mainSections.length - 1) hr();
           });
         }
+
+        // Persoonlijkheidsrapport Vergelijking rendered earlier (after OCEAN page) — skip here
       }
 
       // ═══════════════════════════════════════════════════
@@ -1556,7 +1594,8 @@ const AssessmentResultsModal = ({
                           width: '100%',
                           height: '100%',
                           objectFit: 'cover',
-                          filter: 'contrast(1.25) sepia(0.2)'
+                          filter: 'contrast(1.25) sepia(0.2)',
+                          transform: 'scale(1.05)',
                         }}
                       />
                       <div style={{
@@ -2514,6 +2553,8 @@ const AssessmentResultsModal = ({
 
                 {/* ── 7+. AI Analysis Sections (dynamic, all sections) ── */}
                 {displaySections.map((section, idx) => {
+                  // Persoonlijkheidsrapport Vergelijking: PDF-only, never shown on result card
+                  if (/persoonlijkheidsrapport.*vergelijk/i.test(section.title)) return null;
                   // AI Agent Prompt section: always render as a single unified monospace block
                   if (section.isAgentPrompt || /ai agent|persoonlijke.*agent|agent.*prompt/i.test(section.title)) {
                     return (
@@ -2705,6 +2746,50 @@ const AssessmentResultsModal = ({
                               boxSizing: 'border-box',
                             }}
                           />
+                        </div>
+
+                        {/* Sterrenbeoordeling */}
+                        <div>
+                          <label style={{
+                            display: 'block',
+                            color: '#f59e0b',
+                            fontFamily: "'Figtree', sans-serif",
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            marginBottom: '0.5rem',
+                          }}>
+                            Hoe beoordeel je het systeem overall?
+                          </label>
+                          <div style={{ display: 'flex', gap: '0.25rem' }}>
+                            {[1,2,3,4,5,6,7,8,9].map((n) => (
+                              <button
+                                key={n}
+                                type="button"
+                                onClick={() => setStarRating(n)}
+                                onMouseEnter={() => setStarHover(n)}
+                                onMouseLeave={() => setStarHover(0)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: '0.1rem',
+                                  cursor: 'pointer',
+                                  fontSize: '1.35rem',
+                                  lineHeight: 1,
+                                  color: n <= (starHover || starRating) ? '#f59e0b' : 'rgba(245,158,11,0.2)',
+                                  transition: 'color 0.1s',
+                                  filter: n <= (starHover || starRating) ? 'drop-shadow(0 0 4px rgba(245,158,11,0.5))' : 'none',
+                                }}
+                                aria-label={`${n} sterren`}
+                              >
+                                ★
+                              </button>
+                            ))}
+                            {starRating > 0 && (
+                              <span style={{ alignSelf: 'center', marginLeft: '0.4rem', color: 'rgba(245,158,11,0.7)', fontSize: '0.78rem', fontFamily: "'Figtree', sans-serif" }}>
+                                {starRating}/9
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Vraag 1: Accuraatheid */}

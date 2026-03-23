@@ -931,6 +931,64 @@ router.get('/reviews/:id', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// Helpers — site settings collection
+// ─────────────────────────────────────────────────────────────
+
+function siteSettingsCollection() {
+  return getDB().collection('siteSettings');
+}
+
+// ─────────────────────────────────────────────────────────────
+// GET  /api/admin/settings/feedback-email  — load settings
+// PUT  /api/admin/settings/feedback-email  — save settings
+// Both require admin auth (already applied via router.use above)
+// ─────────────────────────────────────────────────────────────
+
+router.get('/settings/feedback-email', async (_req, res) => {
+  try {
+    const settings = await siteSettingsCollection().findOne({ _id: 'feedback-email' });
+    res.json(settings || { text: '', imageBase64: '', imageMimeType: '' });
+  } catch (err) {
+    console.error('[Admin] Get feedback-email settings error:', err.message);
+    res.status(500).json({ error: 'Failed to load settings' });
+  }
+});
+
+router.put('/settings/feedback-email', async (req, res) => {
+  try {
+    const text = (req.body.text || '').slice(0, 2000);
+    const imageBase64 = req.body.imageBase64 ?? null;   // null = don't touch, '' = clear
+    const imageMimeType = (req.body.imageMimeType || '').slice(0, 100);
+
+    if (imageBase64 && imageMimeType) {
+      if (!imageMimeType.startsWith('image/')) {
+        return res.status(400).json({ error: 'imageMimeType must be an image/* type' });
+      }
+      // Guard against oversized uploads (~5 MB raw = ~6.7 MB base64)
+      if (imageBase64.length > 7 * 1024 * 1024) {
+        return res.status(413).json({ error: 'Image too large (max ~5 MB)' });
+      }
+    }
+
+    const $set = { text, updatedAt: new Date() };
+    if (typeof imageBase64 === 'string') {
+      $set.imageBase64  = imageBase64;   // '' clears it
+      $set.imageMimeType = imageMimeType;
+    }
+
+    await siteSettingsCollection().updateOne(
+      { _id: 'feedback-email' },
+      { $set },
+      { upsert: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Admin] Update feedback-email settings error:', err.message);
+    res.status(500).json({ error: 'Failed to save settings' });
+  }
+});
+
 module.exports = router;
 
 // ─────────────────────────────────────────────────────────────

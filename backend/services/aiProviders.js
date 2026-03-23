@@ -9,9 +9,26 @@
  *   const { callAI, getAvailableProviders } = require('./aiProviders');
  *   const result = await callAI({ provider: 'gemini', messages, ... });
  */
+const fs = require('fs');
+const path = require('path');
 const config = require('../config');
 const { GoogleGenAI } = require('@google/genai');
 const Anthropic = require('@anthropic-ai/sdk');
+
+// ─────────────────────────────────────────────────────────────
+// Model diagram images (loaded once at startup as base64)
+// ─────────────────────────────────────────────────────────────
+
+const IMAGE_DIR = path.join(__dirname, '..', 'prompts', 'images');
+const MODEL_IMAGES = ['Cells within Cells png.png', 'Deltawerken png.png', 'TNM wheel PNG.png']
+  .map(name => {
+    const filePath = path.join(IMAGE_DIR, name);
+    return {
+      name,
+      base64: fs.readFileSync(filePath).toString('base64'),
+      mimeType: 'image/png',
+    };
+  });
 
 // ─────────────────────────────────────────────────────────────
 // Provider registry
@@ -72,6 +89,7 @@ async function callAI({
   messages,
   maxTokens = 2048,
   temperature = 0.7,
+  uploadedImages = [],
 }) {
   const providerDef = PROVIDERS[provider];
   if (!providerDef) {
@@ -87,7 +105,7 @@ async function callAI({
 
   // ── Claude: use @anthropic-ai/sdk ──
   if (providerDef.useClaudeSDK) {
-    return callClaudeSDK({ messages, model: selectedModel, maxTokens, temperature, providerConfig });
+    return callClaudeSDK({ messages, model: selectedModel, maxTokens, temperature, providerConfig, uploadedImages });
   }
 
   // ── Gemini: use @google/genai SDK with Thinking mode ──
@@ -172,13 +190,16 @@ async function callGeminiSDK({ messages, model, maxTokens, temperature, provider
   const systemMsg = messages.find(m => m.role === 'system');
   const userMsgs = messages.filter(m => m.role !== 'system');
 
-  // For a single user message, pass as string; for multi-turn, pass array
-  const contents = userMsgs.length === 1
-    ? userMsgs[0].content
-    : userMsgs.map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
-      }));
+  // Text-only — inline images alongside thinking mode causes "Error in input stream".
+  let contents;
+  if (userMsgs.length === 1) {
+    contents = [{ role: 'user', parts: [{ text: userMsgs[0].content }] }];
+  } else {
+    contents = userMsgs.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
+  }
 
   // For thinking models (2.5-pro/flash), thinkingConfig budgets internal
   // reasoning tokens separately so maxOutputTokens only caps visible output.
@@ -236,24 +257,44 @@ async function callGeminiSDK({ messages, model, maxTokens, temperature, provider
 // Anthropic Claude — @anthropic-ai/sdk
 // ─────────────────────────────────────────────────────────────
 
-async function callClaudeSDK({ messages, model, maxTokens, temperature, providerConfig }) {
+async function callClaudeSDK({ messages, model, maxTokens, temperature, providerConfig, uploadedImages = [] }) {
   const client = new Anthropic({ apiKey: providerConfig.apiKey });
 
   const systemMsg = messages.find(m => m.role === 'system');
   const userMsgs  = messages.filter(m => m.role !== 'system');
 
-  const anthropicMessages = userMsgs.map(m => ({
-    role: m.role === 'assistant' ? 'assistant' : 'user',
-    content: m.content,
-  }));
+  // Only allow mimeTypes that Claude's vision API accepts
+  const VALID_CLAUDE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  const userImageBlocks = uploadedImages
+    .filter(img => VALID_CLAUDE_TYPES.includes(img.mimeType))
+    .map(img => ({
+      type: 'image',
+      source: { type: 'base64', media_type: img.mimeType, data: img.base64 },
+    }));
 
-  // Build system as a content-block array with cache_control on the last block.
-  // Anthropic will cache everything up to (and including) that block for 5 minutes,
-  // so repeated calls with the same large system prompt (context docs + admin meta +
-  // builder) pay only ~10 % of the normal input-token cost on cache hits.
-  const systemBlocks = systemMsg
-    ? [{ type: 'text', text: systemMsg.content, cache_control: { type: 'ephemeral' } }]
-    : undefined;
+  const anthropicMessages = userMsgs.map((m, i) => {
+    const role = m.role === 'assistant' ? 'assistant' : 'user';
+    // Attach model diagram images + user-uploaded images to the first user message
+    if (i === 0 && role === 'user') {
+      return {
+        role,
+        content: [
+          ...MODEL_IMAGES.map(img => ({
+            type: 'image',
+            source: { type: 'base64', media_type: img.mimeType, data: img.base64 },
+          })),
+          ...userImageBlocks,
+          { type: 'text', text: m.content },
+        ],
+      };
+    }
+    return { role, content: m.content };
+  });
+
+  // Pass system prompt as plain string — no cache_control since assessments
+  // are too infrequent to benefit from Anthropic's 5-minute ephemeral cache.
+  // (Cache writes cost 25% more, and with >5 min between requests the cache
+  // always expires before the next hit.)
 
   console.log(`[Claude] Calling model=${model}, maxTokens=${maxTokens}, promptChars=${(systemMsg?.content?.length || 0) + (userMsgs[0]?.content?.length || 0)}`);
   const startTime = Date.now();
@@ -262,26 +303,20 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
     model,
     max_tokens: maxTokens,
     temperature,
-    ...(systemBlocks ? { system: systemBlocks } : {}),
+    ...(systemMsg ? { system: systemMsg.content } : {}),
     messages: anthropicMessages,
   });
 
-  const elapsed         = ((Date.now() - startTime) / 1000).toFixed(1);
-  const text            = response.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
-  const cacheCreated    = response.usage?.cache_creation_input_tokens || 0;
-  const cacheRead       = response.usage?.cache_read_input_tokens     || 0;
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  const text = response.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
 
   console.log(`[Claude] Response in ${elapsed}s, stop_reason=${response.stop_reason}, textLen=${text.length}`);
-  if (cacheCreated > 0) console.log(`[Claude] Cache WRITE : ${cacheCreated} tokens written to cache`);
-  if (cacheRead    > 0) console.log(`[Claude] Cache HIT   : ${cacheRead} tokens served from cache (~90 % cheaper)`);
 
   return {
     analysis: text,
     model,
     provider: 'claude',
-    promptTokens:      response.usage?.input_tokens  || 0,
-    completionTokens:  response.usage?.output_tokens || 0,
-    cacheCreationTokens: cacheCreated,
-    cacheReadTokens:     cacheRead,
+    promptTokens: response.usage?.input_tokens || 0,
+    completionTokens: response.usage?.output_tokens || 0,
   };
 }

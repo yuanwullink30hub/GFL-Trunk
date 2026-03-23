@@ -75,7 +75,7 @@ const SubgroupCounters = ({ subgroups }) => {
           <span style={{ color: '#f97316', fontWeight: 700 }}>CULTURE</span>
         </span>
         <span style={{ color: 'rgba(165, 243, 252, 0.35)', fontSize: '0.8rem', alignSelf: 'center' }}>
-          ( /33 max )
+          ( /36 max )
         </span>
       </div>
 
@@ -199,7 +199,7 @@ const SubgroupCounters = ({ subgroups }) => {
                           </span>
                         </div>
                         <span style={{ fontSize: '0.8rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: 'rgba(165,243,252,0.75)', lineHeight: 1 }}>
-                          {totalNature + totalCulture}<span style={{ fontWeight: 400, color: 'rgba(165,243,252,0.3)', fontSize: '0.8rem' }}>/33</span>
+                          {totalNature + totalCulture}<span style={{ fontWeight: 400, color: 'rgba(165,243,252,0.3)', fontSize: '0.8rem' }}>/36</span>
                         </span>
                       </div>
                     </>

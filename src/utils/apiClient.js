@@ -816,6 +816,34 @@ export async function clearSessions() {
   return response.json();
 }
 
+/**
+ * Get feedback confirmation email settings (admin only).
+ */
+export async function getFeedbackEmailSettings() {
+  const response = await fetch(`${API_BASE}/admin/settings/feedback-email`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error(`Failed to load feedback email settings (${response.status})`);
+  return response.json();
+}
+
+/**
+ * Update feedback confirmation email settings (admin only).
+ * @param {{ text: string, imageBase64: string, imageMimeType: string }} settings
+ */
+export async function updateFeedbackEmailSettings(settings) {
+  const response = await fetch(`${API_BASE}/admin/settings/feedback-email`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(settings),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Failed to save feedback email settings (${response.status})`);
+  }
+  return response.json();
+}
+
 // ── Beta Access ──
 
 const BETA_KEY = 'gfl_beta_access';

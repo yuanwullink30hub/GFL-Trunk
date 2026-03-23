@@ -14,7 +14,7 @@ const RengiPage = ({ isVisible, onBack }) => {
       isVisible={isVisible}
       onBack={onBack}
       initialBrandIndex={3}
-      brandSlug="rengi"
+      brandSlug="template-04"
     />
   );
 };

@@ -186,7 +186,7 @@ export const POLICY_CONTENT = {
         <li style={S.li}>Deelname aan de Betafase is uitsluitend mogelijk na uitdrukkelijke uitnodiging door Garden For Life.</li>
         <li style={S.li}>De Gebruiker dient minimaal 18 jaar oud te zijn.</li>
         <li style={S.li}>Het gebruik van het Platform tijdens de Betafase is kosteloos.</li>
-        <li style={S.li}>De resultaat-PDF bevat een optionele donatie-link via Tikkie (KNAB). Donaties zijn volledig vrijwillig, niet restitueerbaar en verlenen geen aanvullende rechten, toegang of diensten. Het assessment, de resultaten en de PDF worden onvoorwaardelijk en kosteloos aangeboden, ongeacht of er een donatie wordt gedaan.</li>
+        <li style={S.li}>De Feedback-conformatie e-mail bevat een optionele donatie-link via Tikkie (KNAB). Donaties zijn volledig vrijwillig, niet restitueerbaar en verlenen geen aanvullende rechten, toegang of diensten. Het assessment, de resultaten en de PDF worden onvoorwaardelijk en kosteloos aangeboden, ongeacht of er een donatie wordt gedaan.</li>
         <li style={S.li}>Garden For Life behoudt zich het recht voor de toegang van een Gebruiker te beëindigen of te beperken, zonder opgave van reden.</li>
         <li style={S.li}>De Betafase eindigt op 27-09-2026. Na afloop van de Betafase is het Platform openbaar toegankelijk. Betadata wordt beëindigd conform Artikel 6.</li>
       </ol>
@@ -377,7 +377,7 @@ export const POLICY_CONTENT = {
         </tbody>
       </table>
       <p style={S.p}>Indien de gebruiker een bestand uploadt (bijv. een OCEAN-rapport), wordt de geëxtraheerde tekst van dat bestand eveneens verwerkt door Claude. Als dat bestand persoonlijke informatie bevat, wordt die informatie doorgegeven aan Anthropic. Garden For Life is niet verantwoordelijk voor de persoonsgegevens die de gebruiker opneemt in geüploade bestanden. Gebruikers worden hierop gewezen in het toestemmingsscherm en bij het uploadmoment.</p>
-      <p style={S.p}>De resultaat-PDF bevat een optionele donatie-link via Tikkie (KNAB). Garden For Life ontvangt, verwerkt of bewaart geen betaalgegevens van de Gebruiker in verband met donaties. De volledige transactie verloopt via Tikkie en valt onder het privacybeleid van Tikkie/KNAB (ABN AMRO). Er worden geen persoonsgegevens door Garden For Life gekoppeld aan donaties.</p>
+      <p style={S.p}>De Feedback-conformatie e-mail bevat een optionele donatie-link via Tikkie (KNAB). Garden For Life ontvangt, verwerkt of bewaart geen betaalgegevens van de Gebruiker in verband met donaties. De volledige transactie verloopt via Tikkie en valt onder het privacybeleid van Tikkie/KNAB (ABN AMRO). Er worden geen persoonsgegevens door Garden For Life gekoppeld aan donaties.</p>
       <h2 style={S.h2}>8. Je Rechten</h2>
       <p style={S.p}>Onder de AVG heb je de volgende rechten:</p>
       <ul style={S.ul}>

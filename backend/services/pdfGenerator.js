@@ -426,6 +426,65 @@ async function generatePdf(data) {
         y += 16;
       }
 
+      // ── Model Images Page ──
+      doc.addPage();
+      y = MARGIN;
+
+      // Page heading
+      doc.fontSize(8).fillColor(LIGHT_GRAY)
+        .text('GARDEN FOR LIFE  —  Advanced Consciousness Assessment', MARGIN, y);
+      doc.moveTo(MARGIN, y + 14)
+        .lineTo(PAGE_W - MARGIN, y + 14)
+        .strokeColor(GREEN).lineWidth(1).stroke();
+      y += 30;
+
+      doc.fontSize(12).fillColor(GREEN).font('Helvetica-Bold')
+        .text('HET MODEL', MARGIN, y, { width: CONTENT_W, align: 'center', characterSpacing: 2 });
+      y += 24;
+
+      const modelImages = [
+        {
+          path: require('path').join(__dirname, '../../src/images/Model imports/Deltawerken png.png'),
+          label: 'Het Deltawerken-Model',
+        },
+        {
+          path: require('path').join(__dirname, '../../src/images/Model imports/TNM wheel PNG.png'),
+          label: 'De TNM Wheel',
+        },
+        {
+          path: require('path').join(__dirname, '../../src/images/Model imports/Cells within Cells png.png'),
+          label: 'Cells within Cells',
+        },
+      ];
+
+      const imgW = CONTENT_W;
+      const imgH = Math.floor((PAGE_H - MARGIN * 2 - 80) / 3) - 16;
+
+      for (const { path: imgPath, label } of modelImages) {
+        const fs = require('fs');
+        if (y + imgH + 20 > PAGE_H - MARGIN) {
+          doc.addPage();
+          y = MARGIN;
+        }
+
+        // Label
+        doc.fontSize(8).fillColor(PURPLE).font('Helvetica-Bold')
+          .text(label, MARGIN, y, { width: CONTENT_W, align: 'center' });
+        y += 14;
+
+        // Image (skip gracefully if file missing)
+        if (fs.existsSync(imgPath)) {
+          doc.image(imgPath, MARGIN, y, { width: imgW, height: imgH, fit: [imgW, imgH], align: 'center', valign: 'center' });
+        } else {
+          doc.rect(MARGIN, y, imgW, imgH)
+            .strokeColor(LIGHT_GRAY).lineWidth(0.5).stroke();
+          doc.fontSize(8).fillColor(LIGHT_GRAY).font('Helvetica')
+            .text('[afbeelding niet beschikbaar]', MARGIN, y + imgH / 2 - 8, { width: CONTENT_W, align: 'center' });
+        }
+
+        y += imgH + 16;
+      }
+
       // ── Footer ──
       doc.fontSize(7).fillColor(LIGHT_GRAY).font('Helvetica')
         .text('Garden For Life — gardenforlife.nl — Dit rapport is vertrouwelijk',

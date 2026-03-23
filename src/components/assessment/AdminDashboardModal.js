@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useCallback } from 'react';
+import React, { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import {
   getAdminStats,
@@ -31,6 +31,8 @@ import {
   getAccessLog,
   getConsentLog,
   clearSessions,
+  getFeedbackEmailSettings,
+  updateFeedbackEmailSettings,
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
@@ -1134,7 +1136,17 @@ const AssessmentsTab = memo(({ adminEmail }) => {
                 backgroundColor: 'rgba(100, 200, 100, 0.04)',
               }}>
                 <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.6, marginBottom: '0.3rem' }}>
-                  <div>{new Date(review.timestamp).toLocaleString()} · {review.userId ? '👤 Registered' : '👤 Anonymous'}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span>{new Date(review.timestamp).toLocaleString()} · {review.userId ? '👤 Registered' : '👤 Anonymous'}</span>
+                    {review.starRating != null && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
+                        {[...Array(9)].map((_, i) => (
+                          <span key={i} style={{ fontSize: 'max(8px, 0.4vw)', color: i < review.starRating ? '#f59e0b' : 'rgba(245,158,11,0.2)' }}>★</span>
+                        ))}
+                        <span style={{ marginLeft: '0.2rem', color: '#f59e0b' }}>{review.starRating}/9</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {review.whatWorked && (
@@ -2372,6 +2384,160 @@ const FormulierenTab = memo(() => {
 const CONTACT_REQUESTS_KEY = 'gfl_contact_requests';
 const BRAND_EDITS_KEY = 'gfl_brand_edits';
 
+// ═══════════════════════════════════════════════════════════
+// FeedbackEmailSettingsCard — edit confirmation email text + image
+// ═══════════════════════════════════════════════════════════
+const FeedbackEmailSettingsCard = memo(() => {
+  const [text, setText] = useState('');
+  const [imageBase64, setImageBase64] = useState('');
+  const [imageMimeType, setImageMimeType] = useState('');
+  const [imagePreview, setImagePreview] = useState(''); // data URI for browser preview
+  const [status, setStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const [errorMsg, setErrorMsg] = useState('');
+  const fileInputRef = useRef(null);
+
+  const pc = CARD_COLORS.purple;
+
+  // Load on mount
+  useEffect(() => {
+    getFeedbackEmailSettings()
+      .then((s) => {
+        setText(s.text || '');
+        if (s.imageBase64 && s.imageMimeType) {
+          setImageBase64(s.imageBase64);
+          setImageMimeType(s.imageMimeType);
+          setImagePreview(`data:${s.imageMimeType};base64,${s.imageBase64}`);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setErrorMsg('Alleen afbeeldingsbestanden zijn toegestaan'); return; }
+    if (file.size > 5 * 1024 * 1024) { setErrorMsg('Afbeelding mag maximaal 5 MB zijn'); return; }
+    setErrorMsg('');
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const base64 = dataUrl.split(',')[1];
+      setImageBase64(base64);
+      setImageMimeType(file.type);
+      setImagePreview(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setImageBase64('');
+    setImageMimeType('');
+    setImagePreview('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const save = async () => {
+    setStatus('saving');
+    setErrorMsg('');
+    try {
+      await updateFeedbackEmailSettings({ text, imageBase64, imageMimeType });
+      setStatus('saved');
+      setTimeout(() => setStatus(null), 2500);
+    } catch (err) {
+      setErrorMsg(err.message);
+      setStatus('error');
+    }
+  };
+
+  const fieldLabelStyle = {
+    fontSize: 'max(7px, 0.38vw)', color: pc.dimText,
+    textTransform: 'uppercase', letterSpacing: '0.08em',
+    marginBottom: '0.25rem',
+  };
+  const inputBase = {
+    width: '100%', padding: '0.4rem 0.6rem', boxSizing: 'border-box',
+    backgroundColor: 'rgba(0,0,0,0.4)', border: `1px solid ${pc.rowBorder}`,
+    borderRadius: '0.25rem', color: C.text, fontFamily: FONT,
+    fontSize: 'max(9px, 0.45vw)', outline: 'none',
+    transition: 'border-color 0.2s',
+  };
+
+  return (
+    <DashboardCard title="Feedback E-mail Instellingen" color="purple">
+      <p style={{ fontSize: 'max(8px, 0.42vw)', color: pc.dimText, marginTop: 0, marginBottom: '0.75rem' }}>
+        Tekst en afbeelding die verschijnen in de bevestigingsmail na het indienen van feedback.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+        {/* Text */}
+        <div>
+          <div style={fieldLabelStyle}>Berichttekst</div>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Bedankt voor je feedback! Wij zullen die gebruiken om het systeem te verbeteren."
+            rows={4}
+            style={{ ...inputBase, resize: 'vertical' }}
+            onFocus={(e) => { e.target.style.borderColor = C.purple; }}
+            onBlur={(e) => { e.target.style.borderColor = pc.rowBorder; }}
+          />
+        </div>
+
+        {/* File upload */}
+        <div>
+          <div style={fieldLabelStyle}>Afbeelding (van je apparaat)</div>
+          {imagePreview ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{ maxWidth: '100%', maxHeight: '140px', borderRadius: '4px', objectFit: 'contain', display: 'block', border: `1px solid ${pc.rowBorder}` }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <SciFiButton onClick={() => fileInputRef.current?.click()} size="xs" fontSize="max(8px, 0.4vw)">&#128247; Vervangen</SciFiButton>
+                <SciFiButton onClick={removeImage} variant="danger" size="xs" fontSize="max(8px, 0.4vw)">&#128465; Verwijderen</SciFiButton>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                ...inputBase,
+                cursor: 'pointer', textAlign: 'left',
+                color: pc.dimText, paddingLeft: '0.6rem',
+              }}
+            >
+              &#128247; Klik om een afbeelding te kiezen...
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <SciFiButton onClick={save} disabled={status === 'saving'} size="sm" fontSize="max(9px, 0.45vw)">
+            {status === 'saving' ? 'Opslaan...' : 'Opslaan'}
+          </SciFiButton>
+          {status === 'saved' && (
+            <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase' }}>✓ Opgeslagen</span>
+          )}
+          {(status === 'error' || errorMsg) && (
+            <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#ef4444' }}>{errorMsg}</span>
+          )}
+        </div>
+      </div>
+    </DashboardCard>
+  );
+});
+FeedbackEmailSettingsCard.displayName = 'FeedbackEmailSettingsCard';
+
 const ContactTab = memo(() => {
   const [requests, setRequests] = useState(() => {
     try { return JSON.parse(localStorage.getItem(CONTACT_REQUESTS_KEY) || '[]'); } catch { return []; }
@@ -2443,6 +2609,9 @@ const ContactTab = memo(() => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {/* Feedback email settings */}
+      <FeedbackEmailSettingsCard />
+
       {/* Section toggles */}
       <div style={{ display: 'flex', gap: '0.4rem' }}>
         {[

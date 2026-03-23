@@ -14,7 +14,7 @@ const Brand06Page = ({ isVisible, onBack }) => {
       isVisible={isVisible}
       onBack={onBack}
       initialBrandIndex={5}
-      brandSlug="brand-06"
+      brandSlug="template-06"
     />
   );
 };

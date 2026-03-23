@@ -132,6 +132,38 @@ const ARCHETYPE_POSITIONS = {
   TRICKSTER: 7, SAGE: 8, ARTIST: 9, MAGICIAN: 10, HERO: 11, RULER: 12,
 };
 
+/** Yellow Triangle Profile metadata — used in buildUserMessage and buildSystemPrompt */
+const YELLOW_TRIANGLE_PROFILES = [
+  {
+    id: 1, name: 'De Analytische Estheet', members: ['JUDGE', 'EXPLORER', 'ARTIST'],
+    networks: 'CEN (executieve controle) + Openness (ontdekking) + DMN (reflectie)',
+    superpower: 'Convergent-divergent integratie — ontdekken (Explorer), beoordelen (Judge), vertalen naar betekenis (Artist).',
+    fallacies: 'Esthetische Bias (schoonheid = waarheid), Paralysis by Perfection, Intellectueel Elitisme.',
+    growth: 'Aangeleerd in kenniswerkers, academici, ontwerpers — voelt als tweede natuur maar is geconditioneerd.',
+  },
+  {
+    id: 2, name: 'De Passionele Alchemist', members: ['LOVER', 'OUTLAW', 'MAGICIAN'],
+    networks: 'Limbisch (emotionele fusie) + Salience (disruptie) + Agency (transformatie)',
+    superpower: 'Emotionele alchemie — voelen wat niet klopt (Lover), breken (Outlaw), herbouwen met intentie (Magician).',
+    fallacies: 'Messias-Complex, Emotionele Reactiviteit als Strategie, Burn-and-Build Cyclus.',
+    growth: 'Startup-cultuur, activisme, therapeutische settings — dopamine-cocktail van rebellie + transformatie.',
+  },
+  {
+    id: 3, name: 'De Strategische Bewaker', members: ['CAREGIVER', 'TRICKSTER', 'HERO'],
+    networks: 'Limbisch (zorg) + Salience (speelse disruptie) + Agency (actie/bescherming)',
+    superpower: 'Beschermende intelligentie — zien wie pijn lijdt (Caregiver), onverwachte route vinden (Trickster), uitvoeren (Hero).',
+    fallacies: 'Nobele Manipulator, Humor als Vermijding, Martelaar-Held Fusie (architectuur van burn-out).',
+    growth: 'NL verzorgingscultuur, teamgerichte settings — oxytocine + dopamine + testosteron combinatie.',
+  },
+  {
+    id: 4, name: 'De Wijze Bouwmeester', members: ['INNOCENT', 'SAGE', 'RULER'],
+    networks: 'Openness (vertrouwen) + DMN (inzicht) + CEN (structurele controle)',
+    superpower: 'Institutionele intelligentie — vertrouwen (Innocent), begrijpen (Sage), structureren (Ruler) voor duurzaam bestuur.',
+    fallacies: 'Systeemblindheid (kan systeem niet deconstrueren), Conservatieve Bias, Paternalistische Val.',
+    growth: 'Bestuursstructuren, kerkelijk leiderschap, familiebedrijven — meest cultureel gerespecteerd maar kwetsbaar voor chaos.',
+  },
+];
+
 const GROUP_FOR_ARCHETYPE = {
   JUDGE: 'RULING', RULER: 'RULING',
   LOVER: 'RELATIONAL', CAREGIVER: 'RELATIONAL',
@@ -851,36 +883,7 @@ function buildSystemPrompt({
     parts.push(`\nLEESPROTOCOL: Hoge nature_core = biologische identiteit (dit IS de gebruiker). Hoge culture_core = aangeleerde strategie (dit DOET de gebruiker). Hoge green_hw/blue_fb = hardware echo (resoneert mee). Hoge yellow_cog = cognitief netwerk. Hoge purple_shadow = onbewuste tegenpool. Een archetype met hoog totaal maar lage nature_core is GEEN identiteit — het is een echo.`);
 
     // ── GELE DRIEHOEKEN ACTIVATIE (pre-computed for AI) ──
-    const YELLOW_TRIANGLE_PROFILES = [
-      {
-        id: 1, name: 'De Analytische Estheet', members: ['JUDGE', 'EXPLORER', 'ARTIST'],
-        networks: 'CEN (executieve controle) + Openness (ontdekking) + DMN (reflectie)',
-        superpower: 'Convergent-divergent integratie — ontdekken (Explorer), beoordelen (Judge), vertalen naar betekenis (Artist).',
-        fallacies: 'Esthetische Bias (schoonheid = waarheid), Paralysis by Perfection, Intellectueel Elitisme.',
-        growth: 'Aangeleerd in kenniswerkers, academici, ontwerpers — voelt als tweede natuur maar is geconditioneerd.',
-      },
-      {
-        id: 2, name: 'De Passionele Alchemist', members: ['LOVER', 'OUTLAW', 'MAGICIAN'],
-        networks: 'Limbisch (emotionele fusie) + Salience (disruptie) + Agency (transformatie)',
-        superpower: 'Emotionele alchemie — voelen wat niet klopt (Lover), breken (Outlaw), herbouwen met intentie (Magician).',
-        fallacies: 'Messias-Complex, Emotionele Reactiviteit als Strategie, Burn-and-Build Cyclus.',
-        growth: 'Startup-cultuur, activisme, therapeutische settings — dopamine-cocktail van rebellie + transformatie.',
-      },
-      {
-        id: 3, name: 'De Strategische Bewaker', members: ['CAREGIVER', 'TRICKSTER', 'HERO'],
-        networks: 'Limbisch (zorg) + Salience (speelse disruptie) + Agency (actie/bescherming)',
-        superpower: 'Beschermende intelligentie — zien wie pijn lijdt (Caregiver), onverwachte route vinden (Trickster), uitvoeren (Hero).',
-        fallacies: 'Nobele Manipulator, Humor als Vermijding, Martelaar-Held Fusie (architectuur van burn-out).',
-        growth: 'NL verzorgingscultuur, teamgerichte settings — oxytocine + dopamine + testosteron combinatie.',
-      },
-      {
-        id: 4, name: 'De Wijze Bouwmeester', members: ['INNOCENT', 'SAGE', 'RULER'],
-        networks: 'Openness (vertrouwen) + DMN (inzicht) + CEN (structurele controle)',
-        superpower: 'Institutionele intelligentie — vertrouwen (Innocent), begrijpen (Sage), structureren (Ruler) voor duurzaam bestuur.',
-        fallacies: 'Systeemblindheid (kan systeem niet deconstrueren), Conservatieve Bias, Paternalistische Val.',
-        growth: 'Bestuursstructuren, kerkelijk leiderschap, familiebedrijven — meest cultureel gerespecteerd maar kwetsbaar voor chaos.',
-      },
-    ];
+    // YELLOW_TRIANGLE_PROFILES is defined at module scope
 
     if (archetypeDetails && archetypeDetails.length > 0) {
       parts.push(`\n── GELE DRIEHOEKEN — CULTUREFORCE ACTIVATIE ──`);
@@ -1076,6 +1079,23 @@ function buildSystemPrompt({
     `- AI Agent Prompt: Zie Sectie 12.\n`
   );
 
+  // ── CONDITIONAL: Persoonlijkheidsrapport Vergelijking (only when files uploaded) ──
+  if (uploadedFileContents && uploadedFileContents.length > 0) {
+    const fileNames = uploadedFileContents.map(f => f.name).join(', ');
+    parts.push(
+      `## Persoonlijkheidsrapport Vergelijking\n` +
+      `⚠️ VERPLICHTE OPENINGSZIN — begin deze sectie letterlijk met de volgende zin, vetgedrukt, zonder aanpassingen:\n` +
+      `"In deze specifieke sectie gebruiken we ons model als leidende standaard en relativeren we de door jouw gestuurde score. Het extern persoonlijkheidsrapport (${fileNames}) is contextuele input — geen validatie of weerlegging van onze uitkomsten. GardenForLife aanvaardt geen verantwoordelijkheid voor externe rapportinhoud."\n\n` +
+      `STRIKTE LENGTE-BEPERKING: Schrijf MAXIMAAL 420 woorden voor de gehele sectie. De tekst moet op \u00e9\u00e9n A4-pagina passen. GEEN sub-headers, GEEN lijsten — uitsluitend doorlopende alinea's.\n\n` +
+      `Schrijf 4 compacte alinea's (elk max 90 woorden):\n` +
+      `Alinea 1 — Grootste overeenkomsten: noem de 2-3 sterkste raakpunten tussen het externe rapport en ons archetype/OCEAN-profiel. Verklaar vanuit het Triple Network Model. Anker: 'binnen dit model'.\n` +
+      `Alinea 2 — Grootste verschillen & betekenis: benoem de 2-3 opvallendste afwijkingen en wat de methodologische kloof (externe methode vs. GFL 5-mandjes) verklaart. Koppel aan cultuur vs. natuur dynamiek.\n` +
+      `Alinea 3 — Deltawerken / Cells Within Cells: hoe verhoudt de gelaagdheid van het externe rapport zich tot onze 5-mandjes (nature_core → culture_core → blue_fb → yellow_cog → purple_shadow)? Welke laag meet het externe rapport primair?\n` +
+      `Alinea 4 — Reflectie: één concrete reflectievraag voor de gebruiker over wat de discrepantie tussen beide modellen onthult over hun natuur/cultuur-balans.\n\n` +
+      `TAALREGELS: 'het scoreprofiel suggereert', 'binnen dit model', 'als indicatieve modelwaarde'. Geen absolute uitspraken, geen klinische termen. Stop bij 420 woorden.\n`
+    );
+  }
+
   parts.push(
     `## 12. Genereer een Volledige AI Prompt\n` +
     `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools. De prompt bevat de verplichte disclaimer als eerste sectie, gevolgd door de gepersonaliseerde instructies op basis van het archetype-profiel.\n` +
@@ -1087,48 +1107,268 @@ function buildSystemPrompt({
 
 
 // ═══════════════════════════════════════════════════════════════
-// buildUserMessage — concise user message with key data points
+// buildUserMessage — full personalized assessment data for this user
 // ═══════════════════════════════════════════════════════════════
 
 function buildUserMessage({
   archetypeKey, supportArchetype, supportGroup, mainGroup,
-  extendedArchetypeName,
+  extendedArchetypeName, contextDocs,
   shadowArchetype, blindspotArchetype, isIndividuated,
-  polarizationLevel, authenticityLevel,
+  polarizationIndex, polarizationLevel,
+  authenticityIndex, authenticityLevel,
+  totalNaturePoints, totalCulturePoints,
+  archetypeDetails,
   subjectResults, harmonyScore, consciousnessLevel,
+  overallShadow, uploadedFileContents,
+  oceanScores, subgroups, responses,
 }) {
-  let msg = `Genereer een volledig Meester Ontologisch Rapport (alle 12 secties) voor deze gebruiker.\n\n`;
-  msg += `Main Archetype: ${archetypeKey}`;
-  if (supportArchetype) msg += ` | Support: ${supportArchetype}`;
-  if (extendedArchetypeName) msg += ` | Extended: ${extendedArchetypeName}`;
-  msg += `\n`;
+  const mainPos      = ARCHETYPE_POSITIONS[archetypeKey] || '?';
+  const supportPos   = ARCHETYPE_POSITIONS[supportArchetype] || '?';
+  const shadowPos    = ARCHETYPE_POSITIONS[shadowArchetype] || '?';
+  const blindspotPos = ARCHETYPE_POSITIONS[blindspotArchetype] || '?';
+  const matrixKey    = `${archetypeKey}_${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]}`;
+  const isHarmonic   = HARMONIC_KEYS.has(matrixKey);
+  const mainPurple   = PURPLE_LINE[archetypeKey];
+  const mainBlue     = BLUE_LINE[archetypeKey];
+  const isPurpleBonded = mainPurple === supportArchetype;
+  const isBlueBonded   = mainBlue   === supportArchetype;
 
-  if (mainGroup) msg += `Main Groep: ${mainGroup}`;
-  if (supportGroup) msg += ` | Support Groep: ${supportGroup}`;
-  msg += `\n`;
+  const hasReport = uploadedFileContents && uploadedFileContents.length > 0;
+  const parts = [];
 
-  if (shadowArchetype) msg += `Shadow: ${shadowArchetype}`;
-  if (blindspotArchetype) msg += ` | Blindspot: ${blindspotArchetype}`;
-  msg += `\n`;
+  parts.push(
+    `Genereer een volledig Meester Ontologisch Rapport ` +
+    `(${hasReport ? 'alle 12 secties + Persoonlijkheidsrapport Vergelijking' : 'alle 12 secties'}) ` +
+    `voor deze gebruiker.\n`
+  );
 
+  // ═══ ARCHETYPE PROFIEL ═══
+  parts.push(`\n═══════════════════════════════════════`);
+  parts.push(`ARCHETYPE PROFIEL (MEESTER ONTOLOGY)`);
+  parts.push(`═══════════════════════════════════════\n`);
+
+  parts.push(`Main Archetype: ${archetypeKey} (Positie ${mainPos})`);
+  parts.push(`Main Groep: ${mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]} (${GROUP_NEURAL_FOCUS[mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]] || ''})`);
+  parts.push(`Support Archetype: ${supportArchetype} (Positie ${supportPos})`);
+  parts.push(`Support Groep: ${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]} (${GROUP_NEURAL_FOCUS[supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]] || ''})`);
+  parts.push(`Extended Archetype (72-matrix): ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}${isHarmonic ? ' (Harmonic Match ✦)' : ''}`);
+
+  // ─── Section 5: Full 72-matrix row for Main (all 6 possible extended archetypes) ───
+  const extendedRow = buildExtendedRow(archetypeKey);
+  parts.push(`\n── DE 72 MATRIX — 6 MOGELIJKE PROFIELEN VOOR ${archetypeKey} ──`);
+  parts.push(`Groep                | Extended Archetype      | Harmonic`);
+  parts.push(`---------------------|-------------------------|----------`);
+  for (const row of extendedRow) {
+    const group   = row.group.padEnd(20);
+    const name    = row.name.padEnd(24);
+    const harmStr = row.harmonic ? '✦ (H)' : '';
+    const marker  = row.group === (supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]) ? ' ← UITSLAG' : '';
+    parts.push(`${group} | ${name} | ${harmStr}${marker}`);
+  }
+  parts.push(`Huidige uitslag: ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'} (Main=${archetypeKey} × Support Groep=${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]})`);
+
+  const mainDetails   = archetypeDetails && archetypeDetails.find(a => a.key === archetypeKey);
+  const shadowDetails = archetypeDetails && archetypeDetails.find(a => a.key === shadowArchetype);
+  if (mainDetails) {
+    parts.push(`Main Archetype 5-Mandjes: nature_core=${mainDetails.nature_core || 0}, green_hw=${mainDetails.green_hw || 0}, culture_core=${mainDetails.culture_core || 0}, blue_fb=${mainDetails.blue_fb || 0}, yellow_cog=${mainDetails.yellow_cog || 0}, purple_shadow=${mainDetails.purple_shadow || 0}`);
+  }
+  if (shadowDetails) {
+    parts.push(`Shadow Archetype 5-Mandjes: nature_core=${shadowDetails.nature_core || 0}, green_hw=${shadowDetails.green_hw || 0}, culture_core=${shadowDetails.culture_core || 0}, blue_fb=${shadowDetails.blue_fb || 0}, yellow_cog=${shadowDetails.yellow_cog || 0}, purple_shadow=${shadowDetails.purple_shadow || 0}`);
+  }
+
+  parts.push(`Shadow (180° van Main): ${shadowArchetype} (Positie ${shadowPos})`);
+  parts.push(`Blindspot (180° van Support): ${blindspotArchetype} (Positie ${blindspotPos})`);
   if (isIndividuated) {
-    msg += `⚡ INDIVIDUATIE: Main en Support zijn 180° tegenpolen — meesterschap over de paradox.\n`;
+    parts.push(`⚡ INDIVIDUATIE: Main (${archetypeKey}) en Support (${supportArchetype}) zijn 180° tegenpolen — Meesterschap over de Paradox!`);
   }
 
-  if (polarizationLevel) msg += `Polarisatie: ${polarizationLevel}\n`;
-  if (authenticityLevel) msg += `Authenticiteit: ${authenticityLevel}\n`;
+  parts.push(`\nMain-Support Verbinding: ${
+    isPurpleBonded ? 'PAARSE LIJN (180° tegenpolen — paradoxale integratie)' :
+    isBlueBonded   ? 'BLAUWE LIJN (zelfde biologische zuil — hardware resonantie)' :
+    'GEEN directe lijn-relatie'
+  }`);
 
-  if (harmonyScore != null) {
-    msg += `Engagement Score: ${harmonyScore}% | Bewustzijnsniveau: ${consciousnessLevel || 'onbekend'}\n`;
+  // ═══ GEAVANCEERDE METRICS ═══
+  parts.push(`\n── GEAVANCEERDE METRICS ──`);
+  if (polarizationIndex != null) {
+    parts.push(`Polarization Index: ${polarizationIndex} (${polarizationLevel})`);
+    if (polarizationLevel === 'HIGH_POLARIZATION') {
+      parts.push(`  → Gat > 222 punten. Schaduw wordt agressief onderdrukt.`);
+    } else if (polarizationLevel === 'HIGH_INDIVIDUATION') {
+      parts.push(`  → Gat < 123 punten. Paradox verenigd.`);
+    }
+  }
+  if (authenticityIndex != null) {
+    parts.push(`Authenticity Index: ${authenticityIndex}% Nature (${authenticityLevel})`);
+    parts.push(`  Nature punten: ${totalNaturePoints || 0} / Culture punten: ${totalCulturePoints || 0}`);
+    if (authenticityLevel === 'NATURE_DOMINANT') {
+      parts.push(`  → >75% Nature. Biologische flow dominant.`);
+    } else if (authenticityLevel === 'CULTURE_DOMINANT') {
+      parts.push(`  → >65% Culture/Force. "Overlevingsmodus".`);
+    }
+  }
+  if (harmonyScore != null) parts.push(`Engagement Score: ${harmonyScore}%`);
+  if (consciousnessLevel) parts.push(`Bewustzijnsniveau: ${consciousnessLevel}`);
+  if (overallShadow) parts.push(`Dominante Schaduw: ${overallShadow}`);
+  if (oceanScores) parts.push(`OCEAN Scores: ${JSON.stringify(oceanScores)}`);
+
+  // ═══ DUAL-CORE DYNAMICS ═══
+  if (subgroups && subgroups.length > 0) {
+    const GROUP_NEURAL_NAMES = {
+      Ruling: 'CEN Dominantie', Relational: 'Limbic Coupling',
+      Seeker: 'Hoge Openness', Chaos: 'Salience Netwerk',
+      Abstract: 'DMN Hyper-connectie', Agency: 'Extraversie/Wilskracht',
+    };
+    parts.push(`\n── DUAL-CORE DYNAMICS PER NEURAAL NETWERK ──`);
+    parts.push(`(Nature = biologische kern; Culture = aangeleerde strategie; /30 max per kolom)`);
+    parts.push(`Netwerk               | Links        | Rechts       | Nat  | Cult | Nat% `);
+    parts.push(`----------------------|--------------|--------------|------|------|------`);
+    for (const sg of subgroups) {
+      const natTotal  = (sg.leftNature  || 0) + (sg.rightNature  || 0);
+      const cultTotal = (sg.leftCulture || 0) + (sg.rightCulture || 0);
+      const total     = natTotal + cultTotal;
+      const ratio     = total > 0 ? Math.round((natTotal / total) * 100) : 0;
+      const netName   = (GROUP_NEURAL_NAMES[sg.group] || sg.group || '').padEnd(21);
+      const left      = (sg.leftLabel  || '').padEnd(12);
+      const right     = (sg.rightLabel || '').padEnd(12);
+      const natStr    = String(natTotal).padStart(4);
+      const cultStr   = String(cultTotal).padStart(4);
+      const ratioStr  = String(ratio).padStart(4) + '%';
+      parts.push(`${netName} | ${left} | ${right} | ${natStr} | ${cultStr} | ${ratioStr}`);
+    }
+    parts.push(`\nLEESPROTOCOL DUAL-CORE: Nat% >60% = biologische stroom dominant. Nat% <40% = aangeleerde strategie dominant. 40-60% = actieve integratie.`);
   }
 
+  // ═══ ARCHETYPE SCOREOVERZICHT (5-Mandje Decompositie) ═══
+  if (archetypeDetails && archetypeDetails.length > 0) {
+    parts.push(`\n── ARCHETYPE SCOREOVERZICHT (5-Mandje Decompositie) ──`);
+    parts.push(`Archetype       | Pos | Groep       | Totaal | N_Core | G_HW  | C_Core | B_FB  | Y_Cog | P_Shad | Nature%`);
+    parts.push(`----------------|-----|-------------|--------|--------|-------|--------|-------|-------|--------|--------`);
+    for (const a of archetypeDetails) {
+      const name  = (a.key || '').padEnd(15);
+      const pos   = String(a.position || '').padStart(3);
+      const group = (a.group || '').padEnd(11);
+      const total = String(a.total || 0).padStart(6);
+      const nc    = String(a.nature_core || 0).padStart(6);
+      const gh    = String(a.green_hw || 0).padStart(5);
+      const cc    = String(a.culture_core || 0).padStart(6);
+      const bf    = String(a.blue_fb || 0).padStart(5);
+      const yc    = String(a.yellow_cog || 0).padStart(5);
+      const ps    = String(a.purple_shadow || 0).padStart(6);
+      const ratio = String(a.natureRatio || 0).padStart(7) + '%';
+      parts.push(`${name} | ${pos} | ${group} | ${total} | ${nc} | ${gh} | ${cc} | ${bf} | ${yc} | ${ps} | ${ratio}`);
+    }
+    parts.push(`\nLEESPROTOCOL: Hoge nature_core = biologische identiteit. Hoge culture_core = aangeleerde strategie. Hoge green_hw/blue_fb = hardware echo. Hoge yellow_cog = cognitief netwerk. Hoge purple_shadow = onbewuste tegenpool. Hoog totaal + lage nature_core = ECHO, geen identiteit.`);
+
+    // ── GELE DRIEHOEKEN ACTIVATIE ──
+    parts.push(`\n── GELE DRIEHOEKEN — CULTUREFORCE ACTIVATIE ──`);
+    parts.push(`Driehoek                 | Leden                       | Y_Cog Totaal | Activatie`);
+    parts.push(`-------------------------|-----------------------------|--------------|-----------`);
+
+    const triangleActivations = YELLOW_TRIANGLE_PROFILES.map(tri => {
+      const memberScores = tri.members.map(m => {
+        const d = archetypeDetails.find(a => a.key === m);
+        return { key: m, yellowCog: d ? (d.yellow_cog || 0) : 0 };
+      });
+      const totalYellow = memberScores.reduce((s, m) => s + m.yellowCog, 0);
+      const dominance = totalYellow === 0 ? 'AFWEZIG' : totalYellow < 30 ? 'ZWAK' : totalYellow < 80 ? 'ACTIEF' : 'DOMINANT';
+      return { ...tri, memberScores, totalYellow, dominance };
+    }).sort((a, b) => b.totalYellow - a.totalYellow);
+
+    for (const tri of triangleActivations) {
+      const name    = tri.name.padEnd(24);
+      const members = tri.members.join(' · ').padEnd(27);
+      const total   = String(tri.totalYellow).padStart(12);
+      parts.push(`${name} | ${members} | ${total} | ${tri.dominance}`);
+    }
+
+    const dominant = triangleActivations[0];
+    const absent   = triangleActivations[triangleActivations.length - 1];
+
+    parts.push(`\nDOMINANT COGNITIEF NETWERK: ${dominant.name} (Driehoek ${dominant.id})`);
+    parts.push(`  Netwerken: ${dominant.networks}`);
+    parts.push(`  Superkracht: ${dominant.superpower}`);
+    parts.push(`  Cognitieve Valkuilen: ${dominant.fallacies}`);
+    parts.push(`  Culturele Context: ${dominant.growth}`);
+    if (dominant.totalYellow > 0) {
+      for (const ms of dominant.memberScores) {
+        const d  = archetypeDetails.find(a => a.key === ms.key);
+        const nc = d ? (d.nature_core || 0) : 0;
+        const src = nc > 30
+          ? 'NATURE+CULTURE (biologische grondtoon versterkt door cognitief netwerk)'
+          : 'CULTURE-ONLY (puur aangeleerde lens — energiekosten bij druk)';
+        parts.push(`  ${ms.key}: yellow_cog=${ms.yellowCog}, nature_core=${nc} → ${src}`);
+      }
+    }
+
+    if (absent.totalYellow === 0) {
+      parts.push(`\nCOGNITIEVE BLINDE VLEK: ${absent.name} (Driehoek ${absent.id}) — NIET geactiveerd`);
+      parts.push(`  Dit netwerk is zowel biologisch als aangeleerd afwezig.`);
+      parts.push(`  Netwerken: ${absent.networks}`);
+    }
+
+    const [t1, t2] = triangleActivations;
+    if ((t1.id === 1 && t2.id === 2) || (t1.id === 2 && t2.id === 1)) {
+      parts.push(`\nCROSS-DRIEHOEK: Analytische Estheet ↔ Passionele Alchemist (Denken vs. Voelen).`);
+    } else if ((t1.id === 3 && t2.id === 4) || (t1.id === 4 && t2.id === 3)) {
+      parts.push(`\nCROSS-DRIEHOEK: Strategische Bewaker ↔ Wijze Bouwmeester (Bewegen vs. Bewaken).`);
+    }
+  }
+
+  // ═══ LAAG-VOOR-LAAG RESULTATEN ═══
   if (subjectResults && subjectResults.length > 0) {
-    msg += `\nAnalyseer de vijf lagen van bewustzijn en integreer dit in de 12-sectie analyse.\n`;
+    parts.push(`\n── LAAG-VOOR-LAAG RESULTATEN ──`);
+    for (const layer of subjectResults) {
+      parts.push(`${layer.subjectName}: Score ${layer.totalScore}/${layer.maxScore} (${layer.percentage}%) — Dominant: ${layer.dominantArchetype}`);
+      if (layer.shadowAspects && layer.shadowAspects.length > 0) {
+        const unique = [...new Set(layer.shadowAspects)].filter(Boolean);
+        if (unique.length > 0) parts.push(`  Schaduwpatronen: ${unique.join(', ')}`);
+      }
+    }
   }
 
-  msg += `\nGebruik het PDF bestand (indien geüpload) voor additionele context. Volg het exacte 12-sectie format uit je systeeminstructies.`;
+  // ═══ INDIVIDUELE ANTWOORDEN ═══
+  if (responses && responses.length > 0) {
+    parts.push(`\n── INDIVIDUELE ANTWOORDEN (${responses.length} vragen) ──`);
+    const summary = responses.map(r =>
+      `Q${r.questionId}: archetype=${r.archetype}${r.shadowAspect ? ', schaduw=' + r.shadowAspect : ''}`
+    ).join('\n');
+    parts.push(summary);
+  }
 
-  return msg;
+  // ═══ ADMIN KENNISBANK (archetype reference docs from MongoDB) ═══
+  if (contextDocs && contextDocs.length > 0) {
+    parts.push(`\n═══════════════════════════════════════`);
+    parts.push(`KENNISBANK / CONTEXT DOCUMENTEN`);
+    parts.push(`═══════════════════════════════════════`);
+    for (const doc of contextDocs) {
+      parts.push(`── ${doc.filename} ──`);
+      parts.push(doc.extractedText);
+      parts.push('');
+    }
+  }
+
+  // ═══ GEBRUIKER-GEÜPLOADE DOCUMENTEN (PDFs) ═══
+  if (uploadedFileContents && uploadedFileContents.length > 0) {
+    parts.push(`\n═══════════════════════════════════════`);
+    parts.push(`GEBRUIKER-GEÜPLOADE DOCUMENTEN`);
+    parts.push(`═══════════════════════════════════════`);
+    for (const file of uploadedFileContents) {
+      parts.push(`── ${file.name} ──`);
+      parts.push(file.text);
+      parts.push('');
+    }
+  }
+
+  // ═══ UPLOADED RAPPORT ═══
+  if (hasReport) {
+    const fileNames = uploadedFileContents.map(f => f.name).join(', ');
+    parts.push(`\n⚠️ EXTERN RAPPORT GEÜPLOAD: ${fileNames}\nGenereer na sectie 11 de sectie '## Persoonlijkheidsrapport Vergelijking' exact zoals gespecificeerd in de systeeminstructies. Dit is verplicht — sla deze sectie niet over.`);
+  } else {
+    parts.push(`\nVolg het exacte 12-sectie format uit je systeeminstructies.`);
+  }
+
+  return parts.join('\n');
 }
 
 module.exports = { buildSystemPrompt, buildUserMessage };

@@ -88,9 +88,9 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
   }, []);
 
   // Wheel Configuration - dynamically sized from viewport
-  const wheelSize = Math.min(900, Math.round(vpW * 0.70));
+  const wheelSize = Math.min(1200, Math.round(vpW * 0.92));
   const placementRadius = (wheelSize / 2) * 0.85;
-  const visibleWheelH = Math.max(170, Math.round(vpH * 0.22));
+  const visibleWheelH = Math.max(145, Math.round(vpH * 0.187));
   const bottomOffset = -(wheelSize - visibleWheelH);
   const hubSize = Math.max(56, Math.min(74, Math.round(vpW * 0.052)));
   const hubBottom = -Math.round(hubSize * 0.22);
@@ -100,7 +100,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
   const sideOffsetRight = Math.min(142, Math.round(hubHalf + Math.max(82, vpW * 0.063)));
   const listHeight = Math.max(240, Math.round(vpH * 0.30));
   const cardWidth = Math.max(130, Math.round(vpW * 0.109));
-  const logoSize = Math.max(64, Math.round(wheelSize * 0.107));
+  const logoSize = Math.max(58, Math.round(wheelSize * 0.0963));
 
   // Calculate continuous rotation
   const rotation = -virtualIndex * (360 / brands.length);
@@ -117,7 +117,6 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
 
   // Scoped Wheel Event Listener
   useEffect(() => {
-    if (locked) return;
     const handleWheel = (e) => {
       e.preventDefault();
       const direction = e.deltaY > 0 ? 1 : -1;
@@ -144,7 +143,23 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
           borderColor: 'rgba(255, 174, 0, 0.5)'
         }}
       >
-        {!locked && brands.map((brand, i) => (
+        {locked
+          ? Array.from({ length: 99 }, (_, i) => (
+            <div
+              key={`placeholder-${i}`}
+              className="flex-shrink-0 h-full border rounded relative overflow-hidden flex items-end p-2"
+              style={{
+                width: `${cardWidth}px`,
+                borderColor: 'rgba(255, 255, 255, 0.08)',
+                backgroundColor: 'rgba(255, 255, 255, 0.03)'
+              }}
+            >
+              <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'rgba(255,255,255,0.15)', userSelect: 'none' }}>
+                {String(i + 1).padStart(2, '0')}
+              </span>
+            </div>
+          ))
+          : brands.map((brand, i) => (
           <button 
             key={brand.id}
             onClick={() => { handleItemClick(i); setIsExpanded(false); }}
@@ -219,10 +234,33 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
           }}
         >
           {brands.map((brand, i) => {
-            if (locked && i !== ((virtualIndex % brands.length) + brands.length) % brands.length) return null;
             const angle = i * (360 / brands.length);
             const currentIndex = ((virtualIndex % brands.length) + brands.length) % brands.length;
             const isActive = i === currentIndex;
+
+            // When locked, show the template brand's logo for all 12 slots
+            if (locked && !isActive) {
+              return (
+                <div
+                  key={`placeholder-${i}`}
+                  className="absolute top-1/2 left-1/2 w-0 h-0"
+                  style={{ transform: `rotate(${angle}deg) translateY(-${placementRadius}px)` }}
+                >
+                  <div style={{ position: 'absolute', top: -(logoSize / 2), left: -(logoSize / 2), width: logoSize, height: logoSize }}>
+                    <div
+                      className="w-full h-full flex items-center justify-center rounded-full"
+                      style={{
+                        transform: `rotate(${-angle - rotation}deg)`,
+                        opacity: 0.35,
+                        filter: 'grayscale(100%)'
+                      }}
+                    >
+                      <img src={brands[currentIndex].logoUrl} className="w-full h-full object-contain" alt="" style={{ backgroundColor: 'transparent' }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            }
             
             // Brand-specific styling for wrapper
             let logoScale = 1;
@@ -342,7 +380,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
 
       {/* STATIC HUB BUTTON - Simple centered orange button, no rings, no border */}
       <button
-        onClick={() => { if (!locked) setIsExpanded(true); }}
+        onClick={() => setIsExpanded(true)}
         className={`fixed z-50 rounded-full flex items-center justify-center transition-all duration-300 border-0 outline-none ${isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         style={{
           width: `${hubSize}px`,
@@ -352,7 +390,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
           bottom: `${hubBottom}px`,
           left: '50%',
           transform: 'translateX(-50%)',
-          cursor: locked ? 'default' : 'pointer'
+          cursor: 'pointer'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.boxShadow = '0 0 50px rgba(255, 174, 0, 0.7)';
@@ -483,7 +521,11 @@ const GeneralBrandPage = React.memo(({
   }, [isVisible, initialBrandIndex]);
   
   // Calculate actual brand index (0-11)
-  const activeBrandIndex = ((virtualIndex % BRANDS.length) + BRANDS.length) % BRANDS.length;
+  // When hideNavWheel (locked/template mode), always pin to initialBrandIndex so scrolling
+  // never swaps out the profile content.
+  const activeBrandIndex = hideNavWheel
+    ? initialBrandIndex
+    : ((virtualIndex % BRANDS.length) + BRANDS.length) % BRANDS.length;
   const brand = BRANDS[activeBrandIndex];
 
   // Mobile: Use MobileDetailPage component

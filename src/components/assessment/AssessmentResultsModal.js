@@ -51,7 +51,7 @@ const cleanTitle = (title) => {
   // Strip outer ** bold markers wrapping the whole string (e.g. "**De Identiteit**")
   t = t.replace(/^\*\*(.+)\*\*$/, '$1').trim();
   // Strip "SECTIE N" prefix in all forms: "SECTIE 1:", "SECTIE 1.", "**SECTIE 1**:", "**SECTIE 1**"
-  t = t.replace(/^\*?\*?SECTIE\s+\d+\*?\*?[\s:.—\-]*\s*/i, '').trim();
+  t = t.replace(/^\*?\*?SECTIE\s+\d+\*?\*?[\s:.—-]*\s*/i, '').trim();
   // Strip any remaining stray ** at start or end
   t = t.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
   return t;
@@ -402,7 +402,6 @@ const AssessmentResultsModal = ({
       const red       = [239, 68, 68];
       const cyan      = [34, 211, 238];
       const amber     = [251, 191, 36];
-      const pink      = [244, 114, 182];
       const white     = [209, 213, 219];
       const dimWhite  = [156, 163, 175];
       const blue      = [59, 130, 246];
@@ -465,7 +464,7 @@ const AssessmentResultsModal = ({
           const trimmed = raw.trim();
           if (!trimmed) { h += 2; continue; }
           if (/^#{2,}\s/.test(trimmed)) { h += 3 + 5; continue; }
-          if (/^\|[\s\-:]+\|/.test(trimmed)) continue;
+          if (/^\|[\s-:]+\|/.test(trimmed)) continue;
           if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
             const cells = trimmed.slice(1, -1).split('|').map(c => c.trim()).filter(Boolean);
             const rowTxt = cells.join('  |  ');
@@ -473,8 +472,8 @@ const AssessmentResultsModal = ({
             h += rLines.length * 3.8;
             continue;
           }
-          if (/^[*\-]\s/.test(trimmed)) {
-            const bLines = pdf.splitTextToSize(trimmed.replace(/^[*\-]\s+/, '').replace(/\*\*/g, ''), maxW - 5);
+          if (/^[*-]\s/.test(trimmed)) {
+            const bLines = pdf.splitTextToSize(trimmed.replace(/^[*-]\s+/, '').replace(/\*\*/g, ''), maxW - 5);
             h += Math.max(1, bLines.length) * 4.2;
             continue;
           }
@@ -525,7 +524,6 @@ const AssessmentResultsModal = ({
       // ── Helper: markdown-aware AI content renderer ──
       const writePdfMarkdown = (mdText, x, maxW) => {
         if (!mdText) return;
-        const strip = (s) => s.replace(/\*\*/g, '').replace(/^[*\-]\s+/, '').trim();
         const lines = mdText.split('\n');
         for (const raw of lines) {
           const trimmed = raw.trim();
@@ -540,11 +538,11 @@ const AssessmentResultsModal = ({
             pdf.setTextColor(...orange);
             pdf.setFont('helvetica', 'bold');
             const hLines = pdf.splitTextToSize(headText, maxW);
-            hLines.forEach(hl => { ensureSpace(5); pdf.text(hl, x, y); y += 5; });
+            for (const hl of hLines) { ensureSpace(5); pdf.text(hl, x, y); y += 5; }
             continue;
           }
           // Table separator — skip
-          if (/^\|[\s\-:]+\|/.test(trimmed)) continue;
+          if (/^\|[\s-:]+\|/.test(trimmed)) continue;
           // Table row
           if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
             const cells = trimmed.slice(1, -1).split('|').map(c => c.replace(/\*\*/g, '').trim()).filter(Boolean);
@@ -555,12 +553,12 @@ const AssessmentResultsModal = ({
             pdf.setTextColor(...white);
             const rowTxt = cells.join('  |  ');
             const rLines = pdf.splitTextToSize(rowTxt, maxW);
-            rLines.forEach(rl => { ensureSpace(3.8); pdf.text(rl, x, y); y += 3.8; });
+            for (const rl of rLines) { ensureSpace(3.8); pdf.text(rl, x, y); y += 3.8; }
             continue;
           }
           // Bullet: * or -
-          if (/^[*\-]\s/.test(trimmed)) {
-            const content = trimmed.replace(/^[*\-]\s+/, '').replace(/\*\*/g, '');
+          if (/^[*-]\s/.test(trimmed)) {
+            const content = trimmed.replace(/^[*-]\s+/, '').replace(/\*\*/g, '');
             const colonIdx = content.indexOf(':');
             ensureSpace(5);
             pdf.setFontSize(8.5);
@@ -586,7 +584,7 @@ const AssessmentResultsModal = ({
               pdf.text('\u2022', x, y);
               pdf.setTextColor(...white);
               const bLines = pdf.splitTextToSize(content, maxW - 5);
-              bLines.forEach(bl => { ensureSpace(4.2); pdf.text(bl, x + 5, y); y += 4.2; });
+              for (const bl of bLines) { ensureSpace(4.2); pdf.text(bl, x + 5, y); y += 4.2; }
             }
             continue;
           }
@@ -596,17 +594,9 @@ const AssessmentResultsModal = ({
           pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(...white);
           const pLines = pdf.splitTextToSize(text, maxW);
-          pLines.forEach(pl => { ensureSpace(4.3); pdf.text(pl, x, y); y += 4.3; });
+          for (const pl of pLines) { ensureSpace(4.3); pdf.text(pl, x, y); y += 4.3; }
         }
         y += 3;
-      };
-
-      // ── Helper: page footer ──
-      const pageFooter = () => {
-        pdf.setFontSize(6.5);
-        pdf.setTextColor(...white);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('Garden for Life  \u2022  Advanced Consciousness Assessment', W / 2, H - 10, { align: 'center' });
       };
 
       // ── Helper: draw a basic data table ──
@@ -1424,7 +1414,6 @@ const AssessmentResultsModal = ({
       // ── OCEAN PERSONALITY PROFILE ──
       if (result.extendedOcean) {
         const ocean = result.extendedOcean.ocean;
-        const oceanText = result.extendedOcean.oceanText;
         const OCEAN_DIMS = ['O', 'C', 'E', 'A', 'N'];
         const OCEAN_FULL_NL = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
         const OCEAN_COLORS_PDF = {
@@ -1611,11 +1600,16 @@ const AssessmentResultsModal = ({
           let userOcean = null;
           if (reportCompSection?.content) {
             const DUTCH_TO_OCEAN = {
-              'openheid': 'O', 'openness': 'O',
-              'consci': 'C', 'ordelijkheid': 'C', 'conscientiousness': 'C',
-              'extraversie': 'E', 'extraversion': 'E',
-              'meegaandheid': 'A', 'inschikkelijkheid': 'A', 'agreeableness': 'A',
-              'neuroticisme': 'N', 'neuroticism': 'N',
+              // Primary names (used in our prompt)
+              'openheid': 'O', 'ordelijkheid': 'C', 'extraversie': 'E', 'meegaandheid': 'A', 'neuroticisme': 'N',
+              // English equivalents
+              'openness': 'O', 'conscientiousness': 'C', 'extraversion': 'E', 'agreeableness': 'A', 'neuroticism': 'N',
+              // Common Dutch synonyms / AI fallback names
+              'consci': 'C', 'zorgvuldigheid': 'C', 'gewetensvolheid': 'C',
+              'inschikkelijkheid': 'A', 'vriendelijkheid': 'A', 'verdraagzaamheid': 'A',
+              'emotionele': 'N', 'emotionaliteit': 'N', 'stabiliteit': 'N',
+              'intellect': 'O', 'verbeelding': 'O',
+              'assertiviteit': 'E', 'sociabiliteit': 'E',
             };
             const parsed = {};
             const txt = reportCompSection.content;
@@ -1667,7 +1661,6 @@ const AssessmentResultsModal = ({
 
           // ── Layout constants ──
           const halfW = (contentW - 6) / 2; // 6mm gap between the two panels
-          const leftX = margin;
           const rightX = margin + halfW + 6;
           const barH = 3;
           const labelW = 28;
@@ -1774,12 +1767,12 @@ const AssessmentResultsModal = ({
 
             // Detect section boundaries by content keywords
             const lower = trimmed.toLowerCase();
-            if (/convergente\s+punten/i.test(lower) || /waar\s+de\s+modellen\s+het\s+eens/i.test(lower)) {
+            if (/convergente\s+punten/i.test(lower) || /waar\s+de\s+modellen\s+het\s+eens/i.test(lower) || (/paradox/i.test(lower) && /waar\s+de\s+modellen/i.test(lower))) {
               currentSection = 'vergelijking';
               sections.push({ type: 'header', text: 'Vergelijkingsrapport' });
               continue;
             }
-            if (/divergente\s+punten/i.test(lower) || /spanningsveld/i.test(lower) || /paradox/i.test(lower) && /waar\s+de\s+modellen/i.test(lower)) {
+            if (/divergente\s+punten/i.test(lower) || /spanningsveld/i.test(lower) || (/paradox/i.test(lower) && /waar\s+de\s+modellen/i.test(lower))) {
               currentSection = 'spanning';
               sections.push({ type: 'header', text: 'Spanningsvelden' });
               continue;
@@ -1899,13 +1892,7 @@ const AssessmentResultsModal = ({
         const GROUP_META_PDF = {
           Ruling:     { network: 'CEN Dominantie',          drive: 'Externe structuur en orde' },
           Relational: { network: 'Limbic Coupling',          drive: 'Emotionele fusie en empathie' },
-          Seeker:     { network: 'Hoge Openness',            drive: 'Zuiverheid en ontdekking' },
-          Chaos:      { network: 'Salience Network',         drive: 'Disruptie en lage consciëntieusheid' },
-          Abstract:   { network: 'DMN Hyper-connectie',      drive: 'Interne reflectie en subjectiviteit' },
-          Agency:     { network: 'Extraversie / Wilskracht', drive: 'Actie en transformatie' },
-        };
-        const ARCH_POS_PDF = {
-          Ruler: 1, Judge: 2, Lover: 3, Caregiver: 4,
+          Seekr: 1, Judge: 2, Lover: 3, Caregiver: 4,
           Innocent: 5, Explorer: 6, Outlaw: 7, Trickster: 8,
           Sage: 9, Artist: 10, Magician: 11, Hero: 12,
         };
@@ -3423,7 +3410,7 @@ const AssessmentResultsModal = ({
                       overflow: 'hidden',
                     }}>
                       {/* Corner accent */}
-                      <div style={{ position: 'absolute', top: 0, right: 0, width: '3rem', height: '3rem', opacity: 0.12, background: 'radial-gradient(circle at top right, rgba(234,179,8,0.6), transparent 70%)' }} />
+                      <div style={{ position: 'absolute', top: 0, right: 0, width: '3rem', height: '3rem', opacity: 0.12, background: 'radial-gradient(circle at top right, rgba(234,179,8,1), transparent 70%)' }} />
 
                       {/* Header */}
                       <div style={{ marginBottom: '0.85rem' }}>
@@ -4085,25 +4072,6 @@ const AssessmentResultsModal = ({
         }
       `}</style>
     </div>
-  );
-};
-
-/**
- * Render SectorFrame-style corner decorations
- */
-function renderCorners(color) {
-  const baseStyle = {
-    position: 'absolute',
-    width: '1rem',
-    height: '1rem',
-  };
-  return (
-    <>
-      <div style={{ ...baseStyle, top: '-1px', left: '-1px', border: `1.5px solid ${color}`, borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }} />
-      <div style={{ ...baseStyle, top: '-1px', right: '-1px', border: `1.5px solid ${color}`, borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }} />
-      <div style={{ ...baseStyle, bottom: '-1px', left: '-1px', border: `1.5px solid ${color}`, borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }} />
-      <div style={{ ...baseStyle, bottom: '-1px', right: '-1px', border: `1.5px solid ${color}`, borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }} />
-    </>
   );
 }
 

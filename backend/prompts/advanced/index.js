@@ -1086,7 +1086,7 @@ function buildSystemPrompt({
       `## Persoonlijkheidsrapport Vergelijking\n` +
       `⚠️ VERPLICHTE OPENINGSZIN — begin deze sectie letterlijk met de volgende zin, vetgedrukt, zonder aanpassingen:\n` +
       `"In deze specifieke sectie gebruiken we ons model als leidende standaard en relativeren we de door jouw gestuurde score. Het extern persoonlijkheidsrapport (${fileNames}) is contextuele input — geen validatie of weerlegging van onze uitkomsten. GardenForLife aanvaardt geen verantwoordelijkheid voor externe rapportinhoud."\n\n` +
-      `STRIKTE LENGTE-BEPERKING: Schrijf MAXIMAAL 420 woorden voor de gehele sectie. De tekst moet op één A4-pagina passen.\n\n` +
+      `STRIKTE LENGTE-BEPERKING: Schrijf MAXIMAAL 300 woorden voor de gehele sectie. De tekst moet op één A4-pagina passen.\n\n` +
       `VERPLICHTE STRUCTUUR — gebruik exact deze 3 headers en 4 alinea's:\n\n` +
       `### Vergelijkingsrapport\n` +
       `Alinea 1 — Grootste overeenkomsten: noem de 2-3 sterkste raakpunten tussen de archetype testscore en de geleverde PDF/OCEAN-score. Verklaar vanuit het Triple Network Model. Anker: 'binnen dit model'. (max 90 woorden)\n` +
@@ -1095,7 +1095,7 @@ function buildSystemPrompt({
       `Alinea 3 — Deltawerken / Cells Within Cells: hoe verhoudt het externe rapport zich tot onze 3 afbeeldingsmodellen (TNM Wiel, Dual-Core Dynamics, 72-Archetype Matrix)? Welk model verklaart de grootste overlap, welk model de grootste afwijking? (max 90 woorden)\n\n` +
       `### Conclusie\n` +
       `Alinea 4 — Reflectie: één concrete reflectievraag voor de gebruiker over wat de discrepantie tussen beide modellen onthult over hun natuur/cultuur-balans. Schrijf deze als afsluitende conclusie. (max 90 woorden)\n\n` +
-      `TAALREGELS: 'het scoreprofiel suggereert', 'binnen dit model', 'als indicatieve modelwaarde'. Geen absolute uitspraken, geen klinische termen. Stop bij 420 woorden.\n`
+      `TAALREGELS: 'het scoreprofiel suggereert', 'binnen dit model', 'als indicatieve modelwaarde'. Geen absolute uitspraken, geen klinische termen. Stop bij 300 woorden.\n`
     );
   }
 

@@ -21,7 +21,7 @@ import {
 import { isNatureSlot } from '../../pages/assessment/assessmentData';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
-import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity } from '../../utils/apiClient';
+import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity, getPublicSiteBanner } from '../../utils/apiClient';
 import tnmWheelImg from '../../images/Model imports/TNM wheel PNG.png';
 import deltawerkenImg from '../../images/Model imports/Deltawerken png.png';
 import cellsImg from '../../images/Model imports/Cells within Cells png.png';
@@ -109,6 +109,12 @@ const AssessmentResultsModal = ({
   const aiCalledRef = useRef(false);
   const onAiReadyRef = useRef(onAiReady);
   onAiReadyRef.current = onAiReady;
+
+  // ── Site banner for PDF footer (admin-configured image) ──
+  const [siteBanner, setSiteBanner] = useState(null);
+  useEffect(() => {
+    getPublicSiteBanner().then(setSiteBanner).catch(() => {});
+  }, []);
 
   // ── Auto-save to backend when user is logged in ──
   const [savedToBackend, setSavedToBackend] = useState(false);
@@ -1169,7 +1175,7 @@ const AssessmentResultsModal = ({
         'En mocht je nog twijfelen over de gegenereerde content,\nalles wat je zojuist hebt gelezen (behalve de modellen)\nis geschreven door hetzelfde model\ndie jouw score heeft geanalyseerd.',
         margin + 2, y, contentW - 4, 8.5, dimWhite, 'italic'
       );
-      y += 6;
+      y += 2;
 
       // ── Cells within Cells image — between Hoe Het Rapport Ontstaat and Wetenschappelijke Context ──
       try {
@@ -1606,7 +1612,7 @@ const AssessmentResultsModal = ({
           if (reportCompSection?.content) {
             const DUTCH_TO_OCEAN = {
               'openheid': 'O', 'openness': 'O',
-              'conscienti': 'C', 'ordelijkheid': 'C', 'conscientiousness': 'C',
+              'consci': 'C', 'ordelijkheid': 'C', 'conscientiousness': 'C',
               'extraversie': 'E', 'extraversion': 'E',
               'meegaandheid': 'A', 'inschikkelijkheid': 'A', 'agreeableness': 'A',
               'neuroticisme': 'N', 'neuroticism': 'N',
@@ -1758,10 +1764,12 @@ const AssessmentResultsModal = ({
             const h3Match = trimmed.match(/^#{3,4}\s+(.*)/);
 
             if (h1Match) {
-              // Skip the original AI header — we'll use our own
+              // Use AI section header as a styled header entry
+              sections.push({ type: 'header', text: h1Match[1].trim() });
               continue;
             } else if (h3Match) {
-              continue; // sub-headings from AI are stripped, we detect by content
+              sections.push({ type: 'subheader', text: h3Match[1].trim() });
+              continue;
             }
 
             // Detect section boundaries by content keywords
@@ -1806,8 +1814,8 @@ const AssessmentResultsModal = ({
             sections.push({ type: 'text', text: trimmed });
           }
 
-          // If no "Convergente Punten" header was detected, add default header at top
-          if (!sections.find(s => s.type === 'header' && s.text === 'Vergelijkingsrapport')) {
+          // If no header was detected at all, add default header at top
+          if (!sections.find(s => s.type === 'header')) {
             sections.unshift({ type: 'header', text: 'Vergelijkingsrapport' });
           }
 
@@ -1818,40 +1826,40 @@ const AssessmentResultsModal = ({
             }
 
             if (section.type === 'header') {
-              ensureSpace(12);
-              if (y >= reportMaxY) { pdf.addPage(); paintBg(); y = margin; }
-              y += 3;
-              pdf.setFontSize(10); pdf.setFont('helvetica', 'bold');
-              pdf.setTextColor(...cyan);
-              pdf.text(section.text.toUpperCase(), margin + 2, y);
-              y += 3;
-              pdf.setDrawColor(...cyan);
-              pdf.setLineWidth(0.3);
-              pdf.line(margin + 2, y, margin + 2 + pdf.getTextWidth(section.text.toUpperCase()), y);
-              y += 5;
-            } else if (section.type === 'subheader') {
               ensureSpace(10);
               if (y >= reportMaxY) { pdf.addPage(); paintBg(); y = margin; }
               y += 2;
-              pdf.setFontSize(8.5); pdf.setFont('helvetica', 'bold');
+              pdf.setFontSize(9); pdf.setFont('helvetica', 'bold');
+              pdf.setTextColor(...cyan);
+              pdf.text(section.text.toUpperCase(), margin + 2, y);
+              y += 2;
+              pdf.setDrawColor(...cyan);
+              pdf.setLineWidth(0.3);
+              pdf.line(margin + 2, y, margin + 2 + pdf.getTextWidth(section.text.toUpperCase()), y);
+              y += 4;
+            } else if (section.type === 'subheader') {
+              ensureSpace(8);
+              if (y >= reportMaxY) { pdf.addPage(); paintBg(); y = margin; }
+              y += 1.5;
+              pdf.setFontSize(8); pdf.setFont('helvetica', 'bold');
               pdf.setTextColor(...purple);
               const subLines = pdf.splitTextToSize(section.text, contentW - 6);
               for (const sl of subLines) {
                 pdf.text(sl, margin + 4, y);
-                y += 4.3;
+                y += 4.0;
               }
-              y += 1.5;
+              y += 1;
             } else {
               // Normal text paragraph
-              pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal');
+              pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
               pdf.setTextColor(...white);
               const paraLines = pdf.splitTextToSize(section.text, contentW - 4);
               for (const pl of paraLines) {
                 if (y >= reportMaxY) { pdf.addPage(); paintBg(); y = margin; }
                 pdf.text(pl, margin + 2, y);
-                y += 4.3;
+                y += 4.0;
               }
-              y += 1.5;
+              y += 1;
             }
           }
         } else if (hasUploadedFiles) {
@@ -2151,24 +2159,49 @@ const AssessmentResultsModal = ({
                     const availH = H - margin - y - 6;
                     const maxImgH = Math.min(availH, 65);
 
-                    // Shadow archetype image (left)
+                    // Helper: circular-clip an image onto a canvas and return data URL
+                    const circleClip = (imgEl, size) => {
+                      const c = document.createElement('canvas');
+                      c.width = size; c.height = size;
+                      const cx = c.getContext('2d');
+                      cx.beginPath();
+                      cx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                      cx.closePath();
+                      cx.clip();
+                      cx.drawImage(imgEl, 0, 0, size, size);
+                      return c.toDataURL('image/png');
+                    };
+
+                    // Shadow archetype image (left) — circular with purple border
                     const shadowAR = shadowEl.naturalHeight / shadowEl.naturalWidth;
                     const shadowH = Math.min(maxImgH, halfW * shadowAR);
                     const shadowW = shadowH / shadowAR;
-                    pdf.addImage(shadowImgSrc, 'PNG', margin + (halfW - shadowW) / 2, y, shadowW, shadowH);
+                    const sDim = Math.min(shadowW, shadowH);
+                    const sData = circleClip(shadowEl, 600);
+                    const sX = margin + (halfW - sDim) / 2;
+                    pdf.addImage(sData, 'PNG', sX, y, sDim, sDim);
+                    pdf.setDrawColor(...purple);
+                    pdf.setLineWidth(1);
+                    pdf.circle(sX + sDim / 2, y + sDim / 2, sDim / 2, 'S');
                     pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...purple);
-                    pdf.text(result.shadowName || '', margin + halfW / 2, y + shadowH + 3.5, { align: 'center' });
+                    pdf.text(result.shadowName || '', margin + halfW / 2, y + sDim + 3.5, { align: 'center' });
 
-                    // Blindspot archetype image (right)
+                    // Blindspot archetype image (right) — circular with red border
                     const blindAR = blindEl.naturalHeight / blindEl.naturalWidth;
                     const blindH = Math.min(maxImgH, halfW * blindAR);
                     const blindW = blindH / blindAR;
+                    const bDim = Math.min(blindW, blindH);
+                    const bData = circleClip(blindEl, 600);
                     const rightX = margin + halfW + imgGap;
-                    pdf.addImage(blindImgSrc, 'PNG', rightX + (halfW - blindW) / 2, y, blindW, blindH);
+                    const bX = rightX + (halfW - bDim) / 2;
+                    pdf.addImage(bData, 'PNG', bX, y, bDim, bDim);
+                    pdf.setDrawColor(...red);
+                    pdf.setLineWidth(1);
+                    pdf.circle(bX + bDim / 2, y + bDim / 2, bDim / 2, 'S');
                     pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...red);
-                    pdf.text(result.blindspotName || '', rightX + halfW / 2, y + blindH + 3.5, { align: 'center' });
+                    pdf.text(result.blindspotName || '', rightX + halfW / 2, y + bDim + 3.5, { align: 'center' });
 
-                    y += Math.max(shadowH, blindH) + 8;
+                    y += Math.max(sDim, bDim) + 8;
                   }
                 } catch {
                   y += 4;
@@ -2235,39 +2268,44 @@ const AssessmentResultsModal = ({
       pdf.text(`Gegenereerd op ${new Date().toLocaleDateString('nl-NL')}`, W / 2, y, { align: 'center' });
       y += 6;
 
-      // Closing message
+      // Closing message — text left, admin image floats right on same page
+      const hasBannerImage = siteBanner?.imageBase64 && siteBanner?.imageMimeType;
+      const imgSizeMm = 26.5; // 75px display size (~26.5mm)
+      const closingTextW = hasBannerImage ? contentW - imgSizeMm - 6 : contentW - 4;
+      const yTextStart = y; // anchor: image will be placed at this y, right side
+
       pdf.setFontSize(7.5);
       pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'italic');
       writeWrapped(
         'Hoogachtende Meester,',
-        margin + 2, y, contentW - 4, 7.5, white, 'italic'
+        margin + 2, y, closingTextW, 7.5, white, 'italic'
       );
       y += 5;
       writeWrapped(
         'Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en vraag ik je bij deze om onze assessment te delen met anderen- weet wie je vraagt! zolang de beta-fase loopt is alleen het meester niveau toegankelijk.',
-        margin + 2, y, contentW - 4, 7.5, white, 'italic'
+        margin + 2, y, closingTextW, 7.5, white, 'italic'
       );
       y += 5;
       writeWrapped(
         'Ook is een kleine donatie meer dan welkom om ons project nog verder te optimaliseren.',
-        margin + 2, y, contentW - 4, 7.5, white, 'italic'
+        margin + 2, y, closingTextW, 7.5, white, 'italic'
       );
       y += 5;
       writeWrapped(
         'Anyway- pionier, hartelijk dank voor de tijd en attentie!',
-        margin + 2, y, contentW - 4, 7.5, white, 'italic'
+        margin + 2, y, closingTextW, 7.5, white, 'italic'
       );
-      y += 5;
-      writeWrapped(
-        'Met vriendelijke groet,',
-        margin + 2, y, contentW - 4, 7.5, white, 'italic'
-      );
-      y += 8;
-      writeWrapped(
-        'Yuan Wullink',
-        margin + 2, y, contentW - 4, 7.5, white, 'italic'
-      );
+
+      // ── Site banner image: right-aligned, anchored at yTextStart — never forced to new page ──
+      if (hasBannerImage) {
+        try {
+          const imgFormat = siteBanner.imageMimeType.toLowerCase().includes('png') ? 'PNG' : 'JPEG';
+          const bannerData = `data:${siteBanner.imageMimeType};base64,${siteBanner.imageBase64}`;
+          const imgX = W - margin - imgSizeMm;
+          pdf.addImage(bannerData, imgFormat, imgX, yTextStart, imgSizeMm, imgSizeMm);
+        } catch { /* skip banner image on error */ }
+      }
 
       // ── Download ──
       const archetypeName = (result?.extendedName || 'Archetype').replace(/\s+/g, '_');

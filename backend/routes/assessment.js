@@ -27,7 +27,8 @@ function esc(str) {
 }
 
 function buildFeedbackEmail(settings, review) {
-  const bodyText = esc(settings.text || 'Bedankt voor je feedback! Wij hebben je reactie ontvangen en zullen die gebruiken om het systeem te verbeteren.');
+  const defaultText = 'Hoogachtende Meester,\n\nJouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en vraag ik je bij deze om onze assessment te delen met anderen- weet wie je vraagt! zolang de beta-fase loopt is alleen het meester niveau toegankelijk.\n\nOok is een kleine donatie meer dan welkom om ons project nog verder te optimaliseren.\n\nAnyway- pionier, hartelijk dank voor de tijd en attentie!\n\nMet vriendelijke groet,\n\n\nYuan Wullink';
+  const bodyText = esc(settings.text || defaultText);
   const hasImage = !!(settings.imageBase64 && settings.imageMimeType);
 
   const imageBlock = hasImage
@@ -89,7 +90,7 @@ function buildFeedbackEmail(settings, review) {
     ${imageBlock}
     <tr>
       <td class="body-cell" style="padding:28px 30px;line-height:1.7;color:#333;font-size:15px;">
-        <p style="margin:0 0 16px;">${bodyText}</p>
+        <p style="margin:0 0 16px;white-space:pre-wrap;">${bodyText}</p>
         ${ratingBlock}
         ${fieldsBlock}
       </td>
@@ -236,6 +237,25 @@ router.get('/history', authRequired, async (req, res) => {
   } catch (err) {
     console.error('[Assessment] History error:', err.message);
     res.status(500).json({ error: 'Failed to load history' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/assessment/site-banner — Public: PDF footer image from admin settings
+// Returns { imageBase64, imageMimeType, text } — no auth required
+// ─────────────────────────────────────────────────────────────
+router.get('/site-banner', async (_req, res) => {
+  try {
+    const settings = await getDB().collection('siteSettings')
+      .findOne({ _id: 'feedback-email' }).catch(() => null) || {};
+    res.json({
+      imageBase64: settings.imageBase64 || '',
+      imageMimeType: settings.imageMimeType || '',
+      text: settings.text || '',
+    });
+  } catch (err) {
+    console.error('[Assessment] site-banner error:', err.message);
+    res.json({ imageBase64: '', imageMimeType: '', text: '' });
   }
 });
 

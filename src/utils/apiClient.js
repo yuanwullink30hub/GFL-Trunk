@@ -822,6 +822,20 @@ export async function clearSessions() {
 }
 
 /**
+ * Get site banner settings for PDF footer (public — no auth required).
+ * Returns { imageBase64, imageMimeType, text }
+ */
+export async function getPublicSiteBanner() {
+  try {
+    const response = await fetch(`${API_BASE}/assessment/site-banner`);
+    if (!response.ok) return { imageBase64: '', imageMimeType: '', text: '' };
+    return response.json();
+  } catch {
+    return { imageBase64: '', imageMimeType: '', text: '' };
+  }
+}
+
+/**
  * Get feedback confirmation email settings (admin only).
  */
 export async function getFeedbackEmailSettings() {

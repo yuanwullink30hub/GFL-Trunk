@@ -21,14 +21,15 @@ const Anthropic = require('@anthropic-ai/sdk');
 
 const IMAGE_DIR = path.join(__dirname, '..', 'prompts', 'images');
 const MODEL_IMAGES = ['Cells within Cells png.png', 'Deltawerken png.png', 'TNM wheel PNG.png']
-  .map(name => {
-    const filePath = path.join(IMAGE_DIR, name);
-    return {
-      name,
-      base64: fs.readFileSync(filePath).toString('base64'),
-      mimeType: 'image/png',
-    };
-  });
+  .reduce((acc, name) => {
+    try {
+      const filePath = path.join(IMAGE_DIR, name);
+      acc.push({ name, base64: fs.readFileSync(filePath).toString('base64'), mimeType: 'image/png' });
+    } catch (e) {
+      console.warn(`[AI] Model image not found, skipping: ${name}`);
+    }
+    return acc;
+  }, []);
 
 // ─────────────────────────────────────────────────────────────
 // Provider registry

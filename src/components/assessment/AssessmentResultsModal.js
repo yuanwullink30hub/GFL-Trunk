@@ -1661,6 +1661,7 @@ const AssessmentResultsModal = ({
 
           // ── Layout constants ──
           const halfW = (contentW - 6) / 2; // 6mm gap between the two panels
+          const leftX = margin;
           const rightX = margin + halfW + 6;
           const barH = 3;
           const labelW = 28;

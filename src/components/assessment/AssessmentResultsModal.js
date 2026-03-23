@@ -52,6 +52,7 @@ const getSectionAccent = (title) => {
   if (t.includes('vermenigvuldiging')) return { color: '#f97316', rgb: '249, 115, 22' };
   if (t.includes('blindspot')) return { color: '#ef4444', rgb: '239, 68, 68' };
   if (t.includes('visuele') || t.includes('alchemie') || t.includes('schakelbord')) return { color: '#fbbf24', rgb: '251, 191, 36' };
+  if (t.includes('groep dynamiek') || t.includes('neurobiologisch')) return { color: '#22d3ee', rgb: '34, 211, 238' };
   if (t.includes('introductie')) return { color: '#d1d5db', rgb: '209, 213, 219' };
   if (t.includes('prompt') || t.includes('agent')) return { color: '#f97316', rgb: '249, 115, 22' };
   return null; // fallback to cycle
@@ -548,6 +549,46 @@ const AssessmentResultsModal = ({
         pdf.text('Garden for Life  \u2022  Advanced Consciousness Assessment', W / 2, H - 10, { align: 'center' });
       };
 
+      // ── Helper: draw a basic data table ──
+      const drawTable = (headers, rows, colWidths, options = {}) => {
+        const { fontSize = 8, headerColor = green, rowColor = white } = options;
+        const totalW = colWidths.reduce((a, b) => a + b, 0);
+        const lh = fontSize * 0.45;
+        // Header
+        const hCells = headers.map((h, i) => pdf.splitTextToSize(h, colWidths[i] - 4));
+        const hRowH = Math.max(...hCells.map(c => c.length)) * lh + 5;
+        ensureSpace(hRowH + 2);
+        pdf.setFillColor(...cardBg);
+        pdf.rect(margin, y, totalW, hRowH, 'F');
+        pdf.setDrawColor(...mutedGray);
+        pdf.setLineWidth(0.15);
+        pdf.rect(margin, y, totalW, hRowH, 'S');
+        let cxh = margin;
+        colWidths.forEach((cw, i) => { if (i < colWidths.length - 1) { cxh += cw; pdf.line(cxh, y, cxh, y + hRowH); } });
+        pdf.setFontSize(fontSize); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...headerColor);
+        let colX = margin;
+        hCells.forEach((lines, i) => { lines.forEach((line, li) => pdf.text(line, colX + 2, y + 3.5 + li * lh)); colX += colWidths[i]; });
+        y += hRowH;
+        // Rows
+        rows.forEach((row, ri) => {
+          const cells = row.map((cell, i) => pdf.splitTextToSize(String(cell || ''), colWidths[i] - 4));
+          const lineCount = Math.max(...cells.map(c => c.length));
+          const cellH = lineCount * lh + 5;
+          ensureSpace(cellH + 0.5);
+          pdf.setFillColor(...(ri % 2 === 0 ? bg : cardBg));
+          pdf.rect(margin, y, totalW, cellH, 'F');
+          pdf.setDrawColor(...mutedGray); pdf.setLineWidth(0.1);
+          pdf.rect(margin, y, totalW, cellH, 'S');
+          let cx = margin;
+          colWidths.forEach((cw, i) => { if (i < colWidths.length - 1) { cx += cw; pdf.line(cx, y, cx, y + cellH); } });
+          pdf.setFontSize(fontSize); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...rowColor);
+          colX = margin;
+          cells.forEach((lines, i) => { lines.forEach((line, li) => pdf.text(line, colX + 2, y + 3.5 + li * lh)); colX += colWidths[i]; });
+          y += cellH;
+        });
+        y += 4;
+      };
+
       // ═══════════════════════════════════════════════════
       // PAGE 1: COVER — Large profile + extended archetype
       // ═══════════════════════════════════════════════════
@@ -756,6 +797,158 @@ const AssessmentResultsModal = ({
       pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Vragen of verzoeken? Neem contact op via het Garden for Life platform.', W / 2, y, { align: 'center' });
+
+      // ═══════════════════════════════════════════════════
+      // PAGE 2b: FUNDERING VAN DE TEST
+      // ═══════════════════════════════════════════════════
+      pdf.addPage(); paintBg(); y = margin;
+
+      sectionHeading('De Fundering van de Test', cyan);
+
+      writeWrapped(
+        'De fundering voor de test is gebouwd op universele geometrie, eeuwenoude wijsheid vertaald met moderne jargon. ' +
+        'De numerologie die is ontstaan tijdens het ontwerpen resoneert met verschillende mythologie\u00EBn maar dus ook met moderne wetenschappen zoals ' +
+        'quantumfysica, neurobiologie en astronomie \u2014 niet te verwarren met astrologie, dit heeft van nature een relatie met persoonlijkheids-psychologie.',
+        margin + 2, y, contentW - 4, 9, white
+      );
+      y += 4;
+      writeWrapped(
+        'Een complexe uiteenzetting van 1 realiteit, alleen mogelijk door differentiatie, de scheiding en tevens actualisering naar 2. ' +
+        'Maar wat is determinatie nou waard wanneer alles vast staat? ' +
+        'De 3de axis is de kern van transformatie en de gratis lunch in het patroon van onze gemodelleerde psychologie.',
+        margin + 2, y, contentW - 4, 9, white
+      );
+      y += 4;
+      writeWrapped(
+        'Gebouwd op verschillende westerse vondingen in de neurobiologie zijn we tot de conclusie gekomen dat het brein 2 hersendelen heeft, onderverdeelbaar in Orde en Chaos.',
+        margin + 2, y, contentW - 4, 9, white
+      );
+      y += 3;
+      writeWrapped(
+        'Sage tot aan Judge domineren in het orde domein; Lover tot Trickster domineren in het chaos domein.',
+        margin + 2, y, contentW - 4, 9, dimWhite, 'italic'
+      );
+      y += 5;
+      writeWrapped(
+        'Deze twee delen komen samen tot een geheel van 6 biologische cognitieve netwerken die gehardwired zijn:',
+        margin + 2, y, contentW - 4, 9, white
+      );
+      y += 5;
+
+      drawTable(
+        ['GROEP', 'NETWERK', 'ARCHETYPEN', 'DRIJFVEER'],
+        [
+          ['Ruling',     'CEN Dominantie',        'Judge (1), Ruler (12)',      'Externe structuur en orde'],
+          ['Relational', 'Limbic Coupling',        'Lover (2), Caregiver (3)',   'Emotionele fusie en empathie'],
+          ['Seeker',     'Hoge Openness',          'Innocent (4), Explorer (5)', 'Zuiverheid en ontdekking'],
+          ['Chaos',      'Salience Network',       'Outlaw (6), Trickster (7)',  'Disruptie en lage consci\u00EBntieusheid'],
+          ['Abstract',   'DMN Hyper-connectie',    'Sage (8), Artist (9)',       'Interne reflectie en subjectiviteit'],
+          ['Agency',     'Extraversie / Wilskracht','Magician (10), Hero (11)',   'Actie en transformatie'],
+        ],
+        [30, 42, 50, 52]
+      );
+
+      ensureSpace(8);
+      pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+      pdf.text('\u2022', margin + 2, y);
+      const fBullet2 = pdf.splitTextToSize('Deze test bestond uit 36 vragen, elk met 6 antwoorden.', contentW - 8);
+      fBullet2.forEach(bl => { ensureSpace(4.5); pdf.text(bl, margin + 7, y); y += 4.5; });
+      y += 5;
+
+      drawTable(
+        ['Diepte', 'Getal', 'Afleiding', 'Manifestatie'],
+        [
+          ['0', '3',                  'kiem',                                'Drievoudig Netwerkmodel (DMN, SN, CEN)'],
+          ['1', '6 = 3 \u00D7 2',      'polariteitssplitsing',                '6 biogroepen, 6 antwoorden, 6 rotatiesleutels'],
+          ['2', '12 = 3 \u00D7 2\u00B2','opnieuw verdubbeld',                  '12 archetypen op het wiel'],
+          ['3', '36 = 3\u00B2 \u00D7 2\u00B2','3 in het kwadraat \u00D7 4',  '36 vragen (3 per archetype)'],
+          ['4', '72 = 3\u00B2 \u00D7 2\u00B3','binaire verdubbeling',        '72 keuzes, 72 uitgebreide uitkomsten'],
+        ],
+        [16, 42, 52, 64]
+      );
+
+      writeWrapped(
+        '3 is het ware atoom. Al het andere is 3, maar dan verdubbeld, gekwadrateerd of als faculteit berekend:',
+        margin + 2, y, contentW - 4, 9, white, 'bold'
+      );
+      y += 2;
+      writeWrapped(
+        '3 verdrievoudigde netwerken \u2192 verdubbeld door polariteit \u2192 verdubbeld door archetype-individuatie \u2192 gekwadrateerd voor vragen \u2192 verdubbeld voor keuzes \u2192 als faculteit berekend voor punten.',
+        margin + 2, y, contentW - 4, 8.5, dimWhite
+      );
+      y += 3;
+      writeWrapped(
+        'De 5 lagen vormen het enige structurele element dat het patroon doorbreekt \u2014 maar 5 is zelf 3 + 2, 2\u00D79 vragen en 3\u00D76 \u2014 de triade herenigd met haar dualiteitsoperator. ' +
+        'Het systeem rust op een 3 die voortdurend in een spiegel kijkt. Zelf-9 en Ander-9 geven je de navigatie voor Macht-6, Magie-6 en de gespiegelde Wijsheid-6. ' +
+        'Het getal 6 is het atoom van dit hele beoordelingssysteem, en alles vloeit daaruit voort:',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
+      y += 5;
+
+      drawTable(
+        ['Hoeken', 'Toepassing', 'Weergave'],
+        [['30\u00B0 = 360/12', 'Boog per archetype', 'Hoekafstand in het radardiagram']],
+        [42, 50, 82]
+      );
+
+      ensureSpace(8);
+      pdf.setFontSize(9); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...white);
+      pdf.text('Geometrische / heilige verbindingen:', margin + 2, y);
+      y += 5;
+      [
+        '72\u00B0 = 360\u00B0/5 = de hoek van een regelmatige vijfhoek \u2014 en we hebben exact 5 lagen',
+        '36\u00B0 = 360\u00B0/10 = de helft van een vijfhoekige hoek \u2014 tevens 6\u00B2',
+        '6 is zowel het kleinste perfecte getal (1+2+3 = 6 = 1\u00D72\u00D73) als het enige getal dat zowel een driehoeksgetal als een faculteit is',
+      ].forEach(b => {
+        ensureSpace(6);
+        pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+        pdf.text('\u2022', margin + 2, y);
+        const bLines = pdf.splitTextToSize(b, contentW - 8);
+        bLines.forEach(bl => { ensureSpace(4.5); pdf.text(bl, margin + 7, y); y += 4.5; });
+      });
+      y += 5;
+      ensureSpace(8);
+      pdf.setFontSize(9); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...dimWhite);
+      pdf.text('Niet slecht voor een psychologische test.', margin + 2, y);
+      y += 10;
+
+      // ─── Separate page: 72 archetypes cross-reference ───
+      pdf.addPage(); paintBg(); y = margin;
+
+      sectionHeading('72 Archetypes \u2014 Culturele & Mythologische Kruisverwijzing', cyan);
+
+      ensureSpace(8);
+      pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+      pdf.text('\u2022', margin + 2, y);
+      const fBullet1 = pdf.splitTextToSize(
+        '12 Kern archetypes. In de realiteit van relationaliteit betekent dit dat er 72 archetypes zijn (12\u00D76 relaties).',
+        contentW - 8
+      );
+      fBullet1.forEach(bl => { ensureSpace(4.5); pdf.text(bl, margin + 7, y); y += 4.5; });
+      y += 5;
+      hr(mutedGray);
+
+      drawTable(
+        ['Traditie / Discipline', 'Het Concept', 'Betekenis & Belang', 'Thematische Kruisverwijzing'],
+        [
+          ['Astronomie',          'Precessie van de equinoxen', 'De zon verplaatst zich elke 72 jaar 1 graad t.o.v. de sterrenbeelden (cyclus van 25.920 jaar).', 'Kosmisch Uurwerk'],
+          ['Joodse Mystiek',      '72 Namen van God',          '72 drietallen van Hebreeuwse letters afgeleid uit Exodus, kanalen voor goddelijke transformatie.', 'Goddelijke Architectuur'],
+          ['Heilige Geometrie',   'De Vijfhoek',               '72 graden is de exacte middelpuntshoek van een regelmatige vijfhoek.', 'Goddelijke Architectuur'],
+          ['Islamitische Folklore',"Salomo's Djinn",           'Koning Salomo sloot precies 72 opstandige djinns op onder zijn troon.', 'Controle over Chaos'],
+          ['Chinese Mythologie',  '72 Transformaties',         'Sun Wukong beheerst 72 Aardse-Demon transformaties voor ultiem aanpassingsvermogen.', 'Controle over Chaos'],
+          ['Chinese Mythologie',  '72 Grotten',                'De Bloemen-Fruitberg telt 72 grotten, elk met een demonenkoning die eer bewijst.', 'Kosmisch Bestuur'],
+          ['Joodse Mystiek',      '72 Engelen',                'De wereld krijgt supervisie van 72 beschermengelen, elk met een specifiek deel van de aarde.', 'Kosmisch Bestuur'],
+          ['Joodse Mystiek',      'Jakobs ladder',             'De ladder die hemel en aarde verbindt, wordt ge\u00EFnterpreteerd als hebbende 72 sporten.', 'Verbinding van Werelden'],
+          ['Christendom',         'De 72 Discipelen',          'Jezus zendt 72 discipelen uit om zijn leer onder alle naties te verspreiden.', 'Verspreiding over de Wereld'],
+          ['Chinese Filosofie',   '72 Discipelen',             'Confucius had 72 kerndiscipelen die zijn werk volledig beheersten.', 'Verspreiding over de Wereld'],
+          ['Islamitische Traditie','72 Metgezellen',           'Imam Hoessein werd vergezeld door 72 volgelingen tijdens de Slag bij Karbala \u2014 ultieme toewijding.', 'Opoffering & Toewijding'],
+          ['Egyptische Mythologie','Het Osiris-complot',       '72 samenzweerders spanden samen met Seth om de god Osiris te doden.', 'Transformatie & Wedergeboorte'],
+          ['Christelijke Mystiek', 'De Wederopstanding',       '72 uur vertegenwoordigt de exacte tijd verstreken tussen de kruisiging en de wederopstanding.', 'Transformatie & Wedergeboorte'],
+          ['Numerologie',          'Oneindige Voltooiing',     '8 (Oneindigheid) \u00D7 9 (Voltooiing) = 72. Reduceert tot 9 (7+2), het getal van dienstbaarheid.', 'Transformatie & Wedergeboorte'],
+        ],
+        [36, 32, 68, 38],
+        { fontSize: 7.5 }
+      );
 
       // ═══════════════════════════════════════════════════
       // PAGE 3+: CONTENT PAGES
@@ -1442,6 +1635,7 @@ const AssessmentResultsModal = ({
             if (t.includes('vermenigvuldiging') || t.includes('prompt') || t.includes('agent')) return orange;
             if (t.includes('blindspot')) return red;
             if (t.includes('visuele') || t.includes('alchemie') || t.includes('schakelbord')) return amber;
+            if (t.includes('groep dynamiek') || t.includes('neurobiologisch')) return cyan;
             if (t.includes('introductie')) return white;
             return green; // fallback
           };

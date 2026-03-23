@@ -1944,6 +1944,7 @@ const App = () => {
                 resultsLoadingProgress={resultsLoadingProgress}
                 resultsModalProgress={resultsModalProgress}
                 layerAnswers={layerAnswers}
+                uploadedFiles={uploadedFiles}
                 onClose={resetAssessmentState}
                 onAiReady={() => setAiAnalysisReady(true)}
                 onDownload={() => {

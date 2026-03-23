@@ -524,16 +524,16 @@ function generatePDFContent(result) {
   </p>
 
   <!-- PRIMARY ARCHETYPE -->
-  <div class="card card-cyan">
-    <p class="card-title" style="color:#22d3ee;">
-      <span class="dot" style="background:#22d3ee;"></span>
+  <div class="card card-purple">
+    <p class="card-title" style="color:#a855f7;">
+      <span class="dot" style="background:#a855f7;"></span>
       De Essentie &mdash; Main Archetype
     </p>
     <h1 class="hero-archetype">${esc(result.extendedArchetypeName || archetypeInfo?.name || result.overallArchetype)}</h1>
     <p class="hero-desc">${esc(archetypeInfo?.description || '')}</p>
     ${result.supportArchetype ? `
-    <div style="margin-top:3mm;padding:3mm;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:4px;">
-      <p style="color:#c084fc;font-size:9pt;margin:0;">De Vermenigvuldiging &mdash; Support: <strong>${esc(result.supportArchetype)}</strong></p>
+    <div style="margin-top:3mm;padding:3mm;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:4px;">
+      <p style="color:#f97316;font-size:9pt;margin:0;">De Vermenigvuldiging &mdash; Support: <strong>${esc(result.supportArchetype)}</strong></p>
     </div>` : ''}
     <div class="shadow-box">
       <strong>Schaduw: </strong>${esc(result.shadowArchetype || archetypeInfo?.shadow || '')}

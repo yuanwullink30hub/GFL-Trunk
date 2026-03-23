@@ -1424,21 +1424,29 @@ const AssessmentResultsModal = ({
           y += 7;
         }
 
-        // ── GFL OCEAN reference bars (compact, half-page width) for reference ──
+        // ── GFL OCEAN reference bars + user score column ──
         if (result.extendedOcean?.ocean) {
-          ensureSpace(12);
-          pdf.setFontSize(7);
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(...cyan);
-          pdf.text('GFL TEST — OCEAN REFERENTIE', margin + 2, y);
-          y += 6;
-
           const OCEAN_DIMS_REF = ['O', 'C', 'E', 'A', 'N'];
-          const OCEAN_LABEL_SHORT = { O: 'O', C: 'C', E: 'E', A: 'A', N: 'N' };
+          const OCEAN_FULL_REF = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
           const OCEAN_COLORS_REF = {
             O: [167, 139, 250], C: [34, 211, 238], E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253],
           };
-          const refBarW = (contentW / 2) - 30;
+          const userOcean = result.oceanScores || null; // 0-100 scale from assessment
+
+          // ── Column headers ──
+          ensureSpace(16);
+          const barColStart = margin + 2;
+          const scoreColX = W - margin - 2; // right-aligned
+          pdf.setFontSize(7); pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...cyan);
+          pdf.text('GFL TEST — OCEAN REFERENTIE', barColStart, y);
+          if (userOcean) {
+            pdf.setTextColor(...white);
+            pdf.text('JOUW SCORE', scoreColX, y, { align: 'right' });
+          }
+          y += 6;
+
+          const refBarW = contentW - 80; // leave room for label, score/10, and user score
           const refBarH = 3;
 
           OCEAN_DIMS_REF.forEach(dim => {
@@ -1446,15 +1454,25 @@ const AssessmentResultsModal = ({
             const score = result.extendedOcean.ocean[dim] ?? 0;
             const pct = score / 10;
             const col = OCEAN_COLORS_REF[dim];
+            // Dimension label
             pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
-            pdf.text(OCEAN_LABEL_SHORT[dim], margin + 2, y + 1.5);
-            const bx = margin + 10;
+            pdf.text(dim, barColStart, y + 1.5);
+            pdf.setFontSize(6.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...mutedGray);
+            pdf.text(OCEAN_FULL_REF[dim], barColStart + 7, y + 1.5);
+            // Bar
+            const bx = barColStart + 32;
             pdf.setFillColor(22, 22, 30);
             pdf.roundedRect(bx, y - 1.5, refBarW, refBarH, 1, 1, 'F');
             pdf.setFillColor(...col);
             pdf.roundedRect(bx, y - 1.5, Math.max(pct * refBarW, 1.5), refBarH, 1, 1, 'F');
+            // Archetype score
             pdf.setFontSize(7); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
             pdf.text(`${score}/10`, bx + refBarW + 3, y + 1.5);
+            // User's actual score (right column)
+            if (userOcean && userOcean[dim] != null) {
+              pdf.setFontSize(8.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...white);
+              pdf.text(`${userOcean[dim]}`, scoreColX, y + 1.5, { align: 'right' });
+            }
             y += 6.5;
           });
           y += 4;
@@ -1943,9 +1961,9 @@ const AssessmentResultsModal = ({
             maxHeight: rs.modalMaxHeight,
             background: 'rgba(2, 0, 3, 0.3)',
             backdropFilter: 'blur(24px)',
-            border: '1px solid rgba(34, 211, 238, 0.3)',
+            border: '1px solid rgba(0, 255, 157, 0.3)',
             borderRadius: '0.75rem',
-            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34, 211, 238, 0.06), inset 0 0 30px rgba(34, 211, 238, 0.03)',
+            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(0, 255, 157, 0.06), inset 0 0 30px rgba(0, 255, 157, 0.03)',
             display: 'flex',
             flexDirection: 'column',
             color: '#fff',
@@ -1953,7 +1971,7 @@ const AssessmentResultsModal = ({
           }}>
 
             {/* SectorFrame-style corner borders */}
-            {renderCorners('#22d3ee')}
+            {renderCorners('#00ff9d')}
 
             {/* Holographic sheen */}
             <div style={{ position: 'absolute', inset: 0, borderRadius: '0.75rem', pointerEvents: 'none', background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)', backgroundSize: '400% 400%', backgroundRepeat: 'no-repeat', animation: 'holoSheen 45s ease-in-out infinite', mixBlendMode: 'screen' }} />
@@ -1979,7 +1997,7 @@ const AssessmentResultsModal = ({
               left: 0,
               width: '100%',
               height: '1px',
-              background: 'linear-gradient(to right, transparent, #22d3ee, transparent)',
+              background: 'linear-gradient(to right, transparent, #00ff9d, transparent)',
               zIndex: 50
             }} />
             
@@ -2030,7 +2048,7 @@ const AssessmentResultsModal = ({
                       height: '100%',
                       borderRadius: '50%',
                       overflow: 'hidden',
-                      border: '2px solid #22d3ee',
+                      border: '2px solid #00ff9d',
                       background: '#000',
                       position: 'relative',
                     }}>
@@ -2109,7 +2127,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     width: '100%',
                     background: 'transparent',
-                    border: '1px solid rgba(34, 211, 238, 0.25)',
+                    border: '1px solid rgba(0, 255, 157, 0.25)',
                     borderRadius: '0.75rem',
                     padding: rs.sectionPad,
                     position: 'relative',
@@ -2117,11 +2135,11 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #22d3ee, transparent)',
+                      background: 'linear-gradient(to right, transparent, #00ff9d, transparent)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#22d3ee',
+                      color: '#00ff9d',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.85rem',
                       textTransform: 'uppercase',
@@ -2269,7 +2287,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     width: '100%',
                     background: 'transparent',
-                    border: '1px solid rgba(34, 211, 238, 0.15)',
+                    border: '1px solid rgba(0, 255, 157, 0.15)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
                     position: 'relative',
@@ -2277,11 +2295,11 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #22d3ee, transparent)',
+                      background: 'linear-gradient(to right, transparent, #00ff9d, transparent)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#22d3ee',
+                      color: '#00ff9d',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.8rem',
                       textTransform: 'uppercase',
@@ -2295,15 +2313,15 @@ const AssessmentResultsModal = ({
                       Alle Uitkomsten voor {result.mainName}
                     </h3>
                     {/* Archetypes as rows, Betekenis / Gift / Valkuil as columns */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                       {/* Column header row */}
                       <div style={{
                         display: 'grid',
                         gridTemplateColumns: '1fr 1fr 1fr 1fr',
                         gap: '0',
-                        padding: '0.2rem 0',
+                        padding: '0.15rem 0',
                         borderBottom: '1px solid rgba(255,255,255,0.07)',
-                        marginBottom: '0.1rem',
+                        marginBottom: '0',
                       }}>
                         {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(34,211,238,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
                           <div key={label} style={{ fontSize: '0.75rem', color, fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', paddingLeft: '0.4rem' }}>
@@ -2325,29 +2343,29 @@ const AssessmentResultsModal = ({
                             gap: '0',
                             background: 'transparent',
                             border: sa.isActive ? '1px solid rgba(168,85,247,0.35)' : '1px solid rgba(34,211,238,0.08)',
-                            borderRadius: '0.35rem',
+                            borderRadius: '0.2rem',
                             overflow: 'hidden',
                           }}>
                             {/* Archetype name */}
-                            <div style={{ padding: '0.4rem 0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#a855f7' : 'rgba(34,211,238,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            <div style={{ padding: '0.25rem 0.4rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ fontSize: '0.65rem', color: sa.isActive ? '#a855f7' : 'rgba(34,211,238,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: 1.2 }}>
                                 {sa.group}
                               </div>
-                              <div style={{ fontSize: '0.75rem', color: sa.isActive ? '#fff' : 'rgba(34,211,238,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.3, marginTop: '0.1rem' }}>
+                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#fff' : 'rgba(34,211,238,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.2, marginTop: '0.05rem' }}>
                                 {sa.extendedName}
                               </div>
                             </div>
                             {/* Betekenis */}
-                            <div style={{ padding: '0.4rem 0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: '0.7rem', color: 'rgba(209,213,219,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.4 }}>{meaning}</div>
+                            <div style={{ padding: '0.25rem 0.4rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ fontSize: '0.65rem', color: 'rgba(209,213,219,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 }}>{meaning}</div>
                             </div>
                             {/* Gift */}
-                            <div style={{ padding: '0.4rem 0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: '0.7rem', color: 'rgba(209,213,219,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.4 }}>{gift}</div>
+                            <div style={{ padding: '0.25rem 0.4rem', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ fontSize: '0.65rem', color: 'rgba(209,213,219,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 }}>{gift}</div>
                             </div>
                             {/* Valkuil */}
-                            <div style={{ padding: '0.4rem 0.5rem' }}>
-                              <div style={{ fontSize: '0.7rem', color: 'rgba(209,213,219,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.4 }}>{sa.shadow}</div>
+                            <div style={{ padding: '0.25rem 0.4rem' }}>
+                              <div style={{ fontSize: '0.65rem', color: 'rgba(209,213,219,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 }}>{sa.shadow}</div>
                             </div>
                           </div>
                         );
@@ -3021,25 +3039,9 @@ const AssessmentResultsModal = ({
                           </span>
                           {cleanTitle(section.title)}
                         </h3>
-                        <p style={{ fontSize: '0.75rem', color: 'rgba(148,163,184,0.7)', fontFamily: "'Figtree', sans-serif", marginBottom: '0.75rem', lineHeight: 1.6 }}>
-                          Genereer een kant-en-klare systeemprompt die je kunt gebruiken om externe AI-tools (zoals ChatGPT, Claude, etc.) af te stemmen op jouw unieke profiel.
+                        <p style={{ fontSize: '0.85rem', color: 'rgba(148,163,184,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, fontStyle: 'italic' }}>
+                          Download het volledige rapport voor deze prompt
                         </p>
-                        <pre style={{
-                          background: 'rgba(0,0,0,0.7)',
-                          border: '1px solid rgba(234,179,8,0.2)',
-                          borderRadius: '0.5rem',
-                          padding: '1.25rem',
-                          fontFamily: "'Courier New', Courier, monospace",
-                          fontSize: '0.78rem',
-                          color: 'rgba(209,213,219,0.9)',
-                          lineHeight: 1.75,
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                          overflowX: 'auto',
-                          textAlign: 'left',
-                        }}>
-                          {section.content}
-                        </pre>
                       </div>
                     );
                   }
@@ -3194,7 +3196,7 @@ const AssessmentResultsModal = ({
                         <div>
                           <label style={{
                             display: 'block',
-                            color: '#22d3ee',
+                            color: '#00ff9d',
                             fontFamily: "'Figtree', sans-serif",
                             fontSize: '0.85rem',
                             fontWeight: 'bold',
@@ -3376,20 +3378,20 @@ const AssessmentResultsModal = ({
                         <div style={{
                           maxWidth: '34rem', width: '100%',
                           backgroundColor: 'rgba(6, 2, 10, 0.98)',
-                          border: '1px solid rgba(34,211,238,0.2)',
+                          border: '1px solid rgba(0,255,157,0.2)',
                           borderRadius: '0.5rem',
                           padding: '1.75rem',
-                          boxShadow: '0 0 40px rgba(34,211,238,0.08)',
+                          boxShadow: '0 0 40px rgba(0,255,157,0.08)',
                           fontFamily: "'Lexend Mega', sans-serif",
                         }}>
-                          <h3 style={{ color: '#22d3ee', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
+                          <h3 style={{ color: '#00ff9d', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
                             Verantwoordelijkheid PDF & AI Prompt
                           </h3>
                           <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', fontStyle: 'italic', marginBottom: '1.25rem' }}>
                             Lees dit door voordat je de PDF downloadt
                           </p>
 
-                          <div style={{ borderLeft: '2px solid rgba(34,211,238,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
+                          <div style={{ borderLeft: '2px solid rgba(0,255,157,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
                             <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: '0.75rem', lineHeight: 1.75 }}>
                               Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik in externe AI-tools valt buiten de verantwoordelijkheid van Garden For Life.
                             </p>
@@ -3400,7 +3402,7 @@ const AssessmentResultsModal = ({
                               type="checkbox"
                               checked={pdfConsentChecked}
                               onChange={(e) => setPdfConsentChecked(e.target.checked)}
-                              style={{ marginTop: '0.1rem', accentColor: '#22d3ee', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
+                              style={{ marginTop: '0.1rem', accentColor: '#00ff9d', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
                             />
                             <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: '0.75rem', lineHeight: 1.65 }}>
                               Ik begrijp dat de AI Agent Prompt in deze PDF experimenteel is en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.
@@ -3419,8 +3421,8 @@ const AssessmentResultsModal = ({
                             <button
                               onClick={() => { if (pdfConsentChecked) { setShowPdfConsent(false); logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {}); handleDownloadPdf(); } }}
                               disabled={!pdfConsentChecked}
-                              style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#22d3ee' : 'rgba(34,211,238,0.2)'}`, color: pdfConsentChecked ? '#22d3ee' : 'rgba(34,211,238,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(34,211,238,0.07)' : 'none' }}
-                              onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(34,211,238,0.25)'; }}
+                              style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#00ff9d' : 'rgba(0,255,157,0.2)'}`, color: pdfConsentChecked ? '#00ff9d' : 'rgba(0,255,157,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(0,255,157,0.07)' : 'none' }}
+                              onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(0,255,157,0.25)'; }}
                               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
                             >
                               Begrepen en akkoord — Download PDF
@@ -3442,8 +3444,8 @@ const AssessmentResultsModal = ({
                         overflow: 'hidden',
                         padding: rs.btnPad,
                         background: '#000',
-                        border: '1px solid #22d3ee',
-                        color: '#22d3ee',
+                        border: '1px solid #00ff9d',
+                        color: '#00ff9d',
                         fontFamily: "'Lexend Mega', sans-serif",
                         fontWeight: 'bold',
                         textTransform: 'uppercase',
@@ -3451,18 +3453,18 @@ const AssessmentResultsModal = ({
                         fontSize: rs.btnFont,
                         cursor: (isGeneratingPdf || !reviewSubmitted) ? 'not-allowed' : 'pointer',
                         transition: 'all 0.3s',
-                        boxShadow: '0 0 15px rgba(34, 211, 238, 0.1)',
+                        boxShadow: '0 0 15px rgba(0, 255, 157, 0.1)',
                         opacity: (isGeneratingPdf || !reviewSubmitted) ? 0.5 : 1,
                       }}
                       onMouseEnter={e => {
                         if (!isGeneratingPdf && reviewSubmitted) {
-                          e.currentTarget.style.background = '#22d3ee';
+                          e.currentTarget.style.background = '#00ff9d';
                           e.currentTarget.style.color = '#000';
                         }
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.background = '#000';
-                        e.currentTarget.style.color = '#22d3ee';
+                        e.currentTarget.style.color = '#00ff9d';
                       }}
                     >
                       <span style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>

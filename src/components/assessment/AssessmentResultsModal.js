@@ -938,6 +938,30 @@ const AssessmentResultsModal = ({
       // ─── Separate page: 72 archetypes cross-reference ───
       pdf.addPage(); paintBg(); y = margin;
 
+      // ── TN WHEEL — radar chart image above the 72 archetypes table ──
+      if (radarRef.current) {
+        try {
+          const tnCanvas = await html2canvas(radarRef.current, {
+            backgroundColor: null,
+            scale: 3,
+            useCORS: true,
+            logging: false,
+          });
+          const tnImg = tnCanvas.toDataURL('image/png');
+          // Max height: leave room for heading (10) + bullet (8) + hr (4) + table (~90) + footer (14) = ~126mm
+          const maxH = H - margin * 2 - 126;
+          const naturalH = (tnCanvas.height / tnCanvas.width) * contentW;
+          const finalH = Math.min(naturalH, maxH);
+          const finalW = finalH === naturalH ? contentW : (tnCanvas.width / tnCanvas.height) * finalH;
+          const offsetX = margin + (contentW - finalW) / 2;
+          pdf.addImage(tnImg, 'PNG', offsetX, y, finalW, finalH);
+          y += finalH + 4;
+          hr();
+        } catch {
+          y += 4;
+        }
+      }
+
       sectionHeading('72 Archetypes \u2014 Culturele & Mythologische Kruisverwijzing', orange);
 
       ensureSpace(8);

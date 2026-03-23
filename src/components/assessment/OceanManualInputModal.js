@@ -64,16 +64,16 @@ const modalStyles = `
 /* ─── Trait definitions ─── */
 const TRAITS = [
   {
-    key: 'A', label: 'Meegaandheid', eng: 'Agreeableness',
-    color: '#f472b6', rgb: '244,114,182', required: true,
+    key: 'O', label: 'Openheid voor Ervaringen', eng: 'Openness',
+    color: '#f97316', rgb: '249,115,22', required: true,
     subTraits: [
-      { key: 'A_compassie',   label: 'Compassie' },
-      { key: 'A_beleefdheid', label: 'Beleefdheid' },
+      { key: 'O_intellect', label: 'Intellect' },
+      { key: 'O_esthetiek', label: 'Esthetiek' },
     ],
   },
   {
     key: 'C', label: 'Consciëntieusheid', eng: 'Conscientiousness',
-    color: '#60a5fa', rgb: '96,165,250', required: true,
+    color: '#a855f7', rgb: '168,85,247', required: true,
     subTraits: [
       { key: 'C_ijver',       label: 'IJver' },
       { key: 'C_ordelijkheid',label: 'Ordelijkheid' },
@@ -88,24 +88,24 @@ const TRAITS = [
     ],
   },
   {
+    key: 'A', label: 'Meegaandheid', eng: 'Agreeableness',
+    color: '#ef4444', rgb: '239,68,68', required: true,
+    subTraits: [
+      { key: 'A_compassie',   label: 'Compassie' },
+      { key: 'A_beleefdheid', label: 'Beleefdheid' },
+    ],
+  },
+  {
     key: 'N', label: 'Neuroticisme', eng: 'Neuroticism',
-    color: '#f87171', rgb: '248,113,113', required: true,
+    color: '#00ff9d', rgb: '0,255,157', required: true,
     subTraits: [
       { key: 'N_terughoudendheid', label: 'Terughoudendheid' },
       { key: 'N_volatiliteit',     label: 'Volatiliteit' },
     ],
   },
   {
-    key: 'O', label: 'Openheid voor Ervaringen', eng: 'Openness',
-    color: '#00ff9d', rgb: '0,255,157', required: true,
-    subTraits: [
-      { key: 'O_intellect', label: 'Intellect' },
-      { key: 'O_esthetiek', label: 'Esthetiek' },
-    ],
-  },
-  {
     key: 'H', label: 'Eerlijkheid-Nederigheid', eng: 'Honesty-Humility',
-    color: '#22d3ee', rgb: '34,211,238', required: false,
+    color: '#3b82f6', rgb: '59,130,246', required: false,
     subTraits: [],
   },
 ];
@@ -363,7 +363,7 @@ const OceanManualInputModal = ({ onClose, onConfirm, initialValues }) => {
       <style>{modalStyles}</style>
       <div
         className="fixed inset-0 z-[60] flex items-center justify-center"
-        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
         onClick={(e) => { if (e.target === e.currentTarget) close(); }}
       >
         <div style={{

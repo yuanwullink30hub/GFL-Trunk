@@ -10,6 +10,7 @@ import wheelAnatomy from '../../images/TNM wheel PNG.png';
 import triangleHardware from '../../images/Deltawerken png.png';
 import { SciFiButton } from './dashboardStyles';
 import vulnerabilityOrder from '../../images/Nature Nurture png.png';
+import OceanManualInputModal from './OceanManualInputModal';
 
 /**
  * AssessmentIntro - Modal shown when entity appears
@@ -44,6 +45,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
   const [consentOrigin, setConsentOrigin] = useState('center center');
   const consentOverlayRef = useRef(null);
   const [showUploadWarning, setShowUploadWarning] = useState(false);
+  const [showOceanInput, setShowOceanInput] = useState(false);
+  const [oceanManualScores, setOceanManualScores] = useState(null);
 
   const openInfo = () => {
     if (infoIconRef.current && modalRef.current) {
@@ -645,8 +648,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
               {t('assessmentIntro.footerResearch')}
             </p>
 
-            {/* Right: Upload OCEAN button */}
-            <div style={{ width: isMobile ? 'auto' : '10rem', flexShrink: 0, display: 'flex', justifyContent: isMobile ? 'center' : 'flex-end', alignItems: 'center', gap: '0.5rem' }}>
+            {/* Right: Upload OCEAN button + Manual scores button */}
+            <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: isMobile ? 'center' : 'flex-end', gap: '0.35rem' }}>
               {onAddFile && (
                 <>
                   <input
@@ -658,6 +661,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                       const file = e.target.files?.[0];
                       if (file) {
                         if (uploadedFiles.length > 0 && onRemoveFile) onRemoveFile(0);
+                        // Clear any manual scores if a PDF is uploaded
+                        setOceanManualScores(null);
                         onAddFile(file);
                         e.target.value = '';
                       }
@@ -726,6 +731,25 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                       )}
                     </div>
                   )}
+
+                  {/* Divider label */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '10rem' }}>
+                    <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                    <span style={{ color: 'rgba(148,163,184,0.35)', fontSize: '0.58rem', fontFamily: 'monospace' }}>of</span>
+                    <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                  </div>
+
+                  {/* Manual OCEAN input button */}
+                  <SciFiButton
+                    onClick={() => setShowOceanInput(true)}
+                    color={oceanManualScores ? '#22c55e' : '#64748b'}
+                    rgb={oceanManualScores ? '34, 197, 94' : '100, 116, 139'}
+                    size="sm"
+                    fullWidth
+                    style={{ width: '10rem', fontSize: '0.65rem' }}
+                  >
+                    {oceanManualScores ? '✓ Scores opgeslagen' : 'Voer scores in'}
+                  </SciFiButton>
                 </>
               )}
             </div>
@@ -1253,6 +1277,45 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
         </div>
       </div>
     </div>
+
+    {/* ══ OCEAN Manual Input Modal ══ */}
+    {showOceanInput && (
+      <OceanManualInputModal
+        initialValues={oceanManualScores}
+        onClose={() => setShowOceanInput(false)}
+        onConfirm={(scores) => {
+          setOceanManualScores(scores);
+          // Clear any uploaded PDF file and inject scores as a synthetic text file
+          if (uploadedFiles.length > 0 && onRemoveFile) onRemoveFile(0);
+          if (onAddFile) {
+            const lines = [
+              '=== OCEAN Persoonlijkheidsscores (handmatig ingevoerd) ===',
+              '',
+              `A — Meegaandheid (Agreeableness): ${scores.A}/100`,
+              scores.A_compassie !== null   ? `   ↳ Compassie: ${scores.A_compassie}/100`   : null,
+              scores.A_beleefdheid !== null ? `   ↳ Beleefdheid: ${scores.A_beleefdheid}/100` : null,
+              `C — Consciëntieusheid (Conscientiousness): ${scores.C}/100`,
+              scores.C_ijver !== null        ? `   ↳ IJver: ${scores.C_ijver}/100`            : null,
+              scores.C_ordelijkheid !== null ? `   ↳ Ordelijkheid: ${scores.C_ordelijkheid}/100` : null,
+              `E — Extraversie (Extraversion): ${scores.E}/100`,
+              scores.E_enthousiasme !== null  ? `   ↳ Enthousiasme: ${scores.E_enthousiasme}/100`  : null,
+              scores.E_assertiviteit !== null ? `   ↳ Assertiviteit: ${scores.E_assertiviteit}/100` : null,
+              `N — Neuroticisme (Neuroticism): ${scores.N}/100`,
+              scores.N_terughoudendheid !== null ? `   ↳ Terughoudendheid: ${scores.N_terughoudendheid}/100` : null,
+              scores.N_volatiliteit !== null    ? `   ↳ Volatiliteit: ${scores.N_volatiliteit}/100`       : null,
+              `O — Openheid voor Ervaringen (Openness): ${scores.O}/100`,
+              scores.O_intellect !== null ? `   ↳ Intellect: ${scores.O_intellect}/100` : null,
+              scores.O_esthetiek !== null ? `   ↳ Esthetiek: ${scores.O_esthetiek}/100` : null,
+              scores.H !== null ? `H — Eerlijkheid-Nederigheid (Honesty-Humility): ${scores.H}/100` : null,
+              '',
+              'Scores zijn op een schaal van 0 tot 100 (hoger = meer aanwezig).',
+            ].filter(Boolean).join('\n');
+            const file = new File([lines], 'OCEAN_scores_handmatig.txt', { type: 'text/plain' });
+            onAddFile(file);
+          }
+        }}
+      />
+    )}
     </>
   );
 };

@@ -863,6 +863,7 @@ const AssessmentResultsModal = ({
         { fontSize: 7, vPad: 3 }
       );
 
+      y += 5;
       drawTable(
         ['Diepte', 'Getal', 'Afleiding', 'Manifestatie'],
         [
@@ -927,7 +928,7 @@ const AssessmentResultsModal = ({
       // ─── Separate page: 72 archetypes cross-reference ───
       pdf.addPage(); paintBg(); y = margin;
 
-      sectionHeading('72 Archetypes \u2014 Culturele & Mythologische Kruisverwijzing', cyan);
+      sectionHeading('72 Archetypes \u2014 Culturele & Mythologische Kruisverwijzing', orange);
 
       ensureSpace(8);
       pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
@@ -1118,10 +1119,7 @@ const AssessmentResultsModal = ({
           pdf.text(sa.group, col0x + 1, y + 2.5);
           cellText(sa.extendedName, col0x, y + 5, nameColW, nameFontSize, sa.isActive ? white : [160, 185, 175], 'bold');
           if (sa.isActive) {
-            pdf.setFontSize(6);
-            pdf.setFont('helvetica', 'bold');
-            pdf.setTextColor(...green);
-            pdf.text('\u25b8 JOUW RESULTAAT', col0x + 1, y + rowH - 2);
+            // active row highlighted — no extra label needed
           }
 
           // Data columns
@@ -1141,7 +1139,7 @@ const AssessmentResultsModal = ({
       if (result.shadowPartner) {
         sectionHeading(`De Schaduw — ${result.shadowName} (${result.shadowNameEn})`, purple);
         if (result.mainShadowTension) {
-          writeWrapped(result.mainShadowTension, margin + 2, y, contentW - 4, 9, orange, 'italic');
+          writeWrapped(result.mainShadowTension, margin + 2, y, contentW - 4, 9, white);
           y += 2;
         }
         if (result.shadowInsight) {
@@ -1158,8 +1156,8 @@ const AssessmentResultsModal = ({
         sectionHeading(`De Blindspot — ${result.blindspotName} (${result.blindspotNameEn})`, red);
         ensureSpace(6);
         pdf.setFontSize(11);
-        pdf.setTextColor(...red);
-        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(...white);
+        pdf.setFont('helvetica', 'normal');
         pdf.text(`De tegenhanger van je Support (${result.secondaryNameEn}) — jouw externe blinde vlek`, margin + 5, y);
         y += 6;
         if (result.blindspotDescription) {
@@ -1651,11 +1649,39 @@ const AssessmentResultsModal = ({
             if (t.includes('introductie')) return white;
             return green; // fallback
           };
-          mainSections.forEach((section, i) => {
+
+          // Separate intro/disclaimer and AI agent prompt — they always share one dedicated page
+          const regularSections = mainSections.filter(s =>
+            !s.isAgentPrompt &&
+            !/ai agent|persoonlijke.*agent|genereer.*ai prompt/i.test(s.title) &&
+            !s.title?.toLowerCase().includes('introductie')
+          );
+          const disclaimerSection = mainSections.find(s => s.title?.toLowerCase().includes('introductie'));
+          const agentSection = mainSections.find(s =>
+            s.isAgentPrompt || /ai agent|persoonlijke.*agent|genereer.*ai prompt/i.test(s.title)
+          );
+
+          regularSections.forEach((section, i) => {
             sectionHeading(cleanTitle(section.title), getPdfSectionColor(section.title));
             writePdfMarkdown(section.content, margin + 2, contentW - 4);
-            if (i < mainSections.length - 1) hr();
+            if (i < regularSections.length - 1) hr();
           });
+
+          // Disclaimer + AI Agent Prompt: always together on their own page
+          if (disclaimerSection || agentSection) {
+            pdf.addPage();
+            paintBg();
+            y = margin;
+            if (disclaimerSection) {
+              sectionHeading(cleanTitle(disclaimerSection.title), getPdfSectionColor(disclaimerSection.title));
+              writePdfMarkdown(disclaimerSection.content, margin + 2, contentW - 4);
+              hr();
+            }
+            if (agentSection) {
+              sectionHeading(cleanTitle(agentSection.title), getPdfSectionColor(agentSection.title));
+              writePdfMarkdown(agentSection.content, margin + 2, contentW - 4);
+            }
+          }
         }
 
         // Persoonlijkheidsrapport Vergelijking rendered earlier (after OCEAN page) — skip here

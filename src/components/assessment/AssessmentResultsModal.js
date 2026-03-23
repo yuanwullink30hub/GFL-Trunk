@@ -2975,7 +2975,7 @@ const AssessmentResultsModal = ({
                   }
                   // Cycle through accent colors for visual variety
                   const accents = [
-                    { color: '#22d3ee', rgb: '34, 211, 238' },   // green
+                    { color: '#00ff9d', rgb: '0, 255, 157' },    // green
                     { color: '#a855f7', rgb: '168, 85, 247' },   // purple
                     { color: '#f97316', rgb: '249, 115, 22' },   // orange
                     { color: '#3b82f6', rgb: '59, 130, 246' },   // blue

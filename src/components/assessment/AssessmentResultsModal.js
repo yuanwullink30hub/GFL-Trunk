@@ -158,7 +158,7 @@ const AssessmentResultsModal = ({
     } finally {
       setIsSubmittingReview(false);
     }
-  }, [reviewFormData, result, savedAssessmentId]);
+  }, [reviewFormData, result, savedAssessmentId, starRating]);
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -326,7 +326,6 @@ const AssessmentResultsModal = ({
       const red       = [239, 68, 68];
       const cyan      = [34, 211, 238];
       const amber     = [251, 191, 36];
-      const pink      = [244, 114, 182];
       const white     = [209, 213, 219];
       const dimWhite  = [156, 163, 175];
       const mutedGray = [100, 116, 139];
@@ -407,7 +406,6 @@ const AssessmentResultsModal = ({
       // ── Helper: markdown-aware AI content renderer ──
       const writePdfMarkdown = (mdText, x, maxW) => {
         if (!mdText) return;
-        const strip = (s) => s.replace(/\*\*/g, '').replace(/^[*\-]\s+/, '').trim();
         const lines = mdText.split('\n');
         for (const raw of lines) {
           const trimmed = raw.trim();
@@ -422,7 +420,7 @@ const AssessmentResultsModal = ({
             pdf.setTextColor(...orange);
             pdf.setFont('helvetica', 'bold');
             const hLines = pdf.splitTextToSize(headText, maxW);
-            hLines.forEach(hl => { ensureSpace(5); pdf.text(hl, x, y); y += 5; });
+            for (const hl of hLines) { ensureSpace(5); pdf.text(hl, x, y); y += 5; }
             continue;
           }
           // Table separator — skip
@@ -437,12 +435,12 @@ const AssessmentResultsModal = ({
             pdf.setTextColor(...white);
             const rowTxt = cells.join('  |  ');
             const rLines = pdf.splitTextToSize(rowTxt, maxW);
-            rLines.forEach(rl => { ensureSpace(3.8); pdf.text(rl, x, y); y += 3.8; });
+            for (const rl of rLines) { ensureSpace(3.8); pdf.text(rl, x, y); y += 3.8; }
             continue;
           }
           // Bullet: * or -
-          if (/^[*\-]\s/.test(trimmed)) {
-            const content = trimmed.replace(/^[*\-]\s+/, '').replace(/\*\*/g, '');
+          if (/^[-*]\s/.test(trimmed)) {
+            const content = trimmed.replace(/^[-*]\s+/, '').replace(/\*\*/g, '');
             const colonIdx = content.indexOf(':');
             ensureSpace(5);
             pdf.setFontSize(8.5);
@@ -468,7 +466,7 @@ const AssessmentResultsModal = ({
               pdf.text('\u2022', x, y);
               pdf.setTextColor(...white);
               const bLines = pdf.splitTextToSize(content, maxW - 5);
-              bLines.forEach(bl => { ensureSpace(4.2); pdf.text(bl, x + 5, y); y += 4.2; });
+              for (const bl of bLines) { ensureSpace(4.2); pdf.text(bl, x + 5, y); y += 4.2; }
             }
             continue;
           }
@@ -478,17 +476,9 @@ const AssessmentResultsModal = ({
           pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(...white);
           const pLines = pdf.splitTextToSize(text, maxW);
-          pLines.forEach(pl => { ensureSpace(4.3); pdf.text(pl, x, y); y += 4.3; });
+          for (const pl of pLines) { ensureSpace(4.3); pdf.text(pl, x, y); y += 4.3; }
         }
         y += 3;
-      };
-
-      // ── Helper: page footer ──
-      const pageFooter = () => {
-        pdf.setFontSize(6.5);
-        pdf.setTextColor(...white);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('Garden for Life  \u2022  Advanced Consciousness Assessment', W / 2, H - 10, { align: 'center' });
       };
 
       // ═══════════════════════════════════════════════════
@@ -1125,12 +1115,6 @@ const AssessmentResultsModal = ({
           Abstract:   { network: 'DMN Hyper-connectie',      drive: 'Interne reflectie en subjectiviteit' },
           Agency:     { network: 'Extraversie / Wilskracht', drive: 'Actie en transformatie' },
         };
-        const ARCH_POS_PDF = {
-          Ruler: 1, Judge: 2, Lover: 3, Caregiver: 4,
-          Innocent: 5, Explorer: 6, Outlaw: 7, Trickster: 8,
-          Sage: 9, Artist: 10, Magician: 11, Hero: 12,
-        };
-
         const MAX_TOTAL = 36;
         const labelW    = 38;
         const scoreW    = 22;
@@ -2464,7 +2448,7 @@ const AssessmentResultsModal = ({
                       {/* Header */}
                       <div style={{ marginBottom: '0.85rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                          <span style={{ fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>/// CULTURELE_BRIL</span>
+                          <span style={{ fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{'/// CULTURELE_BRIL'}</span>
                         </div>
                         <h3 style={{ margin: 0, fontSize: '1.05rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 0 12px rgba(234,179,8,0.3)' }}>
                           Cognitieve Driehoek

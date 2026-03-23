@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 
 /**
  * SubgroupCounters - Dual-Core Dynamics visualization
@@ -15,17 +15,8 @@ const GROUP_META = {
   Agency:     { network: 'Extraversie / Wilskracht', drive: 'Actie en transformatie' },
 };
 
-const ARCHETYPE_POSITIONS = {
-  Ruler: 1, Judge: 2,
-  Lover: 3, Caregiver: 4,
-  Innocent: 5, Explorer: 6,
-  Outlaw: 7, Trickster: 8,
-  Sage: 9, Artist: 10,
-  Magician: 11, Hero: 12,
-};
 
 const SubgroupCounters = ({ subgroups }) => {
-  const MAX_PER_COMPONENT = 15;
 
   return (
     <div style={{ width: '100%' }}>

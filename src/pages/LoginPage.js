@@ -4,8 +4,8 @@ import { login, register, getMe, logout, getToken, logActivity } from '../utils/
 import ClientProfileModal from '../components/assessment/ClientProfileModal';
 import AdminDashboardModal from '../components/assessment/AdminDashboardModal';
 import {
-  C, BTN_LG, INPUT, FIELD_LABEL, ERROR_STYLE, SciFiButton,
-  PAGE_WRAPPER, SEPARATOR, hover, inputFocus, inputBlur, FONT,
+  C, INPUT, FIELD_LABEL, ERROR_STYLE, SciFiButton,
+  PAGE_WRAPPER, SEPARATOR, inputFocus, inputBlur, FONT,
 } from '../components/assessment/dashboardStyles';
 
 /* ═══════════════════════════════════════════════════════════════════════

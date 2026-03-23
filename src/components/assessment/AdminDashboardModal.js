@@ -36,7 +36,7 @@ import {
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM, TAB_STYLE,
-  hover, C, FONT, SciFiButton,
+  C, FONT, SciFiButton,
 } from './dashboardStyles';
 import { BRANDS } from '../../pages/GeneralBrandPage/brandData';
 import InvoiceTemplate from './InvoiceTemplate';
@@ -199,7 +199,6 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
     return () => window.removeEventListener('resize', h);
   }, []);
 
-  const tabStyle = isMobile ? MOBILE_TAB_STYLE : TAB_STYLE;
 
   return (
     <MobileCtx.Provider value={isMobile}>
@@ -1245,7 +1244,6 @@ const AssessmentsTab = memo(({ adminEmail }) => {
 const PromptsTab = memo(() => {
   const isMobile = React.useContext(MobileCtx);
   const [promptLevel, setPromptLevel] = useState('advanced');
-  const subTabStyle = isMobile ? MOBILE_TAB_STYLE : TAB_STYLE;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
@@ -1582,7 +1580,6 @@ const LEVEL_TABS = [
 const QuestionsTab = memo(() => {
   const isMobile = React.useContext(MobileCtx);
   const [level, setLevel] = useState('advanced');
-  const subTabStyle = isMobile ? MOBILE_TAB_STYLE : TAB_STYLE;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>

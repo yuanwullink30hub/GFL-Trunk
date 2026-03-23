@@ -4,11 +4,6 @@ import { Activity, Database, Lock, ChevronLeft, ChevronRight } from 'lucide-reac
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SciFiButton } from '../assessment/dashboardStyles';
 
-// Import garden logos
-import karmanLogo from '../../images/slideshow images/karmaneventsPNG.png';
-import code49Logo from '../../images/slideshow images/club49-logo.png';
-import tattooshopLogo from '../../images/slideshow images/1111logo.png';
-import rengiLogo from '../../images/slideshow images/Rengi-logo.png';
 import eyeLogo from '../../images/Eyedentity.png';
 import blackholeIcon from '../../images/Blackhole.png';
 

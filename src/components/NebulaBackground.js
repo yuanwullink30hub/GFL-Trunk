@@ -142,16 +142,24 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     return fract(p.x * p.y);
   }
 
+  // Gradient vector from lattice point — unit-length for correct Perlin amplitude
+  vec2 hashGrad(vec2 p) {
+    float a = fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453) * 6.2832;
+    return vec2(cos(a), sin(a));
+  }
+
   float noise(vec2 p) {
     vec2 i = floor(p);
     vec2 f = fract(p);
-    // Quintic interpolation (C2 continuous) — eliminates grid artifacts
-    f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-    float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+    // Quintic interpolation (C2 continuous)
+    vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+    // Gradient noise: dot products with unit gradient vectors at each corner
+    float va = dot(hashGrad(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0));
+    float vb = dot(hashGrad(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0));
+    float vc = dot(hashGrad(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0));
+    float vd = dot(hashGrad(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0));
+    // Scale by 0.7 (unit 2D Perlin range ≈ ±0.707) to fill 0-1 like old value noise
+    return clamp(mix(mix(va, vb, u.x), mix(vc, vd, u.x), u.y) * 0.7 + 0.5, 0.0, 1.0);
   }
 
   float fbm(vec2 p) {
@@ -228,7 +236,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // ── Edge distortion: 3 noise layers for organic nebula boundaries ──
     float edgeWarp = fbm(p1 * 4.5 + vec2(7.3, 2.1) + t * 0.04) * 0.16 - 0.08;
-    float edgeWarp2 = ridgeFbm(p1 * 6.0 + vec2(3.7, 8.4) + t * 0.03) * 0.12 - 0.06;
+    float edgeWarp2 = fbm(p1 * 6.0 + vec2(3.7, 8.4) + t * 0.03) * 0.12 - 0.06;
     float edgeWarp4 = warpedFbm(p1 * 3.0 + vec2(4.8, 6.9), t * 0.5) * 0.14 - 0.07;
     vec2 warpOffset = vec2(edgeWarp, edgeWarp2 + edgeWarp4);
 
@@ -238,65 +246,86 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Reuse main edgeWarp scaled down — bg blobs are too diffuse to need dedicated warp
     vec2 bgWarpOff = vec2(edgeWarp * 0.5, edgeWarp2 * 0.35);
 
+    // Noise-based Gaussian contour warping — breaks up clean elliptical boundaries
+    // into organic, cloud-like shapes so no straight lines appear
+    float gWarp1 = (noise(p1 * 6.0 + vec2(3.1, 8.7) + t * 0.03) - 0.5) * 0.35;
+    float gWarp2 = (noise(p1 * 7.5 + vec2(11.2, 4.3) + t * 0.04) - 0.5) * 0.35;
+    float gWarp3 = (noise(p1 * 5.0 + vec2(6.4, 1.9) + t * 0.025) - 0.5) * 0.25;
 
     // BG1: Upper — cool violet wash
     vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
-    float nebBG1 = exp(-(bgN1.x * bgN1.x * 2.6 + bgN1.y * bgN1.y * 2.25));
+    float bgD1 = bgN1.x * bgN1.x * 2.86 + bgN1.y * bgN1.y * 2.48;
+    bgD1 *= 1.0 + gWarp1 * 0.4;
+    float nebBG1 = exp(-bgD1);
 
     // BG2: Lower-left — warm ember
     vec2 bgN2 = p0 + bgWarpOff - vec2(-0.25, -0.22);
-    float nebBG2 = exp(-(bgN2.x * bgN2.x * 3.15 + bgN2.y * bgN2.y * 2.6));
+    float bgD2 = bgN2.x * bgN2.x * 3.47 + bgN2.y * bgN2.y * 2.86;
+    bgD2 *= 1.0 + gWarp2 * 0.4;
+    float nebBG2 = exp(-bgD2);
 
     // BG3: Right — blue haze
     vec2 bgN3 = p0 + bgWarpOff - vec2(0.28, -0.10);
-    float nebBG3 = exp(-(bgN3.x * bgN3.x * 3.75 + bgN3.y * bgN3.y * 3.15));
+    float bgD3 = bgN3.x * bgN3.x * 4.13 + bgN3.y * bgN3.y * 3.47;
+    bgD3 *= 1.0 + gWarp3 * 0.4;
+    float nebBG3 = exp(-bgD3);
 
 
     float bgGaussMask = clamp(nebBG1 + nebBG2 * 0.8 + nebBG3 * 0.6, 0.0, 1.0);
 
     // ── Spatial confinement: nebulae across the viewport ──
 
+    // Per-Gaussian 2D domain warp — independent x/y offsets break elliptical contours
+    // into organic cloud shapes without creating directional (linear) artifacts
+    vec2 gwVecA = vec2(
+      (noise(p1 * 5.5 + vec2(2.4, 9.1) + t * 0.035) - 0.5) * 0.22,
+      (noise(p1 * 5.5 + vec2(9.1, 2.4) + t * 0.030) - 0.5) * 0.22
+    );
+    vec2 gwVecB = vec2(
+      (noise(p1 * 6.2 + vec2(8.8, 3.5) + t * 0.028) - 0.5) * 0.22,
+      (noise(p1 * 6.2 + vec2(3.5, 8.8) + t * 0.024) - 0.5) * 0.22
+    );
+    vec2 gwVecC = vec2(
+      (noise(p1 * 4.8 + vec2(5.7, 12.3) + t * 0.032) - 0.5) * 0.22,
+      (noise(p1 * 4.8 + vec2(12.3, 5.7) + t * 0.027) - 0.5) * 0.22
+    );
+    vec2 gwVecEnv = vec2(
+      (noise(p1 * 3.5 + vec2(14.1, 6.2) + t * 0.02) - 0.5) * 0.16,
+      (noise(p1 * 3.5 + vec2(6.2, 14.1) + t * 0.017) - 0.5) * 0.16
+    );
+
     // Large shared gas envelope — connects all clouds into one continuous mass
-    vec2 nEnv = p1 + warpOffset * 0.5 - vec2(0.0, -0.02);
-    float nebEnvelope = exp(-(nEnv.x * nEnv.x * 0.68 + nEnv.y * nEnv.y * 0.6));
+    vec2 nEnv = p1 + warpOffset * 0.5 + gwVecEnv - vec2(0.0, -0.02);
+    float envD = nEnv.x * nEnv.x * 0.75 + nEnv.y * nEnv.y * 0.66;
+    float nebEnvelope = exp(-envD);
 
     // Nebula A: Upper-center — magenta-purple, main feature (wide, pulled toward center)
-    vec2 nA = p1 + warpOffset - vec2(-0.05, 0.12);
-    float nebA = exp(-(nA.x * nA.x * 2.1 + nA.y * nA.y * 1.88));
+    vec2 nA = p1 + warpOffset + gwVecA - vec2(-0.05, 0.12);
+    float dA = nA.x * nA.x * 2.66 + nA.y * nA.y * 2.38;
+    float nebA = exp(-dA);
 
     // Nebula B: Lower-left — warm orange-gold (wide, pulled toward center)
-    vec2 nB = p1 + warpOffset - vec2(-0.18, -0.16);
-    float nebB = exp(-(nB.x * nB.x * 2.4 + nB.y * nB.y * 2.1));
+    vec2 nB = p1 + warpOffset + gwVecB - vec2(-0.18, -0.16);
+    float dB = nB.x * nB.x * 3.04 + nB.y * nB.y * 2.66;
+    float nebB = exp(-dB);
 
-    // Nebula C: Right — phoenix warm, wider base (pulled toward center)
-    vec2 nC_base = p1 + warpOffset - vec2(0.20, -0.06);
-    float nebC_body = exp(-(nC_base.x * nC_base.x * 3.75 + nC_base.y * nC_base.y * 3.4));
-    vec2 nC_lw = nC_base - vec2(-0.06, -0.02);
-    vec2 lw = vec2(0.866 * nC_lw.x + 0.5 * nC_lw.y, -0.5 * nC_lw.x + 0.866 * nC_lw.y);
-    float nebC_lw = exp(-(lw.x * lw.x * 3.4 + lw.y * lw.y * 7.5));
-    vec2 nC_rw = nC_base - vec2(0.07, -0.02);
-    vec2 rw = vec2(0.866 * nC_rw.x - 0.5 * nC_rw.y, 0.5 * nC_rw.x + 0.866 * nC_rw.y);
-    float nebC_rw = exp(-(rw.x * rw.x * 3.4 + rw.y * rw.y * 7.5));
-    vec2 nC_hd = nC_base - vec2(0.01, 0.05);
-    vec2 hd = vec2(0.966 * nC_hd.x + 0.259 * nC_hd.y, -0.259 * nC_hd.x + 0.966 * nC_hd.y);
-    float nebC_hd = exp(-(hd.x * hd.x * 6.0 + hd.y * hd.y * 3.4));
-    vec2 nC_tl = nC_base - vec2(-0.015, -0.07);
-    vec2 tl = vec2(0.985 * nC_tl.x + 0.174 * nC_tl.y, -0.174 * nC_tl.x + 0.985 * nC_tl.y);
-    float nebC_tl = exp(-(tl.x * tl.x * 5.25 + tl.y * tl.y * 3.0));
-    float nebC = max(max(max(nebC_body, nebC_lw), max(nebC_rw, nebC_hd)), nebC_tl);
+    // Nebula C: Right — warm diffuse cloud (simple Gaussian, no phoenix sub-shapes)
+    vec2 nC = p1 + warpOffset + gwVecC - vec2(0.20, -0.06);
+    float dC = nC.x * nC.x * 3.54 + nC.y * nC.y * 3.17;
+    float nebC = exp(-dC);
 
     // Noise-driven breakup — sculpts organic holes and tendrils in the gas
     float breakup = warpedFbm(p1 * 2.8 + vec2(3.3, 7.7) + t * 0.3, t * 0.8);
-    float breakupMask = smoothstep(0.28, 0.52, breakup);
+    float breakupMask = smoothstep(0.32, 0.58, breakup);
 
     // Combined cloud mask — envelope connects, clouds overlap and add up
     // Allow values above 1.0 before clamping so overlaps create brighter collision zones
     float rawCloud = nebA + nebB * 1.0 + nebC * 0.85 + nebEnvelope * 0.35;
     float cloudMask = clamp(rawCloud, 0.0, 1.0);
-    // Gentle edge softening instead of harsh sharpening
-    cloudMask = pow(cloudMask, 1.1);
+    // Sharper falloff at edges — pow(1.3) trims faint outer gas that gradient noise made visible
+    cloudMask = pow(cloudMask, 1.3);
     // Apply organic breakup — creates holes and tendrils
-    cloudMask *= mix(0.65, 1.0, breakupMask);
+    cloudMask *= mix(0.55, 1.0, breakupMask);
 
     // Per-nebula color identity: 0 = purple/magenta, 1 = warm orange
     // Each nebula leans toward a hue but all contain both colors swirling through
@@ -916,7 +945,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3);  // Desktop: 2 octaves, highp, 3 gas layers
 
 // ─── React Component ────────────────────────────────────────────────────
-const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
+const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame = 0 }) => {
   const wrapperRef      = useRef(null);
   const canvasRef       = useRef(null);
   const videoRef        = useRef(null);
@@ -929,9 +958,14 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
   const onReadyRef      = useRef(onReady);
   const readyFiredRef   = useRef(false);
   const isMobile        = typeof window !== 'undefined' && window.innerWidth < 768;
+  const currentFrameRef = useRef(currentFrame); // readable inside render loop
+  // Accumulated shader time — runs at 0.7x speed once explosion > frame 10
+  const shaderTimeRef   = useRef(0);
+  const lastRealTimeRef = useRef(null);
 
-  // Keep onReady ref current
+  // Keep onReady + currentFrame refs current
   useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
+  useEffect(() => { currentFrameRef.current = currentFrame; }, [currentFrame]);
 
   // Keep target in a ref so the WebGL render loop always has the latest value
   useEffect(() => {
@@ -1167,10 +1201,14 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady }) => {
       if (timestamp - lastFrame < INTERVAL) return;
       lastFrame = timestamp;
 
-      const elapsed = (Date.now() - startTimeRef.current) / 1000;
-      // Wrap time to prevent unbounded growth — 600s period ensures smooth
-      // looping (noise offsets like 0.07*t stay in a small range ≤42)
-      const wrappedTime = elapsed % 600;
+      const now = Date.now() / 1000;
+      if (lastRealTimeRef.current === null) lastRealTimeRef.current = now;
+      const delta = now - lastRealTimeRef.current;
+      lastRealTimeRef.current = now;
+      // Slow nebula time by 30% once the explosion has passed frame 10
+      const timeScale = currentFrameRef.current > 10 ? 0.7 : 1.0;
+      shaderTimeRef.current = (shaderTimeRef.current + delta * timeScale) % 600;
+      const wrappedTime = shaderTimeRef.current;
 
       // ═══ Pass 1: Update displacement field ═══
       const mx = mouseRef.current.x;

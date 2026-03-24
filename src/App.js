@@ -53,6 +53,11 @@ const GRID_POSITIONS = {
 };
 const MAP_TRANSITION_DURATION = 1800; // ms for smooth curved map movement (longer for more distance)
 
+// Keep Render free-tier backend alive: ping on page load so server is warm by the time the user wants to act.
+if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+  fetch('https://gfl-api.onrender.com/api/status', { method: 'GET' }).catch(() => {});
+}
+
 // Mobile detection hook
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -332,7 +337,7 @@ const App = () => {
 
   // Deep-link: /algemene-voorwaarden etc. opens the Eyedentity page with correct tab
   useEffect(() => {
-    const POLICY_SLUGS = ['algemene-voorwaarden','privacybeleid','cookiebeleid','ai-transparantie','intellectueel-eigendom','gebruiksvoorwaarden-misbruik','profiel','gegevensbehoud-en-verwijdering','verwerkingsregister'];
+    const POLICY_SLUGS = ['algemene-voorwaarden','privacybeleid','cookiebeleid','ai-transparantie','intellectueel-eigendom','gebruiksvoorwaarden-misbruik','profiel','gegevensbehoud-en-verwijdering','verwerkingsregister','feedback'];
     const checkPath = () => {
       const slug = window.location.pathname.replace(/^\//, '');
       if (slug && POLICY_SLUGS.includes(slug)) {
@@ -1258,6 +1263,7 @@ const App = () => {
       {mountNebula && (
         <NebulaBackground
           mapPosition={mapPosition}
+          currentFrame={currentFrame}
           onReady={() => {
             if (nebulaReadyRef.current) {
               nebulaReadyRef.current();
@@ -1427,13 +1433,13 @@ const App = () => {
                 transform: 'scale(1.02) scaleY(1.045)',
               }}>
                 <div style={{
-                  position: 'absolute', inset: '0 1%',
+                  position: 'absolute', inset: '0 -1%',
                   background: 'linear-gradient(180deg, transparent 0%, rgba(21, 179, 21, 0.04) 45%, rgba(21, 179, 21, 0.08) 50%, rgba(21, 179, 21, 0.04) 55%, transparent 100%)',
                   animation: 'scrollPromptScanline 4s linear infinite',
                   pointerEvents: 'none',
                 }} />
                 <div style={{
-                  position: 'absolute', inset: '0 1%',
+                  position: 'absolute', inset: '0 -1%',
                   backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(21, 179, 21, 0.025) 3px, rgba(21, 179, 21, 0.025) 4px)',
                   pointerEvents: 'none',
                 }} />
@@ -1768,14 +1774,14 @@ const App = () => {
                   }}>
                     {/* Scanline sweep */}
                     <div style={{
-                      position: 'absolute', inset: '0 1%',
+                      position: 'absolute', inset: '0 -1%',
                       background: 'linear-gradient(180deg, transparent 0%, rgba(21, 179, 21, 0.04) 45%, rgba(21, 179, 21, 0.08) 50%, rgba(21, 179, 21, 0.04) 55%, transparent 100%)',
                       animation: 'scrollPromptScanline 4s linear infinite',
                       pointerEvents: 'none',
                     }} />
                     {/* Horizontal data lines */}
                     <div style={{
-                      position: 'absolute', inset: '0 1%',
+                      position: 'absolute', inset: '0 -1%',
                       backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(21, 179, 21, 0.025) 3px, rgba(21, 179, 21, 0.025) 4px)',
                       pointerEvents: 'none',
                     }} />

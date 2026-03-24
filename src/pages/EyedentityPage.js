@@ -3,6 +3,8 @@ import { ARCHETYPES, SHADOW_PAIRS, ARCHETYPE_TO_GROUP, getExtendedDescription } 
 import { getArchetypeImage } from '../data/assessment/archetypeImages';
 import { getCoreProfile } from '../data/assessment/oceanProfiles';
 import { POLICY_CONTENT } from '../data/policyContent';
+import { submitAssessmentReview } from '../utils/apiClient';
+import { SciFiButton } from '../components/assessment/dashboardStyles';
 
 /**
  * ProfileResultCard — loads the admin's own assessment from localStorage
@@ -483,6 +485,142 @@ const CornerStone = ({ variant = 'purple' }) => {
   };
 };
 
+// ─── Standalone feedback form — linked from confirmation email ───────────────
+const FeedbackStandaloneForm = () => {
+  const params = new URLSearchParams(window.location.search);
+  const [formData, setFormData] = useState({
+    email: params.get('email') || '', starRating: 0, whatWorked: '', whatDidntWork: '', suggestions: '',
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const assessmentId = params.get('id') || 'anonymous';
+
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    const { email, whatWorked, whatDidntWork, suggestions } = formData;
+    if (!email.trim()) { setError('Vul je e-mailadres in'); return; }
+    if (!formData.starRating) { setError('Selecteer een score (1-9)'); return; }
+    if (!whatWorked.trim() && !whatDidntWork.trim() && !suggestions.trim()) {
+      setError('Vul minimaal één tekstveld in'); return;
+    }
+    setIsSubmitting(true);
+    setError('');
+    try {
+      await submitAssessmentReview({
+        assessmentId,
+        email: email.trim(),
+        starRating: formData.starRating,
+        whatWorked: whatWorked.trim(),
+        whatDidntWork: whatDidntWork.trim(),
+        suggestions: suggestions.trim(),
+        archetypeKey: '',
+        timestamp: new Date().toISOString(),
+      });
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.message || 'Versturen mislukt, probeer opnieuw.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [formData, assessmentId]);
+
+  if (submitted) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>✅</div>
+        <p style={{ color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: '1rem', marginBottom: '0.5rem', margin: '0 0 0.5rem' }}>
+          Dank je wel voor je feedback!
+        </p>
+        <p style={{ color: 'rgba(209,213,219,0.6)', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', margin: 0 }}>
+          Jouw reactie is ontvangen en draagt bij aan de verbetering van dit systeem.
+        </p>
+      </div>
+    );
+  }
+
+  const baseField = {
+    width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.8)',
+    border: '1px solid rgba(168,85,247,0.2)', borderRadius: '0.5rem',
+    color: '#fff', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', boxSizing: 'border-box',
+  };
+
+  return (
+    <div>
+      <p style={{ color: 'rgba(209,213,219,0.7)', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', marginTop: 0, marginBottom: '1.5rem' }}>
+        Topper, hopelijk ben je wijzer geworden en wil je dit nu met ons delen — We horen graag wat je ervan vondt.
+      </p>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+        {/* Star Rating 1-9 */}
+        <div>
+          <label style={{ display: 'block', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Score *</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            {[...Array(9)].map((_, i) => (
+              <button key={i} type="button" onClick={() => setFormData({ ...formData, starRating: i + 1 })} style={{
+                background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem',
+                color: i < formData.starRating ? '#f59e0b' : 'rgba(245,158,11,0.2)',
+                padding: '0.15rem', transition: 'color 0.15s, transform 0.15s',
+                transform: i < formData.starRating ? 'scale(1.1)' : 'scale(1)',
+              }}>★</button>
+            ))}
+            {formData.starRating > 0 && (
+              <span style={{ marginLeft: '0.5rem', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold' }}>{formData.starRating}/9</span>
+            )}
+          </div>
+        </div>
+
+        {/* Email */}
+        <div>
+          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>E-mailadres *</label>
+          <input type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="jouw@email.nl" style={baseField} />
+        </div>
+
+        {/* Accuraatheid */}
+        <div>
+          <label style={{ display: 'block', color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+            Hoe accuraat is het resultaat volgens jouw kennis en gevoel?
+          </label>
+          <textarea value={formData.whatWorked} onChange={(e) => setFormData({ ...formData, whatWorked: e.target.value })}
+            placeholder="Beschrijf in hoeverre het resultaat klopt met wie jij bent..."
+            style={{ ...baseField, minHeight: '80px', border: '1px solid rgba(34,197,94,0.2)', resize: 'vertical' }} />
+        </div>
+
+        {/* Niet overeenkomend */}
+        <div>
+          <label style={{ display: 'block', color: '#ef4444', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+            Waar ben je zeker van dat niet overeenkomt met jouw persoonlijkheid?
+          </label>
+          <textarea value={formData.whatDidntWork} onChange={(e) => setFormData({ ...formData, whatDidntWork: e.target.value })}
+            placeholder="Bijv: ik ben helemaal niet competitief, want..."
+            style={{ ...baseField, minHeight: '80px', border: '1px solid rgba(239,68,68,0.2)', resize: 'vertical' }} />
+        </div>
+
+        {/* Suggesties */}
+        <div>
+          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+            Wat zou jij anders doen of toevoegen aan dit systeem?
+          </label>
+          <textarea value={formData.suggestions} onChange={(e) => setFormData({ ...formData, suggestions: e.target.value })}
+            placeholder="Bijv: meer context bij de vragen, andere formulering..."
+            style={{ ...baseField, minHeight: '80px', resize: 'vertical' }} />
+        </div>
+
+        {error && (
+          <div style={{ color: '#ef4444', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', padding: '0.75rem', background: 'rgba(239,68,68,0.1)', borderRadius: '0.5rem', border: '1px solid rgba(239,68,68,0.3)' }}>
+            {error}
+          </div>
+        )}
+
+        <SciFiButton type="submit" disabled={isSubmitting} variant="purple" size="md">
+          {isSubmitting ? 'VERSTUREN...' : 'VERSTUUR FEEDBACK'}
+        </SciFiButton>
+      </form>
+    </div>
+  );
+};
+
 const NAV_ITEMS = [
   { id: 'profile', slug: 'profiel', title: 'PERSOONLIJK PROFIEL', icon: '🧬', version: 'v1.0' },
   { id: 'terms', slug: 'algemene-voorwaarden', title: 'ALGEMENE VOORWAARDEN', icon: '📋', version: 'Beta 1.0' },
@@ -493,6 +631,7 @@ const NAV_ITEMS = [
   { id: 'usage', slug: 'gebruiksvoorwaarden-misbruik', title: 'GEBRUIKSVOORWAARDEN', icon: '⚖', version: 'v2.1' },
   { id: 'retention', slug: 'gegevensbehoud-en-verwijdering', title: 'GEGEVENSBEHOUD & VERWIJDERING', icon: '🗂', version: 'v1.0' },
   { id: 'register', slug: 'verwerkingsregister', title: 'VERWERKINGSREGISTER', icon: '📜', version: 'v2.0' },
+  { id: 'feedback', slug: 'feedback', title: 'FEEDBACK', icon: '⭐', version: 'Beta' },
 ];
 
 const SLUG_TO_ID = Object.fromEntries(NAV_ITEMS.map(item => [item.slug, item.id]));
@@ -620,33 +759,9 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
             </h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <button
-              onClick={onBack}
-              style={{
-                padding: '0.5rem 1.25rem',
-                backgroundColor: 'rgba(168,85,247,0.1)',
-                border: '1px solid rgba(168,85,247,0.4)',
-                color: accentColor,
-                borderRadius: '0.25rem',
-                cursor: 'pointer',
-                fontFamily: "'Lexend Mega', sans-serif",
-                fontSize: '10px',
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                fontWeight: 'bold',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = 'rgba(168,85,247,0.2)';
-                e.target.style.boxShadow = '0 0 20px rgba(168,85,247,0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'rgba(168,85,247,0.1)';
-                e.target.style.boxShadow = 'none';
-              }}
-            >
+            <SciFiButton onClick={onBack} variant="purple" size="md">
               ← TERUG
-            </button>
+            </SciFiButton>
           </div>
         </div>
 
@@ -812,6 +927,8 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
             }}>
               {selectedId === 'profile' ? (
                 <ProfileResultCard />
+              ) : selectedId === 'feedback' ? (
+                <FeedbackStandaloneForm />
               ) : (
                 POLICY_CONTENT[selectedId] || <p style={{ color: '#94a3b8' }}>Inhoud niet beschikbaar.</p>
               )}

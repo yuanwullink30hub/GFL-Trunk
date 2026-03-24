@@ -27,8 +27,16 @@ function esc(str) {
 }
 
 function buildFeedbackEmail(settings, review) {
-  const defaultText = 'Hoogachtende Meester,\n\nJouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en reik ik nog \u00E9\u00E9n laatste keer uit voor jouw hulp.\n\nNodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data hoe beter wij kunnen optimaliseren.\nZolang de beta-fase loopt is alleen het meester niveau toegankelijk.\n\nAnyway- pionier, hartelijk dank voor de tijd en attentie!\n\nMet vriendelijke groet,\n\n\nYuan Wullink';
-  const bodyText = esc(settings.text || defaultText);
+  // Always use hardcoded text — ignoring any admin-saved override so deploys stay authoritative
+  const bodyText =
+    'Hoogachtende meester,<br><br>' +
+    'Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet ' +
+    'bedwingen en reik ik nog één laatste keer uit voor jouw hulp.<br>' +
+    'Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data ' +
+    'hoe beter wij kunnen optimaliseren. ' +
+    'Zolang de beta-fase loopt is alleen het meester niveau toegankelijk.<br><br>' +
+    'Anyway- pionier, hartelijk dank voor de tijd en attentie!<br><br><br>' +
+    'Met vriendelijke groet, Yuan Wullink';
   const imageBlock = '';
   const attachments = [];
 
@@ -80,7 +88,7 @@ function buildFeedbackEmail(settings, review) {
     ${imageBlock}
     <tr>
       <td class="body-cell" style="padding:28px 30px;line-height:1.7;color:#333;font-size:15px;">
-        <p style="margin:0 0 16px;white-space:pre-wrap;">${bodyText}</p>
+        <p style="margin:0 0 16px;">${bodyText}</p>
         ${ratingBlock}
         ${fieldsBlock}
       </td>
@@ -138,6 +146,7 @@ function authOptional(req, res, next) {
 router.post('/', authRequired, async (req, res) => {
   try {
     const {
+      clientId,
       archetypeKey,
       supportGroup,
       extendedArchetypeName,
@@ -162,6 +171,7 @@ router.post('/', authRequired, async (req, res) => {
 
     const doc = {
       userId: req.user.userId,
+      clientId: clientId || null,
       archetypeKey,
       supportGroup: supportGroup || null,
       extendedArchetypeName: extendedArchetypeName || null,
@@ -267,12 +277,12 @@ router.post('/review', authOptional, async (req, res) => {
       timestamp,
     } = req.body;
 
-    console.log('[Assessment] Review data:', { assessmentId, whatWorked: whatWorked?.slice(0, 50), archetypeKey });
+    console.log('[Assessment] Review data:', { assessmentId, email: email?.slice(0, 30), archetypeKey });
 
-    // Validate at least one field is filled
-    if (!whatWorked?.trim() && !whatDidntWork?.trim() && !suggestions?.trim()) {
-      console.log('[Assessment] ❌ Review validation failed — no data provided');
-      return res.status(400).json({ error: 'At least one feedback field is required' });
+    // Validate: email is required
+    if (!email?.trim()) {
+      console.log('[Assessment] ❌ Review validation failed — no email provided');
+      return res.status(400).json({ error: 'Email is required' });
     }
 
     // Create review document

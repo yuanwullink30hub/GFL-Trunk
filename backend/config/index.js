@@ -33,16 +33,11 @@ module.exports = {
 
   // AI provider keys
   ai: {
-    defaultProvider: process.env.DEFAULT_AI_PROVIDER || 'gemini',
+    defaultProvider: process.env.DEFAULT_AI_PROVIDER || 'claude',
     openai: {
       apiKey: process.env.OPENAI_API_KEY || '',
       baseUrl: 'https://api.openai.com/v1',
       defaultModel: 'gpt-4o',
-    },
-    gemini: {
-      apiKey: process.env.GEMINI_API_KEY || '',
-      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: 'gemini-2.5-pro',
     },
     grok: {
       apiKey: process.env.GROK_API_KEY || '',

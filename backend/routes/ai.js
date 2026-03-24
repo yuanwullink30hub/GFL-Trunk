@@ -26,7 +26,7 @@ const router = Router();
 /**
  * Body:
  * {
- *   provider: "openai" | "gemini" | "grok",   // optional, defaults to openai
+ *   provider: "openai" | "claude" | "grok",   // optional, defaults to claude
  *   model: "gpt-4o",                           // optional, uses provider default
  *   archetypeKey: "JUDGE",                      // required
  *   supportArchetype: "RULER",                  // optional
@@ -329,7 +329,7 @@ router.post('/analyze', async (req, res) => {
     console.log('[AI] ═══════════════════════════════════════════════════════════');
 
     // Only include system message if there is actual content — an empty
-    // systemInstruction causes Gemini to return "Error in input stream".
+    // Note: avoid inline images with text-only providers.
     const messages = [];
     if (system) messages.push({ role: 'system', content: system });
     messages.push({ role: 'user', content: user });
@@ -419,7 +419,7 @@ router.post('/send-results', async (req, res) => {
     const pdfHtml = buildResultsPDFHTML(result);
 
     // Build the email body
-    const emailBody = buildResultsEmailBody(result);
+    const emailBody = buildResultsEmailBody(result, recipientEmail.trim());
 
     // Create transporter
     const transporter = nodemailer.createTransport({
@@ -636,10 +636,13 @@ function buildResultsPDFHTML(result) {
 /**
  * Build the email body HTML using the Garden For Life template.
  */
-function buildResultsEmailBody(result) {
+function buildResultsEmailBody(result, recipientEmail) {
   const archetype = esc(result.overallArchetype || 'Unknown');
   const harmony = result.harmonyScore || 0;
   const level = esc(result.consciousnessLevel || '');
+  const feedbackUrl = recipientEmail
+    ? `https://gardenforlife.nl/feedback?email=${encodeURIComponent(recipientEmail)}`
+    : 'https://gardenforlife.nl/feedback';
 
   return `<!DOCTYPE html>
 <html lang="nl">
@@ -706,6 +709,16 @@ function buildResultsEmailBody(result) {
         </table>
 
         <p style="margin:0 0 16px;">Je volledige rapport met gedetailleerde laaganalyse en AI-persoonlijkheidsanalyse is bijgevoegd als HTML-bestand. Open dit bestand in je browser en gebruik <strong>Ctrl+P</strong> (of Cmd+P op Mac) om het als PDF op te slaan.</p>
+
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:24px 0;">
+          <tr>
+            <td style="background:#f8f0ff;border-radius:8px;border:1px solid #e0c0ff;padding:20px 24px;text-align:center;">
+              <p style="margin:0 0 12px;font-size:15px;color:#444;font-style:italic;">Na het lezen van je rapport — kun je ons vertellen wat je er van vond?</p>
+              <a href="${feedbackUrl}" style="display:inline-block;padding:12px 28px;background:#a855f7;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:700;font-size:14px;letter-spacing:0.5px;font-family:'Segoe UI',Tahoma,sans-serif;">&#9997;&#65039; Geef Feedback</a>
+            </td>
+          </tr>
+        </table>
+
         <p style="margin:0 0 8px;">Met warme groet,</p>
         <p style="margin:0;font-weight:600;">Het Garden For Life Team</p>
       </td>

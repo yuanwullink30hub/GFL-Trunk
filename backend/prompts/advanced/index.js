@@ -312,7 +312,8 @@ function buildSystemPrompt({
     `B. Individuatie boven Conflict\n` +
     `Wanneer Main en Support 180° tegenpolen zijn, presenteer dit als Meesterschap over de Paradox. Gebruik de Polarization Index (Main score MINUS Shadow score) als spectrum-indicator. Leg probabilistisch uit dat de kandidaat leert schakelen tussen fundamenteel verschillende gedragspatronen.\n\n` +
     `C. Shadow & Blindspot Integratie\n` +
-    `Shadow: Presenteer als 'Innerlijke Brandstof' — een nog onbenut groeipotentieel. De Purple drip accumuleert passief op het 180° schaduw-archetype bij elke eerste Nature keuze. Gebruik de Polarization Index als spectrum: gap >60% = onderdrukking, gap <30% = actieve integratie. 'Jouw antwoordprofiel suggereert dat de [schaduw-archetype]-modus minder actief is — dit kan een richting voor verdere ontwikkeling zijn.'\n\n` +
+    `Shadow: Presenteer als 'Innerlijke Brandstof' — een nog onbenut groeipotentieel. De Purple drip accumuleert passief op het 180° schaduw-archetype bij elke eerste Nature keuze. Gebruik de Polarization Index als spectrum: gap >60% = onderdrukking, gap <30% = actieve integratie. 'Jouw antwoordprofiel suggereert dat de [schaduw-archetype]-modus minder actief is — dit kan een richting voor verdere ontwikkeling zijn.'\\n` +
+    `BELANGRIJK: In de secties De Schaduw en De Blindspot: noem het archetype NOOIT bij naam in de lopende tekst. De archetypenaam staat al in de sectietitel. Verwijs uitsluitend als 'deze schaduw-modus', 'deze blinde vlek', 'de tegenpool', 'dit archetype'. Dit geldt voor ALLE paragrafen in deze secties.\\n\\n` +
     `Hardware Signaal: Wanneer beide leden van een biologische groep verhoogd zijn op de chart, leest de AI dit als actieve hardware-resonantie (Green/Blue bleed). Beschrijf als: 'Jouw scoreprofiel toont sterke activatie van het volledige [groep]-circuit.' Dit is een spectrum, geen schakelaar.\n\n` +
     `Blindspot: Definieer als externe trigger of blinde vlek in interacties. Lees van de radar chart als dalen tussen archetypen die geen Green, Purple of Yellow connectie delen. 'Het is aannemelijk dat gedrag dat lijkt op [archetype] bij anderen een sterke reactie oproept — dit kan een signaal zijn voor een onbewust spanningspunt.'\n\n` +
     `7. De 72 Extended Archetypes (Meester Matrix)\n` +
@@ -355,9 +356,11 @@ function buildSystemPrompt({
     `Archetype: [180° tegenpool van Main]. Beschrijf als potentieel groeipunt. Gebruik de Polarization Index (Main score MINUS Shadow score) als spectrum:\n` +
     `• Gap > 60% van Main: schaduw wordt onderdrukt. Focus op de blinde vlek.\n` +
     `• Gap 30–60%: gezonde spanning. Beschrijf het groeipad.\n` +
-    `• Gap < 30%: actieve integratie. 'Jouw antwoordprofiel suggereert dat je al actief werkt met de energie van [schaduw-archetype] — dit is een zeldzame en krachtige combinatie binnen dit model.'\n\n` +
+    `• Gap < 30%: actieve integratie. 'Jouw antwoordprofiel suggereert dat je al actief werkt met de energie van [schaduw-archetype] — dit is een zeldzame en krachtige combinatie binnen dit model.'\n` +
+    `BELANGRIJK: Noem het schaduw-archetype NIET bij naam in de lopende tekst van deze sectie. De sectietitel bevat al de archetypenaam. Gebruik in de tekst uitsluitend verwijzingen als 'deze schaduw-modus', 'dit archetype', 'deze energie', 'de tegenpool'. Geen enkele keer de naam van het archetype herhalen in de paragrafen.\n\n` +
     `6. De Blindspot (De Saboteur):\n` +
-    `Archetype: [180° tegenpool van Support]. Lees frictie van de radar chart — dalen tussen onverbonden archetypen. Formuleer als: 'Het is aannemelijk dat [gedragspatroon van blindspot-archetype] bij anderen een sterke reactie oproept — gebruik dit als reflectiesignaal, niet als oordeel.'\n\n` +
+    `Archetype: [180° tegenpool van Support]. Lees frictie van de radar chart — dalen tussen onverbonden archetypen. Formuleer als: 'Het is aannemelijk dat [gedragspatroon van blindspot-archetype] bij anderen een sterke reactie oproept — gebruik dit als reflectiesignaal, niet als oordeel.'\n` +
+    `BELANGRIJK: Noem het blindspot-archetype NIET bij naam in de lopende tekst van deze sectie. De sectietitel bevat al de archetypenaam. Gebruik in de tekst uitsluitend verwijzingen als 'deze blinde vlek', 'dit archetype', 'deze energie', 'de tegenpool'. Geen enkele keer de naam van het archetype herhalen in de paragrafen.\n\n` +
     `7. Visuele Analyse — Webdiagram en Dual Core Dynamics:\n` +
     `Webdiagram: 12-punts Radar Chart met twee lagen. Eerste keuze (paars) vormt de binnen-core. Tweede keuze (oranje) is de tweede schil die erop gestapeld wordt. Beide lagen samen tonen het volledige archetype-profiel inclusief alle Bleed signalen.\n\n` +
     `8. De Alchemie van Individuatie (Systeem Kernanalyse):\n` +
@@ -805,6 +808,7 @@ function buildSystemPrompt({
   // Shadow & Blindspot
   parts.push(`Shadow (180° van Main): ${shadowArchetype} (Positie ${shadowPos})`);
   parts.push(`Blindspot (180° van Support): ${blindspotArchetype} (Positie ${blindspotPos})`);
+  parts.push(`REGEL: De archetypenamen (${shadowArchetype}, ${blindspotArchetype}) staan al in de sectietitels van De Schaduw en De Blindspot. Noem deze namen NIET in de lopende tekst van die secties. Verwijs uitsluitend als 'deze schaduw-modus', 'deze blinde vlek', 'de tegenpool' etc.`);
   if (isIndividuated) {
     parts.push(`⚡ INDIVIDUATIE: Main (${archetypeKey}) en Support (${supportArchetype}) zijn 180° tegenpolen — Meesterschap over de Paradox!`);
   }
@@ -971,26 +975,29 @@ function buildSystemPrompt({
     parts.push(summary);
   }
 
-  // ═══ OUTPUT FORMAT — 12 SECTIES ═══
+  // ═══ OUTPUT FORMAT — 11 SECTIES + 12A + 12B ═══
   parts.push(`\n═══════════════════════════════════════`);
-  parts.push(`VEREIST OUTPUT FORMAAT (11 SECTIES)`);
+  parts.push(`VEREIST OUTPUT FORMAAT (11 SECTIES + 12A + 12B)`);
   parts.push(`═══════════════════════════════════════\n`);
 
   parts.push(`Genereer het rapport in EXACT deze structuur:\n`);
 
   parts.push(
     `## 1. De Identiteit\n` +
+    `⚠️ WOORDLIMIET: Maximaal 75 woorden.\n` +
     `[Extended Archetype Naam: ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}]\n` +
     `Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit op het Meester niveau.\n`
   );
 
   parts.push(
     `## 2. Waarom jij het ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'} perspectief gebruikt\n` +
+    `⚠️ WOORDLIMIET: Maximaal 135 woorden.\n` +
     `Leg uit hoe de twee hoogste scores in deze gebruiker samenwerken. Focus op de unieke kracht wanneer deze twee neurale netwerken elkaar ontmoeten.\n`
   );
 
   parts.push(
     `## 3. De Essentie (Main Archetype: ${archetypeKey})\n` +
+    `⚠️ WOORDLIMIET: Maximaal 160 woorden.\n` +
     `- Archetype: ${archetypeKey} | Groep: ${mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]}\n` +
     `- TNM-Associatie (modelterm): ${GROUP_NEURAL_FOCUS[mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]] || '?'}\n` +
     `- Drijfveer: Kijk naar de data \u2014 is dit Nature (ongedwongen modus) of Culture/Force (aangeleerde strategie)? Benoem dit expliciet met 'binnen dit model' als anker.\n` +
@@ -999,6 +1006,7 @@ function buildSystemPrompt({
 
   parts.push(
     `## 4. De Vermenigvuldiging (Support Archetype: ${supportArchetype})\n` +
+    `⚠️ WOORDLIMIET: Maximaal 160 woorden.\n` +
     `- Archetype: ${supportArchetype} | Groep: ${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]}\n` +
     `- TNM-Associatie (modelterm): ${GROUP_NEURAL_FOCUS[supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]] || '?'}\n` +
     `- Rol: Hoe dit archetype de Main aanvult of uitdaagt — in gedragsmatige termen.\n` +
@@ -1012,8 +1020,9 @@ function buildSystemPrompt({
 
 
   parts.push(
-    `## 5. De Schaduw (Innerlijke Brandstof)\n` +
-    `Shadow Archetype: ${shadowArchetype} (Positie ${shadowPos})\n` +
+    `## 5. De Schaduw — ${shadowArchetype} (Positie ${shadowPos})\n` +
+    `⚠️ WOORDLIMIET: Maximaal 175 woorden.\n` +
+    `Begin de inhoud NIET met de naam van het schaduw-archetype — dit staat al in de sectietitel.\n` +
     `Gebruik de Polarization Index (Main score MINUS Shadow score) als spectrum:\n` +
     `- Gap > 60% van Main: schaduw wordt onderdrukt. Focus op de blinde vlek.\n` +
     `- Gap 30\u201360%: gezonde spanning. Beschrijf het groeipad.\n` +
@@ -1025,14 +1034,16 @@ function buildSystemPrompt({
   );
 
   parts.push(
-    `## 6. De Blindspot (De Saboteur)\n` +
-    `Blindspot Archetype: ${blindspotArchetype} (Positie ${blindspotPos})\n` +
+    `## 6. De Blindspot — ${blindspotArchetype} (Positie ${blindspotPos})\n` +
+    `⚠️ WOORDLIMIET: Maximaal 150 woorden.\n` +
+    `Begin de inhoud NIET met de naam van het blindspot-archetype — dit staat al in de sectietitel.\n` +
     `Lees frictie van de radar chart \u2014 dalen tussen onverbonden archetypen.\n` +
     `Formuleer als: 'Het is aannemelijk dat gedrag dat lijkt op ${blindspotArchetype} bij anderen een sterke reactie oproept \u2014 gebruik dit als reflectiesignaal, niet als oordeel.'\n`
   );
 
   parts.push(
     `## 7. Visuele Analyse — Webdiagram en Dual Core Dynamics\n` +
+    `⚠️ WOORDLIMIET: Maximaal 150 woorden (webdiagram beschrijving max 125 woorden).\n` +
     `Webdiagram: 12-punts Radar Chart met twee lagen.\n` +
     `Eerste keuze (paars) vormt de binnen-core. Tweede keuze (oranje) is de tweede schil die erop gestapeld wordt.\n` +
     `Beide lagen samen tonen het volledige archetype-profiel inclusief alle Bleed signalen.\n` +
@@ -1044,6 +1055,7 @@ function buildSystemPrompt({
 
   parts.push(
     `## 8. De Alchemie van Individuatie (Systeem Kernanalyse)\n` +
+    `⚠️ WOORDLIMIET: Maximaal 230 woorden.\n` +
     `- De Switch: Hoe effectief schakelt de gebruiker tussen gedragspatronen \u2014 formuleer als observatie, niet als diagnose.\n` +
     `- Nature vs. Culture Balans: Nature picks (${authenticityIndex || '?'}% van ${72} totale picks). Authenticity Index = ${authenticityIndex || '?'}%. Formuleer als indicatieve modelwaarde.\n` +
     `- Hardware Resonantie: Als beide groepsleden verhoogd zijn, beschrijf de sterkte van het biologische circuit. Kijk naar green_hw van beide leden.\n` +
@@ -1055,6 +1067,7 @@ function buildSystemPrompt({
 
   parts.push(
     `## 9. Het Neurale Schakelbord (Tactische Implementatie)\n` +
+    `⚠️ WOORDLIMIET: Maximaal 230 woorden.\n` +
     `Geef 3 concrete gedragsexperimenten:\n` +
     `1. De Focus-hendel: Wanneer bewust schakelen tussen gedragspatronen helpend kan zijn \u2014 als experiment, niet als neurologische interventie.\n` +
     `2. De Schaduw-injectie: Een specifieke oefening om de schaduw-energie van ${shadowArchetype} te verkennen \u2014 als uitnodiging, niet als opdracht.\n` +
@@ -1063,6 +1076,7 @@ function buildSystemPrompt({
 
   parts.push(
     `## 10. Ontologische Evolutie (Toekomstige Integratie)\n` +
+    `⚠️ WOORDLIMIET: Minimaal 100 en maximaal 180 woorden.\n` +
     `- Richting het Centrum: Hoe extreme uitslagen bewust naar meer balans kunnen bewegen \u2014 als groeiperspectief.\n` +
     `- Ontologische Vraag: \u00c9\u00e9n diepe reflectievraag die de kern van de huidige paradox raakt.\n` +
     `- AI Agent Prompt: Zie Sectie 11.\n`
@@ -1070,72 +1084,63 @@ function buildSystemPrompt({
 
   parts.push(
     `## 11. Genereer een Volledige AI Prompt\n` +
-    `Genereer een kant-en-klare systeemprompt (400-450 woorden) voor gebruik in externe AI-tools. De prompt bevat de verplichte disclaimer als eerste sectie, gevolgd door de gepersonaliseerde instructies op basis van het archetype-profiel.\n` +
-    `INSTRUCTIE: Begin de gegenereerde prompt altijd met: 'Dit is een persoonlijk zelfreflectie-instrument gebaseerd op het GardenForLife assessment. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur die ik wil verkennen. Gebruik van deze prompt in externe AI-tools valt buiten de verantwoordelijkheid van GardenForLife.'\n`
+    `LET OP: BELANGRIJK> gebruik tussen de 400 en 420 woorden voor SECTIE 11. Niet minder dan 400 woorden. Tel je woorden. Als je onder de 400 zit, breid dan uit.\n` +
+    `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools. De prompt bevat de verplichte disclaimer als eerste sectie, gevolgd door de gepersonaliseerde instructies op basis van het archetype-profiel.\n` +
+    `INSTRUCTIE: Begin de gegenereerde prompt altijd met: 'Dit is een persoonlijk zelfreflectie-instrument gebaseerd op het GardenForLife assessment. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur die ik wil verkennen. Gebruik van deze prompt in externe AI-tools valt buiten de verantwoordelijkheid van GardenForLife.'\n` +
+    `LET OP: BELANGRIJK> gebruik tussen de 400 en 420 woorden voor SECTIE 11. Niet minder dan 400 woorden.\n`
+  );
+
+  // ── 12A: Professionele Resonantie ──
+  parts.push(
+    `## 12A. Professionele Resonantie\n` +
+    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 12A!\n` +
+    `Lees het webdiagram als landschap. Identificeer: (1) De pieken — waar Natuur Kern en Hardware het hoogst zijn. Gebruik de OCEAN-profielen en biochemische data van de betreffende archetypen (uit de bijgeleverde datasets) om te bepalen welk type werk het minste adaptatie-energie kost. (2) De spreiding — waar Cultuur Kern en Cognitief breder uitwaaieren dan Nature. Gebruik de Gele Driehoek-data om te bepalen welke interdisciplinaire domeinen dit cognitieve netwerk bedient. (3) De Main × Support overlap — het domein zit in het snijvlak van de twee hoogste Core scores (${archetypeKey} × ${supportArchetype}). De Extended Archetype beschrijving is de beste indicator voor het type werk waar beide energieën samenkomen.\n` +
+    `Genereer een korte analyse die de gebruiker informeert over professionele domeinen die resoneren met dit profiel. Noem zowel traditionele domeinen als domeinen die ontstaan in de huidige transitieperiode. De AI vermijdt tunnelvisie op technologie — de transitie creëert evenveel vraag naar menselijke verbinding, zorgkwaliteit, ethische begeleiding, gemeenschapsopbouw en ambachtelijke vakkennis als naar technische innovatie. Waar de hardware naar technische domeinen wijst, benoem die. Waar de hardware naar mensgerichte domeinen wijst, benoem die met dezelfde ernst. Veel van de meest relevante posities in de komende jaren zitten op het snijvlak van technologie en menselijk contact — benoem die overlap expliciet wanneer het profiel daar naartoe wijst.\n` +
+    `Toon: informatief, nooit prescriptief. 'Jouw scoreprofiel resoneert binnen dit model met domeinen waar [match].' Nooit: 'Je zou goed zijn in...' of 'Dit is de juiste richting voor jou.'\n` +
+    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 12A!\n`
+  );
+
+  // ── 12B: Creatieve Resonantie ──
+  parts.push(
+    `## 12B. Creatieve Resonantie — De Onverwachte Richting\n` +
+    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 12B!\n` +
+    `Lees het webdiagram nu omgekeerd. Identificeer: (1) De dalen — waar de radar chart het laagst scoort. Bepaal het Schaduw-archetype (${shadowArchetype}, 180° tegenpool van Main) en het Blindspot-archetype (${blindspotArchetype}, 180° tegenpool van Support). (2) De afwezige verbindingen — waar geen Green, Blue, Yellow of Purple bleed naartoe stroomt. Dit zijn domeinen buiten het gezichtsveld van de gebruiker.\n` +
+    `Genereer NIET het pure schaduwdomein. Genereer de creatieve overlap: het snijvlak van Main-domein en Schaduw-domein. Een Judge die zijn Trickster-schaduw verkent wordt geen entertainer — hij wordt iemand die complexe ethiek kan communiceren. Een Artist die haar Caregiver-blindspot betrekt wordt geen verpleegkundige — zij wordt iemand die genezende omgevingen ontwerpt.\n` +
+    `Gebruik de Polarization Index als intensiteitsmeter: gap groter dan 60% = 'de domeinen die je instinctief vermijdt — het meeste onbenutte potentieel.' Gap 30–60% = 'je hebt al contact maar opereert er nog niet vanuit.' Gap kleiner dan 30% = 'je verkent dit al — de overlap is een stap, geen sprong.'\n` +
+    `De creatieve suggesties zijn niet beperkt tot technologie. Ze omvatten alle domeinen waar Main × Schaduw productief is — van ambacht tot activisme, van zorg tot strategie, van onderwijs tot ondernemerschap. De AI denkt breed en zoekt de overlap die het meest specifiek is voor dit exacte profiel.\n` +
+    `Toon: uitnodigend, nooit tekort-framend. 'De domeinen die het verst van je profiel liggen, bevatten binnen dit model het meeste onbenutte potentieel.' Nooit: 'Je mist dit' of 'Je zou dit moeten doen.'\n` +
+    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 12B!\n\n` +
+    `Verplichte afsluiting: 'Deze domeinanalyse is gebaseerd op de resonantie tussen jouw Deltawerken-scoreprofiel en professionele domeinen. Het is geen loopbaanadvies en vervangt geen professionele oriëntatie of coaching. De suggesties zijn bedoeld als reflectie-instrument — een uitnodiging om breder te kijken, niet een opdracht om van koers te veranderen.'\n`
   );
 
   // ── CONDITIONAL: Persoonlijkheidsrapport Vergelijking (only when files uploaded) ──
-  // Now placed AFTER section 11 per updated meta instruction
+  // Placed AFTER 12A + 12B per updated meta instruction
   if (uploadedFileContents && uploadedFileContents.length > 0) {
     const fileNames = uploadedFileContents.map(f => f.name).join(', ');
     parts.push(
       `## Persoonlijkheidsrapport Vergelijking\n` +
       `⚠️ VERPLICHTE OPENINGSZIN — begin deze sectie letterlijk met de volgende zin, vetgedrukt, zonder aanpassingen:\n` +
       `"In deze specifieke sectie gebruiken we ons model als leidende standaard en relativeren we de door jouw gestuurde score. Het extern persoonlijkheidsrapport (${fileNames}) is contextuele input — geen validatie of weerlegging van onze uitkomsten. GardenForLife aanvaardt geen verantwoordelijkheid voor externe rapportinhoud."\n\n` +
-      `STRIKTE LENGTE-BEPERKING: Schrijf MAXIMAAL 600 woorden voor de gehele sectie (max 150 woorden per alinea).\n\n` +
       `⚠️ VERPLICHT SCOREOVERZICHT — Direct na de openingszin MOET je de 5 OCEAN-dimensiescores uit het geüploade rapport vermelden in EXACT dit format, één per regel:\n` +
       `Openheid (Niveau - XX)\n` +
       `Ordelijkheid (Niveau - XX)\n` +
       `Extraversie (Niveau - XX)\n` +
       `Meegaandheid (Niveau - XX)\n` +
       `Neuroticisme (Niveau - XX)\n` +
-      `Waarbij "Niveau" = Laag/Gemiddeld/Hoog/Zeer Hoog en XX = de numerieke score (0-100).\n` +
-      `GEBRUIK UITSLUITEND DEZE 5 NAMEN: Openheid, Ordelijkheid, Extraversie, Meegaandheid, Neuroticisme.\n` +
-      `GEBRUIK GEEN synoniemen, facetnamen, Engelse termen of alternatieve benamingen (geen Consciëntieusheid, Compassie, Beleefdheid, Agreeableness, etc.).\n` +
-      `Als het externe rapport andere namen gebruikt (bijv. Big Five, HEXACO, NEO-PI-R), vertaal de scores naar deze 5 dimensies.\n\n` +
-      `VERPLICHTE STRUCTUUR — gebruik exact deze 3 subsecties en 4 alinea's.\n` +
-      `⚠️ GEBRUIK GEEN markdown headers (##, ###) binnen deze sectie — gebruik UITSLUITEND vetgedrukte tekst voor de subsectietitels.\n\n` +
-      `**Vergelijkingsrapport**\n` +
-      `Alinea 1 — Grootste overeenkomsten: noem de 2-3 sterkste raakpunten tussen de archetype testscore en de geleverde PDF/OCEAN-score. Verwijs naar de dimensies met de namen: Openheid, Ordelijkheid, Extraversie, Meegaandheid, Neuroticisme. Verklaar vanuit het Triple Network Model. Anker: 'binnen dit model'. (max 150 woorden)\n` +
-      `Alinea 2 — Grootste verschillen: benoem de 2-3 opvallendste afwijkingen en wat de methodologische kloof (externe methode vs. GFL archetype score) verklaart. Koppel aan cultuur vs. natuur dynamiek. (max 150 woorden)\n\n` +
+      `GEBRUIK UITSLUITEND DEZE 5 NAMEN: Openheid, Ordelijkheid, Extraversie, Meegaandheid, Neuroticisme.\n\n` +
+      `VERPLICHTE STRUCTUUR — gebruik UITSLUITEND vetgedrukte tekst (bold) voor subsectietitels, GEEN markdown headers (## of ###).\n` +
+      `De sectie bevat EXACT 4 subsecties, elk met hun eigen vetgedrukte titel gevolgd door precies één alinea (max 175 woorden per alinea).\n\n` +
+      `**Overeenkomsten**\n` +
+      `Alinea 1 — Natuur cultuur overeenkomsten (max 175 woorden)\n\n` +
+      `**Verschillen**\n` +
+      `Alinea 2 — Natuur cultuur verschillen (max 175 woorden)\n\n` +
       `**Spanningsvelden**\n` +
-      `Alinea 3 — Deltawerken / Cells Within Cells: hoe verhoudt het externe rapport zich tot onze 3 afbeeldingsmodellen (TNM Wiel, Dual-Core Dynamics, 72-Archetype Matrix)? Welk model verklaart de grootste overlap, welk model de grootste afwijking? (max 150 woorden)\n\n` +
+      `Alinea 3 — Deltawerken / Cells Within Cells relatie tot de 3 modellen (max 175 woorden)\n\n` +
       `**Conclusie**\n` +
-      `Alinea 4 — Reflectie: één concrete reflectievraag voor de gebruiker over wat de discrepantie tussen beide modellen onthult over hun natuur/cultuur-balans. Schrijf deze als afsluitende conclusie. (max 150 woorden)\n\n` +
-      `TAALREGELS: 'het scoreprofiel suggereert', 'binnen dit model', 'als indicatieve modelwaarde'. Geen absolute uitspraken, geen klinische termen. Verwijs ALTIJD naar dimensies met: Openheid, Ordelijkheid, Extraversie, Meegaandheid, Neuroticisme. Stop bij 600 woorden.\n`
+      `Alinea 4 — Reflectievraag (max 175 woorden)\n\n` +
+      `TAALREGELS: 'het scoreprofiel suggereert', 'binnen dit model', 'als indicatieve modelwaarde'. Geen absolute uitspraken, geen klinische termen.\n`
     );
   }
-
-  // ── 12A: Professionele Resonantie ──
-  parts.push(
-    `## 12A. Professionele Resonantie\n` +
-    `Lees het webdiagram als landschap. Identificeer:\n` +
-    `(1) De pieken — waar Natuur Kern en Hardware het hoogst zijn. Gebruik de OCEAN-profielen en biochemische data van de betreffende archetypen om te bepalen welk type werk het minste adaptatie-energie kost.\n` +
-    `(2) De spreiding — waar Cultuur Kern en Cognitief breder uitwaaieren dan Nature. Gebruik de Gele Driehoek-data om te bepalen welke interdisciplinaire domeinen dit cognitieve netwerk bedient.\n` +
-    `(3) De Main × Support overlap — het domein zit in het snijvlak van de twee hoogste Core scores (${archetypeKey} × ${supportArchetype}). De Extended Archetype beschrijving is de beste indicator voor het type werk waar beide energieën samenkomen.\n` +
-    `Genereer een korte analyse (max 200 woorden) die de gebruiker informeert over professionele domeinen die resoneren met dit profiel.\n` +
-    `Noem zowel traditionele domeinen als domeinen die ontstaan in de huidige transitieperiode.\n` +
-    `De AI vermijdt tunnelvisie op technologie — de transitie creëert evenveel vraag naar menselijke verbinding, zorgkwaliteit, ethische begeleiding, gemeenschapsopbouw en ambachtelijke vakkennis als naar technische innovatie.\n` +
-    `Waar de hardware naar technische domeinen wijst, benoem die. Waar de hardware naar mensgerichte domeinen wijst, benoem die met dezelfde ernst.\n` +
-    `Toon: informatief, nooit prescriptief. 'Jouw scoreprofiel resoneert binnen dit model met domeinen waar [match].' Nooit: 'Je zou goed zijn in...' of 'Dit is de juiste richting voor jou.'\n`
-  );
-
-  // ── 12B: Creatieve Resonantie ──
-  parts.push(
-    `## 12B. Creatieve Resonantie — De Onverwachte Richting\n` +
-    `Lees het webdiagram nu omgekeerd. Identificeer:\n` +
-    `(1) De dalen — waar de radar chart het laagst scoort. Bepaal het Schaduw-archetype (${shadowArchetype}, 180° tegenpool van Main) en het Blindspot-archetype (${blindspotArchetype}, 180° tegenpool van Support).\n` +
-    `(2) De afwezige verbindingen — waar geen Green, Blue, Yellow of Purple bleed naartoe stroomt. Dit zijn domeinen buiten het gezichtsveld van de gebruiker.\n` +
-    `Genereer NIET het pure schaduwdomein. Genereer de creatieve overlap: het snijvlak van Main-domein en Schaduw-domein.\n` +
-    `Gebruik de Polarization Index als intensiteitsmeter:\n` +
-    `- Gap > 60%: 'de domeinen die je instinctief vermijdt — het meeste onbenutte potentieel.'\n` +
-    `- Gap 30–60%: 'je hebt al contact maar opereert er nog niet vanuit.'\n` +
-    `- Gap < 30%: 'je verkent dit al — de overlap is een stap, geen sprong.'\n` +
-    `De creatieve suggesties zijn niet beperkt tot technologie. Ze omvatten alle domeinen waar Main × Schaduw productief is.\n` +
-    `Toon: uitnodigend, nooit tekort-framend. 'De domeinen die het verst van je profiel liggen, bevatten binnen dit model het meeste onbenutte potentieel.' Nooit: 'Je mist dit' of 'Je zou dit moeten doen.'\n\n` +
-    `VERPLICHTE AFSLUITING NA 12A + 12B:\n` +
-    `'Deze domeinanalyse is gebaseerd op de resonantie tussen jouw Deltawerken-scoreprofiel en professionele domeinen. Het is geen loopbaanadvies en vervangt geen professionele oriëntatie of coaching. De suggesties zijn bedoeld als reflectie-instrument — een uitnodiging om breder te kijken, niet een opdracht om van koers te veranderen.'\n`
-  );
 
   return parts.join('\n');
 }
@@ -1173,7 +1178,7 @@ function buildUserMessage({
 
   parts.push(
     `Genereer een volledig Meester Ontologisch Rapport ` +
-    `(secties 1-12 + 13A + 13B${hasReport ? ' + Persoonlijkheidsrapport Vergelijking' : ''}) ` +
+    `(secties 1-11 + 12A + 12B${hasReport ? ' + Persoonlijkheidsrapport Vergelijking' : ''}) ` +
     `voor deze gebruiker.\n` +
     `BELANGRIJK: Begin je output DIRECT met "## 1. De Identiteit". ` +
     `Schrijf GEEN overkoepelende titel zoals "Meester Ontologisch Rapport" of een inleiding vóór sectie 1. ` +
@@ -1401,9 +1406,9 @@ function buildUserMessage({
   // ═══ UPLOADED RAPPORT ═══
   if (hasReport) {
     const fileNames = uploadedFileContents.map(f => f.name).join(', ');
-    parts.push(`\n⚠️ EXTERN RAPPORT GEÜPLOAD: ${fileNames}\nGenereer NA sectie 11 de sectie '## Persoonlijkheidsrapport Vergelijking' exact zoals gespecificeerd in de systeeminstructies. Genereer daarna sectie 12A en 12B. Dit is verplicht — sla geen secties over.`);
+    parts.push(`\n⚠️ EXTERN RAPPORT GEÜPLOAD: ${fileNames}\nGenereer alle secties 1-11 + 12A + 12B. Genereer NA sectie 12B de sectie '## Persoonlijkheidsrapport Vergelijking' exact zoals gespecificeerd in de systeeminstructies. Dit is verplicht — sla geen secties over.`);
   } else {
-    parts.push(`\nVolg het exacte sectie-format (1-11 + 12A + 12B) uit je systeeminstructies.`);
+    parts.push(`\nVolg het exacte sectie-format (1-11 + 12A + 12B) uit je systeeminstructies. Respecteer de woordlimieten per sectie exact zoals aangegeven.`);
   }
 
   return parts.join('\n');

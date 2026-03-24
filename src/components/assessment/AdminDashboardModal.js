@@ -728,7 +728,7 @@ const OverviewTab = memo(({ user }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {[
             { label: 'Backend API', key: 'backend', desc: 'REST / MongoDB' },
-            { label: 'AI Provider', key: 'ai', desc: 'Gemini / Analyse' },
+            { label: 'AI Provider', key: 'ai', desc: 'Claude / Analyse' },
             { label: 'PDF Service', key: 'pdf', desc: 'Rapportgeneratie' },
             { label: 'Encryptie', key: 'encryption', desc: 'AES-256-GCM / PII' },
           ].map(({ label, key, desc }) => (
@@ -761,7 +761,7 @@ const OverviewTab = memo(({ user }) => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
             {[
               { label: 'Backend API', key: 'backend', desc: 'REST / MongoDB' },
-              { label: 'AI Provider', key: 'ai', desc: 'Gemini / Analyse' },
+              { label: 'AI Provider', key: 'ai', desc: 'Claude / Analyse' },
               { label: 'PDF Service', key: 'pdf', desc: 'Rapportgeneratie' },
               { label: 'Encryptie', key: 'encryption', desc: 'AES-256-GCM / PII' },
             ].map(({ label, key, desc }) => (

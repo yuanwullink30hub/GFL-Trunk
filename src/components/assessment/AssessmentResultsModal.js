@@ -62,7 +62,7 @@ const cleanTitle = (title) => {
 // ── Utility: map cleaned section title to accent color for JSX card (returns {color, rgb} or null) ──
 const getSectionAccent = (title) => {
   const t = cleanTitle(title || '').toLowerCase();
-  if (t.includes('identiteit') || t.includes('waarom')) return { color: '#00b46e', rgb: '0, 180, 110' };
+  if (t.includes('identiteit') || t.includes('waarom')) return { color: '#1d9904', rgb: '29, 153, 4' };
   if (t.includes('essentie') || t.includes('schaduw')) return { color: '#a855f7', rgb: '168, 85, 247' };
   if (t.includes('vermenigvuldiging')) return { color: '#f97316', rgb: '249, 115, 22' };
   if (t.includes('blindspot')) return { color: '#ef4444', rgb: '239, 68, 68' };
@@ -147,38 +147,24 @@ const AssessmentResultsModal = ({
     });
   }, [result, savedToBackend]);
 
-  // ── Review/Feedback form state ──
+  // ── Email gate state (unlocks PDF download) ──
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [reviewFormData, setReviewFormData] = useState({
-    email: '',
-    starRating: 0,
-    whatWorked: '',
-    whatDidntWork: '',
-    suggestions: '',
-  });
+  const [reviewFormData, setReviewFormData] = useState({ email: '' });
   const [reviewError, setReviewError] = useState('');
 
-  // ── Review form submission handler ──
+  // ── Email submission handler ──
   const handleReviewSubmit = useCallback(async (e) => {
     e?.preventDefault();
-    const { email, whatWorked, whatDidntWork, suggestions } = reviewFormData;
-    
-    // Validate email is provided
+    const { email } = reviewFormData;
+
     if (!email.trim()) {
       setReviewError('Vul je e-mailadres in');
       return;
     }
-
-    // Validate star rating
-    if (!reviewFormData.starRating || reviewFormData.starRating < 1) {
-      setReviewError('Selecteer een score (1-9 sterren)');
-      return;
-    }
-
-    // Validate at least one field is filled
-    if (!whatWorked.trim() && !whatDidntWork.trim() && !suggestions.trim()) {
-      setReviewError('Vul minimaal één veld in');
+    // Basic email format check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setReviewError('Vul een geldig e-mailadres in');
       return;
     }
 
@@ -189,18 +175,14 @@ const AssessmentResultsModal = ({
       await submitAssessmentReview({
         assessmentId: savedAssessmentId || 'anonymous',
         email: email.trim(),
-        starRating: reviewFormData.starRating,
-        whatWorked: whatWorked.trim(),
-        whatDidntWork: whatDidntWork.trim(),
-        suggestions: suggestions.trim(),
         archetypeKey: result?.mainArchetype || '',
         timestamp: new Date().toISOString(),
       });
       setReviewSubmitted(true);
-      console.log('[GFL] Review submitted successfully');
+      console.log('[GFL] Email submitted — PDF unlocked');
     } catch (err) {
-      console.error('[GFL] Review submission failed:', err);
-      setReviewError(err.message || 'Failed to submit review. Please try again.');
+      console.error('[GFL] Email submission failed:', err);
+      setReviewError(err.message || 'Verzenden mislukt. Probeer opnieuw.');
     } finally {
       setIsSubmittingReview(false);
     }
@@ -460,21 +442,21 @@ const AssessmentResultsModal = ({
       high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
       growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
     },
-    CAREGIVER: { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
+    CAREGIVER: { id: 4, mode: 'Engagement Modus', color: '#1d9904', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
       tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
       what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
       drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
       high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
       growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
     },
-    TRICKSTER: { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
+    TRICKSTER: { id: 4, mode: 'Engagement Modus', color: '#1d9904', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
       tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
       what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
       drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
       high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
       growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
     },
-    HERO:     { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
+    HERO:     { id: 4, mode: 'Engagement Modus', color: '#1d9904', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
       tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
       what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
       drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
@@ -486,7 +468,7 @@ const AssessmentResultsModal = ({
     { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: 'Ruler · Innocent · Sage' },
     { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: 'Judge · Explorer · Artist' },
     { id: 3, mode: 'Impact Modus',     color: '#f97316', members: 'Lover · Outlaw · Magician' },
-    { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: 'Caregiver · Trickster · Hero' },
+    { id: 4, mode: 'Engagement Modus', color: '#1d9904', members: 'Caregiver · Trickster · Hero' },
   ];
 
   // Generate and download a clean, document-style PDF
@@ -523,7 +505,7 @@ const AssessmentResultsModal = ({
       const bg        = [6, 6, 18];
       const orange    = [249, 115, 22];
       const purple    = [168, 85, 247];
-      const green     = [21, 85, 12];
+      const green     = [29, 153, 4];
       const red       = [239, 68, 68];
       const cyan      = [34, 211, 238];
       const amber     = [251, 191, 36];
@@ -699,6 +681,8 @@ const AssessmentResultsModal = ({
           const trimmed = raw.trim();
           // Blank line → small gap
           if (!trimmed) { y += 2; continue; }
+          // Horizontal divider (---, ***, ===) — skip entirely
+          if (/^[-*=]{3,}$/.test(trimmed)) continue;
           // ## / ### heading
           if (/^#{2,}\s/.test(trimmed)) {
             const headText = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim();
@@ -928,7 +912,7 @@ const AssessmentResultsModal = ({
 
       // Header
       pdf.setFontSize(16);
-      pdf.setTextColor(...white);
+      pdf.setTextColor(...green);
       pdf.setFont('helvetica', 'bold');
       pdf.text('Juridische Informatie & Disclaimer', margin, y);
       y += 4;
@@ -1761,7 +1745,7 @@ const AssessmentResultsModal = ({
         await justifiedPage(async (gap) => {
 
         // ── Page heading ──
-        sectionHeading('Persoonlijkheidsrapport Vergelijking', cyan);
+        sectionHeading('Persoonlijkheidsrapport Vergelijking', blue);
         gap();
 
         // ── Uploaded file label ──
@@ -1798,7 +1782,7 @@ const AssessmentResultsModal = ({
           // ── Helper: draw one OCEAN panel ──
           const drawOceanPanel = (panelX, panelW, title, getScore, formatScore, maxVal) => {
             const panelBarW = panelW - labelW - scoreW - 4;
-            pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...cyan);
+            pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...blue);
             pdf.text(title, panelX + 2, y);
             const headerY = y;
 
@@ -1935,10 +1919,10 @@ const AssessmentResultsModal = ({
               ensureSpace(12);
               y += 2;
               pdf.setFontSize(9); pdf.setFont('helvetica', 'bold');
-              pdf.setTextColor(...cyan);
+              pdf.setTextColor(...blue);
               pdf.text(section.text.toUpperCase(), margin + 2, y);
               y += 2;
-              pdf.setDrawColor(...cyan);
+              pdf.setDrawColor(...blue);
               pdf.setLineWidth(0.3);
               pdf.line(margin + 2, y, margin + 2 + pdf.getTextWidth(section.text.toUpperCase()), y);
               y += 4;
@@ -2109,10 +2093,8 @@ const AssessmentResultsModal = ({
         y += 4;
         hr();
       }
-      });
 
-      // ── CULTURAFORCE — COGNITIEVE DRIEHOEK (own page) ──
-      await justifiedPage(async (gap) => {
+      // ── CULTURAFORCE — COGNITIEVE DRIEHOEK (same page as Dual-Core) ──
       {
         const archKey = (result.mainArchetype || '').toUpperCase();
         const tri = COG_TRIANGLES[archKey];
@@ -2134,10 +2116,10 @@ const AssessmentResultsModal = ({
 
           // Active triangle mode name
           ensureSpace(12);
-          pdf.setFillColor(...triColor);
+          pdf.setFillColor(...green);
           pdf.rect(margin, y - 4, 1.5, 7, 'F');
           pdf.setFontSize(10);
-          pdf.setTextColor(...triColor);
+          pdf.setTextColor(...green);
           pdf.setFont('helvetica', 'bold');
           pdf.text(tri.mode.toUpperCase(), margin + 5, y);
           y += 5;
@@ -2162,7 +2144,7 @@ const AssessmentResultsModal = ({
           ensureSpace(6);
           pdf.setFontSize(8.5);
           pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(...triColor);
+          pdf.setTextColor(...amber);
           const navLabel = 'Aangeleerde navigatie: ';
           pdf.text(navLabel, margin + 2, y);
           const navLabelW = pdf.getTextWidth(navLabel);
@@ -2196,7 +2178,7 @@ const AssessmentResultsModal = ({
           ensureSpace(6);
           pdf.setFontSize(8.5);
           pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(...cyan);
+          pdf.setTextColor(...amber);
           const growLabel = 'Groeirichting: ';
           pdf.text(growLabel, margin + 2, y);
           const growLabelW = pdf.getTextWidth(growLabel);
@@ -2217,7 +2199,7 @@ const AssessmentResultsModal = ({
               const otColor = hexToRgb(ot.color);
               pdf.setFontSize(8.5);
               pdf.setFont('helvetica', 'bold');
-              pdf.setTextColor(...otColor);
+              pdf.setTextColor(...green);
               const modeText = ot.mode.toUpperCase();
               pdf.text(modeText, margin + 2, y);
               const modeW = pdf.getTextWidth(modeText + '  ');
@@ -2270,6 +2252,11 @@ const AssessmentResultsModal = ({
           const finalH = Math.min(radarH, availH);
           const finalW = finalH === radarH ? radarW : (radarCanvas.width / radarCanvas.height) * finalH;
           const offsetX = W / 2 - finalW / 2;
+          // Full-width border container around the radar chart (edge-to-edge)
+          const borderPad = 2;
+          pdf.setDrawColor(...green);
+          pdf.setLineWidth(0.5);
+          pdf.rect(0, y - borderPad, W, finalH + borderPad * 2);
           pdf.addImage(radarImg, 'PNG', offsetX, y, finalW, finalH);
           y += finalH + 6;
         } catch {
@@ -2285,7 +2272,7 @@ const AssessmentResultsModal = ({
       ) || [];
       if (resonantieSections.length > 0) {
         noPageBreak = true; // lock to current page — no overflow
-        const resoColor = [0, 180, 110]; // dark green
+        const resoColor = [29, 153, 4]; // green
         for (let ri = 0; ri < resonantieSections.length; ri++) {
           const rs = resonantieSections[ri];
           renderSection(rs.title, rs.content, resoColor);
@@ -2316,7 +2303,7 @@ const AssessmentResultsModal = ({
             if (t.includes('visuele')) return purple;
             if (t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi')) return amber;
             if (t.includes('groep dynamiek') || t.includes('neurobiologisch')) return cyan;
-            if (t.includes('resonantie')) return cyan;
+            if (t.includes('resonantie')) return green;
             if (t.includes('introductie')) return white;
             return green; // fallback
           };
@@ -2377,10 +2364,11 @@ const AssessmentResultsModal = ({
             const disclaimerLines = pdf.splitTextToSize(disclaimerText, disclaimerW - 8);
             const dlH = disclaimerLines.length * 3.5 + 4;
             pdf.rect(disclaimerX, y, disclaimerW, dlH, 'F');
+            // Top bar instead of left bar
             pdf.setFillColor(168, 85, 247);
-            pdf.rect(disclaimerX, y, 1.5, dlH, 'F');
+            pdf.rect(disclaimerX, y, disclaimerW, 0.75, 'F');
             pdf.setTextColor(200, 200, 215);
-            let dlY = y + 4;
+            let dlY = y + 5;
             for (const line of disclaimerLines) {
               pdf.text(line, disclaimerX + 5, dlY);
               dlY += 3.5;
@@ -2752,9 +2740,9 @@ const AssessmentResultsModal = ({
             maxHeight: rs.modalMaxHeight,
             background: 'rgba(2, 0, 3, 0.3)',
             backdropFilter: 'blur(24px)',
-            border: '1px solid rgba(0, 180, 110, 0.3)',
+            border: '1px solid rgba(29, 153, 4, 0.3)',
             borderRadius: '0.75rem',
-            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(0, 180, 110, 0.06), inset 0 0 30px rgba(0, 180, 110, 0.03)',
+            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(29, 153, 4, 0.06), inset 0 0 30px rgba(29, 153, 4, 0.03)',
             display: 'flex',
             flexDirection: 'column',
             color: '#fff',
@@ -2785,7 +2773,7 @@ const AssessmentResultsModal = ({
               left: 0,
               width: '100%',
               height: '1px',
-              background: 'linear-gradient(to right, transparent, #00b46e, transparent)',
+              background: 'linear-gradient(to right, transparent, #1d9904, transparent)',
               zIndex: 50
             }} />
             
@@ -2810,7 +2798,7 @@ const AssessmentResultsModal = ({
                   alignItems: 'center',
                   gap: '2rem',
                   paddingBottom: '1.5rem',
-                  borderBottom: '1px solid rgba(0, 180, 110, 0.2)',
+                  borderBottom: '1px solid rgba(29, 153, 4, 0.2)',
                 }}>
                   {/* Profile Image with Holographic Rings — responsive size */}
                   <div style={{ position: 'relative', width: rs.profileImgSize, height: rs.profileImgSize, flexShrink: 0 }}>
@@ -2819,7 +2807,7 @@ const AssessmentResultsModal = ({
                       position: 'absolute',
                       inset: 0,
                       borderRadius: '50%',
-                      border: '1px dashed rgba(0, 180, 110, 0.4)',
+                      border: '1px dashed rgba(29, 153, 4, 0.4)',
                       animation: 'spin 20s linear infinite',
                     }} />
                     {/* Dotted reverse-spinning ring */}
@@ -2836,7 +2824,7 @@ const AssessmentResultsModal = ({
                       height: '100%',
                       borderRadius: '50%',
                       overflow: 'hidden',
-                      border: '2px solid #00b46e',
+                      border: '2px solid #1d9904',
                       background: '#000',
                       position: 'relative',
                     }}>
@@ -2897,7 +2885,7 @@ const AssessmentResultsModal = ({
                     {result.secondaryName && (
                       <p style={{
                         fontSize: '0.85rem',
-                        color: 'rgba(0, 180, 110, 0.7)',
+                        color: 'rgba(29, 153, 4, 0.7)',
                         fontFamily: "'Rajdhani', sans-serif",
                         fontWeight: 600,
                         textTransform: 'uppercase',
@@ -2915,7 +2903,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     width: '100%',
                     background: 'transparent',
-                    border: '1px solid rgba(0, 180, 110, 0.25)',
+                    border: '1px solid rgba(29, 153, 4, 0.25)',
                     borderRadius: '0.75rem',
                     padding: rs.sectionPad,
                     position: 'relative',
@@ -2923,11 +2911,11 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #00b46e, transparent)',
+                      background: 'linear-gradient(to right, transparent, #1d9904, transparent)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#00b46e',
+                      color: '#1d9904',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.85rem',
                       textTransform: 'uppercase',
@@ -3075,7 +3063,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     width: '100%',
                     background: 'transparent',
-                    border: '1px solid rgba(0, 180, 110, 0.15)',
+                    border: '1px solid rgba(29, 153, 4, 0.15)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
                     position: 'relative',
@@ -3083,11 +3071,11 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #00b46e, transparent)',
+                      background: 'linear-gradient(to right, transparent, #1d9904, transparent)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#00b46e',
+                      color: '#1d9904',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.8rem',
                       textTransform: 'uppercase',
@@ -3111,7 +3099,7 @@ const AssessmentResultsModal = ({
                         borderBottom: '1px solid rgba(255,255,255,0.07)',
                         marginBottom: '0',
                       }}>
-                        {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(0,180,110,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
+                        {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(29,153,4,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
                           <div key={label} style={{ fontSize: '0.75rem', color, fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', paddingLeft: '0.4rem' }}>
                             {label}
                           </div>
@@ -3139,10 +3127,10 @@ const AssessmentResultsModal = ({
                           }}>
                             {/* Archetype name */}
                             <div style={{ padding: '0.2rem 0.4rem 0', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: '0.65rem', color: sa.isActive ? '#a855f7' : 'rgba(0,180,110,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: 1.2 }}>
+                              <div style={{ fontSize: '0.65rem', color: sa.isActive ? '#a855f7' : 'rgba(29,153,4,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: 1.2 }}>
                                 {(sa.group || '').trim()}
                               </div>
-                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#fff' : 'rgba(0,180,110,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.2, marginTop: '0.05rem' }}>
+                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#fff' : 'rgba(29,153,4,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.2, marginTop: '0.05rem' }}>
                                 {(sa.extendedName || '').trim()}
                               </div>
                             </div>
@@ -3305,7 +3293,7 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, #f97316, #a855f7, #fbbf24, #ef4444, #00b46e)',
+                      background: 'linear-gradient(to right, transparent, #3b82f6, transparent)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
@@ -3606,45 +3594,50 @@ const AssessmentResultsModal = ({
                   if (!tri) return null;
 
                   return (
-                    <div ref={culturaForceRef} style={{ width: '100%' }}>
-                      <span style={{ fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{'/// CULTURELE_BRIL'}</span>
-                      <h3 style={{ margin: '0.2rem 0 0', fontSize: '1.05rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    <div ref={culturaForceRef} style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: '1px solid rgba(251,191,36,0.3)',
+                      borderRadius: '0.75rem',
+                      padding: rs.cardPad,
+                    }}>
+                      <h3 style={{ margin: '0 0 0.2rem', fontSize: '1.05rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#fbbf24', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                         Cognitieve Driehoek
                       </h3>
                       <p style={{ margin: '0.3rem 0 0.85rem', fontSize: '0.85rem', color: 'rgba(148,163,184,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-                        Gele driehoeken vuren uitsluitend op <strong style={{ color: 'rgba(234,179,8,0.85)' }}>Culture picks</strong> — ze representeren aangeleerd cognitief gedrag, niet biologische hardware. Groene en blauwe signalen tonen wie je <em>bent</em>; gele signalen tonen hoe je hebt <em>leren navigeren</em>.
+                        Gele driehoeken vuren uitsluitend op <strong style={{ color: 'rgba(251,191,36,0.85)' }}>Culture picks</strong> — ze representeren aangeleerd cognitief gedrag, niet biologische hardware. Groene en blauwe signalen tonen wie je <em>bent</em>; gele signalen tonen hoe je hebt <em>leren navigeren</em>.
                       </p>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        <span style={{ width: '1.4rem', height: '1.4rem', borderRadius: '50%', background: `${tri.color}22`, border: `1px solid ${tri.color}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: tri.color, flexShrink: 0 }}>
+                        <span style={{ width: '1.4rem', height: '1.4rem', borderRadius: '50%', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#fbbf24', flexShrink: 0 }}>
                           {tri.id}
                         </span>
                         <div>
-                          <div style={{ fontSize: '0.9rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: tri.color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{tri.mode}</div>
+                          <div style={{ fontSize: '0.9rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#1d9904', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{tri.mode}</div>
                           <div style={{ fontSize: '0.82rem', color: 'rgba(209,213,219,0.6)', fontFamily: "'Figtree', sans-serif" }}>{tri.members.join(' · ')} — {tri.networks}</div>
                         </div>
                       </div>
-                      <p style={{ margin: '0 0 0.1rem', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(234,179,8,0.9)', fontWeight: 600, fontStyle: 'italic' }}>
+                      <p style={{ margin: '0 0 0.1rem', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(251,191,36,0.9)', fontWeight: 600, fontStyle: 'italic' }}>
                         {tri.tagline}
                       </p>
                       <p style={{ margin: '0.45rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.85)', lineHeight: 1.65, textAlign: 'justify', overflowWrap: 'break-word' }}>
                         {tri.what}
                       </p>
                       <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-                        <span style={{ color: `${tri.color}cc`, fontWeight: 600 }}>Aangeleerde navigatie: </span>{tri.drive}
+                        <span style={{ color: 'rgba(251,191,36,0.9)', fontWeight: 600 }}>Aangeleerde navigatie: </span>{tri.drive}
                       </p>
                       <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-                        <span style={{ color: 'rgba(234,179,8,0.9)', fontWeight: 600 }}>Hoog geel profiel: </span>{tri.high}
+                        <span style={{ color: 'rgba(251,191,36,0.9)', fontWeight: 600 }}>Hoog geel profiel: </span>{tri.high}
                       </p>
                       <p style={{ margin: '0.4rem 0 0.75rem', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-                        <span style={{ color: 'rgba(165,243,252,0.9)', fontWeight: 600 }}>Groeirichting: </span>{tri.growth}
+                        <span style={{ color: 'rgba(251,191,36,0.9)', fontWeight: 600 }}>Groeirichting: </span>{tri.growth}
                       </p>
 
                       {/* Other triangles — compact reference row */}
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         {ALL_COG_TRIANGLES.filter(t => t.id !== tri.id).map(t => (
-                          <div key={t.id} style={{ flex: 1, border: `1px solid rgba(234,179,8,0.15)`, borderRadius: '0.4rem', padding: '0.4rem 0.5rem' }}>
-                            <div style={{ fontSize: '0.8rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: t.color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t.mode}</div>
+                          <div key={t.id} style={{ flex: 1, border: '1px solid rgba(251,191,36,0.15)', borderRadius: '0.4rem', padding: '0.4rem 0.5rem' }}>
+                            <div style={{ fontSize: '0.8rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#1d9904', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t.mode}</div>
                             <div style={{ fontSize: '0.78rem', color: 'rgba(148,163,184,0.8)', fontFamily: "'Figtree', sans-serif" }}>{t.members}</div>
                           </div>
                         ))}
@@ -3658,9 +3651,9 @@ const AssessmentResultsModal = ({
                   position: 'relative',
                   background: 'rgba(0, 0, 0, 0.6)',
                   borderRadius: '0.75rem',
-                  border: '1px solid rgba(0, 255, 157, 0.2)',
+                  border: '1px solid rgba(29, 153, 4, 0.3)',
                   padding: '0.5rem',
-                  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 255, 157, 0.05)',
+                  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(29, 153, 4, 0.08)',
                   minHeight: '350px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -3671,7 +3664,7 @@ const AssessmentResultsModal = ({
                     left: '1rem',
                     fontSize: '0.7rem',
                     fontFamily: "'Rajdhani', sans-serif",
-                    color: 'rgba(0, 255, 157, 0.6)',
+                    color: 'rgba(29, 153, 4, 0.7)',
                     letterSpacing: '0.2em',
                   }}>
                     {'/// TRIPLE_NETWORK_WIEL'}
@@ -3737,7 +3730,7 @@ const AssessmentResultsModal = ({
                   }
                   // Cycle through accent colors for visual variety
                   const accents = [
-                    { color: '#00b46e', rgb: '0, 180, 110' },    // green
+                    { color: '#1d9904', rgb: '29, 153, 4' },    // green
                     { color: '#a855f7', rgb: '168, 85, 247' },   // purple
                     { color: '#f97316', rgb: '249, 115, 22' },   // orange
                     { color: '#3b82f6', rgb: '59, 130, 246' },   // blue
@@ -3817,7 +3810,7 @@ const AssessmentResultsModal = ({
                   gap: '1.5rem',
                 }}>
 
-                  {/* ── Review/Feedback Form (gates download) ── */}
+                  {/* ── Email gate (unlocks PDF download) ── */}
                   {!reviewSubmitted && (
                     <div style={{
                       width: '100%',
@@ -3827,92 +3820,19 @@ const AssessmentResultsModal = ({
                       padding: '1.5rem',
                       boxShadow: 'inset 0 0 20px rgba(168, 85, 247, 0.05)',
                     }}>
-                      <h3 style={{
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        color: '#a855f7',
-                        fontFamily: "'Lexend Mega', sans-serif",
-                        fontSize: '0.95rem',
-                        fontWeight: 'bold',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        marginBottom: '1rem',
-                        marginTop: 0,
-                      }}>
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          width: '1.5rem', height: '1.5rem', borderRadius: '50%',
-                          border: '1px solid rgba(168,85,247,0.4)',
-                          fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif",
-                          color: '#a855f7', flexShrink: 0,
-                        }}>
-                          {visibleSections.length + 1}
-                        </span>
-                        Feedback
-                      </h3>
-                      <p style={{
-                        color: 'rgba(209, 213, 219, 0.8)',
-                        fontFamily: "'Figtree', sans-serif",
-                        fontSize: '0.85rem',
-                        marginBottom: '1rem',
-                        marginTop: 0,
-                      }}>
-                        Jouw feedback helpt ons het systeem verbeteren
-                      </p>
 
                       <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {/* Star Rating (1-9) */}
-                        <div>
-                          <label style={{
-                            display: 'block',
-                            color: '#f59e0b',
-                            fontFamily: "'Figtree', sans-serif",
-                            fontSize: '0.85rem',
-                            fontWeight: 'bold',
-                            marginBottom: '0.5rem',
-                          }}>
-                            Score *
-                          </label>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            {[...Array(9)].map((_, i) => (
-                              <button
-                                key={i}
-                                type="button"
-                                onClick={() => setReviewFormData({ ...reviewFormData, starRating: i + 1 })}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  fontSize: '1.5rem',
-                                  color: i < reviewFormData.starRating ? '#f59e0b' : 'rgba(245,158,11,0.2)',
-                                  padding: '0.15rem',
-                                  transition: 'color 0.15s, transform 0.15s',
-                                  transform: i < reviewFormData.starRating ? 'scale(1.1)' : 'scale(1)',
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.2)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.transform = i < reviewFormData.starRating ? 'scale(1.1)' : 'scale(1)'; }}
-                              >
-                                ★
-                              </button>
-                            ))}
-                            {reviewFormData.starRating > 0 && (
-                              <span style={{ marginLeft: '0.5rem', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold' }}>
-                                {reviewFormData.starRating}/9
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
                         {/* E-mailadres */}
                         <div>
                           <label style={{
                             display: 'block',
-                            color: '#a855f7',
+                            color: '#e2e8f0',
                             fontFamily: "'Figtree', sans-serif",
                             fontSize: '0.85rem',
                             fontWeight: 'bold',
                             marginBottom: '0.5rem',
                           }}>
-                            E-mailadres *
+                            E-mailadres
                           </label>
                           <input
                             type="email"
@@ -3934,102 +3854,6 @@ const AssessmentResultsModal = ({
                           />
                         </div>
 
-                        {/* Vraag 1: Accuraatheid */}
-                        <div>
-                          <label style={{
-                            display: 'block',
-                            color: '#00b46e',
-                            fontFamily: "'Figtree', sans-serif",
-                            fontSize: '0.85rem',
-                            fontWeight: 'bold',
-                            marginBottom: '0.5rem',
-                          }}>
-                            Hoe accuraat is het resultaat volgens jouw kennis en gevoel?
-                          </label>
-                          <textarea
-                            value={reviewFormData.whatWorked}
-                            onChange={(e) => setReviewFormData({ ...reviewFormData, whatWorked: e.target.value })}
-                            placeholder="Beschrijf in hoeverre het resultaat klopt met wie jij bent..."
-                            style={{
-                              width: '100%',
-                              minHeight: '80px',
-                              padding: '0.75rem',
-                              background: 'rgba(0, 0, 0, 0.8)',
-                              border: '1px solid rgba(0, 180, 110, 0.2)',
-                              borderRadius: '0.5rem',
-                              color: '#fff',
-                              fontFamily: "'Figtree', sans-serif",
-                              fontSize: '0.85rem',
-                              resize: 'vertical',
-                              boxSizing: 'border-box',
-                            }}
-                          />
-                        </div>
-
-                        {/* Vraag 2: Niet overeenkomend */}
-                        <div>
-                          <label style={{
-                            display: 'block',
-                            color: '#ff6b6b',
-                            fontFamily: "'Figtree', sans-serif",
-                            fontSize: '0.85rem',
-                            fontWeight: 'bold',
-                            marginBottom: '0.5rem',
-                          }}>
-                            Waar ben je zeker van dat niet overeenkomt met jouw persoonlijkheid? Wees specifiek — en hoe weet je dit?
-                          </label>
-                          <textarea
-                            value={reviewFormData.whatDidntWork}
-                            onChange={(e) => setReviewFormData({ ...reviewFormData, whatDidntWork: e.target.value })}
-                            placeholder="Bijv: ik ben helemaal niet competitief, want in groepswerk neem ik altijd een ondersteunende rol..."
-                            style={{
-                              width: '100%',
-                              minHeight: '80px',
-                              padding: '0.75rem',
-                              background: 'rgba(0, 0, 0, 0.8)',
-                              border: '1px solid rgba(255, 107, 107, 0.2)',
-                              borderRadius: '0.5rem',
-                              color: '#fff',
-                              fontFamily: "'Figtree', sans-serif",
-                              fontSize: '0.85rem',
-                              resize: 'vertical',
-                              boxSizing: 'border-box',
-                            }}
-                          />
-                        </div>
-
-                        {/* Vraag 3: Suggesties */}
-                        <div>
-                          <label style={{
-                            display: 'block',
-                            color: '#a855f7',
-                            fontFamily: "'Figtree', sans-serif",
-                            fontSize: '0.85rem',
-                            fontWeight: 'bold',
-                            marginBottom: '0.5rem',
-                          }}>
-                            Wat zou jij anders doen of toevoegen aan dit systeem?
-                          </label>
-                          <textarea
-                            value={reviewFormData.suggestions}
-                            onChange={(e) => setReviewFormData({ ...reviewFormData, suggestions: e.target.value })}
-                            placeholder="Bijv: meer context bij de vragen, andere formulering, kortere assessment..."
-                            style={{
-                              width: '100%',
-                              minHeight: '80px',
-                              padding: '0.75rem',
-                              background: 'rgba(0, 0, 0, 0.8)',
-                              border: '1px solid rgba(168, 85, 247, 0.2)',
-                              borderRadius: '0.5rem',
-                              color: '#fff',
-                              fontFamily: "'Figtree', sans-serif",
-                              fontSize: '0.85rem',
-                              resize: 'vertical',
-                              boxSizing: 'border-box',
-                            }}
-                          />
-                        </div>
-
                         {/* Error message */}
                         {reviewError && (
                           <div style={{
@@ -4045,7 +3869,7 @@ const AssessmentResultsModal = ({
                           </div>
                         )}
 
-                        {/* Submit button */}
+                        {/* VOLLEDIGE RAPPORT button */}
                         <button
                           type="submit"
                           disabled={isSubmittingReview}
@@ -4075,30 +3899,9 @@ const AssessmentResultsModal = ({
                             e.currentTarget.style.boxShadow = 'none';
                           }}
                         >
-                          {isSubmittingReview ? 'Versturen...' : 'Verstuur Feedback'}
+                          {isSubmittingReview ? 'Versturen...' : 'VOLLEDIGE RAPPORT'}
                         </button>
                       </form>
-                    </div>
-                  )}
-
-                  {/* ── Success message after review submission ── */}
-                  {reviewSubmitted && (
-                    <div style={{
-                      width: '100%',
-                      padding: '1rem',
-                      background: 'rgba(34, 197, 94, 0.1)',
-                      border: '1px solid rgba(34, 197, 94, 0.5)',
-                      borderRadius: '0.75rem',
-                      textAlign: 'center',
-                    }}>
-                      <p style={{
-                        color: '#22c55e',
-                        fontFamily: "'Figtree', sans-serif",
-                        fontSize: '0.9rem',
-                        margin: 0,
-                      }}>
-                        ✓ Feedback submitted successfully
-                      </p>
                     </div>
                   )}
 
@@ -4120,20 +3923,20 @@ const AssessmentResultsModal = ({
                         <div style={{
                           maxWidth: '34rem', width: '100%',
                           backgroundColor: 'rgba(6, 2, 10, 0.98)',
-                          border: '1px solid rgba(0,180,110,0.2)',
+                          border: '1px solid rgba(29,153,4,0.2)',
                           borderRadius: '0.5rem',
                           padding: '1.75rem',
-                          boxShadow: '0 0 40px rgba(0,180,110,0.08)',
+                          boxShadow: '0 0 40px rgba(29,153,4,0.08)',
                           fontFamily: "'Lexend Mega', sans-serif",
                         }}>
-                          <h3 style={{ color: '#00b46e', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
+                          <h3 style={{ color: '#1d9904', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
                             Verantwoordelijkheid PDF & AI Prompt
                           </h3>
                           <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', fontStyle: 'italic', marginBottom: '1.25rem' }}>
                             Lees dit door voordat je de PDF downloadt
                           </p>
 
-                          <div style={{ borderLeft: '2px solid rgba(0,180,110,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
+                          <div style={{ borderLeft: '2px solid rgba(29,153,4,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
                             <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: '0.75rem', lineHeight: 1.75 }}>
                               Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik in externe AI-tools valt buiten de verantwoordelijkheid van Garden For Life.
                             </p>
@@ -4144,7 +3947,7 @@ const AssessmentResultsModal = ({
                               type="checkbox"
                               checked={pdfConsentChecked}
                               onChange={(e) => setPdfConsentChecked(e.target.checked)}
-                              style={{ marginTop: '0.1rem', accentColor: '#00b46e', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
+                              style={{ marginTop: '0.1rem', accentColor: '#1d9904', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
                             />
                             <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: '0.75rem', lineHeight: 1.65 }}>
                               Ik begrijp dat de AI Agent Prompt in deze PDF experimenteel is en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.
@@ -4163,8 +3966,8 @@ const AssessmentResultsModal = ({
                             <button
                               onClick={() => { if (pdfConsentChecked) { setShowPdfConsent(false); logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {}); handleDownloadPdf(); } }}
                               disabled={!pdfConsentChecked}
-                              style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#00b46e' : 'rgba(0,180,110,0.2)'}`, color: pdfConsentChecked ? '#00b46e' : 'rgba(0,180,110,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(0,180,110,0.07)' : 'none' }}
-                              onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(0,180,110,0.25)'; }}
+                              style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#1d9904' : 'rgba(29,153,4,0.2)'}`, color: pdfConsentChecked ? '#1d9904' : 'rgba(29,153,4,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(29,153,4,0.07)' : 'none' }}
+                              onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(29,153,4,0.25)'; }}
                               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
                             >
                               Begrepen en akkoord — Download PDF
@@ -4178,7 +3981,6 @@ const AssessmentResultsModal = ({
                     <button
                       onClick={() => { if (!isGeneratingPdf && reviewSubmitted) { setPdfConsentChecked(false); setShowPdfConsent(true); } }}
                       disabled={isGeneratingPdf || !reviewSubmitted}
-                      title={!reviewSubmitted ? 'Please submit feedback first' : undefined}
                       style={{
                         flex: '1 1 0',
                         minWidth: rs.btnMinWidth,
@@ -4186,8 +3988,8 @@ const AssessmentResultsModal = ({
                         overflow: 'hidden',
                         padding: rs.btnPad,
                         background: '#000',
-                        border: '1px solid #00b46e',
-                        color: '#00b46e',
+                        border: '1px solid #1d9904',
+                        color: '#1d9904',
                         fontFamily: "'Lexend Mega', sans-serif",
                         fontWeight: 'bold',
                         textTransform: 'uppercase',
@@ -4195,18 +3997,18 @@ const AssessmentResultsModal = ({
                         fontSize: rs.btnFont,
                         cursor: (isGeneratingPdf || !reviewSubmitted) ? 'not-allowed' : 'pointer',
                         transition: 'all 0.3s',
-                        boxShadow: '0 0 15px rgba(0, 180, 110, 0.1)',
+                        boxShadow: '0 0 15px rgba(29, 153, 4, 0.1)',
                         opacity: (isGeneratingPdf || !reviewSubmitted) ? 0.5 : 1,
                       }}
                       onMouseEnter={e => {
                         if (!isGeneratingPdf && reviewSubmitted) {
-                          e.currentTarget.style.background = '#00b46e';
+                          e.currentTarget.style.background = '#1d9904';
                           e.currentTarget.style.color = '#000';
                         }
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.background = '#000';
-                        e.currentTarget.style.color = '#00b46e';
+                        e.currentTarget.style.color = '#1d9904';
                       }}
                     >
                       <span style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
@@ -4222,7 +4024,7 @@ const AssessmentResultsModal = ({
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
                             </svg>
-                            {t('results.downloadPdf')}
+                            VOLLEDIGE RAPPORT
                           </>
                         )}
                       </span>
@@ -4231,8 +4033,6 @@ const AssessmentResultsModal = ({
                     {/* Save & Create Account */}
                     <button
                       onClick={onCreateAccount}
-                      disabled={!reviewSubmitted}
-                      title={!reviewSubmitted ? 'Please submit feedback first' : undefined}
                       style={{
                         flex: '1 1 0',
                         minWidth: rs.btnMinWidth,
@@ -4247,14 +4047,12 @@ const AssessmentResultsModal = ({
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         fontSize: rs.btnFont,
-                        cursor: !reviewSubmitted ? 'not-allowed' : 'pointer',
-                        opacity: !reviewSubmitted ? 0.5 : 1,
+                        cursor: 'pointer',
+                        opacity: 1,
                         transition: 'all 0.3s',
                       }}
                       onMouseEnter={e => {
-                        if (reviewSubmitted) {
-                          e.currentTarget.style.boxShadow = '0 0 25px rgba(168, 85, 247, 0.6)';
-                        }
+                        e.currentTarget.style.boxShadow = '0 0 25px rgba(168, 85, 247, 0.6)';
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.boxShadow = 'none';
@@ -4311,15 +4109,15 @@ const AssessmentResultsModal = ({
           background: transparent;
         }
         .results-modal-scroll::-webkit-scrollbar-thumb {
-          background: rgba(0, 180, 110, 0.3);
+          background: rgba(29, 153, 4, 0.3);
           border-radius: 3px;
         }
         .results-modal-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 180, 110, 0.5);
+          background: rgba(29, 153, 4, 0.5);
         }
         .results-modal-scroll {
           scrollbar-width: thin;
-          scrollbar-color: rgba(0, 180, 110, 0.3) transparent;
+          scrollbar-color: rgba(29, 153, 4, 0.3) transparent;
         }
       `}</style>
     </div>

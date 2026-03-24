@@ -1,5 +1,5 @@
 /**
- * End-to-end API test: Generate 60 random answers → score → call Gemini
+ * End-to-end API test: Generate 60 random answers → score → call Claude
  *
  * Usage: cd backend && node test-assessment-e2e.js
  */
@@ -164,13 +164,13 @@ function scoreAnswers(answers) {
 }
 
 // ═════════════════════════════════════════════
-// STEP 3: Call Gemini API
+// STEP 3: Call Claude API
 // ═════════════════════════════════════════════
 
 async function callAssessmentAPI(result) {
   // Build the same params the frontend sends
   const params = {
-    provider: 'gemini',
+    provider: 'claude',
     archetypeKey: result.mainKey,
     supportArchetype: result.supportKey,
     supportGroup: result.supportGroup,
@@ -218,7 +218,7 @@ async function callAssessmentAPI(result) {
   console.log('─────────────────────\n');
 
   const aiResult = await callAI({
-    provider: 'gemini',
+    provider: 'claude',
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
@@ -237,7 +237,7 @@ async function callAssessmentAPI(result) {
 async function main() {
   console.log('═══════════════════════════════════════');
   console.log('  GFL Assessment E2E API Test');
-  console.log('  Model: ' + config.ai.gemini.defaultModel);
+  console.log('  Model: ' + config.ai.claude.defaultModel);
   console.log('═══════════════════════════════════════\n');
 
   // Step 1: Generate answers
@@ -265,7 +265,7 @@ async function main() {
     .forEach(([k, v]) => console.log(`  ${k.padEnd(12)} ${v} pts (${result.counts[k]} selections)`));
 
   // Step 3: Call API
-  console.log('\n── CALLING GEMINI 2.5 PRO ──');
+  console.log('\n── CALLING CLAUDE ──');
   console.log('(This may take 30-60 seconds...)\n');
 
   const startTime = Date.now();

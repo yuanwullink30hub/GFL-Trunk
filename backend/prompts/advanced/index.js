@@ -1082,7 +1082,7 @@ function buildSystemPrompt({
       `## Persoonlijkheidsrapport Vergelijking\n` +
       `⚠️ VERPLICHTE OPENINGSZIN — begin deze sectie letterlijk met de volgende zin, vetgedrukt, zonder aanpassingen:\n` +
       `"In deze specifieke sectie gebruiken we ons model als leidende standaard en relativeren we de door jouw gestuurde score. Het extern persoonlijkheidsrapport (${fileNames}) is contextuele input — geen validatie of weerlegging van onze uitkomsten. GardenForLife aanvaardt geen verantwoordelijkheid voor externe rapportinhoud."\n\n` +
-      `STRIKTE LENGTE-BEPERKING: Schrijf MAXIMAAL 300 woorden voor de gehele sectie. De tekst moet op één A4-pagina passen.\n\n` +
+      `STRIKTE LENGTE-BEPERKING: Schrijf MAXIMAAL 600 woorden voor de gehele sectie (max 150 woorden per alinea).\n\n` +
       `⚠️ VERPLICHT SCOREOVERZICHT — Direct na de openingszin MOET je de 5 OCEAN-dimensiescores uit het geüploade rapport vermelden in EXACT dit format, één per regel:\n` +
       `Openheid (Niveau - XX)\n` +
       `Ordelijkheid (Niveau - XX)\n` +
@@ -1096,13 +1096,13 @@ function buildSystemPrompt({
       `VERPLICHTE STRUCTUUR — gebruik exact deze 3 subsecties en 4 alinea's.\n` +
       `⚠️ GEBRUIK GEEN markdown headers (##, ###) binnen deze sectie — gebruik UITSLUITEND vetgedrukte tekst voor de subsectietitels.\n\n` +
       `**Vergelijkingsrapport**\n` +
-      `Alinea 1 — Grootste overeenkomsten: noem de 2-3 sterkste raakpunten tussen de archetype testscore en de geleverde PDF/OCEAN-score. Verwijs naar de dimensies met de namen: Openheid, Ordelijkheid, Extraversie, Meegaandheid, Neuroticisme. Verklaar vanuit het Triple Network Model. Anker: 'binnen dit model'. (max 90 woorden)\n` +
-      `Alinea 2 — Grootste verschillen: benoem de 2-3 opvallendste afwijkingen en wat de methodologische kloof (externe methode vs. GFL archetype score) verklaart. Koppel aan cultuur vs. natuur dynamiek. (max 90 woorden)\n\n` +
+      `Alinea 1 — Grootste overeenkomsten: noem de 2-3 sterkste raakpunten tussen de archetype testscore en de geleverde PDF/OCEAN-score. Verwijs naar de dimensies met de namen: Openheid, Ordelijkheid, Extraversie, Meegaandheid, Neuroticisme. Verklaar vanuit het Triple Network Model. Anker: 'binnen dit model'. (max 150 woorden)\n` +
+      `Alinea 2 — Grootste verschillen: benoem de 2-3 opvallendste afwijkingen en wat de methodologische kloof (externe methode vs. GFL archetype score) verklaart. Koppel aan cultuur vs. natuur dynamiek. (max 150 woorden)\n\n` +
       `**Spanningsvelden**\n` +
-      `Alinea 3 — Deltawerken / Cells Within Cells: hoe verhoudt het externe rapport zich tot onze 3 afbeeldingsmodellen (TNM Wiel, Dual-Core Dynamics, 72-Archetype Matrix)? Welk model verklaart de grootste overlap, welk model de grootste afwijking? (max 90 woorden)\n\n` +
+      `Alinea 3 — Deltawerken / Cells Within Cells: hoe verhoudt het externe rapport zich tot onze 3 afbeeldingsmodellen (TNM Wiel, Dual-Core Dynamics, 72-Archetype Matrix)? Welk model verklaart de grootste overlap, welk model de grootste afwijking? (max 150 woorden)\n\n` +
       `**Conclusie**\n` +
-      `Alinea 4 — Reflectie: één concrete reflectievraag voor de gebruiker over wat de discrepantie tussen beide modellen onthult over hun natuur/cultuur-balans. Schrijf deze als afsluitende conclusie. (max 90 woorden)\n\n` +
-      `TAALREGELS: 'het scoreprofiel suggereert', 'binnen dit model', 'als indicatieve modelwaarde'. Geen absolute uitspraken, geen klinische termen. Verwijs ALTIJD naar dimensies met: Openheid, Ordelijkheid, Extraversie, Meegaandheid, Neuroticisme. Stop bij 300 woorden.\n`
+      `Alinea 4 — Reflectie: één concrete reflectievraag voor de gebruiker over wat de discrepantie tussen beide modellen onthult over hun natuur/cultuur-balans. Schrijf deze als afsluitende conclusie. (max 150 woorden)\n\n` +
+      `TAALREGELS: 'het scoreprofiel suggereert', 'binnen dit model', 'als indicatieve modelwaarde'. Geen absolute uitspraken, geen klinische termen. Verwijs ALTIJD naar dimensies met: Openheid, Ordelijkheid, Extraversie, Meegaandheid, Neuroticisme. Stop bij 600 woorden.\n`
     );
   }
 

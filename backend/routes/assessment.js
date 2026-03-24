@@ -27,7 +27,7 @@ function esc(str) {
 }
 
 function buildFeedbackEmail(settings, review) {
-  const defaultText = 'Hoogachtende Meester,\n\nJouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en vraag ik je bij deze om onze assessment te delen met anderen- weet wie je vraagt! zolang de beta-fase loopt is alleen het meester niveau toegankelijk.\n\nOok is een kleine donatie meer dan welkom om ons project nog verder te optimaliseren.\n\nAnyway- pionier, hartelijk dank voor de tijd en attentie!\n\nMet vriendelijke groet,\n\n\nYuan Wullink';
+  const defaultText = 'Hoogachtende Meester,\n\nJouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en reik ik nog \u00E9\u00E9n laatste keer uit voor jouw hulp.\n\nNodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data hoe beter wij kunnen optimaliseren.\nZolang de beta-fase loopt is alleen het meester niveau toegankelijk.\n\nAnyway- pionier, hartelijk dank voor de tijd en attentie!\n\nMet vriendelijke groet,\n\n\nYuan Wullink';
   const bodyText = esc(settings.text || defaultText);
   const imageBlock = '';
   const attachments = [];

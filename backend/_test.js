@@ -27,19 +27,15 @@ function esc(str) {
 }
 
 function buildFeedbackEmail(settings, review) {
-  const bodyText = esc(settings.text || 'Bedankt voor je feedback! Wij hebben je reactie ontvangen en zullen die gebruiken om het systeem te verbeteren.');
-  const hasImage = !!(settings.imageBase64 && settings.imageMimeType);
+  // settings.text is admin-controlled content — render as HTML directly (supports <br/> etc.)
+  const bodyText = settings.text ||
+    'Hoogachtende Meester,<br><br>' +
+    'Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet ' +
+    'bedwingen en vraag ik je bij deze om onze assessment te delen met anderen — weet wie je vraagt!<br><br>' +
+    'Zolang de beta-fase loopt is alleen het meester niveau toegankelijk.<br><br>' +
+    'Anyway — pionier, hartelijk dank voor de tijd en attentie.';
 
-  const imageBlock = hasImage
-    ? `<tr><td style="padding:0 30px 20px;text-align:center;"><img src="cid:feedbackimage" alt="Garden For Life" style="max-width:100%;height:auto;border-radius:8px;display:block;margin:0 auto;"></td></tr>`
-    : '';
-
-  const attachments = hasImage ? [{
-    filename: 'image',
-    content: Buffer.from(settings.imageBase64, 'base64'),
-    contentType: settings.imageMimeType,
-    cid: 'feedbackimage',
-  }] : [];
+  const attachments = [];
 
   const ratingBlock = review.starRating
     ? `<div style="margin-top:12px;color:#f59e0b;font-size:15px;">⭐ Beoordeling: ${review.starRating}/9</div>` : '';
@@ -86,7 +82,6 @@ function buildFeedbackEmail(settings, review) {
         </table>
       </td>
     </tr>
-    ${imageBlock}
     <tr>
       <td class="body-cell" style="padding:28px 30px;line-height:1.7;color:#333;font-size:15px;">
         <p style="margin:0 0 16px;">${bodyText}</p>
@@ -189,4 +184,4 @@ router.post('/', authRequired, async (req, res) => {
       completionTokens: completionTokens || 0,
       pdfUrl: null,
       createdAt: new Date(),
-    };
+    };

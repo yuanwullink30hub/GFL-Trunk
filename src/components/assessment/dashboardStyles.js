@@ -207,7 +207,7 @@ export const SciFiButton = ({
         style={{
           position: 'relative', overflow: 'hidden', padding: pd,
           transform: 'scaleX(1.06) scaleY(1.095) translateY(-0.5%)',
-          background: lit ? `rgba(${rgb}, 0.15)` : `rgba(${rgb}, 0.05)`,
+          background: 'transparent',
           border: 'none', outline: 'none', borderRadius: '0.15rem',
           cursor: disabled ? 'not-allowed' : 'pointer',
           fontFamily: FONT, fontSize: fs,
@@ -219,17 +219,6 @@ export const SciFiButton = ({
           width: fullWidth ? '100%' : undefined,
         }}
       >
-        {/* Scanline sweep — matches scroll-label pattern */}
-        <div style={{
-          position: 'absolute', inset: '0 7%', pointerEvents: 'none',
-          background: `linear-gradient(180deg, transparent 0%, rgba(${rgb},0.04) 45%, rgba(${rgb},0.08) 50%, rgba(${rgb},0.04) 55%, transparent 100%)`,
-          animation: 'scifiBtnScanline 4s linear infinite',
-        }} />
-        {/* Horizontal data lines */}
-        <div style={{
-          position: 'absolute', inset: '0 7%', pointerEvents: 'none',
-          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(${rgb},0.025) 3px, rgba(${rgb},0.025) 4px)`,
-        }} />
         <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
       </button>
       {/* Corner bracket accents */}

@@ -62,7 +62,7 @@ const cleanTitle = (title) => {
 // ── Utility: map cleaned section title to accent color for JSX card (returns {color, rgb} or null) ──
 const getSectionAccent = (title) => {
   const t = cleanTitle(title || '').toLowerCase();
-  if (t.includes('identiteit') || t.includes('waarom')) return { color: '#00ff9d', rgb: '0, 255, 157' };
+  if (t.includes('identiteit') || t.includes('waarom')) return { color: '#00b46e', rgb: '0, 180, 110' };
   if (t.includes('essentie') || t.includes('schaduw')) return { color: '#a855f7', rgb: '168, 85, 247' };
   if (t.includes('vermenigvuldiging')) return { color: '#f97316', rgb: '249, 115, 22' };
   if (t.includes('blindspot')) return { color: '#ef4444', rgb: '239, 68, 68' };
@@ -307,6 +307,14 @@ const AssessmentResultsModal = ({
       return true;
     }),
   [displaySections]);
+
+  // Scroll modal to top when results become visible (after AI loading completes)
+  useEffect(() => {
+    if (aiReady && scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [aiReady]);
+
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
@@ -387,6 +395,100 @@ const AssessmentResultsModal = ({
   // ── Ref for the CulturaForce / Cognitieve Driehoek card (captured as image for PDF) ──
   const culturaForceRef = useRef(null);
 
+  // ── Cognitieve Driehoek data — shared between UI rendering and PDF generation ──
+  const COG_TRIANGLES = {
+    RULER:     { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
+      tagline: 'Jij navigeert via principes, visie en structuur.',
+      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
+      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
+      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+    },
+    INNOCENT:  { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
+      tagline: 'Jij navigeert via principes, visie en structuur.',
+      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
+      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
+      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+    },
+    SAGE:      { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
+      tagline: 'Jij navigeert via principes, visie en structuur.',
+      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
+      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
+      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+    },
+    JUDGE:    { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
+      tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
+      what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
+      drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
+      high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
+      growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
+    },
+    EXPLORER: { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
+      tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
+      what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
+      drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
+      high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
+      growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
+    },
+    ARTIST:   { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
+      tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
+      what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
+      drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
+      high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
+      growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
+    },
+    LOVER:    { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
+      tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
+      what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
+      drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
+      high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
+      growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
+    },
+    OUTLAW:   { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
+      tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
+      what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
+      drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
+      high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
+      growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
+    },
+    MAGICIAN: { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
+      tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
+      what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
+      drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
+      high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
+      growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
+    },
+    CAREGIVER: { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
+      tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
+      what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
+      drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
+      high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
+      growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
+    },
+    TRICKSTER: { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
+      tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
+      what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
+      drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
+      high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
+      growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
+    },
+    HERO:     { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
+      tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
+      what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
+      drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
+      high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
+      growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
+    },
+  };
+  const ALL_COG_TRIANGLES = [
+    { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: 'Ruler · Innocent · Sage' },
+    { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: 'Judge · Explorer · Artist' },
+    { id: 3, mode: 'Impact Modus',     color: '#f97316', members: 'Lover · Outlaw · Magician' },
+    { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: 'Caregiver · Trickster · Hero' },
+  ];
+
   // Generate and download a clean, document-style PDF
   const handleDownloadPdf = useCallback(async () => {
     if (!result) return;
@@ -421,7 +523,7 @@ const AssessmentResultsModal = ({
       const bg        = [6, 6, 18];
       const orange    = [249, 115, 22];
       const purple    = [168, 85, 247];
-      const green     = [0, 255, 157];
+      const green     = [21, 85, 12];
       const red       = [239, 68, 68];
       const cyan      = [34, 211, 238];
       const amber     = [251, 191, 36];
@@ -516,7 +618,7 @@ const AssessmentResultsModal = ({
       // ── Helper: start new page if section won't fit, then render it ──
       const renderSection = (title, content, color) => {
         const needed = estimateSectionHeight(title, content, contentW - 4);
-        if (y + needed > H - margin) {
+        if (!noPageBreak && y + needed > H - margin) {
           pdf.addPage();
           paintBg();
           y = margin;
@@ -526,11 +628,48 @@ const AssessmentResultsModal = ({
         writePdfMarkdown(content, margin + 2, contentW - 4);
       };
 
+      // ── Helper: render page content vertically justified (fill full page height) ──
+      // renderFn receives a `gap` callback. Call gap() BETWEEN content blocks.
+      // Extra vertical space is distributed equally among gap() calls so content
+      // spans from top-margin to bottom-margin.
+      // If content overflows one page, falls back to normal rendering with page breaks.
+      const justifiedPage = async (renderFn) => {
+        // Pass 1: measure total content height on temporary page
+        pdf.addPage(); paintBg();
+        const tmpPg = pdf.internal.getNumberOfPages();
+        y = margin;
+        const savedNPB = noPageBreak;
+        noPageBreak = true;
+        let gapCount = 0;
+        await renderFn(() => { gapCount++; });
+        const contentH = y - margin;
+        noPageBreak = savedNPB;
+        pdf.deletePage(tmpPg);
+
+        const availableH = H - 2 * margin;
+
+        if (contentH <= availableH && gapCount > 0) {
+          // Content fits — render justified (spread to fill page)
+          pdf.addPage(); paintBg(); markPage();
+          y = margin;
+          const extra = availableH - contentH;
+          const gapSize = extra / gapCount;
+          noPageBreak = true;
+          await renderFn(() => { y += gapSize; });
+          noPageBreak = savedNPB;
+        } else {
+          // Content overflows — render normally with page breaks
+          pdf.addPage(); paintBg(); markPage();
+          y = margin;
+          await renderFn(() => {});
+        }
+      };
+
       // ── Helper: key-value line ──
       const keyValue = (key, value) => {
         if (!value) return;
         ensureSpace(6);
-        pdf.setFontSize(9);
+        pdf.setFontSize(8.5);
         pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(...white);
         pdf.text(key + ':', margin + 2, y);
@@ -621,7 +760,7 @@ const AssessmentResultsModal = ({
           }
           // Regular paragraph — strip bold markers, render in white
           const text = trimmed.replace(/\*\*/g, '').replace(/\*/g, '');
-          pdf.setFontSize(9);
+          pdf.setFontSize(8.5);
           pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(...white);
           const pLines = pdf.splitTextToSize(text, maxW);
@@ -692,7 +831,7 @@ const AssessmentResultsModal = ({
 
       // Top brand line — "GARDEN FOR LIFE: Archetype Analyse" left, date right
       const coverDate = new Date().toLocaleDateString('nl-NL');
-      pdf.setFontSize(8);
+      pdf.setFontSize(8.5);
       pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
       pdf.text('GARDEN FOR LIFE: Archetype Analyse', margin, y);
@@ -776,18 +915,16 @@ const AssessmentResultsModal = ({
       pdf.setFont('helvetica', 'bold');
       pdf.text(`${result.totalScore} / ${result.maxScore}`, W / 2, y, { align: 'center' });
       y += 9;
-      pdf.setFontSize(8);
+      pdf.setFontSize(8.5);
       pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('BEWUSTZIJNS SCORE', W / 2, y, { align: 'center' });
+      pdf.text('DELTAWERKEN DATAPUNTEN', W / 2, y, { align: 'center' });
       y += 10;
 
       // ═══════════════════════════════════════════════════
       // PAGE 2: LEGAL / COMPLIANCE
       // ═══════════════════════════════════════════════════
-      pdf.addPage();
-      paintBg(); markPage();
-      y = margin;
+      await justifiedPage(async (gap) => {
 
       // Header
       pdf.setFontSize(16);
@@ -802,7 +939,7 @@ const AssessmentResultsModal = ({
 
       // ── Legal section helper (card-style) ──
       const legalSection = (title, body) => {
-        pdf.setFontSize(8);
+        pdf.setFontSize(8.5);
         pdf.setFont('helvetica', 'normal');
         const bodyLines = pdf.splitTextToSize(body, contentW - 16);
         const blockH = 12 + bodyLines.length * 4;
@@ -819,7 +956,7 @@ const AssessmentResultsModal = ({
         pdf.setFont('helvetica', 'bold');
         pdf.text(title, margin + 8, y + 4);
         // Body
-        pdf.setFontSize(8);
+        pdf.setFontSize(8.5);
         pdf.setTextColor(...white);
         pdf.setFont('helvetica', 'normal');
         const bodyY = y + 10;
@@ -828,6 +965,7 @@ const AssessmentResultsModal = ({
         });
         y += blockH + 6;
       };
+      gap();
 
       legalSection(
         '1. Productomschrijving',
@@ -835,6 +973,7 @@ const AssessmentResultsModal = ({
         'De resultaten in dit rapport zijn gebaseerd op een AI-gestuurd archetyperingsmodel en vormen geen klinische diagnose, psychologisch advies of medische beoordeling. ' +
         'Het systeem kent op basis van uw antwoorden een archetypecombinatie toe die bedoeld is als spiegel voor persoonlijke reflectie.'
       );
+      gap();
 
       legalSection(
         '2. Metaforisch Kader & Wetenschappelijke Context',
@@ -842,6 +981,7 @@ const AssessmentResultsModal = ({
         'Deze worden uitsluitend metaforisch ingezet als denkkader en worden niet gepresenteerd als gevestigde wetenschap. ' +
         'Verwijzingen naar neurotransmitters, kwantumvelden of energetische patronen dienen als beeldspraak om gedragspatronen te duiden, niet als wetenschappelijke claims.'
       );
+      gap();
 
       legalSection(
         '3. AI Agent Prompt — Verantwoordelijkheid',
@@ -850,6 +990,7 @@ const AssessmentResultsModal = ({
         'Gebruik in externe AI-tools (zoals ChatGPT, Claude of andere) valt volledig buiten de verantwoordelijkheid van Garden For Life. ' +
         'De gebruiker aanvaardt volledige verantwoordelijkheid voor het gebruik van deze prompt buiten het Garden for Life platform.'
       );
+      gap();
 
       legalSection(
         '4. Gegevensbescherming (AVG/GDPR)',
@@ -859,6 +1000,7 @@ const AssessmentResultsModal = ({
         'Na de bewaartermijn worden gegevens automatisch en onherroepelijk verwijderd. ' +
         'U heeft te allen tijde het recht om uw account en alle bijbehorende gegevens direct te verwijderen via uw profielinstellingen.'
       );
+      gap();
 
       legalSection(
         '5. Intellectueel Eigendom',
@@ -866,6 +1008,7 @@ const AssessmentResultsModal = ({
         'Dit document is uitsluitend bedoeld voor persoonlijk gebruik door de ontvanger. ' +
         'Reproductie, publicatie of commercieel gebruik van (delen van) dit rapport zonder schriftelijke toestemming is niet toegestaan.'
       );
+      gap();
 
       legalSection(
         '6. Aansprakelijkheid',
@@ -874,6 +1017,7 @@ const AssessmentResultsModal = ({
         'Bij psychische klachten of zorgen wordt geadviseerd contact op te nemen met een gekwalificeerde zorgverlener. ' +
         'Het gebruik van dit rapport en de daarin opgenomen AI Agent Prompt geschiedt geheel op eigen risico van de gebruiker.'
       );
+      gap();
 
       // Consent acknowledgment
       y += 2;
@@ -892,12 +1036,14 @@ const AssessmentResultsModal = ({
       pdf.text('De gebruiker heeft bij het downloaden van dit document bevestigd kennis te hebben', margin + 8, y + 9);
       pdf.text('genomen van bovenstaande voorwaarden en de verantwoordelijkheid voor gebruik te aanvaarden.', margin + 8, y + 13);
       y += 22;
+      gap();
 
       // Contact
       pdf.setFontSize(7);
       pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Vragen of verzoeken? Neem contact op via het Garden for Life platform.', W / 2, y, { align: 'center' });
+      });
 
       // ═══════════════════════════════════════════════════
       // PAGE 3: BELANGRIJKE CONTEXT
@@ -992,7 +1138,7 @@ const AssessmentResultsModal = ({
       // ═══════════════════════════════════════════════════
       // PAGE 4: FUNDERING VAN DE TEST (was page 5)
       // ═══════════════════════════════════════════════════
-      pdf.addPage(); paintBg(); markPage(); y = margin;
+      await justifiedPage(async (gap) => {
 
       sectionHeading('De Fundering van de Test', purple);
 
@@ -1025,11 +1171,12 @@ const AssessmentResultsModal = ({
         margin + 2, y, contentW - 4, 9, white
       );
       y += 5;
+      gap();
 
       drawTable(
         ['GROEP', 'NETWERK', 'ARCHETYPEN', 'DRIJFVEER'],
         [
-          ['Ruling',     'CEN Dominantie',        'Judge (1), Ruler (12)',      'Externe structuur en orde'],
+          ['Ruling',     'CEN Dominantie',        'Ruler (12), Judge (1)',      'Externe structuur en orde'],
           ['Relational', 'Limbic Coupling',        'Lover (2), Caregiver (3)',   'Emotionele fusie en empathie'],
           ['Seeker',     'Hoge Openness',          'Innocent (4), Explorer (5)', 'Zuiverheid en ontdekking'],
           ['Chaos',      'Salience Network',       'Outlaw (6), Trickster (7)',  'Disruptie en lage consci\u00EBntieusheid'],
@@ -1041,6 +1188,7 @@ const AssessmentResultsModal = ({
       );
 
       y += 5;
+      gap();
       drawTable(
         ['Diepte', 'Getal', 'Afleiding', 'Manifestatie'],
         [
@@ -1055,6 +1203,7 @@ const AssessmentResultsModal = ({
       );
 
       y += 5;
+      gap();
       writeWrapped(
         '3 is het ware atoom. Al het andere is 3, maar dan verdubbeld, gekwadrateerd of als faculteit berekend:',
         margin + 2, y, contentW - 4, 9, white, 'bold'
@@ -1072,6 +1221,7 @@ const AssessmentResultsModal = ({
         margin + 2, y, contentW - 4, 8.5, white
       );
       y += 5;
+      gap();
 
       drawTable(
         ['Hoeken', 'Toepassing', 'Weergave'],
@@ -1098,19 +1248,20 @@ const AssessmentResultsModal = ({
       });
       y += 5;
       ensureSpace(8);
-      pdf.setFontSize(9); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...dimWhite);
+      pdf.setFontSize(8.5); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...dimWhite);
       pdf.text('Niet slecht voor een psychologische test.', margin + 2, y);
       y += 10;
+      });
 
       // ═══════════════════════════════════════════════════
       // PAGE 5: 72 ARCHETYPES CROSS-REFERENCE (was page 6)
       // ═══════════════════════════════════════════════════
-      pdf.addPage(); paintBg(); markPage(); y = margin;
+      await justifiedPage(async (gap) => {
 
       sectionHeading('72 Archetypes \u2014 Culturele & Mythologische Kruisverwijzing', orange);
 
       ensureSpace(8);
-      pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+      pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
       pdf.text('\u2022', margin + 2, y);
       const fBullet1 = pdf.splitTextToSize(
         '12 Kern archetypes. In de realiteit van relationaliteit betekent dit dat er 72 archetypes zijn (12\u00D76 relaties).',
@@ -1118,6 +1269,7 @@ const AssessmentResultsModal = ({
       );
       fBullet1.forEach(bl => { ensureSpace(4.5); pdf.text(bl, margin + 7, y); y += 4.5; });
       y += 5;
+      gap();
 
       drawTable(
         ['Traditie / Discipline', 'Het Concept', 'Betekenis & Belang', 'Thematische Kruisverwijzing'],
@@ -1139,6 +1291,7 @@ const AssessmentResultsModal = ({
         [36, 32, 68, 38],
         { fontSize: 7.5 }
       );
+      gap();
 
       // ── TNM WHEEL — static model image below the table ──
       try {
@@ -1159,11 +1312,12 @@ const AssessmentResultsModal = ({
       } catch {
         y += 4;
       }
+      });
 
       // ═══════════════════════════════════════════════════
       // PAGE 6: DE ARCHETYPISCHE LAAG + HOE HET RAPPORT ONTSTAAT + WETENSCHAPPELIJKE CONTEXT (was page 4)
       // ═══════════════════════════════════════════════════
-      pdf.addPage(); paintBg(); markPage(); y = margin;
+      await justifiedPage(async (gap) => {
 
       sectionHeading('De Archetypische Laag', orange);
 
@@ -1177,6 +1331,7 @@ const AssessmentResultsModal = ({
         margin + 2, y, contentW - 4, 8.5, white
       );
       y += 6;
+      gap();
 
       // ── Hoe Het Rapport Ontstaat ──
       ensureSpace(14);
@@ -1223,6 +1378,7 @@ const AssessmentResultsModal = ({
       } catch {
         y += 0;
       }
+      gap();
 
       // ── Wetenschappelijke Context ──
       ensureSpace(14);
@@ -1247,7 +1403,7 @@ const AssessmentResultsModal = ({
 
       sciRefs.forEach(({ color: refColor, text }) => {
         ensureSpace(12);
-        pdf.setFontSize(8); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...refColor);
+        pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...refColor);
         pdf.text('\u2022', margin + 2, y);
         const refLines = pdf.splitTextToSize(text, contentW - 10);
         refLines.forEach(rl => {
@@ -1257,21 +1413,21 @@ const AssessmentResultsModal = ({
         });
         y += 1.5;
       });
+      });
 
       // ═══════════════════════════════════════════════════
       // CONTENT PAGES
       // ═══════════════════════════════════════════════════
-      pdf.addPage();
-      paintBg(); markPage();
-      y = margin;
+      await justifiedPage(async (gap) => {
 
       // ── WHY THIS COMBINATION ──
       if (result.combinationText) {
         sectionHeading(`Waarom jij ${result.name} bent`, green);
-        writeWrapped(result.combinationText, margin + 2, y, contentW - 4, 9, white);
+        writeWrapped(result.combinationText, margin + 2, y, contentW - 4, 8.5, white);
         y += 4;
         hr();
       }
+      gap();
 
       // ── MAIN ARCHETYPE ──
       sectionHeading(`De Essentie — ${result.mainName} (${result.mainNameEn})`, purple);
@@ -1288,6 +1444,7 @@ const AssessmentResultsModal = ({
       keyValue('Schaduwkant', result.mainShadowTrait);
       y += 2;
       hr();
+      gap();
 
       // ── SUPPORT ARCHETYPE ──
       sectionHeading(`De Vermenigvuldiging — ${result.secondaryName} (${result.secondaryNameEn})`, orange);
@@ -1306,13 +1463,14 @@ const AssessmentResultsModal = ({
       }
       if (result.harmonyActive) {
         ensureSpace(6);
-        pdf.setFontSize(9);
+        pdf.setFontSize(8.5);
         pdf.setTextColor(...green);
         pdf.setFont('helvetica', 'bold');
         pdf.text(`\u2666 Harmony: ${result.mainNameEn} + ${result.secondaryNameEn} — complementaire as`, margin + 2, y);
         y += 5;
       }
       y += 2;
+      gap();
 
       // ── ALL 6 OUTCOMES TABLE (part of Vermenigvuldiging section) ──
       if (result.allSupportArchetypes) {
@@ -1351,9 +1509,9 @@ const AssessmentResultsModal = ({
         };
 
         // ── NEW LAYOUT: archetypes as rows, Betekenis / Gift / Valkuil as columns ──
-        const gap = 1.5;
+        const colGap = 1.5;
         const nameColW = contentW * 0.20;
-        const dataColW = (contentW - nameColW - gap * 3) / 3;
+        const dataColW = (contentW - nameColW - colGap * 3) / 3;
         const nameFontSize = 8;
         const dataFontSize = 7.5;
 
@@ -1364,9 +1522,9 @@ const AssessmentResultsModal = ({
 
         // Column x positions
         const col0x = margin;
-        const col1x = margin + nameColW + gap;
-        const col2x = col1x + dataColW + gap;
-        const col3x = col2x + dataColW + gap;
+        const col1x = margin + nameColW + colGap;
+        const col2x = col1x + dataColW + colGap;
+        const col3x = col2x + dataColW + colGap;
 
         // Measure row heights
         const rowHeights = nameRowData.map(sa => {
@@ -1380,7 +1538,7 @@ const AssessmentResultsModal = ({
         // Draw rows
         nameRowData.forEach((sa, i) => {
           const rowH = rowHeights[i];
-          ensureSpace(rowH + gap);
+          ensureSpace(rowH + colGap);
 
           if (sa.isActive) { pdf.setFillColor(40, 30, 60); }
           else { pdf.setFillColor(18, 18, 28); }
@@ -1401,28 +1559,28 @@ const AssessmentResultsModal = ({
           cellText(sa.gift,    col2x, y + 2, dataColW, dataFontSize, [215, 215, 220]);
           cellText(sa.shadow,  col3x, y + 2, dataColW, dataFontSize, [195, 195, 205]);
 
-          y += rowH + gap;
+          y += rowH + colGap;
         });
       }
+      });
 
       // ── SHADOW (new page) ──
-      pdf.addPage();
-      paintBg(); markPage();
-      y = margin;
+      await justifiedPage(async (gap) => {
       if (result.shadowPartner) {
         sectionHeading(`De Schaduw — ${result.shadowName} (${result.shadowNameEn})`, purple);
         if (result.mainShadowTension) {
-          writeWrapped(result.mainShadowTension, margin + 2, y, contentW - 4, 9, white);
+          writeWrapped(result.mainShadowTension, margin + 2, y, contentW - 4, 8.5, white);
           y += 2;
         }
         if (result.shadowInsight) {
-          writeWrapped(result.shadowInsight, margin + 2, y, contentW - 4, 9, white);
+          writeWrapped(result.shadowInsight, margin + 2, y, contentW - 4, 8.5, white);
         } else if (result.shadowDescription) {
-          writeWrapped(result.shadowDescription, margin + 2, y, contentW - 4, 9, white);
+          writeWrapped(result.shadowDescription, margin + 2, y, contentW - 4, 8.5, white);
         }
         y += 4;
         hr();
       }
+      gap();
 
       // ── BLINDSPOT ──
       if (result.blindspotPartner) {
@@ -1434,7 +1592,7 @@ const AssessmentResultsModal = ({
         pdf.text(`De tegenhanger van je Support (${result.secondaryNameEn}) — jouw externe blinde vlek`, margin + 5, y);
         y += 6;
         if (result.blindspotDescription) {
-          writeWrapped(result.blindspotDescription, margin + 2, y, contentW - 4, 9, white);
+          writeWrapped(result.blindspotDescription, margin + 2, y, contentW - 4, 8.5, white);
           y += 2;
         }
         if (result.blindspotShadowTrait) {
@@ -1443,6 +1601,7 @@ const AssessmentResultsModal = ({
         y += 4;
         hr();
       }
+      gap();
 
       // ── OCEAN PERSONALITY PROFILE ──
       if (result.extendedOcean) {
@@ -1556,18 +1715,17 @@ const AssessmentResultsModal = ({
           }
         }
 
+        hr();
+
         // Neuroticism Trigger
         if (result.neuroticismTrigger) {
-          const tLines = pdf.splitTextToSize(result.neuroticismTrigger, contentW - 18);
+          const tLines = pdf.splitTextToSize(result.neuroticismTrigger, contentW - 8);
           const bh = 10 + tLines.length * 4.2;
           ensureSpace(bh + 3);
-          pdf.setFillColor(25, 8, 8);
-          pdf.roundedRect(margin, y - 2, contentW, bh, 2, 2, 'F');
-          pdf.setFillColor(...red); pdf.rect(margin, y - 2, 2, bh, 'F');
           pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...red);
-          pdf.text('NEUROTICISME TRIGGER', margin + 8, y + 3.5);
+          pdf.text('NEUROTICISME TRIGGER', margin + 2, y + 3.5);
           pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
-          tLines.forEach((line, li) => pdf.text(line, margin + 8, y + 9 + li * 4.2));
+          tLines.forEach((line, li) => pdf.text(line, margin + 2, y + 9 + li * 4.2));
           y += bh + 5;
         }
 
@@ -1585,13 +1743,13 @@ const AssessmentResultsModal = ({
             pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...c);
             pdf.text(label.toUpperCase(), margin + 2, y);
             y += 5;
-            writeWrapped(text, margin + 2, y, contentW - 4, 9, dimWhite);
+            writeWrapped(text, margin + 2, y, contentW - 4, 8.5, white);
             y += 3;
           });
         }
 
-        hr();
       }
+      });
 
       // ── PERSOONLIJKHEIDSRAPPORT VERGELIJKING — comparison with uploaded OCEAN profile ──
       const reportCompSection = displaySections
@@ -1600,12 +1758,11 @@ const AssessmentResultsModal = ({
       const hasUploadedFiles = (uploadedFiles || []).length > 0;
 
       if (reportCompSection || hasUploadedFiles) {
-        pdf.addPage();
-        paintBg(); markPage();
-        y = margin;
+        await justifiedPage(async (gap) => {
 
         // ── Page heading ──
-        sectionHeading('Persoonlijkheidsrapport Vergelijking', purple);
+        sectionHeading('Persoonlijkheidsrapport Vergelijking', cyan);
+        gap();
 
         // ── Uploaded file label ──
         const fileNames = (uploadedFiles || []).map(f => f.name).join(', ');
@@ -1655,7 +1812,7 @@ const AssessmentResultsModal = ({
               pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
               pdf.text(dim, panelX + 2, rowY + 1.5);
               // Label
-              pdf.setFontSize(8); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...mutedGray);
+              pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...mutedGray);
               pdf.text(OCEAN_FULL_REF[dim], panelX + 9, rowY + 1.5);
               // Bar track
               const bx = panelX + labelW;
@@ -1680,7 +1837,7 @@ const AssessmentResultsModal = ({
           // LEFT: GFL Assessment result (0-100, derived from archetype weights)
           drawOceanPanel(
             leftX, halfW,
-            'GFL TEST — JOUW SCORE',
+            'DELTAWERKEN SCORE',
             (dim) => result.oceanScores?.[dim] ?? 0,
             (_dim, score) => `${score}/100`,
             100
@@ -1706,6 +1863,7 @@ const AssessmentResultsModal = ({
           pdf.line(margin, y, W - margin, y);
           y += 6;
         }
+        gap();
 
         // ── AI comparison text — structured with headers ──
         if (reportCompSection) {
@@ -1745,7 +1903,7 @@ const AssessmentResultsModal = ({
               continue;
             }
             if (/^conclusie/i.test(lower) && trimmed.length < 80) {
-              sections.push({ type: 'header', text: 'Conclusie' });
+              sections.push({ type: 'header', text: 'Conclusie en Reflectie' });
               const afterColon = trimmed.replace(/^conclusie\s*[:.]?\s*/i, '');
               if (afterColon.length > 0) sections.push({ type: 'text', text: afterColon });
               continue;
@@ -1773,6 +1931,7 @@ const AssessmentResultsModal = ({
           // Render sections — use ensureSpace for page breaks (no manual reportMaxY)
           for (const section of sections) {
             if (section.type === 'header') {
+              gap();
               ensureSpace(12);
               y += 2;
               pdf.setFontSize(9); pdf.setFont('helvetica', 'bold');
@@ -1797,7 +1956,7 @@ const AssessmentResultsModal = ({
               y += 1;
             } else {
               // Normal text paragraph
-              pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
+              pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal');
               pdf.setTextColor(...white);
               const paraLines = pdf.splitTextToSize(section.text, contentW - 4);
               for (const pl of paraLines) {
@@ -1819,14 +1978,13 @@ const AssessmentResultsModal = ({
             margin + 2, y, { maxWidth: contentW - 4 }
           );
         }
+        });
       }
 
       // ── DUAL-CORE DYNAMICS + RADAR CHART (page 5) ──
-      pdf.addPage();
-      paintBg(); markPage();
-      y = margin;
+      await justifiedPage(async (gap) => {
       if (result.subgroups && result.subgroups.length > 0) {
-        sectionHeading('Dual-Core Dynamics', purple);
+        sectionHeading('Dual-Core Dynamics', amber);
 
         // Legend
         const legY = y;
@@ -1853,10 +2011,10 @@ const AssessmentResultsModal = ({
         const MAX_TOTAL = 36;
         const labelW    = 38;
         const scoreW    = 22;
-        const gap       = 3;
-        const barAreaW  = contentW - labelW - scoreW - gap * 2;
-        const barX      = margin + labelW + gap;
-        const scoreX    = barX + barAreaW + gap;
+        const colGap    = 3;
+        const barAreaW  = contentW - labelW - scoreW - colGap * 2;
+        const barX      = margin + labelW + colGap;
+        const scoreX    = barX + barAreaW + colGap;
         const barH      = 2.5;
 
         result.subgroups.forEach(sg => {
@@ -1951,27 +2109,127 @@ const AssessmentResultsModal = ({
         y += 4;
         hr();
       }
+      });
 
-      // ── CULTURAFORCE — COGNITIEVE DRIEHOEK (captured from result card UI) ──
-      if (culturaForceRef.current) {
-        try {
-          const cfCanvas = await html2canvas(culturaForceRef.current, {
-            backgroundColor: '#020003',
-            scale: 3,
-            useCORS: true,
-            logging: false,
-          });
-          const cfImg = cfCanvas.toDataURL('image/png');
-          const cfW = contentW;
-          const cfH = (cfCanvas.height / cfCanvas.width) * cfW;
-          ensureSpace(cfH + 6);
-          pdf.addImage(cfImg, 'PNG', margin, y, cfW, cfH);
-          y += cfH + 6;
-          hr();
-        } catch {
+      // ── CULTURAFORCE — COGNITIEVE DRIEHOEK (own page) ──
+      await justifiedPage(async (gap) => {
+      {
+        const archKey = (result.mainArchetype || '').toUpperCase();
+        const tri = COG_TRIANGLES[archKey];
+        if (tri) {
+          const hexToRgb = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+          const triColor = hexToRgb(tri.color);
+
+          // Section heading with amber left bar
+          sectionHeading('Cognitieve Driehoek', amber);
+          gap();
+
+          // Intro paragraph
+          writeWrapped(
+            'Gele driehoeken vuren uitsluitend op Culture picks \u2014 ze representeren aangeleerd cognitief gedrag, niet biologische hardware. Groene en blauwe signalen tonen wie je bent; gele signalen tonen hoe je hebt leren navigeren.',
+            margin + 2, y, contentW - 4, 8.5, dimWhite
+          );
+          y += 3;
+          gap();
+
+          // Active triangle mode name
+          ensureSpace(12);
+          pdf.setFillColor(...triColor);
+          pdf.rect(margin, y - 4, 1.5, 7, 'F');
+          pdf.setFontSize(10);
+          pdf.setTextColor(...triColor);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(tri.mode.toUpperCase(), margin + 5, y);
+          y += 5;
+
+          // Members + networks
+          pdf.setFontSize(8.5);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...dimWhite);
+          pdf.text(tri.members.join(' \u00B7 ') + ' \u2014 ' + tri.networks, margin + 5, y);
+          y += 6;
+
+          // Tagline (italic, amber)
+          writeWrapped(tri.tagline, margin + 2, y, contentW - 4, 8.5, amber, 'italic');
+          y += 2;
+
+          // What
+          writeWrapped(tri.what, margin + 2, y, contentW - 4, 8.5, white);
+          y += 2;
+          gap();
+
+          // Aangeleerde navigatie
+          ensureSpace(6);
+          pdf.setFontSize(8.5);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...triColor);
+          const navLabel = 'Aangeleerde navigatie: ';
+          pdf.text(navLabel, margin + 2, y);
+          const navLabelW = pdf.getTextWidth(navLabel);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...white);
+          const navLines = pdf.splitTextToSize(tri.drive, contentW - 4 - navLabelW);
+          pdf.text(navLines[0] || '', margin + 2 + navLabelW, y);
+          y += 4.3;
+          for (let i = 1; i < navLines.length; i++) { ensureSpace(4.3); pdf.text(navLines[i], margin + 2, y); y += 4.3; }
+          y += 2;
+          gap();
+
+          // Hoog geel profiel
+          ensureSpace(6);
+          pdf.setFontSize(8.5);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...amber);
+          const highLabel = 'Hoog geel profiel: ';
+          pdf.text(highLabel, margin + 2, y);
+          const highLabelW = pdf.getTextWidth(highLabel);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...white);
+          const highLines = pdf.splitTextToSize(tri.high, contentW - 4 - highLabelW);
+          pdf.text(highLines[0] || '', margin + 2 + highLabelW, y);
+          y += 4.3;
+          for (let i = 1; i < highLines.length; i++) { ensureSpace(4.3); pdf.text(highLines[i], margin + 2, y); y += 4.3; }
+          y += 2;
+          gap();
+
+          // Groeirichting
+          ensureSpace(6);
+          pdf.setFontSize(8.5);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...cyan);
+          const growLabel = 'Groeirichting: ';
+          pdf.text(growLabel, margin + 2, y);
+          const growLabelW = pdf.getTextWidth(growLabel);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...white);
+          const growLines = pdf.splitTextToSize(tri.growth, contentW - 4 - growLabelW);
+          pdf.text(growLines[0] || '', margin + 2 + growLabelW, y);
+          y += 4.3;
+          for (let i = 1; i < growLines.length; i++) { ensureSpace(4.3); pdf.text(growLines[i], margin + 2, y); y += 4.3; }
           y += 4;
+          gap();
+
+          // Reference triangles (compact list)
+          const others = ALL_COG_TRIANGLES.filter(t => t.id !== tri.id);
+          if (others.length) {
+            ensureSpace(others.length * 5 + 2);
+            for (const ot of others) {
+              const otColor = hexToRgb(ot.color);
+              pdf.setFontSize(8.5);
+              pdf.setFont('helvetica', 'bold');
+              pdf.setTextColor(...otColor);
+              const modeText = ot.mode.toUpperCase();
+              pdf.text(modeText, margin + 2, y);
+              const modeW = pdf.getTextWidth(modeText + '  ');
+              pdf.setFont('helvetica', 'normal');
+              pdf.setTextColor(...dimWhite);
+              pdf.text(ot.members, margin + 2 + modeW, y);
+              y += 4.5;
+            }
+          }
         }
       }
+      });
 
       // ── GROEP DYNAMIEK + RADAR CHART — together on one page (only if content exists) ──
       const groepDynSection = displaySections?.find(s =>
@@ -2027,7 +2285,7 @@ const AssessmentResultsModal = ({
       ) || [];
       if (resonantieSections.length > 0) {
         noPageBreak = true; // lock to current page — no overflow
-        const resoColor = [34, 211, 238]; // cyan
+        const resoColor = [0, 180, 110]; // dark green
         for (let ri = 0; ri < resonantieSections.length; ri++) {
           const rs = resonantieSections[ri];
           renderSection(rs.title, rs.content, resoColor);
@@ -2097,19 +2355,17 @@ const AssessmentResultsModal = ({
 
           // Render ungrouped sections on a dedicated page (only if there are any)
           if (otherSections.length > 0) {
-            pdf.addPage();
-            paintBg();
-            y = margin;
-            markPage();
+            await justifiedPage(async (gap) => {
             otherSections.forEach((section, i) => {
               renderSection(section.title, section.content, getPdfSectionColor(section.title));
-              if (i < otherSections.length - 1) hr();
+              if (i < otherSections.length - 1) { hr(); gap(); }
+            });
             });
           }
 
           // ── Page 13a: Identiteit / Waarom / Essentie / Vermenigvuldiging ──
           if (group1aSections.length > 0) {
-            pdf.addPage(); paintBg(); y = margin; markPage();
+            await justifiedPage(async (gap) => {
 
             // ── Fixed Meta-Disclaimer (purple blockquote) before section 1 ──
             ensureSpace(20);
@@ -2130,16 +2386,18 @@ const AssessmentResultsModal = ({
               dlY += 3.5;
             }
             y += dlH + 4;
+            gap();
 
             group1aSections.forEach((section, i) => {
               renderSection(section.title, section.content, getPdfSectionColor(section.title));
-              if (i < group1aSections.length - 1) hr();
+              if (i < group1aSections.length - 1) { hr(); gap(); }
+            });
             });
           }
 
           // ── Page 13b: Schaduw + images + Blindspot + Visuele Analyse (always together) ──
           if (group1bSections.length > 0) {
-            pdf.addPage(); paintBg(); y = margin; markPage();
+            await justifiedPage(async (gap) => {
             for (let gi = 0; gi < group1bSections.length; gi++) {
               const section = group1bSections[gi];
               const sTitle = cleanTitle(section.title || '').toLowerCase();
@@ -2147,6 +2405,7 @@ const AssessmentResultsModal = ({
 
               // After De Schaduw content: insert shadow + blindspot archetype images side-by-side
               if (sTitle.includes('schaduw') && result.shadowPartner && result.blindspotPartner) {
+                gap();
                 try {
                   const shadowImgSrc = getArchetypeImage(
                     result.shadowPartner,
@@ -2164,7 +2423,7 @@ const AssessmentResultsModal = ({
                     const imgGap = 6;
                     const halfW = (contentW - imgGap) / 2;
                     const availH = H - margin - y - 6;
-                    const maxImgH = Math.min(availH, 65) * 0.85;
+                    const maxImgH = Math.min(availH, 65) * 0.9775;
 
                     // Helper: circular-clip an image onto a canvas and return data URL
                     const circleClip = (imgEl, size) => {
@@ -2213,19 +2472,22 @@ const AssessmentResultsModal = ({
                 } catch {
                   y += 4;
                 }
+                gap();
               }
 
               // Skip the divider after the schaduw section (images already provide visual separation)
-              if (gi < group1bSections.length - 1 && !sTitle.includes('schaduw')) hr();
+              if (gi < group1bSections.length - 1 && !sTitle.includes('schaduw')) { hr(); gap(); }
             }
+            });
           }
 
           // ── Page 14: Alchemie / Neurale Schaakbord / Ontologie ──
           if (group2Sections.length > 0) {
-            pdf.addPage(); paintBg(); y = margin; markPage();
+            await justifiedPage(async (gap) => {
             group2Sections.forEach((section, i) => {
               renderSection(section.title, section.content, getPdfSectionColor(section.title));
-              if (i < group2Sections.length - 1) hr();
+              if (i < group2Sections.length - 1) { hr(); gap(); }
+            });
             });
           }
 
@@ -2267,7 +2529,7 @@ const AssessmentResultsModal = ({
       pdf.setFontSize(7);
       pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('Garden for Life  \u2022  Advanced Consciousness Assessment', W / 2, y, { align: 'center' });
+      pdf.text('Garden for Life  \u2022  Archetype Analyse', W / 2, y, { align: 'center' });
       y += 3.5;
       pdf.text(`Score: ${result.totalScore} / ${result.maxScore}`, W / 2, y, { align: 'center' });
       y += 3.5;
@@ -2287,15 +2549,15 @@ const AssessmentResultsModal = ({
       // Pre-calculate wrapped line counts to size the block from the bottom up
       pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
       const line1 = pdf.splitTextToSize('Hoogachtende Meester,', closingTextW);
-      const line2 = pdf.splitTextToSize('Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en vraag ik je bij deze om onze assessment te delen met anderen- weet wie je vraagt!', closingTextW);
-      const line3 = pdf.splitTextToSize('zolang de beta-fase loopt is alleen het meester niveau toegankelijk.', closingTextW);
-      const line4 = pdf.splitTextToSize('Ook is een kleine donatie meer dan welkom om ons project nog verder te optimaliseren.', closingTextW);
+      const line2 = pdf.splitTextToSize('Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en reik ik nog \u00E9\u00E9n laatste keer uit voor jouw hulp.', closingTextW);
+      const line3 = pdf.splitTextToSize('Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data hoe beter wij kunnen optimaliseren.', closingTextW);
+      const line4 = pdf.splitTextToSize('Zolang de beta-fase loopt is alleen het meester niveau toegankelijk.', closingTextW);
       const line5 = pdf.splitTextToSize('Anyway- pionier, hartelijk dank voor de tijd en attentie!', closingTextW);
       const gapSingle = lineH;       // 1× blank line gap
       const gapDouble = lineH * 2;   // 2× blank line gap
       const totalTextH =
         line1.length * lineH + gapDouble +
-        line2.length * lineH +
+        line2.length * lineH + gapDouble +
         line3.length * lineH + gapSingle +
         line4.length * lineH + gapDouble +
         line5.length * lineH;
@@ -2308,6 +2570,7 @@ const AssessmentResultsModal = ({
       for (const l of line1) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
       yMsg += gapDouble;
       for (const l of line2) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
+      yMsg += gapDouble;
       for (const l of line3) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
       yMsg += gapSingle;
       for (const l of line4) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
@@ -2489,9 +2752,9 @@ const AssessmentResultsModal = ({
             maxHeight: rs.modalMaxHeight,
             background: 'rgba(2, 0, 3, 0.3)',
             backdropFilter: 'blur(24px)',
-            border: '1px solid rgba(0, 255, 157, 0.3)',
+            border: '1px solid rgba(0, 180, 110, 0.3)',
             borderRadius: '0.75rem',
-            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(0, 255, 157, 0.06), inset 0 0 30px rgba(0, 255, 157, 0.03)',
+            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(0, 180, 110, 0.06), inset 0 0 30px rgba(0, 180, 110, 0.03)',
             display: 'flex',
             flexDirection: 'column',
             color: '#fff',
@@ -2522,7 +2785,7 @@ const AssessmentResultsModal = ({
               left: 0,
               width: '100%',
               height: '1px',
-              background: 'linear-gradient(to right, transparent, #00ff9d, transparent)',
+              background: 'linear-gradient(to right, transparent, #00b46e, transparent)',
               zIndex: 50
             }} />
             
@@ -2547,7 +2810,7 @@ const AssessmentResultsModal = ({
                   alignItems: 'center',
                   gap: '2rem',
                   paddingBottom: '1.5rem',
-                  borderBottom: '1px solid rgba(0, 255, 157, 0.2)',
+                  borderBottom: '1px solid rgba(0, 180, 110, 0.2)',
                 }}>
                   {/* Profile Image with Holographic Rings — responsive size */}
                   <div style={{ position: 'relative', width: rs.profileImgSize, height: rs.profileImgSize, flexShrink: 0 }}>
@@ -2556,7 +2819,7 @@ const AssessmentResultsModal = ({
                       position: 'absolute',
                       inset: 0,
                       borderRadius: '50%',
-                      border: '1px dashed rgba(0, 255, 157, 0.4)',
+                      border: '1px dashed rgba(0, 180, 110, 0.4)',
                       animation: 'spin 20s linear infinite',
                     }} />
                     {/* Dotted reverse-spinning ring */}
@@ -2573,7 +2836,7 @@ const AssessmentResultsModal = ({
                       height: '100%',
                       borderRadius: '50%',
                       overflow: 'hidden',
-                      border: '2px solid #00ff9d',
+                      border: '2px solid #00b46e',
                       background: '#000',
                       position: 'relative',
                     }}>
@@ -2634,7 +2897,7 @@ const AssessmentResultsModal = ({
                     {result.secondaryName && (
                       <p style={{
                         fontSize: '0.85rem',
-                        color: 'rgba(0, 255, 157, 0.7)',
+                        color: 'rgba(0, 180, 110, 0.7)',
                         fontFamily: "'Rajdhani', sans-serif",
                         fontWeight: 600,
                         textTransform: 'uppercase',
@@ -2652,7 +2915,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     width: '100%',
                     background: 'transparent',
-                    border: '1px solid rgba(0, 255, 157, 0.25)',
+                    border: '1px solid rgba(0, 180, 110, 0.25)',
                     borderRadius: '0.75rem',
                     padding: rs.sectionPad,
                     position: 'relative',
@@ -2660,11 +2923,11 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #00ff9d, transparent)',
+                      background: 'linear-gradient(to right, transparent, #00b46e, transparent)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#00ff9d',
+                      color: '#00b46e',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.85rem',
                       textTransform: 'uppercase',
@@ -2812,7 +3075,7 @@ const AssessmentResultsModal = ({
                   <div style={{
                     width: '100%',
                     background: 'transparent',
-                    border: '1px solid rgba(0, 255, 157, 0.15)',
+                    border: '1px solid rgba(0, 180, 110, 0.15)',
                     borderRadius: '0.75rem',
                     padding: rs.cardPad,
                     position: 'relative',
@@ -2820,11 +3083,11 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #00ff9d, transparent)',
+                      background: 'linear-gradient(to right, transparent, #00b46e, transparent)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#00ff9d',
+                      color: '#00b46e',
                       fontFamily: "'Lexend Mega', sans-serif",
                       fontSize: '0.8rem',
                       textTransform: 'uppercase',
@@ -2848,7 +3111,7 @@ const AssessmentResultsModal = ({
                         borderBottom: '1px solid rgba(255,255,255,0.07)',
                         marginBottom: '0',
                       }}>
-                        {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(0,255,157,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
+                        {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(0,180,110,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
                           <div key={label} style={{ fontSize: '0.75rem', color, fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', paddingLeft: '0.4rem' }}>
                             {label}
                           </div>
@@ -2876,10 +3139,10 @@ const AssessmentResultsModal = ({
                           }}>
                             {/* Archetype name */}
                             <div style={{ padding: '0.2rem 0.4rem 0', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: '0.65rem', color: sa.isActive ? '#a855f7' : 'rgba(0,255,157,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: 1.2 }}>
+                              <div style={{ fontSize: '0.65rem', color: sa.isActive ? '#a855f7' : 'rgba(0,180,110,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: 1.2 }}>
                                 {(sa.group || '').trim()}
                               </div>
-                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#fff' : 'rgba(0,255,157,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.2, marginTop: '0.05rem' }}>
+                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#fff' : 'rgba(0,180,110,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.2, marginTop: '0.05rem' }}>
                                 {(sa.extendedName || '').trim()}
                               </div>
                             </div>
@@ -3042,7 +3305,7 @@ const AssessmentResultsModal = ({
                   }}>
                     <div style={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, #f97316, #a855f7, #fbbf24, #ef4444, #00ff9d)',
+                      background: 'linear-gradient(to right, #f97316, #a855f7, #fbbf24, #ef4444, #00b46e)',
                     }} />
                     <h3 style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
@@ -3338,170 +3601,49 @@ const AssessmentResultsModal = ({
 
                 {/* ── 5b. Gele Driehoek — Cognitieve Deepdive ── */}
                 {(() => {
-                  const COG_TRIANGLES = {
-                    RULER:     { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-                      tagline: 'Jij navigeert via principes, visie en structuur.',
-                      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
-                      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-                      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
-                      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
-                    },
-                    INNOCENT:  { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-                      tagline: 'Jij navigeert via principes, visie en structuur.',
-                      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
-                      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-                      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
-                      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
-                    },
-                    SAGE:      { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-                      tagline: 'Jij navigeert via principes, visie en structuur.',
-                      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
-                      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-                      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
-                      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
-                    },
-                    JUDGE:    { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
-                      tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
-                      what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
-                      drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
-                      high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
-                      growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
-                    },
-                    EXPLORER: { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
-                      tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
-                      what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
-                      drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
-                      high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
-                      growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
-                    },
-                    ARTIST:   { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
-                      tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
-                      what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
-                      drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
-                      high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
-                      growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
-                    },
-                    LOVER:    { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
-                      tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
-                      what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
-                      drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
-                      high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
-                      growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
-                    },
-                    OUTLAW:   { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
-                      tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
-                      what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
-                      drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
-                      high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
-                      growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
-                    },
-                    MAGICIAN: { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
-                      tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
-                      what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
-                      drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
-                      high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
-                      growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
-                    },
-                    CAREGIVER: { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
-                      tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
-                      what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
-                      drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
-                      high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
-                      growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
-                    },
-                    TRICKSTER: { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
-                      tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
-                      what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
-                      drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
-                      high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
-                      growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
-                    },
-                    HERO:     { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
-                      tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
-                      what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
-                      drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
-                      high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
-                      growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
-                    },
-                  };
-
                   const archKey = (result.mainArchetype || '').toUpperCase();
                   const tri = COG_TRIANGLES[archKey];
                   if (!tri) return null;
 
-                  const ALL_TRIANGLES = [
-                    { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: 'Ruler · Innocent · Sage' },
-                    { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: 'Judge · Explorer · Artist' },
-                    { id: 3, mode: 'Impact Modus',     color: '#f97316', members: 'Lover · Outlaw · Magician' },
-                    { id: 4, mode: 'Engagement Modus', color: '#22c55e', members: 'Caregiver · Trickster · Hero' },
-                  ];
-
                   return (
-                    <div ref={culturaForceRef} style={{
-                      width: '100%',
-                      background: 'transparent',
-                      border: '1px solid rgba(234, 179, 8, 0.18)',
-                      borderRadius: '0.75rem',
-                      padding: rs.sectionPad,
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}>
-                      {/* Corner accent */}
-                      <div style={{ position: 'absolute', top: 0, right: 0, width: '3rem', height: '3rem', opacity: 0.12, background: 'radial-gradient(circle at top right, rgba(234,179,8,1), transparent 70%)' }} />
+                    <div ref={culturaForceRef} style={{ width: '100%' }}>
+                      <span style={{ fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{'/// CULTURELE_BRIL'}</span>
+                      <h3 style={{ margin: '0.2rem 0 0', fontSize: '1.05rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        Cognitieve Driehoek
+                      </h3>
+                      <p style={{ margin: '0.3rem 0 0.85rem', fontSize: '0.85rem', color: 'rgba(148,163,184,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
+                        Gele driehoeken vuren uitsluitend op <strong style={{ color: 'rgba(234,179,8,0.85)' }}>Culture picks</strong> — ze representeren aangeleerd cognitief gedrag, niet biologische hardware. Groene en blauwe signalen tonen wie je <em>bent</em>; gele signalen tonen hoe je hebt <em>leren navigeren</em>.
+                      </p>
 
-                      {/* Header */}
-                      <div style={{ marginBottom: '0.85rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                          <span style={{ fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif", color: 'rgba(234,179,8,0.6)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{'/// CULTURELE_BRIL'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <span style={{ width: '1.4rem', height: '1.4rem', borderRadius: '50%', background: `${tri.color}22`, border: `1px solid ${tri.color}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: tri.color, flexShrink: 0 }}>
+                          {tri.id}
+                        </span>
+                        <div>
+                          <div style={{ fontSize: '0.9rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: tri.color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{tri.mode}</div>
+                          <div style={{ fontSize: '0.82rem', color: 'rgba(209,213,219,0.6)', fontFamily: "'Figtree', sans-serif" }}>{tri.members.join(' · ')} — {tri.networks}</div>
                         </div>
-                        <h3 style={{ margin: 0, fontSize: '1.05rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#eab308', letterSpacing: '0.08em', textTransform: 'uppercase', textShadow: '0 0 12px rgba(234,179,8,0.3)' }}>
-                          Cognitieve Driehoek
-                        </h3>
-                        <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: 'rgba(148,163,184,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-                          Gele driehoeken vuren uitsluitend op <strong style={{ color: 'rgba(234,179,8,0.85)' }}>Culture picks</strong> — ze representeren aangeleerd cognitief gedrag, niet biologische hardware. Groene en blauwe signalen tonen wie je <em>bent</em>; gele signalen tonen hoe je hebt <em>leren navigeren</em>.
-                        </p>
                       </div>
-
-                      {/* Active triangle — deep dive */}
-                      <div style={{
-                        background: `rgba(0,0,0,0.3)`,
-                        border: `1px solid ${tri.color}44`,
-                        borderLeft: `3px solid ${tri.color}`,
-                        borderRadius: '0.5rem',
-                        padding: '0.75rem 0.9rem',
-                        marginBottom: '0.75rem',
-                      }}>
-                        {/* Triangle header */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                          <span style={{ width: '1.4rem', height: '1.4rem', borderRadius: '50%', background: `${tri.color}22`, border: `1px solid ${tri.color}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: tri.color, flexShrink: 0 }}>
-                            {tri.id}
-                          </span>
-                          <div>
-                            <div style={{ fontSize: '0.9rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: tri.color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{tri.mode}</div>
-                            <div style={{ fontSize: '0.82rem', color: 'rgba(209,213,219,0.6)', fontFamily: "'Figtree', sans-serif" }}>{tri.members.join(' · ')} — {tri.networks}</div>
-                          </div>
-                        </div>
-                        <p style={{ margin: '0 0 0.1rem', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(234,179,8,0.9)', fontWeight: 600, fontStyle: 'italic' }}>
-                          {tri.tagline}
-                        </p>
-                        <p style={{ margin: '0.45rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.85)', lineHeight: 1.65, textAlign: 'justify', overflowWrap: 'break-word' }}>
-                          {tri.what}
-                        </p>
-                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-                          <span style={{ color: `${tri.color}cc`, fontWeight: 600 }}>Aangeleerde navigatie: </span>{tri.drive}
-                        </p>
-                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-                          <span style={{ color: 'rgba(234,179,8,0.9)', fontWeight: 600 }}>Hoog geel profiel: </span>{tri.high}
-                        </p>
-                        <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-                          <span style={{ color: 'rgba(165,243,252,0.9)', fontWeight: 600 }}>Groeirichting: </span>{tri.growth}
-                        </p>
-                      </div>
+                      <p style={{ margin: '0 0 0.1rem', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(234,179,8,0.9)', fontWeight: 600, fontStyle: 'italic' }}>
+                        {tri.tagline}
+                      </p>
+                      <p style={{ margin: '0.45rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.85)', lineHeight: 1.65, textAlign: 'justify', overflowWrap: 'break-word' }}>
+                        {tri.what}
+                      </p>
+                      <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
+                        <span style={{ color: `${tri.color}cc`, fontWeight: 600 }}>Aangeleerde navigatie: </span>{tri.drive}
+                      </p>
+                      <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
+                        <span style={{ color: 'rgba(234,179,8,0.9)', fontWeight: 600 }}>Hoog geel profiel: </span>{tri.high}
+                      </p>
+                      <p style={{ margin: '0.4rem 0 0.75rem', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
+                        <span style={{ color: 'rgba(165,243,252,0.9)', fontWeight: 600 }}>Groeirichting: </span>{tri.growth}
+                      </p>
 
                       {/* Other triangles — compact reference row */}
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        {ALL_TRIANGLES.filter(t => t.id !== tri.id).map(t => (
-                          <div key={t.id} style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: `1px solid rgba(234,179,8,0.15)`, borderRadius: '0.4rem', padding: '0.4rem 0.5rem' }}>
+                        {ALL_COG_TRIANGLES.filter(t => t.id !== tri.id).map(t => (
+                          <div key={t.id} style={{ flex: 1, border: `1px solid rgba(234,179,8,0.15)`, borderRadius: '0.4rem', padding: '0.4rem 0.5rem' }}>
                             <div style={{ fontSize: '0.8rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: t.color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t.mode}</div>
                             <div style={{ fontSize: '0.78rem', color: 'rgba(148,163,184,0.8)', fontFamily: "'Figtree', sans-serif" }}>{t.members}</div>
                           </div>
@@ -3595,7 +3737,7 @@ const AssessmentResultsModal = ({
                   }
                   // Cycle through accent colors for visual variety
                   const accents = [
-                    { color: '#00ff9d', rgb: '0, 255, 157' },    // green
+                    { color: '#00b46e', rgb: '0, 180, 110' },    // green
                     { color: '#a855f7', rgb: '168, 85, 247' },   // purple
                     { color: '#f97316', rgb: '249, 115, 22' },   // orange
                     { color: '#3b82f6', rgb: '59, 130, 246' },   // blue
@@ -3764,7 +3906,7 @@ const AssessmentResultsModal = ({
                         <div>
                           <label style={{
                             display: 'block',
-                            color: '#c4b5fd',
+                            color: '#a855f7',
                             fontFamily: "'Figtree', sans-serif",
                             fontSize: '0.85rem',
                             fontWeight: 'bold',
@@ -3782,7 +3924,7 @@ const AssessmentResultsModal = ({
                               width: '100%',
                               padding: '0.75rem',
                               background: 'rgba(0, 0, 0, 0.8)',
-                              border: '1px solid rgba(196, 181, 253, 0.3)',
+                              border: '1px solid rgba(168, 85, 247, 0.2)',
                               borderRadius: '0.5rem',
                               color: '#fff',
                               fontFamily: "'Figtree', sans-serif",
@@ -3796,7 +3938,7 @@ const AssessmentResultsModal = ({
                         <div>
                           <label style={{
                             display: 'block',
-                            color: '#00ff9d',
+                            color: '#00b46e',
                             fontFamily: "'Figtree', sans-serif",
                             fontSize: '0.85rem',
                             fontWeight: 'bold',
@@ -3813,7 +3955,7 @@ const AssessmentResultsModal = ({
                               minHeight: '80px',
                               padding: '0.75rem',
                               background: 'rgba(0, 0, 0, 0.8)',
-                              border: '1px solid rgba(0, 255, 157, 0.2)',
+                              border: '1px solid rgba(0, 180, 110, 0.2)',
                               borderRadius: '0.5rem',
                               color: '#fff',
                               fontFamily: "'Figtree', sans-serif",
@@ -3860,7 +4002,7 @@ const AssessmentResultsModal = ({
                         <div>
                           <label style={{
                             display: 'block',
-                            color: '#3b82f6',
+                            color: '#a855f7',
                             fontFamily: "'Figtree', sans-serif",
                             fontSize: '0.85rem',
                             fontWeight: 'bold',
@@ -3877,7 +4019,7 @@ const AssessmentResultsModal = ({
                               minHeight: '80px',
                               padding: '0.75rem',
                               background: 'rgba(0, 0, 0, 0.8)',
-                              border: '1px solid rgba(59, 130, 246, 0.2)',
+                              border: '1px solid rgba(168, 85, 247, 0.2)',
                               borderRadius: '0.5rem',
                               color: '#fff',
                               fontFamily: "'Figtree', sans-serif",
@@ -3978,20 +4120,20 @@ const AssessmentResultsModal = ({
                         <div style={{
                           maxWidth: '34rem', width: '100%',
                           backgroundColor: 'rgba(6, 2, 10, 0.98)',
-                          border: '1px solid rgba(0,255,157,0.2)',
+                          border: '1px solid rgba(0,180,110,0.2)',
                           borderRadius: '0.5rem',
                           padding: '1.75rem',
-                          boxShadow: '0 0 40px rgba(0,255,157,0.08)',
+                          boxShadow: '0 0 40px rgba(0,180,110,0.08)',
                           fontFamily: "'Lexend Mega', sans-serif",
                         }}>
-                          <h3 style={{ color: '#00ff9d', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
+                          <h3 style={{ color: '#00b46e', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
                             Verantwoordelijkheid PDF & AI Prompt
                           </h3>
                           <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', fontStyle: 'italic', marginBottom: '1.25rem' }}>
                             Lees dit door voordat je de PDF downloadt
                           </p>
 
-                          <div style={{ borderLeft: '2px solid rgba(0,255,157,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
+                          <div style={{ borderLeft: '2px solid rgba(0,180,110,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
                             <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: '0.75rem', lineHeight: 1.75 }}>
                               Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik in externe AI-tools valt buiten de verantwoordelijkheid van Garden For Life.
                             </p>
@@ -4002,7 +4144,7 @@ const AssessmentResultsModal = ({
                               type="checkbox"
                               checked={pdfConsentChecked}
                               onChange={(e) => setPdfConsentChecked(e.target.checked)}
-                              style={{ marginTop: '0.1rem', accentColor: '#00ff9d', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
+                              style={{ marginTop: '0.1rem', accentColor: '#00b46e', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
                             />
                             <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: '0.75rem', lineHeight: 1.65 }}>
                               Ik begrijp dat de AI Agent Prompt in deze PDF experimenteel is en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.
@@ -4021,8 +4163,8 @@ const AssessmentResultsModal = ({
                             <button
                               onClick={() => { if (pdfConsentChecked) { setShowPdfConsent(false); logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {}); handleDownloadPdf(); } }}
                               disabled={!pdfConsentChecked}
-                              style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#00ff9d' : 'rgba(0,255,157,0.2)'}`, color: pdfConsentChecked ? '#00ff9d' : 'rgba(0,255,157,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(0,255,157,0.07)' : 'none' }}
-                              onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(0,255,157,0.25)'; }}
+                              style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#00b46e' : 'rgba(0,180,110,0.2)'}`, color: pdfConsentChecked ? '#00b46e' : 'rgba(0,180,110,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(0,180,110,0.07)' : 'none' }}
+                              onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(0,180,110,0.25)'; }}
                               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
                             >
                               Begrepen en akkoord — Download PDF
@@ -4044,8 +4186,8 @@ const AssessmentResultsModal = ({
                         overflow: 'hidden',
                         padding: rs.btnPad,
                         background: '#000',
-                        border: '1px solid #00ff9d',
-                        color: '#00ff9d',
+                        border: '1px solid #00b46e',
+                        color: '#00b46e',
                         fontFamily: "'Lexend Mega', sans-serif",
                         fontWeight: 'bold',
                         textTransform: 'uppercase',
@@ -4053,18 +4195,18 @@ const AssessmentResultsModal = ({
                         fontSize: rs.btnFont,
                         cursor: (isGeneratingPdf || !reviewSubmitted) ? 'not-allowed' : 'pointer',
                         transition: 'all 0.3s',
-                        boxShadow: '0 0 15px rgba(0, 255, 157, 0.1)',
+                        boxShadow: '0 0 15px rgba(0, 180, 110, 0.1)',
                         opacity: (isGeneratingPdf || !reviewSubmitted) ? 0.5 : 1,
                       }}
                       onMouseEnter={e => {
                         if (!isGeneratingPdf && reviewSubmitted) {
-                          e.currentTarget.style.background = '#00ff9d';
+                          e.currentTarget.style.background = '#00b46e';
                           e.currentTarget.style.color = '#000';
                         }
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.background = '#000';
-                        e.currentTarget.style.color = '#00ff9d';
+                        e.currentTarget.style.color = '#00b46e';
                       }}
                     >
                       <span style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
@@ -4169,15 +4311,15 @@ const AssessmentResultsModal = ({
           background: transparent;
         }
         .results-modal-scroll::-webkit-scrollbar-thumb {
-          background: rgba(0, 255, 157, 0.3);
+          background: rgba(0, 180, 110, 0.3);
           border-radius: 3px;
         }
         .results-modal-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 255, 157, 0.5);
+          background: rgba(0, 180, 110, 0.5);
         }
         .results-modal-scroll {
           scrollbar-width: thin;
-          scrollbar-color: rgba(0, 255, 157, 0.3) transparent;
+          scrollbar-color: rgba(0, 180, 110, 0.3) transparent;
         }
       `}</style>
     </div>

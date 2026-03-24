@@ -33,6 +33,11 @@ import {
   clearSessions,
   getFeedbackEmailSettings,
   updateFeedbackEmailSettings,
+  getPasskeys,
+  createPasskey,
+  deletePasskey,
+  togglePasskey,
+  getPasskeyAuditLog,
 } from '../../utils/apiClient';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM,
@@ -322,6 +327,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         const bottomRow = [
           { key: 'assessments', label: 'Assessments' },
           { key: 'formulieren', label: 'Formulieren' },
+          { key: 'passkeys', label: 'Passkeys' },
           { key: 'audit', label: 'Audit Log' },
           { key: 'feedback', label: 'Feedback' },
           { key: 'contact', label: 'Contact' },
@@ -350,6 +356,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
             { key: 'questions', label: 'Vragen' },
             { key: 'prompts', label: 'Prompts' },
             { key: 'formulieren', label: 'Formulieren' },
+            { key: 'passkeys', label: 'Passkeys' },
             { key: 'audit', label: 'Audit Log' },
             { key: 'contact', label: 'Contact' },
           ].map(({ key, label, disabled }) => (
@@ -367,6 +374,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
       {tab === 'questions' && <QuestionsTab />}
       {tab === 'prompts' && <PromptsTab />}
       {tab === 'formulieren' && <FormulierenTab />}
+      {tab === 'passkeys' && <PasskeysTab />}
       {tab === 'audit' && <AuditLogTab />}
       {tab === 'contact' && <ContactTab />}
         </div>
@@ -2818,8 +2826,185 @@ function formatDuration(ms) {
 const EVENT_ICONS  = { edit: '✏️', commit: '📦', push: '🚀', admin_login: '🔐', report_view: '📋', consent_given: '✅' };
 const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc', admin_login: '#f59e0b', report_view: '#34d399', consent_given: '#06b6d4' };
 
+// ═══════════════════════════════════════════════════════════
+// Passkeys Tab
+// ═══════════════════════════════════════════════════════════
+
+const PasskeysTab = memo(() => {
+  const [passkeys, setPasskeys] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [newLabel, setNewLabel] = useState('');
+  const [creating, setCreating] = useState(false);
+  const tc = CARD_COLORS.gold;
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const pkRes = await getPasskeys().catch(() => ({ passkeys: [] }));
+      setPasskeys(pkRes.passkeys || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleCreate = async () => {
+    setCreating(true);
+    setError(null);
+    try {
+      await createPasskey(newLabel.trim() || undefined);
+      setNewLabel('');
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (id, code) => {
+    if (!window.confirm(`Passkey ${code} verwijderen? Dit kan niet ongedaan worden.`)) return;
+    try {
+      await deletePasskey(id);
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleToggle = async (id) => {
+    try {
+      await togglePasskey(id);
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const activeCount = passkeys.filter(p => p.isActive).length;
+  const totalUses = passkeys.reduce((a, p) => a + (p.usageCount || 0), 0);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
+        {[
+          { label: 'Totaal', value: passkeys.length, color: C.gold },
+          { label: 'Actief', value: activeCount, color: '#4ade80' },
+          { label: 'Inactief', value: passkeys.length - activeCount, color: '#f87171' },
+          { label: 'Gebruik', value: totalUses, color: '#60a5fa' },
+        ].map((stat, i) => (
+          <div key={i} style={{
+            padding: '0.6rem 0.8rem',
+            backgroundColor: 'rgba(255, 174, 0, 0.04)',
+            borderRadius: '0.3rem',
+            borderLeft: `2px solid ${stat.color}`,
+          }}>
+            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{stat.label}</div>
+            <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <SciFiButton onClick={fetchData} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)">↻ VERNIEUWEN</SciFiButton>
+      </div>
+
+      {error && <ErrorBox msg={error} />}
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>Laden...</div>
+      ) : (
+        <DashboardCard title={`Passkeys Beheer (${passkeys.length})`} color="gold">
+          {/* Generate new passkey */}
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              placeholder="Label (optioneel)..."
+              value={newLabel}
+              onChange={e => setNewLabel(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleCreate()}
+              style={{
+                ...INPUT_SM,
+                flex: '1 1 140px',
+                minWidth: '140px',
+              }}
+            />
+            <SciFiButton onClick={handleCreate} disabled={creating} padding="0.35rem 0.8rem" fontSize="max(9px, 0.45vw)">
+              {creating ? '...' : '+ GENEREER PASSKEY'}
+            </SciFiButton>
+          </div>
+
+          {/* Passkeys list */}
+          {passkeys.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '1.5rem', color: '#ffffff40', fontSize: 'max(10px, 0.5vw)' }}>
+              Geen passkeys — klik op "Genereer Passkey" om er een aan te maken
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '55vh', overflowY: 'auto' }}>
+              {/* Header */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 0.6fr 1fr 1fr 0.8fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
+                {['CODE', 'LABEL', 'STATUS', 'GEBRUIK', 'AANGEMAAKT', 'ACTIES'].map(h => (
+                  <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
+                ))}
+              </div>
+              {/* Rows */}
+              {passkeys.map((pk, i) => (
+                <div key={pk._id} style={{
+                  display: 'grid', gridTemplateColumns: '1fr 1.5fr 0.6fr 1fr 1fr 0.8fr',
+                  gap: '0.3rem', padding: '0.4rem 0.5rem', alignItems: 'center',
+                  backgroundColor: i % 2 === 0 ? 'rgba(255,174,0,0.02)' : 'transparent',
+                  borderLeft: `2px solid ${pk.isActive ? '#4ade80' : '#f87171'}`,
+                  borderRadius: '0 0.15rem 0.15rem 0',
+                }}>
+                  <div style={{ fontSize: 'max(12px, 0.6vw)', fontFamily: 'monospace', color: '#fff', fontWeight: 'bold', letterSpacing: '0.15em' }}>
+                    {pk.code}
+                  </div>
+                  <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {pk.label || <span style={{ color: '#64748b', fontStyle: 'italic' }}>—</span>}
+                  </div>
+                  <div style={{ fontSize: 'max(8px, 0.42vw)', fontWeight: 'bold', color: pk.isActive ? '#4ade80' : '#f87171' }}>
+                    {pk.isActive ? '● ACTIEF' : '○ INACTIEF'}
+                  </div>
+                  <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#60a5fa' }}>
+                    {pk.usageCount || 0}× gebruikt
+                    {pk.lastUsedAt && (
+                      <span style={{ color: '#64748b', marginLeft: '0.3rem' }}>
+                        · {new Date(pk.lastUsedAt).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>
+                    {new Date(pk.createdAt).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.3rem' }}>
+                    <button onClick={() => handleToggle(pk._id)} title={pk.isActive ? 'Deactiveer' : 'Activeer'}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem' }}>
+                      {pk.isActive ? '⏸️' : '▶️'}
+                    </button>
+                    <button onClick={() => handleDelete(pk._id, pk.code)} title="Verwijderen"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem' }}>
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DashboardCard>
+      )}
+    </div>
+  );
+});
+
 const AUDIT_FOLDERS = [
   { key: 'admin',   label: '📂 Admin & Toegang',  icon: '🔐', color: '#f59e0b', desc: 'Admin logins & rapportraadplegingen' },
+  { key: 'passkeys', label: '📂 Passkeys',         icon: '🔑', color: '#c084fc', desc: 'Passkey gebruik — alle pogingen (geldig & ongeldig)' },
   { key: 'compliance', label: '📂 Compliance',     icon: '✅', color: '#06b6d4', desc: 'Toestemmingsregistratie (AVG Art. 7)' },
   { key: 'sessions', label: '📂 Sessies',          icon: '📊', color: C.gold,    desc: 'Alle events gegroepeerd per sessie' },
 ];
@@ -2829,6 +3014,7 @@ const AuditLogTab = memo(() => {
   const [sessions, setSessions] = useState([]);
   const [accessEvents, setAccessEvents] = useState([]);
   const [consentEvents, setConsentEvents] = useState([]);
+  const [passkeyEvents, setPasskeyEvents] = useState([]);
   const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -2839,15 +3025,17 @@ const AuditLogTab = memo(() => {
     setLoading(true);
     setError(null);
     try {
-      const [sessRes, accRes, conRes] = await Promise.all([
+      const [sessRes, accRes, conRes, pkRes] = await Promise.all([
         getSessions(200).catch(() => ({ sessions: [], totalEvents: 0 })),
         getAccessLog(500).catch(() => ({ events: [] })),
         getConsentLog(500).catch(() => ({ events: [] })),
+        getPasskeyAuditLog(500).catch(() => ({ events: [] })),
       ]);
       setSessions(sessRes.sessions || []);
       setTotalEvents(sessRes.totalEvents || 0);
       setAccessEvents(accRes.events || []);
       setConsentEvents(conRes.events || []);
+      setPasskeyEvents(pkRes.events || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -2872,6 +3060,7 @@ const AuditLogTab = memo(() => {
   // Folder counts for badges
   const folderCounts = {
     admin: accessEvents.length,
+    passkeys: passkeyEvents.length,
     compliance: consentEvents.length,
     sessions: sessions.length,
   };
@@ -2887,6 +3076,7 @@ const AuditLogTab = memo(() => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
         {[
           { label: 'Admin', value: accessEvents.length, color: '#f59e0b' },
+          { label: 'Passkeys', value: passkeyEvents.length, color: '#c084fc' },
           { label: 'Compliance', value: consentEvents.length, color: '#06b6d4' },
           { label: 'Sessies', value: totalSessions, color: C.gold },
           { label: 'Totaal', value: totalEvents, color: '#60a5fa' },
@@ -3023,6 +3213,45 @@ const AuditLogTab = memo(() => {
                       </div>
                       <div style={{ fontSize: 'max(7px, 0.35vw)', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {ev.userAgent || '—'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </DashboardCard>
+          )}
+
+          {/* ────── Passkeys ────── */}
+          {folder === 'passkeys' && (
+            <DashboardCard title={`Passkeys — Gebruik & Pogingen (${passkeyEvents.length})`} color="purple">
+              {passkeyEvents.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1rem', color: '#c084fc60', fontSize: 'max(10px, 0.5vw)' }}>Nog geen passkey gebruik geregistreerd</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '55vh', overflowY: 'auto' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 2fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(192,132,252,0.15)' }}>
+                    {['TIJDSTIP', 'CODE', 'GELDIG', 'IP / USER AGENT'].map(h => (
+                      <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#c084fc80', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
+                    ))}
+                  </div>
+                  {passkeyEvents.map((ev, i) => (
+                    <div key={i} style={{
+                      display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 2fr',
+                      gap: '0.3rem', padding: '0.3rem 0.5rem', alignItems: 'center',
+                      backgroundColor: i % 2 === 0 ? 'rgba(192,132,252,0.02)' : 'transparent',
+                      borderLeft: `2px solid ${ev.valid ? '#4ade80' : '#f87171'}`,
+                      borderRadius: '0 0.15rem 0.15rem 0',
+                    }}>
+                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>
+                        {new Date(ev.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </div>
+                      <div style={{ fontSize: 'max(9px, 0.48vw)', fontFamily: 'monospace', color: ev.valid ? '#4ade80' : '#f87171', fontWeight: 'bold', letterSpacing: '0.1em' }}>
+                        {ev.code}
+                      </div>
+                      <div style={{ fontSize: 'max(8px, 0.42vw)', fontWeight: 'bold', color: ev.valid ? '#4ade80' : '#f87171' }}>
+                        {ev.valid ? '✓' : '✗'}
+                      </div>
+                      <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ev.ip || '—'}{ev.userAgent ? ` · ${ev.userAgent}` : ''}
                       </div>
                     </div>
                   ))}

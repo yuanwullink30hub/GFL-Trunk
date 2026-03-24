@@ -167,6 +167,131 @@ router.post('/analyze', async (req, res) => {
       sendEvent('pdf_warning', { files: pdfWarnings });
     }
 
+    // ── Parse OCEAN scores directly from uploaded file text ──
+    // This is done here (before the AI runs) so we can send authoritative
+    // structured scores back to the client — no regex parsing of AI text needed.
+    let uploadedOceanScores = null;
+    if (uploadedFileContents && uploadedFileContents.length > 0) {
+      // Keywords that map to each OCEAN dimension (order: longest match first to avoid substring collisions)
+      const DIM_KEYWORDS = {
+        O: ['openheid voor ervaringen', 'openheid voor ervaring', 'openheid', 'openness to experience', 'openness', 'open to experience', 'open voor ervaring'],
+        C: ['ordelijkheid', 'conscientiousness', 'consciëntieusheid', 'conscientieusheid', 'gewetensvolheid', 'zorgvuldigheid', 'nauwgezetheid'],
+        E: ['extraversie', 'extraversion', 'extroversie', 'extraverted', 'extravert'],
+        A: ['meegaandheid', 'agreeableness', 'inschikkelijkheid', 'vriendelijkheid', 'verdraagzaamheid'],
+        N: ['neuroticisme', 'neuroticism', 'emotionele stabiliteit', 'emotional stability', 'emotionaliteit'],
+      };
+
+      const parsed = {};
+
+      for (const file of uploadedFileContents) {
+        if (!file.text) continue;
+        const txt = file.text;
+
+        // Strategy 1: Scan every line for "dimension-keyword ... number" patterns
+        // Handles: "Openheid voor Ervaringen (Hoog - 72)", "Openness: 72", "Extraversion  88",
+        //          "Conscientiousness — 96 / 100", "Openheid 72%", "O: 72", etc.
+        // If keyword found but no number on same line, check the next 2 lines (PDF extraction fallback).
+        const lines = txt.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+          const lower = lines[i].toLowerCase();
+          for (const [dim, keywords] of Object.entries(DIM_KEYWORDS)) {
+            if (parsed[dim] != null) continue;
+            for (const kw of keywords) {
+              if (!lower.includes(kw)) continue;
+              // Find all numbers in the line (after the keyword position)
+              const kwIdx = lower.indexOf(kw);
+              const afterKw = lines[i].slice(kwIdx + kw.length);
+              // Match a number 0-100 that isn't part of a larger number
+              const numMatch = afterKw.match(/\b(\d{1,3})\b/);
+              if (numMatch) {
+                const val = parseInt(numMatch[1], 10);
+                if (val >= 0 && val <= 100) {
+                  parsed[dim] = val;
+                  break;
+                }
+              }
+              // Fallback: keyword found but no number — check next 2 lines
+              // (handles PDF text extraction where score lands on a separate line)
+              for (let j = 1; j <= 2 && (i + j) < lines.length; j++) {
+                const nextLine = lines[i + j].trim();
+                if (!nextLine) continue;
+                const nextNumMatch = nextLine.match(/\b(\d{1,3})\b/);
+                if (nextNumMatch) {
+                  const val = parseInt(nextNumMatch[1], 10);
+                  if (val >= 0 && val <= 100) {
+                    parsed[dim] = val;
+                    break;
+                  }
+                }
+              }
+              if (parsed[dim] != null) break;
+            }
+          }
+        }
+
+        // Strategy 2: If we still have gaps, try single-letter header format "O: 72" / "C = 81"
+        // (only on lines that look like score entries, not prose)
+        if (Object.keys(parsed).length < 5) {
+          for (const line of lines) {
+            const trimmed = line.trim();
+            // Match lines like "O: 72", "C = 81", "E  92/100", "N: 28 / 100"
+            const letterMatch = trimmed.match(/^([OCEAN])\s*[:=\-–—]?\s*(\d{1,3})\s*(?:\/\s*100)?/i);
+            if (letterMatch && trimmed.length < 40) { // short line = likely a score entry
+              const letter = letterMatch[1].toUpperCase();
+              if ('OCEAN'.includes(letter) && parsed[letter] == null) {
+                const val = parseInt(letterMatch[2], 10);
+                if (val >= 0 && val <= 100) parsed[letter] = val;
+              }
+            }
+          }
+        }
+
+        // Strategy 3: "Openheid (Niveau - XX)" format from our own AI-generated prompts
+        if (Object.keys(parsed).length < 5) {
+          for (const [dim, keywords] of Object.entries(DIM_KEYWORDS)) {
+            if (parsed[dim] != null) continue;
+            for (const kw of keywords) {
+              const re = new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^)]*?\\((.*?)(\\d{1,3})\\)', 'i');
+              const m = txt.match(re);
+              if (m) {
+                const val = parseInt(m[2], 10);
+                if (val >= 0 && val <= 100) { parsed[dim] = val; break; }
+              }
+            }
+          }
+        }
+
+        // Strategy 4: Full-text proximity scan — find keyword anywhere in text, then grab nearest number
+        // (catches cases where line breaks are inconsistent or text is wrapped differently)
+        if (Object.keys(parsed).length < 5) {
+          const fullLower = txt.toLowerCase();
+          for (const [dim, keywords] of Object.entries(DIM_KEYWORDS)) {
+            if (parsed[dim] != null) continue;
+            for (const kw of keywords) {
+              const idx = fullLower.indexOf(kw);
+              if (idx === -1) continue;
+              // Grab up to 80 chars after the keyword to find a nearby number
+              const window = txt.slice(idx + kw.length, idx + kw.length + 80);
+              const numMatch = window.match(/\b(\d{1,3})\b/);
+              if (numMatch) {
+                const val = parseInt(numMatch[1], 10);
+                if (val >= 0 && val <= 100) { parsed[dim] = val; break; }
+              }
+            }
+          }
+        }
+
+        if (Object.keys(parsed).length >= 5) break; // all found, stop checking files
+      }
+
+      if (Object.keys(parsed).length >= 3) {
+        uploadedOceanScores = parsed;
+        console.log('[AI] Parsed uploaded OCEAN scores:', uploadedOceanScores);
+      } else {
+        console.warn('[AI] Could not parse enough OCEAN scores from uploaded files. Found:', parsed);
+      }
+    }
+
     // Build messages — include uploaded context documents
     const contextDocs = await getContextDocuments();
     const promptLevel = level || 'advanced';
@@ -249,6 +374,7 @@ router.post('/analyze', async (req, res) => {
       archetypeKey,
       supportGroup: supportGroup || null,
       extendedArchetypeName: extendedArchetypeName || null,
+      uploadedOceanScores: uploadedOceanScores || null,
       ...result,
     });
 

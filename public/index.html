@@ -256,15 +256,32 @@
             btn.disabled = true;
             if (err) err.style.display = 'none';
 
-            if (key === 'Beta-4.9') {
-              localStorage.setItem(BETA_KEY, key);
-              onUnlocked();
-            } else {
-              if (err) { err.textContent = 'Ongeldige passkey'; err.style.display = 'block'; }
-              btn.textContent = 'Unlock';
-              btn.disabled = false;
-              if (input) { input.value = ''; input.focus(); }
-            }
+            var apiBase = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+              ? 'http://localhost:8080/api'
+              : 'https://gfl-api.onrender.com/api';
+
+            fetch(apiBase + '/beta/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ passkey: key }),
+            })
+              .then(function(r) { return r.json(); })
+              .then(function(data) {
+                if (data.valid) {
+                  localStorage.setItem(BETA_KEY, key);
+                  onUnlocked();
+                } else {
+                  if (err) { err.textContent = 'Ongeldige passkey'; err.style.display = 'block'; }
+                  btn.textContent = 'Unlock';
+                  btn.disabled = false;
+                  if (input) { input.value = ''; input.focus(); }
+                }
+              })
+              .catch(function() {
+                if (err) { err.textContent = 'Verbindingsfout — probeer opnieuw'; err.style.display = 'block'; }
+                btn.textContent = 'Unlock';
+                btn.disabled = false;
+              });
           }
 
           if (btn) btn.addEventListener('click', verify);

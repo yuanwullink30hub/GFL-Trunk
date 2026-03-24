@@ -180,16 +180,20 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
         </RadarChart>
       </ResponsiveContainer>
 
-      {/* Custom legend — rendered outside Recharts so order is fully controlled */}
+      {/* Custom legend — pinned to inside-bottom of the container */}
       <div style={{
+        position: 'absolute',
+        bottom: '0.5rem',
+        left: 0,
+        right: 0,
         display: 'flex',
         flexWrap: 'wrap',
         justifyContent: 'center',
         gap: '0.5rem 1rem',
-        marginTop: '0.5rem',
         fontFamily: "'Segoe UI', Arial, sans-serif",
         fontSize: '0.85rem',
         letterSpacing: '0.04em',
+        pointerEvents: 'none',
       }}>
         {legendPayload.map(item => (
           <span key={item.value} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>

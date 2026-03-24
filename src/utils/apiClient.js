@@ -900,3 +900,58 @@ export function hasBetaAccess() {
 export function clearBetaAccess() {
   localStorage.removeItem(BETA_KEY);
 }
+
+// ── Passkey Management (Admin) ──
+
+export async function getPasskeys() {
+  const response = await fetch(`${API_BASE}/admin/passkeys`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error(`Failed to load passkeys (${response.status})`);
+  return response.json();
+}
+
+export async function createPasskey(label) {
+  const response = await fetch(`${API_BASE}/admin/passkeys`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ label }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Failed to create passkey (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function deletePasskey(id) {
+  const response = await fetch(`${API_BASE}/admin/passkeys/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Failed to delete passkey (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function togglePasskey(id) {
+  const response = await fetch(`${API_BASE}/admin/passkeys/${id}/toggle`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Failed to toggle passkey (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function getPasskeyAuditLog(limit = 500) {
+  const response = await fetch(`${API_BASE}/admin/passkeys/audit?limit=${limit}`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error(`Failed to load passkey audit log (${response.status})`);
+  return response.json();
+}

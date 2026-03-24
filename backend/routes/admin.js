@@ -991,6 +991,119 @@ router.put('/settings/feedback-email', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// Passkey Management (admin only — already behind authRequired + adminRequired)
+// ─────────────────────────────────────────────────────────────
+
+function passkeysCollection() {
+  return getDB().collection('passkeys');
+}
+
+function generatePasskeyCode() {
+  // Cryptographically random 6-digit code (000000–999999)
+  const crypto = require('crypto');
+  return crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+}
+
+// GET /api/admin/passkeys — list all passkeys
+router.get('/passkeys', async (_req, res) => {
+  try {
+    const passkeys = await passkeysCollection()
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
+    res.json({ passkeys });
+  } catch (err) {
+    console.error('[Admin] List passkeys error:', err.message);
+    res.status(500).json({ error: 'Failed to load passkeys' });
+  }
+});
+
+// POST /api/admin/passkeys — generate a new 6-digit passkey
+router.post('/passkeys', async (req, res) => {
+  try {
+    const label = (req.body.label || '').slice(0, 128) || null;
+
+    // Generate unique 6-digit code (retry on collision)
+    let code;
+    for (let i = 0; i < 10; i++) {
+      code = generatePasskeyCode();
+      const existing = await passkeysCollection().findOne({ code });
+      if (!existing) break;
+      if (i === 9) return res.status(500).json({ error: 'Could not generate unique code' });
+    }
+
+    const doc = {
+      code,
+      label,
+      isActive: true,
+      usageCount: 0,
+      lastUsedAt: null,
+      createdAt: new Date(),
+      createdBy: req.user.userId,
+    };
+
+    await passkeysCollection().insertOne(doc);
+    res.json({ success: true, passkey: doc });
+  } catch (err) {
+    console.error('[Admin] Create passkey error:', err.message);
+    res.status(500).json({ error: 'Failed to create passkey' });
+  }
+});
+
+// DELETE /api/admin/passkeys/:id — delete a passkey
+router.delete('/passkeys/:id', async (req, res) => {
+  try {
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid passkey ID' });
+    }
+    const result = await passkeysCollection().deleteOne({ _id: new ObjectId(req.params.id) });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Passkey not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Admin] Delete passkey error:', err.message);
+    res.status(500).json({ error: 'Failed to delete passkey' });
+  }
+});
+
+// PATCH /api/admin/passkeys/:id/toggle — activate/deactivate a passkey
+router.patch('/passkeys/:id/toggle', async (req, res) => {
+  try {
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid passkey ID' });
+    }
+    const pk = await passkeysCollection().findOne({ _id: new ObjectId(req.params.id) });
+    if (!pk) return res.status(404).json({ error: 'Passkey not found' });
+
+    await passkeysCollection().updateOne(
+      { _id: pk._id },
+      { $set: { isActive: !pk.isActive } }
+    );
+    res.json({ success: true, isActive: !pk.isActive });
+  } catch (err) {
+    console.error('[Admin] Toggle passkey error:', err.message);
+    res.status(500).json({ error: 'Failed to toggle passkey' });
+  }
+});
+
+// GET /api/admin/passkeys/audit — passkey usage audit log
+router.get('/passkeys/audit', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 500, 2000);
+    const events = await activityCollection()
+      .find({ type: 'passkey_use' })
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .toArray();
+    res.json({ events, total: events.length });
+  } catch (err) {
+    console.error('[Admin] Passkey audit error:', err.message);
+    res.status(500).json({ error: 'Failed to load passkey audit log' });
+  }
+});
+
 module.exports = router;
 
 // ─────────────────────────────────────────────────────────────
@@ -1033,31 +1146,30 @@ function getDefaultPromptConfig() {
       '3. De Meta-Disclaimer (Mnemonic Improvisation): Plaats deze disclaimer in de inleiding: "Dit rapport is geen in beton gegoten diagnose. Wat ik hier doe, is de data van jouw zenuwstelsel en aangeleerde overlevingsgedrag herinterpreteren. Ik leg je neurologische bedrading bloot om de illusie van \'trouw blijven aan jezelf\' (fidelity) te doorbreken. Beschouw dit als een instrument om verouderde cognitieve scripts te vernietigen en ruimte te maken voor live, functionele aanpassing (salience)."\n\n' +
       'FASE 3: DYNAMISCHE GENERATIE (The Output Phase)\n' +
       'Genereer het rapport met de volgende verplichte secties. Gebruik je TNM/biologische kennis als de motor, maar spreek de taal van de kandidaat (Fase 2).\n' +
-      '• Sectie 1: Ontologische Premisse & Biologische Dashboard-Theorie\n' +
-      '  - Jouw interne kader: Extrinsieke Projectie & TNM.\n' +
-      '  - Vertaalslag: Leg uit dat hun kantoorpantser (Culture) en fysieke stresssymptomen slechts de waarschuwingslampjes op hun instrumentenpaneel zijn. Vermoeidheid is aannemelijk een interne routing-fout waarbij ze hun natuurlijke TNM-netwerk weigeren te gebruiken.\n' +
-      '• Sectie 2: Het Primaire Neurale Profiel (Nature / De Motor)\n' +
-      '  - Jouw interne kader: TNM Dominantie, Platonische Pointer & ZPE.\n' +
-      '  - Vertaalslag: Beschrijf hun Main Archetype en de bijbehorende biochemie als hun staat van \'Flow\'. Geef aan dat het navigeren op deze ontische interface de kans maximaliseert op een "Free Lunch" (hoge output, nul energieverlies).\n' +
-      '• Sectie 3: De CultureForce (Het Gecloakte Pantser)\n' +
-      '  - Jouw interne kader: Neuroplasticiteit & Maladaptieve Dissociatie.\n' +
-      '  - Vertaalslag: Toon respect voor hoe efficiënt hun brein dit overlevingsmechanisme als tweede natuur heeft ingesleten (de Cloak). Waarschuw echter dat de kans groot is dat doorslaan in dit gedrag hen isoleert van hun biologische bron, wat leidt tot cognitieve rigiditeit en uitputting.\n' +
-      '• Sectie 4: Neurale Pathologie & De Rode Lijn (De Blinde Vlek)\n' +
-      '  - Jouw interne kader: TNM Netwerk-botsingen (bijv. CEN vs DMN), Quantum-Bottleneck, Fidelity over Salience.\n' +
-      '  - Vertaalslag: Ontleed hun conflict-netwerk.\n' +
-      '    Keuzestress: Waarschijnlijk een informatie-conflict tussen hun oer-netwerk en hun klassieke kantoor-scripts.\n' +
-      '    Paniek: Waak ervoor dat je onder druk niet blind terugvalt op verouderde, starre neurale scripts (fidelity) omdat het brein de bandbreedte mist voor live-adaptatie.\n' +
-      '    Micromanagement: Houd er rekening mee dat het forceren van onverenigbare netwerken leidt tot Destructieve Interferentie (fysiologische kortsluiting) en de natuurlijke intelligentie van het systeem vernietigt.\n' +
-      '• Sectie 5: De Blauwe/Paarse Lijn & Symbiose (De Schaduw)\n' +
-      '  - Jouw interne kader: Constructieve Interferentie & TNM Synchronisatie.\n' +
-      '  - Vertaalslag: Beschrijf de alchemie van het integreren van hun 180°-tegenpool. Het is zeer aannemelijk dat het synchroniseren van deze uitersten (bijv. CEN en DMN tegelijk activeren) resulteert in exponentiële versterking zonder fysiologische wrijving.\n' +
-      '• Sectie 6: Archetype Extensions & Werkvloer Dynamiek\n' +
-      '  - Benoem hun specifieke gecombineerde titel (bijv. The Maverick) en leg probabilistisch uit hoe deze neurologische cocktail zich manifesteert op de werkvloer, inclusief hun specifieke Tech Multiplier.\n' +
-      '• Sectie 7: Het Neurale Schakelbord (Tactische Implementatie)\n' +
-      '  - Geef 3 kille, uitvoerbare hendels: 1. De Focus-hendel (TNM-manipulatie), 2. De Schaduw-injectie, 3. De Blindspot-check. Formuleer deze als krachtige, probabilistische strategieën ("Als je X doet, is de kans groot dat Y het systeem stabiliseert").\n' +
-      '• Sectie 8: Ontologische Evolutie & AI Agent Prompt\n' +
-      '  - Geef de ontologische vraag voor hun volgende groeifase richting het centrum van het TNM-wiel.\n' +
-      '  - Schrijf de kant-en-klare system prompt die de kandidaat kan gebruiken om hun eigen persoonlijke AI af te stemmen op hun actuele neurologische en morele profiel.\n\n' +
+      'De output bestaat uit 13 genummerde secties (## 1. t/m ## 12. plus ## 13A. en ## 13B.) plus 1 ongenummerde sectie (Groep Dynamiek) en 1 conditionele sectie (Persoonlijkheidsrapport Vergelijking). Elke sectie begint met een ## header.\n\n' +
+      '• Sectie 1: De Identiteit — Introductie van het archetype-profiel.\n' +
+      '• Sectie 2: Waarom jij dit perspectief gebruikt — Ontologische onderbouwing.\n' +
+      '• Sectie 3: De Essentie (Main Archetype) — TNM Dominantie, Platonische Pointer & ZPE. Beschrijf de staat van Flow.\n' +
+      '• Sectie 4: De Vermenigvuldiging (Support Archetype) — Hoe de Support de Main aanvult.\n' +
+      '• Sectie 5: De Matrix van 72 Mogelijkheden — Toon de 6 Extended Archetypen voor het Main Archetype.\n' +
+      '• Sectie 6: De Schaduw (Innerlijke Brandstof) — Constructieve Interferentie & schaduwintegratie.\n' +
+      '• Sectie 7: De Blindspot (De Saboteur) — De externe blinde vlek via het Support-archetype.\n' +
+      '• Sectie 8: Visuele Analyse — 5-Laag Gestapeld Webdiagram.\n' +
+      '• Groep Dynamiek — Neurobiologische Interpretatie (ongenummerd): Analyse van de 6 neurale netwerken.\n' +
+      '• Sectie 9: De Alchemie van Individuatie (Systeem Kernanalyse).\n' +
+      '• Sectie 10: Het Neurale Schakelbord (Tactische Implementatie) — 3 uitvoerbare hendels.\n' +
+      '• Sectie 11: Ontologische Evolutie (Toekomstige Integratie) — Groeifase en reflectievraag.\n' +
+      '• Sectie 12: Genereer een Volledige AI Prompt — Kant-en-klare systeemprompt voor externe AI-tools.\n\n' +
+      '⚠️ CONDITIONELE SECTIE: Persoonlijkheidsrapport Vergelijking\n' +
+      'Deze sectie wordt ALLEEN gegenereerd wanneer de kandidaat een extern OCEAN-rapport heeft geüpload. Als er geen upload is, sla deze sectie volledig over.\n' +
+      'Dit is een EIGEN LOSSTAANDE SECTIE — het is GEEN onderdeel van sectie 11 of sectie 12 of enige andere analyse-sectie.\n' +
+      'Gebruik de header: ## Persoonlijkheidsrapport Vergelijking\n' +
+      'Plaats deze sectie NA sectie 12.\n' +
+      'GEBRUIK GEEN markdown sub-headers (## of ###) binnen deze sectie — gebruik UITSLUITEND vetgedrukte tekst (**bold**) voor subsectietitels.\n' +
+      'Maximale lengte: 300 woorden. De exacte structuur en inhoud worden in de systeeminstructies gespecificeerd.\n\n' +
+      '• Sectie 13A: Professionele Resonantie — Analyse van professionele domeinen die resoneren met het scoreprofiel.\n' +
+      '• Sectie 13B: Creatieve Resonantie — De Onverwachte Richting — Schaduw/Blindspot domeinoverlap.\n' +
+      'Verplichte afsluiting na 13A + 13B: domeinanalyse-disclaimer.\n\n' +
       '⚙️ De AI-Disclaimer\n' +
       'Voeg deze exacte instructie toe aan de "Tone of Voice / Framing" sectie van je Meester Prompt:\n' +
       'De Meta-Disclaimer (Het Rapport als Herinterpretatie): De AI moet het rapport in de inleiding of conclusie expliciet AI – Knowledge guidelines\n' +

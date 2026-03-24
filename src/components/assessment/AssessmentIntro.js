@@ -1117,16 +1117,10 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                   {/* Left — Text */}
                   <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'flex-start' }}>
                     <h3 className="font-medium" style={{ color: '#eab308', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(234,179,8,0.3)' }}>
-                      Onze Perspectieven: Nature vs. Culture
+                      Relatie tussen natuur en cultuur
                     </h3>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.25rem' }}>
-                      We maken een meedogenloos onderscheid tussen jouw Nature (de ongedwongen, universele oerkracht van je zenuwstelsel) en jouw Culture (het &apos;kantoorpantser&apos;).
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#eab308', fontWeight: 600 }}>De Dashboard-Theorie:</span> We benaderen jouw aangeleerde gedrag en stress-symptomen als de metertjes op een instrumentenpaneel. Het is een interface om te overleven, niet je fundamentele realiteit.
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#eab308', fontWeight: 600 }}>Neuroplasticiteit:</span> Jouw overlevingsmechanismen zijn door neuroplasticiteit zó diep ingesleten dat ze als een &apos;tweede natuur&apos; voelen. Wij leggen bloot waar dit pantser jouw eigenlijke biologie uitput en waar het je versterkt.
+                      &lsquo;Cells within Cells Interlinked&rsquo; is het hi&euml;rarchische model dat de ontologische lagen relationeert naar de maatschappij: van fysiologische basisbehoeften (verwant aan Maslows behoeftehi&euml;rarchie) via zelfactualisatie en collectief geheugen naar intimiteit en transcendentie.<br /><br />Dit model verklaart waarom onze test niet alleen persoonlijkheid meet, maar de ontwikkelingslaag als dynamiek tussen natuurlijke aanleg en culturele conditionering blootlegt. &mdash; een principe dat Jean Piaget beschreef als cognitieve stadia en dat Carl Jung benaderde als individuatie.
                     </p>
                   </div>
                   {/* Right — Vulnerability Image (triangle container, gold glow) */}
@@ -1159,9 +1153,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                       Het Geometrische Wiel &amp; De Anatomie
                     </h3>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.25rem' }}>
-                      We hebben het wiel niet opnieuw uitgevonden, we hebben het simpelweg geüpdatet naar de tijdgeest van nu.
+                      We hebben het wiel niet opnieuw uitgevonden, we hebben het simpelweg geüpgrade naar de tijdgeest van nu.
                       <br />
-                      De geometrie van onze test is een innovatieve herstructurering van het oude oosterse zodiak-wiel, volledig verankerd in de harde, moderne biologie.
+                      De geometrie van onze test is een innovatieve herstructurering van het oude oosterse zodiak-wiel, volledig verankerd in de harde, moderne biologie. De 12 kern-archetypen op basis van de drie grote hersennetwerken die Vinod Menon en collega&apos;s beschreven: het Central Executive Network (orde, executie), het Default Mode Network (reflectie, betekenisgeving) en het Salience Network (responsiviteit, adaptatie).
                     </p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
                       <span style={{ color: '#22c55e', fontWeight: 600 }}>1. De Groene Bogen (Het Moederbord):</span> Jouw absolute fundament. Eigenschappen die fysiek op exact dezelfde biologische hardware draaien.

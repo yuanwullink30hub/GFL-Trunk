@@ -526,7 +526,7 @@ function drawContextPages(doc) {
         { type: 'sub', text: 'Het Triple Network Wiel' },
         { type: 'para', text: 'Positioneert de 12 kern-archetypen op een geometrisch wiel op basis van de drie grote hersennetwerken die Vinod Menon en collega\u2019s beschreven: het Central Executive Network (orde, executie), het Default Mode Network (reflectie, betekenisgeving) en het Salience Network (responsiviteit, adaptatie). De 12 posities zijn verbonden via vijf lijntypes \u2014 gedeelde hardware, feedback-bruggen, schaduwassen, cognitieve synergiedriehoeken en frictie-assen.' },
         { type: 'sub', text: 'Cells within Cells Interlinked' },
-        { type: 'para', text: 'Het hiërarchische model dat de ontologische lagen relateert naar de maatschappij: van fysiologische basisbehoeften (verwant aan Maslows behoeftehiërarchie) via zelfactualisatie en collectief geheugen naar intimiteit en transcendentie. Dit model verklaart waarom onze test niet alleen persoonlijkheid meet, maar de ontwikkelingslaag waarop iemand primair opereert.' },
+        { type: 'para', text: '\u2018Cells within Cells Interlinked\u2019 is het hi\u00EBrarchische model dat de ontologische lagen relationeert naar de maatschappij: van fysiologische basisbehoeften (verwant aan Maslows behoeftehi\u00EBrarchie) via zelfactualisatie en collectief geheugen naar intimiteit en transcendentie. Dit model verklaart waarom onze test niet alleen persoonlijkheid meet, maar de ontwikkelingslaag als dynamiek tussen natuurlijke aanleg en culturele conditionering blootlegt. \u2014 een principe dat Jean Piaget beschreef als cognitieve stadia en dat Carl Jung benaderde als individuatie.' },
       ],
     },
     {

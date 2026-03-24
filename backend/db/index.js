@@ -35,6 +35,9 @@ async function connectDB() {
   await db.collection('assessmentReviews').createIndex({ createdAt: -1 });
   await db.collection('assessmentReviews').createIndex({ userId: 1 }, { sparse: true });
 
+  // Passkeys — unique 6-digit codes
+  await db.collection('passkeys').createIndex({ code: 1 }, { unique: true });
+
   // ── BETA data retention: auto-expire assessment data after 90 days ──
   // MongoDB's TTL index removes documents automatically — no cron job needed.
   const BETA_RETENTION_SECONDS = 90 * 24 * 60 * 60; // 90 days
@@ -114,6 +117,7 @@ const collections = {
   assessments: () => getDB().collection('assessments'),
   questions: () => getDB().collection('questions'),
   assessmentReviews: () => getDB().collection('assessmentReviews'),
+  passkeys: () => getDB().collection('passkeys'),
 };
 
 /**

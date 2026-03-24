@@ -29,18 +29,8 @@ function esc(str) {
 function buildFeedbackEmail(settings, review) {
   const defaultText = 'Hoogachtende Meester,\n\nJouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en vraag ik je bij deze om onze assessment te delen met anderen- weet wie je vraagt! zolang de beta-fase loopt is alleen het meester niveau toegankelijk.\n\nOok is een kleine donatie meer dan welkom om ons project nog verder te optimaliseren.\n\nAnyway- pionier, hartelijk dank voor de tijd en attentie!\n\nMet vriendelijke groet,\n\n\nYuan Wullink';
   const bodyText = esc(settings.text || defaultText);
-  const hasImage = !!(settings.imageBase64 && settings.imageMimeType);
-
-  const imageBlock = hasImage
-    ? `<tr><td style="padding:0 30px 20px;text-align:center;"><img src="cid:feedbackimage" alt="Garden For Life" style="max-width:100%;height:auto;border-radius:8px;display:block;margin:0 auto;"></td></tr>`
-    : '';
-
-  const attachments = hasImage ? [{
-    filename: 'image',
-    content: Buffer.from(settings.imageBase64, 'base64'),
-    contentType: settings.imageMimeType,
-    cid: 'feedbackimage',
-  }] : [];
+  const imageBlock = '';
+  const attachments = [];
 
   const ratingBlock = review.starRating
     ? `<div style="margin-top:12px;color:#f59e0b;font-size:15px;">⭐ Beoordeling: ${review.starRating}/9</div>` : '';

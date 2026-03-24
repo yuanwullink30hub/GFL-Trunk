@@ -43,14 +43,41 @@ app.get('/api/status', (_req, res) => {
   });
 });
 
-// Beta passkey verification
-app.post('/api/beta/verify', (req, res) => {
+// Beta passkey verification (checks DB, logs usage)
+app.post('/api/beta/verify', async (req, res) => {
   const { passkey } = req.body;
   if (!passkey || typeof passkey !== 'string') {
     return res.status(400).json({ valid: false, error: 'Passkey is required' });
   }
-  const valid = config.betaPasskeys.includes(passkey.trim());
-  res.json({ valid });
+  const trimmed = passkey.trim();
+  try {
+    const { collections, getDB } = require('./db');
+    const pk = await collections.passkeys().findOne({ code: trimmed, isActive: true });
+    const valid = !!pk;
+
+    // Log usage attempt to devActivity
+    await getDB().collection('devActivity').insertOne({
+      type: 'passkey_use',
+      timestamp: new Date(),
+      code: trimmed,
+      valid,
+      ip: req.ip || req.connection?.remoteAddress || '',
+      userAgent: (req.get('user-agent') || '').slice(0, 512),
+    });
+
+    if (valid) {
+      // Bump usage counter
+      await collections.passkeys().updateOne(
+        { _id: pk._id },
+        { $inc: { usageCount: 1 }, $set: { lastUsedAt: new Date() } }
+      );
+    }
+
+    res.json({ valid });
+  } catch (err) {
+    console.error('[Beta] Verify error:', err.message);
+    res.status(500).json({ valid: false, error: 'Server error' });
+  }
 });
 
 // ── BETA END: delete all assessment data on 27-08-2026 12:00 UTC ──

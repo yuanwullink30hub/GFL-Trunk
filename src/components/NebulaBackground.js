@@ -952,7 +952,6 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
   const animRef         = useRef(null);
   const mouseRef        = useRef({ x: 0.5, y: 0.5 });
   const mousePrevRef    = useRef({ x: 0.5, y: 0.5 });
-  const startTimeRef    = useRef(Date.now());
   const mapPosTargetRef = useRef({ x: 0, y: 0 }); // target from prop
   const mapPosRef       = useRef({ x: 0, y: 0 }); // smoothed value sent to shader
   const onReadyRef      = useRef(onReady);

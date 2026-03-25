@@ -381,9 +381,10 @@ function buildSystemPrompt({
     `• Richting het Centrum: [Hoe extreme uitslagen bewust naar meer balans kunnen bewegen — als groeiperspectief]\n` +
     `• Ontologische Vraag: [Één diepe reflectievraag die de kern van de huidige paradox raakt]\n` +
     `• AI Agent Prompt: [Zie Sectie 11]\n\n` +
-    `11. Genereer een Volledige AI Prompt:\n` +
-    `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools. De prompt bevat de verplichte disclaimer als eerste sectie, gevolgd door de gepersonaliseerde instructies op basis van het archetype-profiel.\n\n` +
-    `INSTRUCTIE: AI AGENT PROMPT: Begin de gegenereerde prompt altijd met: 'Dit is een persoonlijk zelfreflectie-instrument gebaseerd op het GardenForLife assessment. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur die ik wil verkennen. Gebruik van deze prompt in externe AI-tools valt buiten de verantwoordelijkheid van GardenForLife.' Voeg daarna de gebruikersspecifieke instructies toe.\n`
+    `11. Genereer een Volledige AI Prompt\n` +
+    `LET OP: Genereer content tussen de 400 en 420 woorden.\n` +
+    `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools.\n` +
+    `Gepersonaliseerde instructies (voor de AI) op basis van het archetype-profiel. Gebruik tussen de 400 en 420 woorden voor deze gehele sectie.\n`
   );
 
   // ═══ FASE 1: TNM DATA-EXTRACTIE & BEREKENING ═══
@@ -1084,10 +1085,9 @@ function buildSystemPrompt({
 
   parts.push(
     `## 11. Genereer een Volledige AI Prompt\n` +
-    `LET OP: BELANGRIJK> gebruik tussen de 400 en 420 woorden voor SECTIE 11. Niet minder dan 400 woorden. Tel je woorden. Als je onder de 400 zit, breid dan uit.\n` +
-    `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools. De prompt bevat de verplichte disclaimer als eerste sectie, gevolgd door de gepersonaliseerde instructies op basis van het archetype-profiel.\n` +
-    `INSTRUCTIE: Begin de gegenereerde prompt altijd met: 'Dit is een persoonlijk zelfreflectie-instrument gebaseerd op het GardenForLife assessment. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur die ik wil verkennen. Gebruik van deze prompt in externe AI-tools valt buiten de verantwoordelijkheid van GardenForLife.'\n` +
-    `LET OP: BELANGRIJK> gebruik tussen de 400 en 420 woorden voor SECTIE 11. Niet minder dan 400 woorden.\n`
+    `LET OP: Genereer content tussen de 400 en 420 woorden.\n` +
+    `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools.\n` +
+    `Gepersonaliseerde instructies (voor de AI) op basis van het archetype-profiel. Gebruik tussen de 400 en 420 woorden voor deze gehele sectie.\n`
   );
 
   // ── 12A: Professionele Resonantie ──

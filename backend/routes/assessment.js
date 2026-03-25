@@ -33,8 +33,12 @@ function buildFeedbackEmail(settings, review) {
     'Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet ' +
     'bedwingen en reik ik nog één laatste keer uit voor jouw hulp.<br>' +
     'Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data ' +
-    'hoe beter wij kunnen optimaliseren. ' +
+    'hoe beter wij kunnen optimaliseren.<br>' +
     'Zolang de beta-fase loopt is alleen het meester niveau toegankelijk.<br><br>' +
+    '<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:4px 0 0;">' +
+    '<tr><td style="text-align:center;padding:16px 0;">' +
+    '<a href="https://gardenforlife.nl/feedback" style="text-decoration:none;font-size:36px;letter-spacing:6px;">⭐⭐⭐</a>' +
+    '</td></tr></table>' +
     'Anyway- pionier, hartelijk dank voor de tijd en attentie!<br><br><br>' +
     'Met vriendelijke groet, Yuan Wullink';
   const imageBlock = '';

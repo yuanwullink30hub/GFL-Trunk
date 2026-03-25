@@ -821,7 +821,7 @@ const AssessmentResultsModal = ({
       pdf.text('GARDEN FOR LIFE: Archetype Analyse', margin, y);
       pdf.text(coverDate, W - margin, y, { align: 'right' });
       y += 3;
-      pdf.setDrawColor(...green);
+      pdf.setDrawColor(...purple);
       pdf.setLineWidth(0.4);
       pdf.line(margin, y, W - margin, y);
       y += 16;
@@ -852,8 +852,8 @@ const AssessmentResultsModal = ({
         pdf.addImage(imgData, 'PNG', imgX, y, pdfImgSize, pdfImgSize);
         // Clickable hyperlink over the image — opens full-res in browser
         if (result.imageUrl) pdf.link(imgX, y, pdfImgSize, pdfImgSize, { url: result.imageUrl });
-        // Green border ring around circular image
-        pdf.setDrawColor(...green);
+        // Purple border ring around circular image
+        pdf.setDrawColor(...purple);
         pdf.setLineWidth(1.5);
         pdf.circle(W / 2, y + pdfImgSize / 2, pdfImgSize / 2, 'S');
         y += pdfImgSize + 12;
@@ -1551,7 +1551,7 @@ const AssessmentResultsModal = ({
       // ── SHADOW (new page) ──
       await justifiedPage(async (gap) => {
       if (result.shadowPartner) {
-        sectionHeading(`De Schaduw — ${result.shadowName} (${result.shadowNameEn})`, purple);
+        sectionHeading(`De Schaduw — Archetype: ${result.shadowNameEn} (180\u00B0 tegenpool van ${result.mainNameEn})`, purple);
         if (result.mainShadowTension) {
           writeWrapped(result.mainShadowTension, margin + 2, y, contentW - 4, 8.5, white);
           y += 2;
@@ -1568,13 +1568,7 @@ const AssessmentResultsModal = ({
 
       // ── BLINDSPOT ──
       if (result.blindspotPartner) {
-        sectionHeading(`De Blindspot — ${result.blindspotName} (${result.blindspotNameEn})`, red);
-        ensureSpace(6);
-        pdf.setFontSize(11);
-        pdf.setTextColor(...white);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(`De tegenhanger van je Support (${result.secondaryNameEn}) — jouw externe blinde vlek`, margin + 5, y);
-        y += 6;
+        sectionHeading(`De Blindspot — Archetype: ${result.blindspotNameEn} (180\u00B0 tegenpool van ${result.secondaryNameEn || result.supportArchetype})`, red);
         if (result.blindspotDescription) {
           writeWrapped(result.blindspotDescription, margin + 2, y, contentW - 4, 8.5, white);
           y += 2;
@@ -2100,7 +2094,6 @@ const AssessmentResultsModal = ({
         const tri = COG_TRIANGLES[archKey];
         if (tri) {
           const hexToRgb = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
-          const triColor = hexToRgb(tri.color);
 
           // Section heading with amber left bar
           sectionHeading('Cognitieve Driehoek', amber);
@@ -2116,19 +2109,17 @@ const AssessmentResultsModal = ({
 
           // Active triangle mode name
           ensureSpace(12);
-          pdf.setFillColor(...green);
-          pdf.rect(margin, y - 4, 1.5, 7, 'F');
           pdf.setFontSize(10);
           pdf.setTextColor(...green);
           pdf.setFont('helvetica', 'bold');
-          pdf.text(tri.mode.toUpperCase(), margin + 5, y);
+          pdf.text(tri.mode.toUpperCase(), margin + 2, y);
           y += 5;
 
           // Members + networks
           pdf.setFontSize(8.5);
           pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(...dimWhite);
-          pdf.text(tri.members.join(' \u00B7 ') + ' \u2014 ' + tri.networks, margin + 5, y);
+          pdf.text(tri.members.join(' \u00B7 ') + ' \u2014 ' + tri.networks, margin + 2, y);
           y += 6;
 
           // Tagline (italic, amber)
@@ -2196,7 +2187,6 @@ const AssessmentResultsModal = ({
           if (others.length) {
             ensureSpace(others.length * 5 + 2);
             for (const ot of others) {
-              const otColor = hexToRgb(ot.color);
               pdf.setFontSize(8.5);
               pdf.setFont('helvetica', 'bold');
               pdf.setTextColor(...green);
@@ -2244,19 +2234,18 @@ const AssessmentResultsModal = ({
             logging: false,
           });
           const radarImg = radarCanvas.toDataURL('image/png');
-          const radarMargin = 8;
-          const radarW = W - radarMargin * 2;
+          const radarW = contentW;
           const radarH = (radarCanvas.height / radarCanvas.width) * radarW;
           // If it fits on this page, center vertically in remaining space
-          const availH = H - y - radarMargin;
+          const availH = H - y - margin;
           const finalH = Math.min(radarH, availH);
           const finalW = finalH === radarH ? radarW : (radarCanvas.width / radarCanvas.height) * finalH;
-          const offsetX = W / 2 - finalW / 2;
-          // Full-width border container around the radar chart (edge-to-edge)
+          const offsetX = margin + (contentW - finalW) / 2;
+          // Border container around the radar chart (respects page margins)
           const borderPad = 2;
           pdf.setDrawColor(...green);
           pdf.setLineWidth(0.5);
-          pdf.rect(0, y - borderPad, W, finalH + borderPad * 2);
+          pdf.rect(margin, y - borderPad, contentW, finalH + borderPad * 2);
           pdf.addImage(radarImg, 'PNG', offsetX, y, finalW, finalH);
           y += finalH + 6;
         } catch {
@@ -2471,11 +2460,11 @@ const AssessmentResultsModal = ({
 
           // ── Page 14: Alchemie / Neurale Schaakbord / Ontologie ──
           if (group2Sections.length > 0) {
-            await justifiedPage(async (gap) => {
+            pdf.addPage(); paintBg(); markPage();
+            y = margin;
             group2Sections.forEach((section, i) => {
               renderSection(section.title, section.content, getPdfSectionColor(section.title));
-              if (i < group2Sections.length - 1) { hr(); gap(); }
-            });
+              if (i < group2Sections.length - 1) { hr(); }
             });
           }
 
@@ -2510,7 +2499,7 @@ const AssessmentResultsModal = ({
       ensureSpace(14);
       markPage(); // footer always has content
       y += 4;
-      pdf.setDrawColor(...green);
+      pdf.setDrawColor(...purple);
       pdf.setLineWidth(0.3);
       pdf.line(margin, y, W - margin, y);
       y += 5;
@@ -2540,14 +2529,16 @@ const AssessmentResultsModal = ({
       const line2 = pdf.splitTextToSize('Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en reik ik nog \u00E9\u00E9n laatste keer uit voor jouw hulp.', closingTextW);
       const line3 = pdf.splitTextToSize('Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data hoe beter wij kunnen optimaliseren.', closingTextW);
       const line4 = pdf.splitTextToSize('Zolang de beta-fase loopt is alleen het meester niveau toegankelijk.', closingTextW);
+      const line4b = pdf.splitTextToSize('Een donatie is optioneel, maar is meer dan welkom en is directe voeding voor ons project! =)', closingTextW);
       const line5 = pdf.splitTextToSize('Anyway- pionier, hartelijk dank voor de tijd en attentie!', closingTextW);
       const gapSingle = lineH;       // 1× blank line gap
       const gapDouble = lineH * 2;   // 2× blank line gap
       const totalTextH =
         line1.length * lineH + gapDouble +
-        line2.length * lineH + gapDouble +
+        line2.length * lineH +
         line3.length * lineH + gapSingle +
-        line4.length * lineH + gapDouble +
+        line4.length * lineH +
+        line4b.length * lineH + gapDouble +
         line5.length * lineH;
       // Align text block so its bottom matches image bottom
       let yMsg = imgY + imgSizeMm - totalTextH;
@@ -2558,10 +2549,10 @@ const AssessmentResultsModal = ({
       for (const l of line1) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
       yMsg += gapDouble;
       for (const l of line2) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-      yMsg += gapDouble;
       for (const l of line3) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
       yMsg += gapSingle;
       for (const l of line4) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
+      for (const l of line4b) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
       yMsg += gapDouble;
       for (const l of line5) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
 
@@ -3664,8 +3655,8 @@ const AssessmentResultsModal = ({
                     left: '1rem',
                     fontSize: '0.7rem',
                     fontFamily: "'Rajdhani', sans-serif",
-                    color: 'rgba(29, 153, 4, 0.7)',
                     letterSpacing: '0.2em',
+                    color: '#1d9904',
                   }}>
                     {'/// TRIPLE_NETWORK_WIEL'}
                   </div>
@@ -3701,7 +3692,13 @@ const AssessmentResultsModal = ({
                   // AI Agent Prompt section: always render as a single unified monospace block
                   if (section.isAgentPrompt || /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt/i.test(section.title)) {
                     return (
-                      <div key={idx} style={{ width: '100%' }}>
+                      <div key={idx} style={{
+                        width: '100%',
+                        background: 'transparent',
+                        border: '1px solid rgba(249,115,22,0.2)',
+                        padding: rs.sectionPad,
+                        borderRadius: '0.75rem',
+                      }}>
                         <h3 style={{
                           display: 'flex', alignItems: 'center', gap: '0.5rem',
                           color: '#f97316',
@@ -4149,6 +4146,8 @@ function parseAiSections(analysisText) {
   // Patterns to strip disclaimer-like text the AI may inject into any section
   const disclaimerPatterns = [
     /^>?\s*\**Meta[- ]?Disclaimer\**:?[^\n]*\n?/gim,
+    /^>?\s*\**Schaduw[- ]?archetype\**:?[^\n]*\n?/gim,
+    /^>?\s*\**Blindspot[- ]?archetype\**:?[^\n]*\n?/gim,
     /^>?\s*Dit rapport is gegenereerd door het Garden [Ff]or Life[^\n]*\n?/gm,
     /^>?\s*De gebruikte neurobiologische termen zijn metaforen[^\n]*\n?/gm,
     /^>?\s*Raadpleeg een professional voor medisch[^\n]*\n?/gm,

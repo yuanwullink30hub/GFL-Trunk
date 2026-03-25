@@ -29,12 +29,12 @@ function esc(str) {
 function buildFeedbackEmail(settings, review) {
   // settings.text is admin-controlled content — render as HTML directly (supports <br/> etc.)
   const bodyText = settings.text ||
-    'Hoogachtende Meester,<br>' +
+    'Hoogachtende Leerling,<br>' +
     'Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet ' +
     'bedwingen en reik ik nog één laatste keer uit voor jouw hulp.<br>' +
     'Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data ' +
     'hoe beter wij kunnen optimaliseren.<br>' +
-    'Zolang de beta-fase loopt is alleen het meester niveau toegankelijk.<br>' +
+    'Zolang de beta-fase loopt is alleen het leerling niveau toegankelijk.<br>' +
     'Ook kunnen we elke kleine donatie zeer goed gebruiken. =)<br><br>' +
     'Anyway- pionier, hartelijk dank voor de tijd en attentie!';
 

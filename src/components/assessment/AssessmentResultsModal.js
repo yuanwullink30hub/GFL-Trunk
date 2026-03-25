@@ -17,6 +17,7 @@ import {
   isComplementaryPair,
   getExtendedDescription,
   computeAdvancedScores,
+  getArchetypeQuote,
 } from '../../data/assessment';
 import { isNatureSlot } from '../../pages/assessment/assessmentData';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
@@ -752,6 +753,17 @@ const AssessmentResultsModal = ({
             }
             continue;
           }
+          // ALL-CAPS section header (e.g. "KERNPROFIEL:", "COMMUNICATIESTIJL:")
+          if (trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed) && trimmed.length >= 3 && trimmed.length <= 70) {
+            ensureSpace(7);
+            pdf.setFontSize(8.5);
+            pdf.setTextColor(...orange);
+            pdf.setFont('helvetica', 'bold');
+            const hLines = pdf.splitTextToSize(trimmed, maxW);
+            for (const hl of hLines) { ensureSpace(4.5); pdf.text(hl, x, y); y += 4.5; }
+            y += 0.5;
+            continue;
+          }
           // Regular paragraph — strip bold markers, render in white
           const text = trimmed.replace(/\*\*/g, '').replace(/\*/g, '');
           pdf.setFontSize(8.5);
@@ -887,10 +899,10 @@ const AssessmentResultsModal = ({
         y += 8;
       }
 
-      // Quote — italic description under the archetype name
-      if (result.description) {
+      // Quote — levensles for this extended archetype
+      if (result.levensles) {
         y += 2;
-        const quoteText = `\u201C${result.description}\u201D`;
+        const quoteText = `\u201C${result.levensles}\u201D`;
         const quoteLines = pdf.splitTextToSize(quoteText, contentW - 30);
         pdf.setFontSize(10);
         pdf.setTextColor(...white);
@@ -1113,6 +1125,15 @@ const AssessmentResultsModal = ({
         const dwX = margin + (contentW - dwW) / 2;
         const dwY = yAfterBronText + (vvnsStartY - yAfterBronText - dwH) / 2 - 10;
         pdf.addImage(deltawerkenImg, 'PNG', dwX, dwY, dwW, dwH);
+        // Top-right corner label
+        pdf.setFontSize(7.5);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...mutedGray);
+        const cwcCornerLabel = 'Cells within Cells';
+        pdf.text(cwcCornerLabel, dwX + dwW - pdf.getTextWidth(cwcCornerLabel), dwY + 4.5);
+        // Centered caption below image
+        const cwcCaption = 'Cells within cells interlinked (Zie pagina 6)';
+        pdf.text(cwcCaption, dwX + (dwW - pdf.getTextWidth(cwcCaption)) / 2, dwY + dwH + 4.5);
       } catch {
         // image load failed
       }
@@ -1188,7 +1209,7 @@ const AssessmentResultsModal = ({
         [
           ['0', '3',                  'kiem',                                'Drievoudig Netwerkmodel (DMN, SN, CEN)'],
           ['1', '6 = 3 \u00D7 2',      'polariteitssplitsing',                '6 biogroepen, 6 antwoorden, 6 rotatiesleutels'],
-          ['2', '12 = 3 \u00D7 2\u00B2','opnieuw verdubbeld',                  '12 archetypen op het wiel'],
+          ['2', '12 = 3 \u00D7 2\u00B2','Start van complexiteit',              '12 archetypen op het wiel'],
           ['3', '36 = 3\u00B2 \u00D7 2\u00B2','3 in het kwadraat \u00D7 4',  '36 vragen (3 per archetype)'],
           ['4', '72 = 3\u00B2 \u00D7 2\u00B3','binaire verdubbeling',        '72 keuzes, 72 uitgebreide uitkomsten'],
         ],
@@ -1209,7 +1230,7 @@ const AssessmentResultsModal = ({
       );
       y += 3;
       writeWrapped(
-        'De 5 lagen vormen het enige structurele element dat het patroon doorbreekt \u2014 maar 5 is zelf 3 + 2, 2\u00D79 vragen en 3\u00D76 \u2014 de triade herenigd met haar dualiteitsoperator. ' +
+        'De 5 lagen vormen het enige structurele element dat het patroon doorbreekt \u2014 maar 5 is zelf 2 + 3, 2\u00D79 vragen en 3\u00D76 \u2014 de triade herenigd met haar dualiteitsoperator. ' +
         'Het systeem rust op een 3 die voortdurend in een spiegel kijkt. Zelf-9 en Ander-9 geven je de navigatie voor Macht-6, Magie-6 en de gespiegelde Wijsheid-6. ' +
         'Het getal 6 is het atoom van dit hele beoordelingssysteem, en alles vloeit daaruit voort:',
         margin + 2, y, contentW - 4, 8.5, white
@@ -2483,9 +2504,16 @@ const AssessmentResultsModal = ({
             y = margin;
             // Fixed heading in orange
             sectionHeading('De volledige AI prompt', orange);
+            // Advisory tip — displayed in the PDF, never part of the prompt sent to AI
+            const tipText = 'Als je gebruik maakt van Claude of Gemini raden we je aan om het volledige rapport als bijlage te prompten, benoem nadrukkelijk dat het de afbeeldingen en tabellen moet analyseren.';
+            pdf.setFontSize(8); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(251, 191, 36);
+            pdf.splitTextToSize(tipText, contentW - 4).forEach(line => { pdf.text(line, margin + 2, y); y += 4.5; });
+            y += 2;
             // Agent prompt: strip intro text + first ## heading (KERN DISCLAIMER), show its body, then rest with headings
             if (agentSection) {
               let promptContent = (agentSection.content || '').trim();
+              // Strip markdown code fences the AI may wrap the prompt in
+              promptContent = promptContent.replace(/^```[^\n]*\n?/gm, '').replace(/^~~~[^\n]*\n?/gm, '');
               // Remove everything before the first ## sub-heading
               const firstSubIdx = promptContent.search(/(^|\n)##[ \t]/m);
               if (firstSubIdx >= 0) {
@@ -2493,6 +2521,8 @@ const AssessmentResultsModal = ({
               }
               // Strip the first ## heading line itself (KERN DISCLAIMER), keep its body
               promptContent = promptContent.replace(/^##[^\n]*\n+/, '').trim();
+              // Collapse 3+ consecutive blank lines down to one blank line
+              promptContent = promptContent.replace(/\n{3,}/g, '\n\n');
               writePdfMarkdown(promptContent, margin + 2, contentW - 4);
             }
           }
@@ -2533,10 +2563,10 @@ const AssessmentResultsModal = ({
       const closingTextW = hasBannerImage ? contentW - imgSizeMm - 6 : contentW - 4;
       // Pre-calculate wrapped line counts to size the block from the bottom up
       pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
-      const line1 = pdf.splitTextToSize('Hoogachtende Meester,', closingTextW);
+      const line1 = pdf.splitTextToSize('Hoogachtende Leerling,', closingTextW);
       const line2 = pdf.splitTextToSize('Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en reik ik nog \u00E9\u00E9n laatste keer uit voor jouw hulp.', closingTextW);
       const line3 = pdf.splitTextToSize('Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data hoe beter wij kunnen optimaliseren.', closingTextW);
-      const line4 = pdf.splitTextToSize('Zolang de beta-fase loopt is alleen het meester niveau toegankelijk.', closingTextW);
+      const line4 = pdf.splitTextToSize('Zolang de beta-fase loopt is alleen het leerling niveau toegankelijk.', closingTextW);
       const line4b = pdf.splitTextToSize('Een donatie is optioneel, maar is meer dan welkom en is directe voeding voor ons project! =)', closingTextW);
       const line5 = pdf.splitTextToSize('Anyway- pionier, hartelijk dank voor de tijd en attentie!', closingTextW);
       const gapSingle = lineH;       // 1× blank line gap
@@ -2879,7 +2909,7 @@ const AssessmentResultsModal = ({
                       fontFamily: "'Figtree', sans-serif",
                       fontStyle: 'italic',
                     }}>
-                      "{result.description}"
+                      "{result.levensles}"
                     </p>
                     {result.secondaryName && (
                       <p style={{
@@ -4199,8 +4229,8 @@ function parseAiSections(analysisText) {
 
   for (let i = 0; i < matches.length; i++) {
     const title = matches[i].title;
-    // Skip any "Meester Ontologisch Rapport" preamble the AI may inject
-    if (/meester\s+ontologisch/i.test(title)) continue;
+    // Skip any "Leerling Ontologisch Rapport" preamble the AI may inject
+    if (/leerling\s+ontologisch/i.test(title)) continue;
     // Skip any standalone "Introductie" / "Inleiding" the AI may generate
     if (/^(introductie|inleiding)$/i.test(title)) continue;
 
@@ -4702,6 +4732,7 @@ function computeResultFromAnswers(layerAnswers) {
     mainName: primaryArchetype.name,                  // e.g. "De Wijze"
     mainNameEn: primaryArchetype.nameEn || mainKey,
     description: primaryArchetype.description,
+    levensles: getArchetypeQuote(mainKey, supportGroup) || null,
     mainMotivation: primaryArchetype.motivation || null,
     mainPositive: primaryArchetype.positive || null,
     mainShadowTrait: primaryArchetype.shadow || null,

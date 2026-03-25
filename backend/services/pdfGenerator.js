@@ -689,8 +689,8 @@ function parseAnalysisSections(text) {
     const title = newlineIdx === -1 ? trimmed : trimmed.substring(0, newlineIdx).trim();
     const body  = newlineIdx === -1 ? ''      : trimmed.substring(newlineIdx + 1).trim();
 
-    // Skip "Meester Ontologisch Rapport" or standalone "Introductie"/"Inleiding" headers
-    if (/meester\s+ontologisch/i.test(title)) continue;
+    // Skip "Leerling Ontologisch Rapport" or standalone "Introductie"/"Inleiding" headers
+    if (/leerling\s+ontologisch/i.test(title)) continue;
     if (/^(introductie|inleiding)$/i.test(title)) continue;
 
     sections.push({ title, body });

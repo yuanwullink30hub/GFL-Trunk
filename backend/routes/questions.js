@@ -212,17 +212,18 @@ router.put('/:questionId', authRequired, adminRequired, async (req, res) => {
       return res.status(400).json({ error: 'questionId must be 1-60' });
     }
 
-    // Find which layer has this question
-    const layerIndex = Math.floor((questionId - 1) / 12);
-    const layer = await collections.questions().findOne({ layerIndex });
+    // Find which layer actually contains this question (don't assume 12/layer)
+    const allLayers = await collections.questions().find({}).toArray();
+    let layer = null;
+    let questionIdx = -1;
+    for (const l of allLayers) {
+      const idx = l.questions.findIndex(q => q.id === questionId);
+      if (idx !== -1) { layer = l; questionIdx = idx; break; }
+    }
     if (!layer) {
-      return res.status(404).json({ error: 'Layer not found. Run /seed first.' });
+      return res.status(404).json({ error: `Question ${questionId} not found in any layer. Run /seed first.` });
     }
-
-    const questionIdx = layer.questions.findIndex(q => q.id === questionId);
-    if (questionIdx === -1) {
-      return res.status(404).json({ error: `Question ${questionId} not found in layer ${layerIndex}` });
-    }
+    const layerIndex = layer.layerIndex;
 
     // Build update
     const { text, domain, answers } = req.body;

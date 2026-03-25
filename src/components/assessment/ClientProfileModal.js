@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getHistory, getAssessment, downloadPdf, deleteOwnAccount } from '../../utils/apiClient';
-import { BTN, TAB_STYLE, ERROR_STYLE, hover, C, FONT } from './dashboardStyles';
+import { BTN, TAB_STYLE, ERROR_STYLE, hover, C, FONT, SciFiButton } from './dashboardStyles';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 
 // ═══════════════════════════════════════════════════════════
@@ -9,22 +9,22 @@ import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 // ═══════════════════════════════════════════════════════════
 const CARD_COLORS = {
   gold: {
-    border: 'rgba(255, 174, 0, 0.25)',
-    shadow: '0 0 15px rgba(255, 174, 0, 0.05), inset 0 0 30px rgba(255, 174, 0, 0.02)',
-    titleColor: '#ffae00',
-    dimText: 'rgba(255, 174, 0, 0.45)',
-    rowBorder: 'rgba(255, 174, 0, 0.1)',
-    cardBg: 'rgba(255, 174, 0, 0.04)',
-    iconBg: 'rgba(255, 174, 0, 0.08)',
+    border: '#f97316',
+    shadow: '0 0 15px rgba(249, 115, 22, 0.3)',
+    titleColor: '#f97316',
+    dimText: 'rgba(249, 115, 22, 0.35)',
+    rowBorder: 'rgba(249, 115, 22, 0.12)',
+    cardBg: 'rgba(249, 115, 22, 0.04)',
+    iconBg: 'rgba(249, 115, 22, 0.08)',
   },
   purple: {
-    border: 'rgba(188, 19, 254, 0.25)',
-    shadow: '0 0 15px rgba(188, 19, 254, 0.05), inset 0 0 30px rgba(188, 19, 254, 0.02)',
-    titleColor: '#bc13fe',
-    dimText: 'rgba(188, 19, 254, 0.45)',
-    rowBorder: 'rgba(188, 19, 254, 0.1)',
-    cardBg: 'rgba(188, 19, 254, 0.04)',
-    iconBg: 'rgba(188, 19, 254, 0.08)',
+    border: '#a855f7',
+    shadow: '0 0 15px rgba(168, 85, 247, 0.3)',
+    titleColor: '#a855f7',
+    dimText: 'rgba(168, 85, 247, 0.35)',
+    rowBorder: 'rgba(168, 85, 247, 0.12)',
+    cardBg: 'rgba(168, 85, 247, 0.04)',
+    iconBg: 'rgba(168, 85, 247, 0.08)',
   },
 };
 
@@ -33,7 +33,9 @@ function DashboardCard({ children, title, color = 'gold', style = {} }) {
   return (
     <div style={{
       position: 'relative',
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      backgroundColor: 'rgba(1, 0, 2, 0.3)',
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
       border: `1px solid ${t.border}`,
       boxShadow: t.shadow,
       borderRadius: '0.5rem',
@@ -41,19 +43,28 @@ function DashboardCard({ children, title, color = 'gold', style = {} }) {
       fontFamily: FONT,
       color: C.text,
       fontSize: 'max(12px, 0.65vw)',
+      overflow: 'hidden',
       ...style,
     }}>
       {title && (
         <div style={{
-          position: 'absolute', top: '-0.6rem', left: '1.25rem',
-          padding: '0 0.5rem',
-          backgroundColor: '#0a0510',
-          color: t.titleColor, fontSize: 'max(9px, 0.45vw)',
-          fontWeight: 'bold', textTransform: 'uppercase',
-          letterSpacing: '0.15em', fontFamily: FONT,
-          border: `1px solid ${t.border}`,
+          display: 'flex', alignItems: 'center', gap: '0.4rem',
+          marginBottom: '0.8rem',
+          paddingBottom: '0.6rem',
+          borderBottom: `1px solid ${t.border}`,
         }}>
-          {title}
+          <div style={{
+            width: '3px', height: '1rem',
+            backgroundColor: t.border,
+            borderRadius: '1px',
+          }} />
+          <span style={{
+            fontSize: 'max(10px, 0.5vw)',
+            fontWeight: 'bold',
+            color: t.titleColor,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+          }}>{title}</span>
         </div>
       )}
       {children}
@@ -76,7 +87,7 @@ const ErrorBox = ({ msg }) => (
 const CORNER = (pos) => ({
   position: 'absolute',
   width: '1rem', height: '1rem',
-  border: '1.5px solid #ffae00',
+  border: '1.5px solid #a855f7',
   pointerEvents: 'none', zIndex: 3,
   ...(pos === 'tl' && { top: '-0.125rem', left: '-0.125rem', borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }),
   ...(pos === 'tr' && { top: '-0.125rem', right: '-0.125rem', borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }),
@@ -114,7 +125,19 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
   }, [deleteInput, onLogout]);
 
   return (
-    /* Outer shell — fixed size */
+    <>
+    <style>{`
+      @keyframes dashHoloSheen {
+        0%   { background-position: 200% 200%; }
+        50%  { background-position: 0% 0%; }
+        100% { background-position: 200% 200%; }
+      }
+      @keyframes dashHoloScanline {
+        0%   { background-position: 0 -200%; }
+        100% { background-position: 0 200%; }
+      }
+    `}</style>
+    {/* Outer shell — fixed size */}
     <div style={{ position: 'relative', width: '90vw', maxWidth: '1280px', height: '85vh' }}>
       <div style={CORNER('tl')} />
       <div style={CORNER('tr')} />
@@ -127,15 +150,31 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: 'rgba(2, 0, 3, 0.9)',
+        backgroundColor: 'rgba(1, 0, 2, 0.3)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         borderRadius: '0.5rem',
         overflow: 'hidden',
-        boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 0 80px rgba(0,0,0,0.35)',
+        boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
         color: C.text,
         fontFamily: FONT,
         fontSize: 'max(12px, 0.65vw)',
       }}>
-        {/* Decorative overlays removed for performance */}
+        {/* Holographic sheen — Eyedentity glass skin */}
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: '0.5rem', pointerEvents: 'none', zIndex: 1,
+          background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
+          backgroundSize: '400% 400%',
+          animation: 'dashHoloSheen 45s ease-in-out infinite',
+          mixBlendMode: 'screen',
+        }} />
+        {/* Scanline sweep */}
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: '0.5rem', pointerEvents: 'none', zIndex: 1,
+          background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
+          backgroundSize: '100% 300%',
+          animation: 'dashHoloScanline 12s linear infinite',
+        }} />
 
         {/* Title bar */}
         <div style={{
@@ -171,7 +210,7 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
           {/* ── Header ── */}
           <header style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            borderBottom: '1px solid rgba(255, 174, 0, 0.15)',
+            borderBottom: '1px solid rgba(168, 85, 247, 0.15)',
             paddingBottom: '1.2rem',
           }}>
             <div>
@@ -179,12 +218,12 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
                 fontSize: 'max(22px, 1.4vw)', fontWeight: 'bold',
                 color: C.gold, textTransform: 'uppercase',
                 letterSpacing: '0.2em', fontFamily: FONT, margin: 0,
-                textShadow: '0 0 5px #ffae00, 0 0 10px #ffae00',
+                textShadow: `0 0 5px ${C.gold}, 0 0 10px ${C.gold}`,
               }}>
                 Profiel Dashboard
               </h1>
               <p style={{
-                color: 'rgba(255, 174, 0, 0.35)', fontSize: 'max(10px, 0.55vw)',
+                color: 'rgba(249, 115, 22, 0.35)', fontSize: 'max(10px, 0.55vw)',
                 marginTop: '0.25rem', fontFamily: FONT,
               }}>
                 GEBRUIKER: {user.displayName} {'·'} ROL: {(user.role || 'client').toUpperCase()} {'·'} {user.email}
@@ -202,11 +241,9 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
               { key: 'contacten', label: 'Contacten' },
               { key: 'agenda', label: 'Agenda' },
             ].map(({ key, label }) => (
-              <button key={key} onClick={() => setTab(key)} style={TAB_STYLE(tab === key)}
-                onMouseEnter={(e) => { if (tab !== key) e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
-                onMouseLeave={(e) => { if (tab !== key) e.target.style.background = TAB_STYLE(false).background; }}>
-                {label}
-              </button>
+              <SciFiButton key={key} onClick={() => setTab(key)} active={tab === key}>
+                {label.toUpperCase()}
+              </SciFiButton>
             ))}
           </div>
 
@@ -237,20 +274,16 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
                   <span style={{ color: '#fca5a5', fontSize: 'max(9px, 0.48vw)', fontFamily: FONT }}>
                     ⚠ Dit verwijdert je account én alle bijbehorende assessments permanent. Weet je het zeker?
                   </span>
-                  <button
+                  <SciFiButton
                     onClick={() => setDeleteStep(2)}
-                    style={{ ...BTN, width: 'auto', padding: '0.25rem 0.7rem', fontSize: 'max(9px, 0.46vw)', borderColor: 'rgba(239, 68, 68, 0.6)', color: '#fca5a5' }}
-                    onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.25)'; }}
-                    onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
+                    variant="danger" size="xs" padding="0.25rem 0.7rem" fontSize="max(9px, 0.46vw)">
                     Ja, doorgaan
-                  </button>
-                  <button
+                  </SciFiButton>
+                  <SciFiButton
                     onClick={() => { setDeleteStep(0); setDeleteError(''); }}
-                    style={{ ...BTN, width: 'auto', padding: '0.25rem 0.7rem', fontSize: 'max(9px, 0.46vw)' }}
-                    onMouseEnter={(e) => hover(e, true)}
-                    onMouseLeave={(e) => hover(e, false)}>
+                    size="xs" padding="0.25rem 0.7rem" fontSize="max(9px, 0.46vw)">
                     Annuleren
-                  </button>
+                  </SciFiButton>
                 </div>
               )}
               {deleteStep === 2 && (
@@ -268,21 +301,17 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
                       padding: '0.2rem 0.5rem', borderRadius: '0.2rem', outline: 'none', width: '9rem',
                     }}
                   />
-                  <button
+                  <SciFiButton
                     onClick={handleDeleteAccount}
                     disabled={deleteLoading}
-                    style={{ ...BTN, width: 'auto', padding: '0.25rem 0.7rem', fontSize: 'max(9px, 0.46vw)', borderColor: 'rgba(239, 68, 68, 0.7)', color: '#fca5a5', opacity: deleteLoading ? 0.5 : 1 }}
-                    onMouseEnter={(e) => { if (!deleteLoading) e.target.style.background = 'rgba(239, 68, 68, 0.3)'; }}
-                    onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
+                    variant="danger" size="xs" padding="0.25rem 0.7rem" fontSize="max(9px, 0.46vw)">
                     {deleteLoading ? 'Bezig...' : 'Account verwijderen'}
-                  </button>
-                  <button
+                  </SciFiButton>
+                  <SciFiButton
                     onClick={() => { setDeleteStep(0); setDeleteInput(''); setDeleteError(''); }}
-                    style={{ ...BTN, width: 'auto', padding: '0.25rem 0.7rem', fontSize: 'max(9px, 0.46vw)' }}
-                    onMouseEnter={(e) => hover(e, true)}
-                    onMouseLeave={(e) => hover(e, false)}>
+                    size="xs" padding="0.25rem 0.7rem" fontSize="max(9px, 0.46vw)">
                     Annuleren
-                  </button>
+                  </SciFiButton>
                   {deleteError && <span style={{ color: '#f87171', fontSize: 'max(8px, 0.44vw)', fontFamily: FONT }}>{deleteError}</span>}
                 </div>
               )}
@@ -306,28 +335,14 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
               Account verwijderen
             </button>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button onClick={onClose} style={{
-                ...BTN, width: 'auto', padding: '0.35rem 1rem',
-                fontSize: 'max(9px, 0.48vw)',
-              }}
-                onMouseEnter={(e) => hover(e, true)}
-                onMouseLeave={(e) => hover(e, false)}>
-                ← Terug
-              </button>
-              <button onClick={onLogout} style={{
-                ...BTN, width: 'auto', padding: '0.35rem 1rem',
-                fontSize: 'max(9px, 0.48vw)',
-                borderColor: 'rgba(239, 68, 68, 0.5)', color: '#fca5a5',
-              }}
-                onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-                onMouseLeave={(e) => { e.target.style.background = BTN.background; e.target.style.color = '#fca5a5'; }}>
-                Uitloggen
-              </button>
+              <SciFiButton onClick={onClose} size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">← Terug</SciFiButton>
+              <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">Uitloggen</SciFiButton>
             </div>
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 });
 
@@ -483,14 +498,7 @@ const ClientOverviewTab = memo(({ user }) => {
                 onFocus={(e) => { e.target.style.borderColor = C.purple; }}
                 onBlur={(e) => { e.target.style.borderColor = pc.rowBorder; }}
               />
-              <button onClick={addNote} style={{
-                ...BTN, borderColor: C.purple, color: C.purple,
-                fontSize: 'max(9px, 0.45vw)', padding: '0.35rem 0.6rem',
-              }}
-                onMouseEnter={(e) => { e.target.style.background = 'rgba(188, 19, 254, 0.2)'; }}
-                onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
-                +
-              </button>
+              <SciFiButton onClick={addNote} variant="purple" size="sm" padding="0.35rem 0.6rem" fontSize="max(9px, 0.45vw)">+</SciFiButton>
             </div>
             {notesSaved && (
               <div style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase' }}>
@@ -645,10 +653,7 @@ const ClientAssessmentsTab = memo(() => {
             <div style={{ fontSize: 'max(14px, 0.75vw)', fontWeight: 'bold' }}>
               {d.extendedArchetypeName || d.archetypeKey}
             </div>
-            <button onClick={() => setDetail(null)} style={BTN}
-              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-              ← Terug
-            </button>
+            <SciFiButton onClick={() => setDetail(null)}>← Terug</SciFiButton>
           </div>
 
           {/* Summary */}
@@ -731,14 +736,8 @@ const ClientAssessmentsTab = memo(() => {
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.3rem' }}>
-            <button onClick={() => downloadPdf(d._id).catch((e) => setError(e.message))} style={BTN}
-              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-              PDF ↓
-            </button>
-            <button onClick={() => setDetail(null)} style={BTN}
-              onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-              Terug
-            </button>
+            <SciFiButton onClick={() => downloadPdf(d._id).catch((e) => setError(e.message))}>PDF ↓</SciFiButton>
+            <SciFiButton onClick={() => setDetail(null)}>Terug</SciFiButton>
           </div>
         </div>
       </DashboardCard>
@@ -773,19 +772,17 @@ const ClientAssessmentsTab = memo(() => {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.3rem' }}>
-                <button
+                <SciFiButton
                   onClick={() => viewDetail(a._id)}
                   disabled={loadingDetail}
-                  style={{ ...BTN, padding: '0.3rem 0.6rem', fontSize: 'max(9px, 0.4vw)' }}
-                  onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
+                  size="sm" padding="0.3rem 0.6rem" fontSize="max(9px, 0.4vw)">
                   DETAIL
-                </button>
-                <button
+                </SciFiButton>
+                <SciFiButton
                   onClick={() => downloadPdf(a._id).catch((e) => setError(e.message))}
-                  style={{ ...BTN, padding: '0.3rem 0.6rem', fontSize: 'max(9px, 0.4vw)' }}
-                  onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
+                  size="sm" padding="0.3rem 0.6rem" fontSize="max(9px, 0.4vw)">
                   PDF ↓
-                </button>
+                </SciFiButton>
               </div>
             </div>
           ))
@@ -844,18 +841,11 @@ const ClientFeedbackTab = memo(({ user }) => {
               { key: 'vraag', label: 'Vraag' },
               { key: 'bug', label: 'Bug Report' },
             ].map(({ key, label }) => (
-              <button key={key} onClick={() => setForm({ ...form, type: key })} style={{
-                ...BTN,
-                padding: '0.2rem 0.5rem',
-                fontSize: 'max(8px, 0.4vw)',
-                borderColor: form.type === key ? C.purple : 'rgba(255,255,255,0.1)',
-                color: form.type === key ? C.purple : 'rgba(255,255,255,0.4)',
-                backgroundColor: form.type === key ? 'rgba(188, 19, 254, 0.1)' : 'transparent',
-              }}
-                onMouseEnter={(e) => { if (form.type !== key) e.target.style.background = 'rgba(188, 19, 254, 0.08)'; }}
-                onMouseLeave={(e) => { if (form.type !== key) e.target.style.background = form.type === key ? 'rgba(188, 19, 254, 0.1)' : 'transparent'; }}>
+              <SciFiButton key={key} onClick={() => setForm({ ...form, type: key })}
+                variant="purple" active={form.type === key}
+                size="xs" padding="0.2rem 0.5rem" fontSize="max(8px, 0.4vw)">
                 {label}
-              </button>
+              </SciFiButton>
             ))}
           </div>
           <textarea
@@ -876,14 +866,9 @@ const ClientFeedbackTab = memo(({ user }) => {
             onBlur={(e) => { e.target.style.borderColor = pc.rowBorder; }}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <button onClick={submit} style={{
-              ...BTN, borderColor: C.purple, color: C.purple,
-              fontSize: 'max(9px, 0.45vw)', padding: '0.35rem 0.8rem',
-            }}
-              onMouseEnter={(e) => { e.target.style.background = 'rgba(188, 19, 254, 0.2)'; }}
-              onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
+            <SciFiButton onClick={submit} variant="purple" size="sm" padding="0.35rem 0.8rem" fontSize="max(9px, 0.45vw)">
               Versturen
-            </button>
+            </SciFiButton>
             {saved && (
               <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase' }}>
                 ✓ Feedback verzonden
@@ -1001,17 +986,9 @@ const InboxTab = memo(() => {
               </div>
               <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
                 {!m.read && (
-                  <button onClick={() => markRead(m.id)} style={{ ...BTN, padding: '0.25rem 0.5rem', fontSize: 'max(8px, 0.4vw)', borderColor: C.purple, color: C.purple }}
-                    onMouseEnter={(e) => { e.target.style.background = 'rgba(188, 19, 254, 0.2)'; }}
-                    onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
-                    Gelezen
-                  </button>
+                  <SciFiButton onClick={() => markRead(m.id)} variant="purple" size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">Gelezen</SciFiButton>
                 )}
-                <button onClick={() => deleteMsg(m.id)} style={{ ...BTN, padding: '0.25rem 0.5rem', fontSize: 'max(8px, 0.4vw)', borderColor: 'rgba(239,68,68,0.5)', color: '#fca5a5' }}
-                  onMouseEnter={(e) => { e.target.style.background = 'rgba(239, 68, 68, 0.2)'; }}
-                  onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
-                  ✕
-                </button>
+                <SciFiButton onClick={() => deleteMsg(m.id)} variant="danger" size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">✕</SciFiButton>
               </div>
             </div>
           ))
@@ -1064,10 +1041,7 @@ const ContactenTab = memo(() => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
         {/* Add contact button / form */}
         {!showForm ? (
-          <button onClick={() => setShowForm(true)} style={{ ...BTN, alignSelf: 'flex-start', fontSize: 'max(9px, 0.45vw)' }}
-            onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-            + Contact Toevoegen
-          </button>
+          <SciFiButton onClick={() => setShowForm(true)} style={{ alignSelf: 'flex-start' }} fontSize="max(9px, 0.45vw)">+ Contact Toevoegen</SciFiButton>
         ) : (
           <div style={{ padding: '0.8rem', border: `1px solid ${tc.rowBorder}`, borderRadius: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <input value={form.naam} onChange={(e) => setForm({ ...form, naam: e.target.value })} placeholder="Naam *" style={inputStyle}
@@ -1077,12 +1051,9 @@ const ContactenTab = memo(() => {
             <input value={form.notitie} onChange={(e) => setForm({ ...form, notitie: e.target.value })} placeholder="Notitie" style={inputStyle}
               onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
             <div style={{ display: 'flex', gap: '0.4rem' }}>
-              <button onClick={addContact} style={{ ...BTN, fontSize: 'max(9px, 0.45vw)' }}
-                onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>Opslaan</button>
-              <button onClick={() => { setShowForm(false); setForm({ naam: '', email: '', notitie: '' }); }}
-                style={{ ...BTN, fontSize: 'max(9px, 0.45vw)', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)' }}
-                onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.05)'; }}
-                onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>Annuleren</button>
+              <SciFiButton onClick={addContact} fontSize="max(9px, 0.45vw)">Opslaan</SciFiButton>
+              <SciFiButton onClick={() => { setShowForm(false); setForm({ naam: '', email: '', notitie: '' }); }}
+                variant="white" fontSize="max(9px, 0.45vw)">Annuleren</SciFiButton>
             </div>
           </div>
         )}
@@ -1207,10 +1178,7 @@ const AgendaTab = memo(() => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
         {/* Add event button / form */}
         {!showForm ? (
-          <button onClick={() => setShowForm(true)} style={{ ...BTN, alignSelf: 'flex-start', fontSize: 'max(9px, 0.45vw)' }}
-            onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>
-            + Afspraak Toevoegen
-          </button>
+          <SciFiButton onClick={() => setShowForm(true)} style={{ alignSelf: 'flex-start' }} fontSize="max(9px, 0.45vw)">+ Afspraak Toevoegen</SciFiButton>
         ) : (
           <div style={{ padding: '0.8rem', border: `1px solid ${tc.rowBorder}`, borderRadius: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <input value={form.titel} onChange={(e) => setForm({ ...form, titel: e.target.value })} placeholder="Titel *" style={inputStyle}
@@ -1224,12 +1192,9 @@ const AgendaTab = memo(() => {
             <input value={form.notitie} onChange={(e) => setForm({ ...form, notitie: e.target.value })} placeholder="Notitie" style={inputStyle}
               onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
             <div style={{ display: 'flex', gap: '0.4rem' }}>
-              <button onClick={addEvent} style={{ ...BTN, fontSize: 'max(9px, 0.45vw)' }}
-                onMouseEnter={(e) => hover(e, true)} onMouseLeave={(e) => hover(e, false)}>Opslaan</button>
-              <button onClick={() => { setShowForm(false); setForm({ titel: '', datum: '', tijd: '', notitie: '' }); }}
-                style={{ ...BTN, fontSize: 'max(9px, 0.45vw)', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)' }}
-                onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.05)'; }}
-                onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>Annuleren</button>
+              <SciFiButton onClick={addEvent} fontSize="max(9px, 0.45vw)">Opslaan</SciFiButton>
+              <SciFiButton onClick={() => { setShowForm(false); setForm({ titel: '', datum: '', tijd: '', notitie: '' }); }}
+                variant="white" fontSize="max(9px, 0.45vw)">Annuleren</SciFiButton>
             </div>
           </div>
         )}

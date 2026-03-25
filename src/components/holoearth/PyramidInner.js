@@ -388,7 +388,8 @@ const PyramidInner = ({
   foldProgress = 0, // 0-1 for pyramid fold-up (folding mat staircase into entity)
   onSendComplete = () => {},
   onIntroComplete = () => {},
-  onLayerStateChange = () => {}
+  onLayerStateChange = () => {},
+  hidePyramid = false,
 }) => {
   const groupRef = useRef(null);
   const containerRef = useRef(null);
@@ -459,7 +460,7 @@ const PyramidInner = ({
     });
   }, []);
 
-  const totalMovable = TOTAL_LAYERS - 1;
+  const totalMovable = TOTAL_LAYERS;
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
@@ -585,16 +586,9 @@ const PyramidInner = ({
 
       if (!meshChild) return;
 
-      if (i === 0) {
-        meshChild.visible = true;
-        meshChild.position.set(0, layer.yPos, 0);
-        meshChild.scale.set(1, 1, 1);
-        return;
-      }
-
       // Range for each layer
-      const rangeStart = (i - 1) / totalMovable;
-      const rangeEnd = i / totalMovable;
+      const rangeStart = i / totalMovable;
+      const rangeEnd = (i + 1) / totalMovable;
 
       let scrollR = 0;
       if (scrollProgress >= rangeEnd) {
@@ -701,7 +695,7 @@ const PyramidInner = ({
   return (
     <group>
       {/* Rotating Pyramid Layers - renderOrder set to be behind particles during explosion */}
-      <group ref={groupRef} renderOrder={pyramidRenderOrder}>
+      <group ref={groupRef} renderOrder={pyramidRenderOrder} visible={!hidePyramid}>
         {layers.map((layer) => {
           // Calculate particle occlusion based on explosion progress
           // Peak occlusion during mid-explosion (0.2-0.6 range) when particles are densest

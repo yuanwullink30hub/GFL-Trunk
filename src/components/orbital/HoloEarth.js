@@ -459,6 +459,7 @@ const HoloEarthSphere = ({
   onLayerStateChange = () => {},
   isMobile = false,
   onSphereHoverChange = () => {}, // Callback when hovering over sphere
+  hidePyramid = false,
 }) => {
   const groupRef = useRef(null);
   const coreRef = useRef(null);
@@ -701,6 +702,7 @@ const HoloEarthSphere = ({
           foldProgress={foldProgress}
           onIntroComplete={onIntroComplete}
           onLayerStateChange={onLayerStateChange}
+          hidePyramid={hidePyramid}
         />
       </group>
 
@@ -807,7 +809,8 @@ const HoloEarth = ({
   foldProgress = 0, // 0-1 for pyramid fold-up animation
   currentFrame = 0,
   onIntroComplete = () => {},
-  onLayerStateChange = () => {}
+  onLayerStateChange = () => {},
+  hidePyramid = false,
 }) => {
   const glRef = useRef(null);
 
@@ -915,6 +918,7 @@ const HoloEarth = ({
                 onLayerStateChange={onLayerStateChange}
                 onSphereHoverChange={() => {}}
                 isMobile={isMobile}
+                hidePyramid={hidePyramid}
               />
             </group>
           </Suspense>

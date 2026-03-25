@@ -29,16 +29,18 @@ function esc(str) {
 function buildFeedbackEmail(settings, review) {
   // Always use hardcoded text — ignoring any admin-saved override so deploys stay authoritative
   const bodyText =
-    'Hoogachtende meester,<br><br>' +
+    'Hoogachtende leerling,<br><br>' +
     'Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet ' +
     'bedwingen en reik ik nog één laatste keer uit voor jouw hulp.<br>' +
     'Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data ' +
     'hoe beter wij kunnen optimaliseren.<br>' +
-    'Zolang de beta-fase loopt is alleen het meester niveau toegankelijk.<br><br>' +
-    '<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:4px 0 0;">' +
-    '<tr><td style="text-align:center;padding:16px 0;">' +
+    'Zolang de beta-fase loopt is alleen het leerling niveau toegankelijk.';
+  const starsBlock =
+    '<div style="margin:18px 0 20px;">' +
+    '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#f97316;margin-bottom:8px;">FEEDBACK LINK</div>' +
     '<a href="https://gardenforlife.nl/feedback" style="text-decoration:none;font-size:36px;letter-spacing:6px;">⭐⭐⭐</a>' +
-    '</td></tr></table>' +
+    '</div>';
+  const closingText =
     'Anyway- pionier, hartelijk dank voor de tijd en attentie!<br><br><br>' +
     'Met vriendelijke groet, Yuan Wullink';
   const imageBlock = '';
@@ -92,7 +94,9 @@ function buildFeedbackEmail(settings, review) {
     ${imageBlock}
     <tr>
       <td class="body-cell" style="padding:28px 30px;line-height:1.7;color:#333;font-size:15px;">
-        <p style="margin:0 0 16px;">${bodyText}</p>
+        <p style="margin:0 0 0;">${bodyText}</p>
+        ${starsBlock}
+        <p style="margin:0 0 16px;">${closingText}</p>
         ${ratingBlock}
         ${fieldsBlock}
       </td>

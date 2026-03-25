@@ -65,6 +65,9 @@ export { ANALYSIS_TEMPLATES, getAnalysisTemplate, blendAnalysisTemplates } from 
 // Extended Archetype Descriptions (72 combination profiles)
 export { getExtendedDescription } from './extendedArchetypeDescriptions';
 
+// Archetype Levensles Quotes (72 combination profiles)
+export { getArchetypeQuote } from './archetypeQuotes';
+
 // Biochemical & Neuro-Integration Deep Dive (12 archetype profiles)
 export { BIOCHEMICAL_PROFILES, getBiochemicalProfile, getBiochemicalPromptBlock } from './biochemical';
 

@@ -91,9 +91,9 @@ const LEVEL_CONFIGS = {
     allowBacktrack: false,
     allowQuestionJump: false
   },
-  // Meester - Vuurproef mode with layer-based pyramid timers
+  // Leerling - Vuurproef mode with layer-based pyramid timers
   deep: {
-    name: 'Meester',
+    name: 'Leerling',
     questionsPerLayer: null, // use all questions per layer (9,9,6,6,6)
     timerType: 'layered',
     layerTimers: [90, 75, 60, 45, 30],
@@ -205,11 +205,9 @@ const SingleLayerPanel = ({
   
   // Calculate animation progress for this layer (scroll-based entry from entity)
   const getAnimationProgress = useCallback(() => {
-    if (layerIndex === 0) return 1;
-    
-    const totalMovable = 4;
-    const rangeStart = (layerIndex - 1) / totalMovable;
-    const rangeEnd = layerIndex / totalMovable;
+    const totalMovable = 5;
+    const rangeStart = layerIndex / totalMovable;
+    const rangeEnd = (layerIndex + 1) / totalMovable;
     
     if (scrollProgress >= rangeEnd) return 1;
     if (scrollProgress <= rangeStart) return 0;
@@ -329,7 +327,7 @@ const SingleLayerPanel = ({
     }
     
     // Card is fully arrived and active (open on right side, centered)
-    if (isFirstLayer || progress >= 1) {
+    if (progress >= 1) {
       return {
         position: 'fixed',
         left: `${rightXPercent}%`,
@@ -388,7 +386,7 @@ const SingleLayerPanel = ({
         allowQuestionJump: true,
       };
     }
-    // Meester: full restrictions on every layer
+    // Leerling: full restrictions on every layer
     return { ...baseConfig, hasTimer: true };
   }, [assessmentLevel, layerIndex]);
 
@@ -539,10 +537,10 @@ const AssessmentLayerPanel = ({
   // - All saved layers (they persist as collapsed cards)
   // - Current layer (the active layer being worked on)
   // - Any layer whose scroll animation range has begun (so it animates in from entity)
-  //   Layer N (N>0) starts animating at scrollProgress > (N-1)/4
+  //   Layer N starts animating at scrollProgress > N/5
   const layersToRender = new Set([...savedLayers, currentLayerIndex]);
-  for (let i = 1; i <= 4; i++) {
-    const rangeStart = (i - 1) / 4;
+  for (let i = 0; i <= 4; i++) {
+    const rangeStart = i / 5;
     if (scrollProgress > rangeStart) {
       layersToRender.add(i);
     }

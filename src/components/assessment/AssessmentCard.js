@@ -258,7 +258,7 @@ const AssessmentCard = ({
     let initialTime = 0;
     
     if (cfg.timerType === 'layered' && cfg.layerTimers) {
-      // Meester: Use layer-based timer
+      // Leerling: Use layer-based timer
       initialTime = cfg.layerTimers[currentSubjectIndex] || 30;
     } else if (cfg.timerType === 'fixed' && cfg.fixedTimer) {
       // Beginner & Intermediate: Use fixed timer
@@ -456,6 +456,9 @@ const AssessmentCard = ({
               }}>
                 Zes antwoorden per vraag. Kies eerst wat het dichtst bij je <span style={{ color: '#a855f7' }}>kern</span> zit.
                 Kies daarna wat je ook raakt, maar minder.
+                <br/>Let op: Dus twee antwoorden kiezen!
+                <br/>&nbsp;
+                <br/><span style={{ color: '#f97316' }}>Geen antwoord is ook een antwoord...</span> dit verandert verder niks aan het puntensysteem, onze data is dynamisch.
               </p>
 
               <p style={{
@@ -488,8 +491,12 @@ const AssessmentCard = ({
                 }
                 </span>
                 <br />
+                &nbsp;
+                <br />
                 Bij het aflopen van de timer gaat de vraag automatisch door, ook met 0 of 1 antwoord.
-                Je kunt altijd zelf doorklikken.
+                Je kunt altijd zelf doorklikken,
+                <br />
+                niet terug, alleen voorwaartse beweging.
               </p>
 
               <p style={{
@@ -574,9 +581,9 @@ const AssessmentCard = ({
                 <br />
                 Er is geen één maat voor allen. Kies dus wat het meest synchroniseert.
                 <br />
-                <span style={{ color: subjectColor }}>Gekleurde woorden</span> zijn een middel voor de eerste snelle scan, dit is geen waarde systeem voor de intentionele woorden.
+                <span style={{ color: subjectColor }}>Gekleurde woorden</span> zijn een middel voor de eerste snelle scan, dit is geen waarde systeem voor de punten telling.
                 <br /><br />
-                <em style={{ color: 'rgba(255, 254, 240, 0.55)' }}>"Stereotype vergroot om het archetype te onderscheiden:"</em>
+                <em style={{ color: 'rgba(255, 254, 240, 0.55)' }}>Stereotype vergroot om het archetype te onderscheiden:</em>
                 <br />
                 {currentSubjectIndex === 1 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>aandacht en actie</span>}
                 {currentSubjectIndex === 2 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>projectie</span>}
@@ -674,9 +681,9 @@ const AssessmentCard = ({
               <br />
               Er is geen één maat voor allen. Kies dus wat het meest synchroniseert.
               <br />
-              <span style={{ color: subjectColor }}>Gekleurde woorden</span> zijn een middel voor de eerste snelle scan, dit is geen waarde systeem voor de intentionele woorden.
+              <span style={{ color: subjectColor }}>Gekleurde woorden</span> zijn een middel voor de eerste snelle scan, dit is geen waarde systeem voor de punten telling.
               <br /><br />
-              <em style={{ color: 'rgba(255, 254, 240, 0.55)' }}>"Stereotype vergroot om het archetype te onderscheiden:"</em>
+              <em style={{ color: 'rgba(255, 254, 240, 0.55)' }}>Stereotype vergroot om het archetype te onderscheiden:</em>
               <br />
               <span style={{ color: subjectColor, fontWeight: 'bold' }}>intentie en potentie</span>
             </p>
@@ -711,11 +718,11 @@ const AssessmentCard = ({
       {/* Main Card - SectorFrame style */}
       <div 
         className={`
-          relative rounded-lg backdrop-blur-xl overflow-hidden flex flex-col
+          relative rounded-lg overflow-hidden flex flex-col
           transition-[max-height] duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
           ${isCollapsed ? 'max-h-[80px]' : ''}
         `}
-        style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', maxHeight: isCollapsed ? '80px' : s.maxH, boxShadow: `0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px ${subjectColor}10, inset 0 0 30px ${subjectColor}08` }}
+        style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', maxHeight: isCollapsed ? '80px' : s.maxH, boxShadow: `0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px ${subjectColor}10, inset 0 0 30px ${subjectColor}08` }}
       >
         {/* Corner Accents - SectorFrame style */}
         <div className="absolute -top-0.5 -left-0.5 w-4 h-4 pointer-events-none z-20" style={{

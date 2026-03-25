@@ -598,11 +598,11 @@ const App = () => {
         if (assessmentPhase === 'layers') {
           if (direction > 0) {
             const maxProgress = scrollEn
-              ? Math.min(1, (layerIdx + 1) / 4)
-              : (layerIdx / 4);
+              ? Math.min(1, (layerIdx + 1) / 5)
+              : (layerIdx / 5);
             newProgress = Math.min(newProgress, maxProgress);
           } else {
-            const minProgress = layerIdx / 4;
+            const minProgress = layerIdx / 5;
             newProgress = Math.max(newProgress, minProgress);
           }
         }
@@ -683,9 +683,21 @@ const App = () => {
     setCurrentLayerIndex(0);
     setLayerAnswers({});
     setPyramidScrollProgress(0); // Reset scroll so layers start from zero
-    assessmentScrollEnabledRef.current = false;
-    setAssessmentScrollEnabled(false);
+    assessmentScrollEnabledRef.current = true;
+    setAssessmentScrollEnabled(true);
     setAssessmentPhase('layers');
+    // Auto-advance first layer: smoothly animate pyramidScrollProgress from 0 to 1/5
+    const autoScrollStart = Date.now();
+    const autoScrollDuration = 800; // ms
+    const autoScrollTarget = 1 / 5;
+    const autoScrollAnim = () => {
+      const elapsed = Date.now() - autoScrollStart;
+      const t = Math.min(1, elapsed / autoScrollDuration);
+      const eased = t * t * (3 - 2 * t); // smoothstep
+      setPyramidScrollProgress(eased * autoScrollTarget);
+      if (t < 1) requestAnimationFrame(autoScrollAnim);
+    };
+    requestAnimationFrame(autoScrollAnim);
   }, []);
   
   // Full reset of all assessment/pyramid state — used when closing results, returning to landing, etc.
@@ -891,8 +903,8 @@ const App = () => {
       const nextLayer = currentLayerIndex + 1;
       if (nextLayer > 4) return; // All layers visible
       
-      // Layer N+1 is fully animated when scroll reaches (N+1)/4
-      const threshold = nextLayer / 4;
+      // Layer N+1 is fully animated when scroll reaches (N+1)/5
+      const threshold = nextLayer / 5;
       if (pyramidScrollProgress >= threshold) {
         currentLayerIndexRef.current = nextLayer;
         setCurrentLayerIndex(nextLayer);
@@ -1656,6 +1668,7 @@ const App = () => {
               currentFrame={currentFrame}
               onIntroComplete={handleIntroComplete}
               onLayerStateChange={handleLayerStateChange}
+              hidePyramid={assessmentPhase === 'intro'}
             />
           </div>
 

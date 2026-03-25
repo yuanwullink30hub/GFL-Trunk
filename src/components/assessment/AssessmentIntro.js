@@ -28,6 +28,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
   const fileInputRef = useRef(null);
   const infoIconRef = useRef(null);
   const referentiesRef = useRef(null);
+  const oceanScoresRef = useRef(null);
   const modalRef = useRef(null);
   const infoOverlayRef = useRef(null);
   const [showReferences, setShowReferences] = useState(false);
@@ -35,8 +36,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
   const [leaveConfirmClosing, setLeaveConfirmClosing] = useState(false);
   const [leaveConfirmPos, setLeaveConfirmPos] = useState({ top: 0, left: 0 });
   const [showInfo, setShowInfo] = useState(false);
+  const [infoReady, setInfoReady] = useState(false); // true after 1 rAF — lets backdropFilter compositor layer initialise before animation
   const [infoClosing, setInfoClosing] = useState(false);
-  const [infoOrigin, setInfoOrigin] = useState('top right');
+  const [infoOrigin, setInfoOrigin] = useState('50% 50%');
+  const [introClosing, setIntroClosing] = useState(false);
+  const [introExpanding, setIntroExpanding] = useState(false);
+  const [introReady, setIntroReady] = useState(false);
   // Consent gate: set when user clicks a level card
   const [consentLevelId, setConsentLevelId] = useState(null);
   const [consentChecked, setConsentChecked] = useState(false);
@@ -46,17 +51,36 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
   const consentOverlayRef = useRef(null);
   const [showUploadWarning, setShowUploadWarning] = useState(false);
   const [showOceanInput, setShowOceanInput] = useState(false);
+  const [oceanOrigin, setOceanOrigin] = useState('center center');
   const [oceanManualScores, setOceanManualScores] = useState(null);
 
   const openInfo = () => {
-    if (infoIconRef.current && modalRef.current) {
-      const iconRect = infoIconRef.current.getBoundingClientRect();
+    if (modalRef.current) {
+      // Animate to/from the floating entity center (50vw, 23vh — same anchor used by pyramid layer cards)
       const modalRect = modalRef.current.getBoundingClientRect();
-      const x = iconRect.left + iconRect.width / 2 - modalRect.left;
-      const y = iconRect.top + iconRect.height / 2 - modalRect.top;
+      const x = window.innerWidth * 0.5 - modalRect.left;
+      const y = window.innerHeight * 0.23 - modalRect.top;
       setInfoOrigin(`${x}px ${y}px`);
     }
-    setShowInfo(true);
+    // Shrink intro card first, then expand info overlay from the same point
+    setIntroClosing(true);
+    setTimeout(() => {
+      setIntroClosing(false);
+      setShowInfo(true);
+      // Wait one frame so the browser sets up the backdropFilter GPU layer before animating
+      requestAnimationFrame(() => setInfoReady(true));
+    }, 375);
+  };
+
+  const openOceanInput = () => {
+    if (oceanScoresRef.current && modalRef.current) {
+      const btnRect = oceanScoresRef.current.getBoundingClientRect();
+      const modalRect = modalRef.current.getBoundingClientRect();
+      const x = btnRect.left + btnRect.width / 2 - modalRect.left;
+      const y = btnRect.top + btnRect.height / 2 - modalRect.top;
+      setOceanOrigin(`${x}px ${y}px`);
+    }
+    setShowOceanInput(true);
   };
 
   const openLeaveConfirm = () => {
@@ -90,10 +114,14 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
   }, [showInfo]);
 
   const closeInfo = () => {
+    // Shrink info overlay first, then expand intro card back from the same point
     setInfoClosing(true);
     setTimeout(() => {
       setShowInfo(false);
       setInfoClosing(false);
+      setInfoReady(false); // reset so next open gets a fresh two-phase mount
+      setIntroExpanding(true);
+      setTimeout(() => setIntroExpanding(false), 375);
     }, 350);
   };
 
@@ -146,6 +174,14 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     } catch {}
   };
 
+  // Intro card entrance animation on mount — mirrors the infoReady two-phase pattern
+  useEffect(() => {
+    setIntroExpanding(true);
+    requestAnimationFrame(() => setIntroReady(true));
+    const t = setTimeout(() => setIntroExpanding(false), 375);
+    return () => clearTimeout(t);
+  }, []);
+
   // Native wheel capture on consent overlay
   useEffect(() => {
     const el = consentOverlayRef.current;
@@ -179,12 +215,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     descFontSize: '0.875rem',
     descMt: '0.5vh',
     featureGap: '0.5vh',
-    featureMb: '1.8vh',
+    featureMb: '1.1vh',
     contentShiftUp: '-1.5vh',
     referentiesMt: '-1vh',
-    featurePadding: '0.7vh 0.75rem',
-    featureIconSize: '4.5vh',
-    featureIconFont: '0.875rem',
+    featurePadding: '0.875vh 0.75rem',
+    featureIconSize: '5.85vh',
+    featureIconFont: '1.14rem',
     featureTitleFont: '0.875rem',
     featureDescFont: '0.75rem',
     featureItemGap: '0.6rem',
@@ -219,12 +255,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     descFontSize: '0.85vw',
     descMt: '0.3vh',
     featureGap: '0.4vh',
-    featureMb: '1.4vh',
+    featureMb: '0.8vh',
     contentShiftUp: '-1.2vh',
     referentiesMt: '-0.8vh',
-    featurePadding: '0.6vh 0.52vw',
-    featureIconSize: '3.8vh',
-    featureIconFont: '0.71vw',
+    featurePadding: '0.75vh 0.52vw',
+    featureIconSize: '4.94vh',
+    featureIconFont: '0.92vw',
     featureTitleFont: '0.78vw',
     featureDescFont: '0.71vw',
     featureItemGap: '0.4vw',
@@ -259,12 +295,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     descFontSize: '0.75rem',
     descMt: '0.3vh',
     featureGap: '0.4vh',
-    featureMb: '1.4vh',
+    featureMb: '0.8vh',
     contentShiftUp: '-1vh',
     referentiesMt: '-0.8vh',
-    featurePadding: '0.6vh 0.49rem',
-    featureIconSize: '3.5vh',
-    featureIconFont: '0.65rem',
+    featurePadding: '0.75vh 0.49rem',
+    featureIconSize: '4.55vh',
+    featureIconFont: '0.85rem',
     featureTitleFont: '0.65rem',
     featureDescFont: '0.55rem',
     featureItemGap: '0.36rem',
@@ -299,12 +335,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     descFontSize: '0.72rem',
     descMt: '0.2vh',
     featureGap: '0.35vh',
-    featureMb: '0.9vh',
+    featureMb: '0.2vh',
     contentShiftUp: '-0.5vh',
     referentiesMt: '-0.5rem',
-    featurePadding: '0.5vh 0.5rem',
-    featureIconSize: '3.2vh',
-    featureIconFont: '0.65rem',
+    featurePadding: '0.625vh 0.5rem',
+    featureIconSize: '4.16vh',
+    featureIconFont: '0.85rem',
     featureTitleFont: '0.65rem',
     featureDescFont: '0.55rem',
     featureItemGap: '0.35rem',
@@ -367,7 +403,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
       nameKey: 'assessmentIntro.levels.quick.name',
       name: 'Beginner',
       descKey: 'assessmentIntro.levels.quick.description',
-      description: '15 vragen - 45 min - Rapidfire: Zelf/Zonde 49s per vraag',
+      description: '',
       questionsPerLayer: 3,
       color: '#22c55e'
     },
@@ -376,16 +412,16 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
       nameKey: 'assessmentIntro.levels.standard.name',
       name: 'Gevorderd',
       descKey: 'assessmentIntro.levels.standard.description',
-      description: '30 vragen - 50 min - Quickfire: Mysterie/Magie 30s per vraag',
+      description: '',
       questionsPerLayer: 6,
       color: '#a855f7'
     },
     {
       id: 'deep',
       nameKey: 'assessmentIntro.levels.deep.name',
-      name: 'Meester',
+      name: 'Leerling',
       descKey: 'assessmentIntro.levels.deep.description',
-      description: '30 vragen - 50 min - Vuurproef: Piramide tijdsdruk in volgorde 90s/75s/60s/45/30s p.v.',
+      description: '36 QA - 30min - Vuurproef quickfire',
       questionsPerLayer: 6,
       includeUpload: true,
       color: '#f97316'
@@ -415,6 +451,22 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
       40% { opacity: 0.6; }
       100% { transform: scale(0); opacity: 0; }
     }
+    @keyframes infoBlurIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    @keyframes infoBlurOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes introBlurOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes introBlurIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
   `;
 
   return (
@@ -422,7 +474,28 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     <style>{infoAnimStyles}</style>
     <div className="fixed inset-0 flex items-center justify-center p-3 pointer-events-auto" style={{ backgroundColor: isMobile ? 'rgba(0,0,0,0.65)' : 'transparent', backdropFilter: isMobile ? 'blur(4px)' : 'none' }}>
       {/* Outer wrapper: holds corner brackets; no overflow clip so they're visible */}
-      <div className="relative w-full" style={{ maxWidth: s.modalMaxWidth }}>
+      {!showInfo && (
+      <>
+      {/* Intro blur layer — fixed, never transformed, opacity-only animation */}
+      <div style={{
+        position: 'fixed',
+        left: '50%',
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: `min(${s.modalMaxWidth}, calc(100vw - 1.5rem))`,
+        minHeight: s.modalMinHeight,
+        maxHeight: s.modalMaxHeight,
+        borderRadius: '0.5rem',
+        backdropFilter: 'blur(32px)',
+        WebkitBackdropFilter: 'blur(32px)',
+        pointerEvents: 'none',
+        zIndex: 49,
+        opacity: introReady ? undefined : 0,
+        animation: introReady ? (introClosing ? 'introBlurOut 0.375s ease-in-out forwards'
+                 : introExpanding ? 'introBlurIn 0.375s ease-in-out forwards'
+                 : 'none') : 'none',
+      }} />
+      <div className="relative w-full" style={{ maxWidth: s.modalMaxWidth, transformOrigin: infoOrigin, transform: introReady ? undefined : 'scale(0)', opacity: introReady ? undefined : 0, animation: introReady ? (introClosing ? 'infoContract 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards' : introExpanding ? 'infoExpand 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards' : 'none') : 'none', position: 'relative', zIndex: 50 }}>
         {/* Top-Left Corner Border */}
         <div className="absolute -top-0.5 -left-0.5 w-4 h-4 z-10" style={{
           border: '1.5px solid #a855f7',
@@ -459,7 +532,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
         <div 
           ref={modalRef}
           className="relative w-full rounded-lg"
-          style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', minHeight: s.modalMinHeight, maxHeight: s.modalMaxHeight, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)' }}
+          style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', minHeight: s.modalMinHeight, maxHeight: s.modalMaxHeight, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)' }}
         >
         {/* Content - matches SectorFrame inner structure */}
         <div className="relative z-10 w-full flex flex-col" style={{ padding: s.padding, flex: '1 1 auto' }}>
@@ -551,7 +624,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
             </div>
 
             <p className="mx-auto leading-relaxed" style={{ fontSize: s.descFontSize, marginTop: s.descMt, whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'center', color: '#FFFEF0' }}>
-              De meest complete en complexe onderzoekstest voor de synchronisatie van jouw essentie en intelligentie.
+              De meest complete en complexe onderzoekstest tussen jouw essentie en intelligentie.
             </p>
           </div>
 
@@ -579,7 +652,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                       {feature.icon}
                     </div>
                   )}
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <h3 className="font-medium text-slate-200" style={{ fontSize: s.featureTitleFont, marginBottom: '1px' }}>{t(feature.titleKey)}</h3>
                     <p className="text-slate-500" style={{ fontSize: s.featureDescFont }}>{t(feature.descKey)}</p>
                   </div>
@@ -590,28 +663,44 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
 
           {/* Referenties button + research text + upload button row */}
           <div className={isMobile ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between'} style={{ marginTop: s.referentiesMt, marginBottom: s.featureMb }}>
-            {/* Left: Referenties button */}
-            <div ref={referentiesRef} style={{ width: isMobile ? 'auto' : '10rem', flexShrink: 0 }}>
-              {
+            {/* Left: Lees mij! + Referenties buttons */}
+            <div style={{ width: isMobile ? 'auto' : '10rem', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.35rem', marginLeft: isMobile ? 0 : '4rem', position: 'relative', top: isMobile ? 0 : '5rem' }}>
+              <div ref={infoIconRef}>
+              <SciFiButton
+                onClick={() => showInfo ? closeInfo() : openInfo()}
+                color="#a78bfa"
+                rgb="167, 139, 250"
+                size="sm"
+                active={showInfo}
+                fullWidth
+              >
+                Lees mij!
+              </SciFiButton>
+              </div>
+
+              {/* Divider — matches right panel spacing */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '10rem' }}>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
+              </div>
+
+              <div ref={referentiesRef}>
                 <SciFiButton
                   onClick={openLeaveConfirm}
-                  color="#22c55e"
-                  rgb="34, 197, 94"
+                  color="#64748b"
+                  rgb="100, 116, 139"
                   size="sm"
                   fullWidth
+                  disabled
                 >
                   {t('assessmentIntro.footerButton')}
                 </SciFiButton>
-              }
+              </div>
             </div>
 
             {/* Center: research text */}
-            <p className="text-center leading-relaxed text-slate-500" style={{ fontSize: s.descFontSize, flex: isMobile ? 'none' : 1, padding: isMobile ? '0' : '0 1rem', paddingTop: isMobile ? '0' : '1.85rem', order: isMobile ? 3 : 0 }}>
-              {t('assessmentIntro.footerResearch')}
-            </p>
 
             {/* Right: Upload OCEAN button + Manual scores button */}
-            <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: isMobile ? 'center' : 'flex-end', gap: '0.35rem' }}>
+            <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: isMobile ? 'center' : 'flex-end', gap: '0.35rem', marginRight: isMobile ? 0 : '4rem', position: 'relative', top: isMobile ? 0 : '5rem' }}>
               {onAddFile && (
                 <>
                   <input
@@ -700,8 +789,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                   </div>
 
                   {/* Manual OCEAN input button */}
+                  <div ref={oceanScoresRef}>
                   <SciFiButton
-                    onClick={() => setShowOceanInput(true)}
+                    onClick={openOceanInput}
                     color={oceanManualScores ? '#22c55e' : '#64748b'}
                     rgb={oceanManualScores ? '34, 197, 94' : '100, 116, 139'}
                     size="sm"
@@ -710,6 +800,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                   >
                     {oceanManualScores ? '✓ Scores opgeslagen' : 'Voer scores in'}
                   </SciFiButton>
+                  </div>
                 </>
               )}
             </div>
@@ -717,43 +808,6 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
 
           {/* Pyramid Layers Visual */}
           <div style={{ marginBottom: s.pyramidMb, marginTop: 'auto', position: 'relative', top: '-2rem' }}>
-            {/* Info icon — top of pyramid */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
-              <button
-                ref={infoIconRef}
-                onClick={() => showInfo ? closeInfo() : openInfo()}
-                className="hover:scale-110 transition-all duration-300"
-                style={{
-                  width: '2.1rem',
-                  height: '2.1rem',
-                  borderRadius: '50%',
-                  border: `1px solid ${showInfo ? '#eab308' : 'rgba(234,179,8,0.45)'}`,
-                  backgroundColor: showInfo ? 'rgba(234,179,8,0.18)' : 'rgba(234,179,8,0.06)',
-                  boxShadow: showInfo ? '0 0 12px rgba(234,179,8,0.35)' : 'none',
-                  color: '#eab308',
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  fontStyle: 'italic',
-                  fontFamily: 'Georgia, serif',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  zIndex: 10,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#eab308';
-                  e.currentTarget.style.boxShadow = '0 0 16px rgba(234,179,8,0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = showInfo ? '#eab308' : 'rgba(234,179,8,0.45)';
-                  e.currentTarget.style.boxShadow = showInfo ? '0 0 12px rgba(234,179,8,0.35)' : 'none';
-                }}
-                title="Info"
-              >
-                i
-              </button>
-            </div>
             <h2 className="text-center text-slate-400 font-mono uppercase tracking-wider" style={{ display: 'none', fontSize: s.levelsTitleFont, marginBottom: s.levelsTitleMb }}>
               {t('assessmentIntro.layersTitle')}
             </h2>
@@ -822,13 +876,6 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
               })}
             </div>
           </div>
-
-          {/* Transition text between pyramid & levels */}
-          <p className="text-center text-slate-500 italic" style={{ fontSize: s.descFontSize, marginBottom: s.levelsMb }}>
-            {t('assessmentIntro.pyramidToLevelsText')}<br />
-            {t('assessmentIntro.pyramidToLevelsText2')}<br />
-            {t('assessmentIntro.pyramidToLevelsText3')}
-          </p>
 
           {/* Level Selection */}
           <div style={{ marginBottom: s.levelsMb }}>
@@ -954,8 +1001,15 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
         {consentLevelId && (
           <div
             ref={consentOverlayRef}
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
+            className="absolute inset-0 z-50 flex items-center justify-center"
+            style={{
+              backgroundColor: 'rgba(2, 0, 3, 0.82)',
+              backdropFilter: 'blur(32px)',
+              WebkitBackdropFilter: 'blur(32px)',
+              boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
+              animation: `${consentClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
+              transformOrigin: consentOrigin,
+            }}
             onClick={(e) => { if (e.target === e.currentTarget) closeConsent(); }}
           >
             <div
@@ -966,8 +1020,6 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                 WebkitBackdropFilter: 'blur(32px)',
                 border: '1px solid rgba(168,85,247,0.2)',
                 padding: s.padding,
-                transformOrigin: consentOrigin,
-                animation: `${consentClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
                 overflowY: 'auto',
                 width: `calc(0.8 * ${s.modalMaxWidth})`,
                 maxWidth: '90vw',
@@ -1066,40 +1118,134 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
           </div>
         )}
 
-        {/* ═══ INFO OVERLAY ═══ */}
-        {/* Positioned absolute within modalRef (backdrop-filter creates a containing block for fixed children) */}
-        {showInfo && (
-          <div
-            ref={infoOverlayRef}
-            className="absolute z-50 rounded-lg"
-            style={{
-              backgroundColor: 'rgba(2, 0, 3, 0.9)',
-              backdropFilter: 'blur(120px)',
-              WebkitBackdropFilter: 'blur(120px)',
-              boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
-              padding: s.padding,
-              transformOrigin: infoOrigin,
-              animation: `${infoClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              inset: 0,
+
+        {/* ══ OCEAN Manual Input Modal ══ */}
+        {showOceanInput && (
+          <OceanManualInputModal
+            origin={oceanOrigin}
+            initialValues={oceanManualScores}
+            onClose={() => setShowOceanInput(false)}
+            onConfirm={(scores) => {
+              setOceanManualScores(scores);
+              // Clear any uploaded PDF file and inject scores as a synthetic text file
+              if (uploadedFiles.length > 0 && onRemoveFile) onRemoveFile(0);
+              if (onAddFile) {
+                const lines = [
+                  '=== OCEAN Persoonlijkheidsscores (handmatig ingevoerd) ===',
+                  '',
+                  `A — Meegaandheid (Agreeableness): ${scores.A}/100`,
+                  scores.A_compassie !== null   ? `   ↳ Compassie: ${scores.A_compassie}/100`   : null,
+                  scores.A_beleefdheid !== null ? `   ↳ Beleefdheid: ${scores.A_beleefdheid}/100` : null,
+                  `C — Consciëntieusheid (Conscientiousness): ${scores.C}/100`,
+                  scores.C_ijver !== null        ? `   ↳ IJver: ${scores.C_ijver}/100`            : null,
+                  scores.C_ordelijkheid !== null ? `   ↳ Ordelijkheid: ${scores.C_ordelijkheid}/100` : null,
+                  `E — Extraversie (Extraversion): ${scores.E}/100`,
+                  scores.E_enthousiasme !== null  ? `   ↳ Enthousiasme: ${scores.E_enthousiasme}/100`  : null,
+                  scores.E_assertiviteit !== null ? `   ↳ Assertiviteit: ${scores.E_assertiviteit}/100` : null,
+                  `N — Neuroticisme (Neuroticism): ${scores.N}/100`,
+                  scores.N_terughoudendheid !== null ? `   ↳ Terughoudendheid: ${scores.N_terughoudendheid}/100` : null,
+                  scores.N_volatiliteit !== null    ? `   ↳ Volatiliteit: ${scores.N_volatiliteit}/100`       : null,
+                  `O — Openheid voor Ervaringen (Openness): ${scores.O}/100`,
+                  scores.O_intellect !== null ? `   ↳ Intellect: ${scores.O_intellect}/100` : null,
+                  scores.O_esthetiek !== null ? `   ↳ Esthetiek: ${scores.O_esthetiek}/100` : null,
+                  scores.H !== null ? `H — Eerlijkheid-Nederigheid (Honesty-Humility): ${scores.H}/100` : null,
+                  '',
+                  'Scores zijn op een schaal van 0 tot 100 (hoger = meer aanwezig).',
+                ].filter(Boolean).join('\n');
+                const file = new File([lines], 'OCEAN_scores_handmatig.txt', { type: 'text/plain' });
+                onAddFile(file);
+              }
             }}
-          >
-            {/* Info title */}
+          />
+        )}
+        </div>
+      </div>
+      </>
+    )}
+
+    {/* ═══ INFO OVERLAY — sibling element, blurs HoloEarth directly ═══ */}
+    {showInfo && (
+      <>
+      {/* Blur layer — fixed position, opacity-only animation, never transformed.
+          Decoupled from the scale animation so blur is full-size from the first frame. */}
+      <div style={{
+        position: 'fixed',
+        left: '50%',
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: `min(${s.modalMaxWidth}, calc(100vw - 1.5rem))`,
+        minHeight: s.modalMinHeight,
+        maxHeight: s.modalMaxHeight,
+        borderRadius: '0.5rem',
+        backdropFilter: 'blur(32px)',
+        WebkitBackdropFilter: 'blur(32px)',
+        pointerEvents: 'none',
+        zIndex: 49,
+        opacity: infoReady ? undefined : 0,
+        animation: infoReady ? `${infoClosing ? 'infoBlurOut' : 'infoBlurIn'} 0.375s ease-in-out forwards` : 'none',
+      }} />
+      {/* Scale wrapper — no backdropFilter, handles scale + transform origin */}
+      <div className="relative w-full" style={{
+        maxWidth: s.modalMaxWidth,
+        transformOrigin: infoOrigin,
+        // Only animate once infoReady=true (1 rAF after mount)
+        animation: infoReady ? `${infoClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards` : 'none',
+        transform: infoReady ? undefined : 'scale(0)',
+        opacity: infoReady ? undefined : 0,
+        position: 'relative',
+        zIndex: 50,
+      }}>
+        {/* Top-Left Corner */}
+        <div className="absolute -top-0.5 -left-0.5 w-4 h-4 z-10" style={{ border: '1.5px solid #a855f7', borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }}></div>
+        {/* Top-Right Corner */}
+        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 z-10" style={{ border: '1.5px solid #a855f7', borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }}></div>
+        {/* Bottom-Left Corner */}
+        <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4 z-10" style={{ border: '1.5px solid #a855f7', borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }}></div>
+        {/* Bottom-Right Corner */}
+        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 z-10" style={{ border: '1.5px solid #a855f7', borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }}></div>
+
+        {/* Inner glass panel */}
+        <div
+          ref={infoOverlayRef}
+          className="relative w-full rounded-lg"
+          style={{
+            backgroundColor: 'rgba(2, 0, 3, 0.3)',
+            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
+            overflow: 'hidden',
+            minHeight: s.modalMinHeight,
+            maxHeight: s.modalMaxHeight,
+            display: 'flex',
+            flexDirection: 'column',
+            paddingTop: `calc(${s.padding.split(' ')[0]} * 2 + 1.5rem)`,
+            paddingBottom: `calc(${s.padding.split(' ')[0]} * 2)`,
+            paddingRight: 0,
+            paddingLeft: s.padding.split(' ')[1],
+            paddingRight: 0,
+            boxSizing: 'border-box',
+          }}
+        >
+            {/* Title — sits in top padding zone, above the rule */}
             <h2 className="text-center font-mono uppercase tracking-wider" style={{
-              fontSize: s.levelTitleFont,
+              flexShrink: 0,
+              fontSize: `calc(${s.levelTitleFont} + 0.25rem)`,
               color: '#a855f7',
               textShadow: '0 0 10px rgba(168,85,247,0.3)',
-              marginBottom: '1.5rem',
+              paddingRight: s.padding.split(' ')[1],
+              paddingBottom: '0.85rem',
+              margin: 0,
             }}>
-              ℹ️ Achter de Analyse: De Symetrische Synergie
+              Achter de Analyse — De Symetrische Synergie
             </h2>
+            {/* Top rule */}
+            <div style={{ flexShrink: 0, height: '0.75px', backgroundColor: 'rgba(168,85,247,0.45)', borderRadius: '1px', marginRight: s.padding.split(' ')[1] }} />
+            {/* Scrollable content area — scroll track sits at card's right border */}
+            <div className="purple-scrollbar" style={{ flex: '1 1 0', overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingRight: s.padding.split(' ')[1], borderRadius: 'inherit' }}>
 
             {/* Info content */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
               {/* Waarom deze test anders is */}
-              <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem' }}>
+              <div className="rounded-lg" style={{ padding: '1rem' }}>
                 <h3 className="font-medium" style={{ color: '#3b82f6', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(59,130,246,0.3)' }}>
                   Waarom deze test anders is
                 </h3>
@@ -1112,8 +1258,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
               </div>
 
               {/* Nature vs. Culture — 50/50 layout with image */}
-              <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem', minHeight: '378px', display: 'flex', alignItems: 'stretch' }}>
-                <div style={{ display: 'flex', flexDirection: 'row', gap: '1.25rem', alignItems: 'stretch', width: '100%' }}>
+              <div className="rounded-lg" style={{ padding: '1rem', minHeight: '302px', display: 'flex', alignItems: 'stretch' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
                   {/* Left — Text */}
                   <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'flex-start' }}>
                     <h3 className="font-medium" style={{ color: '#eab308', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(234,179,8,0.3)' }}>
@@ -1126,8 +1272,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                   {/* Right — Vulnerability Image (triangle container, gold glow) */}
                   <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{
-                      width: 'min(328px, 30.2vw)',
-                      height: 'min(328px, 30.2vw)',
+                      width: 'min(262px, 24.2vw)',
+                      height: 'min(262px, 24.2vw)',
                       filter: 'drop-shadow(0 0 14px rgba(240,224,0,0.4)) drop-shadow(0 0 30px rgba(240,224,0,0.15))',
                     }}>
                       <img
@@ -1145,8 +1291,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
               </div>
 
               {/* Het Geometrische Wiel + Anatomie — 50/50 layout */}
-              <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem', minHeight: '378px', display: 'flex', alignItems: 'stretch' }}>
-                <div style={{ display: 'flex', flexDirection: 'row', gap: '1.25rem', alignItems: 'stretch', width: '100%' }}>
+              <div className="rounded-lg" style={{ padding: '1rem', minHeight: '302px', display: 'flex', alignItems: 'stretch' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
                   {/* Left — Text (fills remaining space) */}
                   <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'flex-start' }}>
                     <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>
@@ -1176,8 +1322,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                   {/* Right — Wheel Image (circular container) */}
                   <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{
-                      width: 'min(328px, 30.2vw)',
-                      height: 'min(328px, 30.2vw)',
+                      width: 'min(262px, 24.2vw)',
+                      height: 'min(262px, 24.2vw)',
                       borderRadius: '50%',
                       filter: 'drop-shadow(0 0 14px rgba(34,197,94,0.4)) drop-shadow(0 0 30px rgba(34,197,94,0.15))',
                     }}>
@@ -1196,8 +1342,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
               </div>
 
               {/* Biologische Hardware (TNM & OCEAN) — 50/50 layout */}
-              <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem', minHeight: '378px', display: 'flex', alignItems: 'stretch' }}>
-                <div style={{ display: 'flex', flexDirection: 'row', gap: '1.25rem', alignItems: 'stretch', width: '100%' }}>
+              <div className="rounded-lg" style={{ padding: '1rem', minHeight: '302px', display: 'flex', alignItems: 'stretch' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
                   {/* Left — Text */}
                   <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'flex-start' }}>
                     <h3 className="font-medium" style={{ color: '#f97316', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(249,115,22,0.3)' }}>
@@ -1210,20 +1356,20 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                       <span style={{ color: '#f97316', fontWeight: 600 }}>Triple Network Model (TNM):</span> De drie kernnetwerken van je brein (CEN - Centrale Executief Netwerk, DMN - Default Mode Network, Salience Network) bepalen je informatieverwerking.
                     </p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#f97316', fontWeight: 600 }}>CEN (Centrale Executief):</span> Actief denken, planning, focus. De piloot aan het stuur.
+                      <span style={{ color: '#f97316', fontWeight: 600 }}>CEN (Centrale Executief):</span> Orde, structuur, executie. Het netwerk dat plant, weegt en beslist. De architect aan het stuur.
                     </p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#f97316', fontWeight: 600 }}>DMN (Standaard Modus):</span> Zelfbezorgdheid, meditatie, creatieve vaagheid. De kameel die stil staat.
+                      <span style={{ color: '#f97316', fontWeight: 600 }}>DMN (Default Mode):</span> Reflectie, betekenisgeving, abstractie. Het netwerk dat verbanden legt, patronen herkent en de binnenkant van de wereld leest. De spiegel die altijd aan staat.
                     </p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#f97316', fontWeight: 600 }}>Salience Network:</span> Bedreiging-detectie, intuïtie, emotionele relevantie. De wachter.
+                      <span style={{ color: '#f97316', fontWeight: 600 }}>Salience Network:</span> Responsiviteit, ontdekking, adaptatie. Het netwerk dat bepaalt wat aandacht verdient — bedreiging én kans. De schakelaar tussen oud en nieuw.
                     </p>
                   </div>
                   {/* Right — Hardware Image (square container, orange glow) */}
                   <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{
-                      width: 'min(328px, 30.2vw)',
-                      height: 'min(328px, 30.2vw)',
+                      width: 'min(262px, 24.2vw)',
+                      height: 'min(262px, 24.2vw)',
                       borderRadius: '0.5rem',
                       filter: 'drop-shadow(0 0 14px rgba(249,115,22,0.4)) drop-shadow(0 0 30px rgba(249,115,22,0.15))',
                     }}>
@@ -1241,49 +1387,41 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                 </div>
               </div>
 
-              {/* Waarom dit je perceptie zal breken: Van Vraag Naar Score */}
-              <div className="rounded-lg border border-slate-700/50 bg-slate-900/30" style={{ padding: '1.25rem' }}>
+              {/* Van Vraag Naar Score */}
+              <div className="rounded-lg" style={{ padding: '1rem' }}>
                 <h3 className="font-medium" style={{ color: '#ef4444', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(239,68,68,0.3)' }}>
-                  Waarom dit je perceptie zal breken: Van Vraag Naar Score
+                  Van Vraag Naar Score
                 </h3>
                 <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
-                  Het onderzoek bestaat uit 36 vragen verdeeld over vijf onderwerpen: Zelf, Ander, Macht, Wijsheid en Mysterie. Elke vraag biedt zes antwoorden — drie vanuit Nature (het ongedwongen instinct) en drie vanuit Culture (de aangeleerde strategie). Je kiest er twee: de eerste is je kern, de tweede resoneert maar minder sterk. Dit levert 72 datapunten.
-                </p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
-                  Het onderscheid tussen Nature en Culture is gebaseerd op John Vervaeke&apos;s 4P-framework: participatory en perspectival knowing (je weet het doordat je het BENT — Nature) versus propositional en procedural knowing (je weet DAT je het hebt en HOE je ermee navigeert — Culture). De antwoorden zijn zo geschreven dat beide even authentiek aanvoelen — het verschil zit in de korrel van de taal, niet in de oppervlakte.
+                  Het onderzoek bestaat uit 36 vragen over vijf onderwerpen: Zelf, Ander, Macht, Wijsheid en Mysterie. Elke vraag biedt zes antwoorden — drie vanuit Nature (je ongedwongen instinct) en drie vanuit Culture (je aangeleerde strategie). Je kiest er twee: je kern en je tweede herkenning. Dit levert 72 datapunten. Beide antwoordtypes voelen even authentiek — het verschil zit in de korrel van de taal, niet in de oppervlakte.
                 </p>
                 <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.75rem' }}>
-                  Elke keuze distribueert punten niet alleen naar het gekozen archetype, maar vloeit via de geometrische verbindingen van het wiel. Een Nature-keuze activeert de biologische hardware (de groene en blauwe verbindingen) en werpt een schaduw naar de 180° tegenpool (de paarse verbinding). Een Culture-keuze activeert het aangeleerde cognitieve netwerk (de gele driehoeken). Dit principe — dat gedrag niet geïsoleerd opereert maar door neurale netwerken resoneert — is consistent met het werk van Menon over cross-network connectivity en de Default Mode-hypothese van Marcus Raichle.
+                  Elke keuze distribueert punten niet alleen naar het gekozen archetype, maar vloeit via de geometrische verbindingen van het wiel. Een Nature-keuze activeert je biologische hardware en werpt een schaduw naar je 180° tegenpool. Een Culture-keuze activeert je aangeleerde cognitieve netwerk. Gedrag opereert niet geïsoleerd — het resoneert door neurale netwerken.
                 </p>
 
                 <h4 className="font-medium" style={{ color: '#a855f7', fontSize: s.descFontSize, marginBottom: '0.4rem', textShadow: '0 0 8px rgba(168,85,247,0.3)' }}>
                   De Archetypische Laag
                 </h4>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
-                  De 12 archetypen zijn geen hokjes maar navigatiestijlen, geworteld in Jungs oorspronkelijke archetypische theorie en geactualiseerd via de OCEAN-dimensies van Paul Costa en Robert McCrae. Elk archetype heeft een specifiek Big Five-profiel: de Judge scoort hoog op Conscientiousness en laag op Agreeableness; de Lover hoog op Agreeableness en Openness; de Trickster hoog op Openness en laag op Conscientiousness. Deze mapping maakt de archetypische taal meetbaar zonder de diepte te verliezen.
-                </p>
                 <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.75rem' }}>
-                  De zes biologische groepen (Ruling, Relational, Seeker, Chaos, Abstract, Agency) delen neurale hardware — een principe geïnspireerd op Jaak Panksepp&apos;s affectieve neurowetenschappen en de biochemische stressrespons-profielen per archetype (HPA-as activatie, oxytocine/dopamine/serotonine-dynamiek). De 180° schaduwparen (Judge↔Trickster, Lover↔Sage, Caregiver↔Artist, Innocent↔Magician, Explorer↔Hero, Outlaw↔Ruler) volgen Jungs schaduwtheorie: je grootste groeirichting zit in de integratie van je absolute tegenpool.
+                  De 12 archetypen zijn geen hokjes maar navigatiestijlen, geworteld in Jungs archetypische theorie en meetbaar gemaakt via de Big Five persoonlijkheidsdimensies. Elk archetype heeft een specifiek OCEAN-profiel. De zes biologische groepen delen neurale hardware. De zes 180° schaduwparen (Judge↔Trickster, Lover↔Sage, Caregiver↔Artist, Innocent↔Magician, Explorer↔Hero, Outlaw↔Ruler) volgen Jungs schaduwtheorie: je grootste groeirichting zit in de integratie van je absolute tegenpool.
                 </p>
 
                 <h4 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.4rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>
                   Hoe Het Rapport Ontstaat
                 </h4>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
-                  Na het assessment berekent het systeem je volledige scoreprofiel inclusief de geometrische echo&apos;s. Een AI-model (Claude, Anthropic) analyseert dit profiel aan de hand van het volledige Deltawerken-framework: de drie bronmodellen, de biochemische archetypeprofielen, de 72 Extended Archetypes (Main × Support-groep), en — indien aangeleverd — je OCEAN-data als externe validatie.
-                </p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
-                  Het rapport dat je leest is geen generieke beschrijving van een type. Het is een dynamische analyse van jouw specifieke scoreprofiel: waar je hardware het sterkst resoneert, welke aangeleerde strategieën je inzet, waar je blinde vlekken zitten, en welke schaduw-integratie je groeirichting vormt. De taal en structuur worden aangepast aan je dominante netwerkprofiel — analytisch voor CEN-dominante profielen, reflectief voor DMN-dominant, dynamisch voor Salience-dominant.
-                </p>
-                <p className="text-slate-500 italic leading-relaxed" style={{ fontSize: s.descFontSize }}>
-                  En mocht je nog twijfelen over de gegenereerde content, alles wat je zojuist hebt gelezen is geschreven door hetzelfde model die jouw score heeft geanalyseerd.
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize }}>
+                  Na het assessment berekent het systeem je volledige scoreprofiel inclusief geometrische echo's. Een AI-model analyseert dit profiel aan de hand van het Deltawerken-framework, de biochemische archetypeprofielen en de 72 Extended Archetypes. Het rapport dat je leest is geen generieke typebeschrijving — het is een dynamische analyse van jouw specifieke scoreprofiel, geschreven in de taal die past bij jouw dominante netwerk.
                 </p>
               </div>
 
             </div>
 
-            {/* Back button — bottom center */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem', paddingBottom: '0.5rem' }}>
+            </div>{/* /scrollable content area */}
+            {/* Bottom rule */}
+            <div style={{ flexShrink: 0, height: '0.75px', backgroundColor: 'rgba(168,85,247,0.45)', borderRadius: '1px', marginRight: s.padding.split(' ')[1] }} />
+
+            {/* Back button — in bottom padded frame, outside scroll */}
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '1rem', flexShrink: 0 }}>
               <SciFiButton
                 onClick={closeInfo}
                 variant="purple"
@@ -1292,53 +1430,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                 ← {t('assessmentIntro.referencesBack')}
               </SciFiButton>
             </div>
-          </div>
-        )}
         </div>
       </div>
-    </div>
-
-    {/* ══ OCEAN Manual Input Modal ══ */}
-    {showOceanInput && (
-      <OceanManualInputModal
-        initialValues={oceanManualScores}
-        onClose={() => setShowOceanInput(false)}
-        onConfirm={(scores) => {
-          setOceanManualScores(scores);
-          // Clear any uploaded PDF file and inject scores as a synthetic text file
-          if (uploadedFiles.length > 0 && onRemoveFile) onRemoveFile(0);
-          if (onAddFile) {
-            const lines = [
-              '=== OCEAN Persoonlijkheidsscores (handmatig ingevoerd) ===',
-              '',
-              `A — Meegaandheid (Agreeableness): ${scores.A}/100`,
-              scores.A_compassie !== null   ? `   ↳ Compassie: ${scores.A_compassie}/100`   : null,
-              scores.A_beleefdheid !== null ? `   ↳ Beleefdheid: ${scores.A_beleefdheid}/100` : null,
-              `C — Consciëntieusheid (Conscientiousness): ${scores.C}/100`,
-              scores.C_ijver !== null        ? `   ↳ IJver: ${scores.C_ijver}/100`            : null,
-              scores.C_ordelijkheid !== null ? `   ↳ Ordelijkheid: ${scores.C_ordelijkheid}/100` : null,
-              `E — Extraversie (Extraversion): ${scores.E}/100`,
-              scores.E_enthousiasme !== null  ? `   ↳ Enthousiasme: ${scores.E_enthousiasme}/100`  : null,
-              scores.E_assertiviteit !== null ? `   ↳ Assertiviteit: ${scores.E_assertiviteit}/100` : null,
-              `N — Neuroticisme (Neuroticism): ${scores.N}/100`,
-              scores.N_terughoudendheid !== null ? `   ↳ Terughoudendheid: ${scores.N_terughoudendheid}/100` : null,
-              scores.N_volatiliteit !== null    ? `   ↳ Volatiliteit: ${scores.N_volatiliteit}/100`       : null,
-              `O — Openheid voor Ervaringen (Openness): ${scores.O}/100`,
-              scores.O_intellect !== null ? `   ↳ Intellect: ${scores.O_intellect}/100` : null,
-              scores.O_esthetiek !== null ? `   ↳ Esthetiek: ${scores.O_esthetiek}/100` : null,
-              scores.H !== null ? `H — Eerlijkheid-Nederigheid (Honesty-Humility): ${scores.H}/100` : null,
-              '',
-              'Scores zijn op een schaal van 0 tot 100 (hoger = meer aanwezig).',
-            ].filter(Boolean).join('\n');
-            const file = new File([lines], 'OCEAN_scores_handmatig.txt', { type: 'text/plain' });
-            onAddFile(file);
-          }
-        }}
-      />
+      </>
     )}
-    </>
+    </div>
+  </>
   );
 };
 
 export default AssessmentIntro;
-

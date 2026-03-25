@@ -1,5 +1,5 @@
 /**
- * Garden for Life — Assessment Data (Level: Meester — Neurobiological Edition)
+ * Garden for Life — Assessment Data (Level: Leerling — Neurobiological Edition)
  *
  * 36 questions × 6 answers × 2 picks = 72 datapunten
  * 5 subjects: Zelf/Zonde (Q1-Q9), Ander/Attentie (Q10-Q18),

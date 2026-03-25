@@ -1,4 +1,5 @@
 import { ARCHETYPES } from '../../data/assessment/archetypes';
+import { getArchetypeQuote } from '../../data/assessment/archetypeQuotes';
 
 export async function generatePDF(result) {
   const content = generatePDFContent(result);
@@ -48,6 +49,7 @@ function renderMarkdownish(text) {
 
 function generatePDFContent(result) {
   const archetypeInfo = ARCHETYPES[result.overallArchetype];
+  const levensles = getArchetypeQuote(result.mainArchetype || result.overallArchetype, result.supportGroup);
   const colors = ['#22d3ee', '#a855f7', '#f472b6', '#fbbf24', '#f97316'];
   const date = result.timestamp?.toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' }) || new Date().toLocaleDateString('nl-NL');
   const displayName = result.extendedArchetypeName || archetypeInfo?.name || result.overallArchetype;
@@ -429,7 +431,7 @@ function generatePDFContent(result) {
     ${profileImage ? `<div class="cover-image-wrap"><img class="cover-image" src="${profileImage}" alt="${esc(displayName)}" /></div>` : ''}
     <h1 class="cover-name">${esc(displayName)}</h1>
     ${result.supportArchetype ? `<p class="cover-subtitle">Support: ${esc(result.supportArchetype)}</p>` : ''}
-    ${archetypeInfo?.description ? `<div class="cover-quote">&ldquo;${esc(archetypeInfo.description)}&rdquo;</div>` : ''}
+    ${levensles ? `<div class="cover-quote">&ldquo;${esc(levensles)}&rdquo;</div>` : ''}
     <p class="cover-date">${esc(date)}</p>
   </div>
 
@@ -530,7 +532,7 @@ function generatePDFContent(result) {
       De Essentie &mdash; Main Archetype
     </p>
     <h1 class="hero-archetype">${esc(result.extendedArchetypeName || archetypeInfo?.name || result.overallArchetype)}</h1>
-    <p class="hero-desc">${esc(archetypeInfo?.description || '')}</p>
+    <p class="hero-desc">${esc(levensles || '')}</p>
     ${result.supportArchetype ? `
     <div style="margin-top:3mm;padding:3mm;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:4px;">
       <p style="color:#f97316;font-size:9pt;margin:0;">De Vermenigvuldiging &mdash; Support: <strong>${esc(result.supportArchetype)}</strong></p>

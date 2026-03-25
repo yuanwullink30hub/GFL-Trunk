@@ -9,8 +9,8 @@
  * 3. Subgroup dynamics (6 archetype group polarity pairs)
  * 4. Primary & secondary archetype determination
  * 5. Extended Archetype name (72-outcome matrix)
- * 6. Nature vs Culture/Force dual-tracking (Meester Ontology)
- * 7. Polarization Index & Authenticity Index (Meester Metrics)
+ * 6. Nature vs Culture/Force dual-tracking (Leerling Ontology)
+ * 7. Polarization Index & Authenticity Index (Leerling Metrics)
  *
  * Line Connections (from 12-point Neuro-Archetypal Wheel):
  *   Green Line:  Hardware Anker (group partner — same biological substrate)
@@ -912,7 +912,7 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
     harmonyCounter: 0,
     frictieCounter: 0,
 
-    // Meester metrics
+    // Leerling metrics
     polarizationIndex,
     polarizationPct,
     polarizationLevel,

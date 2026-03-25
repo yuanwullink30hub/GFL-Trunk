@@ -1,10 +1,10 @@
 /**
- * Meester (Level 3) — Prompt Builder
+ * Leerling (Level 3) — Prompt Builder
  *
- * Master-Specificatie: GardenForLife Meester Assessment — Ontologie-Engine
+ * Master-Specificatie: GardenForLife Leerling Assessment — Ontologie-Engine
  * — AI Generatieprompt (Compliance-versie)
  *
- * Builds the system prompt and user message for the Meester tier.
+ * Builds the system prompt and user message for the Leerling tier.
  * 36 vragen × 2 picks, per-slot N/C routing, Per-Pick Geometric Bleed scoring engine.
  * Only sends the AI the data it needs for the specific user's Main + Support,
  * NOT the full 12-archetype dataset.
@@ -201,7 +201,7 @@ function getGreenArcFor(archetype) {
 
 
 // ═══════════════════════════════════════════════════════════════
-// buildSystemPrompt — the full Meester system instruction
+// buildSystemPrompt — the full Leerling system instruction
 // ═══════════════════════════════════════════════════════════════
 
 function buildSystemPrompt({
@@ -248,16 +248,16 @@ function buildSystemPrompt({
 
   const parts = [];
 
-  // ═══ MASTER PROMPT: THE MEESTER ONTOLOGICAL ENGINE ═══
+  // ═══ MASTER PROMPT: THE LEERLING ONTOLOGICAL ENGINE ═══
   parts.push(
-    `Master-Specificatie: GardenForLife Meester Assessment\n` +
+    `Master-Specificatie: GardenForLife Leerling Assessment\n` +
     `Ontologie-Engine — AI Generatieprompt (Compliance-versie)\n` +
     `36Q Dual-Pick — 72 Datapunten — Per-Pick Geometric Bleed\n\n` +
     `⚠️ COMPLIANCE KERNREGEL: Dit document bevat instructies voor het genereren van persoonlijkheidsrapporten op basis van zelfingevulde assessmentdata. Alle gegenereerde output is onderhevig aan AVG Art. 9, de EU AI Act en Nederlands consumentenrecht. De AI genereert uitsluitend zelfreflectie-instrumenten. Klinische diagnoses, medische uitspraken en deterministische oordelen zijn verboden. Modelafbakening is verplicht in elke sectie.\n\n` +
     `MODELAFBAKENING: Het Deltawerken Model is een propriëtair conceptueel framework, geen erkend klinisch diagnostisch instrument. Neurowetenschappelijke terminologie wordt in dit model gebruikt als beschrijvende metafoor voor gedragspatronen — niet als meetbare neurologische output van deze test.\n\n` +
     `De Filosofische & Biologische Premisse\n` +
-    `Het Meester Assessment is bedoeld voor gebruikers met diepe zelfkennis. Het doel is niet om hen in een hokje te plaatsen, maar om hun unieke navigatiestijl door het Deltawerken Model (TNM)-architectuur te verkennen als zelfreflectiekader. Het model beschrijft hoe de gebruiker, vanuit hun antwoordpatronen, de spanning tussen Order (CEN), Chaos (Salience) en Abstractie (DMN) navigeert.\n` +
-    `Het Meester Level gebruikt 36 vragen met een dubbele keuze per vraag (72 datapunten), verdeeld over 5 onderwerpen (Zelf/Zonde 9, Ander/Attentie 9, Massa/Macht 6, Wereld/Wijsheid 6, Mysterie/Magie 6), 6 rotatiesleutels met perfecte 50/50 Nature/Culture symmetrie, en een Per-Pick Geometric Bleed scoring engine.\n` +
+    `Het Leerling Assessment is bedoeld voor gebruikers met diepe zelfkennis. Het doel is niet om hen in een hokje te plaatsen, maar om hun unieke navigatiestijl door het Deltawerken Model (TNM)-architectuur te verkennen als zelfreflectiekader. Het model beschrijft hoe de gebruiker, vanuit hun antwoordpatronen, de spanning tussen Order (CEN), Chaos (Salience) en Abstractie (DMN) navigeert.\n` +
+    `Het Leerling Level gebruikt 36 vragen met een dubbele keuze per vraag (72 datapunten), verdeeld over 5 onderwerpen (Zelf/Zonde 9, Ander/Attentie 9, Massa/Macht 6, Wereld/Wijsheid 6, Mysterie/Magie 6), 6 rotatiesleutels met perfecte 50/50 Nature/Culture symmetrie, en een Per-Pick Geometric Bleed scoring engine.\n` +
     `INSTRUCTIE: Lees scores nooit als platte getallen of als meetbare neurologische waarden. Elke archetype score bestaat uit twee componenten: Core (directe picks = identiteit) en Bleed (geometrische echo's = hardware/schaduw/cognitie signalen). Vertaal beide naar gedragsmatige zelfreflectie binnen het model.\n\n` +
     `2. De Geometrische Engine (Source of Truth)\n` +
     `De uitslag wordt berekend op een 12-punts wiel. De posities zijn vastgelegd op basis van de conceptuele TNM-gradiënt:\n\n` +
@@ -294,10 +294,10 @@ function buildSystemPrompt({
     `Bleed sub-score = Geometrische textuur. Hoe sterk echoot dit archetype via hardware (Green/Blue), schaduw (Purple) of cognitie (Yellow)? Hoge Bleed + lage Core = dit archetype is niet gekozen maar resoneert mee via de geometrie.\n\n` +
     `Formuleer schaduw als: 'Jouw instinctieve keuzes genereren binnen dit model een subtiel signaal naar je schaduwpool — dit suggereert een biologische echo, geen bewuste keuze.'\n\n` +
     `INSTRUCTIE: Communiceer scores altijd als indicatoren binnen het model — nooit als absolute meting van psychologische eigenschappen of neurologische capaciteit. Bleed-scores zijn echo's, geen identiteit.\n\n` +
-    `4. Meester Tie-Breaker (Ontologie Failsafe):\n` +
+    `4. Leerling Tie-Breaker (Ontologie Failsafe):\n` +
     `Bij gelijke totaalscores (Core + Bleed) wordt het Main Archetype bepaald door de hoogste Nature sub-score. Dit is bijzonder relevant voor same-group paren (bijv. Ruler vs Judge) die door de Green/Blue bleed vergelijkbare totaalscores kunnen hebben. De Nature sub-score meet uitsluitend directe picks vanuit Nature posities — de zuiverste biologische indicator. Biologie wint altijd van conditioning.\n` +
     `Communiceer dit als: 'Waar scores gelijk zijn, wijst het model op [archetype X] als primaire gedragsmodus op basis van de instinctieve antwoordpatronen.'\n\n` +
-    `Score Plafonds (Meester Engine):\n` +
+    `Score Plafonds (Leerling Engine):\n` +
     `• Core max (alle Nature): 36×9 + 36×6 = 540 punten.\n` +
     `• Green bleed max: 36×3 + 36×1 = 144 (naar same-group partner).\n` +
     `• Blue bleed max: 36×2 + 36×1 = 108 (naar same-group partner).\n` +
@@ -305,7 +305,7 @@ function buildSystemPrompt({
     `• Yellow bleed max: 36×2×2 + 36×1×2 = 216 (verdeeld over driehoek partners).\n` +
     `• Red: GEEN punten.\n\n` +
     `NIET: 'Je hebt 45 punten op de Judge.' WEL: 'Jouw antwoordprofiel plaatst de Judge-modus binnen dit model als een significant aanwezig gedragspatroon — de neiging tot structurele evaluatie en morele weging lijkt herkenbaar in jouw keuzes.'\n\n` +
-    `6. AI-Instructie: De Alchemistische Analyse (Meester)\n` +
+    `6. AI-Instructie: De Alchemistische Analyse (Leerling)\n` +
     `A. Geen Labeling, maar Navigatie\n` +
     `Vermijd deterministische identiteitsuitspraken. Gebruik navigatiemetaforen.\n\n` +
     `NIET: 'Jij bent een Explorer.' WEL: 'Jouw antwoordprofiel suggereert dat je de realiteit momenteel via de Explorer-lens navigeert, versterkt door de Relational-groep.'\n\n` +
@@ -316,7 +316,7 @@ function buildSystemPrompt({
     `BELANGRIJK: In de secties De Schaduw en De Blindspot: noem het archetype NOOIT bij naam in de lopende tekst. De archetypenaam staat al in de sectietitel. Verwijs uitsluitend als 'deze schaduw-modus', 'deze blinde vlek', 'de tegenpool', 'dit archetype'. Dit geldt voor ALLE paragrafen in deze secties.\\n\\n` +
     `Hardware Signaal: Wanneer beide leden van een biologische groep verhoogd zijn op de chart, leest de AI dit als actieve hardware-resonantie (Green/Blue bleed). Beschrijf als: 'Jouw scoreprofiel toont sterke activatie van het volledige [groep]-circuit.' Dit is een spectrum, geen schakelaar.\n\n` +
     `Blindspot: Definieer als externe trigger of blinde vlek in interacties. Lees van de radar chart als dalen tussen archetypen die geen Green, Purple of Yellow connectie delen. 'Het is aannemelijk dat gedrag dat lijkt op [archetype] bij anderen een sterke reactie oproept — dit kan een signaal zijn voor een onbewust spanningspunt.'\n\n` +
-    `7. De 72 Extended Archetypes (Meester Matrix)\n` +
+    `7. De 72 Extended Archetypes (Leerling Matrix)\n` +
     `Verwijs naar de volledige 72-matrix (Archetype_Extensions document) voor Extended Archetype bepaling. Communiceer altijd als samengesteld profiel: 'De combinatie van [Main] en [Support] plaatst jou binnen dit model in de categorie [Extended Archetype] — een profiel gekenmerkt door [beschrijving].'\n\n` +
     `Main Archetype\t+ Ruling\t+ Relational\t+ Seeker\t+ Chaos\t+ Abstract\t+ Agency\n` +
     `1. Judge\tArbiter\tMediator\tExaminer\tWhistleblower (H)\tCritic\tAvenger\n` +
@@ -332,18 +332,18 @@ function buildSystemPrompt({
     `11. Hero\tCommander\tGuardian\tInventor (H)\tRonin\tStrategist\tLegend\n` +
     `12. Ruler\tEmperor\tPatriarch/Matriarch\tEntrepreneur\tMaverick (H)\tPhilosopher-King\tConqueror\n` +
     `(H) = Harmonic match\n\n` +
-    `8. AI Output Prompt: Meester Ontological Report Generator\n` +
+    `8. AI Output Prompt: Leerling Ontological Report Generator\n` +
     `Systeemrol:\n` +
-    `Je genereert een persoonlijk zelfreflectierapport op basis van de GardenForLife Deltawerken-assessment (Meester Level). Je framework is Jungiaanse archetypentheorie gecombineerd met het Triple Network Model als conceptueel kader. Je analyseert antwoordpatronen — geen neurologie, geen psychopathologie. De test gebruikt 36 vragen met dubbele keuze (72 datapunten), 6 rotatiesleutels met perfecte symmetrie, en een Per-Pick Geometric Bleed scoring engine. Elke archetype score bestaat uit Core (directe picks) en Bleed (geometrische echo's).\n\n` +
+    `Je genereert een persoonlijk zelfreflectierapport op basis van de GardenForLife Deltawerken-assessment (Leerling Level). Je framework is Jungiaanse archetypentheorie gecombineerd met het Triple Network Model als conceptueel kader. Je analyseert antwoordpatronen — geen neurologie, geen psychopathologie. De test gebruikt 36 vragen met dubbele keuze (72 datapunten), 6 rotatiesleutels met perfecte symmetrie, en een Per-Pick Geometric Bleed scoring engine. Elke archetype score bestaat uit Core (directe picks) en Bleed (geometrische echo's).\n\n` +
     `1. De Identiteit:\n` +
     `[Extended Archetype Naam]\n` +
-    `Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit op het Meester niveau.\n` +
+    `Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit op het Leerling niveau.\n` +
     `Voeg toe: 'Dit is een modelinterpretatie van jouw antwoordprofiel, geen vastgestelde identiteitsdiagnose.'\n\n` +
     `NIET: Klinische termen in Sectie 1: 'Jouw biologische motor', 'Jouw zenuwstelsel is bedraad voor', 'Jouw dopamine bewijst'. WEL: 'Binnen dit model wordt [archetype] geassocieerd met [beschrijving]' en 'Jouw antwoordprofiel suggereert...'\n\n` +
     `2. Waarom jij het [Extended Archetype Naam] perspectief gebruikt:\n` +
     `Leg uit hoe de combinatie van de twee hoogste Core scores samenwerkt. Gebruik: 'Jouw antwoordpatronen suggereren...' en 'binnen dit model...' als ankerpunten.\n\n` +
     `3. De Essentie (Main Archetype) — Maximaal 140 woorden:\n` +
-    `Archetype & Groep: [Naam] | [Groep]. TNM-Associatie: [Beschrijf als modelterm, niet als neurologisch feit]. Drijfveer: [Nature of CultureForce — altijd met modelkwalificatie]. Meester Inzicht: [Hoe dit antwoordpatroon als primaire gedragslens functioneert].\n` +
+    `Archetype & Groep: [Naam] | [Groep]. TNM-Associatie: [Beschrijf als modelterm, niet als neurologisch feit]. Drijfveer: [Nature of CultureForce — altijd met modelkwalificatie]. Leerling Inzicht: [Hoe dit antwoordpatroon als primaire gedragslens functioneert].\n` +
     `LET OP: Genereer content van maximaal 140 woorden.\n\n` +
     `4. De Vermenigvuldiging (Support Archetype) — Maximaal 140 woorden:\n` +
     `Archetype & Groep: [Naam] | [Groep]. TNM-Associatie: [Beschrijf als modelterm]. Rol: [Hoe dit archetype de Main aanvult of uitdaagt — in gedragsmatige termen]. Hardware / Schaduw Check: Lees de geometrische signalen van de chart. Als Main en Support dezelfde groep delen: hardware-resonantie. Als ze 180° tegenpolen zijn: schaduw-integratie.\n` +
@@ -670,7 +670,7 @@ function buildSystemPrompt({
 
   // ═══ SCORE ANATOMIE INSTRUCTIES ═══
   parts.push(`\n═══════════════════════════════════════`);
-  parts.push(`DE ANATOMIE VAN DE SCORE (MEESTER ENGINE)`);
+  parts.push(`DE ANATOMIE VAN DE SCORE (LEERLING ENGINE)`);
   parts.push(`═══════════════════════════════════════\n`);
 
   parts.push(
@@ -718,7 +718,7 @@ function buildSystemPrompt({
   );
 
   parts.push(
-    `7. Systeem totalen (Meester — Geometrische Bleed):\n` +
+    `7. Systeem totalen (Leerling — Geometrische Bleed):\n` +
     `   Core max (alle Nature): 36×9 + 36×6 = 540 basispunten.\n` +
     `   Purple Drip max: 36. Green Bleed max: 144. Blue Bleed max: 108.\n` +
     `   Yellow Bleed max: 216. Red: GEEN punten.\n`
@@ -726,7 +726,7 @@ function buildSystemPrompt({
 
   // ═══ RICHTLIJNEN ═══
   parts.push(`\n═══════════════════════════════════════`);
-  parts.push(`AI ANALYSE RICHTLIJNEN (MEESTER)`);
+  parts.push(`AI ANALYSE RICHTLIJNEN (LEERLING)`);
   parts.push(`═══════════════════════════════════════\n`);
 
   parts.push(
@@ -780,7 +780,7 @@ function buildSystemPrompt({
 
   // ═══ USER'S ASSESSMENT DATA (only relevant fields) ═══
   parts.push(`\n═══════════════════════════════════════`);
-  parts.push(`ARCHETYPE PROFIEL (MEESTER ONTOLOGY)`);
+  parts.push(`ARCHETYPE PROFIEL (LEERLING ONTOLOGY)`);
   parts.push(`═══════════════════════════════════════\n`);
 
   parts.push(`Main Archetype: ${archetypeKey} (Positie ${mainPos})`);
@@ -810,7 +810,7 @@ function buildSystemPrompt({
     parts.push(`⚡ INDIVIDUATIE: Main (${archetypeKey}) en Support (${supportArchetype}) zijn 180° tegenpolen — Meesterschap over de Paradox!`);
   }
 
-  // Meester Metrics
+  // Leerling Metrics
   parts.push(`\n── GEAVANCEERDE METRICS ──`);
   if (polarizationIndex != null) {
     parts.push(`Polarization Index: ${polarizationIndex} (${polarizationLevel})`);
@@ -983,7 +983,7 @@ function buildSystemPrompt({
     `## 1. De Identiteit\n` +
     `⚠️ WOORDLIMIET: Maximaal 75 woorden.\n` +
     `[Extended Archetype Naam: ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}]\n` +
-    `Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit op het Meester niveau.\n`
+    `Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit op het Leerling niveau.\n`
   );
 
   parts.push(
@@ -998,7 +998,7 @@ function buildSystemPrompt({
     `- Archetype: ${archetypeKey} | Groep: ${mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]}\n` +
     `- TNM-Associatie (modelterm): ${GROUP_NEURAL_FOCUS[mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]] || '?'}\n` +
     `- Drijfveer: Kijk naar de data \u2014 is dit Nature (ongedwongen modus) of Culture/Force (aangeleerde strategie)? Benoem dit expliciet met 'binnen dit model' als anker.\n` +
-    `- Meester Inzicht: Hoe dit antwoordpatroon als primaire gedragslens functioneert.\n`
+    `- Leerling Inzicht: Hoe dit antwoordpatroon als primaire gedragslens functioneert.\n`
   );
 
   parts.push(
@@ -1177,17 +1177,17 @@ function buildUserMessage({
   const parts = [];
 
   parts.push(
-    `Genereer een volledig Meester Ontologisch Rapport ` +
+    `Genereer een volledig Leerling Ontologisch Rapport ` +
     `(secties 1-11 + 12A + 12B${hasReport ? ' + Persoonlijkheidsrapport Vergelijking' : ''}) ` +
     `voor deze gebruiker.\n` +
     `BELANGRIJK: Begin je output DIRECT met "## 1. De Identiteit". ` +
-    `Schrijf GEEN overkoepelende titel zoals "Meester Ontologisch Rapport" of een inleiding vóór sectie 1. ` +
+    `Schrijf GEEN overkoepelende titel zoals "Leerling Ontologisch Rapport" of een inleiding vóór sectie 1. ` +
     `De eerste regel van je output moet "## 1. De Identiteit" zijn.\n`
   );
 
   // ═══ ARCHETYPE PROFIEL ═══
   parts.push(`\n═══════════════════════════════════════`);
-  parts.push(`ARCHETYPE PROFIEL (MEESTER ONTOLOGY)`);
+  parts.push(`ARCHETYPE PROFIEL (LEERLING ONTOLOGY)`);
   parts.push(`═══════════════════════════════════════\n`);
 
   parts.push(`Main Archetype: ${archetypeKey} (Positie ${mainPos})`);

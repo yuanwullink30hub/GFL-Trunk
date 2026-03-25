@@ -76,7 +76,7 @@ const translations = {
         description: { nl: "36 vragen — 25 min • Diepere zelfinzicht", en: "36 questions — 25 min • Deeper self-understanding" }
       },
       deep: {
-        name: { nl: "Meester", en: "Advanced" },
+        name: { nl: "Leerling", en: "Advanced" },
         description: { nl: "36 vragen — 25 min • Volledige zelfbeheersing", en: "36 questions — 25 min • Complete self-mastery" }
       }
     },

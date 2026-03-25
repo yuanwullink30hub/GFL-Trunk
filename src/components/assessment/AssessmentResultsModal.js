@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useRef, useEffect, useState } from 'react';
+import React, { useMemo, useCallback, useRef, useEffect, useLayoutEffect, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import SciFiRadarChart from './SciFiRadarChart';
@@ -290,8 +290,9 @@ const AssessmentResultsModal = ({
     }),
   [displaySections]);
 
-  // Scroll modal to top when results become visible (after AI loading completes)
-  useEffect(() => {
+  // Scroll modal to top when results become visible (after AI loading completes).
+  // useLayoutEffect fires before the browser paints, preventing the flash at sections 9-12.
+  useLayoutEffect(() => {
     if (aiReady && scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
@@ -676,9 +677,18 @@ const AssessmentResultsModal = ({
       // ── Helper: markdown-aware AI content renderer ──
       const writePdfMarkdown = (mdText, x, maxW) => {
         if (!mdText) return;
+        // Sanitize Unicode chars that break jsPDF helvetica encoding
+        const sanitizePdf = (str) => str
+          .replace(/\u2014/g, ' - ')   // em-dash
+          .replace(/\u2013/g, ' - ')   // en-dash
+          .replace(/\u2018|\u2019/g, "'") // curly single quotes
+          .replace(/\u201C|\u201D/g, '"') // curly double quotes
+          .replace(/\u2026/g, '...')   // ellipsis
+          .replace(/\u00B7/g, '-')     // middle dot
+          .replace(/[\u200B-\u200D\uFEFF]/g, ''); // zero-width chars
         const lines = mdText.split('\n');
         for (const raw of lines) {
-          const trimmed = raw.trim();
+          const trimmed = sanitizePdf(raw.trim());
           // Blank line → small gap
           if (!trimmed) { y += 2; continue; }
           // Horizontal divider (---, ***, ===) — skip entirely

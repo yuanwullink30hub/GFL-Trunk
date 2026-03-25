@@ -342,24 +342,20 @@ function buildSystemPrompt({
     `NIET: Klinische termen in Sectie 1: 'Jouw biologische motor', 'Jouw zenuwstelsel is bedraad voor', 'Jouw dopamine bewijst'. WEL: 'Binnen dit model wordt [archetype] geassocieerd met [beschrijving]' en 'Jouw antwoordprofiel suggereert...'\n\n` +
     `2. Waarom jij het [Extended Archetype Naam] perspectief gebruikt:\n` +
     `Leg uit hoe de combinatie van de twee hoogste Core scores samenwerkt. Gebruik: 'Jouw antwoordpatronen suggereren...' en 'binnen dit model...' als ankerpunten.\n\n` +
-    `3. De Essentie (Main Archetype):\n` +
-    `Archetype: [Naam] | Groep: [Naam Groep]\n` +
-    `• TNM-Associatie: [Beschrijf als modelterm, niet als neurologisch feit]\n` +
-    `• Drijfveer: [Nature of CultureForce — altijd met modelkwalificatie]\n` +
-    `• Meester Inzicht: [Hoe dit antwoordpatroon als primaire gedragslens functioneert]\n\n` +
-    `4. De Vermenigvuldiging (Support Archetype):\n` +
-    `• Archetype: [Naam] | Groep: [Naam Groep]\n` +
-    `• TNM-Associatie: [Beschrijf het ondersteunende netwerk als modelterm]\n` +
-    `• Rol: [Hoe dit archetype de Main aanvult of uitdaagt — in gedragsmatige termen]\n` +
-    `• Hardware / Schaduw Check: Lees de geometrische signalen van de chart. Als Main en Support dezelfde groep delen: beschrijf als sterke hardware-resonantie (Green/Blue bleed). Als ze 180° tegenpolen zijn: beschrijf als paradoxale integratie (Purple signaal). Gebruik kwalitatieve beschrijvingen, geen numerieke waarden.\n\n` +
-    `5. De Schaduw:\n` +
-    `Archetype: [180° tegenpool van Main]. Beschrijf als potentieel groeipunt. Gebruik de Polarization Index (Main score MINUS Shadow score) als spectrum:\n` +
+    `3. De Essentie (Main Archetype) — Maximaal 140 woorden:\n` +
+    `Archetype & Groep: [Naam] | [Groep]. TNM-Associatie: [Beschrijf als modelterm, niet als neurologisch feit]. Drijfveer: [Nature of CultureForce — altijd met modelkwalificatie]. Meester Inzicht: [Hoe dit antwoordpatroon als primaire gedragslens functioneert].\n` +
+    `LET OP: Genereer content van maximaal 140 woorden.\n\n` +
+    `4. De Vermenigvuldiging (Support Archetype) — Maximaal 140 woorden:\n` +
+    `Archetype & Groep: [Naam] | [Groep]. TNM-Associatie: [Beschrijf als modelterm]. Rol: [Hoe dit archetype de Main aanvult of uitdaagt — in gedragsmatige termen]. Hardware / Schaduw Check: Lees de geometrische signalen van de chart. Als Main en Support dezelfde groep delen: hardware-resonantie. Als ze 180° tegenpolen zijn: schaduw-integratie.\n` +
+    `LET OP: Genereer content van maximaal 140 woorden.\n\n` +
+    `5. De Schaduw — Archetype: The ${shadowArchetype} (180° Tegenpool van The ${archetypeKey}):\n` +
+    `Beschrijf als potentieel groeipunt. Gebruik de Polarization Index (Main score MINUS Shadow score) als spectrum:\n` +
     `• Gap > 60% van Main: schaduw wordt onderdrukt. Focus op de blinde vlek.\n` +
     `• Gap 30–60%: gezonde spanning. Beschrijf het groeipad.\n` +
     `• Gap < 30%: actieve integratie. 'Jouw antwoordprofiel suggereert dat je al actief werkt met de energie van [schaduw-archetype] — dit is een zeldzame en krachtige combinatie binnen dit model.'\n` +
     `BELANGRIJK: Noem het schaduw-archetype NIET bij naam in de lopende tekst van deze sectie. De sectietitel bevat al de archetypenaam. Gebruik in de tekst uitsluitend verwijzingen als 'deze schaduw-modus', 'dit archetype', 'deze energie', 'de tegenpool'. Geen enkele keer de naam van het archetype herhalen in de paragrafen.\n\n` +
-    `6. De Blindspot (De Saboteur):\n` +
-    `Archetype: [180° tegenpool van Support]. Lees frictie van de radar chart — dalen tussen onverbonden archetypen. Formuleer als: 'Het is aannemelijk dat [gedragspatroon van blindspot-archetype] bij anderen een sterke reactie oproept — gebruik dit als reflectiesignaal, niet als oordeel.'\n` +
+    `6. De Blindspot — Archetype: The ${blindspotArchetype} (180° Tegenpool van The ${supportArchetype}):\n` +
+    `Lees frictie van de radar chart — dalen tussen onverbonden archetypen. Formuleer als: 'Het is aannemelijk dat [gedragspatroon van blindspot-archetype] bij anderen een sterke reactie oproept — gebruik dit als reflectiesignaal, niet als oordeel.'\n` +
     `BELANGRIJK: Noem het blindspot-archetype NIET bij naam in de lopende tekst van deze sectie. De sectietitel bevat al de archetypenaam. Gebruik in de tekst uitsluitend verwijzingen als 'deze blinde vlek', 'dit archetype', 'deze energie', 'de tegenpool'. Geen enkele keer de naam van het archetype herhalen in de paragrafen.\n\n` +
     `7. Visuele Analyse — Webdiagram en Dual Core Dynamics:\n` +
     `Webdiagram: 12-punts Radar Chart met twee lagen. Eerste keuze (paars) vormt de binnen-core. Tweede keuze (oranje) is de tweede schil die erop gestapeld wordt. Beide lagen samen tonen het volledige archetype-profiel inclusief alle Bleed signalen.\n\n` +
@@ -382,9 +378,9 @@ function buildSystemPrompt({
     `• Ontologische Vraag: [Één diepe reflectievraag die de kern van de huidige paradox raakt]\n` +
     `• AI Agent Prompt: [Zie Sectie 11]\n\n` +
     `11. Genereer een Volledige AI Prompt\n` +
-    `LET OP: Genereer content tussen de 400 en 420 woorden.\n` +
+    `⚠️ WOORDLIMIET: PRECIES tussen de 400 en 420 woorden — NIET minder.\n` +
     `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools.\n` +
-    `Gepersonaliseerde instructies (voor de AI) op basis van het archetype-profiel. Gebruik tussen de 400 en 420 woorden voor deze gehele sectie.\n`
+    `Gepersonaliseerde instructies (voor de AI) op basis van het archetype-profiel. Output onder 400 woorden wordt NIET geaccepteerd.\n`
   );
 
   // ═══ FASE 1: TNM DATA-EXTRACTIE & BEREKENING ═══
@@ -1021,25 +1017,25 @@ function buildSystemPrompt({
 
 
   parts.push(
-    `## 5. De Schaduw — ${shadowArchetype} (Positie ${shadowPos})\n` +
+    `## 5. De Schaduw — Archetype: The ${shadowArchetype} (180° Tegenpool van The ${archetypeKey})\n` +
     `⚠️ WOORDLIMIET: Maximaal 175 woorden.\n` +
-    `Begin de inhoud NIET met de naam van het schaduw-archetype — dit staat al in de sectietitel.\n` +
+    `BELANGRIJK: Noem het schaduw-archetype NOOIT bij naam in de lopende tekst. De naam staat al in de sectietitel. Verwijs uitsluitend als 'deze schaduw-modus', 'de tegenpool', 'dit archetype', 'deze energie'.\n` +
     `Gebruik de Polarization Index (Main score MINUS Shadow score) als spectrum:\n` +
     `- Gap > 60% van Main: schaduw wordt onderdrukt. Focus op de blinde vlek.\n` +
     `- Gap 30\u201360%: gezonde spanning. Beschrijf het groeipad.\n` +
-    `- Gap < 30%: actieve integratie. 'Jouw antwoordprofiel suggereert dat je al actief werkt met de energie van ${shadowArchetype}.'\n` +
+    `- Gap < 30%: actieve integratie. 'Jouw antwoordprofiel suggereert dat je al actief werkt met de energie van deze schaduw-modus.'\n` +
     `- ${isIndividuated
-      ? `Overlap: "Je hebt je schaduw (${shadowArchetype}) al meesterlijk ge\u00efntegreerd in je Support-netwerk. Dit is een zeldzame en krachtige combinatie binnen dit model."`
-      : `De Paradox: Beschrijf de spanning tussen ${archetypeKey} en ${shadowArchetype} in gedragsmatige, niet-klinische termen.`}\n` +
+      ? `Overlap: "Je hebt deze schaduw-energie al meesterlijk geïntegreerd in je Support-netwerk. Dit is een zeldzame en krachtige combinatie binnen dit model."`
+      : `De Paradox: Beschrijf de spanning tussen de Main-energie en de tegenpool in gedragsmatige, niet-klinische termen.`}\n` +
     `- Individuatie Status: Beschrijf hoe ze dit patroon nog optimaler kunnen inzetten als groeipotentieel.\n`
   );
 
   parts.push(
-    `## 6. De Blindspot — ${blindspotArchetype} (Positie ${blindspotPos})\n` +
+    `## 6. De Blindspot — Archetype: The ${blindspotArchetype} (180° Tegenpool van The ${supportArchetype})\n` +
     `⚠️ WOORDLIMIET: Maximaal 150 woorden.\n` +
-    `Begin de inhoud NIET met de naam van het blindspot-archetype — dit staat al in de sectietitel.\n` +
+    `BELANGRIJK: Noem het blindspot-archetype NOOIT bij naam in de lopende tekst. De naam staat al in de sectietitel. Verwijs uitsluitend als 'deze blinde vlek', 'de tegenpool', 'dit archetype', 'deze energie'.\n` +
     `Lees frictie van de radar chart \u2014 dalen tussen onverbonden archetypen.\n` +
-    `Formuleer als: 'Het is aannemelijk dat gedrag dat lijkt op ${blindspotArchetype} bij anderen een sterke reactie oproept \u2014 gebruik dit als reflectiesignaal, niet als oordeel.'\n`
+    `Formuleer als: 'Het is aannemelijk dat gedrag dat lijkt op deze blinde-vlek-energie bij anderen een sterke reactie oproept \u2014 gebruik dit als reflectiesignaal, niet als oordeel.'\n`
   );
 
   parts.push(
@@ -1085,9 +1081,13 @@ function buildSystemPrompt({
 
   parts.push(
     `## 11. Genereer een Volledige AI Prompt\n` +
-    `LET OP: Genereer content tussen de 400 en 420 woorden.\n` +
-    `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools.\n` +
-    `Gepersonaliseerde instructies (voor de AI) op basis van het archetype-profiel. Gebruik tussen de 400 en 420 woorden voor deze gehele sectie.\n`
+    `⚠️ WOORDLIMIET: PRECIES tussen de 400 en 420 woorden. NIET minder, NIET meer.\n` +
+    `Genereer een kant-en-klare systeemprompt voor gebruik in externe AI-tools (ChatGPT, Claude, Gemini).\n` +
+    `Gepersonaliseerde instructies (voor de AI) op basis van het archetype-profiel van de gebruiker.\n` +
+    `De prompt moet de AI instrueren om de gebruiker te benaderen op een manier die past bij hun ${archetypeKey} (Main) × ${supportArchetype} (Support) profiel, ` +
+    `rekening houdend met de schaduw (${shadowArchetype}) en blindspot (${blindspotArchetype}).\n` +
+    `Schrijf de prompt als één doorlopend blok instructietekst — geen opsommingstekens, geen headers, geen formatting.\n` +
+    `⚠️ HERHALING WOORDLIMIET: De AI Prompt sectie MOET tussen de 400 en 420 woorden bevatten. Tel zorgvuldig. Output onder 400 woorden wordt NIET geaccepteerd.\n`
   );
 
   // ── 12A: Professionele Resonantie ──

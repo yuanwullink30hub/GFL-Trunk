@@ -1220,7 +1220,6 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
             paddingBottom: `calc(${s.padding.split(' ')[0]} * 2)`,
             paddingRight: 0,
             paddingLeft: s.padding.split(' ')[1],
-            paddingRight: 0,
             boxSizing: 'border-box',
           }}
         >

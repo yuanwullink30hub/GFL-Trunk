@@ -1,5 +1,5 @@
-﻿import React, { memo, useEffect, useState, useCallback } from 'react';
-import { ARCHETYPES, SHADOW_PAIRS, ARCHETYPE_TO_GROUP, getExtendedDescription, getArchetypeQuote } from '../data/assessment';
+import React, { memo, useEffect, useState, useCallback } from 'react';
+import { ARCHETYPES, SHADOW_PAIRS, getExtendedDescription, getArchetypeQuote } from '../data/assessment';
 import { getArchetypeImage } from '../data/assessment/archetypeImages';
 import { getCoreProfile } from '../data/assessment/oceanProfiles';
 import { POLICY_CONTENT } from '../data/policyContent';

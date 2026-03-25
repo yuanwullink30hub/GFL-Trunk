@@ -223,8 +223,6 @@ const SingleLayerPanel = ({
   // Saved cards scale down progressively (pyramid shape).
   const getPanelStyles = useCallback(() => {
     const progress = animProgress;
-    const isFirstLayer = layerIndex === 0;
-    
     const entityCenterX = 50;
     const entityCenterY = 23; // entity center in vh (3D y=0.75 → world 0.775 → ~23vh)
     const savedY = SAVED_LAYER_POSITIONS[layerIndex]; // left-side pyramid Y

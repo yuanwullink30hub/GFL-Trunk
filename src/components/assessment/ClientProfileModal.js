@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getHistory, getAssessment, downloadPdf, deleteOwnAccount } from '../../utils/apiClient';
-import { BTN, TAB_STYLE, ERROR_STYLE, hover, C, FONT, SciFiButton } from './dashboardStyles';
+import { ERROR_STYLE, C, FONT, SciFiButton } from './dashboardStyles';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 
 // ═══════════════════════════════════════════════════════════

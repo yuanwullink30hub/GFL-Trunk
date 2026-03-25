@@ -2103,8 +2103,6 @@ const AssessmentResultsModal = ({
         const archKey = (result.mainArchetype || '').toUpperCase();
         const tri = COG_TRIANGLES[archKey];
         if (tri) {
-          const hexToRgb = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
-
           // Section heading with amber left bar
           sectionHeading('Cognitieve Driehoek', amber);
           gap();

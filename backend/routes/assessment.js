@@ -29,7 +29,7 @@ function esc(str) {
 function buildFeedbackEmail(settings, review) {
   // Always use hardcoded text — ignoring any admin-saved override so deploys stay authoritative
   const bodyText =
-    'Welkom bij de orde van 72,<br><br><br>' +
+    'Welkom bij de orde van 72,<br><br>' +
     'Jouw feedback is uiterst waardevol en alles wat dit project nog miste, toch kan ik mijn gretigheid niet bedwingen en reik ik nog één laatste keer uit voor jouw hulp.<br>' +
     'De sleutel die jij hebt ontvangen omwille je beheersing mag je delen met de mensen die je kent, maar let op: jouw sleutel- jouw verantwoording.<br><br>' +
     'Hoe meer juiste data hoe beter wij kunnen optimaliseren, daarom:<br>' +
@@ -40,8 +40,7 @@ function buildFeedbackEmail(settings, review) {
     '<a href="https://gardenforlife.nl/?page=feedback" style="text-decoration:none;font-size:36px;letter-spacing:6px;">⭐⭐⭐</a>' +
     '</div>';
   const closingText =
-    'Anyway- pionier, hartelijk dank voor de tijd en attentie!<br><br><br>' +
-    'Met vriendelijke groet, Yuan Wullink';
+    'Anyway- pionier, hartelijk dank voor de tijd en attentie!';
   const imageBlock = '';
   const attachments = [];
 

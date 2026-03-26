@@ -1009,8 +1009,8 @@ const AssessmentCard = ({
             })}
           </div>
 
-          {/* Next + AUTO Buttons — manual advance (not all answered) */}
-          {!isAllAnswered && (
+          {/* Next + AUTO Buttons — manual advance */}
+          {(!isAllAnswered || isLastQuestion) && (
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => isLastQuestion ? handleSave() : (onNext && onNext())}
@@ -1071,30 +1071,6 @@ const AssessmentCard = ({
             </div>
           )}
 
-          {/* Save Button — appears on last question OR when all answered */}
-          {(isAllAnswered || isLastQuestion) && (
-            <button
-              onClick={handleSave}
-              className="w-full py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300 relative overflow-hidden text-sm mb-1"
-              style={{
-                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                backgroundColor: subjectColor,
-                color: '#0f172a',
-                border: `2px solid ${subjectColor}`,
-                boxShadow: `0 0 20px ${subjectColor}40`,
-              }}
-            >
-              {/* Corner accents on save button */}
-              <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 opacity-50" style={{ borderColor: '#0f172a' }} />
-              <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 opacity-50" style={{ borderColor: '#0f172a' }} />
-              <span className="flex items-center justify-center gap-2">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Save
-              </span>
-            </button>
-          )}
         </footer>
       </div>
     </div>

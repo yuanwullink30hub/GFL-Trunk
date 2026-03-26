@@ -3229,7 +3229,7 @@ const AuditLogTab = memo(() => {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '55vh', overflowY: 'auto' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 2fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(192,132,252,0.15)' }}>
-                    {['TIJDSTIP', 'CODE', 'GELDIG', 'IP / USER AGENT'].map(h => (
+                    {['TIJDSTIP', 'CODE', 'GELDIG', 'NAAM'].map(h => (
                       <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#c084fc80', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
                     ))}
                   </div>
@@ -3250,8 +3250,8 @@ const AuditLogTab = memo(() => {
                       <div style={{ fontSize: 'max(8px, 0.42vw)', fontWeight: 'bold', color: ev.valid ? '#4ade80' : '#f87171' }}>
                         {ev.valid ? '✓' : '✗'}
                       </div>
-                      <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {ev.ip || '—'}{ev.userAgent ? ` · ${ev.userAgent}` : ''}
+                      <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#c084fc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ev.label || '—'}
                       </div>
                     </div>
                   ))}

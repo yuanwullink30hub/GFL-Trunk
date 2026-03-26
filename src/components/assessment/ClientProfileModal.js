@@ -736,7 +736,6 @@ const ClientAssessmentsTab = memo(() => {
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.3rem' }}>
-            <SciFiButton onClick={() => downloadPdf(d._id).catch((e) => setError(e.message))}>PDF ↓</SciFiButton>
             <SciFiButton onClick={() => setDetail(null)}>Terug</SciFiButton>
           </div>
         </div>
@@ -777,11 +776,6 @@ const ClientAssessmentsTab = memo(() => {
                   disabled={loadingDetail}
                   size="sm" padding="0.3rem 0.6rem" fontSize="max(9px, 0.4vw)">
                   DETAIL
-                </SciFiButton>
-                <SciFiButton
-                  onClick={() => downloadPdf(a._id).catch((e) => setError(e.message))}
-                  size="sm" padding="0.3rem 0.6rem" fontSize="max(9px, 0.4vw)">
-                  PDF ↓
                 </SciFiButton>
               </div>
             </div>

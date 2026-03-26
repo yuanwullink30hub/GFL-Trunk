@@ -2914,6 +2914,17 @@ const AssessmentResultsModal = ({
               We berekenen niet wie je bent.<br/>We berekenen de fysiologische prijs van wie je probeert te zijn.
             </p>
 
+            {/* Time estimate */}
+            <p style={{
+              fontFamily: "'Figtree', sans-serif",
+              fontSize: '0.75rem',
+              color: 'rgba(168, 85, 247, 0.6)',
+              margin: 0,
+              letterSpacing: '0.05em',
+            }}>
+              ca. 3 min
+            </p>
+
             {/* Error state: AI failed — show continue button */}
             {aiFailed && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>

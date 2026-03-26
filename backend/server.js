@@ -61,6 +61,7 @@ app.post('/api/beta/verify', async (req, res) => {
       timestamp: new Date(),
       code: trimmed,
       valid,
+      label: pk?.label || null,
       ip: req.ip || req.connection?.remoteAddress || '',
       userAgent: (req.get('user-agent') || '').slice(0, 512),
     });

@@ -30,7 +30,7 @@ function buildFeedbackEmail(settings, review) {
   // Always use hardcoded text — ignoring any admin-saved override so deploys stay authoritative
   const bodyText =
     'Welkom bij de orde van 72,<br><br>' +
-    'Jouw feedback is uiterst waardevol en alles wat dit project nog miste, toch kan ik mijn gretigheid niet bedwingen en reik ik nog één laatste keer uit voor jouw hulp.<br>' +
+    'Jouw feedback is uiterst waardevol en het enige wat dit project nog mist, toch kan ik mijn gretigheid niet bedwingen en reik ik nog één laatste keer uit voor jouw hulp.<br>' +
     'De sleutel die jij hebt ontvangen omwille je beheersing mag je delen met de mensen die je kent, maar let op: jouw sleutel- jouw verantwoording.<br><br>' +
     'Hoe meer juiste data hoe beter wij kunnen optimaliseren, daarom:<br>' +
     'zolang de beta fase loopt is alleen het leerling niveau toegankelijk.';
@@ -39,8 +39,9 @@ function buildFeedbackEmail(settings, review) {
     '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#f97316;margin-bottom:8px;">FEEDBACK LINK</div>' +
     '<a href="https://gardenforlife.nl/?page=feedback" style="text-decoration:none;font-size:36px;letter-spacing:6px;">⭐⭐⭐</a>' +
     '</div>';
+  const archName = review.archetypeKey || 'pionier';
   const closingText =
-    'Anyway- pionier, hartelijk dank voor de tijd en attentie!';
+    `Anyway— ${archName}, hartelijk dank voor de tijd en attentie!`;
   const imageBlock = '';
   const attachments = [];
 
@@ -340,7 +341,7 @@ router.post('/review', authOptional, async (req, res) => {
             await transporter.sendMail({
               from: `"Garden For Life" <${config.email.from}>`,
               to: review.email,
-              subject: 'Garden For Life — Bedankt voor je feedback',
+              subject: 'Garden For Life — Deltawerken Data',
               html: confirmHtml,
               attachments: confirmAttachments,
             });

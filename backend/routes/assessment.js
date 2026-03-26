@@ -29,12 +29,11 @@ function esc(str) {
 function buildFeedbackEmail(settings, review) {
   // Always use hardcoded text — ignoring any admin-saved override so deploys stay authoritative
   const bodyText =
-    'Hoogachtende leerling,<br><br>' +
-    'Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet ' +
-    'bedwingen en reik ik nog één laatste keer uit voor jouw hulp.<br>' +
-    'Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data ' +
-    'hoe beter wij kunnen optimaliseren.<br>' +
-    'Zolang de beta-fase loopt is alleen het leerling niveau toegankelijk.';
+    'Welkom bij de orde van 72,<br><br><br>' +
+    'Jouw feedback is uiterst waardevol en alles wat dit project nog miste, toch kan ik mijn gretigheid niet bedwingen en reik ik nog één laatste keer uit voor jouw hulp.<br>' +
+    'De sleutel die jij hebt ontvangen omwille je beheersing mag je delen met de mensen die je kent, maar let op: jouw sleutel- jouw verantwoording.<br><br>' +
+    'Hoe meer juiste data hoe beter wij kunnen optimaliseren, daarom:<br>' +
+    'zolang de beta fase loopt is alleen het leerling niveau toegankelijk.';
   const starsBlock =
     '<div style="margin:18px 0 20px;">' +
     '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#f97316;margin-bottom:8px;">FEEDBACK LINK</div>' +

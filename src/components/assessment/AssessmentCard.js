@@ -245,7 +245,7 @@ const AssessmentCard = ({
 
   // Check if all questions in this card have been answered (at least 1 choice each)
   const isAllAnswered = answeredCount >= totalQuestions;
-  const isLastQuestion = currentSubjectIndex === 4 && currentQuestionIndex === questions.length - 1;
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
   
   // Current question's selection: array of 0-2 answer IDs (dual-pick: 1st & 2nd choice)
   const currentSelections = (() => {
@@ -306,8 +306,11 @@ const AssessmentCard = ({
   // Auto-advance when timer runs out (with or without answer selected)
   useEffect(() => {
     if (hasTimer && timeRemaining !== null && timeRemaining === 0) {
-      // Auto-advance to next question regardless of whether an answer was selected
-      if (onNext) onNext();
+      if (isLastQuestion) {
+        handleSave();
+      } else if (onNext) {
+        onNext();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRemaining]);
@@ -1006,11 +1009,11 @@ const AssessmentCard = ({
             })}
           </div>
 
-          {/* Next + AUTO Buttons — manual advance (not on last question, not all answered) */}
-          {!isAllAnswered && !isLastQuestion && (
+          {/* Next + AUTO Buttons — manual advance (not all answered) */}
+          {!isAllAnswered && (
             <div className="flex items-center justify-center gap-2">
               <button
-                onClick={() => onNext && onNext()}
+                onClick={() => isLastQuestion ? handleSave() : (onNext && onNext())}
                 className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"
                 style={{
                   fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",

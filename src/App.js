@@ -1544,11 +1544,11 @@ const App = () => {
           {isSystem && (
             <div style={{
               position: 'fixed', bottom: '5rem', left: '50%', zIndex: 10001,
-              transform: `translateX(-50%) scaleX(0.98)${resultsModalProgress < 1 ? ` translateY(${(1 - resultsModalProgress) * -14}vh) scale(${0.05 + resultsModalProgress * 0.95})` : ''}`,
-              opacity: resultsModalProgress,
-              pointerEvents: resultsModalProgress > 0.1 ? 'auto' : 'none',
-              visibility: resultsModalProgress > 0.02 ? 'visible' : 'hidden',
-              transition: resultsModalProgress >= 1 ? 'opacity 0.3s' : 'none',
+              transform: `translateX(-50%) scaleX(0.98)${assessmentPhase === 'results' && resultsModalProgress < 1 ? ` translateY(${(1 - resultsModalProgress) * -14}vh) scale(${0.05 + resultsModalProgress * 0.95})` : ''}`,
+              opacity: assessmentPhase === 'results' ? resultsModalProgress : (assessmentPhase === 'hidden' || assessmentPhase === 'intro') ? 1 : 0,
+              pointerEvents: (assessmentPhase === 'results' ? resultsModalProgress > 0.1 : (assessmentPhase === 'hidden' || assessmentPhase === 'intro')) ? 'auto' : 'none',
+              visibility: (assessmentPhase === 'results' ? resultsModalProgress > 0.02 : (assessmentPhase === 'hidden' || assessmentPhase === 'intro')) ? 'visible' : 'hidden',
+              transition: 'opacity 0.3s',
             }}>
               <SciFiButton onClick={handleReset} variant="purple" size="sm">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -2022,11 +2022,11 @@ const App = () => {
               zIndex: 10001,
               bottom: window.innerWidth >= 1280 ? '2rem' : window.innerWidth >= 768 ? '0.5rem' : '5rem',
               left: '50%',
-              transform: `translateX(-50%) scaleX(0.98)${resultsModalProgress < 1 ? ` translateY(${(1 - resultsModalProgress) * -14}vh) scale(${0.05 + resultsModalProgress * 0.95})` : ''}`,
-              opacity: isSystem ? resultsModalProgress : 0,
-              pointerEvents: isSystem && resultsModalProgress > 0.1 ? 'auto' : 'none',
-              visibility: isSystem && resultsModalProgress > 0.02 ? 'visible' : 'hidden',
-              transition: resultsModalProgress >= 1 ? 'opacity 0.3s' : 'none',
+              transform: `translateX(-50%) scaleX(0.98)${assessmentPhase === 'results' && resultsModalProgress < 1 ? ` translateY(${(1 - resultsModalProgress) * -14}vh) scale(${0.05 + resultsModalProgress * 0.95})` : ''}`,
+              opacity: isSystem ? (assessmentPhase === 'results' ? resultsModalProgress : (assessmentPhase === 'hidden' || assessmentPhase === 'intro') ? 1 : 0) : 0,
+              pointerEvents: isSystem && (assessmentPhase === 'results' ? resultsModalProgress > 0.1 : (assessmentPhase === 'hidden' || assessmentPhase === 'intro')) ? 'auto' : 'none',
+              visibility: isSystem && (assessmentPhase === 'results' ? resultsModalProgress > 0.02 : (assessmentPhase === 'hidden' || assessmentPhase === 'intro')) ? 'visible' : 'hidden',
+              transition: 'opacity 0.3s',
             }}>
               <SciFiButton onClick={handleReset} variant="purple" size="sm">
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>

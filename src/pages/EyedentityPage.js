@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState, useCallback } from 'react';
+import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
 import { ARCHETYPES, SHADOW_PAIRS, getExtendedDescription, getArchetypeQuote } from '../data/assessment';
 import { getArchetypeImage } from '../data/assessment/archetypeImages';
 import { getCoreProfile } from '../data/assessment/oceanProfiles';
@@ -489,6 +489,11 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
   }, []);
 
   const [selectedId, setSelectedId] = useState(getTabFromPath);
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+  }, [selectedId]);
 
   useEffect(() => {
     const onPopState = () => setSelectedId(getTabFromPath());
@@ -773,7 +778,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
             }} />
 
             {/* Content Body */}
-            <div style={{
+            <div ref={contentRef} style={{
               flex: 1,
               overflowY: 'auto',
               overflowX: 'hidden',

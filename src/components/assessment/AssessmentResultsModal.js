@@ -2431,7 +2431,7 @@ const AssessmentResultsModal = ({
                     const imgGap = 6;
                     const halfW = (contentW - imgGap) / 2;
                     const availH = H - margin - y - 6;
-                    const maxImgH = Math.min(availH, 65) * 0.9775;
+                    const maxImgH = Math.min(availH, 65) * 0.9775 * 0.85;
 
                     // Helper: circular-clip an image onto a canvas and return data URL
                     const circleClip = (imgEl, size) => {
@@ -4069,7 +4069,7 @@ const AssessmentResultsModal = ({
                     
                     {/* Save & Create Account */}
                     <button
-                      onClick={() => setShowLeaveWarning(true)}
+                      onClick={() => {}}
                       style={{
                         flex: '1 1 0',
                         minWidth: rs.btnMinWidth,
@@ -4083,23 +4083,25 @@ const AssessmentResultsModal = ({
                         fontWeight: 'bold',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        fontSize: rs.btnFont,
-                        cursor: 'pointer',
+                        fontSize: `calc(${rs.btnFont} * 1.2)`,
+                        cursor: 'default',
                         opacity: 1,
                         transition: 'all 0.3s',
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.boxShadow = '0 0 25px rgba(168, 85, 247, 0.6)';
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.boxShadow = 'none';
+                        transform: 'scale(1.2)',
+                        transformOrigin: 'center',
+                        zIndex: 1,
                       }}
                     >
-                      <span style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" />
-                        </svg>
-                        {t('results.createAccount')}
+                      <span style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" />
+                          </svg>
+                          {t('results.createAccount')}
+                        </span>
+                        <span style={{ fontSize: '0.7em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.01em', opacity: 0.85 }}>
+                          Save your profile and track your growth over time.
+                        </span>
                       </span>
                       {/* Sheen effect */}
                       <div style={{

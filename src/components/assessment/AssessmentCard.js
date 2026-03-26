@@ -226,7 +226,7 @@ const AssessmentCard = ({
 
   // Check if all questions in this card have been answered (at least 1 choice each)
   const isAllAnswered = answeredCount >= totalQuestions;
-  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
+  const isLastQuestion = currentSubjectIndex === 4 && currentQuestionIndex === questions.length - 1;
   
   // Current question's selection: array of 0-2 answer IDs (dual-pick: 1st & 2nd choice)
   const currentSelections = (() => {

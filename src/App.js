@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 
 import NebulaBackground from './components/NebulaBackground';
 import NebulaOverlay from './components/NebulaOverlay';
 import { assessmentSubjects } from './pages/assessment/assessmentData';
+import { getQuestions } from './utils/apiClient';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from './contexts/LanguageContext';
@@ -162,17 +163,22 @@ const App = () => {
   const [aiAnalysisReady, setAiAnalysisReady] = useState(false); // True when AI response received
   const [showLoginFromResults, setShowLoginFromResults] = useState(false); // Show login modal after results
   
-  // Assessment data: 5 layers with 36 questions total (72 picks)
-  // assessmentSubjects is imported from './pages/assessment/assessmentData' (36 Dutch questions, 6 answers × 2 picks each)
-  
-  // Get total questions based on level (5 layers × questions per layer)
+  // Assessment data: live from MongoDB, falling back to static data if fetch fails
+  const [liveSubjects, setLiveSubjects] = useState(assessmentSubjects);
+  useEffect(() => {
+    getQuestions()
+      .then((data) => {
+        if (data.seeded && data.layers && data.layers.length > 0) {
+          setLiveSubjects(data.layers);
+        }
+      })
+      .catch(() => {}); // silent fallback to static data
+  }, []);
+
+  // Get total questions based on level — uses actual layer counts from MongoDB
   const getTotalQuestions = (level) => {
-    switch (level) {
-      case 'quick': return 15; // 3 questions per subject
-      case 'standard': return 60; // 12 per layer × 5 layers
-      case 'deep': return 60; // 12 per layer × 5 layers + upload
-      default: return 60;
-    }
+    if (level === 'quick') return 15; // always 3 per subject × 5
+    return liveSubjects.reduce((s, l) => s + (l?.questions?.length ?? 0), 0) || 60;
   };
   
   // Get questions per subject based on level
@@ -335,12 +341,13 @@ const App = () => {
     navigateToSection('main');
   }, [navigateToSection]);
 
-  // Deep-link: /algemene-voorwaarden etc. opens the Eyedentity page with correct tab
+  // Deep-link: ?page=feedback etc. opens the Eyedentity page with correct tab
   useEffect(() => {
     const POLICY_SLUGS = ['algemene-voorwaarden','privacybeleid','cookiebeleid','ai-transparantie','intellectueel-eigendom','gebruiksvoorwaarden-misbruik','profiel','gegevensbehoud-en-verwijdering','verwerkingsregister','feedback'];
     const checkPath = () => {
-      const slug = window.location.pathname.replace(/^\//, '');
-      if (slug && POLICY_SLUGS.includes(slug)) {
+      const params = new URLSearchParams(window.location.search);
+      const page = params.get('page');
+      if (page && POLICY_SLUGS.includes(page)) {
         navigateToSection('menu');
       }
     };
@@ -937,11 +944,11 @@ const App = () => {
       setAssessmentAnswers(prev => prev.slice(0, -1));
     } else if (currentSubjectIndex > 0) {
       setCurrentSubjectIndex(prev => prev - 1);
-      const questionsPerSubject = getQuestionsPerSubject(assessmentLevel);
-      setCurrentQuestionIndex(questionsPerSubject - 1);
+      const prevLayerQCount = assessmentLevel === 'quick' ? 3 : (liveSubjects[currentSubjectIndex - 1]?.questions?.length ?? 12);
+      setCurrentQuestionIndex(prevLayerQCount - 1);
       setAssessmentAnswers(prev => prev.slice(0, -1));
     }
-  }, [currentQuestionIndex, currentSubjectIndex, assessmentLevel]);
+  }, [currentQuestionIndex, currentSubjectIndex, assessmentLevel, liveSubjects]);
   
   // File upload handlers
   const handleAddFile = useCallback((file) => {
@@ -1875,8 +1882,8 @@ const App = () => {
                 }}
               >
                 <AssessmentCard 
-                  questions={assessmentSubjects[currentSubjectIndex].questions.slice(0, getQuestionsPerSubject(assessmentLevel))}
-                  currentSubject={assessmentSubjects[currentSubjectIndex]}
+                  questions={(liveSubjects[currentSubjectIndex]?.questions ?? []).slice(0, getQuestionsPerSubject(assessmentLevel))}
+                  currentSubject={liveSubjects[currentSubjectIndex]}
                   currentSubjectIndex={currentSubjectIndex}
                   currentQuestionIndex={currentQuestionIndex}
                   totalQuestions={getTotalQuestions(assessmentLevel)}
@@ -1885,8 +1892,8 @@ const App = () => {
                   onGoBack={handleGoBack}
                   canGoBack={assessmentAnswers.length > 0}
                   onNext={() => {
-                    const questionsPerSubject = getQuestionsPerSubject(assessmentLevel);
-                    if (currentQuestionIndex < questionsPerSubject - 1) {
+                    const currentLayerQCount = assessmentLevel === 'quick' ? 3 : (liveSubjects[currentSubjectIndex]?.questions?.length ?? 12);
+                    if (currentQuestionIndex < currentLayerQCount - 1) {
                       setCurrentQuestionIndex(prev => prev + 1);
                     } else if (currentSubjectIndex < 4) {
                       setCurrentSubjectIndex(prev => prev + 1);
@@ -1979,113 +1986,7 @@ const App = () => {
               />
             )}
             
-            {/* Login Modal from Results */}
-            {showLoginFromResults && (
-              <div 
-                className="fixed inset-0 flex items-center justify-center z-[250] pointer-events-auto"
-                style={{ background: 'rgba(0, 0, 0, 0.7)' }}
-              >
-                <div 
-                  className="relative w-96 p-6 rounded-lg backdrop-blur-sm"
-                  style={{ background: 'rgba(8, 2, 12, 0.95)' }}
-                >
-                  {/* Corner decorations */}
-                  <div className="absolute -top-0.5 -left-0.5 w-4 h-4" style={{
-                    border: '1.5px solid #ffae00',
-                    borderRadius: '10px 0 0 0',
-                    borderBottom: 'none',
-                    borderRight: 'none'
-                  }}></div>
-                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4" style={{
-                    border: '1.5px solid #ffae00',
-                    borderRadius: '0 10px 0 0',
-                    borderBottom: 'none',
-                    borderLeft: 'none'
-                  }}></div>
-                  <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4" style={{
-                    border: '1.5px solid #ffae00',
-                    borderRadius: '0 0 0 10px',
-                    borderTop: 'none',
-                    borderRight: 'none'
-                  }}></div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4" style={{
-                    border: '1.5px solid #ffae00',
-                    borderRadius: '0 0 10px 0',
-                    borderTop: 'none',
-                    borderLeft: 'none'
-                  }}></div>
-                  
-                  <h2 
-                    className="text-lg font-bold mb-4 tracking-wider uppercase text-center"
-                    style={{
-                      color: '#a855f7',
-                      fontFamily: "'Lexend Mega', sans-serif"
-                    }}
-                  >
-                    {t('results.createAccount')}
-                  </h2>
-                  
-                  <p 
-                    className="text-sm mb-6 text-center leading-relaxed"
-                    style={{ color: 'rgba(255, 254, 240, 0.7)' }}
-                  >
-                    Save your profile and track your growth over time.
-                  </p>
-                  
-                  <div className="space-y-4">
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      className="w-full px-4 py-3 rounded-lg text-sm"
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(168, 85, 247, 0.3)',
-                        color: 'rgba(255, 254, 240, 0.9)',
-                        outline: 'none'
-                      }}
-                    />
-                    <input
-                      type="password"
-                      placeholder="Password"
-                      className="w-full px-4 py-3 rounded-lg text-sm"
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(168, 85, 247, 0.3)',
-                        color: 'rgba(255, 254, 240, 0.9)',
-                        outline: 'none'
-                      }}
-                    />
-                    
-                    <button
-                      onClick={() => {
-                        console.log('Create account');
-                        setShowLoginFromResults(false);
-                      }}
-                      className="w-full py-3 rounded-lg font-bold uppercase tracking-wider transition-all duration-300"
-                      style={{
-                        background: '#a855f7',
-                        color: '#000',
-                        border: '2px solid #a855f7'
-                      }}
-                    >
-                      {t('results.createAccount')}
-                    </button>
-                    
-                    <button
-                      onClick={() => setShowLoginFromResults(false)}
-                      className="w-full py-2 rounded-lg text-sm transition-all duration-300"
-                      style={{
-                        background: 'transparent',
-                        color: 'rgba(255, 254, 240, 0.5)',
-                        border: '1px solid rgba(255, 254, 240, 0.2)'
-                      }}
-                    >
-                      {t('results.close')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+
               
             {/* Back Button - positioned separately from entity transforms */}
             <div style={{

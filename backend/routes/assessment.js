@@ -38,7 +38,7 @@ function buildFeedbackEmail(settings, review) {
   const starsBlock =
     '<div style="margin:18px 0 20px;">' +
     '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#f97316;margin-bottom:8px;">FEEDBACK LINK</div>' +
-    '<a href="https://gardenforlife.nl/feedback" style="text-decoration:none;font-size:36px;letter-spacing:6px;">⭐⭐⭐</a>' +
+    '<a href="https://gardenforlife.nl/?page=feedback" style="text-decoration:none;font-size:36px;letter-spacing:6px;">⭐⭐⭐</a>' +
     '</div>';
   const closingText =
     'Anyway- pionier, hartelijk dank voor de tijd en attentie!<br><br><br>' +

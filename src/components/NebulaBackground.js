@@ -934,7 +934,38 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 `;
 } // end makeNebulaFrag
 
-const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3);  // Desktop: 2 octaves, highp, 3 gas layers
+const NEBULA_FRAG     = makeNebulaFrag(2, 2, 'highp',  3); // Desktop: 2 fbm/ridge octaves, 3 gas layers
+const NEBULA_FRAG_LOW = makeNebulaFrag(1, 1, 'mediump', 2); // Low-end: 1 octave, mediump, 2 gas layers (~50% noise)
+
+/**
+ * Detect low-end GPUs that would struggle with the full-quality shader at 1080p/30fps.
+ * Uses WEBGL_debug_renderer_info (available in Chrome/Edge; masked in Firefox/Safari).
+ * Targets the Intel UHD 620/630 era (2017-2019 laptops) and equivalents as the cutoff.
+ */
+function isLowEndGPU(gl) {
+  const ext = gl.getExtension('WEBGL_debug_renderer_info');
+  if (!ext) return false; // renderer string masked — assume capable, rely on FPS watchdog
+  const renderer = (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '').toLowerCase();
+  if (!renderer) return false;
+
+  // Software rasteriser — always low
+  if (renderer.includes('swiftshader') || renderer.includes('llvmpipe') || renderer.includes('software')) return true;
+
+  // Intel integrated
+  if (/intel/.test(renderer)) {
+    if (/iris\s*xe|arc/.test(renderer))       return false; // Iris Xe / Arc: capable
+    if (/iris\s*plus\s*g7/.test(renderer))    return false; // Iris Plus G7 (Ice Lake): borderline ok
+    if (/hd\s*graphics|uhd/.test(renderer))   return true;  // UHD 620/630, HD 5xx/6xx: use low
+  }
+
+  // AMD integrated (pre-RDNA — Vega 3/6/8 on Ryzen 1000-3000 series)
+  if (/amd|radeon/.test(renderer)) {
+    if (/rx\s*\d|radeon\s*[5-9]\d{2}m|radeon\s*[67-9]\d{2}m/.test(renderer)) return false; // discrete / RDNA ok
+    if (/vega\s*[3-8]\b/.test(renderer)) return true; // old APU Vega
+  }
+
+  return false;
+}
 
 // ─── React Component ────────────────────────────────────────────────────
 const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame = 0 }) => {
@@ -1079,9 +1110,11 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
       return p;
     }
 
-    // Create programs
+    // Create programs — choose quality tier based on GPU capability
+    const lowEnd     = isLowEndGPU(gl);
     const dispProg   = linkProg(VERT, DISP_FRAG);
-    const nebulaProg = linkProg(VERT, NEBULA_FRAG);
+    const nebulaProg = linkProg(VERT, lowEnd ? NEBULA_FRAG_LOW : NEBULA_FRAG);
+    if (lowEnd) console.log('NebulaBackground: low-end GPU detected — quality tier LOW (1 octave, 2 gas layers, mediump)');
     if (!nebulaProg || !dispProg) {
       canvas.style.background = 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)';
       if (onReadyRef.current) onReadyRef.current();

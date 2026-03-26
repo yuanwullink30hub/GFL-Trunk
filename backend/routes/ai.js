@@ -641,8 +641,8 @@ function buildResultsEmailBody(result, recipientEmail) {
   const harmony = result.harmonyScore || 0;
   const level = esc(result.consciousnessLevel || '');
   const feedbackUrl = recipientEmail
-    ? `https://gardenforlife.nl/feedback?email=${encodeURIComponent(recipientEmail)}`
-    : 'https://gardenforlife.nl/feedback';
+    ? `https://gardenforlife.nl/?page=feedback&email=${encodeURIComponent(recipientEmail)}`
+    : 'https://gardenforlife.nl/?page=feedback';
 
   return `<!DOCTYPE html>
 <html lang="nl">

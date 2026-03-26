@@ -252,7 +252,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           opacity: mounted ? gardenOpacity : 0
         }}
       >
-        <TechContainer title="GARDENFORLIFE.NL" variant="purple" className="w-full h-full">
+        <TechContainer title="KOOKEILAND" variant="purple" className="w-full h-full">
           <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-visible">
             {/* Blurred webpage background */}
             <div className="absolute inset-0 bg-gradient-to-br from-green-900/30 to-green-800/20 backdrop-blur-sm" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34, 197, 94, 0.1) 2px, rgba(34, 197, 94, 0.1) 4px)'}}></div>
@@ -294,7 +294,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           opacity: mounted ? gardensOpacity : 0
         }}
       >
-        <TechContainer title="GARDENS" variant="purple" className="w-full h-full">
+        <TechContainer title="DE TUINEN" variant="purple" className="w-full h-full">
           {(() => {
             const gardensData = [
               {

@@ -404,7 +404,7 @@ const FeedbackStandaloneForm = () => {
                 color: i < formData.starRating ? '#f59e0b' : 'rgba(245,158,11,0.2)',
                 padding: '0.15rem', transition: 'color 0.15s, transform 0.15s',
                 transform: i < formData.starRating ? 'scale(1.1)' : 'scale(1)',
-              }}>â˜…</button>
+              }}>{'\u2605'}</button>
             ))}
             {formData.starRating > 0 && (
               <span style={{ marginLeft: '0.5rem', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold' }}>{formData.starRating}/9</span>
@@ -463,24 +463,25 @@ const FeedbackStandaloneForm = () => {
 };
 
 const NAV_ITEMS = [
-  { id: 'profile', slug: 'profiel', title: 'PERSOONLIJK PROFIEL', icon: 'ðŸ§¬', version: 'v1.0' },
-  { id: 'terms', slug: 'algemene-voorwaarden', title: 'ALGEMENE VOORWAARDEN', icon: 'ðŸ“‹', version: 'Beta 1.0' },
-  { id: 'privacy', slug: 'privacybeleid', title: 'PRIVACYBELEID', icon: 'ðŸ”’', version: 'v1.0' },
-  { id: 'cookies', slug: 'cookiebeleid', title: 'COOKIEBELEID', icon: 'ðŸª', version: 'v1.1' },
-  { id: 'ai', slug: 'ai-transparantie', title: 'AI-TRANSPARANTIE', icon: 'ðŸ¤–', version: 'v1.0' },
-  { id: 'ip', slug: 'intellectueel-eigendom', title: 'INTELLECTUEEL EIGENDOM', icon: 'Â©', version: 'v2.0' },
-  { id: 'usage', slug: 'gebruiksvoorwaarden-misbruik', title: 'GEBRUIKSVOORWAARDEN', icon: 'âš–', version: 'v2.1' },
-  { id: 'retention', slug: 'gegevensbehoud-en-verwijdering', title: 'GEGEVENSBEHOUD & VERWIJDERING', icon: 'ðŸ—‚', version: 'v1.0' },
-  { id: 'register', slug: 'verwerkingsregister', title: 'VERWERKINGSREGISTER', icon: 'ðŸ“œ', version: 'v2.0' },
-  { id: 'feedback', slug: 'feedback', title: 'FEEDBACK', icon: 'â­', version: 'Beta' },
+  { id: 'profile', slug: 'profiel', title: 'PERSOONLIJK PROFIEL', icon: '\u{1F9EC}', version: 'v1.0' },
+  { id: 'terms', slug: 'algemene-voorwaarden', title: 'ALGEMENE VOORWAARDEN', icon: '\u{1F4CB}', version: 'Beta 1.0' },
+  { id: 'privacy', slug: 'privacybeleid', title: 'PRIVACYBELEID', icon: '\u{1F512}', version: 'v1.0' },
+  { id: 'cookies', slug: 'cookiebeleid', title: 'COOKIEBELEID', icon: '\u{1F36A}', version: 'v1.1' },
+  { id: 'ai', slug: 'ai-transparantie', title: 'AI-TRANSPARANTIE', icon: '\u{1F916}', version: 'v1.0' },
+  { id: 'ip', slug: 'intellectueel-eigendom', title: 'INTELLECTUEEL EIGENDOM', icon: '\u{00A9}', version: 'v2.0' },
+  { id: 'usage', slug: 'gebruiksvoorwaarden-misbruik', title: 'GEBRUIKSVOORWAARDEN', icon: '\u{2696}', version: 'v2.1' },
+  { id: 'retention', slug: 'gegevensbehoud-en-verwijdering', title: 'GEGEVENSBEHOUD & VERWIJDERING', icon: '\u{1F5C2}', version: 'v1.0' },
+  { id: 'register', slug: 'verwerkingsregister', title: 'VERWERKINGSREGISTER', icon: '\u{1F4DC}', version: 'v2.0' },
+  { id: 'feedback', slug: 'feedback', title: 'FEEDBACK', icon: '\u{2B50}', version: 'Beta' },
 ];
 
 const SLUG_TO_ID = Object.fromEntries(NAV_ITEMS.map(item => [item.slug, item.id]));
 
 const EyedentityPage = memo(({ isVisible, onBack }) => {
   const getTabFromPath = useCallback(() => {
-    const slug = window.location.pathname.replace(/^\//, '');
-    if (slug && SLUG_TO_ID[slug]) return SLUG_TO_ID[slug];
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get('page');
+    if (page && SLUG_TO_ID[page]) return SLUG_TO_ID[page];
     return 'profile';
   }, []);
 
@@ -495,7 +496,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
   const handleTabClick = useCallback((id) => {
     const item = NAV_ITEMS.find(i => i.id === id);
     setSelectedId(id);
-    window.history.pushState(null, '', `/${item?.slug || 'profiel'}`);
+    window.history.pushState(null, '', `/?page=${item?.slug || 'profiel'}`);
   }, []);
 
   const selectedItem = NAV_ITEMS.find(item => item.id === selectedId);
@@ -601,7 +602,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
             <SciFiButton onClick={onBack} variant="purple" size="md">
-              â† TERUG
+              ← TERUG
             </SciFiButton>
           </div>
         </div>

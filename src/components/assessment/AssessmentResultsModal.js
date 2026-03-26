@@ -2502,10 +2502,9 @@ const AssessmentResultsModal = ({
             y = margin;
             // Fixed heading in orange
             sectionHeading('De volledige AI prompt', orange);
-            // Advisory tip — displayed in the PDF, never part of the prompt sent to AI
-            const tipText = 'Als je gebruik maakt van Claude of Gemini raden we je aan om het volledige rapport als bijlage te prompten, benoem nadrukkelijk dat het de afbeeldingen en tabellen moet analyseren.';
-            pdf.setFontSize(8); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(251, 191, 36);
-            pdf.splitTextToSize(tipText, contentW - 4).forEach(line => { pdf.text(line, margin + 2, y); y += 4.5; });
+            // Instruction tip in purple
+            pdf.setFontSize(8); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...purple);
+            pdf.splitTextToSize('Kopieer deze prompt en configureer je ai agent. Voeg de PDF toe als bijlage voor de beste sparringspartner.', contentW - 4).forEach(line => { pdf.text(line, margin + 2, y); y += 4.5; });
             y += 2;
             // Agent prompt: strip intro text + first ## heading (KERN DISCLAIMER), show its body, then rest with headings
             if (agentSection) {
@@ -2599,6 +2598,203 @@ const AssessmentResultsModal = ({
           const bannerData = `data:${siteBanner.imageMimeType};base64,${siteBanner.imageBase64}`;
           pdf.addImage(bannerData, imgFormat, imgX, imgY, imgSizeMm, imgSizeMm);
         } catch { /* skip banner image on error */ }
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // PROFIEL DATA PAGE(S) — Machine-readable data for AI agents
+      // Placed AFTER footer as absolute last content before pruning.
+      // The user doesn't read this; external AI models do when the
+      // PDF is uploaded as attachment.
+      // ══════════════════════════════════════════════════════════════
+      {
+        pdf.addPage(); paintBg(); markPage();
+        y = margin;
+
+        const mono = 7;
+        const monoH = 3.5;
+
+        const POS = { JUDGE:1,LOVER:2,CAREGIVER:3,INNOCENT:4,EXPLORER:5,OUTLAW:6,TRICKSTER:7,SAGE:8,ARTIST:9,MAGICIAN:10,HERO:11,RULER:12 };
+        const NET = { RULING:'CEN Dominantie',RELATIONAL:'Limbic Coupling',SEEKER:'Hoge Openness',CHAOS:'Salience Network',ABSTRACT:'DMN Hyper-connectie',AGENCY:'Extraversie/Wilskracht' };
+        const GA = { RULING:['JUDGE','RULER'],RELATIONAL:['LOVER','CAREGIVER'],SEEKER:['INNOCENT','EXPLORER'],CHAOS:['OUTLAW','TRICKSTER'],ABSTRACT:['SAGE','ARTIST'],AGENCY:['MAGICIAN','HERO'] };
+
+        const dm = {}; (result.archetypeDetails || []).forEach(d => { dm[(d.key || '').toUpperCase()] = d; });
+        const sgm = {}; (result.subgroups || []).forEach(sg => { sgm[(sg.group || '').toUpperCase()] = sg; });
+
+        const mk = (result.mainArchetype || '').toUpperCase();
+        const sk = (result.secondaryArchetype || result._secondaryKey || '').toUpperCase();
+        const shk = (result.shadowPartner || '').toUpperCase();
+        const bk = (result.blindspotPartner || '').toUpperCase();
+        const oc = result.oceanScores || {};
+        const cogTri = COG_TRIANGLES[mk];
+        const counterTriId = cogTri ? ({ 1:3, 2:4, 3:1, 4:2 })[cogTri.id] : null;
+        const counterTri = counterTriId ? ALL_COG_TRIANGLES.find(t => t.id === counterTriId) : null;
+        const currentExt = (result.allSupportArchetypes || []).find(
+          sa => (sa.group || '').toUpperCase() === (result.supportGroup || '').toUpperCase()
+        );
+        const cp = result.coreProfile || {};
+        const eo = result.extendedOcean || {};
+
+        let natTotal = 0, culTotal = 0;
+        (result.subgroups || []).forEach(sg => {
+          natTotal += (sg.leftNature || 0) + (sg.rightNature || 0);
+          culTotal += (sg.leftCulture || 0) + (sg.rightCulture || 0);
+        });
+        const authPct = natTotal + culTotal > 0 ? Math.round(natTotal / (natTotal + culTotal) * 100) : 50;
+        const mainTot = dm[mk]?.total || 0;
+        const shadTot = dm[shk]?.total || 0;
+        const polGap = mainTot > 0 ? Math.round(Math.abs(mainTot - shadTot) / mainTot * 100) : 0;
+        const polCat = polGap > 60 ? 'Hoge Polarisatie' : polGap > 30 ? 'Matig' : 'Hoge Individuatie';
+
+        let sGroup = '', sScore = 0;
+        Object.entries(GA).forEach(([gk, [a1, a2]]) => {
+          const s = (dm[a1]?.total || 0) + (dm[a2]?.total || 0);
+          if (s > sScore) { sScore = s; sGroup = gk; }
+        });
+        const avgS = (result.archetypeDetails || []).length > 0
+          ? (result.archetypeDetails || []).reduce((s, d) => s + (d.total || 0), 0) / 12 : 0;
+        const [hw1, hw2] = GA[sGroup] || ['',''];
+        const hwRes = (dm[hw1]?.total || 0) > avgS && (dm[hw2]?.total || 0) > avgS
+          ? `Beide leden van ${sGroup} zijn verhoogd (${dm[hw1]?.total || 0} + ${dm[hw2]?.total || 0} > gem. ${Math.round(avgS)})`
+          : `${sGroup} groep heeft de hoogste concentratie`;
+        const yCogPts = dm[mk]?.yellow_cog || 0;
+        const cfDesc = yCogPts > 4
+          ? `Yellow bleed actief (${yCogPts}pt) via cognitieve driehoek ${cogTri?.mode || ''}`
+          : `Lage cognitieve driehoek activatie (${yCogPts}pt)`;
+
+        const mLine = (text, color = white) => {
+          ensureSpace(monoH);
+          pdf.setFontSize(mono); pdf.setFont('courier', 'normal'); pdf.setTextColor(...color);
+          const lines = pdf.splitTextToSize(String(text), contentW);
+          lines.forEach(l => { pdf.text(l, margin, y); y += monoH; });
+        };
+        const mBold = (text, color = green) => {
+          ensureSpace(monoH + 1);
+          pdf.setFontSize(mono); pdf.setFont('courier', 'bold'); pdf.setTextColor(...color);
+          const lines = pdf.splitTextToSize(String(text), contentW);
+          lines.forEach(l => { pdf.text(l, margin, y); y += monoH; });
+        };
+        const mGap = () => { y += monoH * 0.6; };
+        const SEP = '='.repeat(63);
+        const dash = (label) => `-- ${label} --`;
+
+        mBold(SEP, green);
+        mBold('PROFIEL DATA VOOR AI VERWERKING', green);
+        mLine('Deze sectie is machineleesbaar en bedoeld als primaire databron', dimWhite);
+        mLine('voor externe AI-agents. Upload het volledige rapport als bijlage.', dimWhite);
+        mBold(SEP, green);
+        mGap();
+
+        mBold(dash('IDENTITEIT'), green);
+        mLine(`Extended Archetype: ${result.extendedName || 'N/A'}`);
+        mLine(`Main: ${result.mainName || ''} (${POS[mk] || '?'}) | Groep: ${ARCHETYPE_TO_GROUP[mk] || ''} | Netwerk: ${NET[ARCHETYPE_TO_GROUP[mk]] || ''}`);
+        mLine(`Support: ${result.secondaryName || ''} (${POS[sk] || '?'}) | Groep: ${result.supportGroup || ''}`);
+        mLine(`Shadow: ${result.shadowName || ''} (${POS[shk] || '?'}) | 180 tegenpool van Main`);
+        mLine(`Blindspot: ${result.blindspotName || ''} (${POS[bk] || '?'}) | 180 tegenpool van Support`);
+        mLine(`Harmony Match: ${eo.harmony ? 'Ja' : 'Nee'}`);
+        mGap();
+
+        mBold(dash('SCORES (12-PUNTS WIEL)'), green);
+        [
+          ['Judge','JUDGE',1],['Lover','LOVER',2],['Caregiver','CAREGIVER',3],
+          ['Innocent','INNOCENT',4],['Explorer','EXPLORER',5],['Outlaw','OUTLAW',6],
+          ['Trickster','TRICKSTER',7],['Sage','SAGE',8],['Artist','ARTIST',9],
+          ['Magician','MAGICIAN',10],['Hero','HERO',11],['Ruler','RULER',12],
+        ].forEach(([name, key, pos]) => {
+          const d = dm[key] || {};
+          const core = (d.nature_core || 0) + (d.culture_core || 0);
+          const bleed = (d.total || 0) - core;
+          mLine(`${(name + '(' + pos + '):').padEnd(16)} ${d.total || 0} (Core: ${core} | Bleed: ${bleed})`);
+        });
+        mGap();
+
+        mBold(dash('NATURE / CULTURE VERDELING PER GROEP'), green);
+        ['RULING','RELATIONAL','SEEKER','CHAOS','ABSTRACT','AGENCY'].forEach(gk => {
+          const sg = sgm[gk] || {};
+          const n = (sg.leftNature || 0) + (sg.rightNature || 0);
+          const c = (sg.leftCulture || 0) + (sg.rightCulture || 0);
+          mLine(`${(gk.charAt(0) + gk.slice(1).toLowerCase() + ':').padEnd(12)} N${n} / C${c} = ${n + c}/36`);
+        });
+        mGap();
+
+        mBold(dash('AFGELEIDE INDICES'), green);
+        mLine(`Authenticity Index: ${natTotal}/72 Nature (${authPct}%)`);
+        mLine(`Polarization Index: ${mainTot} (Main) - ${shadTot} (Shadow) = gap ${polGap}% -> ${polCat}`);
+        mLine(`Totaal Deltawerken Datapunten: ${result.totalScore || 0} / 792`);
+        mGap();
+
+        mBold(dash('OCEAN PROFIEL (MODEL-AFGELEID)'), green);
+        mLine(`Openheid:       ${Math.round(oc.O || 0)}/100`);
+        mLine(`Ordelijkheid:   ${Math.round(oc.C || 0)}/100`);
+        mLine(`Extraversie:    ${Math.round(oc.E || 0)}/100`);
+        mLine(`Meegaandheid:   ${Math.round(oc.A || 0)}/100`);
+        mLine(`Neuroticisme:   ${Math.round(oc.N || 0)}/100`);
+        mGap();
+
+        mBold(dash('OCEAN PROFIEL (EXTERN GEUPLOAD)'), green);
+        if (uploadedOceanScores) {
+          mLine(`Openheid:       ${Math.round(uploadedOceanScores.O || 0)}/100`);
+          mLine(`Ordelijkheid:   ${Math.round(uploadedOceanScores.C || 0)}/100`);
+          mLine(`Extraversie:    ${Math.round(uploadedOceanScores.E || 0)}/100`);
+          mLine(`Meegaandheid:   ${Math.round(uploadedOceanScores.A || 0)}/100`);
+          mLine(`Neuroticisme:   ${Math.round(uploadedOceanScores.N || 0)}/100`);
+        } else {
+          mLine('Geen extern OCEAN-profiel aangeleverd.', dimWhite);
+        }
+        mGap();
+
+        mBold(dash('COGNITIEVE DRIEHOEK (YELLOW)'), green);
+        if (cogTri) {
+          const triMembers = Array.isArray(cogTri.members) ? cogTri.members.join(' \u00b7 ') : (cogTri.members || '');
+          mLine(`Actieve Driehoek: ${cogTri.mode} (Driehoek ${cogTri.id})`);
+          mLine(`Partners: ${triMembers}`);
+          mLine(`Netwerken: ${cogTri.networks || ''}`);
+          mLine(`Superkracht: ${cogTri.tagline || ''}`);
+          const weakParts = (cogTri.high || '').split(/maar kan ook\s*/i);
+          mLine(`Cognitieve Val: ${weakParts.length > 1 ? weakParts[1].replace(/^leiden tot\s*/i, '').trim() : 'Zie analyse'}`);
+          if (counterTri) mLine(`Groeirichting: ${counterTri.mode} (Driehoek ${counterTri.id})`);
+        } else {
+          mLine('Driehoekdata niet beschikbaar.', dimWhite);
+        }
+        mGap();
+
+        mBold(dash('HARDWARE SIGNALEN'), green);
+        mLine(`Sterkste Groep: ${sGroup} (${sScore})`);
+        mLine(`Hardware Resonantie: ${hwRes}`);
+        mLine(`CultureForce Signaal: ${cfDesc}`);
+        mGap();
+
+        mBold(dash('EXTENDED ARCHETYPE PROFIEL'), green);
+        mLine(`Gift: ${currentExt?.gift || result.mainPositive || 'N/A'}`);
+        mLine(`Curse / Trigger: ${currentExt?.shadow || result.mainShadowTrait || 'N/A'}`);
+        mLine(`Levensles: "${result.levensles || 'N/A'}"`);
+        mGap();
+
+        mBold(dash('MAIN ARCHETYPE DIEPTE'), green);
+        mLine(`Gift (Neurale Superkracht): ${result.mainPositive || cp.workplaceSuperpower || 'N/A'}`);
+        mLine(`Curse (Paradoxale Schaduw): ${result.mainShadowTrait || 'N/A'}`);
+        mLine(`Superkracht Werkvloer: ${cp.workplaceSuperpower || 'N/A'}`);
+        mLine(`Conflictstijl: ${cp.conflictStyle || 'N/A'}`);
+        mLine(`Relatiepatroon: ${cp.relationshipPattern || 'N/A'}`);
+        mLine(`Neuroticisme Trigger: ${eo.neuroticismTrigger || 'N/A'}`);
+        mLine(`Individuatiepad: ${cp.individuationPath || 'N/A'}`);
+        mGap();
+
+        mBold(dash('SHADOW INTEGRATIE'), green);
+        mLine(`Shadow Archetype: ${result.shadowName || 'N/A'}`);
+        mLine(`Integration Path: ${result.shadowDescription || 'Zie AI analyse sectie'}`);
+        mGap();
+
+        mBold(dash('BLINDSPOT'), green);
+        mLine(`Blindspot Archetype: ${result.blindspotName || 'N/A'}`);
+        mLine(`Kerngedrag: ${result.blindspotDescription || 'Zie AI analyse sectie'}`);
+        mLine(`Integration Path: ${result.blindspotTension || 'Zie AI analyse sectie'}`);
+        mGap();
+
+        mBold(SEP, green);
+        mGap();
+        mLine('Dit blok is automatisch gegenereerd door het Garden For Life', dimWhite);
+        mLine('Assessment System. Het Deltawerken-framework is een conceptueel', dimWhite);
+        mLine('zelfreflectiemodel, geen klinisch diagnostisch systeem.', dimWhite);
       }
 
       // ── Prune any empty pages (pages that never received content) ──

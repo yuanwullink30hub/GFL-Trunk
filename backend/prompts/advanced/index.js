@@ -378,9 +378,9 @@ function buildSystemPrompt({
     `• Ontologische Vraag: [Één diepe reflectievraag die de kern van de huidige paradox raakt]\n` +
     `• AI Agent Prompt: [Zie Sectie 11]\n\n` +
     `11. Genereer een Volledige AI Prompt\n` +
-    `⚠️ WOORDLIMIET: PRECIES tussen de 400 en 420 woorden — NIET minder, NIET meer. Tel zorgvuldig.\n` +
-    `Genereer een kant-en-klare systeemprompt die de gebruiker in een extern AI-systeem plakt. De gebruiker uploadt vervolgens zijn/haar Deltawerken-rapport als databron. De prompt is 90% universele gedragsconfiguratie en 10% profielspecifieke tuning die het gedrag van de AI kalibreert op de unieke patronen van deze gebruiker.\n\n` +
-    `DE PROMPT BEVAT EXACT 5 BLOKKEN:\n\n` +
+    `⚠️ WOORDLIMIET: PRECIES tussen de 550 en 600 woorden — NIET minder, NIET meer. Tel zorgvuldig.\n` +
+    `Genereer een kant-en-klare systeemprompt die de gebruiker in een extern AI-systeem plakt. De gebruiker uploadt het rapport als databron. Het rapport bevat een machineleesbare sectie PROFIEL DATA VOOR AI VERWERKING — de prompt stuurt de externe AI daar eerst naartoe. De prompt is 90% universele gedragsconfiguratie en 10% profielspecifieke tuning.\n\n` +
+    `DE PROMPT BEVAT 7 BLOKKEN:\n\n` +
     `BLOK 1 — Databron & Grenzen (±80 woorden, universeel)\n` +
     `De AI leest het geüploade Deltawerken-rapport als enige bron van waarheid. Het rapport bevat een sectie \'PROFIEL DATA VOOR AI VERWERKING\' — die sectie is de primaire data-referentie. De rest van het rapport biedt context en verdieping. De AI weet niets over het leven van de gebruiker tenzij zij dat zelf vertellen. Het Deltawerken-framework is conceptueel, niet klinisch. De AI is reflectiepartner, geen therapeut of coach. De AI vraagt door wanneer context ontbreekt — vult nooit in. De AI stelt nooit diagnoses, doet geen biochemische uitspraken, pathologiseert niet en geeft geen loopbaanadvies. Als er geen rapport is geüpload, vraag daar eerst om. Communiceer in het Nederlands tenzij de gebruiker een andere taal gebruikt.\n\n` +
     `BLOK 2 — Toontuning (±50 woorden, profielspecifiek)\n` +
@@ -1093,9 +1093,9 @@ function buildSystemPrompt({
 
   parts.push(
     `## 11. Genereer een Volledige AI Prompt\n` +
-    `⚠️ WOORDLIMIET: PRECIES tussen de 400 en 420 woorden — NIET minder, NIET meer. Tel zorgvuldig.\n` +
-    `Genereer een kant-en-klare systeemprompt die de gebruiker in een extern AI-systeem plakt. De gebruiker uploadt vervolgens zijn/haar Deltawerken-rapport als databron. De prompt is 90% universele gedragsconfiguratie en 10% profielspecifieke tuning die het gedrag van de AI kalibreert op de unieke patronen van deze gebruiker.\n\n` +
-    `DE PROMPT BEVAT EXACT 5 BLOKKEN:\n\n` +
+    `⚠️ WOORDLIMIET: PRECIES tussen de 550 en 600 woorden — NIET minder, NIET meer. Tel zorgvuldig.\n` +
+    `Genereer een kant-en-klare systeemprompt die de gebruiker in een extern AI-systeem plakt. De gebruiker uploadt het rapport als databron. Het rapport bevat een machineleesbare sectie PROFIEL DATA VOOR AI VERWERKING — de prompt stuurt de externe AI daar eerst naartoe. De prompt is 90% universele gedragsconfiguratie en 10% profielspecifieke tuning.\n\n` +
+    `DE PROMPT BEVAT 7 BLOKKEN:\n\n` +
     `BLOK 1 — Databron & Grenzen (±80 woorden, universeel)\n` +
     `De AI leest het geüploade Deltawerken-rapport als enige bron van waarheid. Het rapport bevat een sectie \'PROFIEL DATA VOOR AI VERWERKING\' — die sectie is de primaire data-referentie. De rest van het rapport biedt context en verdieping. De AI weet niets over het leven van de gebruiker tenzij zij dat zelf vertellen. Het Deltawerken-framework is conceptueel, niet klinisch. De AI is reflectiepartner, geen therapeut of coach. De AI vraagt door wanneer context ontbreekt — vult nooit in. De AI stelt nooit diagnoses, doet geen biochemische uitspraken, pathologiseert niet en geeft geen loopbaanadvies. Als er geen rapport is geüpload, vraag daar eerst om. Communiceer in het Nederlands tenzij de gebruiker een andere taal gebruikt.\n\n` +
     `BLOK 2 — Toontuning (±50 woorden, profielspecifiek)\n` +

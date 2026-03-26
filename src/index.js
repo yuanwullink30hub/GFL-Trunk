@@ -6,7 +6,15 @@ import './index.css';
 
 // Suppress benign ResizeObserver loop error (Recharts / R3F)
 const ro = 'ResizeObserver loop';
-window.addEventListener('error', e => { if (e.message?.includes(ro)) e.stopImmediatePropagation(); });
+const hideOverlay = () => {
+  const overlay = document.getElementById('webpack-dev-server-client-overlay');
+  const overlayDiv = document.getElementById('webpack-dev-server-client-overlay-div');
+  if (overlay) overlay.style.display = 'none';
+  if (overlayDiv) overlayDiv.style.display = 'none';
+};
+window.addEventListener('error', e => {
+  if (e.message?.includes(ro)) { e.stopImmediatePropagation(); setTimeout(hideOverlay, 0); }
+});
 window.addEventListener('unhandledrejection', e => { if (e.reason?.message?.includes(ro)) e.stopImmediatePropagation(); });
 
 const rootElement = document.getElementById('root');

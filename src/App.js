@@ -1980,9 +1980,31 @@ const App = () => {
                   // TODO: Generate and download PDF
                 }}
                 onCreateAccount={() => {
-                  console.log('Download PDF and create account:', layerAnswers);
-                  // TODO: Generate and download PDF
-                  setShowLoginFromResults(true);
+                  // Phase 1 — collapse modal toward entity (700ms ease-in: slow out, fast into entity)
+                  const collapseStart = performance.now();
+                  const COLLAPSE_DURATION = 700;
+                  const animateCollapse = (now) => {
+                    const elapsed = now - collapseStart;
+                    const progress = Math.min(elapsed / COLLAPSE_DURATION, 1);
+                    const eased = progress * progress * progress; // ease-in cubic
+                    setResultsModalProgress(1 - eased);
+                    if (progress < 1) {
+                      requestAnimationFrame(animateCollapse);
+                    } else {
+                      setResultsModalProgress(0);
+                      // Phase 2 — navigate to login. Keep assessmentPhase='results' so the
+                      // invisible modal stays mounted — prevents the expanded pyramid flashing.
+                      setShowLoginFromResults(true);
+                      navigateToSection('login');
+                      // Phase 3 — reset exactly when map arrives at login position (+200ms buffer).
+                      // MAP_TRANSITION_DURATION (1800ms) is the const used by navigateToSection.
+                      setTimeout(() => {
+                        resetAssessmentState(); // phase→'hidden', all scores/answers/progress reset
+                        setCurrentFrame(0);     // rewind HoloEarth back to frame 0, off-screen
+                      }, MAP_TRANSITION_DURATION + 200);
+                    }
+                  };
+                  requestAnimationFrame(animateCollapse);
                 }}
                 t={t}
               />

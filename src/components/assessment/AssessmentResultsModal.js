@@ -1088,7 +1088,7 @@ const AssessmentResultsModal = ({
       );
       y += 3;
       writeWrapped(
-        '\u2018Cells within Cells Interlinked\u2019 is het hi\u00EBrarchische model dat de ontologische lagen relationeert naar de maatschappij: van fysiologische basisbehoeften (verwant aan Maslows behoeftehi\u00EBrarchie) via zelfactualisatie en collectief geheugen naar intimiteit en transcendentie. Dit model verklaart waarom onze test niet alleen persoonlijkheid meet, maar de ontwikkelingslaag als dynamiek tussen natuurlijke aanleg en culturele conditionering blootlegt. \u2014 een principe dat Jean Piaget beschreef als cognitieve stadia en dat Carl Jung benaderde als individuatie.',
+        '\u2018Cells within Cells Interlinked\u2019 (Zie pagina 6) is het hi\u00EBrarchische model dat de ontologische lagen relationeert naar de maatschappij: van fysiologische basisbehoeften (verwant aan Maslows behoeftehi\u00EBrarchie) via zelfactualisatie en collectief geheugen naar intimiteit en transcendentie. Dit model verklaart waarom onze test niet alleen persoonlijkheid meet, maar de ontwikkelingslaag als dynamiek tussen natuurlijke aanleg en culturele conditionering blootlegt. \u2014 een principe dat Jean Piaget beschreef als cognitieve stadia en dat Carl Jung benaderde als individuatie.',
         margin + 2, y, contentW - 4, 8.5, white
       );
       y += 6;
@@ -1127,15 +1127,6 @@ const AssessmentResultsModal = ({
         const dwX = margin + (contentW - dwW) / 2;
         const dwY = yAfterBronText + (vvnsStartY - yAfterBronText - dwH) / 2 - 10;
         pdf.addImage(deltawerkenImg, 'PNG', dwX, dwY, dwW, dwH);
-        // Top-right corner label
-        pdf.setFontSize(7.5);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(...mutedGray);
-        const cwcCornerLabel = 'Cells within Cells';
-        pdf.text(cwcCornerLabel, dwX + dwW - pdf.getTextWidth(cwcCornerLabel), dwY + 4.5);
-        // Centered caption below image
-        const cwcCaption = 'Cells within cells interlinked (Zie pagina 6)';
-        pdf.text(cwcCaption, dwX + (dwW - pdf.getTextWidth(cwcCaption)) / 2, dwY + dwH + 4.5);
       } catch {
         // image load failed
       }
@@ -1384,13 +1375,18 @@ const AssessmentResultsModal = ({
         const cellsAvail = H - margin - y - 80; // reserve ~80mm for Wetenschappelijke Context + refs below
         const cellsH = Math.min(cellsNaturalH, cellsAvail, 55);
         const cellsW = (cellsImgEl.naturalWidth / cellsImgEl.naturalHeight) * cellsH;
-        // draw 1.406x larger (1.48 * 0.95), anchored at bottom edge (grows upward + sideways), shifted right
-        const cellsScale = 1.406;
-        const drawH = cellsH * cellsScale;
-        const drawW = cellsW * cellsScale;
+        // draw scaled: +5% width, -5% height vs 1.406 base, anchored at bottom edge, shifted right
+        const drawH = cellsH * 1.406 * 0.95;
+        const drawW = cellsW * 1.406 * 1.05;
         const cellsX = margin + (contentW - drawW) / 2 + 35; // +35mm to the right
         const cellsY = y - (drawH - cellsH); // shift up so bottom stays at y + cellsH
         pdf.addImage(cellsImg, 'PNG', cellsX, cellsY, drawW, drawH);
+        // Top-right corner label
+        pdf.setFontSize(7.5);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...mutedGray);
+        const cwcLabel = 'Cells within Cells';
+        pdf.text(cwcLabel, cellsX + drawW - pdf.getTextWidth(cwcLabel), cellsY + 4.5);
         y += cellsH;
       } catch {
         y += 0;
@@ -1584,7 +1580,7 @@ const AssessmentResultsModal = ({
       // ── SHADOW (new page) ──
       await justifiedPage(async (gap) => {
       if (result.shadowPartner) {
-        sectionHeading(`De Schaduw — Archetype: ${result.shadowNameEn} (180\u00B0 tegenpool van ${result.mainNameEn})`, purple);
+        sectionHeading(`De Schaduw — ${result.shadowNameEn}`, purple);
         if (result.mainShadowTension) {
           writeWrapped(result.mainShadowTension, margin + 2, y, contentW - 4, 8.5, white);
           y += 2;
@@ -1601,7 +1597,7 @@ const AssessmentResultsModal = ({
 
       // ── BLINDSPOT ──
       if (result.blindspotPartner) {
-        sectionHeading(`De Blindspot — Archetype: ${result.blindspotNameEn} (180\u00B0 tegenpool van ${result.secondaryNameEn || result.supportArchetype})`, red);
+        sectionHeading(`De Blindspot — ${result.blindspotNameEn}`, red);
         if (result.blindspotDescription) {
           writeWrapped(result.blindspotDescription, margin + 2, y, contentW - 4, 8.5, white);
           y += 2;
@@ -2642,8 +2638,15 @@ const AssessmentResultsModal = ({
   return (
     <div 
       ref={outerRef}
-      className="fixed inset-0 flex items-center justify-center pointer-events-auto"
-      style={{ background: 'transparent', zIndex: 9999 }}
+      className="fixed inset-0 flex items-center justify-center"
+      style={{
+        background: 'transparent',
+        zIndex: 9999,
+        pointerEvents: resultsModalProgress > 0.05 ? 'auto' : 'none',
+        // visibility:hidden completely removes backdrop-filter from the GPU compositing
+        // pipeline — prevents the frosted-glass layer bleeding through at opacity~0
+        visibility: resultsModalProgress < 0.02 ? 'hidden' : 'visible',
+      }}
       onWheelCapture={handleWheelCapture}
     >
       {resultsLoadingProgress < 1 ? (
@@ -2758,7 +2761,8 @@ const AssessmentResultsModal = ({
         <div style={{
           position: 'relative',
           opacity: resultsModalProgress,
-          animation: 'resultsModalFadeIn 0.6s ease-out',
+          transform: `translate(0, ${(1 - resultsModalProgress) * -14}vh) scale(${0.05 + resultsModalProgress * 0.95})`,
+          transformOrigin: 'center center',
           width: '100%',
           maxWidth: rs.modalMaxWidth,
         }}>
@@ -2892,7 +2896,7 @@ const AssessmentResultsModal = ({
                     }}>
                       {result.name}
                     </h1>
-                    {result.extendedSubtitle && (
+                    {result.mainName && result.secondaryName && (
                       <p style={{
                         fontSize: '0.9rem',
                         color: 'rgba(249, 115, 22, 0.9)',
@@ -2902,7 +2906,7 @@ const AssessmentResultsModal = ({
                         textTransform: 'uppercase',
                         marginBottom: '0.5rem',
                       }}>
-                        {result.extendedSubtitle}
+                        {result.mainName} + {result.secondaryName}
                       </p>
                     )}
                     <p style={{
@@ -2913,19 +2917,6 @@ const AssessmentResultsModal = ({
                     }}>
                       "{result.levensles}"
                     </p>
-                    {result.secondaryName && (
-                      <p style={{
-                        fontSize: '0.85rem',
-                        color: 'rgba(29, 153, 4, 0.7)',
-                        fontFamily: "'Rajdhani', sans-serif",
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.15em',
-                        marginTop: '0.75rem',
-                      }}>
-                        {result.mainName} + {result.secondaryName}
-                      </p>
-                    )}
                   </div>
                 </div>
 

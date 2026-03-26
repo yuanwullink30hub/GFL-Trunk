@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import AssessmentCard from './AssessmentCard';
-import { assessmentSubjects } from '../../pages/assessment/assessmentData';
+
 
 /**
  * AssessmentLayerPanel - Renders MULTIPLE layer panels that persist after saving
@@ -18,21 +18,15 @@ import { assessmentSubjects } from '../../pages/assessment/assessmentData';
  */
 
 // Layer configuration matching pyramid (bottom to top)
-// Colors synced with assessmentData.js canonical source
 const LAYERS = [
-  { nameKey: "zelf", color: assessmentSubjects[0]?.color || "#22c55e", descKey: "zelf" },
-  { nameKey: "ander", color: assessmentSubjects[1]?.color || "#3b82f6", descKey: "ander" },
-  { nameKey: "massa", color: assessmentSubjects[2]?.color || "#a855f7", descKey: "massa" },
-  { nameKey: "wereld", color: assessmentSubjects[3]?.color || "#ef4444", descKey: "wereld" },
-  { nameKey: "mysterie", color: assessmentSubjects[4]?.color || "#f97316", descKey: "mysterie" },
+  { nameKey: "zelf",     color: "#22c55e", descKey: "zelf" },
+  { nameKey: "ander",   color: "#3b82f6", descKey: "ander" },
+  { nameKey: "massa",   color: "#a855f7", descKey: "massa" },
+  { nameKey: "wereld",  color: "#ef4444", descKey: "wereld" },
+  { nameKey: "mysterie",color: "#f97316", descKey: "mysterie" },
 ];
 
-// Get real questions for each layer from assessmentData
-const getLayerQuestions = (layerIndex) => {
-  const layer = assessmentSubjects[layerIndex];
-  if (!layer) return [];
-  return layer.questions;
-};
+
 
 // Vertical positions for SAVED cards on the LEFT side (pyramid layer heights)
 // Follow the pyramid upward trail: bottom layer lowest on screen, top layer highest
@@ -110,6 +104,7 @@ const MOVE_DURATION = 1200;  // Slide from right to left
 const SingleLayerPanel = ({
   layerIndex,
   layer,
+  layerQuestions = [],
   answers,
   onAnswerSelect,
   isSaved,
@@ -191,11 +186,10 @@ const SingleLayerPanel = ({
   }, [savePhase, layerIndex, onLayerAnimationStateChange]);
   
   const questions = useMemo(() => {
-    const allQuestions = getLayerQuestions(layerIndex);
     const cfg = LEVEL_CONFIGS[assessmentLevel];
-    const limit = cfg?.questionsPerLayer || allQuestions.length;
-    return allQuestions.slice(0, limit);
-  }, [layerIndex, assessmentLevel]);
+    const limit = cfg?.questionsPerLayer || layerQuestions.length;
+    return layerQuestions.slice(0, limit);
+  }, [layerQuestions, assessmentLevel]);
   const totalQuestions = questions.length;
   
   const answeredCount = questions.filter(q => {
@@ -479,6 +473,7 @@ const AssessmentLayerPanel = ({
   staircaseStep = -1,      // -1=waiting, 0-3=current staircase step, 4=fully assembled
   isVisible = true,
   assessmentLevel,
+  liveSubjects = [],
 }) => {
   // Store answers for ALL layers persistently
   const [allLayerAnswers, setAllLayerAnswers] = useState({});
@@ -551,6 +546,7 @@ const AssessmentLayerPanel = ({
           key={layerIndex}
           layerIndex={layerIndex}
           layer={LAYERS[layerIndex]}
+          layerQuestions={liveSubjects[layerIndex]?.questions ?? []}
           answers={allLayerAnswers[layerIndex] || {}}
           onAnswerSelect={handleAnswerSelect}
           isSaved={savedLayers.includes(layerIndex)}

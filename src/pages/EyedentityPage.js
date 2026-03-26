@@ -129,10 +129,10 @@ const ProfileResultCard = ({ result: resultProp }) => {
             </p>
           )}
           <p style={{ fontSize: '0.8rem', color: `rgba(29, 153, 4, 0.7)`, fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.15em', margin: 0 }}>
-            {r.mainName} {r.harmonyActive ? 'âŸ·' : '+'} {r.secondaryName}
+            {r.mainName} {r.harmonyActive ? '\u27F7' : '+'} {r.secondaryName}
           </p>
-          {r.harmonyActive && <p style={{ fontSize: '0.72rem', color: green, fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>âœ¦ Harmony Bonus Active âœ¦</p>}
-          {r.shadowBonusActive && <p style={{ fontSize: '0.72rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>âœ¦ Shadow Bonus Active âœ¦</p>}
+          {r.harmonyActive && <p style={{ fontSize: '0.72rem', color: green, fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>{'\u2726'} Harmony Bonus Active {'\u2726'}</p>}
+          {r.shadowBonusActive && <p style={{ fontSize: '0.72rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>{'\u2726'} Shadow Bonus Active {'\u2726'}</p>}
         </div>
       </div>
 
@@ -156,7 +156,7 @@ const ProfileResultCard = ({ result: resultProp }) => {
           <div style={{ fontSize: '0.62rem', color: 'rgba(168,85,247,0.5)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Main Archetype</div>
           <h4 style={{ color: '#a855f7', fontFamily: "'Lexend Mega', sans-serif", fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.2rem' }}>{r.mainName}</h4>
           <p style={{ fontSize: '0.68rem', color: 'rgba(156,163,175,0.7)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.75rem' }}>
-            {r.mainNameEn} â€” {r.group}
+            {r.mainNameEn} {'\u2014'} {r.group}
           </p>
           {[
             { label: 'Motivatie', text: r.mainMotivation },
@@ -175,7 +175,7 @@ const ProfileResultCard = ({ result: resultProp }) => {
           <div style={{ fontSize: '0.62rem', color: 'rgba(249,115,22,0.5)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Support Archetype</div>
           <h4 style={{ color: '#f97316', fontFamily: "'Lexend Mega', sans-serif", fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.2rem' }}>{r.secondaryName}</h4>
           <p style={{ fontSize: '0.68rem', color: 'rgba(156,163,175,0.7)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.75rem' }}>
-            {r.secondaryNameEn} â€” {r.supportGroup}
+            {r.secondaryNameEn} {'\u2014'} {r.supportGroup}
           </p>
           {[
             { label: 'Motivatie', text: r.secondaryMotivation },
@@ -192,7 +192,7 @@ const ProfileResultCard = ({ result: resultProp }) => {
 
       {/* â”€â”€ 4. OCEAN Profile (when scores available) â”€â”€ */}
       {(r.extendedOcean?.ocean || r.oceanScores) && (() => {
-        const OCEAN_LABEL_MAP = { O: 'Openheid', C: 'ConsciÃ«ntieusheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
+        const OCEAN_LABEL_MAP = { O: 'Openheid', C: 'Consci\u00ebntieusheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
         const OCEAN_COLOR_MAP = { O: '#a855f7', C: '#00d4ff', E: '#1d9904', A: '#f59e0b', N: '#ef4444' };
         const scores = r.oceanScores || r.extendedOcean?.ocean || {};
         return (
@@ -214,7 +214,7 @@ const ProfileResultCard = ({ result: resultProp }) => {
         <div style={{ background: 'transparent', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: '0.75rem', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(to right, transparent, #a855f7, transparent)' }} />
           <h3 style={{ color: '#a855f7', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
-            Schaduw Archetype{r.shadowName ? ` â€” ${r.shadowName}` : ''}
+            Schaduw Archetype{r.shadowName ? ` \u2014 ${r.shadowName}` : ''}
           </h3>
           {r.shadowInsight && (
             <p style={{ color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif", fontSize: '0.88rem', lineHeight: 1.7, textAlign: 'justify', margin: 0 }}>
@@ -229,7 +229,7 @@ const ProfileResultCard = ({ result: resultProp }) => {
         <div style={{ background: 'transparent', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '0.75rem', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(to right, transparent, #ef4444, transparent)' }} />
           <h3 style={{ color: '#ef4444', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
-            Blindspot{r.blindspotName ? ` â€” ${r.blindspotName}` : ''}
+            Blindspot{r.blindspotName ? ` \u2014 ${r.blindspotName}` : ''}
           </h3>
           {(r.blindspotDescription || r.blindspotShadowTrait) && (
             <p style={{ color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif", fontSize: '0.88rem', lineHeight: 1.7, textAlign: 'justify', margin: 0 }}>
@@ -344,7 +344,7 @@ const FeedbackStandaloneForm = () => {
     if (!email.trim()) { setError('Vul je e-mailadres in'); return; }
     if (!formData.starRating) { setError('Selecteer een score (1-9)'); return; }
     if (!whatWorked.trim() && !whatDidntWork.trim() && !suggestions.trim()) {
-      setError('Vul minimaal Ã©Ã©n tekstveld in'); return;
+      setError('Vul minimaal \u00e9\u00e9n tekstveld in'); return;
     }
     setIsSubmitting(true);
     setError('');
@@ -370,7 +370,7 @@ const FeedbackStandaloneForm = () => {
   if (submitted) {
     return (
       <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>âœ…</div>
+        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{'\u2705'}</div>
         <p style={{ color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: '1rem', marginBottom: '0.5rem', margin: '0 0 0.5rem' }}>
           Dank je wel voor je feedback!
         </p>
@@ -382,22 +382,22 @@ const FeedbackStandaloneForm = () => {
   }
 
   const baseField = {
-    width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.8)',
+    width: '100%', padding: '0.6rem 0.75rem', background: 'rgba(0,0,0,0.8)',
     border: '1px solid rgba(168,85,247,0.2)', borderRadius: '0.5rem',
     color: '#fff', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', boxSizing: 'border-box',
   };
 
   return (
-    <div>
-      <p style={{ color: 'rgba(209,213,219,0.7)', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', marginTop: 0, marginBottom: '1.5rem' }}>
-        Topper, hopelijk ben je wijzer geworden en wil je dit nu met ons delen â€” We horen graag wat je ervan vondt.
+    <div style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', paddingBottom: '2rem' }}>
+      <p style={{ color: 'rgba(209,213,219,0.7)', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', marginTop: 0, marginBottom: '1rem' }}>
+        Topper, hopelijk ben je wijzer geworden en wil je dit nu met ons delen {'\u2014'} We horen graag wat je ervan vondt.
       </p>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 
         {/* Star Rating 1-9 */}
         <div>
-          <label style={{ display: 'block', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Score *</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <label style={{ display: 'block', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>Score *</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
             {[...Array(9)].map((_, i) => (
               <button key={i} type="button" onClick={() => setFormData({ ...formData, starRating: i + 1 })} style={{
                 background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem',
@@ -414,38 +414,38 @@ const FeedbackStandaloneForm = () => {
 
         {/* Email */}
         <div>
-          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>E-mailadres *</label>
+          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>E-mailadres *</label>
           <input type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="jouw@email.nl" style={baseField} />
         </div>
 
         {/* Accuraatheid */}
         <div>
-          <label style={{ display: 'block', color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+          <label style={{ display: 'block', color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>
             Hoe accuraat is het resultaat volgens jouw kennis en gevoel?
           </label>
           <textarea value={formData.whatWorked} onChange={(e) => setFormData({ ...formData, whatWorked: e.target.value })}
             placeholder="Beschrijf in hoeverre het resultaat klopt met wie jij bent..."
-            style={{ ...baseField, minHeight: '80px', border: '1px solid rgba(34,197,94,0.2)', resize: 'vertical' }} />
+            style={{ ...baseField, minHeight: '60px', maxHeight: '120px', border: '1px solid rgba(34,197,94,0.2)', resize: 'vertical' }} />
         </div>
 
         {/* Niet overeenkomend */}
         <div>
-          <label style={{ display: 'block', color: '#ef4444', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+          <label style={{ display: 'block', color: '#ef4444', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>
             Waar ben je zeker van dat niet overeenkomt met jouw persoonlijkheid?
           </label>
           <textarea value={formData.whatDidntWork} onChange={(e) => setFormData({ ...formData, whatDidntWork: e.target.value })}
             placeholder="Bijv: ik ben helemaal niet competitief, want..."
-            style={{ ...baseField, minHeight: '80px', border: '1px solid rgba(239,68,68,0.2)', resize: 'vertical' }} />
+            style={{ ...baseField, minHeight: '60px', maxHeight: '120px', border: '1px solid rgba(239,68,68,0.2)', resize: 'vertical' }} />
         </div>
 
         {/* Suggesties */}
         <div>
-          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>
             Wat zou jij anders doen of toevoegen aan dit systeem?
           </label>
           <textarea value={formData.suggestions} onChange={(e) => setFormData({ ...formData, suggestions: e.target.value })}
             placeholder="Bijv: meer context bij de vragen, andere formulering..."
-            style={{ ...baseField, minHeight: '80px', resize: 'vertical' }} />
+            style={{ ...baseField, minHeight: '60px', maxHeight: '120px', resize: 'vertical' }} />
         </div>
 
         {error && (
@@ -454,9 +454,11 @@ const FeedbackStandaloneForm = () => {
           </div>
         )}
 
-        <SciFiButton type="submit" disabled={isSubmitting} variant="purple" size="md">
-          {isSubmitting ? 'VERSTUREN...' : 'VERSTUUR FEEDBACK'}
-        </SciFiButton>
+        <div style={{ display: 'flex' }}>
+          <SciFiButton type="submit" disabled={isSubmitting} variant="purple" size="md">
+            {isSubmitting ? 'VERSTUREN...' : 'VERSTUUR FEEDBACK'}
+          </SciFiButton>
+        </div>
       </form>
     </div>
   );
@@ -692,7 +694,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
             borderRadius: '0.5rem',
-            padding: '1.5rem 2rem',
+            padding: '1.5rem 2rem 0 2rem',
             boxShadow: 'inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03), 0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15)',
             display: 'flex',
             flexDirection: 'column',
@@ -718,7 +720,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '0.75rem',
-              marginBottom: '1.25rem',
+              marginBottom: '0.5rem',
               flexShrink: 0,
             }}>
               <div style={{
@@ -761,11 +763,21 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
               </div>
             </div>
 
+            {/* Header / Body divider */}
+            <div style={{
+              height: '1px',
+              background: 'rgba(168,85,247,0.4)',
+              marginBottom: '0',
+              flexShrink: 0,
+            }} />
+
             {/* Content Body */}
             <div style={{
               flex: 1,
               overflowY: 'auto',
+              overflowX: 'hidden',
               minHeight: 0,
+              paddingTop: '1.25rem',
             }}>
               {selectedId === 'profile' ? (
                 <ProfileResultCard />

@@ -4,7 +4,6 @@ import { jsPDF } from 'jspdf';
 import SciFiRadarChart from './SciFiRadarChart';
 import SubgroupCounters from './SubgroupCounters';
 import {
-  questions,
   ARCHETYPES,
   SUBGROUP_POLARITIES,
   getAnalysisTemplate,
@@ -80,6 +79,7 @@ const AssessmentResultsModal = ({
   resultsLoadingProgress,
   resultsModalProgress,
   layerAnswers,
+  liveSubjects = [],
   uploadedFiles,
   onClose,
   onDownload,
@@ -92,8 +92,8 @@ const AssessmentResultsModal = ({
     const keys = layerAnswers ? Object.keys(layerAnswers) : [];
     const totalAnswers = keys.reduce((sum, k) => sum + Object.keys(layerAnswers[k] || {}).length, 0);
     console.log('[GFL] computeResultFromAnswers — layers:', keys.length, 'totalAnswers:', totalAnswers, 'sample:', JSON.stringify(layerAnswers).slice(0, 300));
-    return computeResultFromAnswers(layerAnswers);
-  }, [layerAnswers]);
+    return computeResultFromAnswers(layerAnswers, liveSubjects);
+  }, [layerAnswers, liveSubjects]);
   
   // Ref for the scroll container
   const scrollRef = useRef(null);
@@ -4554,7 +4554,7 @@ function formatInline(text) {
  * Accepts: { layerIndex: { questionId: answerId } }
  * e.g. { 0: { 1: "1a", 2: "2c" }, 1: { 7: "7b" }, ... }
  */
-function computeResultFromAnswers(layerAnswers) {
+function computeResultFromAnswers(layerAnswers, liveSubjects) {
   // ──────────────────────────────────────────────────────────
   // 1. Convert layerAnswers → flat response array for scoring engine
   //    Handles dual-pick arrays [pick1, pick2] per question
@@ -4574,7 +4574,7 @@ function computeResultFromAnswers(layerAnswers) {
       const layerIdx = parseInt(layerIdxStr, 10);
       if (!layerData || typeof layerData !== 'object') return;
 
-      const layer = questions.find(q => q.layerIndex === layerIdx);
+      const layer = liveSubjects.find(q => q.layerIndex === layerIdx);
       if (!layer) return;
 
       if (!layerScores[layerIdx]) layerScores[layerIdx] = [];

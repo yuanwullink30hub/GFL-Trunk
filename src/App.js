@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import NebulaBackground from './components/NebulaBackground';
 import NebulaOverlay from './components/NebulaOverlay';
-import { assessmentSubjects } from './pages/assessment/assessmentData';
+
 import { getQuestions } from './utils/apiClient';
 import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
@@ -164,7 +164,7 @@ const App = () => {
   const [showLoginFromResults, setShowLoginFromResults] = useState(false); // Show login modal after results
   
   // Assessment data: live from MongoDB, falling back to static data if fetch fails
-  const [liveSubjects, setLiveSubjects] = useState(assessmentSubjects);
+  const [liveSubjects, setLiveSubjects] = useState([]);
   useEffect(() => {
     getQuestions()
       .then((data) => {
@@ -1942,6 +1942,7 @@ const App = () => {
                 staircaseStep={staircaseStep}
                 isVisible={true}
                 assessmentLevel={assessmentLevel}
+                liveSubjects={liveSubjects}
               />
               </>
             )}
@@ -1970,6 +1971,7 @@ const App = () => {
                 resultsLoadingProgress={resultsLoadingProgress}
                 resultsModalProgress={resultsModalProgress}
                 layerAnswers={layerAnswers}
+                liveSubjects={liveSubjects}
                 uploadedFiles={uploadedFiles}
                 onClose={resetAssessmentState}
                 onAiReady={() => setAiAnalysisReady(true)}

@@ -16,7 +16,7 @@
  */
 
 // Questions
-export { questions, QUESTION_SCHEMA, getQuestionsForLayer, getAllQuestionsFlat } from './questions';
+export { QUESTION_SCHEMA, getQuestionsForLayer, getAllQuestionsFlat } from './questions';
 
 // Archetypes
 export { ARCHETYPES, ARCHETYPE_KEYS, ARCHETYPE_GROUPS, ARCHETYPE_SCHEMA, getArchetype } from './archetypes';

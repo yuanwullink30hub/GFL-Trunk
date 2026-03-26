@@ -1,19 +1,18 @@
 import { useState, useCallback, useMemo } from 'react';
-import { assessmentSubjects } from '../../pages/assessment/assessmentData';
 import { ARCHETYPES } from '../../pages/assessment/assessmentTypes';
 
 /**
  * useAssessmentIntegration - Hook for managing assessment state within the pyramid
  * Bridges the assessment logic with the pyramid's 5 layers
  */
-export function useAssessmentIntegration() {
+export function useAssessmentIntegration(subjects = []) {
   const [responses, setResponses] = useState([]);
   const [completedLayers, setCompletedLayers] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showResults, setShowResults] = useState(false);
 
   // Map assessment subjects to pyramid layers
-  const layerData = useMemo(() => assessmentSubjects.map(subject => ({
+  const layerData = useMemo(() => subjects.map(subject => ({
     id: subject.id,
     name: subject.name,
     title: subject.title,
@@ -27,8 +26,8 @@ export function useAssessmentIntegration() {
 
   // Get all questions flat array
   const allQuestions = useMemo(() => 
-    assessmentSubjects.flatMap(s => s.questions), 
-  []);
+    subjects.flatMap(s => s.questions), 
+  [subjects]);
 
   const totalQuestions = allQuestions.length;
   const answeredQuestions = responses.length;
@@ -36,15 +35,15 @@ export function useAssessmentIntegration() {
 
   // Get responses for a specific layer
   const getLayerResponses = useCallback((layerIndex) => {
-    const layer = assessmentSubjects[layerIndex];
+    const layer = subjects[layerIndex];
     if (!layer) return [];
     const questionIds = layer.questions.map(q => q.id);
     return responses.filter(r => questionIds.includes(r.questionId));
-  }, [responses]);
+  }, [responses, subjects]);
 
   // Check if a layer is complete
   const isLayerComplete = useCallback((layerIndex) => {
-    const layer = assessmentSubjects[layerIndex];
+    const layer = subjects[layerIndex];
     if (!layer) return false;
     const layerResponses = getLayerResponses(layerIndex);
     return layerResponses.length >= layer.questions.length;
@@ -85,7 +84,7 @@ export function useAssessmentIntegration() {
     }
     
     // Check if all layers complete
-    if (layerIndex === assessmentSubjects.length - 1) {
+    if (layerIndex === subjects.length - 1) {
       // All layers done, can show results
       setTimeout(() => setShowResults(true), 1000);
     }
@@ -102,7 +101,7 @@ export function useAssessmentIntegration() {
 
   // Calculate results
   const calculateResults = useMemo(() => {
-    const subjectResults = assessmentSubjects.map((subject) => {
+    const subjectResults = subjects.map((subject) => {
       const subjectResponses = responses.filter(r =>
         subject.questions.some(q => q.id === r.questionId)
       );

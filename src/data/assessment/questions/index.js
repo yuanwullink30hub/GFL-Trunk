@@ -8,7 +8,8 @@
  * directly from the page-level module.
  */
 
-export { assessmentSubjects as questions } from '../../../pages/assessment/assessmentData';
+// NOTE: assessmentSubjects no longer exported from assessmentData — questions are served by the backend API
+// export { assessmentSubjects as questions } from '../../../pages/assessment/assessmentData';
 export { QUESTION_SCHEMA } from './questionSchema';
 
 /**
@@ -16,11 +17,9 @@ export { QUESTION_SCHEMA } from './questionSchema';
  * @param {number} layerIndex
  * @returns {Array} questions for that layer
  */
-export function getQuestionsForLayer(layerIndex) {
-  // Lazy import to avoid circular deps at module level
-  const { assessmentSubjects } = require('../../../pages/assessment/assessmentData');
-  const layer = assessmentSubjects.find(s => s.layerIndex === layerIndex);
-  return layer ? layer.questions : [];
+export function getQuestionsForLayer(/* layerIndex */) {
+  // Questions are now served by the backend API (MongoDB)
+  return [];
 }
 
 /**
@@ -28,13 +27,6 @@ export function getQuestionsForLayer(layerIndex) {
  * @returns {Array<{ layerIndex: number, layerName: string, ...question }>}
  */
 export function getAllQuestionsFlat() {
-  const { assessmentSubjects } = require('../../../pages/assessment/assessmentData');
-  return assessmentSubjects.flatMap(layer =>
-    layer.questions.map(q => ({
-      layerIndex: layer.layerIndex,
-      layerName: layer.name,
-      layerTitle: layer.title,
-      ...q,
-    }))
-  );
+  // Questions are now served by the backend API (MongoDB)
+  return [];
 }

@@ -1,7 +1,6 @@
 // Assessment Module - Main Export
 export { default as AssessmentPage } from './AssessmentPage';
 export { useAssessment } from './useAssessment';
-export { assessmentSubjects } from './assessmentData';
 export { ARCHETYPES, subjectMetadata } from './assessmentTypes';
 export { generatePDF } from './pdfGenerator';
 

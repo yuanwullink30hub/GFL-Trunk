@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { isNatureSlot } from '../../pages/assessment/assessmentData';
 
 /** Strip admin metadata tags [xxx] and (xxx) from display text */
 function stripMeta(text) {
@@ -8,16 +9,25 @@ function stripMeta(text) {
   return text.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\s{2,}/g, ' ').trim();
 }
 
-/** Parse color markers {PURPLE>word} and {ORANGE>word} and convert to JSX spans, after stripping metadata */
-function parseColoredText(text) {
+/** Parse color markers {PURPLE>word}, {ORANGE>word}, and *word* and convert to JSX spans, after stripping metadata.
+ *  For *word* markers, color is determined by the answer's slot position via isNatureSlot:
+ *  Nature slots → purple (#a855f7), Culture slots → orange (#f97316).
+ */
+function parseColoredText(text, questionId, answerIdx) {
   if (!text) return '';
   
   // First strip metadata
   const cleanText = stripMeta(text);
   
+  // Determine the fallback color for *word* markers based on slot routing
+  const slotColor = (questionId != null && answerIdx != null)
+    ? (isNatureSlot(questionId, answerIdx) ? '#a855f7' : '#f97316')
+    : '#a855f7';
+  
   const parts = [];
   let lastIndex = 0;
-  const regex = /\{(PURPLE|ORANGE)>(.*?)\}/g;
+  // Match both {PURPLE>word} / {ORANGE>word} and *word* (non-greedy)
+  const regex = /\{(PURPLE|ORANGE)>(.*?)\}|\*(.*?)\*/g;
   let match;
   
   while ((match = regex.exec(cleanText)) !== null) {
@@ -26,13 +36,22 @@ function parseColoredText(text) {
       parts.push(cleanText.substring(lastIndex, match.index));
     }
     
-    const color = match[1] === 'PURPLE' ? '#a855f7' : '#f97316';
-    const word = match[2];
-    parts.push(
-      <span key={`${match[1]}-${match.index}`} style={{ color }}>
-        {word}
-      </span>
-    );
+    if (match[1]) {
+      // {PURPLE>word} or {ORANGE>word}
+      const color = match[1] === 'PURPLE' ? '#a855f7' : '#f97316';
+      parts.push(
+        <span key={`${match[1]}-${match.index}`} style={{ color }}>
+          {match[2]}
+        </span>
+      );
+    } else {
+      // *word* — color from slot position
+      parts.push(
+        <span key={`star-${match.index}`} style={{ color: slotColor }}>
+          {match[3]}
+        </span>
+      );
+    }
     
     lastIndex = regex.lastIndex;
   }
@@ -939,7 +958,7 @@ const AssessmentCard = ({
                     <span style={{ fontSize: s.answerFont, fontFamily: "'Figtree', sans-serif" }}>
                       {parseColoredText(t(`answers.${answer.id}`) !== `answers.${answer.id}` 
                         ? t(`answers.${answer.id}`) 
-                        : answer.text)}
+                        : answer.text, currentQuestion.id, idx)}
                     </span>
                   </div>
                 </button>

@@ -4069,27 +4069,46 @@ const AssessmentResultsModal = ({
                     
                     {/* Save & Create Account */}
                     <button
-                      onClick={() => {}}
+                      onClick={() => {
+                        if (!reviewSubmitted) return;
+                        if (showLeaveWarning) {
+                          setShowLeaveWarning(false);
+                          onCreateAccount();
+                        } else {
+                          setShowLeaveWarning(true);
+                        }
+                      }}
+                      disabled={!reviewSubmitted}
                       style={{
-                        flex: '1 1 0',
+                        flex: showLeaveWarning ? '2 1 0' : '1 1 0',
                         minWidth: rs.btnMinWidth,
                         position: 'relative',
                         overflow: 'hidden',
                         padding: rs.btnPad,
-                        background: 'linear-gradient(to right, #a855f7, #581c87)',
-                        border: '1px solid transparent',
-                        color: '#fff',
+                        background: showLeaveWarning ? 'linear-gradient(to right, #a855f7, #581c87)' : '#000',
+                        border: `1px solid ${showLeaveWarning ? 'transparent' : '#a855f7'}`,
+                        color: showLeaveWarning ? '#fff' : '#a855f7',
                         fontFamily: "'Lexend Mega', sans-serif",
                         fontWeight: 'bold',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        fontSize: `calc(${rs.btnFont} * 1.2)`,
-                        cursor: 'default',
-                        opacity: 1,
+                        fontSize: rs.btnFont,
+                        cursor: !reviewSubmitted ? 'not-allowed' : 'pointer',
                         transition: 'all 0.3s',
-                        transform: 'scale(1.2)',
-                        transformOrigin: 'center',
-                        zIndex: 1,
+                        boxShadow: showLeaveWarning ? '0 0 20px rgba(168, 85, 247, 0.3)' : '0 0 15px rgba(168, 85, 247, 0.1)',
+                        opacity: !reviewSubmitted ? 0.5 : 1,
+                      }}
+                      onMouseEnter={e => {
+                        if (reviewSubmitted && !showLeaveWarning) {
+                          e.currentTarget.style.background = '#a855f7';
+                          e.currentTarget.style.color = '#000';
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (!showLeaveWarning) {
+                          e.currentTarget.style.background = '#000';
+                          e.currentTarget.style.color = '#a855f7';
+                        }
                       }}
                     >
                       <span style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
@@ -4097,20 +4116,23 @@ const AssessmentResultsModal = ({
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" />
                           </svg>
-                          {t('results.createAccount')}
+                          {showLeaveWarning ? 'CONTINUE' : t('results.createAccount')}
                         </span>
-                        <span style={{ fontSize: '0.7em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.01em', opacity: 0.85 }}>
-                          Save your profile and track your growth over time.
-                        </span>
+                        {showLeaveWarning && (
+                          <span style={{ fontSize: '0.7em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.01em', opacity: 0.85 }}>
+                            Als je deze pagina verlaat kun je het rapport niet meer downloaden.
+                          </span>
+                        )}
                       </span>
-                      {/* Sheen effect */}
-                      <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.15) 50%, transparent 75%)',
-                        backgroundSize: '250% 250%',
-                        animation: 'shimmerBtn 3s infinite',
-                      }} />
+                      {showLeaveWarning && (
+                        <div style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.15) 50%, transparent 75%)',
+                          backgroundSize: '250% 250%',
+                          animation: 'shimmerBtn 3s infinite',
+                        }} />
+                      )}
                     </button>
                   </div>
 
@@ -4160,66 +4182,7 @@ const AssessmentResultsModal = ({
         }
       `}</style>
 
-      {/* ── Leave Warning Overlay ── */}
-      {showLeaveWarning && (
-        <div
-          className="absolute inset-0 z-[10001] flex items-center justify-center"
-          style={{
-            backgroundColor: 'rgba(2, 0, 3, 0.85)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-          }}
-        >
-          <div
-            style={{
-              position: 'relative',
-              padding: '1.75rem 2rem',
-              borderRadius: '0.5rem',
-              maxWidth: '22rem',
-              textAlign: 'center',
-              backgroundColor: 'rgba(2, 0, 3, 0.5)',
-              boxShadow: '0 6px 30px rgba(0,0,0,0.7), inset 0 0 12px rgba(168,85,247,0.06)',
-            }}
-          >
-            {/* Corner brackets */}
-            {[['tl',{top:-2,left:-3,borderTop:'1px solid rgba(168,85,247,0.6)',borderLeft:'1px solid rgba(168,85,247,0.6)',borderTopLeftRadius:'2px'}],
-              ['tr',{top:-2,right:-3,borderTop:'1px solid rgba(168,85,247,0.6)',borderRight:'1px solid rgba(168,85,247,0.6)',borderTopRightRadius:'2px'}],
-              ['bl',{bottom:-2,left:-3,borderBottom:'1px solid rgba(168,85,247,0.6)',borderLeft:'1px solid rgba(168,85,247,0.6)',borderBottomLeftRadius:'2px'}],
-              ['br',{bottom:-2,right:-3,borderBottom:'1px solid rgba(168,85,247,0.6)',borderRight:'1px solid rgba(168,85,247,0.6)',borderBottomRightRadius:'2px'}],
-            ].map(([k,s]) => (
-              <div key={k} style={{ position:'absolute', width:'0.55rem', height:'0.55rem', pointerEvents:'none', ...s }} />
-            ))}
-            <p style={{
-              color: 'rgba(209,213,219,0.9)',
-              fontSize: '0.72rem',
-              lineHeight: 1.8,
-              marginBottom: '1.25rem',
-              fontFamily: "'Lexend Mega', sans-serif",
-              letterSpacing: '0.04em',
-            }}>
-              Als je deze pagina verlaat kun je het rapport nergens meer downloaden.
-            </p>
-            <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center' }}>
-              <SciFiButton
-                onClick={() => setShowLeaveWarning(false)}
-                color="#64748b"
-                rgb="100, 116, 139"
-                size="sm"
-              >
-                Terug
-              </SciFiButton>
-              <SciFiButton
-                onClick={() => { setShowLeaveWarning(false); onCreateAccount(); }}
-                color="#a855f7"
-                rgb="168, 85, 247"
-                size="sm"
-              >
-                Doorgaan
-              </SciFiButton>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

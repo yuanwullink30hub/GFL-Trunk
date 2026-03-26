@@ -118,19 +118,14 @@ const ProfileResultCard = ({ result: resultProp }) => {
           <h1 style={{ fontSize: 'clamp(1.2rem, 2vw, 2rem)', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold', background: 'linear-gradient(to right, #a855f7, #d8b4fe, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))', marginBottom: '0.5rem' }}>
             {r.name}
           </h1>
-          {r.extendedSubtitle && (
-            <p style={{ fontSize: '0.85rem', color: 'rgba(249, 115, 22, 0.9)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-              {r.extendedSubtitle}
-            </p>
-          )}
+          <p style={{ fontSize: '0.85rem', color: 'rgba(249, 115, 22, 0.9)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+            {r.mainName} {r.harmonyActive ? '\u27F7' : '+'} {r.secondaryName}
+          </p>
           {levenslesQuote && (
             <p style={{ fontSize: '0.9rem', color: 'rgba(156, 163, 175, 1)', fontFamily: "'Figtree', sans-serif", fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 0.75rem' }}>
               "{levenslesQuote}"
             </p>
           )}
-          <p style={{ fontSize: '0.8rem', color: `rgba(29, 153, 4, 0.7)`, fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.15em', margin: 0 }}>
-            {r.mainName} {r.harmonyActive ? '\u27F7' : '+'} {r.secondaryName}
-          </p>
           {r.harmonyActive && <p style={{ fontSize: '0.72rem', color: green, fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>{'\u2726'} Harmony Bonus Active {'\u2726'}</p>}
           {r.shadowBonusActive && <p style={{ fontSize: '0.72rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>{'\u2726'} Shadow Bonus Active {'\u2726'}</p>}
         </div>
@@ -196,7 +191,7 @@ const ProfileResultCard = ({ result: resultProp }) => {
         const OCEAN_COLOR_MAP = { O: '#a855f7', C: '#00d4ff', E: '#1d9904', A: '#f59e0b', N: '#ef4444' };
         const scores = r.oceanScores || r.extendedOcean?.ocean || {};
         return (
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '0.75rem', padding: '1.25rem 1.5rem' }}>
+          <div style={{ background: 'transparent', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '0.75rem', padding: '1.25rem 1.5rem', position: 'relative', overflow: 'hidden' }}>
             <h3 style={{ color: '#00d4ff', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '1rem' }}>
               OCEAN Persoonlijkheidsprofiel
             </h3>
@@ -249,17 +244,23 @@ const ProfileResultCard = ({ result: resultProp }) => {
         ].filter(f => f.text);
         if (!fields.length) return null;
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {fields.map(({ label, text }) => (
-              <div key={label}>
-                <div style={{ fontSize: '0.65rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>
-                  {label}
+          <div style={{ background: 'transparent', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '0.75rem', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(to right, transparent, #f97316, transparent)' }} />
+            <h3 style={{ color: '#f97316', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
+              Kernprofiel Inzichten
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {fields.map(({ label, text }) => (
+                <div key={label}>
+                  <div style={{ fontSize: '0.65rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>
+                    {label}
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.65, margin: 0, textAlign: 'justify' }}>
+                    {text}
+                  </p>
                 </div>
-                <p style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.65, margin: 0, textAlign: 'justify' }}>
-                  {text}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         );
       })()}

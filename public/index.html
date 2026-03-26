@@ -226,6 +226,14 @@
             var p2 = document.getElementById('gfl-loading-phase2');
             if (pk) pk.style.display = 'none';
             if (p2) { p2.style.display = 'flex'; }
+            // Safety net: if React never signals ready (crash / aborted effect),
+            // force-dismiss the overlay after 20 seconds so user isn't stuck forever
+            setTimeout(function() {
+              if (!appReady) {
+                console.warn('[GFL] App never signaled ready — forcing overlay dismiss');
+                window.__gflDismissOverlay();
+              }
+            }, 20000);
           }
         }
 
@@ -236,6 +244,13 @@
           var p2 = document.getElementById('gfl-loading-phase2');
           if (pk) pk.style.display = 'none';
           if (p2) { p2.style.display = 'flex'; }
+          // Safety net for returning users: same 20s force-dismiss
+          setTimeout(function() {
+            if (!appReady) {
+              console.warn('[GFL] App never signaled ready (returning user) — forcing dismiss');
+              window.__gflDismissOverlay();
+            }
+          }, 20000);
         } else if (isLocal) {
           // Localhost: auto-unlock after 1s
           setTimeout(function() {
@@ -260,13 +275,26 @@
               ? 'http://localhost:8080/api'
               : 'https://gfl-api.onrender.com/api';
 
+            // 12-second timeout — Render free tier needs ~10s cold-start
+            var fetchAbort = new AbortController();
+            var fetchTimer = setTimeout(function() { fetchAbort.abort(); }, 12000);
+
+            // Show "server wacht" hint after 4s if still pending
+            var hintTimer = setTimeout(function() {
+              if (btn.disabled) {
+                btn.textContent = 'Server wacht...';
+              }
+            }, 4000);
+
             fetch(apiBase + '/beta/verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ passkey: key }),
+              signal: fetchAbort.signal,
             })
               .then(function(r) { return r.json(); })
               .then(function(data) {
+                clearTimeout(fetchTimer); clearTimeout(hintTimer);
                 if (data.valid) {
                   localStorage.setItem(BETA_KEY, key);
                   onUnlocked();
@@ -277,8 +305,12 @@
                   if (input) { input.value = ''; input.focus(); }
                 }
               })
-              .catch(function() {
-                if (err) { err.textContent = 'Verbindingsfout — probeer opnieuw'; err.style.display = 'block'; }
+              .catch(function(e) {
+                clearTimeout(fetchTimer); clearTimeout(hintTimer);
+                var msg = (e && e.name === 'AbortError')
+                  ? 'Server start op — probeer opnieuw'
+                  : 'Verbindingsfout — probeer opnieuw';
+                if (err) { err.textContent = msg; err.style.display = 'block'; }
                 btn.textContent = 'Unlock';
                 btn.disabled = false;
               });

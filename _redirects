@@ -1,18 +1,2 @@
+# SPA catch-all — MUST be last (Cloudflare Pages: first match wins)
 /* /index.html 200
-
-# Media files
-/videos/*.mp4 /videos/:splat
-/videos/*.webm /videos/:splat
-/videos/*.ogg /videos/:splat
-/videos/*.mov /videos/:splat
-
-# Images
-/images/*.png /images/:splat
-/images/*.jpg /images/:splat
-/images/*.jpeg /images/:splat
-/images/*.webp /images/:splat
-/images/*.gif /images/:splat
-/images/*.svg /images/:splat
-
-# Static assets
-/static/* /static/:splat

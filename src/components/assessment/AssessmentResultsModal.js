@@ -23,6 +23,7 @@ import { isNatureSlot } from '../../pages/assessment/assessmentData';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
 import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity, getPublicSiteBanner } from '../../utils/apiClient';
+import { SciFiButton } from './dashboardStyles';
 import tnmWheelImg from '../../images/Model imports/TNM wheel PNG.png';
 import deltawerkenImg from '../../images/Model imports/Deltawerken png.png';
 import cellsImg from '../../images/Model imports/Cells within Cells png.png';
@@ -102,6 +103,7 @@ const AssessmentResultsModal = ({
   
   // PDF download state
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [showPdfConsent, setShowPdfConsent] = useState(false);
   const [pdfConsentChecked, setPdfConsentChecked] = useState(false);
 
@@ -4067,7 +4069,7 @@ const AssessmentResultsModal = ({
                     
                     {/* Save & Create Account */}
                     <button
-                      onClick={onCreateAccount}
+                      onClick={() => setShowLeaveWarning(true)}
                       style={{
                         flex: '1 1 0',
                         minWidth: rs.btnMinWidth,
@@ -4155,6 +4157,67 @@ const AssessmentResultsModal = ({
           scrollbar-color: rgba(29, 153, 4, 0.3) transparent;
         }
       `}</style>
+
+      {/* ── Leave Warning Overlay ── */}
+      {showLeaveWarning && (
+        <div
+          className="absolute inset-0 z-[10001] flex items-center justify-center"
+          style={{
+            backgroundColor: 'rgba(2, 0, 3, 0.85)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+          }}
+        >
+          <div
+            style={{
+              position: 'relative',
+              padding: '1.75rem 2rem',
+              borderRadius: '0.5rem',
+              maxWidth: '22rem',
+              textAlign: 'center',
+              backgroundColor: 'rgba(2, 0, 3, 0.5)',
+              boxShadow: '0 6px 30px rgba(0,0,0,0.7), inset 0 0 12px rgba(168,85,247,0.06)',
+            }}
+          >
+            {/* Corner brackets */}
+            {[['tl',{top:-2,left:-3,borderTop:'1px solid rgba(168,85,247,0.6)',borderLeft:'1px solid rgba(168,85,247,0.6)',borderTopLeftRadius:'2px'}],
+              ['tr',{top:-2,right:-3,borderTop:'1px solid rgba(168,85,247,0.6)',borderRight:'1px solid rgba(168,85,247,0.6)',borderTopRightRadius:'2px'}],
+              ['bl',{bottom:-2,left:-3,borderBottom:'1px solid rgba(168,85,247,0.6)',borderLeft:'1px solid rgba(168,85,247,0.6)',borderBottomLeftRadius:'2px'}],
+              ['br',{bottom:-2,right:-3,borderBottom:'1px solid rgba(168,85,247,0.6)',borderRight:'1px solid rgba(168,85,247,0.6)',borderBottomRightRadius:'2px'}],
+            ].map(([k,s]) => (
+              <div key={k} style={{ position:'absolute', width:'0.55rem', height:'0.55rem', pointerEvents:'none', ...s }} />
+            ))}
+            <p style={{
+              color: 'rgba(209,213,219,0.9)',
+              fontSize: '0.72rem',
+              lineHeight: 1.8,
+              marginBottom: '1.25rem',
+              fontFamily: "'Lexend Mega', sans-serif",
+              letterSpacing: '0.04em',
+            }}>
+              Als je deze pagina verlaat kun je het rapport nergens meer downloaden.
+            </p>
+            <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center' }}>
+              <SciFiButton
+                onClick={() => setShowLeaveWarning(false)}
+                color="#64748b"
+                rgb="100, 116, 139"
+                size="sm"
+              >
+                Terug
+              </SciFiButton>
+              <SciFiButton
+                onClick={() => { setShowLeaveWarning(false); onCreateAccount(); }}
+                color="#a855f7"
+                rgb="168, 85, 247"
+                size="sm"
+              >
+                Doorgaan
+              </SciFiButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

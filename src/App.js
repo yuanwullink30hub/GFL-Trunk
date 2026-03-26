@@ -360,7 +360,7 @@ const App = () => {
     
     // Start preloading all heavy resources immediately
     // Loading screen stays until nebula background is fully rendered
-    const maxLoadTime = 12000;
+    const maxLoadTime = 8000;
     let hasEnded = false;
     
     const endLoadingScreen = () => {

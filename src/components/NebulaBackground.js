@@ -142,24 +142,17 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     return fract(p.x * p.y);
   }
 
-  // Gradient vector from lattice point — unit-length for correct Perlin amplitude
-  vec2 hashGrad(vec2 p) {
-    float a = fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453) * 6.2832;
-    return vec2(cos(a), sin(a));
-  }
-
   float noise(vec2 p) {
     vec2 i = floor(p);
     vec2 f = fract(p);
     // Quintic interpolation (C2 continuous)
     vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-    // Gradient noise: dot products with unit gradient vectors at each corner
-    float va = dot(hashGrad(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0));
-    float vb = dot(hashGrad(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0));
-    float vc = dot(hashGrad(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0));
-    float vd = dot(hashGrad(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0));
-    // Scale by 0.7 (unit 2D Perlin range ≈ ±0.707) to fill 0-1 like old value noise
-    return clamp(mix(mix(va, vb, u.x), mix(vc, vd, u.x), u.y) * 0.7 + 0.5, 0.0, 1.0);
+    // Value noise: interpolate scalar hash values at each corner — isotropic, no directional banding
+    float va = hash(i + vec2(0.0, 0.0));
+    float vb = hash(i + vec2(1.0, 0.0));
+    float vc = hash(i + vec2(0.0, 1.0));
+    float vd = hash(i + vec2(1.0, 1.0));
+    return mix(mix(va, vb, u.x), mix(vc, vd, u.x), u.y);
   }
 
   float fbm(vec2 p) {
@@ -237,7 +230,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // ── Edge distortion: 3 noise layers for organic nebula boundaries ──
     float edgeWarp = fbm(p1 * 4.5 + vec2(7.3, 2.1) + t * 0.04) * 0.16 - 0.08;
     float edgeWarp2 = fbm(p1 * 6.0 + vec2(3.7, 8.4) + t * 0.03) * 0.12 - 0.06;
-    float edgeWarp4 = warpedFbm(p1 * 3.0 + vec2(4.8, 6.9), t * 0.5) * 0.14 - 0.07;
+    float edgeWarp4 = fbm(p1 * 3.0 + vec2(4.8, 6.9) + t * 0.018) * 0.14 - 0.07;
     vec2 warpOffset = vec2(edgeWarp, edgeWarp2 + edgeWarp4);
 
     // ── Background Gaussians — distant diffuse glow for depth illusion ──
@@ -277,22 +270,15 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Per-Gaussian 2D domain warp — independent x/y offsets break elliptical contours
     // into organic cloud shapes without creating directional (linear) artifacts
-    vec2 gwVecA = vec2(
-      (noise(p1 * 5.5 + vec2(2.4, 9.1) + t * 0.035) - 0.5) * 0.22,
-      (noise(p1 * 5.5 + vec2(9.1, 2.4) + t * 0.030) - 0.5) * 0.22
-    );
-    vec2 gwVecB = vec2(
-      (noise(p1 * 6.2 + vec2(8.8, 3.5) + t * 0.028) - 0.5) * 0.22,
-      (noise(p1 * 6.2 + vec2(3.5, 8.8) + t * 0.024) - 0.5) * 0.22
-    );
-    vec2 gwVecC = vec2(
-      (noise(p1 * 4.8 + vec2(5.7, 12.3) + t * 0.032) - 0.5) * 0.22,
-      (noise(p1 * 4.8 + vec2(12.3, 5.7) + t * 0.027) - 0.5) * 0.22
-    );
-    vec2 gwVecEnv = vec2(
-      (noise(p1 * 3.5 + vec2(14.1, 6.2) + t * 0.02) - 0.5) * 0.16,
-      (noise(p1 * 3.5 + vec2(6.2, 14.1) + t * 0.017) - 0.5) * 0.16
-    );
+    // Each gwVec uses one noise sample; y is derived from a cheap offset to halve sample count
+    float _gA = noise(p1 * 5.5 + vec2(2.4, 9.1) + t * 0.033);
+    float _gB = noise(p1 * 6.2 + vec2(8.8, 3.5) + t * 0.026);
+    float _gC = noise(p1 * 4.8 + vec2(5.7, 12.3) + t * 0.030);
+    float _gE = noise(p1 * 3.5 + vec2(14.1, 6.2) + t * 0.019);
+    vec2 gwVecA   = (vec2(_gA, noise(p1 * 5.5 + vec2(11.3, 4.7) + t * 0.028)) - 0.5) * 0.50;
+    vec2 gwVecB   = (vec2(_gB, noise(p1 * 6.2 + vec2(1.9, 10.6) + t * 0.022)) - 0.5) * 0.50;
+    vec2 gwVecC   = (vec2(_gC, noise(p1 * 4.8 + vec2(9.4, 2.1)  + t * 0.025)) - 0.5) * 0.50;
+    vec2 gwVecEnv = (vec2(_gE, noise(p1 * 3.5 + vec2(4.3, 11.8) + t * 0.015)) - 0.5) * 0.28;
 
     // Large shared gas envelope — connects all clouds into one continuous mass
     vec2 nEnv = p1 + warpOffset * 0.5 + gwVecEnv - vec2(0.0, -0.02);
@@ -300,18 +286,24 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float nebEnvelope = exp(-envD);
 
     // Nebula A: Upper-center — magenta-purple, main feature (wide, pulled toward center)
+    // Rotated 30° so its axis doesn't align with B/C, breaking saddle-point seams
     vec2 nA = p1 + warpOffset + gwVecA - vec2(-0.05, 0.12);
-    float dA = nA.x * nA.x * 2.66 + nA.y * nA.y * 2.38;
+    { float ca = 0.866, sa = 0.500; nA = vec2(ca*nA.x + sa*nA.y, -sa*nA.x + ca*nA.y); }
+    float dA = nA.x * nA.x * 2.39 + nA.y * nA.y * 2.14;
     float nebA = exp(-dA);
 
     // Nebula B: Lower-left — warm orange-gold (wide, pulled toward center)
+    // Rotated 75° — axes non-parallel to A and C
     vec2 nB = p1 + warpOffset + gwVecB - vec2(-0.18, -0.16);
-    float dB = nB.x * nB.x * 3.04 + nB.y * nB.y * 2.66;
+    { float cb = 0.259, sb = 0.966; nB = vec2(cb*nB.x + sb*nB.y, -sb*nB.x + cb*nB.y); }
+    float dB = nB.x * nB.x * 2.74 + nB.y * nB.y * 2.39;
     float nebB = exp(-dB);
 
-    // Nebula C: Right — warm diffuse cloud (simple Gaussian, no phoenix sub-shapes)
+    // Nebula C: Right — warm diffuse cloud
+    // Rotated -20° (340°) — tilts opposite to A, avoids reinforcing horizontal saddle
     vec2 nC = p1 + warpOffset + gwVecC - vec2(0.20, -0.06);
-    float dC = nC.x * nC.x * 3.54 + nC.y * nC.y * 3.17;
+    { float cc = 0.940, sc = -0.342; nC = vec2(cc*nC.x + sc*nC.y, -sc*nC.x + cc*nC.y); }
+    float dC = nC.x * nC.x * 3.19 + nC.y * nC.y * 2.85;
     float nebC = exp(-dC);
 
     // Noise-driven breakup — sculpts organic holes and tendrils in the gas
@@ -320,12 +312,12 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Combined cloud mask — envelope connects, clouds overlap and add up
     // Allow values above 1.0 before clamping so overlaps create brighter collision zones
-    float rawCloud = nebA + nebB * 1.0 + nebC * 0.85 + nebEnvelope * 0.35;
+    float rawCloud = nebA * 2.41 + nebB * 2.08 + nebC * 2.15 + nebEnvelope * 0.55;
     float cloudMask = clamp(rawCloud, 0.0, 1.0);
-    // Sharper falloff at edges — pow(1.3) trims faint outer gas that gradient noise made visible
-    cloudMask = pow(cloudMask, 1.3);
-    // Apply organic breakup — creates holes and tendrils
-    cloudMask *= mix(0.55, 1.0, breakupMask);
+    // Gentle falloff — lowered from 1.3 to preserve body volume of wider dispersed clouds
+    cloudMask = pow(cloudMask, 1.05);
+    // Apply organic breakup — raised floor from 0.55 to 0.75 so body doesn't vanish during thin breakup phases
+    cloudMask *= mix(0.75, 1.0, breakupMask);
 
     // Per-nebula color identity: 0 = purple/magenta, 1 = warm orange
     // Each nebula leans toward a hue but all contain both colors swirling through
@@ -334,7 +326,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Add large-scale noise to break up the spatial color separation
     // This makes purple streaks appear in warm regions and vice versa
     float hueNoise = fbm(p2 * 2.5 + vec2(13.7, 7.3) + t * 0.10);
-    float hueSwirl = warpedFbm(p1 * 1.8 + vec2(5.2, 9.1) + vec2(t * 0.14, -t * 0.09), t * 1.2);
+    float hueSwirl = fbm(p1 * 1.8 + vec2(5.2, 9.1) + t * 0.11);
     // Blend noise into hue — ±0.30 variation so colors truly intermingle
     float nebulaHue = clamp(baseHue + (hueNoise - 0.5) * 0.40 + (hueSwirl - 0.5) * 0.20, 0.0, 1.0);
     // Blue depth factor: strongest in transition zones + at depth edges
@@ -1106,7 +1098,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     const wrapper = wrapperRef.current;
     const vpW = wrapper ? wrapper.clientWidth  : window.innerWidth;
     const vpH = wrapper ? wrapper.clientHeight : window.innerHeight;
-    const dpr = Math.min(window.devicePixelRatio, 1.5);
+    const dpr = Math.min(window.devicePixelRatio, 1.0);
     let cw = Math.round(vpW * dpr);
     let ch = Math.round(vpH * dpr);
     canvas.width  = cw;
@@ -1173,7 +1165,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
       const w = wrapperRef.current;
       const rVpW = w ? w.clientWidth  : window.innerWidth;
       const rVpH = w ? w.clientHeight : window.innerHeight;
-      const d = Math.min(window.devicePixelRatio, 1.5);
+      const d = Math.min(window.devicePixelRatio, 1.0);
       let rw = Math.round(rVpW * d);
       let rh = Math.round(rVpH * d);
       canvas.width  = rw;

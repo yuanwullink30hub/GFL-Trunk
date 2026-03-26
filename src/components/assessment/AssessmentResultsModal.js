@@ -22,7 +22,7 @@ import { isNatureSlot } from '../../pages/assessment/assessmentData';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
 import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity, getPublicSiteBanner } from '../../utils/apiClient';
-import { SciFiButton } from './dashboardStyles';
+// SciFiButton removed — unused in this component
 import tnmWheelImg from '../../images/Model imports/TNM wheel PNG.png';
 import deltawerkenImg from '../../images/Model imports/Deltawerken png.png';
 import cellsImg from '../../images/Model imports/Cells within Cells png.png';

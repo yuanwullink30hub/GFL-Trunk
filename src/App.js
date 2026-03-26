@@ -161,7 +161,6 @@ const App = () => {
   const [resultsModalProgress, setResultsModalProgress] = useState(0); // 0-1 progress for results modal floating out
   const [resultsLoadingProgress, setResultsLoadingProgress] = useState(0); // 0-1 loading bar progress (AI thinking time)
   const [aiAnalysisReady, setAiAnalysisReady] = useState(false); // True when AI response received
-  const [showLoginFromResults, setShowLoginFromResults] = useState(false); // Show login modal after results
   
   // Assessment data: live from MongoDB, falling back to static data if fetch fails
   const [liveSubjects, setLiveSubjects] = useState([]);
@@ -729,7 +728,6 @@ const App = () => {
     setResultsModalProgress(0);
     setResultsLoadingProgress(0);
     setAiAnalysisReady(false);
-    setShowLoginFromResults(false);
     setPyramidScrollProgress(0);
     setIntroComplete(false);
     setLayerState({
@@ -1994,7 +1992,6 @@ const App = () => {
                       setResultsModalProgress(0);
                       // Phase 2 — navigate to login. Keep assessmentPhase='results' so the
                       // invisible modal stays mounted — prevents the expanded pyramid flashing.
-                      setShowLoginFromResults(true);
                       navigateToSection('login');
                       // Phase 3 — reset exactly when map arrives at login position (+200ms buffer).
                       // MAP_TRANSITION_DURATION (1800ms) is the const used by navigateToSection.

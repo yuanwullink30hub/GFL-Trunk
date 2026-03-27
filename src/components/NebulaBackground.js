@@ -322,9 +322,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Per-nebula smooth weights — each Gaussian carries its own color identity
     // Additive blending: each color fades with its own Gaussian, no sharp ratio flips
     // Soft floor prevents weight ratios from snapping in dead zones between clouds
-    float sA = nebA + 0.08;
-    float sB = nebB + 0.08;
-    float sC = nebC + 0.08;
+    float sA = nebA + 0.18;
+    float sB = nebB + 0.18;
+    float sC = nebC + 0.18;
     float totalNeb = sA + sB + sC;
     float wA = sA / totalNeb; // purple/magenta weight
     float wB = sB / totalNeb; // mixed/transitional weight

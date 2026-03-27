@@ -23,7 +23,7 @@ import OceanManualInputModal from './OceanManualInputModal';
  * - onClose() - called when user closes the modal
  * - onNavigateToData() - called when user clicks the research button
  */
-const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [], onAddFile, onRemoveFile }) => {
+const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolicy, uploadedFiles = [], onAddFile, onRemoveFile }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef(null);
   const infoIconRef = useRef(null);
@@ -49,6 +49,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
   const [consentClosing, setConsentClosing] = useState(false);
   const [consentOrigin, setConsentOrigin] = useState('center center');
   const consentOverlayRef = useRef(null);
+  const [pendingPolicySlug, setPendingPolicySlug] = useState(null);
   const [showUploadWarning, setShowUploadWarning] = useState(false);
   const [showOceanInput, setShowOceanInput] = useState(false);
   const [oceanOrigin, setOceanOrigin] = useState('center center');
@@ -174,12 +175,10 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
     } catch {}
   };
 
-  // Intro card entrance animation on mount — mirrors the infoReady two-phase pattern
+  // Intro card entrance handled by parent (introShrinkProgress 0→1);
+  // just mark ready immediately so inner content is visible.
   useEffect(() => {
-    setIntroExpanding(true);
     requestAnimationFrame(() => setIntroReady(true));
-    const t = setTimeout(() => setIntroExpanding(false), 375);
-    return () => clearTimeout(t);
   }, []);
 
   // Native wheel capture on consent overlay
@@ -1059,7 +1058,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                   style={{ marginTop: '0.15rem', accentColor: '#a855f7', width: '1rem', height: '1rem', flexShrink: 0, cursor: 'pointer' }}
                 />
                 <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureDescFont, lineHeight: 1.6 }}>
-                  Ik heb de <a href="#/algemene-voorwaarden" style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Algemene Voorwaarden</a> en het <a href="#/privacybeleid" style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Privacybeleid</a> gelezen en ga hiermee akkoord. Ik begrijp dat Garden For Life mijn e-mailadres en accountgegevens verwerkt om de dienst te leveren.
+                  Ik heb de <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingPolicySlug('algemene-voorwaarden'); }} style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' }}>Algemene Voorwaarden</span> en het <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingPolicySlug('privacybeleid'); }} style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' }}>Privacybeleid</span> gelezen en ga hiermee akkoord. Ik begrijp dat Garden For Life mijn e-mailadres en accountgegevens verwerkt om de dienst te leveren.
                 </span>
               </label>
 
@@ -1115,6 +1114,61 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, uploadedFiles = [
                 </SciFiButton>
               </div>
             </div>
+
+            {/* ── Policy redirect warning modal ── */}
+            {pendingPolicySlug && (
+              <div
+                style={{
+                  position: 'absolute', inset: 0, zIndex: 60,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                }}
+                onClick={(e) => { if (e.target === e.currentTarget) setPendingPolicySlug(null); }}
+              >
+                <div style={{
+                  backgroundColor: 'rgba(10, 5, 15, 0.95)',
+                  border: '1px solid rgba(168,85,247,0.3)',
+                  borderRadius: '0.5rem',
+                  padding: '1rem 1.4rem',
+                  maxWidth: '240px',
+                  textAlign: 'center',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.6), inset 0 0 8px rgba(168,85,247,0.05)',
+                  animation: 'infoExpand 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                  transformOrigin: 'center center',
+                }}>
+                  <p style={{ color: 'rgba(148,163,184,0.9)', fontSize: 'max(10px, 0.5vw)', marginBottom: '0.8rem', lineHeight: 1.5 }}>
+                    Je verlaat deze pagina
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                    <SciFiButton
+                      onClick={() => setPendingPolicySlug(null)}
+                      variant="white"
+                      size="xs"
+                      padding="0.25rem 0.7rem"
+                      fontSize="max(8px, 0.4vw)"
+                    >
+                      Terug
+                    </SciFiButton>
+                    <SciFiButton
+                      onClick={() => {
+                        const slug = pendingPolicySlug;
+                        setPendingPolicySlug(null);
+                        // Skip consent close animation — parent will shrink entire card as a whole
+                        setConsentLevelId(null);
+                        setConsentClosing(false);
+                        if (onNavigateToPolicy) onNavigateToPolicy(slug);
+                      }}
+                      variant="purple"
+                      size="xs"
+                      padding="0.25rem 0.7rem"
+                      fontSize="max(8px, 0.4vw)"
+                    >
+                      Doorgaan
+                    </SciFiButton>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

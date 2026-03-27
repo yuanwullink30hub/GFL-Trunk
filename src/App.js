@@ -159,6 +159,7 @@ const App = () => {
   const [foldProgress, setFoldProgress] = useState(0); // 0-1 for pyramid fold-up animation (3D layers)
   const [coreScaleMultiplier, setCoreScaleMultiplier] = useState(1); // 1-5 scale for inner core growth
   const [resultsModalProgress, setResultsModalProgress] = useState(0); // 0-1 progress for results modal floating out
+  const [introShrinkProgress, setIntroShrinkProgress] = useState(1); // 1=full, 0=collapsed into entity
   const [resultsLoadingProgress, setResultsLoadingProgress] = useState(0); // 0-1 loading bar progress (AI thinking time)
   const [aiAnalysisReady, setAiAnalysisReady] = useState(false); // True when AI response received
   
@@ -672,10 +673,21 @@ const App = () => {
   // ASSESSMENT HANDLERS
   // ============================================
   
-  // Show intro modal when entity intro completes
+  // Show intro modal when entity intro completes — float out of entity
   useEffect(() => {
     if (layerState.introComplete && assessmentPhase === 'hidden') {
+      setIntroShrinkProgress(0);
       setAssessmentPhase('intro');
+      const expandStart = performance.now();
+      const EXPAND_DURATION = 700;
+      const animateExpand = (now) => {
+        const elapsed = now - expandStart;
+        const progress = Math.min(elapsed / EXPAND_DURATION, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        setIntroShrinkProgress(eased);
+        if (progress < 1) requestAnimationFrame(animateExpand);
+      };
+      requestAnimationFrame(animateExpand);
     }
   }, [layerState.introComplete, assessmentPhase]);
   
@@ -1864,13 +1876,46 @@ const App = () => {
               <div 
                 className="fixed inset-0 flex items-center justify-center z-[200] pointer-events-auto"
                 style={{
-                  background: 'transparent'
+                  background: 'transparent',
+                  transform: introShrinkProgress < 1 ? `scale(${0.05 + introShrinkProgress * 0.95})` : undefined,
+                  opacity: introShrinkProgress < 1 ? introShrinkProgress : 1,
+                  pointerEvents: introShrinkProgress > 0.05 ? 'auto' : 'none',
+                  transformOrigin: '50% 23vh',
+                  transition: 'none',
                 }}
               >
                 <AssessmentIntro 
                   onStart={handleAssessmentStart}
                   onClose={handleAssessmentClose}
                   onNavigateToData={() => { handleAssessmentClose(); handleOpenSection('monitor'); }}
+                  onNavigateToPolicy={(slug) => {
+                    // Reverse the expand animation — shrink entire intro card back into entity
+                    const collapseStart = performance.now();
+                    const COLLAPSE_DURATION = 500;
+                    const animateCollapse = (now) => {
+                      const elapsed = now - collapseStart;
+                      const progress = Math.min(elapsed / COLLAPSE_DURATION, 1);
+                      const eased = progress * progress; // ease-in quadratic
+                      setIntroShrinkProgress(1 - eased);
+                      if (progress < 1) {
+                        requestAnimationFrame(animateCollapse);
+                      } else {
+                        // Card collapsed — navigate to menu (same pattern as results→login)
+                        setIntroShrinkProgress(0);
+                        navigateToSection('menu');
+                        // Push URL + reset state only after map arrives at destination
+                        setTimeout(() => {
+                          resetAssessmentState();
+                          setCurrentFrame(0);
+                          window.history.pushState({}, '', `?page=${slug}`);
+                          // pushState doesn't fire popstate — dispatch manually so
+                          // EyedentityPage picks up the slug and opens the right tab
+                          window.dispatchEvent(new PopStateEvent('popstate'));
+                        }, MAP_TRANSITION_DURATION + 200);
+                      }
+                    };
+                    requestAnimationFrame(animateCollapse);
+                  }}
                   uploadedFiles={uploadedFiles}
                   onAddFile={handleAddFile}
                   onRemoveFile={handleRemoveFile}

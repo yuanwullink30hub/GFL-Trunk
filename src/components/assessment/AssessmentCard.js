@@ -171,8 +171,9 @@ const AssessmentCard = ({
 
   // Breakpoint-based sizing:  Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
   const s = windowWidth >= 1441 ? {
-    // ── Desktop ── original full-size
-    cardMaxWidth: '42rem',
+    // ── Desktop ── original full-size (+20% width, right-extend)
+    cardMaxWidth: '46.2rem',
+    cardBaseWidth: '42rem',
     maxH: '82vh',
     headerPad: '0.75rem 1.25rem',
     badgeSize: '2.25rem',
@@ -187,8 +188,9 @@ const AssessmentCard = ({
     footerPad: '0.75rem 1.25rem',
     indicatorSize: '1.75rem',
   } : windowWidth >= 1024 ? {
-    // ── Laptop ── vw-based ×1.3
-    cardMaxWidth: '33.9vw',
+    // ── Laptop ── vw-based ×1.3 (+20% width, right-extend)
+    cardMaxWidth: '37.3vw',
+    cardBaseWidth: '33.9vw',
     maxH: '80vh',
     headerPad: '0.57vw 0.95vw',
     badgeSize: '1.89vw',
@@ -203,8 +205,9 @@ const AssessmentCard = ({
     footerPad: '0.57vw 0.95vw',
     indicatorSize: '1.51vw',
   } : windowWidth >= 768 ? {
-    // ── Tablet ── 0.65x
-    cardMaxWidth: '27rem',
+    // ── Tablet ── 0.65x (+20% width, right-extend)
+    cardMaxWidth: '29.7rem',
+    cardBaseWidth: '27rem',
     maxH: '80vh',
     headerPad: '0.5rem 0.8rem',
     badgeSize: '1.5rem',
@@ -221,6 +224,7 @@ const AssessmentCard = ({
   } : {
     // ── Mobile ── viewport-fitting, touch-friendly
     cardMaxWidth: '94vw',
+    cardBaseWidth: '94vw',
     maxH: '82vh',
     headerPad: '0.5rem 0.65rem',
     badgeSize: '1.6rem',
@@ -422,7 +426,7 @@ const AssessmentCard = ({
   }
 
   return (
-    <div className="relative w-full mx-auto" style={{ maxWidth: s.cardMaxWidth }}>
+    <div className="relative mx-auto" style={{ width: isCollapsed ? s.cardBaseWidth : s.cardMaxWidth, maxWidth: '96vw' }}>
       {/* ── First Overlay — "Voordat je begint" for subject 0, layer intro for others ── */}
       {showIntro && !started && !isCollapsed && (
         <div
@@ -1041,7 +1045,7 @@ const AssessmentCard = ({
               </button>
               {process.env.NODE_ENV !== 'production' && (
                 <button
-                  onClick={handleAutoFill}
+                  onClick={() => { handleAutoFill(); handleSave(); }}
                   className="flex items-center justify-center gap-1 px-3 py-1.5 rounded transition-all duration-200"
                   style={{
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",

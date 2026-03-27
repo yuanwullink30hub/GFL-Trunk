@@ -78,8 +78,8 @@ const DISP_FRAG = `
       float dist = segDist(uvA, mpA, mA);
 
       // Adaptive brush radius: smaller for subtler interaction
-      float brushR = 0.06 + u_mouseSpeed * 2.0;
-      brushR = min(brushR, 0.18);
+      float brushR = 0.035 + u_mouseSpeed * 1.2;
+      brushR = min(brushR, 0.10);
 
       // Smooth cubic falloff
       float falloff = 1.0 - smoothstep(0.0, brushR, dist);
@@ -91,7 +91,7 @@ const DISP_FRAG = `
       vec2 dir = spd > 1e-5 ? moveDir / spd : vec2(0.0);
 
       // Gentle strength — subtle paint-stirring feel
-      float str = max(0.015, min(spd * 10.0, 0.08));
+      float str = max(0.010, min(spd * 6.0, 0.045));
 
       // Push 1: drag paint forward along movement direction
       vec2 push = dir * falloff * str;
@@ -282,26 +282,26 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Large shared gas envelope — connects all clouds into one continuous mass
     vec2 nEnv = p1 + warpOffset * 0.5 + gwVecEnv - vec2(0.0, -0.02);
-    float envD = nEnv.x * nEnv.x * 0.75 + nEnv.y * nEnv.y * 0.66;
+    float envD = nEnv.x * nEnv.x * 0.58 + nEnv.y * nEnv.y * 0.50;
     float nebEnvelope = exp(-envD);
 
     // Nebula A: Upper-center — magenta-purple, main feature (drifting center)
     // Rotated 30° so its axis doesn't align with B/C, breaking saddle-point seams
-    vec2 nA = p1 + warpOffset + gwVecA - vec2(-0.05 + 0.07*sin(t*0.053), 0.12 + 0.06*sin(t*0.071));
+    vec2 nA = p1 + warpOffset + gwVecA - vec2(-0.05 + 0.09*sin(t*0.053), 0.12 + 0.08*sin(t*0.071));
     { float ca = 0.866, sa = 0.500; nA = vec2(ca*nA.x + sa*nA.y, -sa*nA.x + ca*nA.y); }
     float dA = nA.x * nA.x * 2.39 + nA.y * nA.y * 2.14;
     float nebA = exp(-dA);
 
     // Nebula B: Lower-left — warm orange-gold (drifting center)
     // Rotated 75° — axes non-parallel to A and C
-    vec2 nB = p1 + warpOffset + gwVecB - vec2(-0.18 + 0.08*sin(t*0.061 + 2.1), -0.16 + 0.07*sin(t*0.083 + 4.3));
+    vec2 nB = p1 + warpOffset + gwVecB - vec2(-0.18 + 0.10*sin(t*0.061 + 2.1), -0.16 + 0.08*sin(t*0.083 + 4.3));
     { float cb = 0.259, sb = 0.966; nB = vec2(cb*nB.x + sb*nB.y, -sb*nB.x + cb*nB.y); }
     float dB = nB.x * nB.x * 2.74 + nB.y * nB.y * 2.39;
     float nebB = exp(-dB);
 
     // Nebula C: Right — warm diffuse cloud (drifting center)
     // Rotated -20° (340°) — tilts opposite to A, avoids reinforcing horizontal saddle
-    vec2 nC = p1 + warpOffset + gwVecC - vec2(0.20 + 0.06*sin(t*0.077 + 5.7), -0.06 + 0.08*sin(t*0.047 + 1.4));
+    vec2 nC = p1 + warpOffset + gwVecC - vec2(0.20 + 0.08*sin(t*0.077 + 5.7), -0.06 + 0.09*sin(t*0.047 + 1.4));
     { float cc = 0.940, sc = -0.342; nC = vec2(cc*nC.x + sc*nC.y, -sc*nC.x + cc*nC.y); }
     float dC = nC.x * nC.x * 3.19 + nC.y * nC.y * 2.85;
     float nebC = exp(-dC);
@@ -311,10 +311,10 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float breakupMask = smoothstep(0.32, 0.58, breakup);
 
     // Combined cloud mask — envelope bridges gaps, clouds add softly
-    float rawCloud = nebA * 2.41 + nebB * 2.08 + nebC * 2.15 + nebEnvelope * 0.55;
+    float rawCloud = nebA * 2.41 + nebB * 2.08 + nebC * 2.15 + nebEnvelope * 0.75;
     float cloudMask = clamp(rawCloud, 0.0, 1.0);
-    cloudMask = pow(cloudMask, 1.3);
-    cloudMask *= mix(0.55, 1.0, breakupMask);
+    cloudMask = pow(cloudMask, 1.15);
+    cloudMask *= mix(0.65, 1.0, breakupMask);
 
     // Smooth weights from drifting Gaussians — derive single blend factor
     // Soft floor prevents weight ratios from snapping in dead zones between clouds

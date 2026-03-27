@@ -42,7 +42,7 @@ const ARCHETYPE_QUOTES = {
   INNOCENT_CHAOS: 'De bubbel waarin ik leef is geen zwakte — het is mijn laboratorium. En de harde grond buiten die bubbel is waar ik ontdek of deze vleugels ook werken als het regent.',
 
   // ═══ EXPLORER ════════════════════════════════════════════
-  EXPLORER_SEEKER: 'De kaart die ik teken terwijl ik loopt is briljant — maar een kaart is geen thuis. Het moeilijkste terrein dat ik ooit in kaart zal brengen is de plek waar ik besluit te blijven.',
+  EXPLORER_SEEKER: 'De kaart die ik teken terwijl ik loop is briljant — maar een kaart is geen thuis. Het moeilijkste terrein dat ik ooit in kaart zal brengen is de plek waar ik besluit te blijven.',
   EXPLORER_RULING: 'Ik verken het onbekende met de discipline van een soldaat. Maar de wildste ontdekking is niet het volgende territorium — het is het moment dat ik de kaart loslaat en verdwaal. Dáár vind ik het.',
   EXPLORER_RELATIONAL: 'Ik ontdek de wereld via verbinding — en dat is mijn grootste gave. Maar de krachtigste verbindingen zijn verankerd. Een vriend voor allen is een vijand van zichzelf.',
   EXPLORER_ABSTRACT: 'De theorie die ik zoek voorbij de horizon — die is er. Maar materie vormt pas als ik mijn handen vuil maak. Kennis die alleen in mijn hoofd bestaat, heeft geen vulling.',
@@ -85,7 +85,7 @@ const ARCHETYPE_QUOTES = {
   MAGICIAN_AGENCY: 'Ik kan alles transformeren — behalve de dood. En dat is niet mijn falen. Dat is de grens. De grootste alchemie is niet lood in goud veranderen. Het is accepteren dat sommige dingen lood mogen blijven.',
   MAGICIAN_RULING: 'De scherpste blauwdruk die ik ooit tekende was de eerste die ik durfde aan te passen terwijl ik bouwde. Een plan dat de werkelijkheid niet mag corrigeren is geen visie — het is een dogma met een deadline.',
   MAGICIAN_RELATIONAL: 'Ik transformeer relaties met een kracht die niemand volledig begrijpt — inclusief ikzelf. Maar charme die stuurt is manipulatie. De echte magie is de ander veranderen door zelf te veranderen — en dan loslaten.',
-  MAGICIAN_SEEKER: 'Ik zie wat er kan zijn — en dat visioen is zuiver. Maar het lot is een raam, geen spiegel. Ik kies mijn gewoonten zorgvuldig, want mijn visioenen zijn geen oogmerk maar een gewoonte.',
+  MAGICIAN_SEEKER: 'Ik zie wat er kan zijn — en dat visioen is zuiver. Maar het lot is een spiegel, geen raam. Ik kies zorgvuldig, want mijn visioenen zijn geen oogmerk maar een gewoonte.',
   MAGICIAN_CHAOS: 'Ik buig de werkelijkheid met een spreuk en een lach — en het werkt. Tot het niet werkt. De situatie waar ik me niet uit kan toveren is mijn leraar. Die essentie is mijn evolutie.',
   MAGICIAN_ABSTRACT: 'De diepte waarin ik afdaal om de wortel te vinden is indrukwekkend — maar de oppervlakte is waar mensen leven. De genezing die ik offer landt pas als ik terugkom uit de diepte en naast iemand gaat zitten. Niet erboven.',
 
@@ -103,7 +103,7 @@ const ARCHETYPE_QUOTES = {
   RULER_SEEKER: 'De markt buigt voor mijn visie — maar de mensen die het bouwen zijn geen grondstof. Op het moment dat ambitie hebzucht wordt, is het verschil niet de omzet. Het is of ik \'s ochtends in de spiegel kan kijken en de persoon nog herken.',
   RULER_ABSTRACT: 'Het systeem dat ik ontwerp vanuit wijsheid is beter dan wat de meesten kunnen bedenken. Maar wijsheid die niet luistert is dogma. De massa die me niet begrijpt is niet dom — ze leeft in een werkelijkheid die mijn theorie niet bereikt.',
   RULER_AGENCY: 'Alles wat ik aanraak, groeit — maar groei zonder grens is ziekte. Bomen groeien niet tot in de hemel. De wortel die zich het langste verhoudt, is de wortel die weet hoe diep genoeg is.',
-  RULER_CHAOS: 'Ik heb de rebellie in mijn leiderschap geïntegreerd — en dat maakt me zeldzaam. Maar de dag dat ik mijn eigen regels breek en het niet meer voel, is de dag dat integriteit een verhaal werd dat ik mezelf vertel. Ik ben wat ik doe, niet wat ik zeg.',
+  RULER_CHAOS: 'Ik heb de rebellie in mijn leiderschap geïntegreerd — en dat maakt me zeldzaam. Maar de dag dat ik mijn eigen regels breek en het niet meer voel, is de dag dat integriteit een verhaal werd dat ik mezelf vertel, en ik ben wat ik doe, niet wat ik zeg.',
 };
 
 /**

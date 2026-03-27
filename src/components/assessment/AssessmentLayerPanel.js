@@ -170,20 +170,24 @@ const SingleLayerPanel = ({
     };
   }, [isSaved]); // eslint-disable-line react-hooks/exhaustive-deps
   
-  // Notify parent (App.js) when this layer is animating
-  // Pass layerIndex so App can track which layers are currently animating
+  // Notify parent (App.js) when save animation completes.
+  // The 'true' (animating) signal is already sent by handleSave in the parent component.
+  // This effect only fires the 'false' (done) signal when savePhase reaches 'done'.
   useEffect(() => {
-    const isAnimating = savePhase === 'collapsing' || savePhase === 'moving';
-    if (onLayerAnimationStateChange) {
-      onLayerAnimationStateChange(layerIndex, isAnimating);
+    if (savePhase === 'done' && onLayerAnimationStateChange) {
+      onLayerAnimationStateChange(layerIndex, false);
     }
-    // Cleanup: ensure layer is removed from animating set on unmount
+  }, [savePhase, layerIndex, onLayerAnimationStateChange]);
+  
+  // Separate unmount-only cleanup: remove from animating set if component unmounts mid-animation
+  useEffect(() => {
     return () => {
       if (onLayerAnimationStateChange) {
         onLayerAnimationStateChange(layerIndex, false);
       }
     };
-  }, [savePhase, layerIndex, onLayerAnimationStateChange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   const questions = useMemo(() => {
     const cfg = LEVEL_CONFIGS[assessmentLevel];
@@ -510,11 +514,9 @@ const AssessmentLayerPanel = ({
     if (layerIndex === 4) {
       onAllLayersComplete?.(allLayerAnswers);
     } else {
-      // Pre-set the animation guard BEFORE enabling scroll, closing the race
-      // window where scroll could be unblocked before the animation useEffect fires.
-      // The useEffect in SingleLayerPanel will also set this (idempotent via Set).
+      // Mark layer as animating — scroll stays disabled.
+      // When animation completes, App.js will advance to next layer + enable scroll.
       onLayerAnimationStateChange?.(layerIndex, true);
-      onScrollEnabled?.(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete, onLayerAnimationStateChange]);

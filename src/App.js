@@ -152,7 +152,7 @@ const App = () => {
   const assessmentScrollEnabledRef = useRef(false); // Mirror for use in event handlers (avoids stale closures)
   const currentLayerIndexRef = useRef(0); // Mirror for use in event handlers (avoids stale closures)
   const animatingLayersRef = useRef(new Set()); // Track which layers are currently animating (use Set to handle multiple simultaneous)
-  const [, setAnimatingLayersCounter] = useState(0); // Dummy state to trigger re-renders when layers animate
+  const [animatingLayersCounter, setAnimatingLayersCounter] = useState(0); // State to trigger re-renders when layers animate
   const [convergenceProgress, setConvergenceProgress] = useState(0); // 0-1 progress for panels floating back to entity
   const [gatherProgress, setGatherProgress] = useState(0); // 0-1 progress for cards gathering to center stack
   const [staircaseStep, setStaircaseStep] = useState(-1); // -1=waiting, 0=absorb cards into pyramid, 1=fold pyramid up, 2=done
@@ -604,13 +604,17 @@ const App = () => {
         const layerIdx = currentLayerIndexRef.current;
         if (assessmentPhase === 'layers') {
           if (direction > 0) {
-            const maxProgress = scrollEn
-              ? Math.min(1, (layerIdx + 1) / 5)
-              : (layerIdx / 5);
-            newProgress = Math.min(newProgress, maxProgress);
+            if (!scrollEn) {
+              // Scroll disabled (answering questions) — freeze forward scroll completely
+              newProgress = prev;
+            } else {
+              // Scroll enabled — cap at end of current layer's animation range
+              const maxProgress = Math.min(1, (layerIdx + 1) / 5);
+              newProgress = Math.min(newProgress, maxProgress);
+            }
           } else {
-            const minProgress = layerIdx / 5;
-            newProgress = Math.max(newProgress, minProgress);
+            // No backward scrolling during assessment — forward only
+            newProgress = prev;
           }
         }
         
@@ -692,7 +696,9 @@ const App = () => {
   }, [layerState.introComplete, assessmentPhase]);
   
   // Start assessment with selected level
+  // First shrinks the intro card back into the entity, then launches layers phase
   const handleAssessmentStart = useCallback((levelId) => {
+    // Reset assessment state immediately (while intro shrinks)
     setAssessmentLevel(levelId);
     setCurrentSubjectIndex(0);
     setCurrentQuestionIndex(0);
@@ -700,22 +706,39 @@ const App = () => {
     currentLayerIndexRef.current = 0;
     setCurrentLayerIndex(0);
     setLayerAnswers({});
-    setPyramidScrollProgress(0); // Reset scroll so layers start from zero
-    assessmentScrollEnabledRef.current = true;
-    setAssessmentScrollEnabled(true);
-    setAssessmentPhase('layers');
-    // Auto-advance first layer: smoothly animate pyramidScrollProgress from 0 to 1/5
-    const autoScrollStart = Date.now();
-    const autoScrollDuration = 800; // ms
-    const autoScrollTarget = 1 / 5;
-    const autoScrollAnim = () => {
-      const elapsed = Date.now() - autoScrollStart;
-      const t = Math.min(1, elapsed / autoScrollDuration);
-      const eased = t * t * (3 - 2 * t); // smoothstep
-      setPyramidScrollProgress(eased * autoScrollTarget);
-      if (t < 1) requestAnimationFrame(autoScrollAnim);
+    setPyramidScrollProgress(0);
+    assessmentScrollEnabledRef.current = false;
+    setAssessmentScrollEnabled(false);
+    
+    // Shrink intro card back into entity (reuses same animation as onNavigateToPolicy)
+    const collapseStart = performance.now();
+    const COLLAPSE_DURATION = 500;
+    const animateCollapse = (now) => {
+      const elapsed = now - collapseStart;
+      const progress = Math.min(elapsed / COLLAPSE_DURATION, 1);
+      const eased = progress * progress; // ease-in quadratic
+      setIntroShrinkProgress(1 - eased);
+      if (progress < 1) {
+        requestAnimationFrame(animateCollapse);
+      } else {
+        // Intro card fully collapsed into entity — now launch layers
+        setIntroShrinkProgress(0);
+        setAssessmentPhase('layers');
+        // Auto-advance first layer: smoothly animate pyramidScrollProgress from 0 to 1/5
+        const autoScrollStart = Date.now();
+        const autoScrollDuration = 800;
+        const autoScrollTarget = 1 / 5;
+        const autoScrollAnim = () => {
+          const elapsed2 = Date.now() - autoScrollStart;
+          const t = Math.min(1, elapsed2 / autoScrollDuration);
+          const eased2 = t * t * (3 - 2 * t); // smoothstep
+          setPyramidScrollProgress(eased2 * autoScrollTarget);
+          if (t < 1) requestAnimationFrame(autoScrollAnim);
+        };
+        requestAnimationFrame(autoScrollAnim);
+      }
     };
-    requestAnimationFrame(autoScrollAnim);
+    requestAnimationFrame(animateCollapse);
   }, []);
   
   // Full reset of all assessment/pyramid state — used when closing results, returning to landing, etc.
@@ -900,33 +923,38 @@ const App = () => {
   }, []);
   
   // Handle layer animation state changes - track which layers are currently animating (collapse/move phases)
-  // This allows the scroll guard to block scroll for ANY animating layer, not just one
+  // When all animations finish: advance to next layer + enable scroll
   const handleLayerAnimationStateChange = useCallback((layerIndex, isAnimating) => {
     if (isAnimating) {
       animatingLayersRef.current.add(layerIndex);
     } else {
-      animatingLayersRef.current.delete(layerIndex);
+      // Only react if this layer was actually animating (prevents false triggers
+      // from newly-mounted SingleLayerPanels whose savePhase starts as 'idle')
+      const wasAnimating = animatingLayersRef.current.delete(layerIndex);
+      if (wasAnimating && animatingLayersRef.current.size === 0) {
+        // All save animations done → advance to next layer and let user scroll
+        const nextLayer = currentLayerIndexRef.current + 1;
+        if (nextLayer <= 4) {
+          currentLayerIndexRef.current = nextLayer;
+          setCurrentLayerIndex(nextLayer);
+          assessmentScrollEnabledRef.current = true;
+          setAssessmentScrollEnabled(true);
+        }
+      }
     }
     // Force re-render so scroll guard sees the updated set
     setAnimatingLayersCounter(prev => prev + 1);
   }, []);
   
   
-  // Update current layer based on pyramid scroll progress when in layers phase
-  // Only advances ONE layer at a time: after saving layer N, scrolling reveals layer N+1
-  // Layer N+1 fully animates in at scrollProgress = (N+1)/4
+  // Disable scroll once the current card is fully visible (user scrolled it all the way in).
+  // Card for layer N is fully visible at scrollProgress = (N+1)/5.
   useEffect(() => {
     if (assessmentPhase === 'layers' && assessmentScrollEnabled) {
-      const nextLayer = currentLayerIndex + 1;
-      if (nextLayer > 4) return; // All layers visible
-      
-      // Layer N+1 is fully animated when scroll reaches (N+1)/5
-      const threshold = nextLayer / 5;
-      if (pyramidScrollProgress >= threshold) {
-        currentLayerIndexRef.current = nextLayer;
-        setCurrentLayerIndex(nextLayer);
+      const fullThreshold = (currentLayerIndex + 1) / 5;
+      if (pyramidScrollProgress >= fullThreshold - 0.001) {
         assessmentScrollEnabledRef.current = false;
-        setAssessmentScrollEnabled(false); // Disable until next save
+        setAssessmentScrollEnabled(false);
       }
     }
   }, [pyramidScrollProgress, assessmentPhase, assessmentScrollEnabled, currentLayerIndex]);
@@ -1046,13 +1074,17 @@ const App = () => {
           const layerIdx = currentLayerIndexRef.current;
           if (assessmentPhase === 'layers') {
             if (accDirection > 0) {
-              const maxProgress = scrollEn
-                ? Math.min(1, (layerIdx + 1) / 4)
-                : (layerIdx / 4);
-              newProgress = Math.min(newProgress, maxProgress);
+              if (!scrollEn) {
+                // Scroll disabled (answering questions) — freeze forward scroll completely
+                newProgress = prev;
+              } else {
+                // Scroll enabled — cap at end of current layer's animation range
+                const maxProgress = Math.min(1, (layerIdx + 1) / 5);
+                newProgress = Math.min(newProgress, maxProgress);
+              }
             } else {
-              const minProgress = layerIdx / 4;
-              newProgress = Math.max(newProgress, minProgress);
+              // No backward scrolling during assessment — forward only
+              newProgress = prev;
             }
           }
           

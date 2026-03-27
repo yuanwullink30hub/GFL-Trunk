@@ -152,6 +152,7 @@ const App = () => {
   const assessmentScrollEnabledRef = useRef(false); // Mirror for use in event handlers (avoids stale closures)
   const currentLayerIndexRef = useRef(0); // Mirror for use in event handlers (avoids stale closures)
   const animatingLayersRef = useRef(new Set()); // Track which layers are currently animating (use Set to handle multiple simultaneous)
+  const completedAnimationsRef = useRef(new Set()); // Layers whose save animation has finished — never re-add to animating
   const [animatingLayersCounter, setAnimatingLayersCounter] = useState(0); // State to trigger re-renders when layers animate
   const [convergenceProgress, setConvergenceProgress] = useState(0); // 0-1 progress for panels floating back to entity
   const [gatherProgress, setGatherProgress] = useState(0); // 0-1 progress for cards gathering to center stack
@@ -755,6 +756,7 @@ const App = () => {
     assessmentScrollEnabledRef.current = false;
     setAssessmentScrollEnabled(false);
     animatingLayersRef.current.clear(); // Clear stale animation tracking
+    completedAnimationsRef.current.clear();
     setConvergenceProgress(0);
     setGatherProgress(0);
     setStaircaseStep(-1);
@@ -925,15 +927,26 @@ const App = () => {
   // Handle layer animation state changes - track which layers are currently animating (collapse/move phases)
   // When all animations finish: advance to next layer + enable scroll
   const handleLayerAnimationStateChange = useCallback((layerIndex, isAnimating) => {
+    console.log(`[ANIM] layer=${layerIndex} isAnimating=${isAnimating} set=${[...animatingLayersRef.current]} completed=${[...completedAnimationsRef.current]} currentLayer=${currentLayerIndexRef.current}`);
     if (isAnimating) {
+      // Don't re-add a layer whose animation already completed (guards against double handleSave calls)
+      if (completedAnimationsRef.current.has(layerIndex)) {
+        console.log(`[ANIM] SKIPPED — layer ${layerIndex} already completed`);
+        return;
+      }
       animatingLayersRef.current.add(layerIndex);
     } else {
       // Only react if this layer was actually animating (prevents false triggers
       // from newly-mounted SingleLayerPanels whose savePhase starts as 'idle')
       const wasAnimating = animatingLayersRef.current.delete(layerIndex);
+      if (wasAnimating) {
+        completedAnimationsRef.current.add(layerIndex);
+      }
+      console.log(`[ANIM] wasAnimating=${wasAnimating} setAfterDelete=${[...animatingLayersRef.current]}`);
       if (wasAnimating && animatingLayersRef.current.size === 0) {
         // All save animations done → advance to next layer and let user scroll
         const nextLayer = currentLayerIndexRef.current + 1;
+        console.log(`[ANIM] ADVANCING to layer ${nextLayer}, enabling scroll`);
         if (nextLayer <= 4) {
           currentLayerIndexRef.current = nextLayer;
           setCurrentLayerIndex(nextLayer);

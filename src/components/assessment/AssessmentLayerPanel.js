@@ -139,11 +139,14 @@ const SingleLayerPanel = ({
   // Two-phase save animation:
   //   Phase 1: card collapses in place (COLLAPSE_WAIT ms)
   //   Phase 2: collapsed card slides from right to left (MOVE_DURATION ms)
+  //   On completion: directly signals App.js (no useEffect, avoids timing bugs)
   useEffect(() => {
     if (isSaved && savePhase === 'idle') {
+      console.log(`[PANEL L${layerIndex}] Starting save animation`);
       setSavePhase('collapsing');
       // Phase 1: wait for collapse animation to finish
       collapseTimerRef.current = setTimeout(() => {
+        console.log(`[PANEL L${layerIndex}] Phase 2: moving`);
         setSavePhase('moving');
         // Phase 2: animate slide to left
         const startTime = performance.now();
@@ -159,6 +162,11 @@ const SingleLayerPanel = ({
             moveAnimRef.current = requestAnimationFrame(animate);
           } else {
             setSavePhase('done');
+            console.log(`[PANEL L${layerIndex}] Animation DONE, signaling false`);
+            // Signal App.js directly from animation completion — no useEffect indirection
+            if (onLayerAnimationStateChange) {
+              onLayerAnimationStateChange(layerIndex, false);
+            }
           }
         };
         moveAnimRef.current = requestAnimationFrame(animate);
@@ -169,25 +177,6 @@ const SingleLayerPanel = ({
       if (moveAnimRef.current) cancelAnimationFrame(moveAnimRef.current);
     };
   }, [isSaved]); // eslint-disable-line react-hooks/exhaustive-deps
-  
-  // Notify parent (App.js) when save animation completes.
-  // The 'true' (animating) signal is already sent by handleSave in the parent component.
-  // This effect only fires the 'false' (done) signal when savePhase reaches 'done'.
-  useEffect(() => {
-    if (savePhase === 'done' && onLayerAnimationStateChange) {
-      onLayerAnimationStateChange(layerIndex, false);
-    }
-  }, [savePhase, layerIndex, onLayerAnimationStateChange]);
-  
-  // Separate unmount-only cleanup: remove from animating set if component unmounts mid-animation
-  useEffect(() => {
-    return () => {
-      if (onLayerAnimationStateChange) {
-        onLayerAnimationStateChange(layerIndex, false);
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   
   const questions = useMemo(() => {
     const cfg = LEVEL_CONFIGS[assessmentLevel];
@@ -506,6 +495,11 @@ const AssessmentLayerPanel = ({
 
   // Handle save for a specific layer
   const handleSave = useCallback((layerIndex) => {
+    // Guard: prevent double-save for the same layer
+    if (savedLayers.includes(layerIndex)) {
+      console.log(`[SAVE] handleSave layer=${layerIndex} SKIPPED — already saved`);
+      return;
+    }
     const layerAnswers = allLayerAnswers[layerIndex] || {};
     onLayerComplete?.(layerIndex, layerAnswers);
     setSavedLayers(prev => [...prev, layerIndex]);
@@ -516,10 +510,11 @@ const AssessmentLayerPanel = ({
     } else {
       // Mark layer as animating — scroll stays disabled.
       // When animation completes, App.js will advance to next layer + enable scroll.
+      console.log(`[SAVE] handleSave layer=${layerIndex}, marking animating`);
       onLayerAnimationStateChange?.(layerIndex, true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allLayerAnswers, onLayerComplete, onScrollEnabled, onAllLayersComplete, onLayerAnimationStateChange]);
+  }, [allLayerAnswers, savedLayers, onLayerComplete, onScrollEnabled, onAllLayersComplete, onLayerAnimationStateChange]);
 
   if (!isVisible) return null;
   

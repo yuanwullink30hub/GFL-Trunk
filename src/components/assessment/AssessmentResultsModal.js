@@ -12,7 +12,9 @@ import {
   SHADOW_PAIRS,
   ARCHETYPE_TO_GROUP,
   EXTENDED_ARCHETYPES,
+  EXTENDED_ARCHETYPES_NL,
   getExtendedArchetype,
+  getExtendedArchetypeNl,
   isComplementaryPair,
   getExtendedDescription,
   computeAdvancedScores,
@@ -4814,6 +4816,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
   // ──────────────────────────────────────────────────────────
   const supportGroup = ARCHETYPE_TO_GROUP[supportKey] || 'RULING';
   const extendedName = getExtendedArchetype(mainKey, supportKey);
+  const extendedNameNl = getExtendedArchetypeNl(mainKey, supportKey);
 
   // ──────────────────────────────────────────────────────────
   // 4b. Extended Archetype portrait image + description
@@ -4850,10 +4853,12 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
   const allSupportArchetypes = ALL_GROUPS.map(group => {
     const extKey = `${mainKey}_${group}`;
     const extName = EXTENDED_ARCHETYPES[extKey] || mainKey;
+    const extNameNl = EXTENDED_ARCHETYPES_NL[extKey] || extName;
     const desc = getExtendedDescription(mainKey, group);
     return {
       group,
       extendedName: extName,
+      extendedNameNl: extNameNl,
       subtitle: desc?.subtitle || group,
       combination: desc?.combination || '',
       shadow: desc?.shadow || '',
@@ -4949,8 +4954,9 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
 
   const resultObj = {
     // Extended identity
-    name: extendedName,                              // e.g. "The Alchemist"
-    extendedName,
+    name: extendedNameNl,                            // e.g. "De Alchemist" (Dutch)
+    extendedName,                                    // e.g. "The Alchemist" (English)
+    extendedNameNl,                                  // e.g. "De Alchemist" (Dutch)
     extendedSubtitle: extendedDesc?.subtitle || null,  // e.g. "Sage + Creative"
     combinationText: extendedDesc?.combination || null, // Why Main+Support create this archetype
     shadowInsight: extendedDesc?.shadow || null,         // Shadow tension for this combination

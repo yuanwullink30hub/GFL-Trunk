@@ -701,7 +701,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
             WebkitBackdropFilter: 'blur(24px)',
             borderRadius: '0.5rem',
             padding: '1.5rem 2rem 0 2rem',
-            boxShadow: 'inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03), 0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15)',
+            boxShadow: 'inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03), inset -3rem -3rem 6rem rgba(168,85,247,0.04), 0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -794,18 +794,6 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
               )}
             </div>
 
-            {/* Background glow accent */}
-            <div style={{
-              position: 'absolute',
-              bottom: '-6rem',
-              right: '-6rem',
-              width: '16rem',
-              height: '16rem',
-              background: 'rgba(168,85,247,0.05)',
-              borderRadius: '50%',
-              filter: 'blur(60px)',
-              pointerEvents: 'none',
-            }} />
           </div>
         </div>
         </div>{/* /content layer */}

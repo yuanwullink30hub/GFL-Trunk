@@ -484,6 +484,71 @@ export const EXTENDED_ARCHETYPES = {
 };
 
 /**
+ * Dutch translations for all 72 Extended Archetype names.
+ */
+export const EXTENDED_ARCHETYPES_NL = {
+  // Main: JUDGE (Positie 1)
+  JUDGE_RULING: 'De Arbiter', JUDGE_RELATIONAL: 'De Bemiddelaar',
+  JUDGE_SEEKER: 'De Examinator', JUDGE_CHAOS: 'De Klokkenluider',
+  JUDGE_ABSTRACT: 'De Criticus', JUDGE_AGENCY: 'De Wreker',
+
+  // Main: LOVER (Positie 2)
+  LOVER_RELATIONAL: 'De Zielsverwant', LOVER_SEEKER: 'De Dichter',
+  LOVER_CHAOS: 'De Verleider', LOVER_ABSTRACT: 'De Mysticus',
+  LOVER_AGENCY: 'De Romanticus', LOVER_RULING: 'De Metgezel',
+
+  // Main: CAREGIVER (Positie 3)
+  CAREGIVER_RELATIONAL: 'De Genezer', CAREGIVER_SEEKER: 'De Padvinder',
+  CAREGIVER_CHAOS: 'De Kweker', CAREGIVER_ABSTRACT: 'De Therapeut',
+  CAREGIVER_AGENCY: 'De Beschermer', CAREGIVER_RULING: 'De Voorvechter',
+
+  // Main: INNOCENT (Positie 4)
+  INNOCENT_SEEKER: 'De Heilige', INNOCENT_CHAOS: 'De Vrije-geest',
+  INNOCENT_ABSTRACT: 'De Discipel', INNOCENT_AGENCY: 'De Pionier',
+  INNOCENT_RULING: 'De Herder', INNOCENT_RELATIONAL: 'De Samaritaan',
+
+  // Main: EXPLORER (Positie 5)
+  EXPLORER_SEEKER: 'De Navigator', EXPLORER_CHAOS: 'De Innovator',
+  EXPLORER_ABSTRACT: 'De Geleerde', EXPLORER_AGENCY: 'De Zeeman',
+  EXPLORER_RULING: 'De Verkenner', EXPLORER_RELATIONAL: 'De Verbinder',
+
+  // Main: OUTLAW (Positie 6)
+  OUTLAW_CHAOS: 'De Anarchist', OUTLAW_ABSTRACT: 'De Beeldenstormer',
+  OUTLAW_AGENCY: 'De Revolutionair', OUTLAW_RULING: 'De Hervormer',
+  OUTLAW_RELATIONAL: 'De Bevrijder', OUTLAW_SEEKER: 'De Columnist',
+
+  // Main: TRICKSTER (Positie 7)
+  TRICKSTER_CHAOS: 'De Dwaas', TRICKSTER_ABSTRACT: 'De Komiek',
+  TRICKSTER_AGENCY: 'De Saboteur', TRICKSTER_RULING: 'De Hofnar',
+  TRICKSTER_RELATIONAL: 'De Clown', TRICKSTER_SEEKER: 'De Gedaanteverwisselaar',
+
+  // Main: SAGE (Positie 8)
+  SAGE_ABSTRACT: 'De Verlichte', SAGE_AGENCY: 'De Detective',
+  SAGE_RULING: 'De Analist', SAGE_RELATIONAL: 'De Mentor',
+  SAGE_SEEKER: 'De Dromer', SAGE_CHAOS: 'De Kluizenaar',
+
+  // Main: ARTIST (Positie 9)
+  ARTIST_ABSTRACT: 'De Ontwerper', ARTIST_AGENCY: 'De Smidmeester',
+  ARTIST_RULING: 'De Architect', ARTIST_RELATIONAL: 'De Verteller',
+  ARTIST_SEEKER: 'De Visionair', ARTIST_CHAOS: 'De Illusionist',
+
+  // Main: MAGICIAN (Positie 10)
+  MAGICIAN_AGENCY: 'De Alchemist', MAGICIAN_RULING: 'De Ingenieur',
+  MAGICIAN_RELATIONAL: 'De Sjamaan', MAGICIAN_SEEKER: 'Het Orakel',
+  MAGICIAN_CHAOS: 'De Betoveraar', MAGICIAN_ABSTRACT: 'De Tovenaar',
+
+  // Main: HERO (Positie 11)
+  HERO_AGENCY: 'De Legende', HERO_RULING: 'De Bevelhebber',
+  HERO_RELATIONAL: 'De Bewaker', HERO_SEEKER: 'De Uitvinder',
+  HERO_CHAOS: 'De Ronin', HERO_ABSTRACT: 'De Strateeg',
+
+  // Main: RULER (Positie 12)
+  RULER_RULING: 'De Keizer', RULER_RELATIONAL: 'De Patriarch / Matriarch',
+  RULER_SEEKER: 'De Ondernemer', RULER_CHAOS: 'De lonewolf',
+  RULER_ABSTRACT: 'De Filosoof-Koning', RULER_AGENCY: 'De Veroveraar',
+};
+
+/**
  * Get the Extended Archetype name from main + support archetype keys.
  * @param {string} mainKey - e.g. 'SAGE'
  * @param {string} supportKey - e.g. 'OUTLAW'
@@ -493,6 +558,18 @@ export function getExtendedArchetype(mainKey, supportKey) {
   const supportGroup = ARCHETYPE_TO_GROUP[supportKey] || 'WISDOM';
   const lookupKey = `${mainKey}_${supportGroup}`;
   return EXTENDED_ARCHETYPES[lookupKey] || mainKey;
+}
+
+/**
+ * Get the Dutch Extended Archetype name from main + support archetype keys.
+ * @param {string} mainKey - e.g. 'SAGE'
+ * @param {string} supportKey - e.g. 'OUTLAW'
+ * @returns {string} Dutch extended archetype name, e.g. 'De Detective'
+ */
+export function getExtendedArchetypeNl(mainKey, supportKey) {
+  const supportGroup = ARCHETYPE_TO_GROUP[supportKey] || 'WISDOM';
+  const lookupKey = `${mainKey}_${supportGroup}`;
+  return EXTENDED_ARCHETYPES_NL[lookupKey] || EXTENDED_ARCHETYPES[lookupKey] || mainKey;
 }
 
 /**
@@ -760,6 +837,7 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
   const supportGroup = ARCHETYPE_TO_GROUP[supportArchetype];
   const mainGroup = ARCHETYPE_TO_GROUP[mainArchetype];
   const extendedArchetypeName = getExtendedArchetype(mainArchetype, supportArchetype);
+  const extendedArchetypeNameNl = getExtendedArchetypeNl(mainArchetype, supportArchetype);
 
   // ── Detect 180° Individuation (Main & Support are shadow opposites) ──
   const isIndividuated = isShadowPair(mainArchetype, supportArchetype);
@@ -895,6 +973,7 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
     mainGroup,
     supportGroup,
     extendedArchetypeName,
+    extendedArchetypeNameNl,
 
     // Shadow analysis
     shadowArchetype,

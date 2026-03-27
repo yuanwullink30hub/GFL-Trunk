@@ -164,6 +164,7 @@ export function useAssessment() {
       mainGroup: advanced.mainGroup,
       supportGroup: advanced.supportGroup,
       extendedArchetypeName: advanced.extendedArchetypeName,
+      extendedArchetypeNameNl: advanced.extendedArchetypeNameNl,
 
       // Shadow & Blindspot
       shadowArchetype: advanced.shadowArchetype,

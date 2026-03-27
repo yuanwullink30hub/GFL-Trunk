@@ -327,13 +327,14 @@ router.post('/review', authOptional, async (req, res) => {
             .findOne({ _id: 'feedback-email' }).catch(() => null) || {};
 
           const ratingLine = review.starRating ? `\n⭐ Beoordeling: ${review.starRating}/9` : '';
-          const adminBody = `Nieuw assessment-feedback ontvangen.${ratingLine}\n\n📌 Archetype: ${review.archetypeKey || '—'}\n📧 E-mail: ${review.email || 'anoniem'}\n\n✅ Accuraatheid:\n${review.whatWorked || '—'}\n\n❌ Niet overeenkomend:\n${review.whatDidntWork || '—'}\n\n💡 Suggesties:\n${review.suggestions || '—'}\n\nTijdstip: ${review.timestamp.toLocaleString('nl-NL')}\nAssessment-ID: ${review.assessmentId}`;
+          const displayName = review.extendedArchetypeName || review.archetypeKey || '—';
+          const adminBody = `Nieuw assessment-feedback ontvangen.${ratingLine}\n\n📌 Archetype: ${displayName}\n📧 E-mail: ${review.email || 'anoniem'}\n\n✅ Accuraatheid:\n${review.whatWorked || '—'}\n\n❌ Niet overeenkomend:\n${review.whatDidntWork || '—'}\n\n💡 Suggesties:\n${review.suggestions || '—'}\n\nTijdstip: ${review.timestamp.toLocaleString('nl-NL')}\nAssessment-ID: ${review.assessmentId}`;
 
           // Notify admin (plain text)
           await transporter.sendMail({
             from: `"Garden For Life" <${config.email.from}>`,
             to: config.email.user,
-            subject: `Nieuwe Feedback — ${review.archetypeKey || 'Assessment'}${review.starRating ? ` (${review.starRating}/9 ⭐)` : ''}`,
+            subject: `Nieuwe Feedback — ${review.extendedArchetypeName || review.archetypeKey || 'Assessment'}${review.starRating ? ` (${review.starRating}/9 ⭐)` : ''}`,
             text: adminBody,
           });
 

@@ -432,13 +432,13 @@ router.post('/send-results', async (req, res) => {
       },
     });
 
-    const archetypeName = result.overallArchetype || 'Assessment';
-    const filename = `GFL-Consciousness-Profile-${archetypeName.replace(/\s+/g, '_')}.html`;
+    const archetypeNameNl = result.extendedArchetypeNameNl || result.extendedArchetypeName || 'Assessment';
+    const filename = `GFL-Consciousness-Profile-${(result.overallArchetype || 'Assessment').replace(/\s+/g, '_')}.html`;
 
     await transporter.sendMail({
       from: `"Garden For Life" <${config.email.from}>`,
       to: recipientEmail.trim(),
-      subject: `Je Garden For Life Bewustzijnsprofiel — ${archetypeName}`,
+      subject: `Je Garden For Life Bewustzijnsprofiel — ${archetypeNameNl}`,
       html: emailBody,
       attachments: [{
         filename,
@@ -590,7 +590,7 @@ function buildResultsPDFHTML(result) {
   </p>
   <div class="card card-cyan">
     <p class="card-title" style="color:#22d3ee;"><span class="dot" style="background:#22d3ee;"></span>Jouw Profiel</p>
-    <h1 class="hero-archetype">Jij navigeert als ${esc(result.extendedArchetypeName || archetype)}</h1>
+    <h1 class="hero-archetype">Jij navigeert als ${esc(result.extendedArchetypeNameNl || result.extendedArchetypeName || archetype)}</h1>
     <p class="hero-desc">${esc(result.archetypeDescription || '')}</p>
     ${result.archetypeShadow ? `<div class="shadow-box"><strong>Shadow Aspect: </strong>${esc(result.archetypeShadow)}</div>` : ''}
   </div>
@@ -637,7 +637,7 @@ function buildResultsPDFHTML(result) {
  * Build the email body HTML using the Garden For Life template.
  */
 function buildResultsEmailBody(result, recipientEmail) {
-  const archetype = esc(result.overallArchetype || 'Unknown');
+  const archetypeNl = esc(result.extendedArchetypeNameNl || result.extendedArchetypeName || 'Unknown');
   const harmony = result.harmonyScore || 0;
   const level = esc(result.consciousnessLevel || '');
   const feedbackUrl = recipientEmail
@@ -691,7 +691,7 @@ function buildResultsEmailBody(result, recipientEmail) {
           <tr>
             <td style="padding:20px 24px;">
               <p style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#6c757d;">Primair Archetype</p>
-              <p style="margin:0 0 16px;font-size:24px;font-weight:600;color:#212529;">${archetype}</p>
+              <p style="margin:0 0 16px;font-size:24px;font-weight:600;color:#212529;">${archetypeNl}</p>
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td width="50%" style="padding-right:8px;">

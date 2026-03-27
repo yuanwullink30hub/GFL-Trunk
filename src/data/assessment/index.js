@@ -40,7 +40,9 @@ export {
   ARCHETYPE_TO_GROUP,
   ARCHETYPE_NUMBERS,
   EXTENDED_ARCHETYPES,
+  EXTENDED_ARCHETYPES_NL,
   getExtendedArchetype,
+  getExtendedArchetypeNl,
   isComplementaryPair,
   // Line Connection Maps (Triple Network Geometry)
   GREEN_LINE,

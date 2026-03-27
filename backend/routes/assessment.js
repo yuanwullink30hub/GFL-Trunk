@@ -39,7 +39,7 @@ function buildFeedbackEmail(settings, review) {
     '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#f97316;margin-bottom:8px;">FEEDBACK LINK</div>' +
     '<a href="https://gardenforlife.nl/?page=feedback" style="text-decoration:none;font-size:36px;letter-spacing:6px;">⭐⭐⭐</a>' +
     '</div>';
-  const archName = review.archetypeKey || 'pionier';
+  const archName = review.extendedArchetypeName || review.archetypeKey || 'pionier';
   const closingText =
     `Anyway— ${archName}, hartelijk dank voor de tijd en attentie!`;
   const imageBlock = '';
@@ -281,6 +281,7 @@ router.post('/review', authOptional, async (req, res) => {
       suggestions,
       starRating,
       archetypeKey,
+      extendedArchetypeName,
       timestamp,
     } = req.body;
 
@@ -298,6 +299,7 @@ router.post('/review', authOptional, async (req, res) => {
       email: email?.trim() || null,
       assessmentId: assessmentId || 'anonymous',
       archetypeKey: archetypeKey || null,
+      extendedArchetypeName: extendedArchetypeName?.trim() || null,
       whatWorked: whatWorked?.trim() || '',
       whatDidntWork: whatDidntWork?.trim() || '',
       suggestions: suggestions?.trim() || '',

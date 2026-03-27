@@ -179,6 +179,7 @@ const AssessmentResultsModal = ({
         assessmentId: savedAssessmentId || 'anonymous',
         email: email.trim(),
         archetypeKey: result?.mainArchetype || '',
+        extendedArchetypeName: result?.extendedName || '',
         timestamp: new Date().toISOString(),
       });
       setReviewSubmitted(true);

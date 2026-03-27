@@ -285,23 +285,23 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float envD = nEnv.x * nEnv.x * 0.75 + nEnv.y * nEnv.y * 0.66;
     float nebEnvelope = exp(-envD);
 
-    // Nebula A: Upper-center — magenta-purple, main feature (wide, pulled toward center)
+    // Nebula A: Upper-center — magenta-purple, main feature (drifting center)
     // Rotated 30° so its axis doesn't align with B/C, breaking saddle-point seams
-    vec2 nA = p1 + warpOffset + gwVecA - vec2(-0.05, 0.12);
+    vec2 nA = p1 + warpOffset + gwVecA - vec2(-0.05 + 0.07*sin(t*0.053), 0.12 + 0.06*sin(t*0.071));
     { float ca = 0.866, sa = 0.500; nA = vec2(ca*nA.x + sa*nA.y, -sa*nA.x + ca*nA.y); }
     float dA = nA.x * nA.x * 2.39 + nA.y * nA.y * 2.14;
     float nebA = exp(-dA);
 
-    // Nebula B: Lower-left — warm orange-gold (wide, pulled toward center)
+    // Nebula B: Lower-left — warm orange-gold (drifting center)
     // Rotated 75° — axes non-parallel to A and C
-    vec2 nB = p1 + warpOffset + gwVecB - vec2(-0.18, -0.16);
+    vec2 nB = p1 + warpOffset + gwVecB - vec2(-0.18 + 0.08*sin(t*0.061 + 2.1), -0.16 + 0.07*sin(t*0.083 + 4.3));
     { float cb = 0.259, sb = 0.966; nB = vec2(cb*nB.x + sb*nB.y, -sb*nB.x + cb*nB.y); }
     float dB = nB.x * nB.x * 2.74 + nB.y * nB.y * 2.39;
     float nebB = exp(-dB);
 
-    // Nebula C: Right — warm diffuse cloud
+    // Nebula C: Right — warm diffuse cloud (drifting center)
     // Rotated -20° (340°) — tilts opposite to A, avoids reinforcing horizontal saddle
-    vec2 nC = p1 + warpOffset + gwVecC - vec2(0.20, -0.06);
+    vec2 nC = p1 + warpOffset + gwVecC - vec2(0.20 + 0.06*sin(t*0.077 + 5.7), -0.06 + 0.08*sin(t*0.047 + 1.4));
     { float cc = 0.940, sc = -0.342; nC = vec2(cc*nC.x + sc*nC.y, -sc*nC.x + cc*nC.y); }
     float dC = nC.x * nC.x * 3.19 + nC.y * nC.y * 2.85;
     float nebC = exp(-dC);
@@ -310,25 +310,25 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float breakup = warpedFbm(p1 * 2.8 + vec2(3.3, 7.7) + t * 0.3, t * 0.8);
     float breakupMask = smoothstep(0.32, 0.58, breakup);
 
-    // Combined cloud mask — envelope connects, clouds overlap and add up
-    // Allow values above 1.0 before clamping so overlaps create brighter collision zones
+    // Combined cloud mask — envelope bridges gaps, clouds add softly
     float rawCloud = nebA * 2.41 + nebB * 2.08 + nebC * 2.15 + nebEnvelope * 0.55;
     float cloudMask = clamp(rawCloud, 0.0, 1.0);
-    // Gentle falloff — lowered from 1.3 to preserve body volume of wider dispersed clouds
-    cloudMask = pow(cloudMask, 1.05);
-    // Apply organic breakup — raised floor from 0.55 to 0.75 so body doesn't vanish during thin breakup phases
-    cloudMask *= mix(0.75, 1.0, breakupMask);
+    cloudMask = pow(cloudMask, 1.3);
+    cloudMask *= mix(0.55, 1.0, breakupMask);
 
-    // Per-nebula smooth weights — each Gaussian carries its own color identity
-    // Additive blending: each color fades with its own Gaussian, no sharp ratio flips
+    // Smooth weights from drifting Gaussians — derive single blend factor
     // Soft floor prevents weight ratios from snapping in dead zones between clouds
-    float sA = nebA + 0.18;
-    float sB = nebB + 0.18;
-    float sC = nebC + 0.18;
-    float totalNeb = sA + sB + sC;
-    float wA = sA / totalNeb; // purple/magenta weight
-    float wB = sB / totalNeb; // mixed/transitional weight
-    float wC = sC / totalNeb; // warm orange weight
+    float sA = nebA + 0.10;
+    float sB = nebB + 0.10;
+    float sC = nebC + 0.10;
+    // Sharpen weights — raise to power so dominant nebula wins more strongly
+    float cA = pow(sA, 2.5);
+    float cB = pow(sB, 2.5);
+    float cC = pow(sC, 2.5);
+    float totalNeb = cA + cB + cC + 0.001;
+    float wA = cA / totalNeb; // purple/magenta weight
+    float wB = cB / totalNeb; // mixed/transitional weight
+    float wC = cC / totalNeb; // warm orange weight
     // Add noise-driven swirl so colors intermingle organically
     float hueNoise = fbm(p2 * 2.5 + vec2(13.7, 7.3) + t * 0.10);
     float hueSwirl = fbm(p1 * 1.8 + vec2(5.2, 9.1) + t * 0.11);
@@ -340,6 +340,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Re-normalize after noise perturbation
     float wSum = wA + wB + wC + 0.001;
     wA /= wSum; wB /= wSum; wC /= wSum;
+    // Single blend factor for mix() calls — 0 = purple, 1 = warm
+    float colorBlend = smoothstep(0.25, 0.75, wC + wB * 0.5);
     // Blue depth factor: strongest where B (transitional) dominates
     float blueDepth = wB * 0.35 * smoothstep(0.15, 0.40, wB);
     blueDepth = min(blueDepth, 0.15); // cap blue at ~15% contribution
@@ -515,8 +517,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 deepPurple = mix(vec3(0.008, 0.002, 0.018), vec3(0.025, 0.008, 0.04), n1);
     vec3 deepBlue   = mix(vec3(0.004, 0.006, 0.020), vec3(0.012, 0.018, 0.045), n1);
     vec3 deepWarm   = mix(vec3(0.020, 0.007, 0.004), vec3(0.047, 0.016, 0.008), n1);
-    // Per-nebula additive deep color — smooth Gaussian-weighted blend
-    vec3 deepColor = deepPurple * wA + mix(deepPurple, deepWarm, 0.5) * wB + deepWarm * wC;
+    vec3 deepColor = mix(deepPurple, deepWarm, colorBlend);
     deepColor = mix(deepColor, deepBlue, blueDepth);
     deepColor = mix(deepColor, deepColor * 1.5, cloudMask * 0.3);
 
@@ -546,9 +547,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 backWarm = mix(mix(backW1, backW2, smoothstep(0.2, 0.4, nBack)),
                        mix(backW3, backW4, smoothstep(0.5, 0.7, nBack)),
                        smoothstep(0.35, 0.55, nBack));
-    // Per-nebula additive back gas — each cloud carries its own color
     backMagenta *= 1.27; // boost purple/magenta depth
-    vec3 backGasColor = backMagenta * wA + mix(backMagenta, backWarm, 0.5) * wB + backWarm * wC;
+    vec3 backGasColor = mix(backMagenta, backWarm, colorBlend);
     backGasColor = mix(backGasColor, backBlue, blueDepth);
     backGasColor *= u_colorDepth;
     float backMask = smoothstep(0.40, 0.62, nBack) * cloudMask * 0.5 * (0.6 + 0.4 * filamentBack);
@@ -593,9 +593,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     midWarm = mix(midWarm, wrm4, smoothstep(0.42, 0.58, n2));
     midWarm = mix(midWarm, wrm5, smoothstep(0.58, 0.74, n2));
 
-    // Per-nebula additive mid clouds — smooth Gaussian-weighted blend
     midMagenta *= 1.27; // boost purple/magenta depth
-    vec3 midColor = midMagenta * wA + mix(midMagenta, midWarm, 0.5) * wB + midWarm * wC;
+    vec3 midColor = mix(midMagenta, midWarm, colorBlend);
     midColor = mix(midColor, midBlue, blueDepth);
     // Blend some filament texture into it
     midColor *= (0.8 + 0.2 * filament2);
@@ -636,9 +635,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     coreOrange = mix(coreOrange, co3, smoothstep(0.43, 0.60, n3));
     coreOrange = mix(coreOrange, co4, smoothstep(0.60, 0.78, n3));
 
-    // Per-nebula additive bright cores — smooth Gaussian-weighted blend
     corePurple *= 1.27; // boost purple/magenta depth
-    vec3 brightColor = corePurple * wA + mix(corePurple, coreOrange, 0.5) * wB + coreOrange * wC;
+    vec3 brightColor = mix(corePurple, coreOrange, colorBlend);
     brightColor = mix(brightColor, coreBlue, blueDepth);
     brightColor *= u_colorDepth;
     float brightMask = smoothstep(0.50, 0.70, n3) * smoothstep(0.42, 0.60, n2) * cloudMask * (0.6 + 0.4 * filament3);
@@ -651,7 +649,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     rimPurple *= 1.27; // boost purple/magenta depth
     vec3 rimBlue   = mix(vec3(0.06, 0.08, 0.25), vec3(0.15, 0.20, 0.45), rimNoise);
     vec3 rimWarm   = mix(vec3(0.34, 0.108, 0.027), vec3(0.65, 0.216, 0.054), rimNoise);
-    vec3 rimColor = rimPurple * wA + mix(rimPurple, rimWarm, 0.5) * wB + rimWarm * wC;
+    vec3 rimColor = mix(rimPurple, rimWarm, colorBlend);
     rimColor = mix(rimColor, rimBlue, blueDepth);
     rimColor *= u_colorDepth;
 
@@ -663,7 +661,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 edgePurple = mix(vec3(0.12, 0.02, 0.10), vec3(0.28, 0.06, 0.22), edge);
     vec3 edgeBlue   = mix(vec3(0.05, 0.05, 0.14), vec3(0.12, 0.14, 0.32), edge);
     vec3 edgeWarm   = mix(vec3(0.24, 0.081, 0.014), vec3(0.51, 0.189, 0.04), edge);
-    vec3 edgeColor = edgePurple * wA + mix(edgePurple, edgeWarm, 0.5) * wB + edgeWarm * wC;
+    vec3 edgeColor = mix(edgePurple, edgeWarm, colorBlend);
     edgeColor = mix(edgeColor, edgeBlue, blueDepth);
 ` : `
     float edgeGlow = 0.0;
@@ -716,7 +714,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float wispGlow = smoothstep(0.82, 0.95, wisp) * smoothstep(0.35, 0.50, n2) * cloudMask * filament3;
     vec3 wispPurple = vec3(0.7, 0.5, 0.85);
     vec3 wispWarm = vec3(0.9, 0.7, 0.5);
-    vec3 wispColor = wispPurple * wA + mix(wispPurple, wispWarm, 0.5) * wB + wispWarm * wC;
+    vec3 wispColor = mix(wispPurple, wispWarm, colorBlend);
     color += wispColor * wispGlow * 0.06;
 
     // S-curve contrast — crushes blacks deeper, lifts highlights

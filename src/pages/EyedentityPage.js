@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
+﻿import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
 import { ARCHETYPES, SHADOW_PAIRS, RED_LINE, getExtendedDescription, getArchetypeQuote } from '../data/assessment';
 import { getArchetypeImage } from '../data/assessment/archetypeImages';
 import { getCoreProfile } from '../data/assessment/oceanProfiles';
@@ -33,22 +33,36 @@ const ProfileResultCard = ({ result: resultProp }) => {
   const green = '#1d9904';
 
   // â”€â”€ Derive base keys (prop takes precedence over default) â”€â”€
-  const mainKey       = resultProp?.mainArchetype      || MAVERICK_DEFAULT.mainArchetype;
-  const supportKey    = resultProp?.secondaryArchetype || MAVERICK_DEFAULT.supportArchetype;
-  const supportGroup  = resultProp?.supportGroup       || MAVERICK_DEFAULT.supportGroup;
+  // load from localStorage when no prop is provided
+  const savedSession = (() => { try { return JSON.parse(localStorage.getItem('gfl_assessment_session') || 'null'); } catch { return null; } })();
+  const savedSections = (() => { try { return JSON.parse(localStorage.getItem('gfl_analysis_sections') || 'null'); } catch { return null; } })();
 
-  const main      = ARCHETYPES[mainKey]    || {};
-  const support   = ARCHETYPES[supportKey] || {};
-  const shadowKey = SHADOW_PAIRS[mainKey];
+  const mainKey      = resultProp?.mainArchetype      || savedSession?.mainArchetype      || MAVERICK_DEFAULT.mainArchetype;
+  const supportKey   = resultProp?.secondaryArchetype || savedSession?.supportArchetype   || MAVERICK_DEFAULT.supportArchetype;
+  const supportGroup = resultProp?.supportGroup       || savedSession?.supportGroup       || MAVERICK_DEFAULT.supportGroup;
+  const extendedName = resultProp?.name               || savedSession?.extendedArchetype  || MAVERICK_DEFAULT.extendedArchetype;
+  const harmonyActive     = resultProp?.harmonyActive     ?? savedSession?.harmonyActive     ?? MAVERICK_DEFAULT.harmonyActive;
+  const shadowBonusActive = resultProp?.shadowBonusActive ?? savedSession?.shadowBonusActive ?? MAVERICK_DEFAULT.shadowBonusActive;
+
+  const aiProfileMap = (() => {
+    if (!savedSections) return {};
+    const map = {};
+    savedSections.filter(s => s.isProfileElement).forEach(s => { map[s.profileKey] = s.content; });
+    return map;
+  })();
+
+  const main         = ARCHETYPES[mainKey]    || {};
+  const support      = ARCHETYPES[supportKey] || {};
+  const shadowKey    = SHADOW_PAIRS[mainKey];
   const blindspotKey = RED_LINE[mainKey];
-  const extendedDesc = getExtendedDescription(mainKey, supportGroup);
-  const coreProfile  = resultProp?.coreProfile || getCoreProfile(mainKey);
-  const levenslesQuote = resultProp?.levensles  || getArchetypeQuote(mainKey, supportGroup);
-  const imageUrl = resultProp?.imageUrl || getArchetypeImage(mainKey, supportGroup) || main.imageUrl;
+  const extendedDesc      = getExtendedDescription(mainKey, supportGroup);
+  const staticCoreProfile = getCoreProfile(mainKey);
+  const levenslesQuote    = resultProp?.levensles || getArchetypeQuote(mainKey, supportGroup);
+  const imageUrl          = resultProp?.imageUrl  || getArchetypeImage(mainKey, supportGroup) || main.imageUrl;
 
   // â”€â”€ Build unified `r` object â€” real data OR derived demo â”€â”€
   const r = resultProp || {
-    name:             MAVERICK_DEFAULT.extendedArchetype,
+    name:             extendedName,
     extendedSubtitle: extendedDesc?.subtitle    || null,
     combinationText:  extendedDesc?.combination || null,
     shadowInsight:    extendedDesc?.shadow      || null,
@@ -71,8 +85,8 @@ const ProfileResultCard = ({ result: resultProp }) => {
     blindspotNameEn:      blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn  || blindspotKey) : null,
     blindspotDescription: blindspotKey ? (ARCHETYPES[blindspotKey]?.description || null) : null,
     blindspotShadowTrait: blindspotKey ? (ARCHETYPES[blindspotKey]?.shadow || null) : null,
-    harmonyActive:     MAVERICK_DEFAULT.harmonyActive,
-    shadowBonusActive: MAVERICK_DEFAULT.shadowBonusActive,
+    harmonyActive,
+    shadowBonusActive,
     oceanScores:    null,
     extendedOcean:  null,
   };
@@ -98,6 +112,16 @@ const ProfileResultCard = ({ result: resultProp }) => {
       </div>
     </div>
   );
+
+
+  // Kernprofiel: AI text takes priority, static template as fallback
+  const kernprofielFields = [
+    { label: 'Neuroticisme Trigger',        text: aiProfileMap.neuroticismTrigger  || null },
+    { label: 'Superkracht op de Werkvloer', text: aiProfileMap.workplaceSuperpower || staticCoreProfile?.workplaceSuperpower || null },
+    { label: 'Conflictstijl',               text: aiProfileMap.conflictStyle       || staticCoreProfile?.conflictStyle       || null },
+    { label: 'Relatiepatroon',              text: aiProfileMap.relationshipPattern || staticCoreProfile?.relationshipPattern  || null },
+    { label: 'Individuatiepad',             text: aiProfileMap.individuationPath   || staticCoreProfile?.individuationPath   || null },
+  ].filter(f => f.text);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -234,36 +258,27 @@ const ProfileResultCard = ({ result: resultProp }) => {
         </div>
       )}
 
-      {/* â”€â”€ 7. Core Profile Insights â”€â”€ */}
-      {coreProfile && (() => {
-        const fields = [
-          { label: 'Superkracht op de Werkvloer', text: coreProfile.workplaceSuperpower },
-          { label: 'Conflictstijl',               text: coreProfile.conflictStyle },
-          { label: 'Relatiepatroon',              text: coreProfile.relationshipPattern },
-          { label: 'Individuatiepad',             text: coreProfile.individuationPath },
-        ].filter(f => f.text);
-        if (!fields.length) return null;
-        return (
-          <div style={{ background: 'transparent', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '0.75rem', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(to right, transparent, #f97316, transparent)' }} />
-            <h3 style={{ color: '#f97316', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
-              Kernprofiel Inzichten
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {fields.map(({ label, text }) => (
-                <div key={label}>
-                  <div style={{ fontSize: '0.65rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>
-                    {label}
-                  </div>
-                  <p style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.65, margin: 0, textAlign: 'justify' }}>
-                    {text}
-                  </p>
+      {/* 7. Core Profile Insights (AI-generated 4B > static fallback) */}
+      {kernprofielFields.length > 0 && (
+        <div style={{ background: 'transparent', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '0.75rem', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(to right, transparent, #f97316, transparent)' }} />
+          <h3 style={{ color: '#f97316', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
+            Kernprofiel Inzichten
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {kernprofielFields.map(({ label, text }) => (
+              <div key={label}>
+                <div style={{ fontSize: '0.65rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>
+                  {label}
                 </div>
-              ))}
-            </div>
+                <p style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.65, margin: 0, textAlign: 'justify' }}>
+                  {text}
+                </p>
+              </div>
+            ))}
           </div>
-        );
-      })()}
+        </div>
+      )}
 
     </div>
   );

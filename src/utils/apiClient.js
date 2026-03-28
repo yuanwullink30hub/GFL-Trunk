@@ -204,6 +204,7 @@ export async function analyzeAssessment(params, onProgress) {
   let buffer = '';
   let result = null;
   let pdfWarnings = [];
+  let currentEventType = null;
 
   const handleEvent = (eventType, data) => {
     if (eventType === 'progress' && onProgress) {
@@ -227,14 +228,13 @@ export async function analyzeAssessment(params, onProgress) {
     const lines = buffer.split('\n');
     buffer = lines.pop() || ''; // keep incomplete line in buffer
 
-    let eventType = null;
     for (const line of lines) {
       if (line.startsWith('event: ')) {
-        eventType = line.slice(7).trim();
+        currentEventType = line.slice(7).trim();
       } else if (line.startsWith('data: ')) {
         const data = JSON.parse(line.slice(6));
-        handleEvent(eventType, data);
-        eventType = null;
+        handleEvent(currentEventType, data);
+        currentEventType = null;
       }
     }
   }
@@ -242,14 +242,13 @@ export async function analyzeAssessment(params, onProgress) {
   // Parse any remaining data left in buffer after stream ends
   if (buffer.trim()) {
     const remaining = buffer.split('\n');
-    let eventType = null;
     for (const line of remaining) {
       if (line.startsWith('event: ')) {
-        eventType = line.slice(7).trim();
+        currentEventType = line.slice(7).trim();
       } else if (line.startsWith('data: ')) {
         const data = JSON.parse(line.slice(6));
-        handleEvent(eventType, data);
-        eventType = null;
+        handleEvent(currentEventType, data);
+        currentEventType = null;
       }
     }
   }

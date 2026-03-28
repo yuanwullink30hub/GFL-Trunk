@@ -114,6 +114,7 @@ const AssessmentResultsModal = ({
   const [uploadedOceanScores, setUploadedOceanScores] = useState(null);
   const [aiReady, setAiReady] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
+  const [aiRetryCount, setAiRetryCount] = useState(0);
   const [, setAiStage] = useState(0); // 0=waiting, 1=data sent, 2=AI done, 3=integrated
   const aiCalledRef = useRef(false);
   const onAiReadyRef = useRef(onAiReady);
@@ -274,7 +275,7 @@ const AssessmentResultsModal = ({
 
     runAnalysis();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, aiReady]);
+  }, [result, aiReady, aiRetryCount]);
 
   // Removed: stageLabels (using simpler single-message loading state now)
 
@@ -2945,6 +2946,7 @@ const AssessmentResultsModal = ({
                       setAiFailed(false);
                       aiCalledRef.current = false;
                       setAiStage(0);
+                      setAiRetryCount(c => c + 1);
                     }}
                     style={{
                       padding: '0.6rem 1.5rem',

@@ -90,7 +90,7 @@ const LEVEL_CONFIGS = {
     name: 'Leerling',
     questionsPerLayer: null, // use all questions per layer (9,9,6,6,6)
     timerType: 'layered',
-    layerTimers: [90, 75, 60, 45, 30],
+    layerTimers: [111, 90, 72, 60, 49],
     allowBacktrack: false,
     allowQuestionJump: false
   }

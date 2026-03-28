@@ -527,7 +527,7 @@ const AssessmentCard = ({
                 <span style={{ color: '#a855f7' }}>
                 {levelConfig.timerType === 'layered' && levelConfig.layerTimers
                   ? <>{levelConfig.layerTimers.join('s → ')}s</>
-                  : <>90s → 75s → 60s → 45s → 30s</>
+                  : <>111s → 90s → 72s → 60s → 49s</>
                 }
                 </span>
                 <br />

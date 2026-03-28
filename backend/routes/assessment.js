@@ -39,7 +39,7 @@ function buildFeedbackEmail(settings, review) {
     '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#f97316;margin-bottom:8px;">FEEDBACK LINK</div>' +
     '<a href="https://gardenforlife.nl/?page=feedback" style="text-decoration:none;font-size:36px;letter-spacing:6px;">⭐⭐⭐</a>' +
     '</div>';
-  const archName = review.extendedArchetypeName || review.archetypeKey || 'pionier';
+  const archName = (review.extendedArchetypeName || review.archetypeKey || 'pionier').replace(/^(De|Het)\s+/i, '');
   const closingText =
     `Anyway— ${archName}, hartelijk dank voor de tijd en attentie!`;
   const imageBlock = '';
@@ -327,14 +327,14 @@ router.post('/review', authOptional, async (req, res) => {
             .findOne({ _id: 'feedback-email' }).catch(() => null) || {};
 
           const ratingLine = review.starRating ? `\n⭐ Beoordeling: ${review.starRating}/9` : '';
-          const displayName = review.extendedArchetypeName || review.archetypeKey || '—';
+          const displayName = (review.extendedArchetypeName || review.archetypeKey || '—').replace(/^(De|Het)\s+/i, '');
           const adminBody = `Nieuw assessment-feedback ontvangen.${ratingLine}\n\n📌 Archetype: ${displayName}\n📧 E-mail: ${review.email || 'anoniem'}\n\n✅ Accuraatheid:\n${review.whatWorked || '—'}\n\n❌ Niet overeenkomend:\n${review.whatDidntWork || '—'}\n\n💡 Suggesties:\n${review.suggestions || '—'}\n\nTijdstip: ${review.timestamp.toLocaleString('nl-NL')}\nAssessment-ID: ${review.assessmentId}`;
 
           // Notify admin (plain text)
           await transporter.sendMail({
             from: `"Garden For Life" <${config.email.from}>`,
             to: config.email.user,
-            subject: `Nieuwe Feedback — ${review.extendedArchetypeName || review.archetypeKey || 'Assessment'}${review.starRating ? ` (${review.starRating}/9 ⭐)` : ''}`,
+            subject: `Nieuwe Feedback — ${displayName}${review.starRating ? ` (${review.starRating}/9 ⭐)` : ''}`,
             text: adminBody,
           });
 

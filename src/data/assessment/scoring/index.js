@@ -814,20 +814,30 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
   ALL_ARCHETYPE_KEYS.forEach(key => {
     const s = scores[key];
     s.total = s.nature_core + s.green_hw + s.culture_core + s.blue_fb + s.yellow_cog + s.purple_shadow;
+    // Weighted support score: de-emphasise same-group echoes
+    // Support(a) = NK + CK + Y + P + 0.5×HW + 0.3×FB
+    s.supportScore = s.nature_core + s.culture_core + s.yellow_cog + s.purple_shadow
+                   + 0.5 * s.green_hw + 0.3 * s.blue_fb;
   });
 
-  // ── Determine Main & Support with Nature tie-breaking ──
-  const sorted = ALL_ARCHETYPE_KEYS
+  // ── Determine Main (by total) & Support (by weighted supportScore) ──
+  const sortedByTotal = ALL_ARCHETYPE_KEYS
     .map(key => ({ key, ...scores[key] }))
     .sort((a, b) => {
-      // Primary sort: total score descending
       if (b.total !== a.total) return b.total - a.total;
-      // Tie-break: highest nature_core wins (biological essence leads)
       return b.nature_core - a.nature_core;
     });
 
-  const mainArchetype = sorted[0]?.key || 'SAGE';
-  const supportArchetype = sorted[1]?.key || 'EXPLORER';
+  const mainArchetype = sortedByTotal[0]?.key || 'SAGE';
+
+  // Support: rank remaining archetypes by supportScore (nature_core tie-break)
+  const supportArchetype = ALL_ARCHETYPE_KEYS
+    .filter(k => k !== mainArchetype)
+    .sort((a, b) => {
+      const diff = scores[b].supportScore - scores[a].supportScore;
+      if (diff !== 0) return diff;
+      return scores[b].nature_core - scores[a].nature_core;
+    })[0] || 'EXPLORER';
 
   // ── Shadow & Blindspot ──
   const shadowArchetype = SHADOW_PAIRS[mainArchetype] || null;

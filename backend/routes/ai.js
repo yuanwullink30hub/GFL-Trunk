@@ -41,7 +41,7 @@ const router = Router();
  *
  *   // ── Advanced Ontology fields ──
  *   shadowArchetype: "TRICKSTER",               // 180° shadow of Main
- *   blindspotArchetype: "OUTLAW",               // 180° shadow of Support
+ *   blindspotArchetype: "OUTLAW",               // Red Line partner of Main
  *   isIndividuated: false,                       // Main & Support are 180° opposites
  *   hasHarmonyBonus: false,                       // deprecated (Geometric Bleed has no counters)
  *   harmonyBonusApplied: 0,                        // deprecated

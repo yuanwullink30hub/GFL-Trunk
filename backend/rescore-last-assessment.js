@@ -27,6 +27,15 @@ const SHADOW_PAIRS = {
   OUTLAW: 'RULER', RULER: 'OUTLAW',
 };
 
+const RED_LINE = {
+  JUDGE: 'OUTLAW', OUTLAW: 'JUDGE',
+  RULER: 'TRICKSTER', TRICKSTER: 'RULER',
+  LOVER: 'ARTIST', ARTIST: 'LOVER',
+  CAREGIVER: 'SAGE', SAGE: 'CAREGIVER',
+  INNOCENT: 'HERO', HERO: 'INNOCENT',
+  EXPLORER: 'MAGICIAN', MAGICIAN: 'EXPLORER',
+};
+
 const ARCHETYPE_TO_GROUP = {
   JUDGE: 'RULING', RULER: 'RULING',
   LOVER: 'RELATIONAL', CAREGIVER: 'RELATIONAL',
@@ -338,7 +347,7 @@ function generateComparisonPdf(assessment, oldResult, newResult, allScores) {
     const oldExt = getExtended(oldResult.main, oldResult.support);
     const oldExtNl = getExtendedNl(oldResult.main, oldResult.support);
     const oldShadow = SHADOW_PAIRS[oldResult.main] || '—';
-    const oldBlind = SHADOW_PAIRS[oldResult.support] || '—';
+    const oldBlind = RED_LINE[oldResult.main] || '—';
     [
       `Main:      ${oldResult.main}`,
       `Support:   ${oldResult.support}  (group: ${ARCHETYPE_TO_GROUP[oldResult.support]})`,
@@ -355,7 +364,7 @@ function generateComparisonPdf(assessment, oldResult, newResult, allScores) {
     const newExt = getExtended(newResult.main, newResult.support);
     const newExtNl = getExtendedNl(newResult.main, newResult.support);
     const newShadow = SHADOW_PAIRS[newResult.main] || '—';
-    const newBlind = SHADOW_PAIRS[newResult.support] || '—';
+    const newBlind = RED_LINE[newResult.main] || '—';
     const changed = oldResult.support !== newResult.support;
     [
       `Main:      ${newResult.main}`,

@@ -727,6 +727,11 @@ function renderMarkdownBody(doc, body, startY) {
       continue;
     }
 
+    // Skip horizontal rules (--- or ***)
+    if (/^[-*]{3,}\s*$/.test(line.trim())) {
+      continue;
+    }
+
     // Sub-header (### or ####)
     const subHeaderMatch = line.match(/^#{3,4}\s+(.+)/);
     if (subHeaderMatch) {

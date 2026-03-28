@@ -10,6 +10,7 @@ import {
   // Archetype-based scoring
   ALL_ARCHETYPE_KEYS,
   SHADOW_PAIRS,
+  RED_LINE,
   ARCHETYPE_TO_GROUP,
   EXTENDED_ARCHETYPES,
   EXTENDED_ARCHETYPES_NL,
@@ -22,7 +23,7 @@ import {
 } from '../../data/assessment';
 import { isNatureSlot } from '../../pages/assessment/assessmentData';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
-import { getCoreProfile, getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
+import { getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
 import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity, getPublicSiteBanner } from '../../utils/apiClient';
 // SciFiButton removed — unused in this component
 import tnmWheelImg from '../../images/Model imports/TNM wheel PNG.png';
@@ -111,6 +112,7 @@ const AssessmentResultsModal = ({
 
   // ── AI Analysis state ──
   const [aiSections, setAiSections] = useState(null);
+  const [aiProfileData, setAiProfileData] = useState(null);
   const [uploadedOceanScores, setUploadedOceanScores] = useState(null);
   const [aiReady, setAiReady] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
@@ -263,7 +265,13 @@ const AssessmentResultsModal = ({
         setAiStage(3);
         if (aiResult.uploadedOceanScores) setUploadedOceanScores(aiResult.uploadedOceanScores);
         const sections = parseAiSections(aiResult.analysis || '');
-        setAiSections(sections);
+        const profileElements = sections.filter(s => s.isProfileElement);
+        if (profileElements.length > 0) {
+          const pd = {};
+          profileElements.forEach(s => { pd[s.profileKey] = s.content; });
+          setAiProfileData(pd);
+        }
+        setAiSections(sections.filter(s => !s.isProfileElement));
         setAiReady(true);
         if (onAiReadyRef.current) onAiReadyRef.current();
       } catch (err) {
@@ -296,6 +304,51 @@ const AssessmentResultsModal = ({
       return true;
     }),
   [displaySections]);
+
+  // Split visible AI sections into ordered groups matching PDF page order
+  const aiGroup1a = useMemo(() => visibleSections.filter(s => {
+    const t = cleanTitle(s.title || '').toLowerCase();
+    return t.includes('identiteit') || t.includes('waarom') || t.includes('essentie') || t.includes('vermenigvuldiging');
+  }), [visibleSections]);
+
+  const aiGroup1b = useMemo(() => visibleSections.filter(s => {
+    const t = cleanTitle(s.title || '').toLowerCase();
+    return t.includes('schaduw') || t.includes('blindspot') || t.includes('visuele');
+  }), [visibleSections]);
+
+  const aiGroup2 = useMemo(() => visibleSections.filter(s => {
+    const t = cleanTitle(s.title || '').toLowerCase();
+    return t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi');
+  }), [visibleSections]);
+
+  const aiGroepDyn = useMemo(() => visibleSections.filter(s => {
+    const t = cleanTitle(s.title || '').toLowerCase();
+    return t.includes('groep dynamiek') || t.includes('neurobiologisch');
+  }), [visibleSections]);
+
+  const aiPromptSection = useMemo(() => visibleSections.filter(s =>
+    s.isAgentPrompt || /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie/i.test(s.title)
+  ), [visibleSections]);
+
+  // Also catch any section 11 that slipped past the regex — exclude it from "other" rendering
+  const isPromptLike = (s) =>
+    s.isAgentPrompt ||
+    /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie/i.test(s.title);
+
+  const aiIntroSection = useMemo(() => visibleSections.filter(s =>
+    (s.title || '').toLowerCase().includes('introductie')
+  ), [visibleSections]);
+
+  // Remaining AI sections not in any named group
+  const aiGroupedIds = useMemo(() => {
+    const all = new Set();
+    [aiGroup1a, aiGroup1b, aiGroup2, aiGroepDyn, aiPromptSection, aiIntroSection].forEach(g => g.forEach(s => all.add(s)));
+    return all;
+  }, [aiGroup1a, aiGroup1b, aiGroup2, aiGroepDyn, aiPromptSection, aiIntroSection]);
+
+  const aiOtherSections = useMemo(() =>
+    visibleSections.filter(s => !aiGroupedIds.has(s) && !isPromptLike(s)),
+  [visibleSections, aiGroupedIds]);
 
   // Scroll modal to top when results become visible (after AI loading completes).
   // useLayoutEffect fires before the browser paints, preventing the flash at sections 9-12.
@@ -384,6 +437,77 @@ const AssessmentResultsModal = ({
   const subgroupRef = useRef(null);
   // ── Ref for the CulturaForce / Cognitieve Driehoek card (captured as image for PDF) ──
   const culturaForceRef = useRef(null);
+
+  // Helper: render a single AI section card (used by all section groups in the UI)
+  const renderAiSectionCard = useCallback((section, idx) => {
+    const accents = [
+      { color: '#1d9904', rgb: '29, 153, 4' },
+      { color: '#a855f7', rgb: '168, 85, 247' },
+      { color: '#f97316', rgb: '249, 115, 22' },
+      { color: '#3b82f6', rgb: '59, 130, 246' },
+      { color: '#ec4899', rgb: '236, 72, 153' },
+      { color: '#14b8a6', rgb: '20, 184, 166' },
+    ];
+    const accent = getSectionAccent(section.title) || accents[idx % accents.length];
+    const isEven = idx % 2 === 0;
+    return (
+      <div key={`ai-${cleanTitle(section.title)}-${idx}`} style={{
+        width: '100%',
+        position: 'relative',
+        ...(isEven ? {} : {
+          background: 'transparent',
+          border: `1px solid rgba(${accent.rgb}, 0.2)`,
+          padding: rs.sectionPad,
+          borderRadius: '0.75rem',
+        }),
+      }}>
+        {isEven && (
+          <div style={{
+            position: 'absolute', left: '-1rem', top: 0, bottom: 0, width: '3px',
+            background: `linear-gradient(to bottom, transparent, rgba(${accent.rgb}, 0.5), transparent)`,
+          }} />
+        )}
+        <h3 style={{
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          color: accent.color,
+          fontFamily: "'Lexend Mega', sans-serif",
+          fontSize: '0.85rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.15em',
+          marginBottom: '0.75rem',
+        }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: '1.5rem', height: '1.5rem', borderRadius: '50%',
+            border: `1px solid rgba(${accent.rgb}, 0.4)`,
+            fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif",
+            color: accent.color, flexShrink: 0,
+          }}>
+            {idx + 1}
+          </span>
+          {cleanTitle(section.title)}
+        </h3>
+        <div style={{
+          color: 'rgba(209, 213, 219, 1)',
+          fontFamily: "'Figtree', sans-serif",
+          fontSize: '0.95rem',
+          lineHeight: 1.7,
+          textAlign: 'justify',
+          ...(isEven ? {
+            background: 'rgba(0, 0, 0, 0.4)',
+            padding: rs.sectionPad,
+            borderRadius: '0 0.75rem 0.75rem 0',
+            borderRight: `1px solid rgba(${accent.rgb}, 0.2)`,
+            borderTop: `1px solid rgba(${accent.rgb}, 0.2)`,
+            borderBottom: `1px solid rgba(${accent.rgb}, 0.2)`,
+            boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.5)',
+          } : {}),
+        }}>
+          {renderMarkdownContent(section.content, accent.color)}
+        </div>
+      </div>
+    );
+  }, [rs.sectionPad, renderMarkdownContent]);
 
   // ── Cognitieve Driehoek data — shared between UI rendering and PDF generation ──
   const COG_TRIANGLES = {
@@ -526,6 +650,18 @@ const AssessmentResultsModal = ({
       // ── Track which pages have real content (to prune empty pages at the end) ──
       const pagesWithContent = new Set([1]); // page 1 (cover) always has content
       const markPage = () => pagesWithContent.add(pdf.internal.getNumberOfPages());
+
+      // ── Block tracking for post-render page reorder ──
+      const blockRanges = [];
+      const trackBlock = (name) => {
+        const before = pdf.internal.getNumberOfPages();
+        return () => {
+          const after = pdf.internal.getNumberOfPages();
+          if (after > before) {
+            blockRanges.push({ name, start: before + 1, end: after });
+          }
+        };
+      };
 
       // ── Helper: paint page background ──
       const paintBg = () => {
@@ -1433,9 +1569,10 @@ const AssessmentResultsModal = ({
       });
 
       // ═══════════════════════════════════════════════════
-      // CONTENT PAGES
+      // CONTENT PAGES (Waarom/Essentie/Vermenigvuldiging/Shadow/Blindspot removed — AI sections cover these deeper)
       // ═══════════════════════════════════════════════════
-      await justifiedPage(async (gap) => {
+      /* eslint-disable no-constant-condition */
+      if (false) { await justifiedPage(async (gap) => {
 
       // ── WHY THIS COMBINATION ──
       if (result.combinationText) {
@@ -1580,43 +1717,16 @@ const AssessmentResultsModal = ({
         });
       }
       });
+      } // end if(false) — removed content pages
+      /* eslint-enable no-constant-condition */
 
-      // ── SHADOW (new page) ──
+      // ── PAGE 7: OCEAN + CORE PROFILE (relation context) ──
+      const endOceanCore = trackBlock('ocean_core');
       await justifiedPage(async (gap) => {
-      if (result.shadowPartner) {
-        sectionHeading(`De Schaduw — ${result.shadowNameEn}`, purple);
-        if (result.mainShadowTension) {
-          writeWrapped(result.mainShadowTension, margin + 2, y, contentW - 4, 8.5, white);
-          y += 2;
-        }
-        if (result.shadowInsight) {
-          writeWrapped(result.shadowInsight, margin + 2, y, contentW - 4, 8.5, white);
-        } else if (result.shadowDescription) {
-          writeWrapped(result.shadowDescription, margin + 2, y, contentW - 4, 8.5, white);
-        }
-        y += 4;
-        hr();
-      }
-      gap();
-
-      // ── BLINDSPOT ──
-      if (result.blindspotPartner) {
-        sectionHeading(`De Blindspot — ${result.blindspotNameEn}`, red);
-        if (result.blindspotDescription) {
-          writeWrapped(result.blindspotDescription, margin + 2, y, contentW - 4, 8.5, white);
-          y += 2;
-        }
-        if (result.blindspotShadowTrait) {
-          keyValue('Sabotage patroon', result.blindspotShadowTrait);
-        }
-        y += 4;
-        hr();
-      }
-      gap();
 
       // ── OCEAN PERSONALITY PROFILE ──
-      if (result.extendedOcean) {
-        const ocean = result.extendedOcean.ocean;
+      if (result.oceanScores) {
+        const ocean = result.oceanScores; // computed 0-100 from actual answer data
         const OCEAN_DIMS = ['O', 'C', 'E', 'A', 'N'];
         const OCEAN_FULL_NL = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
         const OCEAN_COLORS_PDF = {
@@ -1647,8 +1757,8 @@ const AssessmentResultsModal = ({
         OCEAN_DIMS.forEach(dim => {
           ensureSpace(9);
           const col = OCEAN_COLORS_PDF[dim];
-          const score10 = (ocean && ocean[dim]) != null ? ocean[dim] : 0;
-          const pct10 = score10 / 10;
+          const score100 = (ocean && ocean[dim]) != null ? ocean[dim] : 0;
+          const pct100 = score100 / 100;
           // Dim letter
           pdf.setFontSize(8.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
           pdf.text(dim, margin + 2, y + 1.5);
@@ -1661,10 +1771,10 @@ const AssessmentResultsModal = ({
           pdf.roundedRect(bx, y - 1.5, oceanBarW, oceanBarH, 1, 1, 'F');
           // Fill
           pdf.setFillColor(...col);
-          pdf.roundedRect(bx, y - 1.5, Math.max(pct10 * oceanBarW, 2), oceanBarH, 1, 1, 'F');
+          pdf.roundedRect(bx, y - 1.5, Math.max(pct100 * oceanBarW, 2), oceanBarH, 1, 1, 'F');
           // Score
           pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
-          pdf.text(`${score10}/10`, bx + oceanBarW + 3, y + 1.5);
+          pdf.text(`${score100}/100`, bx + oceanBarW + 3, y + 1.5);
 
           y += 9;
         });
@@ -1685,7 +1795,7 @@ const AssessmentResultsModal = ({
           };
           const expect = GROUP_OCEAN_EXPECT[result.group] || GROUP_OCEAN_EXPECT.RULING;
           const analyses = OCEAN_DIMS.map(dim => {
-            const pct100 = (ocean[dim] || 0) * 10;
+            const pct100 = ocean[dim] || 0;
             const exp = expect[dim];
             let status = 'neutral', explanation = '';
             if (exp === 'high') {
@@ -1726,11 +1836,10 @@ const AssessmentResultsModal = ({
           }
         }
 
-        hr();
-
         // Neuroticism Trigger
-        if (result.neuroticismTrigger) {
-          const tLines = pdf.splitTextToSize(result.neuroticismTrigger, contentW - 8);
+        const _nt = aiProfileData?.neuroticismTrigger;
+        if (_nt) {
+          const tLines = pdf.splitTextToSize(_nt, contentW - 8);
           const bh = 10 + tLines.length * 4.2;
           ensureSpace(bh + 3);
           pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...red);
@@ -1741,12 +1850,12 @@ const AssessmentResultsModal = ({
         }
 
         // Core Profile (Workplace, Conflict, Relationship, Individuation)
-        if (result.coreProfile) {
+        if (aiProfileData) {
           const coreItems = [
-            { label: 'Superkracht op de Werkvloer', text: result.coreProfile.workplaceSuperpower, color: orange },
-            { label: 'Conflictstijl',               text: result.coreProfile.conflictStyle,        color: orange },
-            { label: 'Relatiepatroon',              text: result.coreProfile.relationshipPattern,  color: orange },
-            { label: 'Individuatiepad',             text: result.coreProfile.individuationPath,    color: orange },
+            { label: 'Superkracht op de Werkvloer', text: aiProfileData.workplaceSuperpower, color: orange },
+            { label: 'Conflictstijl',               text: aiProfileData.conflictStyle,        color: orange },
+            { label: 'Relatiepatroon',              text: aiProfileData.relationshipPattern,  color: orange },
+            { label: 'Individuatiepad',             text: aiProfileData.individuationPath,    color: orange },
           ];
           coreItems.forEach(({ label, text, color: c }) => {
             if (!text) return;
@@ -1761,8 +1870,10 @@ const AssessmentResultsModal = ({
 
       }
       });
+      endOceanCore();
 
       // ── PERSOONLIJKHEIDSRAPPORT VERGELIJKING — comparison with uploaded OCEAN profile ──
+      const endOceanComp = trackBlock('ocean_comp');
       const reportCompSection = displaySections
         ? displaySections.find(s => s.isComparison || /persoonlijkheidsrapport.*vergelijk/i.test(s.title))
         : null;
@@ -1991,8 +2102,10 @@ const AssessmentResultsModal = ({
         }
         });
       }
+      endOceanComp();
 
       // ── DUAL-CORE DYNAMICS + RADAR CHART (page 5) ──
+      const endDualCore = trackBlock('dual_core');
       await justifiedPage(async (gap) => {
       if (result.subgroups && result.subgroups.length > 0) {
         sectionHeading('Dual-Core Dynamics', amber);
@@ -2233,8 +2346,10 @@ const AssessmentResultsModal = ({
         }
       }
       });
+      endDualCore();
 
       // ── GROEP DYNAMIEK + RADAR CHART — together on one page (only if content exists) ──
+      const endGroepRadar = trackBlock('groep_radar');
       const groepDynSection = displaySections?.find(s =>
         s.title?.toLowerCase().includes('groep dynamiek') ||
         s.title?.toLowerCase().includes('neurobiologische interpretatie')
@@ -2300,6 +2415,7 @@ const AssessmentResultsModal = ({
         }
         noPageBreak = false;
       }
+      endGroepRadar();
 
       // ── ANALYSIS SECTIONS (dedicated page) ──
       if (displaySections && displaySections.length > 0) {
@@ -2331,12 +2447,12 @@ const AssessmentResultsModal = ({
           // Separate intro/disclaimer and AI agent prompt — they always share one dedicated page
           const regularSections = mainSections.filter(s =>
             !s.isAgentPrompt &&
-            !/ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt/i.test(s.title) &&
+            !/ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie/i.test(s.title) &&
             !s.title?.toLowerCase().includes('introductie')
           );
           const disclaimerSection = mainSections.find(s => s.title?.toLowerCase().includes('introductie'));
           const agentSection = mainSections.find(s =>
-            s.isAgentPrompt || /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt/i.test(s.title)
+            s.isAgentPrompt || /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie/i.test(s.title)
           );
 
           // ── Group sections by page ──
@@ -2361,6 +2477,7 @@ const AssessmentResultsModal = ({
           const otherSections   = regularSections.filter(s => !isGroup1a(s.title) && !isGroup1b(s.title) && !isGroup2(s.title));
 
           // Render ungrouped sections on a dedicated page (only if there are any)
+          const endOthers = trackBlock('others');
           if (otherSections.length > 0) {
             await justifiedPage(async (gap) => {
             otherSections.forEach((section, i) => {
@@ -2369,8 +2486,10 @@ const AssessmentResultsModal = ({
             });
             });
           }
+          endOthers();
 
           // ── Page 13a: Identiteit / Waarom / Essentie / Vermenigvuldiging ──
+          const endGroup1a = trackBlock('group1a');
           if (group1aSections.length > 0) {
             await justifiedPage(async (gap) => {
 
@@ -2385,7 +2504,7 @@ const AssessmentResultsModal = ({
             const dlH = disclaimerLines.length * 3.5 + 4;
             pdf.rect(disclaimerX, y, disclaimerW, dlH, 'F');
             // Top bar instead of left bar
-            pdf.setFillColor(168, 85, 247);
+            pdf.setFillColor(249, 115, 22);
             pdf.rect(disclaimerX, y, disclaimerW, 0.75, 'F');
             pdf.setTextColor(200, 200, 215);
             let dlY = y + 5;
@@ -2402,8 +2521,10 @@ const AssessmentResultsModal = ({
             });
             });
           }
+          endGroup1a();
 
           // ── Page 13b: Schaduw + images + Blindspot + Visuele Analyse (always together) ──
+          const endGroup1b = trackBlock('group1b');
           if (group1bSections.length > 0) {
             await justifiedPage(async (gap) => {
             for (let gi = 0; gi < group1bSections.length; gi++) {
@@ -2488,8 +2609,10 @@ const AssessmentResultsModal = ({
             }
             });
           }
+          endGroup1b();
 
           // ── Page 14: Alchemie / Neurale Schaakbord / Ontologie ──
+          const endGroup2 = trackBlock('group2');
           if (group2Sections.length > 0) {
             pdf.addPage(); paintBg(); markPage();
             y = margin;
@@ -2498,8 +2621,10 @@ const AssessmentResultsModal = ({
               if (i < group2Sections.length - 1) { hr(); }
             });
           }
+          endGroup2();
 
           // AI Prompt: dedicated final page — fixed heading, KERN DISCLAIMER body first (no heading), then rest
+          const endAiPrompt = trackBlock('ai_prompt');
           if (disclaimerSection || agentSection) {
             pdf.addPage();
             paintBg(); markPage();
@@ -2527,81 +2652,78 @@ const AssessmentResultsModal = ({
               writePdfMarkdown(promptContent, margin + 2, contentW - 4);
             }
           }
+
+          // ═══════════════════════════════════════════════════
+          // FOOTER — on the same page as the AI prompt
+          // ═══════════════════════════════════════════════════
+          ensureSpace(14);
+          markPage();
+          y += 4;
+          pdf.setDrawColor(...purple);
+          pdf.setLineWidth(0.3);
+          pdf.line(margin, y, W - margin, y);
+          y += 5;
+          pdf.setFontSize(7);
+          pdf.setTextColor(...white);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text('Garden for Life  \u2022  Archetype Analyse', W / 2, y, { align: 'center' });
+          y += 3.5;
+          pdf.text(`Score: ${result.totalScore} / ${result.maxScore}`, W / 2, y, { align: 'center' });
+          y += 3.5;
+          pdf.text(`Gegenereerd op ${new Date().toLocaleDateString('nl-NL')}`, W / 2, y, { align: 'center' });
+          y += 6;
+
+          // ── Closing message + image: pinned to the bottom of the last page ──
+          const hasBannerImage = siteBanner?.imageBase64 && siteBanner?.imageMimeType;
+          const imgSizeMm = 26.5;
+          const imgX = W - margin - imgSizeMm;
+          const imgY = H - margin - imgSizeMm;
+
+          const lineH = 4.0;
+          const closingTextW = hasBannerImage ? contentW - imgSizeMm - 6 : contentW - 4;
+          pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
+          const line1 = pdf.splitTextToSize('Hoogachtende Leerling,', closingTextW);
+          const line2 = pdf.splitTextToSize('Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en reik ik nog \u00E9\u00E9n laatste keer uit voor jouw hulp.', closingTextW);
+          const line3 = pdf.splitTextToSize('Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data hoe beter wij kunnen optimaliseren.', closingTextW);
+          const line4 = pdf.splitTextToSize('Zolang de beta-fase loopt is alleen het leerling niveau toegankelijk.', closingTextW);
+          const line4b = pdf.splitTextToSize('Een donatie is optioneel, maar is meer dan welkom en is directe voeding voor ons project! =)', closingTextW);
+          const line5 = pdf.splitTextToSize('Anyway- pionier, hartelijk dank voor de tijd en attentie!', closingTextW);
+          const gapSingle = lineH;
+          const gapDouble = lineH * 2;
+          const totalTextH =
+            line1.length * lineH + gapDouble +
+            line2.length * lineH +
+            line3.length * lineH + gapSingle +
+            line4.length * lineH +
+            line4b.length * lineH + gapDouble +
+            line5.length * lineH;
+          let yMsg = imgY + imgSizeMm - totalTextH;
+
+          pdf.setFontSize(7.5);
+          pdf.setTextColor(...white);
+          pdf.setFont('helvetica', 'italic');
+          for (const l of line1) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
+          yMsg += gapDouble;
+          for (const l of line2) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
+          for (const l of line3) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
+          yMsg += gapSingle;
+          for (const l of line4) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
+          for (const l of line4b) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
+          yMsg += gapDouble;
+          for (const l of line5) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
+
+          if (hasBannerImage) {
+            try {
+              const imgFormat = siteBanner.imageMimeType.toLowerCase().includes('png') ? 'PNG' : 'JPEG';
+              const bannerData = `data:${siteBanner.imageMimeType};base64,${siteBanner.imageBase64}`;
+              pdf.addImage(bannerData, imgFormat, imgX, imgY, imgSizeMm, imgSizeMm);
+            } catch { /* skip banner image on error */ }
+          }
+
+          endAiPrompt();
         }
 
         // Persoonlijkheidsrapport Vergelijking rendered earlier (after OCEAN page) — skip here
-      }
-
-      // ═══════════════════════════════════════════════════
-      // FINAL FOOTER (last page)
-      // ═══════════════════════════════════════════════════
-      ensureSpace(14);
-      markPage(); // footer always has content
-      y += 4;
-      pdf.setDrawColor(...purple);
-      pdf.setLineWidth(0.3);
-      pdf.line(margin, y, W - margin, y);
-      y += 5;
-      pdf.setFontSize(7);
-      pdf.setTextColor(...white);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Garden for Life  \u2022  Archetype Analyse', W / 2, y, { align: 'center' });
-      y += 3.5;
-      pdf.text(`Score: ${result.totalScore} / ${result.maxScore}`, W / 2, y, { align: 'center' });
-      y += 3.5;
-      pdf.text(`Gegenereerd op ${new Date().toLocaleDateString('nl-NL')}`, W / 2, y, { align: 'center' });
-      y += 6;
-
-      // ── Closing message + image: pinned to the bottom of the last page ──
-      const hasBannerImage = siteBanner?.imageBase64 && siteBanner?.imageMimeType;
-      const imgSizeMm = 26.5; // 75px display size (~26.5mm)
-      // Image anchored at absolute bottom-right corner
-      const imgX = W - margin - imgSizeMm;
-      const imgY = H - margin - imgSizeMm; // outmost bottom edge
-
-      // Text block bottom-aligns with the image bottom — 5 lines × ~4mm spacing plus line heights
-      const lineH = 4.0;
-      const closingTextW = hasBannerImage ? contentW - imgSizeMm - 6 : contentW - 4;
-      // Pre-calculate wrapped line counts to size the block from the bottom up
-      pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
-      const line1 = pdf.splitTextToSize('Hoogachtende Leerling,', closingTextW);
-      const line2 = pdf.splitTextToSize('Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en reik ik nog \u00E9\u00E9n laatste keer uit voor jouw hulp.', closingTextW);
-      const line3 = pdf.splitTextToSize('Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data hoe beter wij kunnen optimaliseren.', closingTextW);
-      const line4 = pdf.splitTextToSize('Zolang de beta-fase loopt is alleen het leerling niveau toegankelijk.', closingTextW);
-      const line4b = pdf.splitTextToSize('Een donatie is optioneel, maar is meer dan welkom en is directe voeding voor ons project! =)', closingTextW);
-      const line5 = pdf.splitTextToSize('Anyway- pionier, hartelijk dank voor de tijd en attentie!', closingTextW);
-      const gapSingle = lineH;       // 1× blank line gap
-      const gapDouble = lineH * 2;   // 2× blank line gap
-      const totalTextH =
-        line1.length * lineH + gapDouble +
-        line2.length * lineH +
-        line3.length * lineH + gapSingle +
-        line4.length * lineH +
-        line4b.length * lineH + gapDouble +
-        line5.length * lineH;
-      // Align text block so its bottom matches image bottom
-      let yMsg = imgY + imgSizeMm - totalTextH;
-
-      pdf.setFontSize(7.5);
-      pdf.setTextColor(...white);
-      pdf.setFont('helvetica', 'italic');
-      for (const l of line1) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-      yMsg += gapDouble;
-      for (const l of line2) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-      for (const l of line3) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-      yMsg += gapSingle;
-      for (const l of line4) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-      for (const l of line4b) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-      yMsg += gapDouble;
-      for (const l of line5) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-
-      // Image: right-aligned, anchored at absolute bottom corner
-      if (hasBannerImage) {
-        try {
-          const imgFormat = siteBanner.imageMimeType.toLowerCase().includes('png') ? 'PNG' : 'JPEG';
-          const bannerData = `data:${siteBanner.imageMimeType};base64,${siteBanner.imageBase64}`;
-          pdf.addImage(bannerData, imgFormat, imgX, imgY, imgSizeMm, imgSizeMm);
-        } catch { /* skip banner image on error */ }
       }
 
       // ══════════════════════════════════════════════════════════════
@@ -2610,6 +2732,7 @@ const AssessmentResultsModal = ({
       // The user doesn't read this; external AI models do when the
       // PDF is uploaded as attachment.
       // ══════════════════════════════════════════════════════════════
+      const endData = trackBlock('data');
       {
         pdf.addPage(); paintBg(); markPage();
         y = margin;
@@ -2635,7 +2758,7 @@ const AssessmentResultsModal = ({
         const currentExt = (result.allSupportArchetypes || []).find(
           sa => (sa.group || '').toUpperCase() === (result.supportGroup || '').toUpperCase()
         );
-        const cp = result.coreProfile || {};
+        const cp = aiProfileData || {};
         const eo = result.extendedOcean || {};
 
         let natTotal = 0, culTotal = 0;
@@ -2693,7 +2816,7 @@ const AssessmentResultsModal = ({
         mLine(`Main: ${result.mainName || ''} (${POS[mk] || '?'}) | Groep: ${ARCHETYPE_TO_GROUP[mk] || ''} | Netwerk: ${NET[ARCHETYPE_TO_GROUP[mk]] || ''}`);
         mLine(`Support: ${result.secondaryName || ''} (${POS[sk] || '?'}) | Groep: ${result.supportGroup || ''}`);
         mLine(`Shadow: ${result.shadowName || ''} (${POS[shk] || '?'}) | 180 tegenpool van Main`);
-        mLine(`Blindspot: ${result.blindspotName || ''} (${POS[bk] || '?'}) | 180 tegenpool van Support`);
+        mLine(`Blindspot: ${result.blindspotName || ''} (${POS[bk] || '?'}) | Rode Lijn van Main`);
         mLine(`Harmony Match: ${eo.harmony ? 'Ja' : 'Nee'}`);
         mGap();
 
@@ -2779,7 +2902,7 @@ const AssessmentResultsModal = ({
         mLine(`Superkracht Werkvloer: ${cp.workplaceSuperpower || 'N/A'}`);
         mLine(`Conflictstijl: ${cp.conflictStyle || 'N/A'}`);
         mLine(`Relatiepatroon: ${cp.relationshipPattern || 'N/A'}`);
-        mLine(`Neuroticisme Trigger: ${eo.neuroticismTrigger || 'N/A'}`);
+        mLine(`Neuroticisme Trigger: ${cp.neuroticismTrigger || eo.neuroticismTrigger || 'N/A'}`);
         mLine(`Individuatiepad: ${cp.individuationPath || 'N/A'}`);
         mGap();
 
@@ -2799,6 +2922,63 @@ const AssessmentResultsModal = ({
         mLine('Dit blok is automatisch gegenereerd door het Garden For Life', dimWhite);
         mLine('Assessment System. Het Deltawerken-framework is een conceptueel', dimWhite);
         mLine('zelfreflectiemodel, geen klinisch diagnostisch systeem.', dimWhite);
+      }
+      endData();
+
+      // ── Reorder PDF pages to configured sequence ──
+      // Desired order (content stays untouched, only page sequence changes):
+      // 1-6 (pre-context) → group1a (identity) → group1b (archetype images) →
+      // groep_radar (web diagram) → dual_core → group2 (yellow) →
+      // ocean_comp (comparison) → ocean_core (OCEAN score) → ai_prompt → data
+      {
+        const desiredBlockOrder = [
+          'others',       // ungrouped AI sections (if any)
+          'group1a',      // Identity page
+          'group1b',      // Archetype images page
+          'groep_radar',  // Groep Dynamiek + Radar
+          'dual_core',    // Dual-Core + Cognitieve Driehoek
+          'group2',       // Alchemie / Schakelbord / Ontologie
+          'ocean_comp',   // OCEAN comparison
+          'ocean_core',   // OCEAN + Core Profile + 5 Elementen
+          'ai_prompt',    // AI Prompt + footer (last content page)
+          'data',         // Profiel data for AI
+        ];
+        const blockMap = {};
+        blockRanges.forEach(b => { blockMap[b.name] = b; });
+
+        // Determine fixed page range (pages before first tracked block)
+        const firstMoveable = blockRanges.length > 0
+          ? Math.min(...blockRanges.map(b => b.start))
+          : Infinity;
+        const fixedCount = firstMoveable - 1;
+        const finalPageCount = pdf.internal.getNumberOfPages();
+
+        // Build new page number sequence
+        const newPageOrder = [];
+        for (let i = 1; i <= fixedCount; i++) newPageOrder.push(i);
+        for (const name of desiredBlockOrder) {
+          const block = blockMap[name];
+          if (!block) continue;
+          for (let i = block.start; i <= block.end; i++) newPageOrder.push(i);
+        }
+        // Safety: append any untracked pages (e.g. footer that didn't create new pages)
+        for (let i = 1; i <= finalPageCount; i++) {
+          if (!newPageOrder.includes(i)) newPageOrder.push(i);
+        }
+
+        // Apply reorder to jsPDF internal pages array (1-indexed)
+        if (newPageOrder.length === finalPageCount) {
+          const oldPages = pdf.internal.pages.slice();
+          for (let i = 0; i < newPageOrder.length; i++) {
+            pdf.internal.pages[i + 1] = oldPages[newPageOrder[i]];
+          }
+          // Update pagesWithContent to match new positions
+          const oldPWC = new Set(pagesWithContent);
+          pagesWithContent.clear();
+          for (let i = 0; i < newPageOrder.length; i++) {
+            if (oldPWC.has(newPageOrder[i])) pagesWithContent.add(i + 1);
+          }
+        }
       }
 
       // ── Prune any empty pages (pages that never received content) ──
@@ -3158,6 +3338,8 @@ const AssessmentResultsModal = ({
                   </div>
                 </div>
 
+                {/* ── Sections 2–4c: PDF-only, hidden from UI card (shown on pages 7–9) ── */}
+                {false && (<>
                 {/* ── 2. Combination Profile — Why Main + Support = Extended Archetype ── */}
                 {result.combinationText && (
                   <div style={{
@@ -3479,7 +3661,7 @@ const AssessmentResultsModal = ({
                   </div>
                 )}
 
-                {/* ── 4b. Blindspot — opposite of Support (external saboteur) ── */}
+                {/* ── 4b. Blindspot — Red Line of Main (external saboteur) ── */}
                 {result.blindspotPartner && (
                   <div style={{
                     width: '100%',
@@ -3760,7 +3942,7 @@ const AssessmentResultsModal = ({
                     })()}
 
                     {/* Neuroticism Trigger */}
-                    {result.neuroticismTrigger && (
+                    {aiProfileData?.neuroticismTrigger && (
                       <div style={{
                         background: 'transparent',
                         border: '1px solid rgba(239, 68, 68, 0.15)',
@@ -3781,19 +3963,19 @@ const AssessmentResultsModal = ({
                           fontFamily: "'Figtree', sans-serif",
                           lineHeight: 1.6, margin: 0,
                         }}>
-                          {result.neuroticismTrigger}
+                          {aiProfileData.neuroticismTrigger}
                         </p>
                       </div>
                     )}
 
                     {/* Core Profile: Workplace & Conflict */}
-                    {result.coreProfile && (
+                    {aiProfileData && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {[
-                          { label: 'Superkracht op de Werkvloer', text: result.coreProfile.workplaceSuperpower, color: '#f97316' },
-                          { label: 'Conflictstijl', text: result.coreProfile.conflictStyle, color: '#f97316' },
-                          { label: 'Relatiepatroon', text: result.coreProfile.relationshipPattern, color: '#f97316' },
-                          { label: 'Individuatiepad', text: result.coreProfile.individuationPath, color: '#f97316' },
+                          { label: 'Superkracht op de Werkvloer', text: aiProfileData.workplaceSuperpower, color: '#f97316' },
+                          { label: 'Conflictstijl', text: aiProfileData.conflictStyle, color: '#f97316' },
+                          { label: 'Relatiepatroon', text: aiProfileData.relationshipPattern, color: '#f97316' },
+                          { label: 'Individuatiepad', text: aiProfileData.individuationPath, color: '#f97316' },
                         ].map(({ label, text, color: c }) => (
                           <div key={label}>
                             <div style={{
@@ -3819,8 +4001,71 @@ const AssessmentResultsModal = ({
                     )}
                   </div>
                 )}
+                </>)}
 
-                {/* ── 5. Subgroup Dynamics ── */}
+                {/* ── Fixed Disclaimer — always shown before AI sections ── */}
+                <div style={{
+                  width: '100%',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  padding: rs.sectionPad,
+                  borderRadius: '0.75rem',
+                  borderLeft: '3px solid rgba(168, 85, 247, 0.5)',
+                  marginBottom: '0.5rem',
+                }}>
+                  <p style={{
+                    margin: 0,
+                    color: 'rgba(209, 213, 219, 0.85)',
+                    fontFamily: "'Figtree', sans-serif",
+                    fontSize: '0.88rem',
+                    lineHeight: 1.7,
+                    fontStyle: 'italic',
+                  }}>
+                    <strong style={{ color: '#a855f7' }}>Meta-Disclaimer:</strong>{' '}
+                    Dit rapport is gegenereerd door het Garden For Life Deltawerken Model — een zelfreflectie-instrument, geen klinische diagnose. De gebruikte neurobiologische termen zijn metaforen binnen dit specifieke model. Raadpleeg een professional voor medisch of psychologisch advies.
+                  </p>
+                </div>
+
+                {/* ── AI Introductie ── */}
+                {aiIntroSection.map((s, i) => renderAiSectionCard(s, i))}
+
+                {/* ── AI group1a: Identiteit / Waarom / Essentie / Vermenigvuldiging ── */}
+                {aiGroup1a.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length))}
+
+                {/* ── AI group1b: Schaduw / Blindspot / Visuele ── */}
+                {aiGroup1b.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length + aiGroup1a.length))}
+
+                {/* ── AI Groep Dynamiek ── */}
+                {aiGroepDyn.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length + aiGroup1a.length + aiGroup1b.length))}
+
+                {/* ── Radar Chart ── */}
+                <div style={{
+                  position: 'relative',
+                  background: 'rgba(0, 0, 0, 0.6)',
+                  borderRadius: '0.75rem',
+                  border: '1px solid rgba(29, 153, 4, 0.3)',
+                  padding: '0.5rem',
+                  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(29, 153, 4, 0.08)',
+                  minHeight: '350px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: '0.75rem',
+                    left: '1rem',
+                    fontSize: '0.7rem',
+                    fontFamily: "'Rajdhani', sans-serif",
+                    letterSpacing: '0.2em',
+                    color: '#1d9904',
+                  }}>
+                    {'/// TRIPLE_NETWORK_WIEL'}
+                  </div>
+                  <div ref={radarRef} style={{ width: '100%', height: rs.radarHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <SciFiRadarChart data={result.radarData} shadow={result.shadowArchetype} blindspot={result.blindspotArchetype} mainArchetype={result.overallArchetype} supportArchetype={result.supportArchetype} />
+                  </div>
+                </div>
+
+                {/* ── Subgroup Dynamics (Dual-Core) ── */}
                 <div style={{
                   width: '100%',
                   background: 'transparent',
@@ -3830,7 +4075,6 @@ const AssessmentResultsModal = ({
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
-                  {/* Background icon decoration */}
                   <div style={{
                     position: 'absolute',
                     top: 0,
@@ -3847,7 +4091,7 @@ const AssessmentResultsModal = ({
                   </div>
                 </div>
 
-                {/* ── 5b. Gele Driehoek — Cognitieve Deepdive ── */}
+                {/* ── Cognitieve Driehoek ── */}
                 {(() => {
                   const archKey = (result.mainArchetype || '').toUpperCase();
                   const tri = COG_TRIANGLES[archKey];
@@ -3893,7 +4137,6 @@ const AssessmentResultsModal = ({
                         <span style={{ color: 'rgba(251,191,36,0.9)', fontWeight: 600 }}>Groeirichting: </span>{tri.growth}
                       </p>
 
-                      {/* Other triangles — compact reference row */}
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         {ALL_COG_TRIANGLES.filter(t => t.id !== tri.id).map(t => (
                           <div key={t.id} style={{ flex: 1, border: '1px solid rgba(251,191,36,0.15)', borderRadius: '0.4rem', padding: '0.4rem 0.5rem' }}>
@@ -3906,166 +4149,35 @@ const AssessmentResultsModal = ({
                   );
                 })()}
 
-                {/* ── 6. Radar Chart (full width) ── */}
-                <div style={{
-                  position: 'relative',
-                  background: 'rgba(0, 0, 0, 0.6)',
-                  borderRadius: '0.75rem',
-                  border: '1px solid rgba(29, 153, 4, 0.3)',
-                  padding: '0.5rem',
-                  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(29, 153, 4, 0.08)',
-                  minHeight: '350px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: '0.75rem',
-                    left: '1rem',
-                    fontSize: '0.7rem',
-                    fontFamily: "'Rajdhani', sans-serif",
-                    letterSpacing: '0.2em',
-                    color: '#1d9904',
-                  }}>
-                    {'/// TRIPLE_NETWORK_WIEL'}
-                  </div>
-                  <div ref={radarRef} style={{ width: '100%', height: rs.radarHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <SciFiRadarChart data={result.radarData} shadow={result.shadowArchetype} blindspot={result.blindspotArchetype} mainArchetype={result.overallArchetype} supportArchetype={result.supportArchetype} />
-                  </div>
-                </div>
+                {/* ── AI group2: Alchemie / Schakelbord / Ontologie ── */}
+                {aiGroup2.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length + aiGroup1a.length + aiGroup1b.length + aiGroepDyn.length))}
 
-                {/* ── Fixed Disclaimer — always shown before AI sections ── */}
+                {/* ── Other AI sections (ungrouped) ── */}
+                {aiOtherSections.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length + aiGroup1a.length + aiGroup1b.length + aiGroepDyn.length + aiGroup2.length))}
+
+                {/* ── AI Prompt: always show download teaser, never full content ── */}
                 <div style={{
                   width: '100%',
-                  background: 'rgba(0, 0, 0, 0.4)',
+                  background: 'transparent',
+                  border: '1px solid rgba(249,115,22,0.2)',
                   padding: rs.sectionPad,
                   borderRadius: '0.75rem',
-                  borderLeft: '3px solid rgba(168, 85, 247, 0.5)',
-                  marginBottom: '0.5rem',
                 }}>
-                  <p style={{
-                    margin: 0,
-                    color: 'rgba(209, 213, 219, 0.85)',
-                    fontFamily: "'Figtree', sans-serif",
-                    fontSize: '0.88rem',
-                    lineHeight: 1.7,
-                    fontStyle: 'italic',
+                  <h3 style={{
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    color: '#f97316',
+                    fontFamily: "'Lexend Mega', sans-serif",
+                    fontSize: '0.85rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.15em',
+                    marginBottom: '0.75rem',
                   }}>
-                    <strong style={{ color: '#a855f7' }}>Meta-Disclaimer:</strong>{' '}
-                    Dit rapport is gegenereerd door het Garden For Life Deltawerken Model — een zelfreflectie-instrument, geen klinische diagnose. De gebruikte neurobiologische termen zijn metaforen binnen dit specifieke model. Raadpleeg een professional voor medisch of psychologisch advies.
+                    Volledige AI Prompt
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: 'rgba(148,163,184,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, fontStyle: 'italic' }}>
+                    De volledige AI prompt is beschikbaar in je PDF rapport. Download het rapport om de complete prompt te gebruiken met een extern AI-systeem.
                   </p>
                 </div>
-
-                {/* ── 7+. AI Analysis Sections (dynamic, all sections) ── */}
-                {visibleSections.map((section, idx) => {
-                  // AI Agent Prompt section: always render as a single unified monospace block
-                  if (section.isAgentPrompt || /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt/i.test(section.title)) {
-                    return (
-                      <div key={idx} style={{
-                        width: '100%',
-                        background: 'transparent',
-                        border: '1px solid rgba(249,115,22,0.2)',
-                        padding: rs.sectionPad,
-                        borderRadius: '0.75rem',
-                      }}>
-                        <h3 style={{
-                          display: 'flex', alignItems: 'center', gap: '0.5rem',
-                          color: '#f97316',
-                          fontFamily: "'Lexend Mega', sans-serif",
-                          fontSize: '0.85rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.15em',
-                          marginBottom: '0.75rem',
-                        }}>
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: '1.5rem', height: '1.5rem', borderRadius: '50%',
-                            border: '1px solid rgba(249,115,22,0.4)',
-                            fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif",
-                            color: '#f97316', flexShrink: 0,
-                          }}>
-                            {idx + 1}
-                          </span>
-                          {cleanTitle(section.title)}
-                        </h3>
-                        <p style={{ fontSize: '0.85rem', color: 'rgba(148,163,184,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, fontStyle: 'italic' }}>
-                          Download het volledige rapport voor deze prompt, wat je zojuist hebt gelezen is nog maar een deel van alle gegenereerde content!
-                        </p>
-                      </div>
-                    );
-                  }
-                  // Cycle through accent colors for visual variety
-                  const accents = [
-                    { color: '#1d9904', rgb: '29, 153, 4' },    // green
-                    { color: '#a855f7', rgb: '168, 85, 247' },   // purple
-                    { color: '#f97316', rgb: '249, 115, 22' },   // orange
-                    { color: '#3b82f6', rgb: '59, 130, 246' },   // blue
-                    { color: '#ec4899', rgb: '236, 72, 153' },   // pink
-                    { color: '#14b8a6', rgb: '20, 184, 166' },   // teal
-                  ];
-                  const accent = getSectionAccent(section.title) || accents[idx % accents.length];
-                  const isEven = idx % 2 === 0;
-
-                  return (
-                    <div key={idx} style={{
-                      width: '100%',
-                      position: 'relative',
-                      ...(isEven ? {} : {
-                        background: 'transparent',
-                        border: `1px solid rgba(${accent.rgb}, 0.2)`,
-                        padding: rs.sectionPad,
-                        borderRadius: '0.75rem',
-                      }),
-                    }}>
-                      {/* Left accent bar for even sections */}
-                      {isEven && (
-                        <div style={{
-                          position: 'absolute', left: '-1rem', top: 0, bottom: 0, width: '3px',
-                          background: `linear-gradient(to bottom, transparent, rgba(${accent.rgb}, 0.5), transparent)`,
-                        }} />
-                      )}
-                      <h3 style={{
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        color: accent.color,
-                        fontFamily: "'Lexend Mega', sans-serif",
-                        fontSize: '0.85rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.15em',
-                        marginBottom: '0.75rem',
-                        ...(isEven ? {} : {}),
-                      }}>
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          width: '1.5rem', height: '1.5rem', borderRadius: '50%',
-                          border: `1px solid rgba(${accent.rgb}, 0.4)`,
-                          fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif",
-                          color: accent.color, flexShrink: 0,
-                        }}>
-                          {idx + 1}
-                        </span>
-                        {cleanTitle(section.title)}
-                      </h3>
-                      <div style={{
-                        color: 'rgba(209, 213, 219, 1)',
-                        fontFamily: "'Figtree', sans-serif",
-                        fontSize: '0.95rem',
-                        lineHeight: 1.7,
-                        textAlign: 'justify',
-                        ...(isEven ? {
-                          background: 'rgba(0, 0, 0, 0.4)',
-                          padding: rs.sectionPad,
-                          borderRadius: '0 0.75rem 0.75rem 0',
-                          borderRight: `1px solid rgba(${accent.rgb}, 0.2)`,
-                          borderTop: `1px solid rgba(${accent.rgb}, 0.2)`,
-                          borderBottom: `1px solid rgba(${accent.rgb}, 0.2)`,
-                          boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.5)',
-                        } : {}),
-                      }}>
-                        {renderMarkdownContent(section.content, accent.color)}
-                      </div>
-                    </div>
-                  );
-                })}
 
                 {/* ── 6. Footer Actions ── */}
                 <div style={{
@@ -4425,7 +4537,8 @@ function parseAiSections(analysisText) {
 
   // Split on ## or ### top-level headings (with or without numbering).
   // The AI prompt requests `## N.` but models sometimes return `### N.` instead.
-  const sectionRegex = /^#{2,3}\s+(?:\d+\.\s+)?(.+)/gm;
+  // The `[A-Za-z]?` handles alphanumeric section numbers like `4B.`
+  const sectionRegex = /^#{2,3}\s+(?:\d+[A-Za-z]?\.\s+)?(.+)/gm;
   const matches = [];
   let match;
 
@@ -4443,6 +4556,7 @@ function parseAiSections(analysisText) {
     /^>?\s*\**Meta[- ]?Disclaimer\**:?[^\n]*\n?/gim,
     /^>?\s*\**Schaduw[- ]?archetype\**:?[^\n]*\n?/gim,
     /^>?\s*\**Blindspot[- ]?archetype\**:?[^\n]*\n?/gim,
+    /^>?\s*\**Archetype:?\**:?\s+\w+.*Positie\s+\d+[^\n]*\n?/gim,
     /^>?\s*Dit rapport is gegenereerd door het Garden [Ff]or Life[^\n]*\n?/gm,
     /^>?\s*De gebruikte neurobiologische termen zijn metaforen[^\n]*\n?/gm,
     /^>?\s*Raadpleeg een professional voor medisch[^\n]*\n?/gm,
@@ -4458,6 +4572,8 @@ function parseAiSections(analysisText) {
     }
     // Remove orphaned blockquote-only lines (> followed by empty or near-empty content)
     cleaned = cleaned.replace(/^>\s*$/gm, '');
+    // Strip horizontal rules (---, ***, ===)
+    cleaned = cleaned.replace(/^[-*=]{3,}\s*$/gm, '');
     // Collapse excessive blank lines
     cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
     return cleaned.trim();
@@ -4470,7 +4586,7 @@ function parseAiSections(analysisText) {
   // (a) absorb all comparison sub-sections into one block, and (b) tag it as PDF-only.
   const reportMatchIdx = matches.findIndex(m => /persoonlijkheidsrapport.*vergelijk|ocean.*vergelijk|vergelijk.*profiel/i.test(m.title));
   const agentPromptIdx = matches.findIndex(m =>
-    /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|^11[^\d]/i.test(m.title)
+    /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie|^11[^\d]/i.test(m.title)
   );
   // 12A/12B resonantie sections (placed below radar chart in PDF) — also match legacy 13A/13B
   const resonantieTest = (t) => /^1[23]\s*[ab][\s.:]/i.test(t) || /professionele\s+resonantie/i.test(t) || /creatieve\s+resonantie/i.test(t);
@@ -4484,12 +4600,50 @@ function parseAiSections(analysisText) {
       )
     : -1;
 
+  // Profiel Dynamiek element detection (Sectie 4B) — match by title keyword
+  const profileKeyFromTitle = (t) => {
+    if (/neuroticisme\s*trigger/i.test(t)) return 'neuroticismTrigger';
+    if (/superkracht/i.test(t)) return 'workplaceSuperpower';
+    if (/conflictstijl/i.test(t)) return 'conflictStyle';
+    if (/relatiepatroon/i.test(t)) return 'relationshipPattern';
+    if (/individuatiepad/i.test(t)) return 'individuationPath';
+    return null;
+  };
+
   for (let i = 0; i < matches.length; i++) {
     const title = matches[i].title;
     // Skip any "Leerling Ontologisch Rapport" preamble the AI may inject
     if (/leerling\s+ontologisch/i.test(title)) continue;
     // Skip any standalone "Introductie" / "Inleiding" the AI may generate
     if (/^(introductie|inleiding)$/i.test(title)) continue;
+    // Skip umbrella "Profiel Dynamiek" / "5 Elementen" / "De 5 Elementen" headers —
+    // the individual elements are parsed by profileKeyFromTitle below.
+    // When the AI bundles them under one heading, extract sub-elements from the body.
+    if (/profiel\s*dynamiek|5\s*element/i.test(title)) {
+      let contentStart4b = matches[i].headerEnd;
+      let contentEnd4b = (i + 1 < matches.length ? matches[i + 1].start : analysisText.length);
+      const rawBody = analysisText.slice(contentStart4b, contentEnd4b).trim();
+      // Try to split on bold sub-headings like **NEUROTICISME TRIGGER** or **Superkracht**
+      const subParts = rawBody.split(/\*\*([^*]+)\*\*/g);
+      // subParts: [textBefore, heading1, textAfter1, heading2, textAfter2, ...]
+      for (let sp = 1; sp < subParts.length; sp += 2) {
+        const subTitle = subParts[sp].trim();
+        const subContent = (subParts[sp + 1] || '').trim();
+        const pk = profileKeyFromTitle(subTitle);
+        if (pk && subContent) {
+          parts.push({
+            title: subTitle,
+            content: stripDisclaimer(subContent),
+            isProfileElement: true,
+            profileKey: pk,
+            isAgentPrompt: false,
+            isComparison: false,
+            isResonantie: false,
+          });
+        }
+      }
+      continue;
+    }
 
     // Comparison sub-sections (Spanningsvelden, Vergelijkingsrapport, Conclusie, etc.)
     // that the AI hallucinated as separate ## headers after the main comparison header:
@@ -4504,6 +4658,24 @@ function parseAiSections(analysisText) {
     const isAgentPrompt = (agentPromptIdx >= 0 && i === agentPromptIdx);
     const isComparison  = (reportMatchIdx >= 0 && i === reportMatchIdx);
     const isResonantie  = resonantieTest(title);
+
+    // Profiel Dynamiek elements (4B) — detect by title keyword, extract as prose sections
+    const profileKey = profileKeyFromTitle(title);
+    if (profileKey) {
+      let contentStart2 = matches[i].headerEnd;
+      let contentEnd2 = (i + 1 < matches.length ? matches[i + 1].start : analysisText.length);
+      const rawContent = analysisText.slice(contentStart2, contentEnd2).trim();
+      parts.push({
+        title,
+        content: stripDisclaimer(rawContent),
+        isProfileElement: true,
+        profileKey,
+        isAgentPrompt: false,
+        isComparison: false,
+        isResonantie: false,
+      });
+      continue;
+    }
 
     // Content range: comparison section absorbs everything up to the next real section,
     // other sections take content until the next header.
@@ -4860,9 +5032,9 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
 
   // ──────────────────────────────────────────────────────────
   // 5b. Blindspot Archetype (external saboteur)
-  //     Blindspot = shadow partner of SUPPORT archetype
+  //     Blindspot = Red Line partner of MAIN archetype
   // ──────────────────────────────────────────────────────────
-  const blindspotKey = SHADOW_PAIRS[supportKey] || null;
+  const blindspotKey = RED_LINE[mainKey] || null;
 
   const primaryArchetype = ARCHETYPES[mainKey] || ARCHETYPES.SAGE;
   const supportArchetype = ARCHETYPES[supportKey] || ARCHETYPES.EXPLORER;
@@ -4977,7 +5149,6 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
   // ──────────────────────────────────────────────────────────
   // 8b. OCEAN Personality Profiles
   // ──────────────────────────────────────────────────────────
-  const coreProfile = getCoreProfile(mainKey);
   const extendedOcean = getExtendedOcean(mainKey, supportGroup);
 
   const resultObj = {
@@ -5011,7 +5182,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
     shadowName: shadowKey ? (ARCHETYPES[shadowKey]?.name || shadowKey) : null,
     shadowNameEn: shadowKey ? (ARCHETYPES[shadowKey]?.nameEn || shadowKey) : null,
     shadowDescription: shadowKey ? (ARCHETYPES[shadowKey]?.description || null) : null,
-    // Blindspot (shadow partner of Support — external saboteur)
+    // Blindspot (Red Line partner of Main — external saboteur)
     blindspotPartner: blindspotKey,
     blindspotName: blindspotKey ? (ARCHETYPES[blindspotKey]?.name || blindspotKey) : null,
     blindspotNameEn: blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn || blindspotKey) : null,
@@ -5038,11 +5209,9 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
     maxScore: advanced.totalMaxScore || 369,
     // OCEAN Personality Profile
     oceanScores: advanced.oceanScores || null,           // 0-100 scale from archetype weight computation
-    coreProfile,                                       // Full core archetype psychological portrait
-    extendedOcean,                                     // OCEAN scores + trigger for this extended archetype
+    extendedOcean,                                     // OCEAN scores for comparison panel
     oceanLabels: OCEAN_LABELS,                         // Dimension label map (short/full/dutch)
     oceanColors: OCEAN_COLORS,                         // Dimension color map for UI
-    neuroticismTrigger: extendedOcean?.neuroticismTrigger || null,
     oceanImported: false,                              // Flag: only true if user explicitly imported OCEAN report
     // Raw data for future API agent
     _archetypeScores: archetypeScores,
@@ -5054,7 +5223,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
     // Full answer log (backend-only, for account-linked retrieval)
     _answerLog: answerLog,
     // AI Agent prompt (for Ontologische Evolutie section)
-    _aiAgentPrompt: `Je bent een persoonlijke ontwikkelingscoach gespecialiseerd in Jungiaanse archetypen en het OCEAN persoonlijkheidsmodel. Mijn profiel: Extended Archetype "${extendedName}" (Main: ${primaryArchetype.nameEn || mainKey}, Support: ${supportArchetype.nameEn || supportKey}, Support Group: ${supportGroup}). Mijn schaduw (180° individuatie) is ${shadowKey ? (ARCHETYPES[shadowKey]?.nameEn || shadowKey) : 'onbekend'}, mijn blindspot is ${blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn || blindspotKey) : 'onbekend'}. OCEAN profiel: O=${extendedOcean?.ocean?.O || '?'}, C=${extendedOcean?.ocean?.C || '?'}, E=${extendedOcean?.ocean?.E || '?'}, A=${extendedOcean?.ocean?.A || '?'}, N=${extendedOcean?.ocean?.N || '?'}. Neuroticisme-trigger: ${extendedOcean?.neuroticismTrigger || 'onbekend'}. ${coreProfile ? `Werkplek superkracht: ${coreProfile.workplaceSuperpower} Conflictstijl: ${coreProfile.conflictStyle} Individuatiepad: ${coreProfile.individuationPath}` : ''} Help me mijn schaduw te integreren en mijn blindspot te herkennen in dagelijkse situaties.`,
+    _aiAgentPrompt: `Je bent een persoonlijke ontwikkelingscoach gespecialiseerd in Jungiaanse archetypen en het OCEAN persoonlijkheidsmodel. Mijn profiel: Extended Archetype "${extendedName}" (Main: ${primaryArchetype.nameEn || mainKey}, Support: ${supportArchetype.nameEn || supportKey}, Support Group: ${supportGroup}). Mijn schaduw (180° indicatie) is ${shadowKey ? (ARCHETYPES[shadowKey]?.nameEn || shadowKey) : 'onbekend'}, mijn blindspot is ${blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn || blindspotKey) : 'onbekend'}. OCEAN profiel: O=${extendedOcean?.ocean?.O || '?'}, C=${extendedOcean?.ocean?.C || '?'}, E=${extendedOcean?.ocean?.E || '?'}, A=${extendedOcean?.ocean?.A || '?'}, N=${extendedOcean?.ocean?.N || '?'}. Neuroticisme-trigger, superkracht en individuatiepad zijn te vinden in het rapport. Help me mijn schaduw te integreren en mijn blindspot te herkennen in dagelijkse situaties.`,
   };
 
   // ──────────────────────────────────────────────────────────

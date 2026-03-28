@@ -48,6 +48,16 @@ const SHADOW_PAIRS = {
   OUTLAW: 'RULER', RULER: 'OUTLAW',
 };
 
+// ── Red Line pairs (neural conflict) ──
+const RED_LINE = {
+  JUDGE: 'OUTLAW', OUTLAW: 'JUDGE',
+  RULER: 'TRICKSTER', TRICKSTER: 'RULER',
+  LOVER: 'ARTIST', ARTIST: 'LOVER',
+  CAREGIVER: 'SAGE', SAGE: 'CAREGIVER',
+  INNOCENT: 'HERO', HERO: 'INNOCENT',
+  EXPLORER: 'MAGICIAN', MAGICIAN: 'EXPLORER',
+};
+
 // ── Complementary pairs (Green Line — same biological pillar) ──
 const COMPLEMENTARY_PAIRS = {
   JUDGE: 'RULER', RULER: 'JUDGE',
@@ -144,7 +154,7 @@ function scoreAnswers(answers) {
   const shadowBonusActive = SHADOW_PAIRS[mainKey] === supportKey;
 
   const shadowKey = SHADOW_PAIRS[mainKey];
-  const blindspotKey = SHADOW_PAIRS[supportKey];
+  const blindspotKey = RED_LINE[mainKey];
   const extendedName = EXTENDED_MATRIX[`${mainKey}_${supportGroup}`] || mainKey;
 
   return {

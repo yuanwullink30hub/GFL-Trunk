@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
-import { ARCHETYPES, SHADOW_PAIRS, getExtendedDescription, getArchetypeQuote } from '../data/assessment';
+import { ARCHETYPES, SHADOW_PAIRS, RED_LINE, getExtendedDescription, getArchetypeQuote } from '../data/assessment';
 import { getArchetypeImage } from '../data/assessment/archetypeImages';
 import { getCoreProfile } from '../data/assessment/oceanProfiles';
 import { POLICY_CONTENT } from '../data/policyContent';
@@ -40,7 +40,7 @@ const ProfileResultCard = ({ result: resultProp }) => {
   const main      = ARCHETYPES[mainKey]    || {};
   const support   = ARCHETYPES[supportKey] || {};
   const shadowKey = SHADOW_PAIRS[mainKey];
-  const blindspotKey = SHADOW_PAIRS[supportKey];
+  const blindspotKey = RED_LINE[mainKey];
   const extendedDesc = getExtendedDescription(mainKey, supportGroup);
   const coreProfile  = resultProp?.coreProfile || getCoreProfile(mainKey);
   const levenslesQuote = resultProp?.levensles  || getArchetypeQuote(mainKey, supportGroup);

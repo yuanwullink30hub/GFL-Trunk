@@ -841,7 +841,7 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
 
   // ── Shadow & Blindspot ──
   const shadowArchetype = SHADOW_PAIRS[mainArchetype] || null;
-  const blindspotArchetype = SHADOW_PAIRS[supportArchetype] || null;
+  const blindspotArchetype = RED_LINE[mainArchetype] || null;
 
   // ── Extended Archetype (72-matrix) ──
   const supportGroup = ARCHETYPE_TO_GROUP[supportArchetype];

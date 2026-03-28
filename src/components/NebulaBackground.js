@@ -1413,6 +1413,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
           display: 'block',
           width: '100%',
           height: '100%',
+          backgroundColor: '#010002',
         }}
       />
     </div>

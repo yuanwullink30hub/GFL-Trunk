@@ -157,6 +157,7 @@ const AssessmentCard = ({
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [showIntro, setShowIntro] = useState(true);
   const [started, setStarted] = useState(false);
+  const [buttonLockSeconds, setButtonLockSeconds] = useState(10);
   const levelConfigRef = useRef(levelConfig);
   levelConfigRef.current = levelConfig;
   const { t } = useLanguage();
@@ -318,6 +319,19 @@ const AssessmentCard = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRemaining]);
+
+  // 10-second trigger lock: block Doorgaan on every new question to prevent accidental skipping
+  useEffect(() => {
+    if (!started) return;
+    setButtonLockSeconds(10);
+    const interval = setInterval(() => {
+      setButtonLockSeconds(prev => {
+        if (prev <= 1) { clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [currentQuestion?.id, started]);
 
   // Answer click handler: dual-pick system (1st choice, then 2nd choice)
   const handleAnswerClick = useCallback((answerId) => {
@@ -484,7 +498,7 @@ const AssessmentCard = ({
                 Kies daarna wat je ook raakt, maar minder.
                 <br/>Let op: Dus twee antwoorden kiezen!
                 <br/>&nbsp;
-                <br/><span style={{ color: '#f97316' }}>Geen antwoord is ook een antwoord...</span> dit verandert verder niks aan het puntensysteem, onze data is dynamisch.
+                <br/><span style={{ color: '#f97316' }}>Geen antwoord is ook een antwoord...</span> één mag ook. dit verandert verder niks aan de verdeling van het puntensysteem, onze data is dynamisch, net zoals jij.
               </p>
 
               <p style={{
@@ -1017,7 +1031,10 @@ const AssessmentCard = ({
           {(!isAllAnswered || isLastQuestion) && (
             <div className="flex items-center justify-center gap-2">
               <button
-                onClick={() => isLastQuestion ? handleSave() : (onNext && onNext())}
+                onClick={() => {
+                  if (process.env.NODE_ENV === 'production' && buttonLockSeconds > 0) return;
+                  isLastQuestion ? handleSave() : (onNext && onNext());
+                }}
                 className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded transition-all duration-200"
                 style={{
                   fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",

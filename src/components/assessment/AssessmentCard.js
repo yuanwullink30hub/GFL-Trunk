@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { isNatureSlot } from '../../pages/assessment/assessmentData';
+import { pingBackend } from '../../utils/apiClient';
 
 /** Strip admin metadata tags [xxx] and (xxx) from display text */
 function stripMeta(text) {
@@ -359,6 +360,7 @@ const AssessmentCard = ({
       setShowScrollMode(true);
     }, 700);
     if (onComplete) onComplete();
+    pingBackend();
   };
 
   // AUTO-fill all questions (DEV only) — 80/20 weighted toward a target outcome

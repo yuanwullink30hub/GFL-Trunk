@@ -30,6 +30,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/questions', questionsRoutes);
 
+// Lightweight keepalive — frontend pings on every card save to prevent Render sleep
+app.get('/api/ping', (_req, res) => res.json({ pong: true }));
+
 // Health check
 app.get('/api/status', (_req, res) => {
   const providers = Object.entries(config.ai)

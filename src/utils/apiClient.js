@@ -290,6 +290,13 @@ export async function sendResultsEmail({ recipientEmail, result }) {
 }
 
 /**
+ * Fire-and-forget keepalive ping — keeps Render backend awake during assessment.
+ */
+export function pingBackend() {
+  fetch(`${API_BASE}/ping`).catch(() => {});
+}
+
+/**
  * Get available AI providers and backend status.
  */
 export async function getApiStatus() {

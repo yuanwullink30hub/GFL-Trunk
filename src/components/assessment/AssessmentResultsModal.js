@@ -2939,29 +2939,55 @@ const AssessmentResultsModal = ({
                 }}>
                   AI analyse niet beschikbaar — basisresultaten beschikbaar.
                 </p>
-                <button
-                  onClick={() => {
-                    setAiReady(true);
-                    if (onAiReady) onAiReady();
-                  }}
-                  style={{
-                    padding: '0.6rem 1.5rem',
-                    borderRadius: '0.35rem',
-                    background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
-                    color: '#fff',
-                    border: 'none',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    fontFamily: "'Figtree', sans-serif",
-                    cursor: 'pointer',
-                    letterSpacing: '0.05em',
-                    transition: 'opacity 0.2s',
-                  }}
-                  onMouseEnter={e => e.target.style.opacity = '0.85'}
-                  onMouseLeave={e => e.target.style.opacity = '1'}
-                >
-                  Doorgaan zonder AI
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button
+                    onClick={() => {
+                      setAiFailed(false);
+                      aiCalledRef.current = false;
+                      setAiStage(0);
+                    }}
+                    style={{
+                      padding: '0.6rem 1.5rem',
+                      borderRadius: '0.35rem',
+                      background: 'linear-gradient(135deg, #1d9904, #16a34a)',
+                      color: '#fff',
+                      border: 'none',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      fontFamily: "'Figtree', sans-serif",
+                      cursor: 'pointer',
+                      letterSpacing: '0.05em',
+                      transition: 'opacity 0.2s',
+                    }}
+                    onMouseEnter={e => e.target.style.opacity = '0.85'}
+                    onMouseLeave={e => e.target.style.opacity = '1'}
+                  >
+                    Probeer opnieuw
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAiReady(true);
+                      if (onAiReady) onAiReady();
+                    }}
+                    style={{
+                      padding: '0.6rem 1.5rem',
+                      borderRadius: '0.35rem',
+                      background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+                      color: '#fff',
+                      border: 'none',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      fontFamily: "'Figtree', sans-serif",
+                      cursor: 'pointer',
+                      letterSpacing: '0.05em',
+                      transition: 'opacity 0.2s',
+                    }}
+                    onMouseEnter={e => e.target.style.opacity = '0.85'}
+                    onMouseLeave={e => e.target.style.opacity = '1'}
+                  >
+                    Doorgaan zonder AI
+                  </button>
+                </div>
               </div>
             )}
           </div>

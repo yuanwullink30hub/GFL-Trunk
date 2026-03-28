@@ -866,10 +866,13 @@ export async function updateFeedbackEmailSettings(settings) {
 // ── Beta Access ──
 
 const BETA_KEY = 'gfl_beta_access';
+const BETA_KEY_TIME = 'gfl_beta_access_time';
+const BETA_SESSION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
  * Verify a beta passkey against the backend.
- * On success, stores the validated passkey in localStorage.
+ * On success, stores the validated passkey + activation timestamp in localStorage.
+ * Session expires 24 hours after first use.
  * @returns {Promise<boolean>} true if valid
  */
 export async function verifyBetaPasskey(passkey) {
@@ -882,16 +885,24 @@ export async function verifyBetaPasskey(passkey) {
   const data = await response.json();
   if (data.valid) {
     localStorage.setItem(BETA_KEY, passkey);
+    localStorage.setItem(BETA_KEY_TIME, Date.now().toString());
   }
   return data.valid;
 }
 
 /**
- * Check if the user has a stored beta passkey.
- * Does NOT re-verify against the server (offline-friendly).
+ * Check if the user has a stored beta passkey that is still within 24h.
+ * Auto-clears expired sessions.
  */
 export function hasBetaAccess() {
-  return !!localStorage.getItem(BETA_KEY);
+  const key = localStorage.getItem(BETA_KEY);
+  if (!key) return false;
+  const activatedAt = parseInt(localStorage.getItem(BETA_KEY_TIME) || '0', 10);
+  if (!activatedAt || (Date.now() - activatedAt) > BETA_SESSION_MS) {
+    clearBetaAccess();
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -899,6 +910,7 @@ export function hasBetaAccess() {
  */
 export function clearBetaAccess() {
   localStorage.removeItem(BETA_KEY);
+  localStorage.removeItem(BETA_KEY_TIME);
 }
 
 // ── Passkey Management (Admin) ──

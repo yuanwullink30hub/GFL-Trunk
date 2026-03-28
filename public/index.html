@@ -201,9 +201,23 @@
     <script>
       (function() {
         var BETA_KEY = 'gfl_beta_access';
+        var BETA_KEY_TIME = 'gfl_beta_access_time';
+        var BETA_SESSION_MS = 24 * 60 * 60 * 1000; // 24 hours
         var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
         var appReady = false;
-        var unlocked = !!localStorage.getItem(BETA_KEY);
+
+        // Check passkey + 24h expiry
+        var unlocked = (function() {
+          var key = localStorage.getItem(BETA_KEY);
+          if (!key) return false;
+          var t = parseInt(localStorage.getItem(BETA_KEY_TIME) || '0', 10);
+          if (!t || (Date.now() - t) > BETA_SESSION_MS) {
+            localStorage.removeItem(BETA_KEY);
+            localStorage.removeItem(BETA_KEY_TIME);
+            return false;
+          }
+          return true;
+        })();
 
         // Called by React when preloading + nebula are done
         window.__gflAppReady = function() {
@@ -255,6 +269,7 @@
           // Localhost: auto-unlock after 1s
           setTimeout(function() {
             localStorage.setItem(BETA_KEY, 'localhost');
+            localStorage.setItem(BETA_KEY_TIME, Date.now().toString());
             onUnlocked();
           }, 1000);
         } else {
@@ -297,6 +312,7 @@
                 clearTimeout(fetchTimer); clearTimeout(hintTimer);
                 if (data.valid) {
                   localStorage.setItem(BETA_KEY, key);
+                  localStorage.setItem(BETA_KEY_TIME, Date.now().toString());
                   onUnlocked();
                 } else {
                   if (err) { err.textContent = 'Ongeldige passkey'; err.style.display = 'block'; }

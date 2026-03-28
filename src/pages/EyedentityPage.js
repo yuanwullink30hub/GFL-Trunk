@@ -467,6 +467,7 @@ const FeedbackStandaloneForm = () => {
 
 const NAV_ITEMS = [
   { id: 'profile', slug: 'profiel', title: 'PERSOONLIJK PROFIEL', icon: '\u{1F9EC}', version: 'v1.0' },
+  { id: 'rapport', slug: 'rapport', title: 'VOLLEDIG RAPPORT', icon: '\u{1F4C4}', version: 'v1.0' },
   { id: 'terms', slug: 'algemene-voorwaarden', title: 'ALGEMENE VOORWAARDEN', icon: '\u{1F4CB}', version: 'Beta 1.0' },
   { id: 'privacy', slug: 'privacybeleid', title: 'PRIVACYBELEID', icon: '\u{1F512}', version: 'v1.0' },
   { id: 'cookies', slug: 'cookiebeleid', title: 'COOKIEBELEID', icon: '\u{1F36A}', version: 'v1.1' },
@@ -477,6 +478,70 @@ const NAV_ITEMS = [
   { id: 'register', slug: 'verwerkingsregister', title: 'VERWERKINGSREGISTER', icon: '\u{1F4DC}', version: 'v2.0' },
   { id: 'feedback', slug: 'feedback', title: 'FEEDBACK', icon: '\u{2B50}', version: 'Beta' },
 ];
+
+// ─── Report card: renders the AI-generated analysis sections ──────────────────────
+const ReportCard = () => {
+  const sections = (() => {
+    try {
+      const raw = localStorage.getItem('gfl_analysis_sections');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })();
+
+  if (!sections || sections.length === 0) {
+    return (
+      <div style={{ padding: '2rem', color: 'rgba(148,163,184,0.6)', fontFamily: "'Figtree', sans-serif", fontSize: '0.9rem', lineHeight: 1.7 }}>
+        Geen rapport beschikbaar. Voltooi eerst een assessment om het volledige rapport te bekijken.
+      </div>
+    );
+  }
+
+  const SECTION_COLOR = '#a855f7';
+
+  // Simple markdown-to-text renderer (bold stripping, bullet detection)
+  const renderBody = (text) => {
+    if (!text) return null;
+    return text.split('\n').map((line, i) => {
+      if (!line.trim()) return <div key={i} style={{ height: '0.4rem' }} />;
+      // Strip bold markers for display
+      const clean = line.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
+      const isBullet = /^\s*[-•]\s/.test(line);
+      const isNumbered = /^\s*\d+\.\s/.test(line);
+      const isSubheader = /^#{3,}/.test(line);
+      if (isSubheader) {
+        return <div key={i} style={{ fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.7rem', color: SECTION_COLOR, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '0.75rem', marginBottom: '0.25rem' }}>{clean.replace(/^#+\s*/, '')}</div>;
+      }
+      if (isBullet || isNumbered) {
+        return <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.2rem' }}>
+          <span style={{ color: SECTION_COLOR, flexShrink: 0 }}>{isBullet ? '•' : clean.match(/^\s*(\d+\.)/)?.[1]}</span>
+          <span style={{ color: 'rgba(209,213,219,0.88)', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', lineHeight: 1.65 }}>{isBullet ? clean.replace(/^\s*[-•]\s/, '') : clean.replace(/^\s*\d+\.\s/, '')}</span>
+        </div>;
+      }
+      return <p key={i} style={{ color: 'rgba(209,213,219,0.88)', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', lineHeight: 1.7, margin: '0 0 0.35rem' }}>{clean}</p>;
+    });
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '2rem' }}>
+      {sections.map((section, idx) => (
+        <div key={idx} style={{ borderLeft: `2px solid ${section.isProfileElement ? 'rgba(249,115,22,0.4)' : 'rgba(168,85,247,0.3)'}`, paddingLeft: '0.875rem' }}>
+          <div style={{
+            fontFamily: "'Lexend Mega', sans-serif",
+            fontSize: '0.7rem',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            letterSpacing: '0.12em',
+            color: section.isProfileElement ? '#f97316' : SECTION_COLOR,
+            marginBottom: '0.5rem',
+          }}>
+            {section.title}
+          </div>
+          <div>{renderBody(section.content || section.body || '')}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const SLUG_TO_ID = Object.fromEntries(NAV_ITEMS.map(item => [item.slug, item.id]));
 
@@ -787,6 +852,8 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
             }}>
               {selectedId === 'profile' ? (
                 <ProfileResultCard />
+              ) : selectedId === 'rapport' ? (
+                <ReportCard />
               ) : selectedId === 'feedback' ? (
                 <FeedbackStandaloneForm />
               ) : (

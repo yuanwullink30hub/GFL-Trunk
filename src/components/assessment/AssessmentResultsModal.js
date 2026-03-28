@@ -148,7 +148,10 @@ const AssessmentResultsModal = ({
       overallShadow: result.overallShadow || null,
     }).then((saved) => {
       setSavedToBackend(true);
-      if (saved?.id) setSavedAssessmentId(String(saved.id));
+      if (saved?.id) {
+        setSavedAssessmentId(String(saved.id));
+        try { localStorage.setItem('gfl_assessment_id', String(saved.id)); } catch (_) {}
+      }
       console.log('[GFL] Assessment saved to account, id:', saved?.id);
     }).catch((err) => {
       console.warn('[GFL] Could not save assessment:', err.message);
@@ -271,7 +274,13 @@ const AssessmentResultsModal = ({
           profileElements.forEach(s => { pd[s.profileKey] = s.content; });
           setAiProfileData(pd);
         }
-        setAiSections(sections.filter(s => !s.isProfileElement));
+        const mainSections = sections.filter(s => !s.isProfileElement);
+        setAiSections(mainSections);
+        // Persist all sections (profile elements + main) for EyedentityPage
+        try {
+          const allForEye = sections.filter(s => !s.isAgentPrompt);
+          localStorage.setItem('gfl_analysis_sections', JSON.stringify(allForEye));
+        } catch (_) {}
         setAiReady(true);
         if (onAiReadyRef.current) onAiReadyRef.current();
       } catch (err) {
@@ -836,6 +845,8 @@ const AssessmentResultsModal = ({
           if (!trimmed) { y += 2; continue; }
           // Horizontal divider (---, ***, ===) — skip entirely
           if (/^[-*=]{3,}$/.test(trimmed)) continue;
+          // Strip "Archetype: XXX (180° tegenpool ...)" and "Archetype: XXX (Rode Lijn ...)" lines
+          if (/^\**Archetype:?\**:?\s+\w+.*(180.*tegenpool|[Rr]ode\s+[Ll]ijn)/i.test(trimmed)) continue;
           // ## / ### heading
           if (/^#{2,}\s/.test(trimmed)) {
             const headText = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim();
@@ -4557,6 +4568,8 @@ function parseAiSections(analysisText) {
     /^>?\s*\**Schaduw[- ]?archetype\**:?[^\n]*\n?/gim,
     /^>?\s*\**Blindspot[- ]?archetype\**:?[^\n]*\n?/gim,
     /^>?\s*\**Archetype:?\**:?\s+\w+.*Positie\s+\d+[^\n]*\n?/gim,
+    /^>?\s*\**Archetype:?\**:?\s+\w+.*180.*tegenpool[^\n]*\n?/gim,
+    /^>?\s*\**Archetype:?\**:?\s+\w+.*[Rr]ode\s+[Ll]ijn[^\n]*\n?/gim,
     /^>?\s*Dit rapport is gegenereerd door het Garden [Ff]or Life[^\n]*\n?/gm,
     /^>?\s*De gebruikte neurobiologische termen zijn metaforen[^\n]*\n?/gm,
     /^>?\s*Raadpleeg een professional voor medisch[^\n]*\n?/gm,

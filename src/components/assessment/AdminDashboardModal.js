@@ -29,7 +29,6 @@ import {
   getAdminReviews,
   logActivity,
   getAccessLog,
-  getConsentLog,
   clearSessions,
   getFeedbackEmailSettings,
   updateFeedbackEmailSettings,
@@ -2823,8 +2822,8 @@ function formatDuration(ms) {
   return `${hr}u ${rm}m`;
 }
 
-const EVENT_ICONS  = { edit: '✏️', commit: '📦', push: '🚀', admin_login: '🔐', report_view: '📋', consent_given: '✅' };
-const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc', admin_login: '#f59e0b', report_view: '#34d399', consent_given: '#06b6d4' };
+const EVENT_ICONS  = { edit: '✏️', commit: '📦', push: '🚀', admin_login: '🔐', report_view: '📋' };
+const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc', admin_login: '#f59e0b', report_view: '#34d399' };
 
 // ═══════════════════════════════════════════════════════════
 // Passkeys Tab
@@ -3005,7 +3004,6 @@ const PasskeysTab = memo(() => {
 const AUDIT_FOLDERS = [
   { key: 'admin',   label: '📂 Admin & Toegang',  icon: '🔐', color: '#f59e0b', desc: 'Admin logins & rapportraadplegingen' },
   { key: 'passkeys', label: '📂 Passkeys',         icon: '🔑', color: '#c084fc', desc: 'Passkey gebruik — alle pogingen (geldig & ongeldig)' },
-  { key: 'compliance', label: '📂 Compliance',     icon: '✅', color: '#06b6d4', desc: 'Toestemmingsregistratie (AVG Art. 7)' },
   { key: 'sessions', label: '📂 Sessies',          icon: '📊', color: C.gold,    desc: 'Alle events gegroepeerd per sessie' },
 ];
 
@@ -3013,7 +3011,6 @@ const AuditLogTab = memo(() => {
   const [folder, setFolder] = useState('admin');
   const [sessions, setSessions] = useState([]);
   const [accessEvents, setAccessEvents] = useState([]);
-  const [consentEvents, setConsentEvents] = useState([]);
   const [passkeyEvents, setPasskeyEvents] = useState([]);
   const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -3025,16 +3022,14 @@ const AuditLogTab = memo(() => {
     setLoading(true);
     setError(null);
     try {
-      const [sessRes, accRes, conRes, pkRes] = await Promise.all([
+      const [sessRes, accRes, pkRes] = await Promise.all([
         getSessions(200).catch(() => ({ sessions: [], totalEvents: 0 })),
         getAccessLog(500).catch(() => ({ events: [] })),
-        getConsentLog(500).catch(() => ({ events: [] })),
         getPasskeyAuditLog(500).catch(() => ({ events: [] })),
       ]);
       setSessions(sessRes.sessions || []);
       setTotalEvents(sessRes.totalEvents || 0);
       setAccessEvents(accRes.events || []);
-      setConsentEvents(conRes.events || []);
       setPasskeyEvents(pkRes.events || []);
     } catch (err) {
       setError(err.message);
@@ -3061,7 +3056,6 @@ const AuditLogTab = memo(() => {
   const folderCounts = {
     admin: accessEvents.length,
     passkeys: passkeyEvents.length,
-    compliance: consentEvents.length,
     sessions: sessions.length,
   };
 
@@ -3077,7 +3071,6 @@ const AuditLogTab = memo(() => {
         {[
           { label: 'Admin', value: accessEvents.length, color: '#f59e0b' },
           { label: 'Passkeys', value: passkeyEvents.length, color: '#c084fc' },
-          { label: 'Compliance', value: consentEvents.length, color: '#06b6d4' },
           { label: 'Sessies', value: totalSessions, color: C.gold },
           { label: 'Totaal', value: totalEvents, color: '#60a5fa' },
           { label: 'Gem. Duur', value: formatDuration(avgDuration), color: '#4ade80' },
@@ -3171,48 +3164,6 @@ const AuditLogTab = memo(() => {
                         ) : (
                           <span style={{ color: '#64748b' }}>{ev.message || '—'}</span>
                         )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </DashboardCard>
-          )}
-
-          {/* ────── Compliance ────── */}
-          {folder === 'compliance' && (
-            <DashboardCard title={`Compliance — Toestemmingsregistratie (${consentEvents.length})`} color="cyan">
-              {consentEvents.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '1rem', color: '#06b6d460', fontSize: 'max(10px, 0.5vw)' }}>Nog geen toestemmingen geregistreerd</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '55vh', overflowY: 'auto' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1.5fr 0.8fr 0.6fr 1.5fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(6,182,212,0.15)' }}>
-                    {['TIJDSTIP', 'EMAIL', 'TYPE TOESTEMMING', 'NIVEAU', 'USER AGENT'].map(h => (
-                      <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#06b6d480', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
-                    ))}
-                  </div>
-                  {consentEvents.map((ev, i) => (
-                    <div key={i} style={{
-                      display: 'grid', gridTemplateColumns: '1.6fr 1.5fr 0.8fr 0.6fr 1.5fr',
-                      gap: '0.3rem', padding: '0.3rem 0.5rem', alignItems: 'center',
-                      backgroundColor: i % 2 === 0 ? 'rgba(6,182,212,0.02)' : 'transparent',
-                      borderLeft: '2px solid #06b6d4',
-                      borderRadius: '0 0.15rem 0.15rem 0',
-                    }}>
-                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>
-                        {new Date(ev.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                      </div>
-                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#f59e0b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {ev.email || <span style={{ color: '#64748b' }}>—</span>}
-                      </div>
-                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#06b6d4', fontWeight: 'bold' }}>
-                        ✅ {ev.consentType || 'art9_assessment'}
-                      </div>
-                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#c084fc', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                        {ev.level || '—'}
-                      </div>
-                      <div style={{ fontSize: 'max(7px, 0.35vw)', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {ev.userAgent || '—'}
                       </div>
                     </div>
                   ))}
@@ -3348,8 +3299,6 @@ const AuditLogTab = memo(() => {
                                 {ev.email && <span style={{ color: '#f59e0b' }}>👤 {ev.email}</span>}
                                 {ev.reportId && <span style={{ color: '#34d399', fontFamily: 'monospace', fontSize: 'max(7px, 0.34vw)' }}>ID: {ev.reportId}</span>}
                                 {ev.reportType && <span style={{ color: '#34d399', textTransform: 'uppercase' }}>{ev.reportType}</span>}
-                                {ev.consentType && <span style={{ color: '#06b6d4' }}>✅ {ev.consentType}</span>}
-                                {ev.level && <span style={{ color: '#c084fc', textTransform: 'uppercase' }}>{ev.level}</span>}
                               </div>
                             ))}
                           </div>

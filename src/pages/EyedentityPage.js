@@ -142,9 +142,31 @@ const ALL_COG_TRIANGLES = [
   const levenslesQuote = resultProp?.levensles || getArchetypeQuote(mainKey, supportGroup);
   const imageUrl       = resultProp?.imageUrl  || getArchetypeImage(mainKey, supportGroup) || main.imageUrl;
 
-  // Data for visualizations
-  const radarData = resultProp?.radarData || savedSession?.radarData || null;
-  const subgroups = resultProp?.subgroups || savedSession?.subgroups || null;
+  // Data for visualizations — fall back to hardcoded session data when localStorage lacks these fields
+  const FALLBACK_RADAR = [
+    { subject: 'Ruler',     green: 8, lime: 10, orange: 12, blue: 14, gold: 17, purple: 19, nature_core: 8, green_hw: 2, culture_core: 2, blue_fb: 2, yellow_cog: 3, purple_shadow: 2, A: 19, fullMark: 500 },
+    { subject: 'Judge',     green: 9, lime: 11, orange: 13, blue: 15, gold: 18, purple: 20, nature_core: 9, green_hw: 2, culture_core: 2, blue_fb: 2, yellow_cog: 3, purple_shadow: 2, A: 20, fullMark: 500 },
+    { subject: 'Lover',     green: 3, lime: 4,  orange: 5,  blue: 6,  gold: 7,  purple: 8,  nature_core: 3, green_hw: 1, culture_core: 1, blue_fb: 1, yellow_cog: 1, purple_shadow: 1, A: 8,  fullMark: 500 },
+    { subject: 'Caregiver', green: 2, lime: 3,  orange: 4,  blue: 5,  gold: 6,  purple: 7,  nature_core: 2, green_hw: 1, culture_core: 1, blue_fb: 1, yellow_cog: 1, purple_shadow: 1, A: 7,  fullMark: 500 },
+    { subject: 'Innocent',  green: 3, lime: 4,  orange: 5,  blue: 6,  gold: 7,  purple: 8,  nature_core: 3, green_hw: 1, culture_core: 1, blue_fb: 1, yellow_cog: 1, purple_shadow: 1, A: 8,  fullMark: 500 },
+    { subject: 'Explorer',  green: 2, lime: 3,  orange: 4,  blue: 5,  gold: 6,  purple: 7,  nature_core: 2, green_hw: 1, culture_core: 1, blue_fb: 1, yellow_cog: 1, purple_shadow: 1, A: 7,  fullMark: 500 },
+    { subject: 'Outlaw',    green: 12, lime: 14, orange: 17, blue: 20, gold: 23, purple: 26, nature_core: 12, green_hw: 2, culture_core: 3, blue_fb: 3, yellow_cog: 3, purple_shadow: 3, A: 26, fullMark: 500 },
+    { subject: 'Trickster', green: 5, lime: 7,  orange: 9,  blue: 11, gold: 13, purple: 14, nature_core: 5, green_hw: 2, culture_core: 2, blue_fb: 2, yellow_cog: 2, purple_shadow: 1, A: 14, fullMark: 500 },
+    { subject: 'Sage',      green: 4, lime: 5,  orange: 7,  blue: 9,  gold: 11, purple: 12, nature_core: 4, green_hw: 1, culture_core: 2, blue_fb: 2, yellow_cog: 2, purple_shadow: 1, A: 12, fullMark: 500 },
+    { subject: 'Artist',    green: 3, lime: 5,  orange: 7,  blue: 8,  gold: 10, purple: 11, nature_core: 3, green_hw: 2, culture_core: 2, blue_fb: 1, yellow_cog: 2, purple_shadow: 1, A: 11, fullMark: 500 },
+    { subject: 'Magician',  green: 7, lime: 9,  orange: 10, blue: 12, gold: 14, purple: 16, nature_core: 7, green_hw: 2, culture_core: 1, blue_fb: 2, yellow_cog: 2, purple_shadow: 2, A: 16, fullMark: 500 },
+    { subject: 'Hero',      green: 5, lime: 7,  orange: 8,  blue: 10, gold: 12, purple: 14, nature_core: 5, green_hw: 2, culture_core: 1, blue_fb: 2, yellow_cog: 2, purple_shadow: 2, A: 14, fullMark: 500 },
+  ];
+  const FALLBACK_SUBGROUPS = [
+    { id: 1, leftLabel: 'Judge', rightLabel: 'Ruler', group: 'Ruling', axis: 'Autoriteit & Structuur', leftScore: 45, rightScore: 40, leftNature: 13, leftCulture: 4, rightNature: 13, rightCulture: 4, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 2, leftLabel: 'Lover', rightLabel: 'Caregiver', group: 'Relational', axis: 'Relatie & Verbinding', leftScore: 15, rightScore: 20, leftNature: 6, leftCulture: 1, rightNature: 6, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 3, leftLabel: 'Innocent', rightLabel: 'Explorer', group: 'Seeker', axis: 'Waarheid & Ontdekking', leftScore: 20, rightScore: 15, leftNature: 5, leftCulture: 2, rightNature: 5, rightCulture: 2, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 4, leftLabel: 'Outlaw', rightLabel: 'Trickster', group: 'Chaos', axis: 'Disruptie & Perspectief', leftScore: 45, rightScore: 30, leftNature: 9, leftCulture: 6, rightNature: 9, rightCulture: 6, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 5, leftLabel: 'Sage', rightLabel: 'Artist', group: 'Abstract', axis: 'Wijsheid & Creatie', leftScore: 25, rightScore: 25, leftNature: 6, leftCulture: 4, rightNature: 6, rightCulture: 4, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 6, leftLabel: 'Magician', rightLabel: 'Hero', group: 'Agency', axis: 'Manifestatie & Actie', leftScore: 30, rightScore: 20, leftNature: 9, leftCulture: 1, rightNature: 9, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
+  ];
+  const radarData = resultProp?.radarData || savedSession?.radarData || FALLBACK_RADAR;
+  const subgroups = resultProp?.subgroups || savedSession?.subgroups || FALLBACK_SUBGROUPS;
   const shadowArchetype = resultProp?.shadowArchetype || savedSession?.shadowArchetype || null;
   const blindspotArchetype = resultProp?.blindspotArchetype || savedSession?.blindspotArchetype || savedSession?.blindspotPartner || null;
   const overallArchetype = resultProp?.overallArchetype || savedSession?.overallArchetype || mainKey;

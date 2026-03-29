@@ -5255,6 +5255,11 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
       maxScore: resultObj.maxScore,
       archetypeScores: advanced.scores || archetypeScores,
       answerLog,
+      radarData,
+      subgroups,
+      shadowArchetype: shadowKey,
+      blindspotArchetype: blindspotKey,
+      overallArchetype: mainKey,
     };
     // Store current session
     localStorage.setItem('gfl_assessment_session', JSON.stringify(sessionData));

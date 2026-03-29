@@ -1,10 +1,10 @@
 ﻿import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
-import { ARCHETYPES, SHADOW_PAIRS, RED_LINE, getExtendedDescription, getArchetypeQuote } from '../data/assessment';
+import { ARCHETYPES, getArchetypeQuote } from '../data/assessment';
 import { getArchetypeImage } from '../data/assessment/archetypeImages';
-import { getCoreProfile } from '../data/assessment/oceanProfiles';
 import { POLICY_CONTENT } from '../data/policyContent';
 import { submitAssessmentReview } from '../utils/apiClient';
 import { SciFiButton } from '../components/assessment/dashboardStyles';
+import { cleanTitle, getSectionAccent, renderMarkdownContent } from '../utils/markdownRenderer';
 
 /**
  * ProfileResultCard â€” loads the admin's own assessment from localStorage
@@ -32,8 +32,7 @@ const MAVERICK_DEFAULT = {
 const ProfileResultCard = ({ result: resultProp }) => {
   const green = '#1d9904';
 
-  // â”€â”€ Derive base keys (prop takes precedence over default) â”€â”€
-  // load from localStorage when no prop is provided
+  // Load saved data from localStorage
   const savedSession = (() => { try { return JSON.parse(localStorage.getItem('gfl_assessment_session') || 'null'); } catch { return null; } })();
   const savedSections = (() => { try { return JSON.parse(localStorage.getItem('gfl_analysis_sections') || 'null'); } catch { return null; } })();
 
@@ -44,241 +43,92 @@ const ProfileResultCard = ({ result: resultProp }) => {
   const harmonyActive     = resultProp?.harmonyActive     ?? savedSession?.harmonyActive     ?? MAVERICK_DEFAULT.harmonyActive;
   const shadowBonusActive = resultProp?.shadowBonusActive ?? savedSession?.shadowBonusActive ?? MAVERICK_DEFAULT.shadowBonusActive;
 
-  const aiProfileMap = (() => {
-    if (!savedSections) return {};
-    const map = {};
-    savedSections.filter(s => s.isProfileElement).forEach(s => { map[s.profileKey] = s.content; });
-    return map;
-  })();
-
   const main         = ARCHETYPES[mainKey]    || {};
   const support      = ARCHETYPES[supportKey] || {};
-  const shadowKey    = SHADOW_PAIRS[mainKey];
-  const blindspotKey = RED_LINE[mainKey];
-  const extendedDesc      = getExtendedDescription(mainKey, supportGroup);
-  const staticCoreProfile = getCoreProfile(mainKey);
-  const levenslesQuote    = resultProp?.levensles || getArchetypeQuote(mainKey, supportGroup);
-  const imageUrl          = resultProp?.imageUrl  || getArchetypeImage(mainKey, supportGroup) || main.imageUrl;
+  const levenslesQuote = resultProp?.levensles || getArchetypeQuote(mainKey, supportGroup);
+  const imageUrl       = resultProp?.imageUrl  || getArchetypeImage(mainKey, supportGroup) || main.imageUrl;
 
-  // â”€â”€ Build unified `r` object â€” real data OR derived demo â”€â”€
-  const r = resultProp || {
-    name:             extendedName,
-    extendedSubtitle: extendedDesc?.subtitle    || null,
-    combinationText:  extendedDesc?.combination || null,
-    shadowInsight:    extendedDesc?.shadow      || null,
-    mainName:         main.name,
-    mainNameEn:       main.nameEn    || mainKey,
-    group:            main.group     || null,
-    mainMotivation:   main.motivation   || null,
-    mainPositive:     main.positive     || null,
-    mainShadowTrait:  main.shadow       || null,
-    secondaryName:        support.name,
-    secondaryNameEn:      support.nameEn || supportKey,
-    secondaryDescription: support.description || null,
-    secondaryMotivation:  support.motivation  || null,
-    secondaryPositive:    support.positive    || null,
-    supportGroup,
-    shadowName:         shadowKey    ? (ARCHETYPES[shadowKey]?.name    || null) : null,
-    shadowNameEn:       shadowKey    ? (ARCHETYPES[shadowKey]?.nameEn  || shadowKey) : null,
-    shadowDescription:  shadowKey    ? (ARCHETYPES[shadowKey]?.description || null) : null,
-    blindspotName:        blindspotKey ? (ARCHETYPES[blindspotKey]?.name    || null) : null,
-    blindspotNameEn:      blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn  || blindspotKey) : null,
-    blindspotDescription: blindspotKey ? (ARCHETYPES[blindspotKey]?.description || null) : null,
-    blindspotShadowTrait: blindspotKey ? (ARCHETYPES[blindspotKey]?.shadow || null) : null,
-    harmonyActive,
-    shadowBonusActive,
-    oceanScores:    null,
-    extendedOcean:  null,
-  };
+  // All sections from AI analysis (profile elements included)
+  const allSections = savedSections || [];
 
-  // â”€â”€ OCEAN trait bar helper â”€â”€
-  const TraitBar = ({ label, value, color, isMain }) => (
-    <div style={{ marginBottom: isMain ? '0.35rem' : '0.2rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <span style={{
-          width: isMain ? '11rem' : '9rem', flexShrink: 0,
-          fontSize: isMain ? '0.72rem' : '0.65rem',
-          fontFamily: isMain ? "'Lexend Mega', sans-serif" : "'Rajdhani', sans-serif",
-          fontWeight: isMain ? 700 : 500,
-          color: isMain ? 'rgba(209,213,219,0.95)' : 'rgba(139,92,246,0.85)',
-          textTransform: isMain ? 'uppercase' : 'none',
-          letterSpacing: isMain ? '0.06em' : '0',
-          textAlign: 'right',
-        }}>{label}</span>
-        <div style={{ flex: 1, height: isMain ? '10px' : '7px', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
-          <div style={{ width: `${value}%`, height: '100%', backgroundColor: isMain ? color : 'rgba(249,115,22,0.6)', borderRadius: '3px', transition: 'width 0.6s ease' }} />
-        </div>
-        <span style={{ width: '2rem', flexShrink: 0, textAlign: 'left', fontSize: isMain ? '0.95rem' : '0.8rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: isMain ? color : 'rgba(249,115,22,0.85)' }}>{value}</span>
-      </div>
-    </div>
-  );
-
-
-  // Kernprofiel: AI text takes priority, static template as fallback
-  const kernprofielFields = [
-    { label: 'Neuroticisme Trigger',        text: aiProfileMap.neuroticismTrigger  || null },
-    { label: 'Superkracht op de Werkvloer', text: aiProfileMap.workplaceSuperpower || staticCoreProfile?.workplaceSuperpower || null },
-    { label: 'Conflictstijl',               text: aiProfileMap.conflictStyle       || staticCoreProfile?.conflictStyle       || null },
-    { label: 'Relatiepatroon',              text: aiProfileMap.relationshipPattern || staticCoreProfile?.relationshipPattern  || null },
-    { label: 'Individuatiepad',             text: aiProfileMap.individuationPath   || staticCoreProfile?.individuationPath   || null },
-  ].filter(f => f.text);
+  // Accent color cycling fallback
+  const accentCycle = [
+    { color: '#1d9904', rgb: '29, 153, 4' },
+    { color: '#a855f7', rgb: '168, 85, 247' },
+    { color: '#f97316', rgb: '249, 115, 22' },
+    { color: '#3b82f6', rgb: '59, 130, 246' },
+    { color: '#ec4899', rgb: '236, 72, 153' },
+    { color: '#14b8a6', rgb: '20, 184, 166' },
+  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      {/* â”€â”€ 1. Header & Profile â”€â”€ */}
+      {/* ── 1. Header & Profile ── */}
       <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '2rem', paddingBottom: '1.5rem', borderBottom: `1px solid rgba(29, 153, 4, 0.2)` }}>
-        {/* Profile Image â€” circular with spinning rings */}
         <div style={{ position: 'relative', width: '9rem', height: '9rem', flexShrink: 0 }}>
           <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px dashed rgba(29, 153, 4, 0.4)', animation: 'spin 20s linear infinite' }} />
           <div style={{ position: 'absolute', inset: '-0.75rem', borderRadius: '50%', border: '1px dotted rgba(168, 85, 247, 0.4)', animation: 'spin 15s linear infinite reverse' }} />
           <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${green}`, background: '#000', position: 'relative' }}>
-            {imageUrl && <img src={imageUrl} alt={r.name} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.25) sepia(0.2)', transform: 'scale(1.05)' }} />}
+            {imageUrl && <img src={imageUrl} alt={extendedName} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.25) sepia(0.2)', transform: 'scale(1.05)' }} />}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
           </div>
         </div>
-
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ fontSize: 'clamp(1.2rem, 2vw, 2rem)', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold', background: 'linear-gradient(to right, #a855f7, #d8b4fe, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))', marginBottom: '0.5rem' }}>
-            {r.name}
+            {extendedName}
           </h1>
           <p style={{ fontSize: '0.85rem', color: 'rgba(249, 115, 22, 0.9)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-            {r.mainName} {r.harmonyActive ? '\u27F7' : '+'} {r.secondaryName}
+            {main.name} {harmonyActive ? '\u27F7' : '+'} {support.name}
           </p>
           {levenslesQuote && (
             <p style={{ fontSize: '0.9rem', color: 'rgba(156, 163, 175, 1)', fontFamily: "'Figtree', sans-serif", fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 0.75rem' }}>
               "{levenslesQuote}"
             </p>
           )}
-          {r.harmonyActive && <p style={{ fontSize: '0.72rem', color: green, fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>{'\u2726'} Harmony Bonus Active {'\u2726'}</p>}
-          {r.shadowBonusActive && <p style={{ fontSize: '0.72rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>{'\u2726'} Shadow Bonus Active {'\u2726'}</p>}
+          {harmonyActive && <p style={{ fontSize: '0.72rem', color: green, fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>{'\u2726'} Harmony Bonus Active {'\u2726'}</p>}
+          {shadowBonusActive && <p style={{ fontSize: '0.72rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>{'\u2726'} Shadow Bonus Active {'\u2726'}</p>}
         </div>
       </div>
 
-      {/* â”€â”€ 2. Combination Profile â”€â”€ */}
-      {r.combinationText && (
-        <div style={{ background: 'transparent', border: `1px solid rgba(29, 153, 4, 0.25)`, borderRadius: '0.75rem', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: `linear-gradient(to right, transparent, ${green}, transparent)` }} />
-          <h3 style={{ color: green, fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
-            Waarom jij {r.name} bent
-          </h3>
-          <p style={{ color: 'rgba(209, 213, 219, 1)', fontFamily: "'Figtree', sans-serif", fontSize: '0.9rem', lineHeight: 1.7, textAlign: 'justify', margin: 0 }}>
-            {r.combinationText}
-          </p>
-        </div>
-      )}
-
-      {/* â”€â”€ 3. Main & Support Archetype Cards â”€â”€ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-        <div style={{ background: 'transparent', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: '0.75rem', padding: '1.25rem', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(to right, #a855f7, transparent)' }} />
-          <div style={{ fontSize: '0.62rem', color: 'rgba(168,85,247,0.5)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Main Archetype</div>
-          <h4 style={{ color: '#a855f7', fontFamily: "'Lexend Mega', sans-serif", fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.2rem' }}>{r.mainName}</h4>
-          <p style={{ fontSize: '0.68rem', color: 'rgba(156,163,175,0.7)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.75rem' }}>
-            {r.mainNameEn} {'\u2014'} {r.group}
-          </p>
-          {[
-            { label: 'Motivatie', text: r.mainMotivation },
-            { label: 'Kracht',    text: r.mainPositive },
-            { label: 'Schaduw',   text: r.mainShadowTrait },
-          ].filter(f => f.text).map(({ label, text }) => (
-            <div key={label} style={{ marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.62rem', color: '#a855f7', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}: </span>
-              <span style={{ fontSize: '0.82rem', color: 'rgba(209,213,219,0.9)', fontFamily: "'Figtree', sans-serif" }}>{text}</span>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ background: 'transparent', border: '1px solid rgba(249, 115, 22, 0.2)', borderRadius: '0.75rem', padding: '1.25rem', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(to right, #f97316, transparent)' }} />
-          <div style={{ fontSize: '0.62rem', color: 'rgba(249,115,22,0.5)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Support Archetype</div>
-          <h4 style={{ color: '#f97316', fontFamily: "'Lexend Mega', sans-serif", fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.2rem' }}>{r.secondaryName}</h4>
-          <p style={{ fontSize: '0.68rem', color: 'rgba(156,163,175,0.7)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.75rem' }}>
-            {r.secondaryNameEn} {'\u2014'} {r.supportGroup}
-          </p>
-          {[
-            { label: 'Motivatie', text: r.secondaryMotivation },
-            { label: 'Kracht',    text: r.secondaryPositive },
-            { label: 'Profiel',   text: r.secondaryDescription },
-          ].filter(f => f.text).map(({ label, text }) => (
-            <div key={label} style={{ marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.62rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}: </span>
-              <span style={{ fontSize: '0.82rem', color: 'rgba(209,213,219,0.9)', fontFamily: "'Figtree', sans-serif" }}>{text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* â”€â”€ 4. OCEAN Profile (when scores available) â”€â”€ */}
-      {(r.extendedOcean?.ocean || r.oceanScores) && (() => {
-        const OCEAN_LABEL_MAP = { O: 'Openheid', C: 'Consci\u00ebntieusheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
-        const OCEAN_COLOR_MAP = { O: '#a855f7', C: '#00d4ff', E: '#1d9904', A: '#f59e0b', N: '#ef4444' };
-        const scores = r.oceanScores || r.extendedOcean?.ocean || {};
+      {/* ── All AI Analysis Sections ── */}
+      {allSections.map((section, idx) => {
+        const accent = getSectionAccent(section.title) || accentCycle[idx % accentCycle.length];
         return (
-          <div style={{ background: 'transparent', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '0.75rem', padding: '1.25rem 1.5rem', position: 'relative', overflow: 'hidden' }}>
-            <h3 style={{ color: '#00d4ff', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '1rem' }}>
-              OCEAN Persoonlijkheidsprofiel
+          <div key={`sec-${idx}`} style={{
+            background: 'transparent',
+            border: `1px solid rgba(${accent.rgb}, 0.2)`,
+            borderRadius: '0.75rem',
+            padding: '1.25rem',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
+              background: `linear-gradient(to right, transparent, ${accent.color}, transparent)`,
+            }} />
+            <h3 style={{
+              color: accent.color,
+              fontFamily: "'Lexend Mega', sans-serif",
+              fontSize: '0.8rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.15em',
+              marginBottom: '0.75rem',
+            }}>
+              {cleanTitle(section.title)}
             </h3>
-            {Object.entries(scores).map(([key, val], i, arr) => (
-              <div key={key} style={{ marginBottom: i < arr.length - 1 ? '0.75rem' : 0 }}>
-                <TraitBar label={OCEAN_LABEL_MAP[key] || key} value={Math.round(val)} color={OCEAN_COLOR_MAP[key] || '#00d4ff'} isMain={true} />
-              </div>
-            ))}
+            <div style={{
+              color: 'rgba(209, 213, 219, 0.9)',
+              fontFamily: "'Figtree', sans-serif",
+              fontSize: '0.88rem',
+              lineHeight: 1.7,
+              textAlign: 'justify',
+            }}>
+              {renderMarkdownContent(section.content, accent.color)}
+            </div>
           </div>
         );
-      })()}
-
-      {/* â”€â”€ 5. Shadow Integration â”€â”€ */}
-      {(r.shadowName || r.shadowInsight) && (
-        <div style={{ background: 'transparent', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: '0.75rem', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(to right, transparent, #a855f7, transparent)' }} />
-          <h3 style={{ color: '#a855f7', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
-            Schaduw Archetype{r.shadowName ? ` \u2014 ${r.shadowName}` : ''}
-          </h3>
-          {r.shadowInsight && (
-            <p style={{ color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif", fontSize: '0.88rem', lineHeight: 1.7, textAlign: 'justify', margin: 0 }}>
-              {r.shadowInsight}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* â”€â”€ 6. Blindspot â”€â”€ */}
-      {(r.blindspotName || r.blindspotDescription) && (
-        <div style={{ background: 'transparent', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '0.75rem', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(to right, transparent, #ef4444, transparent)' }} />
-          <h3 style={{ color: '#ef4444', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
-            Blindspot{r.blindspotName ? ` \u2014 ${r.blindspotName}` : ''}
-          </h3>
-          {(r.blindspotDescription || r.blindspotShadowTrait) && (
-            <p style={{ color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif", fontSize: '0.88rem', lineHeight: 1.7, textAlign: 'justify', margin: 0 }}>
-              {r.blindspotDescription || r.blindspotShadowTrait}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* 7. Core Profile Insights (AI-generated 4B > static fallback) */}
-      {kernprofielFields.length > 0 && (
-        <div style={{ background: 'transparent', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '0.75rem', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(to right, transparent, #f97316, transparent)' }} />
-          <h3 style={{ color: '#f97316', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>
-            Kernprofiel Inzichten
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {kernprofielFields.map(({ label, text }) => (
-              <div key={label}>
-                <div style={{ fontSize: '0.65rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>
-                  {label}
-                </div>
-                <p style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.65, margin: 0, textAlign: 'justify' }}>
-                  {text}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      })}
 
     </div>
   );

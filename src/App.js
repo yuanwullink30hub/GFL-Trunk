@@ -505,12 +505,13 @@ const App = () => {
 
   // LAPTOP: Trigger smooth animation on "Start Experience" button click
   // Animation ends at pyramid visible state, then scroll takes over for layer control
+  // Uses fractional frame values for buttery-smooth continuous interpolation
   const triggerLaptopAnimation = useCallback(() => {
     if (laptopAnimating) return; // Prevent double-click
     
     setLaptopAnimating(true);
     const targetFrame = MAX_FRAME;
-    const animationDuration = 7500; // 7.5 seconds for full animation
+    const animationDuration = 6000; // 6 seconds for full animation
     const startTime = performance.now();
     
     const animate = (currentTime) => {
@@ -519,14 +520,15 @@ const App = () => {
       
       // Use easeOutCubic for smooth deceleration
       const easeProgress = 1 - Math.pow(1 - progress, 3);
-      const smoothFrame = Math.round(easeProgress * targetFrame);
+      // Fractional frames — continuous interpolation for smooth visuals
+      const smoothFrame = easeProgress * targetFrame;
       
       setCurrentFrame(smoothFrame);
       
       if (progress < 1) {
         laptopAnimationRef.current = requestAnimationFrame(animate);
       } else {
-        setCurrentFrame(targetFrame);
+        setCurrentFrame(targetFrame); // Snap to exact integer at end
         setLaptopAnimating(false);
       }
     };

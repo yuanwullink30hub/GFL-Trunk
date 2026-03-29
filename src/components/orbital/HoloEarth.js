@@ -398,11 +398,11 @@ const ChunkMesh = ({ chunk, explosionProgress, material }) => {
 };
 
 // --- All Chunks Container - appears at frame 4, animates outward ---
-const ExplodingChunks = ({ explosionProgress, earthMap, chunkFadeValue }) => {
+const ExplodingChunks = ({ explosionProgress, earthMap, chunkFadeValue, isLaptop = false }) => {
   const chunks = useMemo(() => {
-    const segments = 48;
+    const segments = isLaptop ? 32 : 48;
     return generateChunkGeometries(2.5, segments);
-  }, []);
+  }, [isLaptop]);
   
   const material = useMemo(() => {
     const mat = new THREE.ShaderMaterial({
@@ -456,6 +456,7 @@ const HoloEarthSphere = ({
   onIntroComplete = () => {},
   onLayerStateChange = () => {},
   isMobile = false,
+  isLaptop = false,
   onSphereHoverChange = () => {}, // Callback when hovering over sphere
   hidePyramid = false,
 }) => {
@@ -715,7 +716,7 @@ const HoloEarthSphere = ({
       >
         {/* Solid Complete Earth - visible only before explosion starts */}
         {explosionProgress === 0 && (
-          <Sphere args={[2.5, 64, 64]}>
+          <Sphere args={[2.5, isLaptop ? 32 : 64, isLaptop ? 32 : 64]}>
             <primitive 
               object={solidSphereMaterial} 
               attach="material" 
@@ -730,6 +731,7 @@ const HoloEarthSphere = ({
             explosionProgress={explosionProgress}
             earthMap={earthMap}
             chunkFadeValue={chunkFadeValue}
+            isLaptop={isLaptop}
           />
         )}
         
@@ -794,6 +796,23 @@ const HoloEarthSphere = ({
   );
 };
 
+// On-demand rendering controller for laptop — keeps the render loop alive
+// only while the 3D scene is actively animating. When inactive (e.g. during
+// assessment), no frames are requested and the GPU goes fully idle.
+function LaptopRenderController({ active }) {
+  const invalidate = useThree((state) => state.invalidate);
+  // Kick-start the loop when `active` flips to true (prop change alone
+  // doesn't auto-invalidate because this component has no 3D children).
+  useEffect(() => {
+    if (active) invalidate();
+  }, [active, invalidate]);
+  // While active, request the next frame at the end of every render.
+  useFrame(() => {
+    if (active) invalidate();
+  });
+  return null;
+}
+
 const HoloEarth = ({
   className, 
   style, 
@@ -811,6 +830,15 @@ const HoloEarth = ({
   hidePyramid = false,
 }) => {
   const glRef = useRef(null);
+  const isLaptop = !isMobile && typeof window !== 'undefined' && window.innerWidth < 1800;
+
+  // On laptop, only render while the 3D scene is actively animating.
+  // Idle during assessment questions (hidePyramid) and after fold-up (foldProgress=1).
+  const laptopRenderActive = isLaptop && (
+    !isActive ||                             // Pre-system: earth spinning
+    exploding ||                             // Explosion animation
+    (!hidePyramid && foldProgress < 1)       // Pyramid visible & not yet folded
+  );
 
   // Force-release WebGL context on unmount (prevents context leak during hot-reload)
   useEffect(() => {
@@ -874,6 +902,7 @@ const HoloEarth = ({
       }}
       >
         <Canvas 
+          frameloop={isLaptop ? 'demand' : 'always'}
           camera={{ position: [0, 0, 8], fov: 40 }}
           style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}
           gl={{ 
@@ -898,13 +927,15 @@ const HoloEarth = ({
             ctx.getShaderInfoLog = (shader) => origGetShaderInfoLog(shader) || '';
           }}
         >
+          {isLaptop && <LaptopRenderController active={laptopRenderActive} />}
           <Suspense fallback={null}>
             <ambientLight intensity={0.2} />
             <pointLight position={[10, 10, 10]} intensity={1.5} color="#FFD700" />
-            <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />
+            {!isLaptop && <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />}
             {/* Scale group - Mobile uses 1.3x for larger display, Desktop uses 0.5 to compensate for 200% canvas */}
             <group scale={isMobile ? 1.3 : 0.5}>
-              <HoloEarthSphere 
+              <HoloEarthSphere
+                isLaptop={isLaptop} 
                 exploding={exploding} 
                 explosionProgress={explosionProgress}
                 isActive={isActive}

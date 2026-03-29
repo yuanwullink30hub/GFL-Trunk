@@ -40,12 +40,11 @@ const EarthParticleWaves = ({
     }
   }, [earthMap]);
   
-  // Create geometry with high resolution for dense particle coverage
-  // High width segments (128) = dense horizontal rings that look connected
-  // Height segments (64) provide vertical resolution
+  // Desktop: full 128×64 (8320 verts), Laptop (<1800px): 52×26 (1378 verts, -60%)
+  const isLaptop = typeof window !== 'undefined' && window.innerWidth < 1800;
   const geometry = useMemo(() => {
-    return new THREE.SphereGeometry(sphereRadius, 128, 64);
-  }, [sphereRadius]);
+    return new THREE.SphereGeometry(sphereRadius, isLaptop ? 52 : 128, isLaptop ? 26 : 64);
+  }, [sphereRadius, isLaptop]);
   
   // Shader material based on attached aistudios code
   // OPTIMIZED: Reduced calculations, simplified wave function

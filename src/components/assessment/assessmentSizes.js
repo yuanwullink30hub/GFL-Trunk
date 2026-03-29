@@ -344,11 +344,12 @@ const resultsDesktop = {
 };
 
 const resultsLaptop = {
-  // 0.56x of desktop rem, then modalMaxWidth +15%
+  // 0.56x of desktop rem, then modalMaxWidth +15%, then +25%
   poetryWidth: '13.4rem',
   poetryPad: '0.84rem',
-  modalMaxWidth: '36.11rem',   // 31.4rem × 1.15
-  modalMaxHeight: '79vh',      // 85vh − 7%
+  modalMaxWidth: '45.14rem',   // 36.11rem × 1.25
+  modalMaxHeight: '86.9vh',    // 79vh × 1.10
+  modalMarginTop: '3rem',
   scrollPad: '0.84rem 1.12rem',
   profileImgSize: '14rem',
   profileTextMaxW: '22.4rem',

@@ -1362,6 +1362,8 @@ const App = () => {
           right: '1.5rem',
           top: '2.5rem',
           zIndex: 9999,
+          transform: window.innerWidth < 1441 ? 'scale(0.8)' : undefined,
+          transformOrigin: 'top right',
         }}>
           <TimeSync isMobile={false} />
         </div>

@@ -3133,6 +3133,7 @@ const AssessmentResultsModal = ({
           transformOrigin: 'center center',
           width: '100%',
           maxWidth: rs.modalMaxWidth,
+          marginTop: rs.modalMarginTop || undefined,
         }}>
 
           {/* Modal Container - holographic glass */}

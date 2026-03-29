@@ -207,9 +207,6 @@
 .z-\[-1\]{
   z-index: -1;
 }
-.z-\[10001\]{
-  z-index: 10001;
-}
 .z-\[150\]{
   z-index: 150;
 }
@@ -218,9 +215,6 @@
 }
 .z-\[210\]{
   z-index: 210;
-}
-.z-\[250\]{
-  z-index: 250;
 }
 .mx-4{
   margin-left: 1rem;
@@ -309,6 +303,9 @@
 }
 .mt-auto{
   margin-top: auto;
+}
+.\!block{
+  display: block !important;
 }
 .block{
   display: block;

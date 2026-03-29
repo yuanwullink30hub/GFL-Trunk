@@ -120,8 +120,8 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
   ];
 
   return (
-    <div style={{ width: '100%', height: '100%', minHeight: 300, position: 'relative', background: 'transparent' }}>
-      <ResponsiveContainer width="100%" height="100%">
+    <div style={{ width: '100%', height: '340px', position: 'relative', background: 'transparent' }}>
+      <ResponsiveContainer width="100%" height={340}>
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
           <PolarGrid stroke="#a5f3fc" strokeOpacity={0.15} gridType="polygon" radialLines={true} />
           <PolarAngleAxis

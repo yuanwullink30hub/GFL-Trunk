@@ -120,11 +120,18 @@ router.post('/analyze', async (req, res) => {
       level,
       // Group dynamics (Dual-Core)
       subgroups,
+      radarData,
     } = req.body;
 
     if (!archetypeKey) {
       sendEvent('error', { error: 'archetypeKey is required' });
       return res.end();
+    }
+
+    // Log radarData for debugging
+    if (radarData) {
+      console.log('[AI] radarData received:');
+      console.log(JSON.stringify(radarData, null, 2));
     }
 
     // Fetch admin prompt config from MongoDB for defaults

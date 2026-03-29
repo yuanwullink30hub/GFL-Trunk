@@ -551,8 +551,8 @@ const EXTENDED_DESCRIPTIONS = {
     name: 'The Maverick',
     subtitle: 'Ruler + Chaos',
     harmony: false,
-    combination: 'De Maverick combineert de bestuurskracht van de Heerser met de onconventionele disruptie van de Chaos-groep. De drang naar orde ontmoet de drang naar de onthullende waarheid. Dit levert een leider op die structuur bouwt én breekt wanneer evolutie dat vraagt — massieve, onvoorspelbare daadkracht die voortkomt uit het simultaan inzetten van controle en disruptie.',
-    shadow: 'Onconventioneel leiderschap kan instabiliteit creëren. De Outlaw herinnert je: zelfs de meest disruptieve leider heeft een anker nodig.',
+    combination: 'Binnen dit model is het aannemelijk dat ik de architectuur van systemen begrijp — en precies weet waar ik ze moet breken. De Ruler bouwt de structuur; de Outlaw-energie test haar op waarheid. Samen ontstaat een profiel dat leidt door disruptie, niet ondanks haar.',
+    shadow: 'Mijn antwoordpatronen suggereren een zeldzame combinatie: de Ruler-kern kiest consequent voor orde, verantwoordelijkheid en langetermijnarchitectuur, terwijl de Outlaw-energie als tweede laag voortdurend de vraag stelt of die structuur ook deugt. Binnen dit model functioneert dit als een ingebouwde kwaliteitscontrole — ik bouw systemen die ik tegelijkertijd kritisch bevraag.\n\nDe hoge Nature-score op de CEN-as (76%) suggereert dat structuurdenken biologisch verankerd is, geen aangeleerde strategie. De Outlaw-energie (60% Nature op de Salience-as) voegt echter voldoende chaos-responsiviteit toe om niet te verstenen in eigen regels. Mijn perspectief is daarmee: ik zie hoe het moet zijn, en ik zie waarom het nu nog niet zo is — binnen dit model een krachtige combinatie voor transformationeel leiderschap.',
   },
   RULER_ABSTRACT: {
     name: 'The Philosopher-King',

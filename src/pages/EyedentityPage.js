@@ -33,25 +33,25 @@ const MAVERICK_DEFAULT = {
  */
 const COG_TRIANGLES = {
   RULER:     { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-    tagline: 'Jij navigeert via principes, visie en structuur.',
-    what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
-    drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-    high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
-    growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+    tagline: 'Ik navigeer via principes, visie en structuur.',
+    what: 'Mijn aangeleerde cognitieve gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen waarvan ik geloof dat ze universeel geldig zijn.',
+    drive: 'Aangeleerde navigatie: Mijn Culture picks tonen dat ik heb leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+    high: 'Hoog geel profiel: Hoge gele activatie hier betekent dat ik sterk leef vanuit geleerde regels, idealen en kenniskaders. Ik beoordeel situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan mijn architectuur voldoet.',
+    growth: 'Groeirichting: Duik in de driehoeken die ik het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium die mijn systemen niet kunnen verklaren: emotionele chaos en blinde disruptie.',
   },
   INNOCENT:  { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-    tagline: 'Jij navigeert via principes, visie en structuur.',
-    what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
-    drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-    high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
-    growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+    tagline: 'Ik navigeer via principes, visie en structuur.',
+    what: 'Mijn aangeleerde cognitieve gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen waarvan ik geloof dat ze universeel geldig zijn.',
+    drive: 'Aangeleerde navigatie: Mijn Culture picks tonen dat ik heb leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+    high: 'Hoog geel profiel: Hoge gele activatie hier betekent dat ik sterk leef vanuit geleerde regels, idealen en kenniskaders. Ik beoordeel situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan mijn architectuur voldoet.',
+    growth: 'Groeirichting: Duik in de driehoeken die ik het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium die mijn systemen niet kunnen verklaren: emotionele chaos en blinde disruptie.',
   },
   SAGE:      { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-    tagline: 'Jij navigeert via principes, visie en structuur.',
-    what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
-    drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-    high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
-    growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+    tagline: 'Ik navigeer via principes, visie en structuur.',
+    what: 'Mijn aangeleerde cognitieve gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen waarvan ik geloof dat ze universeel geldig zijn.',
+    drive: 'Aangeleerde navigatie: Mijn Culture picks tonen dat ik heb leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+    high: 'Hoog geel profiel: Hoge gele activatie hier betekent dat ik sterk leef vanuit geleerde regels, idealen en kenniskaders. Ik beoordeel situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan mijn architectuur voldoet.',
+    growth: 'Groeirichting: Duik in de driehoeken die ik het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium die mijn systemen niet kunnen verklaren: emotionele chaos en blinde disruptie.',
   },
   JUDGE:    { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
     tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
@@ -144,18 +144,18 @@ const ALL_COG_TRIANGLES = [
 
   // Data for visualizations — fall back to hardcoded session data when localStorage lacks these fields
   const FALLBACK_RADAR = [
-    { subject: 'Ruler',     green: 8, lime: 10, orange: 12, blue: 14, gold: 17, purple: 19, nature_core: 8, green_hw: 2, culture_core: 2, blue_fb: 2, yellow_cog: 3, purple_shadow: 2, A: 19, fullMark: 500 },
-    { subject: 'Judge',     green: 9, lime: 11, orange: 13, blue: 15, gold: 18, purple: 20, nature_core: 9, green_hw: 2, culture_core: 2, blue_fb: 2, yellow_cog: 3, purple_shadow: 2, A: 20, fullMark: 500 },
-    { subject: 'Lover',     green: 3, lime: 4,  orange: 5,  blue: 6,  gold: 7,  purple: 8,  nature_core: 3, green_hw: 1, culture_core: 1, blue_fb: 1, yellow_cog: 1, purple_shadow: 1, A: 8,  fullMark: 500 },
-    { subject: 'Caregiver', green: 2, lime: 3,  orange: 4,  blue: 5,  gold: 6,  purple: 7,  nature_core: 2, green_hw: 1, culture_core: 1, blue_fb: 1, yellow_cog: 1, purple_shadow: 1, A: 7,  fullMark: 500 },
-    { subject: 'Innocent',  green: 3, lime: 4,  orange: 5,  blue: 6,  gold: 7,  purple: 8,  nature_core: 3, green_hw: 1, culture_core: 1, blue_fb: 1, yellow_cog: 1, purple_shadow: 1, A: 8,  fullMark: 500 },
-    { subject: 'Explorer',  green: 2, lime: 3,  orange: 4,  blue: 5,  gold: 6,  purple: 7,  nature_core: 2, green_hw: 1, culture_core: 1, blue_fb: 1, yellow_cog: 1, purple_shadow: 1, A: 7,  fullMark: 500 },
-    { subject: 'Outlaw',    green: 12, lime: 14, orange: 17, blue: 20, gold: 23, purple: 26, nature_core: 12, green_hw: 2, culture_core: 3, blue_fb: 3, yellow_cog: 3, purple_shadow: 3, A: 26, fullMark: 500 },
-    { subject: 'Trickster', green: 5, lime: 7,  orange: 9,  blue: 11, gold: 13, purple: 14, nature_core: 5, green_hw: 2, culture_core: 2, blue_fb: 2, yellow_cog: 2, purple_shadow: 1, A: 14, fullMark: 500 },
-    { subject: 'Sage',      green: 4, lime: 5,  orange: 7,  blue: 9,  gold: 11, purple: 12, nature_core: 4, green_hw: 1, culture_core: 2, blue_fb: 2, yellow_cog: 2, purple_shadow: 1, A: 12, fullMark: 500 },
-    { subject: 'Artist',    green: 3, lime: 5,  orange: 7,  blue: 8,  gold: 10, purple: 11, nature_core: 3, green_hw: 2, culture_core: 2, blue_fb: 1, yellow_cog: 2, purple_shadow: 1, A: 11, fullMark: 500 },
-    { subject: 'Magician',  green: 7, lime: 9,  orange: 10, blue: 12, gold: 14, purple: 16, nature_core: 7, green_hw: 2, culture_core: 1, blue_fb: 2, yellow_cog: 2, purple_shadow: 2, A: 16, fullMark: 500 },
-    { subject: 'Hero',      green: 5, lime: 7,  orange: 8,  blue: 10, gold: 12, purple: 14, nature_core: 5, green_hw: 2, culture_core: 1, blue_fb: 2, yellow_cog: 2, purple_shadow: 2, A: 14, fullMark: 500 },
+    { subject: 'Ruler',     green: 45, lime: 62, orange: 74, blue: 85, gold: 90, purple: 96, nature_core: 45, green_hw: 17, culture_core: 12, blue_fb: 11, yellow_cog: 5,  purple_shadow: 6, A: 96, fullMark: 500 },
+    { subject: 'Judge',     green: 57, lime: 69, orange: 81, blue: 88, gold: 91, purple: 92, nature_core: 57, green_hw: 12, culture_core: 12, blue_fb: 7,  yellow_cog: 3,  purple_shadow: 1, A: 92, fullMark: 500 },
+    { subject: 'Lover',     green: 27, lime: 29, orange: 33, blue: 33, gold: 40, purple: 40, nature_core: 27, green_hw: 2,  culture_core: 4,  blue_fb: 0,  yellow_cog: 7,  purple_shadow: 0, A: 40, fullMark: 500 },
+    { subject: 'Caregiver', green: 12, lime: 18, orange: 18, blue: 20, gold: 24, purple: 28, nature_core: 12, green_hw: 6,  culture_core: 0,  blue_fb: 2,  yellow_cog: 4,  purple_shadow: 4, A: 28, fullMark: 500 },
+    { subject: 'Innocent',  green: 33, lime: 33, orange: 41, blue: 41, gold: 47, purple: 50, nature_core: 33, green_hw: 0,  culture_core: 8,  blue_fb: 0,  yellow_cog: 6,  purple_shadow: 3, A: 50, fullMark: 500 },
+    { subject: 'Explorer',  green: 0,  lime: 7,  orange: 7,  blue: 9,  gold: 15, purple: 19, nature_core: 0,  green_hw: 7,  culture_core: 0,  blue_fb: 2,  yellow_cog: 6,  purple_shadow: 4, A: 19, fullMark: 500 },
+    { subject: 'Outlaw',    green: 54, lime: 59, orange: 87, blue: 90, gold: 91, purple: 94, nature_core: 54, green_hw: 5,  culture_core: 28, blue_fb: 3,  yellow_cog: 1,  purple_shadow: 3, A: 94, fullMark: 500 },
+    { subject: 'Trickster', green: 21, lime: 39, orange: 47, blue: 61, gold: 63, purple: 68, nature_core: 21, green_hw: 18, culture_core: 8,  blue_fb: 14, yellow_cog: 2,  purple_shadow: 5, A: 68, fullMark: 500 },
+    { subject: 'Sage',      green: 6,  lime: 19, orange: 31, blue: 40, gold: 45, purple: 46, nature_core: 6,  green_hw: 13, culture_core: 12, blue_fb: 9,  yellow_cog: 5,  purple_shadow: 1, A: 46, fullMark: 500 },
+    { subject: 'Artist',    green: 42, lime: 43, orange: 55, blue: 56, gold: 59, purple: 59, nature_core: 42, green_hw: 1,  culture_core: 12, blue_fb: 1,  yellow_cog: 3,  purple_shadow: 0, A: 59, fullMark: 500 },
+    { subject: 'Magician',  green: 27, lime: 41, orange: 41, blue: 50, gold: 58, purple: 59, nature_core: 27, green_hw: 14, culture_core: 0,  blue_fb: 9,  yellow_cog: 8,  purple_shadow: 1, A: 59, fullMark: 500 },
+    { subject: 'Hero',      green: 48, lime: 57, orange: 65, blue: 71, gold: 73, purple: 73, nature_core: 48, green_hw: 9,  culture_core: 8,  blue_fb: 6,  yellow_cog: 2,  purple_shadow: 0, A: 73, fullMark: 500 },
   ];
   const FALLBACK_SUBGROUPS = [
     { id: 1, leftLabel: 'Judge', rightLabel: 'Ruler', group: 'Ruling', axis: 'Autoriteit & Structuur', leftScore: 45, rightScore: 40, leftNature: 13, leftCulture: 4, rightNature: 13, rightCulture: 4, harmonyPoints: 0, shadowPoints: 0 },
@@ -166,6 +166,10 @@ const ALL_COG_TRIANGLES = [
     { id: 6, leftLabel: 'Magician', rightLabel: 'Hero', group: 'Agency', axis: 'Manifestatie & Actie', leftScore: 30, rightScore: 20, leftNature: 9, leftCulture: 1, rightNature: 9, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
   ];
   const radarData = resultProp?.radarData || savedSession?.radarData || FALLBACK_RADAR;
+  // DEV: log real radar values so we can copy them into FALLBACK_RADAR
+  if (process.env.NODE_ENV !== 'production' && savedSession?.radarData) {
+    console.log('[EyedentityPage] radarData from session:', JSON.stringify(savedSession.radarData, null, 2));
+  }
   const subgroups = resultProp?.subgroups || savedSession?.subgroups || FALLBACK_SUBGROUPS;
   const shadowArchetype = resultProp?.shadowArchetype || savedSession?.shadowArchetype || null;
   const blindspotArchetype = resultProp?.blindspotArchetype || savedSession?.blindspotArchetype || savedSession?.blindspotPartner || null;
@@ -322,8 +326,6 @@ const ALL_COG_TRIANGLES = [
               "{levenslesQuote}"
             </p>
           )}
-          {harmonyActive && <p style={{ fontSize: '0.72rem', color: green, fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>{'\u2726'} Harmony Bonus Active {'\u2726'}</p>}
-          {shadowBonusActive && <p style={{ fontSize: '0.72rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.1em', marginTop: '0.25rem', textTransform: 'uppercase' }}>{'\u2726'} Shadow Bonus Active {'\u2726'}</p>}
         </div>
       </div>
 
@@ -462,36 +464,6 @@ const ALL_COG_TRIANGLES = [
 
       {/* ── 11. Other ungrouped sections ── */}
       {aiOtherSections.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length + aiGroup1a.length + aiGroup1b.length + aiGroepDyn.length + aiGroup2.length))}
-
-      {/* ── 12. AI Prompt Teaser ── */}
-      <div style={{
-        width: '100%',
-        background: 'rgba(0, 0, 0, 0.3)',
-        border: '1px solid rgba(168, 85, 247, 0.2)',
-        borderRadius: '0.75rem',
-        padding: sectionPad,
-        textAlign: 'center',
-      }}>
-        <h3 style={{
-          color: '#a855f7',
-          fontFamily: "'Lexend Mega', sans-serif",
-          fontSize: '0.85rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.15em',
-          marginBottom: '0.5rem',
-        }}>
-          Volledige AI Prompt
-        </h3>
-        <p style={{
-          color: 'rgba(209, 213, 219, 0.6)',
-          fontFamily: "'Figtree', sans-serif",
-          fontSize: '0.85rem',
-          lineHeight: 1.6,
-          margin: 0,
-        }}>
-          De volledige AI prompt is beschikbaar in je PDF rapport. Download je rapport via de assessment resultaten.
-        </p>
-      </div>
 
     </div>
   );
@@ -782,11 +754,18 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
   }, []);
 
   const [selectedId, setSelectedId] = useState(getTabFromPath);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const contentRef = useRef(null);
 
   useEffect(() => {
     if (contentRef.current) contentRef.current.scrollTop = 0;
   }, [selectedId]);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const onPopState = () => setSelectedId(getTabFromPath());
@@ -803,6 +782,8 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
   const selectedItem = NAV_ITEMS.find(item => item.id === selectedId);
   const accentColor = '#a855f7';
   const corners = CornerStone({ variant: 'purple' });
+  const shellW = windowWidth >= 1441 ? '70vw' : windowWidth >= 1024 ? '77vw' : '96vw';
+  const shellH = windowWidth >= 1441 ? '70vh' : windowWidth >= 1024 ? '77vh' : '96vh';
 
   return (
     <div style={{
@@ -828,7 +809,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
       {/* â”€â”€ Outer shell â€” positioning context only, corners live here so overflow:hidden can't clip them â”€â”€ */}
-      <div style={{ position: 'relative', width: '70vw', height: '70vh', flexShrink: 0 }}>
+      <div style={{ position: 'relative', width: shellW, height: shellH, flexShrink: 0 }}>
         {/* Purple L-bracket corners â€” exact SectorFrame pattern */}
         <div style={{ position: 'absolute', top: '-2px', left: '-2px', width: '1rem', height: '1rem', border: '1.5px solid #a855f7', borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none', pointerEvents: 'none', zIndex: 10 }} />
         <div style={{ position: 'absolute', top: '-2px', right: '-2px', width: '1rem', height: '1rem', border: '1.5px solid #a855f7', borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none', pointerEvents: 'none', zIndex: 10 }} />
@@ -912,6 +893,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, auto) 1fr',
+          gridTemplateRows: '1fr',
           gap: '1.5rem',
           flex: 1,
           minHeight: 0,
@@ -925,6 +907,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
             overflowY: 'auto',
             width: 'max-content',
             minWidth: 0,
+            minHeight: 0,
           }}>
             {NAV_ITEMS.map(item => {
               const isActive = selectedId === item.id;
@@ -998,6 +981,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            minHeight: 0,
           }}>
             {corners.topLeft}
             {corners.topRight}

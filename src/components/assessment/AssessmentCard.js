@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { isNatureSlot } from '../../pages/assessment/assessmentData';
 import { pingBackend } from '../../utils/apiClient';
+import { getCardSizes } from './assessmentSizes';
 
 /** Strip admin metadata tags [xxx] and (xxx) from display text */
 function stripMeta(text) {
@@ -158,7 +159,7 @@ const AssessmentCard = ({
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [showIntro, setShowIntro] = useState(true);
   const [started, setStarted] = useState(false);
-  const [buttonLockSeconds, setButtonLockSeconds] = useState(10);
+  const [buttonLockSeconds, setButtonLockSeconds] = useState(process.env.NODE_ENV === 'production' ? 10 : 0);
   const levelConfigRef = useRef(levelConfig);
   levelConfigRef.current = levelConfig;
   const { t } = useLanguage();
@@ -172,75 +173,7 @@ const AssessmentCard = ({
   }, []);
 
   // Breakpoint-based sizing:  Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
-  const s = windowWidth >= 1441 ? {
-    // ── Desktop ── original full-size (+20% width, right-extend)
-    cardMaxWidth: '46.2rem',
-    cardBaseWidth: '42rem',
-    maxH: '82vh',
-    headerPad: '0.75rem 1.25rem',
-    badgeSize: '2.25rem',
-    badgeFont: '0.875rem',
-    contentMinH: '32rem',
-    contentPad: '1rem 1.25rem',
-    questionFont: '1rem',
-    questionMinH: '4.5rem',
-    answerMinH: '3.5rem',
-    answerFont: '0.875rem',
-    letterBadgeW: '2.5rem',
-    footerPad: '0.75rem 1.25rem',
-    indicatorSize: '1.75rem',
-  } : windowWidth >= 1024 ? {
-    // ── Laptop ── vw-based ×1.3 (+20% width, right-extend)
-    cardMaxWidth: '37.3vw',
-    cardBaseWidth: '33.9vw',
-    maxH: '80vh',
-    headerPad: '0.57vw 0.95vw',
-    badgeSize: '1.89vw',
-    badgeFont: '0.85vw',
-    contentMinH: '26.4vw',
-    contentPad: '0.75vw 0.95vw',
-    questionFont: '1.13vw',
-    questionMinH: '3.77vw',
-    answerMinH: '3.02vw',
-    answerFont: '0.95vw',
-    letterBadgeW: '2.08vw',
-    footerPad: '0.57vw 0.95vw',
-    indicatorSize: '1.51vw',
-  } : windowWidth >= 768 ? {
-    // ── Tablet ── 0.65x (+20% width, right-extend)
-    cardMaxWidth: '29.7rem',
-    cardBaseWidth: '27rem',
-    maxH: '80vh',
-    headerPad: '0.5rem 0.8rem',
-    badgeSize: '1.5rem',
-    badgeFont: '0.65rem',
-    contentMinH: '21rem',
-    contentPad: '0.65rem 0.8rem',
-    questionFont: '0.8rem',
-    questionMinH: '3rem',
-    answerMinH: '2.3rem',
-    answerFont: '0.7rem',
-    letterBadgeW: '1.6rem',
-    footerPad: '0.5rem 0.8rem',
-    indicatorSize: '1.15rem',
-  } : {
-    // ── Mobile ── viewport-fitting, touch-friendly
-    cardMaxWidth: '94vw',
-    cardBaseWidth: '94vw',
-    maxH: '82vh',
-    headerPad: '0.5rem 0.65rem',
-    badgeSize: '1.6rem',
-    badgeFont: '0.7rem',
-    contentMinH: '0',
-    contentPad: '0.5rem 0.65rem',
-    questionFont: '0.82rem',
-    questionMinH: '2.5rem',
-    answerMinH: '2.6rem',
-    answerFont: '0.75rem',
-    letterBadgeW: '1.75rem',
-    footerPad: '0.45rem 0.65rem',
-    indicatorSize: '1.25rem',
-  };
+  const s = getCardSizes(windowWidth);
 
   const currentQuestion = questions[currentQuestionIndex];
   const questionNumber = currentQuestionIndex + 1;
@@ -324,6 +257,7 @@ const AssessmentCard = ({
   // 10-second trigger lock: block Doorgaan on every new question to prevent accidental skipping
   useEffect(() => {
     if (!started) return;
+    if (process.env.NODE_ENV !== 'production') return; // disabled on localhost
     setButtonLockSeconds(10);
     const interval = setInterval(() => {
       setButtonLockSeconds(prev => {
@@ -461,13 +395,13 @@ const AssessmentCard = ({
           {currentSubjectIndex === 0 ? (
             /* ── Subject 0: "Voordat je begint" briefing with → arrow ── */
             <div style={{
-              padding: windowWidth >= 1024 ? '2rem 2rem 1.5rem' : '1.5rem 1.25rem 1rem',
+              padding: s.introPad,
               display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: windowWidth >= 1024 ? '1rem' : '0.75rem',
+              gap: s.introGap,
             }}>
               <h3 style={{
                 fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontSize: windowWidth >= 1024 ? '1.15rem' : '1rem',
+                fontSize: s.introTitleFont,
                 color: '#f97316',
                 textTransform: 'uppercase',
                 letterSpacing: '0.15em',
@@ -479,7 +413,7 @@ const AssessmentCard = ({
 
               <p style={{
                 fontFamily: "'Figtree', sans-serif",
-                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+                fontSize: s.introDescFont,
                 color: 'rgba(255, 254, 240, 0.6)',
                 textAlign: 'center',
                 lineHeight: 1.7,
@@ -491,7 +425,7 @@ const AssessmentCard = ({
 
               <p style={{
                 fontFamily: "'Figtree', sans-serif",
-                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+                fontSize: s.introDescFont,
                 color: 'rgba(255, 254, 240, 0.6)',
                 textAlign: 'center',
                 lineHeight: 1.7,
@@ -505,7 +439,7 @@ const AssessmentCard = ({
 
               <p style={{
                 fontFamily: "'Figtree', sans-serif",
-                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+                fontSize: s.introDescFont,
                 color: 'rgba(255, 254, 240, 0.6)',
                 textAlign: 'center',
                 lineHeight: 1.7,
@@ -517,7 +451,7 @@ const AssessmentCard = ({
 
               <p style={{
                 fontFamily: "'Figtree', sans-serif",
-                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+                fontSize: s.introDescFont,
                 color: 'rgba(255, 254, 240, 0.5)',
                 textAlign: 'center',
                 lineHeight: 1.7,
@@ -543,7 +477,7 @@ const AssessmentCard = ({
 
               <p style={{
                 fontFamily: "'Figtree', sans-serif",
-                fontSize: windowWidth >= 1024 ? '0.9rem' : '0.82rem',
+                fontSize: s.introItalicFont,
                 color: 'rgba(255, 254, 240, 0.75)',
                 textAlign: 'center',
                 lineHeight: 1.7,
@@ -558,7 +492,7 @@ const AssessmentCard = ({
                 className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
                 style={{
                   fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                  fontSize: windowWidth >= 1024 ? '1.1rem' : '0.95rem',
+                  fontSize: s.introBtnFont,
                   backgroundColor: 'rgba(168, 85, 247, 0.12)',
                   border: '2px solid #a855f7',
                   color: '#a855f7',
@@ -581,13 +515,13 @@ const AssessmentCard = ({
           ) : (
             /* ── Subjects 1-4: layer intro with → arrow ── */
             <div style={{
-              padding: windowWidth >= 1024 ? '2rem 2rem 1.5rem' : '1.5rem 1.25rem 1rem',
+              padding: s.layerIntroPad,
               display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: windowWidth >= 1024 ? '0.75rem' : '0.5rem',
+              gap: s.layerIntroGap,
             }}>
               <h3 style={{
                 fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontSize: windowWidth >= 1024 ? '1.15rem' : '1rem',
+                fontSize: s.layerTitleFont,
                 color: subjectColor,
                 textTransform: 'uppercase',
                 letterSpacing: '0.15em',
@@ -600,7 +534,7 @@ const AssessmentCard = ({
               {levelConfig.timerType === 'layered' && levelConfig.layerTimers && (
                 <div style={{
                   fontFamily: "'Figtree', sans-serif",
-                  fontSize: windowWidth >= 1024 ? '0.85rem' : '0.75rem',
+                  fontSize: s.layerTimerFont,
                   color: 'rgba(255, 254, 240, 0.5)',
                   textAlign: 'center',
                   lineHeight: '1.7',
@@ -612,7 +546,7 @@ const AssessmentCard = ({
 
               <p style={{
                 fontFamily: "'Figtree', sans-serif",
-                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+                fontSize: s.layerDescFont,
                 color: 'rgba(255, 254, 240, 0.55)',
                 textAlign: 'center',
                 lineHeight: 1.7,
@@ -641,7 +575,7 @@ const AssessmentCard = ({
                 className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
                 style={{
                   fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                  fontSize: windowWidth >= 1024 ? '1.1rem' : '0.95rem',
+                  fontSize: s.layerBtnFont,
                   backgroundColor: `${subjectColor}12`,
                   border: `2px solid ${subjectColor}`,
                   color: subjectColor,
@@ -681,13 +615,13 @@ const AssessmentCard = ({
           <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 pointer-events-none" style={{ border: `1.5px solid ${subjectColor}`, borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }} />
 
           <div style={{
-            padding: windowWidth >= 1024 ? '2rem 2rem 1.5rem' : '1.5rem 1.25rem 1rem',
+            padding: s.layerIntroPad,
             display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: windowWidth >= 1024 ? '0.75rem' : '0.5rem',
+            gap: s.layerIntroGap,
           }}>
             <h3 style={{
               fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-              fontSize: windowWidth >= 1024 ? '1.15rem' : '1rem',
+              fontSize: s.layerTitleFont,
               color: subjectColor,
               textTransform: 'uppercase',
               letterSpacing: '0.15em',
@@ -700,7 +634,7 @@ const AssessmentCard = ({
             {levelConfig.timerType === 'layered' && levelConfig.layerTimers && (
               <div style={{
                 fontFamily: "'Figtree', sans-serif",
-                fontSize: windowWidth >= 1024 ? '0.85rem' : '0.75rem',
+                fontSize: s.layerTimerFont,
                 color: 'rgba(255, 254, 240, 0.5)',
                 textAlign: 'center',
                 lineHeight: '1.7',
@@ -712,7 +646,7 @@ const AssessmentCard = ({
 
             <p style={{
               fontFamily: "'Figtree', sans-serif",
-              fontSize: windowWidth >= 1024 ? '0.85rem' : '0.78rem',
+              fontSize: s.layerDescFont,
               color: 'rgba(255, 254, 240, 0.55)',
               textAlign: 'center',
               lineHeight: 1.7,
@@ -735,7 +669,7 @@ const AssessmentCard = ({
               className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
               style={{
                 fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontSize: windowWidth >= 1024 ? '0.95rem' : '0.8rem',
+                fontSize: s.layerStartBtnFont,
                 backgroundColor: `${subjectColor}12`,
                 border: `2px solid ${subjectColor}`,
                 color: subjectColor,

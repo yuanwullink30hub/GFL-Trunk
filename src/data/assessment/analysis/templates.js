@@ -101,15 +101,15 @@ export const ANALYSIS_TEMPLATES = {
     sections: [
       {
         title: 'De Alchemie van Individuatie',
-        content: 'Het subject demonstreert een natuurlijk vermogen voor structuur, leiderschap en het bewaken van orde. De Heerser-signatuur wijst op een geest die niet alleen systemen begrijpt, maar ze actief vormgeeft en beheert. Jouw complementaire partner is de Rechter (Judge) — samen vormen jullie de as van Autoriteit & Structuur: jij bewaakt de orde en soevereiniteit, de Judge bewaakt de morele integriteit en de weging van die orde.',
+        content: 'De Switch: Vanuit dit scoreprofiel is het aannemelijk dat de Ruler-kern domineert in structurering, verantwoordelijkheid en langetermijnarchitectuur — terwijl de Outlaw-energie als tweede laag voortdurend de vraag stelt of die structuur ook deugt. Binnen dit model functioneert dit als een ingebouwde kwaliteitscontrole: systemen worden gebouwd én tegelijkertijd kritisch bevraagd.',
       },
       {
         title: 'Het Neurale Schakelbord',
-        content: 'In elk team neem je de rol van leider aan — je deelt taken uit, bewaakt de structuur en houdt het overzicht. Je competentie straalt autoriteit uit. Je schaduwpartner is de Rebel (Outlaw) — Orde vs. Chaos. Je bent doodsbang voor anarchie, maar de Outlaw is de kracht die nodig is om een gestold systeem open te breken. De beste leider is niet hij die het hardst stuurt, maar hij die de ruimte schept waarin anderen excelleren.',
+        content: 'De Focus-hendel: Wanneer je merkt dat je een situatie primair beoordeelt op haar structurele tekortkomingen — pauzeer en stel jezelf de vraag: wat werkt hier al? Dit is geen positief denken, maar een bewust activeren van de Ruler-modus vóór de Outlaw het frame overneemt. Als experiment: begin één vergadering per week met een expliciete inventarisatie van wat al functioneert, voordat je je agenda voor verbetering presenteert.\n\nDe Schaduw-injectie: De Outlaw-energie is al aanwezig in dit profiel — de uitdaging is niet hem te activeren maar hem bewust te richten.',
       },
       {
         title: 'Ontologische Evolutie',
-        content: 'Je leiderschapspad evolueert van management naar visionair bestuur. De data wijst op een groeiende capaciteit om niet alleen systemen te beheren, maar ze fundamenteel te herontwerpen. Integreer de rebellie-energie van de Outlaw om je structuren levend te houden en te voorkomen dat ze verstenen. Ware macht is geleend en tijdelijk — gebruik het wijs.',
+        content: 'Richting het Centrum: Wanneer de Ruler-score domineert zonder Outlaw-integratie, bestaat het risico van wat dit model beschrijft als structurele calcificatie — systemen die kloppen maar niet meer ademen. Dit profiel suggereert dat dit risico al gedeeltelijk ondervangen is door de Outlaw als Support te integreren. De volgende beweging richting centrum is subtieler: het cultiveren van Trickster-tolerantie — niet als aanval op de architectuur, maar als test van haar elasticiteit. Systemen die geen humor verdragen, zijn te rigide.\n\nOntologische Vraag: Op welk moment in mijn leven heb ik een systeem gebouwd dat perfect was — en wat deed ik toen het niet meer nodig was?',
       },
     ],
   },

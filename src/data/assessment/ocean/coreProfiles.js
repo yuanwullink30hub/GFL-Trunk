@@ -603,19 +603,19 @@ export const OCEAN_CORE_PROFILES = {
       },
       neuroticism: {
         level: 'Laag naar buiten toe',
-        description: 'Ze zijn een baken van stabiliteit, maar zijn intern doodsbang voor anarchie en controleverlies.',
+        description: 'Binnen dit model is het aannemelijk dat het stresspatroon zich manifesteert als een diep gevoel van structurele incompetentie bij anderen — niet het eigen falen, maar het falen van systemen die men verantwoordelijk acht. De Outlaw-Support versterkt dit: wanneer regels worden gebroken zonder reden of autoriteit haar legitimiteit verliest, viert de stressrespons op. Met een uitzonderlijk lage N-score (2) zal deze trigger zelden vuren — maar wanneer hij dat doet, is de respons koel, doelgericht en potentieel langdurig vastgehouden.',
       },
     },
     workplace: {
       role: 'De Soevereine Manager',
-      superpower: 'Ze zijn uitzonderlijk in het creëren van stabiliteit en het omzetten van chaotische ideeën in duurzame, winstgevende realiteiten.',
-      conflictStyle: 'Autoriteit. Ze willen geen gevoelens bemiddelen, maar regels vaststellen om te voorkomen dat het conflict zich herhaalt.',
+      superpower: 'Vanuit dit scoreprofiel is het aannemelijk dat de professionele kernkwaliteit zich uit als het vermogen om systemen te bouwen die zichzelf bevragen. De Ruler-kern levert de architectuur; de Outlaw-Support levert de stresstest. Met een Authenticity Index die sterk Nature-dominant is (met name op de CEN- en Agency-as), opereert deze kwaliteit instinctief — niet nadenken over of een structuur robuust is, maar het voelen. Dit profiel gedijt in organisaties in transitie, bij complexe herstructureringen of waar anderen vastlopen in legacy-systemen.',
+      conflictStyle: 'Binnen dit model is het aannemelijk dat conflict benaderd wordt als een correctiemechanisme, niet als emotionele ontlading. Lage A (39) gecombineerd met uitzonderlijk lage N (2) produceert een koelbloedige confrontatiestijl: rustig, doelgericht, zonder zichtbare emotie. De Ruler-Main confronteert via gezag en argumentstructuur; de Outlaw-Support voegt bereidheid toe om regels te breken als de situatie het vraagt. Escalatiepunt: wanneer de ander de structurele logica weigert te erkennen. Ná het conflict: het grootboek wordt bijgehouden, maar niet getoond.',
     },
     relationships: {
       style: 'De Vestingbouwer',
       attachmentStyle: 'Afwijzend-Vermijdend leunend naar Veilig',
-      attachmentDescription: 'Ze tonen liefde door voorziening en bescherming, maar zien emotionele kwetsbaarheid vaak als een barst in hun pantser.',
-      trap: 'De "Ondergeschikte" Dynamiek: Ze behandelen gezinsleden soms als werknemers door opdrachten te geven in plaats van verzoeken te doen.',
+      attachmentDescription: 'Dit antwoordprofiel suggereert een relatiedynamiek waarin de architect de ander ruimte geeft — maar wel binnen een kader dat zelf is ontworpen. Hoge E (88) gecombineerd met lage A (39) en lage N (2) creëert een dominant, aantrekkelijk maar onvermurwbaar patroon. De Ruler-Main biedt stabiliteit en richting; de Outlaw-Support maakt je onvoorspelbaar genoeg om fascinerend te blijven.',
+      trap: 'De partner ervaart de structuur als veiligheid totdat ze haar beperking voelt. Dit profiel trekt mogelijk mensen aan die vrijheid zoeken — en biedt hen orde.',
     },
     individuation: {
       paradox: 'Absolute Orde vs. Chaos',
@@ -623,7 +623,7 @@ export const OCEAN_CORE_PROFILES = {
       shadowName: 'De Rebel',
       shadowPosition: 6,
       neuralSwitch: 'De Heerser wordt geregeerd door de drang naar controle en orde (\'CEN-modus\'). De \'switch\' naar de Rebel activeert het Salience Network om systemen die gestold zijn open te breken.',
-      alchemy: 'Individuatie betekent dat je erkent dat een systeem dat nooit verandert, uiteindelijk sterft. De Rebel is de noodzakelijke kracht die de anarchie toestaat om vernieuwing mogelijk te maken. Je transformeert van een starre tiran die vasthoudt aan de macht naar een soevereine leider die orde gebruikt als een fundament voor vrijheid, en chaos als een instrument voor evolutie.',
+      alchemy: 'Binnen dit model wijst dit profiel op een individuatiepad waarin de paradox centraal staat: de Ruler die de Outlaw niet vreest, maar hem ook niet volledig loslaat. De spanning tussen Main en Support is hier geen externe frictie maar een intern architectuurprobleem — wanneer is het systeem goed genoeg om los te laten? Het schakelpunt is het moment dat je een structuur vertrouwt zonder haar te controleren. De 180° schaduw-energie van de Outlaw is niet de tegenstander — het is de brandstof die de systemen levend houdt. Het individuatiepad loopt via vertrouwen in onvolmaaktheid.',
     },
   },
 };

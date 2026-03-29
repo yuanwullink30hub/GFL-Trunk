@@ -3,6 +3,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import SciFiRadarChart from './SciFiRadarChart';
 import SubgroupCounters from './SubgroupCounters';
+import { getResultsSizes } from './assessmentSizes';
 import {
   ARCHETYPES,
   SUBGROUP_POLARITIES,
@@ -373,72 +374,8 @@ const AssessmentResultsModal = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Breakpoint-based sizing:  Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
-  const rs = windowWidth >= 1441 ? {
-    // ── Desktop ── original full-size
-    poetryWidth: '24rem',
-    poetryPad: '1.5rem',
-    modalMaxWidth: '56rem',
-    modalMaxHeight: '85vh',
-    scrollPad: '1.5rem 2rem',
-    profileImgSize: '25rem',
-    profileTextMaxW: '40rem',
-    titleFont: 'clamp(1.8rem, 4vw, 3rem)',
-    radarHeight: '380px',
-    sectionPad: '1.5rem',
-    cardPad: '1.25rem',
-    btnMinWidth: '200px',
-    btnPad: '1rem 1.5rem',
-    btnFont: '0.85rem',
-  } : windowWidth >= 1024 ? {
-    // ── Laptop ── 0.56x
-    poetryWidth: '13.4rem',
-    poetryPad: '0.84rem',
-    modalMaxWidth: '31.4rem',
-    modalMaxHeight: '85vh',
-    scrollPad: '0.84rem 1.12rem',
-    profileImgSize: '14rem',
-    profileTextMaxW: '22.4rem',
-    titleFont: '1.4rem',
-    radarHeight: '213px',
-    sectionPad: '0.84rem',
-    cardPad: '0.7rem',
-    btnMinWidth: '112px',
-    btnPad: '0.56rem 0.84rem',
-    btnFont: '0.6rem',
-  } : windowWidth >= 768 ? {
-    // ── Tablet ── 0.65x
-    poetryWidth: '15.6rem',
-    poetryPad: '0.975rem',
-    modalMaxWidth: '36.4rem',
-    modalMaxHeight: '85vh',
-    scrollPad: '0.975rem 1.3rem',
-    profileImgSize: '16.25rem',
-    profileTextMaxW: '26rem',
-    titleFont: '1.6rem',
-    radarHeight: '247px',
-    sectionPad: '0.975rem',
-    cardPad: '0.8rem',
-    btnMinWidth: '130px',
-    btnPad: '0.65rem 0.975rem',
-    btnFont: '0.7rem',
-  } : {
-    // ── Mobile ── near-full-width
-    poetryWidth: '90vw',
-    poetryPad: '1rem',
-    modalMaxWidth: '95vw',
-    modalMaxHeight: '85vh',
-    scrollPad: '0.75rem 1rem',
-    profileImgSize: '80vw',
-    profileTextMaxW: '90vw',
-    titleFont: '1.5rem',
-    radarHeight: '260px',
-    sectionPad: '0.75rem',
-    cardPad: '0.65rem',
-    btnMinWidth: '100%',
-    btnPad: '0.75rem 1rem',
-    btnFont: '0.8rem',
-  };
+  // Breakpoint-based sizing from assessmentSizes.js config
+  const rs = getResultsSizes(windowWidth);
   
   // ── Ref for the radar chart element (captured as image for PDF) ──
   const radarRef = useRef(null);
@@ -521,25 +458,25 @@ const AssessmentResultsModal = ({
   // ── Cognitieve Driehoek data — shared between UI rendering and PDF generation ──
   const COG_TRIANGLES = {
     RULER:     { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-      tagline: 'Jij navigeert via principes, visie en structuur.',
-      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
-      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
-      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+      tagline: 'Ik navigeer via principes, visie en structuur.',
+      what: 'Mijn aangeleerde cognitieve gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen waarvan ik geloof dat ze universeel geldig zijn.',
+      drive: 'Aangeleerde navigatie: Mijn Culture picks tonen dat ik heb leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+      high: 'Hoog geel profiel: Hoge gele activatie hier betekent dat ik sterk leef vanuit geleerde regels, idealen en kenniskaders. Ik beoordeel situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan mijn architectuur voldoet.',
+      growth: 'Groeirichting: Duik in de driehoeken die ik het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium die mijn systemen niet kunnen verklaren: emotionele chaos en blinde disruptie.',
     },
     INNOCENT:  { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-      tagline: 'Jij navigeert via principes, visie en structuur.',
-      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
-      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
-      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+      tagline: 'Ik navigeer via principes, visie en structuur.',
+      what: 'Mijn aangeleerde cognitieve gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen waarvan ik geloof dat ze universeel geldig zijn.',
+      drive: 'Aangeleerde navigatie: Mijn Culture picks tonen dat ik heb leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+      high: 'Hoog geel profiel: Hoge gele activatie hier betekent dat ik sterk leef vanuit geleerde regels, idealen en kenniskaders. Ik beoordeel situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan mijn architectuur voldoet.',
+      growth: 'Groeirichting: Duik in de driehoeken die ik het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium die mijn systemen niet kunnen verklaren: emotionele chaos en blinde disruptie.',
     },
     SAGE:      { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-      tagline: 'Jij navigeert via principes, visie en structuur.',
-      what: 'Je aangeleerde cognitief gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen die jij gelooft dat universeel geldig zijn.',
-      drive: 'Je Culture picks tonen dat je hebt leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-      high: 'Hoge gele activatie hier betekent dat jij sterk leeft vanuit geleerde regels, idealen en kenniskaders. Je beoordeelt situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan jouw architectuur voldoet.',
-      growth: 'Duik in de driehoeken die jij het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium dat jouw systemen niet kunnen verklaren: emotionele chaos, disruptie, alchemie.',
+      tagline: 'Ik navigeer via principes, visie en structuur.',
+      what: 'Mijn aangeleerde cognitieve gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen waarvan ik geloof dat ze universeel geldig zijn.',
+      drive: 'Aangeleerde navigatie: Mijn Culture picks tonen dat ik heb leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
+      high: 'Hoog geel profiel: Hoge gele activatie hier betekent dat ik sterk leef vanuit geleerde regels, idealen en kenniskaders. Ik beoordeel situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan mijn architectuur voldoet.',
+      growth: 'Groeirichting: Duik in de driehoeken die ik het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium die mijn systemen niet kunnen verklaren: emotionele chaos en blinde disruptie.',
     },
     JUDGE:    { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
       tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
@@ -3037,6 +2974,7 @@ const AssessmentResultsModal = ({
         // visibility:hidden completely removes backdrop-filter from the GPU compositing
         // pipeline — prevents the frosted-glass layer bleeding through at opacity~0
         visibility: resultsModalProgress < 0.02 ? 'hidden' : 'visible',
+        paddingBottom: (windowWidth >= 1024 && windowWidth < 1441) ? '6rem' : undefined,
       }}
       onWheelCapture={handleWheelCapture}
     >

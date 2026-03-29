@@ -47,8 +47,9 @@ import InvoiceTemplate from './InvoiceTemplate';
 import CreditNoteTemplate from './CreditNoteTemplate';
 import EmailTemplate from './EmailTemplate';
 
-// ── Mobile detection context ──
+// ── Responsive context ──
 const MobileCtx = React.createContext(false);
+const DashSizeCtx = React.createContext({});
 
 // Mobile-only tab style (standalone, no BTN spread)
 // eslint-disable-next-line no-unused-vars
@@ -197,16 +198,69 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
   useLanguage();
   const [tab, setTab] = useState('overview');
 
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
   useEffect(() => {
-    const h = () => setIsMobile(window.innerWidth < 768);
+    const h = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', h);
     return () => window.removeEventListener('resize', h);
   }, []);
+  const isMobile = windowWidth < 768;
+
+  // Breakpoint-based sizing — Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
+  const ds = windowWidth >= 1441 ? {
+    shellWidth: '90vw', shellMaxWidth: '1280px', shellHeight: '85vh', shellPad: 0,
+    titleBarPad: '0.3rem 0.7rem',
+    contentPad: '1.5rem', contentGap: '1.5rem',
+    headerPb: '0.8rem', headerFont: 'max(22px, 1.53vw)',
+    tabGap: '0.4rem',
+    avatarSize: '3.5rem', avatarFont: '1.5rem',
+    infoGap: '0.4rem', infoMt: '0.5rem',
+    rowPb: '0.35rem',
+    noteListMaxH: '220px', noteGap: '0.35rem',
+    notePad: '0.4rem 0.6rem', noteInputPad: '0.4rem 0.6rem',
+    borderRadius: 'max(4px, 0.5vw)',
+  } : windowWidth >= 1024 ? {
+    shellWidth: '90vw', shellMaxWidth: '1280px', shellHeight: '85vh', shellPad: 0,
+    titleBarPad: '0.3rem 0.7rem',
+    contentPad: '1.5rem', contentGap: '1.5rem',
+    headerPb: '0.8rem', headerFont: 'max(18px, 1.53vw)',
+    tabGap: '0.4rem',
+    avatarSize: '3.5rem', avatarFont: '1.5rem',
+    infoGap: '0.4rem', infoMt: '0.5rem',
+    rowPb: '0.35rem',
+    noteListMaxH: '220px', noteGap: '0.35rem',
+    notePad: '0.4rem 0.6rem', noteInputPad: '0.4rem 0.6rem',
+    borderRadius: 'max(4px, 0.5vw)',
+  } : windowWidth >= 768 ? {
+    shellWidth: '94vw', shellMaxWidth: '1280px', shellHeight: '85vh', shellPad: 0,
+    titleBarPad: 'max(0.4rem, 0.55vw) max(0.7rem, 1vw)',
+    contentPad: '1.25rem', contentGap: '1.25rem',
+    headerPb: '0.6rem', headerFont: 'max(20px, 1.4vw)',
+    tabGap: '0.35rem',
+    avatarSize: '3rem', avatarFont: '1.25rem',
+    infoGap: '0.35rem', infoMt: '0.4rem',
+    rowPb: '0.3rem',
+    noteListMaxH: '180px', noteGap: '0.3rem',
+    notePad: '0.35rem 0.5rem', noteInputPad: '0.35rem 0.5rem',
+    borderRadius: 'max(4px, 0.5vw)',
+  } : {
+    shellWidth: '96vw', shellMaxWidth: '1280px', shellHeight: '82vh', shellPad: '0.6rem',
+    titleBarPad: 'max(0.4rem, 0.55vw) max(0.7rem, 1vw)',
+    contentPad: 'max(1rem, 1.5vw) max(1.4rem, 2.5vw)', contentGap: 'max(1rem, 1.5vw)',
+    headerPb: '0.5rem', headerFont: 'max(18px, 1.4vw)',
+    tabGap: '0.3rem',
+    avatarSize: 'max(2.5rem, 3.5vw)', avatarFont: 'max(1rem, 1.5vw)',
+    infoGap: 'max(0.25rem, 0.4vw)', infoMt: 'max(0.3rem, 0.5vw)',
+    rowPb: 'max(0.25rem, 0.35vw)',
+    noteListMaxH: '30vh', noteGap: 'max(0.25rem, 0.35vw)',
+    notePad: 'max(0.3rem, 0.4vw) max(0.4rem, 0.6vw)', noteInputPad: 'max(0.6rem, 0.8vw) max(0.6rem, 0.9vw)',
+    borderRadius: 'max(4px, 0.5vw)',
+  };
 
 
   return (
     <MobileCtx.Provider value={isMobile}>
+    <DashSizeCtx.Provider value={ds}>
     <style>{`
       @keyframes dashHoloSheen {
         0%   { background-position: 200% 200%; }
@@ -218,8 +272,8 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         100% { background-position: 0 200%; }
       }
     `}</style>
-    {/* Outer shell — fixed size, positioning context for corners */}
-    <div style={{ position: 'relative', width: isMobile ? '96vw' : '90vw', maxWidth: '1280px', height: isMobile ? '82vh' : '85vh', padding: isMobile ? '0.6rem' : 0 }}>
+    {/* Outer shell — vw-based, positioning context for corners */}
+    <div style={{ position: 'relative', width: ds.shellWidth, maxWidth: ds.shellMaxWidth, height: ds.shellHeight, padding: ds.shellPad }}>
       {/* Corner brackets — positioned on the inner panel edge */}
       <div style={CORNER('tl', isMobile)} />
       <div style={CORNER('tr', isMobile)} />
@@ -235,7 +289,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         backgroundColor: 'rgba(1, 0, 2, 0.3)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: 'max(4px, 0.5vw)',
+        borderRadius: ds.borderRadius,
         boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
         color: C.text,
         fontFamily: FONT,
@@ -261,7 +315,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         {/* Title bar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: isMobile ? 'max(0.4rem, 0.55vw) max(0.7rem, 1vw)' : '0.3rem 0.7rem',
+          padding: ds.titleBarPad,
           borderBottom: '1px solid rgba(255,255,255,0.05)',
           backgroundColor: 'rgba(42, 10, 56, 0.35)',
           position: 'relative', zIndex: 2,
@@ -288,24 +342,24 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         {/* Scrollable content area — fills remaining space */}
         <div style={{
           position: 'relative', zIndex: 10,
-          padding: isMobile ? 'max(1rem, 1.5vw) max(1.4rem, 2.5vw)' : '1.5rem',
+          padding: ds.contentPad,
           flex: 1,
           minHeight: 0,
           overflowY: 'auto',
           ...(isMobile ? { overflowX: 'hidden', maxWidth: '100%', wordBreak: 'break-word' } : {}),
           display: 'flex',
           flexDirection: 'column',
-          gap: isMobile ? 'max(1rem, 1.5vw)' : '1.5rem',
+          gap: ds.contentGap,
         }}>
       {/* ── Koptekst — HoloAuth Dashboard structuur ── */}
       <header style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         borderBottom: '1px solid rgba(168, 85, 247, 0.15)',
-        paddingBottom: isMobile ? 'max(0.8rem, 1.2vw)' : '0.8rem',
+        paddingBottom: ds.headerPb,
       }}>
         <div>
           <h1 style={{
-            fontSize: isMobile ? 'max(18px, 1.4vw)' : 'max(22px, 1.4vw)', fontWeight: 'bold',
+            fontSize: ds.headerFont, fontWeight: 'bold',
             color: C.gold, textTransform: 'uppercase',
             letterSpacing: '0.2em', fontFamily: FONT, margin: 0,
             textShadow: '0 0 5px #f97316, 0 0 10px #f97316',
@@ -347,7 +401,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
           </div>
         );
       })() : (
-        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: ds.tabGap, flexWrap: 'wrap' }}>
           {[
             { key: 'overview', label: 'Overzicht' },
             { key: 'users', label: 'Gebruikers' },
@@ -380,6 +434,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
 
       </div>
     </div>
+    </DashSizeCtx.Provider>
     </MobileCtx.Provider>
   );
 });
@@ -462,6 +517,7 @@ if (!window.__gflErrorCapture) {
 
 const OverviewTab = memo(({ user }) => {
   const isMobile = React.useContext(MobileCtx);
+  const ds = React.useContext(DashSizeCtx);
   const [stats, setStats] = useState(null);
   const [, setRecentUsers] = useState([]);
   const [error, setError] = useState('');
@@ -565,25 +621,25 @@ const OverviewTab = memo(({ user }) => {
     <>
       {/* ── 3-Kolommen Raster ── */}
       <div style={isMobile
-        ? { display: 'flex', flexDirection: 'column', gap: 'max(1rem, 1.5vw)' }
-        : { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }
+        ? { display: 'flex', flexDirection: 'column', gap: ds.contentGap }
+        : { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: ds.contentGap }
       }>
         {/* Kaart 1: Identiteitsmatrix (goud) — gebruikersprofiel */}
         <DashboardCard title="Identiteitsmatrix" color="gold">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 'max(0.5rem, 0.8vw)' : '0.8rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 'max(0.5rem, 0.8vw)' : '0.8rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: ds.infoGap }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: ds.infoGap }}>
               <div style={{
-                width: isMobile ? 'max(2.5rem, 3.5vw)' : '3.5rem', height: isMobile ? 'max(2.5rem, 3.5vw)' : '3.5rem', borderRadius: '50%',
+                width: ds.avatarSize, height: ds.avatarSize, borderRadius: '50%',
                 backgroundColor: tc.iconBg, border: `1px solid ${tc.border}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: isMobile ? 'max(1rem, 1.5vw)' : '1.5rem',
+                fontSize: ds.avatarFont,
               }}>🛡</div>
               <div>
                 <div style={{ fontSize: 'max(9px, 0.45vw)', color: tc.dimText, textTransform: 'uppercase' }}>Status</div>
                 <div style={{ color: C.gold, fontWeight: 'bold' }}>OPERATIONEEL</div>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 'max(0.25rem, 0.4vw)' : '0.4rem', marginTop: isMobile ? 'max(0.3rem, 0.5vw)' : '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: ds.infoGap, marginTop: ds.infoMt }}>
               {[
                 ['Gebruiker', user.displayName || '—'],
                 ['E-mail Protocol', user.email],
@@ -592,7 +648,7 @@ const OverviewTab = memo(({ user }) => {
               ].map(([label, value]) => (
                 <div key={label} style={{
                   display: 'flex', justifyContent: 'space-between',
-                  borderBottom: `1px solid ${tc.rowBorder}`, paddingBottom: isMobile ? 'max(0.25rem, 0.35vw)' : '0.35rem',
+                  borderBottom: `1px solid ${tc.rowBorder}`, paddingBottom: ds.rowPb,
                 }}>
                   <span style={{ color: tc.dimText, fontSize: 'max(9px, 0.45vw)', textTransform: 'uppercase', ...(isMobile ? { flexShrink: 0, width: '30%' } : {}) }}>{label}</span>
                   <span style={{ fontSize: 'max(10px, 0.5vw)', fontFamily: FONT, ...(isMobile ? { textAlign: 'right', flex: 1 } : {}) }}>{value}</span>
@@ -604,8 +660,8 @@ const OverviewTab = memo(({ user }) => {
 
         {/* Kaart 2: Admin Notities (paars) — opslaan van notities */}
         <DashboardCard title="Admin Notities" color="purple">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 'max(0.35rem, 0.5vw)' : '0.5rem' }}>
-            <div style={{ display: 'flex', gap: isMobile ? 'max(0.25rem, 0.4vw)' : '0.4rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: ds.noteGap }}>
+            <div style={{ display: 'flex', gap: ds.noteGap }}>
               <input
                 value={noteInput}
                 onChange={(e) => setNoteInput(e.target.value)}
@@ -613,11 +669,11 @@ const OverviewTab = memo(({ user }) => {
                 placeholder="Notitie toevoegen..."
                 style={{
                   flex: 1,
-                  padding: isMobile ? 'max(0.6rem, 0.8vw) max(0.6rem, 0.9vw)' : '0.4rem 0.6rem',
+                  padding: ds.noteInputPad,
                   ...(isMobile ? { minHeight: '2.5rem' } : {}),
                   backgroundColor: 'rgba(0,0,0,0.4)',
                   border: `1px solid ${pc.rowBorder}`,
-                  borderRadius: isMobile ? 'max(2px, 0.25vw)' : '0.25rem',
+                  borderRadius: ds.borderRadius,
                   color: C.text, fontFamily: FONT,
                   fontSize: 'max(9px, 0.45vw)',
                   outline: 'none',
@@ -625,25 +681,25 @@ const OverviewTab = memo(({ user }) => {
                 onFocus={(e) => { e.target.style.borderColor = C.purple; }}
                 onBlur={(e) => { e.target.style.borderColor = pc.rowBorder; }}
               />
-              <SciFiButton onClick={addNote} variant="purple" size="sm" padding={isMobile ? 'max(0.25rem, 0.35vw) max(0.4rem, 0.6vw)' : '0.35rem 0.6rem'} fontSize="max(9px, 0.45vw)">+</SciFiButton>
+              <SciFiButton onClick={addNote} variant="purple" size="sm" padding={ds.notePad} fontSize="max(9px, 0.45vw)">+</SciFiButton>
             </div>
             {notesSaved && (
               <div style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase' }}>
                 ✓ Opgeslagen
               </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 'max(0.25rem, 0.35vw)' : '0.35rem', maxHeight: isMobile ? '30vh' : '220px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: ds.noteGap, maxHeight: ds.noteListMaxH, overflowY: 'auto' }}>
               {notes.length > 0 ? notes.map((n) => (
                 <div key={n.id} style={{
-                  padding: isMobile ? 'max(0.3rem, 0.4vw) max(0.4rem, 0.6vw)' : '0.4rem 0.6rem',
+                  padding: ds.notePad,
                   backgroundColor: pc.cardBg,
                   border: `1px solid ${pc.rowBorder}`,
-                  borderRadius: isMobile ? 'max(2px, 0.25vw)' : '0.25rem',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: isMobile ? 'max(0.25rem, 0.4vw)' : '0.4rem',
+                  borderRadius: ds.borderRadius,
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: ds.noteGap,
                 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 'max(10px, 0.5vw)', wordBreak: 'break-word' }}>{n.text}</div>
-                    <div style={{ fontSize: 'max(7px, 0.35vw)', color: pc.dimText, marginTop: isMobile ? 'max(0.15rem, 0.2vw)' : '0.2rem' }}>
+                    <div style={{ fontSize: 'max(7px, 0.35vw)', color: pc.dimText, marginTop: ds.noteGap }}>
                       {new Date(n.ts).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
@@ -793,8 +849,8 @@ const OverviewTab = memo(({ user }) => {
 
       {/* ── 4-Kolommen Statistieken Voettekst ── */}
       <div style={isMobile
-        ? { display: 'flex', flexDirection: 'column', gap: '0.6rem' }
-        : { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.8rem' }
+        ? { display: 'flex', flexDirection: 'column', gap: ds.noteGap }
+        : { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: ds.infoGap }
       }>
         {[
           { label: 'Gebruikers', value: stats.userCount },

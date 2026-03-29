@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import AssessmentCard from './AssessmentCard';
+import { getLayerPanelSizes } from './assessmentSizes';
 
 
 /**
@@ -218,14 +219,14 @@ const SingleLayerPanel = ({
     // Breakpoint-aware positioning: Desktop / Laptop / Tablet / Mobile
     const vw = window.innerWidth;
     const rightXPercent = vw >= 1441 ? 73 :  // Desktop — balanced
-                          vw >= 1024 ? 83 + (4 * 16 / vw * 100) :  // Laptop — +4rem right
+                          vw >= 1024 ? 83 - (5 * 16 / vw * 100) :  // Laptop — 5rem further left
                           vw >= 768  ? 75 :  // Tablet
                           50;                 // Mobile — centered
     
     // Compute LEFT-side X position (where saved cards stack)
     const savedScale = SAVED_SCALES[layerIndex];
     const leftXPercent = vw >= 1441 ? 21 :   // Desktop — snug left of pyramid
-                         vw >= 1024 ? 13 - (1.5 * 16 / vw * 100) :   // Laptop — -1.5rem left
+                         vw >= 1024 ? 17 + (5 * 16 / vw * 100) :   // Laptop — mirror of right for symmetry
                          vw >= 768  ? 18 :   // Tablet
                          50;                  // Mobile — centered
     
@@ -416,11 +417,9 @@ const SingleLayerPanel = ({
   };
 
   // Breakpoint-aware card wrapper width
-  const cardWrapperWidth = windowWidth >= 1441 ? '30rem' :
-                           windowWidth >= 1024 ? '37.7vw' :
-                           windowWidth >= 768  ? '24rem' :
-                           '90vw';
-  const cardMaxWidth = windowWidth >= 768 ? '45vw' : '95vw';
+  const lps = getLayerPanelSizes(windowWidth);
+  const cardWrapperWidth = lps.cardWrapperWidth;
+  const cardMaxWidth = lps.cardMaxWidth;
 
   return (
     <div 

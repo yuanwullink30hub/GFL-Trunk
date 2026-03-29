@@ -991,6 +991,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
   const onReadyRef      = useRef(onReady);
   const readyFiredRef   = useRef(false);
   const isMobile        = typeof window !== 'undefined' && window.innerWidth < 768;
+  const isLaptopOrTablet = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1441;
   const currentFrameRef = useRef(currentFrame); // readable inside render loop
   // Accumulated shader time — runs at 0.7x speed once explosion > frame 10
   const shaderTimeRef   = useRef(0);
@@ -1218,13 +1219,15 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     }
     window.addEventListener('resize', resize);
 
-    // Mouse / pointer tracking
+    // Mouse / pointer tracking — desktop only (disabled for laptop/tablet)
     function onPointerMove(e) {
       mouseRef.current.x = e.clientX / window.innerWidth;
       mouseRef.current.y = 1.0 - e.clientY / window.innerHeight;
     }
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    window.addEventListener('mousemove', onPointerMove, { passive: true });
+    if (!isLaptopOrTablet) {
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+      window.addEventListener('mousemove', onPointerMove, { passive: true });
+    }
 
     // Render loop
     let lastFrame = 0;
@@ -1329,8 +1332,10 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('mousemove', onPointerMove);
+      if (!isLaptopOrTablet) {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('mousemove', onPointerMove);
+      }
       document.removeEventListener('visibilitychange', onVisibility);
       if (dispProg)   { dispProg._shaders.forEach(s => gl.deleteShader(s));   gl.deleteProgram(dispProg); }
       if (nebulaProg) { nebulaProg._shaders.forEach(s => gl.deleteShader(s)); gl.deleteProgram(nebulaProg); }

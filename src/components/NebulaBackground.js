@@ -945,38 +945,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 `;
 } // end makeNebulaFrag
 
-const NEBULA_FRAG     = makeNebulaFrag(2, 2, 'highp',  3); // Desktop: 2 fbm/ridge octaves, 3 gas layers
-const NEBULA_FRAG_LOW = makeNebulaFrag(1, 1, 'mediump', 2); // Low-end: 1 octave, mediump, 2 gas layers (~50% noise)
-
-/**
- * Detect low-end GPUs that would struggle with the full-quality shader at 1080p/30fps.
- * Uses WEBGL_debug_renderer_info (available in Chrome/Edge; masked in Firefox/Safari).
- * Targets the Intel UHD 620/630 era (2017-2019 laptops) and equivalents as the cutoff.
- */
-function isLowEndGPU(gl) {
-  const ext = gl.getExtension('WEBGL_debug_renderer_info');
-  if (!ext) return false; // renderer string masked — assume capable, rely on FPS watchdog
-  const renderer = (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '').toLowerCase();
-  if (!renderer) return false;
-
-  // Software rasteriser — always low
-  if (renderer.includes('swiftshader') || renderer.includes('llvmpipe') || renderer.includes('software')) return true;
-
-  // Intel integrated
-  if (/intel/.test(renderer)) {
-    if (/iris\s*xe|arc/.test(renderer))       return false; // Iris Xe / Arc: capable
-    if (/iris\s*plus\s*g7/.test(renderer))    return false; // Iris Plus G7 (Ice Lake): borderline ok
-    if (/hd\s*graphics|uhd/.test(renderer))   return true;  // UHD 620/630, HD 5xx/6xx: use low
-  }
-
-  // AMD integrated (pre-RDNA — Vega 3/6/8 on Ryzen 1000-3000 series)
-  if (/amd|radeon/.test(renderer)) {
-    if (/rx\s*\d|radeon\s*[5-9]\d{2}m|radeon\s*[67-9]\d{2}m/.test(renderer)) return false; // discrete / RDNA ok
-    if (/vega\s*[3-8]\b/.test(renderer)) return true; // old APU Vega
-  }
-
-  return false;
-}
+const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3); // Desktop: 2 fbm/ridge octaves, 3 gas layers
 
 // ─── React Component ────────────────────────────────────────────────────
 const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame = 0 }) => {
@@ -992,6 +961,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
   const readyFiredRef   = useRef(false);
   const isMobile        = typeof window !== 'undefined' && window.innerWidth < 768;
   const isLaptopOrTablet = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1441;
+  const useVideo         = isMobile || isLaptopOrTablet; // video for < 1441px, WebGL for desktop only
   const currentFrameRef = useRef(currentFrame); // readable inside render loop
   // Accumulated shader time — runs at 0.7x speed once explosion > frame 10
   const shaderTimeRef   = useRef(0);
@@ -1006,9 +976,9 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     mapPosTargetRef.current = mapPosition;
   }, [mapPosition]);
 
-  // ─── MOBILE: Pre-recorded video loop (zero GPU cost) ─────────────────
+  // ─── VIDEO PATH: Pre-recorded video loop for mobile + laptop/tablet (zero GPU cost) ──
   useEffect(() => {
-    if (!isMobile) return;
+    if (!useVideo) return;
     const video = videoRef.current;
     if (!video) return;
 
@@ -1033,14 +1003,14 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
       video.removeEventListener('error', onError);
       video.pause();
     };
-  }, [isMobile]);
+  }, [useVideo]);
 
-  // ─── DESKTOP: WebGL shader path ─────────────────────────────────────
+  // ─── DESKTOP: WebGL shader path (only for >= 1441px) ────────────────
   // Track WebGL init function so context restore can re-run it
   const initCountRef = useRef(0);
 
   useEffect(() => {
-    if (isMobile) return; // mobile uses video, no WebGL
+    if (useVideo) return; // mobile + laptop/tablet use video, no WebGL
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -1122,11 +1092,9 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
       return p;
     }
 
-    // Create programs — choose quality tier based on GPU capability
-    const lowEnd     = isLowEndGPU(gl);
+    // Create programs — desktop only (laptops/tablets use video)
     const dispProg   = linkProg(VERT, DISP_FRAG);
-    const nebulaProg = linkProg(VERT, lowEnd ? NEBULA_FRAG_LOW : NEBULA_FRAG);
-    if (lowEnd) console.log('NebulaBackground: low-end GPU detected — quality tier LOW (1 octave, 2 gas layers, mediump)');
+    const nebulaProg = linkProg(VERT, NEBULA_FRAG);
     if (!nebulaProg || !dispProg) {
       canvas.style.background = 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)';
       if (onReadyRef.current) onReadyRef.current();
@@ -1219,15 +1187,13 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     }
     window.addEventListener('resize', resize);
 
-    // Mouse / pointer tracking — desktop only (disabled for laptop/tablet)
+    // Mouse / pointer tracking — desktop only (WebGL path only runs on desktop >= 1441px)
     function onPointerMove(e) {
       mouseRef.current.x = e.clientX / window.innerWidth;
       mouseRef.current.y = 1.0 - e.clientY / window.innerHeight;
     }
-    if (!isLaptopOrTablet) {
-      window.addEventListener('pointermove', onPointerMove, { passive: true });
-      window.addEventListener('mousemove', onPointerMove, { passive: true });
-    }
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('mousemove', onPointerMove, { passive: true });
 
     // Render loop
     let lastFrame = 0;
@@ -1332,10 +1298,8 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
-      if (!isLaptopOrTablet) {
-        window.removeEventListener('pointermove', onPointerMove);
-        window.removeEventListener('mousemove', onPointerMove);
-      }
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('mousemove', onPointerMove);
       document.removeEventListener('visibilitychange', onVisibility);
       if (dispProg)   { dispProg._shaders.forEach(s => gl.deleteShader(s));   gl.deleteProgram(dispProg); }
       if (nebulaProg) { nebulaProg._shaders.forEach(s => gl.deleteShader(s)); gl.deleteProgram(nebulaProg); }
@@ -1356,10 +1320,10 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
       canvas.removeEventListener('webglcontextrestored', onContextRestored);
       if (cleanupFn) cleanupFn();
     };
-  }, [isMobile]);
+  }, [useVideo]);
 
-  // ─── MOBILE: Render <video> element instead of WebGL canvas ──────────
-  if (isMobile) {
+  // ─── VIDEO: Render <video> element for mobile + laptop/tablet ────────
+  if (useVideo) {
     return (
       <div
         ref={wrapperRef}
@@ -1392,8 +1356,10 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
             border: 'none',
           }}
         >
-          <source src="/images/nebula-mobile-loop.mp4"  type="video/mp4" />
-          <source src="/images/nebula-mobile-loop.webm" type="video/webm" />
+          {isMobile && <source src="/images/nebula-mobile-loop.mp4"  type="video/mp4" />}
+          {isMobile && <source src="/images/nebula-mobile-loop.webm" type="video/webm" />}
+          {!isMobile && <source src="/images/nebula-laptop-loop.mp4"  type="video/mp4" />}
+          {!isMobile && <source src="/images/nebula-laptop-loop.webm" type="video/webm" />}
         </video>
       </div>
     );

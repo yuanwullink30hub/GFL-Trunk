@@ -206,8 +206,8 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
   }, []);
   const isMobile = windowWidth < 768;
 
-  // Breakpoint-based sizing — Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
-  const ds = windowWidth >= 1441 ? {
+  // Breakpoint-based sizing — Desktop(≥1800) / Laptop(≥1079) / Tablet(≥768) / Mobile(<768)
+  const ds = windowWidth >= 1800 ? {
     shellWidth: '90vw', shellMaxWidth: '1280px', shellHeight: '85vh', shellPad: 0,
     titleBarPad: '0.3rem 0.7rem',
     contentPad: '1.5rem', contentGap: '1.5rem',
@@ -219,7 +219,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
     noteListMaxH: '220px', noteGap: '0.35rem',
     notePad: '0.4rem 0.6rem', noteInputPad: '0.4rem 0.6rem',
     borderRadius: 'max(4px, 0.5vw)',
-  } : windowWidth >= 1024 ? {
+  } : windowWidth >= 1079 ? {
     shellWidth: '90vw', shellMaxWidth: '1280px', shellHeight: '85vh', shellPad: 0,
     titleBarPad: '0.3rem 0.7rem',
     contentPad: '1.5rem', contentGap: '1.5rem',

@@ -481,7 +481,7 @@ const PyramidInner = ({
       // Device-specific entity Y offset
       // Desktop/Laptop: 1rem up - 1rem down = 0
       // Tablet: 0 - 0.5rem down = -0.065
-      const entityYOffset = window.innerWidth >= 1024 ? 0 : // Desktop/Laptop: back to original
+      const entityYOffset = window.innerWidth >= 1079 ? 0 : // Desktop/Laptop: back to original
                             window.innerWidth >= 768 ? -0.065 : // Tablet: 0.5rem down
                             0; // Mobile
       
@@ -602,7 +602,7 @@ const PyramidInner = ({
       const targetPos = new THREE.Vector3(0, layer.yPos, 0);
       // Entity center point - where layers should float FROM (start position)
       // Adjusted to match actual entity visual position on screen
-      const entityYOffset = window.innerWidth >= 1024 ? 0 :
+      const entityYOffset = window.innerWidth >= 1079 ? 0 :
                             window.innerWidth >= 768 ? -0.065 :
                             0;
       // Set to 0.75 to match entity placement (2rem higher than 0.5)

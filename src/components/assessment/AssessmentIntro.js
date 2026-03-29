@@ -202,8 +202,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Breakpoint-based sizing:  Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
-  const s = windowWidth >= 1441 ? {
+  // Breakpoint-based sizing:  Desktop(≥1800) / Laptop(≥1079) / Tablet(≥768) / Mobile(<768)
+  const s = windowWidth >= 1800 ? {
     // ── Desktop ── all vertical spacings in vh so they track viewport height
     modalMaxWidth: '64.4vw',
     modalMinHeight: '82vh',
@@ -243,7 +243,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     footerFont: '0.625rem',
     footerBtnPad: '0.5vh 1.25rem',
     footerBtnFont: '0.75rem',
-  } : windowWidth >= 1024 ? {
+  } : windowWidth >= 1079 ? {
     // ── Laptop ── 77vw wide (48.1 × 1.6), fonts/spacing at original pre-30% scale
     modalMaxWidth: '77vw',
     modalMinHeight: '82vh',

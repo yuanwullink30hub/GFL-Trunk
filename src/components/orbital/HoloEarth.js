@@ -3,7 +3,6 @@ import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
 import { Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import { MotionPredictor } from '../../utils/MotionPredictor';
-import { getPerformanceSettings } from '../../utils/performanceMonitor';
 import PyramidInner from '../holoearth/PyramidInner';
 import EarthParticleWaves from './EarthParticleWaves';
 
@@ -401,8 +400,7 @@ const ChunkMesh = ({ chunk, explosionProgress, material }) => {
 // --- All Chunks Container - appears at frame 4, animates outward ---
 const ExplodingChunks = ({ explosionProgress, earthMap, chunkFadeValue }) => {
   const chunks = useMemo(() => {
-    const performanceSettings = getPerformanceSettings();
-    const segments = performanceSettings.tier === 'LOW' ? 32 : 48;
+    const segments = 48;
     return generateChunkGeometries(2.5, segments);
   }, []);
   
@@ -784,7 +782,7 @@ const HoloEarthSphere = ({
       </group>
 
       {/* Earth Particle Waves - same fade schedule as chunks, fully gone by frame 43 */}
-      {explosionProgress > 0 && particleFadeValue > 0 && getPerformanceSettings().tier !== 'LOW' && (
+      {explosionProgress > 0 && particleFadeValue > 0 && (
         <EarthParticleWaves 
           explosionProgress={explosionProgress} 
           sphereRadius={2.5}
@@ -903,7 +901,7 @@ const HoloEarth = ({
           <Suspense fallback={null}>
             <ambientLight intensity={0.2} />
             <pointLight position={[10, 10, 10]} intensity={1.5} color="#FFD700" />
-            {getPerformanceSettings().tier !== 'LOW' && <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />}
+            <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />
             {/* Scale group - Mobile uses 1.3x for larger display, Desktop uses 0.5 to compensate for 200% canvas */}
             <group scale={isMobile ? 1.3 : 0.5}>
               <HoloEarthSphere 

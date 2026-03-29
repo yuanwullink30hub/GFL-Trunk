@@ -174,8 +174,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       <div 
         className="absolute pointer-events-auto"
         style={{
-          top: windowWidth >= 768 && windowWidth < 1024 ? 'calc(15vh + 2.5rem - 2rem)' : windowWidth >= 1024 ? 'calc(15vh + 0.5rem + 0.5rem)' : 'calc(15vh + 2.5rem)',
-          left: windowWidth >= 768 && windowWidth < 1024 ? 'calc(4.06vw - 1.5rem)' : 'calc(4.06vw - 2.5rem)',
+          top: windowWidth >= 768 && windowWidth < 1079 ? 'calc(15vh + 2.5rem - 2rem)' : windowWidth >= 1079 ? 'calc(15vh + 0.5rem + 0.5rem)' : 'calc(15vh + 2.5rem)',
+          left: windowWidth >= 768 && windowWidth < 1079 ? 'calc(4.06vw - 1.5rem)' : 'calc(4.06vw - 2.5rem)',
           minHeight: '32.5vh',
           width: '26vw',
           transform: `translate(${topLeftX}vw, ${topLeftY}vh) scale(${containerScale})`,
@@ -218,7 +218,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 color: '#FFFEF0',
                 fontSize: 'max(13px, 0.7vw)',
                 textAlign: 'center',
-                display: windowWidth >= 768 && windowWidth < 1024 ? 'none' : 'block'
+                display: windowWidth >= 768 && windowWidth < 1079 ? 'none' : 'block'
               }}>
                 Man en Vrouw gelijkgesteld <br/> De tuinierder moet zich overgeven aan en overkomen van de doorschijnende passie <br />
               </div>
@@ -245,7 +245,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         className="absolute pointer-events-auto"
         style={{
           top: '12.09vh',
-          right: windowWidth >= 768 && windowWidth < 1024 ? 'calc(3.7vw + 2rem)' : windowWidth >= 1024 ? 'calc(3.7vw + 1.5rem + 1rem + 3rem)' : '3.7vw',
+          right: windowWidth >= 768 && windowWidth < 1079 ? 'calc(3.7vw + 2rem)' : windowWidth >= 1079 ? 'calc(3.7vw + 1.5rem + 1rem + 3rem)' : '3.7vw',
           width: '19.01vw',
           height: '21.13vh',
           transform: `translate(${gardenTopRightX}vw, ${gardenTopRightY}vh) scale(${gardenScale})`,
@@ -289,7 +289,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           bottom: '15vh',
           right: '3.56vw',
           width: '22.88vw',
-          height: windowWidth >= 768 && windowWidth < 1024 ? 'calc(29.5vh * 1.3)' : 'calc(39vh * 1.2)',
+          height: windowWidth >= 768 && windowWidth < 1079 ? 'calc(29.5vh * 1.3)' : 'calc(39vh * 1.2)',
           transform: `translate(${bottomRightX}vw, ${bottomRightY}vh) scale(${gardensScale})`,
           opacity: mounted ? gardensOpacity : 0
         }}
@@ -361,7 +361,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                       >
                         {/* Circle placeholder (logo area) */}
                         <div className="w-full flex flex-col items-center justify-center" style={{
-                          height: windowWidth >= 1024 ? '70%' : '70%'
+                          height: windowWidth >= 1079 ? '70%' : '70%'
                         }}>
                           <div style={{
                             width: 'max(52px, 5.5vw)',
@@ -388,7 +388,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         {/* Header */}
                         <div className="text-center absolute" style={{
                           top: windowWidth >= 1280 ? '70%' : 'auto',
-                          bottom: windowWidth >= 1024 && windowWidth < 1280 ? '6.5vw' : windowWidth >= 768 && windowWidth < 1024 ? '-0.5vw' : 'auto',
+                          bottom: windowWidth >= 1079 && windowWidth < 1280 ? '6.5vw' : windowWidth >= 768 && windowWidth < 1079 ? '-0.5vw' : 'auto',
                           left: '50%',
                           transform: 'translateX(-50%)',
                           paddingBottom: '0.4vw',
@@ -403,8 +403,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                             color: garden.color,
                             letterSpacing: '0.15em',
                             marginBottom: '0.2vw',
-                            whiteSpace: windowWidth >= 1024 ? 'nowrap' : 'normal',
-                            maxWidth: windowWidth < 1024 ? '90%' : 'none',
+                            whiteSpace: windowWidth >= 1079 ? 'nowrap' : 'normal',
+                            maxWidth: windowWidth < 1079 ? '90%' : 'none',
                             textAlign: 'center',
                             opacity: 0.85,
                           }}>
@@ -416,7 +416,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         <div className="flex flex-col items-center justify-center relative w-full" style={{
                           height: '30%',
                           padding: '0.4vw 0.8vw',
-                          display: windowWidth >= 1024 ? 'flex' : 'none',
+                          display: windowWidth >= 1079 ? 'flex' : 'none',
                           backgroundColor: 'transparent',
                           borderRadius: '0.2vw'
                         }}>
@@ -536,12 +536,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       <div 
         className="absolute pointer-events-auto"
         style={{
-          bottom: windowWidth >= 768 && windowWidth < 1024 
+          bottom: windowWidth >= 768 && windowWidth < 1079 
             ? 'calc(6vh + 8rem - 2rem)' 
-            : windowWidth >= 1024
+            : windowWidth >= 1079
             ? 'calc(6vh + 8rem - 4rem)'
             : 'calc(6vh + 8rem)',
-          left: windowWidth >= 768 && windowWidth < 1024 
+          left: windowWidth >= 768 && windowWidth < 1079 
             ? 'calc(7.5vw + 4.5rem - 4rem - 3rem)' 
             : 'calc(7.5vw + 4.5rem)',
           height: 'auto',

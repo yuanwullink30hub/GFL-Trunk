@@ -960,8 +960,8 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
   const onReadyRef      = useRef(onReady);
   const readyFiredRef   = useRef(false);
   const isMobile        = typeof window !== 'undefined' && window.innerWidth < 768;
-  const isLaptopOrTablet = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1441;
-  const useVideo         = isMobile || isLaptopOrTablet; // video for < 1441px, WebGL for desktop only
+  const isLaptopOrTablet = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800;
+  const useVideo         = isMobile || isLaptopOrTablet; // video for < 1800px, WebGL for desktop only
   const currentFrameRef = useRef(currentFrame); // readable inside render loop
   // Accumulated shader time — runs at 0.7x speed once explosion > frame 10
   const shaderTimeRef   = useRef(0);
@@ -1005,7 +1005,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     };
   }, [useVideo]);
 
-  // ─── DESKTOP: WebGL shader path (only for >= 1441px) ────────────────
+  // ─── DESKTOP: WebGL shader path (only for >= 1800px) ────────────────
   // Track WebGL init function so context restore can re-run it
   const initCountRef = useRef(0);
 
@@ -1187,7 +1187,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     }
     window.addEventListener('resize', resize);
 
-    // Mouse / pointer tracking — desktop only (WebGL path only runs on desktop >= 1441px)
+    // Mouse / pointer tracking — desktop only (WebGL path only runs on desktop >= 1800px)
     function onPointerMove(e) {
       mouseRef.current.x = e.clientX / window.innerWidth;
       mouseRef.current.y = 1.0 - e.clientY / window.innerHeight;

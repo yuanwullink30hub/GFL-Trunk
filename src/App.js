@@ -3,7 +3,6 @@ import NebulaBackground from './components/NebulaBackground';
 import NebulaOverlay from './components/NebulaOverlay';
 
 import { getQuestions } from './utils/apiClient';
-import { getPerformanceSettings } from './utils/performanceMonitor';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from './contexts/LanguageContext';
 import { SciFiButton } from './components/assessment/dashboardStyles';
@@ -74,6 +73,21 @@ const useIsMobile = () => {
   return isMobile;
 };
 
+// Laptop/tablet detection hook (768–1800px)
+const useIsLaptop = () => {
+  const [isLaptop, setIsLaptop] = useState(window.innerWidth >= 768 && window.innerWidth < 1800);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLaptop(window.innerWidth >= 768 && window.innerWidth < 1800);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  return isLaptop;
+};
+
 const TimeSync = ({ isMobile }) => {
   const [time, setTime] = useState(new Date());
 
@@ -126,8 +140,7 @@ const App = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [pyramidScrollProgress, setPyramidScrollProgress] = useState(0); // Separate scroll for pyramid layers (0-1)
   const [introComplete, setIntroComplete] = useState(false); // Track when pyramid intro animation is done
-  const [isLowEndMode, setIsLowEndMode] = useState(false); // Track if device is low-end
-  const [lowEndAnimating, setLowEndAnimating] = useState(false); // Track low-end animation state
+  const [laptopAnimating, setLaptopAnimating] = useState(false); // Track laptop start-experience animation state
   // eslint-disable-next-line no-unused-vars
   const [layerState, setLayerState] = useState({
     completedLayerIndex: -1,
@@ -212,9 +225,10 @@ const App = () => {
   const mapStartTimeRef = useRef(0);
   
   const isMobile = useIsMobile();
+  const isLaptop = useIsLaptop();
   const containerRef = useRef(null);
   const earthSectionRef = useRef(null);
-  const lowEndAnimationRef = useRef(null); // Ref for low-end animation interval
+  const laptopAnimationRef = useRef(null); // Ref for laptop start-experience animation
   const isScrolling = useRef(false); // Debounce to prevent multiple triggers per scroll
   const mobileScrollLockedRef = useRef(false); // Ref for use in event handlers
   const autoSlideTimeoutRef = useRef(null); // Ref for auto-slide re-enable timeout
@@ -359,9 +373,6 @@ const App = () => {
 
   useEffect(() => {
     setMounted(true);
-    // Detect low-end device on mount
-    const performanceSettings = getPerformanceSettings();
-    setIsLowEndMode(performanceSettings.tier === 'LOW');
     
     // AbortController prevents StrictMode double-fire from causing races
     const abortController = new AbortController();
@@ -439,18 +450,6 @@ const App = () => {
     };
   }, []);
 
-  // LOW-END ONLY APPLIES TO DESKTOPS/LAPTOPS
-  // Phones, tablets, and mobile viewports always get normal (HIGH) build
-  useEffect(() => {
-    if (isMobile) {
-      setIsLowEndMode(false); // Mobile = always normal build
-    } else {
-      // Desktop/laptop: check hardware for low-end detection
-      const performanceSettings = getPerformanceSettings();
-      setIsLowEndMode(performanceSettings.tier === 'LOW');
-    }
-  }, [isMobile]);
-
   // Mobile: Lock scroll when earth section is 100% visible, unlock when scrolling out
   useEffect(() => {
     if (!isMobile || !earthSectionRef.current) return;
@@ -499,21 +498,17 @@ const App = () => {
   // Calculate progress from frame (0-1)
   
   // Total frames needed for all three sections
-  // For low-end devices, increase frame count to slow down animation
-  const totalAnimFrames = isLowEndMode ? 
-    (SECTION_1_FRAMES * 2 + SECTION_2_FRAMES * 1.5 + SECTION_3_FRAMES * 1.5) : 
-    (SECTION_1_FRAMES + SECTION_2_FRAMES + SECTION_3_FRAMES);
-  const TOTAL_ANIMATION_FRAMES = Math.ceil(totalAnimFrames);
+  const TOTAL_ANIMATION_FRAMES = SECTION_1_FRAMES + SECTION_2_FRAMES + SECTION_3_FRAMES;
   
   // Cap the animation at the end of section 3
   const MAX_FRAME = TOTAL_ANIMATION_FRAMES;
 
-  // LOW-END MODE: Trigger smooth animation on button click using requestAnimationFrame
+  // LAPTOP: Trigger smooth animation on "Start Experience" button click
   // Animation ends at pyramid visible state, then scroll takes over for layer control
-  const triggerLowEndAnimation = useCallback(() => {
-    if (lowEndAnimating) return; // Prevent double-click
+  const triggerLaptopAnimation = useCallback(() => {
+    if (laptopAnimating) return; // Prevent double-click
     
-    setLowEndAnimating(true);
+    setLaptopAnimating(true);
     const targetFrame = MAX_FRAME;
     const animationDuration = 7500; // 7.5 seconds for full animation
     const startTime = performance.now();
@@ -529,29 +524,26 @@ const App = () => {
       setCurrentFrame(smoothFrame);
       
       if (progress < 1) {
-        lowEndAnimationRef.current = requestAnimationFrame(animate);
+        laptopAnimationRef.current = requestAnimationFrame(animate);
       } else {
-        // Animation complete - pyramid is now visible with layers
-        setCurrentFrame(targetFrame); // Ensure we land exactly on target
-        setLowEndAnimating(false);
-        // Don't auto-progress pyramid - let user scroll to control layers
+        setCurrentFrame(targetFrame);
+        setLaptopAnimating(false);
       }
     };
     
-    lowEndAnimationRef.current = requestAnimationFrame(animate);
-  }, [lowEndAnimating, MAX_FRAME]);
+    laptopAnimationRef.current = requestAnimationFrame(animate);
+  }, [laptopAnimating, MAX_FRAME]);
 
-  // Cleanup low-end animation on unmount
+  // Cleanup laptop animation on unmount
   useEffect(() => {
     return () => {
-      if (lowEndAnimationRef.current) {
-        cancelAnimationFrame(lowEndAnimationRef.current);
+      if (laptopAnimationRef.current) {
+        cancelAnimationFrame(laptopAnimationRef.current);
       }
     };
   }, []);
 
   // Scroll handler - one tick = one frame
-  // For low-end devices: disabled until animation completes, then enabled for pyramid control only
   // After intro completes (introComplete=true), scroll controls pyramid layers instead
   // Only works when viewing HoloEarth/Deltawerken (activeSection === null AND mobileActiveIndex === 0)
   const handleWheel = useCallback((e) => {
@@ -568,8 +560,8 @@ const App = () => {
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     
-    // LOW-END: Skip scroll during animation, but allow after animation completes for pyramid control
-    if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
+    // Laptop: Skip scroll during start-experience animation, allow after for pyramid control
+    if (isLaptop && (laptopAnimating || currentFrame < MAX_FRAME)) return;
     
     const direction = e.deltaY > 0 ? 1 : -1; // Down = forward, Up = backward
     
@@ -657,7 +649,7 @@ const App = () => {
     setTimeout(() => {
       isScrolling.current = false;
     }, 50);
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, activeSection, mobileActiveIndex, assessmentPhase]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLaptop, laptopAnimating, activeSection, mobileActiveIndex, assessmentPhase]);
 
   // Callback when pyramid intro animation completes
   const handleIntroComplete = useCallback(() => {
@@ -1026,19 +1018,19 @@ const App = () => {
   const TOUCH_THRESHOLD = 30; // Pixels needed to trigger one frame
   
   const handleTouchStart = useCallback((e) => {
-    // LOW-END: Skip during animation, allow after for pyramid control
-    if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
+    // Laptop: Skip during animation, allow after for pyramid control
+    if (isLaptop && (laptopAnimating || currentFrame < MAX_FRAME)) return;
     // Don't process touch when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     touchStartY.current = e.touches[0].clientY;
     touchAccumulator.current = 0;
-  }, [isLowEndMode, lowEndAnimating, currentFrame, MAX_FRAME, mobileActiveIndex, assessmentPhase]);
+  }, [isLaptop, laptopAnimating, currentFrame, MAX_FRAME, mobileActiveIndex, assessmentPhase]);
 
   const handleTouchMove = useCallback((e) => {
-    // LOW-END: Skip during animation, but allow after for pyramid control
-    if (isLowEndMode && (lowEndAnimating || currentFrame < MAX_FRAME)) return;
+    // Laptop: Skip during animation, allow after for pyramid control
+    if (isLaptop && (laptopAnimating || currentFrame < MAX_FRAME)) return;
     
     // Don't process touch when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
@@ -1133,7 +1125,7 @@ const App = () => {
       }
       touchAccumulator.current = 0;
     }
-  }, [currentFrame, introComplete, MAX_FRAME, isLowEndMode, lowEndAnimating, mobileActiveIndex, assessmentPhase]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLaptop, laptopAnimating, mobileActiveIndex, assessmentPhase]);
 
   // Attach wheel/touch listeners - also needed on mobile when scroll is locked
   useEffect(() => {
@@ -1270,7 +1262,7 @@ const App = () => {
   
   // Device-specific pyramid endpoint adjustment
   const pyramidOffset = window.innerWidth >= 1280 ? -48 : // Desktop: 3rem = 48px higher
-                        window.innerWidth >= 1024 ? -48 : // Laptop: 3rem = 48px higher
+                        window.innerWidth >= 1079 ? -48 : // Laptop: 3rem = 48px higher
                         window.innerWidth >= 768 ? -40 : // Tablet: 2.5rem = 40px higher
                         0; // Mobile: no change
   
@@ -1362,7 +1354,7 @@ const App = () => {
           right: '1.5rem',
           top: '2.5rem',
           zIndex: 9999,
-          transform: window.innerWidth < 1441 ? 'scale(0.8)' : undefined,
+          transform: window.innerWidth < 1800 ? 'scale(0.8)' : undefined,
           transformOrigin: 'top right',
         }}>
           <TimeSync isMobile={false} />
@@ -1804,7 +1796,7 @@ const App = () => {
               </div>
             </header>
 
-            {/* --- Scroll Prompt (Desktop) OR Start Button (Low-End) --- */}
+            {/* --- Scroll Prompt (Desktop) OR Start Button (Laptop) --- */}
             <div 
               className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50"
               style={{
@@ -1813,11 +1805,11 @@ const App = () => {
                 transform: `translateY(${scrollLabelY * 2.5}px) scale(${scrollLabelScale})`,
               }}
             >
-              {/* LOW-END: Show "Start Experience" button instead of scroll prompt */}
-              {isLowEndMode ? (
+              {/* LAPTOP: Show "Start Experience" button instead of scroll prompt */}
+              {isLaptop ? (
                 <button
-                  onClick={triggerLowEndAnimation}
-                  disabled={lowEndAnimating}
+                  onClick={triggerLaptopAnimation}
+                  disabled={laptopAnimating}
                   className="relative flex flex-col items-center gap-2 bg-black/60 backdrop-blur-md rounded-sm cursor-pointer hover:bg-black/80 transition-all duration-300 pointer-events-auto hover:scale-105"
                   style={{
                     border: '2px solid rgba(245, 158, 11, 0.7)',
@@ -1828,11 +1820,11 @@ const App = () => {
                   }}
                 >
                   <span className="tracking-[0.25em] font-bold" style={{
-                    color: lowEndAnimating ? 'rgba(255,255,255,0.5)' : '#f59e0b', 
+                    color: laptopAnimating ? 'rgba(255,255,255,0.5)' : '#f59e0b', 
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                     fontSize: '1.1rem'
                   }}>
-                    {lowEndAnimating ? t('lowEndButton.synchronising') : t('lowEndButton.start')}
+                    {laptopAnimating ? t('lowEndButton.synchronising') : t('lowEndButton.start')}
                   </span>
                   <div className="absolute top-0 left-0 border-t-2 border-l-2" style={{
                     width: '0.75rem',

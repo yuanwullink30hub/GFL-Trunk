@@ -127,7 +127,7 @@ function devRandomExcluding(max, exclude) {
 /**
  * AssessmentCard - Question card matching SectorFrame styling
  * 
- * Responsive tiers: Desktop (≥1441) / Laptop (≥1024) / Tablet (≥768) / Mobile (<768)
+ * Responsive tiers: Desktop (≥1800) / Laptop (≥1079) / Tablet (≥768) / Mobile (<768)
  * 
  * Features:
  * - SectorFrame-style background (rgba(8,2,12,0.95)) with colored corner accents
@@ -172,7 +172,7 @@ const AssessmentCard = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Breakpoint-based sizing:  Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
+  // Breakpoint-based sizing:  Desktop(≥1800) / Laptop(≥1079) / Tablet(≥768) / Mobile(<768)
   const s = getCardSizes(windowWidth);
 
   const currentQuestion = questions[currentQuestionIndex];

@@ -1,7 +1,6 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { getPerformanceSettings } from '../../utils/performanceMonitor';
 
 /**
  * Earth Particle Explosion System
@@ -21,9 +20,9 @@ const EarthParticleExplosion = ({
   sphereRadius = 2.5,
   chunkExplosionValue = 0  // The uExplode value from chunks shader
 }) => {
-  // Use adaptive performance settings
-  const performanceSettings = getPerformanceSettings();
-  const adaptiveParticleCount = particleCount || performanceSettings.maxParticles;
+  // Desktop: 9000 particles, Laptop (<1800px): 3000
+  const isLaptop = typeof window !== 'undefined' && window.innerWidth < 1800;
+  const adaptiveParticleCount = particleCount || (isLaptop ? 3000 : 9000);
   const adaptiveStreamCount = streamCount || Math.max(100, Math.floor(adaptiveParticleCount / 30));
   const pointsRef = useRef();
   const materialRef = useRef();
@@ -149,7 +148,7 @@ const EarthParticleExplosion = ({
         uTime: { value: 0 },
         uExplosion: { value: 0 },
         uChunkExplosion: { value: 0 }, // Synced with chunk shader uExplode
-        uPixelRatio: { value: performanceSettings.actualPixelRatio },
+        uPixelRatio: { value: Math.min(window.devicePixelRatio || 1, 2) },
         uSphereRadius: { value: sphereRadius },
         uStreamCount: { value: adaptiveStreamCount }, // For shader optimization
       },

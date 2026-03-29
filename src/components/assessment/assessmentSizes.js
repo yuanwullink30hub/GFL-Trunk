@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════
 //  ASSESSMENT SIZING — Separate breakpoint configs per component
-//  Desktop(≥1441) / Laptop(≥1024) / Tablet(≥768) / Mobile(<768)
+//  Desktop(≥1800) / Laptop(≥1079) / Tablet(≥768) / Mobile(<768)
 //
 //  Each breakpoint is a standalone object. Editing one never touches another.
 // ═══════════════════════════════════════════════════════════════════════
@@ -175,8 +175,8 @@ const introMobile = {
 };
 
 export function getIntroSizes(windowWidth) {
-  if (windowWidth >= 1441) return introDesktop;
-  if (windowWidth >= 1024) return introLaptop(windowWidth);
+  if (windowWidth >= 1800) return introDesktop;
+  if (windowWidth >= 1079) return introLaptop(windowWidth);
   if (windowWidth >= 768)  return introTablet;
   return introMobile;
 }
@@ -315,8 +315,8 @@ const cardMobile = {
 };
 
 export function getCardSizes(windowWidth) {
-  if (windowWidth >= 1441) return cardDesktop;
-  if (windowWidth >= 1024) return cardLaptop;
+  if (windowWidth >= 1800) return cardDesktop;
+  if (windowWidth >= 1079) return cardLaptop;
   if (windowWidth >= 768)  return cardTablet;
   return cardMobile;
 }
@@ -397,8 +397,8 @@ const resultsMobile = {
 };
 
 export function getResultsSizes(windowWidth) {
-  if (windowWidth >= 1441) return resultsDesktop;
-  if (windowWidth >= 1024) return resultsLaptop;
+  if (windowWidth >= 1800) return resultsDesktop;
+  if (windowWidth >= 1079) return resultsLaptop;
   if (windowWidth >= 768)  return resultsTablet;
   return resultsMobile;
 }
@@ -501,8 +501,8 @@ const adminMobile = {
 };
 
 export function getAdminSizes(windowWidth) {
-  if (windowWidth >= 1441) return adminDesktop;
-  if (windowWidth >= 1024) return adminLaptop;
+  if (windowWidth >= 1800) return adminDesktop;
+  if (windowWidth >= 1079) return adminLaptop;
   if (windowWidth >= 768)  return adminTablet;
   return adminMobile;
 }
@@ -533,8 +533,8 @@ const layerPanelMobile = {
 };
 
 export function getLayerPanelSizes(windowWidth) {
-  if (windowWidth >= 1441) return layerPanelDesktop;
-  if (windowWidth >= 1024) return layerPanelLaptop;
+  if (windowWidth >= 1800) return layerPanelDesktop;
+  if (windowWidth >= 1079) return layerPanelLaptop;
   if (windowWidth >= 768)  return layerPanelTablet;
   return layerPanelMobile;
 }

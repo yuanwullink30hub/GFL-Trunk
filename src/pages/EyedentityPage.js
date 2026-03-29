@@ -782,8 +782,8 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
   const selectedItem = NAV_ITEMS.find(item => item.id === selectedId);
   const accentColor = '#a855f7';
   const corners = CornerStone({ variant: 'purple' });
-  const shellW = windowWidth >= 1441 ? '70vw' : windowWidth >= 1024 ? '77vw' : '96vw';
-  const shellH = windowWidth >= 1441 ? '70vh' : windowWidth >= 1024 ? '77vh' : '96vh';
+  const shellW = windowWidth >= 1800 ? '70vw' : windowWidth >= 1079 ? '77vw' : '96vw';
+  const shellH = windowWidth >= 1800 ? '70vh' : windowWidth >= 1079 ? '77vh' : '96vh';
 
   return (
     <div style={{

@@ -2160,7 +2160,7 @@ const App = () => {
           className="fixed bottom-4 right-4 z-50 text-xs font-mono pointer-events-none text-right"
         >
           <div style={{ color: 'rgba(245, 158, 11, 0.6)' }}>
-            Frame: {currentFrame}/{TOTAL_ANIMATION_FRAMES}
+            Frame: {Math.round(currentFrame)}/{TOTAL_ANIMATION_FRAMES}
           </div>
         </div>
       )}

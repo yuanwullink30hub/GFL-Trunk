@@ -26,6 +26,7 @@ import { isNatureSlot } from '../../pages/assessment/assessmentData';
 import { getArchetypeImage } from '../../data/assessment/archetypeImages';
 import { getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '../../data/assessment/oceanProfiles';
 import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity, getPublicSiteBanner } from '../../utils/apiClient';
+import { isIntegratedGPU } from '../../utils/deviceUtils';
 // SciFiButton removed — unused in this component
 import tnmWheelImg from '../../images/Model imports/TNM wheel PNG.png';
 import deltawerkenImg from '../../images/Model imports/Deltawerken png.png';
@@ -376,6 +377,7 @@ const AssessmentResultsModal = ({
 
   // Breakpoint-based sizing from assessmentSizes.js config
   const rs = getResultsSizes(windowWidth);
+  const isLowGpu = windowWidth < 1800 && isIntegratedGPU();
   
   // ── Ref for the radar chart element (captured as image for PDF) ──
   const radarRef = useRef(null);
@@ -2988,7 +2990,7 @@ const AssessmentResultsModal = ({
             borderRadius: '0.5rem',
             textAlign: 'center',
             overflow: 'hidden',
-            backgroundColor: 'rgba(1, 0, 2, 0.3)',
+            backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(1, 0, 2, 0.3)',
             boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168, 85, 247, 0.06), inset 0 0 30px rgba(168, 85, 247, 0.03)',
             transform: `translate(0, ${(1 - resultsModalProgress) * -15}vh) scale(${0.3 + resultsModalProgress * 0.7})`,
             opacity: resultsModalProgress,
@@ -3033,6 +3035,7 @@ const AssessmentResultsModal = ({
               borderTopColor: 'transparent',
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
+              willChange: 'transform',
             }} />
 
             {/* Simple text message */}
@@ -3142,8 +3145,8 @@ const AssessmentResultsModal = ({
             width: '100%',
             maxWidth: rs.modalMaxWidth,
             maxHeight: rs.modalMaxHeight,
-            background: 'rgba(2, 0, 3, 0.3)',
-            backdropFilter: 'blur(24px)',
+            background: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.3)',
+            backdropFilter: isLowGpu ? 'none' : 'blur(24px)',
             border: '1px solid rgba(29, 153, 4, 0.3)',
             borderRadius: '0.75rem',
             boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(29, 153, 4, 0.06), inset 0 0 30px rgba(29, 153, 4, 0.03)',

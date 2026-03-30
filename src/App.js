@@ -519,6 +519,7 @@ const App = () => {
   // LAPTOP: Trigger smooth animation on "Start Experience" button click
   // Animation ends at pyramid visible state, then scroll takes over for layer control
   // Uses fractional frame values for buttery-smooth continuous interpolation
+  // Throttled setState to ~20fps to reduce re-renders on integrated GPU laptops
   const triggerLaptopAnimation = useCallback(() => {
     if (laptopAnimating) return; // Prevent double-click
     
@@ -526,6 +527,7 @@ const App = () => {
     const targetFrame = MAX_FRAME;
     const animationDuration = 6000; // 6 seconds for full animation
     const startTime = performance.now();
+    let lastSetState = 0; // Track last setState time for throttle
     
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
@@ -536,7 +538,11 @@ const App = () => {
       // Fractional frames — continuous interpolation for smooth visuals
       const smoothFrame = easeProgress * targetFrame;
       
-      setCurrentFrame(smoothFrame);
+      // Throttle setState to ~20fps (50ms) — rAF still runs at 60fps for timing accuracy
+      if (currentTime - lastSetState >= 50) {
+        setCurrentFrame(smoothFrame);
+        lastSetState = currentTime;
+      }
       
       if (progress < 1) {
         laptopAnimationRef.current = requestAnimationFrame(animate);
@@ -816,6 +822,7 @@ const App = () => {
   // Convergence animation effect — 2 visual phases:
   // Phase 0 (absorb): All 5 saved cards simultaneously fly to their pyramid layer center and shrink to invisible
   // Phase 1 (fold):   3D pyramid layers do a folding-mat staircase upward into the entity, shrinking on the way
+  // Throttled to ~20fps on laptop to reduce re-render overhead
   useEffect(() => {
     if (assessmentPhase !== 'convergence') return;
     
@@ -833,9 +840,19 @@ const App = () => {
     const t5 = t4 + CORE_GROWTH_DURATION;           // core growth ends
     const t6 = t5 + RESULTS_APPEAR_DURATION;        // results appear done
     const startTime = Date.now();
+    const throttleMs = isLaptop ? 50 : 0;           // 20fps on laptop, full speed on desktop
+    let lastUpdate = 0;
     
     const animate = () => {
-      const elapsed = Date.now() - startTime;
+      const now = Date.now();
+      const elapsed = now - startTime;
+      
+      // Throttle re-renders on laptop
+      if (throttleMs && now - lastUpdate < throttleMs && elapsed < t6) {
+        requestAnimationFrame(animate);
+        return;
+      }
+      lastUpdate = now;
       
       if (elapsed < t1) {
         // Waiting for last card's save animation to finish
@@ -902,7 +919,7 @@ const App = () => {
     };
     
     requestAnimationFrame(animate);
-  }, [assessmentPhase]);
+  }, [assessmentPhase, isLaptop]);
   
   // Show loading screen until AI analysis is ready, then reveal results
   useEffect(() => {
@@ -1158,15 +1175,17 @@ const App = () => {
     };
   }, [handleWheel, handleTouchStart, handleTouchMove]);
 
-  // Slideshow auto-advance - respects autoSlideEnabled state
+  // Slideshow auto-advance - only runs on landing page when visible
   useEffect(() => {
     if (!autoSlideEnabled) return; // Don't run if auto-slide is paused
+    // Skip when slideshow isn't visible — prevents useless App re-renders during assessment/sections
+    if (assessmentPhase !== 'hidden' || activeSection !== null) return;
     
     const slideInterval = setInterval(() => {
       setCurrentSlide(prev => (prev + 1) % 5);
     }, 3300);
     return () => clearInterval(slideInterval);
-  }, [autoSlideEnabled]);
+  }, [autoSlideEnabled, assessmentPhase, activeSection]);
 
   // Derive animation values from currentFrame using section-based timing
   // ============================================
@@ -1319,16 +1338,16 @@ const App = () => {
   const handleReset = () => {
     // Full reset of all assessment/pyramid state
     resetAssessmentState();
-    // Rewind frames back to 0
+    // Rewind frames back to 0 — step by 2 at 60ms to halve re-renders
     const interval = setInterval(() => {
       setCurrentFrame(prev => {
         if (prev <= 0) {
           clearInterval(interval);
           return 0;
         }
-        return prev - 1;
+        return Math.max(0, prev - 2);
       });
-    }, 30);
+    }, 60);
   };
 
   return (

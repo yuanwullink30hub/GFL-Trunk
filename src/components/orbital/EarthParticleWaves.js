@@ -1,6 +1,7 @@
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
+import { isIntegratedGPU } from '../../utils/deviceUtils';
 
 /**
  * Earth Particle Waves System
@@ -40,8 +41,8 @@ const EarthParticleWaves = ({
     }
   }, [earthMap]);
   
-  // Desktop: full 128×64 (8320 verts), Laptop (<1800px): 52×26 (1378 verts, -60%)
-  const isLaptop = typeof window !== 'undefined' && window.innerWidth < 1800;
+  // Desktop: full 128×64 (8320 verts), Laptop (<1800px + integrated GPU): 52×26 (1378 verts, -60%)
+  const isLaptop = typeof window !== 'undefined' && window.innerWidth < 1800 && isIntegratedGPU();
   const geometry = useMemo(() => {
     return new THREE.SphereGeometry(sphereRadius, isLaptop ? 52 : 128, isLaptop ? 26 : 64);
   }, [sphereRadius, isLaptop]);

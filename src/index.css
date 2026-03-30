@@ -182,6 +182,23 @@ body {
   100% { background-position: 100% 50%; }
 }
 
+/* ══ Integrated-GPU laptop: freeze decorative animations + kill backdrop blur ══ */
+/* .low-gpu is toggled on <html> by useIsLaptop when viewport is 768-1799px AND GPU is integrated */
+html.low-gpu .animate-spin-slow,
+html.low-gpu .animate-pulse-slow { animation: none !important; }
+html.low-gpu .animate-ping       { animation: none !important; opacity: 0.75; }
+/* Freeze decorative overlay animations (sheen, scanline, glow pulses).
+   These are always pointer-events:none divs — safe to pause without breaking UI transitions. */
+html.low-gpu .pointer-events-none,
+html.low-gpu [style*="pointer-events: none"] {
+  animation-play-state: paused !important;
+}
+/* Remove all backdrop blurs — biggest GPU compositing cost on integrated GPUs */
+html.low-gpu * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
 /* Custom scrollbar for brand pages */
 .brand-scrollbar::-webkit-scrollbar {
   width: 4px;

@@ -110,6 +110,58 @@ export const getFeatureSupport = () => {
 };
 
 /**
+ * GPU detection — cached after first call.
+ * Uses WEBGL_debug_renderer_info to read the actual GPU renderer string.
+ */
+let _gpuRenderer = null;
+let _gpuDetected = false;
+
+export const getGPURenderer = () => {
+  if (_gpuDetected) return _gpuRenderer;
+  _gpuDetected = true;
+  try {
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+    if (gl) {
+      const ext = gl.getExtension('WEBGL_debug_renderer_info');
+      if (ext) _gpuRenderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
+      const loseCtx = gl.getExtension('WEBGL_lose_context');
+      if (loseCtx) loseCtx.loseContext();
+    }
+  } catch (_) { /* silent */ }
+  return _gpuRenderer;
+};
+
+// ── GPUs that can definitely handle the full build ──
+// Whitelist approach: if it's NOT on this list → low mode (safe).
+const CAPABLE_GPU_PATTERNS = [
+  /geforce/i,              // NVIDIA consumer (GTX / RTX)
+  /nvidia/i,               // NVIDIA (catch-all for Quadro, Tesla, etc.)
+  /rtx\s?\d/i,             // RTX 2060, 3070, 4090 …
+  /gtx\s?\d/i,             // GTX 1060, 1650 …
+  /quadro/i,               // NVIDIA workstation
+  /radeon\s*(rx|pro)\b/i,  // AMD dedicated (RX 6600, Pro W6800 …)
+  /intel.*arc/i,           // Intel Arc (dedicated)
+  /iris.*xe/i,             // Intel Iris Xe (11th gen+, 96 EUs — capable)
+  /apple\s*m\d/i,          // Apple M1, M2, M3, M4 …
+];
+
+/**
+ * Returns true when the GPU is NOT in the known-capable list.
+ * Whitelist approach — only GPUs we're sure can handle the full build
+ * get the desktop experience on laptop-sized viewports.
+ * Everything else (Intel UHD 620, HD 4000, Vega APUs, unknown, no detection) → low mode.
+ */
+let _integratedResult = null;
+export const isIntegratedGPU = () => {
+  if (_integratedResult !== null) return _integratedResult;
+  const renderer = getGPURenderer();
+  if (!renderer) { _integratedResult = true; return true; } // can't detect → safe fallback
+  _integratedResult = !CAPABLE_GPU_PATTERNS.some(p => p.test(renderer));
+  return _integratedResult;
+};
+
+/**
  * Get network information
  * @returns {Object} Network info
  */

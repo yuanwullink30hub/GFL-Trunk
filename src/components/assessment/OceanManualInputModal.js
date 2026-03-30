@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SciFiButton } from './dashboardStyles';
+import { isIntegratedGPU } from '../../utils/deviceUtils';
 
 /* ─── Animation keyframes + slider styles ─── */
 const modalStyles = `
@@ -365,8 +366,8 @@ const OceanManualInputModal = ({ onClose, onConfirm, initialValues, origin = 'ce
         className="absolute inset-0 z-50 flex items-center justify-center"
         style={{
           backgroundColor: 'rgba(2, 0, 3, 0.82)',
-          backdropFilter: 'blur(32px)',
-          WebkitBackdropFilter: 'blur(32px)',
+          backdropFilter: (window.innerWidth < 1800 && isIntegratedGPU()) ? 'none' : 'blur(32px)',
+          WebkitBackdropFilter: (window.innerWidth < 1800 && isIntegratedGPU()) ? 'none' : 'blur(32px)',
           boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
           animation: `${closing ? 'oceanContract' : 'oceanExpand'} 0.36s cubic-bezier(0.4,0,0.2,1) forwards`,
           transformOrigin: origin,
@@ -379,8 +380,8 @@ const OceanManualInputModal = ({ onClose, onConfirm, initialValues, origin = 'ce
           maxHeight: '88vh',
           overflowY: 'auto',
           backgroundColor: 'rgba(2, 0, 3, 0.3)',
-          backdropFilter: 'blur(32px)',
-          WebkitBackdropFilter: 'blur(32px)',
+          backdropFilter: (window.innerWidth < 1800 && isIntegratedGPU()) ? 'none' : 'blur(32px)',
+          WebkitBackdropFilter: (window.innerWidth < 1800 && isIntegratedGPU()) ? 'none' : 'blur(32px)',
           border: '1px solid rgba(168,85,247,0.2)',
           borderRadius: '0.75rem',
           padding: '1.5rem 1.75rem',

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { isIntegratedGPU } from '../utils/deviceUtils';
 
 /**
  * NebulaBackground — Procedural WebGL nebula with paint-stirring mouse physics
@@ -960,8 +961,8 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
   const onReadyRef      = useRef(onReady);
   const readyFiredRef   = useRef(false);
   const isMobile        = typeof window !== 'undefined' && window.innerWidth < 768;
-  const isLaptopOrTablet = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800;
-  const useVideo         = isMobile || isLaptopOrTablet; // video for < 1800px, WebGL for desktop only
+  const isLaptopOrTablet = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && isIntegratedGPU();
+  const useVideo         = isMobile || isLaptopOrTablet; // video for mobile + weak-GPU laptops, WebGL for the rest
   const currentFrameRef = useRef(currentFrame); // readable inside render loop
   // Accumulated shader time — runs at 0.7x speed once explosion > frame 10
   const shaderTimeRef   = useRef(0);

@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { MotionPredictor } from '../../utils/MotionPredictor';
 import PyramidInner from '../holoearth/PyramidInner';
 import EarthParticleWaves from './EarthParticleWaves';
+import { isIntegratedGPU } from '../../utils/deviceUtils';
 
 // ─── Global cursor helpers (updates the !important style tag set by App.js) ──
 const CURSOR_CROSSHAIR = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="3" fill="none" stroke="%2315b315" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="12" stroke="%2315b315" stroke-width="1.5"/><line x1="16" y1="20" x2="16" y2="28" stroke="%2315b315" stroke-width="1.5"/><line x1="4" y1="16" x2="12" y2="16" stroke="%2315b315" stroke-width="1.5"/><line x1="20" y1="16" x2="28" y2="16" stroke="%2315b315" stroke-width="1.5"/></svg>') 16 16, crosshair`;
@@ -830,7 +831,7 @@ const HoloEarth = ({
   hidePyramid = false,
 }) => {
   const glRef = useRef(null);
-  const isLaptop = !isMobile && typeof window !== 'undefined' && window.innerWidth < 1800;
+  const isLaptop = !isMobile && typeof window !== 'undefined' && window.innerWidth < 1800 && isIntegratedGPU();
 
   // On laptop, only render while the 3D scene is actively animating.
   // Idle during assessment questions (hidePyramid) and after fold-up (foldProgress=1).

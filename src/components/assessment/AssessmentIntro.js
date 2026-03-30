@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getToken } from '../../utils/apiClient';
+import { isIntegratedGPU } from '../../utils/deviceUtils';
 import archetypeHeader from '../../images/Import ready/Archetype header.png';
 import analyseIcon from '../../images/Import ready/analyseicon.PNG';
 import shadowIcon from '../../images/Import ready/Shadowicon.png';
@@ -437,6 +438,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   ];
 
   const isMobile = windowWidth < 768;
+  const laptopBlur = (windowWidth < 1800 && isIntegratedGPU()) ? 'none' : 'blur(32px)';
 
   // CSS keyframes for info overlay expand/contract
   const infoAnimStyles = `
@@ -485,8 +487,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         minHeight: s.modalMinHeight,
         maxHeight: s.modalMaxHeight,
         borderRadius: '0.5rem',
-        backdropFilter: 'blur(32px)',
-        WebkitBackdropFilter: 'blur(32px)',
+        backdropFilter: laptopBlur,
+        WebkitBackdropFilter: laptopBlur,
         pointerEvents: 'none',
         zIndex: 49,
         opacity: introReady ? undefined : 0,
@@ -948,8 +950,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             <div style={{
               position: 'relative',
               backgroundColor: 'rgba(2, 0, 3, 0.3)',
-              backdropFilter: 'blur(32px)',
-              WebkitBackdropFilter: 'blur(32px)',
+              backdropFilter: laptopBlur,
+              WebkitBackdropFilter: laptopBlur,
               borderRadius: '0.5rem',
               padding: '1.25rem 1.5rem',
               boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34,197,94,0.06), inset 0 0 30px rgba(34,197,94,0.03)',
@@ -1003,8 +1005,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             className="absolute inset-0 z-50 flex items-center justify-center"
             style={{
               backgroundColor: 'rgba(2, 0, 3, 0.82)',
-              backdropFilter: 'blur(32px)',
-              WebkitBackdropFilter: 'blur(32px)',
+              backdropFilter: laptopBlur,
+              WebkitBackdropFilter: laptopBlur,
               boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
               animation: `${consentClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
               transformOrigin: consentOrigin,
@@ -1015,8 +1017,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               className="rounded-xl"
               style={{
                 backgroundColor: 'rgba(2, 0, 3, 0.3)',
-                backdropFilter: 'blur(32px)',
-                WebkitBackdropFilter: 'blur(32px)',
+                backdropFilter: laptopBlur,
+                WebkitBackdropFilter: laptopBlur,
                 border: '1px solid rgba(168,85,247,0.2)',
                 padding: s.padding,
                 overflowY: 'auto',
@@ -1231,8 +1233,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         minHeight: s.modalMinHeight,
         maxHeight: s.modalMaxHeight,
         borderRadius: '0.5rem',
-        backdropFilter: 'blur(32px)',
-        WebkitBackdropFilter: 'blur(32px)',
+        backdropFilter: laptopBlur,
+        WebkitBackdropFilter: laptopBlur,
         pointerEvents: 'none',
         zIndex: 49,
         opacity: infoReady ? undefined : 0,

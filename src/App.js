@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import NebulaBackground from './components/NebulaBackground';
-import NebulaOverlay from './components/NebulaOverlay';
+
+// Lazy-load NebulaOverlay — desktop-only WebGL effect, no need to parse on laptop/mobile
+const NebulaOverlay = lazy(() => import('./components/NebulaOverlay'));
 
 import { getQuestions } from './utils/apiClient';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
@@ -101,6 +103,10 @@ const useIsLaptop = () => {
   return isLaptop;
 };
 
+const TIMESYNC_STYLE = { color: 'rgba(21, 179, 21, 0.8)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(13px, 0.7vw)' };
+const TIMESYNC_TIME_OPTS = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+const TIMESYNC_DATE_OPTS = { month: '2-digit', day: '2-digit', year: 'numeric' };
+
 const TimeSync = ({ isMobile }) => {
   const [time, setTime] = useState(new Date());
 
@@ -111,22 +117,12 @@ const TimeSync = ({ isMobile }) => {
     return () => clearInterval(timer);
   }, []);
 
-  const timeString = time.toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    second: '2-digit',
-    hour12: false 
-  });
-
-  const dateString = time.toLocaleDateString('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    year: 'numeric'
-  });
+  const timeString = time.toLocaleTimeString('en-US', TIMESYNC_TIME_OPTS);
+  const dateString = time.toLocaleDateString('en-US', TIMESYNC_DATE_OPTS);
 
   return (
     <div className="text-center whitespace-nowrap">
-      <div className="tracking-widest" style={{color: 'rgba(21, 179, 21, 0.8)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(13px, 0.7vw)'}}>TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</div>
+      <div className="tracking-widest" style={TIMESYNC_STYLE}>TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</div>
     </div>
   );
 };
@@ -142,6 +138,10 @@ const SECTION_1_FRAMES = 1;     // Label disappears, chunks visible (frame 0)
 const SECTION_2_FRAMES = 47;    // Chunks and particles explosion - maximized for smooth flow
 const HEADER_START_FRAME = 12;  // Header/containers start vanishing mid-explosion
 const SECTION_3_FRAMES = 1;     // Pyramid snaps down — sharp ending (frame 48)
+
+// Static SVG cross patterns — hoisted to module level to avoid re-creating on every render
+const CROSS_PATTERN_DESKTOP = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3C/svg%3E")`;
+const CROSS_PATTERN_MOBILE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3C/svg%3E")`;
 // ============================================
 
 const App = () => {
@@ -1277,11 +1277,6 @@ const App = () => {
   // Grid background: fades out with header
   const gridOpacity = Math.max(0, 0.3 * (1 - headerProgress));
 
-  // Alternating + and × cross grid: 100x100 tile, checkerboard pattern at 50px spacing
-  // (0,0)=+  (50,0)=×  (0,50)=×  (50,50)=+
-  const crossPatternDesktop = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3C/svg%3E")`;
-  const crossPatternMobile = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3C/svg%3E")`;
-  
   // Containers: fly away with header
   const containerProgress = headerProgress;
   
@@ -1350,6 +1345,14 @@ const App = () => {
     }, 60);
   };
 
+  // Stable callback for NebulaBackground — avoids new function reference on every App render
+  const handleNebulaReady = useCallback(() => {
+    if (nebulaReadyRef.current) {
+      nebulaReadyRef.current();
+      nebulaReadyRef.current = null;
+    }
+  }, []);
+
   return (
     <main 
       ref={containerRef}
@@ -1364,12 +1367,8 @@ const App = () => {
         <NebulaBackground
           mapPosition={mapPosition}
           currentFrame={currentFrame}
-          onReady={() => {
-            if (nebulaReadyRef.current) {
-              nebulaReadyRef.current();
-              nebulaReadyRef.current = null;
-            }
-          }}
+          onReady={handleNebulaReady}
+          isVisible={!activeSection}
         />
       )}
       {/* ========================= */}
@@ -1400,7 +1399,7 @@ const App = () => {
         <div 
           className="fixed inset-0 z-0 pointer-events-none"
           style={{
-            backgroundImage: crossPatternMobile,
+            backgroundImage: CROSS_PATTERN_MOBILE,
             backgroundSize: '100px 100px'
           }}
         />
@@ -1417,7 +1416,7 @@ const App = () => {
             className="fixed inset-0 z-0 pointer-events-none"
             style={{
               opacity: 0.4,
-              backgroundImage: crossPatternMobile,
+              backgroundImage: CROSS_PATTERN_MOBILE,
               backgroundSize: '100px 100px'
             }}
           />
@@ -1694,7 +1693,7 @@ const App = () => {
               left: '-200vw',
               top: '-200vh',
               opacity: gridOpacity,
-              backgroundImage: crossPatternDesktop,
+              backgroundImage: CROSS_PATTERN_DESKTOP,
               backgroundSize: '100px 100px',
               // Move grid with map position - creates floating illusion
               transform: `translate(${-mapPosition.x * 100}vw, ${-mapPosition.y * 100}vh)`,
@@ -1766,11 +1765,12 @@ const App = () => {
               onIntroComplete={handleIntroComplete}
               onLayerStateChange={handleLayerStateChange}
               hidePyramid={assessmentPhase === 'intro'}
+              isVisible={!activeSection}
             />
           </div>
 
           {/* --- Foreground nebula gas overlay — desktop only (skipped on laptop to save GPU) --- */}
-          {!isLaptop && <NebulaOverlay mapPosition={mapPosition} opacity={0.55} />}
+          {!isLaptop && <NebulaOverlay mapPosition={mapPosition} opacity={0.55} isVisible={!activeSection} />}
 
           {/* --- Overlay UI Layer --- */}
           {/* z-10 normally (behind HoloEarth z-20), z-30 when assessment active so modals float above */}

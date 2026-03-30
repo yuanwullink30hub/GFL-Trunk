@@ -829,17 +829,25 @@ const HoloEarth = ({
   onIntroComplete = () => {},
   onLayerStateChange = () => {},
   hidePyramid = false,
+  isVisible = true, // false when user navigated to a section page — pauses R3F rendering
 }) => {
   const glRef = useRef(null);
   const isLaptop = !isMobile && typeof window !== 'undefined' && window.innerWidth < 1800 && isIntegratedGPU();
 
   // On laptop, only render while the 3D scene is actively animating.
-  // Idle during assessment questions (hidePyramid) and after fold-up (foldProgress=1).
-  const laptopRenderActive = isLaptop && (
+  // Idle during assessment intro (hidePyramid) and after fold-up (foldProgress=1).
+  // NOTE: `exploding` stays true from section1End onward (currentFrame >= section1End),
+  // so we must gate on `!hidePyramid` to stop rendering once the intro card opens —
+  // the explosion is visually complete and the 3D scene is static behind the modal.
+  const laptopRenderActive = isLaptop && !hidePyramid && (
     !isActive ||                             // Pre-system: earth spinning
-    exploding ||                             // Explosion animation
-    (!hidePyramid && foldProgress < 1)       // Pyramid visible & not yet folded
+    exploding ||                             // Explosion animation (before intro card)
+    foldProgress < 1                         // Pyramid visible & not yet folded
   );
+
+  // Determine whether the R3F loop should actively render frames.
+  // On laptop: existing fine-grained logic. On desktop: render when visible on screen.
+  const renderActive = isLaptop ? laptopRenderActive : isVisible;
 
   // Force-release WebGL context on unmount (prevents context leak during hot-reload)
   useEffect(() => {
@@ -903,7 +911,7 @@ const HoloEarth = ({
       }}
       >
         <Canvas 
-          frameloop={isLaptop ? 'demand' : 'always'}
+          frameloop="demand"
           camera={{ position: [0, 0, 8], fov: 40 }}
           style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}
           gl={{ 
@@ -928,7 +936,7 @@ const HoloEarth = ({
             ctx.getShaderInfoLog = (shader) => origGetShaderInfoLog(shader) || '';
           }}
         >
-          {isLaptop && <LaptopRenderController active={laptopRenderActive} />}
+          <LaptopRenderController active={renderActive} />
           <Suspense fallback={null}>
             <ambientLight intensity={0.2} />
             <pointLight position={[10, 10, 10]} intensity={1.5} color="#FFD700" />

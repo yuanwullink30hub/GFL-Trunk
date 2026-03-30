@@ -438,7 +438,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   ];
 
   const isMobile = windowWidth < 768;
-  const laptopBlur = (windowWidth < 1800 && isIntegratedGPU()) ? 'none' : 'blur(32px)';
+  const isLowGpu = windowWidth < 1800 && isIntegratedGPU();
+  const laptopBlur = isLowGpu ? 'none' : 'blur(32px)';
 
   // CSS keyframes for info overlay expand/contract
   const infoAnimStyles = `
@@ -533,7 +534,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         <div 
           ref={modalRef}
           className="relative w-full rounded-lg"
-          style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', minHeight: s.modalMinHeight, maxHeight: s.modalMaxHeight, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)' }}
+          style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', minHeight: s.modalMinHeight, maxHeight: s.modalMaxHeight, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)' }}
         >
         {/* Content - matches SectorFrame inner structure */}
         <div className="relative z-10 w-full flex flex-col" style={{ padding: s.padding, flex: '1 1 auto' }}>
@@ -816,7 +817,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               {/* Holographic glow backdrop */}
               <div className="absolute inset-0 pointer-events-none" style={{
                 background: 'radial-gradient(ellipse at center, rgba(168,85,247,0.06) 0%, transparent 70%)',
-                filter: 'blur(20px)',
+                filter: isLowGpu ? 'none' : 'blur(20px)',
               }} />
               {layers.map((layer, index) => {
                 const glowIntensity = 1 - index * 0.12;
@@ -831,8 +832,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       background: `linear-gradient(135deg, ${layer.color}12 0%, ${layer.color}06 50%, ${layer.color}10 100%)`,
                       padding: `${s.pyramidPadY} ${s.pyramidPadX}`,
                       gap: s.pyramidItemGap,
-                      boxShadow: `0 0 ${12 * glowIntensity}px ${layer.color}18, inset 0 0 ${8 * glowIntensity}px ${layer.color}08`,
-                      backdropFilter: 'blur(4px)',
+                      boxShadow: isLowGpu ? 'none' : `0 0 ${12 * glowIntensity}px ${layer.color}18, inset 0 0 ${8 * glowIntensity}px ${layer.color}08`,
+                      backdropFilter: isLowGpu ? 'none' : 'blur(4px)',
                     }}
                   >
                     {/* Scan line overlay */}
@@ -954,7 +955,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               WebkitBackdropFilter: laptopBlur,
               borderRadius: '0.5rem',
               padding: '1.25rem 1.5rem',
-              boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34,197,94,0.06), inset 0 0 30px rgba(34,197,94,0.03)',
+              boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(34,197,94,0.06), inset 0 0 30px rgba(34,197,94,0.03)',
               whiteSpace: 'nowrap',
             }}>
               {/* Corner accents */}
@@ -1007,7 +1008,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               backgroundColor: 'rgba(2, 0, 3, 0.82)',
               backdropFilter: laptopBlur,
               WebkitBackdropFilter: laptopBlur,
-              boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
+              boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
               animation: `${consentClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards`,
               transformOrigin: consentOrigin,
             }}
@@ -1026,7 +1027,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 maxWidth: '90vw',
                 minHeight: `calc(0.7 * ${s.modalMinHeight})`,
                 maxHeight: `calc(0.7 * ${s.modalMaxHeight})`,
-                boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
+                boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
               }}
             >
               {/* Title */}
@@ -1266,7 +1267,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
           className="relative w-full rounded-lg"
           style={{
             backgroundColor: 'rgba(2, 0, 3, 0.3)',
-            boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
+            boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
             overflow: 'hidden',
             minHeight: s.modalMinHeight,
             maxHeight: s.modalMaxHeight,

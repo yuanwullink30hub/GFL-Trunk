@@ -1063,9 +1063,9 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
               paddingTop: '1.25rem',
             }}>
               {selectedId === 'profile' ? (
-                <ProfileResultCard />
+                isVisible && <ProfileResultCard />
               ) : selectedId === 'rapport' ? (
-                <ReportCard />
+                isVisible && <ReportCard />
               ) : selectedId === 'feedback' ? (
                 <FeedbackStandaloneForm />
               ) : (

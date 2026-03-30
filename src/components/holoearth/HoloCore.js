@@ -142,4 +142,4 @@ const HoloCore = ({ isGoldMode = false, opacity = 1, scaleMultiplier = 1 }) => {
   );
 };
 
-export default HoloCore;
+export default React.memo(HoloCore);

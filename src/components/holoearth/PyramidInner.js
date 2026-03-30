@@ -775,4 +775,4 @@ const PyramidInner = ({
   );
 };
 
-export default PyramidInner;
+export default React.memo(PyramidInner);

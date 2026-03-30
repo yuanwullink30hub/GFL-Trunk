@@ -949,7 +949,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3); // Desktop: 2 fbm/ridge octaves, 3 gas layers
 
 // ─── React Component ────────────────────────────────────────────────────
-const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame = 0 }) => {
+const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame = 0, isVisible = true }) => {
   const wrapperRef      = useRef(null);
   const canvasRef       = useRef(null);
   const videoRef        = useRef(null);
@@ -967,10 +967,23 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
   // Accumulated shader time — runs at 0.7x speed once explosion > frame 10
   const shaderTimeRef   = useRef(0);
   const lastRealTimeRef = useRef(null);
+  const isVisibleRef    = useRef(isVisible);
+  const renderFnRef     = useRef(null);
 
   // Keep onReady + currentFrame refs current
   useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
   useEffect(() => { currentFrameRef.current = currentFrame; }, [currentFrame]);
+
+  // Sync isVisible prop → ref, and restart/stop the WebGL rAF loop accordingly
+  useEffect(() => {
+    isVisibleRef.current = isVisible;
+    if (isVisible && !document.hidden && !animRef.current && renderFnRef.current) {
+      animRef.current = requestAnimationFrame(renderFnRef.current);
+    } else if (!isVisible && animRef.current) {
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+    }
+  }, [isVisible]);
 
   // Keep target in a ref so the WebGL render loop always has the latest value
   useEffect(() => {
@@ -1201,6 +1214,10 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     const INTERVAL = 1000 / 30;
 
     function render(timestamp) {
+      if (!isVisibleRef.current) {
+        animRef.current = null;
+        return; // loop stopped — useEffect will restart when isVisible becomes true
+      }
       animRef.current = requestAnimationFrame(render);
       if (gl.isContextLost()) return; // context lost — skip until restored
       if (timestamp - lastFrame < INTERVAL) return;
@@ -1283,11 +1300,12 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
         if (onReadyRef.current) onReadyRef.current();
       }
     }
+    renderFnRef.current = render;
     animRef.current = requestAnimationFrame(render);
 
-    // Visibility API — pause when tab hidden
+    // Visibility API — pause when tab hidden or component not visible
     function onVisibility() {
-      if (document.hidden) {
+      if (document.hidden || !isVisibleRef.current) {
         if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
       } else {
         if (!animRef.current) { lastFrame = 0; animRef.current = requestAnimationFrame(render); }
@@ -1297,6 +1315,7 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
 
     // Cleanup returned from initWebGL
     return () => {
+      renderFnRef.current = null;
       if (animRef.current) cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onPointerMove);
@@ -1425,4 +1444,4 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
   );
 };
 
-export default NebulaBackground;
+export default React.memo(NebulaBackground);

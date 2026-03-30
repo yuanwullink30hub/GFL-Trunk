@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { memo } from 'react';
 import GeneralBrandPage from './GeneralBrandPage';
 
 /**
  * GardensPage — Shows the brand page template (index 4 in BRANDS array).
  * Always displays the template brand regardless of which slide was clicked.
  */
-const GardensPage = ({ isVisible, onBack }) => {
+const GardensPage = memo(({ isVisible, onBack }) => {
   return (
     <GeneralBrandPage
       isVisible={isVisible}
@@ -14,6 +14,6 @@ const GardensPage = ({ isVisible, onBack }) => {
       hideNavWheel={true}
     />
   );
-};
+});
 
 export default GardensPage;

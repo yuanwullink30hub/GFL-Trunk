@@ -176,6 +176,7 @@ const AssessmentCard = ({
   // Breakpoint-based sizing:  Desktop(≥1800) / Laptop(≥1079) / Tablet(≥768) / Mobile(<768)
   const s = getCardSizes(windowWidth);
   const laptopBlur = (windowWidth < 1800 && isIntegratedGPU()) ? 'none' : 'blur(32px)';
+  const isLowGpu = windowWidth < 1800 && isIntegratedGPU();
 
   const currentQuestion = questions[currentQuestionIndex];
   const questionNumber = currentQuestionIndex + 1;
@@ -700,7 +701,7 @@ const AssessmentCard = ({
           transition-[max-height] duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
           ${isCollapsed ? 'max-h-[80px]' : ''}
         `}
-        style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', backdropFilter: laptopBlur, WebkitBackdropFilter: laptopBlur, maxHeight: isCollapsed ? '80px' : s.maxH, boxShadow: `0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px ${subjectColor}10, inset 0 0 30px ${subjectColor}08` }}
+        style={{ backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.3)', backdropFilter: laptopBlur, WebkitBackdropFilter: laptopBlur, maxHeight: isCollapsed ? '80px' : s.maxH, boxShadow: `0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px ${subjectColor}10, inset 0 0 30px ${subjectColor}08` }}
       >
         {/* Corner Accents - SectorFrame style */}
         <div className="absolute -top-0.5 -left-0.5 w-4 h-4 pointer-events-none z-20" style={{

@@ -534,7 +534,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         <div 
           ref={modalRef}
           className="relative w-full rounded-lg"
-          style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', minHeight: s.modalMinHeight, maxHeight: s.modalMaxHeight, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)' }}
+          style={{ backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.3)', minHeight: s.modalMinHeight, maxHeight: s.modalMaxHeight, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)' }}
         >
         {/* Content - matches SectorFrame inner structure */}
         <div className="relative z-10 w-full flex flex-col" style={{ padding: s.padding, flex: '1 1 auto' }}>
@@ -950,7 +950,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             {/* Card */}
             <div style={{
               position: 'relative',
-              backgroundColor: 'rgba(2, 0, 3, 0.3)',
+              backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.3)',
               backdropFilter: laptopBlur,
               WebkitBackdropFilter: laptopBlur,
               borderRadius: '0.5rem',
@@ -1017,7 +1017,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             <div
               className="rounded-xl"
               style={{
-                backgroundColor: 'rgba(2, 0, 3, 0.3)',
+                backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.3)',
                 backdropFilter: laptopBlur,
                 WebkitBackdropFilter: laptopBlur,
                 border: '1px solid rgba(168,85,247,0.2)',

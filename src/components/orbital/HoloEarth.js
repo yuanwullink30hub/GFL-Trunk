@@ -703,6 +703,7 @@ const HoloEarthSphere = ({
           onIntroComplete={onIntroComplete}
           onLayerStateChange={onLayerStateChange}
           hidePyramid={hidePyramid}
+          fastIntro={isLaptop}
         />
       </group>
 

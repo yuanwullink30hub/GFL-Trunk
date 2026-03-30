@@ -115,6 +115,7 @@ const SingleLayerPanel = ({
   gatherProgress = 0,
   staircaseStep = -1,
   assessmentLevel,
+  isLowGpu = false,
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const currentQuestionIndexRef = useRef(0);
@@ -145,15 +146,17 @@ const SingleLayerPanel = ({
     if (isSaved && savePhase === 'idle') {
       console.log(`[PANEL L${layerIndex}] Starting save animation`);
       setSavePhase('collapsing');
-      // Phase 1: wait for collapse animation to finish
+      // Phase 1: wait for collapse (skipped on low GPU — card flies immediately)
+      const wait = isLowGpu ? 0 : COLLAPSE_WAIT;
+      const duration = isLowGpu ? 700 : MOVE_DURATION;
       collapseTimerRef.current = setTimeout(() => {
         console.log(`[PANEL L${layerIndex}] Phase 2: moving`);
         setSavePhase('moving');
-        // Phase 2: animate slide to left
+        // Phase 2: fly to entity (low GPU) or slide to left (default)
         const startTime = performance.now();
         const animate = (now) => {
           const elapsed = now - startTime;
-          const t = Math.min(1, elapsed / MOVE_DURATION);
+          const t = Math.min(1, elapsed / duration);
           // ease-in-out cubic for a natural feel
           const eased = t < 0.5
             ? 4 * t * t * t
@@ -171,7 +174,7 @@ const SingleLayerPanel = ({
           }
         };
         moveAnimRef.current = requestAnimationFrame(animate);
-      }, COLLAPSE_WAIT);
+      }, wait);
     }
     return () => {
       if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
@@ -229,6 +232,9 @@ const SingleLayerPanel = ({
                          vw >= 1079 ? 17 + (5 * 16 / vw * 100) :   // Laptop — mirror of right for symmetry
                          vw >= 768  ? 18 :   // Tablet
                          50;                  // Mobile — centered
+
+    // Low-GPU: center the card; default: offset to the right side
+    const openX = isLowGpu ? 50 : rightXPercent;
     
     // ── ABSORB PHASE (staircaseStep=0): all saved cards simultaneously fly
     //    from their saved left positions toward the pyramid center and shrink
@@ -250,8 +256,16 @@ const SingleLayerPanel = ({
     }
 
     if (staircaseStep === 0) {
+      // Low-GPU: cards already flew to entity during their own save animation — hide immediately.
+      if (isLowGpu) {
+        return {
+          position: 'fixed', left: '50%', right: 'auto', top: `${entityCenterY}vh`,
+          transform: 'translate(-50%, -50%) scale(0)',
+          opacity: 0, transition: 'none', pointerEvents: 'none', zIndex: 140 + layerIndex,
+        };
+      }
       // Absorb: ALL cards fly simultaneously to their pyramid layer center and shrink.
-      // Card 5 (layer 4, just saved) starts from the RIGHT side; cards 0-3 always from LEFT.
+      // Last card from right, others from left stack.
       const isLastCard = layerIndex === 4;
       const startX = isLastCard ? rightXPercent : leftXPercent;
       const startY = isLastCard ? OPEN_Y : savedY;
@@ -280,10 +294,10 @@ const SingleLayerPanel = ({
     // Card is saved — determine which phase we're in
     if (isSaved) {
       if (savePhase === 'collapsing') {
-        // Phase 1: card is collapsing in place on the right — stay put
+        // Phase 1: card collapsing in place — hold at open position
         return {
           position: 'fixed',
-          left: `${rightXPercent}%`,
+          left: `${openX}%`,
           right: 'auto',
           top: `${OPEN_Y}vh`,
           transform: `translate(-50%, -50%)`,
@@ -294,7 +308,24 @@ const SingleLayerPanel = ({
         };
       }
       
-      // Phase 2 or done: sliding from right → left, and from OPEN_Y → savedY
+      // Low-GPU: fly card toward entity center while shrinking to 0
+      if (isLowGpu) {
+        const flyY = OPEN_Y + (entityCenterY - OPEN_Y) * moveProgress;
+        const scale = 1 - moveProgress;
+        return {
+          position: 'fixed',
+          left: '50%',
+          right: 'auto',
+          top: `${flyY}vh`,
+          transform: `translate(-50%, -50%) scale(${scale})`,
+          opacity: 1 - moveProgress,
+          transition: 'none',
+          pointerEvents: 'none',
+          zIndex: 150,
+        };
+      }
+
+      // Default: slide from right → left, and from OPEN_Y → savedY
       const currentX = rightXPercent + (leftXPercent - rightXPercent) * moveProgress;
       const currentY = OPEN_Y + (savedY - OPEN_Y) * moveProgress;
       const currentScale = 1 + (savedScale - 1) * moveProgress;
@@ -312,11 +343,11 @@ const SingleLayerPanel = ({
       };
     }
     
-    // Card is fully arrived and active (open on right side, centered)
+    // Card is fully arrived and active (open — centered on low GPU, right side otherwise)
     if (progress >= 1) {
       return {
         position: 'fixed',
-        left: `${rightXPercent}%`,
+        left: `${openX}%`,
         right: 'auto',
         top: `${OPEN_Y}vh`,
         transform: `translate(-50%, -50%)`,
@@ -327,10 +358,10 @@ const SingleLayerPanel = ({
       };
     }
     
-    // Card is animating in from entity center → right center position
+    // Card animating in from entity center → open position
     const easedProgress = 1 - Math.pow(1 - progress, 2);
     
-    const currentX = entityCenterX + (rightXPercent - entityCenterX) * easedProgress;
+    const currentX = entityCenterX + (openX - entityCenterX) * easedProgress;
     const currentY = entityCenterY + (OPEN_Y - entityCenterY) * easedProgress;
     const scale = 0.1 + 0.9 * easedProgress;
     const opacity = Math.min(1, progress * 2);
@@ -346,7 +377,7 @@ const SingleLayerPanel = ({
       pointerEvents: progress > 0.9 ? 'auto' : 'none',
       zIndex: 150,
     };
-  }, [layerIndex, animProgress, gatherProgress, staircaseStep, isSaved, savePhase, moveProgress]);
+  }, [layerIndex, animProgress, gatherProgress, staircaseStep, isSaved, savePhase, moveProgress, isLowGpu]);
 
   // Compute layer-aware level config
   const computedLevelConfig = useMemo(() => {
@@ -466,6 +497,7 @@ const AssessmentLayerPanel = ({
   isVisible = true,
   assessmentLevel,
   liveSubjects = [],
+  isLowGpu = false,
 }) => {
   // Store answers for ALL layers persistently
   const [allLayerAnswers, setAllLayerAnswers] = useState({});
@@ -552,6 +584,7 @@ const AssessmentLayerPanel = ({
           gatherProgress={gatherProgress}
           staircaseStep={staircaseStep}
           assessmentLevel={assessmentLevel}
+          isLowGpu={isLowGpu}
         />
       ))}
     </>

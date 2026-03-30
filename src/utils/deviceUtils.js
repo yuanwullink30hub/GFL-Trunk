@@ -151,10 +151,20 @@ const CAPABLE_GPU_PATTERNS = [
  * Whitelist approach — only GPUs we're sure can handle the full build
  * get the desktop experience on laptop-sized viewports.
  * Everything else (Intel UHD 620, HD 4000, Vega APUs, unknown, no detection) → low mode.
+ *
+ * localhost is always treated as capable so developers always see the full experience.
  */
 let _integratedResult = null;
 export const isIntegratedGPU = () => {
   if (_integratedResult !== null) return _integratedResult;
+  // ?lowgpu=1 on localhost forces the integrated-GPU code path for preview.
+  const forcelow = typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('lowgpu') === '1';
+  if (forcelow) { _integratedResult = true; return true; }
+  // On localhost: never force low-gpu mode — developer always sees the full build.
+  const isLocalhost = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  if (isLocalhost) { _integratedResult = false; return false; }
   const renderer = getGPURenderer();
   if (!renderer) { _integratedResult = true; return true; } // can't detect → safe fallback
   _integratedResult = !CAPABLE_GPU_PATTERNS.some(p => p.test(renderer));

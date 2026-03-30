@@ -518,8 +518,6 @@ const App = () => {
 
   // LAPTOP: Trigger smooth animation on "Start Experience" button click
   // Animation ends at pyramid visible state, then scroll takes over for layer control
-  // Uses fractional frame values for buttery-smooth continuous interpolation
-  // Throttled setState to ~20fps to reduce re-renders on integrated GPU laptops
   const triggerLaptopAnimation = useCallback(() => {
     if (laptopAnimating) return; // Prevent double-click
     
@@ -527,7 +525,6 @@ const App = () => {
     const targetFrame = MAX_FRAME;
     const animationDuration = 6000; // 6 seconds for full animation
     const startTime = performance.now();
-    let lastSetState = 0; // Track last setState time for throttle
     
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
@@ -535,14 +532,8 @@ const App = () => {
       
       // Use easeOutCubic for smooth deceleration
       const easeProgress = 1 - Math.pow(1 - progress, 3);
-      // Fractional frames — continuous interpolation for smooth visuals
       const smoothFrame = easeProgress * targetFrame;
-      
-      // Throttle setState to ~20fps (50ms) — rAF still runs at 60fps for timing accuracy
-      if (currentTime - lastSetState >= 50) {
-        setCurrentFrame(smoothFrame);
-        lastSetState = currentTime;
-      }
+      setCurrentFrame(smoothFrame);
       
       if (progress < 1) {
         laptopAnimationRef.current = requestAnimationFrame(animate);
@@ -822,7 +813,6 @@ const App = () => {
   // Convergence animation effect — 2 visual phases:
   // Phase 0 (absorb): All 5 saved cards simultaneously fly to their pyramid layer center and shrink to invisible
   // Phase 1 (fold):   3D pyramid layers do a folding-mat staircase upward into the entity, shrinking on the way
-  // Throttled to ~20fps on laptop to reduce re-render overhead
   useEffect(() => {
     if (assessmentPhase !== 'convergence') return;
     
@@ -840,19 +830,10 @@ const App = () => {
     const t5 = t4 + CORE_GROWTH_DURATION;           // core growth ends
     const t6 = t5 + RESULTS_APPEAR_DURATION;        // results appear done
     const startTime = Date.now();
-    const throttleMs = isLaptop ? 50 : 0;           // 20fps on laptop, full speed on desktop
-    let lastUpdate = 0;
     
     const animate = () => {
       const now = Date.now();
       const elapsed = now - startTime;
-      
-      // Throttle re-renders on laptop
-      if (throttleMs && now - lastUpdate < throttleMs && elapsed < t6) {
-        requestAnimationFrame(animate);
-        return;
-      }
-      lastUpdate = now;
       
       if (elapsed < t1) {
         // Waiting for last card's save animation to finish
@@ -919,7 +900,7 @@ const App = () => {
     };
     
     requestAnimationFrame(animate);
-  }, [assessmentPhase, isLaptop]);
+  }, [assessmentPhase]);
   
   // Show loading screen until AI analysis is ready, then reveal results
   useEffect(() => {
@@ -968,20 +949,38 @@ const App = () => {
       }
       console.log(`[ANIM] wasAnimating=${wasAnimating} setAfterDelete=${[...animatingLayersRef.current]}`);
       if (wasAnimating && animatingLayersRef.current.size === 0) {
-        // All save animations done → advance to next layer and let user scroll
+        // All save animations done → advance to next layer
         const nextLayer = currentLayerIndexRef.current + 1;
-        console.log(`[ANIM] ADVANCING to layer ${nextLayer}, enabling scroll`);
+        console.log(`[ANIM] ADVANCING to layer ${nextLayer}, isLaptop=${isLaptop}`);
         if (nextLayer <= 4) {
           currentLayerIndexRef.current = nextLayer;
           setCurrentLayerIndex(nextLayer);
-          assessmentScrollEnabledRef.current = true;
-          setAssessmentScrollEnabled(true);
+          if (isLaptop) {
+            // Low-GPU: auto-animate pyramidScrollProgress to bring next card in — no scroll needed
+            const fromProgress = nextLayer / 5;
+            const toProgress = (nextLayer + 1) / 5;
+            const autoStart = performance.now();
+            const autoDuration = 700;
+            const autoAnim = (now) => {
+              const elapsed = now - autoStart;
+              const t = Math.min(1, elapsed / autoDuration);
+              const eased = t * t * (3 - 2 * t); // smoothstep
+              setPyramidScrollProgress(fromProgress + (toProgress - fromProgress) * eased);
+              if (t < 1) requestAnimationFrame(autoAnim);
+              // assessmentScrollEnabled stays false — card fills screen, no scroll needed
+            };
+            requestAnimationFrame(autoAnim);
+          } else {
+            // Desktop: enable scroll so user pulls next card in manually
+            assessmentScrollEnabledRef.current = true;
+            setAssessmentScrollEnabled(true);
+          }
         }
       }
     }
     // Force re-render so scroll guard sees the updated set
     setAnimatingLayersCounter(prev => prev + 1);
-  }, []);
+  }, [isLaptop]);
   
   
   // Disable scroll once the current card is fully visible (user scrolled it all the way in).
@@ -1306,11 +1305,6 @@ const App = () => {
   const section3End = section2End + SECTION_3_FRAMES;
   const BUTTON_APPEAR_FRAME = section3End; // Frame 49 - the last frame
   const isSystem = currentFrame >= BUTTON_APPEAR_FRAME;
-
-  // Pyramid layer scroll - only active after system is visible
-  // This controls the layer float-up animation via scroll after the 3s intro
-  // When isSystem becomes true, the 3s intro starts automatically in PyramidInner
-  // After intro, scroll continues to control layer positions
 
   // Set global crosshair cursor on mount — uses !important style tag to override
   // all inline cursor:pointer and Tailwind cursor-* classes everywhere on the site.
@@ -2066,6 +2060,7 @@ const App = () => {
                 isVisible={true}
                 assessmentLevel={assessmentLevel}
                 liveSubjects={liveSubjects}
+                isLowGpu={isLaptop}
               />
               </>
             )}

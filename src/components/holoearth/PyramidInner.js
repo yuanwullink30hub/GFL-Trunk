@@ -17,7 +17,7 @@ const BASE_RADIUS = 1.6;    // Match the cone radius
 const LAYER_THICKNESS = PYRAMID_HEIGHT / TOTAL_LAYERS;
 const SPACING = 0.04;
 
-// Timing constants
+// Timing constants (full) — overridden per-instance via fastIntro prop
 const INTRO_DELAY = 1.5;
 const INTRO_DURATION = 2.0;
 
@@ -390,7 +390,10 @@ const PyramidInner = ({
   onIntroComplete = () => {},
   onLayerStateChange = () => {},
   hidePyramid = false,
+  fastIntro = false,
 }) => {
+  const introDelay = fastIntro ? 0 : INTRO_DELAY;
+  const introDuration = fastIntro ? 0.8 : INTRO_DURATION;
   const groupRef = useRef(null);
   const containerRef = useRef(null);
   const buttonGroupRef = useRef(null);
@@ -515,14 +518,14 @@ const PyramidInner = ({
 
       const timeSinceActive = state.clock.elapsedTime - activationTimeRef.current;
 
-      if (timeSinceActive < INTRO_DELAY) {
+      if (timeSinceActive < introDelay) {
         // Phase 1: Pyramid formed, labels visible (if showLabels), entity hidden
         introFactor = 1;
         if (!isIntroActive) setIsIntroActive(true);
         if (entityOpacity !== 0) setEntityOpacity(0);
-      } else if (timeSinceActive < INTRO_DELAY + INTRO_DURATION) {
+      } else if (timeSinceActive < introDelay + introDuration) {
         // Phase 2: Layers floating up to entity
-        const t = (timeSinceActive - INTRO_DELAY) / INTRO_DURATION;
+        const t = (timeSinceActive - introDelay) / introDuration;
         const eased = t * t * (3 - 2 * t);
         introFactor = 1 - eased;
         if (!isIntroActive) setIsIntroActive(true);

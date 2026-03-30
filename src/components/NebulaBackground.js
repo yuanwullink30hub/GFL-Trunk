@@ -960,9 +960,10 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
   const mapPosRef       = useRef({ x: 0, y: 0 }); // smoothed value sent to shader
   const onReadyRef      = useRef(onReady);
   const readyFiredRef   = useRef(false);
-  const isMobile        = typeof window !== 'undefined' && window.innerWidth < 768;
-  const isLaptopOrTablet = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && isIntegratedGPU();
-  const useVideo         = isMobile || isLaptopOrTablet; // video for mobile + weak-GPU laptops, WebGL for the rest
+  const isMobile          = typeof window !== 'undefined' && window.innerWidth < 768;
+  const isLaptopOrTablet   = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && isIntegratedGPU();
+  const isLaptopDedicated  = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && !isIntegratedGPU();
+  const useVideo           = isMobile || isLaptopOrTablet || isLaptopDedicated; // WebGL only for true desktop (≥1800px)
   const currentFrameRef = useRef(currentFrame); // readable inside render loop
   // Accumulated shader time — runs at 0.7x speed once explosion > frame 10
   const shaderTimeRef   = useRef(0);
@@ -1373,6 +1374,46 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
             objectFit: 'cover',
           }}
         />
+      </div>
+    );
+  }
+
+  // ─── DEDICATED-GPU LAPTOP: Laptop video loop ─────────────────────────
+  if (isLaptopDedicated) {
+    return (
+      <div
+        ref={wrapperRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+          overflow: 'hidden',
+          cursor: 'inherit',
+          background: 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)',
+        }}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          disablePictureInPicture
+          disableRemotePlayback
+          style={{
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            resize: 'none',
+            outline: 'none',
+            border: 'none',
+          }}
+        >
+          <source src="/images/nebula-laptop-loop.mp4" type="video/mp4" />
+        </video>
       </div>
     );
   }

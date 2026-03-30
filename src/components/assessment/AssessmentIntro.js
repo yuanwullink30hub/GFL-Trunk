@@ -664,7 +664,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
           </div>
 
           {/* Referenties button + research text + upload button row */}
-          <div className={isMobile ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between'} style={{ marginTop: s.referentiesMt, marginBottom: s.featureMb }}>
+          <div className={isMobile ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between'} style={{ marginTop: s.referentiesMt, marginBottom: s.featureMb, position: 'relative', zIndex: 1 }}>
             {/* Left: Lees mij! + Referenties buttons */}
             <div style={{ width: isMobile ? 'auto' : '10rem', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.35rem', marginLeft: isMobile ? 0 : '4rem', position: 'relative', top: isMobile ? 0 : '5rem' }}>
               <div ref={infoIconRef}>

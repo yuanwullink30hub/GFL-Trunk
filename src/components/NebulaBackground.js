@@ -977,9 +977,9 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     mapPosTargetRef.current = mapPosition;
   }, [mapPosition]);
 
-  // ─── VIDEO PATH: Pre-recorded video loop for mobile + laptop/tablet (zero GPU cost) ──
+  // ─── VIDEO PATH: Pre-recorded video loop for mobile ──────────────────
   useEffect(() => {
-    if (!useVideo) return;
+    if (!isMobile) return; // only mobile uses video; low-gpu laptops use static image
     const video = videoRef.current;
     if (!video) return;
 
@@ -1004,14 +1004,14 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
       video.removeEventListener('error', onError);
       video.pause();
     };
-  }, [useVideo]);
+  }, [isMobile]);
 
   // ─── DESKTOP: WebGL shader path (only for >= 1800px) ────────────────
   // Track WebGL init function so context restore can re-run it
   const initCountRef = useRef(0);
 
   useEffect(() => {
-    if (useVideo) return; // mobile + laptop/tablet use video, no WebGL
+    if (useVideo) return; // mobile uses video, low-gpu laptops use static image — no WebGL
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -1323,8 +1323,43 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     };
   }, [useVideo]);
 
-  // ─── VIDEO: Render <video> element for mobile + laptop/tablet ────────
-  if (useVideo) {
+  // ─── LOW-GPU LAPTOP: Static nebula image (zero compositor cost) ──────
+  if (isLaptopOrTablet) {
+    return (
+      <div
+        ref={wrapperRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+          overflow: 'hidden',
+          cursor: 'inherit',
+          background: 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)',
+        }}
+      >
+        <img
+          src="/images/nebula-laptop-still.webp"
+          alt=""
+          onLoad={() => {
+            if (onReadyRef.current && !readyFiredRef.current) {
+              readyFiredRef.current = true;
+              onReadyRef.current();
+            }
+          }}
+          style={{
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+      </div>
+    );
+  }
+
+  // ─── MOBILE: Video loop ──────────────────────────────────────────────
+  if (isMobile) {
     return (
       <div
         ref={wrapperRef}
@@ -1357,10 +1392,8 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
             border: 'none',
           }}
         >
-          {isMobile && <source src="/images/nebula-mobile-loop.mp4"  type="video/mp4" />}
-          {isMobile && <source src="/images/nebula-mobile-loop.webm" type="video/webm" />}
-          {!isMobile && <source src="/images/nebula-laptop-loop.mp4"  type="video/mp4" />}
-          {!isMobile && <source src="/images/nebula-laptop-loop.webm" type="video/webm" />}
+          <source src="/images/nebula-mobile-loop.mp4"  type="video/mp4" />
+          <source src="/images/nebula-mobile-loop.webm" type="video/webm" />
         </video>
       </div>
     );

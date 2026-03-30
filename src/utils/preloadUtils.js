@@ -262,10 +262,25 @@ export const preloadAll = async (onProgress, options = {}) => {
 
   report(0);
 
+  // On laptop/tablet (< 1800px, non-mobile), skip Three.js + 3D components entirely.
+  // HoloEarth is deferred until user clicks "Start Experience" — no point parsing
+  // ~2MB of Three.js at startup when the landing page only shows a video background.
+  const isLaptopOrTablet = typeof window !== 'undefined' &&
+    window.innerWidth >= 768 && window.innerWidth < 1800;
+
   // ── All imports loaded sequentially with yields ──
   // Sequential loading ensures each import triggers a visible progress
   // bar update before the next one starts evaluating.
-  const allImports = [
+  const allImports = isLaptopOrTablet ? [
+    // Laptop/Tablet: Only non-3D components — Three.js loads on-demand later
+    () => import('../components/orbital/DesktopLayout'),
+    () => import('../pages/FilosofiePage'),
+    () => import('../pages/GardensPage'),
+    () => import('../pages/DataPage'),
+    () => import('../pages/LoginPage'),
+    () => import('../pages/EyedentityPage'),
+  ] : [
+    // Desktop: Full preload including Three.js
     // Three.js core (heaviest)
     () => import('three'),
     () => import('@react-three/fiber'),

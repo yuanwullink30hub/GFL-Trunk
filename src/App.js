@@ -141,6 +141,7 @@ const App = () => {
   const [pyramidScrollProgress, setPyramidScrollProgress] = useState(0); // Separate scroll for pyramid layers (0-1)
   const [introComplete, setIntroComplete] = useState(false); // Track when pyramid intro animation is done
   const [laptopAnimating, setLaptopAnimating] = useState(false); // Track laptop start-experience animation state
+  const [laptopHoloMounted, setLaptopHoloMounted] = useState(false); // Defer Three.js until Start Experience clicked
   // eslint-disable-next-line no-unused-vars
   const [layerState, setLayerState] = useState({
     completedLayerIndex: -1,
@@ -509,31 +510,40 @@ const App = () => {
   const triggerLaptopAnimation = useCallback(() => {
     if (laptopAnimating) return; // Prevent double-click
     
+    // Mount HoloEarth (starts Three.js chunk load + shader compile)
+    setLaptopHoloMounted(true);
     setLaptopAnimating(true);
     const targetFrame = MAX_FRAME;
     const animationDuration = 6000; // 6 seconds for full animation
-    const startTime = performance.now();
+
+    // Small delay so React can mount the <HoloEarth> Suspense boundary and
+    // Three.js has a moment to compile shaders before the first visible frame.
+    const startDelay = 600;
+
+    setTimeout(() => {
+      const startTime = performance.now();
     
-    const animate = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / animationDuration, 1); // 0 to 1
+      const animate = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / animationDuration, 1); // 0 to 1
       
-      // Use easeOutCubic for smooth deceleration
-      const easeProgress = 1 - Math.pow(1 - progress, 3);
-      // Fractional frames — continuous interpolation for smooth visuals
-      const smoothFrame = easeProgress * targetFrame;
+        // Use easeOutCubic for smooth deceleration
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        // Fractional frames — continuous interpolation for smooth visuals
+        const smoothFrame = easeProgress * targetFrame;
       
-      setCurrentFrame(smoothFrame);
+        setCurrentFrame(smoothFrame);
       
-      if (progress < 1) {
-        laptopAnimationRef.current = requestAnimationFrame(animate);
-      } else {
-        setCurrentFrame(targetFrame); // Snap to exact integer at end
-        setLaptopAnimating(false);
-      }
-    };
+        if (progress < 1) {
+          laptopAnimationRef.current = requestAnimationFrame(animate);
+        } else {
+          setCurrentFrame(targetFrame); // Snap to exact integer at end
+          setLaptopAnimating(false);
+        }
+      };
     
-    laptopAnimationRef.current = requestAnimationFrame(animate);
+      laptopAnimationRef.current = requestAnimationFrame(animate);
+    }, startDelay);
   }, [laptopAnimating, MAX_FRAME]);
 
   // Cleanup laptop animation on unmount
@@ -1718,8 +1728,9 @@ const App = () => {
           </div>
 
 
-          {/* --- Main 3D Scene --- */}
+          {/* --- Main 3D Scene — on laptop, deferred until Start Experience to avoid loading ~2MB Three.js upfront --- */}
           <div className="absolute inset-0 flex items-center justify-center" style={{ overflow: 'visible', zIndex: currentFrame > 6 ? 20 : 10 }}>
+            {(!isLaptop || laptopHoloMounted) && (
             <HoloEarth 
               className="w-full h-full" 
               exploding={isExploding}
@@ -1735,6 +1746,7 @@ const App = () => {
               onLayerStateChange={handleLayerStateChange}
               hidePyramid={assessmentPhase === 'intro'}
             />
+            )}
           </div>
 
           {/* --- Foreground nebula gas overlay — upper magenta-purple cloud layered in front of HoloEarth --- */}
@@ -1948,6 +1960,7 @@ const App = () => {
                         setTimeout(() => {
                           resetAssessmentState();
                           setCurrentFrame(0);
+                          if (isLaptop) setLaptopHoloMounted(false);
                           window.history.pushState({}, '', `?page=${slug}`);
                           // pushState doesn't fire popstate — dispatch manually so
                           // EyedentityPage picks up the slug and opens the right tab
@@ -2091,6 +2104,7 @@ const App = () => {
                       setTimeout(() => {
                         resetAssessmentState(); // phase→'hidden', all scores/answers/progress reset
                         setCurrentFrame(0);     // rewind HoloEarth back to frame 0, off-screen
+                        if (isLaptop) setLaptopHoloMounted(false); // unmount Three.js to free GPU
                       }, MAP_TRANSITION_DURATION + 200);
                     }
                   };

@@ -1984,6 +1984,15 @@ body {
   100% { background-position: 100% 50%; }
 }
 
+/* ══ Integrated-GPU laptop: freeze ALL decorative animations + kill backdrop blur ══ */
+/* .low-gpu is toggled on <html> by useIsLaptop when viewport is 768-1799px AND GPU is integrated */
+/* Nuclear kill: stop every infinite animation (sheens, pulses, scanlines, breathe, flicker).
+   One-shot animations (fadeIn, zoomIn) are spared — they run once and end. */
+html.low-gpu *  {
+  animation-iteration-count: 1 !important;
+  backdrop-filter: none !important;
+}
+
 /* Custom scrollbar for brand pages */
 .brand-scrollbar::-webkit-scrollbar {
   width: 4px;

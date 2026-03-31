@@ -35,6 +35,7 @@ const AssessmentResultsModal = lazyRetry(() => import('./components/assessment/A
 const FilosofiePage = lazyRetry(() => import('./pages/FilosofiePage'));
 const GardensPage = lazyRetry(() => import('./pages/GardensPage'));
 const DataPage = lazyRetry(() => import('./pages/DataPage'));
+import { useCelestialState, CelestialBehindLayer } from './pages/DataPage';
 const LoginPage = lazyRetry(() => import('./pages/LoginPage'));
 const EyedentityPage = lazyRetry(() => import('./pages/EyedentityPage'));
 
@@ -150,6 +151,7 @@ const App = () => {
   const nebulaReadyRef = useRef(null); // resolves when NebulaBackground fires onReady
   const { language, toggleLanguage, t } = useLanguage();
   const [currentFrame, setCurrentFrame] = useState(0); // 0 to 29 discrete frames
+  const explosionProgressRef = useRef(0); // Stable ref for smooth 3D animation (read by HoloEarth useFrame)
   const [currentSlide, setCurrentSlide] = useState(0);
   const [pyramidScrollProgress, setPyramidScrollProgress] = useState(0); // Separate scroll for pyramid layers (0-1)
   const [introComplete, setIntroComplete] = useState(false); // Track when pyramid intro animation is done
@@ -216,6 +218,7 @@ const App = () => {
   // eslint-disable-next-line no-unused-vars
   const [mobileScrollLocked, setMobileScrollLocked] = useState(false); // Track when mobile scroll should be hijacked
   const [activeSection, setActiveSection] = useState(null); // Track active section page (filosofie, gardens, monitor, menu)
+  const celestial = useCelestialState(); // Shared zoom state for celestial orbit (front + behind-nebula layers)
   const [autoSlideEnabled, setAutoSlideEnabled] = useState(true); // Track if auto-slide is enabled
   const [gardensBrandIndex, setGardensBrandIndex] = useState(0); // Captured brand index when opening gardens
   
@@ -230,6 +233,7 @@ const App = () => {
   // MAP NAVIGATION STATE - Smooth curved panning
   // ============================================
   const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 }); // Current grid position
+  const nebulaMapRef = useRef({ x: 0, y: 0 }); // Stable ref for NebulaBackground — avoids per-frame React re-renders
   const [isMapAnimating, setIsMapAnimating] = useState(false);
   const mapAnimationRef = useRef(null);
   const mapStartPosRef = useRef({ x: 0, y: 0 });
@@ -282,7 +286,7 @@ const App = () => {
 
   const navigateToSection = useCallback((section) => {
     const target = GRID_POSITIONS[section] || GRID_POSITIONS.main;
-    const start = { ...mapPosition };
+    const start = { x: nebulaMapRef.current.x, y: nebulaMapRef.current.y };
     
     // Don't animate if already at target
     if (Math.abs(target.x - start.x) < 0.01 && Math.abs(target.y - start.y) < 0.01) {
@@ -299,7 +303,7 @@ const App = () => {
     mapStartTimeRef.current = performance.now();
     setIsMapAnimating(true);
     setActiveSection(section === 'main' ? null : section);
-  }, [mapPosition, calculateCurveOffset]);
+  }, [calculateCurveOffset]);
 
   // Map animation loop
   useEffect(() => {
@@ -323,14 +327,26 @@ const App = () => {
       
       const newX = start.x + (target.x - start.x) * eased + curve.x * curveFactor;
       const newY = start.y + (target.y - start.y) * eased + curve.y * curveFactor;
-      
-      setMapPosition({ x: newX, y: newY });
-      
+
+      nebulaMapRef.current.x = newX;
+      nebulaMapRef.current.y = newY;
+      // Update CSS custom properties directly — no React re-render per frame
+      if (containerRef.current) {
+        containerRef.current.style.setProperty('--map-x', newX);
+        containerRef.current.style.setProperty('--map-y', newY);
+      }
+
       if (progress < 1) {
         mapAnimationRef.current = requestAnimationFrame(animate);
       } else {
+        nebulaMapRef.current.x = target.x;
+        nebulaMapRef.current.y = target.y;
+        if (containerRef.current) {
+          containerRef.current.style.setProperty('--map-x', target.x);
+          containerRef.current.style.setProperty('--map-y', target.y);
+        }
+        setMapPosition(target);     // single React re-render at animation end
         setIsMapAnimating(false);
-        setMapPosition(target);
       }
     };
 
@@ -342,6 +358,14 @@ const App = () => {
       }
     };
   }, [isMapAnimating]);
+
+  // Keep CSS custom properties in sync with React state (initial mount + animation end)
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.style.setProperty('--map-x', mapPosition.x);
+      containerRef.current.style.setProperty('--map-y', mapPosition.y);
+    }
+  }, [mapPosition]);
 
   // Section lock: on deployed (non-localhost) sites, sections stay locked regardless of passkey.
   // The passkey gate in index.html controls initial site access, but content sections remain disabled.
@@ -1213,7 +1237,9 @@ const App = () => {
   
   // Earth explosion follows eased section 2
   const explosionProgress = explosionEased;
-  
+  // Keep ref in sync for smooth Three.js animation (avoids per-frame React re-renders)
+  explosionProgressRef.current = explosionProgress;
+
   // Header/containers: start vanishing at frame HEADER_START_FRAME, complete by section2End
   const headerVanishFrames = section2End - HEADER_START_FRAME;
   const headerProgress = currentFrame <= HEADER_START_FRAME 
@@ -1323,20 +1349,43 @@ const App = () => {
     };
   }, []);
 
-  // Reset to frame 0
+  // Reset to frame 0 — smooth rAF-based animation to avoid per-frame React re-renders
   const handleReset = () => {
     // Full reset of all assessment/pyramid state
     resetAssessmentState();
-    // Rewind frames back to 0 — step by 2 at 60ms to halve re-renders
-    const interval = setInterval(() => {
-      setCurrentFrame(prev => {
-        if (prev <= 0) {
-          clearInterval(interval);
-          return 0;
-        }
-        return Math.max(0, prev - 2);
-      });
-    }, 60);
+    const startFrame = currentFrame;
+    if (startFrame <= 0) return;
+    const startTime = performance.now();
+    const duration = startFrame * 30; // ~30ms per frame, similar total time to before
+    let lastStateTime = 0;
+    let firstUpdate = true;
+
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const t = Math.min(1, elapsed / duration);
+      const easedT = 1 - Math.pow(1 - t, 2); // ease-out for smooth deceleration
+      const targetFrame = Math.round(startFrame * (1 - easedT));
+
+      // Update ref every rAF frame for smooth 3D animation (no React re-render)
+      const s2p = targetFrame <= SECTION_1_FRAMES ? 0
+        : Math.min(1, Math.max(0, (targetFrame - SECTION_1_FRAMES) / SECTION_2_FRAMES));
+      explosionProgressRef.current = Math.pow(s2p, 2.5);
+
+      // Throttle React state updates: first one immediate, then every ~200ms for DOM header animations
+      if (firstUpdate || now - lastStateTime > 200) {
+        setCurrentFrame(targetFrame);
+        lastStateTime = now;
+        firstUpdate = false;
+      }
+
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setCurrentFrame(0);
+        explosionProgressRef.current = 0;
+      }
+    };
+    requestAnimationFrame(animate);
   };
 
   // Stable callback for NebulaBackground — avoids new function reference on every App render
@@ -1359,10 +1408,10 @@ const App = () => {
           when the first frame has rendered, allowing the loading screen to end. */}
       {mountNebula && (
         <NebulaBackground
-          mapPosition={mapPosition}
+          mapPositionRef={nebulaMapRef}
           currentFrame={currentFrame}
           onReady={handleNebulaReady}
-          isVisible={!activeSection}
+          isVisible={true}
         />
       )}
       {/* ========================= */}
@@ -1499,6 +1548,7 @@ const App = () => {
                 <HoloEarth 
                   exploding={isExploding}
                   explosionProgress={explosionProgress}
+                  explosionProgressRef={explosionProgressRef}
                   isMobile={isMobile}
                   isActive={isSystem}
                   pyramidScrollProgress={pyramidScrollProgress}
@@ -1690,7 +1740,7 @@ const App = () => {
               backgroundImage: CROSS_PATTERN_DESKTOP,
               backgroundSize: '100px 100px',
               // Move grid with map position - creates floating illusion
-              transform: `translate(${-mapPosition.x * 100}vw, ${-mapPosition.y * 100}vh)`,
+              transform: 'translate(calc(var(--map-x, 0) * -100vw), calc(var(--map-y, 0) * -100vh))',
               transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
               willChange: 'transform',
             }}
@@ -1704,7 +1754,7 @@ const App = () => {
       {!isMobile && (
         <div
           style={{
-            transform: `translate(${-mapPosition.x * 100}vw, ${-mapPosition.y * 100}vh)`,
+            transform: 'translate(calc(var(--map-x, 0) * -100vw), calc(var(--map-y, 0) * -100vh))',
             transformOrigin: 'center center',
             pointerEvents: activeSection ? 'none' : 'auto',
             transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
@@ -1712,6 +1762,7 @@ const App = () => {
             inset: 0,
             willChange: 'transform',
             overflow: 'visible',
+            zIndex: isSystem ? 50 : 10,
           }}
         >
           {/* --- Logo (top-left) - Inside moving container --- */}
@@ -1743,28 +1794,7 @@ const App = () => {
           </div>
 
 
-          {/* --- Main 3D Scene --- */}
-          <div className="absolute inset-0 flex items-center justify-center" style={{ overflow: 'visible', zIndex: currentFrame > 6 ? 20 : 10 }}>
-            <HoloEarth 
-              className="w-full h-full" 
-              exploding={isExploding}
-              explosionProgress={explosionProgress}
-              isMobile={isMobile}
-              isActive={isSystem}
-              pyramidScrollProgress={pyramidScrollProgress}
-              showPyramidLabels={isSystem}
-              coreScaleMultiplier={coreScaleMultiplier}
-              foldProgress={foldProgress}
-              currentFrame={currentFrame}
-              onIntroComplete={handleIntroComplete}
-              onLayerStateChange={handleLayerStateChange}
-              hidePyramid={assessmentPhase === 'intro'}
-              isVisible={!activeSection}
-            />
-          </div>
-
-          {/* --- Foreground nebula gas overlay — desktop only (skipped on laptop to save GPU) --- */}
-          {!isLaptop && <NebulaOverlay mapPosition={mapPosition} opacity={0.55} isVisible={!activeSection} />}
+          {/* --- Main 3D Scene — rendered in dedicated sibling wrapper below, outside this container --- */}
 
           {/* --- Overlay UI Layer --- */}
           {/* z-10 normally (behind HoloEarth z-20), z-30 when assessment active so modals float above */}
@@ -2194,6 +2224,72 @@ const App = () => {
 
 
 
+        {/* ========================= */}
+        {/* HOLOEARTH WRAPPER — separate from desktop container so z-index is independent */}
+        {/* z:8 normally (behind desktop UI z:10 and overlay z:15), z:20 at frame 10+ (above overlay) */}
+        {/* ========================= */}
+        <div
+          style={{
+            transform: 'translate(calc(var(--map-x, 0) * -100vw), calc(var(--map-y, 0) * -100vh))',
+            transformOrigin: 'center center',
+            transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+            position: 'absolute',
+            inset: 0,
+            willChange: 'transform',
+            overflow: 'visible',
+            zIndex: currentFrame > 9 ? 20 : 8,
+          }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center" style={{ overflow: 'visible' }}>
+            <HoloEarth
+              className="w-full h-full"
+              exploding={isExploding}
+              explosionProgress={explosionProgress}
+              explosionProgressRef={explosionProgressRef}
+              isMobile={isMobile}
+              isActive={isSystem}
+              pyramidScrollProgress={pyramidScrollProgress}
+              showPyramidLabels={isSystem}
+              coreScaleMultiplier={coreScaleMultiplier}
+              foldProgress={foldProgress}
+              currentFrame={currentFrame}
+              onIntroComplete={handleIntroComplete}
+              onLayerStateChange={handleLayerStateChange}
+              hidePyramid={assessmentPhase === 'intro'}
+              isVisible={!activeSection}
+            />
+          </div>
+        </div>
+
+        {/* ========================= */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 5,
+          pointerEvents: (activeSection === 'monitor' || isMapAnimating) ? 'auto' : 'none',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{
+          position: 'absolute',
+          width: '100vw',
+          height: '100vh',
+          transform: `translate(calc((${GRID_POSITIONS.monitor.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.monitor.y} - var(--map-y, 0)) * 100vh))`,
+          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+        }}>
+          <CelestialBehindLayer
+            isVisible={activeSection === 'monitor' || isMapAnimating}
+            celestial={celestial}
+          />
+        </div>
+      </div>
+
+      {/* ========================= */}
+      {/* NEBULA OVERLAY — fixed z:15, foreground gas clouds (desktop only) */}
+      {/* ========================= */}
+      {!isLaptop && <NebulaOverlay mapPositionRef={nebulaMapRef} opacity={0.55} isVisible={!activeSection || activeSection === 'monitor'} isZoomedIn={celestial.isZoomedIn} />}
+
       {/* ========================= */}
       {/* PAGE COMPONENTS - Smart pre-loading with content-visibility */}
       {/* Uses CSS content-visibility: auto to skip rendering off-screen content */}
@@ -2213,7 +2309,7 @@ const App = () => {
           position: 'absolute',
           width: '100vw',
           height: '100vh',
-          transform: `translate(${(GRID_POSITIONS.filosofie.x - mapPosition.x) * 100}vw, ${(GRID_POSITIONS.filosofie.y - mapPosition.y) * 100}vh)`,
+          transform: `translate(calc((${GRID_POSITIONS.filosofie.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.filosofie.y} - var(--map-y, 0)) * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'filosofie' ? 'auto' : 'none',
           // Smart rendering: skip painting when far off-screen
@@ -2232,7 +2328,7 @@ const App = () => {
           position: 'absolute',
           width: '100vw',
           height: '100vh',
-          transform: `translate(${(GRID_POSITIONS.gardens.x - mapPosition.x) * 100}vw, ${(GRID_POSITIONS.gardens.y - mapPosition.y) * 100}vh)`,
+          transform: `translate(calc((${GRID_POSITIONS.gardens.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.gardens.y} - var(--map-y, 0)) * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'gardens' ? 'auto' : 'none',
           contentVisibility: (activeSection === 'gardens' || isMapAnimating) ? 'visible' : 'auto',
@@ -2251,16 +2347,17 @@ const App = () => {
           position: 'absolute',
           width: '100vw',
           height: '100vh',
-          transform: `translate(${(GRID_POSITIONS.monitor.x - mapPosition.x) * 100}vw, ${(GRID_POSITIONS.monitor.y - mapPosition.y) * 100}vh)`,
+          transform: `translate(calc((${GRID_POSITIONS.monitor.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.monitor.y} - var(--map-y, 0)) * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
-          pointerEvents: activeSection === 'monitor' ? 'auto' : 'none',
+          pointerEvents: 'none',
           contentVisibility: (activeSection === 'monitor' || isMapAnimating) ? 'visible' : 'auto',
           containIntrinsicSize: '100vw 100vh',
           willChange: activeSection === 'monitor' ? 'transform' : 'auto',
         }}>
           <DataPage 
             isVisible={activeSection === 'monitor' || isMapAnimating}
-            onBack={handleCloseSection} 
+            onBack={handleCloseSection}
+            celestial={celestial}
           />
         </div>
 
@@ -2269,7 +2366,7 @@ const App = () => {
           position: 'absolute',
           width: '100vw',
           height: '100vh',
-          transform: `translate(${(GRID_POSITIONS.login.x - mapPosition.x) * 100}vw, ${(GRID_POSITIONS.login.y - mapPosition.y) * 100}vh)`,
+          transform: `translate(calc((${GRID_POSITIONS.login.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.login.y} - var(--map-y, 0)) * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'login' ? 'auto' : 'none',
           contentVisibility: (activeSection === 'login' || isMapAnimating) ? 'visible' : 'auto',
@@ -2287,7 +2384,7 @@ const App = () => {
           position: 'absolute',
           width: '100vw',
           height: '100vh',
-          transform: `translate(${(GRID_POSITIONS.menu.x - mapPosition.x) * 100}vw, ${(GRID_POSITIONS.menu.y - mapPosition.y) * 100}vh)`,
+          transform: `translate(calc((${GRID_POSITIONS.menu.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.menu.y} - var(--map-y, 0)) * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'menu' ? 'auto' : 'none',
           contentVisibility: (activeSection === 'menu' || isMapAnimating) ? 'visible' : 'auto',

@@ -229,9 +229,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec2 p3 = (uv + disp * 0.48 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.7;
 
     // ── Edge distortion: 3 noise layers for organic nebula boundaries ──
-    float edgeWarp = fbm(p1 * 4.5 + vec2(7.3, 2.1) + t * 0.04) * 0.22 - 0.11;
-    float edgeWarp2 = fbm(p1 * 6.0 + vec2(3.7, 8.4) + t * 0.03) * 0.18 - 0.09;
-    float edgeWarp4 = fbm(p1 * 3.0 + vec2(4.8, 6.9) + t * 0.018) * 0.20 - 0.10;
+    float edgeWarp = fbm(p1 * 4.5 + vec2(7.3, 2.1) + t * 0.04) * 0.09 - 0.045;
+    float edgeWarp2 = fbm(p1 * 6.0 + vec2(3.7, 8.4) + t * 0.03) * 0.07 - 0.035;
+    float edgeWarp4 = fbm(p1 * 3.0 + vec2(4.8, 6.9) + t * 0.018) * 0.08 - 0.04;
     vec2 warpOffset = vec2(edgeWarp, edgeWarp2 + edgeWarp4);
 
     // ── Background Gaussians — distant diffuse glow for depth illusion ──
@@ -276,49 +276,46 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float _gB = noise(p1 * 6.2 + vec2(8.8, 3.5) + t * 0.026);
     float _gC = noise(p1 * 4.8 + vec2(5.7, 12.3) + t * 0.030);
     float _gE = noise(p1 * 3.5 + vec2(14.1, 6.2) + t * 0.019);
-    vec2 gwVecA   = (vec2(_gA, noise(p1 * 5.5 + vec2(11.3, 4.7) + t * 0.028)) - 0.5) * 0.50;
-    vec2 gwVecB   = (vec2(_gB, noise(p1 * 6.2 + vec2(1.9, 10.6) + t * 0.022)) - 0.5) * 0.50;
-    vec2 gwVecC   = (vec2(_gC, noise(p1 * 4.8 + vec2(9.4, 2.1)  + t * 0.025)) - 0.5) * 0.50;
-    vec2 gwVecEnv = (vec2(_gE, noise(p1 * 3.5 + vec2(4.3, 11.8) + t * 0.015)) - 0.5) * 0.28;
+    vec2 gwVecA   = (vec2(_gA, noise(p1 * 5.5 + vec2(11.3, 4.7) + t * 0.028)) - 0.5) * 0.25;
+    vec2 gwVecB   = (vec2(_gB, noise(p1 * 6.2 + vec2(1.9, 10.6) + t * 0.022)) - 0.5) * 0.25;
+    vec2 gwVecC   = (vec2(_gC, noise(p1 * 4.8 + vec2(9.4, 2.1)  + t * 0.025)) - 0.5) * 0.25;
+    vec2 gwVecEnv = (vec2(_gE, noise(p1 * 3.5 + vec2(4.3, 11.8) + t * 0.015)) - 0.5) * 0.15;
 
     // Large shared gas envelope — connects all clouds into one continuous mass
     vec2 nEnv = p1 + warpOffset * 0.5 + gwVecEnv - vec2(0.0, -0.02);
-    float envD = nEnv.x * nEnv.x * 0.58 + nEnv.y * nEnv.y * 0.50;
+    float envD = nEnv.x * nEnv.x * 0.35 + nEnv.y * nEnv.y * 0.30;
     float nebEnvelope = exp(-envD);
 
     // Nebula A: Upper-center — magenta-purple, main feature (drifting center)
     // Rotated 30° so its axis doesn't align with B/C, breaking saddle-point seams
-    vec2 nA = p1 + warpOffset + gwVecA - vec2(-0.05 + 0.09*sin(t*0.053), 0.12 + 0.08*sin(t*0.071));
+    vec2 nA = p1 + warpOffset + gwVecA - vec2(-0.03 + 0.06*sin(t*0.053), 0.08 + 0.05*sin(t*0.071));
     { float ca = 0.866, sa = 0.500; nA = vec2(ca*nA.x + sa*nA.y, -sa*nA.x + ca*nA.y); }
-    float dA = nA.x * nA.x * 2.39 + nA.y * nA.y * 2.14;
-    dA *= 1.0 + gWarp1;
+    float dA = nA.x * nA.x * 1.45 + nA.y * nA.y * 1.30;
     float nebA = exp(-dA);
 
     // Nebula B: Lower-left — warm orange-gold (drifting center)
     // Rotated 75° — axes non-parallel to A and C
-    vec2 nB = p1 + warpOffset + gwVecB - vec2(-0.18 + 0.10*sin(t*0.061 + 2.1), -0.16 + 0.08*sin(t*0.083 + 4.3));
+    vec2 nB = p1 + warpOffset + gwVecB - vec2(-0.10 + 0.07*sin(t*0.061 + 2.1), -0.10 + 0.05*sin(t*0.083 + 4.3));
     { float cb = 0.259, sb = 0.966; nB = vec2(cb*nB.x + sb*nB.y, -sb*nB.x + cb*nB.y); }
-    float dB = nB.x * nB.x * 2.74 + nB.y * nB.y * 2.39;
-    dB *= 1.0 + gWarp2;
+    float dB = nB.x * nB.x * 1.65 + nB.y * nB.y * 1.45;
     float nebB = exp(-dB);
 
     // Nebula C: Right — warm diffuse cloud (drifting center)
     // Rotated -20° (340°) — tilts opposite to A, avoids reinforcing horizontal saddle
-    vec2 nC = p1 + warpOffset + gwVecC - vec2(0.20 + 0.08*sin(t*0.077 + 5.7), -0.06 + 0.09*sin(t*0.047 + 1.4));
+    vec2 nC = p1 + warpOffset + gwVecC - vec2(0.12 + 0.05*sin(t*0.077 + 5.7), -0.04 + 0.06*sin(t*0.047 + 1.4));
     { float cc = 0.940, sc = -0.342; nC = vec2(cc*nC.x + sc*nC.y, -sc*nC.x + cc*nC.y); }
-    float dC = nC.x * nC.x * 3.19 + nC.y * nC.y * 2.85;
-    dC *= 1.0 + gWarp3;
+    float dC = nC.x * nC.x * 1.90 + nC.y * nC.y * 1.70;
     float nebC = exp(-dC);
 
     // Noise-driven breakup — sculpts organic holes and tendrils in the gas
     float breakup = warpedFbm(p1 * 2.8 + vec2(3.3, 7.7) + t * 0.3, t * 0.8);
-    float breakupMask = smoothstep(0.32, 0.58, breakup);
+    float breakupMask = smoothstep(0.22, 0.50, breakup);
 
     // Combined cloud mask — envelope bridges gaps, clouds add softly
-    float rawCloud = nebA * 2.41 + nebB * 2.08 + nebC * 2.15 + nebEnvelope * 0.75;
+    float rawCloud = nebA * 2.41 + nebB * 2.08 + nebC * 2.15 + nebEnvelope * 1.40;
     float cloudMask = clamp(rawCloud, 0.0, 1.0);
-    cloudMask = pow(cloudMask, 1.15);
-    cloudMask *= mix(0.65, 1.0, breakupMask);
+    cloudMask = pow(cloudMask, 1.05);
+    cloudMask *= mix(0.75, 1.0, breakupMask);
 
     // Smooth weights from drifting Gaussians — derive single blend factor
     // Soft floor prevents weight ratios from snapping in dead zones between clouds
@@ -952,16 +949,17 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3); // Desktop: 2 fbm/ridge octaves, 3 gas layers
 
 // ─── React Component ────────────────────────────────────────────────────
-const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible = true }) => {
+const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame = 0, isVisible = true }) => {
   const wrapperRef      = useRef(null);
   const canvasRef       = useRef(null);
   const videoRef        = useRef(null);
   const animRef         = useRef(null);
   const mouseRef        = useRef({ x: 0.5, y: 0.5 });
   const mousePrevRef    = useRef({ x: 0.5, y: 0.5 });
+  const mapPosTargetRef = useRef({ x: 0, y: 0 }); // target from prop
+  const mapPosRef       = useRef({ x: 0, y: 0 }); // smoothed value sent to shader
   const onReadyRef      = useRef(onReady);
   const readyFiredRef   = useRef(false);
-  const mapPosRef       = useRef({ x: 0, y: 0 }); // smoothed position, lerps toward mapPositionRef.current
   const isMobile          = typeof window !== 'undefined' && window.innerWidth < 768;
   const isLaptopOrTablet   = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && isIntegratedGPU();
   const isLaptopDedicated  = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && !isIntegratedGPU();
@@ -987,6 +985,11 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       animRef.current = null;
     }
   }, [isVisible]);
+
+  // Keep target in a ref so the WebGL render loop always has the latest value
+  useEffect(() => {
+    mapPosTargetRef.current = mapPosition;
+  }, [mapPosition]);
 
   // ─── VIDEO PATH: Pre-recorded video loop for mobile ──────────────────
   useEffect(() => {
@@ -1272,8 +1275,8 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
 
       // Smoothly lerp map offset to prevent glitchy noise jumps during fast panning
       const lerpFactor = 0.04;
-      mapPosRef.current.x += (mapPositionRef.current.x - mapPosRef.current.x) * lerpFactor;
-      mapPosRef.current.y += (mapPositionRef.current.y - mapPosRef.current.y) * lerpFactor;
+      mapPosRef.current.x += (mapPosTargetRef.current.x - mapPosRef.current.x) * lerpFactor;
+      mapPosRef.current.y += (mapPosTargetRef.current.y - mapPosRef.current.y) * lerpFactor;
 
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, readFBO.tex);
@@ -1281,9 +1284,9 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       gl.uniform1f(nU.time, wrappedTime);
       gl.uniform2f(nU.resolution, canvas.width, canvas.height);
       gl.uniform2f(nU.offset, mapPosRef.current.x, mapPosRef.current.y);
-      gl.uniform1f(nU.brightness, 1.04);
+      gl.uniform1f(nU.brightness, 1.3);
       gl.uniform1f(nU.saturation, 1.6);
-      gl.uniform1f(nU.colorDepth, 1.8);
+      gl.uniform1f(nU.colorDepth, 1.44);
 
       gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
       gl.enableVertexAttribArray(nPosLoc);

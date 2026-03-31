@@ -21,6 +21,7 @@ import { isIntegratedGPU } from '../../utils/deviceUtils';
  * 4. In final pyramid section, particles continue wave motion in background
  */
 const EarthParticleWaves = ({ 
+  explosionProgressRef,
   explosionProgress = 0, 
   sphereRadius = 2.5,
   fadeValue = 1.0,
@@ -189,17 +190,28 @@ const EarthParticleWaves = ({
     }
   }, [shaderMaterial, earthMap]);
   
-  // Animation loop - also update depthTest based on explosion phase
+  // Animation loop - reads from ref for smooth animation between React state updates
   useFrame((state) => {
     if (materialRef.current && pointsRef.current) {
+      const ep = explosionProgressRef ? explosionProgressRef.current : explosionProgress;
       materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
-      materialRef.current.uniforms.uExplode.value = 25.0 * explosionProgress;
-      materialRef.current.uniforms.uFade.value = fadeValue;
+      materialRef.current.uniforms.uExplode.value = 25.0 * ep;
+
+      // Compute particle fade from ref (avoids React re-render dependency)
+      const particleFadeStart = 0.641;
+      const particleFadeEnd = 0.943;
+      let pFade = 1.0;
+      if (ep >= particleFadeEnd) pFade = 0.0;
+      else if (ep > particleFadeStart) pFade = 1.0 - (ep - particleFadeStart) / (particleFadeEnd - particleFadeStart);
+      materialRef.current.uniforms.uFade.value = pFade;
+
+      // Manage visibility — Three.js skips draw calls for invisible objects
+      pointsRef.current.visible = ep > 0 && pFade > 0;
       
       // Only disable depth test during smokescreen phase (after frame 22)
       // Frames 14-22: normal depth rendering - particles behind pyramid not visible
       // After frame 22 (explosionProgress > 0.25): smokescreen effect
-      const inSmokescreenPhase = explosionProgress > 0.25 && explosionProgress < 0.35;
+      const inSmokescreenPhase = ep > 0.25 && ep < 0.35;
       materialRef.current.depthTest = !inSmokescreenPhase;
       
       // Update render order dynamically - particles in front only during smokescreen
@@ -207,9 +219,6 @@ const EarthParticleWaves = ({
       pointsRef.current.renderOrder = inSmokescreenPhase ? 10 : 0;
     }
   });
-  
-  // Don't render if no explosion yet
-  if (explosionProgress <= 0) return null;
   
   return (
     <points ref={pointsRef}>

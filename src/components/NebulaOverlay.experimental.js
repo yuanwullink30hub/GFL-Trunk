@@ -163,17 +163,17 @@ const OVERLAY_FRAG = `
     vec2 disp = texture2D(u_disp, uv).xy * 2.0 - 1.0;
 
     float t = u_time * 0.07;
-    vec2 mapOff = u_offset * vec2(1.0, -1.0);
+    vec2 mapOff = u_offset * vec2(0.35, 0.35);
 
-    // Parallax-depth per layer — higher factors so overlay scrolls ~1:1 with map content
-    vec2 p1 = (uv + disp * 0.18 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.7;
-    vec2 p2 = (uv + disp * 0.32 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.85;
-    vec2 p3 = (uv + disp * 0.48 - 0.5) * vec2(aspect, 1.0) + mapOff * 1.0;
+    // Parallax-depth displacement per layer — matching NebulaBackground
+    vec2 p1 = (uv + disp * 0.18 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.3;
+    vec2 p2 = (uv + disp * 0.32 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.5;
+    vec2 p3 = (uv + disp * 0.48 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.7;
 
-    // ── Edge distortion: strong wavy contours ──
-    float edgeWarp = fbm(p1 * 4.5 + vec2(7.3, 2.1) + t * 0.04) * 0.22 - 0.11;
-    float edgeWarp2 = fbm(p1 * 6.0 + vec2(3.7, 8.4) + t * 0.03) * 0.18 - 0.09;
-    float edgeWarp4 = fbm(p1 * 3.0 + vec2(4.8, 6.9) + t * 0.018) * 0.20 - 0.10;
+    // ── Edge distortion: synced with NebulaBackground ──
+    float edgeWarp = fbm(p1 * 4.5 + vec2(7.3, 2.1) + t * 0.04) * 0.09 - 0.045;
+    float edgeWarp2 = fbm(p1 * 6.0 + vec2(3.7, 8.4) + t * 0.03) * 0.07 - 0.035;
+    float edgeWarp4 = fbm(p1 * 3.0 + vec2(4.8, 6.9) + t * 0.018) * 0.08 - 0.04;
     vec2 warpOffset = vec2(edgeWarp, edgeWarp2 + edgeWarp4);
 
     // ── Per-Gaussian 2D domain warp — breaks elliptical contours into organic shapes ──
@@ -181,75 +181,43 @@ const OVERLAY_FRAG = `
     float _gB = noise(p1 * 6.2 + vec2(8.8, 3.5) + t * 0.026);
     float _gC = noise(p1 * 4.8 + vec2(5.7, 12.3) + t * 0.030);
     float _gE = noise(p1 * 3.5 + vec2(14.1, 6.2) + t * 0.019);
-    vec2 gwVecA   = (vec2(_gA, noise(p1 * 5.5 + vec2(11.3, 4.7) + t * 0.028)) - 0.5) * 0.30;
-    vec2 gwVecB   = (vec2(_gB, noise(p1 * 6.2 + vec2(1.9, 10.6) + t * 0.022)) - 0.5) * 0.40;
-    vec2 gwVecC   = (vec2(_gC, noise(p1 * 4.8 + vec2(9.4, 2.1)  + t * 0.025)) - 0.5) * 0.40;
-    vec2 gwVecEnv = (vec2(_gE, noise(p1 * 3.5 + vec2(4.3, 11.8) + t * 0.015)) - 0.5) * 0.30;
+    vec2 gwVecA   = (vec2(_gA, noise(p1 * 5.5 + vec2(11.3, 4.7) + t * 0.028)) - 0.5) * 0.25;
+    vec2 gwVecB   = (vec2(_gB, noise(p1 * 6.2 + vec2(1.9, 10.6) + t * 0.022)) - 0.5) * 0.25;
+    vec2 gwVecC   = (vec2(_gC, noise(p1 * 4.8 + vec2(9.4, 2.1)  + t * 0.025)) - 0.5) * 0.25;
+    vec2 gwVecEnv = (vec2(_gE, noise(p1 * 3.5 + vec2(4.3, 11.8) + t * 0.015)) - 0.5) * 0.15;
 
-    // ── Tiled gaussian field — 3×3 cell evaluation for infinite scrolling ──
-    // Gaussian base centers (with sinusoidal drift)
-    vec2 centerA = vec2(-0.03 + 0.06*sin(t*0.053), 0.08 + 0.05*sin(t*0.071));
-    vec2 centerB = vec2( 0.12 + 0.07*sin(t*0.061 + 2.1), -0.04 + 0.05*sin(t*0.083 + 4.3));
-    vec2 centerC = vec2(-0.10 + 0.05*sin(t*0.077 + 5.7), -0.10 + 0.06*sin(t*0.047 + 1.4));
+    // ── Shared gas envelope — synced with background ──
+    vec2 nEnv = p1 + warpOffset * 0.5 + gwVecEnv - vec2(0.0, -0.02);
+    float envD = nEnv.x * nEnv.x * 0.35 + nEnv.y * nEnv.y * 0.30;
+    float nebEnvelope = exp(-envD);
 
-    // Per-pixel noise warps (computed from non-tiled p1 — varies continuously)
-    float gWarp1 = (noise(p1 * 3.5 + vec2(3.1, 8.7) + t * 0.03) - 0.5) * 0.28;
-    float gWarp2 = (noise(p1 * 4.5 + vec2(11.2, 4.3) + t * 0.04) - 0.5) * 0.30;
-    float gWarp3 = (noise(p1 * 3.0 + vec2(6.4, 1.9) + t * 0.025) - 0.5) * 0.25;
+    // ── Nebula A: Top-left — magenta-purple (synced center + drift with background) ──
+    vec2 nA = p1 + warpOffset + gwVecA - vec2(-0.03 + 0.06*sin(t*0.053), 0.08 + 0.05*sin(t*0.071));
+    { float ca = 0.866, sa = 0.500; nA = vec2(ca*nA.x + sa*nA.y, -sa*nA.x + ca*nA.y); }
+    float dA = nA.x * nA.x * 11.5 + nA.y * nA.y * 10.3;
+    float nebA = exp(-dA);
 
-    // Cell grid — accumulate gaussians from 3×3 neighborhood
-    float gCellSize = 1.3;
-    vec2 cellBase = floor(p1 / gCellSize);
+    // ── Nebula B: Right — warm orange (synced center + drift with background) ──
+    vec2 nB = p1 + warpOffset + gwVecB - vec2(0.12 + 0.07*sin(t*0.061 + 2.1), -0.04 + 0.05*sin(t*0.083 + 4.3));
+    { float cb = 0.259, sb = 0.966; nB = vec2(cb*nB.x + sb*nB.y, -sb*nB.x + cb*nB.y); }
+    float dB = nB.x * nB.x * 13.2 + nB.y * nB.y * 11.5;
+    float nebB = exp(-dB);
 
-    float nebA = 0.0, nebB = 0.0, nebC = 0.0;
-    float nebEnvelope = 0.0;
-
-    for (int cy = -1; cy <= 1; cy++) {
-      for (int cx = -1; cx <= 1; cx++) {
-        vec2 cid = cellBase + vec2(float(cx), float(cy));
-        vec2 cOrigin = (cid + 0.5) * gCellSize;  // cell center in world space
-        vec2 lp = p1 - cOrigin;                   // local pos relative to cell center
-
-        // Per-cell random offset so each cell's cluster is slightly different
-        vec2 cellRand = (vec2(hash(cid * 127.1 + 311.7), hash(cid * 419.2 + 183.3)) - 0.5) * 0.12;
-
-        // ── Envelope ──
-        vec2 nEnv = lp + warpOffset * 0.5 + gwVecEnv - vec2(0.0, -0.02) + cellRand;
-        float envD = nEnv.x * nEnv.x * 0.35 + nEnv.y * nEnv.y * 0.30;
-        nebEnvelope += exp(-envD);
-
-        // ── Gaussian A: magenta-purple ──
-        vec2 nA = lp + warpOffset + gwVecA - centerA + cellRand;
-        { float ca = 0.866, sa = 0.500; nA = vec2(ca*nA.x + sa*nA.y, -sa*nA.x + ca*nA.y); }
-        float dA = nA.x * nA.x * 11.5 + nA.y * nA.y * 10.3;
-        dA *= 1.0 + gWarp1;
-        nebA += exp(-dA);
-
-        // ── Gaussian B: warm orange ──
-        vec2 nB = lp + warpOffset + gwVecB - centerB + cellRand;
-        { float cb = 0.259, sb = 0.966; nB = vec2(cb*nB.x + sb*nB.y, -sb*nB.x + cb*nB.y); }
-        float dB = nB.x * nB.x * 13.2 + nB.y * nB.y * 11.5;
-        dB *= 1.0 + gWarp2;
-        nebB += exp(-dB);
-
-        // ── Gaussian C: violet ──
-        vec2 nC = lp + warpOffset + gwVecC - centerC + cellRand;
-        { float cc = 0.940, sc = -0.342; nC = vec2(cc*nC.x + sc*nC.y, -sc*nC.x + cc*nC.y); }
-        float dC = nC.x * nC.x * 15.4 + nC.y * nC.y * 13.7;
-        dC *= 1.0 + gWarp3;
-        nebC += exp(-dC);
-      }
-    }
+    // ── Nebula C: Bottom-left — violet (synced center + drift with background) ──
+    vec2 nC = p1 + warpOffset + gwVecC - vec2(-0.10 + 0.05*sin(t*0.077 + 5.7), -0.10 + 0.06*sin(t*0.047 + 1.4));
+    { float cc = 0.940, sc = -0.342; nC = vec2(cc*nC.x + sc*nC.y, -sc*nC.x + cc*nC.y); }
+    float dC = nC.x * nC.x * 15.4 + nC.y * nC.y * 13.7;
+    float nebC = exp(-dC);
 
     // ── Noise-driven breakup — synced with background ──
     float breakup = warpedFbm(p1 * 2.8 + vec2(3.3, 7.7) + t * 0.3, t * 0.8);
-    float breakupMask = smoothstep(0.18, 0.55, breakup);
+    float breakupMask = smoothstep(0.22, 0.50, breakup);
 
     // Combined cloud mask — envelope excluded, steep falloff for concentrated blobs
     float rawCloud = nebA * 1.60 + nebB * 1.40 + nebC * 1.45;
     float cloudMask = clamp(rawCloud, 0.0, 1.0);
     cloudMask = pow(cloudMask, 2.0);
-    cloudMask *= mix(0.85, 1.0, breakupMask);
+    cloudMask *= mix(0.75, 1.0, breakupMask);
     // Volume control — only affects final alpha, not internal color mixing
     float volumeScale = 0.65;
 
@@ -410,12 +378,13 @@ const OVERLAY_FRAG = `
   }
 `;
 
-const NebulaOverlay = ({ mapPositionRef, opacity = 0.55, isVisible = true, isZoomedIn = false }) => {
+const NebulaOverlay = ({ mapPosition = { x: 0, y: 0 }, opacity = 0.55, isVisible = true, isZoomedIn = false }) => {
   const wrapperRef = useRef(null);
   const canvasRef = useRef(null);
   const animRef = useRef(null);
   const startTimeRef = useRef(Date.now());
   const mapPosRef = useRef({ x: 0, y: 0 });
+  const mapPosTargetRef = useRef({ x: 0, y: 0 });
   const isVisibleRef = useRef(isVisible);
   const renderFnRef = useRef(null);
   const mouseRef = useRef({ x: -9999, y: -9999 });
@@ -431,6 +400,10 @@ const NebulaOverlay = ({ mapPositionRef, opacity = 0.55, isVisible = true, isZoo
       animRef.current = null;
     }
   }, [isVisible]);
+
+  useEffect(() => {
+    mapPosTargetRef.current = mapPosition;
+  }, [mapPosition]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -567,16 +540,11 @@ const NebulaOverlay = ({ mapPositionRef, opacity = 0.55, isVisible = true, isZoo
       if (now - lastFrame < INTERVAL) return;
       lastFrame = now;
 
-      // Smooth map position — snap during navigation so overlay tracks content 1:1
-      const target = mapPositionRef.current;
+      // Smooth map position
+      const target = mapPosTargetRef.current;
       const curr = mapPosRef.current;
-      const mapDx = target.x - curr.x;
-      const mapDy = target.y - curr.y;
-      const mapDist = Math.abs(mapDx) + Math.abs(mapDy);
-      // During navigation (large delta): near-instant tracking; idle: gentle organic drift
-      const factor = mapDist > 0.02 ? 0.7 : 0.08;
-      curr.x += mapDx * factor;
-      curr.y += mapDy * factor;
+      curr.x += (target.x - curr.x) * 0.08;
+      curr.y += (target.y - curr.y) * 0.08;
 
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
       const aspect = cw / ch;

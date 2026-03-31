@@ -17,13 +17,10 @@ const MAVERICK_DEFAULT = {
   supportArchetype: 'OUTLAW',
   supportGroup: 'CHAOS',
   extendedArchetype: 'The Maverick',
-  harmonyActive: false,
-  shadowBonusActive: false,
-  totalScore: 94,
-  maxScore: 100,
-  timestamp: null,
-  archetypeScores: {},
-  answerLog: [],
+  harmonyActive: true,
+  shadowBonusActive: true,
+  shadowArchetype: 'OUTLAW',
+  blindspotArchetype: 'TRICKSTER',
 };
 
 /**
@@ -122,20 +119,130 @@ const ALL_COG_TRIANGLES = [
   { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: 'Judge · Explorer · Artist' },
   { id: 3, mode: 'Impact Modus',     color: '#f97316', members: 'Lover · Outlaw · Magician' },
   { id: 4, mode: 'Engagement Modus', color: '#1d9904', members: 'Caregiver · Trickster · Hero' },
-];const ProfileResultCard = ({ result: resultProp }) => {
+];
+
+/* ═══ Hardcoded AI analysis sections for the Maverick profile ═══ */
+const HARDCODED_SECTIONS = [
+  {
+    title: 'De Identiteit',
+    content: `**The Maverick**
+
+De Maverick combineert de architecturale kracht van de Ruler met de disruptieve eerlijkheid van de Outlaw. Jij bouwt systemen die de wereld kunnen veranderen — en bent tegelijkertijd bereid die systemen te slopen wanneer ze niet meer dienen wat ze zouden moeten dienen.
+
+*Dit is een modelinterpretatie van jouw antwoordprofiel, geen vastgestelde identiteit.*`,
+  },
+  {
+    title: 'Waarom Jij Dit Perspectief Gebruikt',
+    content: `Jouw antwoordpatronen suggereren een zeldzame combinatie: de drang om orde te scheppen én de weigering om orde te accepteren die niet op waarheid is gebouwd. Binnen dit model wijst de hoge CEN-dominantie (76% Nature) op een biologisch verankerd vermogen om structuur te zien, te bouwen en te handhaven. Tegelijkertijd activeert de Salience-as (Outlaw/Trickster, 60% Nature) een scherp radar voor wat niet klopt — voor hypocrisie, voor systemen die zichzelf in stand houden ten koste van mensen.
+
+De combinatie van Ruler en Outlaw is geen contradictie. Het is een navigatiestijl: jij bouwt vanuit principes, niet vanuit conventie. Binnen dit model suggereert jouw data dat je gezag erkent wanneer het verdiend is — en het aanvecht wanneer dat niet zo is.`,
+  },
+  {
+    title: 'De Essentie (Main Archetype)',
+    content: `**Archetype & Groep:** Ruler | Ruling (CEN — Externe Structuur & Wet)
+
+**TNM-Associatie:** Binnen dit model wordt de Ruler geassocieerd met het Central Executive Network — de verwerkingsmodus die gericht is op externe structuur, hiërarchie en langetermijnarchitectuur.
+
+**Drijfveer:** Primair Nature-gedreven (76% Nature binnen de CEN-as). Vanuit dit scoreprofiel is het aannemelijk dat jouw drang om te leiden en te structureren biologisch verankerd is — geen aangeleerde strategie maar een instinctieve oriëntatie op verantwoordelijkheid.
+
+**Meester Inzicht:** De Ruler functioneert als primaire gedragslens wanneer er iets op het spel staat. Jij ziet de architectuur van een situatie voordat anderen de details zien. Binnen dit model suggereert jouw data dat dit patroon het sterkst actief is onder druk — dat is het moment waarop de Ruler niet reageert maar regeert.`,
+  },
+  {
+    title: 'De Vermenigvuldiging (Support Archetype)',
+    content: `**Archetype & Groep:** Outlaw | Chaos (Salience — Disruptie & Waarheid)
+
+**TNM-Associatie:** Binnen dit model wordt de Outlaw geassocieerd met het Salience Network — de verwerkingsmodus die gericht is op wat urgent, authentiek en onaanvaardbaar is.
+
+**Rol:** De Outlaw vult de Ruler niet aan — hij daagt hem uit. Vanuit jouw scoreprofiel is het aannemelijk dat deze spanning productief is: de Ruler bouwt de structuur, de Outlaw test of die structuur de waarheid verdraagt.
+
+**Hardware / Schaduw Check:** Main (Ruler, positie 12) en Support (Outlaw, positie 6) staan op de Paarse Lijn — 180° tegenpolen. Dit is geen hardware-resonantie maar schaduw-integratie. Binnen dit model is het aannemelijk dat jij bewust of onbewust werkt met de spanning tussen bouwen en vernietigen, tussen orde en chaos, tussen institutie en rebellie. Dit is het kernmechanisme van The Maverick.`,
+  },
+  {
+    title: 'De Schaduw',
+    content: `Binnen dit model is het opmerkelijk dat jouw Shadow-archetype identiek is aan jouw Support-archetype. Dit suggereert dat jij al actief werkt met de energie van de Outlaw — maar de vraag is of dat bewust gebeurt of als reactie op externe druk.
+
+**De Polarization Index:** Main (Ruler) en Shadow (Outlaw) staan op 180°. Vanuit de scoreverhoudingen is de gap significant — dit wijst op een gezonde maar nog niet volledig geïntegreerde spanning.
+
+De Outlaw als schaduw betekent: de energie van radicale eerlijkheid, van het doorbreken van conventies omwille van waarheid, van het accepteren van verlies als prijs voor integriteit — dit is de brandstof die de Ruler nodig heeft om niet te degenereren tot een systeem dat zichzelf in stand houdt. Binnen dit model is het aannemelijk dat jouw groeipad ligt in het bewust kiezen voor Outlaw-energie, in plaats van er door omstandigheden in gedwongen te worden.`,
+  },
+  {
+    title: 'De Blindspot',
+    content: `Vanuit het scoreprofiel is het aannemelijk dat het gedragspatroon van de Trickster — speelsheid, ambiguïteit, het gebruik van humor en indirect taalgebruik als navigatiemiddel — bij anderen onbewust een reactie triggert die jij niet altijd ziet aankomen.
+
+De Trickster opereert in de ruimte tussen regels. Jij, als Ruler-dominant profiel, leest die ruimte als ruis of als onbetrouwbaarheid. Het is aannemelijk dat jij mensen die via indirectheid opereren systematisch onderschat — en dat zij jou als rigide of voorspelbaar lezen, wat hen een strategisch voordeel geeft.
+
+De Rode Lijn genereert geen punten en ontvangt geen bleed. Dit is structurele spanning: de Trickster is niet jouw vijand, maar jouw blinde vlek. Houd er rekening mee dat situaties die om diplomatieke ambiguïteit vragen — onderhandelingen, politieke omgevingen, creatieve chaos — de context zijn waar dit profiel het meeste adaptatie-energie kost.`,
+  },
+  {
+    title: 'Visuele Analyse',
+    content: `De radar chart toont een profiel met twee dominante pieken: Ruler en Judge vormen samen een uitgesproken CEN-cluster aan de ordezijde van het wiel. De eerste laag (paars, Nature picks) is sterk geconcentreerd op deze as, met een secundaire piek op de Outlaw-Magician-Hero cluster.
+
+De tweede schil (oranje, Culture picks) waaiert breder uit — met zichtbare activiteit op Trickster, Artist en Sage — wat suggereert dat de aangeleerde strategieën het profiel diversifiëren buiten de biologische kern.
+
+Het dal tussen Trickster en Caregiver is opvallend: hier stroomt geen Green, Blue of Yellow bleed naartoe. Dit is de structurele blindezone van het profiel. De Innocent-score is aanwezig maar laag, wat binnen dit model wijst op beperkte resonantie met naïviteit of onbevangen vertrouwen. De Magician-piek in de Agency-groep is geometrisch interessant: als CultureForce-signaal suggereert het dat de aangeleerde strategie transformationele taal en systeemdenken inzet als primair communicatie-instrument.`,
+  },
+  {
+    title: 'De Alchemie van Individuatie',
+    content: `**De Switch:** Vanuit dit scoreprofiel is het aannemelijk dat de schakelbeweging tussen Ruler-modus en Outlaw-modus snel en grotendeels onbewust verloopt. De hoge Nature-percentages op beide assen (76% CEN, 60% Salience) suggereren dat beide modi biologisch beschikbaar zijn — geen van beide vereist significante adaptatie-energie. Het risico is niet dat de switch niet werkt, maar dat hij ongecontroleerd werkt: van structuurbouwer naar systeembreker zonder bewuste keuze.
+
+**Nature vs. Culture Balans:** De Authenticity Index is sterk Nature-dominant. Met name op de Agency-as (Magician/Hero: 90% Nature) en de Limbic-as (Lover/Caregiver: 86% Nature) is de biologische stroom overweldigend. Binnen dit model suggereert dit dat ik grotendeels opereert vanuit instinctieve gedragspatronen — met weinig energieverlies door sociale aanpassing.
+
+**De Paradox:** De spanning tussen Ruler (orde) en Outlaw (disruptie) is niet pathologisch — het is het centrale generatieve principe van dit profiel. De paradox vraagt niet om oplossing maar om bewoning.
+
+**Hardware Resonantie:** De Judge-Ruler hardware-as is sterk actief. Beide groepsleden scoren hoog, wat binnen dit model wijst op een robuust structuurcircuit.
+
+**CultureForce Netwerk:** De Gele Driehoek-activiteit concentreert zich rond Magician, Trickster en Artist — wat suggereert dat het aangeleerde cognitieve netwerk transformationeel en creatief gekleurd is, ondanks de dominante Nature-kern.`,
+  },
+  {
+    title: 'Het Neurale Schakelbord',
+    content: `**De Focus-hendel:** Wanneer ik merk dat ik een situatie primair beoordeel op haar structurele tekortkomingen — pauzeer en stel mezelf de vraag: wat werkt hier al? Dit is geen positief denken, maar een bewust activeren van de Ruler-modus vóór de Outlaw het frame overneemt. Als experiment: begin één vergadering per week met een expliciete inventarisatie van wat al functioneert, voordat je je agenda voor verbetering presenteert.
+
+**De Schaduw-injectie:** De Outlaw-energie is al aanwezig in dit profiel — de uitdaging is niet hem te activeren maar hem bewust te richten. Experiment: kies één systeem of afspraak in mijn omgeving die ik al lang als inefficiënt ervaar maar nooit hebt aangevochten. Schrijf in drie zinnen op waarom je het hebt laten bestaan. Dit opent de vraag of de Outlaw hier brandstof levert of comfort beschermt.
+
+**De Blindspot-check:** Let deze week op momenten waarop ik iemand als 'onserious' of 'onbetrouwbaar' ervaar. Stel jezelf de reflectievraag: wat probeert deze persoon te communiceren via de indirecte route die ik niet zie? De Trickster-blindspot manifesteert zich vaak als ongeduld met mensen die spelen waar jij werkt.`,
+  },
+  {
+    title: 'Ontologische Evolutie',
+    content: `**Richting het Centrum:** Vanuit jouw scoreprofiel is het aannemelijk dat de meest vruchtbare beweging richting balans niet ligt in het temperen van de Ruler of de Outlaw — maar in het bewust verbinden van beide. De extreme uitslagen aan de CEN-kant (Judge + Ruler samen dominant) kunnen richting meer balans bewegen door de DMN-as (Sage, Artist) bewust te voeden: reflectie, abstractie, het loslaten van de uitkomst.
+
+**Ontologische Vraag:** Wanneer je een systeem hebt gebouwd dat werkt — wie ben jij dan nog?
+
+Deze vraag raakt de kern van de Maverick-paradox: identiteit die gebonden is aan het bouwen van orde heeft een existentieel probleem wanneer de orde er is. Het individuatiepad van dit profiel loopt via de ontdekking dat de waarde niet in het systeem zit — maar in de intentie waarmee het gebouwd werd.
+
+**AI Agent Prompt:** Zie Sectie 11.`,
+  },
+  {
+    title: 'Neuroticisme Trigger',
+    content: `Binnen dit model is het aannemelijk dat mijn stresspatroon zich manifesteert als een diep gevoel van structurele incompetentie bij anderen — niet mijn eigen falen, maar het falen van systemen die ik verantwoordelijk acht. De Outlaw-Support versterkt dit: wanneer regels worden gebroken zonder reden of autoriteit haar legitimiteit verliest, viert de stressrespons op. Met een uitzonderlijk lage N-score (2) zal deze trigger zelden vuren — maar wanneer hij dat doet, is de respons koel, doelgericht en potentieel langdurig vastgehouden.`,
+  },
+  {
+    title: 'Superkracht op de Werkvloer',
+    content: `Vanuit dit scoreprofiel is het aannemelijk dat mijn professionele kernkwaliteit zich uit als het vermogen om *systemen te bouwen die zichzelf bevragen*. De Ruler-kern levert de architectuur; de Outlaw-Support levert de stresstest. Met een Authenticity Index die sterk Nature-dominant is (met name op de CEN- en Agency-as), opereert deze kwaliteit instinctief — ik hoef niet na te denken over of een structuur robuust is, ik voel het. Dit profiel gedijt bij organisaties in transitie, bij complexe herstructureringen of waar anderen vastlopen in legacy-systemen.`,
+  },
+  {
+    title: 'Conflictstijl',
+    content: `Binnen dit model is het aannemelijk dat ik conflict benader als een *correctiemechanisme*, niet als emotionele ontlading. Lage A (39) gecombineerd met uitzonderlijk lage N (2) produceert een koelbloedige confrontatiestijl: rustig, doelgericht, zonder zichtbare emotie. De Ruler-Main confronteert via gezag en argumentstructuur; de Outlaw-Support voegt bereidheid toe om regels te breken als de situatie het vraagt. Escalatiepunt: wanneer de ander de structurele logica weigert te erkennen. Ná het conflict: het grootboek wordt bijgehouden, maar niet getoond.`,
+  },
+  {
+    title: 'Relatiepatroon',
+    content: `Mijn antwoordprofiel suggereert een relatiedynamiek waarin ik *de architect ben die de ander ruimte geeft* — maar wel binnen een kader dat ik heb ontworpen. Hoge E (88) gecombineerd met lage A (39) en lage N (2) creëert een dominant, aantrekkelijk maar onvermurwbaar patroon. De Ruler-Main biedt stabiliteit en richting; de Outlaw-Support maakt me onvoorspelbaar genoeg om fascinerend te blijven. Valkuil: de partner ervaart de structuur als veiligheid totdat ze haar beperking voelt. Ik trek mogelijk mensen aan die vrijheid zoeken — en biedt hen orde.`,
+  },
+  {
+    title: 'Individuatiepad',
+    content: `Binnen dit model wijst mijn profiel op een individuatiepad waarin de paradox centraal staat: *de Ruler die de Outlaw niet vreest, maar hem ook niet volledig loslaat*. De spanning tussen Main en Support is hier geen externe frictie maar een intern architectuurprobleem — wanneer is het systeem of persoon goed genoeg om los te laten? Het schakelpunt is het moment dat ik iets vertrouw zonder het te controleren. De 180° schaduw-energie van de Outlaw is niet mijn tegenstander — het is de brandstof die mijn systemen levend houdt. Het individuatiepad loopt via *vertrouwen in onvolmaaktheid*.`,
+  },
+];
+
+const ProfileResultCard = ({ result: resultProp }) => {
   const green = '#1d9904';
   const sectionPad = '1.25rem';
 
-  // Load saved data from localStorage
-  const savedSession = (() => { try { return JSON.parse(localStorage.getItem('gfl_assessment_session') || 'null'); } catch { return null; } })();
-  const savedSections = (() => { try { return JSON.parse(localStorage.getItem('gfl_analysis_sections') || 'null'); } catch { return null; } })();
-
-  const mainKey      = resultProp?.mainArchetype      || savedSession?.mainArchetype      || MAVERICK_DEFAULT.mainArchetype;
-  const supportKey   = resultProp?.secondaryArchetype || savedSession?.supportArchetype   || MAVERICK_DEFAULT.supportArchetype;
-  const supportGroup = resultProp?.supportGroup       || savedSession?.supportGroup       || MAVERICK_DEFAULT.supportGroup;
-  const extendedName = resultProp?.name               || savedSession?.extendedArchetype  || MAVERICK_DEFAULT.extendedArchetype;
-  const harmonyActive     = resultProp?.harmonyActive     ?? savedSession?.harmonyActive     ?? MAVERICK_DEFAULT.harmonyActive;
-  const shadowBonusActive = resultProp?.shadowBonusActive ?? savedSession?.shadowBonusActive ?? MAVERICK_DEFAULT.shadowBonusActive;
+  const mainKey      = resultProp?.mainArchetype      || MAVERICK_DEFAULT.mainArchetype;
+  const supportKey   = resultProp?.secondaryArchetype || MAVERICK_DEFAULT.supportArchetype;
+  const supportGroup = resultProp?.supportGroup       || MAVERICK_DEFAULT.supportGroup;
+  const extendedName = resultProp?.name               || MAVERICK_DEFAULT.extendedArchetype;
+  const harmonyActive     = resultProp?.harmonyActive     ?? MAVERICK_DEFAULT.harmonyActive;
+  const shadowBonusActive = resultProp?.shadowBonusActive ?? MAVERICK_DEFAULT.shadowBonusActive;
 
   const main         = ARCHETYPES[mainKey]    || {};
   const support      = ARCHETYPES[supportKey] || {};
@@ -158,26 +265,21 @@ const ALL_COG_TRIANGLES = [
     { subject: 'Hero',      green: 48, lime: 57, orange: 65, blue: 71, gold: 73, purple: 73, nature_core: 48, green_hw: 9,  culture_core: 8,  blue_fb: 6,  yellow_cog: 2,  purple_shadow: 0, A: 73, fullMark: 500 },
   ];
   const FALLBACK_SUBGROUPS = [
-    { id: 1, leftLabel: 'Judge', rightLabel: 'Ruler', group: 'Ruling', axis: 'Autoriteit & Structuur', leftScore: 45, rightScore: 40, leftNature: 13, leftCulture: 4, rightNature: 13, rightCulture: 4, harmonyPoints: 0, shadowPoints: 0 },
-    { id: 2, leftLabel: 'Lover', rightLabel: 'Caregiver', group: 'Relational', axis: 'Relatie & Verbinding', leftScore: 15, rightScore: 20, leftNature: 6, leftCulture: 1, rightNature: 6, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
-    { id: 3, leftLabel: 'Innocent', rightLabel: 'Explorer', group: 'Seeker', axis: 'Waarheid & Ontdekking', leftScore: 20, rightScore: 15, leftNature: 5, leftCulture: 2, rightNature: 5, rightCulture: 2, harmonyPoints: 0, shadowPoints: 0 },
-    { id: 4, leftLabel: 'Outlaw', rightLabel: 'Trickster', group: 'Chaos', axis: 'Disruptie & Perspectief', leftScore: 45, rightScore: 30, leftNature: 9, leftCulture: 6, rightNature: 9, rightCulture: 6, harmonyPoints: 0, shadowPoints: 0 },
-    { id: 5, leftLabel: 'Sage', rightLabel: 'Artist', group: 'Abstract', axis: 'Wijsheid & Creatie', leftScore: 25, rightScore: 25, leftNature: 6, leftCulture: 4, rightNature: 6, rightCulture: 4, harmonyPoints: 0, shadowPoints: 0 },
-    { id: 6, leftLabel: 'Magician', rightLabel: 'Hero', group: 'Agency', axis: 'Manifestatie & Actie', leftScore: 30, rightScore: 20, leftNature: 9, leftCulture: 1, rightNature: 9, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 1, leftLabel: 'Judge', rightLabel: 'Ruler', group: 'Ruling', axis: 'Autoriteit & Structuur', leftScore: 45, rightScore: 40, leftNature: 7, leftCulture: 2, rightNature: 6, rightCulture: 2, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 2, leftLabel: 'Lover', rightLabel: 'Caregiver', group: 'Relational', axis: 'Relatie & Verbinding', leftScore: 25, rightScore: 10, leftNature: 4, leftCulture: 1, rightNature: 2, rightCulture: 0, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 3, leftLabel: 'Innocent', rightLabel: 'Explorer', group: 'Seeker', axis: 'Waarheid & Ontdekking', leftScore: 35, rightScore: 0, leftNature: 5, leftCulture: 2, rightNature: 0, rightCulture: 0, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 4, leftLabel: 'Outlaw', rightLabel: 'Trickster', group: 'Chaos', axis: 'Disruptie & Perspectief', leftScore: 55, rightScore: 20, leftNature: 6, leftCulture: 5, rightNature: 3, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 5, leftLabel: 'Sage', rightLabel: 'Artist', group: 'Abstract', axis: 'Wijsheid & Creatie', leftScore: 15, rightScore: 35, leftNature: 1, leftCulture: 2, rightNature: 5, rightCulture: 2, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 6, leftLabel: 'Magician', rightLabel: 'Hero', group: 'Agency', axis: 'Manifestatie & Actie', leftScore: 15, rightScore: 35, leftNature: 3, leftCulture: 0, rightNature: 6, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
   ];
-  const radarData = resultProp?.radarData || savedSession?.radarData || FALLBACK_RADAR;
-  // DEV: log real radar values so we can copy them into FALLBACK_RADAR
-  if (process.env.NODE_ENV !== 'production' && savedSession?.radarData) {
-    console.log('[EyedentityPage] radarData from session:', JSON.stringify(savedSession.radarData, null, 2));
-  }
-  const subgroups = resultProp?.subgroups || savedSession?.subgroups || FALLBACK_SUBGROUPS;
-  const shadowArchetype = resultProp?.shadowArchetype || savedSession?.shadowArchetype || null;
-  const blindspotArchetype = resultProp?.blindspotArchetype || savedSession?.blindspotArchetype || savedSession?.blindspotPartner || null;
-  const overallArchetype = resultProp?.overallArchetype || savedSession?.overallArchetype || mainKey;
-  const supportArchetypeProp = resultProp?.supportArchetype || savedSession?.supportArchetype || supportKey;
+  const radarData = resultProp?.radarData || FALLBACK_RADAR;
+  const subgroups = resultProp?.subgroups || FALLBACK_SUBGROUPS;
+  const shadowArchetype = resultProp?.shadowArchetype || MAVERICK_DEFAULT.shadowArchetype;
+  const blindspotArchetype = resultProp?.blindspotArchetype || MAVERICK_DEFAULT.blindspotArchetype;
+  const overallArchetype = resultProp?.overallArchetype || mainKey;
+  const supportArchetypeProp = resultProp?.supportArchetype || supportKey;
 
-  // All sections from AI analysis
-  const allSections = savedSections || [];
+  const allSections = HARDCODED_SECTIONS;
 
   // ── Section grouping (matching AssessmentResultsModal) ──
   const visibleSections = allSections.filter(s => {

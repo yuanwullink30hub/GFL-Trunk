@@ -375,31 +375,35 @@ const ChunkShaderMaterial = {
 // The chunk geometries already have vertices at their correct sphere positions.
 // We only add position offset for expansion movement, NOT for the base position.
 // NOTE: explosionProgress is EASED (linear^2.5), not linear!
-const ChunkMesh = ({ chunk, explosionProgress, material }) => {
+// Positions are updated imperatively in useFrame from explosionProgressRef to avoid React re-renders.
+const ChunkMesh = ({ chunk, explosionProgressRef, material }) => {
   const meshRef = useRef();
   
-  // Match particle sphere movement - fast, snappy expansion
-  // Particles use baseDist = uExplode * 0.8 where uExplode = explosionProgress * 25
-  // So particles move at roughly explosionProgress * 20-25 rate
-  const expansion = explosionProgress * 69; // Much faster expansion
-  
-  // Position is ONLY the expansion offset - geometry already has correct sphere positions
-  const posX = chunk.direction.x * expansion * chunk.speed;
-  const posY = chunk.direction.y * expansion * chunk.speed;
-  const posZ = chunk.direction.z * expansion * chunk.speed;
+  useFrame(() => {
+    if (meshRef.current) {
+      const ep = explosionProgressRef.current;
+      const expansion = ep * 69;
+      meshRef.current.position.set(
+        chunk.direction.x * expansion * chunk.speed,
+        chunk.direction.y * expansion * chunk.speed,
+        chunk.direction.z * expansion * chunk.speed
+      );
+    }
+  });
   
   return (
     <mesh 
       ref={meshRef} 
       geometry={chunk.geometry} 
       material={material}
-      position={[posX, posY, posZ]}
     />
   );
 };
 
 // --- All Chunks Container - appears at frame 4, animates outward ---
-const ExplodingChunks = ({ explosionProgress, earthMap, chunkFadeValue, isLaptop = false }) => {
+// Reads explosionProgressRef in useFrame for smooth animation without React re-renders.
+const ExplodingChunks = ({ explosionProgressRef, earthMap, isLaptop = false }) => {
+  const groupRef = useRef();
   const chunks = useMemo(() => {
     const segments = isLaptop ? 32 : 48;
     return generateChunkGeometries(2.5, segments);
@@ -426,19 +430,45 @@ const ExplodingChunks = ({ explosionProgress, earthMap, chunkFadeValue, isLaptop
   
   useFrame((state) => {
     if (material) {
+      const ep = explosionProgressRef.current;
       material.uniforms.uTime.value = state.clock.elapsedTime;
-      material.uniforms.uExplode.value = explosionProgress * 25;
-      material.uniforms.uChunkFade.value = chunkFadeValue;
+      material.uniforms.uExplode.value = ep * 25;
+
+      // Compute chunk fade from explosionProgress ref (avoids React re-render dependency)
+      const fadePoints = [
+        { progress: 0.20, opacity: 1.0 },
+        { progress: 0.33, opacity: 0.85 },
+        { progress: 0.50, opacity: 0.60 },
+        { progress: 0.72, opacity: 0.30 },
+        { progress: 1.00, opacity: 0.0 },
+      ];
+      let fade = 1.0;
+      if (ep >= fadePoints[0].progress) {
+        for (let i = 0; i < fadePoints.length - 1; i++) {
+          if (ep >= fadePoints[i].progress && ep <= fadePoints[i + 1].progress) {
+            const seg = (ep - fadePoints[i].progress) / (fadePoints[i + 1].progress - fadePoints[i].progress);
+            fade = fadePoints[i].opacity + (fadePoints[i + 1].opacity - fadePoints[i].opacity) * seg;
+            break;
+          }
+        }
+        if (ep > fadePoints[fadePoints.length - 1].progress) fade = 0.0;
+      }
+      material.uniforms.uChunkFade.value = fade;
+
+      // Toggle group visibility — Three.js skips draw calls for invisible groups
+      if (groupRef.current) {
+        groupRef.current.visible = fade > 0.001;
+      }
     }
   });
   
   return (
-    <group>
+    <group ref={groupRef}>
       {chunks.map((chunk, i) => (
         <ChunkMesh 
           key={i} 
           chunk={chunk} 
-          explosionProgress={explosionProgress}
+          explosionProgressRef={explosionProgressRef}
           material={material}
         />
       ))}
@@ -449,6 +479,7 @@ const ExplodingChunks = ({ explosionProgress, earthMap, chunkFadeValue, isLaptop
 const HoloEarthSphere = ({ 
   exploding, 
   explosionProgress = 0, 
+  explosionProgressRef,
   isActive = false, 
   pyramidScrollProgress = 0,
   showPyramidLabels = false,
@@ -618,12 +649,14 @@ const HoloEarthSphere = ({
         coreRef.current.rotation.y += 0.0014;
         coreRef.current.rotation.x = Math.sin(time * 0.35) * 0.1;
         
-        const zoomZ = 4.5 * explosionProgress;
+        // Read from ref for smooth animation between React state updates
+        const ep = explosionProgressRef ? explosionProgressRef.current : explosionProgress;
+        const zoomZ = 4.5 * ep;
         const pyramidYOffset = window.innerWidth >= 1280 ? 0.27 :
                                window.innerWidth >= 1100 ? 0.27 :
                                window.innerWidth >= 768 ? 0.22 :
                                0;
-        const zoomY = 0.25 - (1.75 * explosionProgress) + (pyramidYOffset * explosionProgress);
+        const zoomY = 0.25 - (1.75 * ep) + (pyramidYOffset * ep);
         coreRef.current.position.z = zoomZ;
         coreRef.current.position.y = zoomY;
     }
@@ -727,12 +760,11 @@ const HoloEarthSphere = ({
           </Sphere>
         )}
         
-        {/* Exploding Chunks - appear immediately when explosion begins, unmount when fully faded */}
-        {explosionProgress > 0 && chunkFadeValue > 0 && (
+        {/* Exploding Chunks - mounted while explosion active, visibility managed in useFrame */}
+        {explosionProgress > 0 && (
           <ExplodingChunks 
-            explosionProgress={explosionProgress}
+            explosionProgressRef={explosionProgressRef}
             earthMap={earthMap}
-            chunkFadeValue={chunkFadeValue}
             isLaptop={isLaptop}
           />
         )}
@@ -785,12 +817,11 @@ const HoloEarthSphere = ({
         )}
       </group>
 
-      {/* Earth Particle Waves - same fade schedule as chunks, fully gone by frame 43 */}
-      {explosionProgress > 0 && particleFadeValue > 0 && (
+      {/* Earth Particle Waves - reduced vertex count on laptop, full on desktop */}
+      {explosionProgress > 0 && (
         <EarthParticleWaves 
-          explosionProgress={explosionProgress} 
+          explosionProgressRef={explosionProgressRef}
           sphereRadius={2.5}
-          fadeValue={particleFadeValue}
         />
       )}
 
@@ -820,6 +851,7 @@ const HoloEarth = ({
   style, 
   exploding = false, 
   explosionProgress = 0, 
+  explosionProgressRef,
   isMobile = false,
   isActive = false,
   pyramidScrollProgress = 0,
@@ -948,6 +980,7 @@ const HoloEarth = ({
                 isLaptop={isLaptop} 
                 exploding={exploding} 
                 explosionProgress={explosionProgress}
+                explosionProgressRef={explosionProgressRef}
                 isActive={isActive}
                 pyramidScrollProgress={pyramidScrollProgress}
                 showPyramidLabels={showPyramidLabels}

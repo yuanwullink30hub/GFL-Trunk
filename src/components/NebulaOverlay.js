@@ -205,26 +205,13 @@ const OVERLAY_FRAG = `
   }
 `;
 
-const NebulaOverlay = ({ mapPosition = { x: 0, y: 0 }, opacity = 0.55, isVisible = true }) => {
+const NebulaOverlay = ({ mapPosition = { x: 0, y: 0 }, opacity = 0.55 }) => {
   const wrapperRef = useRef(null);
   const canvasRef = useRef(null);
   const animRef = useRef(null);
   const startTimeRef = useRef(Date.now());
   const mapPosRef = useRef({ x: 0, y: 0 });
   const mapPosTargetRef = useRef({ x: 0, y: 0 });
-  const isVisibleRef = useRef(isVisible);
-  const renderFnRef = useRef(null);
-
-  // Sync isVisible prop → ref, and restart/stop the rAF loop accordingly
-  useEffect(() => {
-    isVisibleRef.current = isVisible;
-    if (isVisible && !animRef.current && renderFnRef.current) {
-      animRef.current = requestAnimationFrame(renderFnRef.current);
-    } else if (!isVisible && animRef.current) {
-      cancelAnimationFrame(animRef.current);
-      animRef.current = null;
-    }
-  }, [isVisible]);
 
   useEffect(() => {
     mapPosTargetRef.current = mapPosition;
@@ -307,10 +294,6 @@ const NebulaOverlay = ({ mapPosition = { x: 0, y: 0 }, opacity = 0.55, isVisible
 
     function render() {
       if (!running) return;
-      if (!isVisibleRef.current) {
-        animRef.current = null;
-        return; // loop stopped — useEffect will restart when isVisible becomes true
-      }
 
       // Smooth map position
       const target = mapPosTargetRef.current;
@@ -334,12 +317,10 @@ const NebulaOverlay = ({ mapPosition = { x: 0, y: 0 }, opacity = 0.55, isVisible
       animRef.current = requestAnimationFrame(render);
     }
 
-    renderFnRef.current = render;
     animRef.current = requestAnimationFrame(render);
 
     return () => {
       running = false;
-      renderFnRef.current = null;
       if (animRef.current) cancelAnimationFrame(animRef.current);
       gl.deleteBuffer(quadBuf);
       gl.deleteProgram(prog);

@@ -949,7 +949,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 const NEBULA_FRAG = makeNebulaFrag(2, 2, 'highp', 3); // Desktop: 2 fbm/ridge octaves, 3 gas layers
 
 // ─── React Component ────────────────────────────────────────────────────
-const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame = 0, isVisible = true }) => {
+const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame = 0 }) => {
   const wrapperRef      = useRef(null);
   const canvasRef       = useRef(null);
   const videoRef        = useRef(null);
@@ -960,31 +960,17 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
   const mapPosRef       = useRef({ x: 0, y: 0 }); // smoothed value sent to shader
   const onReadyRef      = useRef(onReady);
   const readyFiredRef   = useRef(false);
-  const isMobile          = typeof window !== 'undefined' && window.innerWidth < 768;
-  const isLaptopOrTablet   = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && isIntegratedGPU();
-  const isLaptopDedicated  = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && !isIntegratedGPU();
-  const useVideo           = isMobile || isLaptopOrTablet || isLaptopDedicated; // WebGL only for true desktop (≥1800px)
+  const isMobile        = typeof window !== 'undefined' && window.innerWidth < 768;
+  const isLaptopOrTablet = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && isIntegratedGPU();
+  const useVideo         = isMobile || isLaptopOrTablet; // video for mobile + weak-GPU laptops, WebGL for the rest
   const currentFrameRef = useRef(currentFrame); // readable inside render loop
   // Accumulated shader time — runs at 0.7x speed once explosion > frame 10
   const shaderTimeRef   = useRef(0);
   const lastRealTimeRef = useRef(null);
-  const isVisibleRef    = useRef(isVisible);
-  const renderFnRef     = useRef(null);
 
   // Keep onReady + currentFrame refs current
   useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
   useEffect(() => { currentFrameRef.current = currentFrame; }, [currentFrame]);
-
-  // Sync isVisible prop → ref, and restart/stop the WebGL rAF loop accordingly
-  useEffect(() => {
-    isVisibleRef.current = isVisible;
-    if (isVisible && !document.hidden && !animRef.current && renderFnRef.current) {
-      animRef.current = requestAnimationFrame(renderFnRef.current);
-    } else if (!isVisible && animRef.current) {
-      cancelAnimationFrame(animRef.current);
-      animRef.current = null;
-    }
-  }, [isVisible]);
 
   // Keep target in a ref so the WebGL render loop always has the latest value
   useEffect(() => {
@@ -1215,10 +1201,6 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
     const INTERVAL = 1000 / 30;
 
     function render(timestamp) {
-      if (!isVisibleRef.current) {
-        animRef.current = null;
-        return; // loop stopped — useEffect will restart when isVisible becomes true
-      }
       animRef.current = requestAnimationFrame(render);
       if (gl.isContextLost()) return; // context lost — skip until restored
       if (timestamp - lastFrame < INTERVAL) return;
@@ -1301,12 +1283,11 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
         if (onReadyRef.current) onReadyRef.current();
       }
     }
-    renderFnRef.current = render;
     animRef.current = requestAnimationFrame(render);
 
-    // Visibility API — pause when tab hidden or component not visible
+    // Visibility API — pause when tab hidden
     function onVisibility() {
-      if (document.hidden || !isVisibleRef.current) {
+      if (document.hidden) {
         if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
       } else {
         if (!animRef.current) { lastFrame = 0; animRef.current = requestAnimationFrame(render); }
@@ -1316,7 +1297,6 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
 
     // Cleanup returned from initWebGL
     return () => {
-      renderFnRef.current = null;
       if (animRef.current) cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onPointerMove);
@@ -1374,46 +1354,6 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
             objectFit: 'cover',
           }}
         />
-      </div>
-    );
-  }
-
-  // ─── DEDICATED-GPU LAPTOP: Laptop video loop ─────────────────────────
-  if (isLaptopDedicated) {
-    return (
-      <div
-        ref={wrapperRef}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: 'none',
-          overflow: 'hidden',
-          cursor: 'inherit',
-          background: 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)',
-        }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          disablePictureInPicture
-          disableRemotePlayback
-          style={{
-            display: 'block',
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            resize: 'none',
-            outline: 'none',
-            border: 'none',
-          }}
-        >
-          <source src="/images/nebula-laptop-loop.mp4" type="video/mp4" />
-        </video>
       </div>
     );
   }
@@ -1485,4 +1425,4 @@ const NebulaBackground = ({ mapPosition = { x: 0, y: 0 }, onReady, currentFrame 
   );
 };
 
-export default React.memo(NebulaBackground);
+export default NebulaBackground;

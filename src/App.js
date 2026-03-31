@@ -77,20 +77,24 @@ const useIsMobile = () => {
   return isMobile;
 };
 
-// Laptop/tablet detection hook (768–1800px) + integrated GPU check.
-// Laptop-sized viewport with a dedicated GPU gets the full desktop experience.
+// Split device detection into two independent axes:
+//   isLaptop  — layout flag: compact viewport (768–1800px CSS width), no GPU dependency
+//   isLowGpu  — performance flag: integrated GPU detected, no width dependency
+// A 1920px laptop with integrated GPU → isLaptop=false, isLowGpu=true (desktop layout, reduced effects)
+// A 1700px laptop with dedicated GPU  → isLaptop=true, isLowGpu=false (compact layout, full effects)
 const _integratedGPU = isIntegratedGPU();   // cached, runs once
 if (typeof window !== 'undefined') {
   console.log('[GPU]', getGPURenderer(), _integratedGPU ? '→ integrated (low mode)' : '→ dedicated (full mode)');
 }
-const useIsLaptop = () => {
+const useDeviceFlags = () => {
   const [isLaptop, setIsLaptop] = useState(
-    window.innerWidth >= 768 && window.innerWidth < 1800 && _integratedGPU
+    window.innerWidth >= 768 && window.innerWidth < 1800
   );
-  
+  const isLowGpu = _integratedGPU;
+
   useEffect(() => {
     const handleResize = () => {
-      setIsLaptop(window.innerWidth >= 768 && window.innerWidth < 1800 && _integratedGPU);
+      setIsLaptop(window.innerWidth >= 768 && window.innerWidth < 1800);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -98,10 +102,10 @@ const useIsLaptop = () => {
 
   // Toggle CSS class on <html> so index.css rules can key off it
   useEffect(() => {
-    document.documentElement.classList.toggle('low-gpu', isLaptop);
-  }, [isLaptop]);
-  
-  return isLaptop;
+    document.documentElement.classList.toggle('low-gpu', isLowGpu);
+  }, [isLowGpu]);
+
+  return { isLaptop, isLowGpu };
 };
 
 const TIMESYNC_STYLE = { color: 'rgba(21, 179, 21, 0.8)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(13px, 0.7vw)' };
@@ -242,7 +246,7 @@ const App = () => {
   const mapStartTimeRef = useRef(0);
   
   const isMobile = useIsMobile();
-  const isLaptop = useIsLaptop();
+  const { isLaptop, isLowGpu } = useDeviceFlags();
   const containerRef = useRef(null);
   const earthSectionRef = useRef(null);
   const laptopAnimationRef = useRef(null); // Ref for laptop start-experience animation

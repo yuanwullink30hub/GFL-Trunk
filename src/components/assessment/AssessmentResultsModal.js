@@ -3028,7 +3028,7 @@ const AssessmentResultsModal = ({
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
             {/* Spinner */}
-            <div style={{
+            <div className="keep-spinning" style={{
               width: '3rem',
               height: '3rem',
               border: '2px solid #a855f7',

@@ -165,6 +165,11 @@ export const isIntegratedGPU = () => {
   const isLocalhost = typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   if (isLocalhost) { _integratedResult = false; return false; }
+  // High-res desktops (≥1800 CSS px) are clearly capable — trust them even when
+  // the browser blocks WEBGL_debug_renderer_info for privacy (Chrome 113+).
+  if (typeof window !== 'undefined' && window.innerWidth >= 1800) {
+    _integratedResult = false; return false;
+  }
   const renderer = getGPURenderer();
   if (!renderer) { _integratedResult = true; return true; } // can't detect → safe fallback
   _integratedResult = !CAPABLE_GPU_PATTERNS.some(p => p.test(renderer));

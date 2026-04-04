@@ -191,6 +191,10 @@ html.low-gpu *  {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
+/* Exempt functional loading animations (spinners, cycling text) from the freeze */
+html.low-gpu .keep-spinning {
+  animation-iteration-count: infinite !important;
+}
 
 /* Custom scrollbar for brand pages */
 .brand-scrollbar::-webkit-scrollbar {

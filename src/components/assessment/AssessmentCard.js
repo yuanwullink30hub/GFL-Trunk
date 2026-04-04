@@ -175,8 +175,8 @@ const AssessmentCard = ({
 
   // Breakpoint-based sizing:  Desktop(≥1800) / Laptop(≥1079) / Tablet(≥768) / Mobile(<768)
   const s = getCardSizes(windowWidth);
-  const laptopBlur = (windowWidth < 1800 && isIntegratedGPU()) ? 'none' : 'blur(32px)';
-  const isLowGpu = windowWidth < 1800 && isIntegratedGPU();
+  const laptopBlur = isIntegratedGPU() ? 'none' : 'blur(32px)';
+  const isLowGpu = isIntegratedGPU();
 
   const currentQuestion = questions[currentQuestionIndex];
   const questionNumber = currentQuestionIndex + 1;

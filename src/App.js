@@ -78,23 +78,24 @@ const useIsMobile = () => {
 };
 
 // Split device detection into two independent axes:
-//   isLaptop  — layout flag: compact viewport (768–1800px CSS width), no GPU dependency
+//   isLaptop  — layout flag: compact viewport (768–1920px CSS width), no GPU dependency
 //   isLowGpu  — performance flag: integrated GPU detected, no width dependency
-// A 1920px laptop with integrated GPU → isLaptop=false, isLowGpu=true (desktop layout, reduced effects)
-// A 1700px laptop with dedicated GPU  → isLaptop=true, isLowGpu=false (compact layout, full effects)
+// A 1920px laptop with integrated GPU → isLaptop=true, isLowGpu=true  (compact layout, reduced effects)
+// A 1920px laptop with dedicated GPU  → isLaptop=true, isLowGpu=false (compact layout, full effects)
+// A 2560px desktop with any GPU       → isLaptop=false               (full desktop layout, full effects)
 const _integratedGPU = isIntegratedGPU();   // cached, runs once
 if (typeof window !== 'undefined') {
   console.log('[GPU]', getGPURenderer(), _integratedGPU ? '→ integrated (low mode)' : '→ dedicated (full mode)');
 }
 const useDeviceFlags = () => {
   const [isLaptop, setIsLaptop] = useState(
-    window.innerWidth >= 768 && window.innerWidth < 1800
+    window.innerWidth >= 768 && window.innerWidth <= 1920
   );
   const isLowGpu = _integratedGPU;
 
   useEffect(() => {
     const handleResize = () => {
-      setIsLaptop(window.innerWidth >= 768 && window.innerWidth < 1800);
+      setIsLaptop(window.innerWidth >= 768 && window.innerWidth <= 1920);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -600,8 +601,8 @@ const App = () => {
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     
-    // Laptop: Skip scroll during start-experience animation, allow after for pyramid control
-    if (isLaptop && (laptopAnimating || currentFrame < MAX_FRAME)) return;
+    // Low GPU: Skip scroll during start-experience animation, allow after for pyramid control
+    if (isLowGpu && (laptopAnimating || currentFrame < MAX_FRAME)) return;
     
     const direction = e.deltaY > 0 ? 1 : -1; // Down = forward, Up = backward
     
@@ -689,7 +690,7 @@ const App = () => {
     setTimeout(() => {
       isScrolling.current = false;
     }, 50);
-  }, [currentFrame, introComplete, MAX_FRAME, isLaptop, laptopAnimating, activeSection, mobileActiveIndex, assessmentPhase]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowGpu, laptopAnimating, activeSection, mobileActiveIndex, assessmentPhase]);
 
   // Callback when pyramid intro animation completes
   const handleIntroComplete = useCallback(() => {
@@ -983,7 +984,7 @@ const App = () => {
         if (nextLayer <= 4) {
           currentLayerIndexRef.current = nextLayer;
           setCurrentLayerIndex(nextLayer);
-          if (isLaptop) {
+          if (isLowGpu) {
             // Low-GPU: auto-animate pyramidScrollProgress to bring next card in — no scroll needed
             const fromProgress = nextLayer / 5;
             const toProgress = (nextLayer + 1) / 5;
@@ -1008,7 +1009,7 @@ const App = () => {
     }
     // Force re-render so scroll guard sees the updated set
     setAnimatingLayersCounter(prev => prev + 1);
-  }, [isLaptop]);
+  }, [isLowGpu]);
   
   
   // Disable scroll once the current card is fully visible (user scrolled it all the way in).
@@ -1077,19 +1078,19 @@ const App = () => {
   const TOUCH_THRESHOLD = 30; // Pixels needed to trigger one frame
   
   const handleTouchStart = useCallback((e) => {
-    // Laptop: Skip during animation, allow after for pyramid control
-    if (isLaptop && (laptopAnimating || currentFrame < MAX_FRAME)) return;
+    // Low GPU: Skip during animation, allow after for pyramid control
+    if (isLowGpu && (laptopAnimating || currentFrame < MAX_FRAME)) return;
     // Don't process touch when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     touchStartY.current = e.touches[0].clientY;
     touchAccumulator.current = 0;
-  }, [isLaptop, laptopAnimating, currentFrame, MAX_FRAME, mobileActiveIndex, assessmentPhase]);
+  }, [isLowGpu, laptopAnimating, currentFrame, MAX_FRAME, mobileActiveIndex, assessmentPhase]);
 
   const handleTouchMove = useCallback((e) => {
-    // Laptop: Skip during animation, allow after for pyramid control
-    if (isLaptop && (laptopAnimating || currentFrame < MAX_FRAME)) return;
+    // Low GPU: Skip during animation, allow after for pyramid control
+    if (isLowGpu && (laptopAnimating || currentFrame < MAX_FRAME)) return;
     
     // Don't process touch when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
@@ -1184,7 +1185,7 @@ const App = () => {
       }
       touchAccumulator.current = 0;
     }
-  }, [currentFrame, introComplete, MAX_FRAME, isLaptop, laptopAnimating, mobileActiveIndex, assessmentPhase]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowGpu, laptopAnimating, mobileActiveIndex, assessmentPhase]);
 
   // Attach wheel/touch listeners - also needed on mobile when scroll is locked
   useEffect(() => {
@@ -1434,7 +1435,7 @@ const App = () => {
           right: '1.5rem',
           top: '2.5rem',
           zIndex: 9999,
-          transform: window.innerWidth < 1800 ? 'scale(0.8)' : undefined,
+          transform: window.innerWidth <= 1920 ? 'scale(0.8)' : undefined,
           transformOrigin: 'top right',
         }}>
           <TimeSync isMobile={false} />
@@ -1868,7 +1869,7 @@ const App = () => {
               }}
             >
               {/* LAPTOP: Show "Start Experience" button instead of scroll prompt */}
-              {isLaptop ? (
+              {isLowGpu ? (
                 <button
                   onClick={triggerLaptopAnimation}
                   disabled={laptopAnimating}
@@ -2094,7 +2095,7 @@ const App = () => {
                 isVisible={true}
                 assessmentLevel={assessmentLevel}
                 liveSubjects={liveSubjects}
-                isLowGpu={isLaptop}
+                isLowGpu={isLowGpu}
               />
               </>
             )}

@@ -402,12 +402,12 @@ const ChunkMesh = ({ chunk, explosionProgressRef, material }) => {
 
 // --- All Chunks Container - appears at frame 4, animates outward ---
 // Reads explosionProgressRef in useFrame for smooth animation without React re-renders.
-const ExplodingChunks = ({ explosionProgressRef, earthMap, isLaptop = false }) => {
+const ExplodingChunks = ({ explosionProgressRef, earthMap, isLowGpu = false }) => {
   const groupRef = useRef();
   const chunks = useMemo(() => {
-    const segments = isLaptop ? 32 : 48;
+    const segments = isLowGpu ? 32 : 48;
     return generateChunkGeometries(2.5, segments);
-  }, [isLaptop]);
+  }, [isLowGpu]);
   
   const material = useMemo(() => {
     const mat = new THREE.ShaderMaterial({
@@ -488,7 +488,7 @@ const HoloEarthSphere = ({
   onIntroComplete = () => {},
   onLayerStateChange = () => {},
   isMobile = false,
-  isLaptop = false,
+  isLowGpu = false,
   onSphereHoverChange = () => {}, // Callback when hovering over sphere
   hidePyramid = false,
 }) => {
@@ -736,7 +736,7 @@ const HoloEarthSphere = ({
           onIntroComplete={onIntroComplete}
           onLayerStateChange={onLayerStateChange}
           hidePyramid={hidePyramid}
-          fastIntro={isLaptop}
+          fastIntro={isLowGpu}
         />
       </group>
 
@@ -751,7 +751,7 @@ const HoloEarthSphere = ({
       >
         {/* Solid Complete Earth - visible only before explosion starts */}
         {explosionProgress === 0 && (
-          <Sphere args={[2.5, isLaptop ? 32 : 64, isLaptop ? 32 : 64]}>
+          <Sphere args={[2.5, isLowGpu ? 32 : 64, isLowGpu ? 32 : 64]}>
             <primitive 
               object={solidSphereMaterial} 
               attach="material" 
@@ -765,7 +765,7 @@ const HoloEarthSphere = ({
           <ExplodingChunks 
             explosionProgressRef={explosionProgressRef}
             earthMap={earthMap}
-            isLaptop={isLaptop}
+            isLowGpu={isLowGpu}
           />
         )}
         
@@ -865,22 +865,22 @@ const HoloEarth = ({
   isVisible = true, // false when user navigated to a section page — pauses R3F rendering
 }) => {
   const glRef = useRef(null);
-  const isLaptop = !isMobile && typeof window !== 'undefined' && window.innerWidth < 1800 && isIntegratedGPU();
+  const isLowGpu = !isMobile && typeof window !== 'undefined' && isIntegratedGPU();
 
-  // On laptop, only render while the 3D scene is actively animating.
+  // On low GPU, only render while the 3D scene is actively animating.
   // Idle during assessment intro (hidePyramid) and after fold-up (foldProgress=1).
   // NOTE: `exploding` stays true from section1End onward (currentFrame >= section1End),
   // so we must gate on `!hidePyramid` to stop rendering once the intro card opens —
   // the explosion is visually complete and the 3D scene is static behind the modal.
-  const laptopRenderActive = isLaptop && !hidePyramid && (
+  const laptopRenderActive = isLowGpu && !hidePyramid && (
     !isActive ||                             // Pre-system: earth spinning
     exploding ||                             // Explosion animation (before intro card)
     foldProgress < 1                         // Pyramid visible & not yet folded
   );
 
   // Determine whether the R3F loop should actively render frames.
-  // On laptop: existing fine-grained logic. On desktop: render when visible on screen.
-  const renderActive = isLaptop ? laptopRenderActive : isVisible;
+  // On low GPU: existing fine-grained logic. On desktop: render when visible on screen.
+  const renderActive = isLowGpu ? laptopRenderActive : isVisible;
 
   // Force-release WebGL context on unmount (prevents context leak during hot-reload)
   useEffect(() => {
@@ -973,11 +973,11 @@ const HoloEarth = ({
           <Suspense fallback={null}>
             <ambientLight intensity={0.2} />
             <pointLight position={[10, 10, 10]} intensity={1.5} color="#FFD700" />
-            {!isLaptop && <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />}
+            {!isLowGpu && <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />}
             {/* Scale group - Mobile uses 1.3x for larger display, Desktop uses 0.5 to compensate for 200% canvas */}
             <group scale={isMobile ? 1.3 : 0.5}>
               <HoloEarthSphere
-                isLaptop={isLaptop} 
+                isLowGpu={isLowGpu} 
                 exploding={exploding} 
                 explosionProgress={explosionProgress}
                 explosionProgressRef={explosionProgressRef}

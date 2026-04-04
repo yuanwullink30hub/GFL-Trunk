@@ -42,11 +42,11 @@ const EarthParticleWaves = ({
     }
   }, [earthMap]);
   
-  // Desktop: full 128×64 (8320 verts), Laptop (<1800px + integrated GPU): 52×26 (1378 verts, -60%)
-  const isLaptop = typeof window !== 'undefined' && window.innerWidth < 1800 && isIntegratedGPU();
+  // Desktop/dedicated GPU: full 128×64 (8320 verts), Integrated GPU: 52×26 (1378 verts, -60%)
+  const isLowGpu = typeof window !== 'undefined' && isIntegratedGPU();
   const geometry = useMemo(() => {
-    return new THREE.SphereGeometry(sphereRadius, isLaptop ? 52 : 128, isLaptop ? 26 : 64);
-  }, [sphereRadius, isLaptop]);
+    return new THREE.SphereGeometry(sphereRadius, isLowGpu ? 52 : 128, isLowGpu ? 26 : 64);
+  }, [sphereRadius, isLowGpu]);
   
   // Shader material based on attached aistudios code
   // OPTIMIZED: Reduced calculations, simplified wave function

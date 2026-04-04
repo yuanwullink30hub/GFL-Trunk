@@ -963,9 +963,8 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
   const readyFiredRef   = useRef(false);
   const mapPosRef       = useRef({ x: 0, y: 0 }); // smoothed position, lerps toward mapPositionRef.current
   const isMobile          = typeof window !== 'undefined' && window.innerWidth < 768;
-  const isLaptopOrTablet   = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && isIntegratedGPU();
-  const isLaptopDedicated  = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1800 && !isIntegratedGPU();
-  const useVideo           = isMobile || isLaptopOrTablet || isLaptopDedicated; // WebGL only for true desktop (≥1800px)
+  const isLowGpu           = typeof window !== 'undefined' && isIntegratedGPU();
+  const useVideo           = isMobile || isLowGpu; // WebGL for desktop + laptop-with-dedicated-GPU
   const currentFrameRef = useRef(currentFrame); // readable inside render loop
   // Accumulated shader time — runs at 0.7x speed once explosion > frame 10
   const shaderTimeRef   = useRef(0);
@@ -1340,8 +1339,8 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     };
   }, [useVideo]);
 
-  // ─── LOW-GPU LAPTOP: Static nebula image (zero compositor cost) ──────
-  if (isLaptopOrTablet) {
+  // ─── LOW-GPU: Static nebula image (zero compositor cost) ─────────────
+  if (isLowGpu) {
     return (
       <div
         ref={wrapperRef}
@@ -1371,46 +1370,6 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
             objectFit: 'cover',
           }}
         />
-      </div>
-    );
-  }
-
-  // ─── DEDICATED-GPU LAPTOP: Laptop video loop ─────────────────────────
-  if (isLaptopDedicated) {
-    return (
-      <div
-        ref={wrapperRef}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: 'none',
-          overflow: 'hidden',
-          cursor: 'inherit',
-          background: 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)',
-        }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          disablePictureInPicture
-          disableRemotePlayback
-          style={{
-            display: 'block',
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            resize: 'none',
-            outline: 'none',
-            border: 'none',
-          }}
-        >
-          <source src="/images/nebula-laptop-loop.mp4" type="video/mp4" />
-        </video>
       </div>
     );
   }

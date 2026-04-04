@@ -1,6 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { isIntegratedGPU } from '../../utils/deviceUtils';
 
 /**
  * Earth Particle Explosion System
@@ -20,9 +21,9 @@ const EarthParticleExplosion = ({
   sphereRadius = 2.5,
   chunkExplosionValue = 0  // The uExplode value from chunks shader
 }) => {
-  // Desktop: 9000 particles, Laptop (<1800px): 1500
-  const isLaptop = typeof window !== 'undefined' && window.innerWidth < 1800;
-  const adaptiveParticleCount = particleCount || (isLaptop ? 1500 : 9000);
+  // Desktop/dedicated GPU: 9000 particles, Integrated GPU: 1500
+  const isLowGpu = typeof window !== 'undefined' && isIntegratedGPU();
+  const adaptiveParticleCount = particleCount || (isLowGpu ? 1500 : 9000);
   const adaptiveStreamCount = streamCount || Math.max(100, Math.floor(adaptiveParticleCount / 30));
   const pointsRef = useRef();
   const materialRef = useRef();

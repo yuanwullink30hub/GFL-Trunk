@@ -381,7 +381,7 @@ const App = () => {
   // Handler for opening sections - navigate on map
   const handleOpenSection = useCallback((section) => {
     // Beta lock: block locked sections
-    const lockedSections = ['monitor', 'filosofie'];
+    const lockedSections = ['filosofie'];
     if (shouldShowLock && lockedSections.includes(section)) {
       return;
     }

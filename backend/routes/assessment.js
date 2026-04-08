@@ -26,15 +26,8 @@ function esc(str) {
     .replace(/"/g, '&quot;');
 }
 
-const DEFAULT_FEEDBACK_TEXT =
-  'Welkom bij de orde van 72,<br><br>' +
-  'Jouw feedback is uiterst waardevol en het enige wat dit project nog mist, toch kan ik mijn gretigheid niet bedwingen en reik ik nog één laatste keer uit voor jouw hulp.<br>' +
-  'De sleutel die jij hebt ontvangen omwille je beheersing mag je delen met de mensen die je kent, maar let op: jouw sleutel- jouw verantwoording.<br><br>' +
-  'Hoe meer juiste data hoe beter wij kunnen optimaliseren, daarom:<br>' +
-  'zolang de beta fase loopt is alleen het leerling niveau toegankelijk.';
-
 function buildFeedbackEmail(settings, review) {
-  const bodyText = settings.text || DEFAULT_FEEDBACK_TEXT;
+  const bodyText = settings.text || '';
   const starsBlock =
     '<div style="margin:18px 0 20px;">' +
     '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#f97316;margin-bottom:8px;">FEEDBACK LINK</div>' +
@@ -395,4 +388,3 @@ router.get('/:id', authRequired, async (req, res) => {
 });
 
 module.exports = router;
-module.exports.DEFAULT_FEEDBACK_TEXT = DEFAULT_FEEDBACK_TEXT;

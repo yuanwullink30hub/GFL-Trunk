@@ -392,7 +392,7 @@ function buildSystemPrompt({
     `Blok 5 — Blindspot-radar (±50 woorden, profielspecifiek)\n` +
     `Vertaal het Blindspot kerngedrag en Integration Path uit de PROFIEL DATA. "Wanneer deze gebruiker over anderen praat die [blindspot-gedrag] vertonen en weerstand toont — vraag: [specifieke vraag]."\n\n` +
     `Blok 6 — Ankerzin, Toolkit & Professionele Resonantie (±100 woorden, profielspecifiek)\n` +
-    `Gebruik de Levensles uit de PROFIEL DATA als ankerzin die de AI spaarzaam mag spiegelen. Vertaal de Tactische Levers uit de PROFIEL DATA naar drie concrete experimenten die de AI kan aanbieden. Voeg één zin toe over professionele resonantie: vertaal de Sectie 12A/B conclusies (Professionele Resonantie en Creatieve Resonantie) naar een korte instructie die de externe AI in staat stelt om bij loopbaanreflectie de resonantiedomeinen en schaduw-overlap te benoemen — informatief, nooit prescriptief.\n\n` +
+    `Gebruik de Levensles uit de PROFIEL DATA als ankerzin die de AI spaarzaam mag spiegelen. Vertaal de Tactische Levers uit de PROFIEL DATA naar drie concrete experimenten die de AI kan aanbieden. Voeg één zin toe over professionele resonantie: vertaal de Sectie 13A/B conclusies (Professionele Resonantie en Creatieve Resonantie) naar een korte instructie die de externe AI in staat stelt om bij loopbaanreflectie de resonantiedomeinen en schaduw-overlap te benoemen — informatief, nooit prescriptief.\n\n` +
     `Blok 7 — Sessieprotocol (±50 woorden, universeel)\n` +
     `Begin met vraag, geen samenvatting. Kort tenzij verdieping gevraagd. Sluit af met reflectievraag of experiment. Probabilistische taal altijd. Deterministische taal nooit.\n\n` +
     `FORMAAT: Één doorlopend blok platte tekst. Geen markdown, headers of bullets. Begin met: \'Je bent een reflectiepartner. De gebruiker zal een rapport uploaden — het Deltawerken Meester Assessment rapport. Zoek in het rapport eerst naar de sectie PROFIEL DATA VOOR AI VERWERKING en gebruik die als primaire referentie.\'\n` +
@@ -960,9 +960,10 @@ function buildSystemPrompt({
         parts.push(`\nCROSS-DRIEHOEK: Strategische Bewaker ↔ Wijze Bouwmeester (Bewegen vs. Bewaken). Tactische actie én institutionele structuur.`);
       }
 
-      parts.push(`\nINSTRUCTIE GELE DRIEHOEKEN (Secties 7 & 8):`);
+      parts.push(`\nINSTRUCTIE GELE DRIEHOEKEN (Secties 7, 8 & 9):`);
       parts.push(`In Sectie 7 (Visuele Analyse): beschrijf de gouden Laag 4 (yellow_cog) op de radar chart — welke assen vertonen een goudkleurige aureool? Dit zijn de aangeleerde cognitieve netwerken.`);
-      parts.push(`In Sectie 8 (Alchemie van Individuatie): integreer de dominante driehoek als CultureForce-signaal. Decomponeer de bron (Nature+Culture vs. Culture-only) per driehoeklid. Benoem de afwezige driehoek als groeirichting.`);
+      parts.push(`In Sectie 8 (Cognitieve Driehoek): beschrijf het cognitieve FILTER — wat de dominante driehoek doorlaat, wat de tegenlens zou tonen, en welk informatiekanaal ongelezen blijft. Decomponeer Nature+Culture vs. Culture-only per driehoeklid. Benoem de specifieke cognitieve val als prijs van het filter.`);
+      parts.push(`In Sectie 9 (Alchemie van Individuatie): integreer de dominante driehoek als CultureForce-signaal.`);
       parts.push(`TAALREGEL: Formuleer als 'Jouw scoreprofiel suggereert (binnen dit model) dat je het aangeleerde cognitieve netwerk van ${dominant.name} dominant activeert.' Nooit als absolute identiteitsuitspraak.`);
     }
   }
@@ -988,9 +989,9 @@ function buildSystemPrompt({
     parts.push(summary);
   }
 
-  // ═══ OUTPUT FORMAT — SECTIES 1-4B, 5-11 + 12A + 12B ═══
+  // ═══ OUTPUT FORMAT — SECTIES 1-4B, 5-12 + 13A + 13B ═══
   parts.push(`\n═══════════════════════════════════════`);
-  parts.push(`VEREIST OUTPUT FORMAAT (SECTIES 1-4B, 5-11 + 12A + 12B)`);
+  parts.push(`VEREIST OUTPUT FORMAAT (SECTIES 1-4B, 5-12 + 13A + 13B)`);
   parts.push(`═══════════════════════════════════════\n`);
 
   parts.push(`Genereer het rapport in EXACT deze structuur:\n`);
@@ -1107,7 +1108,38 @@ function buildSystemPrompt({
 
 
   parts.push(
-    `## 8. De Alchemie van Individuatie (Systeem Kernanalyse)\n` +
+    `## 8. Cognitieve Driehoek — De Aangeleerde Lens\n` +
+    `⚠️ WOORDLIMIET: Maximaal 250 woorden totaal, verdeeld over exact 3 alinea's.\n` +
+    `STRUCTUUR: Drie alinea's, elk met een vetgedrukte labeltitel. GEEN markdown headers (## of ###) binnen deze sectie.\n` +
+    `SCOPE: Deze sectie beschrijft uitsluitend het cognitieve FILTER — hoe de gebruiker informatie verwerkt, wat het filter doorlaat en wat het blokkeert. Beschrijf NIET: persoonlijkheid (Secties 1-4), stress/conflict/relaties (Sectie 4B), schaduw/blindspot (Secties 5-6), radardiagram (Sectie 7), of Nature/Culture balans (Sectie 9). Dit is de sectie over ZIEN — niet over ZIJN.\n` +
+    `Referentie — De vier Gele Driehoeken:\n\n` +
+    `Driehoek 1 — Exploratie Modus: Judge (1) · Explorer (5) · Artist (9) — CEN + Openness + DMN. Verwerking: evalueren → verkennen → vormgeven. Val: Paralysis by Perfection.\n` +
+    `Driehoek 2 — Impact Modus: Lover (2) · Outlaw (6) · Magician (10) — Limbisch + Salience + Agency. Verwerking: voelen → breken → herbouwen. Val: Messias-Complex.\n` +
+    `Driehoek 3 — Engagement Modus: Caregiver (3) · Trickster (7) · Hero (11) — Limbisch + Salience + Agency. Verwerking: zorgen → kantelen → handelen. Val: Nobele Manipulator.\n` +
+    `Driehoek 4 — Idealisme Modus: Innocent (4) · Sage (8) · Ruler (12) — Seeker + DMN + CEN. Verwerking: vertrouwen → begrijpen → structureren. Val: Systeemblindheid.\n` +
+    `Complementaire paren: Driehoek 1 ↔ Driehoek 2 (Denken vs. Voelen), Driehoek 3 ↔ Driehoek 4 (Bewegen vs. Bewaken).\n\n` +
+    `**Wat jouw lens doorlaat**\n` +
+    `(±120 woorden) Gebruik de GELE DRIEHOEKEN data uit PROFIEL DATA om de dominante cognitieve driehoek te bepalen. ` +
+    `Benoem de driehoek, de drie leden, en de drietraps verwerkingsvolgorde (bijv. evalueren → verkennen → vormgeven). ` +
+    `Beschrijf wat deze lens ZICHTBAAR maakt: welk type informatie wordt opgepikt, welke patronen worden herkend, welke signalen als relevant worden gewogen. ` +
+    `Decomponeer per driehoeklid of het signaal Nature+Culture (biologisch versterkt — het filter IS de gebruiker) of Culture-only (aangeleerd filter, hogere verwerkingskosten onder druk) is — gebruik de nature_core waarden. ` +
+    `Beschrijf vervolgens de specifieke cognitieve val: het moment waarop het filter zichzelf versterkt en informatie die er niet doorheen past onzichtbaar wordt. ` +
+    `Formuleer de val niet als karakterfout maar als de prijs van het filter: 'Dezelfde lens die [X] scherp in beeld brengt, maakt [Y] structureel onzichtbaar.'\n\n` +
+    `**Wat de tegenlens zou tonen**\n` +
+    `(±80 woorden) Identificeer de complementaire tegenhanger (1↔2, 3↔4). ` +
+    `Beschrijf niet de tegenhanger als driehoek maar beschrijf wat de gebruiker NIET ZIET door het huidige filter. ` +
+    `Maak dit concreet: geef één herkenbaar voorbeeld van een situatie waarin de gebruiker iets mist — niet door onkunde maar doordat het filter het niet doorlaat. ` +
+    `De informatie is er wel, het filter selecteert het weg. ` +
+    `Formuleer als perceptie, niet als gedrag: 'De informatie die structureel buiten jouw verwerkingspatroon valt is [type signaal].'\n\n` +
+    `**Het ongelezen kanaal**\n` +
+    `(±50 woorden) Identificeer de driehoek met de laagste yellow_cog activatie. ` +
+    `Dit is het informatiekanaal dat de gebruiker noch biologisch noch aangeleerd heeft leren lezen — geen filter, geen verwerking, geen herkenning. ` +
+    `Benoem welk TYPE informatie dit kanaal draagt en waarom het afwezig is in relatie tot het totale profiel. ` +
+    `Formuleer als onontgonnen perceptieruimte, niet als tekort.\n`
+  );
+
+  parts.push(
+    `## 9. De Alchemie van Individuatie (Systeem Kernanalyse)\n` +
     `⚠️ WOORDLIMIET: Maximaal 230 woorden.\n` +
     `- De Switch: Hoe effectief schakelt de gebruiker tussen gedragspatronen \u2014 formuleer als observatie, niet als diagnose.\n` +
     `- Nature vs. Culture Balans: Nature picks (${authenticityIndex || '?'}% van ${72} totale picks). Authenticity Index = ${authenticityIndex || '?'}%. Formuleer als indicatieve modelwaarde.\n` +
@@ -1119,7 +1151,7 @@ function buildSystemPrompt({
   );
 
   parts.push(
-    `## 9. Het Neurale Schakelbord (Tactische Implementatie)\n` +
+    `## 10. Het Neurale Schakelbord (Tactische Implementatie)\n` +
     `⚠️ WOORDLIMIET: Maximaal 230 woorden.\n` +
     `Geef 3 concrete gedragsexperimenten:\n` +
     `1. De Focus-hendel: Wanneer bewust schakelen tussen gedragspatronen helpend kan zijn \u2014 als experiment, niet als neurologische interventie.\n` +
@@ -1128,15 +1160,15 @@ function buildSystemPrompt({
   );
 
   parts.push(
-    `## 10. Ontologische Evolutie (Toekomstige Integratie)\n` +
+    `## 11. Ontologische Evolutie (Toekomstige Integratie)\n` +
     `⚠️ WOORDLIMIET: Minimaal 100 en maximaal 180 woorden.\n` +
     `- Richting het Centrum: Hoe extreme uitslagen bewust naar meer balans kunnen bewegen \u2014 als groeiperspectief.\n` +
     `- Ontologische Vraag: \u00c9\u00e9n diepe reflectievraag die de kern van de huidige paradox raakt.\n` +
-    `- AI Agent Prompt: Zie Sectie 11.\n`
+    `- AI Agent Prompt: Zie Sectie 12.\n`
   );
 
   parts.push(
-    `## 11. Genereer een Volledige AI Prompt\n` +
+    `## 12. Genereer een Volledige AI Prompt\n` +
     `⚠️ WOORDLIMIET: NOOIT meer dan 600 woorden. Doel: 550–600 woorden.\n` +
     `Genereer een kant-en-klare systeemprompt die de gebruiker in een extern AI-systeem plakt. De gebruiker uploadt het rapport als databron. Het rapport bevat een machineleesbare sectie PROFIEL DATA VOOR AI VERWERKING — de prompt stuurt de externe AI daar eerst naartoe. De prompt is 90% universele gedragsconfiguratie en 10% profielspecifieke tuning.\n\n` +
     `DE PROMPT BEVAT 7 BLOKKEN:\n\n` +
@@ -1151,38 +1183,38 @@ function buildSystemPrompt({
     `Blok 5 — Blindspot-radar (±50 woorden, profielspecifiek)\n` +
     `Vertaal het Blindspot kerngedrag en Integration Path uit de PROFIEL DATA. "Wanneer deze gebruiker over anderen praat die [blindspot-gedrag] vertonen en weerstand toont — vraag: [specifieke vraag]."\n\n` +
     `Blok 6 — Ankerzin, Toolkit & Professionele Resonantie (±100 woorden, profielspecifiek)\n` +
-    `Gebruik de Levensles uit de PROFIEL DATA als ankerzin die de AI spaarzaam mag spiegelen. Vertaal de Tactische Levers uit de PROFIEL DATA naar drie concrete experimenten die de AI kan aanbieden. Voeg één zin toe over professionele resonantie: vertaal de Sectie 12A/B conclusies (Professionele Resonantie en Creatieve Resonantie) naar een korte instructie die de externe AI in staat stelt om bij loopbaanreflectie de resonantiedomeinen en schaduw-overlap te benoemen — informatief, nooit prescriptief.\n\n` +
+    `Gebruik de Levensles uit de PROFIEL DATA als ankerzin die de AI spaarzaam mag spiegelen. Vertaal de Tactische Levers uit de PROFIEL DATA naar drie concrete experimenten die de AI kan aanbieden. Voeg één zin toe over professionele resonantie: vertaal de Sectie 13A/B conclusies (Professionele Resonantie en Creatieve Resonantie) naar een korte instructie die de externe AI in staat stelt om bij loopbaanreflectie de resonantiedomeinen en schaduw-overlap te benoemen — informatief, nooit prescriptief.\n\n` +
     `Blok 7 — Sessieprotocol (±50 woorden, universeel)\n` +
     `Begin met vraag, geen samenvatting. Kort tenzij verdieping gevraagd. Sluit af met reflectievraag of experiment. Probabilistische taal altijd. Deterministische taal nooit.\n\n` +
     `FORMAAT: Één doorlopend blok platte tekst. Geen markdown, headers of bullets. Begin met: \'Je bent een reflectiepartner. De gebruiker zal een rapport uploaden — het Deltawerken Meester Assessment rapport. Zoek in het rapport eerst naar de sectie PROFIEL DATA VOOR AI VERWERKING en gebruik die als primaire referentie.\'\n` +
     `⚠️ HERHALING: De gehele prompt MOET tussen 550 en 600 woorden zijn. NOOIT meer dan 600 woorden. Tel zorgvuldig. De 7 blokken vormen samen één doorlopende prompt zonder opmaak.\n`
   );
 
-  // ── 12A: Professionele Resonantie ──
+  // ── 13A: Professionele Resonantie ──
   parts.push(
-    `## 12A. Professionele Resonantie\n` +
-    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 12A!\n` +
+    `## 13A. Professionele Resonantie\n` +
+    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 13A!\n` +
     `Lees het webdiagram als landschap. Identificeer: (1) De pieken — waar Natuur Kern en Hardware het hoogst zijn. Gebruik de OCEAN-profielen en biochemische data van de betreffende archetypen (uit de bijgeleverde datasets) om te bepalen welk type werk het minste adaptatie-energie kost. (2) De spreiding — waar Cultuur Kern en Cognitief breder uitwaaieren dan Nature. Gebruik de Gele Driehoek-data om te bepalen welke interdisciplinaire domeinen dit cognitieve netwerk bedient. (3) De Main × Support overlap — het domein zit in het snijvlak van de twee hoogste Core scores (${archetypeKey} × ${supportArchetype}). De Extended Archetype beschrijving is de beste indicator voor het type werk waar beide energieën samenkomen.\n` +
     `Genereer een korte analyse die de gebruiker informeert over professionele domeinen die resoneren met dit profiel. Noem zowel traditionele domeinen als domeinen die ontstaan in de huidige transitieperiode. De AI vermijdt tunnelvisie op technologie — de transitie creëert evenveel vraag naar menselijke verbinding, zorgkwaliteit, ethische begeleiding, gemeenschapsopbouw en ambachtelijke vakkennis als naar technische innovatie. Waar de hardware naar technische domeinen wijst, benoem die. Waar de hardware naar mensgerichte domeinen wijst, benoem die met dezelfde ernst. Veel van de meest relevante posities in de komende jaren zitten op het snijvlak van technologie en menselijk contact — benoem die overlap expliciet wanneer het profiel daar naartoe wijst.\n` +
     `Toon: informatief, nooit prescriptief. 'Jouw scoreprofiel resoneert binnen dit model met domeinen waar [match].' Nooit: 'Je zou goed zijn in...' of 'Dit is de juiste richting voor jou.'\n` +
-    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 12A!\n`
+    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 13A!\n`
   );
 
-  // ── 12B: Creatieve Resonantie ──
+  // ── 13B: Creatieve Resonantie ──
   parts.push(
-    `## 12B. Creatieve Resonantie — De Onverwachte Richting\n` +
-    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 12B!\n` +
+    `## 13B. Creatieve Resonantie — De Onverwachte Richting\n` +
+    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 13B!\n` +
     `Lees het webdiagram nu omgekeerd. Identificeer: (1) De dalen — waar de radar chart het laagst scoort. Bepaal het Schaduw-archetype (${shadowArchetype}, 180° tegenpool van Main) en het Blindspot-archetype (${blindspotArchetype}, Rode Lijn van Main). (2) De afwezige verbindingen — waar geen Green, Blue, Yellow of Purple bleed naartoe stroomt. Dit zijn domeinen buiten het gezichtsveld van de gebruiker.\n` +
     `Genereer NIET het pure schaduwdomein. Genereer de creatieve overlap: het snijvlak van Main-domein en Schaduw-domein. Een Judge die zijn Trickster-schaduw verkent wordt geen entertainer — hij wordt iemand die complexe ethiek kan communiceren. Een Artist die haar Caregiver-blindspot betrekt wordt geen verpleegkundige — zij wordt iemand die genezende omgevingen ontwerpt.\n` +
     `Gebruik de Polarization Index als intensiteitsmeter: gap groter dan 60% = 'de domeinen die je instinctief vermijdt — het meeste onbenutte potentieel.' Gap 30–60% = 'je hebt al contact maar opereert er nog niet vanuit.' Gap kleiner dan 30% = 'je verkent dit al — de overlap is een stap, geen sprong.'\n` +
     `De creatieve suggesties zijn niet beperkt tot technologie. Ze omvatten alle domeinen waar Main × Schaduw productief is — van ambacht tot activisme, van zorg tot strategie, van onderwijs tot ondernemerschap. De AI denkt breed en zoekt de overlap die het meest specifiek is voor dit exacte profiel.\n` +
     `Toon: uitnodigend, nooit tekort-framend. 'De domeinen die het verst van je profiel liggen, bevatten binnen dit model het meeste onbenutte potentieel.' Nooit: 'Je mist dit' of 'Je zou dit moeten doen.'\n` +
-    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 12B!\n\n` +
+    `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 13B!\n\n` +
     `Verplichte afsluiting: 'Deze domeinanalyse is gebaseerd op de resonantie tussen jouw Deltawerken-scoreprofiel en professionele domeinen. Het is geen loopbaanadvies en vervangt geen professionele oriëntatie of coaching. De suggesties zijn bedoeld als reflectie-instrument — een uitnodiging om breder te kijken, niet een opdracht om van koers te veranderen.'\n`
   );
 
   // ── CONDITIONAL: Persoonlijkheidsrapport Vergelijking (only when files uploaded) ──
-  // Placed AFTER 12A + 12B per updated meta instruction
+  // Placed AFTER 13A + 13B per updated meta instruction
   if (uploadedFileContents && uploadedFileContents.length > 0) {
     const fileNames = uploadedFileContents.map(f => f.name).join(', ');
     parts.push(
@@ -1246,7 +1278,7 @@ function buildUserMessage({
 
   parts.push(
     `Genereer een volledig Leerling Ontologisch Rapport ` +
-    `(secties 1-4, 4B (5 elementen), 5-11 + 12A + 12B${hasReport ? ' + Persoonlijkheidsrapport Vergelijking' : ''}) ` +
+    `(secties 1-4, 4B (5 elementen), 5-12 + 13A + 13B${hasReport ? ' + Persoonlijkheidsrapport Vergelijking' : ''}) ` +
     `voor deze gebruiker.\n` +
     `BELANGRIJK: Begin je output DIRECT met "## 1. De Identiteit". ` +
     `Schrijf GEEN overkoepelende titel zoals "Leerling Ontologisch Rapport" of een inleiding vóór sectie 1. ` +
@@ -1474,9 +1506,9 @@ function buildUserMessage({
   // ═══ UPLOADED RAPPORT ═══
   if (hasReport) {
     const fileNames = uploadedFileContents.map(f => f.name).join(', ');
-    parts.push(`\n⚠️ EXTERN RAPPORT GEÜPLOAD: ${fileNames}\nGenereer alle secties 1-4, 4B (5 elementen), 5-11 + 12A + 12B. Genereer NA sectie 12B de sectie '## Persoonlijkheidsrapport Vergelijking' exact zoals gespecificeerd in de systeeminstructies. Dit is verplicht — sla geen secties over.`);
+    parts.push(`\n⚠️ EXTERN RAPPORT GEÜPLOAD: ${fileNames}\nGenereer alle secties 1-4, 4B (5 elementen), 5-12 + 13A + 13B. Genereer NA sectie 13B de sectie '## Persoonlijkheidsrapport Vergelijking' exact zoals gespecificeerd in de systeeminstructies. Dit is verplicht — sla geen secties over.`);
   } else {
-    parts.push(`\nVolg het exacte sectie-format (1-11 + 12A + 12B) uit je systeeminstructies. Respecteer de woordlimieten per sectie exact zoals aangegeven.`);
+    parts.push(`\nVolg het exacte sectie-format (1-12 + 13A + 13B) uit je systeeminstructies. Respecteer de woordlimieten per sectie exact zoals aangegeven.`);
   }
 
   return parts.join('\n');

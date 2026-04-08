@@ -947,10 +947,16 @@ function siteSettingsCollection() {
 // Both require admin auth (already applied via router.use above)
 // ─────────────────────────────────────────────────────────────
 
+const { DEFAULT_FEEDBACK_TEXT } = require('./assessment');
+
 router.get('/settings/feedback-email', async (_req, res) => {
   try {
     const settings = await siteSettingsCollection().findOne({ _id: 'feedback-email' });
-    res.json(settings || { text: '', imageBase64: '', imageMimeType: '' });
+    res.json({
+      text: settings?.text || DEFAULT_FEEDBACK_TEXT,
+      imageBase64: settings?.imageBase64 || '',
+      imageMimeType: settings?.imageMimeType || '',
+    });
   } catch (err) {
     console.error('[Admin] Get feedback-email settings error:', err.message);
     res.status(500).json({ error: 'Failed to load settings' });

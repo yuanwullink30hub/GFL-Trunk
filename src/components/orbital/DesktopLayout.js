@@ -596,9 +596,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               color="#a5f3fc"
               rgb="34, 211, 238"
               size="sm"
-              disabled={shouldShowLock}
               style={{ position: 'relative', zIndex: 100, transform: 'scaleY(1.04)', marginTop: '0.4rem' }}
-              onClick={shouldShowLock ? undefined : (e) => setActiveSection('monitor', e)}
+              onClick={(e) => setActiveSection('monitor', e)}
             >
               onderzoek
             </SciFiButton>

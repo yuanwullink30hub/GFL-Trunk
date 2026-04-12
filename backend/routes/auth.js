@@ -216,6 +216,7 @@ router.delete('/account', authRequired, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.signToken = signToken;
 
 // ─────────────────────────────────────────────────────────────
 // Helper

@@ -189,11 +189,11 @@
       #gfl-passkey-btn:active { opacity: 0.7; }
 
       @media (max-width: 767px) {
-        #gfl-loading-modal { padding: 2rem 1.5rem !important; min-width: auto !important; width: 85vw !important; max-width: 85vw !important; box-sizing: border-box !important; transform: rotate(90deg) !important; }
-        #gfl-loading-content { transform: rotate(-90deg) !important; }
+        #gfl-loading-modal { padding: 1.5rem 1.25rem !important; min-width: auto !important; width: 85vw !important; max-width: 85vw !important; box-sizing: border-box !important; }
         #gfl-loading-spinner { width: 2.5rem !important; height: 2.5rem !important; }
         .gfl-slide { font-size: 0.9rem !important; word-wrap: break-word !important; overflow-wrap: break-word !important; white-space: normal !important; }
         #gfl-loading-slideshow { min-height: 3.2rem !important; max-width: 100% !important; overflow: hidden !important; }
+        #gfl-passkey-input { font-size: 16px !important; }
       }
     </style>
 
@@ -265,15 +265,8 @@
               window.__gflDismissOverlay();
             }
           }, 20000);
-        } else if (isLocal) {
-          // Localhost: auto-unlock after 1s
-          setTimeout(function() {
-            localStorage.setItem(BETA_KEY, 'localhost');
-            localStorage.setItem(BETA_KEY_TIME, Date.now().toString());
-            onUnlocked();
-          }, 1000);
         } else {
-          // Deployed: wire up passkey verification
+          // Deployed + localhost: wire up passkey verification
           var input = document.getElementById('gfl-passkey-input');
           var btn = document.getElementById('gfl-passkey-btn');
           var err = document.getElementById('gfl-passkey-error');
@@ -313,6 +306,16 @@
                 if (data.valid) {
                   localStorage.setItem(BETA_KEY, key);
                   localStorage.setItem(BETA_KEY_TIME, Date.now().toString());
+                  // Admin passkey: flag for stripped mobile admin portal (App.js checks viewport)
+                  if (data.adminMode) {
+                    localStorage.setItem('gfl_admin_mode', '1');
+                    // Store JWT so AdminMobilePortal can auto-login
+                    if (data.token) {
+                      localStorage.setItem('gfl_token', data.token);
+                    }
+                  } else {
+                    localStorage.removeItem('gfl_admin_mode');
+                  }
                   onUnlocked();
                 } else {
                   if (err) { err.textContent = 'Ongeldige passkey'; err.style.display = 'block'; }

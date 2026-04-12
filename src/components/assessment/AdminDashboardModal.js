@@ -36,6 +36,7 @@ import {
   createPasskey,
   deletePasskey,
   togglePasskey,
+  toggleAdminPasskey,
   getPasskeyAuditLog,
 } from '../../utils/apiClient';
 import {
@@ -2941,6 +2942,15 @@ const PasskeysTab = memo(() => {
     }
   };
 
+  const handleToggleAdmin = async (id) => {
+    try {
+      await toggleAdminPasskey(id);
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const activeCount = passkeys.filter(p => p.isActive).length;
   const totalUses = passkeys.reduce((a, p) => a + (p.usageCount || 0), 0);
 
@@ -3003,7 +3013,7 @@ const PasskeysTab = memo(() => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '55vh', overflowY: 'auto' }}>
               {/* Header */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 0.6fr 1fr 1fr 0.8fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 0.6fr 1fr 1fr 1fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
                 {['CODE', 'LABEL', 'STATUS', 'GEBRUIK', 'AANGEMAAKT', 'ACTIES'].map(h => (
                   <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
                 ))}
@@ -3011,10 +3021,10 @@ const PasskeysTab = memo(() => {
               {/* Rows */}
               {passkeys.map((pk, i) => (
                 <div key={pk._id} style={{
-                  display: 'grid', gridTemplateColumns: '1fr 1.5fr 0.6fr 1fr 1fr 0.8fr',
+                  display: 'grid', gridTemplateColumns: '1fr 1.5fr 0.6fr 1fr 1fr 1fr',
                   gap: '0.3rem', padding: '0.4rem 0.5rem', alignItems: 'center',
                   backgroundColor: i % 2 === 0 ? 'rgba(255,174,0,0.02)' : 'transparent',
-                  borderLeft: `2px solid ${pk.isActive ? '#4ade80' : '#f87171'}`,
+                  borderLeft: `2px solid ${pk.isAdminPasskey ? '#f97316' : pk.isActive ? '#4ade80' : '#f87171'}`,
                   borderRadius: '0 0.15rem 0.15rem 0',
                 }}>
                   <div style={{ fontSize: 'max(12px, 0.6vw)', fontFamily: 'monospace', color: '#fff', fontWeight: 'bold', letterSpacing: '0.15em' }}>
@@ -3041,6 +3051,10 @@ const PasskeysTab = memo(() => {
                     <button onClick={() => handleToggle(pk._id)} title={pk.isActive ? 'Deactiveer' : 'Activeer'}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem' }}>
                       {pk.isActive ? '⏸️' : '▶️'}
+                    </button>
+                    <button onClick={() => handleToggleAdmin(pk._id)} title={pk.isAdminPasskey ? 'Verwijder admin toegang' : 'Maak admin passkey (mobiel portaal)'}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem', opacity: pk.isAdminPasskey ? 1 : 0.3 }}>
+                      👑
                     </button>
                     <button onClick={() => handleDelete(pk._id, pk.code)} title="Verwijderen"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem' }}>

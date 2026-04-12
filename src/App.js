@@ -4,7 +4,7 @@ import NebulaBackground from './components/NebulaBackground';
 // Lazy-load NebulaOverlay — desktop-only WebGL effect, no need to parse on laptop/mobile
 const NebulaOverlay = lazy(() => import('./components/NebulaOverlay'));
 
-import { getQuestions } from './utils/apiClient';
+import { getQuestions, getMe, login, logout } from './utils/apiClient';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from './contexts/LanguageContext';
 import { SciFiButton } from './components/assessment/dashboardStyles';
@@ -38,6 +38,7 @@ const DataPage = lazyRetry(() => import('./pages/DataPage'));
 import { useCelestialState, CelestialBehindLayer } from './pages/DataPage';
 const LoginPage = lazyRetry(() => import('./pages/LoginPage'));
 const EyedentityPage = lazyRetry(() => import('./pages/EyedentityPage'));
+const AdminDashboardModal = lazyRetry(() => import('./components/assessment/AdminDashboardModal'));
 
 // ============================================
 // GRID MAP NAVIGATION CONFIGURATION
@@ -133,8 +134,75 @@ const TimeSync = ({ isMobile }) => {
   );
 };
 
-// ============================================
-// ANIMATION SECTION CONFIGURATION
+// ── Mobile admin portal: black screen, auto-login via existing token, or login form
+const AdminMobilePortal = () => {
+  const [user, setUser] = React.useState(null);
+  const [ready, setReady] = React.useState(false);
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    getMe().then(setUser).catch(() => {}).finally(() => setReady(true));
+  }, []);
+
+  const handleLogout = React.useCallback(() => {
+    logout();
+    localStorage.removeItem('gfl_admin_mode');
+    window.location.reload();
+  }, []);
+
+  const handleLogin = React.useCallback(async (e) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      const data = await login({ email, password });
+      setUser(data.user);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [email, password]);
+
+  if (!ready) return null;
+
+  if (user) {
+    return (
+      <Suspense fallback={null}>
+        <AdminDashboardModal user={user} onLogout={handleLogout} onClose={handleLogout} />
+      </Suspense>
+    );
+  }
+
+  // No session — minimal login form
+  const S = {
+    label: { display: 'block', color: '#888', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 },
+    input: { width: '100%', padding: '10px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 8, color: '#fff', fontSize: 16, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' },
+    btn: { width: '100%', padding: '11px 0', marginTop: 12, background: 'linear-gradient(135deg,#a855f7,#7c3aed)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', letterSpacing: '0.05em' },
+  };
+  return (
+    <div style={{ width: '88vw', maxWidth: 380, padding: '2rem 1.75rem', background: 'rgba(8,2,12,0.9)', border: '1px solid rgba(147,51,234,0.3)', borderRadius: 8 }}>
+      <p style={{ color: '#a855f7', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 4px' }}>Admin Portaal</p>
+      <p style={{ color: '#555', fontSize: 11, margin: '0 0 20px' }}>Identificeer je om door te gaan</p>
+      <form onSubmit={handleLogin}>
+        <div style={{ marginBottom: 12 }}>
+          <label style={S.label}>E-mail</label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" style={S.input} />
+        </div>
+        <div style={{ marginBottom: 4 }}>
+          <label style={S.label}>Wachtwoord</label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" style={S.input} />
+        </div>
+        {error && <p style={{ color: '#f87171', fontSize: 11, margin: '8px 0 0' }}>{error}</p>}
+        <button type="submit" disabled={submitting} style={S.btn}>{submitting ? '...' : 'INLOGGEN'}</button>
+      </form>
+    </div>
+  );
+};
+
 // Section 1 (frame 0): Label disappears, chunks become visible
 // Section 2 (frames 1-47): Chunks and particles explosion (47 frames for smooth animation)
 // Section 3 (frame 48): Pyramid snaps to bottom, system visible — sharp cut
@@ -1400,6 +1468,15 @@ const App = () => {
       nebulaReadyRef.current = null;
     }
   }, []);
+
+  // Mobile admin portal: skip entire app, render only the dashboard on black
+  if (isMobile && localStorage.getItem('gfl_admin_mode') === '1') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
+        <AdminMobilePortal />
+      </div>
+    );
+  }
 
   return (
     <main 

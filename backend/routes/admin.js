@@ -1092,6 +1092,26 @@ router.patch('/passkeys/:id/toggle', async (req, res) => {
   }
 });
 
+// PATCH /api/admin/passkeys/:id/toggle-admin — toggle isAdminPasskey flag
+router.patch('/passkeys/:id/toggle-admin', async (req, res) => {
+  try {
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid passkey ID' });
+    }
+    const pk = await passkeysCollection().findOne({ _id: new ObjectId(req.params.id) });
+    if (!pk) return res.status(404).json({ error: 'Passkey not found' });
+
+    await passkeysCollection().updateOne(
+      { _id: pk._id },
+      { $set: { isAdminPasskey: !pk.isAdminPasskey } }
+    );
+    res.json({ success: true, isAdminPasskey: !pk.isAdminPasskey });
+  } catch (err) {
+    console.error('[Admin] Toggle admin passkey error:', err.message);
+    res.status(500).json({ error: 'Failed to toggle admin passkey' });
+  }
+});
+
 // GET /api/admin/passkeys/audit — passkey usage audit log
 router.get('/passkeys/audit', async (req, res) => {
   try {

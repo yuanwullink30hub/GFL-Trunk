@@ -5,9 +5,10 @@ const express = require('express');
 const cors = require('cors');
 const config = require('./config');
 const { connectDB, closeDB } = require('./db');
-const { isEnabled: encryptionEnabled } = require('./services/encryption');
+const { isEnabled: encryptionEnabled, decryptUser } = require('./services/encryption');
 const aiRoutes = require('./routes/ai');
 const authRoutes = require('./routes/auth');
+const { signToken } = require('./routes/auth');
 const assessmentRoutes = require('./routes/assessment');
 const adminRoutes = require('./routes/admin');
 const pdfRoutes = require('./routes/pdf');
@@ -77,7 +78,24 @@ app.post('/api/beta/verify', async (req, res) => {
       );
     }
 
-    res.json({ valid });
+    const result = { valid, adminMode: !!(pk && pk.isAdminPasskey) };
+
+    // Auto-login: issue JWT when admin passkey is used
+    if (valid && pk.isAdminPasskey) {
+      const adminUser = await collections.users().findOne({ role: 'admin' });
+      if (adminUser) {
+        const decrypted = decryptUser(adminUser);
+        result.token = signToken(adminUser._id, decrypted.email, adminUser.role);
+        result.user = {
+          id: adminUser._id.toString(),
+          email: decrypted.email,
+          displayName: decrypted.displayName,
+          role: adminUser.role,
+        };
+      }
+    }
+
+    res.json(result);
   } catch (err) {
     console.error('[Beta] Verify error:', err.message);
     res.status(500).json({ valid: false, error: 'Server error' });

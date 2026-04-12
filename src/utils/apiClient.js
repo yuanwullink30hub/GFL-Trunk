@@ -966,6 +966,18 @@ export async function togglePasskey(id) {
   return response.json();
 }
 
+export async function toggleAdminPasskey(id) {
+  const response = await fetch(`${API_BASE}/admin/passkeys/${id}/toggle-admin`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Failed to toggle admin passkey (${response.status})`);
+  }
+  return response.json();
+}
+
 export async function getPasskeyAuditLog(limit = 500) {
   const response = await fetch(`${API_BASE}/admin/passkeys/audit?limit=${limit}`, {
     headers: authHeaders(),

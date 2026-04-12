@@ -186,6 +186,7 @@ export const SciFiButton = ({
   color: colorProp, rgb: rgbProp,
   size = 'md',
   padding: padOverride, fontSize: fsOverride,
+  textWeight,
   active = false, fullWidth = false,
   style = {}, type = 'button', title,
 }) => {
@@ -213,7 +214,7 @@ export const SciFiButton = ({
           fontFamily: FONT, fontSize: fs,
           color: lit ? color : `rgba(${rgb}, 0.7)`,
           textShadow: lit ? `0 0 8px rgba(${rgb}, 0.4)` : 'none',
-          textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 'bold',
+          textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: textWeight || 'bold',
           opacity: disabled ? 0.4 : 1,
           transition: 'background 0.25s, color 0.25s, text-shadow 0.25s',
           width: fullWidth ? '100%' : undefined,

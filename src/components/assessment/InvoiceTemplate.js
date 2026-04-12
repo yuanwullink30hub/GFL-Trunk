@@ -108,6 +108,10 @@ const CONTACTS_KEY = 'gfl_invoice_contacts';
 const loadContacts = () => { try { return JSON.parse(localStorage.getItem(CONTACTS_KEY) || '[]'); } catch { return []; } };
 const persistContacts = (list) => localStorage.setItem(CONTACTS_KEY, JSON.stringify(list));
 
+const SAVED_INVOICES_KEY = 'gfl_saved_invoices';
+const loadSavedInvoices = () => { try { return JSON.parse(localStorage.getItem(SAVED_INVOICES_KEY) || '[]'); } catch { return []; } };
+const persistSavedInvoices = (list) => localStorage.setItem(SAVED_INVOICES_KEY, JSON.stringify(list));
+
 const InvoiceTemplate = memo(({ isMobile = false }) => {
   const [invoice, setInvoice] = useState(() => ({
     ...INITIAL_DATA,
@@ -118,6 +122,14 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   const [signatureData, setSignatureData] = useState(null);
   const [previewPage, setPreviewPage] = useState(1);
   const [btwIncluded, setBtwIncluded] = useState(false);
+  const [touchDraggingId, setTouchDraggingId] = useState(null);
+  const longPressTimerRef = useRef(null);
+  const dragItemIdRef = useRef(null);
+
+  // Invoice history
+  const [savedInvoices, setSavedInvoices] = useState(loadSavedInvoices);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Saved contacts
   const [savedContacts, setSavedContacts] = useState(loadContacts);
@@ -151,6 +163,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
 
   // Email states
   const [recipientEmail, setRecipientEmail] = useState('');
+  const [ccEmail, setCcEmail] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [sendingState, setSendingState] = useState(null);
@@ -213,6 +226,79 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   const handleItemChange = (id, field, value) => {
     setInvoice({ ...invoice, items: invoice.items.map(i => i.id === id ? { ...i, [field]: value } : i) });
   };
+
+  const moveItemById = (sourceId, targetId) => {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    setInvoice((prev) => {
+      const fromIndex = prev.items.findIndex(i => i.id === sourceId);
+      const toIndex = prev.items.findIndex(i => i.id === targetId);
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return prev;
+      const items = [...prev.items];
+      const [moved] = items.splice(fromIndex, 1);
+      items.splice(toIndex, 0, moved);
+      return { ...prev, items };
+    });
+  };
+
+  const startTouchDrag = (id) => {
+    if (!isMobile) return;
+    clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = setTimeout(() => {
+      dragItemIdRef.current = id;
+      setTouchDraggingId(id);
+      try { if (navigator.vibrate) navigator.vibrate(10); } catch (_) {}
+    }, 220);
+  };
+
+  const handleTouchMoveReorder = (e) => {
+    const sourceId = dragItemIdRef.current;
+    if (!sourceId) return;
+    const t = e.touches && e.touches[0];
+    if (!t) return;
+    e.preventDefault();
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const row = el && el.closest('[data-invoice-row-id]');
+    if (!row) return;
+    const targetId = row.getAttribute('data-invoice-row-id');
+    if (!targetId || targetId === sourceId) return;
+    moveItemById(sourceId, targetId);
+  };
+
+  const endTouchDrag = () => {
+    clearTimeout(longPressTimerRef.current);
+    dragItemIdRef.current = null;
+    setTouchDraggingId(null);
+  };
+
+  useEffect(() => () => clearTimeout(longPressTimerRef.current), []);
+
+  /* ── Invoice history ── */
+  const handleSaveInvoice = () => {
+    const entry = {
+      id: Date.now().toString(),
+      savedAt: new Date().toISOString(),
+      invoiceNumber: invoice.invoiceNumber,
+      clientName: invoice.clientName || '(geen klant)',
+      data: { ...invoice },
+    };
+    const updated = [entry, ...savedInvoices];
+    setSavedInvoices(updated);
+    persistSavedInvoices(updated);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  const handleLoadInvoice = (entry) => {
+    setInvoice({ ...entry.data });
+    setHistoryOpen(false);
+  };
+
+  const handleDeleteSavedInvoice = (id) => {
+    const updated = savedInvoices.filter(e => e.id !== id);
+    setSavedInvoices(updated);
+    persistSavedInvoices(updated);
+  };
+
   const clearSignature = () => { sigCanvas.current?.clear(); setSignatureData(null); };
   const saveSignature = () => {
     if (!sigCanvas.current) return;
@@ -411,6 +497,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
         type: 'pdf',
         content: emailBody || `Factuur ${invoice.invoiceNumber}`,
         recipientEmail,
+        ...(ccEmail.trim() ? { cc: ccEmail.trim() } : {}),
         subject: emailSubject || `Garden For Life — Factuur ${invoice.invoiceNumber}`,
         pdfBase64,
         attachmentFilename: `${invoice.invoiceNumber}.pdf`,
@@ -438,6 +525,91 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
       `}</style>
+
+      {/* ════════════ INVOICE HISTORY PANEL ════════════ */}
+      <div style={{
+        borderRadius: '0.8rem',
+        border: `1px solid ${historyOpen ? 'rgba(188,19,254,0.3)' : BORDER}`,
+        backgroundColor: historyOpen ? 'rgba(188,19,254,0.04)' : 'rgba(255,255,255,0.02)',
+        overflow: 'hidden',
+        transition: 'border-color 0.2s, background-color 0.2s',
+      }}>
+        {/* Header row */}
+        <button
+          onClick={() => setHistoryOpen(o => !o)}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '0.65rem 0.9rem',
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: historyOpen ? ACCENT : TEXT,
+            fontFamily: FONT, fontSize: '0.82rem', fontWeight: 700,
+            letterSpacing: '0.04em',
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Receipt size={16} color={historyOpen ? ACCENT : DIM} />
+            Factuurgeschiedenis
+            {savedInvoices.length > 0 && (
+              <span style={{
+                fontSize: '0.62rem', fontWeight: 800,
+                backgroundColor: 'rgba(188,19,254,0.18)', color: ACCENT,
+                borderRadius: '999px', padding: '0.1rem 0.5rem',
+              }}>{savedInvoices.length}</span>
+            )}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: DIM }}>{historyOpen ? '▲' : '▼'}</span>
+        </button>
+
+        {/* History list */}
+        {historyOpen && (
+          <div style={{ padding: '0 0.9rem 0.9rem' }}>
+            {savedInvoices.length === 0 ? (
+              <div style={{ fontSize: '0.75rem', color: DIM, padding: '0.6rem 0' }}>Geen opgeslagen facturen.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                {savedInvoices.map(entry => (
+                  <div key={entry.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0.5rem 0.75rem',
+                    backgroundColor: 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: '0.5rem',
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: TEXT, marginBottom: '0.1rem' }}>
+                        #{entry.invoiceNumber} — {entry.clientName}
+                      </div>
+                      <div style={{ fontSize: '0.62rem', color: DIM }}>
+                        {new Date(entry.savedAt).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.4rem', marginLeft: '0.6rem' }}>
+                      <button
+                        onClick={() => handleLoadInvoice(entry)}
+                        style={{
+                          padding: '0.3rem 0.65rem', fontSize: '0.68rem', fontWeight: 700,
+                          backgroundColor: 'rgba(188,19,254,0.12)', color: ACCENT,
+                          border: '1px solid rgba(188,19,254,0.25)', borderRadius: '0.35rem',
+                          cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap',
+                        }}
+                      >Laden</button>
+                      <button
+                        onClick={() => handleDeleteSavedInvoice(entry.id)}
+                        style={{
+                          padding: '0.3rem 0.5rem', fontSize: '0.68rem', fontWeight: 700,
+                          backgroundColor: 'rgba(248,113,113,0.08)', color: '#f87171',
+                          border: '1px solid rgba(248,113,113,0.2)', borderRadius: '0.35rem',
+                          cursor: 'pointer', fontFamily: FONT,
+                        }}
+                      >✕</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Two-column grid: Editor | Preview (desktop), Stacked (mobile) */}
       <div style={isMobile
@@ -614,15 +786,20 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}
+              onTouchMove={handleTouchMoveReorder}
+              onTouchEnd={endTouchDrag}
+              onTouchCancel={endTouchDrag}
+            >
               {invoice.items.map((item) => (
-                <div key={item.id} style={isMobile ? {
+                <div key={item.id} data-invoice-row-id={item.id} style={isMobile ? {
                   display: 'flex', flexDirection: 'column',
                   gap: '0.5rem',
                   padding: '0.75rem',
-                  backgroundColor: 'rgba(255,255,255,0.015)',
+                  backgroundColor: touchDraggingId === item.id ? 'rgba(188,19,254,0.14)' : 'rgba(255,255,255,0.015)',
                   borderRadius: '0.6rem',
-                  border: `1px solid ${BORDER}`,
+                  border: `1px solid ${touchDraggingId === item.id ? 'rgba(188,19,254,0.45)' : BORDER}`,
                 } : {
                   display: 'grid', gridTemplateColumns: '6fr 2fr 3fr 1fr',
                   gap: '0.5rem', alignItems: 'start',
@@ -633,6 +810,31 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                 }}>
                   {isMobile ? (
                     <>
+                      <div
+                        onTouchStart={() => startTouchDrag(item.id)}
+                        onTouchEnd={endTouchDrag}
+                        onTouchCancel={endTouchDrag}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.45rem',
+                          padding: '0.35rem 0.5rem',
+                          borderRadius: '0.45rem',
+                          border: `1px dashed ${touchDraggingId === item.id ? 'rgba(188,19,254,0.55)' : 'rgba(255,255,255,0.12)'}`,
+                          color: touchDraggingId === item.id ? ACCENT : DIM,
+                          fontSize: '0.62rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.08em',
+                          userSelect: 'none',
+                          WebkitUserSelect: 'none',
+                          touchAction: 'none',
+                        }}
+                      >
+                        <span style={{ letterSpacing: '0.16em', fontSize: '0.78rem', lineHeight: 1 }}>⋮⋮</span>
+                        <span>{touchDraggingId === item.id ? 'Sleep om te verplaatsen' : 'Houd vast en sleep regel'}</span>
+                      </div>
                       <input style={{ ...inputNoPad, width: '100%', boxSizing: 'border-box' }} placeholder="Omschrijving" value={item.description}
                         onChange={(e) => handleItemChange(item.id, 'description', e.target.value)} />
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -965,7 +1167,16 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
             backgroundColor: 'rgba(188,19,254,0.12)', color: ACCENT,
             border: '1px solid rgba(188,19,254,0.25)', borderRadius: '0.35rem',
             cursor: 'pointer', textTransform: 'uppercase', fontFamily: FONT,
-          }}>📄 PDF DOWNLOADEN</button>
+          }}>📄 DOWNLOAD</button>
+          <button onClick={handleSaveInvoice} style={{
+            padding: '0.4rem 0.8rem', fontSize: '0.72rem', fontWeight: 700,
+            backgroundColor: saveSuccess ? 'rgba(74,222,128,0.14)' : 'rgba(255,174,0,0.10)',
+            color: saveSuccess ? '#4ade80' : GOLD,
+            border: `1px solid ${saveSuccess ? 'rgba(74,222,128,0.3)' : 'rgba(255,174,0,0.25)'}`,
+            borderRadius: '0.35rem',
+            cursor: 'pointer', textTransform: 'uppercase', fontFamily: FONT,
+            transition: 'all 0.2s',
+          }}>{saveSuccess ? '✓ SAVED' : '💾 SAVE'}</button>
         </div>
       </div>
 
@@ -987,7 +1198,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
         {/* Recipient fields */}
         <div style={isMobile
           ? { display: 'flex', flexDirection: 'column', gap: '0.8rem' }
-          : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }
+          : { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.8rem' }
         }>
           <div>
             <div style={labelCss}>Ontvanger E-mail *</div>
@@ -998,6 +1209,19 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                 value={recipientEmail}
                 onChange={(e) => { setRecipientEmail(e.target.value); setSendError(''); }}
                 placeholder="naam@voorbeeld.nl"
+                style={input}
+              />
+            </div>
+          </div>
+          <div>
+            <div style={labelCss}>CC (optioneel)</div>
+            <div style={{ position: 'relative' }}>
+              <Mail size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <input
+                type="email"
+                value={ccEmail}
+                onChange={(e) => setCcEmail(e.target.value)}
+                placeholder="cc@voorbeeld.nl"
                 style={input}
               />
             </div>

@@ -3,22 +3,29 @@
  */
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const config = require('./config');
 const { connectDB, closeDB } = require('./db');
 const { isEnabled: encryptionEnabled, decryptUser } = require('./services/encryption');
 const aiRoutes = require('./routes/ai');
 const authRoutes = require('./routes/auth');
-const { signToken } = require('./routes/auth');
 const assessmentRoutes = require('./routes/assessment');
 const adminRoutes = require('./routes/admin');
 const pdfRoutes = require('./routes/pdf');
 const questionsRoutes = require('./routes/questions');
 
 const app = express();
+const PRIVATE_DEV_ORIGIN_RE = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
 
 // ── Middleware ──
 app.use(cors({
-  origin: config.corsOrigins,
+  origin: (origin, cb) => {
+    // Allow same-machine and LAN dev origins without forcing .env edits.
+    if (!origin || config.corsOrigins.includes(origin) || PRIVATE_DEV_ORIGIN_RE.test(origin)) {
+      return cb(null, true);
+    }
+    return cb(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '25mb' }));
@@ -82,16 +89,26 @@ app.post('/api/beta/verify', async (req, res) => {
 
     // Auto-login: issue JWT when admin passkey is used
     if (valid && pk.isAdminPasskey) {
-      const adminUser = await collections.users().findOne({ role: 'admin' });
-      if (adminUser) {
-        const decrypted = decryptUser(adminUser);
-        result.token = signToken(adminUser._id, decrypted.email, adminUser.role);
-        result.user = {
-          id: adminUser._id.toString(),
-          email: decrypted.email,
-          displayName: decrypted.displayName,
-          role: adminUser.role,
-        };
+      try {
+        const adminUser = await collections.users().findOne({ role: 'admin' });
+        if (adminUser) {
+          const decrypted = decryptUser(adminUser);
+          result.token = jwt.sign(
+            { sub: adminUser._id.toString(), email: decrypted.email, role: adminUser.role },
+            config.jwtSecret,
+            { expiresIn: config.jwtExpiresIn }
+          );
+          result.user = {
+            id: adminUser._id.toString(),
+            email: decrypted.email,
+            displayName: decrypted.displayName,
+            role: adminUser.role,
+          };
+        } else {
+          console.warn('[Beta] Admin passkey used but no admin user found in DB');
+        }
+      } catch (adminErr) {
+        console.error('[Beta] Admin auto-login failed:', adminErr.message);
       }
     }
 

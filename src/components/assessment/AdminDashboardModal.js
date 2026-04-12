@@ -195,9 +195,10 @@ const CORNER = (pos, mobile) => {
   };
 };
 
-const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
+const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false }) => {
   useLanguage();
   const [tab, setTab] = useState('overview');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
   useEffect(() => {
@@ -206,6 +207,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
     return () => window.removeEventListener('resize', h);
   }, []);
   const isMobile = windowWidth < 768;
+  const isEmbeddedMobile = embedded && isMobile;
 
   // Breakpoint-based sizing — Desktop(≥1800) / Laptop(≥1079) / Tablet(≥768) / Mobile(<768)
   const ds = windowWidth >= 1800 ? {
@@ -274,12 +276,15 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
       }
     `}</style>
     {/* Outer shell — vw-based, positioning context for corners */}
-    <div style={{ position: 'relative', width: ds.shellWidth, maxWidth: ds.shellMaxWidth, height: ds.shellHeight, padding: ds.shellPad }}>
+    <div style={isEmbeddedMobile
+      ? { position: 'fixed', inset: 0, width: '100vw', maxWidth: 'none', height: '100vh', padding: 0 }
+      : { position: 'relative', width: ds.shellWidth, maxWidth: ds.shellMaxWidth, height: ds.shellHeight, padding: ds.shellPad }
+    }>
       {/* Corner brackets — positioned on the inner panel edge */}
-      <div style={CORNER('tl', isMobile)} />
-      <div style={CORNER('tr', isMobile)} />
-      <div style={CORNER('bl', isMobile)} />
-      <div style={CORNER('br', isMobile)} />
+      {!isEmbeddedMobile && <div style={CORNER('tl', isMobile)} />}
+      {!isEmbeddedMobile && <div style={CORNER('tr', isMobile)} />}
+      {!isEmbeddedMobile && <div style={CORNER('bl', isMobile)} />}
+      {!isEmbeddedMobile && <div style={CORNER('br', isMobile)} />}
 
       {/* Inner panel — fills fixed outer shell */}
       <div style={{
@@ -290,8 +295,8 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         backgroundColor: 'rgba(1, 0, 2, 0.3)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: ds.borderRadius,
-        boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
+        borderRadius: isEmbeddedMobile ? 0 : ds.borderRadius,
+        boxShadow: isEmbeddedMobile ? 'none' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
         color: C.text,
         fontFamily: FONT,
         fontSize: 'max(12px, 0.65vw)',
@@ -314,7 +319,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
         }} />
 
         {/* Title bar */}
-        <div style={{
+        {!isEmbeddedMobile && <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: ds.titleBarPad,
           borderBottom: '1px solid rgba(255,255,255,0.05)',
@@ -338,7 +343,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
               </div>
             </>
           )}
-        </div>
+        </div>}
 
         {/* Scrollable content area — fills remaining space */}
         <div style={{
@@ -353,7 +358,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
           gap: ds.contentGap,
         }}>
       {/* ── Koptekst — HoloAuth Dashboard structuur ── */}
-      <header style={{
+      {!isEmbeddedMobile && <header style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         borderBottom: '1px solid rgba(168, 85, 247, 0.15)',
         paddingBottom: ds.headerPb,
@@ -368,36 +373,69 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose }) => {
             Commandocentrum
           </h1>
         </div>
-      </header>
+      </header>}
 
       {/* ── Tab Navigatie ── */}
       {isMobile ? (() => {
-        const topRows = [
+        const mobileTabs = [
           { key: 'overview', label: 'Overzicht' },
           { key: 'users', label: 'Gebruikers' },
+          { key: 'assessments', label: 'Assessments' },
           { key: 'questions', label: 'Vragen' },
           { key: 'prompts', label: 'Prompts' },
-        ];
-        const bottomRow = [
-          { key: 'assessments', label: 'Assessments' },
           { key: 'formulieren', label: 'Formulieren' },
           { key: 'passkeys', label: 'Passkeys' },
           { key: 'audit', label: 'Audit Log' },
           { key: 'feedback', label: 'Feedback' },
           { key: 'contact', label: 'Contact' },
         ];
-        const renderBtn = ({ key, label, disabled }) => (
-          <SciFiButton key={key} onClick={() => !disabled && setTab(key)} disabled={disabled} active={tab === key} fullWidth>
-            {label.toUpperCase()}
-          </SciFiButton>
-        );
+        const mobileTabPadding = '0.52rem 0.9rem'; // +30% from default 0.4rem vertical
+        const mobileTabFontSize = 'max(12.5px, 0.625vw)'; // +25% from default max(10px, 0.5vw)
+        const mobileTabWeight = 900; // thicker than default bold
+        const activeTab = mobileTabs.find(t => t.key === tab) || mobileTabs[0];
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.9rem' }}>
-              {topRows.map(renderBtn)}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.9rem', width: '100%' }}>
-              {bottomRow.map(renderBtn)}
+          <div style={{
+            width: '100%',
+            paddingTop: '20px',
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.7rem',
+            }}>
+              <SciFiButton
+                onClick={() => setMobileMenuOpen(v => !v)}
+                active={mobileMenuOpen}
+                fullWidth
+                padding={mobileTabPadding}
+                fontSize={mobileTabFontSize}
+                textWeight={mobileTabWeight}
+              >
+                {`${activeTab.label.toUpperCase()} ${mobileMenuOpen ? '▲' : '▼'}`}
+              </SciFiButton>
+
+              {mobileMenuOpen && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                  {mobileTabs.map(({ key, label, disabled }) => (
+                    <SciFiButton
+                      key={key}
+                      onClick={() => {
+                        if (disabled) return;
+                        setTab(key);
+                        setMobileMenuOpen(false);
+                      }}
+                      disabled={disabled}
+                      active={tab === key}
+                      fullWidth
+                      padding={mobileTabPadding}
+                      fontSize={mobileTabFontSize}
+                      textWeight={mobileTabWeight}
+                    >
+                      {label.toUpperCase()}
+                    </SciFiButton>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         );

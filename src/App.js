@@ -4,7 +4,7 @@ import NebulaBackground from './components/NebulaBackground';
 // Lazy-load NebulaOverlay — desktop-only WebGL effect, no need to parse on laptop/mobile
 const NebulaOverlay = lazy(() => import('./components/NebulaOverlay'));
 
-import { getQuestions, getMe, login, logout } from './utils/apiClient';
+import { getQuestions, getMe, logout } from './utils/apiClient';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from './contexts/LanguageContext';
 import { SciFiButton } from './components/assessment/dashboardStyles';
@@ -134,17 +134,18 @@ const TimeSync = ({ isMobile }) => {
   );
 };
 
-// ── Mobile admin portal: black screen, auto-login via existing token, or login form
+// ── Mobile admin portal: passkey → auto-login → dashboard
 const AdminMobilePortal = () => {
   const [user, setUser] = React.useState(null);
-  const [ready, setReady] = React.useState(false);
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState('');
-  const [submitting, setSubmitting] = React.useState(false);
+  const [phase, setPhase] = React.useState('loading'); // 'loading' | 'passkey' | 'dashboard' | 'denied'
+  const [passkeyValue, setPasskeyValue] = React.useState('');
+  const [passkeyError, setPasskeyError] = React.useState('');
+  const [verifying, setVerifying] = React.useState(false);
 
   React.useEffect(() => {
-    getMe().then(setUser).catch(() => {}).finally(() => setReady(true));
+    getMe()
+      .then(u => { setUser(u); setPhase('dashboard'); })
+      .catch(() => setPhase('passkey'));
   }, []);
 
   const handleLogout = React.useCallback(() => {
@@ -153,52 +154,84 @@ const AdminMobilePortal = () => {
     window.location.reload();
   }, []);
 
-  const handleLogin = React.useCallback(async (e) => {
-    e.preventDefault();
-    setError('');
-    setSubmitting(true);
+  const handleVerify = React.useCallback(async () => {
+    const key = passkeyValue.trim();
+    if (!key) return;
+    setVerifying(true);
+    setPasskeyError('');
     try {
-      const data = await login({ email, password });
-      setUser(data.user);
-    } catch (err) {
-      setError(err.message);
+      const host = window.location.hostname;
+      const isPrivateHost = /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+      const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+      const apiBase = (isLocalHost || isPrivateHost)
+        ? `http://${host}:8080/api`
+        : 'https://gfl-api.onrender.com/api';
+      const res = await fetch(apiBase + '/beta/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passkey: key }),
+      });
+      const data = await res.json();
+      if (!data.valid) { setPasskeyError('Ongeldige passkey'); setVerifying(false); return; }
+      localStorage.setItem('gfl_beta_access', key);
+      localStorage.setItem('gfl_beta_access_time', Date.now().toString());
+      if (data.adminMode && data.token && data.user) {
+        localStorage.setItem('gfl_admin_mode', '1');
+        localStorage.setItem('gfl_token', data.token);
+        setUser(data.user);
+        setPhase('dashboard');
+      } else if (data.valid && !data.adminMode) {
+        // Valid non-admin passkey — desktop only
+        setPhase('denied');
+      } else {
+        // Admin passkey but backend couldn't issue token
+        setPasskeyError('Admin account niet gevonden — neem contact op');
+      }
+    } catch (e) {
+      setPasskeyError('Verbindingsfout — probeer opnieuw');
     } finally {
-      setSubmitting(false);
+      setVerifying(false);
     }
-  }, [email, password]);
+  }, [passkeyValue]);
 
-  if (!ready) return null;
+  if (phase === 'loading') return null;
 
-  if (user) {
+  if (phase === 'dashboard' && user) {
     return (
       <Suspense fallback={null}>
-        <AdminDashboardModal user={user} onLogout={handleLogout} onClose={handleLogout} />
+        <AdminDashboardModal user={user} onLogout={handleLogout} onClose={handleLogout} embedded />
       </Suspense>
     );
   }
 
-  // No session — minimal login form
   const S = {
-    label: { display: 'block', color: '#888', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 },
-    input: { width: '100%', padding: '10px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 8, color: '#fff', fontSize: 16, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' },
-    btn: { width: '100%', padding: '11px 0', marginTop: 12, background: 'linear-gradient(135deg,#a855f7,#7c3aed)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', letterSpacing: '0.05em' },
+    input: { width: '100%', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(168,85,247,0.3)', color: '#fff', fontSize: 16, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', marginBottom: 10 },
+    btn: { width: '100%', padding: '10px 0', borderRadius: 8, background: verifying ? 'rgba(168,85,247,0.4)' : 'linear-gradient(135deg,#a855f7,#7c3aed)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: verifying ? 'default' : 'pointer', letterSpacing: '0.05em', fontFamily: 'inherit' },
   };
+
   return (
-    <div style={{ width: '88vw', maxWidth: 380, padding: '2rem 1.75rem', background: 'rgba(8,2,12,0.9)', border: '1px solid rgba(147,51,234,0.3)', borderRadius: 8 }}>
-      <p style={{ color: '#a855f7', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 4px' }}>Admin Portaal</p>
-      <p style={{ color: '#555', fontSize: 11, margin: '0 0 20px' }}>Identificeer je om door te gaan</p>
-      <form onSubmit={handleLogin}>
-        <div style={{ marginBottom: 12 }}>
-          <label style={S.label}>E-mail</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" style={S.input} />
-        </div>
-        <div style={{ marginBottom: 4 }}>
-          <label style={S.label}>Wachtwoord</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" style={S.input} />
-        </div>
-        {error && <p style={{ color: '#f87171', fontSize: 11, margin: '8px 0 0' }}>{error}</p>}
-        <button type="submit" disabled={submitting} style={S.btn}>{submitting ? '...' : 'INLOGGEN'}</button>
-      </form>
+    <div style={{ width: '85vw', maxWidth: 380, padding: '2rem 1.75rem', background: 'rgba(8,2,12,0.9)', border: '1px solid rgba(147,51,234,0.3)', borderRadius: 8 }}>
+      <p style={{ color: '#a855f7', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 6px', fontFamily: "'Figtree', sans-serif" }}>Garden For Life</p>
+      <p style={{ color: '#666', fontSize: 11, margin: '0 0 16px', fontFamily: "'Figtree', sans-serif" }}>
+        {phase === 'denied' ? 'Deze applicatie is ontworpen voor desktop.' : 'Admin toegang vereist een admin passkey.'}
+      </p>
+      <>
+        <input
+          type="text"
+          value={passkeyValue}
+          onChange={e => {
+            if (phase === 'denied') setPhase('passkey');
+            setPasskeyValue(e.target.value);
+          }}
+          onKeyDown={e => e.key === 'Enter' && handleVerify()}
+          placeholder="Passkey..."
+          autoComplete="off"
+          style={S.input}
+        />
+        {passkeyError && <p style={{ color: '#f87171', fontSize: 11, margin: '0 0 8px', fontFamily: "'Figtree', sans-serif" }}>{passkeyError}</p>}
+        <button onClick={handleVerify} disabled={verifying} style={S.btn}>{verifying ? '...' : 'Unlock'}</button>
+      </>
+      {phase === 'denied' && <p style={{ color: '#555', fontSize: 11, marginTop: 8, fontFamily: "'Figtree', sans-serif" }}>Admin toegang vereist een admin passkey.</p>}
     </div>
   );
 };
@@ -1469,8 +1502,8 @@ const App = () => {
     }
   }, []);
 
-  // Mobile admin portal: skip entire app, render only the dashboard on black
-  if (isMobile && localStorage.getItem('gfl_admin_mode') === '1') {
+  // Mobile: skip entire app, render only admin portal on black
+  if (isMobile) {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
         <AdminMobilePortal />

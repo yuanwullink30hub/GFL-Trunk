@@ -111,6 +111,7 @@ const persistContacts = (list) => localStorage.setItem(CONTACTS_KEY, JSON.string
 const SAVED_INVOICES_KEY = 'gfl_saved_invoices';
 const loadSavedInvoices = () => { try { return JSON.parse(localStorage.getItem(SAVED_INVOICES_KEY) || '[]'); } catch { return []; } };
 const persistSavedInvoices = (list) => localStorage.setItem(SAVED_INVOICES_KEY, JSON.stringify(list));
+const EMPTY_TEMPLATE_ID = 'gfl-empty-template';
 
 const InvoiceTemplate = memo(({ isMobile = false }) => {
   const [invoice, setInvoice] = useState(() => ({
@@ -130,6 +131,17 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   const [savedInvoices, setSavedInvoices] = useState(loadSavedInvoices);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const historyEntries = [
+    {
+      id: EMPTY_TEMPLATE_ID,
+      isTemplate: true,
+      savedAt: null,
+      invoiceNumber: '-',
+      clientName: 'Leeg template',
+      data: { ...INITIAL_DATA, invoiceNumber: getNextInvoiceNumber() },
+    },
+    ...savedInvoices,
+  ];
 
   // Saved contacts
   const [savedContacts, setSavedContacts] = useState(loadContacts);
@@ -289,11 +301,17 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   };
 
   const handleLoadInvoice = (entry) => {
+    if (entry?.isTemplate) {
+      setInvoice({ ...INITIAL_DATA, invoiceNumber: getNextInvoiceNumber() });
+      setHistoryOpen(false);
+      return;
+    }
     setInvoice({ ...entry.data });
     setHistoryOpen(false);
   };
 
   const handleDeleteSavedInvoice = (id) => {
+    if (id === EMPTY_TEMPLATE_ID) return;
     const updated = savedInvoices.filter(e => e.id !== id);
     setSavedInvoices(updated);
     persistSavedInvoices(updated);
@@ -549,12 +567,12 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Receipt size={16} color={historyOpen ? ACCENT : DIM} />
             Factuurgeschiedenis
-            {savedInvoices.length > 0 && (
+            {historyEntries.length > 0 && (
               <span style={{
                 fontSize: '0.62rem', fontWeight: 800,
                 backgroundColor: 'rgba(188,19,254,0.18)', color: ACCENT,
                 borderRadius: '999px', padding: '0.1rem 0.5rem',
-              }}>{savedInvoices.length}</span>
+              }}>{historyEntries.length}</span>
             )}
           </span>
           <span style={{ fontSize: '0.7rem', color: DIM }}>{historyOpen ? '▲' : '▼'}</span>
@@ -563,11 +581,8 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
         {/* History list */}
         {historyOpen && (
           <div style={{ padding: '0 0.9rem 0.9rem' }}>
-            {savedInvoices.length === 0 ? (
-              <div style={{ fontSize: '0.75rem', color: DIM, padding: '0.6rem 0' }}>Geen opgeslagen facturen.</div>
-            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                {savedInvoices.map(entry => (
+                {historyEntries.map(entry => (
                   <div key={entry.id} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '0.5rem 0.75rem',
@@ -579,9 +594,13 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                       <div style={{ fontSize: '0.78rem', fontWeight: 700, color: TEXT, marginBottom: '0.1rem' }}>
                         #{entry.invoiceNumber} — {entry.clientName}
                       </div>
-                      <div style={{ fontSize: '0.62rem', color: DIM }}>
-                        {new Date(entry.savedAt).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </div>
+                      {entry.savedAt ? (
+                        <div style={{ fontSize: '0.62rem', color: DIM }}>
+                          {new Date(entry.savedAt).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.62rem', color: '#4ade80' }}>Altijd beschikbaar</div>
+                      )}
                     </div>
                     <div style={{ display: 'flex', gap: '0.4rem', marginLeft: '0.6rem' }}>
                       <button
@@ -593,20 +612,21 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                           cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap',
                         }}
                       >Laden</button>
-                      <button
-                        onClick={() => handleDeleteSavedInvoice(entry.id)}
-                        style={{
-                          padding: '0.3rem 0.5rem', fontSize: '0.68rem', fontWeight: 700,
-                          backgroundColor: 'rgba(248,113,113,0.08)', color: '#f87171',
-                          border: '1px solid rgba(248,113,113,0.2)', borderRadius: '0.35rem',
-                          cursor: 'pointer', fontFamily: FONT,
-                        }}
-                      >✕</button>
+                      {!entry.isTemplate && (
+                        <button
+                          onClick={() => handleDeleteSavedInvoice(entry.id)}
+                          style={{
+                            padding: '0.3rem 0.5rem', fontSize: '0.68rem', fontWeight: 700,
+                            backgroundColor: 'rgba(248,113,113,0.08)', color: '#f87171',
+                            border: '1px solid rgba(248,113,113,0.2)', borderRadius: '0.35rem',
+                            cursor: 'pointer', fontFamily: FONT,
+                          }}
+                        >✕</button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
-            )}
           </div>
         )}
       </div>

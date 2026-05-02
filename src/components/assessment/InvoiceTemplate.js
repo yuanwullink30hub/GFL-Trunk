@@ -362,7 +362,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
       doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(255, 255, 255);
       doc.text(`Rekening: ${invoice.bankAccount} (Ref: ${invoice.invoiceNumber})`, 14, 62);
       doc.setTextColor(136, 136, 136); doc.setFont('helvetica', 'bold');
-      doc.text('gelieve te betalen binnen 14 werkdagen', 14, 67);
+      doc.text('gelieve te betalen binnen 30 werkdagen', 14, 67);
       doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
       doc.text(`Nr: ${invoice.invoiceNumber}`, pw - 14, 62, { align: 'right' });
       doc.setFont('helvetica', 'normal'); doc.setTextColor(187, 187, 187);

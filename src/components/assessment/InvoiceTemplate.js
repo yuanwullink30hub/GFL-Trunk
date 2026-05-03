@@ -1050,7 +1050,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
               }}>
                 <div>
                   <p style={{ fontSize: '0.44em', color: '#fff', margin: 0 }}>Rekening: {invoice.bankAccount} (Ref: {invoice.invoiceNumber})</p>
-                  <p style={{ fontSize: '0.44em', color: '#888', fontWeight: 700, margin: '0.15em 0 0' }}>gelieve te betalen binnen 14 werkdagen</p>
+                  <p style={{ fontSize: '0.44em', color: '#888', fontWeight: 700, margin: '0.15em 0 0' }}>gelieve te betalen binnen 30 werkdagen</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: 0 }}>Nr: {invoice.invoiceNumber}</p>

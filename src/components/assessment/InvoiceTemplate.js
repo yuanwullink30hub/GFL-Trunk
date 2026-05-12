@@ -3,7 +3,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Plus, Trash2, Eraser, FileText, User, Hash, Receipt, Mail, Send, ChevronDown, UserPlus, X } from 'lucide-react';
-import { sendFormDirect } from '../../utils/apiClient';
+import { sendFormDirect, saveInvoice, getInvoices, deleteInvoice } from '../../utils/apiClient';
 
 // ═══════════════════════════════════════════════════════════
 // GFL Invoice Template — faithful replica of AI Studio layout
@@ -12,18 +12,13 @@ import { sendFormDirect } from '../../utils/apiClient';
 
 const INVOICE_NUM_KEY = 'gfl_invoice_number';
 const getNextInvoiceNumber = () => {
-  const stored = localStorage.getItem(INVOICE_NUM_KEY);
-  if (stored) return stored;
   const yr = new Date().getFullYear();
   return `${yr}0001`;
 };
-const saveInvoiceNumber = (num) => localStorage.setItem(INVOICE_NUM_KEY, num);
 const incrementInvoiceNumber = (num) => {
   const n = parseInt(num, 10);
   if (isNaN(n)) return num;
-  const next = String(n + 1);
-  saveInvoiceNumber(next);
-  return next;
+  return String(n + 1);
 };
 
 const INITIAL_DATA = {
@@ -108,9 +103,6 @@ const CONTACTS_KEY = 'gfl_invoice_contacts';
 const loadContacts = () => { try { return JSON.parse(localStorage.getItem(CONTACTS_KEY) || '[]'); } catch { return []; } };
 const persistContacts = (list) => localStorage.setItem(CONTACTS_KEY, JSON.stringify(list));
 
-const SAVED_INVOICES_KEY = 'gfl_saved_invoices';
-const loadSavedInvoices = () => { try { return JSON.parse(localStorage.getItem(SAVED_INVOICES_KEY) || '[]'); } catch { return []; } };
-const persistSavedInvoices = (list) => localStorage.setItem(SAVED_INVOICES_KEY, JSON.stringify(list));
 const EMPTY_TEMPLATE_ID = 'gfl-empty-template';
 
 const InvoiceTemplate = memo(({ isMobile = false }) => {
@@ -127,10 +119,34 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   const longPressTimerRef = useRef(null);
   const dragItemIdRef = useRef(null);
 
-  // Invoice history
-  const [savedInvoices, setSavedInvoices] = useState(loadSavedInvoices);
+  // Invoice history - loaded from API
+  const [savedInvoices, setSavedInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Load invoices from API on mount
+  useEffect(() => {
+    // Clear old localStorage data (migration from device-linked to database-linked)
+    try {
+      localStorage.removeItem('gfl_saved_invoices');
+      localStorage.removeItem('gfl_invoice_number');
+    } catch (e) {}
+
+    const loadInvoices = async () => {
+      try {
+        const data = await getInvoices();
+        setSavedInvoices(data || []);
+      } catch (err) {
+        console.error('Failed to load invoices:', err);
+        setSavedInvoices([]);
+      } finally {
+        setInvoicesLoading(false);
+      }
+    };
+    loadInvoices();
+  }, []);
+
   const historyEntries = [
     {
       id: EMPTY_TEMPLATE_ID,
@@ -285,19 +301,21 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   useEffect(() => () => clearTimeout(longPressTimerRef.current), []);
 
   /* ── Invoice history ── */
-  const handleSaveInvoice = () => {
+  const handleSaveInvoice = async () => {
     const entry = {
-      id: Date.now().toString(),
-      savedAt: new Date().toISOString(),
       invoiceNumber: invoice.invoiceNumber,
       clientName: invoice.clientName || '(geen klant)',
       data: { ...invoice },
     };
-    const updated = [entry, ...savedInvoices];
-    setSavedInvoices(updated);
-    persistSavedInvoices(updated);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 2000);
+    try {
+      const saved = await saveInvoice(entry);
+      setSavedInvoices([saved, ...savedInvoices]);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to save invoice:', err);
+      setSaveSuccess(false);
+    }
   };
 
   const handleLoadInvoice = (entry) => {
@@ -310,11 +328,14 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
     setHistoryOpen(false);
   };
 
-  const handleDeleteSavedInvoice = (id) => {
+  const handleDeleteSavedInvoice = async (id) => {
     if (id === EMPTY_TEMPLATE_ID) return;
-    const updated = savedInvoices.filter(e => e.id !== id);
-    setSavedInvoices(updated);
-    persistSavedInvoices(updated);
+    try {
+      await deleteInvoice(id);
+      setSavedInvoices(savedInvoices.filter(e => e._id !== id));
+    } catch (err) {
+      console.error('Failed to delete invoice:', err);
+    }
   };
 
   const clearSignature = () => { sigCanvas.current?.clear(); setSignatureData(null); };
@@ -583,7 +604,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
           <div style={{ padding: '0 0.9rem 0.9rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                 {historyEntries.map(entry => (
-                  <div key={entry.id} style={{
+                  <div key={entry.id || entry._id} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '0.5rem 0.75rem',
                     backgroundColor: 'rgba(255,255,255,0.03)',
@@ -614,7 +635,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                       >Laden</button>
                       {!entry.isTemplate && (
                         <button
-                          onClick={() => handleDeleteSavedInvoice(entry.id)}
+                          onClick={() => handleDeleteSavedInvoice(entry._id)}
                           style={{
                             padding: '0.3rem 0.5rem', fontSize: '0.68rem', fontWeight: 700,
                             backgroundColor: 'rgba(248,113,113,0.08)', color: '#f87171',

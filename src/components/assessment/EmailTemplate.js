@@ -75,6 +75,7 @@ const formatFileSize = (bytes) => {
 
 const EmailTemplate = memo(({ isMobile }) => {
   const [recipientEmail, setRecipientEmail] = useState('');
+  const [ccEmail, setCcEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
@@ -165,6 +166,14 @@ const EmailTemplate = memo(({ isMobile }) => {
       setSendError(`Ongeldig e-mailadres: ${invalid[0]}`);
       return;
     }
+
+    const ccEmails = ccEmail.split(',').map(e => e.trim()).filter(Boolean);
+    const invalidCc = ccEmails.filter(e => !emailRegex.test(e));
+    if (invalidCc.length > 0) {
+      setSendError(`Ongeldig CC e-mailadres: ${invalidCc[0]}`);
+      return;
+    }
+
     setSendingState('sending');
     setSendError('');
     try {
@@ -176,6 +185,10 @@ const EmailTemplate = memo(({ isMobile }) => {
         recipientEmail,
         subject: emailSubject || 'Garden For Life',
       };
+
+      if (ccEmails.length > 0) {
+        payload.ccEmail = ccEmail;
+      }
 
       // Attach first PDF if present (primary attachment via existing API)
       if (attachments.length > 0) {
@@ -197,6 +210,7 @@ const EmailTemplate = memo(({ isMobile }) => {
       setTimeout(() => {
         setSendingState(null);
         setRecipientEmail('');
+        setCcEmail('');
         setEmailSubject('');
         setEmailBody('');
         setAttachments([]);
@@ -314,7 +328,7 @@ const EmailTemplate = memo(({ isMobile }) => {
         {/* Recipient fields */}
         <div style={isMobile
           ? { display: 'flex', flexDirection: 'column', gap: '0.8rem' }
-          : { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.8rem' }
+          : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }
         }>
           <div>
             <div style={labelCss}>Naam</div>
@@ -326,6 +340,18 @@ const EmailTemplate = memo(({ isMobile }) => {
                 onChange={(e) => setRecipientName(e.target.value)}
                 placeholder="Naam ontvanger"
                 style={input}
+              />
+            </div>
+          </div>
+          <div>
+            <div style={labelCss}>Onderwerp</div>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder="Garden For Life"
+                style={inputNoPad}
               />
             </div>
           </div>
@@ -343,14 +369,15 @@ const EmailTemplate = memo(({ isMobile }) => {
             </div>
           </div>
           <div>
-            <div style={labelCss}>Onderwerp</div>
+            <div style={labelCss}>CC E-mail(s)</div>
             <div style={{ position: 'relative' }}>
+              <Mail size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="text"
-                value={emailSubject}
-                onChange={(e) => setEmailSubject(e.target.value)}
-                placeholder="Garden For Life"
-                style={inputNoPad}
+                value={ccEmail}
+                onChange={(e) => setCcEmail(e.target.value)}
+                placeholder="cc@voorbeeld.nl"
+                style={input}
               />
             </div>
           </div>

@@ -985,3 +985,38 @@ export async function getPasskeyAuditLog(limit = 500) {
   if (!response.ok) throw new Error(`Failed to load passkey audit log (${response.status})`);
   return response.json();
 }
+
+// ── Invoice Management ──
+
+export async function saveInvoice(invoiceData) {
+  const response = await fetch(`${API_BASE}/admin/invoices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(invoiceData),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Failed to save invoice (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function getInvoices() {
+  const response = await fetch(`${API_BASE}/admin/invoices`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error(`Failed to load invoices (${response.status})`);
+  return response.json();
+}
+
+export async function deleteInvoice(id) {
+  const response = await fetch(`${API_BASE}/admin/invoices/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Failed to delete invoice (${response.status})`);
+  }
+  return response.json();
+}

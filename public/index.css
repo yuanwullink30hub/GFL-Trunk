@@ -1992,6 +1992,10 @@ html.low-gpu *  {
   animation-iteration-count: 1 !important;
   backdrop-filter: none !important;
 }
+/* Exempt functional loading animations (spinners, cycling text) from the freeze */
+html.low-gpu .keep-spinning {
+  animation-iteration-count: infinite !important;
+}
 
 /* Custom scrollbar for brand pages */
 .brand-scrollbar::-webkit-scrollbar {

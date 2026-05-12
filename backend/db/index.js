@@ -38,6 +38,9 @@ async function connectDB() {
   // Passkeys — unique 6-digit codes
   await db.collection('passkeys').createIndex({ code: 1 }, { unique: true });
 
+  // Invoices — indexed by userId for fast lookup across viewports/devices
+  await db.collection('invoices').createIndex({ userId: 1, savedAt: -1 });
+
   // ── BETA data retention: auto-expire assessment data after 90 days ──
   // MongoDB's TTL index removes documents automatically — no cron job needed.
   const BETA_RETENTION_SECONDS = 90 * 24 * 60 * 60; // 90 days

@@ -1128,6 +1128,78 @@ router.get('/passkeys/audit', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// Invoice Management (admin only — database-linked, not device-linked)
+// ─────────────────────────────────────────────────────────────
+
+function invoicesCollection() {
+  return getDB().collection('invoices');
+}
+
+// POST /api/admin/invoices — save an invoice
+router.post('/invoices', async (req, res) => {
+  try {
+    const { invoiceNumber, clientName, data } = req.body;
+    if (!invoiceNumber || !clientName || !data) {
+      return res.status(400).json({ error: 'Missing required fields: invoiceNumber, clientName, data' });
+    }
+
+    const entry = {
+      userId: req.user.id,
+      invoiceNumber,
+      clientName,
+      data,
+      savedAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const result = await invoicesCollection().insertOne(entry);
+    res.json({
+      _id: result.insertedId,
+      ...entry,
+    });
+  } catch (err) {
+    console.error('[Admin] Save invoice error:', err.message);
+    res.status(500).json({ error: 'Failed to save invoice' });
+  }
+});
+
+// GET /api/admin/invoices — get all invoices for current user
+router.get('/invoices', async (req, res) => {
+  try {
+    const invoices = await invoicesCollection()
+      .find({ userId: req.user.id })
+      .sort({ savedAt: -1 })
+      .toArray();
+    res.json(invoices);
+  } catch (err) {
+    console.error('[Admin] Get invoices error:', err.message);
+    res.status(500).json({ error: 'Failed to load invoices' });
+  }
+});
+
+// DELETE /api/admin/invoices/:id — delete an invoice
+router.delete('/invoices/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ObjectId = require('mongodb').ObjectId;
+
+    const result = await invoicesCollection().deleteOne({
+      _id: new ObjectId(id),
+      userId: req.user.id,
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Admin] Delete invoice error:', err.message);
+    res.status(500).json({ error: 'Failed to delete invoice' });
+  }
+});
+
 module.exports = router;
 
 // ─────────────────────────────────────────────────────────────

@@ -187,7 +187,6 @@ const LoginPage = memo(({ isVisible, onBack }) => {
     return (
       <div style={{
         ...PAGE_WRAPPER(isVisible),
-        ...(isAdmin ? { backgroundColor: '#000' } : {}),
       }}>
         {isAdmin
           ? <AdminDashboardModal user={user} onLogout={handleLogout} onClose={onBack} />

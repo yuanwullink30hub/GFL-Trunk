@@ -90,3 +90,26 @@ the existing DataPage HUD aesthetic, designed here.
 4. **Axis↔domain mapping** is a first pass — reorder freely if you have a preferred
    spatial layout (e.g. astro on ceiling).
 
+---
+
+## Task 4b — domain overlay + pause (`feat(hypercube)`)
+**Build:** green · main chunk unchanged
+
+Click a targeted face (while pointer-locked) → opens a 2D modal for that domain,
+pauses the cube, and releases pointer lock so the cursor reaches the modal. A
+`paused` flag is threaded into `HyperCube` (freezes the tesseract), `CameraRig`
+(releases lock, freezes look), and `FaceTargets` (hides label, ignores clicks).
+`BACK_TO_CORE` closes it and re-engages.
+
+### Needs owner eyes
+1. **Select → overlay.** Inside + locked, a left-click opens the targeted domain's
+   modal; cube + look freeze; the cursor reappears over the modal.
+2. **Re-lock after Back (timing risk).** Closing re-requests pointer lock from the
+   Back-button gesture. Browsers can reject `requestPointerLock` if it's too far
+   from a user gesture — if look doesn't resume automatically, a single click on
+   the scene re-locks (fallback wired in `FaceTargets`). Confirm which happens.
+3. **Modal aesthetic.** Inline-styled, monospace, `#BF00FF`/`#39FF14`, placeholder
+   body. Matches the HUD; tune later.
+4. **First click vs select.** When not locked, the first scene click re-engages FPS
+   look (does not select); the next click selects. Confirm that two-stage feel is OK.
+

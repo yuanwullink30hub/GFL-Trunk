@@ -23,7 +23,7 @@ import { HyperCube, CameraRig, HolographicButton, FaceTargets } from './HyperCub
    same pattern as HoloEarth).
    =================================================================== */
 
-export default function HypercubeScene({ isVisible, isInside, onExitInside }) {
+export default function HypercubeScene({ isVisible, isInside, paused, onExitInside, onSelectDomain }) {
   const glRef = useRef(null);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function HypercubeScene({ isVisible, isInside, onExitInside }) {
         ctx.getShaderInfoLog = (shader) => origGetShaderInfoLog(shader) || '';
       }}
     >
-      <CameraRig isInside={isInside} />
+      <CameraRig isInside={isInside} paused={paused} />
       <PerspectiveCamera makeDefault position={[5, 5, 8]} fov={45} />
 
       {/* Cinematic lighting */}
@@ -75,8 +75,8 @@ export default function HypercubeScene({ isVisible, isInside, onExitInside }) {
       <pointLight position={[5, -5, 5]} intensity={3} color="#00FF00" />
 
       <Suspense fallback={null}>
-        <HyperCube isInside={isInside} />
-        <FaceTargets isInside={isInside} />
+        <HyperCube isInside={isInside} paused={paused} />
+        <FaceTargets isInside={isInside} paused={paused} onSelect={onSelectDomain} />
         <HolographicButton onReturn={onExitInside} isInside={isInside} />
 
         <EffectComposer>

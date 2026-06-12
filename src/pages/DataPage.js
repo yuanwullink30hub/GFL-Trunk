@@ -56,16 +56,22 @@ const HUD_KEYFRAMES = `
 const DataPage = memo(({ isVisible, onBack }) => {
   const [hasWebGL, setHasWebGL] = useState(null);
   const [isInside, setIsInside] = useState(false);
+  // The domain whose overlay is open (task 4b). Non-null = cube paused.
+  const [activeDomain, setActiveDomain] = useState(null);
+  const paused = !!activeDomain;
 
   useEffect(() => {
     setHasWebGL(isWebGLAvailable());
   }, []);
 
   // Leaving the section exits the interior so pointer lock releases
-  // and the next visit starts from the void view.
+  // and the next visit starts from the void view; close any open overlay.
   useEffect(() => {
-    if (!isVisible && isInside) setIsInside(false);
-  }, [isVisible, isInside]);
+    if (!isVisible) {
+      if (isInside) setIsInside(false);
+      if (activeDomain) setActiveDomain(null);
+    }
+  }, [isVisible, isInside, activeDomain]);
 
   return (
     <div
@@ -104,7 +110,9 @@ const DataPage = memo(({ isVisible, onBack }) => {
           <HypercubeScene
             isVisible={isVisible}
             isInside={isInside}
+            paused={paused}
             onExitInside={() => setIsInside(false)}
+            onSelectDomain={setActiveDomain}
           />
         </Suspense>
       )}
@@ -153,8 +161,8 @@ const DataPage = memo(({ isVisible, onBack }) => {
         </button>
       </div>
 
-      {/* Interior HUD */}
-      {isInside && (
+      {/* Interior HUD — hidden while a domain overlay is open */}
+      {isInside && !activeDomain && (
         <>
           {/* Crosshair */}
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -184,6 +192,55 @@ const DataPage = memo(({ isVisible, onBack }) => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Domain overlay (task 4b) — 2D modal over the paused cube. The
+          assessment gate (task 4c) will wrap access to this. */}
+      {activeDomain && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 300,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '2rem',
+          background: 'rgba(5,5,5,0.55)', backdropFilter: 'blur(4px)',
+          pointerEvents: 'auto',
+        }}>
+          <div style={{
+            width: '100%', maxWidth: '40rem',
+            border: '1px solid rgba(191,0,255,0.6)',
+            background: 'rgba(0,0,0,0.6)',
+            boxShadow: '0 0 40px rgba(191,0,255,0.35)',
+            padding: '2rem',
+            fontFamily: 'monospace', color: '#fff',
+          }}>
+            <div style={{ fontSize: '10px', letterSpacing: '0.3em', color: '#39FF14', textTransform: 'uppercase' }}>
+              {activeDomain.code} // Domain_Access
+            </div>
+            <h2 style={{ fontSize: '1.4rem', letterSpacing: '0.1em', color: '#BF00FF', textTransform: 'uppercase', margin: '0.5rem 0 1.25rem' }}>
+              {activeDomain.title}
+            </h2>
+            <div style={{
+              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'rgba(255,255,255,0.03)',
+              padding: '1.5rem', minHeight: '8rem',
+              fontSize: '0.85rem', lineHeight: 1.7, color: 'rgba(255,255,255,0.55)',
+              letterSpacing: '0.05em',
+            }}>
+              [ PLACEHOLDER ] // Domain content for {activeDomain.title} will be
+              populated in a later phase. This panel is the surface the assessment
+              gate (DEV_PATHGUIDE task 4c) unlocks.
+            </div>
+            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <SciFiButton onClick={() => setActiveDomain(null)} variant="purple" size="sm">
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                  BACK_TO_CORE
+                </span>
+              </SciFiButton>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Technical data overlay */}

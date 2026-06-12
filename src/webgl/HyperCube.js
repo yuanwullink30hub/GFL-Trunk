@@ -123,7 +123,7 @@ export function HolographicButton({ onReturn, isInside }) {
 }
 
 /* The tesseract itself. */
-export function HyperCube({ isInside }) {
+export function HyperCube({ isInside, paused }) {
   const edgesPurpleRef = useRef(null);
   const edgesGreenRef = useRef(null);
   const edgesBridgeRef = useRef(null);
@@ -210,6 +210,8 @@ export function HyperCube({ isInside }) {
 
   useFrame(({ clock }) => {
     if (!edgesPurpleRef.current || !edgesGreenRef.current || !edgesBridgeRef.current) return;
+    // Domain overlay open: freeze the tesseract where it is (task 4b).
+    if (paused) return;
 
     // -- State machine: settle -> expand (inside) / shrink -> resume (outside)
     if (isInside) {
@@ -303,7 +305,7 @@ export function HyperCube({ isInside }) {
 /* Camera: void view (static, looking at center) -> fly-in to center with
    pointer-lock FPS look while inside. ESC releases the pointer; look
    pauses until re-entry. */
-export function CameraRig({ isInside }) {
+export function CameraRig({ isInside, paused }) {
   const { camera, gl } = useThree();
   const transitionActive = useRef(false);
   const prevState = useRef(isInside);
@@ -330,8 +332,10 @@ export function CameraRig({ isInside }) {
     };
   }, [gl]);
 
+  // Pointer lock follows isInside, but releases while a domain overlay is open
+  // (paused) so the cursor can reach the 2D modal. Re-locks when it closes.
   useEffect(() => {
-    if (isInside && !transitionActive.current) {
+    if (isInside && !paused && !transitionActive.current) {
       const promise = gl.domElement.requestPointerLock();
       if (promise && promise.catch) promise.catch(() => {});
     } else {
@@ -339,7 +343,7 @@ export function CameraRig({ isInside }) {
         document.exitPointerLock();
       }
     }
-  }, [isInside, gl]);
+  }, [isInside, paused, gl]);
 
   useEffect(() => {
     if (!isInside && !transitionActive.current) {
@@ -357,6 +361,8 @@ export function CameraRig({ isInside }) {
   }, [isInside]);
 
   useFrame(() => {
+    // Frozen while a domain overlay is open (task 4b).
+    if (paused) return;
     if (transitionActive.current) {
       if (isInside) targetPos.set(0, 0, 0.01);
       else targetPos.set(5, 5, 8);
@@ -413,15 +419,15 @@ const FACE_DIST = 4.5;
    forward) is aimed at by max dot product against the six axis normals,
    and surface that domain's label at its face position. Only the targeted
    face shows (the one in front of the camera) - no behind-camera clutter. */
-export function FaceTargets({ isInside }) {
-  const { camera } = useThree();
+export function FaceTargets({ isInside, paused, onSelect }) {
+  const { camera, gl } = useThree();
   const [targeted, setTargeted] = useState(-1);
   const targetedRef = useRef(-1);
   const axes = useMemo(() => DOMAINS.map((d) => new THREE.Vector3(...d.axis)), []);
   const fwd = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(() => {
-    if (!isInside) {
+    if (!isInside || paused) {
       if (targetedRef.current !== -1) { targetedRef.current = -1; setTargeted(-1); }
       return;
     }
@@ -438,7 +444,25 @@ export function FaceTargets({ isInside }) {
     }
   });
 
-  if (!isInside || targeted < 0) return null;
+  // Click-to-select (task 4b). Pointer lock still delivers `click`. While
+  // locked, a click opens the targeted domain; when not locked (e.g. just
+  // after closing an overlay), the click re-engages FPS look instead.
+  useEffect(() => {
+    const el = gl.domElement;
+    const handleClick = () => {
+      if (paused || !isInside) return;
+      if (document.pointerLockElement === el) {
+        if (targetedRef.current >= 0 && onSelect) onSelect(DOMAINS[targetedRef.current]);
+      } else {
+        const p = el.requestPointerLock();
+        if (p && p.catch) p.catch(() => {});
+      }
+    };
+    el.addEventListener('click', handleClick);
+    return () => el.removeEventListener('click', handleClick);
+  }, [gl, isInside, paused, onSelect]);
+
+  if (!isInside || paused || targeted < 0) return null;
   const d = DOMAINS[targeted];
 
   return (

@@ -19,19 +19,21 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // three.js + r3f + drei + postprocessing — shared by the WebGL scenes
-          'three-vendor': [
-            'three',
-            '@react-three/fiber',
-            '@react-three/drei',
-            '@react-three/postprocessing',
-            'postprocessing',
-          ],
-          // PDF / export libs — only loaded when the user exports
-          'export-vendor': ['jspdf', 'jspdf-autotable', 'html2canvas', 'jszip'],
-          'chart-vendor': ['recharts'],
-          'motion-vendor': ['framer-motion'],
+        // Split the heavy 3D libs into SEPARATE chunks (don't bundle them into one
+        // mega-chunk). A single 807 kB three+fiber+drei+postprocessing chunk
+        // evaluates as one long synchronous main-thread block (freezing the UI /
+        // passkey). Separate chunks evaluate as smaller pieces, and preloadUtils'
+        // `yieldToMain` between imports lets the browser breathe between them.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('/three/') || id.includes('three/build')) return 'three';
+          if (id.includes('three-stdlib') || id.includes('three-mesh-bvh') || id.includes('/troika')) return 'three-stdlib';
+          if (id.includes('@react-three/postprocessing') || id.includes('/postprocessing/') || id.includes('/n8ao/')) return 'postprocessing';
+          if (id.includes('@react-three')) return 'r3f';
+          if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('jszip') || id.includes('canvg') || id.includes('dompurify')) return 'export-vendor';
+          if (id.includes('recharts') || id.includes('/d3-') || id.includes('victory')) return 'chart-vendor';
+          if (id.includes('framer-motion') || id.includes('motion-dom') || id.includes('motion-utils')) return 'motion-vendor';
+          return undefined;
         },
       },
     },

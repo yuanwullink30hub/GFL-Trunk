@@ -113,3 +113,33 @@ pauses the cube, and releases pointer lock so the cursor reaches the modal. A
 4. **First click vs select.** When not locked, the first scene click re-engages FPS
    look (does not select); the next click selects. Confirm that two-stage feel is OK.
 
+---
+
+## Task 4c — assessment gate flow + unlock badge (`feat(hypercube)`)
+**Build:** green · main chunk unchanged
+
+Selecting a domain while **locked** runs the gate first: upload-ritual placeholder
+(`PRESENT_DOCUMENT`) → 6 single-select questions (any answer accepted) with
+progress pips → `ACCESS_GRANTED` celebration → `ENTER`. On complete, persists
+`dw_assessmentUnlocked=true` to localStorage, then opens the domain that triggered
+it. Subsequent selects skip the gate. A `Lattice_Unlocked` badge (lit cube) shows
+in the corner once unlocked. Gate also pauses the cube (via `paused`).
+
+### Needs owner eyes
+1. **Full funnel.** First domain click → gate appears, cube + look freeze, cursor
+   free. Walk upload → 6 questions → granted → enter; the triggering domain's
+   overlay opens afterward.
+2. **Persistence.** Reload the page → still unlocked (badge present, no gate on
+   next access). localStorage key `dw_assessmentUnlocked`; a backend field replaces
+   it when user accounts land.
+3. **Cancel.** `[ X ]` closes the gate without unlocking; cube resumes.
+4. **Copy.** The 6 questions + ritual text are placeholder "personalized-template"
+   prose I wrote — replace with the real templates when ready.
+5. **Pre-unlock teaser.** Face labels (4a) still show before unlock as a teaser;
+   only *content access* is gated. DEV_PATHGUIDE mentions "outer-cube content fades
+   in on unlock" — if you want the labels hidden until unlocked too, that's a small
+   gate on `FaceTargets`. Flagged, not done.
+
+### To reset while testing
+`localStorage.removeItem('dw_assessmentUnlocked')` in the console, then reload.
+

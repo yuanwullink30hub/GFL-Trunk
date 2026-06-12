@@ -1,1 +1,1 @@
-export * from './dashboardStyles.js';
+export * from './dashboardStyles.jsx';

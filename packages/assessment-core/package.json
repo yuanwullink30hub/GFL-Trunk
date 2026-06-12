@@ -6,6 +6,8 @@
   "main": "./src/index.js",
   "exports": {
     ".": "./src/index.js",
+    "./assessmentTypes": "./src/assessmentTypes.js",
+    "./assessmentData": "./src/assessmentData.js",
     "./data": "./src/data/index.js",
     "./data/*": "./src/data/*"
   },

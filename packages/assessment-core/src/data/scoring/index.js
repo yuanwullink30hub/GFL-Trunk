@@ -35,7 +35,7 @@
 
 import {
   ROTATION_KEYS, getKeyForQuestion, isNatureRouting, isNatureSlot
-} from '../../../pages/assessment/assessmentData';
+} from '../../assessmentData';
 
 /**
  * The 12 radar traits displayed on the result chart.

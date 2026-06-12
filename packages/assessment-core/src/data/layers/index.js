@@ -12,7 +12,7 @@
  * Re-exports from the canonical assessmentTypes.js source where appropriate.
  */
 
-export { subjectMetadata } from '../../../pages/assessment/assessmentTypes';
+export { subjectMetadata } from '../../assessmentTypes';
 
 /**
  * Extended layer definitions with all display/scoring context.

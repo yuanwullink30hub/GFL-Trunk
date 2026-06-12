@@ -8,6 +8,5 @@ export * from './performanceUtils.js';
 export * from './storageUtils.js';
 export { MotionPredictor } from './MotionPredictor.js';
 export { ParticlePool } from './ParticlePool.js';
-export * from './preloadUtils.js';
-export * from './markdownRenderer.js';
+export * from './markdownRenderer.jsx';
 export * from './sessionTracker.js';

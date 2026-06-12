@@ -12,100 +12,100 @@
  */
 
 // ── JUDGE images ───────────────────────────────────────────
-import imgArbiter          from '../../images/Import ready/Arbiter.PNG';
-import imgMediator         from '../../images/Import ready/Mediator.png';
-import imgExaminer         from '../../images/Import ready/Examiner.png';
-import imgWhistleblower    from '../../images/Import ready/Whistleblower.png';
-import imgCritic           from '../../images/Import ready/Critic.PNG';
-import imgAvenger          from '../../images/Import ready/Avenger.png';
+const imgArbiter = '/images/Import ready/Arbiter.PNG';
+const imgMediator = '/images/Import ready/Mediator.png';
+const imgExaminer = '/images/Import ready/Examiner.png';
+const imgWhistleblower = '/images/Import ready/Whistleblower.png';
+const imgCritic = '/images/Import ready/Critic.PNG';
+const imgAvenger = '/images/Import ready/Avenger.png';
 
 // ── LOVER images ───────────────────────────────────────────
-import imgSoulmate         from '../../images/Import ready/Soulmate.png';
-import imgPoet             from '../../images/Import ready/Poet.png';
-import imgSeducer          from '../../images/Import ready/Seducer.PNG';
-import imgMystic           from '../../images/Import ready/Mystic.png';
-import imgRomantic         from '../../images/Import ready/Romantist.png';
-import imgCompanion        from '../../images/Import ready/Companion.png';
+const imgSoulmate = '/images/Import ready/Soulmate.png';
+const imgPoet = '/images/Import ready/Poet.png';
+const imgSeducer = '/images/Import ready/Seducer.PNG';
+const imgMystic = '/images/Import ready/Mystic.png';
+const imgRomantic = '/images/Import ready/Romantist.png';
+const imgCompanion = '/images/Import ready/Companion.png';
 
 // ── CAREGIVER images ───────────────────────────────────────
-import imgHealer           from '../../images/Import ready/Healer.PNG';
-import imgPathfinder       from '../../images/Import ready/Pathfinder.png';
-import imgCultivator       from '../../images/Import ready/Cultivator.png';
-import imgTherapist        from '../../images/Import ready/Therapist.PNG';
-import imgProtector        from '../../images/Import ready/Protector.png';
-import imgAdvocate         from '../../images/Import ready/Advocate.PNG';
+const imgHealer = '/images/Import ready/Healer.PNG';
+const imgPathfinder = '/images/Import ready/Pathfinder.png';
+const imgCultivator = '/images/Import ready/Cultivator.png';
+const imgTherapist = '/images/Import ready/Therapist.PNG';
+const imgProtector = '/images/Import ready/Protector.png';
+const imgAdvocate = '/images/Import ready/Advocate.PNG';
 
 // ── INNOCENT images ────────────────────────────────────────
-import imgSaint            from '../../images/Import ready/Saint.png';
-import imgFreeSpirit       from '../../images/Import ready/Free spirit.PNG';
-import imgDisciple         from '../../images/Import ready/Disciple.png';
-import imgPioneer          from '../../images/Import ready/Pioneer.png';
-import imgShepherd         from '../../images/Import ready/Shepherd.png';
-import imgSamaritan        from '../../images/Import ready/Samaritan.png';
+const imgSaint = '/images/Import ready/Saint.png';
+const imgFreeSpirit = '/images/Import ready/Free spirit.PNG';
+const imgDisciple = '/images/Import ready/Disciple.png';
+const imgPioneer = '/images/Import ready/Pioneer.png';
+const imgShepherd = '/images/Import ready/Shepherd.png';
+const imgSamaritan = '/images/Import ready/Samaritan.png';
 
 // ── EXPLORER images ────────────────────────────────────────
-import imgNavigator        from '../../images/Import ready/Navigator.png';
-import imgInnovator        from '../../images/Import ready/Innovator.png';
-import imgScholar          from '../../images/Import ready/Scholar.png';
-import imgSailor           from '../../images/Import ready/Sailor.png';
-import imgScout            from '../../images/Import ready/Scout.PNG';
-import imgNetworker        from '../../images/Import ready/Networker.png';
+const imgNavigator = '/images/Import ready/Navigator.png';
+const imgInnovator = '/images/Import ready/Innovator.png';
+const imgScholar = '/images/Import ready/Scholar.png';
+const imgSailor = '/images/Import ready/Sailor.png';
+const imgScout = '/images/Import ready/Scout.PNG';
+const imgNetworker = '/images/Import ready/Networker.png';
 
 // ── OUTLAW images ──────────────────────────────────────────
-import imgAnarchist        from '../../images/Import ready/Anarchist.png';
-import imgIconoclast       from '../../images/Import ready/Iconoclast.PNG';
-import imgRevolutionary    from '../../images/Import ready/Revolutionary.png';
-import imgReformer         from '../../images/Import ready/Reformer.png';
-import imgLiberator        from '../../images/Import ready/Liberator.png';
-import imgRenegade         from '../../images/Import ready/Renegade.PNG';
+const imgAnarchist = '/images/Import ready/Anarchist.png';
+const imgIconoclast = '/images/Import ready/Iconoclast.PNG';
+const imgRevolutionary = '/images/Import ready/Revolutionary.png';
+const imgReformer = '/images/Import ready/Reformer.png';
+const imgLiberator = '/images/Import ready/Liberator.png';
+const imgRenegade = '/images/Import ready/Renegade.PNG';
 
 // ── TRICKSTER images ───────────────────────────────────────
-import imgFool             from '../../images/Import ready/Fool.png';
-import imgComedian         from '../../images/Import ready/Comedian.PNG';
-import imgSaboteur         from '../../images/Import ready/Saboteur copy.png';
-import imgJester           from '../../images/Import ready/Jester.PNG';
-import imgClown            from '../../images/Import ready/Clown.png';
-import imgShapeshifter     from '../../images/Import ready/Shapeshifter.png';
+const imgFool = '/images/Import ready/Fool.png';
+const imgComedian = '/images/Import ready/Comedian.PNG';
+const imgSaboteur = '/images/Import ready/Saboteur copy.png';
+const imgJester = '/images/Import ready/Jester.PNG';
+const imgClown = '/images/Import ready/Clown.png';
+const imgShapeshifter = '/images/Import ready/Shapeshifter.png';
 
 // ── SAGE images ────────────────────────────────────────────
-import imgEnlightened      from '../../images/Import ready/Enlightened.PNG';
-import imgDetective        from '../../images/Import ready/Detective.PNG';
-import imgAnalyst          from '../../images/Import ready/Analyst.png';
-import imgMentor           from '../../images/Import ready/Mentor.png';
-import imgDreamer          from '../../images/Import ready/Dreamer.PNG';
-import imgHermit           from '../../images/Import ready/Hermit.PNG';
+const imgEnlightened = '/images/Import ready/Enlightened.PNG';
+const imgDetective = '/images/Import ready/Detective.PNG';
+const imgAnalyst = '/images/Import ready/Analyst.png';
+const imgMentor = '/images/Import ready/Mentor.png';
+const imgDreamer = '/images/Import ready/Dreamer.PNG';
+const imgHermit = '/images/Import ready/Hermit.PNG';
 
 // ── ARTIST images ──────────────────────────────────────────
-import imgDemiurge         from '../../images/Import ready/Demiurge.png';
-import imgForgemaster      from '../../images/Import ready/Forgemaster.png';
-import imgArchitect        from '../../images/Import ready/Architect.png';
-import imgStoryteller      from '../../images/Import ready/Storyteller.PNG';
-import imgVisionary        from '../../images/Import ready/Visionair.png';
-import imgIllusionist      from '../../images/Import ready/Illusionist.png';
+const imgDemiurge = '/images/Import ready/Demiurge.png';
+const imgForgemaster = '/images/Import ready/Forgemaster.png';
+const imgArchitect = '/images/Import ready/Architect.png';
+const imgStoryteller = '/images/Import ready/Storyteller.PNG';
+const imgVisionary = '/images/Import ready/Visionair.png';
+const imgIllusionist = '/images/Import ready/Illusionist.png';
 
 // ── MAGICIAN images ────────────────────────────────────────
-import imgAlchemist        from '../../images/Import ready/Alchemist.png';
-import imgEngineer         from '../../images/Import ready/Engineer.png';
-import imgShaman           from '../../images/Import ready/Shaman.png';
-import imgOracle           from '../../images/Import ready/Oracle.png';
-import imgEnchanter        from '../../images/Import ready/Enchanter.png';
-import imgSorcerer         from '../../images/Import ready/Sorcerer.PNG';
+const imgAlchemist = '/images/Import ready/Alchemist.png';
+const imgEngineer = '/images/Import ready/Engineer.png';
+const imgShaman = '/images/Import ready/Shaman.png';
+const imgOracle = '/images/Import ready/Oracle.png';
+const imgEnchanter = '/images/Import ready/Enchanter.png';
+const imgSorcerer = '/images/Import ready/Sorcerer.PNG';
 
 // ── HERO images ────────────────────────────────────────────
-import imgLegend           from '../../images/Import ready/Legend.PNG';
-import imgCommander        from '../../images/Import ready/Commander.png';
-import imgGuardian         from '../../images/Import ready/Guardian.png';
-import imgInventor         from '../../images/Import ready/Inventor.png';
-import imgRonin            from '../../images/Import ready/Ronin.PNG';
-import imgStrategist       from '../../images/Import ready/Strategist.PNG';
+const imgLegend = '/images/Import ready/Legend.PNG';
+const imgCommander = '/images/Import ready/Commander.png';
+const imgGuardian = '/images/Import ready/Guardian.png';
+const imgInventor = '/images/Import ready/Inventor.png';
+const imgRonin = '/images/Import ready/Ronin.PNG';
+const imgStrategist = '/images/Import ready/Strategist.PNG';
 
 // ── RULER images ───────────────────────────────────────────
-import imgEmperor          from '../../images/Import ready/Emperor-Emperess.png';
-import imgPatriarch        from '../../images/Import ready/Patriarch-Matriarch.png';
-import imgEntrepreneur     from '../../images/Import ready/Entrepeneur.PNG';
-import imgMaverick         from '../../images/Import ready/Maverick.png';
-import imgPhilosopher      from '../../images/Import ready/Philosopher king.png';
-import imgConqueror        from '../../images/Import ready/Conqueror.png';
+const imgEmperor = '/images/Import ready/Emperor-Emperess.png';
+const imgPatriarch = '/images/Import ready/Patriarch-Matriarch.png';
+const imgEntrepreneur = '/images/Import ready/Entrepeneur.PNG';
+const imgMaverick = '/images/Import ready/Maverick.png';
+const imgPhilosopher = '/images/Import ready/Philosopher king.png';
+const imgConqueror = '/images/Import ready/Conqueror.png';
 
 
 /**

@@ -60,6 +60,12 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/assessment-core:
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   packages/i18n:
     dependencies:
       react:

@@ -41,7 +41,7 @@ const DataPage = lazyRetry(() => import('./pages/DataPage'));
 import { useCelestialState, CelestialBehindLayer } from './pages/DataPage.shared';
 const LoginPage = lazyRetry(() => import('./pages/LoginPage'));
 const EyedentityPage = lazyRetry(() => import('./pages/EyedentityPage'));
-const AdminDashboardModal = lazyRetry(() => import('./components/assessment/AdminDashboardModal'));
+const AdminDashboardModal = lazyRetry(() => import('@gfl/admin-ui'));
 
 // ============================================
 // GRID MAP NAVIGATION CONFIGURATION

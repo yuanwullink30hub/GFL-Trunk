@@ -1,0 +1,249 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Mega:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&display=swap');
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0a0510 !important;
+}
+
+body {
+  font-family: 'Figtree', sans-serif;
+  color: #FFFEF0;
+}
+
+/* Prevent window scroll on desktop - map navigation uses transforms not scroll */
+@media (min-width: 768px) {
+  html, body {
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html, body {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+}
+
+/* Font classes */
+.font-rajdhani {
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.font-lexend-mega {
+  font-family: 'Lexend Mega', Arial, Helvetica, sans-serif;
+}
+
+.font-figtree {
+  font-family: 'Figtree', sans-serif;
+}
+
+/* Keyframe animations for page transitions */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Additional animations for GeneralBrandPage */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Animation utility classes */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-zoomIn {
+  animation: zoomIn 0.3s ease-out;
+}
+
+.animate-spin-slow {
+  animation: spin 20s linear infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* === Sci-Fi Scroll Prompt Animations === */
+@keyframes scrollPromptScanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+
+@keyframes scifiBtnScanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+
+@keyframes scrollPromptGlow {
+  0%, 100% { 
+    border-color: rgba(21, 179, 21, 0.35);
+  }
+  50% { 
+    border-color: rgba(21, 179, 21, 0.8);
+  }
+}
+
+@keyframes loginPromptGlow {
+  0%, 100% { 
+    border-color: rgba(255, 174, 0, 0.35);
+  }
+  50% { 
+    border-color: rgba(255, 174, 0, 0.8);
+  }
+}
+
+@keyframes scrollPromptTextFlicker {
+  0%, 92%, 100% { opacity: 1; }
+  93% { opacity: 0.7; }
+  94% { opacity: 1; }
+  96% { opacity: 0.6; }
+  97% { opacity: 1; }
+}
+
+@keyframes scrollPromptDataStream {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+
+@keyframes scrollDotPulse {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(6px); opacity: 0.3; }
+}
+
+@keyframes scrollPromptCornerPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes headerBreathe {
+  0%, 100% { opacity: 0.88; }
+  50% { opacity: 1; }
+}
+
+@keyframes holoSheen {
+  0%, 100% { background-position: 300% 300%; }
+  50% { background-position: 0% 0%; }
+}
+
+@keyframes holoScanline {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+
+@keyframes holoInterference {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+/* ══ Integrated-GPU laptop: freeze ALL decorative animations + kill backdrop blur ══ */
+/* .low-gpu is toggled on <html> by useIsLaptop when viewport is 768-1799px AND GPU is integrated */
+/* Nuclear kill: stop every infinite animation (sheens, pulses, scanlines, breathe, flicker).
+   One-shot animations (fadeIn, zoomIn) are spared — they run once and end. */
+html.low-gpu *  {
+  animation-iteration-count: 1 !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+/* Exempt functional loading animations (spinners, cycling text) from the freeze */
+html.low-gpu .keep-spinning {
+  animation-iteration-count: infinite !important;
+}
+
+/* Custom scrollbar for brand pages */
+.brand-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.brand-scrollbar::-webkit-scrollbar-track {
+  background: rgba(42, 10, 56, 0.3);
+}
+
+.brand-scrollbar::-webkit-scrollbar-thumb {
+  background: #ffae00;
+  border-radius: 0px;
+}
+
+/* Purple scrollbar for info modal */
+.purple-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+
+.purple-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.purple-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.6);
+  border-radius: 2px;
+}
+
+.purple-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.9);
+}
+
+.purple-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.6) transparent;
+}
+
+/* Selection styling for brand pages */
+.brand-selection::selection {
+  background-color: #ffae00;
+  color: #000;
+}
+
+/* Hide scrollbar but allow scrolling */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}

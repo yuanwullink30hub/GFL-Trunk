@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@gfl/admin-ui": "workspace:*",
     "@gfl/api-client": "workspace:*",
     "@gfl/assessment-core": "workspace:*",
     "@gfl/brands": "workspace:*",

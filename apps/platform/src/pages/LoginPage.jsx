@@ -2,7 +2,7 @@ import React, { memo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@gfl/i18n';
 import { login, register, getMe, logout, getToken, logActivity } from '@gfl/api-client';
 import ClientProfileModal from '../components/assessment/ClientProfileModal';
-import AdminDashboardModal from '../components/assessment/AdminDashboardModal';
+import AdminDashboardModal from '@gfl/admin-ui';
 import {
   C, INPUT, FIELD_LABEL, ERROR_STYLE, SciFiButton,
   PAGE_WRAPPER, SEPARATOR, inputFocus, inputBlur, FONT,

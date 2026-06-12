@@ -26,16 +26,23 @@ export default defineConfig({
         // `yieldToMain` between imports lets the browser breathe between them.
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
-          // Keep the three.js ecosystem together (three + its stdlib/bvh extend
-          // and depend on three's internals — splitting them apart breaks init
-          // order). Split it from the r3f/drei half so each evaluates as its own
-          // (smaller) block with a yield between, instead of one 2.67 MB freeze.
+          // React core in its OWN chunk that initializes before everything that
+          // uses it. react-spring (pulled by drei) touches React.useLayoutEffect
+          // at module-init; if React isn't a stable early chunk, splitting r3f off
+          // makes react-spring evaluate before React exists -> grey screen.
+          if (id.includes('/react/') || id.includes('/react-dom/') ||
+              id.includes('/scheduler/') || id.includes('/react-reconciler/')) {
+            return 'react-vendor';
+          }
+          // Pure three.js ecosystem (no React) — safe to isolate as one chunk.
           if (id.includes('/three/') || id.includes('three/build') ||
               id.includes('three-stdlib') || id.includes('three-mesh-bvh') || id.includes('/troika')) {
             return 'three';
           }
           if (id.includes('@react-three/postprocessing') || id.includes('/postprocessing/') || id.includes('/n8ao/')) return 'postprocessing';
-          if (id.includes('@react-three')) return 'r3f';
+          // r3f + drei + their react-dependent helpers (react-spring, use-gesture)
+          // stay together; they all depend on react-vendor, so init order is safe.
+          if (id.includes('@react-three') || id.includes('react-spring') || id.includes('@use-gesture') || id.includes('/maath/') || id.includes('/zustand/') || id.includes('suspend-react') || id.includes('its-fine')) return 'r3f';
           if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('jszip') || id.includes('canvg') || id.includes('dompurify')) return 'export-vendor';
           if (id.includes('recharts') || id.includes('/d3-') || id.includes('victory')) return 'chart-vendor';
           if (id.includes('framer-motion') || id.includes('motion-dom') || id.includes('motion-utils')) return 'motion-vendor';

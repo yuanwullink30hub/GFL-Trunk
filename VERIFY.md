@@ -47,3 +47,21 @@ rendered **transparent over the platform nebula** — the old `#050505` void is 
   stubs because `App.js:38` imports them synchronously (DEV_PATHGUIDE task 3).
 - `HoloPlanet.js` is now unused by DataPage (retired pending owner decision —
   DEV_PATHGUIDE task 2); not deleted.
+
+---
+
+## Task 3 — close App.js sync-import leak + lazy NebulaBackground (`refactor(app)`)
+**Build:** green · main chunk **81.36 kB** (was 99.53 — NebulaBackground split out of main, −18 kB)
+
+- Stubs moved to `src/pages/DataPage.shared.js`; `App.js:38` imports from there;
+  `DataPage.js` re-exports for compat. Heavy three.js graph stays fully lazy.
+- `NebulaBackground` is now `lazy()` + wrapped in its own `<Suspense fallback={null}>`
+  at the mount (it sits above the main Suspense boundary).
+
+### Needs owner eyes
+1. **Loading sequence intact.** `NebulaBackground` now loads as a separate chunk.
+   It still only mounts when `mountNebula` is true (after chunks load, and
+   `preloadAll` warms it), and its `onReady` still ends the loading screen.
+   Confirm the landing still fades from the loading overlay to the nebula with no
+   extra blank flash. Low risk, but it touches the load choreography.
+

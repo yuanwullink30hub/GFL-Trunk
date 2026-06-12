@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
-import NebulaBackground from './components/NebulaBackground';
+
+// Lazy-load NebulaBackground — procedural WebGL nebula; keeps it out of the
+// main chunk. Mounted only after chunks load (mountNebula), inside Suspense.
+const NebulaBackground = lazy(() => import('./components/NebulaBackground'));
 
 // Lazy-load NebulaOverlay — desktop-only WebGL effect, no need to parse on laptop/mobile
 const NebulaOverlay = lazy(() => import('./components/NebulaOverlay'));
@@ -35,7 +38,7 @@ const AssessmentResultsModal = lazyRetry(() => import('./components/assessment/A
 const FilosofiePage = lazyRetry(() => import('./pages/FilosofiePage'));
 const GardensPage = lazyRetry(() => import('./pages/GardensPage'));
 const DataPage = lazyRetry(() => import('./pages/DataPage'));
-import { useCelestialState, CelestialBehindLayer } from './pages/DataPage';
+import { useCelestialState, CelestialBehindLayer } from './pages/DataPage.shared';
 const LoginPage = lazyRetry(() => import('./pages/LoginPage'));
 const EyedentityPage = lazyRetry(() => import('./pages/EyedentityPage'));
 const AdminDashboardModal = lazyRetry(() => import('./components/assessment/AdminDashboardModal'));
@@ -1522,12 +1525,14 @@ const App = () => {
           happens behind the opaque loading overlay. The onReady callback signals
           when the first frame has rendered, allowing the loading screen to end. */}
       {mountNebula && (
-        <NebulaBackground
-          mapPositionRef={nebulaMapRef}
-          currentFrame={currentFrame}
-          onReady={handleNebulaReady}
-          isVisible={true}
-        />
+        <Suspense fallback={null}>
+          <NebulaBackground
+            mapPositionRef={nebulaMapRef}
+            currentFrame={currentFrame}
+            onReady={handleNebulaReady}
+            isVisible={true}
+          />
+        </Suspense>
       )}
       {/* ========================= */}
       {/* LOADING SCREEN OVERLAY */}

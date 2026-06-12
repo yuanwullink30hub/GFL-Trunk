@@ -1,6 +1,11 @@
-import React, { memo, useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { memo, useState, useEffect, lazy, Suspense } from 'react';
 import { Zap, Home, Radio } from 'lucide-react';
 import { SciFiButton } from '../components/assessment/dashboardStyles';
+
+// App.js (line ~38) imports these synchronously; they live in DataPage.shared.js
+// to stay off this module's lazy three.js graph. Re-exported here for any
+// existing `from './pages/DataPage'` consumers.
+export { useCelestialState, CelestialBehindLayer } from './DataPage.shared';
 
 // Heavy scene (three / fiber / drei / postprocessing) stays behind a
 // lazy boundary: App.js synchronously imports the stubs below, which
@@ -39,29 +44,6 @@ function isWebGLAvailable() {
    DEV_PATHGUIDE.md. This file deliberately keeps the page shell
    minimal so that phase has a clean surface to build on.
    =================================================================== */
-
-/* -- Legacy exports - App.js contract -------------------------------
-   App.js imports these (line ~38) and threads `celestial` into the
-   NebulaOverlay and the (now empty) behind-nebula layer. Kept as stubs
-   so App.js needs zero changes; remove both when App.js is next edited. */
-export function useCelestialState() {
-  return useMemo(() => ({
-    selectedPlanetId: null,
-    isZoomedIn: false,
-    hideOriginal: false,
-    frozenOrigin: '50% 50%',
-    activePlanet: null,
-    targetX: '0vw',
-    targetY: '0vh',
-    entryX: '0vw',
-    entryY: '0vh',
-    handlePlanetClick: () => {},
-    handlePlanetBack: () => {},
-  }), []);
-}
-
-export const CelestialBehindLayer = memo(() => null);
-CelestialBehindLayer.displayName = 'CelestialBehindLayer';
 
 /* -- Inline keyframes for the HUD (codebase is inline-styles; these two
    animations are the only CSS the page needs) -- */

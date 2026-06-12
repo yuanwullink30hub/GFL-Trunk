@@ -12,6 +12,7 @@
   "dependencies": {
     "@gfl/api-client": "workspace:*",
     "@gfl/assessment-core": "workspace:*",
+    "@gfl/brands": "workspace:*",
     "@gfl/i18n": "workspace:*",
     "@gfl/types": "workspace:*",
     "@gfl/ui": "workspace:*",

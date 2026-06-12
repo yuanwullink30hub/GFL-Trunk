@@ -54,6 +54,43 @@ importers:
         specifier: ^0.15.1
         version: 0.15.2
 
+  apps/marketing:
+    dependencies:
+      '@gfl/brands':
+        specifier: workspace:*
+        version: link:../../packages/brands
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.31)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.0
+        version: 4.7.0(vite@5.4.21(@types/node@25.9.3))
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.0(postcss@8.5.15)
+      postcss:
+        specifier: ^8.4.47
+        version: 8.5.15
+      tailwindcss:
+        specifier: ^3.4.19
+        version: 3.4.19
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.0
+        version: 5.4.21(@types/node@25.9.3)
+
   apps/platform:
     dependencies:
       '@gfl/api-client':
@@ -62,6 +99,9 @@ importers:
       '@gfl/assessment-core':
         specifier: workspace:*
         version: link:../../packages/assessment-core
+      '@gfl/brands':
+        specifier: workspace:*
+        version: link:../../packages/brands
       '@gfl/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -167,6 +207,28 @@ importers:
         version: 5.9.3
 
   packages/assessment-core:
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/brands:
+    dependencies:
+      framer-motion:
+        specifier: ^11.18.2
+        version: 11.18.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      lucide-react:
+        specifier: ^0.562.0
+        version: 0.562.0(react@18.3.1)
+      react:
+        specifier: ^18.3.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.0
+        version: 18.3.1(react@18.3.1)
+      recharts:
+        specifier: ^3.7.0
+        version: 3.8.1(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react-is@16.13.1)(react@18.3.1)(redux@5.0.1)
     devDependencies:
       typescript:
         specifier: ^5.5.0

@@ -23,4 +23,4 @@ export {
   Brand10Page,
   Brand11Page,
   Brand12Page
-} from './GeneralBrandPage';
+} from '@gfl/brands';

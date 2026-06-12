@@ -43,7 +43,7 @@ import {
   BTN, LABEL, TEXTAREA, INPUT_SM,
   C, FONT, SciFiButton,
 } from '@gfl/ui';
-import { BRANDS } from '../../pages/GeneralBrandPage/brandData';
+import { BRANDS } from '@gfl/brands';
 import InvoiceTemplate from './InvoiceTemplate';
 import CreditNoteTemplate from './CreditNoteTemplate';
 import EmailTemplate from './EmailTemplate';

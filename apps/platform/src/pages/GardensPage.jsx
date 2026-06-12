@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import GeneralBrandPage from './GeneralBrandPage';
+import GeneralBrandPage from '@gfl/brands';
 
 /**
  * GardensPage — Shows the brand page template (index 4 in BRANDS array).

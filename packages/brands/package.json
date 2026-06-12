@@ -1,0 +1,21 @@
+{
+  "name": "@gfl/brands",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.jsx",
+  "exports": {
+    ".": "./src/index.jsx"
+  },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.562.0",
+    "recharts": "^3.7.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": { "typescript": "^5.5.0" }
+}

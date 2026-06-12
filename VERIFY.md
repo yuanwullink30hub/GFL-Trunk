@@ -143,3 +143,51 @@ in the corner once unlocked. Gate also pauses the cube (via `paused`).
 ### To reset while testing
 `localStorage.removeItem('dw_assessmentUnlocked')` in the console, then reload.
 
+---
+
+## Task 5 — mobile gating (`feat(mobile)`)
+**Build:** green
+
+`getDeviceInfo().isMobile || .isTablet` (UA-based, from `deviceUtils`) → DataPage
+renders a styled `[ DESKTOP_REQUIRED ]` card instead of mounting `HypercubeScene`.
+The warp toggle and WebGL fallback are also desktop-only; the `DELTAWERKEN` back
+button stays so the section is still escapable. No touch port (by design).
+
+### Needs owner eyes
+1. On a phone/tablet, the DATA_STREAM section shows the desktop-only card (monitor
+   icon + copy), no canvas mounts, and back still works.
+2. Detection is UA-based — borderline devices (iPad masquerading as desktop, large
+   Android tablets) may slip through either way; tune the `deviceUtils` regex if a
+   specific device misclassifies.
+
+---
+
+## KNOWN ISSUES (open)
+
+### K1 — return / zoom-out from interior gets stuck (owner-reported 2026-06-12)
+**Severity:** non-critical (self-heals — fully leaving DataPage to the landing /
+HoloEarth and coming back fixes it without a hard refresh).
+
+**Symptom:** exiting the interior (warp-out / return) is glitchy and can get stuck;
+the camera doesn't cleanly fly back to the void view.
+
+**Owner hypothesis:** partly because the inner content doesn't fully exist yet, so
+there's "no path bound to return from."
+
+**My leading hypothesis:** stuck component state in `CameraRig` (src/webgl/HyperCube.js)
+— the self-heal-on-unmount points at a ref that never resets, most likely
+`transitionActive.current` and/or the pointer-lock state. Candidate interactions:
+(a) the `if (paused) return;` guards I added at the top of `CameraRig`/`HyperCube`
+`useFrame` (task 4b) — if `paused` is true at the moment `isInside` flips to false,
+the exit transition can't progress and `transitionActive` stays latched; (b)
+exiting before the fly-in fully settled; (c) pointer lock not releasing on the
+exact exit path (e.g. clicking the in-scene `DISCONNECT` while still locked).
+
+**Repro to capture:** warp in → (try variations: open a domain/gate then exit; exit
+via `DISCONNECT` vs HUD `Exit_Interior` vs ESC-then-exit) → note which path sticks.
+
+**Fix sketch (deferred):** on `isInside`→false, force-reset `transitionActive`,
+`rotation`, and pointer-lock unconditionally (don't let `paused` short-circuit the
+exit), and ensure `paused` is cleared before/with the exit. Not done yet — logged
+per owner; revisit before task 7.
+

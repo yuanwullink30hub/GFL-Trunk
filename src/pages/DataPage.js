@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { Zap, Home, Radio, Box } from 'lucide-react';
+import { Zap, Home, Radio, Box, Monitor } from 'lucide-react';
 import { SciFiButton } from '../components/assessment/dashboardStyles';
+import { getDeviceInfo } from '../utils/deviceUtils';
 
 /* ===================================================================
    ASSESSMENT GATE (task 4c) — a soft, ritual, one-time funnel (NOT
@@ -226,6 +227,12 @@ Badge.displayName = 'Badge';
 
 /* -- Main DataPage -- */
 const DataPage = memo(({ isVisible, onBack }) => {
+  // Hypercube is desktop-only by design (task 5) — no touch port. Mobile/tablet
+  // get a styled card instead of the WebGL scene. UA-based, stable for the session.
+  const [mobileBlocked] = useState(() => {
+    const d = getDeviceInfo();
+    return d.isMobile || d.isTablet;
+  });
   const [hasWebGL, setHasWebGL] = useState(null);
   const [isInside, setIsInside] = useState(false);
   // The domain whose overlay is open (task 4b). Non-null = cube paused.
@@ -275,8 +282,27 @@ const DataPage = memo(({ isVisible, onBack }) => {
     >
       <style>{HUD_KEYFRAMES}</style>
 
-      {/* WebGL unavailable fallback */}
-      {hasWebGL === false && (
+      {/* Desktop-only card (task 5) — mobile/tablet do not mount the scene. */}
+      {mobileBlocked && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          padding: '2rem', textAlign: 'center', gap: '1.25rem',
+        }}>
+          <Monitor size={40} color="#BF00FF" style={{ animation: 'dwPulse 2.5s infinite' }} />
+          <div style={{ fontFamily: 'monospace', color: '#39FF14', fontSize: '1rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.25em' }}>
+            [ DESKTOP_REQUIRED ]
+          </div>
+          <div style={{ fontFamily: 'monospace', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', maxWidth: '26rem', lineHeight: 1.7, letterSpacing: '0.04em' }}>
+            The Deltawerken hypercube is a desktop experience — it needs a pointer and
+            keyboard to navigate the 4D lattice. Return on a desktop browser to enter.
+          </div>
+        </div>
+      )}
+
+      {/* WebGL unavailable fallback (desktop only) */}
+      {!mobileBlocked && hasWebGL === false && (
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', flexDirection: 'column',
@@ -294,7 +320,7 @@ const DataPage = memo(({ isVisible, onBack }) => {
       )}
 
       {/* The hypercube - lazy scene, see src/webgl/HypercubeScene.js */}
-      {hasWebGL && (
+      {!mobileBlocked && hasWebGL && (
         <Suspense fallback={null}>
           <HypercubeScene
             isVisible={isVisible}
@@ -319,7 +345,8 @@ const DataPage = memo(({ isVisible, onBack }) => {
         </SciFiButton>
       </div>
 
-      {/* Warp toggle - below the Deltawerken button */}
+      {/* Warp toggle - below the Deltawerken button (desktop only) */}
+      {!mobileBlocked && (
       <div style={{ position: 'absolute', top: '9.5rem', right: '1.5rem', zIndex: 200 }}>
         <button
           onClick={() => setIsInside(!isInside)}
@@ -349,6 +376,7 @@ const DataPage = memo(({ isVisible, onBack }) => {
           )}
         </button>
       </div>
+      )}
 
       {/* Interior HUD — hidden while a domain overlay is open */}
       {isInside && !activeDomain && (

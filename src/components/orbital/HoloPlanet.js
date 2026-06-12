@@ -1,3 +1,7 @@
+// RETIRED from DataPage 2026-06-12; pending owner decision (DEV_PATHGUIDE task 2/7).
+// The 9-planet celestial view was replaced by the Deltawerken hypercube; this
+// component currently has no importers. Kept in place until the owner confirms
+// permanent deletion of the planet/celestial components.
 import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';

@@ -26,7 +26,26 @@ landing + tasks 2–7a. CRA `react-scripts build`, sizes are **gzipped**.
 (Full table is in the build output; chunk→source attribution needs source-map
 analysis, to be done as part of the migration's measurement step.)
 
-## Post-migration comparison
-Re-capture the same table after the Vite build and compare per-entry. Watch in
-particular: three.js chunk size (Vite/rollup tree-shaking should help), main chunk,
-and total. Record results below when the migration build is green.
+## Post-migration (Vite — apps/platform)
+Captured after Phase 5 (`vite build`, target es2020). Gzipped.
+
+| chunk | raw | gzip | notes |
+|-------|-----|------|-------|
+| `index.js` (app shell) | 106.6 kB | **31.6 kB** | was CRA `main` 81.55 kB gz |
+| `index.css` | 41.3 kB | 7.55 kB | |
+| `motion-vendor` | 114.3 kB | 37.8 kB | framer-motion |
+| `index.es` | 150.8 kB | 51.6 kB | (PDF/export sub-dep) |
+| `chart-vendor` | 322.6 kB | 97.1 kB | recharts |
+| `export-vendor` | 622.9 kB | 186.2 kB | jspdf + html2canvas + jszip (lazy) |
+| `three-vendor` | 2,666.6 kB | **807.3 kB** | three + r3f + drei + postprocessing |
+| + lazy page chunks | | | DataPage, FilosofiePage, GardensPage, EyedentityPage, AssessmentIntro/ResultsModal, AdminDashboardModal, NebulaBackground … |
+
+### Diff vs pre-migration
+- **App shell:** CRA `main` 81.55 kB gz → Vite `index.js` **31.6 kB gz** (−61%). three/pdf/charts now isolated in lazy vendor chunks.
+- three.js is now a single `three-vendor` chunk (807 kB gz) loaded only by WebGL routes, vs being spread across CRA chunks.
+- Modern target (es2020) vs CRA's ES5 — less transpilation weight.
+- Marketing (P6) and admin (P7) were **deferred** (embedded in platform — GardensPage renders brands, LoginPage launches admin), so this is single-app `apps/platform`; the 3-app split is a later incremental step.
+
+### Notes
+- Root `pnpm build` script assumes a global `pnpm` shim; in this env builds run via `corepack pnpm@9.0.0 --filter @gfl/platform build` (per-app, green).
+- Platform `tsc --noEmit` reports a parser quirk on `AssessmentQuestions.jsx` (valid JSX — Vite/esbuild bundles it fine); a pre-existing JS-origin typecheck artifact, not a build blocker.

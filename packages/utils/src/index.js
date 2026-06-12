@@ -7,6 +7,6 @@ export * from './geometryUtils.js';
 export * from './performanceUtils.js';
 export * from './storageUtils.js';
 export { MotionPredictor } from './MotionPredictor.js';
-export { ParticlePool } from './ParticlePool.js';
+export { default as ParticlePool } from './ParticlePool.js';
 export * from './markdownRenderer.jsx';
 export * from './sessionTracker.js';

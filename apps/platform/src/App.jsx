@@ -239,6 +239,87 @@ const AdminMobilePortal = () => {
   );
 };
 
+// ── Universal beta passkey gate (desktop). Mirrors AdminMobilePortal's
+//    /beta/verify contract but, on a valid passkey, grants access to the full
+//    app instead of the admin dashboard. It drops the static loading overlay on
+//    mount so the prompt fronts the load — preloadAll keeps warming chunks behind
+//    it, so the seconds spent authenticating mask the load (as in the old build).
+const BetaGate = ({ onGranted }) => {
+  const [passkeyValue, setPasskeyValue] = React.useState('');
+  const [passkeyError, setPasskeyError] = React.useState('');
+  const [verifying, setVerifying] = React.useState(false);
+
+  React.useEffect(() => {
+    const overlay = document.getElementById('gfl-loading-overlay');
+    if (overlay) {
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+      setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 400);
+    }
+  }, []);
+
+  const handleVerify = React.useCallback(async () => {
+    const key = passkeyValue.trim();
+    if (!key) return;
+    setVerifying(true);
+    setPasskeyError('');
+    try {
+      const host = window.location.hostname;
+      const isPrivateHost = /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+      const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+      const apiBase = (isLocalHost || isPrivateHost)
+        ? `http://${host}:8080/api`
+        : 'https://gfl-api.onrender.com/api';
+      const res = await fetch(apiBase + '/beta/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passkey: key }),
+      });
+      const data = await res.json();
+      if (!data.valid) { setPasskeyError('Ongeldige passkey'); setVerifying(false); return; }
+      localStorage.setItem('gfl_beta_access', key);
+      localStorage.setItem('gfl_beta_access_time', Date.now().toString());
+      // Admin passkey also unlocks admin mode (LoginPage / dashboard use these).
+      if (data.adminMode && data.token) {
+        localStorage.setItem('gfl_admin_mode', '1');
+        localStorage.setItem('gfl_token', data.token);
+      }
+      onGranted();
+    } catch (e) {
+      setPasskeyError('Verbindingsfout — probeer opnieuw');
+      setVerifying(false);
+    }
+  }, [passkeyValue, onGranted]);
+
+  const S = {
+    input: { width: '100%', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(168,85,247,0.3)', color: '#fff', fontSize: 16, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', marginBottom: 10 },
+    btn: { width: '100%', padding: '10px 0', borderRadius: 8, background: verifying ? 'rgba(168,85,247,0.4)' : 'linear-gradient(135deg,#a855f7,#7c3aed)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: verifying ? 'default' : 'pointer', letterSpacing: '0.05em', fontFamily: 'inherit' },
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto', zIndex: 100000 }}>
+      <div style={{ width: '85vw', maxWidth: 380, padding: '2rem 1.75rem', background: 'rgba(8,2,12,0.9)', border: '1px solid rgba(147,51,234,0.3)', borderRadius: 8 }}>
+        <p style={{ color: '#a855f7', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 6px', fontFamily: "'Figtree', sans-serif" }}>Garden For Life</p>
+        <p style={{ color: '#666', fontSize: 11, margin: '0 0 16px', fontFamily: "'Figtree', sans-serif" }}>
+          Voer je beta passkey in om toegang te krijgen.
+        </p>
+        <input
+          type="text"
+          value={passkeyValue}
+          onChange={e => setPasskeyValue(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleVerify()}
+          placeholder="Passkey..."
+          autoComplete="off"
+          autoFocus
+          style={S.input}
+        />
+        {passkeyError && <p style={{ color: '#f87171', fontSize: 11, margin: '0 0 8px', fontFamily: "'Figtree', sans-serif" }}>{passkeyError}</p>}
+        <button onClick={handleVerify} disabled={verifying} style={S.btn}>{verifying ? '...' : 'Unlock'}</button>
+      </div>
+    </div>
+  );
+};
+
 // Section 1 (frame 0): Label disappears, chunks become visible
 // Section 2 (frames 1-47): Chunks and particles explosion (47 frames for smooth animation)
 // Section 3 (frame 48): Pyramid snaps to bottom, system visible — sharp cut
@@ -352,6 +433,11 @@ const App = () => {
   
   const isMobile = useIsMobile();
   const { isLaptop, isLowGpu } = useDeviceFlags();
+  // Universal beta passkey gate. Desktop is fronted by <BetaGate>; mobile keeps
+  // <AdminMobilePortal>. Granted once a verified passkey is stored in localStorage.
+  const [betaGranted, setBetaGranted] = useState(() => {
+    try { return !!localStorage.getItem('gfl_beta_access'); } catch (e) { return false; }
+  });
   const containerRef = useRef(null);
   const earthSectionRef = useRef(null);
   const laptopAnimationRef = useRef(null); // Ref for laptop start-experience animation
@@ -1518,8 +1604,15 @@ const App = () => {
     );
   }
 
+  // Desktop: universal beta passkey gate (mobile is gated above via AdminMobilePortal).
+  // The preloadAll effect keeps warming chunks behind this prompt, so the time spent
+  // entering the passkey masks the load — then the app is revealed already warm.
+  if (!betaGranted) {
+    return <BetaGate onGranted={() => setBetaGranted(true)} />;
+  }
+
   return (
-    <main 
+    <main
       ref={containerRef}
       className={`relative w-screen font-figtree ${isMobile ? 'min-h-screen overflow-visible' : 'h-screen overflow-hidden'}`}
       style={{color: '#FFFEF0', touchAction: isMobile ? 'pan-y pinch-zoom' : 'none', zIndex: 1, isolation: 'isolate'}}

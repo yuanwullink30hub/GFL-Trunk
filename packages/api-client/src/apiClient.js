@@ -5,7 +5,7 @@
  * All archetype/OCEAN profile data is sent from the frontend with each request.
  */
 
-const API_BASE = process.env.REACT_APP_API_URL ||
+const API_BASE = import.meta.env.VITE_API_URL ||
   (typeof window !== 'undefined' && window.location.hostname === 'localhost'
     ? 'http://localhost:8080/api'
     : 'https://gfl-api.onrender.com/api');

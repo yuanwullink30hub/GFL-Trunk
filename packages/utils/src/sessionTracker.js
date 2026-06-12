@@ -5,10 +5,9 @@
  * Git hooks handle commit/push events automatically.
  * This module provides a helper for logging edit events from the frontend.
  */
-import { logActivity } from './apiClient';
+import { logActivity } from '@gfl/api-client';
 
 /** Log a dev edit event (e.g. saving a prompt, updating a question). */
 export function logEdit(message = '') {
   logActivity({ type: 'edit', message }).catch(() => {});
-}
 }

@@ -162,6 +162,22 @@ button stays so the section is still escapable. No touch port (by design).
 
 ---
 
+## Task 6 — local HDR for Environment (`chore(assets)`)
+**Build:** green · `build/hdr/night.hdr` bundled (1.745 MB, valid `#?RADIANCE`)
+
+Downloaded the drei `night` preset (`dikhololo_night_1k.hdr`) once into
+`public/hdr/night.hdr` and switched `HypercubeScene` to
+`<Environment files="/hdr/night.hdr" />`. No more pmndrs CDN fetch at runtime.
+1.7 MB < the 2 MB threshold, so the preset file is used as-is.
+
+### Needs owner eyes
+1. Metallic tube reflections still read the same as with `preset="night"` (it's the
+   identical HDR, just served locally — should be pixel-identical).
+2. With the network throttled/offline, the cube still lights correctly (the point
+   of the change).
+
+---
+
 ## KNOWN ISSUES (open)
 
 ### K1 — return / zoom-out from interior gets stuck (owner-reported 2026-06-12)

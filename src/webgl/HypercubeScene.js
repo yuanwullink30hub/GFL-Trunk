@@ -84,9 +84,10 @@ export default function HypercubeScene({ isVisible, isInside, paused, onExitInsi
         </EffectComposer>
 
         {/* Environment only feeds reflections on the metallic tubes - no
-            `background` prop, so the canvas stays transparent. Task 6 in
-            DEV_PATHGUIDE localizes this HDR off the pmndrs CDN. */}
-        <Environment preset="night" />
+            `background` prop, so the canvas stays transparent. Served locally
+            from public/hdr/ (the drei `night` preset = dikhololo_night_1k.hdr,
+            ~1.7MB) instead of fetching the pmndrs CDN at runtime (task 6). */}
+        <Environment files="/hdr/night.hdr" />
       </Suspense>
 
       {/* Subtle floor grid - dark lines, reads faintly over the nebula. */}

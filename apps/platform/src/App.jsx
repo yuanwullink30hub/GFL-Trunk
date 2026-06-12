@@ -8,7 +8,7 @@ const NebulaBackground = lazy(() => import('./components/NebulaBackground'));
 const NebulaOverlay = lazy(() => import('./components/NebulaOverlay'));
 
 import { getQuestions, getMe, logout } from '@gfl/api-client';
-import { preloadAll, preloadInBackground } from './utils/preloadUtils';
+import { preloadAll } from './utils/preloadUtils';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
 import { isIntegratedGPU, getGPURenderer } from '@gfl/utils';
@@ -586,7 +586,11 @@ const App = () => {
         console.log('[App] Max load time reached, continuing');
         setMountNebula(true);
         endLoadingScreen();
-        preloadInBackground();
+        // Cap the preload: stop warming chunks once the loading screen is gone,
+        // so the main thread is free for navigation. Anything not yet warmed
+        // loads on-demand (fast — three.js is already warm). Without this the
+        // preload churned ~30s in the background and made navigation laggy.
+        abortController.abort();
       }
     }, maxLoadTime);
     

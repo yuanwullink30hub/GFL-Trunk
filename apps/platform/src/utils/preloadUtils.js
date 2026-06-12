@@ -282,11 +282,11 @@ export const preloadAll = async (onProgress, options = {}) => {
     () => import('../components/holoearth/PyramidView'),
     () => import('../components/holoearth/PyramidInner'),
     () => import('../components/holoearth/PyramidOverlay'),
-    () => import('../pages/FilosofiePage'),
-    () => import('../pages/GardensPage'),
-    () => import('../pages/DataPage'),
-    () => import('../pages/LoginPage'),
-    () => import('../pages/EyedentityPage'),
+    // NOTE: the section pages (DataPage/Filosofie/Gardens/Login/Eyedentity) are
+    // intentionally NOT eagerly preloaded — they're navigated-to and already lazy,
+    // and three.js (warmed above) is their heavy dep. Eager-loading them here
+    // saturated the main thread for ~30s after the loading screen, making
+    // section navigation laggy. They now load on-demand (fast, three is warm).
   ];
   const total = allImports.length;
   for (let i = 0; i < total; i++) {

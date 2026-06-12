@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": false,
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "baseUrl": ".",
+    "paths": {
+      "@gfl/ui": ["packages/ui/src/index"],
+      "@gfl/utils": ["packages/utils/src/index"],
+      "@gfl/api-client": ["packages/api-client/src/index"],
+      "@gfl/i18n": ["packages/i18n/src/index"],
+      "@gfl/assessment-core": ["packages/assessment-core/src/index"],
+      "@gfl/types": ["packages/types/src/index"]
+    }
+  }
+}

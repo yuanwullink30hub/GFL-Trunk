@@ -1,0 +1,6 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  # platform-legacy is a throwaway CRA reference snapshot (deleted in Phase 9);
+  # not a workspace member — avoids installing react-scripts under pnpm.
+  - '!apps/platform-legacy'

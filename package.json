@@ -1,64 +1,19 @@
 {
-  "name": "merk-manifesto",
+  "name": "gfl-monorepo",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "@react-three/drei": "^9.96.5",
-    "@react-three/fiber": "^8.15.19",
-    "@react-three/postprocessing": "^2.16.2",
-    "@tailwindcss/postcss": "^4.1.17",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "date-fns": "^4.1.0",
-    "framer-motion": "^11.18.2",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^4.2.0",
-    "jspdf-autotable": "^5.0.7",
-    "jszip": "^3.10.1",
-    "lucide-react": "^0.562.0",
-    "postprocessing": "^6.36.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^7.10.1",
-    "react-scripts": "5.0.1",
-    "react-signature-canvas": "^1.1.0-alpha.2",
-    "recharts": "^3.7.0",
-    "three": "^0.160.0",
-    "web-vitals": "^5.1.0",
-    "zustand": "^5.0.13"
-  },
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "start": "set PORT=3000 && react-scripts start",
-    "build:css": "postcss src/index.css -o public/index.css",
-    "build": "npm run build:css && react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "deploy": "gh-pages -d build",
-    "watch:dev": "node dev-watcher.js"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "build": "pnpm -r --filter=\"./apps/*\" --filter=\"!@gfl/backend\" run build",
+    "dev:platform": "pnpm --filter @gfl/platform dev",
+    "dev:marketing": "pnpm --filter @gfl/marketing dev",
+    "dev:admin": "pnpm --filter @gfl/admin dev",
+    "dev:backend": "pnpm --filter @gfl/backend dev",
+    "start:backend": "pnpm --filter @gfl/backend start",
+    "clean": "pnpm -r exec rm -rf dist node_modules .turbo",
+    "typecheck": "pnpm -r run typecheck"
   },
   "devDependencies": {
-    "@cloudflare/kv-asset-handler": "^0.3.4",
-    "autoprefixer": "^10.4.20",
-    "postcss-cli": "^11.0.0",
-    "tailwindcss": "^3.4.19"
+    "typescript": "^5.5.0"
   }
 }

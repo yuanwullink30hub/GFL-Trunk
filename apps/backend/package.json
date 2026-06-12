@@ -1,5 +1,5 @@
 {
-  "name": "gfl-api",
+  "name": "@gfl/backend",
   "version": "0.1.0",
   "private": true,
   "description": "Garden For Life backend — multi-provider AI proxy, auth, MongoDB, PDF",

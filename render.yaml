@@ -19,7 +19,7 @@ services:
     runtime: node
     region: frankfurt          # EU — close to users
     plan: free                 # Free tier (spins down after 15 min inactivity)
-    rootDir: backend
+    rootDir: apps/backend
     buildCommand: npm install
     startCommand: node server.js
     envVars:

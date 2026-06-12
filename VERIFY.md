@@ -15,18 +15,16 @@ styles). Per owner: it is a single component replacing the DataPage inner conten
 rendered **transparent over the platform nebula** — the old `#050505` void is gone.
 
 ### Needs owner eyes
-1. **Transparency over nebula (HIGH RISK).** The canvas is `alpha:true` + 0-alpha
-   clear, but `@react-three/postprocessing` `EffectComposer`/`Bloom` can force an
-   opaque background, which would show the tesseract on black instead of the
-   nebula. Confirm the nebula is visible behind the cube. If it's black, the bloom
-   pass is clearing opaque — flag and we'll switch the composer to preserve alpha
-   (or move bloom to a selective pass).
+1. ~~**Transparency over nebula (HIGH RISK).**~~ **CONFIRMED by owner 2026-06-12:**
+   hypercube renders correctly (transparent over nebula — bloom did not force an
+   opaque background). No fix needed.
 2. **Bloom over nebula.** Glow reads correctly, no dark rectangle around the scene.
+   (Implied OK by #1; left for a closer look.)
 3. **gridHelper floor.** Dark lines (`#222`/`#080808`) over the colourful nebula —
    keep, dim further, or drop? Aesthetic call.
-4. **Warp flow.** `Warp_Inside` flies to centre → 4D rotation snaps to 90° → cube
-   expands into a room; pointer lock engages (mouse-look); `ESC` releases; in-scene
-   `[ DISCONNECT ]` and the HUD `Exit_Interior` button both return to void.
+4. ~~**Warp flow.**~~ **CONFIRMED by owner 2026-06-12:** the 3D→2D / warp movement
+   works (fly-in, snap, expansion). Pointer-lock / DISCONNECT / Exit details still
+   worth a closer pass but the core interaction is good.
 5. **Section exit.** `DELTAWERKEN` back button leaves the section and the frameloop
    stops (GPU usage drops — check Task Manager / about:gpu). `isInside` resets so
    the next visit starts from the void view.
@@ -64,4 +62,31 @@ rendered **transparent over the platform nebula** — the old `#050505` void is 
    `preloadAll` warms it), and its `onReady` still ends the loading screen.
    Confirm the landing still fades from the loading overlay to the nebula with no
    extra blank flash. Low risk, but it touches the load choreography.
+
+---
+
+## Task 4a — interior face-targeting (`feat(hypercube)`)
+**Build:** green · main chunk unchanged (code is in the lazy scene chunk)
+
+Six domains modelled in `DOMAINS` (src/webgl/HyperCube.js), one per cube axis:
++X Psychologie & Neurobiologie, −X Filosofie, +Y Symbolische Tradities,
+−Y Chemie·Alchemie·Epigenetica, +Z Natuurkunde & Informatietheorie,
+−Z Astronomie & Astrologie. `FaceTargets` finds the aimed face each frame
+(camera-forward · axis, max dot) and shows that domain's label at its face.
+
+No `hypercube-prototype.html` exists (confirmed by owner) — visual language is
+the existing DataPage HUD aesthetic, designed here.
+
+### Needs owner eyes
+1. **Targeting feel.** Inside, as you mouse-look, the floating `[ DOM-0x //
+   TARGET_LOCKED ]` label should update to whichever face you face. Only the
+   targeted face's label shows (deliberate — avoids behind-camera clutter).
+2. **Floor/ceiling domains.** ±Y faces are floor (Chemie) and ceiling
+   (Symbolische Tradities) — reachable via pitch (clamped ~±85°). Confirm they're
+   targetable and the label reads OK when looking up/down. If floor/ceiling feels
+   wrong for a domain, the axis→domain mapping in `DOMAINS` is trivial to reorder.
+3. **Timing.** Label currently appears as soon as `isInside` (during fly-in), not
+   only after full expansion. If it reads as premature, gate it on expansion.
+4. **Axis↔domain mapping** is a first pass — reorder freely if you have a preferred
+   spatial layout (e.g. astro on ceiling).
 

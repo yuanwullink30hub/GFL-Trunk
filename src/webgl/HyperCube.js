@@ -390,3 +390,83 @@ export function CameraRig({ isInside }) {
 
   return null;
 }
+
+/* ===================================================================
+   DOMAIN LAYER - the six science domains, one per outer-cube face.
+
+   Tesseract design (owner-decided, DEV_PATHGUIDE task 4): inner cube =
+   the Deltawerken system, outer cube = six domain faces. Each face maps
+   to one axis direction of the expanded room the camera sits inside.
+   =================================================================== */
+export const DOMAINS = [
+  { id: 'psyche',      axis: [1, 0, 0],  code: 'DOM-01', title: 'Psychologie & Neurobiologie' },
+  { id: 'filosofie',   axis: [-1, 0, 0], code: 'DOM-02', title: 'Filosofie' },
+  { id: 'symboliek',   axis: [0, 1, 0],  code: 'DOM-03', title: 'Symbolische Tradities' },
+  { id: 'chemie',      axis: [0, -1, 0], code: 'DOM-04', title: 'Chemie · Alchemie · Epigenetica' },
+  { id: 'natuurkunde', axis: [0, 0, 1],  code: 'DOM-05', title: 'Natuurkunde & Informatietheorie' },
+  { id: 'astro',       axis: [0, 0, -1], code: 'DOM-06', title: 'Astronomie & Astrologie' },
+];
+
+const FACE_DIST = 4.5;
+
+/* Face-targeting: every frame, find which face the crosshair (= camera
+   forward) is aimed at by max dot product against the six axis normals,
+   and surface that domain's label at its face position. Only the targeted
+   face shows (the one in front of the camera) - no behind-camera clutter. */
+export function FaceTargets({ isInside }) {
+  const { camera } = useThree();
+  const [targeted, setTargeted] = useState(-1);
+  const targetedRef = useRef(-1);
+  const axes = useMemo(() => DOMAINS.map((d) => new THREE.Vector3(...d.axis)), []);
+  const fwd = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame(() => {
+    if (!isInside) {
+      if (targetedRef.current !== -1) { targetedRef.current = -1; setTargeted(-1); }
+      return;
+    }
+    camera.getWorldDirection(fwd);
+    let best = -Infinity;
+    let bestIdx = 0;
+    for (let i = 0; i < axes.length; i++) {
+      const d = fwd.dot(axes[i]);
+      if (d > best) { best = d; bestIdx = i; }
+    }
+    if (bestIdx !== targetedRef.current) {
+      targetedRef.current = bestIdx;
+      setTargeted(bestIdx);
+    }
+  });
+
+  if (!isInside || targeted < 0) return null;
+  const d = DOMAINS[targeted];
+
+  return (
+    <Html
+      position={[d.axis[0] * FACE_DIST, d.axis[1] * FACE_DIST, d.axis[2] * FACE_DIST]}
+      center
+      pointerEvents="none"
+      zIndexRange={[20, 0]}
+    >
+      <div style={{
+        fontFamily: 'monospace',
+        textAlign: 'center',
+        whiteSpace: 'nowrap',
+        padding: '0.6rem 1.25rem',
+        border: '1px solid rgba(191,0,255,0.6)',
+        background: 'rgba(0,0,0,0.45)',
+        backdropFilter: 'blur(8px)',
+        boxShadow: '0 0 24px rgba(191,0,255,0.35)',
+        userSelect: 'none',
+      }}>
+        <div style={{ fontSize: '8px', letterSpacing: '0.3em', color: '#39FF14', opacity: 0.8, textTransform: 'uppercase' }}>
+          {d.code} // Target_Locked
+        </div>
+        <div style={{ fontSize: '13px', letterSpacing: '0.15em', color: '#BF00FF', marginTop: '0.25rem', textTransform: 'uppercase', fontWeight: 'bold' }}>
+          {d.title}
+        </div>
+        <div style={{ width: '100%', height: '1px', background: 'rgba(191,0,255,0.4)', marginTop: '0.4rem' }} />
+      </div>
+    </Html>
+  );
+}

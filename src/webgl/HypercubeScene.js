@@ -2,7 +2,7 @@ import React, { useRef, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { PerspectiveCamera, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { HyperCube, CameraRig, HolographicButton } from './HyperCube';
+import { HyperCube, CameraRig, HolographicButton, FaceTargets } from './HyperCube';
 
 /* ===================================================================
    HYPERCUBE SCENE - the <Canvas> owner, lazy-loaded by DataPage.
@@ -76,6 +76,7 @@ export default function HypercubeScene({ isVisible, isInside, onExitInside }) {
 
       <Suspense fallback={null}>
         <HyperCube isInside={isInside} />
+        <FaceTargets isInside={isInside} />
         <HolographicButton onReturn={onExitInside} isInside={isInside} />
 
         <EffectComposer>

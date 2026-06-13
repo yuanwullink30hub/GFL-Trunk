@@ -4,9 +4,6 @@ import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 
 // main chunk. Mounted only after chunks load (mountNebula), inside Suspense.
 const NebulaBackground = lazy(() => import('./components/NebulaBackground'));
 
-// Lazy-load NebulaOverlay — desktop-only WebGL effect, no need to parse on laptop/mobile
-const NebulaOverlay = lazy(() => import('./components/NebulaOverlay'));
-
 import { getQuestions, getMe, logout } from '@gfl/api-client';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from '@gfl/i18n';
@@ -2425,10 +2422,9 @@ const App = () => {
         </div>
       </div>
 
-      {/* ========================= */}
-      {/* NEBULA OVERLAY — fixed z:15, foreground gas clouds (desktop only) */}
-      {/* ========================= */}
-      {!isLaptop && <NebulaOverlay mapPositionRef={nebulaMapRef} opacity={0.55} isVisible={!activeSection || activeSection === 'monitor'} isZoomedIn={celestial.isZoomedIn} />}
+      {/* NEBULA OVERLAY removed — the foreground gas-cloud canvas misaligned
+          during map pans (owner request). NebulaBackground still provides the
+          backdrop. */}
 
       {/* ========================= */}
       {/* PAGE COMPONENTS - Smart pre-loading with content-visibility */}

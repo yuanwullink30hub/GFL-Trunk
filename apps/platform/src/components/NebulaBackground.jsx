@@ -38,6 +38,8 @@ const DISP_FRAG = `
   uniform vec2  u_mousePrev;      // previous mouse (0-1, GL-Y)
   uniform float u_mouseSpeed;     // |mouse - mousePrev|
   uniform float u_aspect;         // screen width / height
+  uniform float u_decay;          // per-frame decay (delta-scaled to be fps-independent)
+  uniform float u_diffuse;        // per-frame diffusion amount (delta-scaled)
 
   // Distance from point p to line segment a->b
   float segDist(vec2 p, vec2 a, vec2 b) {
@@ -66,7 +68,7 @@ const DISP_FRAG = `
     vec2 up = texture2D(u_prev, uv + vec2(0.0, texel.y)).xy * 2.0 - 1.0;
     vec2 dn = texture2D(u_prev, uv - vec2(0.0, texel.y)).xy * 2.0 - 1.0;
     vec2 avg = (rt + lt + up + dn) * 0.25;
-    vec2 diffused = mix(cur, avg, 0.025);
+    vec2 diffused = mix(cur, avg, u_diffuse);
 
     // Mouse stroke
     if (u_mouseSpeed > 0.0001) {
@@ -110,8 +112,8 @@ const DISP_FRAG = `
       diffused += push;
     }
 
-    // Near-permanent: half-life about 77 s at 30 fps
-    diffused *= 0.9997;
+    // Near-permanent: half-life about 77 s (delta-scaled in JS so it's fps-independent)
+    diffused *= u_decay;
 
     // Clamp to sane range
     diffused = clamp(diffused, vec2(-0.5), vec2(0.5));
@@ -143,24 +145,54 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     return fract(p.x * p.y);
   }
 
+  // Unit gradient per lattice point — trig-free Dave-Hoskins hash, then normalize.
+  vec2 hashGrad(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 19.19);
+    vec2 g = fract((p3.xx + p3.yz) * p3.zy) * 2.0 - 1.0;
+    return normalize(g + vec2(1e-5));
+  }
+
+  // Gradient (Perlin) noise — random DIRECTIONS at lattice points, not random
+  // scalar VALUES. Value noise interpolates corner scalars, which biases features
+  // onto the x/y grid and makes low-octave cloud edges read as blocky square cells
+  // ("low-res pixels"). Gradient noise crosses zero in every direction, so edges
+  // stay smooth, organic gas. Remapped to keep mean 0.5 but with a wider spread
+  // than the naive *0.5+0.5 (which over-concentrates mass near 0.5) — this keeps the
+  // existing colour grading calibrated. MASS_GAIN is the contrast / "mass" knob:
+  // higher = more contrast / less central mass, lower = softer / more mass.
   float noise(vec2 p) {
     vec2 i = floor(p);
     vec2 f = fract(p);
-    // Quintic interpolation (C2 continuous)
     vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-    // Value noise: interpolate scalar hash values at each corner — isotropic, no directional banding
-    float va = hash(i + vec2(0.0, 0.0));
-    float vb = hash(i + vec2(1.0, 0.0));
-    float vc = hash(i + vec2(0.0, 1.0));
-    float vd = hash(i + vec2(1.0, 1.0));
-    return mix(mix(va, vb, u.x), mix(vc, vd, u.x), u.y);
+    float a = dot(hashGrad(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0));
+    float b = dot(hashGrad(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0));
+    float c = dot(hashGrad(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0));
+    float d = dot(hashGrad(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0));
+    float n = mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+    // Perlin range ~[-0.707,0.707]. Two knobs:
+    //   NOISE_GAIN — contrast. 0.707 fills [0,1] exactly; higher clamps the tails
+    //                flat at 0/1 (solid patches — that was the "too much mass" bug).
+    //   NOISE_BIAS — the cloud-MASS dial. The DC level of the field: below 0.5 shifts
+    //                the whole field down so less of it clears the gas thresholds →
+    //                thinner, more defined clouds. Lower = less mass, higher = more.
+    const float NOISE_GAIN = 0.70;
+    const float NOISE_BIAS = 0.42;
+    return clamp(n * NOISE_GAIN + NOISE_BIAS, 0.0, 1.0);
   }
 
+  // Per-octave rotation (irrational ~36.9 turn) decorrelates the lattice so the
+  // value-noise grid axes of successive octaves never align — this is what breaks
+  // the reinforced horizontal/vertical "linear axis" banding. The value range is
+  // unchanged (still a weighted sum of 0..1 noise) so colour grading stays calibrated.
+  const float ROT_C = 0.80, ROT_S = 0.60;
   float fbm(vec2 p) {
-    float v = 0.0, a = 0.5, f = 1.0;
+    float v = 0.0, a = 0.5;
+    mat2 m = mat2(ROT_C, ROT_S, -ROT_S, ROT_C);
     for (int i = 0; i < ${fbmOctaves}; i++) {
-      v += a * noise(p * f);
-      f *= 2.1; a *= 0.48;
+      v += a * noise(p);
+      p = m * p * 2.1;
+      a *= 0.48;
     }
     return v;
   }
@@ -171,10 +203,12 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
   }
 
   float ridgeFbm(vec2 p) {
-    float v = 0.0, a = 0.5, f = 1.0;
+    float v = 0.0, a = 0.5;
+    mat2 m = mat2(ROT_C, ROT_S, -ROT_S, ROT_C);
     for (int i = 0; i < ${ridgeOctaves}; i++) {
-      v += a * ridgeNoise(p * f);
-      f *= 2.2; a *= 0.45;
+      v += a * ridgeNoise(p);
+      p = m * p * 2.2;
+      a *= 0.45;
     }
     return v;
   }
@@ -222,11 +256,23 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Map navigation offset
     vec2 mapOff = u_offset * vec2(0.35, 0.35);
 
-    // Parallax-depth displacement per layer
-    vec2 p0 = (uv + disp * 0.06 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.12; // deepest — background gas
-    vec2 p1 = (uv + disp * 0.18 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.3;
-    vec2 p2 = (uv + disp * 0.32 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.5;
-    vec2 p3 = (uv + disp * 0.48 - 0.5) * vec2(aspect, 1.0) + mapOff * 0.7;
+    // Map-pan translation for the gas: ONE shared offset across every gas layer so
+    // the whole nebula slides rigidly (a parallax pan past the star field) when you
+    // navigate. Previously each layer panned at a different rate (0.12/0.3/0.5/0.7),
+    // so a single cloud's shape-mask, mid-tones and bright cores translated by
+    // different amounts and slid apart — reading as chaotic "reforming" gas instead
+    // of camera motion. 0.25 sits the gas deep — slower than the mid/foreground
+    // stars so they visibly rush past it as you navigate (a stronger "flying through
+    // space" read). Depth still comes from the star/galaxy layers below, which keep
+    // their own per-layer parallax rates.
+    vec2 gasPan = mapOff * 0.25;
+
+    // Parallax-depth displacement per layer — disp (mouse paint) stays per-layer;
+    // only the map-pan term is unified so navigation reads as a rigid slide.
+    vec2 p0 = (uv + disp * 0.06 - 0.5) * vec2(aspect, 1.0) + gasPan; // deepest — background gas
+    vec2 p1 = (uv + disp * 0.18 - 0.5) * vec2(aspect, 1.0) + gasPan;
+    vec2 p2 = (uv + disp * 0.32 - 0.5) * vec2(aspect, 1.0) + gasPan;
+    vec2 p3 = (uv + disp * 0.48 - 0.5) * vec2(aspect, 1.0) + gasPan;
 
     // ── Edge distortion: 3 noise layers for organic nebula boundaries ──
     float edgeWarp = fbm(p1 * 4.5 + vec2(7.3, 2.1) + t * 0.04) * 0.22 - 0.11;
@@ -344,8 +390,15 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Re-normalize after noise perturbation
     float wSum = wA + wB + wC + 0.001;
     wA /= wSum; wB /= wSum; wC /= wSum;
-    // Single blend factor for mix() calls — 0 = purple, 1 = warm
-    float colorBlend = smoothstep(0.25, 0.75, wC + wB * 0.5);
+    // Single blend factor for mix() calls — 0 = purple, 1 = warm.
+    // Fracture the purple<->warm boundary with the existing breakup fractal so the
+    // cross-section where two clouds meet dissolves into tendrils instead of a clean
+    // contour that sweeps across as the cloud centers drift. seamProx gates it to the
+    // boundary only — cloud cores keep their identity colour (free: reuses breakup).
+    float blendArg = wC + wB * 0.5;
+    float seamProx = clamp(1.0 - abs(blendArg - 0.5) * 2.0, 0.0, 1.0);
+    blendArg += (breakup - 0.5) * 0.5 * seamProx;
+    float colorBlend = smoothstep(0.25, 0.75, blendArg);
     // Blue depth factor: strongest where B (transitional) dominates
     float blueDepth = wB * 0.35 * smoothstep(0.15, 0.40, wB);
     blueDepth = min(blueDepth, 0.15); // cap blue at ~15% contribution
@@ -1122,7 +1175,7 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     const wrapper = wrapperRef.current;
     const vpW = wrapper ? wrapper.clientWidth  : window.innerWidth;
     const vpH = wrapper ? wrapper.clientHeight : window.innerHeight;
-    const dpr = Math.min(window.devicePixelRatio, 1.0);
+    const dpr = Math.min(window.devicePixelRatio, 1.25);
     let cw = Math.round(vpW * dpr);
     let ch = Math.round(vpH * dpr);
     canvas.width  = cw;
@@ -1168,6 +1221,8 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       mousePrev:  gl.getUniformLocation(dispProg, 'u_mousePrev'),
       mouseSpeed: gl.getUniformLocation(dispProg, 'u_mouseSpeed'),
       aspect:     gl.getUniformLocation(dispProg, 'u_aspect'),
+      decay:      gl.getUniformLocation(dispProg, 'u_decay'),
+      diffuse:    gl.getUniformLocation(dispProg, 'u_diffuse'),
     };
     const dPosLoc = gl.getAttribLocation(dispProg, 'a_position');
 
@@ -1189,7 +1244,7 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       const w = wrapperRef.current;
       const rVpW = w ? w.clientWidth  : window.innerWidth;
       const rVpH = w ? w.clientHeight : window.innerHeight;
-      const d = Math.min(window.devicePixelRatio, 1.0);
+      const d = Math.min(window.devicePixelRatio, 1.25);
       let rw = Math.round(rVpW * d);
       let rh = Math.round(rVpH * d);
       canvas.width  = rw;
@@ -1208,7 +1263,7 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
 
     // Render loop
     let lastFrame = 0;
-    const INTERVAL = 1000 / 30;
+    const INTERVAL = 1000 / 49;
 
     function render(timestamp) {
       if (!isVisibleRef.current) {
@@ -1249,6 +1304,12 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       gl.uniform2f(dU.mousePrev, px, py);
       gl.uniform1f(dU.mouseSpeed, speed);
       gl.uniform1f(dU.aspect, aspect);
+      // Paint physics were hand-tuned per-frame at 30fps. Scale them by the real
+      // frame delta so decay/diffusion run at the same RATE regardless of fps —
+      // trails fade/spread identically at 49fps (or any fps) as they did at 30.
+      const frames30 = Math.min(Math.max(delta, 0) * 30.0, 4.0); // clamp spikes after tab-away
+      gl.uniform1f(dU.decay, Math.pow(0.9997, frames30));
+      gl.uniform1f(dU.diffuse, Math.min(0.025 * frames30, 0.4));
 
       gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
       gl.enableVertexAttribArray(dPosLoc);

@@ -65,9 +65,14 @@ const updateMesh = (
     const edgeAngle = Math.atan2(avgW, avgX);
     const focusAngle = -glowTime - Math.PI / 2;
     const proximity = Math.cos(edgeAngle - focusAngle);
-    const glowBoost = Math.max(0, proximity) ** 5 * 15.0 * flicker;
-
-    const boostColor = new THREE.Color(1, 1, 1).multiplyScalar(1 + glowBoost);
+    // Smooth focus sweep. proximity^5 gave each edge a razor-thin bright window, so
+    // as the focus passed it snapped bright->dark — a glitchy flash, amplified outward
+    // by bloom. proximity^2 widens that window so the glow flows smoothly along the
+    // cube (neighbouring edges share it), and x2.5 keeps the peak modest. The clamp
+    // still guards the Bloom pass from HDR blowout.
+    const glowBoost = Math.max(0, proximity) ** 2.0 * 2.5 * flicker;
+    const boost = Math.min(1 + glowBoost, 5.0);
+    const boostColor = new THREE.Color(boost, boost, boost);
     if (baseColor) {
       ref.current.setColorAt(i, baseColor.clone().multiply(boostColor));
     } else {
@@ -78,44 +83,51 @@ const updateMesh = (
   if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true;
 };
 
-/* Holographic in-scene return button, visible only inside. */
-export function HolographicButton({ onReturn, isInside }) {
+/* In-world ENTER gate — a billboarded holographic button that lives at the centre,
+   inside the inner cube. It copies the camera orientation each frame so it always
+   faces us and never rolls with the 4D rotation. `occlude="blending"` makes the
+   cube's near edges pass in front of it per-pixel while the far edges sit behind —
+   so it reads as living *inside* the inner cube. Shown only from the void view;
+   once inside, the crosshair-aimable DISCONNECT button (in FaceTargets) and the
+   HUD toggle handle the exit. */
+export function EnterButton({ onEnter, isInside, paused }) {
   const [hovered, setHovered] = useState(false);
 
-  if (!isInside) return null;
+  if (isInside || paused) return null;
 
+  // No billboard — the panel stays world-oriented so it shares the tesseract's tilt.
+  // The cube's faces are world-axis-aligned; facing +Z sits flush with the inner
+  // cube's camera-facing face, so it foreshortens with the same perspective as the
+  // cube instead of reading as a flat HUD sticker. `rotation` is the tilt knob.
   return (
-    <group position={[0, -2.5, -4]} rotation={[-Math.PI / 3, 0, 0]}>
-      <Html transform occlude distanceFactor={6} pointerEvents="auto">
+    <group position={[0, 0, 0]} rotation={[0, 0, 0]}>
+      <Html transform occlude="blending" distanceFactor={5} pointerEvents="auto">
         <button
-          onClick={onReturn}
+          onClick={(e) => { e.stopPropagation(); onEnter && onEnter(); }}
           onPointerDown={(e) => e.stopPropagation()}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           style={{
-            padding: '0.75rem 2rem',
+            padding: '0.6rem 1.4rem',
             borderRadius: '0.125rem',
-            border: `2px solid ${hovered ? '#39FF14' : 'rgba(191,0,255,0.6)'}`,
+            border: `2px solid ${hovered ? '#39FF14' : 'rgba(191,0,255,0.7)'}`,
             fontFamily: 'monospace',
             fontSize: '10px',
-            letterSpacing: '0.4em',
-            transition: 'all 0.5s',
-            background: hovered ? 'rgba(191,0,255,0.3)' : 'rgba(0,0,0,0.4)',
+            letterSpacing: '0.35em',
+            transition: 'all 0.4s',
+            background: hovered ? 'rgba(57,255,20,0.18)' : 'rgba(5,1,10,0.55)',
             color: hovered ? '#39FF14' : '#BF00FF',
-            boxShadow: hovered ? '0 0 30px #39FF14' : '0 0 15px rgba(191,0,255,0.3)',
-            transform: hovered ? 'scale(1.1)' : 'scale(1)',
-            backdropFilter: 'blur(24px)',
+            boxShadow: hovered ? '0 0 28px #39FF14' : '0 0 16px rgba(191,0,255,0.4)',
+            transform: hovered ? 'scale(1.08)' : 'scale(1)',
+            backdropFilter: 'blur(10px)',
             cursor: 'pointer',
             textTransform: 'uppercase',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '0.25rem',
+            whiteSpace: 'nowrap',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem',
           }}
         >
-          <span style={{ opacity: 0.5, fontSize: '8px', letterSpacing: '0.1em' }}>Return_Signal</span>
-          <span>[ DISCONNECT ]</span>
-          <div style={{ width: '100%', height: '1px', background: 'currentColor', marginTop: '0.25rem', opacity: 0.2 }} />
+          <span style={{ opacity: 0.55, fontSize: '7px', letterSpacing: '0.2em' }}>Core_Access</span>
+          <span>[ INITIALIZE ]</span>
         </button>
       </Html>
     </group>
@@ -238,7 +250,8 @@ export function HyperCube({ isInside, paused }) {
     }
 
     const time = rotationRef.current;
-    const flicker = 1.0 + Math.sin(clock.getElapsedTime() * 50) * 0.15;
+    // Gentle electric shimmer — was 50 rad/s x 0.15, a fast/deep strobe that read as flashing.
+    const flicker = 1.0 + Math.sin(clock.getElapsedTime() * 7) * 0.06;
 
     // Suppress the lantern while the cubes overlap (folded state)
     const foldState = Math.abs(Math.sin(time * 2));
@@ -251,7 +264,7 @@ export function HyperCube({ isInside, paused }) {
     // 4D -> 3D perspective projection with dynamic scale for the room illusion
     const baseDistance = 2.2;
     const currentDistance = THREE.MathUtils.lerp(baseDistance, 4.0, expansionRef.current);
-    const scale = THREE.MathUtils.lerp(3.0, 12.0, expansionRef.current);
+    const scale = THREE.MathUtils.lerp(2.4, 12.0, expansionRef.current); // 2.4 = 80% of the old 3.0 void-view size
 
     vertices4D.forEach((v, i) => {
       const rw = v.x * sinT + v.w * cosT;
@@ -266,7 +279,7 @@ export function HyperCube({ isInside, paused }) {
 
     if (lightARef.current) {
       lightARef.current.position.set(0, 0, 0);
-      lightARef.current.intensity = 15;
+      lightARef.current.intensity = 8; // softened — sharp moving speculars were twinkling on the chrome edges
     }
   });
 
@@ -296,8 +309,8 @@ export function HyperCube({ isInside, paused }) {
         />
       </instancedMesh>
 
-      <pointLight ref={lightARef} color="#39FF14" distance={12} decay={2} intensity={15} />
-      <pointLight color="#BF00FF" position={[0, 0, 0]} intensity={12} distance={15} />
+      <pointLight ref={lightARef} color="#39FF14" distance={12} decay={2} intensity={8} />
+      <pointLight color="#BF00FF" position={[0, 0, 0]} intensity={7} distance={15} />
     </group>
   );
 }
@@ -322,7 +335,8 @@ export function CameraRig({ isInside, paused }) {
       const sensitivity = 0.002;
       rotation.current.y -= e.movementX * sensitivity;
       rotation.current.x -= e.movementY * sensitivity;
-      rotation.current.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, rotation.current.x));
+      // No pitch clamp — full vertical freedom so you can look/turn all the way
+      // over the top and bottom and back around (free-floating-in-space look).
     };
     document.addEventListener('pointerlockchange', handleLockChange);
     document.addEventListener('mousemove', handleMouseMove);
@@ -419,28 +433,48 @@ const FACE_DIST = 4.5;
    forward) is aimed at by max dot product against the six axis normals,
    and surface that domain's label at its face position. Only the targeted
    face shows (the one in front of the camera) - no behind-camera clutter. */
-export function FaceTargets({ isInside, paused, onSelect }) {
+export function FaceTargets({ isInside, paused, onSelect, onDisconnect }) {
   const { camera, gl } = useThree();
   const [targeted, setTargeted] = useState(-1);
   const targetedRef = useRef(-1);
+  const aimDiscRef = useRef(false);
   const axes = useMemo(() => DOMAINS.map((d) => new THREE.Vector3(...d.axis)), []);
   const fwd = useMemo(() => new THREE.Vector3(), []);
+  // Direction from the camera (centre) to the in-world DISCONNECT button at
+  // [0,-2.5,-4]. A narrow cone (dot > 0.92, ~23°) around it is reserved so the
+  // button is aimable while pointer-locked, without bleeding into the -Z/-Y faces.
+  const DISCONNECT_DIR = useMemo(() => new THREE.Vector3(0, -2.5, -4).normalize(), []);
 
   useFrame(() => {
     if (!isInside || paused) {
       if (targetedRef.current !== -1) { targetedRef.current = -1; setTargeted(-1); }
+      aimDiscRef.current = false;
       return;
     }
     camera.getWorldDirection(fwd);
+    // DISCONNECT takes priority when the crosshair is on it — so a locked click
+    // there exits instead of opening the domain behind it.
+    if (fwd.dot(DISCONNECT_DIR) > 0.92) {
+      aimDiscRef.current = true;
+      if (targetedRef.current !== -2) { targetedRef.current = -2; setTargeted(-2); }
+      return;
+    }
+    aimDiscRef.current = false;
     let best = -Infinity;
     let bestIdx = 0;
     for (let i = 0; i < axes.length; i++) {
       const d = fwd.dot(axes[i]);
       if (d > best) { best = d; bestIdx = i; }
     }
-    if (bestIdx !== targetedRef.current) {
-      targetedRef.current = bestIdx;
-      setTargeted(bestIdx);
+    // Contain the hitbox to the button itself: only target a face when the
+    // crosshair is within a tight cone of its normal (~where the label sits),
+    // not anywhere on the 90°-wide face. Below threshold → no target, so a click
+    // off the label does nothing instead of selecting the nearest face.
+    const FACE_AIM = 0.96; // ~16° cone
+    const next = best >= FACE_AIM ? bestIdx : -1;
+    if (next !== targetedRef.current) {
+      targetedRef.current = next;
+      setTargeted(next);
     }
   });
 
@@ -449,9 +483,16 @@ export function FaceTargets({ isInside, paused, onSelect }) {
   // after closing an overlay), the click re-engages FPS look instead.
   useEffect(() => {
     const el = gl.domElement;
-    const handleClick = () => {
+    const handleClick = (e) => {
       if (paused || !isInside) return;
+      // Only the 3D canvas itself drives select / re-lock. A click that lands on an
+      // overlay control (DISCONNECT, exit, INITIALIZE, HUD) must NOT also open a
+      // domain or grab pointer-lock — that shared "one click → two paths" was what
+      // made DISCONNECT also fire the content path.
+      if (e.target !== el) return;
       if (document.pointerLockElement === el) {
+        // Aimed at the DISCONNECT button → exit (priority over domain select).
+        if (aimDiscRef.current) { if (onDisconnect) onDisconnect(); return; }
         if (targetedRef.current >= 0 && onSelect) onSelect(DOMAINS[targetedRef.current]);
       } else {
         const p = el.requestPointerLock();
@@ -460,37 +501,63 @@ export function FaceTargets({ isInside, paused, onSelect }) {
     };
     el.addEventListener('click', handleClick);
     return () => el.removeEventListener('click', handleClick);
-  }, [gl, isInside, paused, onSelect]);
+  }, [gl, isInside, paused, onSelect, onDisconnect]);
 
-  if (!isInside || paused || targeted < 0) return null;
-  const d = DOMAINS[targeted];
+  if (!isInside || paused) return null;
+
+  const armed = targeted === -2;           // crosshair on the DISCONNECT button
+  const d = targeted >= 0 ? DOMAINS[targeted] : null;
 
   return (
-    <Html
-      position={[d.axis[0] * FACE_DIST, d.axis[1] * FACE_DIST, d.axis[2] * FACE_DIST]}
-      center
-      pointerEvents="none"
-      zIndexRange={[20, 0]}
-    >
-      <div style={{
-        fontFamily: 'monospace',
-        textAlign: 'center',
-        whiteSpace: 'nowrap',
-        padding: '0.6rem 1.25rem',
-        border: '1px solid rgba(191,0,255,0.6)',
-        background: 'rgba(0,0,0,0.45)',
-        backdropFilter: 'blur(8px)',
-        boxShadow: '0 0 24px rgba(191,0,255,0.35)',
-        userSelect: 'none',
-      }}>
-        <div style={{ fontSize: '8px', letterSpacing: '0.3em', color: '#39FF14', opacity: 0.8, textTransform: 'uppercase' }}>
-          {d.code} // Target_Locked
+    <>
+      {/* The single in-world DISCONNECT button — small, green, always visible while
+          inside; brightens + invites a click when the crosshair is on it. */}
+      <Html position={[0, -2.5, -4]} center pointerEvents="none" zIndexRange={[20, 0]}>
+        <div style={{
+          fontFamily: 'monospace', textAlign: 'center', whiteSpace: 'nowrap',
+          padding: '0.35rem 0.9rem',
+          border: `1px solid ${armed ? '#39FF14' : 'rgba(57,255,20,0.5)'}`,
+          background: armed ? 'rgba(57,255,20,0.12)' : 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(8px)',
+          boxShadow: armed ? '0 0 22px rgba(57,255,20,0.55)' : '0 0 10px rgba(57,255,20,0.2)',
+          userSelect: 'none',
+          fontSize: '9px', letterSpacing: '0.3em',
+          color: armed ? '#39FF14' : 'rgba(57,255,20,0.75)',
+          textTransform: 'uppercase', transition: 'all 0.2s',
+        }}>
+          {armed ? '[ CLICK_TO_DISCONNECT ]' : '[ DISCONNECT ]'}
         </div>
-        <div style={{ fontSize: '13px', letterSpacing: '0.15em', color: '#BF00FF', marginTop: '0.25rem', textTransform: 'uppercase', fontWeight: 'bold' }}>
-          {d.title}
-        </div>
-        <div style={{ width: '100%', height: '1px', background: 'rgba(191,0,255,0.4)', marginTop: '0.4rem' }} />
-      </div>
-    </Html>
+      </Html>
+
+      {/* Domain label — only while the crosshair is on the face's button cone. */}
+      {d && (
+        <Html
+          position={[d.axis[0] * FACE_DIST, d.axis[1] * FACE_DIST, d.axis[2] * FACE_DIST]}
+          center
+          pointerEvents="none"
+          zIndexRange={[20, 0]}
+        >
+          <div style={{
+            fontFamily: 'monospace',
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+            padding: '0.6rem 1.25rem',
+            border: '1px solid rgba(191,0,255,0.6)',
+            background: 'rgba(0,0,0,0.45)',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 0 24px rgba(191,0,255,0.35)',
+            userSelect: 'none',
+          }}>
+            <div style={{ fontSize: '8px', letterSpacing: '0.3em', color: '#39FF14', opacity: 0.8, textTransform: 'uppercase' }}>
+              {d.code} // Target_Locked
+            </div>
+            <div style={{ fontSize: '13px', letterSpacing: '0.15em', color: '#BF00FF', marginTop: '0.25rem', textTransform: 'uppercase', fontWeight: 'bold' }}>
+              {d.title}
+            </div>
+            <div style={{ width: '100%', height: '1px', background: 'rgba(191,0,255,0.4)', marginTop: '0.4rem' }} />
+          </div>
+        </Html>
+      )}
+    </>
   );
 }

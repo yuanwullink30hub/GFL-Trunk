@@ -497,8 +497,14 @@ const App = () => {
 
   // Handler for opening sections - navigate on map
   const handleOpenSection = useCallback((section) => {
-    // Beta lock: block locked sections
-    const lockedSections = ['filosofie'];
+    // Parked sections: content has moved into the hypercube and the map space is
+    // empty, so the navigation path is disabled everywhere (incl. localhost).
+    const parkedSections = ['filosofie'];
+    if (parkedSections.includes(section)) {
+      return;
+    }
+    // Beta lock: block locked sections on deployed (non-localhost) sites
+    const lockedSections = [];
     if (shouldShowLock && lockedSections.includes(section)) {
       return;
     }

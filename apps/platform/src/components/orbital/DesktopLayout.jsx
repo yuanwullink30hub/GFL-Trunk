@@ -10,13 +10,7 @@ const blackholeIcon = '/images/Blackhole.png';
 const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, gardenAnimationProgress, verbindingsAnimationProgress, setActiveSection, pauseAutoSlide }) => {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
   const { language, toggleLanguage, t } = useLanguage();
-  
-  // Section lock: on deployed (non-localhost) sites, sections stay locked regardless of passkey.
-  const isLocalhost = typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const shouldShowLock = !isLocalhost;
 
-  
   // Touch swipe state for Gardens slideshow
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
@@ -225,11 +219,13 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             </div>
 
             {/* Button */}
+            {/* Filosofie is parked — its content moved into the hypercube. The path
+                to that (now empty) map space is disabled until it's re-homed. */}
             <SciFiButton
               variant="purple"
               size="sm"
-              disabled={shouldShowLock}
-              onClick={shouldShowLock ? undefined : (e) => setActiveSection('filosofie', e)}
+              disabled
+              onClick={undefined}
               style={{ transform: 'scaleY(1.04)', marginTop: '0.4rem' }}
             >
               Leer meer

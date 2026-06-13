@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera, Environment } from '@react-three/drei';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { HyperCube, CameraRig, HolographicButton, FaceTargets } from './HyperCube';
+import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
+import { HyperCube, CameraRig, FaceTargets, EnterButton } from './HyperCube';
 
 /* Pre-warm pass — mounted inside the Canvas only during the idle warm-up window.
    The hypercube's first rendered frame compiles every material's shader program
@@ -44,7 +44,7 @@ function PreWarm({ active, onDone }) {
    same pattern as HoloEarth).
    =================================================================== */
 
-export default function HypercubeScene({ isVisible, isInside, paused, onExitInside, onSelectDomain }) {
+export default function HypercubeScene({ isVisible, isInside, paused, onEnter, onExitInside, onSelectDomain }) {
   const glRef = useRef(null);
 
   // One-time idle pre-warm so the FIRST navigation to the data-stream page doesn't
@@ -112,11 +112,16 @@ export default function HypercubeScene({ isVisible, isInside, paused, onExitInsi
 
       <Suspense fallback={null}>
         <HyperCube isInside={isInside} paused={paused} />
-        <FaceTargets isInside={isInside} paused={paused} onSelect={onSelectDomain} />
-        <HolographicButton onReturn={onExitInside} isInside={isInside} />
+        <FaceTargets isInside={isInside} paused={paused} onSelect={onSelectDomain} onDisconnect={onExitInside} />
+        <EnterButton onEnter={onEnter} isInside={isInside} paused={paused} />
+        {/* DISCONNECT is now the crosshair-aimable green button rendered inside
+            FaceTargets (onDisconnect); the old large purple Html button is removed. */}
 
-        <EffectComposer>
+        <EffectComposer multisampling={8}>
           <Bloom luminanceThreshold={0.1} mipmapBlur intensity={1.5} radius={0.4} />
+          {/* Morphological AA on the final composite — tames the shimmer of the thin,
+              bright tube edges as they move sub-pixel (MSAA alone doesn't catch it). */}
+          <SMAA />
         </EffectComposer>
 
         {/* Environment only feeds reflections on the metallic tubes - no
@@ -126,8 +131,6 @@ export default function HypercubeScene({ isVisible, isInside, paused, onExitInsi
         <Environment files="/hdr/night.hdr" />
       </Suspense>
 
-      {/* Subtle floor grid - dark lines, reads faintly over the nebula. */}
-      <gridHelper args={[60, 40, '#222', '#080808']} position={[0, -4, 0]} />
     </Canvas>
   );
 }

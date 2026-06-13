@@ -4,7 +4,11 @@ export default {
   content: [
     './index.html',
     './src/**/*.{js,jsx,ts,tsx}',
-    '../../packages/ui/src/**/*.{js,jsx,ts,tsx}',
+    // Scan every workspace package the platform renders, so Tailwind classes
+    // used only inside shared packages (e.g. @gfl/brands' arbitrary positioning
+    // like top-[12%]) are still generated. Without this the Gardens page's
+    // <main> lost its top/left utilities and rendered too high / off to the left.
+    '../../packages/*/src/**/*.{js,jsx,ts,tsx}',
   ],
   theme: {
     extend: {

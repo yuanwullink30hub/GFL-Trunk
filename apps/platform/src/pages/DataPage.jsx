@@ -326,7 +326,14 @@ const DataPage = memo(({ isVisible, onBack }) => {
             isVisible={isVisible}
             isInside={isInside}
             paused={paused}
-            onExitInside={() => setIsInside(false)}
+            onEnter={() => setIsInside(true)}
+            onExitInside={() => {
+              // DISCONNECT is authoritative: leave the interior AND close any open
+              // domain/gate overlay so it always lands straight back on the overview.
+              setIsInside(false);
+              setActiveDomain(null);
+              setGateDomain(null);
+            }}
             onSelectDomain={handleSelectDomain}
           />
         </Suspense>
@@ -345,11 +352,12 @@ const DataPage = memo(({ isVisible, onBack }) => {
         </SciFiButton>
       </div>
 
-      {/* Warp toggle - below the Deltawerken button (desktop only) */}
-      {!mobileBlocked && (
+      {/* Exit toggle — only while inside (entry is now the in-cube INITIALIZE button).
+          Kept as a reliable HUD way out alongside the in-world DISCONNECT. */}
+      {!mobileBlocked && isInside && (
       <div style={{ position: 'absolute', top: '9.5rem', right: '1.5rem', zIndex: 200 }}>
         <button
-          onClick={() => setIsInside(!isInside)}
+          onClick={() => { setIsInside(false); setActiveDomain(null); setGateDomain(null); }}
           style={{
             display: 'flex', alignItems: 'center', gap: '0.75rem',
             padding: '0.75rem 1.5rem',

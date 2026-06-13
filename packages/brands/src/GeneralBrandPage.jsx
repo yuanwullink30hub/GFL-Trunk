@@ -262,15 +262,10 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
               );
             }
             
-            // Brand-specific styling for wrapper
-            let logoScale = 1;
-            let wrapperTranslate = 0;
-            
-            if (i === 0) logoScale = 0.8; // Karman
-            if (i === 1) logoScale = 0.8; // Code49
-            if (i === 2) wrapperTranslate = -Math.round(logoSize / 6); // Eleven Eleven
-            if (i === 3) logoScale = 0.85; // Rengi
-            
+            // All logos render at uniform size/position
+            const logoScale = 1;
+            const wrapperTranslate = 0;
+
             return (
               <div 
                 key={brand.id}

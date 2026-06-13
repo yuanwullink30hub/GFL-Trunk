@@ -326,16 +326,24 @@ export const preloadAll = async (onProgress, options = {}) => {
  * Use this for non-critical resources after initial load
  */
 export const preloadInBackground = () => {
-  scheduleIdleTask(() => {
-    // Load any additional resources during idle time
-    try {
-      const imageContext = require.context('../images', true, /\.(png|jpg|jpeg|gif|webp)$/);
-      imageContext.keys().forEach(path => {
-        const img = new Image();
-        img.src = imageContext(path);
-      });
-    } catch (error) {
-      // Graceful fallback if images don't exist or can't be required
-    }
-  });
+  // Gently warm the section-page chunks AFTER the landing is ready — ONE per idle
+  // tick, so the first navigation to a section doesn't pay a synchronous chunk
+  // eval (a full freeze). This is the calm counterpart to the up-front preloadAll
+  // blast that made navigation laggy for ~30s: low priority, spread across idle.
+  const pages = [
+    () => import('../pages/LoginPage'),
+    () => import('../pages/FilosofiePage'),
+    () => import('../pages/GardensPage'),
+    () => import('../pages/DataPage'),
+    () => import('../pages/EyedentityPage'),
+  ];
+  let i = 0;
+  const loadNext = () => {
+    if (i >= pages.length) return;
+    const load = pages[i++];
+    Promise.resolve(load())
+      .catch(() => {})
+      .then(() => scheduleIdleTask(loadNext)); // next one only after this settles
+  };
+  scheduleIdleTask(loadNext);
 };

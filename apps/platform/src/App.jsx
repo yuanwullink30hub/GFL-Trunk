@@ -8,7 +8,7 @@ const NebulaBackground = lazy(() => import('./components/NebulaBackground'));
 const NebulaOverlay = lazy(() => import('./components/NebulaOverlay'));
 
 import { getQuestions, getMe, logout } from '@gfl/api-client';
-import { preloadAll } from './utils/preloadUtils';
+import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
 import { isIntegratedGPU, getGPURenderer } from '@gfl/utils';
@@ -545,6 +545,9 @@ const App = () => {
           setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 500);
         }
       }
+      // Landing is ready — now gently warm the section-page chunks during idle so
+      // the first navigation to a page doesn't pay a chunk eval (freeze).
+      preloadInBackground();
     };
 
     // Create a promise that resolves when NebulaBackground fires onReady

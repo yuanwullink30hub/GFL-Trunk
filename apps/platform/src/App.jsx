@@ -1545,7 +1545,10 @@ const App = () => {
             mapPositionRef={nebulaMapRef}
             currentFrame={currentFrame}
             onReady={handleNebulaReady}
-            isVisible={true}
+            // Pause the nebula's rAF loop when an opaque section page covers it
+            // (it already self-pauses on !isVisible). Keep rendering on the home
+            // view, the transparent DataPage/monitor, and during map pans.
+            isVisible={!activeSection || activeSection === 'monitor' || isMapAnimating}
           />
         </Suspense>
       )}

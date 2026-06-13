@@ -341,6 +341,17 @@ const App = () => {
   const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 }); // Current grid position
   const nebulaMapRef = useRef({ x: 0, y: 0 }); // Stable ref for NebulaBackground — avoids per-frame React re-renders
   const [isMapAnimating, setIsMapAnimating] = useState(false);
+  const [panSource, setPanSource] = useState(null); // the section we're panning AWAY from
+  const activeSectionRef = useRef(null);            // current active section, readable in callbacks
+  // A section's heavy DOM (and 3D scenes) should only go live when it's the pan
+  // DESTINATION or the section we're LEAVING — never all six at once. Flipping
+  // every section visible during a pan (the old `|| isMapAnimating`) forced the
+  // browser to style+reflow every section's DOM simultaneously: a ~3.4s Layout
+  // storm (64% of busy main-thread time) that froze the navigation.
+  const sectionLive = useCallback(
+    (id) => activeSection === id || (isMapAnimating && panSource === id),
+    [activeSection, isMapAnimating, panSource]
+  );
   const mapAnimationRef = useRef(null);
   const mapStartPosRef = useRef({ x: 0, y: 0 });
   const mapTargetPosRef = useRef({ x: 0, y: 0 });
@@ -390,6 +401,10 @@ const App = () => {
     };
   }, []);
 
+  // Mirror activeSection into a ref so navigateToSection can read the section
+  // we're leaving without taking activeSection as a dependency.
+  useEffect(() => { activeSectionRef.current = activeSection; }, [activeSection]);
+
   const navigateToSection = useCallback((section) => {
     const target = GRID_POSITIONS[section] || GRID_POSITIONS.main;
     const start = { x: nebulaMapRef.current.x, y: nebulaMapRef.current.y };
@@ -407,6 +422,7 @@ const App = () => {
     mapTargetPosRef.current = target;
     mapCurveOffsetRef.current = curve;
     mapStartTimeRef.current = performance.now();
+    setPanSource(activeSectionRef.current); // keep the section we're leaving painted during the pan
     setIsMapAnimating(true);
     setActiveSection(section === 'main' ? null : section);
   }, [calculateCurveOffset]);
@@ -2457,12 +2473,12 @@ const App = () => {
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'filosofie' ? 'auto' : 'none',
           // Smart rendering: skip painting when far off-screen
-          contentVisibility: (activeSection === 'filosofie' || isMapAnimating) ? 'visible' : 'auto',
+          contentVisibility: sectionLive('filosofie') ? 'visible' : 'auto',
           containIntrinsicSize: '100vw 100vh',
           willChange: activeSection === 'filosofie' ? 'transform' : 'auto',
         }}>
-          <FilosofiePage 
-            isVisible={activeSection === 'filosofie' || isMapAnimating}
+          <FilosofiePage
+            isVisible={sectionLive('filosofie')}
             onBack={handleCloseSection} 
           />
         </div>
@@ -2475,12 +2491,12 @@ const App = () => {
           transform: `translate(calc(${GRID_POSITIONS.gardens.x} * 100vw), calc(${GRID_POSITIONS.gardens.y} * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'gardens' ? 'auto' : 'none',
-          contentVisibility: (activeSection === 'gardens' || isMapAnimating) ? 'visible' : 'auto',
+          contentVisibility: sectionLive('gardens') ? 'visible' : 'auto',
           containIntrinsicSize: '100vw 100vh',
           willChange: activeSection === 'gardens' ? 'transform' : 'auto',
         }}>
-          <GardensPage 
-            isVisible={activeSection === 'gardens' || isMapAnimating}
+          <GardensPage
+            isVisible={sectionLive('gardens')}
             onBack={handleCloseSection}
             initialBrandIndex={gardensBrandIndex}
           />
@@ -2494,12 +2510,12 @@ const App = () => {
           transform: `translate(calc(${GRID_POSITIONS.monitor.x} * 100vw), calc(${GRID_POSITIONS.monitor.y} * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: 'none',
-          contentVisibility: (activeSection === 'monitor' || isMapAnimating) ? 'visible' : 'auto',
+          contentVisibility: sectionLive('monitor') ? 'visible' : 'auto',
           containIntrinsicSize: '100vw 100vh',
           willChange: activeSection === 'monitor' ? 'transform' : 'auto',
         }}>
-          <DataPage 
-            isVisible={activeSection === 'monitor' || isMapAnimating}
+          <DataPage
+            isVisible={sectionLive('monitor')}
             onBack={handleCloseSection}
             celestial={celestial}
           />
@@ -2513,12 +2529,12 @@ const App = () => {
           transform: `translate(calc(${GRID_POSITIONS.login.x} * 100vw), calc(${GRID_POSITIONS.login.y} * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'login' ? 'auto' : 'none',
-          contentVisibility: (activeSection === 'login' || isMapAnimating) ? 'visible' : 'auto',
+          contentVisibility: sectionLive('login') ? 'visible' : 'auto',
           containIntrinsicSize: '100vw 100vh',
           willChange: activeSection === 'login' ? 'transform' : 'auto',
         }}>
-          <LoginPage 
-            isVisible={activeSection === 'login' || isMapAnimating}
+          <LoginPage
+            isVisible={sectionLive('login')}
             onBack={handleCloseSection} 
           />
         </div>
@@ -2531,12 +2547,12 @@ const App = () => {
           transform: `translate(calc(${GRID_POSITIONS.menu.x} * 100vw), calc(${GRID_POSITIONS.menu.y} * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'menu' ? 'auto' : 'none',
-          contentVisibility: (activeSection === 'menu' || isMapAnimating) ? 'visible' : 'auto',
+          contentVisibility: sectionLive('menu') ? 'visible' : 'auto',
           containIntrinsicSize: '100vw 100vh',
           willChange: activeSection === 'menu' ? 'transform' : 'auto',
         }}>
-          <EyedentityPage 
-            isVisible={activeSection === 'menu' || isMapAnimating}
+          <EyedentityPage
+            isVisible={sectionLive('menu')}
             onBack={handleCloseSection} 
           />
         </div>

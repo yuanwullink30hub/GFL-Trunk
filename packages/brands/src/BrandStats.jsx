@@ -28,6 +28,25 @@ const getChartData = (metrics) => {
 const BrandStats = ({ metrics }) => {
   const data = getChartData(metrics);
 
+  // Defer the recharts radar (ResponsiveContainer's ResizeObserver + heavy SVG
+  // layout) until the main thread is idle. When the Gardens page mounts during a
+  // section pan, the browser is mid-way through a large style+reflow pass; mounting
+  // the radar then piled onto that pass (profiled at ~64% Layout / ~3.4s of jank).
+  // requestIdleCallback fires only once the thread is idle — i.e. after the pan's
+  // layout storm settles — so the radar fades in a beat later instead of freezing
+  // the navigation. The placeholder keeps the same box so nothing shifts.
+  const [showChart, setShowChart] = React.useState(false);
+  React.useEffect(() => {
+    const ric = window.requestIdleCallback || ((cb) => setTimeout(() => cb(), 200));
+    const cancel = window.cancelIdleCallback || clearTimeout;
+    const id = ric(() => setShowChart(true), { timeout: 800 });
+    return () => cancel(id);
+  }, []);
+
+  if (!showChart) {
+    return <div className="w-full h-full" style={{ minHeight: '180px' }} aria-hidden />;
+  }
+
   return (
     <div className="w-full h-full" style={{ minHeight: '180px' }}>
       <ResponsiveContainer width="100%" height="100%">

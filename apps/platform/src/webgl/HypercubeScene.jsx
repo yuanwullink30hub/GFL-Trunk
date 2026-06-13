@@ -1,8 +1,29 @@
-import React, { useRef, useEffect, Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useRef, useEffect, useState, Suspense } from 'react';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { HyperCube, CameraRig, HolographicButton, FaceTargets } from './HyperCube';
+
+/* Pre-warm pass — mounted inside the Canvas only during the idle warm-up window.
+   The hypercube's first rendered frame compiles every material's shader program
+   plus the Bloom composer, shadow maps and the PMREM environment — ~hundreds of
+   ms that, left to the first navigation, freeze the data-stream page. Here we do
+   it off the critical path: gl.compile() builds the scene programs synchronously,
+   and a few rendered frames flush the composer/shadow passes. Then we report done
+   and the canvas drops back to frameloop:'never' until the user actually visits. */
+function PreWarm({ active, onDone }) {
+  const { gl, scene, camera } = useThree();
+  const frames = useRef(0);
+  useEffect(() => {
+    if (active) { try { gl.compile(scene, camera); } catch (e) { /* ignore */ } }
+  }, [active, gl, scene, camera]);
+  useFrame(() => {
+    if (!active) return;
+    frames.current += 1;
+    if (frames.current >= 8) onDone();
+  });
+  return null;
+}
 
 /* ===================================================================
    HYPERCUBE SCENE - the <Canvas> owner, lazy-loaded by DataPage.
@@ -26,6 +47,20 @@ import { HyperCube, CameraRig, HolographicButton, FaceTargets } from './HyperCub
 export default function HypercubeScene({ isVisible, isInside, paused, onExitInside, onSelectDomain }) {
   const glRef = useRef(null);
 
+  // One-time idle pre-warm so the FIRST navigation to the data-stream page doesn't
+  // freeze on shader/bloom/shadow/PMREM compilation. Scheduled on idle (after the
+  // landing settles) — renders a few hidden frames, then the canvas idles again.
+  const [warming, setWarming] = useState(false);
+  const [warmed, setWarmed] = useState(false);
+  useEffect(() => {
+    if (warmed) return;
+    const ric = window.requestIdleCallback || ((cb) => setTimeout(() => cb(), 1500));
+    const cancel = window.cancelIdleCallback || clearTimeout;
+    const id = ric(() => setWarming(true), { timeout: 4000 });
+    return () => cancel(id);
+  }, [warmed]);
+  const finishWarm = () => { setWarming(false); setWarmed(true); };
+
   useEffect(() => {
     return () => {
       if (glRef.current) {
@@ -42,7 +77,7 @@ export default function HypercubeScene({ isVisible, isInside, paused, onExitInsi
 
   return (
     <Canvas
-      frameloop={isVisible ? 'always' : 'never'}
+      frameloop={(isVisible || (warming && !warmed)) ? 'always' : 'never'}
       shadows
       dpr={[1, 1.5]}
       style={{ position: 'absolute', inset: 0, background: 'transparent' }}
@@ -65,6 +100,7 @@ export default function HypercubeScene({ isVisible, isInside, paused, onExitInsi
         ctx.getShaderInfoLog = (shader) => origGetShaderInfoLog(shader) || '';
       }}
     >
+      <PreWarm active={warming && !warmed} onDone={finishWarm} />
       <CameraRig isInside={isInside} paused={paused} />
       <PerspectiveCamera makeDefault position={[5, 5, 8]} fov={45} />
 

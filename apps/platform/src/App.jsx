@@ -1686,6 +1686,7 @@ const App = () => {
                   explosionProgressRef={explosionProgressRef}
                   isMobile={isMobile}
                   isActive={isSystem}
+                  isVisible={!activeSection || isMapAnimating}
                   pyramidScrollProgress={pyramidScrollProgress}
                   showPyramidLabels={isSystem}
                   coreScaleMultiplier={coreScaleMultiplier}
@@ -2383,6 +2384,7 @@ const App = () => {
               explosionProgressRef={explosionProgressRef}
               isMobile={isMobile}
               isActive={isSystem}
+              isVisible={!activeSection || isMapAnimating}
               pyramidScrollProgress={pyramidScrollProgress}
               showPyramidLabels={isSystem}
               coreScaleMultiplier={coreScaleMultiplier}

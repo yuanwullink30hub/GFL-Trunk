@@ -337,13 +337,14 @@ export const preloadInBackground = () => {
     () => import('../pages/DataPage'),
     () => import('../pages/EyedentityPage'),
   ];
-  let i = 0;
-  const loadNext = () => {
-    if (i >= pages.length) return;
-    const load = pages[i++];
-    Promise.resolve(load())
-      .catch(() => {})
-      .then(() => scheduleIdleTask(loadNext)); // next one only after this settles
-  };
-  scheduleIdleTask(loadNext);
+  // Kick off once the main thread is idle after the landing, then warm them
+  // back-to-back with a yield between each (so all 5 are ready within ~1s instead
+  // of waiting for a fresh idle callback per page, which gets starved while the
+  // landing renders — leaving the first nav to evaluate an un-warmed chunk).
+  scheduleIdleTask(async () => {
+    for (const load of pages) {
+      try { await Promise.resolve(load()); } catch (e) { /* ignore */ }
+      await new Promise(r => setTimeout(r, 0)); // yield to the event loop
+    }
+  });
 };

@@ -1542,10 +1542,11 @@ const App = () => {
             mapPositionRef={nebulaMapRef}
             currentFrame={currentFrame}
             onReady={handleNebulaReady}
-            // Pause the nebula's rAF loop when an opaque section page covers it
-            // (it already self-pauses on !isVisible). Keep rendering on the home
-            // view, the transparent DataPage/monitor, and during map pans.
-            isVisible={!activeSection || activeSection === 'monitor' || isMapAnimating}
+            // Always animate: the nebula is the visible parallax backdrop behind
+            // EVERY section (it pans with the map), so it must not pause — gating
+            // it froze the background on section coordinates. (HoloEarth still
+            // pauses off-screen since it's fully covered.)
+            isVisible={true}
           />
         </Suspense>
       )}

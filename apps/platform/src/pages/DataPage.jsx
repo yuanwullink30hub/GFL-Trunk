@@ -334,7 +334,7 @@ const DataPage = memo(({ isVisible, onBack }) => {
               setActiveDomain(null);
               setGateDomain(null);
             }}
-            onSelectDomain={handleSelectDomain}
+            onSelectDomain={() => { /* content access disabled for now — only DISCONNECT works inside */ }}
           />
         </Suspense>
       )}
@@ -479,12 +479,6 @@ const DataPage = memo(({ isVisible, onBack }) => {
         </div>
       )}
 
-      {/* Technical data overlay */}
-      <div style={{ position: 'absolute', bottom: '2rem', left: '2rem', pointerEvents: 'none', opacity: 0.4 }}>
-        <div style={{ fontFamily: 'monospace', fontSize: '10px', color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          Reconstruction_Active // Nested_Geometric_Array // Deltawerken.Hypercube
-        </div>
-      </div>
     </div>
   );
 });

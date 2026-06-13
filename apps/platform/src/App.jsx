@@ -2437,15 +2437,22 @@ const App = () => {
           zIndex: 95,
           pointerEvents: 'none',
           overflow: 'visible',
+          // Single-element pan: the whole wrapper translates by -map, and each
+          // section sits statically at its grid position. Previously every section
+          // recomputed `GRID.x - var(--map-x)` each frame -> a style recalc across
+          // all sections; now only this one transform updates per frame.
+          transform: 'translate(calc(var(--map-x, 0) * -100vw), calc(var(--map-y, 0) * -100vh))',
+          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+          willChange: isMapAnimating ? 'transform' : 'auto',
         }}
       >
-        {/* Each page is positioned at its grid location */}
+        {/* Each page sits statically at its grid position; the wrapper pans */}
         {/* Filosofie - Top-left button area */}
         <div style={{
           position: 'absolute',
           width: '100vw',
           height: '100vh',
-          transform: `translate(calc((${GRID_POSITIONS.filosofie.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.filosofie.y} - var(--map-y, 0)) * 100vh))`,
+          transform: `translate(calc(${GRID_POSITIONS.filosofie.x} * 100vw), calc(${GRID_POSITIONS.filosofie.y} * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'filosofie' ? 'auto' : 'none',
           // Smart rendering: skip painting when far off-screen
@@ -2464,7 +2471,7 @@ const App = () => {
           position: 'absolute',
           width: '100vw',
           height: '100vh',
-          transform: `translate(calc((${GRID_POSITIONS.gardens.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.gardens.y} - var(--map-y, 0)) * 100vh))`,
+          transform: `translate(calc(${GRID_POSITIONS.gardens.x} * 100vw), calc(${GRID_POSITIONS.gardens.y} * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'gardens' ? 'auto' : 'none',
           contentVisibility: (activeSection === 'gardens' || isMapAnimating) ? 'visible' : 'auto',
@@ -2483,7 +2490,7 @@ const App = () => {
           position: 'absolute',
           width: '100vw',
           height: '100vh',
-          transform: `translate(calc((${GRID_POSITIONS.monitor.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.monitor.y} - var(--map-y, 0)) * 100vh))`,
+          transform: `translate(calc(${GRID_POSITIONS.monitor.x} * 100vw), calc(${GRID_POSITIONS.monitor.y} * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: 'none',
           contentVisibility: (activeSection === 'monitor' || isMapAnimating) ? 'visible' : 'auto',
@@ -2502,7 +2509,7 @@ const App = () => {
           position: 'absolute',
           width: '100vw',
           height: '100vh',
-          transform: `translate(calc((${GRID_POSITIONS.login.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.login.y} - var(--map-y, 0)) * 100vh))`,
+          transform: `translate(calc(${GRID_POSITIONS.login.x} * 100vw), calc(${GRID_POSITIONS.login.y} * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'login' ? 'auto' : 'none',
           contentVisibility: (activeSection === 'login' || isMapAnimating) ? 'visible' : 'auto',
@@ -2520,7 +2527,7 @@ const App = () => {
           position: 'absolute',
           width: '100vw',
           height: '100vh',
-          transform: `translate(calc((${GRID_POSITIONS.menu.x} - var(--map-x, 0)) * 100vw), calc((${GRID_POSITIONS.menu.y} - var(--map-y, 0)) * 100vh))`,
+          transform: `translate(calc(${GRID_POSITIONS.menu.x} * 100vw), calc(${GRID_POSITIONS.menu.y} * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'menu' ? 'auto' : 'none',
           contentVisibility: (activeSection === 'menu' || isMapAnimating) ? 'visible' : 'auto',

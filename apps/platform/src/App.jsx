@@ -552,51 +552,59 @@ const App = () => {
     const nebulaReadyPromise = new Promise(resolve => { resolveNebulaReady = resolve; });
     nebulaReadyRef.current = resolveNebulaReady;
 
-    // THREE-PHASE LOADING:
-    // Phase 1 (0→80%): Download + evaluate Three.js and app components
-    // Phase 2 (80→95%): Mount NebulaBackground, wait for shader compile + first render
-    // Phase 3 (95→100%): Nebula ready → end loading screen
-    preloadAll(null, { signal: abortController.signal }).then(async () => {
+    // THREE-PHASE LOADING (the preloadAll body), DEFERRED to the next idle frame.
+    // The static overlay's passkey input has already painted and is interactive;
+    // evaluating three.js (a long synchronous main-thread block) right now would
+    // freeze that input for the first ~second. requestIdleCallback runs this once
+    // the initial mount/paint settles, so the passkey stays responsive while the
+    // heavy chunks still load in the background behind it.
+    let maxTimer = null;
+    const startPreload = () => {
       if (abortController.signal.aborted) return;
-      console.log('[App] JS chunks loaded — mounting nebula background');
-      // Mount nebula — shader compilation will block the thread
-      setMountNebula(true);
-      // Give React a tick to mount the canvas before WebGL init blocks the thread
-      await new Promise(r => setTimeout(r, 16));
-      if (abortController.signal.aborted) return;
-      // Bar stays at 81% while shaders compile (thread blocked, can't animate)
-      
-      // Wait for nebula to signal it’s rendered its first frame
-      return nebulaReadyPromise;
-    }).then(() => {
-      if (abortController.signal.aborted) return;
-      console.log('[App] Nebula background ready');
-      // Nebula is rendered — end loading screen
-      endLoadingScreen();
-    }).catch(() => {
-      if (abortController.signal.aborted) return;
-      console.warn('[App] Preloading failed, continuing anyway');
-      setMountNebula(true);
-      endLoadingScreen();
-    });
-    
-    // Fallback: max load time even if something hangs
-    const maxTimer = setTimeout(() => {
-      if (!hasEnded && !abortController.signal.aborted) {
-        console.log('[App] Max load time reached, continuing');
+      preloadAll(null, { signal: abortController.signal }).then(async () => {
+        if (abortController.signal.aborted) return;
+        // Mount nebula — shader compilation will block the thread
+        setMountNebula(true);
+        // Give React a tick to mount the canvas before WebGL init blocks the thread
+        await new Promise(r => setTimeout(r, 16));
+        if (abortController.signal.aborted) return;
+        // Wait for nebula to signal it's rendered its first frame
+        return nebulaReadyPromise;
+      }).then(() => {
+        if (abortController.signal.aborted) return;
+        endLoadingScreen();
+      }).catch(() => {
+        if (abortController.signal.aborted) return;
         setMountNebula(true);
         endLoadingScreen();
-        // Cap the preload: stop warming chunks once the loading screen is gone,
-        // so the main thread is free for navigation. Anything not yet warmed
-        // loads on-demand (fast — three.js is already warm). Without this the
-        // preload churned ~30s in the background and made navigation laggy.
-        abortController.abort();
-      }
-    }, maxLoadTime);
-    
+      });
+
+      // Fallback: max load time even if something hangs (counts from preload start)
+      maxTimer = setTimeout(() => {
+        if (!hasEnded && !abortController.signal.aborted) {
+          setMountNebula(true);
+          endLoadingScreen();
+          // Cap the preload so the main thread is free for navigation; anything not
+          // yet warmed loads on-demand (fast — three is already warm).
+          abortController.abort();
+        }
+      }, maxLoadTime);
+    };
+
+    let idleHandle = null;
+    if (typeof window.requestIdleCallback === 'function') {
+      idleHandle = window.requestIdleCallback(startPreload, { timeout: 1500 });
+    } else {
+      idleHandle = setTimeout(startPreload, 250);
+    }
+
     return () => {
       abortController.abort();
-      clearTimeout(maxTimer);
+      if (maxTimer) clearTimeout(maxTimer);
+      if (idleHandle != null) {
+        if (typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleHandle);
+        clearTimeout(idleHandle);
+      }
     };
   }, []);
 

@@ -1909,7 +1909,14 @@ const App = () => {
           style={{
             transform: 'translate(calc(var(--map-x, 0) * -100vw), calc(var(--map-y, 0) * -100vh))',
             transformOrigin: 'center center',
-            pointerEvents: activeSection ? 'none' : 'auto',
+            // This full-screen UI container must stay transparent to pointer events
+            // so the empty center falls through to the HoloEarth canvas (z:8) below —
+            // that's what restores the hover heart-cursor + click-drag spin. Every
+            // interactive child (logo, header, nav buttons, DesktopLayout's sectors)
+            // already declares its own `pointer-events-auto`, so `none` here is safe.
+            // (Was `activeSection ? 'none' : 'auto'`, which swallowed the earth's events
+            // on the landing.)
+            pointerEvents: 'none',
             transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
             position: 'absolute',
             inset: 0,

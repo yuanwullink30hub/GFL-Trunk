@@ -1,26 +1,40 @@
 import React, { useRef, useEffect, useState, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera, Environment } from '@react-three/drei';
-import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { HyperCube, CameraRig, FaceTargets, EnterButton } from './HyperCube';
 
 /* Pre-warm pass — mounted inside the Canvas only during the idle warm-up window.
-   The hypercube's first rendered frame compiles every material's shader program
-   plus the Bloom composer, shadow maps and the PMREM environment — ~hundreds of
-   ms that, left to the first navigation, freeze the data-stream page. Here we do
-   it off the critical path: gl.compile() builds the scene programs synchronously,
-   and a few rendered frames flush the composer/shadow passes. Then we report done
-   and the canvas drops back to frameloop:'never' until the user actually visits. */
+   The hypercube's first rendered frame compiles every material's shader program plus
+   the Bloom composer and the PMREM environment — ~hundreds of ms that, left to the
+   first navigation, freeze the data-stream page. We do it off the critical path during
+   idle. The catch: the scene is behind a <Suspense> gated on the Environment HDR, so it
+   renders nothing until that loads — a fixed-frame warm would warm an empty canvas
+   (observed: programs=0). So this polls until the suspense resolves and the program
+   count settles, then the canvas drops back to frameloop:'never' until the user visits. */
 function PreWarm({ active, onDone }) {
   const { gl, scene, camera } = useThree();
   const frames = useRef(0);
-  useEffect(() => {
-    if (active) { try { gl.compile(scene, camera); } catch (e) { /* ignore */ } }
-  }, [active, gl, scene, camera]);
+  const stable = useRef(0);
+  const last = useRef(-1);
+  // The scene sits behind a <Suspense> that's suspended until the Environment HDR
+  // loads — so for the first ~second the canvas renders NOTHING (programs=0) and a
+  // fixed-frame pre-warm warms an empty scene. Instead we keep the frameloop alive and
+  // poll: once the suspense resolves (programs>0) we gl.compile any remaining variants
+  // (env-map materials, the Bloom mip chain) and only declare done once the program
+  // count stops growing. Safety-capped so a failed HDR load can't spin forever.
   useFrame(() => {
     if (!active) return;
     frames.current += 1;
-    if (frames.current >= 8) onDone();
+    const n = gl.info?.programs?.length ?? 0;
+    if (n > 0) {
+      try { gl.compile(scene, camera); } catch (e) { /* ignore */ }
+      const after = gl.info?.programs?.length ?? n;
+      if (after === last.current) stable.current += 1; else stable.current = 0;
+      last.current = after;
+      if (stable.current >= 4) { onDone(); return; }
+    }
+    if (frames.current > 300) onDone(); // ~5s cap
   });
   return null;
 }
@@ -78,8 +92,12 @@ export default function HypercubeScene({ isVisible, isInside, paused, onEnter, o
   return (
     <Canvas
       frameloop={(isVisible || (warming && !warmed)) ? 'always' : 'never'}
-      shadows
-      dpr={[1, 1.5]}
+      /* No shadows + dpr capped at 1: the hypercube shares the GPU with the always-on
+         Nebula + HoloEarth contexts, and its render targets were tipping the GPU into a
+         context drop on first nav (24 shaders relink synchronously = a ~400-600ms freeze).
+         Shadow maps cost both VRAM and extra depth-shader variants; the wireframe cube in
+         open space barely shows them, so they're pure overhead here. */
+      dpr={1}
       style={{ position: 'absolute', inset: 0, background: 'transparent' }}
       gl={{
         antialias: true,
@@ -106,7 +124,7 @@ export default function HypercubeScene({ isVisible, isInside, paused, onEnter, o
 
       {/* Cinematic lighting */}
       <ambientLight intensity={2} />
-      <spotLight position={[10, 10, 10]} angle={0.2} penumbra={1} intensity={5} castShadow />
+      <spotLight position={[10, 10, 10]} angle={0.2} penumbra={1} intensity={5} />
       <pointLight position={[-5, 5, -5]} intensity={4} color="#00FF00" />
       <pointLight position={[5, -5, 5]} intensity={3} color="#00FF00" />
 
@@ -117,11 +135,11 @@ export default function HypercubeScene({ isVisible, isInside, paused, onEnter, o
         {/* DISCONNECT is now the crosshair-aimable green button rendered inside
             FaceTargets (onDisconnect); the old large purple Html button is removed. */}
 
-        <EffectComposer multisampling={8}>
+        {/* Bloom-only composer (cf2a690's known-good state). SMAA removed: it's a pass
+            that only compiles at real framebuffer size, which the 0x0 off-screen pre-warm
+            can't cover, so it compiled on first nav and added to the context-drop. */}
+        <EffectComposer multisampling={0}>
           <Bloom luminanceThreshold={0.1} mipmapBlur intensity={1.5} radius={0.4} />
-          {/* Morphological AA on the final composite — tames the shimmer of the thin,
-              bright tube edges as they move sub-pixel (MSAA alone doesn't catch it). */}
-          <SMAA />
         </EffectComposer>
 
         {/* Environment only feeds reflections on the metallic tubes - no

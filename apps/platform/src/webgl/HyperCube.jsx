@@ -1,7 +1,7 @@
 import React, { useRef, useMemo, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { Html, Text } from '@react-three/drei';
 
 /* ===================================================================
    HYPERCUBE - 4D tesseract with instanced tube edges.
@@ -101,33 +101,29 @@ export function EnterButton({ onEnter, isInside, paused }) {
   // cube instead of reading as a flat HUD sticker. `rotation` is the tilt knob.
   if (isInside || paused) return null;
 
-  // Single green text label — the text itself is the click target (DOM overlay, the
-  // same proven path the old button used). Routing the click through a 3D hit-box on
-  // the canvas collided with the cube's pointer-lock/FPS-look system and broke the
-  // fly-in. No container, no occlude plane — just the green word.
+  // 3D text mesh — depth-tests against the tube edges (front tubes occlude it, back
+  // tubes behind): reads as living INSIDE the inner cube, no container. Click stays on a
+  // transparent DOM overlay (canvas-mesh clicks break the fly-in).
   return (
     <group position={[0, 0, 0]}>
-      <Html transform distanceFactor={5} pointerEvents="auto">
+      <Text
+        fontSize={hovered ? 0.275 : 0.255}
+        color="#39FF14"
+        anchorX="center"
+        anchorY="middle"
+        letterSpacing={0.16}
+        outlineWidth={0}
+      >
+        INITIEER
+      </Text>
+      <Html transform center distanceFactor={5} pointerEvents="auto" style={{ pointerEvents: 'auto' }}>
         <div
           onClick={(e) => { e.stopPropagation(); onEnter && onEnter(); }}
           onPointerDown={(e) => e.stopPropagation()}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          style={{
-            fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-            fontWeight: 700,
-            letterSpacing: '0.28em',
-            color: '#39FF14',
-            fontSize: '15px',
-            textTransform: 'uppercase',
-            whiteSpace: 'nowrap',
-            textShadow: hovered ? '0 0 20px rgba(57,255,20,0.95)' : '0 0 11px rgba(57,255,20,0.55)',
-            transform: hovered ? 'scale(1.1)' : 'scale(1)',
-            transition: 'all 0.3s ease-out',
-            cursor: 'pointer',
-            userSelect: 'none',
-          }}
-        >Initieer</div>
+          style={{ width: '150px', height: '46px', cursor: 'pointer', background: 'transparent' }}
+        />
       </Html>
     </group>
   );

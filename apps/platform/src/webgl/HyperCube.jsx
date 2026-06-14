@@ -99,45 +99,35 @@ export function EnterButton({ onEnter, isInside, paused }) {
   // The cube's faces are world-axis-aligned; facing +Z sits flush with the inner
   // cube's camera-facing face, so it foreshortens with the same perspective as the
   // cube instead of reading as a flat HUD sticker. `rotation` is the tilt knob.
-  // Cursor feedback while hovering the inner-cube hit target.
-  useEffect(() => {
-    document.body.style.cursor = hovered ? 'pointer' : '';
-    return () => { document.body.style.cursor = ''; };
-  }, [hovered]);
-
   if (isInside || paused) return null;
 
+  // Single green text label — the text itself is the click target (DOM overlay, the
+  // same proven path the old button used). Routing the click through a 3D hit-box on
+  // the canvas collided with the cube's pointer-lock/FPS-look system and broke the
+  // fly-in. No container, no occlude plane — just the green word.
   return (
     <group position={[0, 0, 0]}>
-      {/* The inner cube IS the event handler: an invisible hit-box at the inner-cube
-          volume captures the click → enter. (Wireframe edges are too thin to click.) */}
-      <mesh
-        onClick={(e) => { e.stopPropagation(); onEnter && onEnter(); }}
-        onPointerDown={(e) => e.stopPropagation()}
-        onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
-        onPointerOut={() => setHovered(false)}
-      >
-        <boxGeometry args={[2, 2, 2]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-      </mesh>
-
-      {/* Single green text label — non-interactive (clicks fall through to the cube).
-          No occlude plane (that was the faint "container"); plain transformed text. */}
-      <Html transform distanceFactor={5} pointerEvents="none" style={{ pointerEvents: 'none' }}>
-        <div style={{
-          fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-          fontWeight: 700,
-          letterSpacing: '0.28em',
-          color: '#39FF14',
-          fontSize: '15px',
-          textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
-          textShadow: hovered ? '0 0 20px rgba(57,255,20,0.95)' : '0 0 11px rgba(57,255,20,0.55)',
-          transform: hovered ? 'scale(1.1)' : 'scale(1)',
-          transition: 'all 0.3s ease-out',
-          userSelect: 'none',
-          pointerEvents: 'none',
-        }}>Initieer</div>
+      <Html transform distanceFactor={5} pointerEvents="auto">
+        <div
+          onClick={(e) => { e.stopPropagation(); onEnter && onEnter(); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          style={{
+            fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+            fontWeight: 700,
+            letterSpacing: '0.28em',
+            color: '#39FF14',
+            fontSize: '15px',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+            textShadow: hovered ? '0 0 20px rgba(57,255,20,0.95)' : '0 0 11px rgba(57,255,20,0.55)',
+            transform: hovered ? 'scale(1.1)' : 'scale(1)',
+            transition: 'all 0.3s ease-out',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+        >Initieer</div>
       </Html>
     </group>
   );

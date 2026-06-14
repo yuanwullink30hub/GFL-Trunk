@@ -207,3 +207,31 @@ via `DISCONNECT` vs HUD `Exit_Interior` vs ESC-then-exit) → note which path st
 exit), and ensure `paused` is cleared before/with the exit. Not done yet — logged
 per owner; revisit before task 7.
 
+
+---
+
+## PERF_TASKS pass (post-migration perf queue) — human-eyes verification
+
+Tasks 1–6 landed (one commit each, build green between). Items below need a real browser:
+
+- **Task 1 (lazy export libs):** open the assessment results modal — confirm `export-vendor`
+  (jspdf/html2canvas, ~249 KB gz) does NOT execute on mount; click **Download PDF** → libs
+  stream in (existing "generating" spinner covers it) → PDF generates correctly with the
+  same layout. *Note:* `@gfl/admin-ui` (Invoice/CreditNoteTemplate) still statically imports
+  jsPDF, so `export-vendor` gets a `modulepreload` link in index.html and downloads on
+  landing regardless. Task 1 still removed the modal's static edge; fully deferring the
+  download would mean lazy-loading the admin PDF templates too — flagged, not done (would
+  need `modulePreload` tuning, out of this queue's conservative scope).
+- **Task 2 (hoisted allocations):** hypercube renders/animates identically — the glow sweep
+  along the tubes should look the same (pure GC-churn reduction, no visual change).
+- **Tasks 3 & 4:** already satisfied in current code — HDR is local (`files="/hdr/night.hdr"`),
+  no `gridHelper` present. No change made.
+- **Task 5 (GPU-tier bloom gate):** on a normal/discrete GPU bloom is unchanged. Force the
+  low path with `?lowgpu=1` on a deployed URL (localhost always counts as capable) → the
+  hypercube still renders correctly, emissive tubes still glow, just without the soft bloom.
+- **Task 6 (three preload):** already preloaded — built `index.html` carries
+  `<link rel="modulepreload" href="/assets/three-*.js">`, so three downloads alongside main
+  (no waterfall). No change made.
+- **Task 7 (defer HoloEarth behind first paint):** OPTIONAL, owner judgment — NOT done.
+  Only worth it if landing time-to-first-paint feels slow after 1–6; higher risk (visible
+  "pop" when the live scene replaces a poster). Left for owner review.

@@ -253,6 +253,11 @@ const AssessmentResultsModal = ({
         } catch { /* skip unreadable files */ }
       }
 
+      // Warm the archetype image now — we know it before the ~5s AI call, so kicking off
+      // the fetch here means it's decoded and cached by the time the result card renders
+      // (otherwise the card appears first and the image pops in ~2s later).
+      if (result.imageUrl) { const warmImg = new Image(); warmImg.src = result.imageUrl; warmImg.decode?.().catch(() => {}); }
+
       try {
         const aiResult = await analyzeAssessment({
           archetypeKey: result.mainArchetype,
@@ -571,12 +576,28 @@ const AssessmentResultsModal = ({
         return false;
       };
 
+      // ── Helper: sanitize Unicode that jsPDF's WinAnsi helvetica can't encode ──
+      // Unencodable chars (arrows, emoji, etc.) render as boxes AND corrupt the run's
+      // character-width math, which is what garbled text into "v e r w e r k i n g".
+      const sanitizePdf = (str) => String(str ?? '')
+        .replace(/—/g, ' - ')   // em-dash
+        .replace(/–/g, ' - ')   // en-dash
+        .replace(/‘|’/g, "'") // curly single quotes
+        .replace(/“|”/g, '"') // curly double quotes
+        .replace(/…/g, '...')   // ellipsis
+        .replace(/·/g, '-')     // middle dot
+        .replace(/[→⇒➡➔➙➜]/g, ' -> ') // right arrows
+        .replace(/[←⇐]/g, ' <- ')   // left arrows
+        .replace(/[↔⇔]/g, ' <-> ')  // bidirectional arrows
+        .replace(/[​-‍﻿]/g, '') // zero-width chars
+        .replace(/[^\x00-\xFF]/g, ''); // strip any remaining non-Latin-1
+
       // ── Helper: wrapped text ──
       const writeWrapped = (text, x, startY, maxW, fontSize, color, style = 'normal') => {
         pdf.setFontSize(fontSize);
         pdf.setTextColor(...color);
         pdf.setFont('helvetica', style);
-        const lines = pdf.splitTextToSize(text, maxW);
+        const lines = pdf.splitTextToSize(sanitizePdf(text), maxW);
         const lineH = fontSize * 0.45;
         for (let i = 0; i < lines.length; i++) {
           ensureSpace(lineH);
@@ -707,15 +728,7 @@ const AssessmentResultsModal = ({
       // ── Helper: markdown-aware AI content renderer ──
       const writePdfMarkdown = (mdText, x, maxW) => {
         if (!mdText) return;
-        // Sanitize Unicode chars that break jsPDF helvetica encoding
-        const sanitizePdf = (str) => str
-          .replace(/\u2014/g, ' - ')   // em-dash
-          .replace(/\u2013/g, ' - ')   // en-dash
-          .replace(/\u2018|\u2019/g, "'") // curly single quotes
-          .replace(/\u201C|\u201D/g, '"') // curly double quotes
-          .replace(/\u2026/g, '...')   // ellipsis
-          .replace(/\u00B7/g, '-')     // middle dot
-          .replace(/[\u200B-\u200D\uFEFF]/g, ''); // zero-width chars
+        // Unicode sanitization handled by the hoisted sanitizePdf() (defined above).
         const lines = mdText.split('\n');
         for (const raw of lines) {
           let trimmed = sanitizePdf(raw.trim());
@@ -1749,7 +1762,7 @@ const AssessmentResultsModal = ({
         // Neuroticism Trigger
         const _nt = aiProfileData?.neuroticismTrigger;
         if (_nt) {
-          const tLines = pdf.splitTextToSize(_nt, contentW - 8);
+          const tLines = pdf.splitTextToSize(sanitizePdf(_nt), contentW - 8);
           const bh = 10 + tLines.length * 4.2;
           ensureSpace(bh + 3);
           pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...red);
@@ -2240,7 +2253,10 @@ const AssessmentResultsModal = ({
           !/cognitieve\s*driehoek|aangeleerde\s*lens/i.test(s.title || '') &&
           !/persoonlijkheidsrapport.*vergelijk/i.test(s.title) &&
           !/^1[23]\s*[ab][\s.:]/i.test(s.title || '') &&
-          !/professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '')
+          !/professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '') &&
+          // Drop empty/ghost sections (a header the AI emitted with no real body) so they
+          // never render a content-less page — e.g. a stray "Profiel Elementen" umbrella.
+          (s.content || '').replace(/[\s*#>_~`+.-]/g, '').length > 0
         );
         if (mainSections.length > 0) {
           const getPdfSectionColor = (title) => {
@@ -4391,10 +4407,11 @@ function parseAiSections(analysisText) {
     if (/leerling\s+ontologisch/i.test(title)) continue;
     // Skip any standalone "Introductie" / "Inleiding" the AI may generate
     if (/^(introductie|inleiding)$/i.test(title)) continue;
-    // Skip umbrella "Profiel Dynamiek" / "5 Elementen" / "De 5 Elementen" headers —
-    // the individual elements are parsed by profileKeyFromTitle below.
-    // When the AI bundles them under one heading, extract sub-elements from the body.
-    if (/profiel\s*dynamiek|(?:5|vijf)\s*element/i.test(title)) {
+    // Skip umbrella "Profiel Dynamiek" / "Profiel Elementen" / "5 Elementen" / "De 5 Elementen"
+    // headers — the individual elements are parsed by profileKeyFromTitle below. When the AI
+    // bundles them under one heading, extract sub-elements from the body. (Without "element"
+    // here, a bare "Profiel Elementen" umbrella leaks through as an empty-body ghost page.)
+    if (/profiel\s*(?:dynamiek|element)|(?:5|vijf)\s*element/i.test(title)) {
       let contentStart4b = matches[i].headerEnd;
       let contentEnd4b = (i + 1 < matches.length ? matches[i + 1].start : analysisText.length);
       const rawBody = analysisText.slice(contentStart4b, contentEnd4b).trim();

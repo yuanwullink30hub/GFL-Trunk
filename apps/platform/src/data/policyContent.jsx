@@ -1070,7 +1070,7 @@ export const POLICY_CONTENT = {
       <table style={S.table}>
         <thead><tr><th style={S.th}>Aspect</th><th style={S.th}>Invulling</th></tr></thead>
         <tbody>
-          <tr><td style={S.td}>AI-model gebruikt</td><td style={S.td}>Claude (Anthropic) — Large Language Model<br/>Model: claude-sonnet-4-6 of vergelijkbaar model</td></tr>
+          <tr><td style={S.td}>AI-model gebruikt</td><td style={S.td}>Claude (Anthropic) — Large Language Model<br/>Model: claude-opus-4-8 of vergelijkbaar model</td></tr>
           <tr><td style={S.td}>Rol van AI</td><td style={S.td}>Generatie van het persoonlijkheidsrapport op basis van de volledige assessmentdata en de Garden For Life Deltawerken Model instructielaag. De AI ontvangt: responses, subjectResults, scores, archetypeDetails en systeeminstructies — geen naam, e-mail, IP of andere identificerende persoonsgegevens.</td></tr>
           <tr><td style={S.td}>Geen autonome besluitvorming</td><td style={S.td}>Het gegenereerde rapport vormt geen juridisch of klinisch bindend oordeel. Er worden geen besluiten over de gebruiker genomen op uitsluitend geautomatiseerde basis.</td></tr>
           <tr><td style={S.td}>Disclaimer in rapport</td><td style={S.td}>Het rapport bevat een expliciete vermelding dat de inhoud AI-gegenereerd is, gebaseerd op zelfingevulde assessmentdata, en dient als zelfreflectie-instrument — niet als klinische diagnose.</td></tr>

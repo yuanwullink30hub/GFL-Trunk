@@ -210,10 +210,15 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
   console.log(`[Claude] Calling model=${model}, maxTokens=${maxTokens}, promptChars=${(systemMsg?.content?.length || 0) + (userMsgs[0]?.content?.length || 0)}`);
   const startTime = Date.now();
 
+  // `temperature` is deprecated on newer Claude models (claude-opus-4-8 returns a 400
+  // "temperature is deprecated for this model"), so only pass it for models that still
+  // accept it. Opus/Sonnet 4.x manage sampling internally.
+  const supportsTemperature = typeof temperature === 'number' && !/-(opus|sonnet)-4-\d/.test(model);
+
   const response = await client.messages.create({
     model,
     max_tokens: maxTokens,
-    temperature,
+    ...(supportsTemperature ? { temperature } : {}),
     ...(systemMsg ? { system: systemMsg.content } : {}),
     messages: anthropicMessages,
   });

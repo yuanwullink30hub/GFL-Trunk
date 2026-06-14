@@ -46,7 +46,7 @@ module.exports = {
     },
     claude: {
       apiKey: process.env.ANTHROPIC_API_KEY || '',
-      defaultModel: 'claude-sonnet-4-6',
+      defaultModel: 'claude-opus-4-8',
     },
   },
 

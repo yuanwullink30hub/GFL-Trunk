@@ -1,13 +1,11 @@
-import React, { useRef, useEffect, useState, useMemo, Suspense } from 'react';
+import React, { useRef, useEffect, useState, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera, Environment } from '@react-three/drei';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { isIntegratedGPU } from '@gfl/utils';
 import { HyperCube, CameraRig, FaceTargets, EnterButton } from './HyperCube';
 
 /* Pre-warm pass — mounted inside the Canvas only during the idle warm-up window.
    The hypercube's first rendered frame compiles every material's shader program plus
-   the Bloom composer and the PMREM environment — ~hundreds of ms that, left to the
+   the PMREM environment — ~hundreds of ms that, left to the
    first navigation, freeze the data-stream page. We do it off the critical path during
    idle. The catch: the scene is behind a <Suspense> gated on the Environment HDR, so it
    renders nothing until that loads — a fixed-frame warm would warm an empty canvas
@@ -22,7 +20,7 @@ function PreWarm({ active, onDone }) {
   // loads — so for the first ~second the canvas renders NOTHING (programs=0) and a
   // fixed-frame pre-warm warms an empty scene. Instead we keep the frameloop alive and
   // poll: once the suspense resolves (programs>0) we gl.compile any remaining variants
-  // (env-map materials, the Bloom mip chain) and only declare done once the program
+  // (env-map materials) and only declare done once the program
   // count stops growing. Safety-capped so a failed HDR load can't spin forever.
   useFrame(() => {
     if (!active) return;
@@ -62,12 +60,8 @@ function PreWarm({ active, onDone }) {
 export default function HypercubeScene({ isVisible, isInside, paused, onEnter, onExitInside, onSelectDomain }) {
   const glRef = useRef(null);
 
-  // Bloom is the scene's biggest per-frame cost — skip the whole composer on
-  // integrated/low-tier GPUs (cached detection; localhost always counts as capable).
-  const isLowGpu = useMemo(() => isIntegratedGPU(), []);
-
   // One-time idle pre-warm so the FIRST navigation to the data-stream page doesn't
-  // freeze on shader/bloom/shadow/PMREM compilation. Scheduled on idle (after the
+  // freeze on shader/PMREM compilation. Scheduled on idle (after the
   // landing settles) — renders a few hidden frames, then the canvas idles again.
   const [warming, setWarming] = useState(false);
   const [warmed, setWarmed] = useState(false);
@@ -140,14 +134,9 @@ export default function HypercubeScene({ isVisible, isInside, paused, onEnter, o
         {/* DISCONNECT is now the crosshair-aimable green button rendered inside
             FaceTargets (onDisconnect); the old large purple Html button is removed. */}
 
-        {/* Bloom-only composer (cf2a690's known-good state). SMAA removed: it's a pass
-            that only compiles at real framebuffer size, which the 0x0 off-screen pre-warm
-            can't cover, so it compiled on first nav and added to the context-drop. */}
-        {!isLowGpu && (
-          <EffectComposer multisampling={0}>
-            <Bloom luminanceThreshold={0.1} mipmapBlur intensity={1.5} radius={0.4} />
-          </EffectComposer>
-        )}
+        {/* No post-processing: the emissive tubes read better raw than through the Bloom
+            composer (owner call), and dropping the multi-pass mipmapBlur removes the
+            scene's biggest per-frame cost and its shader-compile spike on first nav. */}
 
         {/* Environment only feeds reflections on the metallic tubes - no
             `background` prop, so the canvas stays transparent. Served locally

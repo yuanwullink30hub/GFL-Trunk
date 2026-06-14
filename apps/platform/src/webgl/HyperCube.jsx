@@ -40,6 +40,13 @@ export function isWebGLAvailable() {
 
 /* Shared instanced-mesh updater. Computes per-edge transform from the
    projected endpoints and per-edge glow color from the 4D lantern. */
+// Module-level scratch reused every frame by updateMesh — avoids ~4 allocations per
+// edge × 32 edges × 60fps of GC churn. Same reuse pattern as the dummy/up objects.
+const _dir = new THREE.Vector3();
+const _mid = new THREE.Vector3();
+const _boost = new THREE.Color();
+const _scratch = new THREE.Color();
+
 const updateMesh = (
   ref, indices, projected, vertices4D, baseColor,
   glowTime, flicker, dummy, up
@@ -48,9 +55,9 @@ const updateMesh = (
   indices.forEach(([startIdx, endIdx], i) => {
     const start = projected[startIdx];
     const end = projected[endIdx];
-    const direction = new THREE.Vector3().subVectors(end, start);
+    const direction = _dir.subVectors(end, start);
     const length = direction.length();
-    const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    const midpoint = _mid.addVectors(start, end).multiplyScalar(0.5);
 
     dummy.position.copy(midpoint);
     dummy.scale.set(1, length, 1);
@@ -72,9 +79,9 @@ const updateMesh = (
     // still guards the Bloom pass from HDR blowout.
     const glowBoost = Math.max(0, proximity) ** 2.0 * 2.5 * flicker;
     const boost = Math.min(1 + glowBoost, 5.0);
-    const boostColor = new THREE.Color(boost, boost, boost);
+    const boostColor = _boost.setScalar(boost);
     if (baseColor) {
-      ref.current.setColorAt(i, baseColor.clone().multiply(boostColor));
+      ref.current.setColorAt(i, _scratch.copy(baseColor).multiply(boostColor));
     } else {
       ref.current.setColorAt(i, boostColor);
     }

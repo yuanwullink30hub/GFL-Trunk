@@ -1,5 +1,5 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://gfl-api.onrender.com https://generativelanguage.googleapis.com; media-src 'self' https: blob:; frame-src 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://gfl-api.onrender.com https://generativelanguage.googleapis.com https://cdn.jsdelivr.net; media-src 'self' https: blob:; frame-src 'self'
 
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate

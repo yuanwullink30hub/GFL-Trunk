@@ -1,12 +1,30 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@gfl/i18n';
-import { login, register, getMe, logout, getToken, logActivity } from '@gfl/api-client';
+import { login, register, getMe, logout, getToken, logActivity, saveAssessment } from '@gfl/api-client';
 import ClientProfileModal from '../components/assessment/ClientProfileModal';
 import AdminDashboardModal from '@gfl/admin-ui';
 import {
   C, INPUT, FIELD_LABEL, ERROR_STYLE, SciFiButton,
   PAGE_WRAPPER, SEPARATOR, inputFocus, inputBlur, FONT,
 } from '@gfl/ui';
+
+/* If the user completed the assessment, hit "create account" while logged out, and
+   just registered/logged in, link that stashed profile to the now-authenticated
+   account. Runs once after auth (the token is already set by register()/login()). */
+async function linkPendingAssessment() {
+  let pending;
+  try { pending = localStorage.getItem('gfl_pending_assessment'); } catch (_) { return; }
+  if (!pending) return;
+  try {
+    const saved = await saveAssessment(JSON.parse(pending));
+    if (saved?.id) localStorage.setItem('gfl_assessment_id', String(saved.id));
+    localStorage.removeItem('gfl_pending_assessment');
+    console.log('[GFL] Linked pending assessment to account, id:', saved?.id);
+  } catch (err) {
+    console.warn('[GFL] Could not link pending assessment:', err?.message);
+    // Leave it in storage so a later successful auth can still pick it up.
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    LoginFrame — bespoke translucent container for the login modal.
@@ -151,6 +169,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
     try {
       const data = await login({ email, password });
       setUser(data.user);
+      await linkPendingAssessment();
       if (data.user?.role === 'admin') {
         logActivity({
           type: 'admin_login',
@@ -169,6 +188,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       const data = await register({ email, password, displayName });
       logActivity({ type: 'consent_given', consentType: 'registration' }).catch(() => {});
       setUser(data.user);
+      await linkPendingAssessment();
       setEmail(''); setPassword(''); setDisplayName('');
       setShowConsent(false);
       setConsentA(false); setConsentB(false);

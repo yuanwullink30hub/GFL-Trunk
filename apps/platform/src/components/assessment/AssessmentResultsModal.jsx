@@ -134,14 +134,15 @@ const AssessmentResultsModal = ({
   // ── Auto-save to backend when user is logged in ──
   const [savedToBackend, setSavedToBackend] = useState(false);
   const [savedAssessmentId, setSavedAssessmentId] = useState(null);
-  useEffect(() => {
-    if (!result || savedToBackend || !getToken()) return;
-    const oceanScores = result.oceanScores || result.extendedOcean?.ocean || null;
-    saveAssessment({
+  // Build the backend save payload from the computed result — shared by the auto-save
+  // below AND the "create account" hand-off, so the two can never drift out of sync.
+  const buildSavePayload = useCallback(() => {
+    if (!result) return null;
+    return {
       archetypeKey: result.mainArchetype,
       supportGroup: result.supportGroup,
       extendedArchetypeName: result.extendedName,
-      oceanScores,
+      oceanScores: result.oceanScores || result.extendedOcean?.ocean || null,
       responses: result._answerLog || [],
       subjectResults: result.subjectResults || [],
       scores: result.scores || null,
@@ -149,7 +150,13 @@ const AssessmentResultsModal = ({
       harmonyScore: result.harmonyScore ?? null,
       consciousnessLevel: result.consciousnessLevel || null,
       overallShadow: result.overallShadow || null,
-    }).then((saved) => {
+    };
+  }, [result]);
+  useEffect(() => {
+    if (!result || savedToBackend || !getToken()) return;
+    const payload = buildSavePayload();
+    if (!payload) return;
+    saveAssessment(payload).then((saved) => {
       setSavedToBackend(true);
       if (saved?.id) {
         setSavedAssessmentId(String(saved.id));
@@ -159,7 +166,7 @@ const AssessmentResultsModal = ({
     }).catch((err) => {
       console.warn('[GFL] Could not save assessment:', err.message);
     });
-  }, [result, savedToBackend]);
+  }, [result, savedToBackend, buildSavePayload]);
 
   // ── Email gate state (unlocks PDF download) ──
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
@@ -4170,6 +4177,16 @@ const AssessmentResultsModal = ({
                         if (!reviewSubmitted) return;
                         if (showLeaveWarning) {
                           setShowLeaveWarning(false);
+                          // Path: test done + NOT logged in + "create account" clicked.
+                          // Stash the profile so LoginPage can link it to the new account
+                          // once it's made. (If already logged in, the auto-save above
+                          // already handled it — don't stash a pending copy.)
+                          if (!getToken()) {
+                            try {
+                              const payload = buildSavePayload();
+                              if (payload) localStorage.setItem('gfl_pending_assessment', JSON.stringify(payload));
+                            } catch (_) { /* storage disabled — skip */ }
+                          }
                           onCreateAccount();
                         } else {
                           setShowLeaveWarning(true);

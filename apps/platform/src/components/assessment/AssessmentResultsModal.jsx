@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useRef, useEffect, useLayoutEffect, useState } from 'react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+// html2canvas + jsPDF are lazy-loaded inside handleDownloadPdf (export click) so the
+// ~250 KB gz export-vendor chunk stays out of the results-modal mount.
 import SciFiRadarChart from './SciFiRadarChart';
 import SubgroupCounters from './SubgroupCounters';
 import { getResultsSizes } from './assessmentSizes';
@@ -501,6 +501,14 @@ const AssessmentResultsModal = ({
     setIsGeneratingPdf(true);
 
     try {
+      // Lazy-load the heavy export libs only on the actual export click (not at modal
+      // mount). The existing isGeneratingPdf state covers the brief fetch as part of
+      // the normal "generating" spinner.
+      const [{ jsPDF }, html2canvasMod] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ]);
+      const html2canvas = html2canvasMod.default;
       // ── PDF Setup ──
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const W = 210, H = 297;

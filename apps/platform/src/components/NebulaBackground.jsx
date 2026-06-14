@@ -251,7 +251,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Read accumulated displacement
     vec2 disp = texture2D(u_disp, uv).xy * 2.0 - 1.0;
 
-    float t = u_time * 0.07;
+    float t = u_time * 0.0525; // cloud-drift speed (was 0.07) — slowed 25% for a calmer, less distracting feel
 
     // Map navigation offset
     vec2 mapOff = u_offset * vec2(0.35, 0.35);

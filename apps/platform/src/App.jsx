@@ -251,6 +251,26 @@ const CROSS_PATTERN_DESKTOP = `url("data:image/svg+xml,%3Csvg xmlns='http://www.
 const CROSS_PATTERN_MOBILE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3C/svg%3E")`;
 // ============================================
 
+// Small assessment icons (intro/info card + results diagrams). Held in a module-level
+// array so the browser keeps them in its memory cache for the whole session — otherwise
+// they re-fetch (blank for 2-3s) every time the intro card re-mounts, e.g. after closing
+// results and restarting the flow.
+const ASSESSMENT_WARM_IMAGES = [
+  '/images/Import ready/Archetype header.png',
+  '/images/Import ready/analyseicon.PNG',
+  '/images/Import ready/Shadowicon.png',
+  '/images/Import ready/Scienceicon.png',
+  '/images/Import ready/AIicon.PNG',
+  '/images/Model imports/TNM wheel PNG.png',
+  '/images/Model imports/Deltawerken png.png',
+  '/images/Model imports/Cells within Cells png.png',
+];
+let _warmedAssessmentImgs = null;
+function warmAssessmentImages() {
+  if (_warmedAssessmentImgs) return;
+  _warmedAssessmentImgs = ASSESSMENT_WARM_IMAGES.map((src) => { const img = new Image(); img.src = src; return img; });
+}
+
 const App = () => {
   const [mounted, setMounted] = useState(false);
   const [mountNebula, setMountNebula] = useState(false); // Mount nebula after imports are done
@@ -1487,6 +1507,11 @@ const App = () => {
     import('./components/assessment/AssessmentResultsModal');
     import('./components/assessment/AssessmentCard');
     import('./components/assessment/AssessmentUpload');
+    // Warm the FIXED assessment images (held module-level, see warmAssessmentImages) so
+    // the intro/info card and results diagrams don't flash an empty canvas on render —
+    // and stay cached all session so they don't re-blank when the flow restarts. Per-user
+    // archetype images (18.9MB set) are NOT warmed here — only the user's own, later.
+    warmAssessmentImages();
   }, [isSystem]);
 
   // Set global crosshair cursor on mount — uses !important style tag to override
@@ -1508,10 +1533,13 @@ const App = () => {
 
   // Reset to frame 0 — smooth rAF-based animation to avoid per-frame React re-renders
   const handleReset = () => {
-    // Full reset of all assessment/pyramid state
-    resetAssessmentState();
+    // Hide the (heavy) results card cheaply via its CSS collapse, and DEFER the expensive
+    // resetAssessmentState — it unmounts the 4000-line ResultsModal (recharts + jsPDF) in
+    // one synchronous commit, which up-front was blocking the rewind's first frames (the
+    // freeze). We run the rewind smoothly first, then unmount at the end.
+    setResultsModalProgress(0);
     const startFrame = currentFrame;
-    if (startFrame <= 0) return;
+    if (startFrame <= 0) { resetAssessmentState(); return; }
     const startTime = performance.now();
     const duration = startFrame * 30; // ~30ms per frame, similar total time to before
     let lastStateTime = 0;
@@ -1540,6 +1568,9 @@ const App = () => {
       } else {
         setCurrentFrame(0);
         explosionProgressRef.current = 0;
+        // Heavy state reset + ResultsModal unmount happens now — after the rewind has
+        // played — so its one-frame hitch lands on the settled landing, not mid-animation.
+        resetAssessmentState();
       }
     };
     requestAnimationFrame(animate);
@@ -1673,9 +1704,10 @@ const App = () => {
                   background: 'linear-gradient(90deg, transparent 0%, rgba(255,254,240,0.4) 20%, rgba(245,158,11,0.5) 50%, rgba(255,254,240,0.4) 80%, transparent 100%)',
                 }} />
                 <div className="flex items-center" style={{ gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <span className="rounded-full bg-green-500 animate-ping" style={{
+                  <span className="rounded-full bg-green-500" style={{
                     width: '0.5rem',
                     height: '0.5rem',
+                    animation: 'dotBreathe 4s ease-in-out infinite',
                   }}></span>
                   <span className="text-gray-400 tracking-wider" style={{
                     fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
@@ -2020,11 +2052,12 @@ const App = () => {
                     background: 'linear-gradient(90deg, rgba(255,254,240,0.4) 0%, rgba(245,158,11,0.5) 50%, transparent 100%)',
                   }} />
                   <div className="flex gap-2 items-center" style={{marginTop: 'clamp(0.25rem, 0.5vw, 0.5rem)'}}>
-                    <span className="rounded-full bg-green-500 animate-ping" style={{
+                    <span className="rounded-full bg-green-500" style={{
                       width: 'clamp(0.35rem, 0.5vw, 0.5rem)',
                       height: 'clamp(0.35rem, 0.5vw, 0.5rem)',
                       minWidth: 'clamp(0.35rem, 0.5vw, 0.5rem)',
-                      minHeight: 'clamp(0.35rem, 0.5vw, 0.5rem)'
+                      minHeight: 'clamp(0.35rem, 0.5vw, 0.5rem)',
+                      animation: 'dotBreathe 4s ease-in-out infinite',
                     }}></span>
                     <span className="text-gray-400 tracking-widest" style={{
                       fontSize: 'clamp(0.6rem, 0.9vw, 0.85rem)'

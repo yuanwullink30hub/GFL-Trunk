@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useState, Suspense } from 'react';
+import React, { useRef, useEffect, useState, useMemo, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { isIntegratedGPU } from '@gfl/utils';
 import { HyperCube, CameraRig, FaceTargets, EnterButton } from './HyperCube';
 
 /* Pre-warm pass — mounted inside the Canvas only during the idle warm-up window.
@@ -60,6 +61,10 @@ function PreWarm({ active, onDone }) {
 
 export default function HypercubeScene({ isVisible, isInside, paused, onEnter, onExitInside, onSelectDomain }) {
   const glRef = useRef(null);
+
+  // Bloom is the scene's biggest per-frame cost — skip the whole composer on
+  // integrated/low-tier GPUs (cached detection; localhost always counts as capable).
+  const isLowGpu = useMemo(() => isIntegratedGPU(), []);
 
   // One-time idle pre-warm so the FIRST navigation to the data-stream page doesn't
   // freeze on shader/bloom/shadow/PMREM compilation. Scheduled on idle (after the
@@ -138,9 +143,11 @@ export default function HypercubeScene({ isVisible, isInside, paused, onEnter, o
         {/* Bloom-only composer (cf2a690's known-good state). SMAA removed: it's a pass
             that only compiles at real framebuffer size, which the 0x0 off-screen pre-warm
             can't cover, so it compiled on first nav and added to the context-drop. */}
-        <EffectComposer multisampling={0}>
-          <Bloom luminanceThreshold={0.1} mipmapBlur intensity={1.5} radius={0.4} />
-        </EffectComposer>
+        {!isLowGpu && (
+          <EffectComposer multisampling={0}>
+            <Bloom luminanceThreshold={0.1} mipmapBlur intensity={1.5} radius={0.4} />
+          </EffectComposer>
+        )}
 
         {/* Environment only feeds reflections on the metallic tubes - no
             `background` prop, so the canvas stays transparent. Served locally

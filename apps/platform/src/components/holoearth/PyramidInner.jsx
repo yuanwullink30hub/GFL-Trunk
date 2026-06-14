@@ -698,7 +698,12 @@ const PyramidInner = ({
   return (
     <group>
       {/* Rotating Pyramid Layers - renderOrder set to be behind particles during explosion */}
-      <group ref={groupRef} renderOrder={pyramidRenderOrder} visible={!hidePyramid}>
+      {/* NOTE: do NOT hide on hidePyramid — the entity must stay visible through the
+          intro so the card floats OUT of it (and back IN on level-select). hidePyramid
+          still gates the low-GPU render loop in HoloEarth; the laptop just holds the
+          last frame, so the entity remains on screen either way. (branch-original had
+          no hidePyramid and rendered the pyramid throughout.) */}
+      <group ref={groupRef} renderOrder={pyramidRenderOrder}>
         {layers.map((layer) => {
           // Calculate particle occlusion based on explosion progress
           // Peak occlusion during mid-explosion (0.2-0.6 range) when particles are densest

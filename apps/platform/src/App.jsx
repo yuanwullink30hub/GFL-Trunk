@@ -1475,6 +1475,20 @@ const App = () => {
   const BUTTON_APPEAR_FRAME = section3End; // Frame 49 - the last frame
   const isSystem = currentFrame >= BUTTON_APPEAR_FRAME;
 
+  // Pre-load the lazy assessment-flow chunks the moment the user enters system mode.
+  // The entity intro plays for ~2-3s before the intro card is needed, so this lands
+  // the chunks in cache first. Without it, each phase's lazy component SUSPENDS the
+  // update on first show — the float-out animation runs invisibly during the chunk
+  // download and the card pops in fully-grown instead of flowing out of the entity.
+  useEffect(() => {
+    if (!isSystem) return;
+    import('./components/assessment/AssessmentIntro');
+    import('./components/assessment/AssessmentLayerPanel');
+    import('./components/assessment/AssessmentResultsModal');
+    import('./components/assessment/AssessmentCard');
+    import('./components/assessment/AssessmentUpload');
+  }, [isSystem]);
+
   // Set global crosshair cursor on mount — uses !important style tag to override
   // all inline cursor:pointer and Tailwind cursor-* classes everywhere on the site.
   useEffect(() => {

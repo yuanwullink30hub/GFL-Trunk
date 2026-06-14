@@ -16,6 +16,7 @@ import {
   TechBadge,
   SectionHeader
 } from './SciFiUI';
+import { useLanguage } from '@gfl/i18n';
 import BrandStats from './BrandStats';
 import { BRANDS } from './brandData';
 
@@ -351,6 +352,7 @@ const Slideshow = ({ images }) => {
 // Based on branch-original GeneralPage structure
 // ============================================
 const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('overzicht');
   const [externalLinkModal, setExternalLinkModal] = useState({ isOpen: false, url: '', buttonElement: null });
   const [socialShareModal, setSocialShareModal] = useState({ isOpen: false, buttonElement: null });
@@ -495,7 +497,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                 transform: 'translate(-50%, -50%)',
                 fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"
               }}>
-                {brand.name}
+                {t(brand.name)}
               </h1>
             </div>
 
@@ -507,8 +509,8 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
               <p className="text-slate-400 leading-relaxed text-xs font-sans">
                 <span className="block mb-2 text-xs font-bold uppercase tracking-widest" style={{
                   color: '#f59e0b'
-                }}>{'/// Missie'}</span>
-                <span style={{ color: '#FFFEF0' }}>{brand.description}</span>
+                }}>{`/// ${t('brands.mission')}`}</span>
+                <span style={{ color: '#FFFEF0' }}>{t(brand.description)}</span>
               </p>
             </div>
           </div>
@@ -574,7 +576,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                       fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"
                     }}
                   >
-                    {tab}
+                    {t(`brands.tabs.${tab}`)}
                     {activeTab === tab && (
                       <div className="absolute bottom-0 left-0 w-full h-[2px]" style={{
                         backgroundColor: '#f59e0b',
@@ -640,12 +642,12 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                   color: '#FFFEF0',
                   borderLeft: '2px solid rgba(168, 85, 247, 0.8)'
                 }}>
-                  {brand.tagline}
+                  {t(brand.tagline)}
                 </p>
 
                 {/* Tags */}
                 <div className="flex gap-1 flex-wrap mb-4 justify-center">
-                  {brand.tags.map(tag => <TechBadge key={tag} label={tag} />)}
+                  {brand.tags.map((tag, ti) => <TechBadge key={ti} label={t(tag)} />)}
                 </div>
 
                 {/* Gallery with Slideshow */}
@@ -663,7 +665,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                           <Slideshow images={brand.gallery} />
                         ) : (
                           <div className="relative w-full h-full group cursor-pointer">
-                            <img src={item.url || item.image} alt={item.title} className="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
+                            <img src={item.url || item.image} alt={t(item.title)} className="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
                             <div className="absolute inset-0 flex items-center justify-center">
                               <div className="w-10 h-10 rounded-full flex items-center justify-center bg-black/50 group-hover:bg-orange-500 transition-all" style={{
                                 border: '2px solid rgba(168, 85, 247, 0.6)',
@@ -689,7 +691,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-3"
               >
-                <SectionHeader title="Aankomende Events" />
+                <SectionHeader title={t('brands.upcomingEvents')} />
                 {brand.events?.map(event => (
                   <div 
                     key={event.id}
@@ -700,19 +702,19 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                     }}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs font-mono" style={{ color: '#15B315' }}>{event.date}</span>
+                      <span className="text-xs font-mono" style={{ color: '#15B315' }}>{t(event.date)}</span>
                       <Calendar size={12} style={{ color: '#f59e0b' }} />
                     </div>
-                    <div className="font-bold text-sm uppercase" style={{ color: '#FFFEF0' }}>{event.title}</div>
+                    <div className="font-bold text-sm uppercase" style={{ color: '#FFFEF0' }}>{t(event.title)}</div>
                     <div className="text-xs flex items-center gap-1 mt-1" style={{ color: '#E0E30B' }}>
-                      <MapPin size={10} /> {event.location}
+                      <MapPin size={10} /> {t(event.location)}
                     </div>
                   </div>
                 ))}
                 {(!brand.events || brand.events.length === 0) && (
                   <div className="text-center py-8 opacity-50">
                     <Calendar size={32} className="mx-auto mb-2" style={{ color: '#f59e0b' }} />
-                    <p className="text-xs uppercase tracking-widest">Geen events gepland</p>
+                    <p className="text-xs uppercase tracking-widest">{t('brands.noEventsPlanned')}</p>
                   </div>
                 )}
               </motion.div>
@@ -726,7 +728,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-3"
               >
-                <SectionHeader title="Verbindingen" />
+                <SectionHeader title={t('brands.connections')} />
                 {brand.reviews?.map(review => (
                   <div 
                     key={review.id}
@@ -742,13 +744,13 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                         {Array(review.rating).fill('★').join('')}
                       </div>
                     </div>
-                    <p className="text-xs italic" style={{ color: '#FFFEF0', opacity: 0.7 }}>"{review.comment}"</p>
+                    <p className="text-xs italic" style={{ color: '#FFFEF0', opacity: 0.7 }}>"{t(review.comment)}"</p>
                   </div>
                 ))}
                 {(!brand.reviews || brand.reviews.length === 0) && (
                   <div className="text-center py-8 opacity-50">
                     <Share2 size={32} className="mx-auto mb-2" style={{ color: '#f59e0b' }} />
-                    <p className="text-xs uppercase tracking-widest">Nog geen verbindingen</p>
+                    <p className="text-xs uppercase tracking-widest">{t('brands.noConnectionsYet')}</p>
                   </div>
                 )}
               </motion.div>

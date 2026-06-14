@@ -131,7 +131,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       <style>{`
         .gfl-eye-btn { position: relative; }
         .gfl-eye-btn::before {
-          content: 'Identiteit';
+          content: attr(data-label);
           position: absolute;
           bottom: 100%;
           left: 50%;
@@ -148,7 +148,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         .gfl-eye-btn:hover::before { color: rgba(255, 220, 160, 0.9); }
         .gfl-blackhole-btn { position: relative; }
         .gfl-blackhole-btn::before {
-          content: 'Inloggen';
+          content: attr(data-label);
           position: absolute;
           bottom: 100%;
           left: 50%;
@@ -176,7 +176,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           opacity: mounted ? containerOpacity : 0
         }}
       >
-        <TechContainer title="FILOSOFIE" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
+        <TechContainer title={t('desktopLayout.filosofieTitle')} variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
           <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '0.8vw' }}>
             {/* Content wrapper */}
             <div style={{ display: 'contents' }}>
@@ -192,9 +192,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 filter: 'brightness(0.9)',
                 textAlign: 'center',
                 letterSpacing: '0.05em'
-              }}>
-                DE LUIDE STILTE <br/> EN DE INTENSE KALMTE <br/> WIJZEN MIJ DE WEG <br/> VAN HET HART <br/> NAAR HET HOOFD
-              </h2>
+              }} dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofiePoem') }} />
               <div style={{ width: '2vw', height: '0.1vh', background: 'linear-gradient(to right, transparent, rgb(168, 85, 247), transparent)' }}></div>
             </div>
 
@@ -213,9 +211,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 fontSize: 'max(13px, 0.7vw)',
                 textAlign: 'center',
                 display: windowWidth >= 768 && windowWidth < 1079 ? 'none' : 'block'
-              }}>
-                Man en Vrouw gelijkgesteld <br/> De tuinierder moet zich overgeven aan en overkomen van de doorschijnende passie <br />
-              </div>
+              }} dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofieSubtext') }} />
             </div>
 
             {/* Button */}
@@ -228,7 +224,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               onClick={undefined}
               style={{ transform: 'scaleY(1.04)', marginTop: '0.4rem' }}
             >
-              Leer meer
+              {t('desktopLayout.learnMore')}
             </SciFiButton>
             </div>{/* end content wrapper */}
           </div>
@@ -248,7 +244,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           opacity: mounted ? gardenOpacity : 0
         }}
       >
-        <TechContainer title="KOOKEILAND" variant="purple" className="w-full h-full">
+        <TechContainer title={t('desktopLayout.kitchen')} variant="purple" className="w-full h-full">
           <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-visible">
             {/* Blurred webpage background */}
             <div className="absolute inset-0 bg-gradient-to-br from-green-900/30 to-green-800/20 backdrop-blur-sm" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34, 197, 94, 0.1) 2px, rgba(34, 197, 94, 0.1) 4px)'}}></div>
@@ -290,44 +286,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           opacity: mounted ? gardensOpacity : 0
         }}
       >
-        <TechContainer title="DE TUINEN" variant="purple" className="w-full h-full">
+        <TechContainer title={t('desktopLayout.gardensTitle')} variant="purple" className="w-full h-full">
           {(() => {
+            const gardenPrompt = t('desktopLayout.gardenConnectPrompt');
             const gardensData = [
-              {
-                id: 'green',
-                name: 'ARTIEST',
-                description: 'Verbinden met ons platform? Maak de test en benader ons team.',
-                color: '#22c55e',
-                rgb: '34, 197, 94',
-              },
-              {
-                id: 'blue',
-                name: 'ZZP',
-                description: 'Verbinden met ons platform? Maak de test en benader ons team.',
-                color: '#3b82f6',
-                rgb: '59, 130, 246',
-              },
-              {
-                id: 'purple',
-                name: 'EENMANSZAAK',
-                description: 'Verbinden met ons platform? Maak de test en benader ons team.',
-                color: '#a855f7',
-                rgb: '168, 85, 247',
-              },
-              {
-                id: 'red',
-                name: 'BV',
-                description: 'Verbinden met ons platform? Maak de test en benader ons team.',
-                color: '#ef4444',
-                rgb: '239, 68, 68',
-              },
-              {
-                id: 'orange',
-                name: 'INTERNATIONAL',
-                description: 'Verbinden met ons platform? Maak de test en benader ons team.',
-                color: '#f97316',
-                rgb: '249, 115, 22',
-              },
+              { id: 'green',  name: t('desktopLayout.businessTypes.green'),  description: gardenPrompt, color: '#22c55e', rgb: '34, 197, 94' },
+              { id: 'blue',   name: t('desktopLayout.businessTypes.blue'),   description: gardenPrompt, color: '#3b82f6', rgb: '59, 130, 246' },
+              { id: 'purple', name: t('desktopLayout.businessTypes.purple'), description: gardenPrompt, color: '#a855f7', rgb: '168, 85, 247' },
+              { id: 'red',    name: t('desktopLayout.businessTypes.red'),    description: gardenPrompt, color: '#ef4444', rgb: '239, 68, 68' },
+              { id: 'orange', name: t('desktopLayout.businessTypes.orange'), description: gardenPrompt, color: '#f97316', rgb: '249, 115, 22' },
             ];
             return (
               <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '1vw' }}>
@@ -484,7 +451,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     onClick={(e) => setActiveSection('gardens', e)}
                     style={{ position: 'relative', zIndex: 100, transform: 'scaleY(1.04)' }}
                   >
-                    Zie meer
+                    {t('desktopLayout.seeMore')}
                   </SciFiButton>
                   
                   {/* Right Indicators (only 2 — total 4 shown, hint there's more) */}
@@ -595,7 +562,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               style={{ position: 'relative', zIndex: 100, transform: 'scaleY(1.04)', marginTop: '0.4rem' }}
               onClick={(e) => setActiveSection('monitor', e)}
             >
-              onderzoek
+              {t('desktopLayout.research')}
             </SciFiButton>
             </div>{/* end content wrapper */}
           </div>
@@ -614,11 +581,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         {/* Desktop Build - 1325px+ */}
         {windowWidth >= 1325 && (
           <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(2rem)' }} className="pointer-events-auto">
-            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '14.95vh' }} headerRight={langToggle}>
+            <TechContainer title={t('desktopLayout.connectionsMenu')} variant="purple" className="w-full h-full" style={{ height: '14.95vh' }} headerRight={langToggle}>
               <div className="w-full h-full flex items-center justify-around opacity-90 relative" style={{ padding: '0 1vw' }}>
                 {/* Left: Logo - Button */}
                 <button
                   className="gfl-eye-btn"
+                  data-label={t('desktopLayout.identity')}
                   onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
@@ -648,6 +616,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
                   <button
                     className="gfl-blackhole-btn"
+                    data-label={t('desktopLayout.login')}
                     onClick={(e) => setActiveSection('login', e)}
                     style={{
                     padding: '0',
@@ -675,11 +644,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         {/* Laptop Build - 1100px to 1324px */}
         {windowWidth >= 1100 && windowWidth < 1325 && (
           <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(0.9rem)' }} className="pointer-events-auto">
-            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }} headerRight={langToggle}>
+            <TechContainer title={t('desktopLayout.connectionsMenu')} variant="purple" className="w-full h-full" style={{ height: '17.94vh' }} headerRight={langToggle}>
               <div className="w-full h-full flex items-center justify-around opacity-90 relative" style={{ padding: '0 1vw' }}>
                 {/* Left: Logo - Button */}
                 <button
                   className="gfl-eye-btn"
+                  data-label={t('desktopLayout.identity')}
                   onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
@@ -709,6 +679,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
                   <button
                     className="gfl-blackhole-btn"
+                    data-label={t('desktopLayout.login')}
                     onClick={(e) => setActiveSection('login', e)}
                     style={{
                     padding: '0',
@@ -736,11 +707,12 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         {/* Tablet Build - 768px to 1099px */}
         {windowWidth >= 768 && windowWidth < 1100 && (
           <div style={{ width: '30vw', position: 'relative', zIndex: 10, transform: 'translateY(1rem)' }} className="pointer-events-auto">
-            <TechContainer title="VERBINDINGS_MENU" variant="purple" className="w-full h-full" style={{ height: '17.94vh' }} headerRight={langToggle}>
+            <TechContainer title={t('desktopLayout.connectionsMenu')} variant="purple" className="w-full h-full" style={{ height: '17.94vh' }} headerRight={langToggle}>
               <div className="w-full h-full flex items-center justify-evenly opacity-90 relative" style={{ padding: '0 0.5vw' }}>
                 {/* Left: Logo - Button */}
                 <button
                   className="gfl-eye-btn"
+                  data-label={t('desktopLayout.identity')}
                   onClick={(e) => setActiveSection('menu', e)}
                   style={{
                     backgroundColor: 'transparent',
@@ -770,6 +742,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 <div className="flex flex-col items-center justify-center gap-1" style={{ overflow: 'visible' }}>
                   <button
                     className="gfl-blackhole-btn"
+                    data-label={t('desktopLayout.login')}
                     onClick={(e) => setActiveSection('login', e)}
                     style={{
                     padding: '0',

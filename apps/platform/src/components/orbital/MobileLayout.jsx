@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TechContainer from './TechContainer';
 import { Activity, Lock } from 'lucide-react';
+import { useLanguage } from '@gfl/i18n';
 
 // Import garden logos
 const karmanLogo = '/images/karmaneventsPNG.png';
@@ -9,6 +10,7 @@ const tattooshopLogo = '/images/1111logo.png';
 const rengiLogo = '/images/Rengi-logo.png';
 
 const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, position = 'top', isMobile, TimeSync, setActiveSection, pauseAutoSlide }) => {
+  const { t } = useLanguage();
   // Beta lock: passkey-based access control (reads from localStorage)
   const [betaUnlocked] = useState(() => {
     try { return !!localStorage.getItem('gfl_beta_access'); } catch { return false; }
@@ -70,17 +72,18 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
               DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
             </h1>
             <div className="flex gap-1.5 items-center" style={{marginTop: 'clamp(0.25rem, 1vw, 0.5rem)', marginLeft: '1.2rem'}}>
-              <span className="rounded-full bg-green-500 animate-ping" style={{
+              <span className="rounded-full bg-green-500" style={{
                 width: 'clamp(0.3rem, 0.8vw, 0.5rem)',
                 height: 'clamp(0.3rem, 0.8vw, 0.5rem)',
                 minWidth: 'clamp(0.3rem, 0.8vw, 0.5rem)',
-                minHeight: 'clamp(0.3rem, 0.8vw, 0.5rem)'
+                minHeight: 'clamp(0.3rem, 0.8vw, 0.5rem)',
+                animation: 'dotBreathe 4s ease-in-out infinite',
               }}></span>
               <span className="text-gray-400 tracking-widest" style={{
                 fontSize: 'clamp(0.55rem, 2vw, 0.85rem)',
                 fontWeight: '500',
                 letterSpacing: '0.05em'
-              }}>SCHADUW WERK {'/'}{'/'} V.4.9</span>
+              }}>{t('header.versionText')} {'/'}{'/'} V.4.9</span>
             </div>
           </div>
         </div>
@@ -93,7 +96,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
         }}>
           {/* 1. Filosofie */}
           <div style={{minHeight: 'clamp(18rem, 45vh, 24rem)'}}>
-            <TechContainer title="FILOSOFIE" variant="purple" className="w-full h-full">
+            <TechContainer title={t('desktopLayout.filosofieTitle')} variant="purple" className="w-full h-full">
               <div className="w-full h-full flex flex-col items-center justify-start gap-3 p-4 overflow-visible">
                 {/* Header */}
                 <div className="flex flex-col items-center gap-2 w-full">
@@ -106,9 +109,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     lineHeight: 0.9,
                     textAlign: 'center',
                     letterSpacing: '0.05em'
-                  }}>
-                    DE LUIDE STILTE <br/> EN DE INTENSE KALMTE <br/> WIJZEN MIJ DE WEG <br/> VAN HET HART <br/> NAAR HET HOOFD
-                  </h2>
+                  }} dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofiePoem') }} />
                   <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
                 </div>
 
@@ -125,10 +126,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     color: '#FFFEF0',
                     fontSize: 'clamp(15px, 3.4vw, 20px)',
                     textAlign: 'center'
-                  }}>
-                   Man en Vrouw gelijkgesteld <br/> De tuinierder moet zich overgeven aan en overkomen van de doorschijnende passie <br />
-                
-                  </div>
+                  }} dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofieSubtext') }} />
                 </div>
 
                 {/* Button */}

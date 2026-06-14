@@ -297,6 +297,9 @@ importers:
 
   packages/brands:
     dependencies:
+      '@gfl/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       framer-motion:
         specifier: ^11.18.2
         version: 11.18.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

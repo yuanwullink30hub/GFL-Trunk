@@ -312,7 +312,7 @@ export const IconButton = ({ icon, onClick, variant = 'default', className = '' 
   return (
     <button
       onClick={onClick}
-      className={`w-12 h-12 flex items-center justify-center transition-all rounded-lg group ${className}`}
+      className={`inline-flex items-center justify-center leading-none p-1.5 transition-all rounded-lg group ${className}`}
       style={{
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
         border: `1px solid ${style.border}`,

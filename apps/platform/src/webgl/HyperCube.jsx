@@ -99,36 +99,45 @@ export function EnterButton({ onEnter, isInside, paused }) {
   // The cube's faces are world-axis-aligned; facing +Z sits flush with the inner
   // cube's camera-facing face, so it foreshortens with the same perspective as the
   // cube instead of reading as a flat HUD sticker. `rotation` is the tilt knob.
+  // Cursor feedback while hovering the inner-cube hit target.
+  useEffect(() => {
+    document.body.style.cursor = hovered ? 'pointer' : '';
+    return () => { document.body.style.cursor = ''; };
+  }, [hovered]);
+
+  if (isInside || paused) return null;
+
   return (
-    <group position={[0, 0, 0]} rotation={[0, 0, 0]}>
-      <Html transform occlude="blending" distanceFactor={5} pointerEvents="auto">
-        <button
-          onClick={(e) => { e.stopPropagation(); onEnter && onEnter(); }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          style={{
-            padding: '0.6rem 1.4rem',
-            borderRadius: '0.125rem',
-            border: `2px solid ${hovered ? '#39FF14' : 'rgba(191,0,255,0.7)'}`,
-            fontFamily: 'monospace',
-            fontSize: '10px',
-            letterSpacing: '0.35em',
-            transition: 'all 0.4s',
-            background: hovered ? 'rgba(57,255,20,0.18)' : 'rgba(5,1,10,0.55)',
-            color: hovered ? '#39FF14' : '#BF00FF',
-            boxShadow: hovered ? '0 0 28px #39FF14' : '0 0 16px rgba(191,0,255,0.4)',
-            transform: hovered ? 'scale(1.08)' : 'scale(1)',
-            backdropFilter: 'blur(10px)',
-            cursor: 'pointer',
-            textTransform: 'uppercase',
-            whiteSpace: 'nowrap',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem',
-          }}
-        >
-          <span style={{ opacity: 0.55, fontSize: '7px', letterSpacing: '0.2em' }}>Core_Access</span>
-          <span>[ INITIALIZE ]</span>
-        </button>
+    <group position={[0, 0, 0]}>
+      {/* The inner cube IS the event handler: an invisible hit-box at the inner-cube
+          volume captures the click → enter. (Wireframe edges are too thin to click.) */}
+      <mesh
+        onClick={(e) => { e.stopPropagation(); onEnter && onEnter(); }}
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
+        onPointerOut={() => setHovered(false)}
+      >
+        <boxGeometry args={[2, 2, 2]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
+      {/* Single green text label — non-interactive (clicks fall through to the cube).
+          No occlude plane (that was the faint "container"); plain transformed text. */}
+      <Html transform distanceFactor={5} pointerEvents="none" style={{ pointerEvents: 'none' }}>
+        <div style={{
+          fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+          fontWeight: 700,
+          letterSpacing: '0.28em',
+          color: '#39FF14',
+          fontSize: '15px',
+          textTransform: 'uppercase',
+          whiteSpace: 'nowrap',
+          textShadow: hovered ? '0 0 20px rgba(57,255,20,0.95)' : '0 0 11px rgba(57,255,20,0.55)',
+          transform: hovered ? 'scale(1.1)' : 'scale(1)',
+          transition: 'all 0.3s ease-out',
+          userSelect: 'none',
+          pointerEvents: 'none',
+        }}>Initieer</div>
       </Html>
     </group>
   );

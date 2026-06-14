@@ -9,6 +9,7 @@
   },
   "scripts": { "typecheck": "tsc --noEmit" },
   "dependencies": {
+    "@gfl/i18n": "workspace:*",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.562.0",
     "recharts": "^3.7.0"

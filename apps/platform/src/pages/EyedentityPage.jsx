@@ -1,4 +1,5 @@
 ﻿import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
+import { useLanguage } from '@gfl/i18n';
 import { ARCHETYPES, getArchetypeQuote } from '@gfl/assessment-core';
 import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
 import { POLICY_CONTENT } from '../data/policyContent';
@@ -631,6 +632,7 @@ const CornerStone = ({ variant = 'purple' }) => {
 
 // â”€â”€â”€ Standalone feedback form â€” linked from confirmation email â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FeedbackStandaloneForm = () => {
+  const { t } = useLanguage();
   const params = new URLSearchParams(window.location.search);
   const [formData, setFormData] = useState({
     email: params.get('email') || '', starRating: 0, whatWorked: '', whatDidntWork: '', suggestions: '',
@@ -664,7 +666,7 @@ const FeedbackStandaloneForm = () => {
       });
       setSubmitted(true);
     } catch (err) {
-      setError(err.message || 'Versturen mislukt, probeer opnieuw.');
+      setError(err.message || t('eyedentity.feedback.submitError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -693,13 +695,13 @@ const FeedbackStandaloneForm = () => {
   return (
     <div style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', paddingBottom: '2rem' }}>
       <p style={{ color: 'rgba(209,213,219,0.7)', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', marginTop: 0, marginBottom: '1rem' }}>
-        Topper, hopelijk ben je wijzer geworden en wil je dit nu met ons delen {'\u2014'} We horen graag wat je ervan vondt.
+        {t('eyedentity.feedback.intro')}
       </p>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 
         {/* Star Rating 1-9 */}
         <div>
-          <label style={{ display: 'block', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>Score *</label>
+          <label style={{ display: 'block', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>{t('eyedentity.feedback.score')} *</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
             {[...Array(9)].map((_, i) => (
               <button key={i} type="button" onClick={() => setFormData({ ...formData, starRating: i + 1 })} style={{
@@ -717,37 +719,37 @@ const FeedbackStandaloneForm = () => {
 
         {/* Email */}
         <div>
-          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>E-mailadres *</label>
-          <input type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="jouw@email.nl" style={baseField} />
+          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>{t('eyedentity.feedback.email')} *</label>
+          <input type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder={t('eyedentity.feedback.emailPlaceholder')} style={baseField} />
         </div>
 
         {/* Accuraatheid */}
         <div>
           <label style={{ display: 'block', color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>
-            Hoe accuraat is het resultaat volgens jouw kennis en gevoel?
+            {t('eyedentity.feedback.accuracyLabel')}
           </label>
           <textarea value={formData.whatWorked} onChange={(e) => setFormData({ ...formData, whatWorked: e.target.value })}
-            placeholder="Beschrijf in hoeverre het resultaat klopt met wie jij bent..."
+            placeholder={t('eyedentity.feedback.accuracyPlaceholder')}
             style={{ ...baseField, minHeight: '60px', maxHeight: '120px', border: '1px solid rgba(34,197,94,0.2)', resize: 'vertical' }} />
         </div>
 
         {/* Niet overeenkomend */}
         <div>
           <label style={{ display: 'block', color: '#ef4444', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>
-            Waar ben je zeker van dat niet overeenkomt met jouw persoonlijkheid?
+            {t('eyedentity.feedback.mismatchLabel')}
           </label>
           <textarea value={formData.whatDidntWork} onChange={(e) => setFormData({ ...formData, whatDidntWork: e.target.value })}
-            placeholder="Bijv: ik ben helemaal niet competitief, want..."
+            placeholder={t('eyedentity.feedback.mismatchPlaceholder')}
             style={{ ...baseField, minHeight: '60px', maxHeight: '120px', border: '1px solid rgba(239,68,68,0.2)', resize: 'vertical' }} />
         </div>
 
         {/* Suggesties */}
         <div>
           <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>
-            Wat zou jij anders doen of toevoegen aan dit systeem?
+            {t('eyedentity.feedback.suggestionsLabel')}
           </label>
           <textarea value={formData.suggestions} onChange={(e) => setFormData({ ...formData, suggestions: e.target.value })}
-            placeholder="Bijv: meer context bij de vragen, andere formulering..."
+            placeholder={t('eyedentity.feedback.suggestionsPlaceholder')}
             style={{ ...baseField, minHeight: '60px', maxHeight: '120px', resize: 'vertical' }} />
         </div>
 
@@ -759,7 +761,7 @@ const FeedbackStandaloneForm = () => {
 
         <div style={{ display: 'flex' }}>
           <SciFiButton type="submit" disabled={isSubmitting} variant="purple" size="md">
-            {isSubmitting ? 'VERSTUREN...' : 'VERSTUUR FEEDBACK'}
+            {isSubmitting ? t('eyedentity.feedback.submitting') : t('eyedentity.feedback.submit')}
           </SciFiButton>
         </div>
       </form>
@@ -768,21 +770,22 @@ const FeedbackStandaloneForm = () => {
 };
 
 const NAV_ITEMS = [
-  { id: 'profile', slug: 'profiel', title: 'PERSOONLIJK PROFIEL', icon: '\u{1F9EC}', version: 'v1.0' },
-  { id: 'terms', slug: 'algemene-voorwaarden', title: 'ALGEMENE VOORWAARDEN', icon: '\u{1F4CB}', version: 'Beta 1.0' },
-  { id: 'privacy', slug: 'privacybeleid', title: 'PRIVACYBELEID', icon: '\u{1F512}', version: 'v1.0' },
-  { id: 'cookies', slug: 'cookiebeleid', title: 'COOKIEBELEID', icon: '\u{1F36A}', version: 'v1.1' },
-  { id: 'ai', slug: 'ai-transparantie', title: 'AI-TRANSPARANTIE', icon: '\u{1F916}', version: 'v1.0' },
-  { id: 'ip', slug: 'intellectueel-eigendom', title: 'INTELLECTUEEL EIGENDOM', icon: '\u{00A9}', version: 'v2.0' },
-  { id: 'usage', slug: 'gebruiksvoorwaarden-misbruik', title: 'GEBRUIKSVOORWAARDEN', icon: '\u{2696}', version: 'v2.1' },
-  { id: 'retention', slug: 'gegevensbehoud-en-verwijdering', title: 'GEGEVENSBEHOUD & VERWIJDERING', icon: '\u{1F5C2}', version: 'v1.0' },
-  { id: 'register', slug: 'verwerkingsregister', title: 'VERWERKINGSREGISTER', icon: '\u{1F4DC}', version: 'v2.0' },
-  { id: 'feedback', slug: 'feedback', title: 'FEEDBACK', icon: '\u{2B50}', version: 'Beta' },
+  { id: 'profile', slug: 'profiel', titleKey: 'eyedentity.nav.profile', icon: '\u{1F9EC}', version: 'v1.0' },
+  { id: 'terms', slug: 'algemene-voorwaarden', titleKey: 'eyedentity.nav.terms', icon: '\u{1F4CB}', version: 'Beta 1.0' },
+  { id: 'privacy', slug: 'privacybeleid', titleKey: 'eyedentity.nav.privacy', icon: '\u{1F512}', version: 'v1.0' },
+  { id: 'cookies', slug: 'cookiebeleid', titleKey: 'eyedentity.nav.cookies', icon: '\u{1F36A}', version: 'v1.1' },
+  { id: 'ai', slug: 'ai-transparantie', titleKey: 'eyedentity.nav.ai', icon: '\u{1F916}', version: 'v1.0' },
+  { id: 'ip', slug: 'intellectueel-eigendom', titleKey: 'eyedentity.nav.ip', icon: '\u{00A9}', version: 'v2.0' },
+  { id: 'usage', slug: 'gebruiksvoorwaarden-misbruik', titleKey: 'eyedentity.nav.usage', icon: '\u{2696}', version: 'v2.1' },
+  { id: 'retention', slug: 'gegevensbehoud-en-verwijdering', titleKey: 'eyedentity.nav.retention', icon: '\u{1F5C2}', version: 'v1.0' },
+  { id: 'register', slug: 'verwerkingsregister', titleKey: 'eyedentity.nav.register', icon: '\u{1F4DC}', version: 'v2.0' },
+  { id: 'feedback', slug: 'feedback', titleKey: 'eyedentity.nav.feedback', icon: '\u{2B50}', version: 'Beta' },
 ];
 
 const SLUG_TO_ID = Object.fromEntries(NAV_ITEMS.map(item => [item.slug, item.id]));
 
 const EyedentityPage = memo(({ isVisible, onBack }) => {
+  const { t } = useLanguage();
   const getTabFromPath = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
     const page = params.get('page');
@@ -998,7 +1001,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
                       color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)',
                       transition: 'color 0.3s',
                     }}>
-                      {item.title}
+                      {t(item.titleKey)}
                     </div>
                   </div>
                 </button>
@@ -1066,7 +1069,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
                   color: '#ffffff',
                   margin: 0,
                 }}>
-                  {selectedItem?.title}
+                  {selectedItem ? t(selectedItem.titleKey) : ''}
                 </h2>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.2rem' }}>
                   <span style={{
@@ -1104,7 +1107,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
               ) : selectedId === 'feedback' ? (
                 <FeedbackStandaloneForm />
               ) : (
-                POLICY_CONTENT[selectedId] || <p style={{ color: '#94a3b8' }}>Inhoud niet beschikbaar.</p>
+                POLICY_CONTENT[selectedId] || <p style={{ color: '#94a3b8' }}>{t('eyedentity.contentUnavailable')}</p>
               )}
             </div>
 

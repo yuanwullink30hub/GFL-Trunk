@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 // Note: lucide-react provides icons - ensure it's installed or use alternatives
 
+import { useLanguage } from '@gfl/i18n';
 import { BRANDS } from './brandData';
 import { 
   SectorFrame, 
@@ -75,6 +76,7 @@ const Linkedin = ({ size = 24, className = '' }) => (
  * NavWheel - Rotating navigation wheel for brand selection
  */
 const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false }) => {
+  const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
   const wheelRef = useRef(null);
   const [vpW, setVpW] = useState(typeof window !== 'undefined' ? window.innerWidth : 1440);
@@ -179,7 +181,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
               <span className="text-xl font-mono font-bold text-white/20">{brand.id}</span>
               <div className="mt-auto">
                 <div className="text-xs uppercase tracking-wider" style={{ color: '#ffae00', fontSize: '9px' }}>Unit {brand.id}</div>
-                <div className="text-xs font-bold text-white truncate">{brand.name}</div>
+                <div className="text-xs font-bold text-white truncate">{t(brand.name)}</div>
               </div>
             </div>
           </button>
@@ -341,10 +343,10 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
         onMouseLeave={(e) => {
           e.currentTarget.style.color = '#ffae00';
         }}
-        title="Terug"
+        title={t('brands.backTitle')}
       >
         <ChevronLeft size={16} />
-        <span>TERUG</span>
+        <span>{t('brands.back')}</span>
       </button>
 
       {/* SCROLL BUTTON - Right side of hub button */}
@@ -404,6 +406,7 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
  * Slideshow - Media gallery with image/video support
  */
 const Slideshow = ({ items }) => {
+  const { t } = useLanguage();
   const [idx, setIdx] = useState(0);
   const next = () => setIdx(prev => (prev + 1) % items.length);
   const prev = () => setIdx(prev => (prev - 1 + items.length) % items.length);
@@ -422,10 +425,10 @@ const Slideshow = ({ items }) => {
           playsInline
         />
       ) : (
-        <img 
-          src={currentItem.url} 
-          alt={currentItem.title} 
-          className="w-full h-full object-cover opacity-80 transition-opacity duration-500" 
+        <img
+          src={currentItem.url}
+          alt={t(currentItem.title)}
+          className="w-full h-full object-cover opacity-80 transition-opacity duration-500"
         />
       )}
       
@@ -449,7 +452,7 @@ const Slideshow = ({ items }) => {
             ))}
           </div>
         </div>
-        <div className="text-sm font-bold text-white uppercase tracking-wider">{currentItem.title}</div>
+        <div className="text-sm font-bold text-white uppercase tracking-wider">{t(currentItem.title)}</div>
       </div>
 
       <button 
@@ -486,6 +489,7 @@ const GeneralBrandPage = React.memo(({
   brandSlug = null, // Optional: can specify brand by slug instead
   hideNavWheel = false // When true, hides the rotating brand selection wheel
 }) => {
+  const { t } = useLanguage();
   // Use a virtual index for infinite scrolling
   const [virtualIndex, setVirtualIndex] = useState(1008 + initialBrandIndex);
   const [activeTab, setActiveTab] = useState('profile');
@@ -558,7 +562,7 @@ const GeneralBrandPage = React.memo(({
                     className="text-3xl font-bold uppercase tracking-wider text-white leading-tight truncate"
                     style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}
                   >
-                    {brand.name}
+                    {t(brand.name)}
                   </h2>
                   <div className="flex flex-col gap-1 text-base font-mono mt-1 uppercase tracking-widest" style={{ color: '#ffae00' }}>
                     <div className="flex items-center gap-2">
@@ -589,10 +593,10 @@ const GeneralBrandPage = React.memo(({
                       <span className="font-mono text-xs mr-2" style={{ color: '#bc13fe' }}>
                         {'/// BRIEFING:'}
                       </span>
-                      {brand.description}
+                      {t(brand.description)}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-4">
-                      {brand.tags.map(tag => <TechBadge key={tag} label={tag} />)}
+                      {brand.tags.map((tag, ti) => <TechBadge key={ti} label={t(tag)} />)}
                     </div>
                   </div>
                 )}
@@ -605,11 +609,11 @@ const GeneralBrandPage = React.memo(({
                         className="p-3 bg-white/5 border border-white/10 rounded-sm hover:border-amber-400/30 transition-colors cursor-pointer"
                       >
                         <div className="flex justify-between items-center mb-1">
-                          <div className="text-xs font-mono" style={{ color: '#ffae00', fontSize: '9px' }}>{e.date}</div>
+                          <div className="text-xs font-mono" style={{ color: '#ffae00', fontSize: '9px' }}>{t(e.date)}</div>
                           <Activity size={10} style={{ color: '#bc13fe' }} />
                         </div>
-                        <div className="font-bold text-sm uppercase text-white/90">{e.title}</div>
-                        <div className="text-xs text-white/50" style={{ fontSize: '10px' }}>{e.location}</div>
+                        <div className="font-bold text-sm uppercase text-white/90">{t(e.title)}</div>
+                        <div className="text-xs text-white/50" style={{ fontSize: '10px' }}>{t(e.location)}</div>
                       </div>
                     ))}
                   </div>
@@ -624,8 +628,8 @@ const GeneralBrandPage = React.memo(({
                       >
                         {p.image && <img src={p.image} className="w-10 h-10 object-cover opacity-80 rounded-sm" alt="" />}
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-xs uppercase truncate text-white/90">{p.name}</div>
-                          <div className="text-xs font-mono" style={{ color: '#bc13fe', fontSize: '9px' }}>{p.price}</div>
+                          <div className="font-bold text-xs uppercase truncate text-white/90">{t(p.name)}</div>
+                          <div className="text-xs font-mono" style={{ color: '#bc13fe', fontSize: '9px' }}>{t(p.price)}</div>
                         </div>
                         <ChevronRight size={12} className="text-white/20" />
                       </div>
@@ -646,7 +650,7 @@ const GeneralBrandPage = React.memo(({
                           </div>
                         </div>
                         <div className="text-xs text-white/70 italic border-l-2 border-white/10 pl-2" style={{ fontSize: '11px' }}>
-                          "{r.comment}"
+                          "{t(r.comment)}"
                         </div>
                       </div>
                     ))}
@@ -772,19 +776,19 @@ const GeneralBrandPage = React.memo(({
                   </div>
                   <div className="overflow-hidden flex flex-col h-full">
                     <h4 className="text-white font-bold uppercase tracking-widest text-sm truncate">
-                      {brand.featuredProducts[0]?.name}
+                      {t(brand.featuredProducts[0]?.name)}
                     </h4>
                     <div className="text-xs font-mono my-1 font-bold" style={{ color: '#bc13fe' }}>
-                      {brand.featuredProducts[0]?.price}
+                      {t(brand.featuredProducts[0]?.price)}
                     </div>
                     <div className="flex gap-1 flex-wrap mt-auto">
-                      {brand.featuredProducts[0]?.specs.map(s => (
-                        <span 
-                          key={s} 
+                      {brand.featuredProducts[0]?.specs.map((s, si) => (
+                        <span
+                          key={si}
                           className="text-xs bg-white/5 px-1.5 py-0.5 border border-white/10 text-white/50"
                           style={{ fontSize: '8px' }}
                         >
-                          {s}
+                          {t(s)}
                         </span>
                       ))}
                     </div>

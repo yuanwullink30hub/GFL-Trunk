@@ -872,10 +872,14 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
           float h = hash(cell + 77.0);
           if (h < 0.12) {
             vec2 sp = (cell + vec2(hash(cell + 0.3), hash(cell + 0.4))) / density;
-            // Exclude bright stars within right galaxy's footprint
-            // and the left-center zone occupied by hand-placed stars
+            // Keep large stars off: the right galaxy; the two hand-placed stars they'd
+            // collide with (blue giant 0.18,0.42 + red dwarf 0.13,0.80 — tight circles
+            // instead of a big left-center rectangle, which used to blank the entire left
+            // half of the data-stream viewport); and the removed double-star patch.
             if (length(sp - vec2(0.88, 0.60)) > 0.12
-                && !(sp.x < 0.50 && sp.y > 0.30 && sp.y < 0.75)) {
+                && length(sp - vec2(0.18, 0.42)) > 0.13
+                && length(sp - vec2(0.13, 0.80)) > 0.13
+                && length(sp - vec2(0.573, 1.126)) > 0.13) {
             vec2 toStar = fgStarUv - sp;
             float d = length(toStar) * density;
             // Distance factor: 0.4 (far/small) to 1.0 (close/large)
@@ -948,6 +952,51 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
       float spike = exp(-min(rotDiff.x, rotDiff.y) * 22.0) * exp(-max(rotDiff.x, rotDiff.y) * 4.8) * 0.14;
       float brightness = (core + glow + spike) * (0.91 + 0.09 * sin(u_time * 0.9 + 3.2));
       color += vec3(1.0, 0.78, 0.38) * max(brightness, 0.0) * 0.70;
+    }
+
+    // ── Data-stream page: extra prominent stars filling its bare left side ──
+    // Faded to the monitor map-coordinate (u_offset ≈ -1.3,1.2) so they only appear on
+    // this page; placed at fgStarUv.x<0 (off-screen-left elsewhere) for good measure.
+    {
+      float dsFade = 1.0 - smoothstep(0.35, 0.80, length(u_offset - vec2(-1.3, 1.2)));
+      if (dsFade > 0.002) {
+        // lower-left, blue-white
+        {
+          vec2 toStar = fgStarUv - vec2(-0.12, 0.55);
+          float d = length(toStar) * 10.0;
+          float core = smoothstep(0.024, 0.0, d);
+          float glow = exp(-d * d * 52.0) * 0.28;
+          float sc = sin(0.55), cc = cos(0.55);
+          vec2 rd = abs(vec2(cc * toStar.x + sc * toStar.y, -sc * toStar.x + cc * toStar.y)) * 10.0;
+          float spike = exp(-min(rd.x, rd.y) * 21.0) * exp(-max(rd.x, rd.y) * 4.2) * 0.18;
+          float b = (core + glow + spike) * (0.89 + 0.11 * sin(u_time * 1.4 + 0.7));
+          color += vec3(0.66, 0.78, 1.0) * max(b, 0.0) * 0.70 * dsFade;
+        }
+        // mid-left, white-gold
+        {
+          vec2 toStar = fgStarUv - vec2(-0.05, 0.86);
+          float d = length(toStar) * 10.0;
+          float core = smoothstep(0.021, 0.0, d);
+          float glow = exp(-d * d * 58.0) * 0.24;
+          float sc = sin(2.30), cc = cos(2.30);
+          vec2 rd = abs(vec2(cc * toStar.x + sc * toStar.y, -sc * toStar.x + cc * toStar.y)) * 10.0;
+          float spike = exp(-min(rd.x, rd.y) * 22.0) * exp(-max(rd.x, rd.y) * 4.6) * 0.14;
+          float b = (core + glow + spike) * (0.90 + 0.10 * sin(u_time * 1.1 + 2.4));
+          color += vec3(1.0, 0.93, 0.72) * max(b, 0.0) * 0.66 * dsFade;
+        }
+        // upper-left, blue-white
+        {
+          vec2 toStar = fgStarUv - vec2(-0.16, 1.05);
+          float d = length(toStar) * 10.0;
+          float core = smoothstep(0.023, 0.0, d);
+          float glow = exp(-d * d * 50.0) * 0.30;
+          float sc = sin(1.20), cc = cos(1.20);
+          vec2 rd = abs(vec2(cc * toStar.x + sc * toStar.y, -sc * toStar.x + cc * toStar.y)) * 10.0;
+          float spike = exp(-min(rd.x, rd.y) * 20.0) * exp(-max(rd.x, rd.y) * 4.0) * 0.19;
+          float b = (core + glow + spike) * (0.88 + 0.12 * sin(u_time * 1.6 + 4.1));
+          color += vec3(0.72, 0.82, 1.0) * max(b, 0.0) * 0.70 * dsFade;
+        }
+      }
     }
 
     // (old single-layer galaxies removed — now split into bg + midground layers above)

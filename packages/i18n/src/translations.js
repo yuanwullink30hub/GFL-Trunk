@@ -810,6 +810,38 @@ const translations = {
       en: "Real-time system metrics <br /> and data streams flowing live"
     },
     monitor: { nl: "MONITOR", en: "MONITOR" },
+    // Filosofie container
+    filosofiePoem: {
+      nl: "DE LUIDE STILTE <br/> EN DE INTENSE KALMTE <br/> WIJZEN MIJ DE WEG <br/> VAN HET HART <br/> NAAR HET HOOFD",
+      en: "THE LOUD SILENCE <br/> AND THE INTENSE CALM <br/> SHOW ME THE WAY <br/> FROM THE HEART <br/> TO THE MIND"
+    },
+    filosofieSubtext: {
+      nl: "Man en Vrouw gelijkgesteld <br/> De tuinierder moet zich overgeven aan en overkomen van de doorschijnende passie <br />",
+      en: "Man and Woman made equal <br/> The gardener must surrender to, and emerge from, the translucent passion <br />"
+    },
+    learnMore: { nl: "Leer meer", en: "Learn more" },
+    seeMore: { nl: "Zie meer", en: "See more" },
+    research: { nl: "onderzoek", en: "research" },
+    // Container titles
+    filosofieTitle: { nl: "FILOSOFIE", en: "PHILOSOPHY" },
+    gardensTitle: { nl: "DE TUINEN", en: "THE GARDENS" },
+    connectionsMenu: { nl: "VERBINDINGS_MENU", en: "CONNECTIONS_MENU" },
+    kitchen: { nl: "KOOKEILAND", en: "KITCHEN" },
+    // Gardens slideshow (business types + shared prompt)
+    gardenConnectPrompt: {
+      nl: "Verbinden met ons platform? Maak de test en benader ons team.",
+      en: "Connect with our platform? Take the test and reach out to our team."
+    },
+    businessTypes: {
+      green: { nl: "ARTIEST", en: "ARTIST" },
+      blue: { nl: "ZZP", en: "FREELANCER" },
+      purple: { nl: "EENMANSZAAK", en: "SOLE PROPRIETOR" },
+      red: { nl: "BV", en: "LTD" },
+      orange: { nl: "INTERNATIONAL", en: "INTERNATIONAL" }
+    },
+    // Hover tooltips on the connections-menu icons
+    identity: { nl: "Identiteit", en: "Identity" },
+    login: { nl: "Inloggen", en: "Log in" },
     gardens: {
       karman: {
         tagline: { nl: "Underground Techno Events", en: "Underground Techno Events" },
@@ -881,6 +913,76 @@ const translations = {
         en: "The unified theory of consciousness and being."
       },
       back: { nl: "Terug", en: "Back" }
+    }
+  },
+
+  // --- Eyedentity (profile / policy tabs + feedback) ---
+  eyedentity: {
+    nav: {
+      profile: { nl: "PERSOONLIJK PROFIEL", en: "PERSONAL PROFILE" },
+      terms: { nl: "ALGEMENE VOORWAARDEN", en: "TERMS & CONDITIONS" },
+      privacy: { nl: "PRIVACYBELEID", en: "PRIVACY POLICY" },
+      cookies: { nl: "COOKIEBELEID", en: "COOKIE POLICY" },
+      ai: { nl: "AI-TRANSPARANTIE", en: "AI TRANSPARENCY" },
+      ip: { nl: "INTELLECTUEEL EIGENDOM", en: "INTELLECTUAL PROPERTY" },
+      usage: { nl: "GEBRUIKSVOORWAARDEN", en: "TERMS OF USE" },
+      retention: { nl: "GEGEVENSBEHOUD & VERWIJDERING", en: "DATA RETENTION & DELETION" },
+      register: { nl: "VERWERKINGSREGISTER", en: "PROCESSING REGISTER" },
+      feedback: { nl: "FEEDBACK", en: "FEEDBACK" }
+    },
+    contentUnavailable: { nl: "Inhoud niet beschikbaar.", en: "Content unavailable." },
+    feedback: {
+      intro: {
+        nl: "Topper, hopelijk ben je wijzer geworden en wil je dit nu met ons delen — We horen graag wat je ervan vondt.",
+        en: "Nice one — hopefully you've gained some insight and want to share it with us. We'd love to hear what you thought."
+      },
+      score: { nl: "Score", en: "Score" },
+      email: { nl: "E-mailadres", en: "Email address" },
+      emailPlaceholder: { nl: "jouw@email.nl", en: "you@email.com" },
+      accuracyLabel: {
+        nl: "Hoe accuraat is het resultaat volgens jouw kennis en gevoel?",
+        en: "How accurate is the result, in your knowledge and gut feeling?"
+      },
+      accuracyPlaceholder: {
+        nl: "Beschrijf in hoeverre het resultaat klopt met wie jij bent...",
+        en: "Describe how well the result matches who you are..."
+      },
+      mismatchLabel: {
+        nl: "Waar ben je zeker van dat niet overeenkomt met jouw persoonlijkheid?",
+        en: "What are you certain does NOT match your personality?"
+      },
+      mismatchPlaceholder: {
+        nl: "Bijv: ik ben helemaal niet competitief, want...",
+        en: "E.g. I'm not competitive at all, because..."
+      },
+      suggestionsLabel: {
+        nl: "Wat zou jij anders doen of toevoegen aan dit systeem?",
+        en: "What would you do differently or add to this system?"
+      },
+      suggestionsPlaceholder: {
+        nl: "Bijv: meer context bij de vragen, andere formulering...",
+        en: "E.g. more context with the questions, different phrasing..."
+      },
+      submit: { nl: "VERSTUUR FEEDBACK", en: "SEND FEEDBACK" },
+      submitting: { nl: "VERSTUREN...", en: "SENDING..." },
+      submitError: { nl: "Versturen mislukt, probeer opnieuw.", en: "Submission failed, please try again." }
+    }
+  },
+
+  // --- Brand / Gardens page ---
+  // (Placeholder brand *content* lives bilingually in packages/brands/src/brandData.jsx.)
+  brands: {
+    back: { nl: "TERUG", en: "BACK" },
+    backTitle: { nl: "Terug", en: "Back" },
+    mission: { nl: "Missie", en: "Mission" },
+    upcomingEvents: { nl: "Aankomende Events", en: "Upcoming Events" },
+    noEventsPlanned: { nl: "Geen events gepland", en: "No events planned" },
+    connections: { nl: "Verbindingen", en: "Connections" },
+    noConnectionsYet: { nl: "Nog geen verbindingen", en: "No connections yet" },
+    tabs: {
+      overzicht: { nl: "Overzicht", en: "Overview" },
+      events: { nl: "Events", en: "Events" },
+      netwerk: { nl: "Netwerk", en: "Network" }
     }
   }
 };

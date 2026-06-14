@@ -167,6 +167,13 @@ body {
   50% { opacity: 1; }
 }
 
+/* Status dot: a slow breathing glow rather than a flashing ping — keeps the
+   header calm. Soft green halo swells and fades; the dot never blinks out. */
+@keyframes dotBreathe {
+  0%, 100% { opacity: 0.55; box-shadow: 0 0 2px rgba(34, 197, 94, 0.35); }
+  50%      { opacity: 1;    box-shadow: 0 0 8px 1px rgba(34, 197, 94, 0.7); }
+}
+
 @keyframes holoSheen {
   0%, 100% { background-position: 300% 300%; }
   50% { background-position: 0% 0%; }

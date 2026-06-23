@@ -22,6 +22,8 @@ import {
 } from '@gfl/assessment-core';
 import { isNatureSlot } from '@gfl/assessment-core/assessmentData';
 import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
+import { assembleV4 } from './v4Parser';
+import MorphologyChart from './MorphologyChart';
 
 // ── Restructure part 2.3 ──────────────────────────────────────────────────────
 // OCEAN is now an ORTHOGONAL instrument (v4 §3.4): no model-derived scalars. The
@@ -127,6 +129,9 @@ const AssessmentResultsModal = ({
   // ── AI Analysis state ──
   const [aiSections, setAiSections] = useState(null);
   const [aiProfileData, setAiProfileData] = useState(null);
+  // v4: structured parse of the model output (assembleV4) + the engine C-runtime.
+  const [v4Data, setV4Data] = useState(null);
+  const [cRuntime, setCRuntime] = useState(null);
   const [uploadedOceanScores, setUploadedOceanScores] = useState(null);
   const [aiReady, setAiReady] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
@@ -299,6 +304,9 @@ const AssessmentResultsModal = ({
         // Stage 3: frontend integration
         setAiStage(3);
         if (aiResult.uploadedOceanScores) setUploadedOceanScores(aiResult.uploadedOceanScores);
+        // v4 structured parse (title-lines-as-tags) + the engine's C-runtime.
+        try { setV4Data(assembleV4(aiResult.analysis || '')); } catch (e) { console.warn('[GFL] v4 parse failed:', e.message); }
+        if (aiResult.cRuntime) setCRuntime(aiResult.cRuntime);
         const sections = parseAiSections(aiResult.analysis || '');
         const profileElements = sections.filter(s => s.isProfileElement);
         if (profileElements.length > 0) {

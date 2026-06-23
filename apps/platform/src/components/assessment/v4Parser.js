@@ -208,6 +208,123 @@ export function parseMorphologyChart(morphologyBody) {
   return { main, support, composed };
 }
 
+// ── §7.2 Machine-block value parser — THE numeric source of truth ─────────────
+// Numbers (radar, dual-core, indices, OCEAN bars) come from here, parsed; never
+// scraped from prose. Tuned against the Ronin machine block.
+
+/** "Key: Value | Key2: Value2" lines → { key(lowercased): value }. First wins. */
+function parseKeyValueBlock(body) {
+  const out = {};
+  for (const line of String(body || '').split('\n')) {
+    for (const seg of line.split('|')) {
+      const i = seg.indexOf(':');
+      if (i > 0) {
+        const k = seg.slice(0, i).trim().toLowerCase();
+        const v = seg.slice(i + 1).trim();
+        if (k && v && !(k in out)) out[k] = v;
+      }
+    }
+  }
+  return out;
+}
+
+/** SCORES rows: "Judge(1): 8 (Core: 0 | Bleed: 8)" → 12 × {key,name,pos,total,core,bleed}. */
+function parseScores(body) {
+  const rows = [];
+  const re = /^\s*([A-Za-z]+)\((\d+)\)\s*:\s*(\d+)\s*\(Core:\s*(\d+)\s*\|\s*Bleed:\s*(\d+)\)/gim;
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    rows.push({ key: m[1].toUpperCase(), name: m[1], pos: +m[2], total: +m[3], core: +m[4], bleed: +m[5] });
+  }
+  return rows;
+}
+
+/** NAT/CULT rows: "Ruling: N1 / C1 = 2/36" → 6 × {group,N,C,total,max}. */
+function parseNatCult(body) {
+  const rows = [];
+  const re = /^\s*([A-Za-z]+)\s*:\s*N(\d+)\s*\/\s*C(\d+)\s*=\s*(\d+)\/(\d+)/gim;
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    rows.push({ group: m[1], N: +m[2], C: +m[3], total: +m[4], max: +m[5] });
+  }
+  return rows;
+}
+
+/** AFGELEIDE INDICES → { authenticity, polarization(+band), datapoints }. */
+function parseIndices(body) {
+  const out = {};
+  let m;
+  if ((m = body.match(/Authenticity Index:\s*(\d+)\/(\d+)\s*Nature\s*\((\d+)%?\)/i)))
+    out.authenticity = { nature: +m[1], total: +m[2], pct: +m[3] };
+  if ((m = body.match(/Polarization Index:\s*(\d+)\s*\(Main\)\s*[-–—]\s*(\d+)\s*\(Shadow\)\s*=\s*gap\s*(\d+)%?\s*(?:->|→)?\s*(.+)?/i)))
+    out.polarization = { main: +m[1], shadow: +m[2], gapPct: +m[3], band: (m[4] || '').trim() };
+  if ((m = body.match(/Datapunten:\s*(\d+)\s*\/\s*(\d+)/i)))
+    out.datapoints = { value: +m[1], max: +m[2] };
+  return out;
+}
+
+// OCEAN bars: "Openheid: 72/100" etc. NB the machine block uses short Dutch labels.
+const DUTCH_OCEAN = { openheid: 'O', ordelijkheid: 'C', extraversie: 'E', meegaandheid: 'A', neuroticisme: 'N' };
+function parseOceanBlock(body) {
+  const out = {};
+  const re = /^\s*([A-Za-zëïéè]+)\s*:\s*(\d+)\s*\/\s*100/gim;
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    const letter = DUTCH_OCEAN[m[1].toLowerCase()];
+    if (letter) out[letter] = +m[2];
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+/** §7.2 Parse the whole machine block → structured numeric data. Drops model-derived OCEAN. */
+export function parseMachineBlock(machine) {
+  const byKey = {};
+  for (const b of machine || []) if (b.key && b.key !== 'DROP') byKey[b.key] = b.body;
+  const data = {};
+  if (byKey.identity_fields) data.identity = parseKeyValueBlock(byKey.identity_fields);
+  if (byKey.scores) data.scores = parseScores(byKey.scores);
+  if (byKey.nat_cult) data.natCult = parseNatCult(byKey.nat_cult);
+  if (byKey.indices) data.indices = parseIndices(byKey.indices);
+  if (byKey.ocean_uploaded) data.oceanUploaded = parseOceanBlock(byKey.ocean_uploaded);
+  if (byKey.yellow_triangle) data.yellowTriangle = parseKeyValueBlock(byKey.yellow_triangle);
+  if (byKey.hardware_signals) data.hardwareSignals = parseKeyValueBlock(byKey.hardware_signals);
+  if (byKey.extended_profile) data.extendedProfile = parseKeyValueBlock(byKey.extended_profile);
+  if (byKey.main_depth) data.mainDepth = parseKeyValueBlock(byKey.main_depth);
+  if (byKey.shadow_integration) data.shadowIntegration = parseKeyValueBlock(byKey.shadow_integration);
+  if (byKey.blindspot_fields) data.blindspotFields = parseKeyValueBlock(byKey.blindspot_fields);
+  return data;
+}
+
+// ── §7.4 Page assembler — emit slots in the locked page-map order, IF-state aware.
+export function assembleV4(raw) {
+  const { narrative, machine } = splitV4Output(raw);
+  const slots = routeToSlots(narrative);
+  const machineData = parseMachineBlock(machine);
+  const oceanUpload = hasOceanUpload(machine);
+
+  const pages = [];
+  for (const group of PAGE_ORDER) {
+    const onPage = group
+      .filter((id) => {
+        if (id === 'ocean_compare' && !oceanUpload) return false; // only when uploaded
+        return slots[id];
+      })
+      .map((id) => slots[id]);
+    if (onPage.length) pages.push(onPage);
+  }
+
+  // Render-ready morphology: chart series + prose with the charted text removed.
+  let morphology = null;
+  if (slots.morphology) {
+    morphology = {
+      chart: parseMorphologyChart(slots.morphology.body),
+      prose: stripStrayMarkdown(stripChartedData(slots.morphology.body)),
+    };
+  }
+
+  return { pages, slots, machineData, oceanUpload, morphology };
+}
+
 /** §5 cleanup: strip the charted data (fenced ASCII + raw value lines) from prose. */
 export function stripChartedData(body) {
   if (!body) return body;

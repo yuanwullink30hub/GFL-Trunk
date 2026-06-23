@@ -22,30 +22,42 @@
 const fs = require('fs');
 const path = require('path');
 
-const CORPUS_PATH = path.join(
-  __dirname, '..', '..', '..',
-  'packages', 'assessment-core', 'src', 'data', 'canon', 'deltawerken_corpus.json'
-);
+const CANON_DIR = path.join(__dirname, '..', '..', '..', 'packages', 'assessment-core', 'src', 'data', 'canon');
+const CORPUS_PATHS = {
+  en: path.join(CANON_DIR, 'deltawerken_corpus.json'),
+  nl: path.join(CANON_DIR, 'deltawerken_corpus_nl.json'),
+};
+// The canonical NUMERIC source (stored_D, C-[Effect]) is language-independent and
+// validated against EN — the engine always reads EN. Language only selects which
+// corpus TEXT is sent to the model.
+const ENGINE_LANG = 'en';
 
-let _corpus = null;
-let _corpusText = null;
+/** Map any language tag → a supported corpus language ('nl' | 'en'; uk/en/default → en). */
+function resolveLang(language) {
+  return String(language || '').toLowerCase() === 'nl' ? 'nl' : 'en';
+}
 
-/** Load + memoise the parsed canon corpus. */
-function loadCorpus() {
-  if (_corpus) return _corpus;
-  _corpus = JSON.parse(fs.readFileSync(CORPUS_PATH, 'utf8'));
-  return _corpus;
+const CORPUS_PATH = CORPUS_PATHS.en; // back-compat default
+
+const _corpus = {};      // parsed, memoised per language
+const _corpusText = {};  // raw text, memoised per language
+
+/** Load + memoise the parsed canon corpus for a language (engine reads EN by default). */
+function loadCorpus(language = ENGINE_LANG) {
+  const lang = resolveLang(language);
+  if (!_corpus[lang]) _corpus[lang] = JSON.parse(fs.readFileSync(CORPUS_PATHS[lang], 'utf8'));
+  return _corpus[lang];
 }
 
 /**
- * Raw corpus file text (memoised) — the byte-stable block sent to the model as
- * cached context. Read from disk verbatim (not re-stringified) so the cached
- * prefix is identical across calls and the prompt cache reliably hits.
+ * Raw corpus file text (memoised per language) — the byte-stable block sent to the
+ * model as cached context. Read verbatim (not re-stringified) so the cached prefix
+ * is identical across calls and the prompt cache reliably hits per language.
  */
-function getCorpusText() {
-  if (_corpusText) return _corpusText;
-  _corpusText = fs.readFileSync(CORPUS_PATH, 'utf8');
-  return _corpusText;
+function getCorpusText(language = ENGINE_LANG) {
+  const lang = resolveLang(language);
+  if (!_corpusText[lang]) _corpusText[lang] = fs.readFileSync(CORPUS_PATHS[lang], 'utf8');
+  return _corpusText[lang];
 }
 
 // ── Key normalisation: UPPERCASE (backend/scoring) <-> TitleCase (corpus) ──

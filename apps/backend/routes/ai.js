@@ -149,6 +149,9 @@ router.post('/analyze', async (req, res) => {
       // The relevant Levensles (Main×SupportGroup), sent by the frontend so the AI
       // gets it directly without searching the corpus.
       levensles,
+      // UI language tag — selects which corpus TEXT is sent to the model
+      // ('nl' → Dutch corpus, otherwise the English corpus). Engine math is EN.
+      language,
     } = req.body;
 
     if (!archetypeKey) {
@@ -380,7 +383,7 @@ router.post('/analyze', async (req, res) => {
     // — read it fully before translating). Skipped for free-form userQuestion calls.
     const cachedContext = userQuestion
       ? null
-      : `═══ DELTAWERKEN VOLLEDIG CORPUS (single source of truth — Matrix 360, Rosetta, de vier geometrische bronmodellen) ═══\n${getCorpusText()}`;
+      : `═══ DELTAWERKEN VOLLEDIG CORPUS (single source of truth — Matrix 360, Rosetta, de vier geometrische bronmodellen) ═══\n${getCorpusText(language)}`;
 
     console.log('[AI] ═══════════════════════════════════════════════════════════');
     console.log('[AI] FINAL SYSTEM PROMPT BEING SENT TO AI:');

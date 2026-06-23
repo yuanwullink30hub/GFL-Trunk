@@ -40,6 +40,7 @@ const OCEAN_LABELS = {
 const OCEAN_COLORS = { O: '#a78bfa', C: '#22d3ee', E: '#67e8f9', A: '#818cf8', N: '#c4b5fd' };
 import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity, getPublicSiteBanner } from '@gfl/api-client';
 import { isIntegratedGPU } from '@gfl/utils';
+import { useLanguage } from '@gfl/i18n';
 // SciFiButton removed — unused in this component
 const tnmWheelImg = '/images/Model imports/TNM wheel PNG.png';
 const deltawerkenImg = '/images/Model imports/Deltawerken png.png';
@@ -127,6 +128,7 @@ const AssessmentResultsModal = ({
   const [pdfConsentChecked, setPdfConsentChecked] = useState(false);
 
   // ── AI Analysis state ──
+  const { language } = useLanguage(); // 'nl' | 'en' — selects the corpus sent to the model
   const [aiSections, setAiSections] = useState(null);
   const [aiProfileData, setAiProfileData] = useState(null);
   // v4: structured parse of the model output (assembleV4) + the engine C-runtime.
@@ -295,6 +297,8 @@ const AssessmentResultsModal = ({
           // The relevant Levensles (Main×SupportGroup) — sent so the backend hands it
           // to the AI directly (it needn't search the corpus for it).
           levensles: getArchetypeQuote(result.mainArchetype, result.supportGroup),
+          // UI language → backend picks the matching corpus (nl → Dutch, else English).
+          language,
           level: 'advanced',
           uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
         }, (stage, message) => {

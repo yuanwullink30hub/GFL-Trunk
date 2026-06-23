@@ -10,11 +10,9 @@
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
+import { dPhaseLabel } from './v4Labels';
 
 const STATES = ['D1', 'D2', 'D3', 'D4', 'D5'];
-const STATE_LABELS = {
-  D1: 'D1 Coherent', D2: 'D2 Strained', D3: 'D3 Entrenched', D4: 'D4 Acuut', D5: 'D5 Collapse',
-};
 
 const COLORS = {
   main: '#39FF14',      // green — Main
@@ -26,13 +24,13 @@ const COLORS = {
  * @param {{ chart: {main?:number[], support?:number[], composed?:number[]},
  *           mainName?: string, supportName?: string, height?: number }} props
  */
-export default function MorphologyChart({ chart, mainName = 'Main', supportName = 'Support', height = 280 }) {
+export default function MorphologyChart({ chart, mainName = 'Main', supportName = 'Support', height = 280, language = 'nl' }) {
   if (!chart || (!chart.main && !chart.support && !chart.composed)) return null;
   const { main, support, composed } = chart;
 
   const data = STATES.map((d, i) => ({
     state: d,
-    label: STATE_LABELS[d],
+    label: dPhaseLabel(d, language),      // full phase name (tooltip)
     main: main ? main[i] : null,
     support: support ? support[i] : null,
     composed: composed ? composed[i] : null,
@@ -42,7 +40,8 @@ export default function MorphologyChart({ chart, mainName = 'Main', supportName 
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 18, right: 28, bottom: 8, left: -8 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(168,85,247,0.14)" />
-        <XAxis dataKey="state" stroke="#a78bfa" tick={{ fontSize: 12, fontFamily: "'Figtree', sans-serif" }} tickLine={false} />
+        <XAxis dataKey="state" stroke="#a78bfa" tick={{ fontSize: 12, fontFamily: "'Figtree', sans-serif" }}
+          tickFormatter={(v) => dPhaseLabel(v, language, true)} tickLine={false} />
         <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} stroke="#a78bfa" tick={{ fontSize: 11 }} tickLine={false} width={34} />
         <ReferenceLine y={50} stroke="rgba(168,85,247,0.2)" strokeDasharray="2 4" />
         <Tooltip

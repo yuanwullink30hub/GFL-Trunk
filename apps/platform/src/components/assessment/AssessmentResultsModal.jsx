@@ -2964,7 +2964,7 @@ const AssessmentResultsModal = ({
               margin: 0,
               letterSpacing: '0.05em',
             }}>
-              ca. 3 min
+              ca. 6 min
             </p>
 
             {/* Error state: AI failed — show continue button */}

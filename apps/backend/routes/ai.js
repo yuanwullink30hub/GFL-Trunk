@@ -6,6 +6,8 @@
  */
 const { Router } = require('express');
 const { callAI, getAvailableProviders } = require('../services/aiProviders');
+const { computeCRuntime } = require('../services/cRuntime');
+const { getCorpusText } = require('../services/corpusData');
 const { getDB } = require('../db');
 const config = require('../config');
 const nodemailer = require('nodemailer');
@@ -16,6 +18,29 @@ const promptBuilders = {
   intermediate: require('../prompts/intermediate'),
   advanced: require('../prompts/advanced'),
 };
+
+/**
+ * Format the pre-computed C-runtime block for the model payload. The engine
+ * computes this; the model must NOT recompute it (it reads these values).
+ */
+function formatCRuntimeBlock(c) {
+  const d = c.composed_D_state || {};
+  const cv = c.c_runtime_values || {};
+  const cLines = Object.entries(cv)
+    .map(([f, v]) => `${f}=${v === null ? 'no-channel' : v.toFixed(3)}`)
+    .join(', ');
+  const refusals = (c.unresolved_edges || []).map(([n, e]) => `${n}(${e})`).join(', ') || 'none';
+  return [
+    '═══ C-RUNTIME (pre-computed by the engine — do NOT recompute) ═══',
+    'Composed D-state (dynamic-ceiling normalised, peak=100%; within-configuration relative):',
+    `  D1=${d.D1} D2=${d.D2} D3=${d.D3} D4=${d.D4} D5=${d.D5}`,
+    'C-modulation (Support [Effect] × geometry — direction stored, magnitude geometry-driven):',
+    `  ${cLines}`,
+    `polar_norm=${c.polar_norm}  support_weight_norm=${(c.support_weight_norm || 0).toFixed(3)}`,
+    `unresolved edges (refused, not guessed): ${refusals}`,
+    `[${c.WARNING}]`,
+  ].join('\n');
+}
 
 const router = Router();
 
@@ -121,6 +146,9 @@ router.post('/analyze', async (req, res) => {
       // Group dynamics (Dual-Core)
       subgroups,
       radarData,
+      // The relevant Levensles (Main×SupportGroup), sent by the frontend so the AI
+      // gets it directly without searching the corpus.
+      levensles,
     } = req.body;
 
     if (!archetypeKey) {
@@ -318,11 +346,41 @@ router.post('/analyze', async (req, res) => {
       subgroups,
     };
 
-    // Admin meta instruction from MongoDB (editable via dashboard) is the sole system prompt.
-    // The backend hardcoded prompt is no longer used — all instructions live in the admin dashboard.
+    // System prompt = the AI Master Prompt (v4), stored in the MongoDB admin config
+    // (editable in the dashboard). Together with the cached corpus it is the cached prefix.
     const adminMeta = adminConfig.systemPromptTemplate || '';
     const system = systemPrompt || adminMeta || '';
-    const user = userQuestion || builder.buildUserMessage(promptData);
+
+    // ── C-runtime: engine pre-computes the composed D-state + C-magnitude (the model
+    //    reads these; it does not recompute). Non-fatal if the geometry is incomplete. ──
+    let cRuntime = null;
+    try {
+      if (archetypeDetails && archetypeKey) {
+        cRuntime = computeCRuntime({
+          archetypeDetails,
+          mainKey: archetypeKey,
+          supportKey: supportArchetype,
+          shadowKey: shadowArchetype,
+        });
+      }
+    } catch (e) {
+      console.warn('[AI] C-runtime precompute failed (continuing without it):', e.message);
+    }
+
+    // ── User payload: per-user geometry (buildUserMessage) + the C-runtime block + the
+    //    relevant Levensles. The full corpus rides separately as cached context. ──
+    const geometryMsg = userQuestion || builder.buildUserMessage(promptData);
+    const user = userQuestion ? geometryMsg : [
+      geometryMsg,
+      cRuntime ? formatCRuntimeBlock(cRuntime) : '',
+      levensles ? `═══ LEVENSLES (extended archetype) ═══\n${levensles}` : '',
+    ].filter(Boolean).join('\n\n');
+
+    // Full corpus as the cached static-prefix context (single source of truth; v4 §1.1
+    // — read it fully before translating). Skipped for free-form userQuestion calls.
+    const cachedContext = userQuestion
+      ? null
+      : `═══ DELTAWERKEN VOLLEDIG CORPUS (single source of truth — Matrix 360, Rosetta, de vier geometrische bronmodellen) ═══\n${getCorpusText()}`;
 
     console.log('[AI] ═══════════════════════════════════════════════════════════');
     console.log('[AI] FINAL SYSTEM PROMPT BEING SENT TO AI:');
@@ -369,6 +427,7 @@ router.post('/analyze', async (req, res) => {
       maxTokens: finalMaxTokens,
       temperature: finalTemperature,
       uploadedImages,
+      cachedContext,
     });
 
     console.log(`[AI] ✅ Analysis complete: provider=${result.provider}, model=${result.model}, tokens=${result.completionTokens}`);

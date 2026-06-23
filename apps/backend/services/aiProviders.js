@@ -84,6 +84,7 @@ async function callAI({
   maxTokens = 2048,
   temperature = 0.7,
   uploadedImages = [],
+  cachedContext = null,
 }) {
   const providerDef = PROVIDERS[provider];
   if (!providerDef) {
@@ -99,7 +100,7 @@ async function callAI({
 
   // ── Claude: use @anthropic-ai/sdk ──
   if (providerDef.useClaudeSDK) {
-    return callClaudeSDK({ messages, model: selectedModel, maxTokens, temperature, providerConfig, uploadedImages });
+    return callClaudeSDK({ messages, model: selectedModel, maxTokens, temperature, providerConfig, uploadedImages, cachedContext });
   }
 
   // ── OpenAI / Grok: REST API ──
@@ -168,7 +169,7 @@ function parseResponse(json) {
 // Anthropic Claude — @anthropic-ai/sdk
 // ─────────────────────────────────────────────────────────────
 
-async function callClaudeSDK({ messages, model, maxTokens, temperature, providerConfig, uploadedImages = [] }) {
+async function callClaudeSDK({ messages, model, maxTokens, temperature, providerConfig, uploadedImages = [], cachedContext = null }) {
   const client = new Anthropic({ apiKey: providerConfig.apiKey });
 
   const systemMsg = messages.find(m => m.role === 'system');
@@ -185,11 +186,17 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
 
   const anthropicMessages = userMsgs.map((m, i) => {
     const role = m.role === 'assistant' ? 'assistant' : 'user';
-    // Attach model diagram images + user-uploaded images to the first user message
+    // Attach the cached corpus block FIRST (static prefix → prompt cache), then the
+    // model diagram images + user-uploaded images, then the per-user payload text.
     if (i === 0 && role === 'user') {
       return {
         role,
         content: [
+          // Cached corpus: cache_control here marks a breakpoint so the system prompt
+          // (v4) + this corpus block are cached. Per-user content after it is not.
+          ...(cachedContext
+            ? [{ type: 'text', text: cachedContext, cache_control: { type: 'ephemeral' } }]
+            : []),
           ...MODEL_IMAGES.map(img => ({
             type: 'image',
             source: { type: 'base64', media_type: img.mimeType, data: img.base64 },
@@ -202,10 +209,10 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
     return { role, content: m.content };
   });
 
-  // Pass system prompt as plain string — no cache_control since assessments
-  // are too infrequent to benefit from Anthropic's 5-minute ephemeral cache.
-  // (Cache writes cost 25% more, and with >5 min between requests the cache
-  // always expires before the next hit.)
+  // The system prompt (v4) + the cachedContext corpus form the cached prefix when
+  // cachedContext is supplied (cache_control on the corpus block above). With the
+  // ~156k-token corpus this is worth the 25% write cost: repeat assessments inside
+  // the cache window read the prefix ~90% cheaper. Without cachedContext, no cache.
 
   console.log(`[Claude] Calling model=${model}, maxTokens=${maxTokens}, promptChars=${(systemMsg?.content?.length || 0) + (userMsgs[0]?.content?.length || 0)}`);
   const startTime = Date.now();

@@ -28,11 +28,24 @@ const CORPUS_PATH = path.join(
 );
 
 let _corpus = null;
-/** Load + memoise the canon corpus. */
+let _corpusText = null;
+
+/** Load + memoise the parsed canon corpus. */
 function loadCorpus() {
   if (_corpus) return _corpus;
   _corpus = JSON.parse(fs.readFileSync(CORPUS_PATH, 'utf8'));
   return _corpus;
+}
+
+/**
+ * Raw corpus file text (memoised) — the byte-stable block sent to the model as
+ * cached context. Read from disk verbatim (not re-stringified) so the cached
+ * prefix is identical across calls and the prompt cache reliably hits.
+ */
+function getCorpusText() {
+  if (_corpusText) return _corpusText;
+  _corpusText = fs.readFileSync(CORPUS_PATH, 'utf8');
+  return _corpusText;
 }
 
 // ── Key normalisation: UPPERCASE (backend/scoring) <-> TitleCase (corpus) ──
@@ -108,6 +121,7 @@ function getCEffectDirection(corpus, supportKey) {
 module.exports = {
   CORPUS_PATH,
   loadCorpus,
+  getCorpusText,
   toCorpusKey,
   getStoredDFor,
   getStoredD,

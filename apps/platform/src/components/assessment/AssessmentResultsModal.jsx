@@ -330,7 +330,12 @@ const AssessmentResultsModal = ({
       } catch (err) {
         console.warn('[GFL] AI analysis failed, using template:', err.message);
         setAiFailed(true);
-        aiCalledRef.current = false; // allow retry on failure
+        // Deliberately do NOT reset aiCalledRef here. `result` recomputes a fresh
+        // reference whenever its parent-prop deps (layerAnswers/liveSubjects) change,
+        // which re-runs this effect; resetting the guard on failure made it AUTO-FIRE
+        // a brand-new full-corpus AI call each time — a runaway retry loop that billed
+        // the (succeeding) call several times over. Re-firing now happens ONLY via the
+        // explicit retry button, which resets the ref + bumps aiRetryCount.
       }
     };
 

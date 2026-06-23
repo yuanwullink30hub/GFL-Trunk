@@ -423,15 +423,33 @@ router.post('/analyze', async (req, res) => {
       .filter(item => item.imageBase64 && item.mimeType)
       .map(item => ({ base64: item.imageBase64, mimeType: item.mimeType, name: item.name }));
 
-    const result = await callAI({
-      provider: finalProvider,
-      model: finalModel,
-      messages,
-      maxTokens: finalMaxTokens,
-      temperature: finalTemperature,
-      uploadedImages,
-      cachedContext,
-    });
+    // ── Keep the SSE connection alive during the long (~4 min) AI generation ──
+    // callAI awaits the full model response, writing nothing to the stream in the
+    // meantime. Without periodic bytes, idle timeouts (browser / dev proxy /
+    // Cloudflare ~100s) drop the connection; the client then sees a failure and the
+    // user retries — re-running the entire expensive corpus call while THIS one still
+    // completes server-side (the source of the duplicate billed calls). An SSE
+    // comment line (": ...") is ignored by the client parser but resets every idle
+    // timer along the path.
+    const heartbeat = setInterval(() => {
+      try { res.write(`: keepalive ${Date.now()}\n\n`); } catch { /* socket already gone */ }
+    }, 15000);
+    req.on('close', () => clearInterval(heartbeat));
+
+    let result;
+    try {
+      result = await callAI({
+        provider: finalProvider,
+        model: finalModel,
+        messages,
+        maxTokens: finalMaxTokens,
+        temperature: finalTemperature,
+        uploadedImages,
+        cachedContext,
+      });
+    } finally {
+      clearInterval(heartbeat);
+    }
 
     console.log(`[AI] ✅ Analysis complete: provider=${result.provider}, model=${result.model}, tokens=${result.completionTokens}`);
 

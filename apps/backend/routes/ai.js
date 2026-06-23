@@ -441,6 +441,10 @@ router.post('/analyze', async (req, res) => {
       supportGroup: supportGroup || null,
       extendedArchetypeName: extendedArchetypeName || null,
       uploadedOceanScores: uploadedOceanScores || null,
+      // The engine's pre-computed C-runtime (composed D-state + C-magnitude) so the
+      // frontend can render the Plastische Morfologie / De Stille Stem visuals
+      // without recomputing. null when the geometry was incomplete.
+      cRuntime: cRuntime || null,
       ...result,
     });
 

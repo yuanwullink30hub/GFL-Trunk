@@ -7,7 +7,6 @@ import { getResultsSizes } from './assessmentSizes';
 import {
   ARCHETYPES,
   SUBGROUP_POLARITIES,
-  getAnalysisTemplate,
   // Archetype-based scoring
   ALL_ARCHETYPE_KEYS,
   SHADOW_PAIRS,
@@ -18,13 +17,25 @@ import {
   getExtendedArchetype,
   getExtendedArchetypeNl,
   isComplementaryPair,
-  getExtendedDescription,
   computeAdvancedScores,
   getArchetypeQuote,
 } from '@gfl/assessment-core';
 import { isNatureSlot } from '@gfl/assessment-core/assessmentData';
 import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
-import { getExtendedOcean, OCEAN_LABELS, OCEAN_COLORS } from '@gfl/assessment-core/data/oceanProfiles';
+
+// ── Restructure part 2.3 ──────────────────────────────────────────────────────
+// OCEAN is now an ORTHOGONAL instrument (v4 §3.4): no model-derived scalars. The
+// label/colour maps stay (for rendering uploaded OCEAN); derivation is gone. The
+// extended description + analysis templates moved to the corpus/AI (no static
+// frontend copies), so those getters are retired here.
+const OCEAN_LABELS = {
+  O: { short: 'O', full: 'Openness', dutch: 'Openheid voor Ervaring' },
+  C: { short: 'C', full: 'Conscientiousness', dutch: 'Consciëntieusheid' },
+  E: { short: 'E', full: 'Extraversion', dutch: 'Extraversie' },
+  A: { short: 'A', full: 'Agreeableness', dutch: 'Inschikkelijkheid' },
+  N: { short: 'N', full: 'Neuroticism', dutch: 'Neuroticisme' },
+};
+const OCEAN_COLORS = { O: '#a78bfa', C: '#22d3ee', E: '#67e8f9', A: '#818cf8', N: '#c4b5fd' };
 import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity, getPublicSiteBanner } from '@gfl/api-client';
 import { isIntegratedGPU } from '@gfl/utils';
 // SciFiButton removed — unused in this component
@@ -271,8 +282,14 @@ const AssessmentResultsModal = ({
           harmonyBonusApplied: 0,
           oceanScores,
           scores: result._archetypeScores,
+          // Per-archetype 5-mandje + totals — the geometry the backend feeds the
+          // C-runtime precompute and the model payload (was previously omitted).
+          archetypeDetails: result.archetypeDetails,
           responses: result._answerLog,
           subgroups: result.subgroups,
+          // The relevant Levensles (Main×SupportGroup) — sent so the backend hands it
+          // to the AI directly (it needn't search the corpus for it).
+          levensles: getArchetypeQuote(result.mainArchetype, result.supportGroup),
           level: 'advanced',
           uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
         }, (stage, message) => {
@@ -4847,7 +4864,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
   // 4b. Extended Archetype portrait image + description
   // ──────────────────────────────────────────────────────────
   const archetypeImage = getArchetypeImage(mainKey, supportGroup);
-  const extendedDesc = getExtendedDescription(mainKey, supportGroup);
+  const extendedDesc = null; // description now comes from the AI (corpus-grounded), not a static file
 
   // ──────────────────────────────────────────────────────────
   // 5. Shadow Archetype (psychological tension point)
@@ -4879,7 +4896,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
     const extKey = `${mainKey}_${group}`;
     const extName = EXTENDED_ARCHETYPES[extKey] || mainKey;
     const extNameNl = EXTENDED_ARCHETYPES_NL[extKey] || extName;
-    const desc = getExtendedDescription(mainKey, group);
+    const desc = null; // extended descriptions now live in the corpus / AI output
     return {
       group,
       extendedName: extName,
@@ -4955,7 +4972,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
   // ──────────────────────────────────────────────────────────
   // 8. Analysis text templates
   // ──────────────────────────────────────────────────────────
-  const analysisTemplate = getAnalysisTemplate(mainKey);
+  const analysisTemplate = null; // AI generates the analysis; no static fallback template
   const analysisSections = analysisTemplate
     ? analysisTemplate.sections.map(s => ({ title: s.title, content: s.content }))
     : [
@@ -4974,7 +4991,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
   // ──────────────────────────────────────────────────────────
   // 8b. OCEAN Personality Profiles
   // ──────────────────────────────────────────────────────────
-  const extendedOcean = getExtendedOcean(mainKey, supportGroup);
+  const extendedOcean = null; // OCEAN is orthogonal (v4 §3.4): no model-derived profile
 
   const resultObj = {
     // Extended identity

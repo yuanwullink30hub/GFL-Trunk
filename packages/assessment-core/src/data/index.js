@@ -61,20 +61,12 @@ export {
   computeAdvancedScores,
 } from './scoring';
 
-// Analysis Templates
-export { ANALYSIS_TEMPLATES, getAnalysisTemplate, blendAnalysisTemplates } from './analysis/templates';
-
-// Extended Archetype Descriptions (72 combination profiles)
-export { getExtendedDescription } from './extendedArchetypeDescriptions';
-
-// Archetype Levensles Quotes (72 combination profiles)
+// Archetype Levensles Quotes — the 72 combination life-lessons. Kept standalone
+// (fetched and sent to the AI directly so it needn't search the corpus for them).
 export { getArchetypeQuote } from './archetypeQuotes';
 
-// Biochemical & Neuro-Integration Deep Dive (12 archetype profiles)
-export { BIOCHEMICAL_PROFILES, getBiochemicalProfile, getBiochemicalPromptBlock } from './biochemical';
-
-// OCEAN Deep-Dive Profiles (12 core + 72 extended)
-export {
-  OCEAN_CORE_PROFILES, getOceanCoreProfile,
-  EXTENDED_OCEAN_PROFILES, getExtendedOceanProfile, getExtendedOceanProfiles,
-} from './ocean';
+// ── Restructure part 1 ──────────────────────────────────────────────────────
+// Biochemical profiles, OCEAN deep-dives, extended archetype descriptions and the
+// analysis templates were removed here — that archetype content now lives in the
+// single source of truth: canon/deltawerken_corpus.json. Consumers of the removed
+// exports (results modal / PDF / EyedentityPage) are rewired in a later part.

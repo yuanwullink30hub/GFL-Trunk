@@ -186,7 +186,7 @@ export const SciFiButton = ({
   color: colorProp, rgb: rgbProp,
   size = 'md',
   padding: padOverride, fontSize: fsOverride,
-  textWeight,
+  textWeight, textColor, rounded,
   active = false, fullWidth = false,
   style = {}, type = 'button', title,
 }) => {
@@ -199,6 +199,8 @@ export const SciFiButton = ({
   const fs  = fsOverride  || sz.fontSize;
   const lit = hov || active;
   const cCol = lit ? color : `rgba(${rgb}, 0.45)`;
+  const cr  = rounded || '2px';        // corner-bracket radius (more rounded when `rounded` set)
+  const btnR = rounded || '0.15rem';   // button body radius
   return (
     <div style={{ position: 'relative', display: fullWidth ? 'flex' : 'inline-flex', flexDirection: 'column', margin: fullWidth ? 0 : '0 0.25rem', ...style }}>
       <button
@@ -209,10 +211,10 @@ export const SciFiButton = ({
           position: 'relative', overflow: 'hidden', padding: pd,
           transform: 'scaleX(1.06) scaleY(1.095) translateY(-0.5%)',
           background: 'transparent',
-          border: 'none', outline: 'none', borderRadius: '0.15rem',
+          border: 'none', outline: 'none', borderRadius: btnR,
           cursor: disabled ? 'not-allowed' : 'pointer',
           fontFamily: FONT, fontSize: fs,
-          color: lit ? color : `rgba(${rgb}, 0.7)`,
+          color: textColor || (lit ? color : `rgba(${rgb}, 0.7)`),
           textShadow: lit ? `0 0 8px rgba(${rgb}, 0.4)` : 'none',
           textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: textWeight || 'bold',
           opacity: disabled ? 0.4 : 1,
@@ -224,10 +226,10 @@ export const SciFiButton = ({
       </button>
       {/* Corner bracket accents */}
       {[
-        ['tl', { top: sz.top,    left: sz.side,  borderTop:    `1px solid ${cCol}`, borderLeft:   `1px solid ${cCol}`, borderTopLeftRadius:     '2px' }],
-        ['tr', { top: sz.top,    right: sz.side, borderTop:    `1px solid ${cCol}`, borderRight:  `1px solid ${cCol}`, borderTopRightRadius:    '2px' }],
-        ['bl', { bottom: sz.top, left: sz.side,  borderBottom: `1px solid ${cCol}`, borderLeft:   `1px solid ${cCol}`, borderBottomLeftRadius:  '2px' }],
-        ['br', { bottom: sz.top, right: sz.side, borderBottom: `1px solid ${cCol}`, borderRight:  `1px solid ${cCol}`, borderBottomRightRadius: '2px' }],
+        ['tl', { top: sz.top,    left: sz.side,  borderTop:    `1px solid ${cCol}`, borderLeft:   `1px solid ${cCol}`, borderTopLeftRadius:     cr }],
+        ['tr', { top: sz.top,    right: sz.side, borderTop:    `1px solid ${cCol}`, borderRight:  `1px solid ${cCol}`, borderTopRightRadius:    cr }],
+        ['bl', { bottom: sz.top, left: sz.side,  borderBottom: `1px solid ${cCol}`, borderLeft:   `1px solid ${cCol}`, borderBottomLeftRadius:  cr }],
+        ['br', { bottom: sz.top, right: sz.side, borderBottom: `1px solid ${cCol}`, borderRight:  `1px solid ${cCol}`, borderBottomRightRadius: cr }],
       ].map(([k, s]) => (
         <div key={k} style={{ position: 'absolute', width: sz.corner, height: sz.corner, pointerEvents: 'none', transition: 'border-color 0.25s', ...s }} />
       ))}

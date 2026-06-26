@@ -36,19 +36,33 @@ const translations = {
     features: {
       layerAnalysis: {
         title: { nl: "5-Lagen Analyse", en: "5-Layer Analysis" },
-        description: { nl: "5 lagen analyxe X 5 ocean model", en: "5-layer analysis X 5 ocean model" }
+        description: { nl: "Twaalf archetypen, gelezen als posities op een wiel. Niet een label — een landkaart van je navigatie.", en: "Twelve archetypes, read as positions on a wheel. Not a label — a map of your navigation." }
       },
       shadowIntegration: {
         title: { nl: "Schaduw Integratie", en: "Shadow Integration" },
-        description: { nl: "Gebaseerd op het raamwerk van de Deltawerken dynamiek", en: "Based on the Deltawerken framework dynamics" }
+        description: { nl: "Duidelijke stappen met ons Deltawerken framewerk, om je blinde vlekken weg te poetsen.", en: "Clear steps with our Deltawerken framework to wipe away your blind spots." }
       },
       researchBacked: {
         title: { nl: "Wetenschappelijk Onderbouwd", en: "Research-Backed" },
-        description: { nl: "Geïnspireerd door Carl Gustav Jung", en: "Inspired by Carl Gustav Jung" }
+        description: { nl: "Jungs archetypische diepte, mythologisch gedreven en neurobiologisch gelezen.", en: "Jung's archetypal depth, mythologically driven and read through neurobiology." }
       },
       aiTraining: {
         title: { nl: "AI prompt generatie", en: "AI Prompt Generation" },
-        description: { nl: "Genereer prompts om je AI-agenten af te stemmen op jouw psychologie", en: "Generate prompts to harmonize your AI agents with your psychology" }
+        description: { nl: "Genereer prompts om je AI-agenten af te stemmen op jouw psychologie.", en: "Generate prompts to harmonize your AI agents with your psychology." }
+      }
+    },
+    pricing: {
+      title: {
+        nl: "Gratis Analyse — prompt waarde van gemiddeld €3.- en een onbetaalbare wetenschappelijke zelfkennis",
+        en: "Free Analysis — a prompt worth ~€3 on average, plus priceless scientific self-knowledge"
+      },
+      free: {
+        nl: "Download de basis om je archetype in kaart te brengen — De identiteit, de verklaring, gevisualiseerd op ons eigen model, en uiteraard de prijs die je betaalt voor dit archetype.",
+        en: "Download the basics to map your archetype — the identity, the explanation, visualized on our own model, and of course the price you pay for this archetype."
+      },
+      paid: {
+        nl: "Optioneel voor €00,00 — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt voor je online-extensie.",
+        en: "Optional for €00.00 — the full exposition (3× the data), reading = transforming in itself. Incl. AI prompt for your online extension."
       }
     },
     layersTitle: {

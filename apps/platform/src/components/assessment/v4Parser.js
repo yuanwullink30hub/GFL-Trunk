@@ -19,39 +19,56 @@
 // ── §2a Narrative tag registry: tag-stem -> { slot, renderer } ────────────────
 // Matched case-insensitively, trimmed, on a startswith/stem basis (the model may
 // append a subtitle after an em-dash, e.g. "PLASTISCHE MORFOLOGIE — DE VORM …").
+// Master Prompt v4.1 §5 — the locked section list, EXACT titles as parser-tags, in order.
+// (Longest stem wins on overlap; see matchNarrativeTag.)
 export const NARRATIVE_TAGS = [
+  // p1 — Identiteit + Verklaring
   { stem: 'DE IDENTITEIT', slot: 'identity', renderer: 'prose' },
-  { stem: 'WAAROM JIJ DIT PERSPECTIEF GEBRUIKT', slot: 'why_perspective', renderer: 'prose' },
+  { stem: 'DE VERKLARING', slot: 'verklaring', renderer: 'prose' },
+  // p2 — Essentie + Vermenigvuldiging
   { stem: 'DE ESSENTIE', slot: 'main_essence', renderer: 'prose' },
   { stem: 'DE VERMENIGVULDIGING', slot: 'support_mult', renderer: 'prose' },
+  // p3 — Radar (render-side) + Schaduw + Blindspot
   { stem: 'DE SCHADUW', slot: 'shadow', renderer: 'prose' },
   { stem: 'DE BLINDSPOT', slot: 'blindspot', renderer: 'prose' },
-  { stem: 'VISUELE ANALYSE', slot: 'radar_analysis', renderer: 'radar+prose' },
-  { stem: 'HET OCEAN-PROFIEL', slot: 'ocean', renderer: 'ocean' },
-  { stem: 'PLASTISCHE MORFOLOGIE', slot: 'morphology', renderer: 'morphology_chart' },
-  { stem: 'DE STILLE STEM', slot: 'stille_stem', renderer: 'prose+domain_table' },
+  // p4 — OCEAN comparison (upload only): 5 per-trait sections
+  { stem: 'TRAIT O', slot: 'ocean_o', renderer: 'prose' },
+  { stem: 'TRAIT C', slot: 'ocean_c', renderer: 'prose' },
+  { stem: 'TRAIT E', slot: 'ocean_e', renderer: 'prose' },
+  { stem: 'TRAIT A', slot: 'ocean_a', renderer: 'prose' },
+  { stem: 'TRAIT N', slot: 'ocean_n', renderer: 'prose' },
+  // p5 — Plastische Morfologie (render-side D-curve chart) + 3 reads
+  { stem: 'DE VORM', slot: 'morph_vorm', renderer: 'prose' },
+  { stem: 'DE HARDWARE ONDER DRUK', slot: 'morph_hardware', renderer: 'prose' },
+  { stem: 'DE OVERGANG NAAR DE STILLE STEM', slot: 'morph_overgang', renderer: 'prose' },
+  // p6 — De Stille Stem
+  { stem: 'REFLECTIE', slot: 'stille_reflectie', renderer: 'prose' },
+  { stem: 'MOTIVATIE', slot: 'stille_motivatie', renderer: 'prose' },
+  { stem: 'BEWEGING', slot: 'stille_beweging', renderer: 'prose' },
+  // p7 — Archetype images (render-side) + Resonantie
   { stem: 'PROFESSIONELE RESONANTIE', slot: 'prof_resonance', renderer: 'prose' },
   { stem: 'CREATIEVE RESONANTIE', slot: 'creative_resonance', renderer: 'prose' },
-  { stem: 'DUAL-CORE DYNAMICS', slot: 'dual_core', renderer: 'dual_core_table' },
+  // p8 — Dual-Core chart (render-side) + Alchemie + Schakelbord + Evolutie
   { stem: 'DE ALCHEMIE VAN INDIVIDUATIE', slot: 'alchemy', renderer: 'prose' },
   { stem: 'HET NEURALE SCHAKELBORD', slot: 'neural_board', renderer: 'prose' },
   { stem: 'ONTOLOGISCHE EVOLUTIE', slot: 'ontological', renderer: 'prose' },
-  { stem: 'PERSOONLIJKHEIDSRAPPORT VERGELIJKING', slot: 'ocean_compare', renderer: 'comparison' },
+  // p9 — AI prompt
   { stem: 'DE VOLLEDIGE AI PROMPT', slot: 'ai_prompt', renderer: 'monospace' },
 ];
 
 // ── §2b Machine-block tags (the `-- TAG --` data block) → numeric source of truth.
+// Master Prompt v4.1 §5.10 — machine block fields, in order. Model-derived OCEAN
+// removed (D-10); dead v3 fields removed; 5-mandje decompositie added.
 export const MACHINE_TAGS = {
   'IDENTITEIT': 'identity_fields',
   'SCORES (12-PUNTS WIEL)': 'scores',            // 12 rows: archetype → {total, core, bleed}
+  '5-MANDJE DECOMPOSITIE': 'five_mandje',        // per archetype: nature_core, green_hw, culture_core, blue_fb, yellow_cog, purple_shadow
   'NATURE / CULTURE VERDELING PER GROEP': 'nat_cult', // 6 rows: group → {N, C, /36}
   'AFGELEIDE INDICES': 'indices',                // authenticity, polarization(+band), datapoints
-  'OCEAN PROFIEL (MODEL-AFGELEID)': 'DROP',      // §2b / D-10 — derived OCEAN is forbidden; drop
-  'OCEAN PROFIEL (EXTERN GEUPLOAD)': 'ocean_uploaded', // OCEAN bars (only if present)
+  'OCEAN PROFIEL (EXTERN GEUPLOAD)': 'ocean_uploaded', // OCEAN bars (only if upload present)
   'COGNITIEVE DRIEHOEK (YELLOW)': 'yellow_triangle',
   'HARDWARE SIGNALEN': 'hardware_signals',
   'EXTENDED ARCHETYPE PROFIEL': 'extended_profile', // gift, curse, levensles
-  'MAIN ARCHETYPE DIEPTE': 'main_depth',
   'SHADOW INTEGRATIE': 'shadow_integration',
   'BLINDSPOT': 'blindspot_fields',
 };
@@ -59,17 +76,18 @@ export const MACHINE_TAGS = {
 // ── §3 Page-map: the locked v4 page order (slot_ids), assembled regardless of
 //    emission order. Missing slot → skip (never error). Static pages handled by
 //    the existing template; this lists the model-driven slots in order.
+// Master Prompt v4.1 §5 — locked page order. Render-side visuals (radar, D-curve,
+// dual-core chart, archetype images, meta-disclaimer) are added by the renderer.
 export const PAGE_ORDER = [
-  ['identity', 'why_perspective'],
-  ['main_essence', 'support_mult'],
-  ['radar_analysis', 'shadow', 'blindspot'],
-  ['ocean', 'ocean_compare'],            // IF-state: 1pg no-upload / 2pg upload
-  ['morphology'],                        // CHART + prose
-  ['stille_stem'],
-  ['prof_resonance', 'creative_resonance'], // + archetype images
-  ['dual_core'],
-  ['alchemy', 'neural_board', 'ontological'],
-  ['ai_prompt'],
+  ['identity', 'verklaring'],                                  // p1
+  ['main_essence', 'support_mult'],                            // p2
+  ['shadow', 'blindspot'],                                     // p3 + radar
+  ['ocean_o', 'ocean_c', 'ocean_e', 'ocean_a', 'ocean_n'],     // p4 (upload-only; IF-state)
+  ['morph_vorm', 'morph_hardware', 'morph_overgang'],          // p5 + D-curve chart
+  ['stille_reflectie', 'stille_motivatie', 'stille_beweging'], // p6
+  ['prof_resonance', 'creative_resonance'],                    // p7 + archetype images
+  ['alchemy', 'neural_board', 'ontological'],                  // p8 + dual-core chart
+  ['ai_prompt'],                                               // p9
   // machine block rendered verbatim on the last page (handled separately)
 ];
 
@@ -93,7 +111,14 @@ export function matchNarrativeTag(line) {
   if (!norm) return null;
   // longest stem first so "DE ESSENTIE (MAIN ARCHETYPE)" matches before "DE …".
   const sorted = [...NARRATIVE_TAGS].sort((a, b) => b.stem.length - a.stem.length);
-  return sorted.find((t) => norm.startsWith(t.stem)) || null;
+  // The stem must be followed by end-of-string, a space, or "(" — NOT a hyphen/letter.
+  // This stops in-body labels like "DE SCHADUW-INJECTIE:" / "DE BLINDSPOT-CHECK:" (the
+  // Neurale Schakelbord experiments, §5.8) from being mistaken for the SCHADUW/BLINDSPOT tags.
+  return sorted.find((t) => {
+    if (!norm.startsWith(t.stem)) return false;
+    const after = norm.charAt(t.stem.length);
+    return after === '' || after === ' ' || after === '(';
+  }) || null;
 }
 
 // ── §1/§7.1 Splitter: raw model output → { narrative[], machine[] } ────────────

@@ -22,8 +22,9 @@ import {
 } from '@gfl/assessment-core';
 import { isNatureSlot } from '@gfl/assessment-core/assessmentData';
 import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
-import { assembleV4 } from './v4Parser';
+import { assembleV4, NARRATIVE_TAGS, matchNarrativeTag } from './v4Parser';
 import MorphologyChart from './MorphologyChart';
+import { sectionTitle, relabelProse } from './v4Labels';
 
 // ── Restructure part 2.3 ──────────────────────────────────────────────────────
 // OCEAN is now an ORTHOGONAL instrument (v4 §3.4): no model-derived scalars. The
@@ -79,13 +80,51 @@ const cleanTitle = (title) => {
   return t;
 };
 
+// Master Prompt v4.1 §5.2 — De Essentie & De Vermenigvuldiging each have an intro followed
+// by three aspects: cognitive disposition, orientation (intern/extern), gift & curse. The
+// model writes them as prose; this promotes the FIRST paragraph that discusses each aspect to
+// a bold subtitle so both sections read as labeled sub-blocks. Each aspect is detected
+// INDEPENDENTLY (one subtitle each, max), so a paragraph that doesn't match still passes the
+// later aspects through. Best-effort on free prose; paragraphs already starting with a bold
+// heading (e.g. the model emitted its own) are left untouched.
+function injectAspectSubtitles(content, language) {
+  if (!content) return content;
+  const en = String(language || 'nl').toLowerCase() === 'en';
+  // Checked in this order per paragraph; first matching, not-yet-used aspect wins the line.
+  const ASPECTS = [
+    { key: 'gift', label: en ? 'Gift & Curse' : 'Gift & Vloek',
+      re: /\b(de\s+)?(gift|vloek|curse)\b|kracht\s+en\s+schaduw/i },
+    { key: 'orient', label: en ? 'Orientation (internal/external)' : 'Oriëntatie (intern/extern)',
+      re: /\b(intern|extern|naar\s+binnen|naar\s+buiten|ori[eë]ntat|internal|external|inward|outward)\b/i },
+    { key: 'cognit', label: en ? 'Cognitive disposition' : 'Cognitieve aanleg',
+      re: /\b(cognitiev|denkstijl|aanleg|kernfunctie|interpretatie|integratie|differentiatie|cognitive|disposition)\b/i },
+  ];
+  // Split on blank lines; if the model used single newlines (one block), fall back to per-line.
+  let paras = content.split(/\n{2,}/);
+  if (paras.length < 3) paras = content.split(/\n+/);
+  const used = {};
+  const out = paras.map((p, idx) => {
+    const t = p.trim();
+    if (!t || idx === 0) return p;                 // keep the intro paragraph untouched
+    if (/^(\*\*|#{1,6}\s)/.test(t)) return p;      // already a subtitle/heading
+    for (const a of ASPECTS) {
+      if (!used[a.key] && a.re.test(t)) { used[a.key] = true; return `**${a.label}**\n${t}`; }
+    }
+    return p;
+  });
+  return out.join('\n\n');
+}
+
 // ── Utility: map cleaned section title to accent color for JSX card (returns {color, rgb} or null) ──
 const getSectionAccent = (title) => {
   const t = cleanTitle(title || '').toLowerCase();
-  if (t.includes('identiteit') || t.includes('waarom')) return { color: '#1d9904', rgb: '29, 153, 4' };
+  if (t.includes('identiteit') || t.includes('verklaring') || t.includes('waarom')) return { color: '#1d9904', rgb: '29, 153, 4' };
   if (t.includes('essentie') || t.includes('schaduw')) return { color: '#a855f7', rgb: '168, 85, 247' };
   if (t.includes('vermenigvuldiging')) return { color: '#f97316', rgb: '249, 115, 22' };
   if (t.includes('blindspot')) return { color: '#ef4444', rgb: '239, 68, 68' };
+  if (/\bvorm\b/.test(t) || /hardware|onder\s+druk/.test(t) || /\bovergang\b/.test(t) || /morfologie/.test(t)) return { color: '#22d3ee', rgb: '34, 211, 238' };
+  if (/\b(reflectie|motivatie|beweging)\b/.test(t)) return { color: '#a855f7', rgb: '168, 85, 247' };
+  if (t.includes('resonantie')) return { color: '#1d9904', rgb: '29, 153, 4' };
   if (t.includes('visuele')) return { color: '#a855f7', rgb: '168, 85, 247' };
   if (t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi')) return { color: '#fbbf24', rgb: '251, 191, 36' };
   if (t.includes('groep dynamiek') || t.includes('neurobiologisch')) return { color: '#22d3ee', rgb: '34, 211, 238' };
@@ -126,6 +165,8 @@ const AssessmentResultsModal = ({
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [showPdfConsent, setShowPdfConsent] = useState(false);
   const [pdfConsentChecked, setPdfConsentChecked] = useState(false);
+  // Which variant the consent modal / spinner refers to: 'short' (free) or 'full' (paid).
+  const [pdfKind, setPdfKind] = useState('full');
 
   // ── AI Analysis state ──
   const { language } = useLanguage(); // 'nl' | 'en' — selects the corpus sent to the model
@@ -300,6 +341,11 @@ const AssessmentResultsModal = ({
           // UI language → backend picks the matching corpus (nl → Dutch, else English).
           language,
           level: 'advanced',
+          // v4.3's bigger budgets pushed the report past the old 18k cap, truncating the tail
+          // sections (Resonantie, Alchemie/Schakelbord/Ontologie). The backend now streams the
+          // Claude call (SDK .finalMessage()), which sidesteps the non-streaming 10-min guard
+          // (max_tokens > ~21,333), so we can give comfortable headroom. Overrides the admin maxTokens.
+          maxTokens: 30000,
           uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
         }, (stage, message) => {
           setAiStage(stage);
@@ -312,6 +358,23 @@ const AssessmentResultsModal = ({
         try { setV4Data(assembleV4(aiResult.analysis || '')); } catch (e) { console.warn('[GFL] v4 parse failed:', e.message); }
         if (aiResult.cRuntime) setCRuntime(aiResult.cRuntime);
         const sections = parseAiSections(aiResult.analysis || '');
+        // ── DIAGNOSTIC: shows whether a section was "never sent" (not in this list) vs "not
+        //    rendered" (in the list but missing from the PDF). Also flags truncation: if the
+        //    tail (machine block / last sections) is missing, the analysis was cut short. ──
+        try {
+          const raw = aiResult.analysis || '';
+          console.log('%c[GFL] AI OUTPUT DIAGNOSTIC', 'font-weight:bold;color:#22d3ee');
+          console.log('[GFL] analysis length:', raw.length, 'chars; completionTokens:', aiResult.completionTokens ?? '(n/a)');
+          console.log('[GFL] section titles emitted by the model:', (sections || []).map(s => s.title));
+          console.log('[GFL] machine block present (— PROFIEL DATA —):', /PROFIEL\s*DATA\s*VOOR\s*AI/i.test(raw), '| last 300 chars:', JSON.stringify(raw.slice(-300)));
+          // D-curve provenance: these come from the ENGINE (cRuntime.d_curve), not the model.
+          // If main === support it's because the corpus stores the D-curve PER GROUP — same-group
+          // Main+Support share it. Different-group pairs differ.
+          const dc = aiResult.cRuntime?.d_curve;
+          console.log('[GFL] D-curve (engine):', dc ? `main=${JSON.stringify(dc.main)} support=${JSON.stringify(dc.support)} composed=${JSON.stringify(dc.composed)}` : '(none)',
+            '| Main:', result?.mainArchetype, '/ Support:', result?.secondaryArchetype || result?._secondaryKey,
+            '| main===support:', dc ? JSON.stringify(dc.main) === JSON.stringify(dc.support) : '(n/a)');
+        } catch (_) {}
         const profileElements = sections.filter(s => s.isProfileElement);
         if (profileElements.length > 0) {
           const pd = {};
@@ -357,21 +420,94 @@ const AssessmentResultsModal = ({
       if (s.isComparison) return false;
       if (s.isResonantie) return false;
       const t = (s.title || '').trim();
+      // "Radar-lezing": never render anywhere — the radar chart covers it.
+      if (/radar.?lezing/i.test(t)) return false;
+      // Stray AI-emitted sections that aren't part of the page-map.
+      if (/(samenvattende\s+)?kernlezing|centrale\s+spanning/i.test(t)) return false;
+      // Machine block + OCEAN render-side titles (gereedschap / profiel intro) — drop.
+      if (/profiel\s*data|ai[\s-]*verwerking|ocean.?gereedschap|ocean.?profiel/i.test(t)) return false;
+      // v3 "5 geometrische elementen" leftover — not a v4.1 section.
+      if (/geometrische\s+element|vijf\s+(geometrische\s+)?element/i.test(t)) return false;
       if (/persoonlijkheidsrapport.*vergelijk|ocean.*vergelijk|vergelijk.*profiel/i.test(t)) return false;
       if (/^(spanningsvelden|vergelijkingsrapport|vergelijkings\s*rapport|conclusie)$/i.test(t)) return false;
       return true;
     }),
   [displaySections]);
 
-  // Split visible AI sections into ordered groups matching PDF page order
+  // Split visible AI sections into ordered groups matching the v4.1 page order
   const aiGroup1a = useMemo(() => visibleSections.filter(s => {
     const t = cleanTitle(s.title || '').toLowerCase();
-    return t.includes('identiteit') || t.includes('waarom') || t.includes('essentie') || t.includes('vermenigvuldiging');
+    return t.includes('identiteit') || t.includes('verklaring') || t.includes('waarom') ||
+           t.includes('essentie') || t.includes('vermenigvuldiging');
   }), [visibleSections]);
+
+  // ── Card groups: mirror the PDF page order (Identiteit → … → Ontologische Evolutie).
+  //    OCEAN traits and the dual-core widget are intentionally NOT shown on the card. ──
+  const cardIdentity = useMemo(() => visibleSections.filter(s => {
+    const t = cleanTitle(s.title || '').toLowerCase();
+    return t.includes('identiteit') || t.includes('verklaring') || t.includes('waarom');
+  }), [visibleSections]);
+  const cardEssence = useMemo(() => visibleSections.filter(s => {
+    const t = cleanTitle(s.title || '').toLowerCase();
+    return t.includes('essentie') || t.includes('vermenigvuldiging');
+  }), [visibleSections]);
+  const cardShadow = useMemo(() => visibleSections.filter(s => {
+    const t = cleanTitle(s.title || '').toLowerCase();
+    return t.includes('schaduw') || t.includes('blindspot');
+  }).sort((a, b) => (cleanTitle(a.title || '').toLowerCase().includes('schaduw') ? 0 : 1) -
+                    (cleanTitle(b.title || '').toLowerCase().includes('schaduw') ? 0 : 1)), [visibleSections]);
+  const cardMorph = useMemo(() => visibleSections.filter(s => {
+    const t = cleanTitle(s.title || '').toLowerCase();
+    // The 3 morphology reads only — no "morfologie" fallback (that only matched the page-label echo).
+    return /\bvorm\b/.test(t) || /hardware|onder\s+druk/.test(t) || /\bovergang\b/.test(t);
+  }), [visibleSections]);
+  const cardStille = useMemo(() => visibleSections.filter(s => {
+    const t = cleanTitle(s.title || '').toLowerCase();
+    return /\b(reflectie|motivatie|beweging)\b/.test(t);
+  }).sort((a, b) => {
+    const order = ['reflectie', 'motivatie', 'beweging'];
+    const ix = (s) => order.findIndex(k => cleanTitle(s.title || '').toLowerCase().includes(k));
+    return ix(a) - ix(b);
+  }), [visibleSections]);
+  // Resonantie is flagged isResonantie (excluded from visibleSections) → pull from displaySections.
+  const cardResonance = useMemo(() => (displaySections || []).filter(s =>
+    /professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '')
+  ).sort((a, b) => (/professionele/i.test(a.title) ? 0 : 1) - (/professionele/i.test(b.title) ? 0 : 1)),
+  [displaySections]);
+  const cardYellow = useMemo(() => visibleSections.filter(s => {
+    const t = cleanTitle(s.title || '').toLowerCase();
+    return t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi');
+  }), [visibleSections]);
+
+  // Teaser key-findings: Main/Support/Shadow/Blindspot + Authenticity % + Polarization band.
+  // Computed the same way as the PDF's PROFIEL DATA block (subgroups + archetype totals).
+  const cardKeyFindings = useMemo(() => {
+    if (!result) return null;
+    let nat = 0, cul = 0;
+    (result.subgroups || []).forEach((sg) => {
+      nat += (sg.leftNature || 0) + (sg.rightNature || 0);
+      cul += (sg.leftCulture || 0) + (sg.rightCulture || 0);
+    });
+    const authPct = nat + cul > 0 ? Math.round((nat / (nat + cul)) * 100) : null;
+    const dm = {};
+    (result.archetypeDetails || []).forEach((d) => { dm[(d.key || '').toUpperCase()] = d; });
+    const mainTot = dm[(result.mainArchetype || '').toUpperCase()]?.total || 0;
+    const shadTot = dm[(result.shadowPartner || '').toUpperCase()]?.total || 0;
+    const polGap = mainTot > 0 ? Math.round((Math.abs(mainTot - shadTot) / mainTot) * 100) : null;
+    const polBand = polGap == null ? null
+      : polGap > 60 ? 'Schaduw onderdrukt'
+      : polGap > 30 ? 'Gezonde spanning'
+      : 'Actieve integratie';
+    return {
+      main: result.mainName, support: result.secondaryName,
+      shadow: result.shadowName, blindspot: result.blindspotName,
+      authPct, polGap, polBand,
+    };
+  }, [result]);
 
   const aiGroup1b = useMemo(() => visibleSections.filter(s => {
     const t = cleanTitle(s.title || '').toLowerCase();
-    return t.includes('schaduw') || t.includes('blindspot') || t.includes('visuele');
+    return t.includes('schaduw') || t.includes('blindspot');
   }), [visibleSections]);
 
   const aiGroup2 = useMemo(() => visibleSections.filter(s => {
@@ -435,6 +571,11 @@ const AssessmentResultsModal = ({
   const radarRef = useRef(null);
   // ── Ref for the subgroup dynamics element ──
   const subgroupRef = useRef(null);
+  // ── Ref for the Plastische Morfologie D-curve chart (rasterised into the PDF) ──
+  const morphologyRef = useRef(null);
+  // ── Dedicated off-screen radar for clean PDF capture (the on-card radar's container height
+  //    varies by breakpoint and can clip the wheel; this one is a fixed, full-size source). ──
+  const pdfRadarRef = useRef(null);
 
   // Helper: render a single AI section card (used by all section groups in the UI)
   const renderAiSectionCard = useCallback((section, idx) => {
@@ -474,15 +615,6 @@ const AssessmentResultsModal = ({
           letterSpacing: '0.15em',
           marginBottom: '0.75rem',
         }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: '1.5rem', height: '1.5rem', borderRadius: '50%',
-            border: `1px solid rgba(${accent.rgb}, 0.4)`,
-            fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif",
-            color: accent.color, flexShrink: 0,
-          }}>
-            {idx + 1}
-          </span>
           {cleanTitle(section.title)}
         </h3>
         <div style={{
@@ -530,8 +662,9 @@ const AssessmentResultsModal = ({
   ];
 
   // Generate and download a clean, document-style PDF
-  const handleDownloadPdf = useCallback(async () => {
+  const handleDownloadPdf = useCallback(async ({ shortVersion = false } = {}) => {
     if (!result) return;
+    setPdfKind(shortVersion ? 'short' : 'full');
     setIsGeneratingPdf(true);
 
     try {
@@ -650,16 +783,17 @@ const AssessmentResultsModal = ({
       };
 
       // ── Helper: section heading with colored left bar ──
-      const sectionHeading = (title, color) => {
-        ensureSpace(14);
-        y += 4;
+      const sectionHeading = (title, color, opts = {}) => {
+        const small = opts.small; // reduced heading (OCEAN traits) — 9pt vs the 12pt default
+        ensureSpace(small ? 10 : 14);
+        y += small ? 3 : 4;
         pdf.setFillColor(...color);
-        pdf.rect(margin, y - 4, 1.5, 7, 'F');
-        pdf.setFontSize(12);
+        pdf.rect(margin, y - (small ? 3.5 : 4), 1.5, small ? 5 : 7, 'F');
+        pdf.setFontSize(small ? 9 : 12);
         pdf.setTextColor(...color);
         pdf.setFont('helvetica', 'bold');
         pdf.text(title.toUpperCase(), margin + 5, y);
-        y += 8;
+        y += small ? 5 : 8;
       };
 
       // ── Helper: estimate rendered height of a markdown section (heading + content) ──
@@ -692,7 +826,7 @@ const AssessmentResultsModal = ({
       };
 
       // ── Helper: start new page if section won't fit, then render it ──
-      const renderSection = (title, content, color) => {
+      const renderSection = (title, content, color, opts = {}) => {
         const needed = estimateSectionHeight(title, content, contentW - 4);
         if (!noPageBreak && y + needed > H - margin) {
           pdf.addPage();
@@ -700,45 +834,20 @@ const AssessmentResultsModal = ({
           y = margin;
           markPage();
         }
-        sectionHeading(cleanTitle(title), color);
-        writePdfMarkdown(content, margin + 2, contentW - 4);
+        sectionHeading(cleanTitle(title), color, opts);
+        // Theme in-body sub-headers to the section's accent (Schaduw=purple, Blindspot=red, …).
+        writePdfMarkdown(content, margin + 2, contentW - 4, color);
       };
 
-      // ── Helper: render page content vertically justified (fill full page height) ──
-      // renderFn receives a `gap` callback. Call gap() BETWEEN content blocks.
-      // Extra vertical space is distributed equally among gap() calls so content
-      // spans from top-margin to bottom-margin.
-      // If content overflows one page, falls back to normal rendering with page breaks.
+      // ── Helper: render page content TOP-ALIGNED (anchored at the top margin) ──
+      // renderFn receives a `gap` callback (kept for call-site compatibility) which is
+      // now a no-op: content flows from the top margin downward with its own spacing,
+      // rather than being spread to fill the full page height. Content that overflows
+      // a page breaks naturally to the next page.
       const justifiedPage = async (renderFn) => {
-        // Pass 1: measure total content height on temporary page
-        pdf.addPage(); paintBg();
-        const tmpPg = pdf.internal.getNumberOfPages();
+        pdf.addPage(); paintBg(); markPage();
         y = margin;
-        const savedNPB = noPageBreak;
-        noPageBreak = true;
-        let gapCount = 0;
-        await renderFn(() => { gapCount++; });
-        const contentH = y - margin;
-        noPageBreak = savedNPB;
-        pdf.deletePage(tmpPg);
-
-        const availableH = H - 2 * margin;
-
-        if (contentH <= availableH && gapCount > 0) {
-          // Content fits — render justified (spread to fill page)
-          pdf.addPage(); paintBg(); markPage();
-          y = margin;
-          const extra = availableH - contentH;
-          const gapSize = extra / gapCount;
-          noPageBreak = true;
-          await renderFn(() => { y += gapSize; });
-          noPageBreak = savedNPB;
-        } else {
-          // Content overflows — render normally with page breaks
-          pdf.addPage(); paintBg(); markPage();
-          y = margin;
-          await renderFn(() => {});
-        }
+        await renderFn(() => {});
       };
 
       // ── Helper: key-value line ──
@@ -758,18 +867,21 @@ const AssessmentResultsModal = ({
       };
 
       // ── Thin horizontal rule ──
+      // Section dividers removed (they ate too much vertical space). Kept as a tiny no-line
+      // gap so sections still have a hair of breathing room; section headings do the rest.
+      // No-op'd centrally so every existing call site drops its divider at once.
+      // eslint-disable-next-line no-unused-vars
       const hr = (color = mutedGray) => {
-        ensureSpace(4);
-        y += 2;
-        pdf.setDrawColor(...color);
-        pdf.setLineWidth(0.15);
-        pdf.line(margin, y, W - margin, y);
-        y += 4;
+        y += 1.5;
       };
 
       // ── Helper: markdown-aware AI content renderer ──
-      const writePdfMarkdown = (mdText, x, maxW) => {
+      // `accent` (optional) themes the in-body headings/sub-headers to the section color;
+      // when omitted, the legacy orange (## / ALL-CAPS) + amber (**bold**) defaults apply.
+      const writePdfMarkdown = (mdText, x, maxW, accent) => {
         if (!mdText) return;
+        const headColor = accent || orange;
+        const boldColor = accent || [251, 191, 36];
         // Unicode sanitization handled by the hoisted sanitizePdf() (defined above).
         const lines = mdText.split('\n');
         for (const raw of lines) {
@@ -787,13 +899,18 @@ const AssessmentResultsModal = ({
           if (/^[-*=]{3,}$/.test(trimmed)) continue;
           // Strip "Archetype: XXX (180° tegenpool ...)" and "Archetype: XXX (Rode Lijn ...)" lines
           if (/^\**Archetype:?\**:?\s+\w+.*(180.*tegenpool|[Rr]ode\s+[Ll]ijn)/i.test(trimmed)) continue;
+          // Render-side image placeholders the model sometimes emits on the resonance page —
+          // a bare "ARCHETYPE-AFBEELDINGEN" header and "[afbeelding: X] - Naam [afbeelding: Y]"
+          // lines. The renderer draws the real archetype circles itself, so drop these.
+          if (/\[\s*afbeelding\b/i.test(trimmed)) continue;
+          if (/^#{0,3}\s*\**\s*archetype[-\s]?afbeeldingen\s*\**\s*:?\s*$/i.test(trimmed)) continue;
           // ## / ### heading
           if (/^#{2,}\s/.test(trimmed)) {
             const headText = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim();
             ensureSpace(10);
             y += 3;
             pdf.setFontSize(10);
-            pdf.setTextColor(...orange);
+            pdf.setTextColor(...headColor);
             pdf.setFont('helvetica', 'bold');
             const hLines = pdf.splitTextToSize(headText, maxW);
             for (const hl of hLines) { ensureSpace(5); pdf.text(hl, x, y); y += 5; }
@@ -853,7 +970,7 @@ const AssessmentResultsModal = ({
             ensureSpace(7);
             y += 2;
             pdf.setFontSize(9);
-            pdf.setTextColor(251, 191, 36);
+            pdf.setTextColor(...boldColor);
             pdf.setFont('helvetica', 'bold');
             const shLines = pdf.splitTextToSize(subhead, maxW);
             for (const sl of shLines) { ensureSpace(4.5); pdf.text(sl, x, y); y += 4.5; }
@@ -864,7 +981,7 @@ const AssessmentResultsModal = ({
           if (trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed) && trimmed.length >= 3 && trimmed.length <= 70) {
             ensureSpace(7);
             pdf.setFontSize(8.5);
-            pdf.setTextColor(...orange);
+            pdf.setTextColor(...headColor);
             pdf.setFont('helvetica', 'bold');
             const hLines = pdf.splitTextToSize(trimmed, maxW);
             for (const hl of hLines) { ensureSpace(4.5); pdf.text(hl, x, y); y += 4.5; }
@@ -1033,6 +1150,159 @@ const AssessmentResultsModal = ({
       pdf.setFont('helvetica', 'normal');
       pdf.text('DELTAWERKEN DATAPUNTEN', W / 2, y, { align: 'center' });
       y += 10;
+
+      // ═══════════════════════════════════════════════════
+      // SHORT (free) VERSION — follows the result-card flow, 1 page per component:
+      //   p1 cover (identical to full, above) · p2 Identiteit + Verklaring (identical
+      //   to full, meta-disclaimer on top) · p3 radar + key-findings + D-curve ·
+      //   p4 De Stille Stem · p5 closure (placeholder). Full report runs below the guard.
+      // ═══════════════════════════════════════════════════
+      if (shortVersion) {
+        const g1 = (s) => cleanTitle(s.title || '').toLowerCase();
+        const idSecs = (displaySections || [])
+          .filter((s) => g1(s).includes('identiteit') || g1(s).includes('verklaring'))
+          .sort((a, b) => (g1(a).includes('identiteit') ? 0 : 1) - (g1(b).includes('identiteit') ? 0 : 1));
+        const stilleSecs = (displaySections || [])
+          .filter((s) => /reflectie|motivatie/.test(g1(s)))
+          .sort((a, b) => {
+            const o = ['reflectie', 'motivatie'];
+            return o.findIndex((k) => g1(a).includes(k)) - o.findIndex((k) => g1(b).includes(k));
+          });
+
+        // ── p2: Identiteit + Verklaring — identical to the full report (meta-disclaimer
+        //    on top, then the two reads in green). No key-findings here. ──
+        if (idSecs.length > 0) {
+          await justifiedPage(async (gap) => {
+            const savedNPB = noPageBreak; noPageBreak = true;
+
+            // Fixed Meta-Disclaimer (same block + top bar as the full report's identity page).
+            ensureSpace(20);
+            pdf.setFillColor(20, 16, 36);
+            const disclaimerText = 'Meta-Disclaimer: Dit rapport is gegenereerd door het Garden For Life Deltawerken Model — een zelfreflectie-instrument, geen klinische diagnose. De gebruikte neurobiologische termen zijn metaforen binnen dit specifieke model. Raadpleeg een professional voor medisch of psychologisch advies.';
+            pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
+            const disclaimerLines = pdf.splitTextToSize(disclaimerText, contentW - 8);
+            const dlH = disclaimerLines.length * 3.5 + 4;
+            pdf.rect(margin, y, contentW, dlH, 'F');
+            pdf.setFillColor(249, 115, 22);
+            pdf.rect(margin, y, contentW, 0.75, 'F');
+            pdf.setTextColor(200, 200, 215);
+            let dlY = y + 5;
+            for (const line of disclaimerLines) { pdf.text(line, margin + 5, dlY); dlY += 3.5; }
+            y += dlH + 8;
+            gap();
+
+            idSecs.forEach((section, i) => {
+              renderSection(section.title, section.content, green);
+              if (i < idSecs.length - 1) { hr(); gap(); }
+            });
+            noPageBreak = savedNPB;
+          });
+        }
+
+        // ── p3: Radar (top) + key-findings (middle) + D-curve (below) — one page ──
+        await justifiedPage(async (gap) => {
+          const savedNPB = noPageBreak; noPageBreak = true;
+
+          // Radar (TNM wheel) on top.
+          const radarEl = pdfRadarRef.current || radarRef.current;
+          if (radarEl) {
+            try {
+              const canvas = await html2canvas(radarEl, { backgroundColor: '#060612', scale: 3, useCORS: true, logging: false });
+              const img = canvas.toDataURL('image/png');
+              const maxH = 80;
+              let drawH = (canvas.height / canvas.width) * contentW; let drawW = contentW;
+              if (drawH > maxH) { drawH = maxH; drawW = (canvas.width / canvas.height) * drawH; }
+              const ox = margin + (contentW - drawW) / 2;
+              pdf.setDrawColor(...green); pdf.setLineWidth(0.5);
+              pdf.rect(ox, y, drawW, drawH);
+              pdf.addImage(img, 'PNG', ox, y, drawW, drawH);
+              y += drawH + 7;
+            } catch { y += 4; }
+          }
+
+          // Key-findings strip in the middle — Kern/Support/Schaduw/Blindspot + Polarisatie.
+          {
+            const dm = {};
+            (result.archetypeDetails || []).forEach((d) => { dm[(d.key || '').toUpperCase()] = d; });
+            const mainTot = dm[(result.mainArchetype || '').toUpperCase()]?.total || 0;
+            const shadTot = dm[(result.shadowPartner || '').toUpperCase()]?.total || 0;
+            const polGap = mainTot > 0 ? Math.round((Math.abs(mainTot - shadTot) / mainTot) * 100) : null;
+            const polBand = polGap == null ? null
+              : polGap > 60 ? 'Schaduw onderdrukt'
+              : polGap > 30 ? 'Gezonde spanning'
+              : 'Actieve integratie';
+            const rows = [
+              ['Kern', result.mainName, green],
+              ['Support', result.secondaryName, orange],
+              ['Schaduw', result.shadowName, purple],
+              ['Blindspot', result.blindspotName, red],
+              ...(polBand ? [['Polarisatie', polGap + '% — ' + polBand, amber]] : []),
+            ].filter((r) => r[1]);
+            if (rows.length) {
+              const boxH = rows.length * 7 + 6;
+              pdf.setDrawColor(...mutedGray); pdf.setLineWidth(0.3);
+              pdf.rect(margin, y, contentW, boxH);
+              let ry = y + 6;
+              rows.forEach(([label, value, col]) => {
+                pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...mutedGray);
+                pdf.text(String(label).toUpperCase(), margin + 4, ry);
+                pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
+                pdf.text(sanitizePdf(String(value)), margin + 42, ry);
+                ry += 7;
+              });
+              y += boxH + 7;
+            }
+          }
+
+          // D-curve below.
+          if (cRuntime?.d_curve && morphologyRef.current) {
+            try {
+              const mc = await html2canvas(morphologyRef.current, { backgroundColor: '#060612', scale: 3, useCORS: true, logging: false });
+              const mImg = mc.toDataURL('image/png');
+              const innerPad = 3;
+              const chartW = contentW - innerPad * 2;
+              let chartH = (mc.height / mc.width) * chartW;
+              if (chartH > 105) chartH = 105;
+              const boxH = chartH + innerPad * 2;
+              pdf.setDrawColor(...cyan); pdf.setLineWidth(0.4);
+              pdf.rect(margin, y, contentW, boxH);
+              pdf.addImage(mImg, 'PNG', margin + innerPad, y + innerPad, chartW, chartH);
+              y += boxH + 4;
+            } catch { y += 4; }
+          }
+          noPageBreak = savedNPB;
+        });
+
+        // ── p4: De Stille Stem — Reflectie + Motivatie ──
+        if (stilleSecs.length > 0) {
+          await justifiedPage(async (gap) => {
+            const savedNPB = noPageBreak; noPageBreak = true;
+            stilleSecs.forEach((section, i) => {
+              renderSection('De Stille Stem — ' + cleanTitle(section.title), section.content, purple);
+              if (i < stilleSecs.length - 1) { hr(); gap(); }
+            });
+            noPageBreak = savedNPB;
+          });
+        }
+
+        // ── p5: Afsluiting (closure — copy not yet written, placeholder page) ──
+        await justifiedPage(async () => {
+          y += 40;
+          pdf.setFontSize(16); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...green);
+          pdf.text('Tot Slot', W / 2, y, { align: 'center' });
+          y += 12;
+          pdf.setFontSize(9); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...dimWhite);
+          const placeholder = pdf.splitTextToSize('Deze afsluiting wordt binnenkort toegevoegd.', contentW - 40);
+          for (const l of placeholder) { pdf.text(l, W / 2, y, { align: 'center' }); y += 5; }
+        });
+
+        // ── Prune empty pages + save ──
+        const tp = pdf.internal.getNumberOfPages();
+        for (let p = tp; p >= 1; p--) { if (!pagesWithContent.has(p)) pdf.deletePage(p); }
+        const an = (result?.extendedName || 'Archetype').replace(/\s+/g, '_');
+        pdf.save(`GardenForLife_${an}_kort.pdf`);
+        return; // finally{} resets isGeneratingPdf
+      }
 
       // ═══════════════════════════════════════════════════
       // PAGE 2: LEGAL / COMPLIANCE
@@ -1685,393 +1955,205 @@ const AssessmentResultsModal = ({
       } // end if(false) — removed content pages
       /* eslint-enable no-constant-condition */
 
-      // ── PAGE 7: OCEAN + CORE PROFILE (relation context) ──
-      const endOceanCore = trackBlock('ocean_core');
-      await justifiedPage(async (gap) => {
+      // ── Page 4: PERSOONLIJKHEIDSRAPPORT VERGELIJKING (OCEAN, IF-state) ──
+      // Master Prompt v4.1 §5.4: NEVER model-derived OCEAN (D-10). Upload present →
+      // uploaded-values table + 5 per-trait sections (O,C on p1; E,A,N on p2). No upload →
+      // 1 page tendency reads, NO numbers + explicit instrument-disclaimer.
+      const hasOceanUpload = !!uploadedOceanScores;
+      const OCEAN_DIMS_P = ['O', 'C', 'E', 'A', 'N'];
+      const OCEAN_FULL_P = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
+      const OCEAN_COLORS_P = { O: [167, 139, 250], C: [34, 211, 238], E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253] };
+      const oceanTraitOf = (letter) =>
+        (displaySections || []).find(s => new RegExp('^\\**\\s*trait\\s+' + letter + '\\b', 'i').test(cleanTitle(s.title || '')));
+      const oceanTraitSections = OCEAN_DIMS_P.map(oceanTraitOf).filter(Boolean);
 
-      // ── OCEAN PERSONALITY PROFILE ──
-      if (result.oceanScores) {
-        const ocean = result.oceanScores; // computed 0-100 from actual answer data
-        const OCEAN_DIMS = ['O', 'C', 'E', 'A', 'N'];
-        const OCEAN_FULL_NL = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
-        const OCEAN_COLORS_PDF = {
-          O: [167, 139, 250], C: [34, 211, 238], E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253],
-        };
+      // OCEAN page subtitle (render-side).
+      const oceanSubtitle = () => {
+        pdf.setFontSize(9); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...cyan);
+        pdf.text(sectionTitle('ocean_subtitle', language).toUpperCase(), margin + 2, y);
+        y += 7;
+      };
 
-        sectionHeading('OCEAN Persoonlijkheidsprofiel', blue);
+      // Instrument disclaimer (heavy when no upload, lighter when upload present).
+      const oceanDisclaimer = (heavy) => {
+        const txt = heavy
+          ? (language === 'en'
+              ? 'No external OCEAN report was uploaded. The reads below are hedged tendencies grounded in your geometry — NOT measured Big Five scores. For an accurate trait reading, take a validated OCEAN/Big Five test.'
+              : 'Er is geen extern OCEAN-rapport geüpload. De lezingen hieronder zijn gehedgde tendensen, gegrond in je geometrie — GEEN gemeten Big Five-scores. Voor een accurate trait-lezing neem je een gevalideerde OCEAN/Big Five-test af.')
+          : (language === 'en'
+              ? 'This model translates how your configuration EXPRESSES each trait; it does not measure or certify the traits themselves. An accurate trait reading requires a real OCEAN instrument.'
+              : 'Dit model VERTAALT hoe jouw configuratie elk trait uitdrukt; het meet of certificeert de traits niet. Een accurate trait-lezing vereist een echt OCEAN-instrument.');
+        pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
+        const lines = pdf.splitTextToSize(txt, contentW - 10);
+        const dH = lines.length * 3.6 + 5;
+        ensureSpace(dH + 3);
+        pdf.setFillColor(28, 22, 0);
+        pdf.roundedRect(margin, y, contentW, dH, 1.5, 1.5, 'F');
+        pdf.setFillColor(...amber);
+        pdf.rect(margin, y, 2, dH, 'F');
+        pdf.setTextColor(...amber);
+        let dy = y + 4.5;
+        for (const l of lines) { pdf.text(l, margin + 6, dy); dy += 3.6; }
+        y += dH + 4;
+      };
 
-        // Legend row
-        ensureSpace(6);
-        pdf.setFontSize(7);
-        pdf.setFont('helvetica', 'normal');
-        let legX = margin + 2;
-        OCEAN_DIMS.forEach(dim => {
-          pdf.setTextColor(...OCEAN_COLORS_PDF[dim]);
-          const legTxt = `${dim}=${OCEAN_FULL_NL[dim]}   `;
-          pdf.text(legTxt, legX, y);
-          legX += pdf.getTextWidth(legTxt);
-        });
+      // Uploaded-values table (render-side; ONLY when an external report was uploaded).
+      const drawUploadedOceanTable = () => {
+        if (!uploadedOceanScores) return;
+        pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...blue);
+        pdf.text(language === 'en' ? 'UPLOADED OCEAN VALUES' : 'GEÜPLOADE OCEAN-WAARDEN', margin + 2, y);
         y += 6;
-
-        // ── Single-panel OCEAN: archetype profile (X/10) ──
-        const oceanBarH = 4;
-        const labelW = 26;
-        const scoreColW = 14;
-        const oceanBarW = contentW - labelW - scoreColW - 4;
-
-        OCEAN_DIMS.forEach(dim => {
-          ensureSpace(9);
-          const col = OCEAN_COLORS_PDF[dim];
-          const score100 = (ocean && ocean[dim]) != null ? ocean[dim] : 0;
-          const pct100 = score100 / 100;
-          // Dim letter
+        const labelW = 30, scoreColW = 16, barW = contentW - labelW - scoreColW - 4, barH = 4;
+        OCEAN_DIMS_P.forEach(dim => {
+          ensureSpace(8);
+          const col = OCEAN_COLORS_P[dim];
+          const score = Math.round(uploadedOceanScores[dim] || 0);
           pdf.setFontSize(8.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
           pdf.text(dim, margin + 2, y + 1.5);
-          // Label
           pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
-          pdf.text(OCEAN_FULL_NL[dim], margin + 9, y + 1.5);
-          // Track background
+          pdf.text(OCEAN_FULL_P[dim], margin + 9, y + 1.5);
           const bx = margin + labelW;
           pdf.setFillColor(22, 22, 30);
-          pdf.roundedRect(bx, y - 1.5, oceanBarW, oceanBarH, 1, 1, 'F');
-          // Fill
+          pdf.roundedRect(bx, y - 1.5, barW, barH, 1, 1, 'F');
           pdf.setFillColor(...col);
-          pdf.roundedRect(bx, y - 1.5, Math.max(pct100 * oceanBarW, 2), oceanBarH, 1, 1, 'F');
-          // Score
+          pdf.roundedRect(bx, y - 1.5, Math.max((score / 100) * barW, 2), barH, 1, 1, 'F');
           pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
-          pdf.text(`${score100}/100`, bx + oceanBarW + 3, y + 1.5);
-
-          y += 9;
+          pdf.text(`${score}/100`, bx + barW + 3, y + 1.5);
+          y += 8;
         });
         y += 2;
+      };
 
-        // Resonantie / Dissonantie analysis (only when ocean data was imported)
-        if (result.oceanImported) {
-          const GROUP_OCEAN_EXPECT = {
-            RULING:     { O: 'low',  C: 'high', E: 'mid',  A: 'low',  N: 'low'  },
-            RELATIONAL: { O: 'mid',  C: 'mid',  E: 'high', A: 'high', N: 'mid'  },
-            SEEKER:     { O: 'high', C: 'low',  E: 'mid',  A: 'mid',  N: 'mid'  },
-            CHAOS:      { O: 'mid',  C: 'low',  E: 'mid',  A: 'low',  N: 'high' },
-            ABSTRACT:   { O: 'high', C: 'mid',  E: 'low',  A: 'mid',  N: 'mid'  },
-            AGENCY:     { O: 'mid',  C: 'high', E: 'high', A: 'mid',  N: 'low'  },
-          };
-          const OCEAN_FULL_EN = {
-            O: 'Openness', C: 'Conscientiousness', E: 'Extraversion', A: 'Agreeableness', N: 'Neuroticism',
-          };
-          const expect = GROUP_OCEAN_EXPECT[result.group] || GROUP_OCEAN_EXPECT.RULING;
-          const analyses = OCEAN_DIMS.map(dim => {
-            const pct100 = ocean[dim] || 0;
-            const exp = expect[dim];
-            let status = 'neutral', explanation = '';
-            if (exp === 'high') {
-              if (pct100 >= 60) { status = 'resonance'; explanation = `Je ${OCEAN_FULL_EN[dim]} (${pct100}) is in resonantie met je ${result.group}-netwerk.`; }
-              else { status = 'dissonance'; explanation = `Je ${result.group}-profiel verwacht hoge ${OCEAN_FULL_EN[dim]}, maar je scoort ${pct100}. Dit gedrag is mogelijk aangeleerd.`; }
-            } else if (exp === 'low') {
-              if (pct100 <= 40) { status = 'resonance'; explanation = `Je lage ${OCEAN_FULL_EN[dim]} (${pct100}) past bij je ${result.group}-architectuur.`; }
-              else { status = 'dissonance'; explanation = `Je ${result.group}-netwerk verwacht lage ${OCEAN_FULL_EN[dim]}, maar je scoort ${pct100}. Mogelijk aangeleerde compensatie.`; }
-            }
-            return { dim, pct100, status, explanation };
-          }).filter(a => a.status !== 'neutral');
-
-          if (analyses.length > 0) {
-            ensureSpace(10);
-            pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...blue);
-            pdf.text('OCEAN RESONANTIE & DISSONANTIE', margin + 2, y);
-            y += 7;
-
-            analyses.forEach(({ dim, pct100, status, explanation }) => {
-              const isRes = status === 'resonance';
-              const ac = isRes ? green : amber;
-              const expLines = pdf.splitTextToSize(explanation, contentW - 18);
-              const bh = 10 + expLines.length * 3.8;
-              ensureSpace(bh + 3);
-              pdf.setFillColor(...(isRes ? [0, 25, 12] : [28, 22, 0]));
-              pdf.roundedRect(margin + 2, y - 2, contentW - 4, bh, 1.5, 1.5, 'F');
-              pdf.setFillColor(...OCEAN_COLORS_PDF[dim]);
-              pdf.rect(margin + 2, y - 2, 2, bh, 'F');
-              pdf.setFontSize(8.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...OCEAN_COLORS_PDF[dim]);
-              pdf.text(`${dim}`, margin + 7, y + 3.5);
-              pdf.setTextColor(...ac);
-              pdf.text(` — ${isRes ? 'Resonantie' : 'Dissonantie'} (${pct100}/100)`, margin + 12, y + 3.5);
-              pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
-              expLines.forEach((line, li) => pdf.text(line, margin + 7, y + 9 + li * 3.8));
-              y += bh + 4;
+      // ── OCEAN page 1: title + subtitle + (upload: table + Trait O/C  |  no-upload: all reads) ──
+      const endOceanCore = trackBlock('ocean_core');
+      if (oceanTraitSections.length > 0 || hasOceanUpload) {
+        await justifiedPage(async (gap) => {
+          sectionHeading(sectionTitle('ocean_page', language), blue);
+          oceanSubtitle();
+          if (hasOceanUpload) {
+            drawUploadedOceanTable();
+            gap();
+            oceanDisclaimer(false);   // between the values table and the first trait
+            gap();
+            const p1 = [oceanTraitOf('O'), oceanTraitOf('C')].filter(Boolean);
+            p1.forEach((s, i) => {
+              renderSection(s.title, s.content, cyan, { small: true }); // 50% trait subtitle
+              if (i < p1.length - 1) { gap(); } // no hr — headings separate the traits, saves height
             });
-            y += 2;
+          } else {
+            oceanDisclaimer(true);    // up top, before the tendency reads (no table in this path)
+            gap();
+            oceanTraitSections.forEach((s, i) => {
+              renderSection(s.title, s.content, cyan, { small: true }); // 50% trait subtitle
+              if (i < oceanTraitSections.length - 1) { hr(); gap(); }
+            });
           }
-        }
-
-        // Neuroticism Trigger
-        const _nt = aiProfileData?.neuroticismTrigger;
-        if (_nt) {
-          const tLines = pdf.splitTextToSize(sanitizePdf(_nt), contentW - 8);
-          const bh = 10 + tLines.length * 4.2;
-          ensureSpace(bh + 3);
-          pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...red);
-          pdf.text('NEUROTICISME TRIGGER', margin + 2, y + 3.5);
-          pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
-          tLines.forEach((line, li) => pdf.text(line, margin + 2, y + 9 + li * 4.2));
-          y += bh + 5;
-        }
-
-        // Core Profile (Workplace, Conflict, Relationship, Individuation)
-        if (aiProfileData) {
-          const coreItems = [
-            { label: 'Superkracht op de Werkvloer', text: aiProfileData.workplaceSuperpower, color: orange },
-            { label: 'Conflictstijl',               text: aiProfileData.conflictStyle,        color: orange },
-            { label: 'Relatiepatroon',              text: aiProfileData.relationshipPattern,  color: orange },
-            { label: 'Individuatiepad',             text: aiProfileData.individuationPath,    color: orange },
-          ];
-          coreItems.forEach(({ label, text, color: c }) => {
-            if (!text) return;
-            ensureSpace(14);
-            pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...c);
-            pdf.text(label.toUpperCase(), margin + 2, y);
-            y += 5;
-            writeWrapped(text, margin + 2, y, contentW - 4, 8.5, white);
-            y += 3;
-          });
-        }
-
+        });
       }
-      });
       endOceanCore();
 
-      // ── PERSOONLIJKHEIDSRAPPORT VERGELIJKING — comparison with uploaded OCEAN profile ──
+      // ── OCEAN page 2 (upload only): Trait E + Trait A + Trait N (disclaimer now on page 1) ──
       const endOceanComp = trackBlock('ocean_comp');
-      const reportCompSection = displaySections
-        ? displaySections.find(s => s.isComparison || /persoonlijkheidsrapport.*vergelijk/i.test(s.title))
-        : null;
-      const hasUploadedFiles = (uploadedFiles || []).length > 0;
-
-      if (reportCompSection || hasUploadedFiles) {
+      const oceanP2 = hasOceanUpload ? [oceanTraitOf('E'), oceanTraitOf('A'), oceanTraitOf('N')].filter(Boolean) : [];
+      if (oceanP2.length > 0) {
         await justifiedPage(async (gap) => {
-
-        // ── Page heading ──
-        sectionHeading('Persoonlijkheidsrapport Vergelijking', blue);
-        gap();
-
-        // ── Uploaded file label ──
-        const fileNames = (uploadedFiles || []).map(f => f.name).join(', ');
-        if (fileNames) {
-          ensureSpace(10);
-          pdf.setFontSize(7.5);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(...mutedGray);
-          pdf.text(`Geüpload rapport: ${fileNames}`, margin + 2, y);
-          y += 7;
-        }
-
-        // ── GFL OCEAN reference bars + user OCEAN bars — SIDE BY SIDE ──
-        if (result.extendedOcean?.ocean) {
-          const OCEAN_DIMS_REF = ['O', 'C', 'E', 'A', 'N'];
-          const OCEAN_FULL_REF = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
-          const OCEAN_COLORS_REF = {
-            O: [167, 139, 250], C: [34, 211, 238], E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253],
-          };
-
-          // ── Uploaded OCEAN scores: provided directly by the backend parser ──
-          // (parsed from the raw file text before the AI runs — no AI-text regex needed)
-          const userOcean = uploadedOceanScores || null;
-
-          // ── Layout constants ──
-          const halfW = (contentW - 6) / 2; // 6mm gap between the two panels
-          const leftX = margin;
-          const rightX = margin + halfW + 6;
-          const barH = 3;
-          const labelW = 28;
-          const scoreW = 16;
-
-          // ── Helper: draw one OCEAN panel ──
-          const drawOceanPanel = (panelX, panelW, title, getScore, formatScore, maxVal) => {
-            const panelBarW = panelW - labelW - scoreW - 4;
-            pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...blue);
-            pdf.text(title, panelX + 2, y);
-            const headerY = y;
-
-            let rowY = headerY + 6;
-            OCEAN_DIMS_REF.forEach(dim => {
-              const score = getScore(dim);
-              if (score == null) return;
-              const pct = Math.min(score / maxVal, 1);
-              const col = OCEAN_COLORS_REF[dim];
-              // Dim letter
-              pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
-              pdf.text(dim, panelX + 2, rowY + 1.5);
-              // Label
-              pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...mutedGray);
-              pdf.text(OCEAN_FULL_REF[dim], panelX + 9, rowY + 1.5);
-              // Bar track
-              const bx = panelX + labelW;
-              pdf.setFillColor(22, 22, 30);
-              pdf.roundedRect(bx, rowY - 1.5, panelBarW, barH, 1, 1, 'F');
-              // Bar fill
-              pdf.setFillColor(...col);
-              pdf.roundedRect(bx, rowY - 1.5, Math.max(pct * panelBarW, 1.5), barH, 1, 1, 'F');
-              // Score label
-              pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...col);
-              pdf.text(formatScore(dim, score), bx + panelBarW + 3, rowY + 1.5);
-
-              rowY += 6.5;
-            });
-            return rowY;
-          };
-
-          // ── Draw both panels ──
-          ensureSpace(50);
-          const savedY = y;
-
-          // LEFT: GFL Assessment result (0-100, derived from archetype weights)
-          drawOceanPanel(
-            leftX, halfW,
-            'DELTAWERKEN SCORE',
-            (dim) => result.oceanScores?.[dim] ?? 0,
-            (_dim, score) => `${score}/100`,
-            100
-          );
-
-          // RIGHT: Uploaded OCEAN profile (0-100) — only shown when parsed from uploaded file
-          if (userOcean) {
-            y = savedY; // reset y to draw at same vertical position
-            drawOceanPanel(
-              rightX, halfW,
-              'GEÜPLOAD PROFIEL',
-              (dim) => userOcean[dim] ?? null,
-              (_dim, score) => `${score}/100`,
-              100
-            );
-          }
-
-          // Advance y past both panels
-          y = savedY + 6 + OCEAN_DIMS_REF.length * 6.5 + 4;
-
-          pdf.setDrawColor(...mutedGray);
-          pdf.setLineWidth(0.15);
-          pdf.line(margin, y, W - margin, y);
-          y += 6;
-        }
-        gap();
-
-        // ── AI comparison text — structured with headers ──
-        if (reportCompSection) {
-          const rawText = reportCompSection.content
-            .replace(/\*\*/g, '')
-            .replace(/\*/g, '')
-            .trim();
-
-          // Split into lines and classify into sections
-          const lines = rawText.split('\n');
-          const sections = []; // { type: 'header'|'subheader'|'text', text }
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
-
-            // Detect markdown headers (## or ###)
-            const h1Match = trimmed.match(/^#{1,2}\s+(.*)/);
-            const h3Match = trimmed.match(/^#{3,4}\s+(.*)/);
-
-            if (h1Match) {
-              sections.push({ type: 'header', text: h1Match[1].trim() });
-              continue;
-            } else if (h3Match) {
-              sections.push({ type: 'subheader', text: h3Match[1].trim() });
-              continue;
-            }
-
-            // Detect section boundaries by content keywords
-            const lower = trimmed.toLowerCase();
-            if (/vergelijkingsrapport|convergente\s+punten|overeenkomst/i.test(lower) && trimmed.length < 80) {
-              sections.push({ type: 'header', text: trimmed.replace(/[:.]$/, '') });
-              continue;
-            }
-            if (/spanningsveld|divergente\s+punten|verschil/i.test(lower) && trimmed.length < 80) {
-              sections.push({ type: 'header', text: trimmed.replace(/[:.]$/, '') });
-              continue;
-            }
-            if (/^conclusie/i.test(lower) && trimmed.length < 80) {
-              sections.push({ type: 'header', text: 'Conclusie en Reflectie' });
-              const afterColon = trimmed.replace(/^conclusie\s*[:.]?\s*/i, '');
-              if (afterColon.length > 0) sections.push({ type: 'text', text: afterColon });
-              continue;
-            }
-            // Detect "Stap X:" style headers the AI sometimes generates
-            if (/^stap\s+\d/i.test(lower) && trimmed.length < 120) {
-              sections.push({ type: 'header', text: trimmed.replace(/[:.]$/, '') });
-              continue;
-            }
-
-            // Detect trait subheaders: "Openheid voor Ervaringen (Hoog - 72):" or numbered items like "1. Trait (Score):"
-            if (/^(?:\d+\.\s*)?[A-Z][a-zéëïöü].*\([^)]*\d+\)/.test(trimmed) && trimmed.length < 120) {
-              sections.push({ type: 'subheader', text: trimmed.replace(/:$/, '') });
-              continue;
-            }
-
-            sections.push({ type: 'text', text: trimmed });
-          }
-
-          // If no header was detected at all, add default header at top
-          if (!sections.find(s => s.type === 'header')) {
-            sections.unshift({ type: 'header', text: 'Vergelijkingsrapport' });
-          }
-
-          // Render sections — use ensureSpace for page breaks (no manual reportMaxY)
-          for (const section of sections) {
-            if (section.type === 'header') {
-              gap();
-              ensureSpace(12);
-              y += 2;
-              pdf.setFontSize(9); pdf.setFont('helvetica', 'bold');
-              pdf.setTextColor(...blue);
-              pdf.text(section.text.toUpperCase(), margin + 2, y);
-              y += 2;
-              pdf.setDrawColor(...blue);
-              pdf.setLineWidth(0.3);
-              pdf.line(margin + 2, y, margin + 2 + pdf.getTextWidth(section.text.toUpperCase()), y);
-              y += 4;
-            } else if (section.type === 'subheader') {
-              ensureSpace(10);
-              y += 1.5;
-              pdf.setFontSize(8); pdf.setFont('helvetica', 'bold');
-              pdf.setTextColor(...purple);
-              const subLines = pdf.splitTextToSize(section.text, contentW - 6);
-              for (const sl of subLines) {
-                ensureSpace(5);
-                pdf.text(sl, margin + 4, y);
-                y += 4.0;
-              }
-              y += 1;
-            } else {
-              // Normal text paragraph
-              pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal');
-              pdf.setTextColor(...white);
-              const paraLines = pdf.splitTextToSize(section.text, contentW - 4);
-              for (const pl of paraLines) {
-                ensureSpace(5);
-                pdf.text(pl, margin + 2, y);
-                y += 4.0;
-              }
-              y += 1;
-            }
-          }
-        } else if (hasUploadedFiles) {
-          // AI didn't generate the section (e.g. AI failed) — show placeholder
-          ensureSpace(30);
-          pdf.setFontSize(8.5);
-          pdf.setFont('helvetica', 'italic');
-          pdf.setTextColor(...mutedGray);
-          pdf.text(
-            'De vergelijkingsanalyse kon niet worden gegenereerd. Start het assessment opnieuw met het geüploade bestand om een volledige vergelijking te ontvangen.',
-            margin + 2, y, { maxWidth: contentW - 4 }
-          );
-        }
+          // No bottom padding on this page: let the text flow all the way down to the page edge
+          // (the extra ~18mm of room keeps the 3 traits from being pushed to a third page).
+          const savedNPB = noPageBreak;
+          noPageBreak = true;
+          oceanP2.forEach((s, i) => {
+            renderSection(s.title, s.content, cyan, { small: true }); // 50% trait subtitle
+            if (i < oceanP2.length - 1) { gap(); } // no hr — headings separate the traits, saves height
+          });
+          noPageBreak = savedNPB;
         });
       }
       endOceanComp();
 
+      // ── Page 5: PLASTISCHE MORFOLOGIE — engine D-curve chart + 3 reads ──
+      // Master Prompt v4.1 §5.5: chart is render-side (engine cRuntime, ~30% page height),
+      // then DE VORM + DE HARDWARE ONDER DRUK + DE OVERGANG NAAR DE STILLE STEM.
+      const endMorphology = trackBlock('nb_morphology');
+      // Tolerant matcher for the 3 morphology reads (vorm / hardware|druk / overgang). NO
+      // "morfologie" fallback — that only matched the page-label echo "DE MORFOLOGIE", which is
+      // a render-side note the model parrots, not a real section.
+      const morphRank = (s) => {
+        const t = cleanTitle(s.title || '').toLowerCase();
+        if (/\bvorm\b/.test(t)) return 0;
+        if (/hardware|onder\s+druk/.test(t)) return 1;
+        if (/\bovergang\b/.test(t)) return 2;
+        return -1;
+      };
+      const morphPage = (displaySections || [])
+        .filter(s => morphRank(s) >= 0)
+        .sort((a, b) => morphRank(a) - morphRank(b));
+      const hasMorphChart = !!(cRuntime?.d_curve && morphologyRef.current);
+      if (hasMorphChart || morphPage.length > 0) {
+        pdf.addPage(); paintBg(); markPage(); y = margin;
+        sectionHeading(sectionTitle('morphology_page', language), cyan);
+
+        // Chart FULL-WIDTH (so the in-chart labels are readable), caption BELOW it.
+        if (hasMorphChart) {
+          try {
+            const morphCanvas = await html2canvas(morphologyRef.current, {
+              backgroundColor: '#060612', scale: 3, useCORS: true, logging: false,
+            });
+            const morphImg = morphCanvas.toDataURL('image/png');
+            const capTxt = language === 'en'
+              ? 'Main and Support show each archetype’s absolute cost-curve (0–100). Samengesteld (composed) is the blended load normalised to its own peak (=100%) — it shows the SHAPE within your configuration, not an absolute comparison, so it can sit above the individual lines.'
+              : 'Hoofd en Support tonen elk de absolute kostencurve van het archetype (0–100). Samengesteld is de gecombineerde belasting, genormaliseerd op zijn eigen piek (=100%) — het toont de VORM binnen jouw configuratie, geen absolute vergelijking, en kan daarom boven de losse lijnen liggen.';
+
+            const innerPad = 3;
+            const MORPH_SCALE = 0.75;                         // 25% smaller than full width
+            const chartW = (contentW - innerPad * 2) * MORPH_SCALE;
+            let chartH = (morphCanvas.height / morphCanvas.width) * chartW;
+            if (chartH > 101) { chartH = 101; }              // cap chart height (135 × 0.75)
+            const boxW = chartW + innerPad * 2;
+            const boxH = chartH + innerPad * 2;
+            const boxX = margin + (contentW - boxW) / 2;     // centered
+            ensureSpace(boxH + 4);
+            // Bordered box around the (centered) chart
+            pdf.setDrawColor(...cyan);
+            pdf.setLineWidth(0.4);
+            pdf.rect(boxX, y, boxW, boxH);
+            pdf.addImage(morphImg, 'PNG', boxX + innerPad, y + innerPad, chartW, chartH);
+            y += boxH + 4;
+            // Caption below the chart, full width
+            pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...mutedGray);
+            const lineH = 3.6;
+            for (const cl of pdf.splitTextToSize(sanitizePdf(capTxt), contentW)) { ensureSpace(lineH); pdf.text(cl, margin, y + 2); y += lineH; }
+            y += 5;
+          } catch { y += 4; }
+        }
+
+        // Master Prompt v4.3 §5.5 — TWO pages: Page A = chart + DE VORM; Page B = DE HARDWARE
+        // ONDER DRUK + DE OVERGANG (no chart). Split the reads accordingly.
+        const pageAReads = morphPage.filter(s => morphRank(s) === 0);   // DE VORM
+        const pageBReads = morphPage.filter(s => morphRank(s) >= 1);    // Hardware + Overgang (+ fallback)
+        // Page A: DE VORM directly under the chart — no bottom padding, let the text flow
+        // down to the page edge instead of breaking early.
+        const savedNPBmorph = noPageBreak; noPageBreak = true;
+        pageAReads.forEach((section, i) => {
+          renderSection(section.title, relabelProse(section.content, language), cyan);
+          if (i < pageAReads.length - 1) hr();
+        });
+        noPageBreak = savedNPBmorph;
+        // Page B: the deeper mechanism reads on a fresh page (no chart)
+        if (pageBReads.length > 0) {
+          pdf.addPage(); paintBg(); markPage(); y = margin;
+          // (no page-level "— vervolg" heading; the section headings below carry the page)
+          pageBReads.forEach((section, i) => {
+            renderSection(section.title, relabelProse(section.content, language), cyan);
+            if (i < pageBReads.length - 1) hr();
+          });
+        }
+      }
+      endMorphology();
+
       // ── DUAL-CORE DYNAMICS + RADAR CHART (page 5) ──
       const endDualCore = trackBlock('dual_core');
       await justifiedPage(async (gap) => {
+      const savedNPBdc = noPageBreak; noPageBreak = true; // no bottom padding — let text flow to edge
       if (result.subgroups && result.subgroups.length > 0) {
         sectionHeading('Dual-Core Dynamics', amber);
 
@@ -2097,18 +2179,21 @@ const AssessmentResultsModal = ({
           Sage: 9, Artist: 10, Magician: 11, Hero: 12,
         };
 
+        // Visual scale — the bar chart is drawn 10% smaller overall (shorter/thinner bars,
+        // tighter rows). Font sizes are NOT scaled, so the text stays the same size.
+        const VIS = 0.9;
         const MAX_TOTAL = 36;
         const labelW    = 38;
         const scoreW    = 22;
         const colGap    = 3;
-        const barAreaW  = contentW - labelW - scoreW - colGap * 2;
+        const barAreaW  = (contentW - labelW - scoreW - colGap * 2) * VIS;
         const barX      = margin + labelW + colGap;
         const scoreX    = barX + barAreaW + colGap;
-        const barH      = 2.5;
+        const barH      = 2.5 * VIS;
 
         result.subgroups.forEach(sg => {
           const hasBonus = sg.harmonyPoints > 0 || sg.shadowPoints > 0;
-          const rowH = 14 + (hasBonus ? 5 : 0);
+          const rowH = (14 + (hasBonus ? 5 : 0)) * VIS;
           ensureSpace(rowH);
 
           const meta      = GROUP_META_PDF[sg.group] || { network: sg.group, drive: sg.axis || '' };
@@ -2199,88 +2284,77 @@ const AssessmentResultsModal = ({
         hr();
       }
 
-      // ── COGNITIEVE DRIEHOEK (AI-generated Section 8, same page as Dual-Core) ──
+      // ── Master Prompt v4.1 §5.8: under the dual-core chart, the 3 compressed reads —
+      //    Alchemie van Individuatie + Neurale Schakelbord + Ontologische Evolutie.
+      //    (Dual-Core narrative + Cognitieve Driehoek are dropped per spec.)
       {
-        const cogDriehoekSection = displaySections?.find(s => {
-          const t = cleanTitle(s.title || '').toLowerCase();
-          return t.includes('cognitieve driehoek') || t.includes('aangeleerde lens');
-        });
-        if (cogDriehoekSection) {
-          sectionHeading('Cognitieve Driehoek — De Aangeleerde Lens', amber);
+        const yellowOrder = ['alchemie', 'schakelbord', 'ontologi'];
+        const yellowOnPage = (displaySections || [])
+          .filter(s => {
+            const t = cleanTitle(s.title || '').toLowerCase();
+            return t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi');
+          })
+          .sort((a, b) => {
+            const ta = cleanTitle(a.title || '').toLowerCase();
+            const tb = cleanTitle(b.title || '').toLowerCase();
+            const ix = (t) => yellowOrder.findIndex(k => t.includes(k));
+            return ix(ta) - ix(tb);
+          });
+        yellowOnPage.forEach((section, i) => {
           gap();
-          writePdfMarkdown(cogDriehoekSection.content, margin + 2, contentW - 4);
-          y += 3;
-        }
+          renderSection(section.title, section.content, amber);
+          if (i < yellowOnPage.length - 1) hr();
+        });
       }
+      noPageBreak = savedNPBdc;
       });
       endDualCore();
 
-      // ── GROEP DYNAMIEK + RADAR CHART — together on one page (only if content exists) ──
-      const endGroepRadar = trackBlock('groep_radar');
-      const groepDynSection = displaySections?.find(s =>
-        s.title?.toLowerCase().includes('groep dynamiek') ||
-        s.title?.toLowerCase().includes('neurobiologische interpretatie')
-      );
-      const hasGroepOrRadar = groepDynSection || radarRef.current;
-      if (hasGroepOrRadar) {
-        pdf.addPage();
-        paintBg();
-        y = margin;
-        markPage();
-      }
-      if (groepDynSection) {
-        sectionHeading('Groep Dynamiek — Neurobiologische Interpretatie', cyan);
-        writePdfMarkdown(groepDynSection.content, margin + 2, contentW - 4);
-        y += 3;
-        hr();
-      }
-
-      // ── RADAR CHART — same page as Groep Dynamiek ──
-      if (radarRef.current) {
-        y += 4;
-        sectionHeading('Visuele Analyse — Triple Network Wiel', green);
+      // ── Reusable radar-chart renderer (rasterise radarRef into the current page) ──
+      // Used on the Schaduw/Blindspot page (p9) per the page-map. Returns true if drawn.
+      const renderRadarChart = async (maxH = 0, { caption = true } = {}) => {
+        if (!radarRef.current) return false;
+        if (caption) sectionHeading('Visuele Analyse — Triple Network Wiel', green);
         try {
           const radarCanvas = await html2canvas(radarRef.current, {
-            backgroundColor: null,
-            scale: 3,
-            useCORS: true,
-            logging: false,
+            backgroundColor: null, scale: 3, useCORS: true, logging: false,
           });
           const radarImg = radarCanvas.toDataURL('image/png');
           const radarW = contentW;
           const radarH = (radarCanvas.height / radarCanvas.width) * radarW;
-          // If it fits on this page, center vertically in remaining space
-          const availH = H - y - margin;
+          const availH = maxH > 0 ? maxH : H - y - margin;
           const finalH = Math.min(radarH, availH);
           const finalW = finalH === radarH ? radarW : (radarCanvas.width / radarCanvas.height) * finalH;
           const offsetX = margin + (contentW - finalW) / 2;
-          // Border container around the radar chart (respects page margins)
           const borderPad = 2;
           pdf.setDrawColor(...green);
           pdf.setLineWidth(0.5);
           pdf.rect(margin, y - borderPad, contentW, finalH + borderPad * 2);
           pdf.addImage(radarImg, 'PNG', offsetX, y, finalW, finalH);
           y += finalH + 6;
+          return true;
         } catch {
           y += 4;
+          return false;
         }
-      }
+      };
 
-      // ── 12A / 12B RESONANTIE SECTIONS — below radar chart on same page (forced) ──
-      const resonantieSections = displaySections?.filter(s =>
-        s.isResonantie ||
-        /^1[23]\s*[ab][\s.:]/i.test(s.title || '') ||
-        /professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '')
-      ) || [];
-      if (resonantieSections.length > 0) {
-        noPageBreak = true; // lock to current page — no overflow
-        const resoColor = [29, 153, 4]; // green
-        for (let ri = 0; ri < resonantieSections.length; ri++) {
-          const rs = resonantieSections[ri];
-          renderSection(rs.title, rs.content, resoColor);
-          if (ri < resonantieSections.length - 1) hr();
-        }
-        noPageBreak = false;
+      // ── GROEP DYNAMIEK (legacy) — own page if it exists; v4 emits no such section so
+      //    this block is normally empty and pruned. Radar + resonantie moved off it. ──
+      const endGroepRadar = trackBlock('groep_radar');
+      const groepDynSection = displaySections?.find(s =>
+        s.title?.toLowerCase().includes('groep dynamiek') ||
+        s.title?.toLowerCase().includes('neurobiologische interpretatie')
+      );
+      if (groepDynSection) {
+        pdf.addPage();
+        paintBg();
+        y = margin;
+        markPage();
+        sectionHeading('Groep Dynamiek — Neurobiologische Interpretatie', cyan);
+        writePdfMarkdown(groepDynSection.content, margin + 2, contentW - 4);
+        y += 3;
+        hr();
       }
       endGroepRadar();
 
@@ -2296,6 +2370,22 @@ const AssessmentResultsModal = ({
           !/persoonlijkheidsrapport.*vergelijk/i.test(s.title) &&
           !/^1[23]\s*[ab][\s.:]/i.test(s.title || '') &&
           !/professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '') &&
+          // OCEAN per-trait sections render on the OCEAN page — drop from prose catch-all.
+          !/^\**\s*trait\s+[ocean]\b/i.test(cleanTitle(s.title || '')) &&
+          // Het OCEAN-profiel narrative / OCEAN-gereedschap subtitle / OCEAN intro — these are
+          // render-side titles, not narrative sections. When an upload is present the AI may also
+          // emit an OCEAN profile introduction; never render it (the OCEAN page is render-driven).
+          !/het\s+ocean.?profiel|ocean.?profiel|ocean.?gereedschap/i.test(cleanTitle(s.title || '')) &&
+          // The machine block (PROFIEL DATA VOOR AI VERWERKING) is the model's, but the renderer
+          // draws its own authoritative `data` page — drop the AI's copy to avoid a duplicate.
+          !/profiel\s*data|ai[\s-]*verwerking/i.test(cleanTitle(s.title || '')) &&
+          // "Radar-lezing": never render — the radar chart covers it.
+          !/radar.?lezing/i.test(s.title || '') &&
+          // Stray AI-emitted sections that aren't part of the page-map — never render.
+          !/(samenvattende\s+)?kernlezing|centrale\s+spanning/i.test(s.title || '') &&
+          // v3 leftover the model sometimes reverts to (Aarde/Water/Lucht/Vuur/Ether) — not a
+          // v4.1 section; §5.8 is Alchemie/Schakelbord/Ontologie. Never render.
+          !/geometrische\s+element|vijf\s+(geometrische\s+)?element|\bvijf\s+element/i.test(cleanTitle(s.title || '')) &&
           // Drop empty/ghost sections (a header the AI emitted with no real body) so they
           // never render a content-less page — e.g. a stray "Profiel Elementen" umbrella.
           (s.content || '').replace(/[\s*#>_~`+.-]/g, '').length > 0
@@ -2303,16 +2393,14 @@ const AssessmentResultsModal = ({
         if (mainSections.length > 0) {
           const getPdfSectionColor = (title) => {
             const t = cleanTitle(title || '').toLowerCase();
-            if (t.includes('identiteit') || t.includes('waarom')) return green;
+            if (t.includes('identiteit') || t.includes('verklaring') || t.includes('waarom')) return green;
             if (t.includes('essentie') || t.includes('schaduw')) return purple;
             if (t.includes('vermenigvuldiging') || t.includes('prompt') || t.includes('agent')) return orange;
             if (t.includes('blindspot')) return red;
-            if (t.includes('cognitieve driehoek') || t.includes('aangeleerde lens')) return amber;
-            if (t.includes('visuele')) return purple;
+            if (t.startsWith('trait ') || /\bvorm\b/.test(t) || /hardware|onder\s+druk/.test(t) || /\bovergang\b/.test(t) || /morfologie/.test(t)) return cyan;
+            if (/\b(reflectie|motivatie|beweging)\b/.test(t)) return purple;
             if (t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi')) return amber;
-            if (t.includes('groep dynamiek') || t.includes('neurobiologisch')) return cyan;
             if (t.includes('resonantie')) return green;
-            if (t.includes('introductie')) return white;
             return green; // fallback
           };
 
@@ -2327,43 +2415,70 @@ const AssessmentResultsModal = ({
             s.isAgentPrompt || /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie/i.test(s.title)
           );
 
-          // ── Group sections by page ──
-          // group1a = Identiteit / Waarom / Essentie / Vermenigvuldiging (one page)
-          // group1b = Schaduw + images + Blindspot + Visuele Analyse (dedicated page, always together)
-          // group2  = Alchemie / Schaakbord / Evolutie / Ontologie (one page)
+          // ── Group sections by page (Master Prompt v4.1 §5, titles = parser-tags) ──
+          // p1 identity+verklaring, p2 essence+vermenigvuldiging, p3 schaduw+blindspot,
+          // p5 morfologie (vorm/hardware/overgang), p6 stille (reflectie/motivatie/beweging),
+          // p7 resonantie, p8 alchemie/schakelbord/ontologie.
           const isGroup1a = (title) => {
             const t = cleanTitle(title || '').toLowerCase();
-            return t.includes('identiteit') || t.includes('waarom') || t.includes('essentie') || t.includes('vermenigvuldiging');
+            return t.includes('identiteit') || t.includes('verklaring') || t.includes('waarom') ||
+                   t.includes('essentie') || t.includes('vermenigvuldiging');
           };
           const isGroup1b = (title) => {
             const t = cleanTitle(title || '').toLowerCase();
-            return t.includes('schaduw') || t.includes('blindspot') || t.includes('visuele');
+            return t.includes('schaduw') || t.includes('blindspot');
           };
           const isGroup2 = (title) => {
             const t = cleanTitle(title || '').toLowerCase();
             return t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi');
           };
+          // Tolerant morphology matcher — the model doesn't always emit the verbatim tags.
+          // Matches De Vorm / De Hardware onder Druk / De Overgang…, plus a single
+          // "Plastische Morfologie" fallback. None of the other section titles contain these.
+          const isMorph = (title) => {
+            const t = cleanTitle(title || '').toLowerCase();
+            return /\bvorm\b/.test(t) || /hardware|onder\s+druk/.test(t) ||
+                   /\bovergang\b/.test(t) || /morfologie/.test(t);
+          };
+          const isStille = (title) => {
+            const t = cleanTitle(title || '').toLowerCase();
+            // Reflectie / Motivatie / Beweging — match the word anywhere so "De Reflectie",
+            // "Reflectie:" etc. all hit (NOT anchored to the start). No other v4.1 title
+            // contains these words; "De Overgang naar de Stille Stem" is a morphology read.
+            return /\b(reflectie|motivatie|beweging)\b/.test(t);
+          };
           const group1aSections = regularSections.filter(s => isGroup1a(s.title));
           const group1bSections = regularSections.filter(s => isGroup1b(s.title));
           const group2Sections  = regularSections.filter(s => isGroup2(s.title));
-          const otherSections   = regularSections.filter(s => !isGroup1a(s.title) && !isGroup1b(s.title) && !isGroup2(s.title));
-
-          // Render ungrouped sections on a dedicated page (only if there are any)
-          const endOthers = trackBlock('others');
+          const morphSections   = regularSections.filter(s => isMorph(s.title));
+          const stilleSections  = regularSections.filter(s => isStille(s.title));
+          // STRICT ALLOWLIST: every real v4.3 narrative section is claimed by a specific page
+          // collector (identity/essence/shadow/OCEAN-traits/morph/stille/resonance/yellow/ai-prompt).
+          // Anything left over is NOT part of the spec — a fabricated/echoed section — so we DROP it
+          // entirely rather than render it on a stray "others" page.
+          const otherSections = regularSections.filter(s =>
+            !isGroup1a(s.title) && !isGroup1b(s.title) && !isGroup2(s.title) &&
+            !isMorph(s.title) && !isStille(s.title));
           if (otherSections.length > 0) {
-            await justifiedPage(async (gap) => {
-            otherSections.forEach((section, i) => {
-              renderSection(section.title, section.content, getPdfSectionColor(section.title));
-              if (i < otherSections.length - 1) { hr(); gap(); }
-            });
-            });
+            console.warn('[GFL] dropped non-spec sections (strict allowlist):', otherSections.map(s => s.title));
           }
-          endOthers();
 
-          // ── Page 13a: Identiteit / Waarom / Essentie / Vermenigvuldiging ──
+          // ── Page 1: Identiteit + Verklaring   Page 2: Essentie + Vermenigvuldiging ──
+          // Ordered so the reader sees Identiteit before Verklaring, Essentie before Vermenigvuldiging.
+          const g1aTitle = (s) => cleanTitle(s.title || '').toLowerCase();
+          const identityPage = group1aSections
+            .filter(s => g1aTitle(s).includes('identiteit') || g1aTitle(s).includes('verklaring') || g1aTitle(s).includes('waarom'))
+            .sort((a, b) => (g1aTitle(a).includes('identiteit') ? 0 : 1) - (g1aTitle(b).includes('identiteit') ? 0 : 1));
+          const essencePage = group1aSections
+            .filter(s => g1aTitle(s).includes('essentie') || g1aTitle(s).includes('vermenigvuldiging'))
+            .sort((a, b) => (g1aTitle(a).includes('essentie') ? 0 : 1) - (g1aTitle(b).includes('essentie') ? 0 : 1));
+
           const endGroup1a = trackBlock('group1a');
-          if (group1aSections.length > 0) {
+          // ── Page 7: Identiteit + Waarom (with the fixed Meta-Disclaimer on top) ──
+          if (identityPage.length > 0) {
             await justifiedPage(async (gap) => {
+            const savedNPB = noPageBreak;
+            noPageBreak = true; // no bottom padding — let the text flow down to the page edge
 
             // ── Fixed Meta-Disclaimer (purple blockquote) before section 1 ──
             ensureSpace(20);
@@ -2384,120 +2499,228 @@ const AssessmentResultsModal = ({
               pdf.text(line, disclaimerX + 5, dlY);
               dlY += 3.5;
             }
-            y += dlH + 4;
+            y += dlH + 8; // doubled padding between the meta-disclaimer and the first section
             gap();
 
-            group1aSections.forEach((section, i) => {
+            identityPage.forEach((section, i) => {
               renderSection(section.title, section.content, getPdfSectionColor(section.title));
-              if (i < group1aSections.length - 1) { hr(); gap(); }
+              if (i < identityPage.length - 1) { hr(); gap(); }
+            });
+            noPageBreak = savedNPB;
+            });
+          }
+          // ── Page 2: Essentie + Vermenigvuldiging (intro + 3 labeled aspects each) ──
+          if (essencePage.length > 0) {
+            await justifiedPage(async (gap) => {
+            essencePage.forEach((section, i) => {
+              renderSection(section.title, injectAspectSubtitles(section.content, language), getPdfSectionColor(section.title));
+              if (i < essencePage.length - 1) { hr(); gap(); }
             });
             });
           }
           endGroup1a();
 
-          // ── Page 13b: Schaduw + images + Blindspot + Visuele Analyse (always together) ──
+          // ── Page 3: Schaduw + Blindspot, then the TNM wheel in the leftover space ──
+          // Master Prompt v4.1 §5.3: radar = visual only, no caption. The wheel is bottom-
+          // anchored and drawn at an absolute position (no ensureSpace) so it sits in the
+          // space below the text and may bleed into the bottom spacer — never page-breaks.
           const endGroup1b = trackBlock('group1b');
-          if (group1bSections.length > 0) {
+          // Order: Schaduw before Blindspot.
+          const shadowBlindspotSections = group1bSections.sort((a, b) =>
+            (cleanTitle(a.title || '').toLowerCase().includes('schaduw') ? 0 : 1) -
+            (cleanTitle(b.title || '').toLowerCase().includes('schaduw') ? 0 : 1));
+          const radarEl = pdfRadarRef.current || radarRef.current;
+          if (group1bSections.length > 0 || radarEl) {
             await justifiedPage(async (gap) => {
-            for (let gi = 0; gi < group1bSections.length; gi++) {
-              const section = group1bSections[gi];
-              const sTitle = cleanTitle(section.title || '').toLowerCase();
-              renderSection(section.title, section.content, getPdfSectionColor(section.title));
-
-              // After De Schaduw content: insert shadow + blindspot archetype images side-by-side
-              if (sTitle.includes('schaduw') && result.shadowPartner && result.blindspotPartner) {
-                gap();
-                try {
-                  const shadowImgSrc = getArchetypeImage(
-                    result.shadowPartner,
-                    ARCHETYPE_TO_GROUP[result.shadowPartner]
-                  );
-                  const blindImgSrc = getArchetypeImage(
-                    result.blindspotPartner,
-                    ARCHETYPE_TO_GROUP[result.blindspotPartner]
-                  );
-                  if (shadowImgSrc && blindImgSrc) {
-                    const [shadowEl, blindEl] = await Promise.all([
-                      new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = shadowImgSrc; }),
-                      new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = blindImgSrc; }),
-                    ]);
-                    const imgGap = 6;
-                    const halfW = (contentW - imgGap) / 2;
-                    const availH = H - margin - y - 6;
-                    const maxImgH = Math.min(availH, 65) * 0.9775 * 0.85;
-
-                    // Helper: circular-clip an image onto a canvas and return data URL
-                    const circleClip = (imgEl, size) => {
-                      const c = document.createElement('canvas');
-                      c.width = size; c.height = size;
-                      const cx = c.getContext('2d');
-                      cx.beginPath();
-                      cx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-                      cx.closePath();
-                      cx.clip();
-                      cx.drawImage(imgEl, 0, 0, size, size);
-                      return c.toDataURL('image/png');
-                    };
-
-                    // Shadow archetype image (left) — circular with red border
-                    const shadowAR = shadowEl.naturalHeight / shadowEl.naturalWidth;
-                    const shadowH = Math.min(maxImgH, halfW * shadowAR);
-                    const shadowW = shadowH / shadowAR;
-                    const sDim = Math.min(shadowW, shadowH);
-                    const sData = circleClip(shadowEl, 600);
-                    const sX = margin + (halfW - sDim) / 2;
-                    pdf.addImage(sData, 'PNG', sX, y, sDim, sDim);
-                    pdf.setDrawColor(...red);
-                    pdf.setLineWidth(1);
-                    pdf.circle(sX + sDim / 2, y + sDim / 2, sDim / 2, 'S');
-                    pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...red);
-                    pdf.text(result.shadowName || '', margin + halfW / 2, y + sDim + 3.5, { align: 'center' });
-
-                    // Blindspot archetype image (right) — circular with red border
-                    const blindAR = blindEl.naturalHeight / blindEl.naturalWidth;
-                    const blindH = Math.min(maxImgH, halfW * blindAR);
-                    const blindW = blindH / blindAR;
-                    const bDim = Math.min(blindW, blindH);
-                    const bData = circleClip(blindEl, 600);
-                    const rightX = margin + halfW + imgGap;
-                    const bX = rightX + (halfW - bDim) / 2;
-                    pdf.addImage(bData, 'PNG', bX, y, bDim, bDim);
-                    pdf.setDrawColor(...red);
-                    pdf.setLineWidth(1);
-                    pdf.circle(bX + bDim / 2, y + bDim / 2, bDim / 2, 'S');
-                    pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...red);
-                    pdf.text(result.blindspotName || '', rightX + halfW / 2, y + bDim + 3.5, { align: 'center' });
-
-                    y += Math.max(sDim, bDim) + 8;
-                  }
-                } catch {
-                  y += 4;
-                }
-                gap();
-              }
-
-              // Skip the divider after the schaduw section (images already provide visual separation)
-              if (gi < group1bSections.length - 1 && !sTitle.includes('schaduw')) { hr(); gap(); }
+            // Radar chart (Visuele Analyse) ABOVE the content — height-capped, no caption (§5.3).
+            if (radarEl) {
+              try {
+                const canvas = await html2canvas(radarEl, {
+                  backgroundColor: '#060612', scale: 3, useCORS: true, logging: false,
+                });
+                const img = canvas.toDataURL('image/png');
+                const maxH = 76.5;                             // 15% smaller; leaves room for 2 sections + TNM wheel
+                let drawH = (canvas.height / canvas.width) * contentW;
+                let drawW = contentW;
+                if (drawH > maxH) { drawH = maxH; drawW = (canvas.width / canvas.height) * drawH; }
+                const offsetX = margin + (contentW - drawW) / 2;
+                pdf.setDrawColor(...green);
+                pdf.setLineWidth(0.5);
+                pdf.rect(offsetX, y, drawW, drawH);
+                pdf.addImage(img, 'PNG', offsetX, y, drawW, drawH);
+                y += drawH + 8;
+              } catch { y += 4; }
             }
+            // Schaduw + Blindspot below the radar
+            for (let gi = 0; gi < shadowBlindspotSections.length; gi++) {
+              const section = shadowBlindspotSections[gi];
+              renderSection(section.title, section.content, getPdfSectionColor(section.title));
+              if (gi < shadowBlindspotSections.length - 1) { hr(); gap(); }
+            }
+            // ── TNM WHEEL — the static model image (same asset/size as page 5) placed in the
+            //    leftover space below the text. Static image → no capture/clip risk. ──
+            try {
+              const tnmEl = await new Promise((res, rej) => {
+                const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = tnmWheelImg;
+              });
+              const availH = (H - 6) - (y + 1);                  // room down to ~6mm from page edge
+              if (availH > 18) {
+                const FIXED_TNM_H = 50;                           // fixed height (predictable size)
+                const finalH = Math.min(FIXED_TNM_H, availH);    // fixed, only shrinks if the page is full (never clips)
+                const finalW = (tnmEl.naturalWidth / tnmEl.naturalHeight) * finalH;
+                const offsetX = margin + (contentW - finalW) / 2;
+                y += 1;                                          // tighter gap under De Blindspot (~70% of before)
+                pdf.addImage(tnmWheelImg, 'PNG', offsetX, y, finalW, finalH);
+                y += finalH + 4;
+              }
+            } catch { /* image load failed — skip */ }
             });
           }
           endGroup1b();
 
-          // ── Page 14: Alchemie / Neurale Schaakbord / Ontologie ──
-          const endGroup2 = trackBlock('group2');
-          if (group2Sections.length > 0) {
-            pdf.addPage(); paintBg(); markPage();
-            y = margin;
-            group2Sections.forEach((section, i) => {
-              renderSection(section.title, section.content, getPdfSectionColor(section.title));
-              if (i < group2Sections.length - 1) { hr(); }
+          // ── Page 6: De Stille Stem — Reflectie + Motivatie + Beweging ──
+          const endStille = trackBlock('nb_stille');
+          const stilleOrder = ['reflectie', 'motivatie', 'beweging'];
+          const stillePage = stilleSections.sort((a, b) => {
+            const ix = (s) => stilleOrder.findIndex(k => cleanTitle(s.title || '').toLowerCase().includes(k));
+            return ix(a) - ix(b);
+          });
+          if (stillePage.length > 0) {
+            await justifiedPage(async (gap) => {
+            const savedNPB = noPageBreak;
+            noPageBreak = true; // no bottom padding — let the text flow down to the page edge
+            // No page title — each read gets its own "De Stille Stem — <read>" header instead.
+            stillePage.forEach((section, i) => {
+              renderSection('De Stille Stem — ' + cleanTitle(section.title), section.content, purple);
+              if (i < stillePage.length - 1) { hr(); gap(); }
+            });
+            noPageBreak = savedNPB;
             });
           }
-          endGroup2();
+          endStille();
 
-          // AI Prompt: dedicated final page — fixed heading, KERN DISCLAIMER body first (no heading), then rest
+          // ── Resonantie page: Main + Support archetype images, then Professionele &
+          //    Creatieve Resonantie (pulled directly from displaySections). ──
+          const resonanceSections = (displaySections || []).filter(s =>
+            /professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '')
+          ).sort((a, b) =>
+            (/professionele/i.test(a.title) ? 0 : 1) - (/professionele/i.test(b.title) ? 0 : 1));
+          const endResonance = trackBlock('nb_resonance');
+          if (resonanceSections.length > 0 || (result.mainArchetype && result.secondaryArchetype)) {
+            await justifiedPage(async (gap) => {
+            // Master Prompt v4.1 §5.7: the two archetype images (NO header, name under each) sit
+            // ABOVE the text, sized to fill the space the text won't use. The text height is
+            // measured EXACTLY by rendering it on a throwaway page first (the real render, not a
+            // word estimate), so the fit is reliable regardless of the model's length.
+            let resoTextH = 0;
+            if (resonanceSections.length > 0) {
+              const savedY = y, savedNPB = noPageBreak, savedPWC = new Set(pagesWithContent);
+              pdf.addPage(); paintBg();
+              const tmpPg = pdf.internal.getNumberOfPages();
+              y = margin; noPageBreak = true;
+              resonanceSections.forEach((section, i) => {
+                renderSection(section.title, section.content, green);
+                if (i < resonanceSections.length - 1) hr();
+              });
+              resoTextH = y - margin;
+              noPageBreak = savedNPB;
+              pdf.deletePage(tmpPg);
+              pagesWithContent.clear(); savedPWC.forEach(p => pagesWithContent.add(p));
+              y = savedY;
+            }
+
+            // Images at the top, filling the space above the text.
+            if (result.mainArchetype && (result.secondaryArchetype || result._secondaryKey)) {
+              try {
+                const supportKey = result.secondaryArchetype || result._secondaryKey;
+                const mainImgSrc = getArchetypeImage(result.mainArchetype, ARCHETYPE_TO_GROUP[(result.mainArchetype || '').toUpperCase()] || result.group);
+                const supImgSrc = getArchetypeImage(supportKey, ARCHETYPE_TO_GROUP[(supportKey || '').toUpperCase()] || result.supportGroup);
+                if (mainImgSrc && supImgSrc) {
+                  const [mainEl, supEl] = await Promise.all([
+                    new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = mainImgSrc; }),
+                    new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = supImgSrc; }),
+                  ]);
+                  const circleClip = (imgEl, size) => {
+                    const c = document.createElement('canvas');
+                    c.width = size; c.height = size;
+                    const cx = c.getContext('2d');
+                    cx.beginPath(); cx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2); cx.closePath(); cx.clip();
+                    cx.drawImage(imgEl, 0, 0, size, size);
+                    return c.toDataURL('image/png');
+                  };
+                  const imgGap = 6;
+                  const halfW = (contentW - imgGap) / 2;
+                  const areaTop = y;
+                  // Space above the text (text height reserved below); cap to half-width so the two
+                  // circles stay side-by-side; leave ~6mm under for the name labels.
+                  const availableAbove = (H - margin) - areaTop - resoTextH - 8;
+                  const dim = Math.min(halfW, availableAbove - 6);
+                  if (dim >= 28) {
+                    // Main (left, purple border)
+                    const mX = margin + (halfW - dim) / 2;
+                    pdf.addImage(circleClip(mainEl, 600), 'PNG', mX, areaTop, dim, dim);
+                    pdf.setDrawColor(...purple); pdf.setLineWidth(1);
+                    pdf.circle(mX + dim / 2, areaTop + dim / 2, dim / 2, 'S');
+                    pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...purple);
+                    pdf.text(result.mainName || '', margin + halfW / 2, areaTop + dim + 4, { align: 'center' });
+                    // Support (right, orange border)
+                    const rX = margin + halfW + imgGap;
+                    const sX = rX + (halfW - dim) / 2;
+                    pdf.addImage(circleClip(supEl, 600), 'PNG', sX, areaTop, dim, dim);
+                    pdf.setDrawColor(...orange); pdf.setLineWidth(1);
+                    pdf.circle(sX + dim / 2, areaTop + dim / 2, dim / 2, 'S');
+                    pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...orange);
+                    pdf.text(result.secondaryName || '', rX + halfW / 2, areaTop + dim + 4, { align: 'center' });
+                    y = areaTop + dim + 9; // text starts below the images + names
+                  }
+                }
+              } catch { /* image load failed — skip */ }
+            }
+
+            // Text below the images.
+            resonanceSections.forEach((section, i) => {
+              renderSection(section.title, section.content, green);
+              if (i < resonanceSections.length - 1) { hr(); gap(); }
+            });
+            });
+          }
+          endResonance();
+
+          // ── Alchemie / Neurale Schakelbord / Ontologie now render on the Dual-Core page
+          //    (Master Prompt v4.1 §5.8); group2Sections kept only to keep them out of `others`.
+          void group2Sections;
+
+          // Render-side fallback AI prompt — the model sometimes ends early (on the OCEAN
+          // disclaimer) and never writes its agent-prompt section. This deterministic prompt,
+          // built from the archetype configuration, is used whenever the model omits its own.
+          const buildFallbackAgentPrompt = () => {
+            const mn = result.mainName || result.overallArchetype || 'mijn Kern';
+            const sn = result.secondaryName || result.supportArchetype || 'mijn Support';
+            const shn = result.shadowName || result.shadowArchetype || 'mijn Schaduw';
+            const bn = result.blindspotName || result.blindspotArchetype || 'mijn Blindspot';
+            const en = result.extendedName || '';
+            return [
+              `Je bent mijn persoonlijke reflectie-sparringspartner, afgestemd op mijn Garden For Life Deltawerken-configuratie${en ? ` (${en})` : ''}.`,
+              '',
+              '**Mijn configuratie**',
+              `- Kern (Main): ${mn}`,
+              `- Support: ${sn}`,
+              `- Schaduw (180° tegenpool): ${shn}`,
+              `- Blindspot (Rode Lijn): ${bn}`,
+              '',
+              '**Toon & aanpak**',
+              `Spreek mij aan vanuit mijn Kern (${mn}) en ondersteun met de kwaliteiten van mijn Support (${sn}). Daag mijn Schaduw (${shn}) en Blindspot (${bn}) respectvol uit zodra ik in oude patronen verval. Wees direct maar warm; spiegel mij, stuur mij niet.`,
+              '',
+              '**Gebruik**',
+              'Voeg het volledige PDF-rapport toe als context voor de scherpste sparringspartner. Stel telkens één gerichte vraag die mij een stap verder brengt in mijn vernieuwde landschap.',
+            ].join('\n');
+          };
+
+          // AI Prompt: dedicated final page — ALWAYS rendered (model prompt or the fallback
+          // above), so the footer + closing letter never disappear when the model omits it.
           const endAiPrompt = trackBlock('ai_prompt');
-          if (disclaimerSection || agentSection) {
+          void disclaimerSection;
+          {
             pdf.addPage();
             paintBg(); markPage();
             y = margin;
@@ -2510,6 +2733,10 @@ const AssessmentResultsModal = ({
             // Agent prompt: strip intro text + first ## heading (KERN DISCLAIMER), show its body, then rest with headings
             if (agentSection) {
               let promptContent = (agentSection.content || '').trim();
+              // If the model appended its machine block after the prompt (plain text, no ##),
+              // cut it off here — the render-side `data` page is the authoritative copy.
+              promptContent = promptContent.replace(/\n[^\n]*PROFIEL\s*DATA\s*VOOR\s*AI[\s\S]*$/i, '')
+                                           .replace(/\n\s*--\s*IDENTITEIT\s*--[\s\S]*$/i, '').trim();
               // Strip markdown code fences the AI may wrap the prompt in
               promptContent = promptContent.replace(/^```[^\n]*\n?/gm, '').replace(/^~~~[^\n]*\n?/gm, '');
               // Remove everything before the first ## sub-heading
@@ -2522,6 +2749,9 @@ const AssessmentResultsModal = ({
               // Collapse 3+ consecutive blank lines down to one blank line
               promptContent = promptContent.replace(/\n{3,}/g, '\n\n');
               writePdfMarkdown(promptContent, margin + 2, contentW - 4);
+            } else {
+              // Model omitted its prompt section — render the deterministic fallback instead.
+              writePdfMarkdown(buildFallbackAgentPrompt(), margin + 2, contentW - 4);
             }
           }
 
@@ -2706,6 +2936,19 @@ const AssessmentResultsModal = ({
         });
         mGap();
 
+        // Master Prompt v4.1 §5.10: 5-mandje decompositie per archetype.
+        mBold(dash('5-MANDJE DECOMPOSITIE'), green);
+        [
+          ['Judge','JUDGE'],['Lover','LOVER'],['Caregiver','CAREGIVER'],
+          ['Innocent','INNOCENT'],['Explorer','EXPLORER'],['Outlaw','OUTLAW'],
+          ['Trickster','TRICKSTER'],['Sage','SAGE'],['Artist','ARTIST'],
+          ['Magician','MAGICIAN'],['Hero','HERO'],['Ruler','RULER'],
+        ].forEach(([name, key]) => {
+          const d = dm[key] || {};
+          mLine(`${(name + ':').padEnd(12)} nat_core ${d.nature_core || 0} | green ${d.green_hw || 0} | cult_core ${d.culture_core || 0} | blue ${d.blue_fb || 0} | yellow ${d.yellow_cog || 0} | purple ${d.purple_shadow || 0}`);
+        });
+        mGap();
+
         mBold(dash('NATURE / CULTURE VERDELING PER GROEP'), green);
         ['RULING','RELATIONAL','SEEKER','CHAOS','ABSTRACT','AGENCY'].forEach(gk => {
           const sg = sgm[gk] || {};
@@ -2721,25 +2964,17 @@ const AssessmentResultsModal = ({
         mLine(`Totaal Deltawerken Datapunten: ${result.totalScore || 0} / 792`);
         mGap();
 
-        mBold(dash('OCEAN PROFIEL (MODEL-AFGELEID)'), green);
-        mLine(`Openheid:       ${Math.round(oc.O || 0)}/100`);
-        mLine(`Ordelijkheid:   ${Math.round(oc.C || 0)}/100`);
-        mLine(`Extraversie:    ${Math.round(oc.E || 0)}/100`);
-        mLine(`Meegaandheid:   ${Math.round(oc.A || 0)}/100`);
-        mLine(`Neuroticisme:   ${Math.round(oc.N || 0)}/100`);
-        mGap();
-
-        mBold(dash('OCEAN PROFIEL (EXTERN GEUPLOAD)'), green);
+        // Master Prompt v4.1 §5.10 / D-10: model-derived OCEAN scalars are NEVER emitted.
+        // §5.10: OCEAN PROFIEL (EXTERN GEUPLOAD) — ALLEEN bij upload; omit the whole block otherwise.
         if (uploadedOceanScores) {
+          mBold(dash('OCEAN PROFIEL (EXTERN GEUPLOAD)'), green);
           mLine(`Openheid:       ${Math.round(uploadedOceanScores.O || 0)}/100`);
           mLine(`Ordelijkheid:   ${Math.round(uploadedOceanScores.C || 0)}/100`);
           mLine(`Extraversie:    ${Math.round(uploadedOceanScores.E || 0)}/100`);
           mLine(`Meegaandheid:   ${Math.round(uploadedOceanScores.A || 0)}/100`);
           mLine(`Neuroticisme:   ${Math.round(uploadedOceanScores.N || 0)}/100`);
-        } else {
-          mLine('Geen extern OCEAN-profiel aangeleverd.', dimWhite);
+          mGap();
         }
-        mGap();
 
         mBold(dash('COGNITIEVE DRIEHOEK (YELLOW)'), green);
         if (cogTri) {
@@ -2768,16 +3003,7 @@ const AssessmentResultsModal = ({
         mLine(`Levensles: "${result.levensles || 'N/A'}"`);
         mGap();
 
-        mBold(dash('MAIN ARCHETYPE DIEPTE'), green);
-        mLine(`Gift (Neurale Superkracht): ${result.mainPositive || cp.workplaceSuperpower || 'N/A'}`);
-        mLine(`Curse (Paradoxale Schaduw): ${result.mainShadowTrait || 'N/A'}`);
-        mLine(`Superkracht Werkvloer: ${cp.workplaceSuperpower || 'N/A'}`);
-        mLine(`Conflictstijl: ${cp.conflictStyle || 'N/A'}`);
-        mLine(`Relatiepatroon: ${cp.relationshipPattern || 'N/A'}`);
-        mLine(`Neuroticisme Trigger: ${cp.neuroticismTrigger || eo.neuroticismTrigger || 'N/A'}`);
-        mLine(`Individuatiepad: ${cp.individuationPath || 'N/A'}`);
-        mGap();
-
+        // Master Prompt v4.1 §5.10: dead v3 fields removed (MAIN ARCHETYPE DIEPTE block).
         mBold(dash('SHADOW INTEGRATIE'), green);
         mLine(`Shadow Archetype: ${result.shadowName || 'N/A'}`);
         mLine(`Integration Path: ${result.shadowDescription || 'Zie AI analyse sectie'}`);
@@ -2803,17 +3029,20 @@ const AssessmentResultsModal = ({
       // groep_radar (web diagram) → dual_core → group2 (yellow) →
       // ocean_comp (comparison) → ocean_core (OCEAN score) → ai_prompt → data
       {
+        // Master Prompt v4.1 §5 page order (render-side visuals added in-block).
         const desiredBlockOrder = [
-          'others',       // ungrouped AI sections (if any)
-          'group1a',      // Identity page
-          'group1b',      // Archetype images page
-          'groep_radar',  // Groep Dynamiek + Radar
-          'dual_core',    // Dual-Core + Cognitieve Driehoek
-          'group2',       // Alchemie / Schakelbord / Ontologie
-          'ocean_comp',   // OCEAN comparison
-          'ocean_core',   // OCEAN + Core Profile + 5 Elementen
-          'ai_prompt',    // AI Prompt + footer (last content page)
-          'data',         // Profiel data for AI
+          'group1a',       // p1+p2: Identiteit/Verklaring + Essentie/Vermenigvuldiging
+          'group1b',       // p3: Radar (no caption) + Schaduw + Blindspot
+          'ocean_core',    // p4: OCEAN page 1 (title + table/traits or tendency)
+          'ocean_comp',    // p4: OCEAN page 2 (Trait E/A/N, upload only)
+          'nb_morphology', // p5: D-curve chart + Vorm/Hardware/Overgang
+          'nb_stille',     // p6: De Stille Stem (Reflectie/Motivatie/Beweging)
+          'nb_resonance',  // p7: archetype images + Professionele/Creatieve Resonantie
+          'dual_core',     // p8: Dual-Core chart + Alchemie/Schakelbord/Ontologie
+          'others',        // any remaining ungrouped AI sections (safety net)
+          'groep_radar',   // (legacy) usually empty in v4.1
+          'ai_prompt',     // p9: AI Prompt + footer + closing
+          'data',          // machine block: Profiel data voor AI-bijlage
         ];
         const blockMap = {};
         blockRanges.forEach(b => { blockMap[b.name] = b; });
@@ -2870,8 +3099,8 @@ const AssessmentResultsModal = ({
       setIsGeneratingPdf(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, displaySections, uploadedFiles]);
-  
+  }, [result, displaySections, uploadedFiles, v4Data, language, cRuntime]);
+
   // Stop wheel events from propagating to the pyramid scroll handler
   const handleWheelCapture = useCallback((e) => {
     e.stopPropagation();
@@ -2981,8 +3210,16 @@ const AssessmentResultsModal = ({
               margin: 0,
               letterSpacing: '0.05em',
             }}>
-              ca. 6 min
+              ca. 9 min
             </p>
+
+            {/* Persistent preload: load + decode the archetype portrait during the wait so it's
+                already cached when the result card paints (otherwise the card shows first and the
+                image pops in a moment later). Hidden, off the layout. */}
+            {result?.imageUrl && (
+              <img src={result.imageUrl} alt="" aria-hidden="true" decoding="async"
+                style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }} />
+            )}
 
             {/* Error state: AI failed — show continue button */}
             {aiFailed && (
@@ -3157,9 +3394,12 @@ const AssessmentResultsModal = ({
                       background: '#000',
                       position: 'relative',
                     }}>
-                      <img 
-                        src={result.imageUrl} 
+                      <img
+                        src={result.imageUrl}
                         alt={result.name}
+                        loading="eager"
+                        fetchpriority="high"
+                        decoding="async"
                         style={{
                           width: '100%',
                           height: '100%',
@@ -3886,6 +4126,7 @@ const AssessmentResultsModal = ({
                   padding: rs.sectionPad,
                   borderRadius: '0.75rem',
                   borderLeft: '3px solid rgba(168, 85, 247, 0.5)',
+                  borderRight: '3px solid rgba(168, 85, 247, 0.5)',
                   marginBottom: '0.5rem',
                 }}>
                   <p style={{
@@ -3901,19 +4142,50 @@ const AssessmentResultsModal = ({
                   </p>
                 </div>
 
-                {/* ── AI Introductie ── */}
-                {aiIntroSection.map((s, i) => renderAiSectionCard(s, i))}
+                {/* ── TEASER CARD: short summary + best findings + a nudge to download the full
+                       PDF. Everything else lives in the PDF only. ── */}
 
-                {/* ── AI group1a: Identiteit / Waarom / Essentie / Vermenigvuldiging ── */}
-                {aiGroup1a.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length))}
+                {/* De Identiteit + De Verklaring — the intro reads (Verklaring gives the graphs/
+                    charts their context, so it stays on the teaser). Identiteit first. */}
+                {cardIdentity
+                  .filter((s) => {
+                    const t = cleanTitle(s.title || '').toLowerCase();
+                    return t.includes('identiteit') || t.includes('verklaring');
+                  })
+                  .sort((a, b) => (cleanTitle(a.title || '').toLowerCase().includes('identiteit') ? 0 : 1) -
+                                  (cleanTitle(b.title || '').toLowerCase().includes('identiteit') ? 0 : 1))
+                  .map((s, i) => renderAiSectionCard(s, 1000 + i))}
 
-                {/* ── AI group1b: Schaduw / Blindspot / Visuele ── */}
-                {aiGroup1b.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length + aiGroup1a.length))}
+                {/* Key-findings strip */}
+                {cardKeyFindings && (
+                  <div style={{
+                    width: '100%',
+                    background: 'rgba(0,0,0,0.45)',
+                    border: '1px solid rgba(168,85,247,0.25)',
+                    borderRadius: '0.75rem',
+                    padding: '0.9rem 1rem',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center',
+                    gap: '0.6rem 1.5rem',
+                    fontFamily: "'Figtree', sans-serif",
+                  }}>
+                    {[
+                      { label: 'Kern', value: cardKeyFindings.main, color: '#1d9904' },
+                      { label: 'Support', value: cardKeyFindings.support, color: '#f97316' },
+                      { label: 'Schaduw', value: cardKeyFindings.shadow, color: '#a855f7' },
+                      { label: 'Blindspot', value: cardKeyFindings.blindspot, color: '#ef4444' },
+                      ...(cardKeyFindings.polBand ? [{ label: 'Polarisatie', value: `${cardKeyFindings.polGap}% — ${cardKeyFindings.polBand}`, color: '#fbbf24' }] : []),
+                    ].filter((f) => f.value).map((f) => (
+                      <div key={f.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minWidth: '8rem' }}>
+                        <span style={{ fontSize: '0.62rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(156,163,175,0.8)' }}>{f.label}</span>
+                        <span style={{ fontSize: '0.92rem', fontWeight: 700, color: f.color }}>{f.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                {/* ── AI Groep Dynamiek ── */}
-                {aiGroepDyn.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length + aiGroup1a.length + aiGroup1b.length))}
-
-                {/* ── Radar Chart ── */}
+                {/* ── Radar Chart (TNM wheel) ── */}
                 <div style={{
                   position: 'relative',
                   background: 'rgba(0, 0, 0, 0.6)',
@@ -3941,42 +4213,67 @@ const AssessmentResultsModal = ({
                   </div>
                 </div>
 
-                {/* ── Subgroup Dynamics (Dual-Core) ── */}
-                <div style={{
-                  width: '100%',
-                  background: 'transparent',
-                  border: '1px solid rgba(168, 85, 247, 0.1)',
-                  borderRadius: '0.75rem',
-                  padding: rs.sectionPad,
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    padding: '0.5rem',
-                    opacity: 0.15,
-                  }}>
-                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                    </svg>
-                  </div>
-                  <div ref={subgroupRef}>
-                    <SubgroupCounters subgroups={result.subgroups} />
+                {/* Off-screen full-size radar — the clean source rasterised into the PDF (the
+                    on-card radar above can clip at narrow breakpoints). Real layout, off-canvas. */}
+                <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', top: 0, width: '620px', height: '360px', background: '#060612' }}>
+                  <div ref={pdfRadarRef} style={{ width: '100%', height: '100%' }}>
+                    <SciFiRadarChart data={result.radarData} shadow={result.shadowArchetype} blindspot={result.blindspotArchetype} mainArchetype={result.overallArchetype} supportArchetype={result.supportArchetype} />
                   </div>
                 </div>
 
-                {/* ── Cognitieve Driehoek (AI-generated Section 8) ── */}
-                {aiCogDriehoek.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length + aiGroup1a.length + aiGroup1b.length + aiGroepDyn.length))}
+                {/* De Stille Stem — Reflectie */}
+                {cardStille
+                  .filter((s) => /reflectie/.test(cleanTitle(s.title || '').toLowerCase()))
+                  .map((s, i) => renderAiSectionCard({ ...s, title: 'De Stille Stem — ' + cleanTitle(s.title) }, 6000 + i))}
 
-                {/* ── AI group2: Alchemie / Schakelbord / Ontologie ── */}
-                {aiGroup2.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length + aiGroup1a.length + aiGroup1b.length + aiGroepDyn.length + aiCogDriehoek.length))}
+                {/* D-curve chart (visible) — between Reflectie and Motivatie. Same ref the PDF rasterises. */}
+                {cRuntime?.d_curve && (
+                  <div style={{
+                    position: 'relative',
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    borderRadius: '0.75rem',
+                    border: '1px solid rgba(34, 211, 238, 0.3)',
+                    padding: '0.5rem 0.5rem 0.25rem',
+                    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(34, 211, 238, 0.08)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: '0.75rem', left: '1rem',
+                      fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif",
+                      letterSpacing: '0.2em', color: '#22d3ee', zIndex: 1,
+                    }}>
+                      {'/// PLASTISCHE_MORFOLOGIE'}
+                    </div>
+                    <div ref={morphologyRef} style={{ width: '100%', height: '512px', background: '#060612', borderRadius: '0.5rem', paddingTop: '1.5rem' }}>
+                      <MorphologyChart
+                        chart={cRuntime.d_curve}
+                        mainName={result.mainName || 'Main'}
+                        supportName={result.secondaryName || 'Support'}
+                        height={474}
+                        language={language}
+                      />
+                    </div>
+                    <p style={{
+                      margin: '0.5rem 0.25rem 0.1rem', fontSize: '0.72rem', lineHeight: 1.45,
+                      color: 'rgba(156, 163, 175, 0.9)', fontFamily: "'Figtree', sans-serif", fontStyle: 'italic',
+                    }}>
+                      {language === 'en'
+                        ? 'Main and Support show each archetype’s absolute cost-curve (0–100). Samengesteld (composed) is the blended load normalised to its own peak (=100%) — it shows the shape within your configuration, not an absolute comparison, so it can sit above the individual lines.'
+                        : 'Hoofd en Support tonen elk de absolute kostencurve van het archetype (0–100). Samengesteld is de gecombineerde belasting, genormaliseerd op zijn eigen piek (=100%) — het toont de vorm binnen jouw configuratie, geen absolute vergelijking, en kan daarom boven de losse lijnen liggen.'}
+                    </p>
+                  </div>
+                )}
 
-                {/* ── Other AI sections (ungrouped) ── */}
-                {aiOtherSections.map((s, i) => renderAiSectionCard(s, i + aiIntroSection.length + aiGroup1a.length + aiGroup1b.length + aiGroepDyn.length + aiCogDriehoek.length + aiGroup2.length))}
+                {/* De Stille Stem — Motivatie */}
+                {cardStille
+                  .filter((s) => /motivatie/.test(cleanTitle(s.title || '').toLowerCase()))
+                  .map((s, i) => renderAiSectionCard({ ...s, title: 'De Stille Stem — ' + cleanTitle(s.title) }, 6100 + i))}
 
-                {/* ── AI Prompt: always show download teaser, never full content ── */}
+                {/* Essentie/Vermenigvuldiging/Schaduw/Blindspot/Morfologie-reads/Beweging/Resonantie/
+                    Alchemie etc. are PDF-only now — pulled off the teaser card. */}
+
+                {/* ── Download teaser: this card is a summary; the PDF holds the full report ── */}
                 <div style={{
                   width: '100%',
                   background: 'transparent',
@@ -3993,10 +4290,10 @@ const AssessmentResultsModal = ({
                     letterSpacing: '0.15em',
                     marginBottom: '0.75rem',
                   }}>
-                    Volledige AI Prompt
+                    Volledig Rapport (3× zoveel data)
                   </h3>
                   <p style={{ fontSize: '0.85rem', color: 'rgba(148,163,184,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, fontStyle: 'italic' }}>
-                    De volledige AI prompt is beschikbaar in je PDF rapport. Download het rapport om de complete prompt te gebruiken met een extern AI-systeem.
+                    Dit is een korte samenvatting. Je volledige rapport bevat ongeveer 3× zoveel data — alle secties, de grafieken, de D-curve, het OCEAN-profiel, de complete AI-prompt en de machine-leesbare profieldata. Download de PDF om alles te lezen, wanneer je maar wilt.
                   </p>
                 </div>
 
@@ -4051,6 +4348,17 @@ const AssessmentResultsModal = ({
                               boxSizing: 'border-box',
                             }}
                           />
+                          <p style={{
+                            margin: '0.6rem 0 0',
+                            color: 'rgba(148,163,184,0.75)',
+                            fontFamily: "'Figtree', sans-serif",
+                            fontSize: '0.72rem',
+                            lineHeight: 1.55,
+                            fontStyle: 'italic',
+                          }}>
+                            We sturen je in de toekomst éénmalig een reclamebrief om je te herinneren aan je vooruitgang.
+                            De keuze is daarna aan jou om te navigeren in je vernieuwde landschap.
+                          </p>
                         </div>
 
                         {/* Error message */}
@@ -4068,7 +4376,7 @@ const AssessmentResultsModal = ({
                           </div>
                         )}
 
-                        {/* VOLLEDIGE RAPPORT button */}
+                        {/* PROCEED button (unlocks the download options) */}
                         <button
                           type="submit"
                           disabled={isSubmittingReview}
@@ -4098,7 +4406,7 @@ const AssessmentResultsModal = ({
                             e.currentTarget.style.boxShadow = 'none';
                           }}
                         >
-                          {isSubmittingReview ? 'Versturen...' : 'VOLLEDIGE RAPPORT'}
+                          {isSubmittingReview ? 'Versturen...' : 'PROCEED'}
                         </button>
                       </form>
                     </div>
@@ -4107,6 +4415,7 @@ const AssessmentResultsModal = ({
                   <div data-pdf-hide style={{
                     display: 'flex',
                     flexDirection: 'row',
+                    alignItems: 'stretch',
                     gap: '1rem',
                     width: '100%',
                     flexWrap: 'wrap',
@@ -4129,7 +4438,7 @@ const AssessmentResultsModal = ({
                           fontFamily: "'Lexend Mega', sans-serif",
                         }}>
                           <h3 style={{ color: '#1d9904', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
-                            Verantwoordelijkheid PDF & AI Prompt
+                            {pdfKind === 'short' ? 'Verantwoordelijkheid PDF' : 'Verantwoordelijkheid PDF & AI Prompt'}
                           </h3>
                           <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', fontStyle: 'italic', marginBottom: '1.25rem' }}>
                             Lees dit door voordat je de PDF downloadt
@@ -4137,7 +4446,9 @@ const AssessmentResultsModal = ({
 
                           <div style={{ borderLeft: '2px solid rgba(29,153,4,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
                             <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: '0.75rem', lineHeight: 1.75 }}>
-                              Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik in externe AI-tools valt buiten de verantwoordelijkheid van Garden For Life.
+                              {pdfKind === 'short'
+                                ? 'Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model — geen klinische diagnose. De gebruikte termen zijn metaforen binnen dit model.'
+                                : 'Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik in externe AI-tools valt buiten de verantwoordelijkheid van Garden For Life.'}
                             </p>
                           </div>
 
@@ -4149,7 +4460,9 @@ const AssessmentResultsModal = ({
                               style={{ marginTop: '0.1rem', accentColor: '#1d9904', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
                             />
                             <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: '0.75rem', lineHeight: 1.65 }}>
-                              Ik begrijp dat de AI Agent Prompt in deze PDF experimenteel is en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.
+                              {pdfKind === 'short'
+                                ? 'Ik begrijp het.'
+                                : 'Ik begrijp dat de AI Agent Prompt in deze PDF experimenteel is en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.'}
                             </span>
                           </label>
 
@@ -4163,7 +4476,7 @@ const AssessmentResultsModal = ({
                               Annuleren
                             </button>
                             <button
-                              onClick={() => { if (pdfConsentChecked) { setShowPdfConsent(false); logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {}); handleDownloadPdf(); } }}
+                              onClick={() => { if (pdfConsentChecked) { const wasShort = pdfKind === 'short'; setShowPdfConsent(false); logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: wasShort ? 'pdf_short' : 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {}); handleDownloadPdf({ shortVersion: wasShort }); } }}
                               disabled={!pdfConsentChecked}
                               style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#1d9904' : 'rgba(29,153,4,0.2)'}`, color: pdfConsentChecked ? '#1d9904' : 'rgba(29,153,4,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(29,153,4,0.07)' : 'none' }}
                               onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(29,153,4,0.25)'; }}
@@ -4176,9 +4489,9 @@ const AssessmentResultsModal = ({
                       </div>
                     )}
 
-                    {/* Download PDF */}
+                    {/* Korte versie — FREE short summary PDF (shorter consent, no AI-prompt clause) */}
                     <button
-                      onClick={() => { if (!isGeneratingPdf && reviewSubmitted) { setPdfConsentChecked(false); setShowPdfConsent(true); } }}
+                      onClick={() => { if (!isGeneratingPdf && reviewSubmitted) { setPdfKind('short'); setPdfConsentChecked(false); setShowPdfConsent(true); } }}
                       disabled={isGeneratingPdf || !reviewSubmitted}
                       style={{
                         flex: '1 1 0',
@@ -4210,25 +4523,23 @@ const AssessmentResultsModal = ({
                         e.currentTarget.style.color = '#1d9904';
                       }}
                     >
-                      <span style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-                        {isGeneratingPdf ? (
-                          <>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
-                              <path d="M21 12a9 9 0 11-6.219-8.56" />
-                            </svg>
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-                            </svg>
-                            VOLLEDIGE RAPPORT
-                          </>
+                      <span style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={(isGeneratingPdf && pdfKind === 'short') ? { animation: 'spin 1s linear infinite' } : undefined}>
+                            {(isGeneratingPdf && pdfKind === 'short')
+                              ? <path d="M21 12a9 9 0 11-6.219-8.56" />
+                              : <><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></>}
+                          </svg>
+                          {(isGeneratingPdf && pdfKind === 'short') ? 'Generating...' : 'Korte versie'}
+                        </span>
+                        {!(isGeneratingPdf && pdfKind === 'short') && (
+                          <span style={{ fontSize: '0.7em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.02em', opacity: 0.85 }}>
+                            Download nu
+                          </span>
                         )}
                       </span>
                     </button>
-                    
+
                     {/* Save & Create Account */}
                     <button
                       onClick={() => {
@@ -4306,6 +4617,57 @@ const AssessmentResultsModal = ({
                         }} />
                       )}
                     </button>
+
+                    {/* Volledige rapport — PAID (placeholder €00,00, instant). Consent gate, no paywall. */}
+                    <button
+                      onClick={() => { if (!isGeneratingPdf && reviewSubmitted) { setPdfKind('full'); setPdfConsentChecked(false); setShowPdfConsent(true); } }}
+                      disabled={isGeneratingPdf || !reviewSubmitted}
+                      style={{
+                        flex: '1 1 0',
+                        minWidth: rs.btnMinWidth,
+                        position: 'relative',
+                        overflow: 'hidden',
+                        padding: rs.btnPad,
+                        background: '#000',
+                        border: '1px solid #1d9904',
+                        color: '#1d9904',
+                        fontFamily: "'Lexend Mega', sans-serif",
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        fontSize: rs.btnFont,
+                        cursor: (isGeneratingPdf || !reviewSubmitted) ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.3s',
+                        boxShadow: '0 0 15px rgba(29, 153, 4, 0.1)',
+                        opacity: (isGeneratingPdf || !reviewSubmitted) ? 0.5 : 1,
+                      }}
+                      onMouseEnter={e => {
+                        if (!isGeneratingPdf && reviewSubmitted) {
+                          e.currentTarget.style.background = '#1d9904';
+                          e.currentTarget.style.color = '#000';
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = '#000';
+                        e.currentTarget.style.color = '#1d9904';
+                      }}
+                    >
+                      <span style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={(isGeneratingPdf && pdfKind === 'full') ? { animation: 'spin 1s linear infinite' } : undefined}>
+                            {(isGeneratingPdf && pdfKind === 'full')
+                              ? <path d="M21 12a9 9 0 11-6.219-8.56" />
+                              : <><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></>}
+                          </svg>
+                          {(isGeneratingPdf && pdfKind === 'full') ? 'Generating...' : 'Volledige rapport'}
+                        </span>
+                        {!(isGeneratingPdf && pdfKind === 'full') && (
+                          <span style={{ fontSize: '0.7em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.02em', opacity: 0.85 }}>
+                            € 00,00
+                          </span>
+                        )}
+                      </span>
+                    </button>
                   </div>
 
 
@@ -4363,8 +4725,29 @@ const AssessmentResultsModal = ({
  * Parse the AI analysis response (markdown with ## headings) into display sections.
  * Returns ALL sections found in the AI response for full dynamic rendering.
  */
+// Master Prompt v4.1: "titles are the parser-tags". The model may emit each title as a
+// `## ` heading OR as a bare title-line. Normalise bare tag-lines into `## ` headings so the
+// existing heading-splitter routes them. Conservative: a line is only promoted when it
+// matches a known NARRATIVE_TAGS stem AND is short enough to be a title (not prose).
+function preinsertTagHeadings(text) {
+  if (!text) return text;
+  const KNOWN = NARRATIVE_TAGS; // stems matched via matchNarrativeTag (em-dash/subtitle aware)
+  return text.split('\n').map((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return line;
+    if (/^#{1,6}\s/.test(trimmed)) return line;          // already a heading
+    if (trimmed.startsWith('|') || trimmed.startsWith('-- ')) return line; // table / machine block
+    if (trimmed.length > 70) return line;                // too long to be a title-line
+    if (/[.!?]$/.test(trimmed)) return line;             // sentence punctuation → prose, not a title
+    if (trimmed.split(/\s+/).length > 10) return line;   // too many words to be a title
+    if (KNOWN.length && matchNarrativeTag(trimmed)) return '## ' + trimmed;
+    return line;
+  }).join('\n');
+}
+
 function parseAiSections(analysisText) {
   if (!analysisText || typeof analysisText !== 'string') return null;
+  analysisText = preinsertTagHeadings(analysisText);
 
   // Split on ## or ### top-level headings (with or without numbering).
   // The AI prompt requests `## N.` but models sometimes return `### N.` instead.
@@ -4523,8 +4906,19 @@ function parseAiSections(analysisText) {
     }
     let content = stripDisclaimer(analysisText.slice(contentStart, contentEnd).trim());
 
-    // Deduplicate: skip sections whose content is identical to an already-seen section
-    const contentKey = content.slice(0, 200).toLowerCase().replace(/\s+/g, ' ');
+    // STRICT: drop render-side note echoes. The model sometimes parrots the spec's parenthetical
+    // render-side / page labels as a fake section body — e.g. "(Pagina A - met D-curvegrafiek)"
+    // or "(Dual-Core grafiek - render-side - draagt de Nature/Culture-data per zuil.)". Real
+    // sections are long prose (>300 chars); these stubs are tiny and mention render-side artefacts.
+    const bare = content.replace(/[*#>_`~]/g, '').trim();
+    if (bare.length < 200 && /render.?side|pagina\s+[ab]\b|d-?curve.?grafiek|grafiek\s*[-–)]|dual.?core\s+grafiek|6-?groeps|nature\s*\/\s*culture/i.test(bare)) {
+      continue;
+    }
+
+    // Deduplicate exact content repeats (keys on title + opening so distinct sections that share
+    // a structural lead aren't wrongly dropped). Per-title "keep the longest" + the min-word drop
+    // happen in a post-pass below.
+    const contentKey = cleanTitle(title).toLowerCase() + '::' + content.slice(0, 120).toLowerCase().replace(/\s+/g, ' ');
     if (seenContent.has(contentKey)) continue;
     seenContent.add(contentKey);
 
@@ -4537,7 +4931,23 @@ function parseAiSections(analysisText) {
     });
   }
 
-  return parts;
+  // ── Min-word catcher + keep-longest-per-title ──
+  // When the model emits a title twice (a real paragraph + a short "echo"), keep ONLY the longest
+  // instance — that's always the real read. Also drop any narrative section whose body is too
+  // short to be a real read (a few-word echo/stub). Profile elements (4B) are exempt.
+  const wordCount = (s) => (s.content || '').trim().split(/\s+/).filter(Boolean).length;
+  const MIN_WORDS = 8;
+  const longestByTitle = {};
+  for (const p of parts) {
+    if (p.isProfileElement) continue;
+    const k = cleanTitle(p.title || '').toLowerCase();
+    if (!longestByTitle[k] || wordCount(p) > wordCount(longestByTitle[k])) longestByTitle[k] = p;
+  }
+  return parts.filter((p) => {
+    if (p.isProfileElement) return true;
+    if (wordCount(p) < MIN_WORDS) return false;                       // drop short echoes/stubs
+    return longestByTitle[cleanTitle(p.title || '').toLowerCase()] === p; // keep only the longest per title
+  });
 }
 
 /**

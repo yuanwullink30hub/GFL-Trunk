@@ -7,6 +7,7 @@
 const { Router } = require('express');
 const { callAI, getAvailableProviders } = require('../services/aiProviders');
 const { computeCRuntime } = require('../services/cRuntime');
+const { formatLineTypeBlock, LINE_TYPE_LOOKUP_DOC } = require('../services/lineType');
 const { getCorpusText } = require('../services/corpusData');
 const { getDB } = require('../db');
 const config = require('../config');
@@ -370,11 +371,22 @@ router.post('/analyze', async (req, res) => {
       console.warn('[AI] C-runtime precompute failed (continuing without it):', e.message);
     }
 
-    // ── User payload: per-user geometry (buildUserMessage) + the C-runtime block + the
-    //    relevant Levensles. The full corpus rides separately as cached context. ──
+    // ── Main↔Support line-type: resolved deterministically from the static lookup table
+    //    so the model never re-derives the colour (the recurring Green/Blue mistake). The
+    //    resolved tag rides in the payload; the full table rides as a separate reference doc. ──
+    const lineTypeBlock = (!userQuestion && archetypeKey && supportArchetype)
+      ? formatLineTypeBlock({
+          mainKey: archetypeKey, supportKey: supportArchetype,
+          shadowKey: shadowArchetype, blindspotKey: blindspotArchetype,
+        })
+      : '';
+
+    // ── User payload: per-user geometry (buildUserMessage) + the line-type tag + the
+    //    C-runtime block + the relevant Levensles. Corpus rides separately as cached context. ──
     const geometryMsg = userQuestion || builder.buildUserMessage(promptData);
     const user = userQuestion ? geometryMsg : [
       geometryMsg,
+      lineTypeBlock,
       cRuntime ? formatCRuntimeBlock(cRuntime) : '',
       levensles ? `═══ LEVENSLES (extended archetype) ═══\n${levensles}` : '',
     ].filter(Boolean).join('\n\n');
@@ -446,6 +458,11 @@ router.post('/analyze', async (req, res) => {
         temperature: finalTemperature,
         uploadedImages,
         cachedContext,
+        // Static reference docs shipped as separate documents (not merged into the corpus),
+        // so the model can verify the resolved links rather than guess them.
+        referenceDocs: userQuestion ? [] : [
+          { name: 'Backend_LineType_Lookup_Table.md', text: LINE_TYPE_LOOKUP_DOC },
+        ],
       });
     } finally {
       clearInterval(heartbeat);

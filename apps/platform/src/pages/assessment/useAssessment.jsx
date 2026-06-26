@@ -214,19 +214,27 @@ export function useAssessment() {
     setUploadedFiles([]);
   }, []);
 
-  // DEV: Fill all questions across all subjects with random answers
+  // DEV: Fill all questions across all subjects. Instead of a pure random pick (which, after the
+  // geometric bleed, tends to pile up in one group), spread the picks across archetypes: for each
+  // question choose the answer whose archetype has been used least so far (random tiebreak). This
+  // produces a "spread" profile so Main/Support usually land in different groups — useful for
+  // exercising the v4.3 spread logic and getting distinct D-curves.
   const autoFillAll = useCallback(() => {
     if (!subjects.length) return;
     const allResponses = [];
+    const archCount = {}; // archetype -> times picked (drives the spread)
     subjects.forEach((subject) => {
       subject.questions.forEach((q) => {
-        const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
+        const pick = [...q.answers]
+          .map((a) => ({ a, used: archCount[a.archetype] || 0, r: Math.random() }))
+          .sort((x, y) => x.used - y.used || x.r - y.r)[0].a; // least-used archetype first
+        archCount[pick.archetype] = (archCount[pick.archetype] || 0) + 1;
         allResponses.push({
           questionId: q.id,
-          answerId: shuffled[0].id,
-          value: shuffled[0].value,
-          archetype: shuffled[0].archetype,
-          shadowAspect: shuffled[0].shadowAspect,
+          answerId: pick.id,
+          value: pick.value,
+          archetype: pick.archetype,
+          shadowAspect: pick.shadowAspect,
         });
       });
     });

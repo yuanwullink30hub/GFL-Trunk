@@ -211,7 +211,13 @@ function composeDState(geo, storedD) {
     for (const k of Object.keys(raw)) composed[k] = 0.0;
   }
 
-  return { composed_D: composed, raw_composed_D: raw, dynamic_ceiling: peak, refusals };
+  // Render-side chart series (Master Prompt v4.1 §5.5): Main + Support stored curves
+  // (absolute, on-scale) + the composed curve (dynamic-ceiling normalised) as [D1..D5].
+  const main_curve = (storedD[geo.main] || []).map((v) => Math.round(v * 10) / 10);
+  const support_curve = (geo.support && storedD[geo.support] ? storedD[geo.support] : []).map((v) => Math.round(v * 10) / 10);
+  const composed_curve = classes.map((k) => composed[k]);
+
+  return { composed_D: composed, raw_composed_D: raw, dynamic_ceiling: peak, refusals, main_curve, support_curve, composed_curve };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -256,6 +262,8 @@ function precompute(geo, storedD, supportEffectDirection) {
     composed_D_state: step1.composed_D,
     composed_D_raw: step1.raw_composed_D,
     dynamic_ceiling: step1.dynamic_ceiling,
+    // Render-side D-curve chart series (Main + Support + Composed), [D1..D5].
+    d_curve: { main: step1.main_curve, support: step1.support_curve, composed: step1.composed_curve },
     c_runtime_values: step2,
     polar_norm: polarNorm(geo),
     support_weight_norm: supportWeightNorm(geo),

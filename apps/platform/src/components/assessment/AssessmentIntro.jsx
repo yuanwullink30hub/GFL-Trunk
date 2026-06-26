@@ -13,6 +13,114 @@ import { SciFiButton } from '@gfl/ui';
 const vulnerabilityOrder = '/images/Nature Nurture png.png';
 import OceanManualInputModal from './OceanManualInputModal';
 
+// Render inline **bold** / *italic* markers from the source-ledger copy as JSX.
+const renderRich = (text) => {
+  const parts = String(text).split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} style={{ color: '#FFFEF0' }}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
+
+// ── Referenties card content — Bronnen & Verantwoording (Open Onderzoek) ──
+// "Waarom we dit laten zien" intro paragraphs.
+const REFS_INTRO_PARAGRAPHS = [
+  'De meeste modellen noemen een paar grote namen en laten het daarbij. Wij laten iets anders zien: per bron tonen we niet alleen waar we op bouwen, maar **waar we bewust afwijken, en wat onze eigen claim zou weerleggen.**',
+  'Dat doen we niet om gelijk te krijgen. We bouwen dit in de open, en we weten dat we het op punten mis kunnen hebben. De interessante gesprekken ontstaan juist daar — bij de plekken waar een bron iets *net niet* zegt wat wij nodig hadden, en we een stap hebben gezet die we eerlijk als stap benoemen. Wie daar dieper in wil kijken, vindt hieronder precies waar die stappen zitten.',
+  'Elke bron krijgt vijf velden: wat het onderbouwt, waar wij ervan afwijken en waarom, wat het kruisrelateert of zou falsifiëren, en onze eerlijke inschatting van de zekerheid. Een hoge zekerheid betekent: stevig onderbouwd. Een lagere betekent niet "zwak" — het betekent dat we de gok benoemen in plaats van hem te verbergen.',
+  '**En dit is het belangrijkste om te weten:** een bron met frictie, een omstreden link of een lage zekerheid wordt in het model zélf nooit als vaststaand fundament behandeld. We laten een zwakke schakel zwak — helemaal tot onderin. Hij voedt een voorzichtige, laag-gewogen neiging, nooit een harde claim. Het model bouwt niet bovenop een betwiste bron alsof die bewezen is; het draagt die bron precies zoals het jóuw scores leest: als een waarschijnlijkheid, niet als een verdict. De zekerheid van een lezing wordt begrensd door de zekerheid van de bron eronder — en de omstreden bronnen houden we daarom bewust níét dragend.',
+  'Dat is de symmetrie die het hele model draagt: **we behandelen onze eigen bronnen op exact dezelfde manier als we jouw data lezen** — nooit als een vast gegeven, altijd als een gewogen neiging die herzien kan worden. De frictie is geen fout die de audit blootlegt; de frictie wordt mét opzet als frictie vastgehouden, en nooit stilletjes tot feit gepromoveerd.',
+];
+
+// Cluster A sources — each rendered as a block (a 5-col table won't fit the modal width).
+const REFS_CLUSTER_A = [
+  {
+    name: 'Friston (2010)',
+    cite: 'Free-energy principle / actieve inferentie · Nature Reviews Neuroscience',
+    onderbouwt: 'De hele voorspellende architectuur: het brein minimaliseert verrassing via top-down verwachtingen (priors). Dit is de formele basis voor "archetype = configuratie van priors."',
+    afwijking: 'Het raamwerk is algemeen; de vertaling naar één archetype per cel is **onze constructie, geen meting**. We dragen actieve inferentie als aangenomen substraat — een fundament dat we niet per archetype apart hebben geverifieerd.',
+    kruis: 'Falsifieert als de per-archetype prior-toewijzing geen voorspellende waarde blijkt te hebben. Draagt het hele B-component.',
+    zekerheid: 'Hoog als raamwerk · Middel voor de cel-toepassing',
+  },
+  {
+    name: 'Buzsáki (2019)',
+    cite: 'The Brain from Inside Out · Oxford UP',
+    onderbouwt: 'De omkering: archetypen zijn geen reactieve circuits maar **actieve generatoren** die de wereld op fitness testen. Grondt onze taal "de configuratie neigt zich te uiten als…" — actief, niet reactief.',
+    afwijking: 'We nemen een sterke interpretatieve positie ("inside-out") als uitgangspunt, terwijl het een synthese is, geen enkele meting. We kiezen bewust de kant van het zelf-organiserende brein.',
+    kruis: 'Kruisrelateert met de dynamische-matrix-lezing (priors als actieve generatoren).',
+    zekerheid: 'Middel–Hoog',
+  },
+  {
+    name: 'Menon (2011)',
+    cite: 'Triple Network Model / CEN–DMN-competitie · Trends in Cognitive Sciences',
+    onderbouwt: 'De netwerk-competitiestructuur: CEN houdt orde deels door DMN te onderdrukken; het Salience Network schakelt ertussen. Onderbouwt direct onze zes-groepen-naar-netwerk-mapping (Ruling=CEN, Abstract=DMN, Chaos=SN).',
+    afwijking: 'De schone driedeling is een **vereenvoudiging** — echte netwerkgrenzen lopen vloeiend in elkaar over, niet in scherpe lijnen. We weten dat we de kaart strakker trekken dan het terrein.',
+    kruis: 'Bevestigd door onze eigen Fase-2-bevinding (CEN⊥DMN: Ruler/Judge-dalen = Sage/Artist-pieken).',
+    zekerheid: 'Hoog (fundamenteel, veelvuldig gerepliceerd)',
+  },
+  {
+    name: 'Bassett (2011, 2017)',
+    cite: 'Dynamische netwerk-herconfiguratie · PNAS',
+    onderbouwt: 'Het onderscheid tussen snelle, omkeerbare aanpassing (D2) en tragere structurele verandering (D3) in onze spannings-curve. De snelheid waarmee netwerken loskoppelen en hercombineren onder druk.',
+    afwijking: 'De flexibiliteits-metingen zijn correlationeel; het koppelen ervan aan onze toestandsklassen (D2/D3) is **interpretatie, geen directe afleiding**.',
+    kruis: 'Onderbouwt de D2→D3-overgang in de spannings-curve; specifiek de Chaos-groep (Outlaw/Trickster).',
+    zekerheid: 'Hoog (robuust, gerepliceerd)',
+  },
+  {
+    name: 'Carhart-Harris & Friston (2019)',
+    cite: 'REBUS / het anarchische brein · Pharmacological Reviews',
+    onderbouwt: 'Het mechanisme van schaduw-integratie: onder hoge DMN-activiteit/entropie ontspannen rigide verwachtingen, waardoor er ruimte komt. Geeft de richting voor de schaduw-as.',
+    afwijking: 'Het model is **farmacologisch** gegrond (psychedelica). Het gebruiken als algemeen mechanisme voor schaduw-ontspanning is een analogische uitbreiding — een brug die we slaan, geen meting die we overnemen.',
+    kruis: 'Gekoppeld aan Carhart-Harris (2014, entropisch brein); samen dragen ze de REBUS-richting.',
+    zekerheid: 'Middel–Hoog (model goed onderbouwd; generalisatie is inferentie)',
+  },
+  {
+    name: 'Carhart-Harris (2014)',
+    cite: 'Het entropische brein · Frontiers in Human Neuroscience',
+    onderbouwt: 'Het rigiditeit↔chaos-spectrum: hersentoestanden liggen op een meetbare entropie-as; hoge entropie lost rigide priors op. Anker voor de omgekeerde, entropische dynamiek van de Chaos-groep.',
+    afwijking: 'Entropie-als-flexibiliteit is één specifieke operationalisatie; de koppeling aan archetype-toestanden is interpretatie.',
+    kruis: 'Paart met de entry hierboven (REBUS-richting).',
+    zekerheid: 'Middel–Hoog',
+  },
+  {
+    name: 'Christoff (2016)',
+    cite: 'Ongebonden DMN-incubatie · Nature Reviews Neuroscience',
+    onderbouwt: 'Het DMN bereikt zijn maximale generatieve capaciteit pas wanneer het níét door het CEN wordt ingeperkt. Anker voor de "naar-binnen-spiraal" van de Abstract-groep: generativiteit stijgt naarmate externe inperking daalt.',
+    afwijking: 'De inperkings-dimensies zijn een raamwerk; onze D3-piek-mapping erop is interpretatie.',
+    kruis: 'Onderbouwt de Abstract-groep (Sage/Artist) curve.',
+    zekerheid: 'Middel–Hoog',
+  },
+  {
+    name: 'Buckner (2008)',
+    cite: 'Het default-netwerk / mentale tijdreis · Annals NYAS',
+    onderbouwt: 'Het DMN is sterk actief bij herinneren, toekomst-simulatie en het invoelen van anderen — het constructieve-simulatie-substraat. Grondt de naar-binnen-gerichte functie van de Abstract-groep.',
+    afwijking: '— (directe toepassing; geen materiële afwijking)',
+    kruis: 'Fundamentele DMN-review; consistent over autobiografisch geheugen, vooruitkijken en mentaliseren.',
+    zekerheid: 'Hoog (fundamenteel, veelvuldig gerepliceerd)',
+  },
+  {
+    name: 'Aston-Jones & Cohen (2005)',
+    cite: 'LC-NE faseschakeling · Annual Review of Neuroscience',
+    onderbouwt: 'De verken/benut-afweging als fysiologische regelknop (tonische vs. fasische LC-NE-vuring). Het mechanisme achter de ontdekkingsdrang van de Seeker-groep en hun gebufferde inzakking.',
+    afwijking: '— (een van onze best-gegronde ankers; geen materiële afwijking)',
+    kruis: 'Onderbouwt de Seeker-groep (Innocent/Explorer) en de gebufferde-crash-curve.',
+    zekerheid: 'Hoog (robuuste systeem-neurowetenschap)',
+  },
+  {
+    name: 'DeYoung (2015)',
+    cite: 'Cybernetic Big Five / Openheid–dopamine · Journal of Research in Personality',
+    onderbouwt: 'Koppelt de exploratieve drive aan dopamine-gelinkte hoge Openheid; levert het trait-substraat voor de Openheid-primaire archetypen (Seeker/Abstract).',
+    afwijking: '**Dit is onze zwakste schakel in de fundamentele set, en we benoemen het als zodanig.** De link tussen Openheid en dopamine/plasticiteit is omstreden (zie o.a. Gurven et al. over cross-culturele Big-Five-replicatie). We houden de Openheid-primairen bewust op verlaagde zekerheid.',
+    kruis: 'Het trait→neurotransmitter-verband is het kwetsbaarste punt van het fundament. Falsifieert als Openheid-als-dopamine cross-cultureel niet standhoudt.',
+    zekerheid: 'Middel — bewust verlaagd, openlijk gemarkeerd risico',
+  },
+];
+
 /**
  * AssessmentIntro - Modal shown when entity appears
  * Explains the assessment and lets user choose difficulty level
@@ -32,6 +140,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   const oceanScoresRef = useRef(null);
   const modalRef = useRef(null);
   const infoOverlayRef = useRef(null);
+  const refsOverlayRef = useRef(null);
   const [showReferences, setShowReferences] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [leaveConfirmClosing, setLeaveConfirmClosing] = useState(false);
@@ -40,6 +149,11 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   const [infoReady, setInfoReady] = useState(false); // true after 1 rAF — lets backdropFilter compositor layer initialise before animation
   const [infoClosing, setInfoClosing] = useState(false);
   const [infoOrigin, setInfoOrigin] = useState('50% 50%');
+  // Referenties overlay — mirrors the "Lees mij!" info overlay (same open/close animation, different content)
+  const [showRefs, setShowRefs] = useState(false);
+  const [refsReady, setRefsReady] = useState(false);
+  const [refsClosing, setRefsClosing] = useState(false);
+  const [refsOrigin, setRefsOrigin] = useState('50% 50%');
   const [introClosing, setIntroClosing] = useState(false);
   const [introExpanding, setIntroExpanding] = useState(false);
   const [introReady, setIntroReady] = useState(false);
@@ -127,6 +241,46 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     }, 350);
   };
 
+  // Referenties overlay — same two-phase open/close as openInfo/closeInfo, different card content
+  const openRefs = () => {
+    if (modalRef.current) {
+      const modalRect = modalRef.current.getBoundingClientRect();
+      const x = window.innerWidth * 0.5 - modalRect.left;
+      const y = window.innerHeight * 0.23 - modalRect.top;
+      setRefsOrigin(`${x}px ${y}px`);
+    }
+    setIntroClosing(true);
+    setTimeout(() => {
+      setIntroClosing(false);
+      setShowRefs(true);
+      requestAnimationFrame(() => setRefsReady(true));
+    }, 375);
+  };
+
+  const closeRefs = () => {
+    setRefsClosing(true);
+    setTimeout(() => {
+      setShowRefs(false);
+      setRefsClosing(false);
+      setRefsReady(false);
+      setIntroExpanding(true);
+      setTimeout(() => setIntroExpanding(false), 375);
+    }, 350);
+  };
+
+  // Native wheel capture on refs overlay to block PyramidView's handler
+  useEffect(() => {
+    const el = refsOverlayRef.current;
+    if (!el) return;
+    const stop = (e) => { e.stopPropagation(); };
+    el.addEventListener('wheel', stop, { passive: false, capture: true });
+    el.addEventListener('touchmove', stop, { passive: false, capture: true });
+    return () => {
+      el.removeEventListener('wheel', stop, { capture: true });
+      el.removeEventListener('touchmove', stop, { capture: true });
+    };
+  }, [showRefs]);
+
   // Open consent overlay with zoom-from-card animation
   const openConsent = (levelId, e) => {
     if (e && e.currentTarget) {
@@ -207,7 +361,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   const s = windowWidth >= 1800 ? {
     // ── Desktop ── all vertical spacings in vh so they track viewport height
     modalMaxWidth: '64.4vw',
-    modalMinHeight: '82vh',
+    modalMinHeight: 'calc(82vh - 0.5rem)',
     modalMaxHeight: '99vh',
     padding: '1.8vh 2rem',
     headerMaxWidth: '22rem',
@@ -247,7 +401,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   } : windowWidth >= 1079 ? {
     // ── Laptop ── 77vw wide (48.1 × 1.6), fonts/spacing at original pre-30% scale
     modalMaxWidth: '77vw',
-    modalMinHeight: '82vh',
+    modalMinHeight: 'calc(82vh - 0.5rem)',
     modalMaxHeight: '99vh',
     padding: '1.4vh 1.05vw',
     headerMaxWidth: '17.0vw',
@@ -287,7 +441,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   } : windowWidth >= 768 ? {
     // ── Tablet ── vh for vertical, rem for horizontal
     modalMaxWidth: '39.6rem',
-    modalMinHeight: '82vh',
+    modalMinHeight: 'calc(82vh - 0.5rem)',
     modalMaxHeight: '99vh',
     padding: '1.4vh 1.2rem',
     headerMaxWidth: '17rem',
@@ -327,7 +481,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   } : {
     // ── Mobile ── vh for vertical, rem for horizontal
     modalMaxWidth: '97vw',
-    modalMinHeight: '80vh',
+    modalMinHeight: 'calc(80vh - 0.5rem)',
     modalMaxHeight: '99vh',
     padding: '1.2vh 0.85rem',
     headerMaxWidth: '11rem',
@@ -474,9 +628,16 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   return (
     <>
     <style>{infoAnimStyles}</style>
+    {/* Pre-load the "Lees mij!" info-card images on intro mount (they live in a panel that
+        mounts lazily, so without this they pop in only after the card opens). */}
+    <div aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
+      <img src={vulnerabilityOrder} alt="" decoding="async" fetchpriority="low" />
+      <img src={wheelAnatomy} alt="" decoding="async" fetchpriority="low" />
+      <img src={triangleHardware} alt="" decoding="async" fetchpriority="low" />
+    </div>
     <div className="fixed inset-0 flex items-center justify-center p-3 pointer-events-auto" style={{ backgroundColor: isMobile ? 'rgba(0,0,0,0.65)' : 'transparent', backdropFilter: isMobile ? 'blur(4px)' : 'none' }}>
       {/* Outer wrapper: holds corner brackets; no overflow clip so they're visible */}
-      {!showInfo && (
+      {!showInfo && !showRefs && (
       <>
       {/* Intro blur layer — fixed, never transformed, opacity-only animation */}
       <div style={{
@@ -625,8 +786,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
 
             </div>
 
-            <p className="mx-auto leading-relaxed" style={{ fontSize: s.descFontSize, marginTop: s.descMt, whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'center', color: '#FFFEF0' }}>
-              De meest complete en complexe onderzoekstest tussen jouw essentie en intelligentie.
+            <p className="mx-auto leading-relaxed" style={{ fontSize: s.pyramidLabelFont, marginTop: s.descMt, whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'center', color: '#FFFEF0' }}>
+              De meest complete en complexe analyse van de relatie tussen jouw essentie en intelligentie.
             </p>
           </div>
 
@@ -655,8 +816,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                     </div>
                   )}
                   <div style={{ flex: 1 }}>
-                    <h3 className="font-medium text-slate-200" style={{ fontSize: s.featureTitleFont, marginBottom: '1px' }}>{t(feature.titleKey)}</h3>
-                    <p className="text-slate-500" style={{ fontSize: s.featureDescFont }}>{t(feature.descKey)}</p>
+                    <h3 className="font-medium text-slate-200" style={{ fontSize: s.pyramidLabelFont, marginBottom: '1px' }}>{t(feature.titleKey)}</h3>
+                    <p className="text-slate-500" style={{ fontSize: s.featureTitleFont }}>{t(feature.descKey)}</p>
                   </div>
                 </div>
               </div>
@@ -672,6 +833,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 onClick={() => showInfo ? closeInfo() : openInfo()}
                 color="#a78bfa"
                 rgb="167, 139, 250"
+                textColor="#a78bfa"
                 size="sm"
                 active={showInfo}
                 fullWidth
@@ -687,12 +849,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
 
               <div ref={referentiesRef}>
                 <SciFiButton
-                  onClick={openLeaveConfirm}
-                  color="#64748b"
-                  rgb="100, 116, 139"
+                  onClick={() => showRefs ? closeRefs() : openRefs()}
+                  color="#94a3b8"
+                  rgb="148, 163, 184"
+                  textColor="#FFFEF0"
                   size="sm"
+                  active={showRefs}
                   fullWidth
-                  disabled
                 >
                   {t('assessmentIntro.footerButton')}
                 </SciFiButton>
@@ -759,6 +922,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                     onClick={() => fileInputRef.current?.click()}
                     color="#a78bfa"
                     rgb="167, 139, 250"
+                    textColor="#a78bfa"
                     size="sm"
                     fullWidth
                     style={{ width: '10rem' }}
@@ -794,8 +958,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   <div ref={oceanScoresRef}>
                   <SciFiButton
                     onClick={openOceanInput}
-                    color={oceanManualScores ? '#22c55e' : '#64748b'}
-                    rgb={oceanManualScores ? '34, 197, 94' : '100, 116, 139'}
+                    color={oceanManualScores ? '#22c55e' : '#94a3b8'}
+                    rgb={oceanManualScores ? '34, 197, 94' : '148, 163, 184'}
+                    textColor={oceanManualScores ? undefined : '#FFFEF0'}
                     size="sm"
                     fullWidth
                     style={{ width: '10rem', fontSize: '0.65rem' }}
@@ -879,50 +1044,81 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             </div>
           </div>
 
+          {/* Free / paid transparency — between the pyramid and the level choices, where the
+              green frame merges with the layout. Shown up front so nobody finishes the test
+              expecting the full report for free. */}
+          <div
+            className="rounded-lg bg-slate-900/30"
+            style={{
+              marginBottom: s.featureMb,
+              padding: s.featurePadding,
+              border: '1px solid rgba(29,153,4,0.18)',
+            }}
+          >
+            <div className="flex items-center" style={{ gap: '0.5rem', marginBottom: '0.25rem', lineHeight: 1.5 }}>
+              <span style={{ color: '#1d9904', fontSize: s.featureTitleFont }}>✓</span>
+              {(() => {
+                const full = t('assessmentIntro.pricing.title');
+                const idx = full.indexOf('—');
+                const head = idx >= 0 ? full.slice(0, idx) : full; // "Gratis Analyse "
+                const tail = idx >= 0 ? full.slice(idx) : ''; // "— prompt waarde…" (white, incl. dash)
+                return (
+                  <h3 className="font-semibold" style={{ fontSize: s.featureTitleFont }}>
+                    <span style={{ color: '#1d9904' }}>{head}</span>
+                    <span style={{ color: '#FFFEF0' }}>{tail}</span>
+                  </h3>
+                );
+              })()}
+            </div>
+            <p style={{ color: '#FFFEF0', fontSize: s.featureTitleFont, lineHeight: 1.5, marginBottom: '0.3rem' }}>
+              {t('assessmentIntro.pricing.free')}
+            </p>
+            {(() => {
+              const full = t('assessmentIntro.pricing.paid');
+              const idx = full.indexOf('—');
+              const head = idx >= 0 ? full.slice(0, idx) : full; // "Optioneel voor €00,00 "
+              const tail = idx >= 0 ? full.slice(idx) : ''; // "— De volledige…" (white, incl. dash)
+              return (
+                <p style={{ fontSize: s.featureTitleFont, lineHeight: 1.5 }}>
+                  <span style={{ color: '#1d9904' }}>{head}</span>
+                  <span style={{ color: '#FFFEF0' }}>{tail}</span>
+                </p>
+              );
+            })()}
+          </div>
+
           {/* Level Selection */}
-          <div style={{ marginBottom: s.levelsMb }}>
+          <div style={{ marginBottom: s.levelsMb, marginTop: '1rem' }}>
             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`} style={{ gap: s.levelsGap }}>
               {levels.map((level) => {
                 const isLocked = level.id === 'quick' || level.id === 'standard';
                 return (
-                  <button
+                  <SciFiButton
                     key={level.id}
                     onClick={(e) => !isLocked && openConsent(level.id, e)}
-                    className={`relative rounded-lg border transition-all duration-300 text-left group ${isLocked ? 'cursor-not-allowed' : 'hover:scale-[1.02]'}`}
-                    style={{
-                      borderColor: isLocked ? 'rgba(100,116,139,0.25)' : `${level.color}40`,
-                      backgroundColor: isLocked ? 'rgba(30,30,40,0.5)' : `${level.color}08`,
-                      opacity: isLocked ? 0.55 : 1,
-                      padding: s.levelPadding,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isLocked) {
-                        e.currentTarget.style.borderColor = level.color;
-                        e.currentTarget.style.boxShadow = `0 0 20px ${level.color}30`;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isLocked) {
-                        e.currentTarget.style.borderColor = `${level.color}40`;
-                        e.currentTarget.style.boxShadow = 'none';
-                      }
-                    }}
+                    color="#f97316"
+                    rgb="249, 115, 22"
+                    size="lg"
+                    rounded="0.4rem"
+                    fullWidth
+                    disabled={isLocked}
+                    padding={s.levelPadding}
+                    style={{ margin: '0 auto', width: '90%' }}
                   >
-                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderColor: level.color }} />
-                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderColor: level.color }} />
-                    
-                    <div className="flex flex-col items-center gap-1.5 mb-0.5">
-                      <h3 className="font-medium" style={{ color: isLocked ? '#64748b' : level.color, fontSize: s.levelTitleFont, textAlign: 'center' }}>
+                    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', width: '100%' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: s.levelTitleFont }}>
                         {level.name || t(level.nameKey)}
-                      </h3>
-                      {isLocked && (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                      )}
-                    </div>
-                    <p style={{ color: isLocked ? '#475569' : '#64748b', fontSize: s.levelDescFont, textAlign: 'center' }}>{level.description || t(level.descKey)}</p>
-                  </button>
+                        {isLocked && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                        )}
+                      </span>
+                      <span style={{ color: '#94a3b8', fontSize: s.levelDescFont, textTransform: 'none', letterSpacing: 'normal', fontWeight: 400, textAlign: 'center' }}>
+                        {level.description || t(level.descKey)}
+                      </span>
+                    </span>
+                  </SciFiButton>
                 );
               })}
             </div>
@@ -1488,6 +1684,156 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 ← {t('assessmentIntro.referencesBack')}
               </SciFiButton>
             </div>
+        </div>
+      </div>
+      </>
+    )}
+
+    {/* ══ Referenties overlay — same animation as "Lees mij!", different content ══ */}
+    {showRefs && (
+      <>
+      {/* Blur layer — fixed position, opacity-only animation, never transformed */}
+      <div style={{
+        position: 'fixed',
+        left: '50%',
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: `min(${s.modalMaxWidth}, calc(100vw - 1.5rem))`,
+        minHeight: s.modalMinHeight,
+        maxHeight: s.modalMaxHeight,
+        borderRadius: '0.5rem',
+        backdropFilter: laptopBlur,
+        WebkitBackdropFilter: laptopBlur,
+        pointerEvents: 'none',
+        zIndex: 49,
+        opacity: refsReady ? undefined : 0,
+        animation: refsReady ? `${refsClosing ? 'infoBlurOut' : 'infoBlurIn'} 0.375s ease-in-out forwards` : 'none',
+      }} />
+      {/* Scale wrapper */}
+      <div className="relative w-full" style={{
+        maxWidth: s.modalMaxWidth,
+        transformOrigin: refsOrigin,
+        animation: refsReady ? `${refsClosing ? 'infoContract' : 'infoExpand'} 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards` : 'none',
+        transform: refsReady ? undefined : 'scale(0)',
+        opacity: refsReady ? undefined : 0,
+        position: 'relative',
+        zIndex: 50,
+      }}>
+        {/* Corner brackets */}
+        <div className="absolute -top-0.5 -left-0.5 w-4 h-4 z-10" style={{ border: '1.5px solid #a855f7', borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }}></div>
+        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 z-10" style={{ border: '1.5px solid #a855f7', borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }}></div>
+        <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4 z-10" style={{ border: '1.5px solid #a855f7', borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }}></div>
+        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 z-10" style={{ border: '1.5px solid #a855f7', borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }}></div>
+
+        {/* Inner glass panel */}
+        <div
+          ref={refsOverlayRef}
+          className="relative w-full rounded-lg"
+          style={{
+            backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.55)',
+            backdropFilter: laptopBlur,
+            WebkitBackdropFilter: laptopBlur,
+            boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
+            overflow: 'hidden',
+            minHeight: s.modalMinHeight,
+            maxHeight: s.modalMaxHeight,
+            display: 'flex',
+            flexDirection: 'column',
+            paddingTop: `calc(${s.padding.split(' ')[0]} * 2 + 1.5rem)`,
+            paddingBottom: `calc(${s.padding.split(' ')[0]} * 2)`,
+            paddingRight: 0,
+            paddingLeft: s.padding.split(' ')[1],
+            boxSizing: 'border-box',
+          }}
+        >
+          {/* Title */}
+          <h2 className="text-center font-mono uppercase tracking-wider" style={{
+            flexShrink: 0,
+            fontSize: `calc(${s.levelTitleFont} + 0.25rem)`,
+            color: '#a855f7',
+            textShadow: '0 0 10px rgba(168,85,247,0.3)',
+            paddingRight: s.padding.split(' ')[1],
+            paddingBottom: '0.85rem',
+            margin: 0,
+          }}>
+            Bronnen &amp; Verantwoording — Open Onderzoek
+          </h2>
+          {/* Top rule */}
+          <div style={{ flexShrink: 0, height: '0.75px', backgroundColor: 'rgba(168,85,247,0.45)', borderRadius: '1px', marginRight: s.padding.split(' ')[1] }} />
+          {/* Scrollable content area */}
+          <div className="purple-scrollbar" style={{ flex: '1 1 0', overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingRight: s.padding.split(' ')[1], borderRadius: 'inherit' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+              {/* Prototype note */}
+              <p className="text-slate-500" style={{ fontSize: `calc(${s.descFontSize} - 0.05rem)`, fontStyle: 'italic', lineHeight: 1.5, padding: '0 1rem' }}>
+                Prototype: Cluster A (van 11). Dit is de proef voor toon en structuur; de andere clusters volgen in dezelfde vorm zodra deze klopt.
+              </p>
+
+              {/* Waarom we dit laten zien */}
+              <div className="rounded-lg" style={{ padding: '1rem' }}>
+                <h3 className="font-medium" style={{ color: '#3b82f6', fontSize: s.descFontSize, marginBottom: '0.6rem', textShadow: '0 0 8px rgba(59,130,246,0.3)' }}>
+                  Waarom we dit laten zien
+                </h3>
+                {REFS_INTRO_PARAGRAPHS.map((para, i) => (
+                  <p key={i} className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: i === REFS_INTRO_PARAGRAPHS.length - 1 ? 0 : '0.55rem' }}>
+                    {renderRich(para)}
+                  </p>
+                ))}
+              </div>
+
+              {/* Cluster A — sources */}
+              <div className="rounded-lg" style={{ padding: '1rem' }}>
+                <h3 className="font-medium" style={{ color: '#a855f7', fontSize: s.descFontSize, marginBottom: '0.4rem', textShadow: '0 0 8px rgba(168,85,247,0.3)' }}>
+                  Cluster A — Actieve inferentie, netwerken &amp; het voorspellende substraat
+                </h3>
+                <p className="text-slate-500 leading-relaxed" style={{ fontSize: `calc(${s.descFontSize} - 0.05rem)`, fontStyle: 'italic', marginBottom: '1rem' }}>
+                  De laag die verklaart hoe het brein de wereld niet ondergaat maar vóórspelt — het fundament onder "een archetype is een configuratie van verwachtingen, geen vaste eigenschap."
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {REFS_CLUSTER_A.map((src, i) => (
+                    <div key={i} style={{ borderTop: '1px solid rgba(168,85,247,0.15)', paddingTop: '0.85rem' }}>
+                      {/* Source name + citation */}
+                      <p style={{ fontSize: s.descFontSize, marginBottom: '0.45rem', lineHeight: 1.45 }}>
+                        <strong style={{ color: '#c4b5fd' }}>{src.name}</strong>
+                        <span className="text-slate-500"> — {src.cite}</span>
+                      </p>
+                      {/* Fields */}
+                      {[
+                        ['Wat het onderbouwt', src.onderbouwt, '#3b82f6'],
+                        ['Waar wij afwijken', src.afwijking, '#eab308'],
+                        ['Kruisrelatie / falsifieert', src.kruis, '#22c55e'],
+                        ['Zekerheid', src.zekerheid, '#fb923c'],
+                      ].map(([label, value, color]) => (
+                        <p key={label} className="leading-relaxed" style={{ fontSize: `calc(${s.descFontSize} - 0.05rem)`, marginBottom: '0.35rem' }}>
+                          <span style={{ color, fontWeight: 600 }}>{label}: </span>
+                          <span className="text-slate-400">{renderRich(value)}</span>
+                        </p>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Closing invitation */}
+              <p className="text-slate-500 leading-relaxed" style={{ fontSize: `calc(${s.descFontSize} - 0.05rem)`, fontStyle: 'italic', padding: '0 1rem' }}>
+                Herken je je hierin — of zie je juist waar we het mis hebben? Dat laatste is geen probleem, dat is precies waarvoor dit er staat. We bouwen dit in de open en denken graag verder met mensen die meekijken. <span style={{ color: '#c4b5fd', fontStyle: 'normal' }}>[Neem contact op]</span>.
+              </p>
+
+            </div>
+          </div>
+          {/* Bottom rule */}
+          <div style={{ flexShrink: 0, height: '0.75px', backgroundColor: 'rgba(168,85,247,0.45)', borderRadius: '1px', marginRight: s.padding.split(' ')[1] }} />
+          {/* Back button */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '1rem', flexShrink: 0 }}>
+            <SciFiButton
+              onClick={closeRefs}
+              variant="purple"
+              size="sm"
+            >
+              ← {t('assessmentIntro.referencesBack')}
+            </SciFiButton>
+          </div>
         </div>
       </div>
       </>

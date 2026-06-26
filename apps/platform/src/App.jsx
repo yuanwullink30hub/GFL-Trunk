@@ -751,7 +751,11 @@ const App = () => {
     
     // Don't process scroll when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
-    
+
+    // Intro card open: lock the pyramid/frame — no scrolling back to main or forward.
+    // Only the Deltawerken (back) button or starting the test advances from here.
+    if (assessmentPhase === 'intro') return;
+
     // STRICT: Don't process scroll if ANY layer panel is animating its save (collapse/move phases)
     // This prevents race conditions between scroll animation and card save animation
     if (animatingLayersRef.current.size > 0) return;
@@ -1240,6 +1244,8 @@ const App = () => {
     if (isLowGpu && (laptopAnimating || currentFrame < MAX_FRAME)) return;
     // Don't process touch when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
+    // Intro card open: lock the pyramid/frame (see handleWheel)
+    if (assessmentPhase === 'intro') return;
     // On mobile, only process if Deltawerken is the active nav item (index 0)
     if (window.innerWidth < 768 && mobileActiveIndex !== 0) return;
     touchStartY.current = e.touches[0].clientY;
@@ -1252,7 +1258,10 @@ const App = () => {
     
     // Don't process touch when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
-    
+
+    // Intro card open: lock the pyramid/frame (see handleWheel)
+    if (assessmentPhase === 'intro') return;
+
     // STRICT: Don't process touch if ANY layer panel is animating its save
     if (animatingLayersRef.current.size > 0) return;
     

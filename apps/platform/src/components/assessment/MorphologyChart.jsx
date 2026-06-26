@@ -52,17 +52,21 @@ export default function MorphologyChart({ chart, mainName = 'Main', supportName 
           labelFormatter={(v, p) => (p && p[0] ? p[0].payload.label : v)}
         />
         <Legend wrapperStyle={{ fontFamily: "'Figtree', sans-serif", fontSize: 12 }} />
-        {main && (
-          <Line type="monotone" dataKey="main" name={mainName} stroke={COLORS.main}
-            strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-        )}
-        {support && (
-          <Line type="monotone" dataKey="support" name={supportName} stroke={COLORS.support}
-            strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-        )}
+        {/* Draw order = z-order (last on top). Composed (cyan dashed) underneath, then Main
+            (green solid), then Support (purple dashed) on top. When Main and Support coincide
+            (same-group archetypes share a stored D-curve) the purple dashes sit over the solid
+            green Main, so both series stay visible instead of one hiding the other. */}
         {composed && (
           <Line type="monotone" dataKey="composed" name="Samengesteld" stroke={COLORS.composed}
             strokeWidth={2.5} strokeDasharray="6 3" dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+        )}
+        {main && (
+          <Line type="monotone" dataKey="main" name={mainName} stroke={COLORS.main}
+            strokeWidth={2.75} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+        )}
+        {support && (
+          <Line type="monotone" dataKey="support" name={supportName} stroke={COLORS.support}
+            strokeWidth={2} strokeDasharray="4 4" dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
         )}
       </LineChart>
     </ResponsiveContainer>

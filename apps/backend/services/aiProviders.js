@@ -85,6 +85,7 @@ async function callAI({
   temperature = 0.7,
   uploadedImages = [],
   cachedContext = null,
+  referenceDocs = [],
 }) {
   const providerDef = PROVIDERS[provider];
   if (!providerDef) {
@@ -100,7 +101,7 @@ async function callAI({
 
   // ── Claude: use @anthropic-ai/sdk ──
   if (providerDef.useClaudeSDK) {
-    return callClaudeSDK({ messages, model: selectedModel, maxTokens, temperature, providerConfig, uploadedImages, cachedContext });
+    return callClaudeSDK({ messages, model: selectedModel, maxTokens, temperature, providerConfig, uploadedImages, cachedContext, referenceDocs });
   }
 
   // ── OpenAI / Grok: REST API ──
@@ -169,7 +170,7 @@ function parseResponse(json) {
 // Anthropic Claude — @anthropic-ai/sdk
 // ─────────────────────────────────────────────────────────────
 
-async function callClaudeSDK({ messages, model, maxTokens, temperature, providerConfig, uploadedImages = [], cachedContext = null }) {
+async function callClaudeSDK({ messages, model, maxTokens, temperature, providerConfig, uploadedImages = [], cachedContext = null, referenceDocs = [] }) {
   const client = new Anthropic({ apiKey: providerConfig.apiKey });
 
   const systemMsg = messages.find(m => m.role === 'system');
@@ -197,6 +198,13 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
           ...(cachedContext
             ? [{ type: 'text', text: cachedContext, cache_control: { type: 'ephemeral' } }]
             : []),
+          // Static reference documents (e.g. the line-type lookup table) shipped as their own
+          // labelled blocks. They sit inside the cached prefix (static → cheap on repeat calls).
+          ...referenceDocs.map(doc => ({
+            type: 'text',
+            text: `═══ REFERENTIEDOCUMENT: ${doc.name} ═══\n${doc.text}`,
+            cache_control: { type: 'ephemeral' },
+          })),
           ...MODEL_IMAGES.map(img => ({
             type: 'image',
             source: { type: 'base64', media_type: img.mimeType, data: img.base64 },
@@ -222,13 +230,18 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
   // accept it. Opus/Sonnet 4.x manage sampling internally.
   const supportsTemperature = typeof temperature === 'number' && !/-(opus|sonnet)-4-\d/.test(model);
 
-  const response = await client.messages.create({
+  // Stream via the SDK helper and collect the full message with .finalMessage(). Streaming
+  // sidesteps the SDK's non-streaming 10-minute guard (max_tokens > ~21,333 would otherwise
+  // throw "Streaming is required…"), so we can use a higher max_tokens for the full v4.3 report.
+  // Same Message shape as create().
+  const stream = client.messages.stream({
     model,
     max_tokens: maxTokens,
     ...(supportsTemperature ? { temperature } : {}),
     ...(systemMsg ? { system: systemMsg.content } : {}),
     messages: anthropicMessages,
   });
+  const response = await stream.finalMessage();
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   const text = response.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';

@@ -261,8 +261,11 @@ const ASSESSMENT_WARM_IMAGES = [
   '/images/Import ready/Shadowicon.png',
   '/images/Import ready/Scienceicon.png',
   '/images/Import ready/AIicon.PNG',
-  '/images/Model imports/TNM wheel PNG.png',
-  '/images/Model imports/Deltawerken png.png',
+  // Lees-mij overlay images — MUST match the exact paths AssessmentIntro loads
+  // (root /images/… for wheel + deltawerken, Model imports/ for cells). A path
+  // mismatch here warms a different cache key and the card loads them cold mid-animation.
+  '/images/TNM wheel PNG.png',
+  '/images/Deltawerken png.png',
   '/images/Model imports/Cells within Cells png.png',
 ];
 let _warmedAssessmentImgs = null;
@@ -1223,7 +1226,44 @@ const App = () => {
   const handleRemoveFile = useCallback((index) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   }, []);
-  
+
+  // Stable nav handlers for AssessmentIntro — kept in useCallback so the (heavy,
+  // memoized) intro card does NOT re-render on every introShrinkProgress frame
+  // during the float-out animation. See the React.memo wrapper on AssessmentIntro.
+  const handleIntroNavigateToData = useCallback(() => {
+    handleAssessmentClose();
+    handleOpenSection('monitor');
+  }, [handleAssessmentClose, handleOpenSection]);
+
+  const handleIntroNavigateToPolicy = useCallback((slug) => {
+    // Reverse the expand animation — shrink entire intro card back into entity
+    const collapseStart = performance.now();
+    const COLLAPSE_DURATION = 500;
+    const animateCollapse = (now) => {
+      const elapsed = now - collapseStart;
+      const progress = Math.min(elapsed / COLLAPSE_DURATION, 1);
+      const eased = progress * progress; // ease-in quadratic
+      setIntroShrinkProgress(1 - eased);
+      if (progress < 1) {
+        requestAnimationFrame(animateCollapse);
+      } else {
+        // Card collapsed — navigate to menu (same pattern as results→login)
+        setIntroShrinkProgress(0);
+        navigateToSection('menu');
+        // Push URL + reset state only after map arrives at destination
+        setTimeout(() => {
+          resetAssessmentState();
+          setCurrentFrame(0);
+          window.history.pushState({}, '', `?page=${slug}`);
+          // pushState doesn't fire popstate — dispatch manually so
+          // EyedentityPage picks up the slug and opens the right tab
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }, MAP_TRANSITION_DURATION + 200);
+      }
+    };
+    requestAnimationFrame(animateCollapse);
+  }, [navigateToSection, resetAssessmentState]);
+
   const handleUploadContinue = useCallback(() => {
     setAssessmentPhase('results');
     triggerGoldMode();
@@ -2203,38 +2243,11 @@ const App = () => {
                   transition: 'none',
                 }}
               >
-                <AssessmentIntro 
+                <AssessmentIntro
                   onStart={handleAssessmentStart}
                   onClose={handleAssessmentClose}
-                  onNavigateToData={() => { handleAssessmentClose(); handleOpenSection('monitor'); }}
-                  onNavigateToPolicy={(slug) => {
-                    // Reverse the expand animation — shrink entire intro card back into entity
-                    const collapseStart = performance.now();
-                    const COLLAPSE_DURATION = 500;
-                    const animateCollapse = (now) => {
-                      const elapsed = now - collapseStart;
-                      const progress = Math.min(elapsed / COLLAPSE_DURATION, 1);
-                      const eased = progress * progress; // ease-in quadratic
-                      setIntroShrinkProgress(1 - eased);
-                      if (progress < 1) {
-                        requestAnimationFrame(animateCollapse);
-                      } else {
-                        // Card collapsed — navigate to menu (same pattern as results→login)
-                        setIntroShrinkProgress(0);
-                        navigateToSection('menu');
-                        // Push URL + reset state only after map arrives at destination
-                        setTimeout(() => {
-                          resetAssessmentState();
-                          setCurrentFrame(0);
-                          window.history.pushState({}, '', `?page=${slug}`);
-                          // pushState doesn't fire popstate — dispatch manually so
-                          // EyedentityPage picks up the slug and opens the right tab
-                          window.dispatchEvent(new PopStateEvent('popstate'));
-                        }, MAP_TRANSITION_DURATION + 200);
-                      }
-                    };
-                    requestAnimationFrame(animateCollapse);
-                  }}
+                  onNavigateToData={handleIntroNavigateToData}
+                  onNavigateToPolicy={handleIntroNavigateToPolicy}
                   uploadedFiles={uploadedFiles}
                   onAddFile={handleAddFile}
                   onRemoveFile={handleRemoveFile}

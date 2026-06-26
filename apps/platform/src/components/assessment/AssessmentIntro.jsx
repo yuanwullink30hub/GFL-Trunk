@@ -11,7 +11,9 @@ const wheelAnatomy = '/images/TNM wheel PNG.png';
 const triangleHardware = '/images/Deltawerken png.png';
 import { SciFiButton } from '@gfl/ui';
 const vulnerabilityOrder = '/images/Nature Nurture png.png';
+const cellsImage = '/images/Model imports/Cells within Cells png.png';
 import OceanManualInputModal from './OceanManualInputModal';
+import ReferencesPanel from './ReferencesPanel';
 
 // Render inline **bold** / *italic* markers from the source-ledger copy as JSX.
 const renderRich = (text) => {
@@ -166,6 +168,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   const consentOverlayRef = useRef(null);
   const [pendingPolicySlug, setPendingPolicySlug] = useState(null);
   const [showUploadWarning, setShowUploadWarning] = useState(false);
+  const [showOceanInfo, setShowOceanInfo] = useState(false);
   const [showOceanInput, setShowOceanInput] = useState(false);
   const [oceanOrigin, setOceanOrigin] = useState('center center');
   const [oceanManualScores, setOceanManualScores] = useState(null);
@@ -221,11 +224,14 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     const el = infoOverlayRef.current;
     if (!el) return;
     const stop = (e) => { e.stopPropagation(); };
-    el.addEventListener('wheel', stop, { passive: false, capture: true });
-    el.addEventListener('touchmove', stop, { passive: false, capture: true });
+    // Bubble phase (NOT capture): let the wheel reach the inner scroll container first so
+    // the overlay content scrolls natively, THEN stop it here so it never reaches
+    // PyramidView's container handler (which preventDefault()s and locks the frame).
+    el.addEventListener('wheel', stop, { passive: false });
+    el.addEventListener('touchmove', stop, { passive: false });
     return () => {
-      el.removeEventListener('wheel', stop, { capture: true });
-      el.removeEventListener('touchmove', stop, { capture: true });
+      el.removeEventListener('wheel', stop);
+      el.removeEventListener('touchmove', stop);
     };
   }, [showInfo]);
 
@@ -273,11 +279,14 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     const el = refsOverlayRef.current;
     if (!el) return;
     const stop = (e) => { e.stopPropagation(); };
-    el.addEventListener('wheel', stop, { passive: false, capture: true });
-    el.addEventListener('touchmove', stop, { passive: false, capture: true });
+    // Bubble phase (NOT capture): let the wheel reach the inner scroll container first so
+    // the overlay content scrolls natively, THEN stop it here so it never reaches
+    // PyramidView's container handler (which preventDefault()s and locks the frame).
+    el.addEventListener('wheel', stop, { passive: false });
+    el.addEventListener('touchmove', stop, { passive: false });
     return () => {
-      el.removeEventListener('wheel', stop, { capture: true });
-      el.removeEventListener('touchmove', stop, { capture: true });
+      el.removeEventListener('wheel', stop);
+      el.removeEventListener('touchmove', stop);
     };
   }, [showRefs]);
 
@@ -341,11 +350,14 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     const el = consentOverlayRef.current;
     if (!el) return;
     const stop = (e) => { e.stopPropagation(); };
-    el.addEventListener('wheel', stop, { passive: false, capture: true });
-    el.addEventListener('touchmove', stop, { passive: false, capture: true });
+    // Bubble phase (NOT capture): let the wheel reach the inner scroll container first so
+    // the overlay content scrolls natively, THEN stop it here so it never reaches
+    // PyramidView's container handler (which preventDefault()s and locks the frame).
+    el.addEventListener('wheel', stop, { passive: false });
+    el.addEventListener('touchmove', stop, { passive: false });
     return () => {
-      el.removeEventListener('wheel', stop, { capture: true });
-      el.removeEventListener('touchmove', stop, { capture: true });
+      el.removeEventListener('wheel', stop);
+      el.removeEventListener('touchmove', stop);
     };
   }, [consentLevelId]);
 
@@ -631,9 +643,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     {/* Pre-load the "Lees mij!" info-card images on intro mount (they live in a panel that
         mounts lazily, so without this they pop in only after the card opens). */}
     <div aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
-      <img src={vulnerabilityOrder} alt="" decoding="async" fetchpriority="low" />
       <img src={wheelAnatomy} alt="" decoding="async" fetchpriority="low" />
       <img src={triangleHardware} alt="" decoding="async" fetchpriority="low" />
+      <img src={cellsImage} alt="" decoding="async" fetchpriority="low" />
     </div>
     <div className="fixed inset-0 flex items-center justify-center p-3 pointer-events-auto" style={{ backgroundColor: isMobile ? 'rgba(0,0,0,0.65)' : 'transparent', backdropFilter: isMobile ? 'blur(4px)' : 'none' }}>
       {/* Outer wrapper: holds corner brackets; no overflow clip so they're visible */}
@@ -713,64 +725,18 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 ← {t('assessmentIntro.referencesBack')}
               </SciFiButton>
 
-              {/* References title */}
-              <h2 className="text-center font-mono uppercase tracking-wider" style={{
-                fontSize: s.levelsTitleFont,
-                color: '#22c55e',
-                marginBottom: '1.5rem',
-                textShadow: '0 0 10px rgba(34,197,94,0.3)',
-              }}>
-                {t('assessmentIntro.referencesTitle')}
-              </h2>
-
-              {/* References subtitle */}
-              <p className="text-center text-slate-400 leading-relaxed" style={{
-                fontSize: s.descFontSize,
-                marginBottom: '2rem',
-              }}>
-                {t('assessmentIntro.referencesSubtitle')}
-              </p>
-
-              {/* Reference categories */}
-              {[
-                { key: 'psychology', color: '#3b82f6', icon: '🧠' },
-                { key: 'alchemy', color: '#f97316', icon: '⚗️' },
-                { key: 'astrology', color: '#a855f7', icon: '✦' },
-                { key: 'consciousness', color: '#ef4444', icon: '◉' },
-                { key: 'biochemistry', color: '#22c55e', icon: '🧬' },
-              ].map((cat) => (
-                <div
-                  key={cat.key}
-                  className="rounded-lg border border-slate-700/50 bg-slate-900/30"
-                  style={{ padding: '1rem', marginBottom: '0.75rem' }}
-                >
-                  <div className="flex items-start gap-3">
-                    <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{cat.icon}</span>
-                    <div>
-                      <h3 className="font-medium" style={{
-                        color: cat.color,
-                        fontSize: s.featureTitleFont,
-                        marginBottom: '0.35rem',
-                        textShadow: `0 0 8px ${cat.color}40`,
-                      }}>
-                        {t(`assessmentIntro.references.${cat.key}.title`)}
-                      </h3>
-                      <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                        {t(`assessmentIntro.references.${cat.key}.sources`)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Footer note */}
-              <p className="text-center text-slate-600 italic" style={{
-                fontSize: s.featureDescFont,
-                marginTop: '1.5rem',
-                paddingBottom: '1rem',
-              }}>
-                {t('assessmentIntro.referencesFooter')}
-              </p>
+              {/* ──────────────────────────────────────────────────────────────
+                  REFERENCE CARD — emptied, ready for the incoming UI.
+                  When importing the new UI: copy its LAYOUT STRUCTURE only.
+                  Restyle everything to match THIS intro card for consistency:
+                    • corner brackets / borders → purple (#a855f7) like the card frame
+                    • headings → font-mono uppercase tracking-wider, green (#22c55e) /
+                      purple accents with subtle textShadow
+                    • body text → text-slate-400, sizes from the `s` scale
+                      (s.levelsTitleFont, s.featureTitleFont, s.featureDescFont, s.descFontSize)
+                    • cards/boxes → rounded-lg bg-slate-900/30 with faint borders
+                  Drop the new structure below; do not keep the incoming UI's own styling.
+                  ────────────────────────────────────────────────────────────── */}
             </div>
           ) : (
           /* ═══ MAIN INTRO VIEW ═══ */
@@ -884,7 +850,41 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       }
                     }}
                   />
-                  <div style={{ position: 'relative', width: '10rem' }}>
+                  <div
+                    style={{ position: 'relative', width: '10rem' }}
+                    onMouseEnter={() => setShowOceanInfo(true)}
+                    onMouseLeave={() => setShowOceanInfo(false)}
+                  >
+                  {/* Info icon — top-right corner of the Upload button; the whole button triggers the pop-up */}
+                  <span
+                    style={{
+                      position: 'absolute', top: '-0.45rem', right: '-0.45rem', zIndex: 30,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      width: '1.05rem', height: '1.05rem', borderRadius: '50%',
+                      backgroundColor: 'rgba(2,0,3,0.9)', border: '1px solid rgba(167,139,250,0.6)',
+                      color: '#a78bfa', fontSize: '0.62rem', fontWeight: 700, fontStyle: 'italic',
+                      cursor: 'pointer', lineHeight: 1,
+                    }}
+                    title="Info"
+                  >
+                    i
+                    {showOceanInfo && (
+                      <div
+                        style={{
+                          position: 'absolute', bottom: 'calc(100% + 0.4rem)', right: 0,
+                          width: '16.25rem', padding: '0.7rem 0.9rem', borderRadius: '0.5rem',
+                          backgroundColor: 'rgba(15,23,42,0.97)', border: '1px solid rgba(167,139,250,0.3)',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.45)', zIndex: 50,
+                          color: 'rgba(148,163,184,0.9)', fontSize: '0.7rem', lineHeight: 1.6,
+                          fontStyle: 'normal', fontWeight: 400, textAlign: 'left', whiteSpace: 'normal',
+                          cursor: 'default',
+                        }}
+                      >
+                        <span style={{ color: '#a78bfa', fontWeight: 600 }}>{t('assessmentIntro.oceanInfoLabel')}</span>
+                        {t('assessmentIntro.oceanInfoText')}
+                      </div>
+                    )}
+                  </span>
                   {uploadedFiles.length > 0 && (
                     <div style={{ position: 'absolute', right: 'calc(100% + 0.85rem)', top: '50%', transform: 'translateY(-50%)' }}>
                       <span
@@ -1029,7 +1029,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                     </div>
                     <div className="flex items-center relative" style={{ gap: s.pyramidLabelGap }}>
                       <span className="font-medium" style={{
-                        color: layer.color,
+                        color: 'rgba(255,254,240,0.72)',
                         fontSize: s.pyramidLabelFont,
                         textShadow: `0 0 10px ${layer.color}50`,
                       }}>{t(`${layer.nameKey}.name`)}</span>
@@ -1498,174 +1498,72 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             {/* Info content */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
-              {/* Waarom deze test anders is */}
               <div className="rounded-lg" style={{ padding: '1rem' }}>
-                <h3 className="font-medium" style={{ color: '#3b82f6', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(59,130,246,0.3)' }}>
-                  Waarom deze test anders is
-                </h3>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
-                  Waar traditionele persoonlijkheidstesten je in één hokje plaatsen, brengt het Deltawerken Model in kaart hoe jouw zenuwstelsel navigeert tussen instinct en aanpassing — en wat dat je kost.
-                </p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize }}>
-                  Het theoretische fundament combineert drie onderzoekstradities: de archetypische psychologie van Carl Jung, het neurobiologische Triple Network Model, en de Big Five persoonlijkheidstheorie (OCEAN). Deze worden samengebracht in het eerste persoonlijkheidsframework dat niet alleen meet wát je doet, maar vanuit welke laag je opereert.
-                </p>
+                <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>Waarom dit geen persoonlijkheidstest is</h3>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>De meeste tests geven je een hokje. Vier letters, een kleur, een dier — een etiket dat je meedraagt en dat nooit verandert, hoe het leven ook aan je trekt.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Dit model stelt een andere vraag. Niet wat ben je, maar hoe navigeer je — tussen instinct en aanleg, tussen wie je van nature bent en wie je hebt leren zijn. En, belangrijker: wat kost dat je, wanneer de druk oploopt. Want een mens is geen vast punt. Een mens is een vorm die buigt, en de kunst is om te weten waar, en hoe ver, en wat er overeind blijft.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Daarvoor bouwen we op drie originele modellen. Geen van de drie is decoratie; elk bezielt op intieme wijze de schoonheid in onze tuin.</p>
               </div>
 
-              {/* Nature vs. Culture — 50/50 layout with image */}
-              <div className="rounded-lg" style={{ padding: '1rem', minHeight: '302px', display: 'flex', alignItems: 'stretch' }}>
+              <div className="rounded-lg" style={{ padding: '1rem', display: 'flex', alignItems: 'stretch' }}>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
-                  {/* Left — Text */}
-                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'flex-start' }}>
-                    <h3 className="font-medium" style={{ color: '#eab308', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(234,179,8,0.3)' }}>
-                      Relatie tussen natuur en cultuur
-                    </h3>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.25rem' }}>
-                      &lsquo;Cells within Cells Interlinked&rsquo; is het hi&euml;rarchische model dat de ontologische lagen relationeert naar de maatschappij: van fysiologische basisbehoeften (verwant aan Maslows behoeftehi&euml;rarchie) via zelfactualisatie en collectief geheugen naar intimiteit en transcendentie.<br /><br />Dit model verklaart waarom onze test niet alleen persoonlijkheid meet, maar de ontwikkelingslaag als dynamiek tussen natuurlijke aanleg en culturele conditionering blootlegt. &mdash; een principe dat Jean Piaget beschreef als cognitieve stadia en dat Carl Jung benaderde als individuatie.
-                    </p>
+                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
+                    <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>Het wiel — Archetype landschap</h3>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>We hebben het wiel niet uitgevonden. Dit is het antieke oosterse zodiak wiel — exact dezelfde geometrie, dezelfde twaalf posities, dezelfde regel dat elke relatie, en elke conversatie een transformatie is voor beide.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>De oude kaart had de vorm goed maar de wetenschap nog niet. De twaalf posities zitten nu op de drie grote hersennetwerken die Vinod Menon beschreef: het netwerk dat plant en beslist, het netwerk dat reflecteert en betekenis geeft, en het netwerk dat bepaalt wat aandacht verdient. Dezelfde eeuwenoude geometrie — nu verankerd in de neurobiologie van het brein.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Ja — dat is een bewuste knipoog naar de omstreden astrologie. Niet naar de sterren, maar naar haar belichaming: het idee dat een mens te begrijpen valt aan de hand van een positie op een wiel, en aan wat daar tegenover en naast ligt. De astrologie had die intuïtie eeuwen geleden al, en ze is gevaarlijker dan haar reputatie. Wij namen de geometrie serieus en gaven haar een grond die de oude kaart niet had.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>En zoals een astroloog een geboortekaart leest, lezen wij de verbanden recht van die geometrie af:</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Wie naast je staat, deelt je <span style={{ color: '#22c55e', fontWeight: 600 }}>hardware</span>. Buur-archetypen in dezelfde biologische groep draaien op exact dezelfde neurale grond — je stevigste, meest moeiteloze kracht.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Wie tegenover je staat, is je <span style={{ color: '#a855f7', fontWeight: 600 }}>schaduw</span>. De 180°-tegenpool: alles wat je niet bent, en juist daarom je grootste groeirichting. Niet omdat zij de tegenovergestelde hardware hebben, maar omdat ze deze naar jou toe spiegelen.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Sommige verbindingen kruisen het wiel als een <span style={{ color: '#3b82f6', fontWeight: 600 }}>brug</span>. Archetypen uit verschillende groepen die elkaars tegengewicht dragen — een spanning die, wie haar kan houden, in beweging zet.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>En over alles heen ligt wat je hebt <span style={{ color: '#eab308', fontWeight: 600 }}>geléérd</span>. Driehoeken van archetypen die biologisch niets delen, maar die jaren van vorming tot één aangeleerd netwerk hebben gesmeed — de software die je schreef om te overleven.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Geen van deze verbindingen is verzonnen. Ze volgen uit waar je zit. Dat is het verschil tussen determinatie en ‘’vrije’’ wil.</p>
                   </div>
-                  {/* Right — Vulnerability Image (triangle container, gold glow) */}
-                  <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{
-                      width: 'min(262px, 24.2vw)',
-                      height: 'min(262px, 24.2vw)',
-                      filter: 'drop-shadow(0 0 14px rgba(240,224,0,0.4)) drop-shadow(0 0 30px rgba(240,224,0,0.15))',
-                    }}>
-                      <img
-                        src={vulnerabilityOrder}
-                        alt="The Magical Order of Vulnerability — Nature vs Culture"
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'contain',
-                        }}
-                      />
+                  <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+                    <div style={{ width: 'min(262px, 24.2vw)', height: 'min(262px, 24.2vw)', borderRadius: '50%', filter: 'drop-shadow(0 0 14px rgba(34,197,94,0.4)) drop-shadow(0 0 30px rgba(34,197,94,0.15))' }}>
+                      <img src={wheelAnatomy} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Het Geometrische Wiel + Anatomie — 50/50 layout */}
-              <div className="rounded-lg" style={{ padding: '1rem', minHeight: '302px', display: 'flex', alignItems: 'stretch' }}>
+              <div className="rounded-lg" style={{ padding: '1rem', display: 'flex', alignItems: 'stretch' }}>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
-                  {/* Left — Text (fills remaining space) */}
-                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'flex-start' }}>
-                    <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>
-                      Het Geometrische Wiel &amp; De Anatomie
-                    </h3>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.25rem' }}>
-                      We hebben het wiel niet opnieuw uitgevonden, we hebben het simpelweg geüpgrade naar de tijdgeest van nu.
-                      <br />
-                      De geometrie van onze test is een innovatieve herstructurering van het oude oosterse zodiak-wiel, volledig verankerd in de harde, moderne biologie. De 12 kern-archetypen op basis van de drie grote hersennetwerken die Vinod Menon en collega&apos;s beschreven: het Central Executive Network (orde, executie), het Default Mode Network (reflectie, betekenisgeving) en het Salience Network (responsiviteit, adaptatie).
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#22c55e', fontWeight: 600 }}>1. De Groene Bogen (Het Moederbord):</span> Jouw absolute fundament. Eigenschappen die fysiek op exact dezelfde biologische hardware draaien.
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#3b82f6', fontWeight: 600 }}>2. De Blauwe Lijnen (Symbiotische Brug):</span> Fysiologische snelwegen in je brein. Gedeelde neurale hubs die extreem efficiënt werken.
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#a855f7', fontWeight: 600 }}>3. De Paarse Lijnen (De Paradox / 180°):</span> De ultieme integratie van absolute tegenpolen. Wie deze spanning kan dragen, ontsluit exponentiële energie.
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#ef4444', fontWeight: 600 }}>4. De Rode Lijnen (A-typische projectie):</span> De archetype die van nature botst met jouw neurale netwerk. Hier ontstaan mogelijk sterke projecties wanneer patronen nog niet in kaart zijn gebracht.
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#eab308', fontWeight: 600 }}>5. De Gele Driehoeken (CultureForce):</span> Jouw aangeleerde cognitieve synergie. De software die je hebt geschreven om te overleven; efficiënt, maar niet je ware oernatuur.
-                    </p>
+                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
+                    <h3 className="font-medium" style={{ color: '#f97316', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(249,115,22,0.3)' }}>De driehoek — waar het om draait</h3>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>In het wiel ligt een driehoek, en die stelt de oudste vraag die er is: waar oriënteer je je op, als puntje bij paaltje komt? Op wat waar is, op wat goed is, of op wat mooi is?</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Het zijn de drie waarden die Plato herkende als het hoogste waar een mens zich naar kan richten. Wij citeren hem niet — we zetten zijn intuïtie voort. De Deltawerken is de moderne gestalte van diezelfde platonische geest: niet drie idealen aan een hemel, maar drie geneste richtingen waarin een levend mens zich wendt. Elk archetype navigeert ertussen — niet als gedrag dat je vertoont, maar als waar je je naartoe keert wanneer het er werkelijk toe doet. De driehoek bepaalt de dieptelaag: niet wat je doet, maar waarvoor.</p>
                   </div>
-                  {/* Right — Wheel Image (circular container) */}
-                  <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{
-                      width: 'min(262px, 24.2vw)',
-                      height: 'min(262px, 24.2vw)',
-                      borderRadius: '50%',
-                      filter: 'drop-shadow(0 0 14px rgba(34,197,94,0.4)) drop-shadow(0 0 30px rgba(34,197,94,0.15))',
-                    }}>
-                      <img
-                        src={wheelAnatomy}
-                        alt="Het Geometrische Wiel — 12 Archetypen met neurale connecties"
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
+                  <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+                    <div style={{ width: 'min(262px, 24.2vw)', height: 'min(262px, 24.2vw)', marginTop: '-2rem', filter: 'drop-shadow(0 0 14px rgba(249,115,22,0.4)) drop-shadow(0 0 30px rgba(249,115,22,0.15))' }}>
+                      <img src={triangleHardware} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Biologische Hardware (TNM & OCEAN) — 50/50 layout */}
-              <div className="rounded-lg" style={{ padding: '1rem', minHeight: '302px', display: 'flex', alignItems: 'stretch' }}>
+              <div className="rounded-lg" style={{ padding: '1rem', display: 'flex', alignItems: 'stretch' }}>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
-                  {/* Left — Text */}
-                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', justifyContent: 'flex-start' }}>
-                    <h3 className="font-medium" style={{ color: '#f97316', fontSize: s.descFontSize, marginBottom: '0.25rem', textShadow: '0 0 8px rgba(249,115,22,0.3)' }}>
-                      Biologische Hardware (TNM &amp; OCEAN)
-                    </h3>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      De Deltawerken Driehoek structureert de verhouding tussen drie fundamentele waardenoriëntaties: waarheid, goedheid en schoonheid. Deze driehoek — verwant aan Plato&apos;s transcendentalia — bepaalt de dieptelaag van de assessment. In dit model navigeert elke archetype op deze driehoek: niet alleen als gedragskenmerken, maar als oriëntatie op wat er werkelijk toe doet.
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#f97316', fontWeight: 600 }}>Triple Network Model (TNM):</span> De drie kernnetwerken van je brein (CEN - Centrale Executief Netwerk, DMN - Default Mode Network, Salience Network) bepalen je informatieverwerking.
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#f97316', fontWeight: 600 }}>CEN (Centrale Executief):</span> Orde, structuur, executie. Het netwerk dat plant, weegt en beslist. De architect aan het stuur.
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#f97316', fontWeight: 600 }}>DMN (Default Mode):</span> Reflectie, betekenisgeving, abstractie. Het netwerk dat verbanden legt, patronen herkent en de binnenkant van de wereld leest. De spiegel die altijd aan staat.
-                    </p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.featureDescFont }}>
-                      <span style={{ color: '#f97316', fontWeight: 600 }}>Salience Network:</span> Responsiviteit, ontdekking, adaptatie. Het netwerk dat bepaalt wat aandacht verdient — bedreiging én kans. De schakelaar tussen oud en nieuw.
-                    </p>
+                  <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
+                    <h3 className="font-medium" style={{ color: '#22d3ee', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,211,238,0.3)' }}>Cellen in cellen — hoe diep het gaat</h3>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>En dan de schaal. Kijk goed naar dit beeld, want het is groter dan een mens. Het is het patroon dat de wetenschap als geheel probeert te ontvouwen: dezelfde nesten, dezelfde geometrie van vorm-binnen-vorm, die terugkeert van het kleinste naar het grootste. De chemie vindt het in moleculen, de biologie in cellen, de fysica in velden, de kosmologie en astronomie in de structuur van het heelal — en de psychologie in jou. Eén substraat, op elke schaal opnieuw.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Een mens is daar geen uitzondering op, maar een instantie ervan: genest in lagen, van het lijf dat ademt tot de betekenis die je zoekt — van de eerste fysiologische behoefte, via zelf en gemeenschap, naar intimiteit en wat daarboven uitreikt. Daarom raakt deze test niet alleen je persoonlijkheid maar je levensverhaal: de intense spanning tussen je natuurlijke aanleg en wat de cultuur van je maakte. Piaget noemde het cognitieve stadia. Jung noemde het individuatie. Wij brengen het in kaart als een dynamiek die altijd draait — niet een eindpunt, maar een beweging die nooit stopt.</p>
                   </div>
-                  {/* Right — Hardware Image (square container, orange glow) */}
                   <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{
-                      width: 'min(262px, 24.2vw)',
-                      height: 'min(262px, 24.2vw)',
-                      borderRadius: '0.5rem',
-                      filter: 'drop-shadow(0 0 14px rgba(249,115,22,0.4)) drop-shadow(0 0 30px rgba(249,115,22,0.15))',
-                    }}>
-                      <img
-                        src={triangleHardware}
-                        alt="Biologische Hardware — Triple Network Model &amp; OCEAN"
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'contain',
-                        }}
-                      />
+                    <div style={{ width: 'min(262px, 24.2vw)', height: 'min(262px, 24.2vw)', filter: 'drop-shadow(0 0 14px rgba(34,211,238,0.4)) drop-shadow(0 0 30px rgba(34,211,238,0.15))' }}>
+                      <img src={cellsImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Van Vraag Naar Score */}
               <div className="rounded-lg" style={{ padding: '1rem' }}>
-                <h3 className="font-medium" style={{ color: '#ef4444', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(239,68,68,0.3)' }}>
-                  Van Vraag Naar Score
-                </h3>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>
-                  Het onderzoek bestaat uit 36 vragen over vijf onderwerpen: Zelf, Ander, Macht, Wijsheid en Mysterie. Elke vraag biedt zes antwoorden — drie vanuit Nature (je ongedwongen instinct) en drie vanuit Culture (je aangeleerde strategie). Je kiest er twee: je kern en je tweede herkenning. Dit levert 72 datapunten. Beide antwoordtypes voelen even authentiek — het verschil zit in de korrel van de taal, niet in de oppervlakte.
-                </p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.75rem' }}>
-                  Elke keuze distribueert punten niet alleen naar het gekozen archetype, maar vloeit via de geometrische verbindingen van het wiel. Een Nature-keuze activeert je biologische hardware en werpt een schaduw naar je 180° tegenpool. Een Culture-keuze activeert je aangeleerde cognitieve netwerk. Gedrag opereert niet geïsoleerd — het resoneert door neurale netwerken.
-                </p>
-
-                <h4 className="font-medium" style={{ color: '#a855f7', fontSize: s.descFontSize, marginBottom: '0.4rem', textShadow: '0 0 8px rgba(168,85,247,0.3)' }}>
-                  De Archetypische Laag
-                </h4>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.75rem' }}>
-                  De 12 archetypen zijn geen hokjes maar navigatiestijlen, geworteld in Jungs archetypische theorie en meetbaar gemaakt via de Big Five persoonlijkheidsdimensies. Elk archetype heeft een specifiek OCEAN-profiel. De zes biologische groepen delen neurale hardware. De zes 180° schaduwparen (Judge↔Trickster, Lover↔Sage, Caregiver↔Artist, Innocent↔Magician, Explorer↔Hero, Outlaw↔Ruler) volgen Jungs schaduwtheorie: je grootste groeirichting zit in de integratie van je absolute tegenpool.
-                </p>
-
-                <h4 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.4rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>
-                  Hoe Het Rapport Ontstaat
-                </h4>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize }}>
-                  Na het assessment berekent het systeem je volledige scoreprofiel inclusief geometrische echo's. Een AI-model analyseert dit profiel aan de hand van het Deltawerken-framework, de biochemische archetypeprofielen en de 72 Extended Archetypes. Het rapport dat je leest is geen generieke typebeschrijving — het is een dynamische analyse van jouw specifieke scoreprofiel, geschreven in de taal die past bij jouw dominante netwerk.
-                </p>
+                <h3 className="font-medium" style={{ color: '#a855f7', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(168,85,247,0.3)' }}>Wat dit model draagt, en de meeste niet</h3>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Een gewone test vraagt je een paar vinkjes en geeft je een naam terug. Hier kies je tweeledig op zesendertig vragen — telkens tussen wat je van nature bent en wat je hebt leren zijn — en elke keuze stroomt niet naar één punt, maar door de geometrie van het hele wiel. Tweeënzeventig datapunten, en geen daarvan staat op zichzelf.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Tel je uit hoeveel verschillende geometrieën daaruit kunnen ontstaan, dan kom je op een getal van vierenvijftig cijfers: 30³⁶ — meer dan honderdvijftig quadriljard maal een biljoen. Meer dan er sterren aan de hemel staan, meer dan er atomen in je lichaam zitten.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Dit is geen losse statistiek: het is een gevolg van hoe het model leest. Elke keuze stroomt niet naar één oceaan, maar verspreidt zich uit in vijf afzonderlijke geometrische kanalen door het hele wiel — gedeelde hardware, bruggen, schaduw, aangeleerde driehoeken, frictie. Geen etiket, een vingerafdruk.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Toch zit de diepte niet eens in hoeveel vormen er mogelijk zijn. Ze zit in wat we eruit lezen. Dit model leest ook de storm: hoe jouw specifieke configuratie zich houdt wanneer de druk oploopt, waar ze het langst standhoudt, en waar — en op welk punt — ze breekt. Niet om je een diagnose te geven, maar om je de vorm van je eigen veerkracht te tonen: waar je rust, waar je rekt, en wat je het kost om overeind te blijven.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Dat is wat een kaart kan en een etiket nooit. Een etiket zegt wie je bent. Een kaart laat zien hoe je beweegt — en waar het terrein steil wordt.</p>
               </div>
 
             </div>
@@ -1756,70 +1654,15 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             paddingBottom: '0.85rem',
             margin: 0,
           }}>
-            Bronnen &amp; Verantwoording — Open Onderzoek
+            {t('assessmentIntro.referencesCardTitle')}
           </h2>
           {/* Top rule */}
           <div style={{ flexShrink: 0, height: '0.75px', backgroundColor: 'rgba(168,85,247,0.45)', borderRadius: '1px', marginRight: s.padding.split(' ')[1] }} />
           {/* Scrollable content area */}
           <div className="purple-scrollbar" style={{ flex: '1 1 0', overflowY: 'auto', overflowX: 'hidden', minHeight: 0, paddingRight: s.padding.split(' ')[1], borderRadius: 'inherit' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-              {/* Prototype note */}
-              <p className="text-slate-500" style={{ fontSize: `calc(${s.descFontSize} - 0.05rem)`, fontStyle: 'italic', lineHeight: 1.5, padding: '0 1rem' }}>
-                Prototype: Cluster A (van 11). Dit is de proef voor toon en structuur; de andere clusters volgen in dezelfde vorm zodra deze klopt.
-              </p>
-
-              {/* Waarom we dit laten zien */}
-              <div className="rounded-lg" style={{ padding: '1rem' }}>
-                <h3 className="font-medium" style={{ color: '#3b82f6', fontSize: s.descFontSize, marginBottom: '0.6rem', textShadow: '0 0 8px rgba(59,130,246,0.3)' }}>
-                  Waarom we dit laten zien
-                </h3>
-                {REFS_INTRO_PARAGRAPHS.map((para, i) => (
-                  <p key={i} className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: i === REFS_INTRO_PARAGRAPHS.length - 1 ? 0 : '0.55rem' }}>
-                    {renderRich(para)}
-                  </p>
-                ))}
-              </div>
-
-              {/* Cluster A — sources */}
-              <div className="rounded-lg" style={{ padding: '1rem' }}>
-                <h3 className="font-medium" style={{ color: '#a855f7', fontSize: s.descFontSize, marginBottom: '0.4rem', textShadow: '0 0 8px rgba(168,85,247,0.3)' }}>
-                  Cluster A — Actieve inferentie, netwerken &amp; het voorspellende substraat
-                </h3>
-                <p className="text-slate-500 leading-relaxed" style={{ fontSize: `calc(${s.descFontSize} - 0.05rem)`, fontStyle: 'italic', marginBottom: '1rem' }}>
-                  De laag die verklaart hoe het brein de wereld niet ondergaat maar vóórspelt — het fundament onder "een archetype is een configuratie van verwachtingen, geen vaste eigenschap."
-                </p>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  {REFS_CLUSTER_A.map((src, i) => (
-                    <div key={i} style={{ borderTop: '1px solid rgba(168,85,247,0.15)', paddingTop: '0.85rem' }}>
-                      {/* Source name + citation */}
-                      <p style={{ fontSize: s.descFontSize, marginBottom: '0.45rem', lineHeight: 1.45 }}>
-                        <strong style={{ color: '#c4b5fd' }}>{src.name}</strong>
-                        <span className="text-slate-500"> — {src.cite}</span>
-                      </p>
-                      {/* Fields */}
-                      {[
-                        ['Wat het onderbouwt', src.onderbouwt, '#3b82f6'],
-                        ['Waar wij afwijken', src.afwijking, '#eab308'],
-                        ['Kruisrelatie / falsifieert', src.kruis, '#22c55e'],
-                        ['Zekerheid', src.zekerheid, '#fb923c'],
-                      ].map(([label, value, color]) => (
-                        <p key={label} className="leading-relaxed" style={{ fontSize: `calc(${s.descFontSize} - 0.05rem)`, marginBottom: '0.35rem' }}>
-                          <span style={{ color, fontWeight: 600 }}>{label}: </span>
-                          <span className="text-slate-400">{renderRich(value)}</span>
-                        </p>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Closing invitation */}
-              <p className="text-slate-500 leading-relaxed" style={{ fontSize: `calc(${s.descFontSize} - 0.05rem)`, fontStyle: 'italic', padding: '0 1rem' }}>
-                Herken je je hierin — of zie je juist waar we het mis hebben? Dat laatste is geen probleem, dat is precies waarvoor dit er staat. We bouwen dit in de open en denken graag verder met mensen die meekijken. <span style={{ color: '#c4b5fd', fontStyle: 'normal' }}>[Neem contact op]</span>.
-              </p>
-
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingLeft: '0.25rem' }}>
+              {/* Full Bronnen & Verantwoording panel (clusters A–K, search, filters, forms) */}
+              <ReferencesPanel bodyFont={s.descFontSize} />
             </div>
           </div>
           {/* Bottom rule */}
@@ -1843,4 +1686,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   );
 };
 
-export default AssessmentIntro;
+// Memoized: App re-renders ~42×/700ms while scaling the intro card out of the entity
+// (introShrinkProgress rAF loop). All props from App are stable (useCallback / state),
+// so memo skips those frames and the float-out stays smooth instead of re-rendering
+// this heavy component each frame.
+export default React.memo(AssessmentIntro);

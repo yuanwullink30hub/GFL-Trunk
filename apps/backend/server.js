@@ -13,6 +13,7 @@ const assessmentRoutes = require('./routes/assessment');
 const adminRoutes = require('./routes/admin');
 const pdfRoutes = require('./routes/pdf');
 const questionsRoutes = require('./routes/questions');
+const contactRoutes = require('./routes/contact');
 
 const app = express();
 const PRIVATE_DEV_ORIGIN_RE = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
@@ -37,6 +38,7 @@ app.use('/api/assessment', assessmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/questions', questionsRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Lightweight keepalive — frontend pings on every card save to prevent Render sleep
 app.get('/api/ping', (_req, res) => res.json({ pong: true }));

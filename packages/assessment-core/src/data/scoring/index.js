@@ -253,18 +253,20 @@ export const ARCHETYPE_RADAR_LABELS = [
  * All 12 archetype keys in wheel position order 1→12.
  */
 export const ALL_ARCHETYPE_KEYS = [
-  'RULER', 'JUDGE', 'LOVER', 'CAREGIVER',
-  'INNOCENT', 'EXPLORER', 'OUTLAW', 'TRICKSTER',
-  'SAGE', 'ARTIST', 'MAGICIAN', 'HERO',
+  'JUDGE', 'LOVER', 'CAREGIVER', 'INNOCENT',
+  'EXPLORER', 'OUTLAW', 'TRICKSTER', 'SAGE',
+  'ARTIST', 'MAGICIAN', 'HERO', 'RULER',
 ];
 
 /**
  * Archetype numbering on the 12-position wheel (Neuraal Schakelbord).
+ * Clock convention: Ruler sits at the top (12 o'clock = 12), Judge is the next
+ * clockwise (1). Matches lineType.js, the prompts and the wheel image.
  */
 export const ARCHETYPE_NUMBERS = {
-  RULER: 1, JUDGE: 2, LOVER: 3, CAREGIVER: 4,
-  INNOCENT: 5, EXPLORER: 6, OUTLAW: 7, TRICKSTER: 8,
-  SAGE: 9, ARTIST: 10, MAGICIAN: 11, HERO: 12,
+  JUDGE: 1, LOVER: 2, CAREGIVER: 3, INNOCENT: 4,
+  EXPLORER: 5, OUTLAW: 6, TRICKSTER: 7, SAGE: 8,
+  ARTIST: 9, MAGICIAN: 10, HERO: 11, RULER: 12,
 };
 
 // ═══════════════════════════════════════════════════════════════════════

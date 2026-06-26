@@ -46,6 +46,7 @@ import { useLanguage } from '@gfl/i18n';
 const tnmWheelImg = '/images/Model imports/TNM wheel PNG.png';
 const deltawerkenImg = '/images/Model imports/Deltawerken png.png';
 const cellsImg = '/images/Model imports/Cells within Cells png.png';
+const c12Img = '/images/Model imports/C12.png';
 
 /**
  * AssessmentResultsModal - Full-screen sci-fi results modal
@@ -1009,7 +1010,7 @@ const AssessmentResultsModal = ({
 
         // Header
         pdf.setFontSize(fontSize); pdf.setFont('helvetica', 'bold');
-        const hCells = headers.map((h, i) => pdf.splitTextToSize(h, colWidths[i] - hPad * 2));
+        const hCells = headers.map((h, i) => pdf.splitTextToSize(sanitizePdf(h), colWidths[i] - hPad * 2));
         const hRowH = Math.max(...hCells.map(c => c.length)) * lh + vPad;
         ensureSpace(hRowH + 2);
         pdf.setFillColor(...cardBg);
@@ -1032,7 +1033,7 @@ const AssessmentResultsModal = ({
         // Rows
         rows.forEach((row, ri) => {
           pdf.setFontSize(fontSize); pdf.setFont('helvetica', 'normal');
-          const cells = row.map((cell, i) => pdf.splitTextToSize(String(cell || ''), colWidths[i] - hPad * 2));
+          const cells = row.map((cell, i) => pdf.splitTextToSize(sanitizePdf(String(cell || '')), colWidths[i] - hPad * 2));
           const lineCount = Math.max(...cells.map(c => c.length));
           const cellH = lineCount * lh + vPad;
           ensureSpace(cellH + 0.5);
@@ -1429,128 +1430,231 @@ const AssessmentResultsModal = ({
       });
 
       // ═══════════════════════════════════════════════════
-      // PAGE 3: BELANGRIJKE CONTEXT
+// PAGE 3: BELANGRIJKE CONTEXT + BRONMODELLEN (revised intro flow)
       // ═══════════════════════════════════════════════════
+      const loadImg = (src) => new Promise((resolve, reject) => {
+        const im = new Image();
+        im.onload = () => resolve(im);
+        im.onerror = reject;
+        im.src = src;
+      });
+      const measurePara = (text, w, fsz) => {
+        pdf.setFontSize(fsz); pdf.setFont('helvetica', 'normal');
+        return pdf.splitTextToSize(sanitizePdf(text), w).length * (fsz * 0.45);
+      };
+      // Flow paragraphs in a narrow left column only while beside the image (imgTopY..imgBottomY), full width otherwise.
+      const flowAroundImage = (paras, x, narrowW, fullW, imgTopY, imgBottomY, fsz, color) => {
+        pdf.setFontSize(fsz); pdf.setTextColor(...color); pdf.setFont('helvetica', 'normal');
+        const lineH = fsz * 0.45;
+        let broke = false;
+        for (let pi = 0; pi < paras.length; pi++) {
+          const words = sanitizePdf(paras[pi]).split(/\s+/).filter(Boolean);
+          let i = 0;
+          while (i < words.length) {
+            if (ensureSpace(lineH)) broke = true;
+            const w = (!broke && y >= imgTopY && y < imgBottomY) ? narrowW : fullW;
+            let line = '';
+            while (i < words.length) {
+              const t = line ? line + ' ' + words[i] : words[i];
+              if (pdf.getTextWidth(t) <= w) { line = t; i++; } else break;
+            }
+            if (!line) { line = words[i]; i++; }
+            pdf.text(line, x, y); y += lineH;
+          }
+          y += 2;
+        }
+      };
+      const coloredBullet = (label, labelColor, rest, rightX) => {
+        pdf.setFontSize(8.5);
+        ensureSpace(6);
+        const dotX = margin + 2, labelX = margin + 6;
+        const lineH = 8.5 * 0.45;
+        pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...labelColor);
+        pdf.text('\u2022', dotX, y);
+        const labelS = sanitizePdf(label);
+        pdf.text(labelS, labelX, y);
+        const labelW = pdf.getTextWidth(labelS + ' ');
+        pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+        const words = sanitizePdf(rest).split(/\s+/).filter(Boolean);
+        const rightEdge = rightX || (margin + contentW - 2);
+        let curX = labelX + labelW, i = 0, line = '';
+        while (i < words.length) {
+          const t = line ? line + ' ' + words[i] : words[i];
+          if (curX + pdf.getTextWidth(t) <= rightEdge) { line = t; i++; } else break;
+        }
+        if (line) { pdf.text(line, curX, y); }
+        y += lineH;
+        while (i < words.length) {
+          ensureSpace(lineH);
+          let l2 = '';
+          while (i < words.length) {
+            const t = l2 ? l2 + ' ' + words[i] : words[i];
+            if (pdf.getTextWidth(t) <= rightEdge - labelX) { l2 = t; i++; } else break;
+          }
+          if (!l2) { l2 = words[i]; i++; }
+          pdf.text(l2, labelX, y); y += lineH;
+        }
+        y += 2.5;
+      };
+
+      const T_wiel = "Het Triple Network-wiel plaatst de twaalf kern-archetypen op een geometrisch wiel, verankerd in de drie grote hersennetwerken die Vinod Menon en collega's beschreven: het Central Executive Network (orde, executie), het Default Mode Network (reflectie, betekenisgeving) en het Salience Network (responsiviteit, adaptatie). De geometrie is die van het oosterse zodiak-wiel \u2014 dezelfde twaalf posities, dezelfde relationele logica van buur en tegenpool \u2014 maar de posities zijn opnieuw verankerd: niet in sterrenbeelden, in netwerken. De twaalf posities zijn onderling verbonden via vijf lijntypes, die elk een ander soort relatie dragen (zie hieronder).";
+      const T_cells = 'Cells within Cells Interlinked (zie pagina 6) levert de schaal-as: de geneste ontologische lagen, van fysiologische basisbehoefte via zelf en gemeenschap naar intimiteit en transcendentie. Dit is waarom het instrument niet alleen persoonlijkheid meet maar de ontwikkelingslaag blootlegt \u2014 de spanning tussen aangeboren aanleg en culturele conditionering. Piaget beschreef die als cognitieve stadia; Jung als individuatie.';
+      const T_vv1 = 'Het assessment bestaat uit 36 vragen over vijf domeinen: Zelf, Ander, Macht, Wijsheid en Mysterie. Elke vraag biedt zes antwoorden \u2014 drie vanuit Nature (het ongedwongen instinct) en drie vanuit Culture (de aangeleerde strategie). Je kiest er twee (of geen): de eerste is de kern, de tweede resoneert maar weegt minder zwaar. Dit levert 72 datapunten.';
+      const T_vv2 = "Het onderscheid Nature/Culture is gegrond in John Vervaeke's 4P-model van kennen. Nature = participatory en perspectival knowing: je weet het doordat je het BENT. Culture = propositional en procedural knowing: je weet DAT je het hebt en HOE je ermee navigeert. De antwoorden zijn zo geschreven dat beide even authentiek aanvoelen; het verschil zit in de korrel van de taal, niet in de oppervlakte.";
+      const T_vv3 = 'Elke keuze distribueert punten niet naar \u00E9\u00E9n archetype, maar vloeit door de geometrische verbindingen van het wiel. Een Nature-keuze activeert de gedeelde hardware (de groene koppeling) en werpt een schaduw naar de 180\u00B0-tegenpool (de paarse as). Een Culture-keuze activeert het aangeleerde netwerk (de gele driehoek). Geen enkel datapunt staat op zichzelf \u2014 gedrag resoneert door de netwerken heen, consistent met Menons werk over cross-network connectiviteit en Raichles Default Mode-hypothese.';
+      const T_vv4 = 'Het resultaat is geen positie maar een verdeling: een geometrie. En omdat elke keuze door vijf afzonderlijke kanalen tegelijk bloedt, convergeren verschillende antwoordpaden vrijwel nooit op dezelfde eindvorm. De ruwe antwoordruimte telt 30^36 mogelijke configuraties \u2014 een getal van 54 cijfers. Geen twee profielen zijn in de praktijk gelijk.';
+      const T_wi1 = 'Het bovenstaande beschrijft de meting bij rust. De feitelijke diepte van het model ligt in de toestand-as: voor elke configuratie modelleert het niet alleen hoe ze zich uitdrukt bij basislast, maar hoe ze vervormt naarmate de druk oploopt \u2014 waar ze het langst standhoudt, op welk punt ze omslaat, en hoe het herstel verloopt. Dit is de plastische laag: een traject van baseline, via belasting, naar het punt van bezwijken, met het mechanisme benoemd bij elke fase.';
+      const T_wi2 = 'Dat is wat het rapport hierna leest. Geen typebeschrijving, maar een dynamische analyse van jouw specifieke scoreprofiel \u2014 geschreven in de taal van je dominante netwerk, en gericht op de vorm van je veerkracht: waar je rust, waar je rekt, en wat het je kost om overeind te blijven.';
+      const T_lijnIntro = 'De vijf verbindingen zijn geen taxonomie achteraf \u2014 ze volgen uit de positie op het wiel, en elk routeert punten anders:';
+      const B_groen = '\u2014 gedeelde hardware. Archetypen binnen dezelfde biologische groep draaien op dezelfde neurale grond. De stevigste, meest moeiteloze koppeling. (Nature)';
+      const B_paars = '\u2014 de schaduw-as (180\u00B0). De tegenpool: het neurale tegenbeeld dat de configuratie naar zich toe spiegelt. Grootste groeirichting, niet omdat de hardware tegengesteld is, maar omdat ze wordt teruggekaatst.';
+      const B_blauw = '\u2014 de feedback-brug. Een verbinding die de groepen kruist en reorganisatie draagt: geen gedeelde hardware, maar een runtime-kanaal dat tegengewicht overbrengt.';
+      const B_geel = '\u2014 de aangeleerde driehoek. Archetypen zonder biologische verwantschap die door jaren conditionering tot \u00E9\u00E9n getraind netwerk zijn gesmeed. (Culture)';
+      const B_rood = '\u2014 de frictie-as. De cross-group botsing waar de neurale schaduw zijn oorsprong heeft; de plek waar projectie ontstaat zolang het patroon niet in kaart is.';
+
+      // ── PAGE 3A: Belangrijke Context + Bronmodellen + Deltawerken (centered) + wiel/cells (bottom) ──
       pdf.addPage(); paintBg(); markPage(); y = margin;
 
       sectionHeading('Belangrijke Context', green);
+      writeWrapped('Traditionele persoonlijkheidstests classificeren: ze plaatsen je in een type en laten het daarbij. Dit model doet iets anders. Het brengt in kaart hoe een zenuwstelsel navigeert tussen aangeboren aanleg en aangeleerde strategie \u2014 en, doorslaggevend, hoe die configuratie zich gedraagt onder toenemende druk. Niet een classificatie, maar een dynamisch profiel.', margin + 2, y, contentW - 4, 8.5, white); y += 3;
+      writeWrapped('Het rust op drie onderzoekstradities, samengebracht tot \u00E9\u00E9n instrument: de archetypische psychologie van Carl Jung, het neurobiologische Triple Network Model (Menon e.a.), en de Big Five persoonlijkheidstheorie (OCEAN). De synthese meet niet alleen wat je doet, maar vanuit welke neurale laag je opereert.', margin + 2, y, contentW - 4, 8.5, white); y += 3;
+      writeWrapped('Een methodologische noot vooraf, in lijn met de discipline van het model: de termen uit de neurowetenschap die volgen, worden zuiver mechanistisch ingezet \u2014 als beschrijving van verwerkingspatronen, niet als klinische claim. Het model leest tendensen, geen vaststaande feiten. Waar het "neigt naar" of "weegt richting" leest, staat nooit "is".', margin + 2, y, contentW - 4, 8.5, dimWhite, 'italic'); y += 6;
 
-      writeWrapped(
-        'Waar traditionele persoonlijkheidstesten je in \u00E9\u00E9n hokje plaatsen, brengt het Deltawerken Model in kaart hoe jouw zenuwstelsel navigeert tussen instinct en aanpassing \u2014 en wat dat je kost.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
-      y += 3;
-      writeWrapped(
-        'Het theoretische fundament combineert drie onderzoekstradities: de archetypische psychologie van Carl Jung, het neurobiologische Triple Network Model, en de Big Five persoonlijkheidstheorie (OCEAN). Deze worden samengebracht in HET oosterse persoonlijkheids framework dat niet alleen meet w\u00E1t je doet, maar vanuit welke laag je opereert.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
-      y += 6;
-
-      // ── Garden For Life Bronmodellen ──
       ensureSpace(14);
       pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...purple);
-      pdf.text('Garden For Life Bronmodellen', margin + 2, y);
-      y += 6;
+      pdf.text('Garden For Life Bronmodellen', margin + 2, y); y += 6;
+      writeWrapped("De Deltawerken-driehoek legt de waarde-ori\u00EBntatie vast: waarheid, goedheid, schoonheid \u2014 Plato's transcendentalia, hier niet als citaat maar als operationele as. Elk archetype navigeert middels deze drie polen. De driehoek bepaalt de dieptelaag van de meting: niet het gedrag, maar de ori\u00EBntatie eronder \u2014 waar een configuratie zich naartoe wendt wanneer het ertoe doet.", margin + 2, y, contentW - 4, 8.5, white); y += 4;
 
-      writeWrapped(
-        'De Deltawerken Driehoek structureert de verhouding tussen drie fundamentele waarden\u00F6ri\u00EBntaties: waarheid, goedheid en schoonheid. Deze driehoek \u2014 verwant aan Plato\u2019s transcendentalia \u2014 bepaalt de dieptelaag van de assessment. In dit model navigeert elke archetype op deze driehoek: niet alleen als gedragskenmerken, maar als ori\u00EBntatie op wat er werkelijk toe doet.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
-      y += 3;
-      writeWrapped(
-        'Het Triple Network Wiel positioneert de 12 kern-archetypen op een geometrisch wiel op basis van de drie grote hersennetwerken die Vinod Menon en collega\u2019s beschreven: het Central Executive Network (orde, executie), het Default Mode Network (reflectie, betekenisgeving) en het Salience Network (responsiviteit, adaptatie). De 12 posities zijn verbonden via vijf lijntypes \u2014 gedeelde hardware, feedback-bruggen, schaduwassen, cognitieve synergiedriehoeken en frictie-assen \u2014 die samen het volledige netwerk van het archetype-systeem vormen.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
-      y += 3;
-      writeWrapped(
-        '\u2018Cells within Cells Interlinked\u2019 (Zie pagina 6) is het hi\u00EBrarchische model dat de ontologische lagen relationeert naar de maatschappij: van fysiologische basisbehoeften (verwant aan Maslows behoeftehi\u00EBrarchie) via zelfactualisatie en collectief geheugen naar intimiteit en transcendentie. Dit model verklaart waarom onze test niet alleen persoonlijkheid meet, maar de ontwikkelingslaag als dynamiek tussen natuurlijke aanleg en culturele conditionering blootlegt. \u2014 een principe dat Jean Piaget beschreef als cognitieve stadia en dat Carl Jung benaderde als individuatie.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
-      y += 6;
-
-      // ── Deltawerken image + Van Vraag Naar Score (bottom-aligned layout) ──
-      const vvnsTexts = [
-        'Het onderzoek bestaat uit 36 vragen verdeeld over vijf onderwerpen: Zelf, Ander, Macht, Wijsheid en Mysterie. Elke vraag biedt zes antwoorden \u2014 drie vanuit Nature (het ongedwongen instinct) en drie vanuit Culture (de aangeleerde strategie). Je kiest er twee: de eerste is je kern, de tweede resoneert maar minder sterk. Dit levert 72 datapunten.',
-        'Het onderscheid tussen Nature en Culture is gebaseerd op John Vervaeke\u2019s 4P-framework: participatory en perspectival knowing (je weet het doordat je het BENT \u2014 Nature) versus propositional en procedural knowing (je weet DAT je het hebt en HOE je ermee navigeert \u2014 Culture). De antwoorden zijn zo geschreven dat beide even authentiek aanvoelen \u2014 het verschil zit in de korrel van de taal, niet in de oppervlakte.',
-        'Elke keuze distribueert punten niet alleen naar het gekozen archetype, maar vloeit via de geometrische verbindingen van het wiel. Een Nature-keuze activeert de biologische hardware (de groene en blauwe verbindingen) en werpt een schaduw naar de 180\u00B0 tegenpool (de paarse verbinding). Een Culture-keuze activeert het aangeleerde cognitieve netwerk (de gele driehoeken). Dit principe \u2014 dat gedrag niet ge\u00EFsoleerd opereert maar door neurale netwerken resoneert \u2014 is consistent met het werk van Menon over cross-network connectivity en de Default Mode-hypothese van Marcus Raichle.',
-      ];
-
-      // Pre-measure Van Vraag Naar Score section height
-      pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal');
-      const vvnsLineH = 8.5 * 0.45;
-      const vvnsMW = contentW - 4;
-      const vvnsCounts = vvnsTexts.map(t => pdf.splitTextToSize(t, vvnsMW).length);
-      const vvnsTotalH = 6 + vvnsCounts[0] * vvnsLineH + 3 + vvnsCounts[1] * vvnsLineH + 3 + vvnsCounts[2] * vvnsLineH;
-
-      // Position Van Vraag so last line sits at page bottom
-      const pageBottom = H - margin;
-      const vvnsStartY = pageBottom - vvnsTotalH;
-
-      const yAfterBronText = y;
-
+      const yAfterBron = y;
+      const pageBottomA = H - margin;
+      const wielCellsH = measurePara(T_wiel, contentW - 4, 8.5) + 3 + measurePara(T_cells, contentW - 4, 8.5);
+      const wielStartY = pageBottomA - wielCellsH;
+      // Deltawerken image (x1.35) centered in the gap between bron text and the bottom-anchored wiel/cells text.
       try {
-        const dwImgEl = await new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = deltawerkenImg;
-        });
+        const dwImgEl = await loadImg(deltawerkenImg);
         const dwNaturalH = (dwImgEl.naturalHeight / dwImgEl.naturalWidth) * contentW;
-        let dwH = Math.min(dwNaturalH, 55) * 1.45;
+        let dwH = Math.min(dwNaturalH, 55) * 1.45 * 1.35;
         let dwW = (dwImgEl.naturalWidth / dwImgEl.naturalHeight) * dwH;
         if (dwW > contentW) { dwW = contentW; dwH = (dwImgEl.naturalHeight / dwImgEl.naturalWidth) * dwW; }
+        const gapA = wielStartY - yAfterBron;
+        if (dwH > gapA - 4) { dwH = gapA - 4; dwW = (dwImgEl.naturalWidth / dwImgEl.naturalHeight) * dwH; }
         const dwX = margin + (contentW - dwW) / 2;
-        const dwY = yAfterBronText + (vvnsStartY - yAfterBronText - dwH) / 2 - 10;
+        const dwY = yAfterBron + (gapA - dwH) / 2;
         pdf.addImage(deltawerkenImg, 'PNG', dwX, dwY, dwW, dwH);
-      } catch {
-        // image load failed
-      }
+      } catch { /* image load failed */ }
+      y = wielStartY;
+      writeWrapped(T_wiel, margin + 2, y, contentW - 4, 8.5, white); y += 3;
+      writeWrapped(T_cells, margin + 2, y, contentW - 4, 8.5, white);
 
-      // ── Van Vraag Naar Score (bottom-aligned) ──
-      y = vvnsStartY;
+      // ── PAGE 3B: Van Vraag (smaller, top) + Wat het instrument (centered) + lijntypes (bottom) ──
+      pdf.addPage(); paintBg(); markPage(); y = margin;
+
+      ensureSpace(14);
       pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...purple);
-      pdf.text('Van Vraag Naar Score', margin + 2, y);
-      y += 6;
+      pdf.text('Van Vraag naar Score', margin + 2, y); y += 6;
 
-      writeWrapped(vvnsTexts[0], margin + 2, y, contentW - 4, 8.5, white);
-      y += 3;
-      writeWrapped(vvnsTexts[1], margin + 2, y, contentW - 4, 8.5, white);
-      y += 3;
-      writeWrapped(vvnsTexts[2], margin + 2, y, contentW - 4, 8.5, white);
+      const VV_FS = 7.5;
+      let vvNarrowW = contentW - 4, vvImgTop = y, vvImgBottom = y;
+      try {
+        const cImg = await loadImg(cellsImg);
+        const ratioH = cImg.naturalHeight / cImg.naturalWidth;
+        let cW = contentW * 0.44;
+        let cH = cW * ratioH;
+        const cX = margin + contentW - cW - 5; // 1.5cm left of previous (+10 -> -5)
+        const cY = y + 45;                     // moved down a further 1.5cm (was +30)
+        pdf.addImage(cellsImg, 'PNG', cX, cY, cW, cH);
+        pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...mutedGray);
+        const lbl = 'Cells within Cells';
+        pdf.text(lbl, cX + cW - pdf.getTextWidth(lbl), cY + 4.5);
+        vvImgTop = cY;
+        vvImgBottom = cY + cH;
+        vvNarrowW = (cX - 4) - (margin + 2);
+      } catch { /* image load failed */ }
+
+      flowAroundImage([T_vv1, T_vv2, T_vv3, T_vv4], margin + 2, vvNarrowW, contentW - 4, vvImgTop, vvImgBottom, VV_FS, white);
+      const yAfterVanVraag = y;
+      const pageBottomB = H - margin;
+
+      // Pre-measure the bottom-anchored lijntypes block (heading + intro + 5 bullets).
+      const wW = contentW * 0.42;
+      const wX_l = margin + contentW - wW;
+      const lijnRightX = wX_l - 4;
+      const labelX = margin + 6;
+      const bulletWrapW = lijnRightX - labelX;
+      const lineH85 = 8.5 * 0.45;
+      pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal');
+      const introH = pdf.splitTextToSize(sanitizePdf(T_lijnIntro), lijnRightX - (margin + 2)).length * lineH85;
+      let bulletsH = 0;
+      for (const pair of [['Groen', B_groen], ['Paars', B_paars], ['Blauw', B_blauw], ['Geel', B_geel], ['Rood', B_rood]]) {
+        const lines = pdf.splitTextToSize(sanitizePdf(pair[0] + ' ' + pair[1]), bulletWrapW).length;
+        bulletsH += lines * lineH85 + 2.5;
+      }
+      const lijnBlockH = 6 + introH + 3 + bulletsH;
+      const lijnStartY = pageBottomB - lijnBlockH - 3;
+
+      // Wat het instrument leest — vertically centered in the middle gap.
+      const watH = 6 + measurePara(T_wi1, contentW - 4, 8.5) + 3 + measurePara(T_wi2, contentW - 4, 8.5);
+      const midGap = lijnStartY - yAfterVanVraag;
+      y = yAfterVanVraag + Math.max(0, (midGap - watH) / 2) + 30; // moved down a further 2cm (was +10)
+      pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...green);
+      pdf.text('Wat het instrument leest dat een test niet leest', margin + 2, y); y += 6;
+      writeWrapped(T_wi1, margin + 2, y, contentW - 4, 8.5, white); y += 3;
+      writeWrapped(T_wi2, margin + 2, y, contentW - 4, 8.5, white);
+
+      // De vijf lijntypes — bottom-anchored; text left, TNM wiel right.
+      y = lijnStartY;
+      pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...purple);
+      pdf.text('De vijf lijntypes', margin + 2, y); y += 6;
+      const lijnTop = y;
+      try {
+        const wImgEl = await loadImg(tnmWheelImg);
+        const ratioWH = wImgEl.naturalHeight / wImgEl.naturalWidth;
+        let wWi = wW;
+        let wHi = wWi * ratioWH;
+        const wAvail = (H - margin) - lijnTop;
+        if (wHi > wAvail) { wHi = wAvail; wWi = wHi / ratioWH; }
+        pdf.addImage(tnmWheelImg, 'PNG', margin + contentW - wWi, lijnTop, wWi, wHi);
+      } catch { /* image load failed */ }
+      writeWrapped(T_lijnIntro, margin + 2, y, lijnRightX - (margin + 2), 8.5, white); y += 3;
+      coloredBullet('Groen', green, B_groen, lijnRightX);
+      coloredBullet('Paars', purple, B_paars, lijnRightX);
+      coloredBullet('Blauw', blue, B_blauw, lijnRightX);
+      coloredBullet('Geel', amber, B_geel, lijnRightX);
+      coloredBullet('Rood', red, B_rood, lijnRightX);
 
       // ═══════════════════════════════════════════════════
-      // PAGE 4: FUNDERING VAN DE TEST (was page 5)
+      // PAGE 4: DE TAAL VAN DE TEST (was page 5)
       // ═══════════════════════════════════════════════════
       await justifiedPage(async (gap) => {
 
-      sectionHeading('De Fundering van de Test', purple);
+      sectionHeading('De taal van de test', purple);
 
       writeWrapped(
-        'De fundering voor de test is gebouwd op universele geometrie, eeuwenoude wijsheid vertaald met moderne jargon. ' +
-        'De numerologie die is ontstaan tijdens het ontwerpen resoneert met verschillende mythologie\u00EBn maar dus ook met moderne wetenschappen zoals ' +
-        'quantumfysica, neurobiologie en astronomie \u2014 niet te verwarren met astrologie, dit heeft van nature een relatie met persoonlijkheids-psychologie.',
+        'De taal rust op universele geometrie: eeuwenoude wijsheid, vertaald naar moderne taal. ' +
+        'De numerologie die tijdens het ontwerp opdook resoneert met oude mythologie\u00EBn \u00E9n met moderne wetenschap \u2014 ' +
+        'kwantumfysica, neurobiologie, astronomie. Niet te verwarren met astrologie; dit raakt van nature aan persoonlijkheidspsychologie.',
         margin + 2, y, contentW - 4, 9, white
       );
       y += 4;
       writeWrapped(
-        'Een complexe uiteenzetting van 1 realiteit, alleen mogelijk door differentiatie, de scheiding en tevens actualisering naar 2. ' +
-        'Maar wat is determinatie nou waard wanneer alles vast staat? ' +
-        'De 3de axis is de kern van transformatie en de gratis lunch in het patroon van onze gemodelleerde psychologie.',
+        '\u00C9\u00E9n realiteit wordt pas kenbaar door differentiatie: de splitsing naar twee. ' +
+        'Maar wat is bepaling waard wanneer alles vastligt? ' +
+        'De derde as is de kern van transformatie \u2014 de gratis lunch in het patroon van onze gemodelleerde psychologie, de plek waar beweging ontstaat.',
         margin + 2, y, contentW - 4, 9, white
       );
       y += 4;
       writeWrapped(
-        'Gebouwd op verschillende westerse vondingen in de neurobiologie zijn we tot de conclusie gekomen dat het brein 2 hersendelen heeft, onderverdeelbaar in Orde en Chaos.',
+        'Westerse neurobiologie wijst op een tweedeling van het brein: Orde tegenover Chaos.',
         margin + 2, y, contentW - 4, 9, white
       );
       y += 3;
       writeWrapped(
-        'Sage tot aan Judge domineren in het orde domein; Lover tot Trickster domineren in het chaos domein.',
+        'Sage tot Judge domineren het orde-domein; Lover tot Trickster het chaos-domein.',
         margin + 2, y, contentW - 4, 9, dimWhite, 'italic'
       );
       y += 5;
       writeWrapped(
-        'Deze twee delen komen samen tot een geheel van 6 biologische cognitieve netwerken die gehardwired zijn:',
+        'Waar die twee elkaar raken, kristalliseren zes biologische cognitieve netwerken uit \u2014 gehardwired, en de grond waarop alles wat volgt is gebouwd:',
         margin + 2, y, contentW - 4, 9, white
       );
       y += 5;
@@ -1588,19 +1692,12 @@ const AssessmentResultsModal = ({
       y += 5;
       gap();
       writeWrapped(
-        '3 is het ware atoom. Al het andere is 3, maar dan verdubbeld, gekwadrateerd of als faculteit berekend:',
-        margin + 2, y, contentW - 4, 9, white, 'bold'
-      );
-      y += 2;
-      writeWrapped(
-        '3 verdrievoudigde netwerken -> verdubbeld door polariteit -> verdubbeld door archetype-individuatie -> gekwadrateerd voor vragen -> verdubbeld voor keuzes -> als faculteit berekend voor punten.',
+        'Drie is het ware atoom. Al het andere is drie \u2014 verdubbeld, gekwadrateerd, of als faculteit berekend: drie netwerken, verdubbeld door polariteit, verdubbeld door individuatie, gekwadrateerd tot vragen, verdubbeld tot keuzes, als faculteit tot punten.',
         margin + 2, y, contentW - 4, 8.5, white
       );
       y += 3;
       writeWrapped(
-        'De 5 lagen vormen het enige structurele element dat het patroon doorbreekt \u2014 maar 5 is zelf 2 + 3, 2\u00D79 vragen en 3\u00D76 \u2014 de triade herenigd met haar dualiteitsoperator. ' +
-        'Het systeem rust op een 3 die voortdurend in een spiegel kijkt. Zelf-9 en Ander-9 geven je de navigatie voor Macht-6, Magie-6 en de gespiegelde Wijsheid-6. ' +
-        'Het getal 6 is het atoom van dit hele beoordelingssysteem, en alles vloeit daaruit voort:',
+        'Vijf doorbreekt als enige het patroon \u2014 maar vijf is zelf twee plus drie: 2\u00D79 vragen, 3\u00D76 domeinen. De triade, herenigd met haar dualiteitsoperator. Het systeem rust op een drie die onophoudelijk in een spiegel kijkt. Zelf-9 en Ander-9 sturen Macht-6, Magie-6 en de gespiegelde Wijsheid-6. Zes is het atoom van het hele systeem, en alles vloeit daaruit voort:',
         margin + 2, y, contentW - 4, 8.5, white
       );
       y += 5;
@@ -1651,12 +1748,18 @@ const AssessmentResultsModal = ({
         contentW - 8
       );
       fBullet1.forEach(bl => { ensureSpace(4.5); pdf.text(bl, margin + 7, y); y += 4.5; });
+      y += 3;
+      writeWrapped(
+        'Convergentie is geen bewijs, maar ze is ook niet onbelangrijk. Dat onafhankelijke tradities — meetkundig, mythologisch, astronomisch — op hetzelfde getal samenkomen, vraagt op zijn minst om aandacht.',
+        margin + 2, y, contentW - 4, 8.5, white
+      );
       y += 5;
       gap();
 
       drawTable(
         ['Traditie / Discipline', 'Het Concept', 'Betekenis & Belang', 'Thematische Kruisverwijzing'],
         [
+          ['Hellenistische Oudheid', 'De 72 Vertalers (Septuagint)', 'Volgens de Brief van Aristeas koos de hogepriester zes vertalers uit elk van de twaalf stammen — 12 × 6 = 72 — die de Torah in het Grieks vertaalden.', 'Overdracht van Wijsheid'],
           ['Numerologie',          'Oneindige Voltooiing',     '8 (Oneindigheid) \u00D7 9 (Voltooiing) = 72. Reduceert tot 9 (7+2), het getal van dienstbaarheid.', 'Transformatie & Wedergeboorte'],
           ['Heilige Geometrie',   'De Vijfhoek',               '72 graden is de exacte middelpuntshoek van een regelmatige vijfhoek.', 'Goddelijke Architectuur'],
           ['Astronomie',          'Precessie van de equinoxen', 'De zon verplaatst zich elke 72 jaar 1 graad t.o.v. de sterrenbeelden (cyclus van 25.920 jaar).', 'Kosmisch Uurwerk'],
@@ -1665,6 +1768,7 @@ const AssessmentResultsModal = ({
           ['Chinese Mythologie',  '72 Grotten',                'De Bloemen-Fruitberg telt 72 grotten, elk met een demonenkoning die eer bewijst.', 'Kosmisch Bestuur'],
           ['Joodse Mystiek',      '72 Namen van God',          '72 drietallen van Hebreeuwse letters afgeleid uit Exodus, kanalen voor goddelijke transformatie.', 'Goddelijke Architectuur'],
           ['Joodse Mystiek',      '72 Engelen',                'De wereld krijgt supervisie van 72 beschermengelen, elk met een specifiek deel van de aarde.', 'Kosmisch Bestuur'],
+          ['Westerse Esoterie',   'De 72 Geesten (Ars Goetia)', 'De Ars Goetia somt exact 72 geesten op — bewust gespiegeld aan de 72 engelen van de Shem HaMephorash: licht en schaduw op hetzelfde getal.', 'Kaart van de Schaduw'],
           ['Joodse Mystiek',      'Jakobs ladder',             'De ladder die hemel en aarde verbindt, wordt ge\u00EFnterpreteerd als hebbende 72 sporten.', 'Verbinding van Werelden'],
           ['Christendom',         'De 72 Discipelen',          'Jezus zendt 72 discipelen uit om zijn leer onder alle naties te verspreiden.', 'Verspreiding over de Wereld'],
           ['Christelijke Mystiek', 'De Wederopstanding',       '72 uur vertegenwoordigt de exacte tijd verstreken tussen de kruisiging en de wederopstanding.', 'Transformatie & Wedergeboorte'],
@@ -1675,135 +1779,128 @@ const AssessmentResultsModal = ({
         { fontSize: 7.5 }
       );
       gap();
-
-      // ── TNM WHEEL — static model image below the table ──
-      try {
-        const tnmImgEl = await new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = tnmWheelImg;
-        });
-        // Hard cap at 60mm (75mm × 0.8) — fixed size
-        const maxH = 60;
-        const naturalH = (tnmImgEl.naturalHeight / tnmImgEl.naturalWidth) * contentW;
-        const finalH = Math.min(naturalH, maxH);
-        const finalW = finalH === naturalH ? contentW : (tnmImgEl.naturalWidth / tnmImgEl.naturalHeight) * finalH;
-        const offsetX = margin + (contentW - finalW) / 2;
-        pdf.addImage(tnmWheelImg, 'PNG', offsetX, y, finalW, finalH);
-        y += finalH + 4;
-      } catch {
-        y += 4;
-      }
       });
 
       // ═══════════════════════════════════════════════════
-      // PAGE 6: DE ARCHETYPISCHE LAAG + HOE HET RAPPORT ONTSTAAT + WETENSCHAPPELIJKE CONTEXT (was page 4)
+      // PAGE 6: HOE HET RAPPORT ONTSTAAT (vier stappen)
+      // ═══════════════════════════════════════════════════
+      await justifiedPage(async (gap) => {
+      const savedNPBhro = noPageBreak; noPageBreak = true; // no bottom padding — let content flow to the page edge, never spill to a new page
+
+      // ── Hoe Het Rapport Ontstaat — vier stappen ──
+      sectionHeading('Hoe Het Rapport Ontstaat', orange);
+
+      const leadPara = (lead, leadColor, rest) => {
+        // Subtitle on its own line — blue and larger, matching the report's other sub-headings.
+        ensureSpace(10);
+        pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...blue);
+        pdf.text(sanitizePdf(lead), margin + 2, y);
+        y += 5;
+        writeWrapped(rest, margin + 2, y, contentW - 4, 8.5, white);
+        y += 3;
+      };
+
+      writeWrapped('Geen twee rapporten lezen hetzelfde \u2014 niet alleen in inhoud, maar in toon. De taal en structuur worden afgestemd op je dominante netwerk: analytisch en gestructureerd voor een CEN-profiel, reflectief en associatief voor DMN, direct en responsief voor het Salience Network. Het rapport spreekt, met andere woorden, de taal van het systeem dat het beschrijft. Wat volgt is geen typebeschrijving uit een la, maar een lezing die in vier stappen uit jouw specifieke profiel wordt opgebouwd.', margin + 2, y, contentW - 4, 8.5, white);
+      y += 5;
+
+      leadPara("De geometrische echo's.", green, "Na het assessment berekent het systeem geen rijtje scores maar een volledige geometrie. Elke keuze heeft door de vijf kanalen van het wiel gebloed, en dat laat sporen na: schaduwen geworpen naar de tegenpolen, gewicht verschoven naar ondersteunende archetypen, polarisatie tussen wat sterk en wat onderdrukt staat. Deze echo's \u2014 niet de kale totalen \u2014 vormen de werkelijke vorm die gelezen wordt. Twee mensen met dezelfde top-archetypen kunnen een volstrekt andere geometrie hebben.");
+      leadPara("Main \u00D7 Support \u2014 de relationele lezing.", purple, "Je resultaat is geen archetype maar een relatie tussen twee. Het dominante archetype levert de kern; het tweede, via zijn biologische groep, kleurt hoe die kern zich uitdrukt. Dezelfde Minnaar leest anders met een ordenend support dan met een ontwrichtend support \u2014 en de gave \u00E9n de valkuil ontstaan juist in die combinatie, niet in het archetype alleen. Zo worden twaalf kernen twee\u00EBnzeventig configuraties: de relatie is de eenheid van de lezing, niet het etiket.");
+      leadPara('De analyse.', amber, "Een taalmodel (Claude, Anthropic) leest dit volledige profiel tegen het complete Deltawerken-framework: de drie bronmodellen, de archetype-profielen, en de twee\u00EBnzeventig Extended Archetypes. Is er eigen OCEAN-data aangeleverd, dan wordt die als externe validatie meegewogen \u2014 inclusief, en juist, de plekken waar de gemeten persoonlijkheid en de geometrie uiteenlopen. Die divergentie wordt niet gladgestreken; ze is vaak het meest verhelderende deel van de lezing.");
+      leadPara('De toestand-lezing.', red, "Tot slot leest het rapport niet alleen wie je bent bij rust, maar hoe je configuratie zich houdt onder druk. Voor elk profiel modelleert het de plastische laag: waar je het sterkst staat, waar je rekt, op welk punt je omslaat, en hoe het herstel verloopt. Dit is wat een statisch type nooit kan tonen \u2014 de vorm van je veerkracht, en wat het je kost om overeind te blijven.");
+
+      // C12 model image \u2014 bottom-anchored, centered; 1.5x the previous size (TNM wheel * 1.1 * 1.5).
+      try {
+        const c12El = await loadImg(c12Img);
+        const ratio = c12El.naturalHeight / c12El.naturalWidth;
+        const cW = contentW * 0.42 * 1.1 * 1.5;
+        const cH = cW * ratio;
+        const cX = margin + (contentW - cW) / 2;
+        const cY = (H - margin) - cH;
+        pdf.addImage(c12Img, 'PNG', cX, cY, cW, cH);
+      } catch { /* image load failed */ }
+      noPageBreak = savedNPBhro;
+      gap();
+
+
+      });
+
+// ═══════════════════════════════════════════════════
+      // LAST INTRO PAGE: WETENSCHAPPELIJKE CONTEXT (full page, before the rapport)
       // ═══════════════════════════════════════════════════
       await justifiedPage(async (gap) => {
 
-      sectionHeading('De Archetypische Laag', orange);
+      sectionHeading('Wetenschappelijke Context', orange);
+      writeWrapped('Het Deltawerken Model is een zelfreflectie-instrument, geen klinisch diagnostisch systeem. De neurobiologische termen worden conceptueel ingezet \u2014 wetenschappelijk onderzoek als inspiratiebron en denkkader, niet als diagnostische claim.', margin + 2, y, contentW - 4, 8.5, white);
+      y += 5;
 
-      writeWrapped(
-        'De 12 archetypen zijn geen hokjes maar navigatiestijlen, geworteld in Jungs oorspronkelijke archetypische theorie en geactualiseerd via de OCEAN-dimensies van Paul Costa en Robert McCrae. Elk archetype heeft een specifiek Big Five-profiel: de Judge scoort hoog op Conscientiousness en laag op Agreeableness; de Lover hoog op Agreeableness en Openness; de Trickster hoog op Openness en laag op Conscientiousness. Deze mapping maakt de archetypische taal meetbaar zonder de diepte te verliezen.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
-      y += 3;
-      writeWrapped(
-        'De zes biologische groepen (Ruling, Relational, Seeker, Chaos, Abstract, Agency) delen neurale hardware \u2014 een principe ge\u00EFnspireerd op Jaak Panksepp\u2019s affectieve neurowetenschappen en de biochemische stressrespons-profielen per archetype (HPA-as activatie, oxytocine/dopamine/serotonine-dynamiek). De 180\u00B0 schaduwparen (Judge\u2013Trickster, Lover\u2013Sage, Caregiver\u2013Artist, Innocent\u2013Magician, Explorer\u2013Hero, Outlaw\u2013Ruler) volgen Jungs schaduwtheorie: je grootste groeirichting zit in de integratie van je absolute tegenpool.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
-      y += 6;
-      gap();
+      const refEntry = (label, sources) => {
+        const fsz = 7.5, lineH = fsz * 0.45, x0 = margin + 2;
+        ensureSpace(lineH);
+        pdf.setFontSize(fsz);
+        pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...white);
+        const labelS = sanitizePdf(label + ' \u2014 ');
+        pdf.text(labelS, x0, y);
+        const labelW = pdf.getTextWidth(labelS);
+        pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+        const words = sanitizePdf(sources).split(/\s+/).filter(Boolean);
+        const rightEdge = margin + contentW - 2;
+        let curX = x0 + labelW, i = 0, line = '';
+        while (i < words.length) {
+          const t = line ? line + ' ' + words[i] : words[i];
+          if (curX + pdf.getTextWidth(t) <= rightEdge) { line = t; i++; } else break;
+        }
+        if (line) pdf.text(line, curX, y);
+        y += lineH;
+        while (i < words.length) {
+          ensureSpace(lineH);
+          let l2 = '';
+          while (i < words.length) {
+            const t = l2 ? l2 + ' ' + words[i] : words[i];
+            if (pdf.getTextWidth(t) <= contentW - 9) { l2 = t; i++; } else break;
+          }
+          if (!l2) { l2 = words[i]; i++; }
+          pdf.text(l2, x0 + 3, y); y += lineH;
+        }
+        y += 2.8;
+      };
 
-      // ── Hoe Het Rapport Ontstaat ──
-      ensureSpace(14);
-      pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...amber);
-      pdf.text('Hoe Het Rapport Ontstaat', margin + 2, y);
-      y += 6;
+      ensureSpace(10);
+      pdf.setFontSize(9.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...green);
+      pdf.text('Empirisch fundament', margin + 2, y); y += 5;
 
-      writeWrapped(
-        'Na het assessment berekent het systeem je volledige scoreprofiel inclusief de geometrische echo\u2019s. Een AI-model (Claude, Anthropic) analyseert dit profiel aan de hand van het volledige Deltawerken-framework: de drie bronmodellen, de biochemische archetypeprofielen, de 72 Extended Archetypes (Main \u00D7 Support-groep), en \u2014 indien aangeleverd \u2014 je OCEAN-data als externe validatie.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
-      y += 3;
-      writeWrapped(
-        'Het rapport dat je leest is geen generieke beschrijving van een type. Het is een dynamische analyse van jouw specifieke scoreprofiel: waar je hardware het sterkst resoneert, welke aangeleerde strategie\u00EBn je inzet, waar je blinde vlekken zitten, en welke schaduw-integratie je groeirichting vormt. De taal en structuur worden aangepast aan je dominante netwerkprofiel \u2014 analytisch voor CEN-dominante profielen, reflectief voor DMN-dominant, dynamisch voor Salience-dominant.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
-      y += 3;
-      writeWrapped(
-        'En mocht je nog twijfelen over de gegenereerde content,\nalles wat je zojuist hebt gelezen (behalve de modellen)\nis geschreven door hetzelfde model\ndie jouw score heeft geanalyseerd.',
-        margin + 2, y, contentW - 4, 8.5, dimWhite, 'italic'
-      );
+      refEntry('Archetypische psychologie', "C.G. Jung (1921), Psychological Types; Carol Pearson (1991), Awakening the Heroes Within");
+      refEntry('Neurale netwerken', "V. Menon (2011), Large-scale brain networks, Trends Cogn. Sci.; M.E. Raichle (2001), A default mode of brain function, PNAS");
+      refEntry('Default Mode & interne simulatie', "R.L. Buckner (2008), The brain's default network, Annals NYAS; K. Christoff (2016), Mind-wandering as spontaneous thought, Nat. Rev. Neurosci.");
+      refEntry('Voorspellend brein', "K. Friston (2010), The free-energy principle, Nat. Rev. Neurosci.; G. Buzs\u00E1ki (2019), The Brain from Inside Out");
+      refEntry('Netwerkdynamiek & binding', "D. Bassett (2011), Dynamic reconfiguration of brain networks, PNAS; G. Buzs\u00E1ki & X.-J. Wang (2012), Mechanisms of gamma oscillations, Annu. Rev. Neurosci.");
+      refEntry('Entropie & herorganisatie', "R. Carhart-Harris (2014), The entropic brain, Front. Hum. Neurosci.; R. Carhart-Harris & K. Friston (2019), REBUS and the anarchic brain, Pharmacol. Rev.");
+      refEntry('Persoonlijkheidstheorie', "P.T. Costa & R.R. McCrae (1992), NEO-PI-R; L.R. Goldberg (1993), Phenotypic personality traits, Am. Psychol.; C. DeYoung (2015), Cybernetic Big Five Theory, J. Res. Pers.");
+      refEntry('Motivatie & drijfveer', "J. Panksepp (1998), Affective Neuroscience; J. Gray & N. McNaughton (2000), The Neuropsychology of Anxiety; E. Aston-Jones & J. Cohen (2005), LC-NE function, Annu. Rev. Neurosci.");
+      refEntry('Emotie & belichaming', "L.F. Barrett (2017), How Emotions Are Made; A. Damasio (2003), Looking for Spinoza; M. Solms (2021), The Hidden Spring; A. Seth (2021), Being You");
+      refEntry('Perceptie & hemisferische asymmetrie', "L. Robertson & R. Ivry (1998), The Two Sides of Perception");
+      refEntry('Beperking & context', "A. Juarrero (2023), Context Changes Everything");
+      refEntry('Cognitieve ontwikkeling', "J. Piaget (1954), The Construction of Reality in the Child; R. Kegan (1994), In Over Our Heads; J. Vervaeke (2019), Awakening from the Meaning Crisis; J. Peterson (1999), Maps of Meaning");
+      refEntry('Psychodynamiek, empirisch getrieerd', "D. Westen (1999), The scientific status of unconscious processes, Psychol. Bull.");
+      refEntry('Stress-neuroplasticiteit', "S. Russo & E. Nestler (2013), Brain reward circuitry in mood disorders, Nat. Rev. Neurosci.; R. Shansky et al. (2009), dendritische hermodellering; R. Duman & G. Aghajanian (2012), Synaptic dysfunction in depression, Science");
+      refEntry('Multischaal-biologie', "M. Levin (2019), The computational boundary of a 'self', Front. Psychol.");
+      refEntry('Relationele co-regulatie', "J. Coutinho et al. (2021), Cardiac synchrony in dyadic co-regulation, Psychophysiology; D. Palumbo et al. (2017), Interpersonal autonomic physiology");
+      refEntry('Creativiteit & neurale integratie', "M. Benedek et al. (2014), Brain connectivity during creative cognition, Neuropsychologia; R.E. Beaty et al. (2018), Robust prediction of creativity from brain activity, PNAS");
+
+      y += 1.5;
+      ensureSpace(8);
+      writeWrapped('Theoretische & frontier-ankers \u2014 richtinggevend, bewust lichter gewogen; nooit dragend voor een afzonderlijke waarde.', margin + 2, y, contentW - 4, 8, dimWhite, 'italic');
       y += 2;
 
-      // ── Cells within Cells image — between Hoe Het Rapport Ontstaat and Wetenschappelijke Context ──
-      try {
-        const cellsImgEl = await new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = cellsImg;
-        });
-        const cellsNaturalH = (cellsImgEl.naturalHeight / cellsImgEl.naturalWidth) * contentW;
-        const cellsAvail = H - margin - y - 80; // reserve ~80mm for Wetenschappelijke Context + refs below
-        const cellsH = Math.min(cellsNaturalH, cellsAvail, 55);
-        const cellsW = (cellsImgEl.naturalWidth / cellsImgEl.naturalHeight) * cellsH;
-        // draw scaled: +5% width, -5% height vs 1.406 base, anchored at bottom edge, shifted right
-        const drawH = cellsH * 1.406 * 0.95;
-        const drawW = cellsW * 1.406 * 1.05;
-        const cellsX = margin + (contentW - drawW) / 2 + 35; // +35mm to the right
-        const cellsY = y - (drawH - cellsH); // shift up so bottom stays at y + cellsH
-        pdf.addImage(cellsImg, 'PNG', cellsX, cellsY, drawW, drawH);
-        // Top-right corner label
-        pdf.setFontSize(7.5);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(...mutedGray);
-        const cwcLabel = 'Cells within Cells';
-        pdf.text(cwcLabel, cellsX + drawW - pdf.getTextWidth(cwcLabel), cellsY + 4.5);
-        y += cellsH;
-      } catch {
-        y += 0;
-      }
-      gap();
+      refEntry('Bewustzijnstheorie', "G. Tononi e.a. (2023), IIT 4.0, PLoS Comput. Biol.; Cogitate Consortium (2025), Adversarial testing of consciousness theories, Nature");
+      refEntry('Oscillatoir bindingsveld', "J. McFadden (2020), Integrating information in the brain's EM field (CEMI), Neurosci. Conscious.");
+      refEntry('Emergentie op schaaldrempels', "J. Wei e.a. (2022), Emergent abilities of LLMs; R. Schaeffer e.a. (2023), Are emergent abilities a mirage?; Templeton e.a. (2024), Scaling Monosemanticity");
+      refEntry('Ontologische verankering', "D. Bohm (1980), Wholeness and the Implicate Order; E. Verlinde (2016), Emergent gravity and the dark universe; B. Kastrup (2019), Reasonable inferences from quantum mechanics");
 
-      // ── Wetenschappelijke Context ──
-      ensureSpace(14);
-      pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...orange);
-      pdf.text('Wetenschappelijke Context', margin + 2, y);
-      y += 6;
-
-      writeWrapped(
-        'Het Deltawerken Model is een zelfreflectie-instrument, geen klinisch diagnostisch systeem. De neurobiologische termen zijn conceptuele metaforen die wetenschappelijk onderzoek als inspiratiebron gebruiken \u2014 geen diagnostische claims. Het model integreert inzichten uit:',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
-      y += 4;
-
-      const sciRefs = [
-        { color: white, text: 'Archetypische psychologie: C.G. Jung (1921), Collected Works Vol. 6 \u2014 Psychological Types; Carol Pearson (1991), Awakening the Heroes Within.' },
-        { color: white, text: 'Neurale netwerken: V. Menon (2011), Large-scale brain networks in cognition, Trends in Cognitive Sciences; M.E. Raichle (2001), A default mode of brain function, PNAS.' },
-        { color: white, text: 'Persoonlijkheidstheorie: P.T. Costa & R.R. McCrae (1992), Revised NEO Personality Inventory (NEO-PI-R); L.R. Goldberg (1993), The structure of phenotypic personality traits, American Psychologist.' },
-        { color: white, text: 'Cognitieve ontwikkeling: J. Piaget (1954), The Construction of Reality in the Child; J. Vervaeke (2019), Awakening from the Meaning Crisis (lecture series); J. Peterson (1999), Maps of Meaning.' },
-        { color: white, text: 'Affectieve neurowetenschappen: J. Panksepp (1998), Affective Neuroscience; S. Porges (2011), The Polyvagal Theory. Biochemische stressrespons en HPA-as dynamiek per archetype.' },
-        { color: white, text: 'Creativiteit & neurale integratie: M. Benedek et al. (2014), Brain connectivity during creative cognition, Neuropsychologia; R.E. Beaty et al. (2018), Robust prediction of creativity from brain activity, PNAS.' },
-      ];
-
-      sciRefs.forEach(({ color: refColor, text }) => {
-        ensureSpace(12);
-        pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...refColor);
-        pdf.text('\u2022', margin + 2, y);
-        const refLines = pdf.splitTextToSize(text, contentW - 10);
-        refLines.forEach(rl => {
-          ensureSpace(4.3);
-          pdf.text(rl, margin + 7, y);
-          y += 4.3;
-        });
-        y += 1.5;
-      });
+      y += 3;
+      writeWrapped('Niet elke bron weegt even zwaar. Menon, Friston en de stress-neuroplasticiteit-literatuur dragen het meeste gewicht; de theoretische ankers zijn richtinggevend maar opener, en worden navenant lichter gewogen \u2014 nooit als vaststaand fundament behandeld. Volledige bronverantwoording \u2014 inclusief waar wij afwijken en wat onze claims zou weerleggen \u2014 onder Bronnen & Verantwoording.', margin + 2, y, contentW - 4, 8, dimWhite);
       });
 
-      // ═══════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════
       // CONTENT PAGES (Waarom/Essentie/Vermenigvuldiging/Shadow/Blindspot removed — AI sections cover these deeper)
       // ═══════════════════════════════════════════════════
       /* eslint-disable no-constant-condition */

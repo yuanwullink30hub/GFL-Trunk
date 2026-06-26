@@ -13,9 +13,9 @@ const path = require('path');
 
 // ── Constants (mirrored from frontend scoring/index.js) ────────────────
 const ALL_ARCHETYPE_KEYS = [
-  'RULER', 'JUDGE', 'LOVER', 'CAREGIVER',
-  'INNOCENT', 'EXPLORER', 'OUTLAW', 'TRICKSTER',
-  'SAGE', 'ARTIST', 'MAGICIAN', 'HERO',
+  'JUDGE', 'LOVER', 'CAREGIVER', 'INNOCENT',
+  'EXPLORER', 'OUTLAW', 'TRICKSTER', 'SAGE',
+  'ARTIST', 'MAGICIAN', 'HERO', 'RULER',
 ];
 
 const SHADOW_PAIRS = {

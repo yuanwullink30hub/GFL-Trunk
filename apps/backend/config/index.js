@@ -58,6 +58,8 @@ module.exports = {
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
     from: process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@gardenforlife.nl',
+    // Inbox that public contact/feedback/source-suggestion forms land in.
+    contactTo: process.env.CONTACT_EMAIL || process.env.SMTP_USER || process.env.SMTP_FROM || 'noreply@gardenforlife.nl',
   },
 
   // Beta access passkeys (comma-separated list)

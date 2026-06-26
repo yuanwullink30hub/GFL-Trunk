@@ -741,6 +741,20 @@ export async function sendFormDirect(data) {
   return response.json();
 }
 
+/** Send a public contact / source-suggestion form (no auth, no DB storage). */
+export async function sendContactForm(data) {
+  const response = await fetch(`${API_BASE}/contact`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Verzenden mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
 /** Check email SMTP configuration status */
 export async function getEmailStatus() {
   const response = await fetch(`${API_BASE}/admin/email/status`, {

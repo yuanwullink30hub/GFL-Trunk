@@ -160,7 +160,7 @@ const AssessmentCard = ({
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [showIntro, setShowIntro] = useState(true);
   const [started, setStarted] = useState(false);
-  const [buttonLockSeconds, setButtonLockSeconds] = useState(process.env.NODE_ENV === 'production' ? 10 : 0);
+  const [buttonLockSeconds, setButtonLockSeconds] = useState(process.env.NODE_ENV === 'production' ? 3 : 0);
   const levelConfigRef = useRef(levelConfig);
   levelConfigRef.current = levelConfig;
   const { t } = useLanguage();
@@ -257,11 +257,11 @@ const AssessmentCard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRemaining]);
 
-  // 10-second trigger lock: block Doorgaan on every new question to prevent accidental skipping
+  // 3-second trigger lock: block Doorgaan on every new question to prevent accidental skipping
   useEffect(() => {
     if (!started) return;
     if (process.env.NODE_ENV !== 'production') return; // disabled on localhost
-    setButtonLockSeconds(10);
+    setButtonLockSeconds(3);
     const interval = setInterval(() => {
       setButtonLockSeconds(prev => {
         if (prev <= 1) { clearInterval(interval); return 0; }

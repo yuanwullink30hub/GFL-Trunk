@@ -61,8 +61,8 @@ const translations = {
         en: "Download the basics to map your archetype — the identity, the explanation, visualized on our own model, and of course the price you pay for this archetype."
       },
       paid: {
-        nl: "Optioneel voor €00,00 — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt voor je online-extensie.",
-        en: "Optional for €00.00 — the full exposition (3× the data), reading = transforming in itself. Incl. AI prompt for your online extension."
+        nl: "Optioneel voor €00,00 — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt en toegang tot de complete online-extensie.",
+        en: "Optional for €00.00 — the full exposition (3× the data), reading = transforming in itself. Incl. AI prompt and access to the complete online extension."
       }
     },
     layersTitle: {
@@ -125,6 +125,18 @@ const translations = {
     referencesTitle: {
       nl: "Wetenschappelijke Referenties",
       en: "Scientific References"
+    },
+    referencesCardTitle: {
+      nl: "Bronnen & Verantwoording — Open Onderzoek",
+      en: "Sources & Accountability — Open Research"
+    },
+    oceanInfoLabel: {
+      nl: "Optioneel: ",
+      en: "Optional: "
+    },
+    oceanInfoText: {
+      nl: "Heb je al een OCEAN / Big Five-rapport? Upload het als externe validatie naast je assessment — het verfijnt de analyse, maar is niet verplicht.",
+      en: "Already have an OCEAN / Big Five report? Upload it as external validation alongside your assessment — it refines the analysis, but is not required."
     },
     referencesSubtitle: {
       nl: "Het A+ Archetype Analyse systeem is gebaseerd op interdisciplinair onderzoek uit de volgende domeinen:",

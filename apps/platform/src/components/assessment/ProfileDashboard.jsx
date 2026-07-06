@@ -518,8 +518,8 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
       img.crossOrigin = 'anonymous';
       await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = archetypeImg; });
       // Same framing as the PDF cover circle (600 source-square → 567 visible circle, the
-      // ring-covered rim cropped away), rendered at 2× pixel density for a sharper file.
-      const SRC = 1200, S = 1134;
+      // ring-covered rim cropped away).
+      const SRC = 600, S = 567;
       const cnv = document.createElement('canvas'); cnv.width = S; cnv.height = S;
       const cx = cnv.getContext('2d');
       cx.fillStyle = '#000'; cx.fillRect(0, 0, S, S); // full black corners (JPEG has no alpha)

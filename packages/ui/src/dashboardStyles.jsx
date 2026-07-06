@@ -188,6 +188,7 @@ export const SciFiButton = ({
   padding: padOverride, fontSize: fsOverride,
   textWeight, textColor, rounded,
   active = false, fullWidth = false,
+  brackets = true, // false = no corner-bracket frame (text/icon only)
   style = {}, type = 'button', title,
 }) => {
   const [hov, setHov] = React.useState(false);
@@ -225,7 +226,7 @@ export const SciFiButton = ({
         <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
       </button>
       {/* Corner bracket accents */}
-      {[
+      {brackets && [
         ['tl', { top: sz.top,    left: sz.side,  borderTop:    `1px solid ${cCol}`, borderLeft:   `1px solid ${cCol}`, borderTopLeftRadius:     cr }],
         ['tr', { top: sz.top,    right: sz.side, borderTop:    `1px solid ${cCol}`, borderRight:  `1px solid ${cCol}`, borderTopRightRadius:    cr }],
         ['bl', { bottom: sz.top, left: sz.side,  borderBottom: `1px solid ${cCol}`, borderLeft:   `1px solid ${cCol}`, borderBottomLeftRadius:  cr }],

@@ -5,7 +5,6 @@ import WheelGlyph from '../WheelGlyph';
 import { Activity, Database, Lock, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
-import { getArchetypeImageByName } from '@gfl/assessment-core/data/archetypeImages';
 import { getInbox, sendUserMessage, markMessageRead, getMe } from '@gfl/api-client';
 
 const eyeLogo = '/images/Eyedentity.png';
@@ -158,9 +157,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   };
 
   // Right button icon. Client mode → the reading's full-colour radar WHEEL (5-mandje split,
-  // owner-only via /me); falls back to the archetype portrait while no wheel data exists
-  // (pre-extractor readings), then to the blackhole login icon for visitors.
-  const archetypeImg = clientMode ? getArchetypeImageByName(clientProfile?.archetypeName) : null;
+  // owner-only via /me); EMPTY until the wheel data arrives (no archetype-portrait fallback).
+  // Visitors get the blackhole login icon.
   const [wheelBaskets, setWheelBaskets] = useState(null);
   useEffect(() => {
     if (!clientMode) return;
@@ -176,12 +174,11 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         </div>
       );
     }
-    if (archetypeImg) {
-      return (
-        <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid rgba(168, 85, 247, 0.55)', boxShadow: '0 0 10px rgba(168, 85, 247, 0.25)', background: '#0a0510' }}>
-          <img src={archetypeImg} alt="Profiel" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-        </div>
-      );
+    if (clientMode) {
+      // Wheel not loaded (fetch in flight or no extracted baskets): stay EMPTY — no archetype
+      // portrait fallback. Same-size placeholder keeps the button footprint stable, so the
+      // wheel pops in without layout shift.
+      return <div style={{ width: size, height: size }} />;
     }
     return <img src={blackholeIcon} alt="Login" style={{ width: size, height: 'auto' }} />;
   };

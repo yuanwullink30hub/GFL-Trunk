@@ -134,7 +134,7 @@ const REFS_CLUSTER_A = [
  * - onClose() - called when user closes the modal
  * - onNavigateToData() - called when user clicks the research button
  */
-const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolicy, uploadedFiles = [], onAddFile, onRemoveFile }) => {
+const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolicy, uploadedFiles = [], onAddFile, onRemoveFile, onBack = null, backLabel = '' }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef(null);
   const infoIconRef = useRef(null);
@@ -710,6 +710,22 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
           className="relative w-full rounded-lg"
           style={{ backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.55)', backdropFilter: laptopBlur, WebkitBackdropFilter: laptopBlur, minHeight: s.modalMinHeight, maxHeight: s.modalMaxHeight, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)' }}
         >
+        {/* Back to map (KOOKEILAND / DELTAWERKEN) — top-left INSIDE the card, so it lives and
+            dies with the intro card (hidden while the Lees-mij/referenties overlays replace it).
+            The references view has its own back button, so skip it there. */}
+        {onBack && !showReferences && (
+          <div style={{ position: 'absolute', top: '0.9rem', left: '0.9rem', zIndex: 20 }}>
+            <SciFiButton onClick={onBack} variant="purple" size="sm" brackets={false}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                {backLabel}
+              </span>
+            </SciFiButton>
+          </div>
+        )}
+
         {/* Content - matches SectorFrame inner structure */}
         <div className="relative z-10 w-full flex flex-col" style={{ padding: s.padding, flex: '1 1 auto' }}>
 
@@ -1127,7 +1143,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                           }}
                         >
                           Level keuze is irrelevant voor jouw account.<br />
-                          Deze keuze helpt ons gepaste vragen te stellen voor jouw verhouding.
+                          Deze keuze helpt ons gepaste vragen te stellen naar jouw verhouding.
                         </div>
                       )}
                     </span>

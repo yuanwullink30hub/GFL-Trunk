@@ -61,8 +61,8 @@ const translations = {
         en: "Download the basics to map your archetype — the identity, the explanation, visualized on our own model, and of course the price you pay for the embodiment of this archetype."
       },
       paid: {
-        nl: "Optioneel voor €00,00 — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt en toegang tot de complete online-extensie.",
-        en: "Optional for €00.00 — the full exposition (3× the data), reading = transforming in itself. Incl. AI prompt and access to the complete online extension."
+        nl: "Optioneel voor €00,00 per maand — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt en toegang tot de complete online-extensie.",
+        en: "Optional for €00.00 per month — The full exposition (3× the data), reading = transforming in itself. Incl. AI prompt and access to the complete online extension."
       }
     },
     layersTitle: {

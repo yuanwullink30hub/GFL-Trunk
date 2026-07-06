@@ -1723,6 +1723,13 @@ const App = () => {
     requestAnimationFrame(animate);
   };
 
+  // Stable wrapper for handleReset (a plain function, new ref each render) — the memoized
+  // AssessmentIntro renders the KOOKEILAND/DELTAWERKEN back button inside its card and must
+  // not re-render on every App frame just because this handler was recreated.
+  const handleResetRef = useRef(null);
+  handleResetRef.current = handleReset;
+  const handleIntroBack = useCallback(() => handleResetRef.current?.(), []);
+
   // Stable callback for NebulaBackground — avoids new function reference on every App render
   const handleNebulaReady = useCallback(() => {
     if (nebulaReadyRef.current) {
@@ -2373,6 +2380,8 @@ const App = () => {
                   uploadedFiles={uploadedFiles}
                   onAddFile={handleAddFile}
                   onRemoveFile={handleRemoveFile}
+                  onBack={handleIntroBack}
+                  backLabel={clientMode ? 'KOOKEILAND' : 'DELTAWERKEN'}
                 />
               </div>
             )}
@@ -2516,16 +2525,18 @@ const App = () => {
             
 
               
-            {/* Back Button - positioned separately from entity transforms */}
+            {/* Back Button - positioned separately from entity transforms. During the intro
+                phase it does NOT render here: the intro card hosts it top-left (AssessmentIntro
+                onBack), so it appears/disappears together with that card. */}
             <div style={{
               position: 'absolute',
               zIndex: 10001,
               bottom: window.innerWidth >= 1280 ? '2rem' : window.innerWidth >= 768 ? '0.5rem' : '5rem',
               left: '50%',
               transform: `translateX(-50%) scaleX(0.98)${assessmentPhase === 'results' && resultsModalProgress < 1 ? ` translateY(${(1 - resultsModalProgress) * -14}vh) scale(${0.05 + resultsModalProgress * 0.95})` : ''}`,
-              opacity: isSystem ? (assessmentPhase === 'results' ? resultsModalProgress : (assessmentPhase === 'hidden' || assessmentPhase === 'intro') ? 1 : 0) : 0,
-              pointerEvents: isSystem && (assessmentPhase === 'results' ? resultsModalProgress > 0.1 : (assessmentPhase === 'hidden' || assessmentPhase === 'intro')) ? 'auto' : 'none',
-              visibility: isSystem && (assessmentPhase === 'results' ? resultsModalProgress > 0.02 : (assessmentPhase === 'hidden' || assessmentPhase === 'intro')) ? 'visible' : 'hidden',
+              opacity: isSystem ? (assessmentPhase === 'results' ? resultsModalProgress : assessmentPhase === 'hidden' ? 1 : 0) : 0,
+              pointerEvents: isSystem && (assessmentPhase === 'results' ? resultsModalProgress > 0.1 : assessmentPhase === 'hidden') ? 'auto' : 'none',
+              visibility: isSystem && (assessmentPhase === 'results' ? resultsModalProgress > 0.02 : assessmentPhase === 'hidden') ? 'visible' : 'hidden',
               transition: 'opacity 0.3s',
             }}>
               <SciFiButton onClick={handleReset} variant="purple" size="sm">

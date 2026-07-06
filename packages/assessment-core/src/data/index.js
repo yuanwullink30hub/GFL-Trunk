@@ -63,7 +63,8 @@ export {
 
 // Archetype Levensles Quotes — the 72 combination life-lessons. Kept standalone
 // (fetched and sent to the AI directly so it needn't search the corpus for them).
-export { getArchetypeQuote } from './archetypeQuotes';
+export { getArchetypeQuote, getArchetypeQuoteByKey } from './archetypeQuotes';
+export { getArchetypeKeyByName } from './archetypeImages';
 
 // ── Restructure part 1 ──────────────────────────────────────────────────────
 // Biochemical profiles, OCEAN deep-dives, extended archetype descriptions and the

@@ -396,7 +396,12 @@ function buildSystemPrompt({
     `Blok 7 — Sessieprotocol (±50 woorden, universeel)\n` +
     `Begin met vraag, geen samenvatting. Kort tenzij verdieping gevraagd. Sluit af met reflectievraag of experiment. Probabilistische taal altijd. Deterministische taal nooit.\n\n` +
     `FORMAAT: Één doorlopend blok platte tekst. Geen markdown, headers of bullets. Begin met: \'Je bent een reflectiepartner. De gebruiker zal een rapport uploaden — het Deltawerken Meester Assessment rapport. Zoek in het rapport eerst naar de sectie PROFIEL DATA VOOR AI VERWERKING en gebruik die als primaire referentie.\'\n` +
-    `⚠️ HERHALING: De gehele prompt MOET tussen 550 en 600 woorden zijn. NOOIT meer dan 600 woorden. Tel zorgvuldig. De 7 blokken vormen samen één doorlopende prompt zonder opmaak.\n`
+    `⚠️ HERHALING: De gehele prompt MOET tussen 550 en 600 woorden zijn. NOOIT meer dan 600 woorden. Tel zorgvuldig. De 7 blokken vormen samen één doorlopende prompt zonder opmaak.\n\n` +
+    `12. Kaart Microcopy (machineleesbaar voor de profielkaart — wordt NIET als rapportpagina getoond)\n` +
+    `Sluit je analyse af met deze sectie, exact in dit formaat (kopregel + twee gelabelde velden):\n` +
+    `## 12. Kaart Microcopy\n` +
+    `KAART_GIFT: [2–3 zinnen in eenvoudige, heldere taal: een verdiepende beschrijving van de gift van déze gebruiker. GEEN kopie of parafrase van de Levensles, geen jargon en geen netwerknamen — concreet wat deze gave in de praktijk is, hoe ze zich toont en wat ze oplevert. Schrijf direct aan de gebruiker ("jouw gave…").]\n` +
+    `KAART_GEOMETRIE: [4–6 zinnen. Werk in TWEE stappen: STAP 1 (intern, niet in de output): lees de geometrie van dit profiel in de taal van de canon — netwerken, groepen, lijntypes, spreiding, polarisatie, Nature/Culture-verhouding. STAP 2 (de output): VERTAAL die canon-lezing naar tekst die helder en makkelijk leesbaar is voor iemand zonder enige modelkennis. GEEN netwerknamen, GEEN lijntypes, GEEN modeljargon in de eindtekst — de betekenis draagt de canon, de woorden zijn alledaags. Beschrijf de VORM: waar de kracht zit en hoe de twee hoofdenergieën zich tot elkaar verhouden. Dit is een PUBLIEKE SHOWKAART, geen reflectiedagboek: GEEN groeipunten, aandachtspunten, reflectie-opdrachten of adviezen — alleen wie dit is en wat dit profiel draagt. FRAMING-REGEL: elke configuratie is een volwaardige manier van navigeren — beschrijf óók middenposities en gelijke verdelingen als kwaliteit (souplesse, toegang tot beide kanten, meebewegen), NOOIT als tekort, gemis, zwakte of "laag". Geen enkel deficit-woord. Probabilistische taal; geen determinisme; geen afsluitende disclaimer (die staat al op de kaart).]\n`
   );
 
   // ═══ FASE 1: TNM DATA-EXTRACTIE & BEREKENING ═══
@@ -1211,6 +1216,14 @@ function buildSystemPrompt({
     `Toon: uitnodigend, nooit tekort-framend. 'De domeinen die het verst van je profiel liggen, bevatten binnen dit model het meeste onbenutte potentieel.' Nooit: 'Je mist dit' of 'Je zou dit moeten doen.'\n` +
     `LET OP: BELANGRIJK> maximaal 130 woorden gebruiken voor SECTIE 13B!\n\n` +
     `Verplichte afsluiting: 'Deze domeinanalyse is gebaseerd op de resonantie tussen jouw Deltawerken-scoreprofiel en professionele domeinen. Het is geen loopbaanadvies en vervangt geen professionele oriëntatie of coaching. De suggesties zijn bedoeld als reflectie-instrument — een uitnodiging om breder te kijken, niet een opdracht om van koers te veranderen.'\n`
+  );
+
+  // ── 14: Kaart Microcopy — AI-authored profile-card fields (machine-consumed; never a report page) ──
+  parts.push(
+    `## 14. Kaart Microcopy\n` +
+    `Deze sectie is machineleesbaar voor de profielkaart en wordt NIET als rapportpagina getoond. Sluit je volledige analyse af met exact dit formaat (kopregel + twee gelabelde velden, niets anders in deze sectie):\n` +
+    `KAART_GIFT: [2–3 zinnen in eenvoudige, heldere taal: een verdiepende beschrijving van de gift van déze gebruiker. GEEN kopie of parafrase van de Levensles, geen jargon en geen netwerknamen — concreet wat deze gave in de praktijk is, hoe ze zich toont en wat ze oplevert. Schrijf direct aan de gebruiker ("jouw gave…").]\n` +
+    `KAART_GEOMETRIE: [4–6 zinnen. Werk in TWEE stappen: STAP 1 (intern, niet in de output): lees de geometrie van dit profiel in de taal van de canon — netwerken, groepen, lijntypes, spreiding, polarisatie, Nature/Culture-verhouding; betrek hoe Main (${archetypeKey}) en Support (${supportArchetype}) zich verhouden en wat de frictie-as is. STAP 2 (de output): VERTAAL die canon-lezing naar tekst die helder en makkelijk leesbaar is voor iemand zonder enige modelkennis. GEEN netwerknamen, GEEN lijntypes, GEEN modeljargon in de eindtekst — de betekenis draagt de canon, de woorden zijn alledaags. Beschrijf de VORM: waar de kracht zit en hoe de twee hoofdenergieën zich tot elkaar verhouden. Dit is een PUBLIEKE SHOWKAART, geen reflectiedagboek: GEEN groeipunten, aandachtspunten, reflectie-opdrachten of adviezen — alleen wie dit is en wat dit profiel draagt. FRAMING-REGEL: elke configuratie is een volwaardige manier van navigeren — beschrijf óók middenposities en gelijke verdelingen als kwaliteit (souplesse, toegang tot beide kanten, meebewegen), NOOIT als tekort, gemis, zwakte of "laag". Geen enkel deficit-woord. Probabilistische taal; geen determinisme; geen afsluitende disclaimer (die staat al op de kaart).]\n`
   );
 
   // ── CONDITIONAL: Persoonlijkheidsrapport Vergelijking (only when files uploaded) ──

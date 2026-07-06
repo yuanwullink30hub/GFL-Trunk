@@ -62,6 +62,11 @@ module.exports = {
     contactTo: process.env.CONTACT_EMAIL || process.env.SMTP_USER || process.env.SMTP_FROM || 'noreply@gardenforlife.nl',
   },
 
+  // Public frontend base URL — used to build clickable links in transactional emails
+  // (e.g. the password-change confirmation). Defaults to the production site, NOT the
+  // request host (which would be localhost in dev / the API host in prod).
+  siteUrl: (process.env.SITE_URL || 'https://www.gardenforlife.nl').replace(/\/+$/, ''),
+
   // Beta access passkeys (comma-separated list)
   betaPasskeys: (process.env.BETA_PASSKEYS || 'Beta-4.9').split(',').map(s => s.trim()),
 };

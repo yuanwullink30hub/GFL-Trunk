@@ -169,6 +169,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   const [pendingPolicySlug, setPendingPolicySlug] = useState(null);
   const [showUploadWarning, setShowUploadWarning] = useState(false);
   const [showOceanInfo, setShowOceanInfo] = useState(false);
+  const [infoLevel, setInfoLevel] = useState(null); // which level's info pop-up is open (per card)
   const [showOceanInput, setShowOceanInput] = useState(false);
   const [oceanOrigin, setOceanOrigin] = useState('center center');
   const [oceanManualScores, setOceanManualScores] = useState(null);
@@ -373,7 +374,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   const s = windowWidth >= 1800 ? {
     // ── Desktop ── all vertical spacings in vh so they track viewport height
     modalMaxWidth: '64.4vw',
-    modalMinHeight: 'calc(82vh - 0.5rem)',
+    modalMinHeight: 'calc(73.8vh - 0.5rem)', // 82vh − 10%
     modalMaxHeight: '99vh',
     padding: '1.8vh 2rem',
     headerMaxWidth: '22rem',
@@ -413,7 +414,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   } : windowWidth >= 1079 ? {
     // ── Laptop ── 77vw wide (48.1 × 1.6), fonts/spacing at original pre-30% scale
     modalMaxWidth: '77vw',
-    modalMinHeight: 'calc(82vh - 0.5rem)',
+    modalMinHeight: 'calc(73.8vh - 0.5rem)', // 82vh − 10%
     modalMaxHeight: '99vh',
     padding: '1.4vh 1.05vw',
     headerMaxWidth: '17.0vw',
@@ -453,7 +454,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   } : windowWidth >= 768 ? {
     // ── Tablet ── vh for vertical, rem for horizontal
     modalMaxWidth: '39.6rem',
-    modalMinHeight: 'calc(82vh - 0.5rem)',
+    modalMinHeight: 'calc(73.8vh - 0.5rem)', // 82vh − 10%
     modalMaxHeight: '99vh',
     padding: '1.4vh 1.2rem',
     headerMaxWidth: '17rem',
@@ -493,7 +494,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   } : {
     // ── Mobile ── vh for vertical, rem for horizontal
     modalMaxWidth: '97vw',
-    modalMinHeight: 'calc(80vh - 0.5rem)',
+    modalMinHeight: 'calc(72vh - 0.5rem)', // 80vh − 10%
     modalMaxHeight: '99vh',
     padding: '1.2vh 0.85rem',
     headerMaxWidth: '11rem',
@@ -656,7 +657,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         position: 'fixed',
         left: '50%',
         top: '50%',
-        transform: 'translate(-50%, -50%)',
+        transform: 'translate(-50%, calc(-50% + 1rem))', // card sits 1rem below center
         width: `min(${s.modalMaxWidth}, calc(100vw - 1.5rem))`,
         minHeight: s.modalMinHeight,
         maxHeight: s.modalMaxHeight,
@@ -670,7 +671,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                  : introExpanding ? 'introBlurIn 0.375s ease-in-out forwards'
                  : 'none') : 'none',
       }} />
-      <div className="relative w-full" style={{ maxWidth: s.modalMaxWidth, transformOrigin: infoOrigin, transform: introReady ? undefined : 'scale(0)', opacity: introReady ? undefined : 0, animation: introReady ? (introClosing ? 'infoContract 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards' : introExpanding ? 'infoExpand 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards' : 'none') : 'none', position: 'relative', zIndex: 50 }}>
+      <div className="relative w-full" style={{ maxWidth: s.modalMaxWidth, transformOrigin: infoOrigin, transform: introReady ? undefined : 'scale(0)', opacity: introReady ? undefined : 0, animation: introReady ? (introClosing ? 'infoContract 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards' : introExpanding ? 'infoExpand 0.375s cubic-bezier(0.4, 0, 0.2, 1) forwards' : 'none') : 'none', position: 'relative', top: '1rem', zIndex: 50 }}>
         {/* Top-Left Corner Border */}
         <div className="absolute -top-0.5 -left-0.5 w-4 h-4 z-10" style={{
           border: '1.5px solid #a855f7',
@@ -872,10 +873,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       <div
                         style={{
                           position: 'absolute', bottom: 'calc(100% + 0.4rem)', right: 0,
-                          width: '16.25rem', padding: '0.7rem 0.9rem', borderRadius: '0.5rem',
-                          backgroundColor: 'rgba(15,23,42,0.97)', border: '1px solid rgba(167,139,250,0.3)',
+                          width: '19.5rem', padding: '0.84rem 1.08rem', borderRadius: '0.5rem',
+                          backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.55)',
+                          backdropFilter: laptopBlur, WebkitBackdropFilter: laptopBlur,
+                          border: '1px solid rgba(167,139,250,0.35)',
                           boxShadow: '0 4px 20px rgba(0,0,0,0.45)', zIndex: 50,
-                          color: 'rgba(148,163,184,0.9)', fontSize: '0.7rem', lineHeight: 1.6,
+                          color: 'rgba(255,254,240,0.85)', fontSize: s.descFontSize, lineHeight: 1.6,
                           fontStyle: 'normal', fontWeight: 400, textAlign: 'left', whiteSpace: 'normal',
                           cursor: 'default',
                         }}
@@ -965,7 +968,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                     fullWidth
                     style={{ width: '10rem', fontSize: '0.65rem' }}
                   >
-                    {oceanManualScores ? '✓ Scores opgeslagen' : 'Voer scores in'}
+                    {oceanManualScores ? '✓ Scores opgeslagen' : 'Handmatig'}
                   </SciFiButton>
                   </div>
                 </>
@@ -1087,38 +1090,73 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             })()}
           </div>
 
-          {/* Level Selection */}
+          {/* Level Selection — each card carries the same info pop-up (beginner, gevorderd, diep). */}
           <div style={{ marginBottom: s.levelsMb, marginTop: '1rem' }}>
             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`} style={{ gap: s.levelsGap }}>
               {levels.map((level) => {
                 const isLocked = level.id === 'quick' || level.id === 'standard';
                 return (
-                  <SciFiButton
-                    key={level.id}
-                    onClick={(e) => !isLocked && openConsent(level.id, e)}
-                    color="#f97316"
-                    rgb="249, 115, 22"
-                    size="lg"
-                    rounded="0.4rem"
-                    fullWidth
-                    disabled={isLocked}
-                    padding={s.levelPadding}
-                    style={{ margin: '0 auto', width: '90%' }}
-                  >
-                    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', width: '100%' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: s.levelTitleFont }}>
-                        {level.name || t(level.nameKey)}
-                        {isLocked && (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                          </svg>
-                        )}
-                      </span>
-                      <span style={{ color: '#94a3b8', fontSize: s.levelDescFont, textTransform: 'none', letterSpacing: 'normal', fontWeight: 400, textAlign: 'center' }}>
-                        {level.description || t(level.descKey)}
-                      </span>
+                  <div key={level.id} style={{ position: 'relative', width: '90%', margin: '0 auto' }}>
+                    {/* Info pop-up — platform glass, intro-card text size; same message on every card */}
+                    <span
+                      onMouseEnter={() => setInfoLevel(level.id)}
+                      onMouseLeave={() => setInfoLevel(null)}
+                      style={{
+                        position: 'absolute', top: '-0.55rem', right: '-0.55rem', zIndex: 30,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: '1.15rem', height: '1.15rem', borderRadius: '50%',
+                        backgroundColor: 'rgba(2,0,3,0.9)', border: '1px solid rgba(249,115,22,0.6)',
+                        color: '#f97316', fontSize: '0.68rem', fontWeight: 700, fontStyle: 'italic',
+                        cursor: 'pointer', lineHeight: 1,
+                      }}
+                      title="Info"
+                    >
+                      i
+                      {infoLevel === level.id && (
+                        <div
+                          style={{
+                            position: 'absolute', bottom: 'calc(100% + 0.4rem)', right: 0,
+                            width: '21.6rem', maxWidth: '80vw', padding: '0.84rem 1.08rem', borderRadius: '0.5rem',
+                            backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.55)',
+                            backdropFilter: laptopBlur, WebkitBackdropFilter: laptopBlur,
+                            border: '1px solid rgba(249,115,22,0.35)',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.45)', zIndex: 50,
+                            color: 'rgba(255,254,240,0.85)', fontSize: s.descFontSize, lineHeight: 1.6,
+                            fontStyle: 'normal', fontWeight: 400, textAlign: 'left', whiteSpace: 'normal',
+                            cursor: 'default',
+                          }}
+                        >
+                          Level keuze is irrelevant voor jouw account.<br />
+                          Deze keuze helpt ons gepaste vragen te stellen voor jouw verhouding.
+                        </div>
+                      )}
                     </span>
-                  </SciFiButton>
+                    <SciFiButton
+                      onClick={(e) => !isLocked && openConsent(level.id, e)}
+                      color="#f97316"
+                      rgb="249, 115, 22"
+                      size="lg"
+                      rounded="0.4rem"
+                      fullWidth
+                      disabled={isLocked}
+                      padding={s.levelPadding}
+                      style={{ width: '100%' }}
+                    >
+                      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', width: '100%' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: s.levelTitleFont }}>
+                          {level.name || t(level.nameKey)}
+                          {isLocked && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                          )}
+                        </span>
+                        <span style={{ color: '#94a3b8', fontSize: s.levelDescFont, textTransform: 'none', letterSpacing: 'normal', fontWeight: 400, textAlign: 'center' }}>
+                          {level.description || t(level.descKey)}
+                        </span>
+                      </span>
+                    </SciFiButton>
+                  </div>
                 );
               })}
             </div>
@@ -1425,7 +1463,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         position: 'fixed',
         left: '50%',
         top: '50%',
-        transform: 'translate(-50%, -50%)',
+        transform: 'translate(-50%, calc(-50% + 1rem))', // card sits 1rem below center
         width: `min(${s.modalMaxWidth}, calc(100vw - 1.5rem))`,
         minHeight: s.modalMinHeight,
         maxHeight: s.modalMaxHeight,
@@ -1446,6 +1484,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         transform: infoReady ? undefined : 'scale(0)',
         opacity: infoReady ? undefined : 0,
         position: 'relative',
+        top: '1rem',
         zIndex: 50,
       }}>
         {/* Top-Left Corner */}
@@ -1501,26 +1540,27 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               <div className="rounded-lg" style={{ padding: '1rem' }}>
                 <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>Waarom dit geen persoonlijkheidstest is</h3>
                 <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>De meeste tests geven je een hokje. Vier letters, een kleur, een dier — een etiket dat je meedraagt en dat nooit verandert, hoe het leven ook aan je trekt.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Dit model stelt een andere vraag. Niet wat ben je, maar hoe navigeer je — tussen instinct en aanleg, tussen wie je van nature bent en wie je hebt leren zijn. En, belangrijker: wat kost dat je, wanneer de druk oploopt. Want een mens is geen vast punt. Een mens is een vorm die buigt, en de kunst is om te weten waar, en hoe ver, en wat er overeind blijft.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Daarvoor bouwen we op drie originele modellen. Geen van de drie is decoratie; elk bezielt op intieme wijze de schoonheid in onze tuin.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Dit model vraagt iets anders. Niet ‘’wat ben je’’ maar ‘’hoe navigeer je’’ — tussen instinct en aanleg, wie je van nature bent en wie je hebt leren zijn. <br /> En belangrijker: wat kost dat je wanneer de druk oploopt. Want een mens is geen vast punt. Een mens is een vorm die buigt, aan ons de kunst om jou te vertellen waar, hoe ver en wat er overeind blijft.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Daarvoor bouwen we op drie originele modellen — elk bezielt op zeer intieme wijze de schoonheid van onze tuin.</p>
               </div>
 
               <div className="rounded-lg" style={{ padding: '1rem', display: 'flex', alignItems: 'stretch' }}>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
                   <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
                     <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>Het wiel — Archetype landschap</h3>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>We hebben het wiel niet uitgevonden. Dit is het antieke oosterse zodiak wiel — exact dezelfde geometrie, dezelfde twaalf posities, dezelfde regel dat elke relatie, en elke conversatie een transformatie is voor beide.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>De oude kaart had de vorm goed maar de wetenschap nog niet. De twaalf posities zitten nu op de drie grote hersennetwerken die Vinod Menon beschreef: het netwerk dat plant en beslist, het netwerk dat reflecteert en betekenis geeft, en het netwerk dat bepaalt wat aandacht verdient. Dezelfde eeuwenoude geometrie — nu verankerd in de neurobiologie van het brein.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Ja — dat is een bewuste knipoog naar de omstreden astrologie. Niet naar de sterren, maar naar haar belichaming: het idee dat een mens te begrijpen valt aan de hand van een positie op een wiel, en aan wat daar tegenover en naast ligt. De astrologie had die intuïtie eeuwen geleden al, en ze is gevaarlijker dan haar reputatie. Wij namen de geometrie serieus en gaven haar een grond die de oude kaart niet had.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>En zoals een astroloog een geboortekaart leest, lezen wij de verbanden recht van die geometrie af:</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>We hebben het wiel niet opnieuw uitgevonden. Zijn voorganger is het antieke oosterse zodiak wiel — exact dezelfde geometrie, dezelfde aantallen en dezelfde regels dat elke relatie of conversatie een transformatie is voor beide.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>De oude kaart had de vorm goed, wij hebben de wetenschap zijn werk laten doen. De twaalf posities zitten nu geketend op de drie grote hersennetwerken die ‘’Vinod Menon’’ beschreef: het netwerk dat plant en beslist (Central Executive Network), het netwerk dat reflecteert en betekenis geeft (Default Mode Network), en het netwerk dat bepaalt wat aandacht verdient (Salience Network). Dezelfde eeuwenoude geometrie — nu verankerd in de neurobiologie van het brein.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Ja — dit is een bewuste knipoog naar de omstreden astrologie. Niet naar de verscholen sterren, maar naar haar belichaming: het idee dat een mens onderdeel is van een groot geordend wiel en haar onderlinge relaties. <br />De astrologie had die intuïtie eeuwen geleden al, en ze blijkt gevaarlijker dan haar reputatie. Dus wij namen de geometrie serieus en gaven haar een grond die de oude kaart niet had.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Zoals een astroloog een geboortekaart leest, lezen wij de verbanden recht van die geometrie af:</p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Wie naast je staat, deelt je <span style={{ color: '#22c55e', fontWeight: 600 }}>hardware</span>. Buur-archetypen in dezelfde biologische groep draaien op exact dezelfde neurale grond — je stevigste, meest moeiteloze kracht.</p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Wie tegenover je staat, is je <span style={{ color: '#a855f7', fontWeight: 600 }}>schaduw</span>. De 180°-tegenpool: alles wat je niet bent, en juist daarom je grootste groeirichting. Niet omdat zij de tegenovergestelde hardware hebben, maar omdat ze deze naar jou toe spiegelen.</p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Sommige verbindingen kruisen het wiel als een <span style={{ color: '#3b82f6', fontWeight: 600 }}>brug</span>. Archetypen uit verschillende groepen die elkaars tegengewicht dragen — een spanning die, wie haar kan houden, in beweging zet.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Tegenstrijdigheid is hier geen politiek maar <span style={{ color: '#ef4444', fontWeight: 600 }}>contrasterende</span> hardware, de natuur die een keuze heeft gemaakt en de mens die dit moet respecteren.</p>
                     <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>En over alles heen ligt wat je hebt <span style={{ color: '#eab308', fontWeight: 600 }}>geléérd</span>. Driehoeken van archetypen die biologisch niets delen, maar die jaren van vorming tot één aangeleerd netwerk hebben gesmeed — de software die je schreef om te overleven.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Geen van deze verbindingen is verzonnen. Ze volgen uit waar je zit. Dat is het verschil tussen determinatie en ‘’vrije’’ wil.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Geen van deze verbindingen is verzonnen, ze presenteerden zichzelf. Dit is de synchronisatie tussen determinatie en vrije wil.</p>
                   </div>
                   <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-                    <div style={{ width: 'min(262px, 24.2vw)', height: 'min(262px, 24.2vw)', borderRadius: '50%', filter: 'drop-shadow(0 0 14px rgba(34,197,94,0.4)) drop-shadow(0 0 30px rgba(34,197,94,0.15))' }}>
+                    <div style={{ width: 'min(375px, 34.65vw)', height: 'min(375px, 34.65vw)', borderRadius: '50%', filter: 'drop-shadow(0 0 14px rgba(34,197,94,0.4)) drop-shadow(0 0 30px rgba(34,197,94,0.15))' }}>
                       <img src={wheelAnatomy} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                   </div>
@@ -1531,11 +1571,11 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
                   <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
                     <h3 className="font-medium" style={{ color: '#f97316', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(249,115,22,0.3)' }}>De driehoek — waar het om draait</h3>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>In het wiel ligt een driehoek, en die stelt de oudste vraag die er is: waar oriënteer je je op, als puntje bij paaltje komt? Op wat waar is, op wat goed is, of op wat mooi is?</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Het zijn de drie waarden die Plato herkende als het hoogste waar een mens zich naar kan richten. Wij citeren hem niet — we zetten zijn intuïtie voort. De Deltawerken is de moderne gestalte van diezelfde platonische geest: niet drie idealen aan een hemel, maar drie geneste richtingen waarin een levend mens zich wendt. Elk archetype navigeert ertussen — niet als gedrag dat je vertoont, maar als waar je je naartoe keert wanneer het er werkelijk toe doet. De driehoek bepaalt de dieptelaag: niet wat je doet, maar waarvoor.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>In het wiel ligt een driehoek, en die transfigureert een oude vraag: In welke mate trekt een waarde je richting bepaald gedrag wanneer keuze schaars voelt?</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Het zijn de drie waarden die Plato herkende als het hoogste waar een mens zich naar kan richten. Wij citeren hem niet — we zetten zijn intuïtie voort. De Deltawerken is de moderne gestalte van diezelfde platonische geest: niet drie idealen aan een hemel, maar drie geneste richtingen waarin een levend mens zich wendt. <br />Elk archetype navigeert hierop — niet als externe uitstraling, maar als waar je je naartoe keert wanneer het er werkelijk toe doet. De driehoek bepaalt de diepte: niet alleen wat je doet, maar waarvoor en voor wie.</p>
                   </div>
                   <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-                    <div style={{ width: 'min(262px, 24.2vw)', height: 'min(262px, 24.2vw)', marginTop: '-2rem', filter: 'drop-shadow(0 0 14px rgba(249,115,22,0.4)) drop-shadow(0 0 30px rgba(249,115,22,0.15))' }}>
+                    <div style={{ width: 'min(375px, 34.65vw)', height: 'min(375px, 34.65vw)', marginTop: '-6rem', filter: 'drop-shadow(0 0 14px rgba(249,115,22,0.4)) drop-shadow(0 0 30px rgba(249,115,22,0.15))' }}>
                       <img src={triangleHardware} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   </div>
@@ -1546,11 +1586,11 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
                   <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
                     <h3 className="font-medium" style={{ color: '#22d3ee', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,211,238,0.3)' }}>Cellen in cellen — hoe diep het gaat</h3>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>En dan de schaal. Kijk goed naar dit beeld, want het is groter dan een mens. Het is het patroon dat de wetenschap als geheel probeert te ontvouwen: dezelfde nesten, dezelfde geometrie van vorm-binnen-vorm, die terugkeert van het kleinste naar het grootste. De chemie vindt het in moleculen, de biologie in cellen, de fysica in velden, de kosmologie en astronomie in de structuur van het heelal — en de psychologie in jou. Eén substraat, op elke schaal opnieuw.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Een mens is daar geen uitzondering op, maar een instantie ervan: genest in lagen, van het lijf dat ademt tot de betekenis die je zoekt — van de eerste fysiologische behoefte, via zelf en gemeenschap, naar intimiteit en wat daarboven uitreikt. Daarom raakt deze test niet alleen je persoonlijkheid maar je levensverhaal: de intense spanning tussen je natuurlijke aanleg en wat de cultuur van je maakte. Piaget noemde het cognitieve stadia. Jung noemde het individuatie. Wij brengen het in kaart als een dynamiek die altijd draait — niet een eindpunt, maar een beweging die nooit stopt.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Kijk goed naar dit beeld, het is het patroon dat de wetenschap als geheel probeert te ontvouwen: dezelfde nesten, dezelfde geometrie van vorm-binnen-vorm, die terugkeert van het kleinste naar het grootste. <br />De chemie vindt het in moleculen, de biologie in cellen, de fysica in velden, de kosmologie en astronomie in de structuur van het heelal — en de psychologie in jou. <br />Eén substraat, uitgedrukt op verschillende frequenties.</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Een mens is daar geen uitzondering op, maar een instantie ervan: genest in lagen, van het lijf dat ademt tot de betekenis die je zoekt — van de eerste fysiologische behoefte, via zelf en gemeenschap, naar intimiteit en wat daarboven uitreikt. <br />Daarom raakt deze test niet alleen je persoonlijkheid maar jouw levensverhaal: de intense spanning tussen je natuurlijke aanleg en wat de cultuur van je maakte. Piaget noemde het cognitieve stadia. Jung noemde het individuatie. Wij brengen het in kaart als een dynamiek — niet een eindpunt, maar een beweging die nooit stopt.</p>
                   </div>
                   <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: 'min(262px, 24.2vw)', height: 'min(262px, 24.2vw)', filter: 'drop-shadow(0 0 14px rgba(34,211,238,0.4)) drop-shadow(0 0 30px rgba(34,211,238,0.15))' }}>
+                    <div style={{ width: 'min(375px, 34.65vw)', height: 'min(375px, 34.65vw)', marginTop: '-2rem', filter: 'drop-shadow(0 0 14px rgba(34,211,238,0.4)) drop-shadow(0 0 30px rgba(34,211,238,0.15))' }}>
                       <img src={cellsImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                   </div>
@@ -1559,11 +1599,11 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
 
               <div className="rounded-lg" style={{ padding: '1rem' }}>
                 <h3 className="font-medium" style={{ color: '#a855f7', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(168,85,247,0.3)' }}>Wat dit model draagt, en de meeste niet</h3>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Een gewone test vraagt je een paar vinkjes en geeft je een naam terug. Hier kies je tweeledig op zesendertig vragen — telkens tussen wat je van nature bent en wat je hebt leren zijn — en elke keuze stroomt niet naar één punt, maar door de geometrie van het hele wiel. Tweeënzeventig datapunten, en geen daarvan staat op zichzelf.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Een gewone test vraagt je een paar vinkjes en geeft je wat data terug. Hier kies je tweeledig op zesendertig vragen, die onderscheid maken tussen aangeleerd gedrag en de essentie — en elke keuze stroomt niet naar één punt, maar door de geometrie van het hele wiel. Tweeënzeventig datapunten waarvan er geen één op zichzelf staat.</p>
                 <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Tel je uit hoeveel verschillende geometrieën daaruit kunnen ontstaan, dan kom je op een getal van vierenvijftig cijfers: 30³⁶ — meer dan honderdvijftig quadriljard maal een biljoen. Meer dan er sterren aan de hemel staan, meer dan er atomen in je lichaam zitten.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Dit is geen losse statistiek: het is een gevolg van hoe het model leest. Elke keuze stroomt niet naar één oceaan, maar verspreidt zich uit in vijf afzonderlijke geometrische kanalen door het hele wiel — gedeelde hardware, bruggen, schaduw, aangeleerde driehoeken, frictie. Geen etiket, een vingerafdruk.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Toch zit de diepte niet eens in hoeveel vormen er mogelijk zijn. Ze zit in wat we eruit lezen. Dit model leest ook de storm: hoe jouw specifieke configuratie zich houdt wanneer de druk oploopt, waar ze het langst standhoudt, en waar — en op welk punt — ze breekt. Niet om je een diagnose te geven, maar om je de vorm van je eigen veerkracht te tonen: waar je rust, waar je rekt, en wat je het kost om overeind te blijven.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Dat is wat een kaart kan en een etiket nooit. Een etiket zegt wie je bent. Een kaart laat zien hoe je beweegt — en waar het terrein steil wordt.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Dit is geen losse statistiek: het is een gevolg van hoe het model leest. Elke keuze stroomt niet naar één oceaan, maar verspreidt zich in vijf afzonderlijke geometrische kanalen — gedeelde hardware, bruggen, schaduw, aangeleerde driehoeken, frictie. <br />Geen etiket, een vingerafdruk.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}><br />Toch zit de diepte niet eens in hoeveel vormen er mogelijk zijn. Ze zit in wat we eruit lezen. Dit model reikt tot het oog van de storm: hoe jouw specifieke configuratie zich houdt wanneer de druk oploopt, waar ze het langst standhoudt — waar en op welk punt ze breekt. Niet om je een diagnose te geven, maar om je de vorm van je eigen veerkracht te tonen: waar je rust, waar je rekt, en wat je het kost om overeind te blijven.</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Een etiket zegt wie je bent, een kaart laat zien hoe je in die headspace kan bewegen.</p>
               </div>
 
             </div>
@@ -1595,7 +1635,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         position: 'fixed',
         left: '50%',
         top: '50%',
-        transform: 'translate(-50%, -50%)',
+        transform: 'translate(-50%, calc(-50% + 1rem))', // card sits 1rem below center
         width: `min(${s.modalMaxWidth}, calc(100vw - 1.5rem))`,
         minHeight: s.modalMinHeight,
         maxHeight: s.modalMaxHeight,
@@ -1615,6 +1655,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         transform: refsReady ? undefined : 'scale(0)',
         opacity: refsReady ? undefined : 0,
         position: 'relative',
+        top: '1rem',
         zIndex: 50,
       }}>
         {/* Corner brackets */}

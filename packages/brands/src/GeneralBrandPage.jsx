@@ -303,8 +303,8 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
                       <img src={brand.logoUrl} alt={brand.id} className="w-full h-full object-contain" style={{ backgroundColor: 'transparent' }} />
                     </div>
                     {isActive && (
-                      <div 
-                        className="absolute -bottom-6 left-1/2 -translate-x-1/2 px-2 py-0.5 text-xs font-mono whitespace-nowrap rounded"
+                      <div
+                        className="absolute top-0.5 left-1/2 -translate-x-1/2 z-10 px-2 py-0.5 text-xs font-mono whitespace-nowrap rounded pointer-events-none"
                         style={{
                           backgroundColor: 'rgba(0, 0, 0, 0.8)',
                           border: '1px solid rgba(255, 174, 0, 0.5)',
@@ -323,31 +323,34 @@ const NavWheel = ({ brands, virtualIndex, onUpdateIndex, onBack, locked = false 
         </div>
       </div>
 
-      {/* RETURN BUTTON - Left side of hub button */}
-      <button
-        onClick={() => onBack()}
-        className={`fixed z-50 flex items-center justify-center transition-all duration-300 border-0 outline-none gap-2 ${isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-        style={{
-          backgroundColor: 'transparent',
-          bottom: `${sideBottom}px`,
-          left: `calc(50% - ${sideOffset}px)`,
-          color: '#ffae00',
-          fontSize: '12px',
-          fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-          fontWeight: 'bold',
-          letterSpacing: '0.1em'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = '#ffc955';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = '#ffae00';
-        }}
-        title={t('brands.backTitle')}
-      >
-        <ChevronLeft size={16} />
-        <span>{t('brands.back')}</span>
-      </button>
+      {/* RETURN BUTTON - Left side of hub button. Hidden when the wheel is locked (e.g. Gardens):
+          the global nav "← Terug" handles going back there. */}
+      {!locked && (
+        <button
+          onClick={() => onBack()}
+          className={`fixed z-50 flex items-center justify-center transition-all duration-300 border-0 outline-none gap-2 ${isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          style={{
+            backgroundColor: 'transparent',
+            bottom: `${sideBottom}px`,
+            left: `calc(50% - ${sideOffset}px)`,
+            color: '#ffae00',
+            fontSize: '12px',
+            fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+            fontWeight: 'bold',
+            letterSpacing: '0.1em'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#ffc955';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#ffae00';
+          }}
+          title={t('brands.backTitle')}
+        >
+          <ChevronLeft size={16} />
+          <span>{t('brands.back')}</span>
+        </button>
+      )}
 
       {/* SCROLL BUTTON - Right side of hub button */}
       <button
@@ -553,7 +556,7 @@ const GeneralBrandPage = React.memo(({
         <div className="w-full h-full flex gap-6 pointer-events-auto relative z-10">
 
           {/* LEFT COLUMN: Identity & Tabs */}
-          <div className="w-1/3 flex flex-col gap-4" style={{ height: '125%', transform: 'translateY(max(-7.5rem, -8.5vh)) translateX(-2%)', paddingTop: '0.84rem', paddingBottom: '0.36rem' }}>
+          <div className="w-1/3 flex flex-col gap-4" style={{ height: '106.25%', transform: 'translateY(calc(max(-7.5rem, -8.5vh) + 14.0625vh)) translateX(-2%)', paddingTop: '0.84rem', paddingBottom: '0.36rem' }}>
             <SectorFrame>
               {/* Header */}
               <div className="flex gap-6 mb-6 border-b border-white/10 pb-6">
@@ -668,7 +671,8 @@ const GeneralBrandPage = React.memo(({
           </div>
 
           {/* CENTER COLUMN: Visuals & Contact */}
-          <div className="w-1/3 flex flex-col gap-4" style={{ height: '105%', marginTop: '-2.5%' }}>
+          {/* height 105%→99.75% cuts 5% off the BOTTOM only; marginTop unchanged keeps the top line in place */}
+          <div className="w-1/3 flex flex-col gap-4" style={{ height: '99.75%', marginTop: '-2.5%' }}>
             <SectorFrame>
               <div 
                 className="flex-1 relative group rounded-sm overflow-hidden border border-white/10 bg-black"

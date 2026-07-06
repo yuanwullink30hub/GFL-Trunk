@@ -23,6 +23,7 @@ import {
 import { isNatureSlot } from '@gfl/assessment-core/assessmentData';
 import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
 import { assembleV4, NARRATIVE_TAGS, matchNarrativeTag } from './v4Parser';
+import { orbCodeFromResult } from '../../orb';
 import MorphologyChart from './MorphologyChart';
 import { sectionTitle, relabelProse } from './v4Labels';
 
@@ -179,6 +180,10 @@ const AssessmentResultsModal = ({
   // v4: structured parse of the model output (assembleV4) + the engine C-runtime.
   const [v4Data, setV4Data] = useState(null);
   const [cRuntime, setCRuntime] = useState(null);
+  // Backend-authored orb login-code (LC_ORB2_…), radial-gated with the real polar_gap.
+  // Held in a ref so the PDF generator reads it synchronously without a re-render race.
+  const orbCodeRef = useRef('');
+  const kaartFieldsRef = useRef({ gift: '', geometrie: '' }); // AI-authored card fields (## Kaart Microcopy)
   const [uploadedOceanScores, setUploadedOceanScores] = useState(null);
   const [aiReady, setAiReady] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
@@ -328,7 +333,7 @@ const AssessmentResultsModal = ({
         const __replay = (typeof window !== 'undefined' && window.__GFL_PDF_REPLAY) || null;
         let aiResult;
         if (__replay) {
-          aiResult = { analysis: __replay.analysis, cRuntime: __replay.cRuntime, uploadedOceanScores: __replay.uploadedOceanScores };
+          aiResult = { analysis: __replay.analysis, cRuntime: __replay.cRuntime, uploadedOceanScores: __replay.uploadedOceanScores, orbCode: __replay.orbCode };
         } else {
         aiResult = await analyzeAssessment({
           archetypeKey: result.mainArchetype,
@@ -367,10 +372,15 @@ const AssessmentResultsModal = ({
         // Stage 3: frontend integration
         setAiStage(3);
         if (aiResult.uploadedOceanScores) setUploadedOceanScores(aiResult.uploadedOceanScores);
+        // Card fields: extract, then STRIP from the analysis so no rendering path (sections,
+        // v4, PDF pages) can ever show them — they exist only in kaartFieldsRef + machine block.
+        kaartFieldsRef.current = extractKaartFields(aiResult.analysis || '');
+        const cleanedAnalysis = stripKaartFields(aiResult.analysis || '');
         // v4 structured parse (title-lines-as-tags) + the engine's C-runtime.
-        try { setV4Data(assembleV4(aiResult.analysis || '')); } catch (e) { console.warn('[GFL] v4 parse failed:', e.message); }
+        try { setV4Data(assembleV4(cleanedAnalysis)); } catch (e) { console.warn('[GFL] v4 parse failed:', e.message); }
         if (aiResult.cRuntime) setCRuntime(aiResult.cRuntime);
-        const sections = parseAiSections(aiResult.analysis || '');
+        orbCodeRef.current = aiResult.orbCode || '';   // backend-authored code (empty on replay/back-compat)
+        const sections = parseAiSections(cleanedAnalysis);
         // ── DIAGNOSTIC: shows whether a section was "never sent" (not in this list) vs "not
         //    rendered" (in the list but missing from the PDF). Also flags truncation: if the
         //    tail (machine block / last sections) is missing, the analysis was cut short. ──
@@ -408,7 +418,7 @@ const AssessmentResultsModal = ({
             localStorage.setItem('gfl_pdf_replay', JSON.stringify({
               layerAnswers, liveSubjects,
               analysis: aiResult.analysis, cRuntime: aiResult.cRuntime,
-              uploadedOceanScores: aiResult.uploadedOceanScores,
+              uploadedOceanScores: aiResult.uploadedOceanScores, orbCode: aiResult.orbCode,
               savedAt: Date.now(),
             }));
           }
@@ -701,7 +711,7 @@ const AssessmentResultsModal = ({
       ]);
       const html2canvas = html2canvasMod.default;
       // ── PDF Setup ──
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
       const W = 210, H = 297;
       const margin = 18;
       const contentW = W - margin * 2;
@@ -1110,16 +1120,17 @@ const AssessmentResultsModal = ({
         imgCanvas.width = imgSize;
         imgCanvas.height = imgSize;
         const ctx = imgCanvas.getContext('2d');
+        ctx.fillStyle = '#060612'; ctx.fillRect(0, 0, imgSize, imgSize); // opaque bg so JPEG corners blend with the page
         // Circular mask
         ctx.beginPath();
         ctx.arc(imgSize / 2, imgSize / 2, imgSize / 2, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
         ctx.drawImage(img, 0, 0, imgSize, imgSize);
-        const imgData = imgCanvas.toDataURL('image/png');
+        const imgData = imgCanvas.toDataURL('image/jpeg', 0.85);
         const pdfImgSize = 90;
         const imgX = W / 2 - pdfImgSize / 2;
-        pdf.addImage(imgData, 'PNG', imgX, y, pdfImgSize, pdfImgSize);
+        pdf.addImage(imgData, 'JPEG', imgX, y, pdfImgSize, pdfImgSize);
         // Clickable hyperlink over the image — opens full-res in browser
         if (result.imageUrl) pdf.link(imgX, y, pdfImgSize, pdfImgSize, { url: result.imageUrl });
         // Purple border ring around circular image
@@ -1231,15 +1242,15 @@ const AssessmentResultsModal = ({
           const radarEl = pdfRadarRef.current || radarRef.current;
           if (radarEl) {
             try {
-              const canvas = await html2canvas(radarEl, { backgroundColor: '#060612', scale: 3, useCORS: true, logging: false });
-              const img = canvas.toDataURL('image/png');
+              const canvas = await html2canvas(radarEl, { backgroundColor: '#060612', scale: 2, useCORS: true, logging: false });
+              const img = canvas.toDataURL('image/jpeg', 0.85);
               const maxH = 80;
               let drawH = (canvas.height / canvas.width) * contentW; let drawW = contentW;
               if (drawH > maxH) { drawH = maxH; drawW = (canvas.width / canvas.height) * drawH; }
               const ox = margin + (contentW - drawW) / 2;
               pdf.setDrawColor(...green); pdf.setLineWidth(0.5);
               pdf.rect(ox, y, drawW, drawH);
-              pdf.addImage(img, 'PNG', ox, y, drawW, drawH);
+              pdf.addImage(img, 'JPEG', ox, y, drawW, drawH);
               y += drawH + 7;
             } catch { y += 4; }
           }
@@ -1281,8 +1292,8 @@ const AssessmentResultsModal = ({
           // D-curve below.
           if (cRuntime?.d_curve && morphologyRef.current) {
             try {
-              const mc = await html2canvas(morphologyRef.current, { backgroundColor: '#060612', scale: 3, useCORS: true, logging: false });
-              const mImg = mc.toDataURL('image/png');
+              const mc = await html2canvas(morphologyRef.current, { backgroundColor: '#060612', scale: 2, useCORS: true, logging: false });
+              const mImg = mc.toDataURL('image/jpeg', 0.85);
               const innerPad = 3;
               const chartW = contentW - innerPad * 2;
               let chartH = (mc.height / mc.width) * chartW;
@@ -1290,7 +1301,7 @@ const AssessmentResultsModal = ({
               const boxH = chartH + innerPad * 2;
               pdf.setDrawColor(...cyan); pdf.setLineWidth(0.4);
               pdf.rect(margin, y, contentW, boxH);
-              pdf.addImage(mImg, 'PNG', margin + innerPad, y + innerPad, chartW, chartH);
+              pdf.addImage(mImg, 'JPEG', margin + innerPad, y + innerPad, chartW, chartH);
               y += boxH + 4;
             } catch { y += 4; }
           }
@@ -2185,9 +2196,9 @@ const AssessmentResultsModal = ({
         if (hasMorphChart) {
           try {
             const morphCanvas = await html2canvas(morphologyRef.current, {
-              backgroundColor: '#060612', scale: 3, useCORS: true, logging: false,
+              backgroundColor: '#060612', scale: 2, useCORS: true, logging: false,
             });
-            const morphImg = morphCanvas.toDataURL('image/png');
+            const morphImg = morphCanvas.toDataURL('image/jpeg', 0.85);
             const capTxt = language === 'en'
               ? 'Main and Support show each archetype’s absolute cost-curve (0–100). Samengesteld (composed) is the blended load normalised to its own peak (=100%) — it shows the SHAPE within your configuration, not an absolute comparison, so it can sit above the individual lines.'
               : 'Hoofd en Support tonen elk de absolute kostencurve van het archetype (0–100). Samengesteld is de gecombineerde belasting, genormaliseerd op zijn eigen piek (=100%) — het toont de VORM binnen jouw configuratie, geen absolute vergelijking, en kan daarom boven de losse lijnen liggen.';
@@ -2205,7 +2216,7 @@ const AssessmentResultsModal = ({
             pdf.setDrawColor(...cyan);
             pdf.setLineWidth(0.4);
             pdf.rect(boxX, y, boxW, boxH);
-            pdf.addImage(morphImg, 'PNG', boxX + innerPad, y + innerPad, chartW, chartH);
+            pdf.addImage(morphImg, 'JPEG', boxX + innerPad, y + innerPad, chartW, chartH);
             y += boxH + 4;
             // Caption below the chart, full width
             pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...mutedGray);
@@ -2408,7 +2419,7 @@ const AssessmentResultsModal = ({
           const radarCanvas = await html2canvas(radarRef.current, {
             backgroundColor: null, scale: 3, useCORS: true, logging: false,
           });
-          const radarImg = radarCanvas.toDataURL('image/png');
+          const radarImg = radarCanvas.toDataURL('image/jpeg', 0.85);
           const radarW = contentW;
           const radarH = (radarCanvas.height / radarCanvas.width) * radarW;
           const availH = maxH > 0 ? maxH : H - y - margin;
@@ -2419,7 +2430,7 @@ const AssessmentResultsModal = ({
           pdf.setDrawColor(...green);
           pdf.setLineWidth(0.5);
           pdf.rect(margin, y - borderPad, contentW, finalH + borderPad * 2);
-          pdf.addImage(radarImg, 'PNG', offsetX, y, finalW, finalH);
+          pdf.addImage(radarImg, 'JPEG', offsetX, y, finalW, finalH);
           y += finalH + 6;
           return true;
         } catch {
@@ -2625,9 +2636,9 @@ const AssessmentResultsModal = ({
             if (radarEl) {
               try {
                 const canvas = await html2canvas(radarEl, {
-                  backgroundColor: '#060612', scale: 3, useCORS: true, logging: false,
+                  backgroundColor: '#060612', scale: 2, useCORS: true, logging: false,
                 });
-                const img = canvas.toDataURL('image/png');
+                const img = canvas.toDataURL('image/jpeg', 0.85);
                 const maxH = 76.5;                             // 15% smaller; leaves room for 2 sections + TNM wheel
                 let drawH = (canvas.height / canvas.width) * contentW;
                 let drawW = contentW;
@@ -2636,7 +2647,7 @@ const AssessmentResultsModal = ({
                 pdf.setDrawColor(...green);
                 pdf.setLineWidth(0.5);
                 pdf.rect(offsetX, y, drawW, drawH);
-                pdf.addImage(img, 'PNG', offsetX, y, drawW, drawH);
+                pdf.addImage(img, 'JPEG', offsetX, y, drawW, drawH);
                 y += drawH + 8;
               } catch { y += 4; }
             }
@@ -2733,9 +2744,10 @@ const AssessmentResultsModal = ({
                     const c = document.createElement('canvas');
                     c.width = size; c.height = size;
                     const cx = c.getContext('2d');
+                    cx.fillStyle = '#060612'; cx.fillRect(0, 0, size, size);
                     cx.beginPath(); cx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2); cx.closePath(); cx.clip();
                     cx.drawImage(imgEl, 0, 0, size, size);
-                    return c.toDataURL('image/png');
+                    return c.toDataURL('image/jpeg', 0.85);
                   };
                   const imgGap = 6;
                   const halfW = (contentW - imgGap) / 2;
@@ -2747,7 +2759,7 @@ const AssessmentResultsModal = ({
                   if (dim >= 28) {
                     // Main (left, purple border)
                     const mX = margin + (halfW - dim) / 2;
-                    pdf.addImage(circleClip(mainEl, 600), 'PNG', mX, areaTop, dim, dim);
+                    pdf.addImage(circleClip(mainEl, 600), 'JPEG', mX, areaTop, dim, dim);
                     pdf.setDrawColor(...purple); pdf.setLineWidth(1);
                     pdf.circle(mX + dim / 2, areaTop + dim / 2, dim / 2, 'S');
                     pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...purple);
@@ -2755,7 +2767,7 @@ const AssessmentResultsModal = ({
                     // Support (right, orange border)
                     const rX = margin + halfW + imgGap;
                     const sX = rX + (halfW - dim) / 2;
-                    pdf.addImage(circleClip(supEl, 600), 'PNG', sX, areaTop, dim, dim);
+                    pdf.addImage(circleClip(supEl, 600), 'JPEG', sX, areaTop, dim, dim);
                     pdf.setDrawColor(...orange); pdf.setLineWidth(1);
                     pdf.circle(sX + dim / 2, areaTop + dim / 2, dim / 2, 'S');
                     pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...orange);
@@ -3002,6 +3014,24 @@ const AssessmentResultsModal = ({
         mBold(SEP, green);
         mGap();
 
+        // ── Orb login-code: the PDF IS the login. Backend extracts this and discards the file. ──
+        // Prefer the backend-authored code (radial-gated with the real polar_gap); fall back to
+        // client re-derivation (gate open) only when a backend code isn't present (back-compat).
+        const orbCode = orbCodeRef.current || orbCodeFromResult(result);
+        if (orbCode) {
+          mBold(dash('ORB-SIGNATUUR (LOGIN-CODE)'), green);
+          mLine(`ORB::${orbCode}::ORB`, dimWhite);
+          // Extended archetype name, wrapped like the orb code so PDF-login can recover it even
+          // after whitespace-stripping. Base64 (UTF-8) keeps spaces/diacritics intact as one token.
+          const archName = result.extendedNameNl || result.extendedName || '';
+          if (archName) {
+            let archB64 = '';
+            try { archB64 = btoa(unescape(encodeURIComponent(archName))); } catch (_) {}
+            if (archB64) mLine(`ARCH::${archB64}::ARCH`, dimWhite);
+          }
+          mGap();
+        }
+
         mBold(dash('IDENTITEIT'), green);
         mLine(`Extended Archetype: ${result.extendedName || 'N/A'}`);
         mLine(`Main: ${result.mainName || ''} (${POS[mk] || '?'}) | Groep: ${ARCHETYPE_TO_GROUP[mk] || ''} | Netwerk: ${NET[ARCHETYPE_TO_GROUP[mk]] || ''}`);
@@ -3091,6 +3121,17 @@ const AssessmentResultsModal = ({
         mLine(`Curse / Trigger: ${currentExt?.shadow || result.mainShadowTrait || 'N/A'}`);
         mLine(`Levensles: "${result.levensles || 'N/A'}"`);
         mGap();
+
+        // Kaart Microcopy — AI-authored profile-card fields (KAART_GIFT / KAART_GEOMETRIE),
+        // base64-marked like ORB::/ARCH:: so the card extractor recovers them regardless of
+        // how the PDF text layer wraps lines.
+        if (kaartFieldsRef.current.gift || kaartFieldsRef.current.geometrie) {
+          const b64u = (s) => { try { return btoa(unescape(encodeURIComponent(s))); } catch { return ''; } };
+          mBold(dash('KAART MICROCOPY'), green);
+          if (kaartFieldsRef.current.gift) mLine(`CGIFT::${b64u(kaartFieldsRef.current.gift)}::CGIFT`, dimWhite);
+          if (kaartFieldsRef.current.geometrie) mLine(`CGEO::${b64u(kaartFieldsRef.current.geometrie)}::CGEO`, dimWhite);
+          mGap();
+        }
 
         // Master Prompt v4.1 §5.10: dead v3 fields removed (MAIN ARCHETYPE DIEPTE block).
         mBold(dash('SHADOW INTEGRATIE'), green);
@@ -4845,6 +4886,29 @@ function preinsertTagHeadings(text) {
   }).join('\n');
 }
 
+// ── Kaart Microcopy (## Kaart Microcopy): AI-authored profile-card fields.
+// KAART_GIFT = in-depth gift description (tendens slot); KAART_GEOMETRIE = geometry
+// summary in canon language (expressieprofiel slot). Printed into the PDF's machine
+// block as base64 markers so the card extractor recovers them whitespace-proof.
+function extractKaartFields(text) {
+  const t = String(text || '');
+  const gift = t.match(/KAART_GIFT:\s*([\s\S]*?)(?=\n\s*KAART_GEOMETRIE:|\n#{2,3}\s|$)/);
+  const geo = t.match(/KAART_GEOMETRIE:\s*([\s\S]*?)(?=\n#{2,3}\s|$)/);
+  const clean = (m) => (m ? m[1].replace(/\s+/g, ' ').replace(/^\[|\]$/g, '').trim() : '');
+  return { gift: clean(gift), geometrie: clean(geo) };
+}
+
+// Remove the Kaart Microcopy material from the analysis BEFORE any rendering path sees it —
+// guarantees the card fields never appear on a report page/PDF section, even when the model
+// drops the section heading and appends the labels to a previous section's body.
+function stripKaartFields(text) {
+  let t = String(text || '');
+  t = t.replace(/^#{2,3}\s*(?:\d+[A-Za-z]?\.\s*)?kaart\s*microcopy\s*$[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
+  t = t.replace(/^\s*KAART_GIFT:\s*[\s\S]*?(?=\n\s*KAART_GEOMETRIE:|\n#{2,3}\s|$)/gim, '');
+  t = t.replace(/^\s*KAART_GEOMETRIE:\s*[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
+  return t;
+}
+
 function parseAiSections(analysisText) {
   if (!analysisText || typeof analysisText !== 'string') return null;
   analysisText = preinsertTagHeadings(analysisText);
@@ -4932,6 +4996,9 @@ function parseAiSections(analysisText) {
     if (/leerling\s+ontologisch/i.test(title)) continue;
     // Skip any standalone "Introductie" / "Inleiding" the AI may generate
     if (/^(introductie|inleiding)$/i.test(title)) continue;
+    // Skip "Kaart Microcopy" — machine-consumed profile-card fields (KAART_GIFT/KAART_GEOMETRIE),
+    // extracted separately via extractKaartFields(); never rendered as a report page.
+    if (/kaart\s*microcopy/i.test(title)) continue;
     // Skip umbrella "Profiel Dynamiek" / "Profiel Elementen" / "5 Elementen" / "De 5 Elementen"
     // headers — the individual elements are parsed by profileKeyFromTitle below. When the AI
     // bundles them under one heading, extract sub-elements from the body. (Without "element"

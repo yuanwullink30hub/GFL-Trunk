@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nebula Recorder — mobile background</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #0a0510; color: #e7e2f0;
+      font-family: 'Figtree', system-ui, sans-serif;
+      display: flex; min-height: 100vh;
+    }
+    #stage {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 24px; background:
+        repeating-linear-gradient(45deg, #0c0714 0 10px, #0a0510 10px 20px);
+    }
+    /* Preview canvas — letterboxed; the recorded output is the true pixel size. */
+    #gl {
+      max-width: 100%; max-height: calc(100vh - 48px);
+      box-shadow: 0 0 0 1px rgba(168,85,247,0.3), 0 20px 60px rgba(0,0,0,0.6);
+      background: #010002;
+    }
+    #panel {
+      width: 320px; flex-shrink: 0; padding: 24px 20px; overflow-y: auto;
+      background: rgba(8,2,12,0.9); border-left: 1px solid rgba(147,51,234,0.25);
+      max-height: 100vh;
+    }
+    h1 { font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: #a855f7; margin: 0 0 4px; }
+    p.sub { font-size: 11px; color: #8a8595; margin: 0 0 20px; line-height: 1.5; }
+    .row { margin-bottom: 18px; }
+    label { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #b9b3c8; margin-bottom: 6px; }
+    label .val { color: #f59e0b; font-variant-numeric: tabular-nums; }
+    input[type=range] { width: 100%; accent-color: #a855f7; }
+    select {
+      width: 100%; padding: 8px 10px; border-radius: 6px; font-size: 13px;
+      background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(168,85,247,0.3);
+      font-family: inherit;
+    }
+    button {
+      width: 100%; padding: 12px 0; border-radius: 8px; border: none; cursor: pointer;
+      background: linear-gradient(135deg,#a855f7,#7c3aed); color: #fff;
+      font-size: 13px; font-weight: 700; letter-spacing: 0.08em; font-family: inherit;
+      margin-top: 8px;
+    }
+    button:disabled { opacity: 0.5; cursor: default; }
+    #status { font-size: 11px; color: #8a8595; margin-top: 12px; min-height: 28px; line-height: 1.4; }
+    #track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+    #bar { height: 100%; width: 0; background: #f59e0b; transition: width 0.1s linear; }
+    .hint { font-size: 10px; color: #6b6678; margin-top: 6px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="gl" width="720" height="1280"></canvas>
+  </div>
+  <div id="panel">
+    <h1>Nebula Recorder</h1>
+    <p class="sub">Captures a seamless, non-interactive nebula loop for the mobile background. Crossfade-loop technique → first and last frames match exactly.</p>
+
+    <div class="row">
+      <label>Saturation <span class="val" id="satv">1.15</span></label>
+      <input type="range" id="sat" min="0" max="1.8" step="0.01" value="1.15" />
+      <div class="hint">Desktop uses 1.6 — lower = calmer color for mobile.</div>
+    </div>
+
+    <div class="row">
+      <label>Gas density <span class="val" id="depthv">1.20</span></label>
+      <input type="range" id="depth" min="0.3" max="1.8" step="0.01" value="1.20" />
+      <div class="hint">Desktop uses 1.8 — lower = thinner, less dense gas.</div>
+    </div>
+
+    <div class="row">
+      <label>Brightness <span class="val" id="brightv">1.00</span></label>
+      <input type="range" id="bright" min="0.4" max="1.4" step="0.01" value="1.00" />
+    </div>
+
+    <div class="row">
+      <label>Loop length</label>
+      <select id="dur">
+        <option value="60" selected>60 seconds</option>
+        <option value="30">30 seconds</option>
+        <option value="20">20 seconds</option>
+        <option value="15">15 seconds</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label>Frame rate</label>
+      <select id="fps">
+        <option value="30" selected>30 fps</option>
+        <option value="24">24 fps</option>
+        <option value="60">60 fps</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label>Resolution (portrait)</label>
+      <select id="res">
+        <option value="1080x2340">1080 × 2340 (device — matches old loop)</option>
+        <option value="720x1560">720 × 1560 (device, lighter)</option>
+        <option value="720x1280" selected>720 × 1280 (HD)</option>
+        <option value="1080x1920">1080 × 1920 (FHD)</option>
+        <option value="540x960">540 × 960 (light)</option>
+        <option value="1280x720">1280 × 720 (landscape)</option>
+      </select>
+    </div>
+
+    <button id="record">● Record loop</button>
+    <div id="track"><div id="bar"></div></div>
+    <div id="status">Adjust to taste — preview is live. Recording steps deterministically, so a 60 s clip takes ~30 s to capture.</div>
+    <p class="hint">Output downloads as <code>nebula-mobile-loop.mp4</code> (or <code>.webm</code> if your browser can't encode mp4). Drop it into <code>public/images/</code> and the mobile background picks it up. If it saved as .webm, also keep a .webm copy — the mobile &lt;video&gt; lists both sources.</p>
+  </div>
+
+  <script type="module" src="/src/dev/nebulaRecorder.js"></script>
+</body>
+</html>

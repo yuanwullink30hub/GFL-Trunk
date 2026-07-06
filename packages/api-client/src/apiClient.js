@@ -37,11 +37,11 @@ function authHeaders() {
  * Register a new account.
  * @returns {Promise<{ token: string, user: { id, email, displayName } }>}
  */
-export async function register({ email, password, displayName }) {
+export async function register({ email, password, displayName, age, country, orbCode, archetypeName, reading }) {
   const response = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, displayName }),
+    body: JSON.stringify({ email, password, displayName, age, country, orbCode, archetypeName, reading }),
   });
 
   if (!response.ok) {
@@ -50,12 +50,14 @@ export async function register({ email, password, displayName }) {
   }
 
   const data = await response.json();
-  setToken(data.token);
+  if (data.token) setToken(data.token);   // no token when the account still needs email verification
   return data;
 }
 
 /**
  * Login with email + password.
+ * Throws on failure; the error carries `.needsVerification = true` when the account exists but its
+ * email isn't confirmed yet (so callers can poll instead of treating it as a hard error).
  * @returns {Promise<{ token: string, user: { id, email, displayName } }>}
  */
 export async function login({ email, password }) {
@@ -67,7 +69,9 @@ export async function login({ email, password }) {
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Login failed (${response.status})`);
+    const e = new Error(err.error || `Login failed (${response.status})`);
+    if (err.needsVerification) e.needsVerification = true;
+    throw e;
   }
 
   const data = await response.json();
@@ -92,6 +96,222 @@ export async function getMe() {
     throw new Error('Failed to get user');
   }
 
+  return response.json();
+}
+
+/**
+ * Update the VISUAL NAME (editable anytime, must be globally unique). Auth required.
+ * @returns {Promise<{ displayName: string }>}
+ */
+export async function updateDisplayName(name) {
+  const response = await fetch(`${API_BASE}/auth/name`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Naam bijwerken mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Update profile fields (age, country, story, link, roleLine, languages, intention).
+ * Only provided keys are changed. Auth required.
+ * @returns {Promise<{ age?: number|null, country?: string, story?: string, link?: string, roleLine?: string, languages?: string[], intention?: string }>}
+ */
+export async function updateProfile({ age, country, story, link, roleLine, languages, intention, socials, visibleName, descriptionSections, intentionSections }) {
+  const response = await fetch(`${API_BASE}/auth/profile`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ age, country, story, link, roleLine, languages, intention, socials, visibleName, descriptionSections, intentionSections }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Profiel bijwerken mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Fetch a profile-card payload (cardPayload.v1). With a handle: PUBLIC, no auth.
+ * Without a handle: the authed owner's own card — byte-identical to the public
+ * response for the same user (SR-5 owner symmetry). Renderers consume ONLY this.
+ * @returns {Promise<{ schemaVersion, derived, declared }>}
+ */
+/**
+ * Start OAuth ownership verification for a social platform. Auth required.
+ * Returns { url } to open in a popup; 501 while the platform's app isn't configured.
+ */
+export async function startSocialVerify(platform) {
+  const response = await fetch(`${API_BASE}/social/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ platform }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    const e = new Error(err.error || `Synchronisatie starten mislukt (${response.status})`);
+    e.status = response.status;
+    throw e;
+  }
+  return response.json();
+}
+
+// ── Internal messages ──
+
+/**
+ * Send an internal message. `to` = the recipient's shown profile name (the addressing
+ * scheme is resolved server-side and may change — treat it as an opaque address).
+ * @returns {Promise<{ ok: true, id: string }>}
+ */
+export async function sendUserMessage({ to, title, body }) {
+  const response = await fetch(`${API_BASE}/messages/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ to, title, body }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Versturen mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Fetch the authed user's inbox (newest first).
+ * @returns {Promise<{ messages: Array<{ id, from, title, body, at, read }> }>}
+ */
+export async function getInbox() {
+  const response = await fetch(`${API_BASE}/messages/inbox`, { headers: authHeaders() });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Berichten ophalen mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/** Mark one of the authed user's messages as read. */
+export async function markMessageRead(id) {
+  const response = await fetch(`${API_BASE}/messages/read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ id }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Bijwerken mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function getCard(handle) {
+  const url = handle ? `${API_BASE}/auth/card/${encodeURIComponent(handle)}` : `${API_BASE}/auth/card`;
+  const response = await fetch(url, handle ? undefined : { headers: authHeaders() });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Kaart ophalen mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Fetch a PUBLIC, read-only profile by its unique visual name (handle).
+ * No auth. Returns only public-safe fields (name, archetype, render-only orb, country).
+ * @returns {Promise<{ displayName, archetypeName, orb, country }>}
+ */
+export async function getPublicProfile(handle) {
+  const response = await fetch(`${API_BASE}/auth/public/${encodeURIComponent(handle)}`);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Profiel ophalen mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Store a still image of the current orb (attached to the active orbHistory entry). Auth required.
+ * The image is a data-URL (png/jpeg/webp). No-op server-side if that entry already has an image.
+ * @returns {Promise<{ ok: true }>}
+ */
+export async function saveOrbSnapshot(image, readingIndex, force) {
+  const response = await fetch(`${API_BASE}/auth/orb-snapshot`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ image, readingIndex, force }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Snapshot opslaan mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Change password (auth required). Requires current password; new min 6 chars.
+ * When SMTP is configured the change is gated behind an email confirmation link and is only
+ * applied when that link is clicked — the response is { ok: true, pending: true } in that case,
+ * or { ok: true, pending: false } when applied immediately (no SMTP / local dev).
+ * @returns {Promise<{ ok: true, pending?: boolean }>}
+ */
+export async function updatePassword({ currentPassword, newPassword }) {
+  const response = await fetch(`${API_BASE}/auth/password`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Wachtwoord bijwerken mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Confirm a pending password change via the one-time token from the email link
+ * (frontend lands on /?pwverify=<token> and calls this). No auth. Applies the change.
+ * @returns {Promise<{ ok: true }>}
+ */
+export async function verifyPasswordChange(token) {
+  const response = await fetch(`${API_BASE}/auth/password/verify?token=${encodeURIComponent(token)}`);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Bevestiging mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Request an email-address change. Requires the current password. When SMTP is on the server
+ * emails a confirmation link to the NEW address and returns { ok, pending:true } — the account
+ * email is NOT changed until that link is clicked. Without SMTP it applies immediately.
+ * @returns {Promise<{ ok: true, pending: boolean, pendingEmail?: string, email?: string }>}
+ */
+export async function updateEmail({ newEmail, currentPassword }) {
+  const response = await fetch(`${API_BASE}/auth/email`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ newEmail, currentPassword }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `E-mailadres bijwerken mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Confirm a pending email change via the one-time token from the email link
+ * (frontend lands on /?emailverify=<token> and calls this). No auth. Applies the change.
+ * @returns {Promise<{ ok: true }>}
+ */
+export async function verifyEmailChange(token) {
+  const response = await fetch(`${API_BASE}/auth/email/verify?token=${encodeURIComponent(token)}`);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Bevestiging mislukt (${response.status})`);
+  }
   return response.json();
 }
 
@@ -337,6 +557,49 @@ export async function downloadPdf(assessmentId) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ── Orb login (PDF code is the credential) ──
+
+/**
+ * Upload a report PDF; the backend extracts only the LC_ORB_ code and discards
+ * the file. Returns { code }. No auth — the code itself is the login.
+ */
+export async function orbLoginFromPdf(file) {
+  const pdfBase64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(String(e.target.result).split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  const response = await fetch(`${API_BASE}/orb/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pdfBase64 }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Kon de code niet uit de PDF lezen (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Link an LC_ORB code to the authenticated account (once). After linking, the code's
+ * PDF-upload login is denied — the account becomes the credential. Auth required.
+ * @returns {Promise<{ linked: boolean, alreadyOwned?: boolean }>}
+ */
+export async function orbLinkCode(code, archetypeName, reading) {
+  const response = await fetch(`${API_BASE}/orb/link`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ code, archetypeName, reading }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Koppelen mislukt (${response.status})`);
+  }
+  return response.json();
 }
 
 // ── Admin ──

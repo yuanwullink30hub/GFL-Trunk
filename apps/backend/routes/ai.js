@@ -7,6 +7,7 @@
 const { Router } = require('express');
 const { callAI, getAvailableProviders } = require('../services/aiProviders');
 const { computeCRuntime } = require('../services/cRuntime');
+const { orb3FromGeometry } = require('@gfl/orb-engine');
 const { formatLineTypeBlock, LINE_TYPE_LOOKUP_DOC } = require('../services/lineType');
 const { getCorpusText } = require('../services/corpusData');
 const { getDB } = require('../db');
@@ -371,6 +372,23 @@ router.post('/analyze', async (req, res) => {
       console.warn('[AI] C-runtime precompute failed (continuing without it):', e.message);
     }
 
+    // ── Orb code: the engine authors the one-line LC_ORB3_ profile code (3D orb) from the same
+    //    12-arc geometry — palette/pulse/cymatic/friction/harmony/radial derived at runtime, the
+    //    composed-B-deferred levers from the §3 group priors — gating radial+purple with the REAL
+    //    polar_gap (main − shadow weight). Printed on the PDF; the component decodes + renders. ──
+    let orbCode = '';
+    try {
+      if (archetypeDetails && archetypeKey) {
+        orbCode = orb3FromGeometry({
+          archetypeDetails,
+          mainKey: archetypeKey,
+          shadowKey: shadowArchetype,
+        });
+      }
+    } catch (e) {
+      console.warn('[AI] orb code-gen failed (continuing without it):', e.message);
+    }
+
     // ── Main↔Support line-type: resolved deterministically from the static lookup table
     //    so the model never re-derives the colour (the recurring Green/Blue mistake). The
     //    resolved tag rides in the payload; the full table rides as a separate reference doc. ──
@@ -470,6 +488,29 @@ router.post('/analyze', async (req, res) => {
 
     console.log(`[AI] ✅ Analysis complete: provider=${result.provider}, model=${result.model}, tokens=${result.completionTokens}`);
 
+    // ── Kaart Microcopy: extract the profile-card fields SERVER-SIDE and DISCARD them from
+    // the analysis before it reaches the client — the result card / report PDF never see
+    // them. Stored as a draft keyed by the orb code's hash; register / orb-link merge it
+    // into the reading's orbHistory entry when the code is claimed. ──
+    try {
+      if (!userQuestion && result && typeof result.analysis === 'string') {
+        const { extractKaartSection } = require('../services/readingExtract');
+        const kaart = extractKaartSection(result.analysis);
+        result.analysis = kaart.cleaned;
+        if (orbCode && (kaart.giftMicro || kaart.geomSummary)) {
+          const { hash } = require('../services/encryption');
+          await getDB().collection('kaartDrafts').updateOne(
+            { codeHash: hash(orbCode) },
+            { $set: { ...(kaart.giftMicro ? { giftMicro: kaart.giftMicro } : {}), ...(kaart.geomSummary ? { geomSummary: kaart.geomSummary } : {}), at: new Date() } },
+            { upsert: true }
+          );
+          console.log('[AI] kaart-microcopy extracted → draft stored (gift:', !!kaart.giftMicro, '| geometrie:', !!kaart.geomSummary, ')');
+        } else if (!kaart.giftMicro && !kaart.geomSummary) {
+          console.warn('[AI] ⚠ kaart-microcopy MISSING from model output (card falls back to levensles/placeholder)');
+        }
+      }
+    } catch (e) { console.warn('[AI] kaart-microcopy extract failed (continuing):', e.message); }
+
     // ── Stage 2: AI generation complete ──
     sendEvent('progress', { stage: 2, message: 'AI analyse compleet — resultaten verwerken...' });
 
@@ -483,6 +524,9 @@ router.post('/analyze', async (req, res) => {
       // frontend can render the Plastische Morfologie / De Stille Stem visuals
       // without recomputing. null when the geometry was incomplete.
       cRuntime: cRuntime || null,
+      // Authoritative orb profile code (LC_ORB3_…), radial+purple-gated with the real polar_gap.
+      // The client prints this on the PDF instead of re-deriving it. '' when geometry incomplete.
+      orbCode: orbCode || '',
       ...result,
     });
 

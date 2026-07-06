@@ -44,7 +44,7 @@ const translations = {
       },
       researchBacked: {
         title: { nl: "Wetenschappelijk Onderbouwd", en: "Research-Backed" },
-        description: { nl: "Jungs archetypische diepte, mythologisch gedreven en neurobiologisch gelezen.", en: "Jung's archetypal depth, mythologically driven and read through neurobiology." }
+        description: { nl: "Carl Gustav Jung zijn archetypische diepte, mythologisch gedreven en neurobiologisch gelezen.", en: "Carl Gustav Jung's archetypal depth, mythologically driven and read through neurobiology." }
       },
       aiTraining: {
         title: { nl: "AI prompt generatie", en: "AI Prompt Generation" },
@@ -57,8 +57,8 @@ const translations = {
         en: "Free Analysis — a prompt worth ~€3 on average, plus priceless scientific self-knowledge"
       },
       free: {
-        nl: "Download de basis om je archetype in kaart te brengen — De identiteit, de verklaring, gevisualiseerd op ons eigen model, en uiteraard de prijs die je betaalt voor dit archetype.",
-        en: "Download the basics to map your archetype — the identity, the explanation, visualized on our own model, and of course the price you pay for this archetype."
+        nl: "Download de basis om je archetype in kaart te brengen — De identiteit, de verklaring, gevisualiseerd op ons eigen model, en uiteraard de prijs die je betaalt voor de belichaming van dit archetype.",
+        en: "Download the basics to map your archetype — the identity, the explanation, visualized on our own model, and of course the price you pay for the embodiment of this archetype."
       },
       paid: {
         nl: "Optioneel voor €00,00 — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt en toegang tot de complete online-extensie.",

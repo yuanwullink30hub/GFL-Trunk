@@ -55,6 +55,11 @@ export const QUOTES = [
   { id: 5, text: "Mijn entropie is sterker en eist dus meer realisatie", category: "Entropy" },
 ];
 
+// The single quote surfaced on the client-mode Filosofie bar (DesktopLayout, above the orb).
+// Change this id to pick which QUOTES entry is shown — this is the one control point.
+export const FEATURED_QUOTE_ID = 1;
+export const getFeaturedQuote = () => QUOTES.find((q) => q.id === FEATURED_QUOTE_ID) || QUOTES[0];
+
 // Symbol combination insights - different combinations reveal different wisdom
 export const SYMBOL_COMBINATIONS = {
   // Single symbols

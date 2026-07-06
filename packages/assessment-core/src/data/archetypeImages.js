@@ -1,3 +1,5 @@
+import { EXTENDED_ARCHETYPES, EXTENDED_ARCHETYPES_NL } from './scoring/index.js';
+
 /**
  * Archetype Image Map
  * -------------------
@@ -231,6 +233,36 @@ export function getArchetypeImage(mainKey, supportGroup) {
  */
 export function getArchetypeImageByKey(lookupKey) {
   return ARCHETYPE_IMAGES[lookupKey] || null;
+}
+
+/**
+ * Reverse lookup: the display NAME of an extended archetype → its portrait.
+ * Accepts either the English ("The Mentor") or Dutch ("De Mentor") name, since
+ * the client profile only stores the resolved name string (not the key).
+ */
+const NAME_TO_KEY = {};
+for (const [key, name] of Object.entries(EXTENDED_ARCHETYPES)) NAME_TO_KEY[name.trim().toLowerCase()] = key;
+for (const [key, name] of Object.entries(EXTENDED_ARCHETYPES_NL)) NAME_TO_KEY[name.trim().toLowerCase()] = key;
+
+/**
+ * @param {string} name – e.g. 'The Mentor' or 'De Mentor'
+ * @returns {string|null} portrait image path, or null if unknown
+ */
+export function getArchetypeImageByName(name) {
+  if (!name) return null;
+  const key = NAME_TO_KEY[String(name).trim().toLowerCase()];
+  return key ? (ARCHETYPE_IMAGES[key] || null) : null;
+}
+
+/**
+ * Resolve a stored extended-archetype display name (EN or NL) to its
+ * MAINARCHETYPE_SUPPORTGROUP key — e.g. 'The Mediator' / 'De Bemiddelaar' → 'JUDGE_RELATIONAL'.
+ * @param {string} name
+ * @returns {string|null}
+ */
+export function getArchetypeKeyByName(name) {
+  if (!name) return null;
+  return NAME_TO_KEY[String(name).trim().toLowerCase()] || null;
 }
 
 export default ARCHETYPE_IMAGES;

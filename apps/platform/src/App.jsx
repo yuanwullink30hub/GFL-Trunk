@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
+import { getClientOrbConfig, getClientProfile, setClientProfile, clearClientMode } from './clientMode';
+import ClientSubnav from './components/ClientNav';
 
 // Lazy-load NebulaBackground — procedural WebGL nebula; keeps it out of the
 // main chunk. Mounted only after chunks load (mountNebula), inside Suspense.
 const NebulaBackground = lazy(() => import('./components/NebulaBackground'));
+const PublicProfile = lazy(() => import('./components/assessment/PublicProfile'));
 
-import { getQuestions, getMe, logout } from '@gfl/api-client';
+import { getQuestions, getMe, getHistory, getToken } from '@gfl/api-client';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
@@ -26,6 +29,8 @@ const lazyRetry = (fn) => lazy(() =>
 
 // Lazy-load ALL heavy components so the main bundle stays tiny.
 const HoloEarth = lazyRetry(() => import('./components/orbital/HoloEarth'));
+// Client-mode orb — replaces HoloEarth at centre once the user has crossed the line.
+const OrbSphere3D = lazyRetry(() => import('./orb/OrbSphere3D'));
 const DesktopLayout = lazyRetry(() => import('./components/orbital/DesktopLayout'));
 const AssessmentIntro = lazyRetry(() => import('./components/assessment/AssessmentIntro'));
 const AssessmentCard = lazyRetry(() => import('./components/assessment/AssessmentCard'));
@@ -38,7 +43,8 @@ const DataPage = lazyRetry(() => import('./pages/DataPage'));
 import { useCelestialState, CelestialBehindLayer } from './pages/DataPage.shared';
 const LoginPage = lazyRetry(() => import('./pages/LoginPage'));
 const EyedentityPage = lazyRetry(() => import('./pages/EyedentityPage'));
-const AdminDashboardModal = lazyRetry(() => import('@gfl/admin-ui'));
+const WinkelPage = lazyRetry(() => import('./pages/WinkelPage'));
+const KookPage = lazyRetry(() => import('./pages/KookPage'));
 
 // ============================================
 // GRID MAP NAVIGATION CONFIGURATION
@@ -55,6 +61,8 @@ const GRID_POSITIONS = {
   monitor: { x: -1.3, y: 1.2 },      // Bottom-LEFT button → far bottom-left on map
   login: { x: 0, y: 1 },             // Eyedentity (right verbindingsmenu) → 1 viewport below
   menu: { x: 0, y: 2 },              // Blackhole (left verbindingsmenu) → 2 viewports below
+  winkel: { x: 0, y: -1.2 },         // Winkel button → empty space directly above the orb
+  kook: { x: 1.3, y: -1.2 },         // Kook-eiland → far top-right (mirrors gardens; same row as winkel)
 };
 const MAP_TRANSITION_DURATION = 1800; // ms for smooth curved map movement (longer for more distance)
 
@@ -134,107 +142,8 @@ const TimeSync = ({ isMobile }) => {
   );
 };
 
-// ── Mobile admin portal: passkey → auto-login → dashboard
-const AdminMobilePortal = () => {
-  const [user, setUser] = React.useState(null);
-  const [phase, setPhase] = React.useState('loading'); // 'loading' | 'passkey' | 'dashboard' | 'denied'
-  const [passkeyValue, setPasskeyValue] = React.useState('');
-  const [passkeyError, setPasskeyError] = React.useState('');
-  const [verifying, setVerifying] = React.useState(false);
-
-  React.useEffect(() => {
-    getMe()
-      .then(u => { setUser(u); setPhase('dashboard'); })
-      .catch(() => setPhase('passkey'));
-  }, []);
-
-  const handleLogout = React.useCallback(() => {
-    logout();
-    localStorage.removeItem('gfl_admin_mode');
-    window.location.reload();
-  }, []);
-
-  const handleVerify = React.useCallback(async () => {
-    const key = passkeyValue.trim();
-    if (!key) return;
-    setVerifying(true);
-    setPasskeyError('');
-    try {
-      const host = window.location.hostname;
-      const isPrivateHost = /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-      const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-      const apiBase = (isLocalHost || isPrivateHost)
-        ? `http://${host}:8080/api`
-        : 'https://gfl-api.onrender.com/api';
-      const res = await fetch(apiBase + '/beta/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passkey: key }),
-      });
-      const data = await res.json();
-      if (!data.valid) { setPasskeyError('Ongeldige passkey'); setVerifying(false); return; }
-      localStorage.setItem('gfl_beta_access', key);
-      localStorage.setItem('gfl_beta_access_time', Date.now().toString());
-      if (data.adminMode && data.token && data.user) {
-        localStorage.setItem('gfl_admin_mode', '1');
-        localStorage.setItem('gfl_token', data.token);
-        setUser(data.user);
-        setPhase('dashboard');
-      } else if (data.valid && !data.adminMode) {
-        // Valid non-admin passkey — desktop only
-        setPhase('denied');
-      } else {
-        // Admin passkey but backend couldn't issue token
-        setPasskeyError('Admin account niet gevonden — neem contact op');
-      }
-    } catch (e) {
-      setPasskeyError('Verbindingsfout — probeer opnieuw');
-    } finally {
-      setVerifying(false);
-    }
-  }, [passkeyValue]);
-
-  if (phase === 'loading') return null;
-
-  if (phase === 'dashboard' && user) {
-    return (
-      <Suspense fallback={null}>
-        <AdminDashboardModal user={user} onLogout={handleLogout} onClose={handleLogout} embedded />
-      </Suspense>
-    );
-  }
-
-  const S = {
-    input: { width: '100%', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(168,85,247,0.3)', color: '#fff', fontSize: 16, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', marginBottom: 10 },
-    btn: { width: '100%', padding: '10px 0', borderRadius: 8, background: verifying ? 'rgba(168,85,247,0.4)' : 'linear-gradient(135deg,#a855f7,#7c3aed)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: verifying ? 'default' : 'pointer', letterSpacing: '0.05em', fontFamily: 'inherit' },
-  };
-
-  return (
-    <div style={{ width: '85vw', maxWidth: 380, padding: '2rem 1.75rem', background: 'rgba(8,2,12,0.9)', border: '1px solid rgba(147,51,234,0.3)', borderRadius: 8 }}>
-      <p style={{ color: '#a855f7', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 6px', fontFamily: "'Figtree', sans-serif" }}>Garden For Life</p>
-      <p style={{ color: '#666', fontSize: 11, margin: '0 0 16px', fontFamily: "'Figtree', sans-serif" }}>
-        {phase === 'denied' ? 'Deze applicatie is ontworpen voor desktop.' : 'Admin toegang vereist een admin passkey.'}
-      </p>
-      <>
-        <input
-          type="text"
-          value={passkeyValue}
-          onChange={e => {
-            if (phase === 'denied') setPhase('passkey');
-            setPasskeyValue(e.target.value);
-          }}
-          onKeyDown={e => e.key === 'Enter' && handleVerify()}
-          placeholder="Passkey..."
-          autoComplete="off"
-          style={S.input}
-        />
-        {passkeyError && <p style={{ color: '#f87171', fontSize: 11, margin: '0 0 8px', fontFamily: "'Figtree', sans-serif" }}>{passkeyError}</p>}
-        <button onClick={handleVerify} disabled={verifying} style={S.btn}>{verifying ? '...' : 'Unlock'}</button>
-      </>
-      {phase === 'denied' && <p style={{ color: '#555', fontSize: 11, marginTop: 8, fontFamily: "'Figtree', sans-serif" }}>Admin toegang vereist een admin passkey.</p>}
-    </div>
-  );
-};
+// NOTE: The mobile experience lives entirely in MobileApp.jsx — main.jsx mounts
+// it (not this App) on mobile-sized viewports, so this file is desktop-only.
 
 // Section 1 (frame 0): Label disappears, chunks become visible
 // Section 2 (frames 1-47): Chunks and particles explosion (47 frames for smooth animation)
@@ -292,7 +201,65 @@ const App = () => {
     isGoldMode: false,
     introComplete: false
   }); // Pure DOM label state from PyramidInner
-  
+
+  // ── Client mode: the user has crossed the line (persisted orb-code flag). Their orb replaces
+  // HoloEarth, the intro is pre-completed, the map is immediately live. Guarded entirely by the
+  // flag, so visitors are 100% unaffected. See src/clientMode.js.
+  const clientOrbConfig = useMemo(() => getClientOrbConfig(), []);
+  // Client mode requires BOTH the orb-code flag AND a live session token. A logged-out user (token
+  // cleared) whose orb code still lingers must fall back to the visitor interface — otherwise the
+  // orb + cached profile keep showing when nobody is signed in.
+  const hasSession = useMemo(() => !!getToken(), []);
+  const clientMode = !!clientOrbConfig && hasSession;
+  // Reconcile storage with reality: a stale orb code without a session is cleaned up so a later
+  // reload starts clean (and the cached profile name can't leak into the logged-out UI).
+  useEffect(() => {
+    if (clientOrbConfig && !hasSession) clearClientMode();
+  }, [clientOrbConfig, hasSession]);
+  // Identity for the client-mode verbindingsmenu (name + PDF archetype + country + age). Written
+  // at login; on a plain refresh of an existing session it may be absent, so we fetch + persist it.
+  const [clientProfile, setClientProfileState] = useState(() => (clientMode ? getClientProfile() : null));
+  useEffect(() => {
+    if (!clientMode) return;
+    const stored = getClientProfile();
+    if (stored && stored.displayName && stored.archetypeName) { setClientProfileState(stored); return; }
+    let alive = true;
+    (async () => {
+      try {
+        const [me, hist] = await Promise.all([
+          getMe().catch(() => null),
+          getHistory({ limit: 1 }).catch(() => null),
+        ]);
+        const latest = hist?.assessments?.[0] || null;
+        const profile = {
+          displayName: me?.displayName || stored?.displayName || '',
+          archetypeName: latest?.extendedArchetypeName || latest?.archetypeKey || stored?.archetypeName || '',
+          country: (me?.country ?? stored?.country) || '',
+          age: (me?.age ?? stored?.age) ?? '',
+        };
+        if (!alive) return;
+        setClientProfile(profile);       // persist for the next instant refresh
+        setClientProfileState(profile);
+      } catch (_) { /* keep whatever was stored */ }
+    })();
+    return () => { alive = false; };
+  }, [clientMode]);
+  // Viewport size tracked on resize so the orb stays proportional to the screen (like the
+  // vw/vh-based DesktopLayout containers). A plain useMemo([]) froze the size at mount.
+  const [viewport, setViewport] = useState(() => ({
+    w: typeof window === 'undefined' ? 1280 : window.innerWidth,
+    h: typeof window === 'undefined' ? 800 : window.innerHeight,
+  }));
+  useEffect(() => {
+    const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  const clientOrbSize = useMemo(
+    () => Math.round(Math.max(280, Math.min(viewport.h * 0.6, viewport.w * 0.44, 680))),
+    [viewport.w, viewport.h]
+  );
+
   // ============================================
   // ASSESSMENT STATE - Replaces the old label system
   // Phases: 'hidden' → 'intro' → 'layers' → 'convergence' → 'results'
@@ -320,6 +287,25 @@ const App = () => {
   const [introShrinkProgress, setIntroShrinkProgress] = useState(1); // 1=full, 0=collapsed into entity
   const [resultsLoadingProgress, setResultsLoadingProgress] = useState(0); // 0-1 loading bar progress (AI thinking time)
   const [aiAnalysisReady, setAiAnalysisReady] = useState(false); // True when AI response received
+  // Kook-eiland individuatie: a client-mode assessment run — the WHOLE visitor flow rendered
+  // at the kook map spot. The kook cell hosts its own HoloEarth instance pinned at the
+  // post-journey state; while this is true the assessment overlays counter-pan so they render
+  // on-screen at the kook position (the map itself never moves).
+  const [clientAssessment, setClientAssessment] = useState(false);
+  const kookExplosionRef = useRef(1); // kook HoloEarth is permanently past the explosion
+  // TRUE pre-mount of the kook assessment scene: the HoloEarth instance is far too heavy
+  // to mount on-request (canvas + scene build + shader compile landed inside the pan
+  // frames = the fly-to freeze). A few seconds after landing, it mounts ONCE at its map
+  // cell — off-viewport, frameloop paused via isVisible=false, paint skipped by the
+  // pane's content-visibility — so navigating to kook is pure transform, zero mount work.
+  const [kookSceneWarm, setKookSceneWarm] = useState(false);
+  useEffect(() => {
+    if (!clientMode) return undefined;
+    const ric = window.requestIdleCallback ? (fn) => window.requestIdleCallback(fn, { timeout: 6000 }) : (fn) => setTimeout(fn, 1500);
+    const t = setTimeout(() => ric(() => setKookSceneWarm(true)), 4000); // after the landing settles
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Assessment data: live from MongoDB, falling back to static data if fetch fails
   const [liveSubjects, setLiveSubjects] = useState([]);
@@ -522,7 +508,8 @@ const App = () => {
   const handleOpenSection = useCallback((section) => {
     // Parked sections: content has moved into the hypercube and the map space is
     // empty, so the navigation path is disabled everywhere (incl. localhost).
-    const parkedSections = ['filosofie'];
+    // (Filosofie is a nav destination again — it's being reworked into its own set.)
+    const parkedSections = [];
     if (parkedSections.includes(section)) {
       return;
     }
@@ -538,13 +525,67 @@ const App = () => {
     navigateToSection(section);
   }, [navigateToSection, currentSlide, shouldShowLock]);
 
+  // ── Client-mode navigation history (for the "← Terug" back-one-step) ──
+  const [navStack, setNavStack] = useState([]);
+  const handleClientNav = useCallback((section) => {
+    const current = activeSectionRef.current || 'main';
+    if (section === current) return;
+    setNavStack((s) => [...s, current]);   // remember where we came from
+    handleOpenSection(section);
+  }, [handleOpenSection]);
+  const handleClientBack = useCallback(() => {
+    const prev = navStack.length ? navStack[navStack.length - 1] : 'main';
+    setNavStack((s) => s.slice(0, -1));
+    navigateToSection(prev);
+  }, [navStack, navigateToSection]);
+
+  // Hover-to-open for the client nav menu (hovering the logo OR the header lights it up). A short
+  // close delay lets the pointer travel logo → subheader → menu without the menu dropping.
+  const [navMenuOpen, setNavMenuOpen] = useState(false);
+  const [navHovered, setNavHovered] = useState(false);
+  const toggleNavMenu = useCallback(() => setNavMenuOpen((v) => !v), []);
+  const closeNavMenu = useCallback(() => setNavMenuOpen(false), []);
+  // Pages in the menu — visitor vs client interface (different homes + Inloggen vs Filosofie set).
+  const navItems = useMemo(() => (clientMode ? [
+    { key: 'main',      label: 'Liquid Crystal identiteit' },
+    { key: 'filosofie', label: 'Filosofie' },
+    { key: 'monitor',   label: 'Data' },
+    { key: 'gardens',   label: 'Gardens' },
+    { key: 'winkel',    label: 'Winkel' },
+    { key: 'kook',      label: 'Kook-eiland' },
+    { key: 'menu',      label: 'Voorwaarden' },
+    { key: 'login',     label: 'Profiel' },
+  ] : [
+    { key: 'main',      label: 'Schaduw Werk' },
+    { key: 'filosofie', label: 'Filosofie' },
+    { key: 'monitor',   label: 'Data' },
+    { key: 'gardens',   label: 'Gardens' },
+    { key: 'menu',      label: 'Voorwaarden' },
+    { key: 'login',     label: 'Inloggen' },
+  ]), [clientMode]);
+
   // Handler for closing sections - navigate back to main
   const handleCloseSection = useCallback(() => {
     window.history.pushState(null, '', '/');
     navigateToSection('main');
   }, [navigateToSection]);
 
-  // Deep-link: ?page=feedback etc. opens the Eyedentity page with correct tab
+  // Public profile overlay (?u=<handle>).
+  const [publicHandle, setPublicHandle] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get('u') || null; } catch { return null; }
+  });
+  const openPublicProfile = useCallback((handle) => {
+    if (!handle) return;
+    window.history.pushState({}, '', `?u=${encodeURIComponent(handle)}`);
+    setPublicHandle(String(handle));
+  }, []);
+  const closePublicProfile = useCallback(() => {
+    window.history.pushState(null, '', '/');
+    setPublicHandle(null);
+  }, []);
+
+  // Deep-link: ?page=feedback etc. opens the Eyedentity page with correct tab.
+  // ?u=<handle> opens a public, read-only profile overlay (works logged-out).
   useEffect(() => {
     const POLICY_SLUGS = ['algemene-voorwaarden','privacybeleid','cookiebeleid','ai-transparantie','intellectueel-eigendom','gebruiksvoorwaarden-misbruik','profiel','gegevensbehoud-en-verwijdering','verwerkingsregister','feedback'];
     const checkPath = () => {
@@ -553,11 +594,15 @@ const App = () => {
       if (page && POLICY_SLUGS.includes(page)) {
         navigateToSection('menu');
       }
+      setPublicHandle(params.get('u') || null);
     };
     checkPath();
     window.addEventListener('popstate', checkPath);
     return () => window.removeEventListener('popstate', checkPath);
   }, [navigateToSection]);
+
+  // (Section-page chunk warming happens in preloadInBackground(), fired when the
+  // landing is ready — Winkel/Kook are included there.)
 
   useEffect(() => {
     setMounted(true);
@@ -706,6 +751,15 @@ const App = () => {
   // Cap the animation at the end of section 3
   const MAX_FRAME = TOTAL_ANIMATION_FRAMES;
 
+  // Client mode = the ORBITAL/landing state held static: the nav containers are visible at the
+  // LOW frame (they fly away as the frame advances toward system/assessment). HoloEarth normally
+  // drives these frames; it's replaced by the orb, so nothing advances the frame — we pin it to 0
+  // and the scroll handlers are disabled (below) so the map nav stays put. The user navigates by
+  // clicking the map, not by scrolling.
+  useEffect(() => {
+    if (clientMode) setCurrentFrame(0);
+  }, [clientMode]);
+
   // LAPTOP: Trigger smooth animation on "Start Experience" button click
   // Animation ends at pyramid visible state, then scroll takes over for layer control
   const triggerLaptopAnimation = useCallback(() => {
@@ -749,8 +803,14 @@ const App = () => {
   // After intro completes (introComplete=true), scroll controls pyramid layers instead
   // Only works when viewing HoloEarth/Deltawerken (activeSection === null AND mobileActiveIndex === 0)
   const handleWheel = useCallback((e) => {
-    // Don't process scroll if viewing other content sections
-    if (activeSection !== null) return;
+    // Client mode = static orbital landing: scrolling must NOT advance the frame (that flies the
+    // map nav away). Navigation is by clicking the map. EXCEPTION: the kook-eiland assessment
+    // (clientAssessment) — its layers phase is scroll-driven, so let those ticks through, but
+    // only once pinned at the system frame with the entity intro done (never frame scrolling).
+    if (clientMode && !(clientAssessment && currentFrame >= MAX_FRAME && introComplete)) return;
+    // Don't process scroll if viewing other content sections — EXCEPT the kook-eiland
+    // assessment, which runs while activeSection stays 'kook'.
+    if (activeSection !== null && !clientAssessment) return;
     
     // Don't process scroll when assessment results modal is open
     if (assessmentPhase === 'results' || assessmentPhase === 'convergence') return;
@@ -826,9 +886,10 @@ const App = () => {
         }
         
         // If scrolling up and at 0, allow returning to orbital animation
-        // BUT NOT during assessment — stay locked at progress 0
+        // BUT NOT during assessment — stay locked at progress 0. Client mode never frame-scrolls:
+        // the earth journey was skipped, so rewinding into it would strand the user mid-zoom.
         if (direction < 0 && prev <= 0) {
-          if (assessmentPhase !== 'layers' && assessmentPhase !== 'convergence') {
+          if (!clientMode && assessmentPhase !== 'layers' && assessmentPhase !== 'convergence') {
             setCurrentFrame(prevFrame => Math.max(0, prevFrame - 1));
           }
           return 0;
@@ -855,7 +916,7 @@ const App = () => {
     setTimeout(() => {
       isScrolling.current = false;
     }, 50);
-  }, [currentFrame, introComplete, MAX_FRAME, isLowGpu, laptopAnimating, activeSection, mobileActiveIndex, assessmentPhase]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowGpu, laptopAnimating, activeSection, mobileActiveIndex, assessmentPhase, clientMode, clientAssessment]);
 
   // Callback when pyramid intro animation completes
   const handleIntroComplete = useCallback(() => {
@@ -876,8 +937,11 @@ const App = () => {
   // ASSESSMENT HANDLERS
   // ============================================
   
-  // Show intro modal when entity intro completes — float out of entity
+  // Show intro modal when entity intro completes — float out of entity.
+  // Client mode: the kook entity completes its intro on ARRIVAL at kook-eiland, but there
+  // the MENU card owns the entity until the user picks the test (clientAssessment).
   useEffect(() => {
+    if (clientMode && !clientAssessment) return;
     if (layerState.introComplete && assessmentPhase === 'hidden') {
       setIntroShrinkProgress(0);
       setAssessmentPhase('intro');
@@ -892,7 +956,7 @@ const App = () => {
       };
       requestAnimationFrame(animateExpand);
     }
-  }, [layerState.introComplete, assessmentPhase]);
+  }, [layerState.introComplete, assessmentPhase, clientMode, clientAssessment]);
   
   // Start assessment with selected level
   // First shrinks the intro card back into the entity, then launches layers phase
@@ -976,7 +1040,27 @@ const App = () => {
   // Close assessment (back to hidden)
   const handleAssessmentClose = useCallback(() => {
     resetAssessmentState();
-  }, [resetAssessmentState]);
+    // Kook-eiland run: closing the intro card ends the run — back to the kook menu
+    // (the menu card floats back out of the entity, which never left the screen).
+    if (clientAssessment) {
+      setClientAssessment(false);
+      setCurrentFrame(0);
+    }
+  }, [resetAssessmentState, clientAssessment]);
+
+  // Kook-eiland (individuatie): start the assessment IN PLACE at the kook map spot. The
+  // map does not move and the kook HoloEarth instance (the same entity that has been on
+  // screen since arrival) stays mounted — the intro card simply floats out of it, exactly
+  // like the visitor flow. currentFrame→MAX flips isSystem on so the flow machinery and its
+  // (counter-panned) overlays activate. The entity's intro already played on arrival, so we
+  // mark it complete by hand — PyramidInner only re-reports on internal state changes, so
+  // after a reset the pop effect would otherwise never re-fire. Exit = handleReset.
+  const handleClientAssessmentStart = useCallback(() => {
+    setClientAssessment(true);
+    setCurrentFrame(MAX_FRAME);
+    setIntroComplete(true);
+    setLayerState({ completedLayerIndex: 0, isIntroActive: false, isGoldMode: false, introComplete: true });
+  }, [MAX_FRAME]);
   
   // Handle layer completion (Save button clicked)
   const handleLayerComplete = useCallback((layerIndex, answers) => {
@@ -1293,6 +1377,8 @@ const App = () => {
   }, [isLowGpu, laptopAnimating, currentFrame, MAX_FRAME, mobileActiveIndex, assessmentPhase]);
 
   const handleTouchMove = useCallback((e) => {
+    // Client mode = static orbital landing: touch-scroll must NOT advance the frame.
+    if (clientMode) return;
     // Low GPU: Skip during animation, allow after for pyramid control
     if (isLowGpu && (laptopAnimating || currentFrame < MAX_FRAME)) return;
     
@@ -1392,7 +1478,7 @@ const App = () => {
       }
       touchAccumulator.current = 0;
     }
-  }, [currentFrame, introComplete, MAX_FRAME, isLowGpu, laptopAnimating, mobileActiveIndex, assessmentPhase]);
+  }, [currentFrame, introComplete, MAX_FRAME, isLowGpu, laptopAnimating, mobileActiveIndex, assessmentPhase, clientMode]);
 
   // Attach wheel/touch listeners - also needed on mobile when scroll is locked
   useEffect(() => {
@@ -1550,7 +1636,9 @@ const App = () => {
   // update on first show — the float-out animation runs invisibly during the chunk
   // download and the card pops in fully-grown instead of flowing out of the entity.
   useEffect(() => {
-    if (!isSystem) return;
+    // Client mode: kook-eiland hosts the same flow — warm the chunks the moment the user
+    // opens that section, so the intro card flows out instead of popping after its download.
+    if (!isSystem && !(clientMode && activeSection === 'kook')) return;
     import('./components/assessment/AssessmentIntro');
     import('./components/assessment/AssessmentLayerPanel');
     import('./components/assessment/AssessmentResultsModal');
@@ -1561,7 +1649,7 @@ const App = () => {
     // and stay cached all session so they don't re-blank when the flow restarts. Per-user
     // archetype images (18.9MB set) are NOT warmed here — only the user's own, later.
     warmAssessmentImages();
-  }, [isSystem]);
+  }, [isSystem, clientMode, activeSection]);
 
   // Set global crosshair cursor on mount — uses !important style tag to override
   // all inline cursor:pointer and Tailwind cursor-* classes everywhere on the site.
@@ -1582,6 +1670,16 @@ const App = () => {
 
   // Reset to frame 0 — smooth rAF-based animation to avoid per-frame React re-renders
   const handleReset = () => {
+    // Client-mode (kook-eiland) assessment: there is no earth journey to rewind through —
+    // snap straight back to the static orbital landing (frame 0, orb restored).
+    if (clientMode) {
+      setResultsModalProgress(0);
+      resetAssessmentState();
+      setClientAssessment(false);
+      setCurrentFrame(0);
+      explosionProgressRef.current = 0;
+      return;
+    }
     // Hide the (heavy) results card cheaply via its CSS collapse, and DEFER the expensive
     // resetAssessmentState — it unmounts the 4000-line ResultsModal (recharts + jsPDF) in
     // one synchronous commit, which up-front was blocking the rewind's first frames (the
@@ -1633,15 +1731,6 @@ const App = () => {
     }
   }, []);
 
-  // Mobile: skip entire app, render only admin portal on black
-  if (isMobile) {
-    return (
-      <div style={{ position: 'fixed', inset: 0, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
-        <AdminMobilePortal />
-      </div>
-    );
-  }
-
   return (
     <main
       ref={containerRef}
@@ -1688,6 +1777,7 @@ const App = () => {
           <TimeSync isMobile={false} />
         </div>
       )}
+
 
       {/* Grid Background - spans entire page on mobile */}
       {isMobile && (
@@ -1743,7 +1833,7 @@ const App = () => {
                   letterSpacing: '0.1em',
                   animation: 'headerBreathe 6s ease-in-out infinite',
                 }}>
-                  DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
+                  DELTA<span style={{color: '#f97316'}}>WERKEN</span>
                 </h1>
                 {/* Gradient underline */}
                 <div style={{
@@ -1798,27 +1888,30 @@ const App = () => {
                   justifyContent: 'center',
                 }}
               >
-                <HoloEarth 
-                  exploding={isExploding}
-                  explosionProgress={explosionProgress}
-                  explosionProgressRef={explosionProgressRef}
-                  isMobile={isMobile}
-                  isActive={isSystem}
-                  isVisible={!activeSection || isMapAnimating}
-                  pyramidScrollProgress={pyramidScrollProgress}
-                  showPyramidLabels={isSystem}
-                  coreScaleMultiplier={coreScaleMultiplier}
-                  currentFrame={currentFrame}
-                  onIntroComplete={handleIntroComplete}
-                  onLayerStateChange={handleLayerStateChange}
-                />
+                {clientMode ? null : (
+                  <HoloEarth
+                    exploding={isExploding}
+                    explosionProgress={explosionProgress}
+                    explosionProgressRef={explosionProgressRef}
+                    isMobile={isMobile}
+                    isActive={isSystem}
+                    isVisible={!activeSection || isMapAnimating}
+                    pyramidScrollProgress={pyramidScrollProgress}
+                    showPyramidLabels={isSystem}
+                    coreScaleMultiplier={coreScaleMultiplier}
+                    currentFrame={currentFrame}
+                    onIntroComplete={handleIntroComplete}
+                    onLayerStateChange={handleLayerStateChange}
+                  />
+                )}
               </div>
 
             </div>
           </div>
 
-          {/* Scroll Prompt - Between HoloEarth and Login */}
-          <div 
+          {/* Scroll Prompt - Between HoloEarth and Login (hidden in client mode) */}
+          {!clientMode && (
+          <div
             className="fixed left-0 right-0 flex flex-col items-center justify-center z-30"
             style={{
               bottom: '9.5rem',
@@ -1857,6 +1950,7 @@ const App = () => {
               <div style={{ position: 'absolute', bottom: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderBottomRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1.5s' }} />
             </div>
           </div>
+          )}
 
           {/* Login Button - Bottom center — sci-fi themed to match scroll label */}
           {!showMobileLogin && (
@@ -1937,7 +2031,7 @@ const App = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                   </svg>
-                  DELTAWERKEN
+                  {clientMode ? 'KOOKEILAND' : 'DELTAWERKEN'}
                 </span>
               </SciFiButton>
             </div>
@@ -2023,17 +2117,23 @@ const App = () => {
             inset: 0,
             willChange: 'transform',
             overflow: 'visible',
-            zIndex: isSystem ? 50 : 10,
+            // On a section, lift this layer ABOVE the section pages (z:95) so the fixed
+            // logo/header nav stays clickable. (This layer is pointer-events:none, so only its
+            // pointer-events:auto children — logo + header — intercept; sections stay usable.)
+            zIndex: activeSection ? 100 : (isSystem ? 50 : 10),
           }}
         >
           {/* --- Logo (top-left) - Inside moving container --- */}
           <div
             className="absolute pointer-events-auto z-10"
+            onMouseEnter={() => setNavHovered(true)}
+            onMouseLeave={() => setNavHovered(false)}
             style={{
               top: 'clamp(1.5rem, 2vw, 2rem)',
               left: 'clamp(1rem, 3vw, 2rem)',
-              // Header animation during scroll — delayed 1 frame
-              transform: `translateX(${logoY * 2.5}px) translateY(${logoY * 2.5}px) scale(${logoScale})`,
+              // Header animation during scroll — delayed 1 frame. Always counter-pan (+map cancels
+              // the container's −map) so the logo stays fixed on screen during map navigation.
+              transform: `translate(calc(var(--map-x, 0) * 100vw), calc(var(--map-y, 0) * 100vh)) translateX(${logoY * 2.5}px) translateY(${logoY * 2.5}px) scale(${logoScale})`,
               opacity: logoOpacity,
             }}
           >
@@ -2061,38 +2161,50 @@ const App = () => {
           {/* z-10 normally (behind HoloEarth z-20), z-30 when assessment active so modals float above */}
           <div className={`absolute inset-0 ${isSystem ? 'z-30' : 'z-10'} pointer-events-none`}>
             {/* Header HUD - Flies up based on scroll progress — delayed 2 frames */}
-            <header 
-              className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-auto"
+            <header
+              className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-none"
               style={{
-                transform: `translateY(calc(${deltaY * 2.5}px - 1.5rem)) scale(${deltaScale})`,
+                // Always counter-pan (+map cancels the moving container's −map) so the header stays
+                // fixed on screen during map navigation, while still running the landing intro (deltaY).
+                transform: `translate(calc(var(--map-x, 0) * 100vw), calc(var(--map-y, 0) * 100vh)) translateY(calc(${deltaY * 2.5}px - 1.5rem)) scale(${deltaScale})`,
                 opacity: deltaOpacity,
                 marginTop: window.innerWidth >= 768 ? 'clamp(3rem, 3.5vw, 3.5rem)' : 'clamp(1.75rem, 2.5vw, 2rem)',
                 marginLeft: 'clamp(1rem, 3vw, 2rem)',
                 paddingRight: 'clamp(1rem, 2vw, 1.5rem)',
-                paddingBottom: 'clamp(0.75rem, 1.5vw, 1.5rem)'
+                paddingBottom: 'clamp(0.75rem, 1.5vw, 1.5rem)',
+                // When the nav dropdown is open, lift the whole header's stacking context above the
+                // floating containers (e.g. Filosofie) so the menu isn't covered. See ClientNav.
+                // (Header is position:absolute via className, so z-index applies.)
+                zIndex: navMenuOpen ? 2147483647 : undefined,
               }}
             >
-              <div className="flex items-center" style={{gap: 'clamp(0.75rem, 1.5vw, 1.5rem)'}}>
-                {/* Invisible spacer where logo used to be */}
-                <div 
+              <div
+                className="flex items-center pointer-events-auto"
+                style={{gap: 'clamp(0.75rem, 1.5vw, 1.5rem)'}}
+                onMouseEnter={() => setNavHovered(true)}
+                onMouseLeave={() => setNavHovered(false)}
+              >
+                {/* Invisible spacer where logo used to be — sits over the real logo, so hovering
+                    the logo lands here and still lights the subheader. */}
+                <div
                   style={{
-                    width: 'clamp(4rem, 7vw, 12.5rem)', 
+                    width: 'clamp(4rem, 7vw, 12.5rem)',
                     height: 'clamp(4rem, 7vw, 12.5rem)',
                     flexShrink: 0
-                  }} 
+                  }}
                 />
                 <div style={{marginLeft: 'clamp(-1rem, -1vw, -1.5rem)'}}>
                   <h1 style={{
                     color: '#FFFEF0',
                     fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                    fontSize: 'clamp(1.2rem, 2vw, 2.25rem)',
+                    fontSize: 'clamp(0.9rem, 1.4vw, 2.25rem)',
                     fontWeight: 600,
                     lineHeight: 0.9,
                     filter: 'brightness(0.9)',
                     letterSpacing: 'clamp(0.1em, 0.15vw, 0.2em)',
                     animation: 'headerBreathe 6s ease-in-out infinite',
                   }}>
-                    DELTA<span style={{color: '#f59e0b'}}>WERKEN</span>
+                    DELTA<span style={{color: '#f97316'}}>WERKEN</span>
                   </h1>
                   {/* Gradient underline */}
                   <div style={{
@@ -2100,24 +2212,24 @@ const App = () => {
                     marginTop: 'clamp(0.2rem, 0.4vw, 0.4rem)',
                     background: 'linear-gradient(90deg, rgba(255,254,240,0.4) 0%, rgba(245,158,11,0.5) 50%, transparent 100%)',
                   }} />
-                  <div className="flex gap-2 items-center" style={{marginTop: 'clamp(0.25rem, 0.5vw, 0.5rem)'}}>
-                    <span className="rounded-full bg-green-500" style={{
-                      width: 'clamp(0.35rem, 0.5vw, 0.5rem)',
-                      height: 'clamp(0.35rem, 0.5vw, 0.5rem)',
-                      minWidth: 'clamp(0.35rem, 0.5vw, 0.5rem)',
-                      minHeight: 'clamp(0.35rem, 0.5vw, 0.5rem)',
-                      animation: 'dotBreathe 4s ease-in-out infinite',
-                    }}></span>
-                    <span className="text-gray-400 tracking-widest" style={{
-                      fontSize: 'clamp(0.6rem, 0.9vw, 0.85rem)'
-                    }}>{t('header.versionText')} {'/'}{'/'} V.4.9</span>
-                  </div>
+                  <ClientSubnav
+                    activeSection={activeSection}
+                    items={navItems}
+                    onNavigate={handleClientNav}
+                    onBack={handleClientBack}
+                    canBack={navStack.length > 0 || activeSection !== null}
+                    open={navMenuOpen}
+                    onToggle={toggleNavMenu}
+                    onClose={closeNavMenu}
+                    hovered={navHovered}
+                  />
                 </div>
               </div>
             </header>
 
-            {/* --- Scroll Prompt (Desktop) OR Start Button (Laptop) --- */}
-            <div 
+            {/* --- Scroll Prompt (Desktop) OR Start Button (Laptop) — hidden in client mode --- */}
+            {!clientMode && (
+            <div
               className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50"
               style={{
                 bottom: 'calc(20% + 0.5rem)',
@@ -2199,6 +2311,7 @@ const App = () => {
                 </div>
               )}
             </div>
+            )}
 
             {/* --- Floating Containers (Orbital View) --- */}
             <DesktopLayout 
@@ -2211,10 +2324,19 @@ const App = () => {
               verbindingsAnimationProgress={verbindingsProgress}
               setActiveSection={handleOpenSection}
               pauseAutoSlide={pauseAutoSlide}
+              clientProfile={clientProfile}
+              clientMode={clientMode}
+              onOpenProfile={openPublicProfile}
             />
 
+            {/* Kook-eiland run wrapper: during a client assessment the map STAYS at the kook
+                position — this wrapper counter-pans the ENTIRE assessment system (+map cancels
+                the moving container's −map, same trick as the header/logo) so the exact same
+                flow renders on-screen at that map spot. Identity (no transform) otherwise. */}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', transform: clientAssessment ? 'translate(calc(var(--map-x, 0) * 100vw), calc(var(--map-y, 0) * 100vh))' : undefined }}>
+
             {/* --- SYSTEM INNER CONTENT (Shown after Zoom) --- */}
-            <div 
+            <div
               className="absolute inset-0 flex items-center justify-center pointer-events-none"
               style={{
                 opacity: systemOpacity,
@@ -2411,10 +2533,12 @@ const App = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                   </svg>
-                  DELTAWERKEN
+                  {clientMode ? 'KOOKEILAND' : 'DELTAWERKEN'}
                 </span>
               </SciFiButton>
             </div>
+
+            </div>{/* end kook-eiland counter-pan wrapper */}
           </div>
         </div>
       )}
@@ -2476,24 +2600,32 @@ const App = () => {
           }}
         >
           <div className="absolute inset-0 flex items-center justify-center" style={{ overflow: 'visible' }}>
-            <HoloEarth
-              className="w-full h-full"
-              exploding={isExploding}
-              explosionProgress={explosionProgress}
-              explosionProgressRef={explosionProgressRef}
-              isMobile={isMobile}
-              isActive={isSystem}
-              isVisible={!activeSection || isMapAnimating}
-              pyramidScrollProgress={pyramidScrollProgress}
-              showPyramidLabels={isSystem}
-              coreScaleMultiplier={coreScaleMultiplier}
-              foldProgress={foldProgress}
-              currentFrame={currentFrame}
-              onIntroComplete={handleIntroComplete}
-              onLayerStateChange={handleLayerStateChange}
-              hidePyramid={assessmentPhase === 'intro'}
-              isVisible={!activeSection}
-            />
+            {clientMode ? (
+              <OrbSphere3D
+                config={clientOrbConfig}
+                active={!activeSection || isMapAnimating}
+                size={clientOrbSize}
+                style={{ filter: 'drop-shadow(0 0 90px rgba(120,80,200,0.18))' }}
+              />
+            ) : (
+              <HoloEarth
+                className="w-full h-full"
+                exploding={isExploding}
+                explosionProgress={explosionProgress}
+                explosionProgressRef={explosionProgressRef}
+                isMobile={isMobile}
+                isActive={isSystem}
+                isVisible={!activeSection || isMapAnimating}
+                pyramidScrollProgress={pyramidScrollProgress}
+                showPyramidLabels={isSystem}
+                coreScaleMultiplier={coreScaleMultiplier}
+                foldProgress={foldProgress}
+                currentFrame={currentFrame}
+                onIntroComplete={handleIntroComplete}
+                onLayerStateChange={handleLayerStateChange}
+                hidePyramid={assessmentPhase === 'intro'}
+              />
+            )}
           </div>
         </div>
 
@@ -2561,7 +2693,74 @@ const App = () => {
         }}>
           <FilosofiePage
             isVisible={sectionLive('filosofie')}
-            onBack={handleCloseSection} 
+            onBack={handleCloseSection}
+          />
+        </div>
+
+        {/* Winkel - empty space directly above the orb */}
+        <div style={{
+          position: 'absolute',
+          width: '100vw',
+          height: '100vh',
+          transform: `translate(calc(${GRID_POSITIONS.winkel.x} * 100vw), calc(${GRID_POSITIONS.winkel.y} * 100vh))`,
+          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+          pointerEvents: activeSection === 'winkel' ? 'auto' : 'none',
+          contentVisibility: sectionLive('winkel') ? 'visible' : 'auto',
+          containIntrinsicSize: '100vw 100vh',
+          willChange: activeSection === 'winkel' ? 'transform' : 'auto',
+        }}>
+          <WinkelPage
+            isVisible={sectionLive('winkel')}
+            onBack={handleCloseSection}
+          />
+        </div>
+
+        {/* Kook-eiland - far top-right (client kitchen; visitors see the container locked) */}
+        <div style={{
+          position: 'absolute',
+          width: '100vw',
+          height: '100vh',
+          transform: `translate(calc(${GRID_POSITIONS.kook.x} * 100vw), calc(${GRID_POSITIONS.kook.y} * 100vh))`,
+          transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
+          pointerEvents: activeSection === 'kook' ? 'auto' : 'none',
+          contentVisibility: sectionLive('kook') ? 'visible' : 'auto',
+          containIntrinsicSize: '100vw 100vh',
+          willChange: activeSection === 'kook' ? 'transform' : 'auto',
+        }}>
+          {/* THE assessment scene — the very same HoloEarth/entity component the visitor flow
+              uses, rendered here at the kook map spot, pinned at the post-journey state (earth
+              exploded, entity active). PRE-MOUNTED at idle after landing (kookSceneWarm) —
+              mounting it at pan start froze the fly-to (canvas + shader compile mid-animation).
+              While unvisited it costs only memory: frameloop paused (isVisible=false), paint
+              skipped by the pane's content-visibility. Never re-mounts when the test starts. */}
+          {clientMode && (kookSceneWarm || sectionLive('kook')) && (
+            <div className="absolute inset-0 flex items-center justify-center" style={{ overflow: 'visible' }}>
+              <HoloEarth
+                className="w-full h-full"
+                exploding={true}
+                explosionProgress={1}
+                explosionProgressRef={kookExplosionRef}
+                isMobile={isMobile}
+                isActive={true}
+                isVisible={activeSection === 'kook' || isMapAnimating}
+                pyramidScrollProgress={pyramidScrollProgress}
+                showPyramidLabels={true}
+                coreScaleMultiplier={coreScaleMultiplier}
+                foldProgress={foldProgress}
+                currentFrame={MAX_FRAME}
+                onIntroComplete={handleIntroComplete}
+                onLayerStateChange={handleLayerStateChange}
+                hidePyramid={assessmentPhase === 'intro'}
+                fastIntro={true}
+                skipEarth={true} // pinned past the explosion — earth visuals never show here
+              />
+            </div>
+          )}
+          <KookPage
+            isVisible={sectionLive('kook')}
+            mapAnimating={isMapAnimating}
+            assessmentActive={clientAssessment}
+            onStartAssessment={clientMode ? handleClientAssessmentStart : null}
           />
         </div>
 
@@ -2640,6 +2839,13 @@ const App = () => {
         </div>
       </div>
       </Suspense>
+
+      {/* Public shareable profile overlay (?u=<handle>) — above everything, works logged-out */}
+      {publicHandle && (
+        <Suspense fallback={null}>
+          <PublicProfile handle={publicHandle} active onClose={closePublicProfile} />
+        </Suspense>
+      )}
 
     </main>
   );

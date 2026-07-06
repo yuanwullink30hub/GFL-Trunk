@@ -330,7 +330,6 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
             <>
               <div />
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <SciFiButton onClick={onClose} size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">← Terug</SciFiButton>
                 <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">Uitloggen</SciFiButton>
               </div>
             </>
@@ -338,7 +337,6 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
             <>
               <div />
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <SciFiButton onClick={onClose} size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">← Terug</SciFiButton>
                 <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">Uitloggen</SciFiButton>
               </div>
             </>

@@ -339,18 +339,7 @@ const DataPage = memo(({ isVisible, onBack }) => {
         </Suspense>
       )}
 
-      {/* Return to Deltawerken - top-right, below TimeSync (kept from
-          the previous DataPage so section navigation is unchanged) */}
-      <div style={{ position: 'absolute', top: '6rem', right: '1.5rem', zIndex: 200, pointerEvents: isVisible ? 'auto' : 'none' }}>
-        <SciFiButton onClick={onBack} variant="purple" size="sm">
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            DELTAWERKEN
-          </span>
-        </SciFiButton>
-      </div>
+      {/* (Return-to-Deltawerken button removed — the global nav "← Terug" handles going back.) */}
 
       {/* Exit toggle — only while inside (entry is now the in-cube INITIALIZE button).
           Kept as a reliable HUD way out alongside the in-world DISCONNECT. */}

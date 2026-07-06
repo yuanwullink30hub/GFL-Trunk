@@ -159,6 +159,10 @@ export const preloadComponents = () => {
       () => import('../pages/DataPage'),
       () => import('../pages/LoginPage'),
       () => import('../pages/EyedentityPage'),
+      // Map destinations added later — warm them too, or the chunk fetch lands
+      // mid-pan and the fly-to stutters (same lesson as the entity-emergence chunks).
+      () => import('../pages/WinkelPage'),
+      () => import('../pages/KookPage'),
     ];
 
     // Load all components in parallel for speed
@@ -336,6 +340,8 @@ export const preloadInBackground = () => {
     () => import('../pages/GardensPage'),
     () => import('../pages/DataPage'),
     () => import('../pages/EyedentityPage'),
+    () => import('../pages/WinkelPage'),
+    () => import('../pages/KookPage'),
   ];
   // Kick off once the main thread is idle after the landing, then warm them
   // back-to-back with a yield between each (so all 5 are ready within ~1s instead

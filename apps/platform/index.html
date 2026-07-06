@@ -181,6 +181,27 @@
         opacity: 0;
         animation: gfl-slide-cycle 8.4s ease-in-out infinite;
       }
+      /* Post-login Levensles — static (no rotation), wraps a full paragraph. */
+      .gfl-lesson-label {
+        margin: 0 0 0.9rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.28em;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 0.72rem;
+        color: #c4b5fd;
+      }
+      .gfl-lesson-slide {
+        margin: 0;
+        text-align: center;
+        letter-spacing: 0.02em;
+        color: rgba(255, 254, 240, 0.9);
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1rem;
+        line-height: 1.6;
+        animation: gfl-fade-in 0.6s ease-out both;
+      }
+      @keyframes gfl-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
       #gfl-passkey-input:focus {
         border-color: #a855f7 !important;
         box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
@@ -237,6 +258,30 @@
             window.__gflDismissOverlay();
           }
         };
+
+        // Post-login boot: the login flow stashes the client's archetype "Levensles" in
+        // localStorage before hard-refreshing. If present, show it in the loading slideshow
+        // (replacing the generic rotating slides) for this one boot, then clear it.
+        (function applyBootLesson() {
+          var lesson = null;
+          try { lesson = localStorage.getItem('gfl_boot_lesson'); } catch (e) {}
+          if (!lesson) return;
+          try { localStorage.removeItem('gfl_boot_lesson'); } catch (e) {}
+          var ss = document.getElementById('gfl-loading-slideshow');
+          if (!ss) return;
+          ss.style.minHeight = 'auto';
+          ss.style.overflow = 'visible';
+          ss.style.maxWidth = '440px';
+          var label = document.createElement('p');
+          label.className = 'gfl-lesson-label';
+          label.textContent = 'Levensles';
+          var body = document.createElement('p');
+          body.className = 'gfl-lesson-slide';
+          body.textContent = lesson;           // textContent — safe, no HTML injection
+          ss.innerHTML = '';
+          ss.appendChild(label);
+          ss.appendChild(body);
+        })();
 
         // After passkey accepted (or auto-skip): show spinner or dismiss
         function onUnlocked() {

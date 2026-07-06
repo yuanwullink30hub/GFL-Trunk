@@ -1,0 +1,546 @@
+{
+  "$schema": "gfl-design-tokens/v1",
+  "meta": {
+    "name": "GFL-Trunk Design Tokens",
+    "source": "https://github.com/yuanwullink30hub/GFL-Trunk",
+    "derivation": "Frequency analysis of repeated literal values across apps/{platform,marketing,admin} and packages/{ui,brands}. Primary anchors: packages/ui/src/dashboardStyles.jsx, packages/brands/src/SciFiUI.jsx, apps/*/src/index.css, apps/platform/src/components/assessment/assessmentSizes.jsx, packages/utils/src/deviceUtils.js.",
+    "generated": "2026-07-06",
+    "designLanguage": "Dark sci-fi glassmorphism: near-black purple void background, translucent blurred glass panels, corner-bracket accents, amber/purple dual accent system, holographic sheen + scanline overlays, uppercase wide-tracked Lexend Mega UI text, fluid max(px,vw) sizing.",
+    "knownContradiction": "dashboardStyles.jsx exports C.gold = '#f97316' (Tailwind orange-500) but its hover/focus handlers and SectorFrame/GlowButton/scrollbars use '#ffae00' (brand amber). Both are load-bearing today. New builds should pick ONE per surface: colors.accent.amber for brand/frame/marketing surfaces, colors.accent.orange for dashboard/form surfaces — or unify deliberately."
+  },
+
+  "colors": {
+    "base": {
+      "background": "#0a0510",
+      "backgroundNote": "Set on html/body with !important in every app's index.css. The universal void behind everything.",
+      "glass": "rgba(2, 0, 3, 0.3)",
+      "glassNote": "SectorFrame / modal / card fill. Always paired with backdrop-blur (see effects.backdropBlur.panel).",
+      "deepPurple": "rgba(42, 10, 56, 0.35)",
+      "deepPurpleAlt": ["rgba(42, 10, 56, 0.3)", "rgba(42, 10, 56, 0.5)"],
+      "deepPurpleNote": "Card header bars, brand-scrollbar track.",
+      "inputFill": "rgba(0, 0, 0, 0.4)",
+      "overlay": "rgba(0, 0, 0, 0.4)",
+      "overlayHeavy": "rgba(0, 0, 0, 0.7)",
+      "black": "#000000",
+      "white": "#ffffff"
+    },
+    "text": {
+      "primary": "#FFFEF0",
+      "primaryNote": "Cream white — the body text color everywhere, never pure #fff for copy.",
+      "dim": "rgba(255, 254, 240, 0.5)",
+      "muted": "#888888",
+      "mutedLight": "#bbbbbb",
+      "onAccent": "#000000",
+      "onAccentNote": "Text color when a button flips to solid amber/green on hover.",
+      "slate": { "300": "#cbd5e1", "400": "#94a3b8", "500": "#64748b", "600": "#475569", "800": "#1e293b" }
+    },
+    "accent": {
+      "amber": "#ffae00",
+      "amberNote": "PRIMARY BRAND ACCENT. SectorFrame corner brackets, GlowButton primary, scrollbar thumbs, ::selection, tab actives, input focus glow, login-prompt glow.",
+      "orange": "#f97316",
+      "orangeNote": "Dashboard accent (dashboardStyles C.gold). Card corner accents, dashboard buttons, labels, SciFiButton default variant.",
+      "amber500": "#f59e0b",
+      "amber400": "#fbbf24",
+      "orange400": "#fb923c",
+      "amberDark": "#b45309",
+      "gold": "#ffd700",
+      "purple": "#a855f7",
+      "purpleNote": "SECONDARY ACCENT (most-used hex in the repo, 165x). Frame corners on main shells, borders, badges, purple scrollbar, inset panel glow.",
+      "purpleLight": "#c084fc",
+      "violet": "#a78bfa",
+      "violetPale": "#c4b5fd",
+      "violetDeep": "#7c3aed",
+      "neonPurple": "#bc13fe",
+      "neonPurpleNote": "HoloCard status dot, secondary GlowButton hover, decorative tech ticks.",
+      "neonViolet": "#bf00ff",
+      "cyan": "#22d3ee",
+      "blue": "#3b82f6",
+      "pink": "#f472b6",
+      "pinkDeep": "#ec4899"
+    },
+    "green": {
+      "terminal": "#15b315",
+      "terminalNote": "Scroll-prompt / terminal UI green. Glow animates border rgba(21,179,21, 0.35 -> 0.8).",
+      "neon": "#39ff14",
+      "matrix": "rgba(0, 255, 65, 1)",
+      "matrixAlphas": [0.2, 0.4, 0.5],
+      "mint": "#00ff9d",
+      "mintNote": "GlowButton 'green' variant.",
+      "success": "#22c55e",
+      "successLight": "#4ade80",
+      "emerald": "#10b981",
+      "darkGreen": "#1d9904",
+      "statusDotGlow": "rgba(34, 197, 94, 0.7)"
+    },
+    "danger": {
+      "base": "#ef4444",
+      "text": "#fca5a5",
+      "light": "#f87171",
+      "bg": "rgba(239, 68, 68, 0.08)",
+      "border": "rgba(239, 68, 68, 0.6)",
+      "borderSoft": "rgba(239, 68, 68, 0.5)"
+    },
+    "alphaRamps": {
+      "note": "The repo builds accent tints as rgba ramps of the base RGB, not new hexes. Reuse these exact stops.",
+      "purple_168_85_247": [0.03, 0.06, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+      "amber_255_174_0": [0.04, 0.08, 0.1, 0.12, 0.15, 0.2, 0.35, 0.5, 0.7, 0.8, 0.9],
+      "orange_249_115_22": [0.1, 0.2, 0.5],
+      "white_255_255_255": [0.008, 0.01, 0.015, 0.03, 0.05, 0.06, 0.1, 0.15, 0.2, 0.45],
+      "black_0_0_0": [0.15, 0.35, 0.4, 0.5, 0.6, 0.7, 0.8],
+      "neonPurple_188_19_254": [0.06, 0.2, 0.4],
+      "terminalGreen_21_179_21": [0.025, 0.04, 0.08, 0.3, 0.35, 0.5, 0.7, 0.8]
+    }
+  },
+
+  "typography": {
+    "families": {
+      "body": "'Figtree', sans-serif",
+      "bodyNote": "Default body font (set on <body>). Weights loaded: 300,400,500,600,700.",
+      "ui": "'Lexend Mega', Arial, Helvetica, sans-serif",
+      "uiNote": "THE interface font: buttons, labels, card titles, badges, inputs, all uppercase wide-tracked chrome. Weights loaded: 400,700. Exported as FONT in dashboardStyles.",
+      "display": "'Rajdhani', sans-serif",
+      "displayNote": "Numeric readouts, counters, technical headers. Weights loaded: 300,400,500,600,700.",
+      "mono": "monospace",
+      "tailwindSans": ["Ubuntu", "system-ui", "sans-serif"],
+      "tailwindMono": ["\"Ubuntu Mono\"", "monospace"],
+      "tailwindNote": "Declared in all three tailwind.config.js but inline styles override with Figtree/Lexend Mega/Rajdhani in practice.",
+      "googleFontsImport": "https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Lexend+Mega:wght@400;700&family=Figtree:wght@300;400;500;600;700&display=swap"
+    },
+    "fluidSizePattern": {
+      "note": "House pattern: fontSize = max(<pxFloor>, <vw>) so text scales with viewport on large desktops but never drops below a legible px floor on small laptops. Use these named steps; counts show established convention.",
+      "steps": {
+        "2xs":   { "value": "max(7px, 0.35vw)",  "use": "micro annotations" },
+        "xs":    { "value": "max(8px, 0.4vw)",   "use": "SciFiButton xs, fine print (60x)" },
+        "sm":    { "value": "max(9px, 0.45vw)",  "use": "most common UI text (72x); SciFiButton sm" },
+        "smAlt": { "value": "max(9px, 0.48vw)",  "use": "field labels" },
+        "md":    { "value": "max(10px, 0.5vw)",  "use": "buttons, labels, small inputs (49x)" },
+        "mdAlt": { "value": "max(10px, 0.55vw)", "use": "slightly larger UI text" },
+        "lg":    { "value": "max(11px, 0.55vw)", "use": "SciFiButton lg" },
+        "lgAlt": { "value": "max(11px, 0.6vw)",  "use": "large buttons (BTN_LG), SciFiButton xl" },
+        "base":  { "value": "max(12px, 0.65vw)", "use": "modal body text, inputs" },
+        "xl":    { "value": "max(13px, 0.7vw)",  "use": "emphasized body" },
+        "2xl":   { "value": "max(16px, 0.9vw)",  "use": "section titles" },
+        "3xl":   { "value": "max(18px, 1vw)",    "use": "panel headers" },
+        "4xl":   { "value": "max(28px, 1.26vw)", "use": "page titles" },
+        "5xl":   { "value": "max(31px, 1.4vw)",  "use": "hero sub" },
+        "hero":  { "value": "max(55px, 3vw)",    "use": "hero display" },
+        "heroXl":{ "value": "max(70px, 4.1vw)",  "use": "largest display text" }
+      }
+    },
+    "remScale": {
+      "note": "Static rem sizes used inside breakpoint-tiered components (assessmentSizes.jsx desktop tier).",
+      "values": ["0.625rem", "0.7rem", "0.75rem", "0.8rem", "0.84rem", "0.875rem", "1.05rem", "1.14rem"]
+    },
+    "weights": { "normal": 400, "semibold": 600, "bold": 700, "boldNote": "'bold'/700 dominate (217x combined); 600 for softer emphasis (50x)." },
+    "letterSpacing": {
+      "tight": "0.02em",
+      "snug": "0.04em",
+      "normal": "0.05em",
+      "wide": "0.08em",
+      "wider": "0.1em",
+      "button": "0.12em",
+      "label": "0.15em",
+      "caps": "0.2em",
+      "display": "0.3em",
+      "note": "All uppercase UI text carries tracking. 0.1em buttons (43x), 0.15em labels/large buttons (32x), 0.2em card titles (15x)."
+    },
+    "textTransform": "uppercase",
+    "textTransformNote": "Uppercase is the default for ALL chrome text (buttons, labels, badges, titles). Body copy stays sentence case."
+  },
+
+  "layout": {
+    "breakpoints": {
+      "mobile": { "max": 767 },
+      "tablet": { "min": 768, "max": 1078 },
+      "laptop": { "min": 1079, "max": 1799 },
+      "desktop": { "min": 1800 },
+      "note": "Canonical tiers from assessmentSizes.jsx: Desktop(>=1800) / Laptop(>=1079) / Tablet(>=768) / Mobile(<768). Component sizing objects are defined per tier; laptop tier often computes px from windowWidth ratios (e.g. Math.round(windowWidth * 0.1874))."
+    },
+    "viewportStrategy": {
+      "desktop": "html,body overflow hidden at >=768px; navigation via transforms, not scroll. Content sized with vw/vh + max(px,vw) floors so 1080p laptops and 4K desktops align.",
+      "mobile": "overflow-y auto, overflow-x hidden below 768px.",
+      "widthUnits": "Horizontal: vw or rem. Vertical rhythm: vh (padding/margins like '1.8vh 2rem', '0.8vh 1rem')."
+    },
+    "modal": {
+      "maxWidthDesktop": "64.4vw",
+      "maxWidthLaptop": "75vw",
+      "minHeight": "82vh",
+      "maxHeight": "85vh to 99vh",
+      "maxHeightDefault": "85vh",
+      "padding": "1.25rem",
+      "paddingNote": "MODAL_CONTAINER uses p-5 = 1.25rem (SectorFrame exact)."
+    },
+    "spacing": {
+      "note": "Tailwind default scale + vh-based vertical rhythm. Repeated literal paddings:",
+      "buttonMd": "0.4rem 0.9rem",
+      "buttonLg": "0.7rem 1.5rem",
+      "input": "0.7rem 0.9rem",
+      "inputSm": "0.4rem 0.6rem",
+      "cardContent": "1.5rem",
+      "panelContent": "1.25rem",
+      "errorBox": "0.5rem 0.7rem",
+      "gaps": ["0.4rem", "0.5rem", "0.75rem", "1rem"]
+    },
+    "zIndex": {
+      "base": 0,
+      "content": 1,
+      "raised": 2,
+      "decor": 3,
+      "float": 10,
+      "sticky": 20,
+      "nav": 30,
+      "overlay": 50,
+      "modal": 100,
+      "modalStack": [140, 150],
+      "toast": 200,
+      "max": 9999
+    }
+  },
+
+  "borders": {
+    "radius": {
+      "none": "0px",
+      "hairline": "0.1rem",
+      "button": "0.15rem",
+      "buttonNote": "Buttons/inputs use near-square 0.15rem — the sharp sci-fi look.",
+      "xs": "0.2rem",
+      "sm": "0.25rem",
+      "md": "0.35rem",
+      "panel": "0.5rem",
+      "panelNote": "Dominant container radius (46x). MODAL_CONTAINER, SectorFrame (rounded-lg).",
+      "lg": "0.6rem",
+      "xl": "0.75rem",
+      "fluid": "max(4px, 0.5vw)",
+      "full": "50%",
+      "cornerBracket": "10px 0 0 0",
+      "cornerBracketNote": "Per-corner: '10px 0 0 0' / '0 10px 0 0' / '0 0 10px 0' / '0 0 0 10px' (18x each)."
+    },
+    "width": { "hairline": "1px", "accent": "1.5px", "bracket": "2px" },
+    "colors": {
+      "subtle": "rgba(255, 255, 255, 0.05)",
+      "soft": "rgba(255, 255, 255, 0.1)",
+      "medium": "rgba(255, 255, 255, 0.2)",
+      "amberSoft": "rgba(255, 174, 0, 0.2)",
+      "amberFocus": "rgba(255, 174, 0, 0.5)",
+      "orangeSoft": "rgba(249, 115, 22, 0.2)",
+      "orangeMed": "rgba(249, 115, 22, 0.5)",
+      "purpleDashed": "rgba(168, 85, 247, 0.3)",
+      "purpleDashedNote": "HoloCard inner overlay: 1px dashed, rounded-sm."
+    },
+    "cornerBrackets": {
+      "note": "Three canonical bracket specs. Corner accents are absolutely-positioned divs, pointer-events none.",
+      "sectorFrame": {
+        "size": "1rem (w-4 h-4)",
+        "offset": "-0.125rem (-top-0.5/-left-0.5)",
+        "border": "1.5px solid #ffae00",
+        "cornerRadius": "10px on the outer corner only",
+        "use": "Large panels / page shells. Purple variant swaps #a855f7."
+      },
+      "holoCard": {
+        "size": "0.5rem (w-2 h-2)",
+        "offset": "0",
+        "border": "1px solid #ffae00 (two sides per corner)",
+        "use": "Cards."
+      },
+      "cornerAccents": {
+        "size": "10px",
+        "offset": "-1px",
+        "border": "2px solid #ffae00 (two sides per corner)",
+        "use": "Small inline elements (dashboardStyles CornerAccents)."
+      },
+      "sciFiButtonBySize": {
+        "xs": { "corner": "0.38rem", "top": -2, "side": -2 },
+        "sm": { "corner": "0.48rem", "top": -2, "side": -3 },
+        "md": { "corner": "0.55rem", "top": -2, "side": -3 },
+        "lg": { "corner": "0.65rem", "top": -2, "side": -4 },
+        "xl": { "corner": "0.75rem", "top": -3, "side": -5 },
+        "borderRadiusPerCorner": "2px",
+        "colorIdle": "rgba(<accentRGB>, 0.45)",
+        "colorLit": "<accent>"
+      }
+    },
+    "techTicks": {
+      "spec": "1px wide x 1rem tall, vertically centered on left/right edges",
+      "color": "rgba(188, 19, 254, 0.2)"
+    }
+  },
+
+  "effects": {
+    "backdropBlur": {
+      "panel": "blur(20px)",
+      "panelNote": "MODAL_CONTAINER / Eyedentity exact. Always set both backdropFilter and WebkitBackdropFilter.",
+      "frame": "blur(24px)",
+      "frameNote": "backdrop-blur-xl on SectorFrame (12x, most common).",
+      "card": "blur(12px)",
+      "soft": "blur(8px)",
+      "heavy": "blur(32px)"
+    },
+    "boxShadow": {
+      "sector": "0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15)",
+      "sectorNote": "THE signature panel shadow. Append an accent inset pair to tint the panel interior:",
+      "sectorInsetTemplate": ", inset 0 0 12px rgba(<accentRGB>, 0.06), inset 0 0 30px rgba(<accentRGB>, 0.03)",
+      "sectorInsetAccents": {
+        "purple": "168, 85, 247",
+        "amber": "255, 174, 0",
+        "amber500": "245, 158, 11",
+        "emerald": "16, 185, 129"
+      },
+      "cardFloat": "0 8px 24px rgba(0,0,0,0.5)",
+      "cardFloatLg": "0 8px 40px rgba(0,0,0,0.5)",
+      "insetWell": "inset 0 2px 20px rgba(0,0,0,0.8)",
+      "glowAmber": "0 0 20px rgba(255, 174, 0, 0.6)",
+      "glowDanger": "0 0 20px rgba(239, 68, 68, 0.5)",
+      "glowPurpleSoft": "0 0 8px rgba(168, 85, 247, 0.2)",
+      "glowInputFocus": "0 0 15px rgba(255, 174, 0, 0.15)",
+      "glowMint": "0 0 20px rgba(0, 255, 157, 0.6)",
+      "glowNeonPurple": "0 0 15px rgba(188, 19, 254, 0.4)"
+    },
+    "textShadowGlow": "0 0 8px rgba(<accentRGB>, 0.4)",
+    "holoOverlays": {
+      "sheen": {
+        "background": "linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)",
+        "backgroundSize": "400% 400%",
+        "animation": "holoSheen 45s ease-in-out infinite",
+        "mixBlendMode": "screen"
+      },
+      "scanline": {
+        "background": "linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)",
+        "backgroundSize": "100% 300%",
+        "animation": "holoScanline 14s linear infinite"
+      },
+      "noise": {
+        "url": "https://grainy-gradients.vercel.app/noise.svg",
+        "opacity": 0.03,
+        "mixBlendMode": "overlay"
+      }
+    },
+    "gradients": {
+      "buttonIdleTemplate": "linear-gradient(135deg, rgba(<accentRGB>, 0.1), rgba(<accentRGB>, 0.2))",
+      "buttonHoverTemplate": "linear-gradient(135deg, rgba(<accentRGB>, 0.8), rgba(<accentRGB>, 0.9))",
+      "tabIdle": "linear-gradient(135deg, rgba(255, 174, 0, 0.03), rgba(255, 174, 0, 0.06))",
+      "tabActive": "linear-gradient(135deg, rgba(255, 174, 0, 0.2), rgba(255, 174, 0, 0.3))",
+      "purpleSolid": "linear-gradient(135deg, #a855f7, #7c3aed)",
+      "angleNote": "135deg is the house gradient angle."
+    },
+    "selection": { "background": "#ffae00", "color": "#000000" }
+  },
+
+  "components": {
+    "panel": {
+      "background": "rgba(2, 0, 3, 0.3)",
+      "backdropFilter": "blur(20px)",
+      "borderRadius": "0.5rem",
+      "boxShadow": "effects.boxShadow.sector + purple inset",
+      "padding": "1.25rem",
+      "color": "#FFFEF0",
+      "fontFamily": "typography.families.ui",
+      "fontSize": "max(12px, 0.65vw)",
+      "maxHeight": "85vh",
+      "overflowY": "auto",
+      "decor": ["cornerBrackets.sectorFrame", "holoOverlays.sheen", "holoOverlays.scanline", "holoOverlays.noise"]
+    },
+    "card": {
+      "background": "colors.base.glass",
+      "backdropFilter": "blur(12px)",
+      "border": "1px solid rgba(255,255,255,0.05)",
+      "innerBorder": "1px dashed rgba(168, 85, 247, 0.3)",
+      "borderRadius": "0.125rem (rounded-sm)",
+      "headerBar": {
+        "background": "rgba(42, 10, 56, 0.5)",
+        "padding": "0.75rem 1rem",
+        "borderBottom": "1px solid rgba(255,255,255,0.05)",
+        "titleColor": "#ffae00",
+        "titleFont": "typography.families.ui",
+        "titleSpacing": "0.2em",
+        "statusDots": ["#ffae00", "#bc13fe", "rgba(255,255,255,0.2)"]
+      },
+      "contentPadding": "1.5rem",
+      "decor": ["cornerBrackets.holoCard", "techTicks"]
+    },
+    "button": {
+      "base": {
+        "padding": "0.4rem 0.9rem",
+        "background": "gradients.buttonIdleTemplate with accent",
+        "border": "1px solid rgba(<accentRGB>, 0.5)",
+        "color": "<accent>",
+        "borderRadius": "0.15rem",
+        "fontFamily": "typography.families.ui",
+        "fontSize": "max(10px, 0.5vw)",
+        "fontWeight": "bold",
+        "textTransform": "uppercase",
+        "letterSpacing": "0.1em",
+        "transition": "all 0.3s"
+      },
+      "large": {
+        "padding": "0.7rem 1.5rem",
+        "fontSize": "max(11px, 0.6vw)",
+        "letterSpacing": "0.15em",
+        "width": "100%",
+        "layout": "flex center, gap 0.5rem"
+      },
+      "hover": {
+        "background": "gradients.buttonHoverTemplate with accent",
+        "color": "#000000",
+        "boxShadow": "0 0 20px rgba(<accentRGB>, 0.6)"
+      },
+      "variants": {
+        "primaryAmber": { "rgb": "255, 174, 0", "color": "#ffae00" },
+        "orange": { "rgb": "249, 115, 22", "color": "#f97316" },
+        "purple": { "rgb": "168, 85, 247", "color": "#a855f7" },
+        "danger": { "rgb": "239, 68, 68", "color": "#ef4444", "hoverColor": "#ffffff" },
+        "green": { "rgb": "0, 255, 157", "color": "#00ff9d" },
+        "white": { "rgb": "255, 255, 255", "color": "rgba(255,255,255,0.45)" },
+        "secondaryGhost": {
+          "background": "transparent",
+          "border": "1px solid rgba(255, 255, 255, 0.2)",
+          "color": "rgba(255, 255, 255, 0.6)",
+          "hoverColor": "#bc13fe",
+          "hoverBorder": "1px solid #bc13fe",
+          "hoverShadow": "0 0 15px rgba(188, 19, 254, 0.4)"
+        }
+      },
+      "sciFiSizes": {
+        "note": "SciFiButton: transparent bg, corner brackets, idle text rgba(<rgb>,0.7), lit = accent + textShadowGlow. transform 'scaleX(1.06) scaleY(1.095) translateY(-0.5%)'.",
+        "xs": { "padding": "0.15rem 0.45rem", "fontSize": "max(8px, 0.4vw)" },
+        "sm": { "padding": "0.3rem 0.7rem", "fontSize": "max(9px, 0.45vw)" },
+        "md": { "padding": "0.4rem 0.9rem", "fontSize": "max(10px, 0.5vw)" },
+        "lg": { "padding": "0.6rem 1.5rem", "fontSize": "max(11px, 0.55vw)" },
+        "xl": { "padding": "0.7rem 1.5rem", "fontSize": "max(11px, 0.6vw)" },
+        "letterSpacing": "0.12em",
+        "disabledOpacity": 0.4
+      }
+    },
+    "tab": {
+      "extends": "components.button.base",
+      "idle": { "background": "gradients.tabIdle", "borderColor": "rgba(255, 174, 0, 0.2)" },
+      "active": { "background": "gradients.tabActive", "borderColor": "rgba(255, 174, 0, 0.7)" }
+    },
+    "input": {
+      "width": "100%",
+      "padding": "0.7rem 0.9rem",
+      "background": "rgba(0, 0, 0, 0.4)",
+      "border": "1px solid rgba(249, 115, 22, 0.2)",
+      "borderRadius": "0.15rem",
+      "color": "#FFFEF0",
+      "fontFamily": "typography.families.ui",
+      "fontSize": "max(12px, 0.65vw)",
+      "transition": "all 0.25s ease",
+      "small": { "padding": "0.4rem 0.6rem", "fontSize": "max(10px, 0.5vw)" },
+      "textarea": { "minHeight": "100px", "resize": "vertical", "fontSize": "max(10px, 0.5vw)" },
+      "focus": {
+        "borderColor": "rgba(255, 174, 0, 0.5)",
+        "background": "rgba(255, 174, 0, 0.04)",
+        "boxShadow": "0 0 15px rgba(255, 174, 0, 0.15)"
+      },
+      "blur": {
+        "borderColor": "rgba(255, 174, 0, 0.2)",
+        "background": "rgba(0, 0, 0, 0.4)",
+        "boxShadow": "none"
+      }
+    },
+    "label": {
+      "section": {
+        "fontSize": "max(10px, 0.5vw)",
+        "color": "<accent>",
+        "opacity": 0.7,
+        "textTransform": "uppercase",
+        "letterSpacing": "0.15em",
+        "fontWeight": "bold",
+        "marginBottom": "0.2rem"
+      },
+      "field": {
+        "fontSize": "max(9px, 0.48vw)",
+        "color": "rgba(<accentRGB>, 0.6)",
+        "textTransform": "uppercase",
+        "letterSpacing": "0.1em",
+        "marginBottom": "0.3rem"
+      }
+    },
+    "errorBox": {
+      "padding": "0.5rem 0.7rem",
+      "borderLeft": "2px solid rgba(239, 68, 68, 0.6)",
+      "background": "rgba(239, 68, 68, 0.08)",
+      "color": "#fca5a5",
+      "fontSize": "max(10px, 0.5vw)",
+      "layout": "flex align-center gap 0.4rem"
+    },
+    "separator": { "height": "1px", "background": "rgba(255, 174, 0, 0.12)" },
+    "modalOverlay": {
+      "background": "rgba(0, 0, 0, 0.4)",
+      "heavyVariant": "rgba(0, 0, 0, 0.7)",
+      "entry": "animate-fadeIn / animate-zoomIn"
+    },
+    "pageWrapper": {
+      "position": "absolute inset 0, flex center",
+      "transition": "opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1)",
+      "hidden": { "opacity": 0, "pointerEvents": "none" }
+    },
+    "scrollbar": {
+      "brand": {
+        "width": "4px",
+        "track": "rgba(42, 10, 56, 0.3)",
+        "thumb": "#ffae00",
+        "thumbRadius": "0px"
+      },
+      "purple": {
+        "width": "3px",
+        "track": "transparent",
+        "thumb": "rgba(168, 85, 247, 0.6)",
+        "thumbHover": "rgba(168, 85, 247, 0.9)",
+        "thumbRadius": "2px",
+        "firefox": "scrollbar-width: thin; scrollbar-color: rgba(168,85,247,0.6) transparent"
+      },
+      "hidden": "-ms-overflow-style: none; scrollbar-width: none; ::-webkit-scrollbar { display: none }"
+    },
+    "statusDot": {
+      "animation": "dotBreathe",
+      "keyframes": "0%/100%: opacity 0.55, shadow 0 0 2px rgba(34,197,94,0.35); 50%: opacity 1, shadow 0 0 8px 1px rgba(34,197,94,0.7)"
+    }
+  },
+
+  "motion": {
+    "transitions": {
+      "fast": "all 0.2s",
+      "standard": "all 0.3s ease",
+      "input": "all 0.25s ease",
+      "color": "color 0.2s",
+      "bg": "background-color 0.2s",
+      "transform": "transform 0.15s ease-out",
+      "page": "opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1)"
+    },
+    "keyframes": {
+      "fadeIn": { "duration": "0.3s", "easing": "ease-in-out", "note": "opacity 0 -> 1" },
+      "zoomIn": { "duration": "0.3s", "easing": "ease-out", "note": "scale 0.95 + fade -> 1" },
+      "fadeInScale": { "note": "translate(-50%,-50%) scale 0.85 -> 1 with fade (centered modals)" },
+      "spinSlow": { "duration": "20s", "easing": "linear", "iteration": "infinite" },
+      "pulseSlow": { "duration": "4s", "easing": "cubic-bezier(0.4, 0, 0.6, 1)", "iteration": "infinite", "note": "opacity 1 -> 0.5 -> 1" },
+      "holoSheen": { "duration": "45s", "easing": "ease-in-out", "iteration": "infinite" },
+      "holoScanline": { "duration": "14s", "easing": "linear", "iteration": "infinite" },
+      "scrollPromptGlow": { "note": "border rgba(21,179,21) 0.35 <-> 0.8" },
+      "loginPromptGlow": { "note": "border rgba(255,174,0) 0.35 <-> 0.8" },
+      "scrollPromptTextFlicker": { "note": "brief opacity dips at 93-97%" },
+      "scrollDotPulse": { "note": "translateY 0 -> 6px, opacity 1 -> 0.3" },
+      "headerBreathe": { "note": "opacity 0.88 <-> 1" },
+      "dotBreathe": { "note": "see components.statusDot" }
+    },
+    "lowGpuPolicy": {
+      "trigger": "viewport 768-1799px AND GPU not on capable whitelist (GeForce/RTX/GTX/Quadro/Radeon RX-Pro/Intel Arc/Iris Xe/Apple M-series). Toggles class 'low-gpu' on <html>.",
+      "effect": "All animations forced to iteration-count 1; backdrop-filter killed. Exempt class: .keep-spinning (functional loaders).",
+      "rule": "Every decorative infinite animation in new builds must tolerate being frozen; every functional loader must carry .keep-spinning."
+    }
+  },
+
+  "rules": {
+    "newBuildChecklist": [
+      "Background is always #0a0510; panels are glass rgba(2,0,3,0.3) + blur(20-24px) + sector shadow, never opaque.",
+      "All chrome text: Lexend Mega, uppercase, tracked (0.1-0.2em), bold.",
+      "All font sizes in UI chrome use the max(px, vw) fluid steps, never bare px.",
+      "Buttons/inputs use 0.15rem radius; panels use 0.5rem; corner brackets per borders.cornerBrackets.",
+      "Accent tints are alpha ramps of a base RGB (colors.alphaRamps), not new hex values.",
+      "Gradients run at 135deg.",
+      "Hover = accent solid-fill flip (text -> #000) + 20px glow; focus = amber border 0.5 + 0.04 fill + 15px glow.",
+      "Respect the 4-tier breakpoint system and the low-gpu freeze contract.",
+      "Provide -webkit-backdrop-filter alongside backdrop-filter everywhere."
+    ]
+  }
+}

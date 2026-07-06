@@ -21,7 +21,9 @@ import { isIntegratedGPU } from '@gfl/utils';
  */
 
 // ─── Shared vertex shader ──────────────────────────────────────────────
-const VERT = `
+// Exported (additive — desktop path unchanged) so the dev nebula recorder
+// (src/dev/nebulaRecorder.js) reuses the EXACT same shader source.
+export const VERT = `
   attribute vec2 a_position;
   void main() {
     gl_Position = vec4(a_position, 0.0, 1.0);
@@ -30,9 +32,9 @@ const VERT = `
 
 // ─── Pass 1: Displacement field update (ping-pong) ─────────────────────
 const DISP_FRAG = `
-  precision mediump float;
+  precision highp float;
 
-  uniform sampler2D u_prev;       // previous frame displacement (RG encoded)
+  uniform sampler2D u_prev;       // previous frame displacement (16-bit packed: RG=x, BA=y)
   uniform vec2  u_res;            // displacement texture resolution
   uniform vec2  u_mouse;          // current mouse  (0-1, GL-Y)
   uniform vec2  u_mousePrev;      // previous mouse (0-1, GL-Y)
@@ -40,6 +42,23 @@ const DISP_FRAG = `
   uniform float u_aspect;         // screen width / height
   uniform float u_decay;          // per-frame decay (delta-scaled to be fps-independent)
   uniform float u_diffuse;        // per-frame diffusion amount (delta-scaled)
+  uniform float u_drain;          // per-frame linear pull to zero (delta-scaled)
+
+  // 16-bit fixed-point storage. 8-bit storage quantized the field so coarsely that the
+  // multiplicative decay (max step ~1.5e-4/frame) always rounded back to the same byte:
+  // paint never faded — it FOSSILIZED into quantized plateaus whose straight texel-grid
+  // edges printed the intermittent "linear splits" in the gas. Two bytes per component
+  // (quantum 1.5e-5) lets decay/diffusion actually progress. NOTE: packed channels must
+  // never be bilinearly filtered — the disp textures use NEAREST and are sampled at
+  // texel centers here (and manually interpolated after unpacking in the nebula pass).
+  vec4 packDisp(vec2 e) {
+    vec2 hi = floor(e * 255.0) / 255.0;
+    vec2 lo = fract(e * 255.0);
+    return vec4(hi.x, lo.x, hi.y, lo.y);
+  }
+  vec2 unpackDisp(vec4 t) {
+    return vec2(t.r + t.g / 255.0, t.b + t.a / 255.0);
+  }
 
   // Distance from point p to line segment a->b
   float segDist(vec2 p, vec2 a, vec2 b) {
@@ -60,13 +79,13 @@ const DISP_FRAG = `
     vec2 texel = 1.0 / u_res;
 
     // Decode existing displacement (-1 to 1 range)
-    vec2 cur = texture2D(u_prev, uv).xy * 2.0 - 1.0;
+    vec2 cur = unpackDisp(texture2D(u_prev, uv)) * 2.0 - 1.0;
 
     // 4-neighbor diffusion for organic paint bleeding
-    vec2 rt = texture2D(u_prev, uv + vec2(texel.x, 0.0)).xy * 2.0 - 1.0;
-    vec2 lt = texture2D(u_prev, uv - vec2(texel.x, 0.0)).xy * 2.0 - 1.0;
-    vec2 up = texture2D(u_prev, uv + vec2(0.0, texel.y)).xy * 2.0 - 1.0;
-    vec2 dn = texture2D(u_prev, uv - vec2(0.0, texel.y)).xy * 2.0 - 1.0;
+    vec2 rt = unpackDisp(texture2D(u_prev, uv + vec2(texel.x, 0.0))) * 2.0 - 1.0;
+    vec2 lt = unpackDisp(texture2D(u_prev, uv - vec2(texel.x, 0.0))) * 2.0 - 1.0;
+    vec2 up = unpackDisp(texture2D(u_prev, uv + vec2(0.0, texel.y))) * 2.0 - 1.0;
+    vec2 dn = unpackDisp(texture2D(u_prev, uv - vec2(0.0, texel.y))) * 2.0 - 1.0;
     vec2 avg = (rt + lt + up + dn) * 0.25;
     vec2 diffused = mix(cur, avg, u_diffuse);
 
@@ -77,8 +96,17 @@ const DISP_FRAG = `
       vec2 mA   = u_mouse     * vec2(u_aspect, 1.0);
       vec2 mpA  = u_mousePrev * vec2(u_aspect, 1.0);
 
+      // Wavy brush: each frame's stroke is a STRAIGHT segment between two pointer
+      // samples, so a fast flick painted a ruler-straight ridge into the field (a
+      // straight distortion streak in the gas). Bending the distance-field query
+      // coordinate makes every stroke contour undulate — no straight wake possible.
+      vec2 uvW = uvA + vec2(
+        sin(uvA.y * 43.0 + uvA.x * 11.0) + sin(uvA.y * 17.0 - uvA.x * 29.0) * 0.6,
+        sin(uvA.x * 37.0 - uvA.y * 19.0) + sin(uvA.x * 13.0 + uvA.y * 31.0) * 0.6
+      ) * 0.011;
+
       // Distance from this pixel to the stroke segment
-      float dist = segDist(uvA, mpA, mA);
+      float dist = segDist(uvW, mpA, mA);
 
       // Adaptive brush radius: smaller for subtler interaction
       float brushR = 0.035 + u_mouseSpeed * 1.2;
@@ -115,25 +143,67 @@ const DISP_FRAG = `
     // Near-permanent: half-life about 77 s (delta-scaled in JS so it's fps-independent)
     diffused *= u_decay;
 
+    // Linear drain: multiplicative decay alone slows exponentially and stalls inside the
+    // storage quantum near zero — a constant pull guarantees the field truly empties,
+    // so no residual paint structure can linger indefinitely.
+    diffused -= clamp(diffused, vec2(-u_drain), vec2(u_drain));
+
     // Clamp to sane range
     diffused = clamp(diffused, vec2(-0.5), vec2(0.5));
 
-    // Encode for unsigned byte storage
-    gl_FragColor = vec4(diffused * 0.5 + 0.5, 0.0, 1.0);
+    // Encode for 16-bit packed storage
+    gl_FragColor = packDisp(diffused * 0.5 + 0.5);
   }
 `;
 
 // ─── Pass 2: Nebula render with displacement applied ───────────────────
 // Factory: generates shader source with configurable octave counts
-function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', gasLayers = 4) {
+// ─── Seam crossfade: blend two nebula renders (current cycle vs next) ──
+// Tiny shader (single compile, negligible load cost) used only during the ~10s wrap dissolve.
+const BLEND_FRAG = `
+  precision mediump float;
+  uniform sampler2D u_texA;
+  uniform sampler2D u_texB;
+  uniform float     u_fade;
+  uniform vec2      u_resolution;
+  void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution;
+    vec3 a = texture2D(u_texA, uv).rgb;
+    vec3 b = texture2D(u_texB, uv).rgb;
+    gl_FragColor = vec4(mix(a, b, u_fade), 1.0);
+  }
+`;
+
+export function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', gasLayers = 4) {
   return `
   #extension GL_OES_standard_derivatives : enable
   precision ${precision} float;
 
   uniform float     u_time;
   uniform vec2      u_resolution;
-  uniform sampler2D u_disp;   // accumulated displacement field
-  uniform vec2      u_offset; // map navigation offset (viewport units)
+  uniform sampler2D u_disp;    // accumulated displacement field (16-bit packed: RG=x, BA=y)
+  uniform vec2      u_dispRes; // displacement texture resolution
+  uniform vec2      u_offset;  // map navigation offset (viewport units)
+
+  // Smooth C1 sampling of the quarter-res paint field. Plain bilinear upscaling has
+  // derivative kinks along texel rows/columns, and the gas warp printed those as
+  // faint STRAIGHT creases wherever the mouse had painted. Unpack the four texel
+  // corners (stored as 2×8-bit fixed point — must not be hardware-filtered) and
+  // blend with a quintic weight: continuous slope, so paint distorts curvily.
+  vec2 unpackDisp(vec4 t) {
+    return vec2(t.r + t.g / 255.0, t.b + t.a / 255.0);
+  }
+  vec2 sampleDisp(vec2 uv) {
+    vec2 g = uv * u_dispRes - 0.5;
+    vec2 i = floor(g);
+    vec2 f = fract(g);
+    f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+    vec2 t00 = unpackDisp(texture2D(u_disp, (i + vec2(0.5, 0.5)) / u_dispRes));
+    vec2 t10 = unpackDisp(texture2D(u_disp, (i + vec2(1.5, 0.5)) / u_dispRes));
+    vec2 t01 = unpackDisp(texture2D(u_disp, (i + vec2(0.5, 1.5)) / u_dispRes));
+    vec2 t11 = unpackDisp(texture2D(u_disp, (i + vec2(1.5, 1.5)) / u_dispRes));
+    return mix(mix(t00, t10, f.x), mix(t01, t11, f.x), f.y) * 2.0 - 1.0;
+  }
   uniform float     u_brightness;  // overall brightness multiplier
   uniform float     u_saturation;  // color saturation boost
   uniform float     u_colorDepth;  // gas color intensity multiplier
@@ -145,12 +215,18 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     return fract(p.x * p.y);
   }
 
-  // Unit gradient per lattice point — trig-free Dave-Hoskins hash, then normalize.
+  // Unit gradient per lattice point. The old version normalized a uniform SQUARE sample
+  // (fract*2-1 in [-1,1]²); normalizing a square biases directions toward the four DIAGONALS
+  // (angular density peaks at ±45°), so each Perlin cell carries a faint diagonal grain that
+  // accumulates across octaves into the residual "linear formations" in the gas. Deriving a
+  // UNIFORM angle instead spreads gradients evenly around the circle → isotropic, non-linear
+  // noise. Range/mean are unchanged, so the NOISE_GAIN/BIAS colour calibration still holds.
+  // (The extra sin/cos is negligible next to the dozens of exp() this shader already runs.)
   vec2 hashGrad(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 0.1031);
     p3 += dot(p3, p3.yzx + 19.19);
-    vec2 g = fract((p3.xx + p3.yz) * p3.zy) * 2.0 - 1.0;
-    return normalize(g + vec2(1e-5));
+    float ang = fract((p3.x + p3.y) * p3.z) * 6.2831853;
+    return vec2(cos(ang), sin(ang));
   }
 
   // Gradient (Perlin) noise — random DIRECTIONS at lattice points, not random
@@ -248,8 +324,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Clamp aspect so narrow viewports don't squish features beyond recognition
     aspect = max(aspect, 0.9);
 
-    // Read accumulated displacement
-    vec2 disp = texture2D(u_disp, uv).xy * 2.0 - 1.0;
+    // Read accumulated displacement (smooth-filtered, see sampleDisp)
+    vec2 disp = sampleDisp(uv);
 
     float t = u_time * 0.0525; // cloud-drift speed (was 0.07) — slowed 25% for a calmer, less distracting feel
 
@@ -288,9 +364,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Noise-based Gaussian contour warping — breaks up clean elliptical boundaries
     // into organic, cloud-like shapes so no straight lines appear
-    float gWarp1 = (noise(p1 * 6.0 + vec2(3.1, 8.7) + t * 0.03) - 0.5) * 0.35;
-    float gWarp2 = (noise(p1 * 7.5 + vec2(11.2, 4.3) + t * 0.04) - 0.5) * 0.35;
-    float gWarp3 = (noise(p1 * 5.0 + vec2(6.4, 1.9) + t * 0.025) - 0.5) * 0.25;
+    float gWarp1 = (fbm(p1 * 3.4 + vec2(3.1, 8.7) + t * 0.03) - 0.5) * 0.55; // fbm: per-octave rotation kills the value-lattice echo (straight/45° kinks) a single noise sample prints on the outline
+    float gWarp2 = (fbm(p1 * 4.2 + vec2(11.2, 4.3) + t * 0.04) - 0.5) * 0.55;
+    float gWarp3 = (fbm(p1 * 2.9 + vec2(6.4, 1.9) + t * 0.025) - 0.5) * 0.40;
 
     // BG1: Upper — cool violet wash
     vec2 bgN1 = p0 + bgWarpOff - vec2(0.05, 0.22);
@@ -329,14 +405,14 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Large shared gas envelope — connects all clouds into one continuous mass
     vec2 nEnv = p1 + warpOffset * 0.5 + gwVecEnv - vec2(0.0, -0.02);
-    float envD = nEnv.x * nEnv.x * 0.58 + nEnv.y * nEnv.y * 0.50;
+    float envD = nEnv.x * nEnv.x * 0.74 + nEnv.y * nEnv.y * 0.64; // tighter envelope
     float nebEnvelope = exp(-envD);
 
     // Nebula A: Upper-center — magenta-purple, main feature (drifting center)
     // Rotated 30° so its axis doesn't align with B/C, breaking saddle-point seams
     vec2 nA = p1 + warpOffset + gwVecA - vec2(-0.05 + 0.09*sin(t*0.053), 0.12 + 0.08*sin(t*0.071));
     { float ca = 0.866, sa = 0.500; nA = vec2(ca*nA.x + sa*nA.y, -sa*nA.x + ca*nA.y); }
-    float dA = nA.x * nA.x * 2.39 + nA.y * nA.y * 2.14;
+    float dA = nA.x * nA.x * 3.23 + nA.y * nA.y * 2.89; // tighter (+35%) — concentrated cloud
     dA *= 1.0 + gWarp1;
     float nebA = exp(-dA);
 
@@ -344,7 +420,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Rotated 75° — axes non-parallel to A and C
     vec2 nB = p1 + warpOffset + gwVecB - vec2(-0.18 + 0.10*sin(t*0.061 + 2.1), -0.16 + 0.08*sin(t*0.083 + 4.3));
     { float cb = 0.259, sb = 0.966; nB = vec2(cb*nB.x + sb*nB.y, -sb*nB.x + cb*nB.y); }
-    float dB = nB.x * nB.x * 2.74 + nB.y * nB.y * 2.39;
+    float dB = nB.x * nB.x * 3.70 + nB.y * nB.y * 3.23; // tighter
     dB *= 1.0 + gWarp2;
     float nebB = exp(-dB);
 
@@ -352,7 +428,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // Rotated -20° (340°) — tilts opposite to A, avoids reinforcing horizontal saddle
     vec2 nC = p1 + warpOffset + gwVecC - vec2(0.20 + 0.08*sin(t*0.077 + 5.7), -0.06 + 0.09*sin(t*0.047 + 1.4));
     { float cc = 0.940, sc = -0.342; nC = vec2(cc*nC.x + sc*nC.y, -sc*nC.x + cc*nC.y); }
-    float dC = nC.x * nC.x * 3.19 + nC.y * nC.y * 2.85;
+    float dC = nC.x * nC.x * 4.31 + nC.y * nC.y * 3.85; // tighter
     dC *= 1.0 + gWarp3;
     float nebC = exp(-dC);
 
@@ -361,9 +437,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     float breakupMask = smoothstep(0.32, 0.58, breakup);
 
     // Combined cloud mask — envelope bridges gaps, clouds add softly
-    float rawCloud = nebA * 2.41 + nebB * 2.08 + nebC * 2.15 + nebEnvelope * 0.75;
+    float rawCloud = nebA * 2.41 + nebB * 2.08 + nebC * 2.15 + nebEnvelope * 0.55; // less inter-cloud smear
     float cloudMask = clamp(rawCloud, 0.0, 1.0);
-    cloudMask = pow(cloudMask, 1.15);
+    cloudMask = pow(cloudMask, 1.28); // compress mid-density spread
     cloudMask *= mix(0.65, 1.0, breakupMask);
 
     // Smooth weights from drifting Gaussians — derive single blend factor
@@ -396,9 +472,14 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // contour that sweeps across as the cloud centers drift. seamProx gates it to the
     // boundary only — cloud cores keep their identity colour (free: reuses breakup).
     float blendArg = wC + wB * 0.5;
-    float seamProx = clamp(1.0 - abs(blendArg - 0.5) * 2.0, 0.0, 1.0);
-    blendArg += (breakup - 0.5) * 0.5 * seamProx;
-    float colorBlend = smoothstep(0.25, 0.75, blendArg);
+    // Wider seam band + TWO fractal scales in the jitter: the purple<->warm boundary
+    // dissolves into multi-scale tendrils and can never resolve into a clean straight
+    // contour (the intermittent "linear split"). Softer smoothstep spreads any residual
+    // transition into a wide haze instead of an edge.
+    float seamProx = clamp(1.0 - abs(blendArg - 0.5) * 1.7, 0.0, 1.0);
+    float seamJit = (breakup - 0.5) + (fbm(p1 * 5.1 + vec2(19.3, 4.1) + t * 0.4) - 0.5) * 0.7;
+    blendArg += seamJit * 0.72 * seamProx;
+    float colorBlend = smoothstep(0.16, 0.84, blendArg);
     // Blue depth factor: strongest where B (transitional) dominates
     float blueDepth = wB * 0.35 * smoothstep(0.15, 0.40, wB);
     blueDepth = min(blueDepth, 0.15); // cap blue at ~15% contribution
@@ -406,7 +487,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // ── Volumetric depth simulation ──
     vec2 pBack = p2 + vec2(0.06, -0.04);
     float nBack = warpedFbm(pBack * 1.7 + vec2(2.8, 1.4) + vec2(t * 0.28, t * 0.07), t * 1.1);
-    float dustLane = ridgeFbm(p2 * 2.2 + vec2(5.5, 8.3) + t * 0.02);
+    float dustLane = ridgeFbm(p2 * 2.2 + vec2(5.5, 8.3) + warpOffset * 1.6 + t * 0.02); // warped domain — creases curve instead of running lattice-straight
     float absorption = smoothstep(0.55, 0.75, dustLane) * cloudMask * 0.35;
 
     // Layer 1: Deep background void — subtle color hint from nearest nebula
@@ -598,9 +679,9 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
                        smoothstep(0.35, 0.55, nBack));
     // Warm nebula back grades
     vec3 backW1 = vec3(0.054, 0.020, 0.007);
-    vec3 backW2 = vec3(0.108, 0.040, 0.014);
-    vec3 backW3 = vec3(0.189, 0.074, 0.020);
-    vec3 backW4 = vec3(0.27, 0.108, 0.034);
+    vec3 backW2 = vec3(0.135, 0.055, 0.020);
+    vec3 backW3 = vec3(0.235, 0.098, 0.028);
+    vec3 backW4 = vec3(0.34, 0.15, 0.050);
     vec3 backWarm = mix(mix(backW1, backW2, smoothstep(0.2, 0.4, nBack)),
                        mix(backW3, backW4, smoothstep(0.5, 0.7, nBack)),
                        smoothstep(0.35, 0.55, nBack));
@@ -618,8 +699,8 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 mag1 = vec3(0.04, 0.005, 0.03);
     vec3 mag2 = vec3(0.10, 0.015, 0.08);
     vec3 mag3 = vec3(0.20, 0.035, 0.16);
-    vec3 mag4 = vec3(0.32, 0.06, 0.26);
-    vec3 mag5 = vec3(0.50, 0.12, 0.40);
+    vec3 mag4 = vec3(0.37, 0.08, 0.30);
+    vec3 mag5 = vec3(0.57, 0.17, 0.47);
     vec3 midMagenta = mag1;
     midMagenta = mix(midMagenta, mag2, smoothstep(0.12, 0.26, n2));
     midMagenta = mix(midMagenta, mag3, smoothstep(0.26, 0.42, n2));
@@ -640,10 +721,10 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
 
     // Warm orange grades: near-black → deep brown → burnt orange → amber → bright gold
     vec3 wrm1 = vec3(0.04, 0.013, 0.004);
-    vec3 wrm2 = vec3(0.135, 0.047, 0.014);
-    vec3 wrm3 = vec3(0.30, 0.108, 0.027);
-    vec3 wrm4 = vec3(0.51, 0.20, 0.04);
-    vec3 wrm5 = vec3(0.62, 0.30, 0.08);
+    vec3 wrm2 = vec3(0.175, 0.068, 0.022);
+    vec3 wrm3 = vec3(0.38, 0.15, 0.04);
+    vec3 wrm4 = vec3(0.58, 0.25, 0.06);
+    vec3 wrm5 = vec3(0.78, 0.44, 0.14); // lighter amber top
     vec3 midWarm = wrm1;
     midWarm = mix(midWarm, wrm2, smoothstep(0.12, 0.26, n2));
     midWarm = mix(midWarm, wrm3, smoothstep(0.26, 0.42, n2));
@@ -666,7 +747,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 cp1 = vec3(0.12, 0.02, 0.16);
     vec3 cp2 = vec3(0.25, 0.04, 0.30);
     vec3 cp3 = vec3(0.42, 0.08, 0.38);
-    vec3 cp4 = vec3(0.65, 0.20, 0.55);
+    vec3 cp4 = vec3(0.74, 0.28, 0.62);
     vec3 corePurple = cp1;
     corePurple = mix(corePurple, cp2, smoothstep(0.25, 0.43, n3));
     corePurple = mix(corePurple, cp3, smoothstep(0.43, 0.60, n3));
@@ -683,10 +764,10 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     coreBlue = mix(coreBlue, cb4, smoothstep(0.60, 0.78, n3));
 
     // Orange core grades: dark red-brown → ember → fire → white-gold
-    vec3 co1 = vec3(0.19, 0.054, 0.014);
-    vec3 co2 = vec3(0.40, 0.135, 0.027);
-    vec3 co3 = vec3(0.67, 0.30, 0.054);
-    vec3 co4 = vec3(0.80, 0.44, 0.14);
+    vec3 co1 = vec3(0.235, 0.075, 0.022);
+    vec3 co2 = vec3(0.48, 0.18, 0.045);
+    vec3 co3 = vec3(0.74, 0.36, 0.08);
+    vec3 co4 = vec3(0.95, 0.62, 0.24); // light golden peak
     vec3 coreOrange = co1;
     coreOrange = mix(coreOrange, co2, smoothstep(0.25, 0.43, n3));
     coreOrange = mix(coreOrange, co3, smoothstep(0.43, 0.60, n3));
@@ -705,7 +786,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     vec3 rimPurple = mix(vec3(0.18, 0.04, 0.22), vec3(0.38, 0.10, 0.42), rimNoise);
     rimPurple *= 1.27; // boost purple/magenta depth
     vec3 rimBlue   = mix(vec3(0.06, 0.08, 0.25), vec3(0.15, 0.20, 0.45), rimNoise);
-    vec3 rimWarm   = mix(vec3(0.34, 0.108, 0.027), vec3(0.65, 0.216, 0.054), rimNoise);
+    vec3 rimWarm   = mix(vec3(0.34, 0.108, 0.027), vec3(0.74, 0.30, 0.09), rimNoise);
     vec3 rimColor = mix(rimPurple, rimWarm, colorBlend);
     rimColor = mix(rimColor, rimBlue, blueDepth);
     rimColor *= u_colorDepth;
@@ -753,7 +834,7 @@ function makeNebulaFrag(fbmOctaves = 5, ridgeOctaves = 5, precision = 'highp', g
     // ── Depth enhancement: dark voids, highlights, contrast ──
 
     // Dark absorption lanes — wispy dark dust cutting through gas
-    float dustDetail = ridgeFbm(p2 * 4.5 + vec2(11.3, 4.7) + t * 0.015);
+    float dustDetail = ridgeFbm(p2 * 4.5 + vec2(11.3, 4.7) + warpOffset * 1.8 + t * 0.015); // warped domain
     float voidMask = smoothstep(0.62, 0.80, dustDetail) * cloudMask;
     color *= (1.0 - voidMask * 0.25); // darken in dust lanes
 
@@ -1234,14 +1315,21 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     const dispW = Math.max(256, Math.ceil(canvas.width  / 4));
     const dispH = Math.max(256, Math.ceil(canvas.height / 4));
 
-    function createFBO(w, h) {
+    function createFBO(w, h, fill = true) {
       const tex = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, tex);
-      const data = new Uint8Array(w * h * 4);
-      data.fill(128); // 128/255 = 0.502 -> decodes to ~0.0 displacement
+      let data = null;
+      if (fill) {
+        // 16-bit packed zero displacement: e=0.5 → hi=127, lo=128 per component (RG=x, BA=y)
+        data = new Uint8Array(w * h * 4);
+        for (let i = 0; i < data.length; i += 2) { data[i] = 127; data[i + 1] = 128; }
+      }
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      // NEAREST is required: the disp channels are 2×8-bit fixed-point pairs — hardware
+      // bilinear filtering would blend hi/lo bytes independently and corrupt the values.
+      // Smooth interpolation happens after unpacking (sampleDisp in the nebula pass).
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -1272,6 +1360,7 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       aspect:     gl.getUniformLocation(dispProg, 'u_aspect'),
       decay:      gl.getUniformLocation(dispProg, 'u_decay'),
       diffuse:    gl.getUniformLocation(dispProg, 'u_diffuse'),
+      drain:      gl.getUniformLocation(dispProg, 'u_drain'),
     };
     const dPosLoc = gl.getAttribLocation(dispProg, 'a_position');
 
@@ -1281,12 +1370,53 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       time:       gl.getUniformLocation(nebulaProg, 'u_time'),
       resolution: gl.getUniformLocation(nebulaProg, 'u_resolution'),
       disp:       gl.getUniformLocation(nebulaProg, 'u_disp'),
+      dispRes:    gl.getUniformLocation(nebulaProg, 'u_dispRes'),
       offset:     gl.getUniformLocation(nebulaProg, 'u_offset'),
       brightness:  gl.getUniformLocation(nebulaProg, 'u_brightness'),
       saturation:  gl.getUniformLocation(nebulaProg, 'u_saturation'),
       colorDepth:  gl.getUniformLocation(nebulaProg, 'u_colorDepth'),
     };
     const nPosLoc = gl.getAttribLocation(nebulaProg, 'a_position');
+
+    // ── Seam crossfade resources ──────────────────────────────────────────
+    const blendProg = linkProg(VERT, BLEND_FRAG);
+    const bU = blendProg ? {
+      texA:       gl.getUniformLocation(blendProg, 'u_texA'),
+      texB:       gl.getUniformLocation(blendProg, 'u_texB'),
+      fade:       gl.getUniformLocation(blendProg, 'u_fade'),
+      resolution: gl.getUniformLocation(blendProg, 'u_resolution'),
+    } : null;
+    const bPosLoc = blendProg ? gl.getAttribLocation(blendProg, 'a_position') : -1;
+
+    // Full-res scene targets — created lazily on the first seam (most sessions never reach 30
+    // min), recreated if the canvas size changed since.
+    let sceneA = null, sceneB = null;
+    function ensureSceneFBOs() {
+      if (sceneA && sceneA.w === canvas.width && sceneA.h === canvas.height) return;
+      if (sceneA) { gl.deleteTexture(sceneA.tex); gl.deleteFramebuffer(sceneA.fb); }
+      if (sceneB) { gl.deleteTexture(sceneB.tex); gl.deleteFramebuffer(sceneB.fb); }
+      sceneA = createFBO(canvas.width, canvas.height, false); sceneA.w = canvas.width; sceneA.h = canvas.height;
+      sceneB = createFBO(canvas.width, canvas.height, false); sceneB.w = canvas.width; sceneB.h = canvas.height;
+    }
+
+    // Draw the nebula at a given time into whatever framebuffer/viewport is currently bound.
+    function drawNebula(timeValue) {
+      gl.useProgram(nebulaProg);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, readFBO.tex);
+      gl.uniform1i(nU.disp, 0);
+      gl.uniform2f(nU.dispRes, dispW, dispH);
+      gl.uniform1f(nU.time, timeValue);
+      gl.uniform2f(nU.resolution, canvas.width, canvas.height);
+      gl.uniform2f(nU.offset, mapPosRef.current.x, mapPosRef.current.y);
+      gl.uniform1f(nU.brightness, 1.04);
+      gl.uniform1f(nU.saturation, 1.6);
+      gl.uniform1f(nU.colorDepth, 1.8);
+      gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+      gl.enableVertexAttribArray(nPosLoc);
+      gl.vertexAttribPointer(nPosLoc, 2, gl.FLOAT, false, 0, 0);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
 
     // Resize handler — uses wrapper dimensions to match real visible viewport
     function resize() {
@@ -1330,8 +1460,17 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       lastRealTimeRef.current = now;
       // Slow nebula time by 30% once the explosion has passed frame 10
       const timeScale = currentFrameRef.current > 10 ? 0.7 : 1.0;
-      shaderTimeRef.current = (shaderTimeRef.current + delta * timeScale) % 600;
+      // Wrap shader time on a 30-min period (float-precision guard). The noise isn't periodic,
+      // so noise(t=PERIOD) ≠ noise(t=0) → a hard seam at the wrap. We hide it with a CROSSFADE_SEC
+      // dissolve into the next cycle, rendered as a separate two-pass blend (see Pass 2) so the
+      // nebula shader is compiled only once (no load-time penalty).
+      const TIME_PERIOD = 1800;   // 30 min
+      const CROSSFADE_SEC = 10;
+      shaderTimeRef.current = (shaderTimeRef.current + delta * timeScale) % TIME_PERIOD;
       const wrappedTime = shaderTimeRef.current;
+      const seamFade = wrappedTime > (TIME_PERIOD - CROSSFADE_SEC)
+        ? (wrappedTime - (TIME_PERIOD - CROSSFADE_SEC)) / CROSSFADE_SEC : 0;
+      const wrappedTime2 = wrappedTime - TIME_PERIOD; // "next cycle" time (lands at ~0 as fade→1)
 
       // ═══ Pass 1: Update displacement field ═══
       const mx = mouseRef.current.x;
@@ -1359,6 +1498,10 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       const frames30 = Math.min(Math.max(delta, 0) * 30.0, 4.0); // clamp spikes after tab-away
       gl.uniform1f(dU.decay, Math.pow(0.9997, frames30));
       gl.uniform1f(dU.diffuse, Math.min(0.025 * frames30, 0.4));
+      // Drains the sub-quantum tail the multiplicative decay can't clear (~28s for
+      // the last 5% of a full-strength stroke). 4× the 16-bit storage quantum, so
+      // quantization can never stall it.
+      gl.uniform1f(dU.drain, 0.00006 * frames30);
 
       gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
       gl.enableVertexAttribArray(dPosLoc);
@@ -1374,30 +1517,40 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       mousePrevRef.current.x = mx;
       mousePrevRef.current.y = my;
 
-      // ═══ Pass 2: Render nebula to screen ═══
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.useProgram(nebulaProg);
-
       // Smoothly lerp map offset to prevent glitchy noise jumps during fast panning
       const lerpFactor = 0.04;
       mapPosRef.current.x += (mapPositionRef.current.x - mapPosRef.current.x) * lerpFactor;
       mapPosRef.current.y += (mapPositionRef.current.y - mapPosRef.current.y) * lerpFactor;
 
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, readFBO.tex);
-      gl.uniform1i(nU.disp, 0);
-      gl.uniform1f(nU.time, wrappedTime);
-      gl.uniform2f(nU.resolution, canvas.width, canvas.height);
-      gl.uniform2f(nU.offset, mapPosRef.current.x, mapPosRef.current.y);
-      gl.uniform1f(nU.brightness, 1.04);
-      gl.uniform1f(nU.saturation, 1.6);
-      gl.uniform1f(nU.colorDepth, 1.8);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
-      gl.enableVertexAttribArray(nPosLoc);
-      gl.vertexAttribPointer(nPosLoc, 2, gl.FLOAT, false, 0, 0);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      // ═══ Pass 2: Render nebula to screen ═══
+      if (seamFade <= 0 || !blendProg) {
+        // Normal path: one nebula pass straight to the screen (unchanged cost).
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        drawNebula(wrappedTime);
+      } else {
+        // Seam dissolve: render the field at the current and next-cycle time to two textures,
+        // then blend to screen. ~2× nebula cost, but only for the ~10s window each 30 min.
+        ensureSceneFBOs();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, sceneA.fb);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        drawNebula(wrappedTime);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, sceneB.fb);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        drawNebula(wrappedTime2);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.useProgram(blendProg);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, sceneA.tex); gl.uniform1i(bU.texA, 0);
+        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, sceneB.tex); gl.uniform1i(bU.texB, 1);
+        gl.uniform1f(bU.fade, seamFade);
+        gl.uniform2f(bU.resolution, canvas.width, canvas.height);
+        gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+        gl.enableVertexAttribArray(bPosLoc);
+        gl.vertexAttribPointer(bPosLoc, 2, gl.FLOAT, false, 0, 0);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.activeTexture(gl.TEXTURE0); // restore default unit for next frame's displacement pass
+      }
 
       // Signal ready after first frame is fully rendered
       if (!readyFiredRef.current) {
@@ -1433,6 +1586,9 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       gl.deleteBuffer(quadBuf);
       if (fboA) { gl.deleteTexture(fboA.tex);  gl.deleteFramebuffer(fboA.fb); }
       if (fboB) { gl.deleteTexture(fboB.tex);  gl.deleteFramebuffer(fboB.fb); }
+      if (sceneA) { gl.deleteTexture(sceneA.tex); gl.deleteFramebuffer(sceneA.fb); }
+      if (sceneB) { gl.deleteTexture(sceneB.tex); gl.deleteFramebuffer(sceneB.fb); }
+      if (blendProg) { blendProg._shaders.forEach(s => gl.deleteShader(s)); gl.deleteProgram(blendProg); }
       // Force-release the WebGL context so it doesn't linger during hot-reload
       const loseCtx = gl.getExtension('WEBGL_lose_context');
       if (loseCtx) loseCtx.loseContext();

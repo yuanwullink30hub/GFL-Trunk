@@ -5,10 +5,15 @@
  * Each quote is the "Levensles" for that extended archetype.
  *
  * Used on the result card and PDF cover in place of the generic
- * base-archetype description.
+ * base-archetype description, and on the login/boot loading screen.
+ *
+ * Two language tables. Dutch is complete; English is filled in over time —
+ * getArchetypeQuote()/getArchetypeQuoteByKey() fall back to the Dutch text for
+ * any key not yet translated, so English users see the Dutch lesson until its
+ * translation lands (then it swaps automatically).
  */
 
-const ARCHETYPE_QUOTES = {
+const ARCHETYPE_QUOTES_NL = {
   // ═══ JUDGE ═══════════════════════════════════════════════
   JUDGE_RULING: 'Het systeem dat ik bouw om alles rechtvaardig te maken, moet ook ruimte hebben voor wat het niet kan bevatten — de boog kan niet altijd gespannen zijn. Het sterkste fundament is niet het perfecte. Het is het fundament dat kan ademen.',
   JUDGE_RELATIONAL: 'De waarheid die ik verzacht om de vrede te bewaren is dezelfde waarheid die de relatie langzaam uitholt. De moedigste vorm van liefde is eerlijkheid die pijn doet — uitgesproken door iemand die blijft.',
@@ -107,15 +112,49 @@ const ARCHETYPE_QUOTES = {
 };
 
 /**
+ * English translations of the 72 Levensles quotes. Fill in per key (same
+ * MAINARCHETYPE_SUPPORTGROUP keys as ARCHETYPE_QUOTES_NL). Any key left out (or
+ * empty) automatically falls back to the Dutch text via the getters below.
+ *
+ * Example:
+ *   JUDGE_RULING: 'The system I build to make everything just must also leave room…',
+ */
+const ARCHETYPE_QUOTES_EN = {
+  // TODO: English translations — mirror the keys of ARCHETYPE_QUOTES_NL above.
+};
+
+// Back-compat alias (Dutch table was the original default export).
+const ARCHETYPE_QUOTES = ARCHETYPE_QUOTES_NL;
+
+// Pick the table for a language, defaulting to Dutch.
+function quotesFor(lang) {
+  return (lang === 'en' || lang === 'EN') ? ARCHETYPE_QUOTES_EN : ARCHETYPE_QUOTES_NL;
+}
+
+/**
+ * Levensles quote by the combined MAINARCHETYPE_SUPPORTGROUP key.
+ * Falls back to Dutch when the requested language has no translation for that key.
+ * @param {string} key  — e.g. "CAREGIVER_RELATIONAL"
+ * @param {string} [lang='nl'] — 'nl' | 'en'
+ * @returns {string|null}
+ */
+export function getArchetypeQuoteByKey(key, lang = 'nl') {
+  if (!key) return null;
+  const k = String(key).toUpperCase();
+  return quotesFor(lang)[k] || ARCHETYPE_QUOTES_NL[k] || null;
+}
+
+/**
  * Get the levensles quote for a given main archetype + support group combo.
  * @param {string} mainKey — e.g. "CAREGIVER"
  * @param {string} supportGroup — e.g. "Relational" or "RELATIONAL"
+ * @param {string} [lang='nl'] — 'nl' | 'en'
  * @returns {string|null}
  */
-export function getArchetypeQuote(mainKey, supportGroup) {
+export function getArchetypeQuote(mainKey, supportGroup, lang = 'nl') {
   if (!mainKey || !supportGroup) return null;
-  const key = `${mainKey.toUpperCase()}_${supportGroup.toUpperCase()}`;
-  return ARCHETYPE_QUOTES[key] || null;
+  return getArchetypeQuoteByKey(`${mainKey.toUpperCase()}_${supportGroup.toUpperCase()}`, lang);
 }
 
+export { ARCHETYPE_QUOTES_NL, ARCHETYPE_QUOTES_EN };
 export default ARCHETYPE_QUOTES;

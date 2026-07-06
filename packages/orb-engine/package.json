@@ -1,0 +1,7 @@
+{
+  "name": "@gfl/orb-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Deltawerken Liquid Crystal orb engine — geometry → OrbConfiguration → LC_ORB2_ code. Shared by the platform (render/fallback) and the backend (authoritative code-gen). CommonJS so the Node backend can require() it.",
+  "main": "./index.js"
+}

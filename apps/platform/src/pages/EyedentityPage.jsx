@@ -3,7 +3,9 @@ import { useLanguage } from '@gfl/i18n';
 import { ARCHETYPES, getArchetypeQuote } from '@gfl/assessment-core';
 import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
 import { POLICY_CONTENT } from '../data/policyContent';
-import { submitAssessmentReview } from '@gfl/api-client';
+import { submitAssessmentReview, getToken, updateDisplayName, deleteOwnAccount } from '@gfl/api-client';
+import { getClientOrbConfig, getClientOrbCode, getClientProfile } from '../clientMode';
+import { OrbSphere3D } from '../orb';
 import { SciFiButton } from '@gfl/ui';
 import { cleanTitle, getSectionAccent, renderMarkdownContent } from '@gfl/utils';
 import SciFiRadarChart from '../components/assessment/SciFiRadarChart';
@@ -250,6 +252,40 @@ const ProfileResultCard = ({ result: resultProp }) => {
   const levenslesQuote = resultProp?.levensles || getArchetypeQuote(mainKey, supportGroup);
   const imageUrl       = resultProp?.imageUrl  || getArchetypeImage(mainKey, supportGroup) || main.imageUrl;
 
+  // ── Client-profile front + owner-only manage ──
+  // Front (public, visitable by anyone): the user's real orb + archetype name.
+  // Manage: an owner-only button (shown only when you're logged in = your own profile).
+  const orbConfig = getClientOrbConfig();                 // decoded from the user's orb code, or null
+  const storedProfile = getClientProfile();
+  const displayArchetype = storedProfile?.archetypeName || extendedName;
+  const isOwner = !!getToken();
+  const orbCode = getClientOrbCode();
+
+  const [manageOpen, setManageOpen] = useState(false);
+  const [nameInput, setNameInput] = useState(storedProfile?.displayName || '');
+  const [nameBusy, setNameBusy] = useState(false);
+  const [nameMsg, setNameMsg] = useState('');
+  const [delInput, setDelInput] = useState('');
+  const [delErr, setDelErr] = useState('');
+  const [delBusy, setDelBusy] = useState(false);
+
+  const handleSaveName = useCallback(async () => {
+    const v = nameInput.trim();
+    if (!v) return;
+    setNameBusy(true); setNameMsg('');
+    try { const { displayName } = await updateDisplayName(v); setNameInput(displayName); setNameMsg('Opgeslagen ✓'); }
+    catch (e) { setNameMsg(e.message || 'Bijwerken mislukt'); }
+    finally { setNameBusy(false); }
+  }, [nameInput]);
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (delInput !== 'VERWIJDER') { setDelErr('Typ precies "VERWIJDER" om te bevestigen'); return; }
+    setDelBusy(true); setDelErr('');
+    try { await deleteOwnAccount(); window.location.reload(); }
+    catch (e) { setDelErr(e.message || 'Verwijderen mislukt'); setDelBusy(false); }
+  }, [delInput]);
+  const copyCode = useCallback(() => { if (orbCode) navigator.clipboard?.writeText(orbCode); }, [orbCode]);
+
   // Data for visualizations — fall back to hardcoded session data when localStorage lacks these fields
   const FALLBACK_RADAR = [
     { subject: 'Ruler',     green: 45, lime: 62, orange: 74, blue: 85, gold: 90, purple: 96, nature_core: 45, green_hw: 17, culture_core: 12, blue_fb: 11, yellow_cog: 5,  purple_shadow: 6, A: 96, fullMark: 500 },
@@ -409,17 +445,24 @@ const ProfileResultCard = ({ result: resultProp }) => {
 
       {/* ── 1. Header & Profile ── */}
       <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '2rem', paddingBottom: '1.5rem', borderBottom: `1px solid rgba(29, 153, 4, 0.2)` }}>
-        <div style={{ position: 'relative', width: '9rem', height: '9rem', flexShrink: 0 }}>
-          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px dashed rgba(29, 153, 4, 0.4)', animation: 'spin 20s linear infinite' }} />
-          <div style={{ position: 'absolute', inset: '-0.75rem', borderRadius: '50%', border: '1px dotted rgba(168, 85, 247, 0.4)', animation: 'spin 15s linear infinite reverse' }} />
-          <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${green}`, background: '#000', position: 'relative' }}>
-            {imageUrl && <img src={imageUrl} alt={extendedName} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.25) sepia(0.2)', transform: 'scale(1.05)' }} />}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
-          </div>
+        {/* Portrait container widened x2.1 (9rem -> 18.9rem) to hold the user's real orb */}
+        <div style={{ position: 'relative', width: '18.9rem', height: '18.9rem', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {orbConfig ? (
+            <OrbSphere3D config={orbConfig} active size={300} style={{ filter: 'drop-shadow(0 0 40px rgba(120,80,200,0.25))' }} />
+          ) : (
+            <>
+              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px dashed rgba(29, 153, 4, 0.4)', animation: 'spin 20s linear infinite' }} />
+              <div style={{ position: 'absolute', inset: '-0.75rem', borderRadius: '50%', border: '1px dotted rgba(168, 85, 247, 0.4)', animation: 'spin 15s linear infinite reverse' }} />
+              <div style={{ width: '9rem', height: '9rem', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${green}`, background: '#000', position: 'relative' }}>
+                {imageUrl && <img src={imageUrl} alt={displayArchetype} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.25) sepia(0.2)', transform: 'scale(1.05)' }} />}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
+              </div>
+            </>
+          )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ fontSize: 'clamp(1.2rem, 2vw, 2rem)', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold', background: 'linear-gradient(to right, #a855f7, #d8b4fe, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))', marginBottom: '0.5rem' }}>
-            {extendedName}
+            {displayArchetype}
           </h1>
           <p style={{ fontSize: '0.85rem', color: 'rgba(249, 115, 22, 0.9)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
             {main.name} {harmonyActive ? '\u27F7' : '+'} {support.name}
@@ -429,8 +472,59 @@ const ProfileResultCard = ({ result: resultProp }) => {
               "{levenslesQuote}"
             </p>
           )}
+          {/* Manage — only on your OWN profile (logged in). Hidden for other viewers. */}
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => setManageOpen((o) => !o)}
+              style={{ marginTop: '0.35rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.5)', borderRadius: '0.4rem', color: '#c4b5fd', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.72rem', padding: '0.4rem 0.85rem', cursor: 'pointer', transition: 'all 0.2s ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(168,85,247,0.22)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(168,85,247,0.12)'; }}
+            >
+              {manageOpen ? 'Sluiten' : 'Beheer'}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* ── Manage panel — owner-only (naam / profielcode / account verwijderen). ── */}
+      {isOwner && manageOpen && (
+        <div style={{ border: '1px solid rgba(168,85,247,0.35)', borderRadius: '0.6rem', background: 'rgba(20,10,30,0.5)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+          {/* Zichtbare naam */}
+          <div>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)', marginBottom: '0.4rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700 }}>Zichtbare naam</div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input value={nameInput} onChange={(e) => { setNameInput(e.target.value); setNameMsg(''); }} maxLength={40}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); }}
+                style={{ flex: 1, minWidth: '10rem', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(168,85,247,0.35)', color: '#fff', fontFamily: "'Figtree', sans-serif", fontSize: '0.9rem', padding: '0.45rem 0.7rem', borderRadius: '0.35rem', outline: 'none' }} />
+              <SciFiButton onClick={handleSaveName} disabled={nameBusy || !nameInput.trim()} variant="purple" size="sm">{nameBusy ? '...' : 'Opslaan'}</SciFiButton>
+            </div>
+            {nameMsg && <div style={{ fontSize: '0.75rem', color: nameMsg.includes('✓') ? '#4ade80' : '#f87171', marginTop: '0.35rem' }}>{nameMsg}</div>}
+          </div>
+
+          {/* Profielcode */}
+          {orbCode && (
+            <div>
+              <div style={{ fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)', marginBottom: '0.4rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700 }}>Profielcode</div>
+              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.72rem', color: '#c4b5fd', background: '#050505', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '0.35rem', padding: '0.55rem', wordBreak: 'break-all', lineHeight: 1.5 }}>{orbCode}</div>
+              <div style={{ marginTop: '0.5rem' }}><SciFiButton onClick={copyCode} variant="purple" size="sm">Kopieer code</SciFiButton></div>
+            </div>
+          )}
+
+          {/* Account verwijderen */}
+          <div style={{ borderTop: '1px solid rgba(239,68,68,0.25)', paddingTop: '0.9rem' }}>
+            <div style={{ color: '#fca5a5', fontSize: '0.78rem', lineHeight: 1.5, marginBottom: '0.55rem' }}>
+              Dit verwijdert je account en alle assessments permanent (AVG/GDPR). Typ <b>VERWIJDER</b> om te bevestigen:
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input value={delInput} onChange={(e) => setDelInput(e.target.value)} placeholder="VERWIJDER"
+                style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(239,68,68,0.4)', color: '#fca5a5', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', padding: '0.4rem 0.7rem', borderRadius: '0.35rem', outline: 'none', width: '10rem' }} />
+              <SciFiButton onClick={handleDeleteAccount} disabled={delBusy} variant="danger" size="sm">{delBusy ? 'Bezig...' : 'Verwijderen'}</SciFiButton>
+              {delErr && <span style={{ color: '#f87171', fontSize: '0.75rem' }}>{delErr}</span>}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── 2. Meta-Disclaimer ── */}
       <div style={{
@@ -797,6 +891,15 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const contentRef = useRef(null);
 
+  // Preload the profile portrait on mount (not gated by isVisible/selectedId). The card lives
+  // inside a content-visibility:auto section, so its <img> would otherwise only start fetching
+  // once the user navigates in — arriving late. Fetching it here caches it ahead of time.
+  useEffect(() => {
+    const url = getArchetypeImage(MAVERICK_DEFAULT.mainArchetype, MAVERICK_DEFAULT.supportGroup)
+      || (ARCHETYPES[MAVERICK_DEFAULT.mainArchetype] || {}).imageUrl;
+    if (url) { const img = new Image(); img.src = url; }
+  }, []);
+
   useEffect(() => {
     if (contentRef.current) contentRef.current.scrollTop = 0;
   }, [selectedId]);
@@ -922,11 +1025,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
               EYEDENTITY
             </h1>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <SciFiButton onClick={onBack} variant="purple" size="md">
-              ← TERUG
-            </SciFiButton>
-          </div>
+          {/* (← TERUG removed — the global nav "← Terug" handles going back.) */}
         </div>
 
         {/* â”€â”€ Main: Sidebar + Content â”€â”€ */}

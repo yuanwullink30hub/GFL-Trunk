@@ -476,48 +476,24 @@ const ExplodingChunks = ({ explosionProgressRef, earthMap, isLowGpu = false }) =
   );
 };
 
-const HoloEarthSphere = ({ 
-  exploding, 
-  explosionProgress = 0, 
-  explosionProgressRef,
-  isActive = false, 
-  pyramidScrollProgress = 0,
-  showPyramidLabels = false,
-  coreScaleMultiplier = 1, // Scale for inner core during convergence
-  foldProgress = 0, // 0-1 for pyramid fold-up animation
-  onIntroComplete = () => {},
-  onLayerStateChange = () => {},
-  isMobile = false,
-  isLowGpu = false,
-  onSphereHoverChange = () => {}, // Callback when hovering over sphere
-  hidePyramid = false,
-}) => {
-  const groupRef = useRef(null);
-  const coreRef = useRef(null);
-  const { viewport } = useThree();
-  const isDragging = useRef(false);
-  const previousMouse = useRef({ x: 0, y: 0 });
-  const rotationVelocity = useRef({ x: 0, y: 0 });
-  const motionPredictor = useRef(new MotionPredictor());
-  
-  // Track orbital rotation to pass to PyramidInner when in orbital mode (button invisible)
-  const orbitalRotationY = useRef(0);
-  
+/* ── EarthLayers — every EARTH visual (solid sphere, exploding chunks, inner glow) and its
+   texture/material live HERE, so an instance pinned past the explosion (skipEarth) never
+   loads the remote earth texture, never builds the chunk meshes, and never compiles the
+   sphere shader: pure dead weight at explosionProgress=1, where all of it sits at 0 opacity.
+   Hooks (useLoader/useMemo/useFrame) stay unconditional WITHIN this subcomponent — the
+   parent conditionally renders the component itself. ── */
+const EarthLayers = ({ explosionProgress = 0, explosionProgressRef, isLowGpu = false }) => {
   const earthMap = useLoader(
-    THREE.TextureLoader, 
+    THREE.TextureLoader,
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg'
   );
-
-  // Scale: base scale with mobile multiplier for larger earth on mobile
-  const baseScale = Math.min(1, viewport.width / 5.5) * 0.65;
-  const scale = isMobile ? baseScale * 1.15 : baseScale;
 
   // Solid sphere material - used for complete earth (frames 0-3)
   const solidSphereMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColorCore: { value: new THREE.Color('#0d0618') },   
+        uColorCore: { value: new THREE.Color('#0d0618') },
         uColorLand: { value: new THREE.Color('#6b1d8f') },
         uColorRim: { value: new THREE.Color('#1a0320') },
         uColorBorder: { value: new THREE.Color('#FFD700') },
@@ -584,6 +560,120 @@ const HoloEarthSphere = ({
     }
   }, [earthMap, solidSphereMaterial]);
 
+  // Scanline time uniform (was part of the parent's useFrame)
+  useFrame((state) => {
+    if (solidSphereMaterial) {
+      solidSphereMaterial.uniforms.uTime.value = state.clock.getElapsedTime();
+    }
+  });
+
+  return (
+    <>
+      {/* Solid Complete Earth - visible only before explosion starts */}
+      {explosionProgress === 0 && (
+        <Sphere args={[2.5, isLowGpu ? 32 : 64, isLowGpu ? 32 : 64]}>
+          <primitive
+            object={solidSphereMaterial}
+            attach="material"
+            transparent={true}
+          />
+        </Sphere>
+      )}
+
+      {/* Exploding Chunks - mounted while explosion active, visibility managed in useFrame */}
+      {explosionProgress > 0 && (
+        <ExplodingChunks
+          explosionProgressRef={explosionProgressRef}
+          earthMap={earthMap}
+          isLowGpu={isLowGpu}
+        />
+      )}
+
+      {/* Inner Glow - dropshadow/glow inside earth to integrate chunks with particle sphere */}
+      {/* NOTE: explosionProgress is EASED. Frame 9 (0.078) to Frame 18 (0.44) */}
+      {/* Fades out from frame 16 (0.33) to frame 18 (0.44), then unmounts */}
+      {explosionProgress > 0.078 && explosionProgress < 0.44 && (
+        <Sphere args={[2.35, 32, 32]}>
+          <shaderMaterial
+            transparent={true}
+            side={THREE.BackSide}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            uniforms={{
+              uColor: { value: new THREE.Color('#1a0825') },
+              uGlowColor: { value: new THREE.Color('#6b1d8f') },
+              uIntensity: { value: Math.min(1, (explosionProgress - 0.078) / 0.15) * 0.6 * (explosionProgress > 0.33 ? Math.max(0, 1 - (explosionProgress - 0.33) / (0.44 - 0.33)) : 1) }
+            }}
+            vertexShader={`
+              varying vec3 vNormal;
+              varying vec3 vPosition;
+              void main() {
+                vNormal = normalize(normalMatrix * normal);
+                vPosition = position;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              }
+            `}
+            fragmentShader={`
+              uniform vec3 uColor;
+              uniform vec3 uGlowColor;
+              uniform float uIntensity;
+              varying vec3 vNormal;
+              varying vec3 vPosition;
+              void main() {
+                // Soft inner glow that's stronger at edges
+                float edgeFade = 1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0)));
+                float glow = pow(edgeFade, 1.5) * uIntensity;
+
+                // Mix base color with glow color
+                vec3 color = mix(uColor, uGlowColor, edgeFade * 0.5);
+
+                // Soft falloff for nice integration
+                float alpha = glow * 0.8;
+                gl_FragColor = vec4(color, alpha);
+              }
+            `}
+          />
+        </Sphere>
+      )}
+    </>
+  );
+};
+
+const HoloEarthSphere = ({
+  exploding,
+  explosionProgress = 0,
+  explosionProgressRef,
+  isActive = false,
+  pyramidScrollProgress = 0,
+  showPyramidLabels = false,
+  coreScaleMultiplier = 1, // Scale for inner core during convergence
+  foldProgress = 0, // 0-1 for pyramid fold-up animation
+  onIntroComplete = () => {},
+  onLayerStateChange = () => {},
+  isMobile = false,
+  isLowGpu = false,
+  onSphereHoverChange = () => {}, // Callback when hovering over sphere
+  hidePyramid = false,
+  fastIntro = false,
+  skipEarth = false, // instances pinned PAST the explosion: no texture, no chunks, no sphere
+}) => {
+  const groupRef = useRef(null);
+  const coreRef = useRef(null);
+  const { viewport } = useThree();
+  const isDragging = useRef(false);
+  const previousMouse = useRef({ x: 0, y: 0 });
+  const rotationVelocity = useRef({ x: 0, y: 0 });
+  const motionPredictor = useRef(new MotionPredictor());
+  
+  // Track orbital rotation to pass to PyramidInner when in orbital mode (button invisible)
+  const orbitalRotationY = useRef(0);
+  
+  // Scale: base scale with mobile multiplier for larger earth on mobile
+  const baseScale = Math.min(1, viewport.width / 5.5) * 0.65;
+  const scale = isMobile ? baseScale * 1.15 : baseScale;
+
+  // Earth texture + sphere/chunk materials live in <EarthLayers> (skipped when skipEarth).
+
 
 
   useEffect(() => {
@@ -637,12 +727,7 @@ const HoloEarthSphere = ({
 
   useFrame((state, delta) => {
     const time = state.clock.getElapsedTime();
-    
-    // Update solid sphere time uniform
-    if (solidSphereMaterial) {
-      solidSphereMaterial.uniforms.uTime.value = time;
-    }
-    
+
     const momentumMagnitude = Math.abs(rotationVelocity.current.x) + Math.abs(rotationVelocity.current.y);
     
     if (coreRef.current) {
@@ -736,7 +821,7 @@ const HoloEarthSphere = ({
           onIntroComplete={onIntroComplete}
           onLayerStateChange={onLayerStateChange}
           hidePyramid={hidePyramid}
-          fastIntro={isLowGpu}
+          fastIntro={isLowGpu || fastIntro}
         />
       </group>
 
@@ -749,77 +834,21 @@ const HoloEarthSphere = ({
         onPointerEnter={handlePointerEnter}
         onPointerMove={handlePointerMove}
       >
-        {/* Solid Complete Earth - visible only before explosion starts */}
-        {explosionProgress === 0 && (
-          <Sphere args={[2.5, isLowGpu ? 32 : 64, isLowGpu ? 32 : 64]}>
-            <primitive 
-              object={solidSphereMaterial} 
-              attach="material" 
-              transparent={true}
-            />
-          </Sphere>
-        )}
-        
-        {/* Exploding Chunks - mounted while explosion active, visibility managed in useFrame */}
-        {explosionProgress > 0 && (
-          <ExplodingChunks 
+        {/* Earth visuals (solid sphere / chunks / glow) — skipped entirely for instances
+            pinned past the explosion: at explosionProgress=1 everything here sits at
+            0 opacity, so skipEarth trades nothing visible for a much lighter mount. */}
+        {!skipEarth && (
+          <EarthLayers
+            explosionProgress={explosionProgress}
             explosionProgressRef={explosionProgressRef}
-            earthMap={earthMap}
             isLowGpu={isLowGpu}
           />
-        )}
-        
-        {/* Inner Glow - dropshadow/glow inside earth to integrate chunks with particle sphere */}
-        {/* NOTE: explosionProgress is EASED. Frame 9 (0.078) to Frame 18 (0.44) */}
-        {/* Fades out from frame 16 (0.33) to frame 18 (0.44), then unmounts */}
-        {explosionProgress > 0.078 && explosionProgress < 0.44 && (
-          <Sphere args={[2.35, 32, 32]}>
-            <shaderMaterial
-              transparent={true}
-              side={THREE.BackSide}
-              blending={THREE.AdditiveBlending}
-              depthWrite={false}
-              uniforms={{
-                uColor: { value: new THREE.Color('#1a0825') },
-                uGlowColor: { value: new THREE.Color('#6b1d8f') },
-                uIntensity: { value: Math.min(1, (explosionProgress - 0.078) / 0.15) * 0.6 * (explosionProgress > 0.33 ? Math.max(0, 1 - (explosionProgress - 0.33) / (0.44 - 0.33)) : 1) }
-              }}
-              vertexShader={`
-                varying vec3 vNormal;
-                varying vec3 vPosition;
-                void main() {
-                  vNormal = normalize(normalMatrix * normal);
-                  vPosition = position;
-                  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-              `}
-              fragmentShader={`
-                uniform vec3 uColor;
-                uniform vec3 uGlowColor;
-                uniform float uIntensity;
-                varying vec3 vNormal;
-                varying vec3 vPosition;
-                void main() {
-                  // Soft inner glow that's stronger at edges
-                  float edgeFade = 1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0)));
-                  float glow = pow(edgeFade, 1.5) * uIntensity;
-                  
-                  // Mix base color with glow color
-                  vec3 color = mix(uColor, uGlowColor, edgeFade * 0.5);
-                  
-                  // Soft falloff for nice integration
-                  float alpha = glow * 0.8;
-                  gl_FragColor = vec4(color, alpha);
-                }
-              `}
-            />
-          </Sphere>
         )}
       </group>
 
       {/* Earth Particle Waves - reduced vertex count on laptop, full on desktop */}
-      {explosionProgress > 0 && (
-        <EarthParticleWaves 
+      {!skipEarth && explosionProgress > 0 && (
+        <EarthParticleWaves
           explosionProgressRef={explosionProgressRef}
           sphereRadius={2.5}
         />
@@ -863,6 +892,8 @@ const HoloEarth = ({
   onLayerStateChange = () => {},
   hidePyramid = false,
   isVisible = true, // false when user navigated to a section page — pauses R3F rendering
+  fastIntro = false, // client-mode kook-eiland handoff: entity appears fast (no long emergence)
+  skipEarth = false, // instances pinned past the explosion: skip earth texture/sphere/chunks entirely
 }) => {
   const glRef = useRef(null);
   const isLowGpu = !isMobile && typeof window !== 'undefined' && isIntegratedGPU();
@@ -991,6 +1022,8 @@ const HoloEarth = ({
                 onSphereHoverChange={() => {}}
                 isMobile={isMobile}
                 hidePyramid={hidePyramid}
+                fastIntro={fastIntro}
+                skipEarth={skipEarth}
               />
             </group>
           </Suspense>

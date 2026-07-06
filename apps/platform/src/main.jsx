@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
 import { LanguageProvider } from '@gfl/i18n';
 import './index.css';
 
@@ -28,8 +27,29 @@ if (!rootElement) {
 const isPdfPreview = import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has('pdfpreview');
 
+// Password- or email-change confirmation landing (?pwverify / ?emailverify token from the email
+// link). Mounts a tiny standalone page that applies the change and shows the result — no heavy
+// 3D app, any device.
+const _verifySearch = new URLSearchParams(window.location.search);
+const isPwVerify = _verifySearch.has('pwverify') || _verifySearch.has('emailverify');
+
+// Mobile vs desktop are two fully separate code paths (MobileApp.jsx vs App.jsx).
+// Decided once at mount: a mobile viewport mounts ONLY MobileApp, so the heavy
+// desktop tree (and its hooks) never even evaluates on mobile — and editing one
+// side can never touch the other. Uses the <768px breakpoint the app used before.
+const isMobile = window.innerWidth < 768;
+
 const root = ReactDOM.createRoot(rootElement);
-if (isPdfPreview) {
+if (isPwVerify) {
+  const PasswordVerify = React.lazy(() => import('./pages/PasswordVerify'));
+  root.render(
+    <LanguageProvider>
+      <React.Suspense fallback={null}>
+        <PasswordVerify />
+      </React.Suspense>
+    </LanguageProvider>
+  );
+} else if (isPdfPreview) {
   const PdfPreviewHarness = React.lazy(() => import('./dev/PdfPreviewHarness'));
   root.render(
     <LanguageProvider>
@@ -38,10 +58,22 @@ if (isPdfPreview) {
       </React.Suspense>
     </LanguageProvider>
   );
-} else {
+} else if (isMobile) {
+  const MobileApp = React.lazy(() => import('./MobileApp'));
   root.render(
     <LanguageProvider>
-      <App />
+      <React.Suspense fallback={null}>
+        <MobileApp />
+      </React.Suspense>
+    </LanguageProvider>
+  );
+} else {
+  const App = React.lazy(() => import('./App'));
+  root.render(
+    <LanguageProvider>
+      <React.Suspense fallback={null}>
+        <App />
+      </React.Suspense>
     </LanguageProvider>
   );
 }

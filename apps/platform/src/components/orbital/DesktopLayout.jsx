@@ -2,13 +2,39 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import TechContainer from './TechContainer';
 import WheelGlyph from '../WheelGlyph';
-import { Activity, Database, Lock, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Database, Lock, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
 import { getInbox, sendUserMessage, markMessageRead, getMe } from '@gfl/api-client';
 
+import OrbSphere3D from '../../orb/OrbSphere3D';
+import { ORB3D_PRESETS } from '../../orb/orb3d';
+
 const eyeLogo = '/images/Eyedentity.png';
-const blackholeIcon = '/images/Blackhole.png';
+// Visitor login icon: the animated TEMPLATE orb (Agency preset) — replaced the static
+// Blackhole.png. Module-level const → stable ref for the memo.
+const TEMPLATE_ORB_CFG = { ...ORB3D_PRESETS.Agency, palette: 'Agency' };
+
+// Self-unmounting wrapper: the HoloEarth journey pushes the whole verbindingsmenu container
+// off-screen, where a mounted-but-hidden WebGL canvas would keep its render loop burning.
+// An IntersectionObserver (200px margin past the viewport) unmounts the canvas entirely once
+// the button leaves view and remounts it on return; the sized placeholder keeps the footprint.
+function VisitorLoginOrb({ size }) {
+  const boxRef = useRef(null);
+  const [inView, setInView] = useState(true);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return undefined;
+    const obs = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { rootMargin: '200px' });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div ref={boxRef} style={{ width: size, height: size, pointerEvents: 'none' }}>
+      {inView && <OrbSphere3D config={TEMPLATE_ORB_CFG} active size={size} />}
+    </div>
+  );
+}
 
 // ── Contacten overlay chrome ─────────────────────────────────────────────────
 // A glass panel that opens OVER the page. Portalled to <body> because the Contacten
@@ -160,10 +186,13 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   // owner-only via /me); EMPTY until the wheel data arrives (no archetype-portrait fallback).
   // Visitors get the blackhole login icon.
   const [wheelBaskets, setWheelBaskets] = useState(null);
+  // Access model: expired clients stay logged in but the visitor-locked containers re-lock.
+  const [accessExpired, setAccessExpired] = useState(false);
   useEffect(() => {
     if (!clientMode) return;
     getMe().then((u) => {
       if (Array.isArray(u.readingBaskets) && u.readingBaskets.length === 12) setWheelBaskets(u.readingBaskets);
+      setAccessExpired(!!(u.accessUntil && new Date(u.accessUntil) < new Date()));
     }).catch(() => {});
   }, [clientMode]);
   const renderLoginIcon = (size) => {
@@ -180,19 +209,42 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       // wheel pops in without layout shift.
       return <div style={{ width: size, height: size }} />;
     }
-    return <img src={blackholeIcon} alt="Login" style={{ width: size, height: 'auto' }} />;
+    // Visitor: the animated template orb, same footprint as the old blackhole image.
+    // OrbSphere3D needs a NUMERIC size (its canvas is drawn at size×1.35) — mirror the
+    // CSS max(px, vw) strings the buttons pass in ('max(70px, 4.1vw)' / 'max(55px, 3.2vw)').
+    const orbPx = Math.round(0.9 * (windowWidth < 1100 ? Math.max(55, windowWidth * 0.032) : Math.max(70, windowWidth * 0.041)));
+    return <VisitorLoginOrb size={orbPx} />;
   };
 
   // Compact per-section action button (Contacten columns). Pinned to the bottom via marginTop:auto.
-  const renderSectionBtn = (label, onClick) => (
+  // isLocked → visitor state: a small lock icon prefixes the label and the button does nothing.
+  const renderSectionBtn = (label, onClick, isLocked = false) => (
     <button
-      onClick={onClick}
-      style={{ marginTop: 'auto', width: '100%', background: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.45)', borderRadius: '0.3rem', color: 'rgb(216, 190, 254)', fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px, 0.5vw)', padding: '0.5vh 0.4vw', cursor: 'pointer', transition: 'background 0.2s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(168, 85, 247, 0.25)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(168, 85, 247, 0.12)'; }}
+      onClick={isLocked ? undefined : onClick}
+      disabled={isLocked}
+      style={{ marginTop: 'auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35vw', background: isLocked ? 'rgba(245, 158, 11, 0.08)' : 'rgba(168, 85, 247, 0.12)', border: `1px solid ${isLocked ? 'rgba(245, 158, 11, 0.4)' : 'rgba(168, 85, 247, 0.45)'}`, borderRadius: '0.3rem', color: isLocked ? 'rgba(245, 158, 11, 0.85)' : 'rgb(216, 190, 254)', fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px, 0.5vw)', padding: '0.5vh 0.4vw', cursor: isLocked ? 'default' : 'pointer', transition: 'background 0.2s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+      onMouseEnter={isLocked ? undefined : (e) => { e.currentTarget.style.background = 'rgba(168, 85, 247, 0.25)'; }}
+      onMouseLeave={isLocked ? undefined : (e) => { e.currentTarget.style.background = 'rgba(168, 85, 247, 0.12)'; }}
     >
+      {isLocked && <Lock style={{ width: 'max(9px, 0.5vw)', height: 'max(9px, 0.5vw)', flexShrink: 0, color: '#f59e0b' }} strokeWidth={2} />}
       {label}
     </button>
+  );
+
+  // Visitor lock overlay — frosted (backdrop-blur) layer + centred lock icon, laid OVER a
+  // container's real content so visitors see the actual shape but can't interact. Captures its
+  // own clicks so nothing underneath fires. Rendered on Winkel / Contacten / Kook-eiland when !clientMode.
+  const locked = !clientMode;
+  // `locked` stays purely visitor-mode (drives cosmetic bits like the filosofie subtext/position);
+  // `restricted` is the actual gate — visitor OR expired client — on Winkel/Contacten/Kook-eiland.
+  const restricted = locked || accessExpired;
+  const renderLock = () => (
+    <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm" style={{ zIndex: 6, borderRadius: '0.5rem', background: 'rgba(1, 0, 2, 0.15)', pointerEvents: 'auto', cursor: 'default' }}>
+      <div className="flex flex-col items-center" style={{ gap: '0.5vw' }}>
+        <Lock style={{ width: '2.25vw', height: '2.25vw', color: '#f59e0b' }} strokeWidth={1.5} />
+        <span style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 400, lineHeight: 1.5, color: 'rgba(245, 158, 11, 0.8)', fontSize: 'max(9px, 0.5vw)', letterSpacing: '0.05em' }}>{t('desktopLayout.locked')}</span>
+      </div>
+    </div>
   );
 
   // Touch swipe state for Gardens slideshow
@@ -349,13 +401,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         }
         .gfl-blackhole-btn:hover::before { color: rgba(255, 220, 160, 0.9); }
       `}</style>
-      {/* 1. Filosofie — client mode: a slim wide bar centered ABOVE the orb (replaces the top-left
-          box). Visitor: the original top-left box. Header + one featured quote (content only). */}
-      {clientMode ? (
+      {/* 1. Filosofie — slim wide bar centered ABOVE the orb, in BOTH modes. Winkel now occupies the
+          old top-left spot for visitors too, so Filosofie can't live there; the earth dropping 3.5rem
+          opens the room for this bar. Header + one featured quote. */}
       <div
         className="absolute left-0 right-0 flex justify-center pointer-events-none"
         style={{
-          top: 'calc(5vh + 3rem)',
+          // Same height in both modes — the subtext (and thus the bar height) now shows
+          // for visitors AND clients.
+          top: 'calc(5vh + 1rem)',
           transform: `scale(${containerScale})`,
           opacity: mounted ? containerOpacity : 0,
         }}
@@ -364,8 +418,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             so its empty left/right areas don't sit over (and swallow clicks to) the header nav toggle. */}
         <div style={{ width: '37.8vw', maxWidth: '960px', pointerEvents: 'auto' }}>
           <TechContainer title={t('desktopLayout.filosofieTitle')} variant="purple" className="w-full" style={{ minHeight: '9.9vh', backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
-            <div className="w-full h-full flex items-center justify-center" style={{ padding: '0.9vh 1.5vw', position: 'relative' }}>
-              {/* Quote centered in the FULL container (ignores the absolutely-placed button). */}
+            <div className="w-full h-full flex flex-col items-center justify-center" style={{ padding: '0.9vh 1.5vw', gap: '0.5vh', position: 'relative' }}>
+              {/* Header quote (centred; ignores the absolutely-placed button). */}
               <p style={{
                 fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
                 fontWeight: 600,
@@ -377,9 +431,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 textAlign: 'center',
                 margin: 0,
               }}>Voluntas amor, Elefthéros fati</p>
-              {/* Button pinned bottom-right, out of the centering flow. */}
-              <div style={{ position: 'absolute', right: '0.8vw', bottom: '0.6vh' }}>
-                <SciFiButton variant="purple" size="sm" onClick={(e) => setActiveSection('filosofie', e)}>
+              {/* The smaller white subtext from the old Filosofie box, below the quote —
+                  shown in BOTH modes (visitor and client). */}
+              <div style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 400, lineHeight: 1.5, color: '#FFFEF0', fontSize: 'max(13px, 0.7vw)', textAlign: 'center', maxWidth: '90%' }}
+                dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofieSubtext') }} />
+              {/* Button pinned bottom-right against the container border — frameless, text only.
+                  Negative offsets cancel TechContainer's 0.8vw content padding so the button
+                  actually reaches the outer border, not just the inner dashed box. */}
+              <div style={{ position: 'absolute', right: 'calc(-0.8vw + 0.3rem)', bottom: 'calc(-0.8vw + 0.3rem)' }}>
+                <SciFiButton variant="orange" size="sm" brackets={false} onClick={(e) => setActiveSection('filosofie', e)}>
                   {t('desktopLayout.learnMore')}
                 </SciFiButton>
               </div>
@@ -387,121 +447,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           </TechContainer>
         </div>
       </div>
-      ) : (
-      <div
-        className="absolute pointer-events-auto"
-        style={{
-          top: windowWidth >= 768 && windowWidth < 1079 ? 'calc(15vh + 2.5rem - 2rem)' : windowWidth >= 1079 ? 'calc(15vh + 0.5rem + 0.5rem)' : 'calc(15vh + 2.5rem)',
-          left: windowWidth >= 768 && windowWidth < 1079 ? 'calc(4.06vw - 1.5rem)' : 'calc(4.06vw - 2.5rem)',
-          // Frame + content BOTH driven by vw → scale as one unit. minHeight (not height): the box
-          // also GROWS to fit when the fonts hit their px floor on laptop-sized viewports, so the
-          // container conforms to the size the text needs while keeping the vw dynamic sizing.
-          minHeight: '20vw',
-          width: '26vw',
-          transform: `translate(${topLeftX}vw, ${topLeftY}vh) scale(${containerScale})`,
-          opacity: mounted ? containerOpacity : 0
-        }}
-      >
-        <TechContainer title={t('desktopLayout.filosofieTitle')} variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
-          <div className="w-full h-full flex flex-col items-center justify-between relative" style={{ padding: '0.8vw' }}>
-            {/* Content wrapper */}
-            <div style={{ display: 'contents' }}>
-            {/* Header */}
-            <div className="flex flex-col items-center w-full" style={{ gap: '0.4vw' }}>
-              <h2 style={{
-                fontSize: 'max(15px, 1.084vw)',
-                color: 'rgb(196, 181, 253)',
-                margin: 0,
-                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontWeight: 600,
-                lineHeight: 0.9,
-                filter: 'brightness(0.9)',
-                textAlign: 'center',
-                letterSpacing: '0.05em'
-              }} dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofiePoem') }} />
-              <div style={{ width: '2vw', height: '0.1vh', background: 'linear-gradient(to right, transparent, rgb(168, 85, 247), transparent)' }}></div>
-            </div>
 
-            {/* Content — laptop (<1800) drops the symbol + pulse bar; the header's division
-                line stays as the only separator between quote and subtext. */}
-            <div className="flex flex-col items-center justify-center flex-1" style={{ gap: '0.8vw' }}>
-              {windowWidth >= 1800 && (
-                <>
-                  <Activity style={{ width: '3vw', height: '3vw', color: 'rgb(192, 132, 252)', flexShrink: 0 }} />
-                  <div style={{ height: '0.1vh', width: '50%', backgroundColor: 'rgba(88, 28, 135, 0.5)', borderRadius: '9999px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: '33%', backgroundColor: 'rgb(192, 132, 252)' }} className="animate-pulse"></div>
-                  </div>
-                </>
-              )}
-              {/* Hide secondary text on tablet sizes (768px-1024px) */}
-              <div style={{
-                fontFamily: "'Figtree', sans-serif",
-                fontWeight: 400,
-                lineHeight: 1.5,
-                color: '#FFFEF0',
-                fontSize: 'max(13px, 0.7vw)',
-                textAlign: 'center',
-                display: windowWidth >= 768 && windowWidth < 1079 ? 'none' : 'block'
-              }} dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofieSubtext') }} />
-            </div>
+      {/* Winkel + Kook-eiland + Contacten render in BOTH modes now, at their client positions.
+          Visitors see the full containers frosted with a lock (renderLock); clients get the live
+          content. (The old thin "Markt" teaser bar is gone — the real locked containers replace it.) */}
 
-            {/* Button */}
-            {/* Filosofie is parked — its content moved into the hypercube. The path
-                to that (now empty) map space is disabled until it's re-homed. */}
-            <SciFiButton
-              variant="purple"
-              size="sm"
-              disabled
-              onClick={undefined}
-              style={{ transform: 'scaleY(1.04)', marginTop: '0.4rem' }}
-            >
-              {t('desktopLayout.learnMore')}
-            </SciFiButton>
-            </div>{/* end content wrapper */}
-          </div>
-        </TechContainer>
-      </div>
-      )}
-
-      {/* Visitor-only: a thin locked bar in the left column, between Filosofie and Data Stream.
-          Two sections — Winkel + Contacten — both locked (unlock in the client interface). */}
-      {!clientMode && (
-      <div
-        className="absolute pointer-events-auto"
-        style={{
-          top: '59.67vh',
-          left: windowWidth >= 768 && windowWidth < 1079 ? '5vw' : '4.37vw',
-          width: '26vw',
-          // vh governs on normal/tall viewports (conformal with the others); on SHORT viewports the
-          // vw floor keeps the thin bar proportional to its 26vw width. The floor also stays above
-          // TechContainer's fixed vertical overhead (~2.8vw) + the lock (1.1vw) so content never spills.
-          height: 'max(7.5vh, 4.2vw)',
-          transform: `translate(${topLeftX}vw, ${topLeftY}vh) scale(${containerScale})`,
-          opacity: mounted ? containerOpacity : 0,
-          zIndex: 20,
-        }}
-      >
-        <TechContainer title="Markt" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
-          <div className="w-full h-full flex" style={{ padding: '0 0.3vw', overflow: 'hidden' }}>
-            {[{ label: 'Winkel' }, { label: 'Contacten' }].map((s, idx) => (
-              <React.Fragment key={s.label}>
-                {idx === 1 && <div style={{ width: '1px', alignSelf: 'stretch', background: 'rgba(255, 255, 255, 0.1)' }} />}
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5vw', padding: '0.1vh 0.4vw' }}>
-                  <Lock style={{ width: '1.1vw', height: '1.1vw', color: '#f59e0b', flexShrink: 0 }} strokeWidth={1.5} />
-                  <span style={{ fontFamily: "'Figtree', sans-serif", color: 'rgba(245, 158, 11, 0.85)', fontSize: 'max(10px, 0.62vw)', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{s.label}</span>
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
-        </TechContainer>
-      </div>
-      )}
-
-      {/* Client-mode: Winkel on the OLD Filosofie spot (top-left). Kook-eiland used to stack
+      {/* Winkel on the OLD Filosofie spot (top-left). Kook-eiland used to stack
           below it here, but it's now a standalone container (further down) so it holds position
           + scales cleanly like the top-right box. Wrapper is pointer-transparent; only the
           Winkel slot captures clicks (its empty lower area must not swallow clicks). */}
-      {clientMode && (
       <div
         className="absolute pointer-events-none"
         style={{
@@ -523,6 +477,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             the bottom, since it's top-anchored by the transform); the image flexes to fill it. */}
         <div style={{ width: '85%', height: '22.28vh', flexShrink: 0, pointerEvents: 'auto', transform: 'translate(1vw, 4.56vh)' /* was calc(9vh - 4rem) — 4rem=4.44vh @1440 */ }}>
           <TechContainer title="Winkel" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
+            {/* No frosted lock overlay here: the product template (image/description, filled
+                later) stays readable for visitors — the lock lives on the Bekijk-winkel button. */}
             <div className="w-full h-full flex flex-col" style={{ gap: '0.5vw', padding: '0.6vw' }}>
               {/* Image (left) + text (right) — fills the space above the price/action row */}
               <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', gap: '0.6vw' }}>
@@ -538,19 +494,20 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               {/* Price + action (stays) */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5vw' }}>
                 <span style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", color: '#22c55e', fontSize: 'max(11px, 0.62vw)', fontWeight: 700 }}>€ 0,00</span>
-                <SciFiButton variant="purple" size="sm" onClick={() => setActiveSection('winkel')}>Bekijk winkel</SciFiButton>
+                <SciFiButton variant="purple" size="sm" disabled={restricted} onClick={() => setActiveSection('winkel')}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                    {restricted && <Lock style={{ width: 'max(9px, 0.5vw)', height: 'max(9px, 0.5vw)', flexShrink: 0, color: '#f59e0b' }} strokeWidth={2} />}
+                    Bekijk winkel
+                  </span>
+                </SciFiButton>
               </div>
             </div>
           </TechContainer>
         </div>
       </div>
-      )}
 
-      {/* Client-mode: Kook-eiland — standalone container (swapped in from the top-right box).
-          Uses the SAME viewport-scaling technique as the top-right box: a clean vw/vh anchor +
-          translate·scale (left cluster's fly-in vars), so it holds position and scales uniformly
-          instead of drifting off the flex chain it used to sit on. Size kept (22.1vw × 19.22vh). */}
-      {clientMode && (
+      {/* Kook-eiland — standalone container. Renders in both modes; locked (frosted) for visitors.
+          Same viewport-scaling technique as the top-right box. Size kept (22.1vw × 19.22vh). */}
       <div
         className="absolute pointer-events-auto"
         style={{
@@ -564,6 +521,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         }}
       >
         <TechContainer title={t('desktopLayout.kitchen')} variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
+          {restricted ? renderLock() : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-visible">
             {/* Client: unlocked — opens the Kook-eiland map section (far top-right) */}
             <SciFiButton
@@ -575,9 +533,9 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               Openen
             </SciFiButton>
           </div>
+          )}
         </TechContainer>
       </div>
-      )}
 
 
       {/* 3. Top Right - Garden For Life Website */}
@@ -585,17 +543,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         className="absolute pointer-events-auto"
         style={{
           top: '12.09vh',
-          right: windowWidth >= 768 && windowWidth < 1079 ? 'calc(3.7vw + 2rem)' : windowWidth >= 1079 ? 'calc(3.7vw + 1.5rem + 1rem + 3rem)' : '3.7vw',
+          right: windowWidth >= 768 && windowWidth < 1079 ? 'calc(3.7vw + 1rem)' : windowWidth >= 1079 ? 'calc(3.7vw + 1.5rem + 3rem)' : 'calc(3.7vw - 1rem)',
           width: '19.01vw',
           height: '21.13vh',
           transform: `translate(${gardenTopRightX}vw, ${gardenTopRightY}vh) scale(${gardenScale})`,
           opacity: mounted ? gardenOpacity : 0
         }}
       >
-        {clientMode ? (
-        /* Swapped: in the client interface this top-right box now holds Contacten
-           (title + content). Kook-eiland moved to the top-left stack. Non-client keeps
-           the locked Kook-eiland below. Container size/position unchanged. */
+        {/* Top-right box: Contacten — live content for clients; for visitors the container shows but
+            each action button carries a small lock (renderSectionBtn isLocked), not a full frost. */}
         <TechContainer title="Contacten" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
           <div className="w-full h-full flex flex-col" style={{ padding: '0.5vw' }}>
 
@@ -705,37 +661,17 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
             {/* Button row — Berichten/Openen open a full panel; Versturen sends the inline draft */}
             <div style={{ display: 'flex', marginTop: '0.6vh' }}>
-              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn('Berichten', () => setContactenOverlay('berichten'))}</div>
+              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn('Berichten', () => setContactenOverlay('berichten'), restricted)}</div>
               <div style={{ width: '1px' }} />
-              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn('Openen', () => setContactenOverlay('contactlijst'))}</div>
+              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn('Openen', () => setContactenOverlay('contactlijst'), restricted)}</div>
               <div style={{ width: '1px' }} />
-              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn('Versturen', () => sendMessage())}</div>
+              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn('Versturen', () => sendMessage(), restricted)}</div>
             </div>
             {composeMsg && (
               <div style={{ marginTop: '0.4vh', textAlign: 'center', fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px, 0.5vw)', color: composeMsg.includes('✓') ? '#4ade80' : '#f87171' }}>{composeMsg}</div>
             )}
           </div>
         </TechContainer>
-        ) : (
-        <TechContainer title={t('desktopLayout.kitchen')} variant="purple" className="w-full h-full">
-          <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-visible">
-            {/* Lock Icon Overlay — non-client interface (Kook-eiland locked) */}
-            <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
-              <div className="flex flex-col items-center" style={{ gap: '0.5vw' }}>
-                <Lock style={{ width: '2.25vw', height: '2.25vw', color: '#f59e0b' }} strokeWidth={1.5} />
-                <span style={{
-                  fontFamily: "'Figtree', sans-serif",
-                  fontWeight: 400,
-                  lineHeight: 1.5,
-                  color: 'rgba(245, 158, 11, 0.8)',
-                  fontSize: 'max(9px, 0.5vw)',
-                  letterSpacing: '0.05em'
-                }}>{t('desktopLayout.locked')}</span>
-              </div>
-            </div>
-          </div>
-        </TechContainer>
-        )}
       </div>
 
       {/* Contacten overlays — portalled glass panels over the page, one per card section (each sized differently). */}

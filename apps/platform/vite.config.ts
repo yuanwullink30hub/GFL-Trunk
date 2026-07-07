@@ -38,7 +38,22 @@ export default defineConfig({
         // passkey). Separate chunks evaluate as smaller pieces, and preloadUtils'
         // `yieldToMain` between imports lets the browser breathe between them.
         manualChunks(id) {
+          // Vite's virtual helper modules (CJS interop, __vitePreload, modulepreload
+          // polyfill) are shared by the entry AND heavy vendor chunks. Left to default
+          // placement, Rollup hoisted them INTO those vendor chunks — making the boot
+          // entry statically import 786 kB of jspdf/html2canvas just to reach a 200-byte
+          // helper. Pin every vite/rollup helper into one tiny chunk.
+          if (id.includes('commonjsHelpers') || id.includes('vite/preload-helper')
+            || id.includes('vite/modulepreload-polyfill')) return 'helpers';
           if (!id.includes('node_modules')) return undefined;
+          // React runtime gets its OWN chunk. Without this, Rollup hoisted react +
+          // jsx-runtime into the 'three' chunk (both shared), so the boot entry
+          // statically imported three-*.js — 1.4 MB of synchronous evaluation while
+          // the user stared at a frozen passkey caret, and preloadAll's staged
+          // import('three') was already-paid-for. ONLY the react runtime goes here;
+          // react-DEPENDENT libs (r3f/drei/react-spring) stay default-chunked (see
+          // the grey-screen note below).
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react-vendor';
           // Split ONLY the pure three.js ecosystem (no React) into its own chunk,
           // so it evaluates as a separate ~1.3 MB block (with a yield before the
           // r3f block) instead of being fused into one ~2.67 MB synchronous freeze.

@@ -199,7 +199,6 @@ export const preloadImages = () => {
   
   // UI images
   const uiImages = [
-    'images/Blackhole.png',
     'images/Eyedentity.png',
     'images/illustrativesun.png',
   ];
@@ -312,7 +311,6 @@ export const preloadAll = async (onProgress, options = {}) => {
     'images/slideshow images/club49-logo.png',
     'images/slideshow images/karmaneventsPNG.png',
     'images/slideshow images/Rengi-logo.png',
-    'images/Blackhole.png',
     'images/Eyedentity.png',
     'images/illustrativesun.png',
   ];

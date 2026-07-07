@@ -68,13 +68,16 @@ export function LeverDashboard({ cfg, onChange, fullHeight = false, mobile = fal
 }
 
 /* ── Right panel: the six hardware-group templates ──────────────────────── */
+// Display order (Agency first — it's also the template orb + verbindingsmenu icon).
+const PALETTE_ORDER = ['Agency', 'Ruling', 'Seeker', 'Relational', 'Chaos', 'Abstract'];
 export function PaletteDashboard({ cfg, onChange, fullHeight = false, mobile = false }) {
   return (
     <div style={shell(fullHeight, mobile)}>
       <Header title="Hardwaregroep" subtitle="Ontdek de kleurtypes voor elke groep." />
 
       <div style={fillCol(fullHeight)}>
-        {Object.entries(PALETTES).map(([name, cols]) => {
+        {PALETTE_ORDER.filter((n) => PALETTES[n]).map((name) => {
+          const cols = PALETTES[name];
           const sel = cfg.palette === name;
           return (
             <button key={name} type="button"

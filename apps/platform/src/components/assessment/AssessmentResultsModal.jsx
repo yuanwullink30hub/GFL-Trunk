@@ -40,7 +40,7 @@ const OCEAN_LABELS = {
   N: { short: 'N', full: 'Neuroticism', dutch: 'Neuroticisme' },
 };
 const OCEAN_COLORS = { O: '#a78bfa', C: '#22d3ee', E: '#67e8f9', A: '#818cf8', N: '#c4b5fd' };
-import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, logActivity, getPublicSiteBanner } from '@gfl/api-client';
+import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, sendAccessEmail, sendReportEmail, logActivity, getPublicSiteBanner } from '@gfl/api-client';
 import { isIntegratedGPU } from '@gfl/utils';
 import { useLanguage } from '@gfl/i18n';
 // SciFiButton removed — unused in this component
@@ -243,6 +243,9 @@ const AssessmentResultsModal = ({
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewFormData, setReviewFormData] = useState({ email: '' });
   const [reviewError, setReviewError] = useState('');
+  // Gate email, readable inside handleDownloadPdf without recreating that (huge)
+  // callback on every keystroke — set once when the gate is passed.
+  const gateEmailRef = useRef('');
 
   // ── Email submission handler ──
   const handleReviewSubmit = useCallback(async (e) => {
@@ -270,6 +273,7 @@ const AssessmentResultsModal = ({
         extendedArchetypeName: result?.extendedNameNl || result?.extendedName || '',
         timestamp: new Date().toISOString(),
       });
+      gateEmailRef.current = email.trim();
       setReviewSubmitted(true);
       console.log('[GFL] Email submitted — PDF unlocked');
     } catch (err) {
@@ -1337,6 +1341,17 @@ const AssessmentResultsModal = ({
         const an = (result?.extendedName || 'Archetype').replace(/\s+/g, '_');
         if (pvw) { try { onPreviewReadyRef.current?.(pdf.output('bloburl')); } catch (_) {} return; }
         pdf.save(`GardenForLife_${an}_kort.pdf`);
+        // Short report downloaded → send the SHORT report email to the gate email
+        // (fire-and-forget). The gate itself no longer emails on entry — the chosen
+        // download decides which mail goes out (full sends the access email below).
+        if (gateEmailRef.current) {
+          sendReportEmail({
+            email: gateEmailRef.current,
+            kind: 'short',
+            archetypeKey: result?.mainArchetype || '',
+            extendedArchetypeName: result?.extendedNameNl || result?.extendedName || '',
+          }).then(() => console.log('[GFL] Short report email sent')).catch((e) => console.warn('[GFL] Short report email failed:', e?.message));
+        }
         return; // finally{} resets isGeneratingPdf
       }
 
@@ -3225,6 +3240,18 @@ const AssessmentResultsModal = ({
       const archetypeName = (result?.extendedName || 'Archetype').replace(/\s+/g, '_');
       if (pvw) { try { onPreviewReadyRef.current?.(pdf.output('bloburl')); } catch (_) {} return; }
       pdf.save(`GardenForLife_${archetypeName}.pdf`);
+      // Full (paid) report downloaded → send the access/welcome email to the gate
+      // email (fire-and-forget; never blocks the download). Language + archetype
+      // name follow the language of the taken test.
+      if (gateEmailRef.current) {
+        sendAccessEmail({
+          recipientEmail: gateEmailRef.current,
+          archetypeName: language === 'en'
+            ? (result?.extendedName || result?.extendedNameNl || '')
+            : (result?.extendedNameNl || result?.extendedName || ''),
+          lang: language === 'en' ? 'en' : 'nl',
+        }).then(() => console.log('[GFL] Access email sent')).catch((e) => console.warn('[GFL] Access email failed:', e?.message));
+      }
     } catch (err) {
       console.error('[PDF] Generation failed:', err);
     } finally {

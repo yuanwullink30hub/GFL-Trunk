@@ -63,9 +63,9 @@ async function enterClientModeFromAccount(user, lang = 'nl') {
 // Generic placeholder orb shown on the logged-out login screen (Relational template).
 // The user's real crystal is only resolved from their assessment after login. The
 // palette panel morphs this to any hardware-group template; Relational is the default.
-// 3D template orb — the Relational hardware-group preset. The palette panel morphs it to any
-// of the six group templates (ORB3D_PRESETS).
-const TEMPLATE_ORB = ORB3D_PRESETS.Relational;
+// 3D template orb — the Agency hardware-group preset (matches the verbindingsmenu login
+// icon). The palette panel morphs it to any of the six group templates (ORB3D_PRESETS).
+const TEMPLATE_ORB = ORB3D_PRESETS.Agency;
 const SESSION_TS_KEY = 'gfl_session_ts';
 const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
 
@@ -251,7 +251,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
   const verifyPollRef = useRef(null);
   const [absorbing, setAbsorbing] = useState(false);   // panels + login card floating INTO the orb
   const [emerged, setEmerged] = useState(false);       // account card flowing OUT of the orb
-  const [playCfg, setPlayCfg] = useState(() => ({ ...TEMPLATE_ORB, palette: 'Relational' })); // lever-lab orb
+  const [playCfg, setPlayCfg] = useState(() => ({ ...TEMPLATE_ORB, palette: 'Agency' })); // lever-lab orb
   const fileInputRef = useRef(null);
 
   // ── Flow-animation timers: absorb → grow → emerge, and the exact reverse. Tracked so leaving
@@ -796,7 +796,8 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: usePassword ? 'flex-start' : 'center', ...(!usePassword && { alignItems: 'center', textAlign: 'center' }) }}>
           {!usePassword && (
             <div style={{ fontFamily: FONT, fontSize: 'max(9px, 0.5vw)', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, marginBottom: '0.8rem' }}>
-              Login met je pdf's code om jouw unieke signatuur te visualiseren en gebruik te maken van het hele platform.
+              Synchroniseer hier jouw essentie en ontgrendel<br />
+              3 maanden gebruik van het platform zijn intelligentie.
             </div>
           )}
 
@@ -856,9 +857,9 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         <div style={{ display: 'flex', justifyContent: !usePassword ? 'center' : 'space-between', alignItems: 'flex-end', marginBottom: '0.4rem', gap: '0.5rem' }}>
           {!usePassword ? (
             <button type="button" onClick={() => { setUsePassword(true); setUploadErr(''); }}
-              style={{ background: 'none', border: 'none', color: 'rgba(255,174,0,0.32)', cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}
-              onMouseEnter={(e) => e.target.style.color = 'rgba(255,174,0,0.6)'}
-              onMouseLeave={(e) => e.target.style.color = 'rgba(255,174,0,0.32)'}>
+              style={{ background: 'none', border: 'none', color: 'rgba(255,174,0,0.6)', cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}
+              onMouseEnter={(e) => e.target.style.color = 'rgba(255,174,0,0.9)'}
+              onMouseLeave={(e) => e.target.style.color = 'rgba(255,174,0,0.6)'}>
               Al een account? login
             </button>
           ) : (

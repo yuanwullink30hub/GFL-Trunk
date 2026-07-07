@@ -659,7 +659,7 @@ const HoloEarthSphere = ({
 }) => {
   const groupRef = useRef(null);
   const coreRef = useRef(null);
-  const { viewport } = useThree();
+  const { viewport, size } = useThree();
   const isDragging = useRef(false);
   const previousMouse = useRef({ x: 0, y: 0 });
   const rotationVelocity = useRef({ x: 0, y: 0 });
@@ -671,6 +671,16 @@ const HoloEarthSphere = ({
   // Scale: base scale with mobile multiplier for larger earth on mobile
   const baseScale = Math.min(1, viewport.width / 5.5) * 0.65;
   const scale = isMobile ? baseScale * 1.15 : baseScale;
+
+  // Pixel-width falloff — the container text hits its max(px, …) floors on smaller viewports, so
+  // the containers barely shrink there; the whole globe+pyramid scales down to rebalance. Uses real
+  // canvas PIXEL width (viewport.width is aspect-based, so constant across resolutions). Applied to
+  // the OUTER group (earth + core together) so the pyramid never overflows the shrinking globe.
+  // ≥ REF px → factor 1 (unchanged); narrower → shrinks (power = steepness).
+  const EARTH_FALLOFF_REF = 1600;   // px screen width at/above which it's full size
+  const EARTH_FALLOFF_POWER = 1.1;  // >1 = shrinks faster on smaller screens
+  const screenPx = isMobile ? size.width : size.width / 2; // desktop canvas is drawn 200%
+  const earthFalloff = isMobile ? 1 : Math.min(1, Math.pow(screenPx / EARTH_FALLOFF_REF, EARTH_FALLOFF_POWER));
 
   // Earth texture + sphere/chunk materials live in <EarthLayers> (skipped when skipEarth).
 
@@ -806,7 +816,7 @@ const HoloEarthSphere = ({
   const baseY = 0.45 + mobileYOffset;
 
   return (
-    <group position={[0, baseY, 0]} scale={scale}>
+    <group position={[0, baseY, 0]} scale={scale * earthFalloff}>
       
       {/* Inner Core: PyramidInner */}
       <group ref={coreRef} position={[0, 0.35, 0]}>
@@ -894,6 +904,7 @@ const HoloEarth = ({
   isVisible = true, // false when user navigated to a section page — pauses R3F rendering
   fastIntro = false, // client-mode kook-eiland handoff: entity appears fast (no long emergence)
   skipEarth = false, // instances pinned past the explosion: skip earth texture/sphere/chunks entirely
+  landingShadowScale = 1, // matches the globe's viewport falloff so the CSS dropshadow shrinks with it
 }) => {
   const glRef = useRef(null);
   const isLowGpu = !isMobile && typeof window !== 'undefined' && isIntegratedGPU();
@@ -940,14 +951,20 @@ const HoloEarth = ({
         height: isMobile ? '100vh' : undefined,
         pointerEvents: exploding ? 'none' : 'auto',
         overflow: 'visible',
+        // Landing only: drop the globe + its shadow so the top-row containers overlap its edges.
+        // vh (not rem) so it tracks the viewport (≈ 7rem on desktop); re-centres during the
+        // assessment (isActive) so the zoomed-in pyramid stays exactly where it is.
+        transform: (!isMobile && !isActive) ? 'translateY(6.3vh)' : undefined,
+        transition: 'transform 0.4s ease',
       }}
     >
-      {/* Depth shadow behind the sphere (desktop only) */}
+      {/* Depth shadow behind the sphere (desktop only) — scale() with the globe's viewport falloff
+          so the whole shadow (circle + its box-shadow) shrinks in step on smaller viewports. */}
       {!isMobile && <div style={{
         position: 'absolute',
         top: 'calc(50% - 6.5vh - 0.5rem)',
         left: '50%',
-        transform: 'translate(-50%, -50%)',
+        transform: `translate(-50%, -50%) scale(${landingShadowScale})`,
         width: '55vh',
         height: '55vh',
         borderRadius: '50%',

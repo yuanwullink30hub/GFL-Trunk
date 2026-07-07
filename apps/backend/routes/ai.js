@@ -13,6 +13,7 @@ const { getCorpusText } = require('../services/corpusData');
 const { getDB } = require('../db');
 const config = require('../config');
 const nodemailer = require('nodemailer');
+const { buildAccessEmail } = require('../services/accessEmail');
 
 // Level-specific prompt builders
 const promptBuilders = {
@@ -604,6 +605,46 @@ router.post('/send-results', async (req, res) => {
   } catch (err) {
     console.error('[Email] Send failed:', err.message);
     res.status(500).json({ error: 'E-mail kon niet worden verzonden. Probeer het later opnieuw.' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/ai/send-access-email — access/welcome email, fired by the client
+// after the FULL (paid) report PDF has been downloaded. Language follows the
+// language of the taken test ('nl' | 'en').
+// ─────────────────────────────────────────────────────────────
+
+router.post('/send-access-email', async (req, res) => {
+  try {
+    const { recipientEmail, archetypeName, lang } = req.body || {};
+    const to = String(recipientEmail || '').trim();
+    if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      return res.status(400).json({ error: 'Valid recipientEmail is required' });
+    }
+
+    const { subject, html } = buildAccessEmail({
+      archetypeName: archetypeName || '',
+      lang: lang === 'en' ? 'en' : 'nl',
+    });
+
+    const transporter = nodemailer.createTransport({
+      host: config.email.host,
+      port: config.email.port,
+      secure: config.email.secure,
+      auth: { user: config.email.user, pass: config.email.pass },
+    });
+    await transporter.sendMail({
+      from: `"Garden For Life" <${config.email.from}>`,
+      to,
+      subject,
+      html,
+    });
+
+    console.log(`[Email] Access email sent to ${to}`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Email] Access email failed:', err.message);
+    res.status(500).json({ error: 'E-mail kon niet worden verzonden.' });
   }
 });
 

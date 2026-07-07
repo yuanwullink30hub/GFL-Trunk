@@ -729,6 +729,34 @@ export async function submitAssessmentReview(data) {
 }
 
 /**
+ * Report email for the chosen PDF kind ('short' | 'full') — fired when the user
+ * clicks the download button, NOT when the gate email is entered.
+ */
+export async function sendReportEmail({ email, kind, archetypeKey, extendedArchetypeName }) {
+  const response = await fetch(`${API_BASE}/assessment/report-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, kind, archetypeKey, extendedArchetypeName }),
+  });
+  if (!response.ok) throw new Error(`Server error: ${response.status}`);
+  return response.json();
+}
+
+/**
+ * Access/welcome email after the FULL (paid) report PDF download.
+ * lang = language of the taken test ('nl' | 'en').
+ */
+export async function sendAccessEmail({ recipientEmail, archetypeName, lang }) {
+  const response = await fetch(`${API_BASE}/ai/send-access-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipientEmail, archetypeName, lang }),
+  });
+  if (!response.ok) throw new Error(`Server error: ${response.status}`);
+  return response.json();
+}
+
+/**
  * Get all assessment reviews (admin only).
  * @param {Object} opts - Options (limit, skip, includeAssessment)
  */

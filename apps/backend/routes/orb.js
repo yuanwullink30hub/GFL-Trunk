@@ -8,6 +8,13 @@ const { signToken } = require('./auth');
 const { decodeOrb3 } = require('@gfl/orb-engine');
 const { extractReading, sanitizeReading } = require('../services/readingExtract');
 
+// ── Access model (spec 2026-07-07): every code grants ACCESS_MONTHS of platform access,
+// cumulative on the current expiry (3→6, 6→9 — never "3 from redemption"). A new code can
+// only be attached UPLOAD_GATE_MONTHS after the previous one. Codes claim once, globally.
+const ACCESS_MONTHS = 3;
+const UPLOAD_GATE_MONTHS = 2;
+const addMonths = (date, n) => { const d = new Date(date); d.setMonth(d.getMonth() + n); return d; };
+
 /**
  * POST /api/orb/login
  * Body: { pdfBase64 }
@@ -112,6 +119,19 @@ router.post('/link', authRequired, async (req, res) => {
       ...(kaartDraft && kaartDraft.geomSummary ? { geomSummary: kaartDraft.geomSummary } : {}),
     });
 
+    // ── Upload gate: a NEW code can only be attached UPLOAD_GATE_MONTHS after the previous
+    // one (idempotent re-links of an owned code bypass this — handled below). Server-side
+    // twin of the disabled upload button in the Privé tab.
+    const userDoc = await collections.users().findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { orbHistory: 1, accessUntil: 1 } }
+    );
+    if (!userDoc) return res.status(404).json({ error: 'Account niet gevonden.' });
+    const lastEntry = Array.isArray(userDoc.orbHistory) && userDoc.orbHistory.length
+      ? userDoc.orbHistory[userDoc.orbHistory.length - 1] : null;
+    const gateOpensAt = lastEntry && lastEntry.at ? addMonths(lastEntry.at, UPLOAD_GATE_MONTHS) : null;
+    const gateClosed = gateOpensAt && gateOpensAt > new Date();
+
     const existing = await collections.orbCodes().findOne({ codeHash });
     if (existing) {
       if (String(existing.userId) === userId) {
@@ -128,6 +148,13 @@ router.post('/link', authRequired, async (req, res) => {
         return res.json({ linked: true, alreadyOwned: true, backfilled: !!cleanReading });
       }
       return res.status(409).json({ error: 'Deze kristal-code is al aan een ander account gekoppeld.' });
+    }
+
+    if (gateClosed) {
+      return res.status(403).json({
+        error: `Een nieuwe kristal-code kan pas gekoppeld worden vanaf ${gateOpensAt.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}.`,
+        nextUploadAvailableAt: gateOpensAt,
+      });
     }
 
     const at = new Date();
@@ -147,15 +174,18 @@ router.post('/link', authRequired, async (req, res) => {
     // (most recent = the shown one). Older entries stay in orbHistory for the public/private archive.
     let orb = null; try { orb = decodeOrb3(String(code)) || null; } catch { /* ignore */ }
     const entry = { codeHash, orb, archetypeName: archetypeName ? String(archetypeName) : '', at, ...(cleanReading || {}) };
+    // Access extension: cumulative on the current expiry (never from the redemption moment).
+    const accessBase = userDoc.accessUntil && new Date(userDoc.accessUntil) > at ? new Date(userDoc.accessUntil) : at;
+    const accessUntil = addMonths(accessBase, ACCESS_MONTHS);
     await collections.users().updateOne(
       { _id: new ObjectId(userId) },
       {
         $push: { orbHistory: entry },
-        $set: { publicOrb: orb, updatedAt: at, ...(entry.archetypeName ? { archetypeName: entry.archetypeName } : {}) },
+        $set: { publicOrb: orb, accessUntil, updatedAt: at, ...(entry.archetypeName ? { archetypeName: entry.archetypeName } : {}) },
       }
     ).catch((e) => console.warn('[orb/link] history update failed:', e.message));
 
-    return res.json({ linked: true });
+    return res.json({ linked: true, accessUntil });
   } catch (e) {
     console.error('[orb/link] error:', e.message);
     return res.status(500).json({ error: 'Serverfout bij het koppelen van de code.' });

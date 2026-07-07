@@ -3,7 +3,7 @@ import { updateDisplayName, updateProfile, updatePassword, updateEmail, deleteOw
 import { C, FONT, SciFiButton } from '@gfl/ui';
 import { OrbSphere3D } from '../../orb';
 import ProfileCard from './ProfileCard';
-import { getClientOrbConfig, getClientProfile, setClientOrbCode, setClientOrbConfig, setClientProfile } from '../../clientMode';
+import { getClientOrbConfig, getClientProfile, setClientOrbCode, setClientOrbConfig, setClientProfile, clearClientOrbCode } from '../../clientMode';
 import { getArchetypeImageByName } from '@gfl/assessment-core/data/archetypeImages';
 import { PRESET_KERNELS } from './presetKernels';
 
@@ -190,7 +190,20 @@ const LABEL = { fontSize: 'max(9px,0.48vw)', letterSpacing: '0.14em', textTransf
 const SECTION_TITLE = { fontSize: 'max(13px,0.75vw)', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#f59e0b' };
 
 const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
-  const orbConfig = getClientOrbConfig();
+  // Active orb config — LOCAL cache first, but the server is the truth: when /me carries a
+  // newer publicOrb (e.g. a code linked out-of-band or on another device), adopt it. The stale
+  // raw code must be dropped, since it takes precedence in getClientOrbConfig and would keep
+  // decoding to the OLD orb forever.
+  const [orbConfig, setOrbConfig] = useState(() => getClientOrbConfig());
+  useEffect(() => {
+    const serverOrb = user.orb;
+    if (!serverOrb) return;
+    const local = getClientOrbConfig();
+    if (local && JSON.stringify(local) === JSON.stringify(serverOrb)) return;
+    clearClientOrbCode();
+    setClientOrbConfig(serverOrb);
+    setOrbConfig(serverOrb);
+  }, [user.orb]);
   const profile = getClientProfile() || {};
 
   const [name, setName] = useState(user.displayName || '');
@@ -383,11 +396,26 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
       const fresh = await getCard();
       setCard(fresh);
       const orb = fresh?.derived?.latest?.orbRenderRef?.orb;
-      if (orb) setClientOrbConfig(orb);
+      if (orb) { setClientOrbConfig(orb); setOrbConfig(orb); } // swap the on-screen orb too
     } catch { refreshCard(); }
     if (archetypeName) { try { setClientProfile({ ...(getClientProfile() || {}), archetypeName }); } catch { /* ignore */ } }
     setSyncMsg('Nieuw kristal gesynchroniseerd ✓');
   }, [refreshCard]);
+
+  // ── Upload gate (access model): a new kristal-code may be attached 2 months after the
+  // last one. /me delivers nextUploadAvailableAt; fall back to computing it from orbHistory.
+  const nextUploadAt = (() => {
+    if (user.nextUploadAvailableAt) return new Date(user.nextUploadAvailableAt);
+    const hist = Array.isArray(user.orbHistory) ? user.orbHistory : [];
+    const lastAt = hist.length ? hist[hist.length - 1].at : null;
+    if (!lastAt) return null;
+    const d = new Date(lastAt); d.setMonth(d.getMonth() + 2); return d;
+  })();
+  const uploadGateClosed = !!(nextUploadAt && nextUploadAt > new Date());
+  const fmtDateNL = (d) => (d ? new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
+  // Access expired: still logged in, but the profile card hides behind an overlay and Privé
+  // reduces to the PDF-upload block; only Instellingen stays fully usable.
+  const accessExpired = !!(user.accessUntil && new Date(user.accessUntil) < new Date());
 
   const syncFromPdf = useCallback(async (file) => {
     if (!file) return;
@@ -664,11 +692,26 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
           card up behind it). The card then centers within the header-cleared area. */}
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'clamp(6.5rem, 14vh, 10rem) clamp(1rem, 3vw, 3rem) clamp(1rem, 4vh, 3rem)' }}>
 
-        {/* ── OPENBAAR — the profile card (cardPayload.v1 render; identical to the public ?u= view) ── */}
+        {/* ── OPENBAAR — the profile card (cardPayload.v1 render; identical to the public ?u= view).
+            Access expired → the card stays hidden behind the same shell with an expiry notice;
+            the tabs keep working so Privé (upload) and Instellingen stay reachable. ── */}
         {tab === 'openbaar' && (
-          card
-            ? <ProfileCard payload={card} tabsRow={tabsRow} orbConfigOverride={orbConfig} active={active} orbBoxRef={onScreenOrbRef} wheelBaskets={user.readingBaskets} />
-            : <div style={{ fontFamily: FONT, fontSize: 'max(12px,0.7vw)', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)' }}>Kaart laden…</div>
+          accessExpired
+            ? (
+              <ProfileCard payload={card || {}} tabsRow={tabsRow}>
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '0.9rem', padding: '3rem 2rem' }}>
+                  <div style={{ fontFamily: FONT, fontSize: 'max(14px,0.8vw)', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#f59e0b' }}>Toegang verlopen</div>
+                  <div style={{ fontSize: 'max(11px,0.6vw)', color: '#FFFEF0', lineHeight: 1.6, maxWidth: '34rem' }}>
+                    Je toegang was geldig tot <b>{fmtDateNL(user.accessUntil)}</b>. Upload een nieuw rapport-PDF onder <b>Privé</b> om je profiel opnieuw te ontgrendelen — elke nieuwe kristal-code opent 3 maanden toegang.
+                  </div>
+                  <SciFiButton onClick={() => setTab('prive')} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">Naar Privé — upload rapport</SciFiButton>
+                </div>
+              </ProfileCard>
+            )
+            : card
+              ? <ProfileCard payload={card} tabsRow={tabsRow} orbConfigOverride={orbConfig} active={active} orbBoxRef={onScreenOrbRef} wheelBaskets={user.readingBaskets}
+                  wheelBasketsHistory={(Array.isArray(user.orbHistory) ? user.orbHistory : []).map((h) => (Array.isArray(h?.baskets12) && h.baskets12.length === 12 ? h.baskets12 : null))} />
+              : <div style={{ fontFamily: FONT, fontSize: 'max(12px,0.7vw)', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)' }}>Kaart laden…</div>
         )}
 
         {/* Privé/Instellingen render inside the SAME ProfileCard shell as Openbaar (glass, brackets,
@@ -697,11 +740,25 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                   </div>
                   <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <input ref={syncFileRef} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => syncFromPdf(e.target.files && e.target.files[0])} />
-                    <SciFiButton onClick={() => syncFileRef.current && syncFileRef.current.click()} disabled={syncBusy} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{syncBusy ? 'Bezig…' : 'Upload rapport-PDF'}</SciFiButton>
+                    {/* Gate: disabled + no pointer events until 2 months after the last code. */}
+                    <SciFiButton onClick={() => syncFileRef.current && syncFileRef.current.click()} disabled={syncBusy || uploadGateClosed} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)" style={{ pointerEvents: uploadGateClosed ? 'none' : 'auto' }}>{syncBusy ? 'Bezig…' : 'Upload rapport-PDF'}</SciFiButton>
+                    {uploadGateClosed && (
+                      <span style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(251,191,36,0.9)' }}>
+                        Nieuw rapport uploaden kan vanaf {fmtDateNL(nextUploadAt)}
+                      </span>
+                    )}
                     {syncMsg && <span style={{ fontSize: 'max(9px,0.5vw)', color: syncMsg.includes('✓') ? '#4ade80' : '#f87171' }}>{syncMsg}</span>}
                   </div>
                 </div>
 
+                {/* Access expired → Privé reduces to the upload block above; everything below
+                    (declared card content, socials, save) hides until a new code re-opens access. */}
+                {accessExpired && (
+                  <div style={{ fontSize: 'max(10px,0.55vw)', color: 'rgba(251,191,36,0.9)', lineHeight: 1.5 }}>
+                    Je toegang is verlopen. Upload hierboven een nieuw rapport-PDF om je profiel opnieuw te ontgrendelen.
+                  </div>
+                )}
+                {!accessExpired && (<>
                 <div style={{ display: 'flex', gap: '0.9rem', marginBottom: '1.05rem' }}>
                   <div style={{ flex: 1 }}>
                     <div style={LABEL}>Leeftijd</div>
@@ -791,6 +848,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                   <SciFiButton onClick={saveAll} disabled={busy} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">Profiel opslaan</SciFiButton>
                   {storyMsg && <div style={{ marginTop: '0.6rem', fontSize: 'max(9px,0.5vw)', color: storyMsg.includes('✓') ? '#4ade80' : '#f87171' }}>{storyMsg}</div>}
                 </div>
+                </>)}
               </div>
             )}
 
@@ -854,6 +912,25 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                     {dlMsg && <span style={{ fontSize: 'max(9px,0.48vw)', color: dlMsg.includes('✓') ? '#4ade80' : dlMsg.includes('…') ? 'rgba(196,181,253,0.85)' : '#f87171' }}>{dlMsg}</span>}
                   </div>
                 </div>
+
+                {/* Toegang — unlocks after 3 linked kristal-codes (access model): the user has
+                    proven commitment; offer subscription (cheaper than a new test), a year, or
+                    lifetime. No payment rails yet → options render disabled with a coming-soon note. */}
+                {(Array.isArray(user.orbHistory) ? user.orbHistory : []).length >= 3 && (
+                  <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ ...LABEL, marginBottom: '0.6rem' }}>Toegang</div>
+                    <div style={{ fontSize: 'max(11px,0.58vw)', color: '#FFFEF0', lineHeight: 1.5, marginBottom: '0.7rem' }}>
+                      Je hebt drie kristal-codes gekoppeld — vanaf nu kun je je toegang ook zonder nieuwe test voortzetten.
+                      {user.accessUntil && <> Je huidige toegang is geldig tot <b>{fmtDateNL(user.accessUntil)}</b>.</>}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">Abonnement — per 3 maanden</SciFiButton>
+                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">Jaartoegang</SciFiButton>
+                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">Levenslange toegang</SciFiButton>
+                      <span style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(196,181,253,0.75)' }}>Binnenkort beschikbaar</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* danger: delete account */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(239,68,68,0.25)' }}>

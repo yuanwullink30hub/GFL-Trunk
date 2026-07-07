@@ -296,13 +296,14 @@
             if (pk) pk.style.display = 'none';
             if (p2) { p2.style.display = 'flex'; }
             // Safety net: if React never signals ready (crash / aborted effect),
-            // force-dismiss the overlay after 20 seconds so user isn't stuck forever
+            // force-dismiss the overlay after 30 seconds so user isn't stuck forever.
+            // (30s > the app's own 20s anti-hang cap, so this only fires on a real crash.)
             setTimeout(function() {
               if (!appReady) {
                 console.warn('[GFL] App never signaled ready — forcing overlay dismiss');
                 window.__gflDismissOverlay();
               }
-            }, 20000);
+            }, 30000);
           }
         }
 
@@ -322,13 +323,13 @@
           var p2 = document.getElementById('gfl-loading-phase2');
           if (pk) pk.style.display = 'none';
           if (p2) { p2.style.display = 'flex'; }
-          // Safety net for returning users: same 20s force-dismiss
+          // Safety net for returning users: same 30s crash-only force-dismiss
           setTimeout(function() {
             if (!appReady) {
               console.warn('[GFL] App never signaled ready (returning user) — forcing dismiss');
               window.__gflDismissOverlay();
             }
-          }, 20000);
+          }, 30000);
         }
 
         // ── Passkey input (both mobile fresh + desktop fresh) ──

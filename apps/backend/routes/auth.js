@@ -108,7 +108,12 @@ function publicOrbFromCode(orbCode) {
 // archetype + timestamp, oldest→newest. Strips codeHash — never expose the credential surface.
 function publicOrbHistory(u) {
   if (!u || !Array.isArray(u.orbHistory)) return [];
-  return u.orbHistory.map((h) => ({ orb: h.orb || null, archetypeName: h.archetypeName || '', at: h.at || null, image: h.image || null }));
+  // baskets12 rides along per entry: /me is OWNER-ONLY, so the 5-mandje stays off the
+  // public card (§3) — the dashboard uses it for the chip-hover full-colour radar.
+  return u.orbHistory.map((h) => ({
+    orb: h.orb || null, archetypeName: h.archetypeName || '', at: h.at || null, image: h.image || null,
+    baskets12: Array.isArray(h.baskets12) && h.baskets12.length === 12 ? h.baskets12 : null,
+  }));
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -319,6 +324,9 @@ router.post('/register', async (req, res) => {
       ...(archetypeName ? { archetypeName: String(archetypeName) } : {}),
       ...(publicOrb ? { publicOrb } : {}),
       ...(historyEntry ? { orbHistory: [historyEntry] } : {}),
+      // Access model: the first code opens a 3-month window; each later code (POST /orb/link)
+      // appends 3 more to the expiry.
+      ...(hasOrbCode ? { accessUntil: (() => { const d = new Date(now); d.setMonth(d.getMonth() + 3); return d; })() } : {}),
       createdAt: now,
       updatedAt: now,
     });
@@ -566,6 +574,14 @@ router.get('/me', authRequired, async (req, res) => {
       orb: user.publicOrb || null,
       archetypeName: user.archetypeName || '',
       orbHistory: publicOrbHistory(user),
+      // Access model: platform-access expiry + when the next code may be attached (2 months
+      // after the last one). The Privé upload button disables itself on this date.
+      accessUntil: user.accessUntil || null,
+      nextUploadAvailableAt: (() => {
+        const h = Array.isArray(user.orbHistory) ? user.orbHistory[user.orbHistory.length - 1] : null;
+        if (!h || !h.at) return null;
+        const d = new Date(h.at); d.setMonth(d.getMonth() + 2); return d;
+      })(),
       story: user.story || '',
       link: user.link || '',
       roleLine: user.roleLine || '',

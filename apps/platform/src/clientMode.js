@@ -31,6 +31,13 @@ export function setClientOrbConfig(config) {
   try { if (config) localStorage.setItem(ORB_CONFIG_KEY, JSON.stringify(config)); } catch { /* ignore */ }
 }
 
+/** Drop ONLY the raw code (keeps client mode via the stored config). Needed when the server
+ *  has a newer active orb than the locally stored code decodes to — the code takes precedence
+ *  in getClientOrbConfig, so a stale one must go for the adopted config to win. */
+export function clearClientOrbCode() {
+  try { localStorage.removeItem(ORB_CODE_KEY); } catch { /* ignore */ }
+}
+
 /** { displayName, archetypeName, country, age } — or null if none stored. */
 export function getClientProfile() {
   try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null'); } catch { return null; }

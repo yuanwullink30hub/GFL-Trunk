@@ -612,9 +612,13 @@ const App = () => {
     
     // Start preloading all heavy resources immediately
     // Loading screen stays until nebula background is fully rendered
-    const maxLoadTime = 8000;
+    // 20s: a pure anti-hang net, NOT a routine cutoff. A user who entered their
+    // passkey early must stay on the loading modal until the landing is genuinely
+    // ready — a cold nebula shader compile alone can take 9-15s (in the worker,
+    // spinner keeps moving), and the old 8s cap dumped them onto a half-loaded page.
+    const maxLoadTime = 20000;
     let hasEnded = false;
-    
+
     const endLoadingScreen = () => {
       if (hasEnded || abortController.signal.aborted) return;
       hasEnded = true;
@@ -622,7 +626,9 @@ const App = () => {
       // If passkey was already entered, this dismisses immediately.
       // If user is still typing the passkey, it will dismiss once they unlock.
       if (window.__gflAppReady) {
-        window.__gflAppReady();
+        // Double-rAF: let the landing commit + paint behind the overlay before the
+        // 0.5s fade starts, so early-passkey users never see a half-rendered page.
+        requestAnimationFrame(() => requestAnimationFrame(() => window.__gflAppReady()));
       } else {
         // Fallback: just remove the overlay
         const overlay = document.getElementById('gfl-loading-overlay');
@@ -651,12 +657,12 @@ const App = () => {
     let maxTimer = null;
     const startPreload = () => {
       if (abortController.signal.aborted) return;
-      preloadAll(null, { signal: abortController.signal }).then(async () => {
-        if (abortController.signal.aborted) return;
-        // Mount nebula — shader compilation will block the thread
-        setMountNebula(true);
-        // Give React a tick to mount the canvas before WebGL init blocks the thread
-        await new Promise(r => setTimeout(r, 16));
+      // Mount nebula FIRST: its shader compile runs in a Web Worker (nebulaWorker.js),
+      // so it proceeds in parallel with the chunk warming below instead of after it —
+      // and it can't block the main thread (the old serialized order existed because
+      // compilation used to freeze the thread for seconds).
+      setMountNebula(true);
+      preloadAll(null, { signal: abortController.signal }).then(() => {
         if (abortController.signal.aborted) return;
         // Wait for nebula to signal it's rendered its first frame
         return nebulaReadyPromise;
@@ -1581,6 +1587,10 @@ const App = () => {
   const scrollLabelY = scrollLabelProgress * 250; // faster outward movement (closer to explosion)
   const scrollLabelOpacity = Math.max(0, 1 - scrollLabelProgress * 2.0);
   const scrollLabelScale = 1 - (scrollLabelProgress * 0.08);
+  // Landing falloff — mirrors HoloEarth's earthFalloff (the globe shrinks on smaller pixel viewports
+  // where the container text hits its floors). Applied to the earth's dropshadow + the scroll label
+  // so they scale down WITH the globe. ≥1600px → 1. Keep REF/POWER in sync with HoloEarth.
+  const landingScale = Math.min(1, Math.pow(viewport.w / 1600, 1.1));
 
   // Login button (mobile): matches scroll label, delayed 1 frame
   const loginBtnStartFrame = scrollLabelStartFrame + 1;
@@ -2239,9 +2249,9 @@ const App = () => {
             <div
               className="absolute left-0 right-0 flex flex-col items-center justify-center gap-4 z-50"
               style={{
-                bottom: 'calc(20% + 0.5rem)',
+                bottom: 'calc(20% - 1rem)',
                 opacity: scrollLabelOpacity,
-                transform: `translateY(${scrollLabelY * 2.5}px) scale(${scrollLabelScale})`,
+                transform: `translateY(${scrollLabelY * 2.5}px) scale(${scrollLabelScale * landingScale})`,
               }}
             >
               {/* LAPTOP: Show "Start Experience" button instead of scroll prompt */}
@@ -2635,6 +2645,7 @@ const App = () => {
                 onIntroComplete={handleIntroComplete}
                 onLayerStateChange={handleLayerStateChange}
                 hidePyramid={assessmentPhase === 'intro'}
+                landingShadowScale={landingScale}
               />
             )}
           </div>

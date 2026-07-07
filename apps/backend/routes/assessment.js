@@ -332,8 +332,12 @@ router.post('/review', authOptional, async (req, res) => {
             text: adminBody,
           });
 
-          // HTML confirmation to submitter
-          if (review.email) {
+          // HTML confirmation to submitter — ONLY for real feedback submissions (the
+          // feedback form). The result card's email gate posts an email-only review;
+          // that flow must NOT email instantly — the korte-versie/volledig-rapport
+          // button decides which mail goes out (POST /report-email below).
+          const hasFeedback = !!(review.whatWorked || review.whatDidntWork || review.suggestions || review.starRating);
+          if (review.email && hasFeedback) {
             const { html: confirmHtml, attachments: confirmAttachments } = buildFeedbackEmail(emailSettings, review);
             await transporter.sendMail({
               from: `"Garden For Life" <${config.email.from}>`,
@@ -358,6 +362,65 @@ router.post('/review', authOptional, async (req, res) => {
   } catch (err) {
     console.error('[Assessment] ❌ Review save error:', err.message);
     res.status(500).json({ error: 'Failed to save review' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/assessment/report-email — Send the report email for the chosen PDF kind.
+// Fired when the user clicks "Korte versie" or "Volledig rapport" (after consent) —
+// NOT when the email is first entered. Template per kind from siteSettings
+// ('report-email-short' / 'report-email-full'), falling back to 'feedback-email'.
+// ─────────────────────────────────────────────────────────────
+
+router.post('/report-email', authOptional, async (req, res) => {
+  try {
+    const { email, kind, archetypeKey, extendedArchetypeName } = req.body || {};
+    const normalized = String(email || '').trim();
+    if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+      return res.status(400).json({ error: 'Geldig e-mailadres vereist' });
+    }
+    const pdfKind = kind === 'short' ? 'short' : 'full';
+    if (!config.email.user || !config.email.pass) {
+      console.warn('[Assessment] SMTP not configured — report email skipped');
+      return res.json({ sent: false });
+    }
+
+    // Fire-and-forget: the download must not wait on SMTP.
+    (async () => {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: config.email.host,
+          port: config.email.port,
+          secure: config.email.secure,
+          auth: { user: config.email.user, pass: config.email.pass },
+        });
+        const settings = await getDB().collection('siteSettings')
+          .findOne({ _id: `report-email-${pdfKind}` }).catch(() => null)
+          || await getDB().collection('siteSettings').findOne({ _id: 'feedback-email' }).catch(() => null)
+          || {};
+        const pseudoReview = {
+          email: normalized,
+          archetypeKey: archetypeKey || null,
+          extendedArchetypeName: (extendedArchetypeName || '').trim() || null,
+        };
+        const { html, attachments } = buildFeedbackEmail(settings, pseudoReview);
+        await transporter.sendMail({
+          from: `"Garden For Life" <${config.email.from}>`,
+          to: normalized,
+          subject: pdfKind === 'short' ? 'Garden For Life — Korte versie' : 'Garden For Life — Volledig rapport',
+          html,
+          attachments,
+        });
+        console.log(`[Assessment] ✅ Report email (${pdfKind}) sent to ${normalized.slice(0, 30)}`);
+      } catch (err) {
+        console.error('[Assessment] Report email send error:', err.message);
+      }
+    })();
+
+    return res.json({ sent: true, kind: pdfKind });
+  } catch (err) {
+    console.error('[Assessment] ❌ report-email error:', err.message);
+    return res.status(500).json({ error: 'Failed to send report email' });
   }
 });
 

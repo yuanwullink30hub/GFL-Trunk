@@ -223,7 +223,7 @@ function SocialRow({ socials }) {
   );
 }
 
-const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, active = true, orbBoxRef = null, children = null, wheelBaskets = null }) => {
+const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, active = true, orbBoxRef = null, children = null, wheelBaskets = null, wheelBasketsHistory = null }) => {
   const { width: vpW } = useViewport();
   const stacked = vpW < 900;
   const chipsRef = useRef(null);
@@ -252,17 +252,22 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
   const railInner = (stacked ? cardW : cardW * 0.32) - 40;
   const chipSize = Math.max(24, Math.floor((railInner - (CHIPS_PER_ROW - 1) * 9.6) / CHIPS_PER_ROW));
 
-  // The strip fills toward the RIGHT: the newest reading sits at the right edge; once the
-  // row is full the oldest chips are pushed out of view on the left (scroll back to see them).
+  // The strip fills from the LEFT: the newest reading sits at the left edge and pushes the
+  // older chips to the right; once the row is full the oldest get pushed out of view on the
+  // right (scroll forward to see them). Keep the view pinned at the left on new readings.
   useEffect(() => {
     const el = chipsRef.current;
-    if (el) el.scrollLeft = el.scrollWidth;
+    if (el) el.scrollLeft = 0;
   }, [readings.length, chipSize]);
 
+  // Chips = PREVIOUS readings only: the ACTIVE (newest) reading is the big orb above and
+  // gets no chip. Newest-of-the-old sits leftmost (new entries push the older ones right).
+  const chipReadings = readings.slice(0, -1).reverse();
+
   // Ghost chips: pad the row to a full CHIPS_PER_ROW slots — empty dashed circles for the
-  // readings still to come. Once the path holds 8+ readings, no ghosts remain.
+  // readings still to come. Once the path holds 8+ past readings, no ghosts remain.
   const ghosts = [];
-  for (let i = 0; i < Math.max(0, CHIPS_PER_ROW - readings.length); i++) ghosts.push(i);
+  for (let i = 0; i < Math.max(0, CHIPS_PER_ROW - chipReadings.length); i++) ghosts.push(i);
 
   const identityLine = [
     declared.age != null ? String(declared.age) : null,
@@ -410,11 +415,13 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
             <div style={zoneLabel()}>
               SCHADUWPROFIELEN · {readingCount} {readingCount === 1 ? 'LEZING' : 'LEZINGEN'}
             </div>
-            {/* Scrollable strip — sized so exactly CHIPS_PER_ROW fit; fills toward the RIGHT
-                (newest at the right edge). When full, the oldest chips get pushed out of view
-                on the left — still reachable by scrolling (wheel or drag). */}
+            {/* Scrollable strip — sized so exactly CHIPS_PER_ROW fit; fills from the LEFT
+                (newest at the left edge, pushing older chips right). When full, the oldest
+                get pushed out of view on the right — still reachable by scrolling. */}
             <div ref={chipsRef} onWheel={onChipsWheel} onScroll={onChipLeave} className="purple-scrollbar" style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', overflowY: 'hidden', paddingBottom: '0.3rem', scrollbarWidth: 'thin', maxWidth: '100%' }}>
-              {readings.map((r) => <ReadingChip key={r.readingId} reading={r} size={chipSize} onHover={onChipHover} onLeave={onChipLeave} />)}
+              {/* Past readings, newest first: new orbs enter at the LEFT and push the older
+                  ones right; the ACTIVE reading has no chip; ghosts pad the right. */}
+              {chipReadings.map((r) => <ReadingChip key={r.readingId} reading={r} size={chipSize} onHover={onChipHover} onLeave={onChipLeave} />)}
               {ghosts.map((d, i) => <GhostChip key={`g${i}`} size={chipSize} />)}
             </div>
           </div>
@@ -430,41 +437,57 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
           {/* alignItems flex-start (not center): the block's first text line must sit at a
               FIXED offset below the title so it stays aligned with the rail's gift box —
               centering made the text top float with content height. */}
+          {/* Chip hover: the WHOLE block follows the hovered reading — header archetypes,
+              radar and expression body swap to that reading's data (readings carry §2.1
+              fields per entry). Live baskets exist only for the ACTIVE reading, so hovered
+              readings render the shape-only radar from their own shapeVector12. */}
+          {(() => {
+            const expr = hoverReading || latest;
+            const exprMicro = hoverReading ? getCardMicrocopy(hoverReading.archetypePrimaryId) : micro;
+            return (
           <div style={{ position: 'relative', flex: '0 0 auto', minHeight: stacked ? 0 : '24%', padding: '0.9rem 1rem', display: 'flex', gap: '1rem', alignItems: 'flex-start', boxSizing: 'border-box' }}>
             {/* Left column — the Expressieprofiel header (main + support archetype on their
                 own lines) stacked ABOVE the radar wheel. */}
             <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                 <div style={zoneLabel()}>Expressieprofiel</div>
-                {latest?.archetypeMainId && (
+                {expr?.archetypeMainId && (
                   <div style={{ fontFamily: FONT, fontSize: FS.xs, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255, 174, 0, 0.55)' }}>
-                    {latest.archetypeMainId}
+                    {expr.archetypeMainId}
                   </div>
                 )}
-                {latest?.archetypeSupportId && (
+                {expr?.archetypeSupportId && (
                   <div style={{ fontFamily: FONT, fontSize: FS.xs, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255, 174, 0, 0.55)' }}>
-                    + {latest.archetypeSupportId}
+                    + {expr.archetypeSupportId}
                   </div>
                 )}
               </div>
               {(() => {
                 const radarSize = Math.round(Math.min(150, Math.max(96, vpW * 0.075)));
-                // Owner view carries the reading's 5-mandje baskets → the full split-colour wheel
-                // (identical to the PDF radar). No baskets (public card / pre-extractor) → shape-only glyph.
-                return Array.isArray(wheelBaskets) && wheelBaskets.length === 12
-                  ? <div style={{ width: radarSize, height: radarSize, flexShrink: 0 }}><WheelGlyph baskets={wheelBaskets} /></div>
-                  : <RadarGlyph vector={latest?.shapeVector12} size={radarSize} />;
+                // Owner view: the full split-colour 5-mandje wheel (identical to the PDF radar)
+                // for the ACTIVE reading and for hovered history readings alike — per-reading
+                // baskets come via wheelBasketsHistory (owner-only /me data, aligned 1:1 with
+                // the payload readings). Missing baskets (pre-extractor entries, public card)
+                // fall back to the shape-only glyph from the reading's own vector.
+                const baskets = hoverReading
+                  ? (Array.isArray(wheelBasketsHistory) ? wheelBasketsHistory[readings.indexOf(hoverReading)] : null)
+                  : wheelBaskets;
+                return Array.isArray(baskets) && baskets.length === 12
+                  ? <div style={{ width: radarSize, height: radarSize, flexShrink: 0 }}><WheelGlyph baskets={baskets} /></div>
+                  : <RadarGlyph vector={expr?.shapeVector12} size={radarSize} />;
               })()}
             </div>
             {/* Body column — sits where the header block used to: expression text at the top. */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
               {/* Body: the AI-authored geometry summary (canon language) wins → then the
                   extracted Gift one-liner → then the placeholder microcopy. */}
-              <div style={{ fontFamily: FIGTREE, fontSize: FS.base, lineHeight: 1.6, color: CREAM }}>{renderEmphasized(latest?.geomSummary || (latest?.gift ? `*Gift* — ${latest.gift}.` : micro.expression))}</div>
+              <div style={{ fontFamily: FIGTREE, fontSize: FS.base, lineHeight: 1.6, color: CREAM }}>{renderEmphasized(expr?.geomSummary || (expr?.gift ? `*Gift* — ${expr.gift}.` : exprMicro.expression))}</div>
               {/* Model-note: ships with the block in every render — not a tooltip, not removable. */}
               <div style={{ fontFamily: FIGTREE, fontSize: FS.sm, color: DIM, fontStyle: 'italic' }}>Binnen dit model: een waarschijnlijke tendens, geen bepaling.</div>
             </div>
           </div>
+            );
+          })()}
 
           {/* Declared row — self-write register (left-edge bar, purple; NEVER corner brackets).
               v1.1: each block = the self-written text + a SEPARATE readable section block of

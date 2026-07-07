@@ -131,15 +131,24 @@ app.post('/api/beta/verify', async (req, res) => {
 // Keeps: user accounts, audit logs (devActivity), questions.
 // Deletes: assessments, assessmentReviews.
 const BETA_WIPE_DATE = new Date('2026-09-27T12:00:00Z');
+// Node's setTimeout delay is a 32-bit signed int: anything over ~24.8 days overflows and gets
+// clamped to 1ms (fires immediately). The wipe is months out, so we re-arm in safe chunks.
+const MAX_TIMEOUT = 2147483647; // 2^31 - 1 ms
 
 function scheduleBetaWipe() {
-  const now = Date.now();
-  const msUntilWipe = BETA_WIPE_DATE.getTime() - now;
+  const msUntilWipe = BETA_WIPE_DATE.getTime() - Date.now();
 
   if (msUntilWipe <= 0) {
     // Already past the deadline — run immediately on startup
     console.log('[GFL-API] ⚠️  Beta wipe deadline has passed — executing now');
     executeBetaWipe();
+    return;
+  }
+
+  if (msUntilWipe > MAX_TIMEOUT) {
+    // Too far out for a single timer — re-check after one max chunk (never fires early).
+    console.log(`[GFL-API] Beta data wipe scheduled for ${BETA_WIPE_DATE.toISOString()} (in ${Math.round(msUntilWipe / 86400000)}d)`);
+    setTimeout(scheduleBetaWipe, MAX_TIMEOUT).unref?.();
     return;
   }
 

@@ -719,19 +719,22 @@ const LoginPage = memo(({ isVisible, onBack }) => {
               <div style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, margin: '0.35rem 0 1rem' }}>
                 Je kristal is uniek. Koppel het aan een account om het platform te betreden — je code wordt je sleutel.
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+              {/* Real <form> — password managers skip fields that live outside one. Enter
+                  submits; the SciFiButton below stays type=button and calls the handler itself. */}
+              <form id="onboardForm" onSubmit={(e) => { e.preventDefault(); handleCreateAccount(); }} style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                 <div>
                   <div style={FIELD_LABEL}><span>👤</span> Gebruikersnaam</div>
-                  <input value={obUsername} onChange={(e) => setObUsername(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
+                  {/* nickname, NOT username: login is by email — managers must not save this as the identifier */}
+                  <input type="text" name="nickname" id="onboard-nickname" autoComplete="nickname" value={obUsername} onChange={(e) => setObUsername(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
                 <div>
                   <div style={FIELD_LABEL}><span>✉</span> E-mail</div>
-                  <input type="email" autoComplete="email" value={obEmail} onChange={(e) => setObEmail(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
+                  <input type="email" name="email" id="onboard-email" autoComplete="username" value={obEmail} onChange={(e) => setObEmail(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
                 <div>
                   <div style={FIELD_LABEL}><span>🔑</span> Wachtwoord</div>
                   <div style={{ position: 'relative' }}>
-                    <input type={obShowPassword ? 'text' : 'password'} autoComplete="new-password" value={obPassword} onChange={(e) => setObPassword(e.target.value)} style={{ ...INPUT, paddingRight: '2.4rem' }} onFocus={inputFocus} onBlur={inputBlur} />
+                    <input type={obShowPassword ? 'text' : 'password'} name="new-password" id="onboard-password" autoComplete="new-password" value={obPassword} onChange={(e) => setObPassword(e.target.value)} style={{ ...INPUT, paddingRight: '2.4rem' }} onFocus={inputFocus} onBlur={inputBlur} />
                     <button
                       type="button"
                       onClick={() => setObShowPassword((v) => !v)}
@@ -758,11 +761,11 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                 <div style={{ display: 'flex', gap: '0.55rem' }}>
                   <div style={{ flex: 1 }}>
                     <div style={FIELD_LABEL}>Leeftijd</div>
-                    <input type="number" min="0" value={obAge} onChange={(e) => setObAge(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
+                    <input type="number" name="age" min="0" autoComplete="off" value={obAge} onChange={(e) => setObAge(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                   </div>
                   <div style={{ flex: 2 }}>
                     <div style={FIELD_LABEL}>Land</div>
-                    <input value={obCountry} onChange={(e) => setObCountry(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
+                    <input type="text" name="country" autoComplete="country-name" value={obCountry} onChange={(e) => setObCountry(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                   </div>
                 </div>
                 <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginTop: '0.3rem', cursor: 'pointer' }}>
@@ -774,7 +777,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                     <a href="/?page=privacybeleid" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: C.gold, textDecoration: 'underline' }}>Privacybeleid</a>.
                   </span>
                 </label>
-              </div>
+              </form>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.1rem' }}>
                 <button type="button" onClick={handleOnboardingBack} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 'max(9px,0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}>← Terug</button>
                 <SciFiButton onClick={handleCreateAccount} disabled={obBusy} size="md">{obBusy ? 'Aanmaken…' : 'Betreed platform'}</SciFiButton>
@@ -820,14 +823,16 @@ const LoginPage = memo(({ isVisible, onBack }) => {
               <form id="loginForm" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                 <div>
                   <div style={FIELD_LABEL}><span>✉</span> {t('pages.loginPage.email') || 'E-mail'}</div>
-                  <input type="email" {...(process.env.NODE_ENV === 'production' && { required: true })} autoComplete="email"
+                  {/* name/id + autocomplete="username": password managers key on these to
+                      recognize the login form (and to offer saving in the first place). */}
+                  <input type="email" name="email" id="login-email" {...(process.env.NODE_ENV === 'production' && { required: true })} autoComplete="username"
                     placeholder={t('pages.loginPage.email')}
                     value={email} onChange={(e) => setEmail(e.target.value)}
                     style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
                 <div>
                   <div style={FIELD_LABEL}><span>🔑</span> {t('pages.loginPage.password') || 'Wachtwoord'}</div>
-                  <input type="password" {...(process.env.NODE_ENV === 'production' && { required: true, minLength: 6 })}
+                  <input type="password" name="password" id="login-password" {...(process.env.NODE_ENV === 'production' && { required: true, minLength: 6 })}
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     placeholder={t('pages.loginPage.password')}
                     value={password} onChange={(e) => setPassword(e.target.value)}
@@ -836,7 +841,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                 {mode === 'register' && (
                   <div>
                     <div style={FIELD_LABEL}><span>👤</span> {t('pages.loginPage.displayName') || 'Naam'}</div>
-                    <input type="text" autoComplete="name"
+                    <input type="text" name="name" id="login-name" autoComplete="name"
                       placeholder={t('pages.loginPage.displayName')}
                       value={displayName} onChange={(e) => setDisplayName(e.target.value)}
                       style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />

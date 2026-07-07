@@ -19,9 +19,13 @@ services:
     runtime: node
     region: frankfurt          # EU — close to users
     plan: free                 # Free tier (spins down after 15 min inactivity)
-    rootDir: apps/backend
-    buildCommand: npm install
-    startCommand: node server.js
+    # pnpm monorepo: build from the workspace ROOT (no rootDir) so pnpm can resolve the
+    # @gfl/orb-engine `workspace:*` dependency the backend requires at runtime. `npm install`
+    # cannot handle the workspace: protocol, and installing inside apps/backend alone can't
+    # link the sibling package — hence the previous "Root directory backend does not exist"
+    # / unresolved-dependency failures.
+    buildCommand: corepack pnpm@9.0.0 install --filter @gfl/backend...
+    startCommand: node apps/backend/server.js
     envVars:
       - key: NODE_ENV
         value: production

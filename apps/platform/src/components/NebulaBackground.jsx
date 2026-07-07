@@ -1208,8 +1208,9 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Defer WebGL init to the next macrotask so the loading bar can update
-    // (shader compilation blocks the main thread for 2-5s)
+    // Defer WebGL init to the next macrotask so the canvas paints first. Shader
+    // compilation itself is async inside initWebGL (KHR_parallel_shader_compile):
+    // the driver compiles on background threads while the loading spinner spins.
     let cleanupFn = null;
     const initTimer = setTimeout(() => {
       cleanupFn = initWebGL(canvas);
@@ -1258,43 +1259,80 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     gl.getExtension('OES_standard_derivatives');
     gl.getExtension('EXT_shader_texture_lod');
 
-    // Shader helpers
-    function compile(type, src) {
-      const s = gl.createShader(type);
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        console.error('Shader compile error:', gl.getShaderInfoLog(s));
-        gl.deleteShader(s);
-        return null;
-      }
-      return s;
-    }
-    function linkProg(vSrc, fSrc) {
-      const v = compile(gl.VERTEX_SHADER, vSrc);
-      const f = compile(gl.FRAGMENT_SHADER, fSrc);
-      if (!v || !f) return null;
+    // Shader helpers — compile + link WITHOUT querying status. Querying
+    // COMPILE_STATUS/LINK_STATUS right after compileShader forces the driver to
+    // finish compiling synchronously — the 2-5s cold-boot stall that froze even
+    // the compositor (and with it the loading spinner). Status is only checked
+    // in finishInit(), after the driver signals completion.
+    function makeProgram(vSrc, fSrc) {
+      const v = gl.createShader(gl.VERTEX_SHADER);
+      gl.shaderSource(v, vSrc);
+      gl.compileShader(v);
+      const f = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(f, fSrc);
+      gl.compileShader(f);
       const p = gl.createProgram();
       gl.attachShader(p, v);
       gl.attachShader(p, f);
       gl.linkProgram(p);
-      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
-        console.error('Link error:', gl.getProgramInfoLog(p));
-        return null;
-      }
       p._shaders = [v, f];
       return p;
     }
-
-    // Create programs — desktop only (laptops/tablets use video)
-    const dispProg   = linkProg(VERT, DISP_FRAG);
-    const nebulaProg = linkProg(VERT, NEBULA_FRAG);
-    if (!nebulaProg || !dispProg) {
-      canvas.style.background = 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)';
-      if (onReadyRef.current) onReadyRef.current();
-      return () => {};
+    function programOk(p, label) {
+      if (gl.getProgramParameter(p, gl.LINK_STATUS)) return true;
+      p._shaders.forEach((s) => {
+        const log = gl.getShaderInfoLog(s);
+        if (log) console.error(`NebulaBackground ${label} shader:`, log);
+      });
+      console.error(`NebulaBackground ${label} link:`, gl.getProgramInfoLog(p));
+      return false;
     }
-    console.log('NebulaBackground: both programs compiled & linked');
+
+    // Create ALL programs up front so the driver compiles them as one parallel batch.
+    const dispProg   = makeProgram(VERT, DISP_FRAG);
+    const nebulaProg = makeProgram(VERT, NEBULA_FRAG);
+    let blendProg    = makeProgram(VERT, BLEND_FRAG);
+
+    // KHR_parallel_shader_compile: poll COMPLETION_STATUS_KHR once per frame while the
+    // driver compiles on its own threads — main thread + compositor stay free, so the
+    // loading overlay keeps animating. No extension → old synchronous path (the
+    // LINK_STATUS query in finishInit blocks, exactly as before).
+    const parallelExt = gl.getExtension('KHR_parallel_shader_compile');
+    let cancelled = false;
+    let pollHandle = null;
+    let innerCleanup = null;
+
+    function finishInit() {
+      if (cancelled) return;
+      if (!programOk(dispProg, 'displacement') || !programOk(nebulaProg, 'nebula')) {
+        canvas.style.background = 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)';
+        if (onReadyRef.current) onReadyRef.current();
+        return;
+      }
+      if (blendProg && !programOk(blendProg, 'blend')) {
+        blendProg._shaders.forEach((s) => gl.deleteShader(s));
+        gl.deleteProgram(blendProg);
+        blendProg = null; // seam crossfade disabled — render loop handles null
+      }
+      console.log('NebulaBackground: programs compiled & linked');
+      innerCleanup = mainInit();
+    }
+
+    if (parallelExt) {
+      const poll = () => {
+        if (cancelled) return;
+        const done = [dispProg, nebulaProg, blendProg].every(
+          (p) => gl.getProgramParameter(p, parallelExt.COMPLETION_STATUS_KHR)
+        );
+        if (done) { pollHandle = null; finishInit(); }
+        else { pollHandle = requestAnimationFrame(poll); }
+      };
+      poll();
+    } else {
+      finishInit();
+    }
+
+    function mainInit() {
 
     // Fullscreen quad
     const quadBuf = gl.createBuffer();
@@ -1378,8 +1416,8 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     };
     const nPosLoc = gl.getAttribLocation(nebulaProg, 'a_position');
 
-    // ── Seam crossfade resources ──────────────────────────────────────────
-    const blendProg = linkProg(VERT, BLEND_FRAG);
+    // ── Seam crossfade resources (blendProg compiled up front, in the parallel batch;
+    //    null here if its link failed — the render loop falls back to the single pass) ──
     const bU = blendProg ? {
       texA:       gl.getUniformLocation(blendProg, 'u_texA'),
       texB:       gl.getUniformLocation(blendProg, 'u_texB'),
@@ -1552,12 +1590,13 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
         gl.activeTexture(gl.TEXTURE0); // restore default unit for next frame's displacement pass
       }
 
-      // Signal ready after first frame is fully rendered
+      // Signal ready once the first frame has been submitted. flush + next-rAF instead
+      // of gl.finish(): finish blocks the main thread until the GPU completes the
+      // full-res frame (another cold-boot stall); by the next rAF it's presented anyway.
       if (!readyFiredRef.current) {
         readyFiredRef.current = true;
-        // Use gl.finish() to ensure GPU has completed all draw calls
-        gl.finish();
-        if (onReadyRef.current) onReadyRef.current();
+        gl.flush();
+        requestAnimationFrame(() => { if (onReadyRef.current) onReadyRef.current(); });
       }
     }
     renderFnRef.current = render;
@@ -1573,7 +1612,7 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     }
     document.addEventListener('visibilitychange', onVisibility);
 
-    // Cleanup returned from initWebGL
+    // Cleanup returned from mainInit
     return () => {
       renderFnRef.current = null;
       if (animRef.current) cancelAnimationFrame(animRef.current);
@@ -1590,6 +1629,23 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
       if (sceneB) { gl.deleteTexture(sceneB.tex); gl.deleteFramebuffer(sceneB.fb); }
       if (blendProg) { blendProg._shaders.forEach(s => gl.deleteShader(s)); gl.deleteProgram(blendProg); }
       // Force-release the WebGL context so it doesn't linger during hot-reload
+      const loseCtx = gl.getExtension('WEBGL_lose_context');
+      if (loseCtx) loseCtx.loseContext();
+    };
+
+    } // end mainInit
+
+    // initWebGL's own cleanup — valid whether or not compilation has finished yet.
+    return () => {
+      cancelled = true;
+      if (pollHandle) cancelAnimationFrame(pollHandle);
+      if (innerCleanup) { innerCleanup(); return; }
+      // Compile still in flight (or link failed): delete programs + release the context.
+      [dispProg, nebulaProg, blendProg].forEach((p) => {
+        if (!p) return;
+        p._shaders.forEach((s) => gl.deleteShader(s));
+        gl.deleteProgram(p);
+      });
       const loseCtx = gl.getExtension('WEBGL_lose_context');
       if (loseCtx) loseCtx.loseContext();
     };

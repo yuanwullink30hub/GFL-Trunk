@@ -1756,25 +1756,31 @@ const AssessmentResultsModal = ({
       // ═══════════════════════════════════════════════════
       // PAGE 5: 72 ARCHETYPES CROSS-REFERENCE (was page 6)
       // ═══════════════════════════════════════════════════
-      await justifiedPage(async (gap) => {
+      await justifiedPage(async () => {
+      // Fixed one-page layout (no flex gaps): intro on top, the closer bottom-anchored,
+      // and the TABLE stretched (via vPad) to fill exactly the space between them.
+      const savedNPBmyth = noPageBreak; noPageBreak = true;
 
       sectionHeading('72 Archetypes \u2014 Culturele & Mythologische Kruisverwijzing', orange);
 
       writeWrapped(
-        'En de getallen blijven terugkeren \u2014 niet alleen in de meetkunde, maar in de oudheid en de mythologie, los van elkaar, eeuwen uiteen.',
+        'Deze mythologie beschrijft de karakter laag van transformatie \u2014 hoe iets beweegt en verandert.\nTwaalf kern-archetypen, elk gedragen door \u00E9\u00E9n van zes neurale hardware-groepen, geven twee\u00EBnzeventig patronen.',
         margin + 2, y, contentW - 4, 8.5, white
       );
-      y += 3;
-      writeWrapped(
-        'E\u00E9n keer is toeval. Twee keer is opmerkelijk. Wanneer hetzelfde getal opduikt in de meetkunde, de oudheid en de mythologie \u2014 los van elkaar, eeuwen uit elkaar \u2014 wordt toeval de minst waarschijnlijke verklaring. Dit is de structuur waarop onze lezing rust.',
-        margin + 2, y, contentW - 4, 8.5, dimWhite, 'italic'
-      );
       y += 5;
-      gap();
 
-      drawTable(
-        ['Traditie / Discipline', 'Het Concept', 'Betekenis & Belang', 'Thematische Kruisverwijzing'],
-        [
+      // Bottom-anchored closer \u2014 measured first so the table knows its budget.
+      const MYTH_CLOSER_1 = 'De traditie komt telkens op hetzelfde getal uit, maar moderne wetenschap verfijnt de resolutie; onder elke transformatie ligt een dieper biologisch detail die de mythologie niet kon meten.';
+      const MYTH_CLOSER_2 = 'Precies die laag hebben wij voor jou in kaart gebracht.';
+      pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal');
+      const mythCloserLines = pdf.splitTextToSize(MYTH_CLOSER_1, contentW - 4).length
+        + pdf.splitTextToSize(MYTH_CLOSER_2, contentW - 4).length;
+      const mythCloserH = mythCloserLines * 4.5 + 6; // + paragraph gap
+      const mythBottomY = (H - margin) - mythCloserH; // top of the closer block
+
+      const MYTH_HEADERS = ['Traditie / Discipline', 'Het Concept', 'Betekenis & Belang', 'Thematische Kruisverwijzing'];
+      const MYTH_COLS = [36, 32, 68, 38];
+      const MYTH_ROWS = [
           ['Hellenistische Oudheid', 'De 72 Vertalers (Septuagint)', 'Volgens de Brief van Aristeas koos de hogepriester zes vertalers uit elk van de twaalf stammen — 12 × 6 = 72 — die de Torah in het Grieks vertaalden.', 'Overdracht van Wijsheid'],
           ['Numerologie',          'Oneindige Voltooiing',     '8 (Oneindigheid) \u00D7 9 (Voltooiing) = 72. Reduceert tot 9 (7+2), het getal van dienstbaarheid.', 'Transformatie & Wedergeboorte'],
           ['Heilige Geometrie',   'De Vijfhoek',               '72 graden is de exacte middelpuntshoek van een regelmatige vijfhoek.', 'Goddelijke Architectuur'],
@@ -1790,11 +1796,26 @@ const AssessmentResultsModal = ({
           ['Christelijke Mystiek', 'De Wederopstanding',       '72 uur vertegenwoordigt de exacte tijd verstreken tussen de kruisiging en de wederopstanding.', 'Transformatie & Wedergeboorte'],
           ['Islamitische Traditie','72 Metgezellen',           'Imam Hoessein werd vergezeld door 72 volgelingen tijdens de Slag bij Karbala \u2014 ultieme toewijding.', 'Opoffering & Toewijding'],
           ['Egyptische Mythologie','Het Osiris-complot',       '72 samenzweerders spanden samen met Seth om de god Osiris te doden.', 'Transformatie & Wedergeboorte'],
-        ],
-        [36, 32, 68, 38],
-        { fontSize: 7.5 }
-      );
-      gap();
+      ];
+
+      // Stretch: natural text height at 7.5pt \u2192 the surplus up to the closer becomes
+      // per-row padding (capped 3..12 so extremes can't wreck the rhythm).
+      const lhT = 7.5 * 0.45;
+      pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold');
+      const mythHeadLines = Math.max(...MYTH_HEADERS.map((h, i) => pdf.splitTextToSize(sanitizePdf(h), MYTH_COLS[i] - 4).length));
+      pdf.setFont('helvetica', 'normal');
+      const mythRowLines = MYTH_ROWS.map((r) => Math.max(...r.map((c, i) => pdf.splitTextToSize(sanitizePdf(String(c)), MYTH_COLS[i] - 4).length)));
+      const mythNaturalText = (mythHeadLines + mythRowLines.reduce((a, b) => a + b, 0)) * lhT;
+      const mythAvail = (mythBottomY - 6) - y; // breathing room above the closer
+      const mythVPad = Math.max(3, Math.min(12, (mythAvail - mythNaturalText) / (MYTH_ROWS.length + 1)));
+      drawTable(MYTH_HEADERS, MYTH_ROWS, MYTH_COLS, { fontSize: 7.5, vPad: mythVPad });
+
+      // Closer \u2014 bottom-aligned on the SAME page.
+      y = mythBottomY;
+      writeWrapped(MYTH_CLOSER_1, margin + 2, y, contentW - 4, 8.5, white);
+      y += 3;
+      writeWrapped(MYTH_CLOSER_2, margin + 2, y, contentW - 4, 8.5, white, 'italic');
+      noPageBreak = savedNPBmyth;
       });
 
       // ═══════════════════════════════════════════════════
@@ -1816,7 +1837,7 @@ const AssessmentResultsModal = ({
         y += 3;
       };
 
-      writeWrapped('En zo ontstaat je rapport. Geen twee rapporten lezen hetzelfde \u2014 niet alleen in inhoud, maar in toon. Taal en structuur worden afgestemd op je dominante netwerk: analytisch en gestructureerd voor CEN, reflectief en associatief voor DMN, direct en responsief voor het Salience Network. Het rapport spreekt, met andere woorden, de taal van het systeem dat het beschrijft.\nWat volgt is geen typebeschrijving uit een printer, maar een hologram die in meerdere stappen uit jouw antwoordprofiel wordt opgebouwd.', margin + 2, y, contentW - 4, 8.5, white);
+      writeWrapped('En die map is de aarde van jouw rapport, waarvan er geen twee hetzelfde lezen \u2014 niet alleen in inhoud, maar in toon. Taal en structuur worden afgestemd op je dominante netwerk: analytisch en gestructureerd voor CEN, reflectief en associatief voor DMN, direct en responsief voor het Salience Network. Het rapport spreekt, met andere woorden, de taal van het systeem dat het beschrijft.\nWat volgt is geen typebeschrijving uit een printer, maar een hologram die in meerdere stappen uit jouw antwoordprofiel wordt opgebouwd.', margin + 2, y, contentW - 4, 8.5, white);
       y += 5;
 
       leadPara("De geometrische echo's", green, "Na de toetsing berekent het systeem geen rijtje scores maar een gelaagde geometrie. Elke keuze heeft door de vijf kanalen van het wiel gebloed, en dat laat sporen na: schaduwen geworpen naar de tegenpolen, gewicht verschoven naar ondersteunende archetypen, polarisatie tussen wat sterk en wat onderdrukt staat. Deze echo's \u2014 niet de kale totalen \u2014 vormen de werkelijke vorm die gelezen wordt. Twee mensen met dezelfde top-archetypen kunnen een volstrekt andere geometrie hebben.");

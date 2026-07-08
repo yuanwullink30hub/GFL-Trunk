@@ -119,13 +119,16 @@ function sanitizeReading(r) {
  */
 function extractKaartSection(text) {
   const t = String(text || '');
-  const gift = t.match(/KAART_GIFT:\s*([\s\S]*?)(?=\n\s*KAART_GEOMETRIE:|\n#{2,3}\s|$)/);
-  const geo = t.match(/KAART_GEOMETRIE:\s*([\s\S]*?)(?=\n#{2,3}\s|$)/);
+  // Label delimiter is tolerant ( : or — / – / - ): the master prompt itself writes
+  // "KAART_GEOMETRIE — [...]" and the model follows it literally — a colon-only match
+  // let the gift capture swallow the geometry label + a truncated tail.
+  const gift = t.match(/KAART_GIFT\s*[:—–-]\s*([\s\S]*?)(?=\s*KAART_GEOMETRIE\s*[:—–-]|\n#{2,3}\s|$)/);
+  const geo = t.match(/KAART_GEOMETRIE\s*[:—–-]\s*([\s\S]*?)(?=\n#{2,3}\s|$)/);
   const clean = (m, max) => (m ? m[1].replace(/\s+/g, ' ').replace(/^\[|\]$/g, '').trim().slice(0, max) : '');
   const cleaned = t
     .replace(/^#{2,3}\s*(?:\d+[A-Za-z]?\.\s*)?kaart\s*microcopy\s*$[\s\S]*?(?=\n#{2,3}\s|$)/gim, '')
-    .replace(/^\s*KAART_GIFT:\s*[\s\S]*?(?=\n\s*KAART_GEOMETRIE:|\n#{2,3}\s|$)/gim, '')
-    .replace(/^\s*KAART_GEOMETRIE:\s*[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
+    .replace(/^\s*KAART_GIFT\s*[:—–-]\s*[\s\S]*?(?=\s*KAART_GEOMETRIE\s*[:—–-]|\n#{2,3}\s|$)/gim, '')
+    .replace(/^\s*KAART_GEOMETRIE\s*[:—–-]\s*[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
   return { giftMicro: clean(gift, 800), geomSummary: clean(geo, 1500), cleaned };
 }
 

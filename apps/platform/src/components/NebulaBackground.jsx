@@ -51,25 +51,25 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     const video = videoRef.current;
     if (!video) return;
 
-    function onCanPlay() {
+    const fireReady = () => {
       video.play().catch(() => {}); // autoplay may be blocked; gradient shows as fallback
       if (onReadyRef.current && !readyFiredRef.current) {
         readyFiredRef.current = true;
         onReadyRef.current();
       }
-    }
-    function onError() {
-      console.warn('NebulaBackground: video failed to load, falling back to gradient');
-      if (onReadyRef.current && !readyFiredRef.current) {
-        readyFiredRef.current = true;
-        onReadyRef.current();
-      }
-    }
-    video.addEventListener('canplaythrough', onCanPlay);
-    video.addEventListener('error', onError);
+    };
+    // Cached reload: the media can already be buffered before this effect attaches —
+    // the events would never re-fire and the boot overlay would hang. Check state first.
+    if (video.readyState >= 3) { fireReady(); return () => video.pause(); }
+    video.addEventListener('canplay', fireReady);
+    video.addEventListener('error', fireReady);
+    // Failsafe: a hung fetch (or a codec the browser silently rejects) must never pin the
+    // boot overlay — time-box the wait; the gradient background covers the gap.
+    const failsafe = setTimeout(fireReady, 5000);
     return () => {
-      video.removeEventListener('canplaythrough', onCanPlay);
-      video.removeEventListener('error', onError);
+      clearTimeout(failsafe);
+      video.removeEventListener('canplay', fireReady);
+      video.removeEventListener('error', fireReady);
       video.pause();
     };
   }, [useVideo]);
@@ -234,8 +234,13 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
           background: 'radial-gradient(ellipse at 40% 50%, #1a0525 0%, #0a0510 100%)',
         }}
       >
+        {/* src directly on the element (no <source> children): a failed fetch then fires
+            `error` on the video itself — source-element failures never reach it, which
+            would strand the boot overlay. Mobile keeps its portrait loop; low-gpu
+            laptops/desktops get the landscape-mastered laptop loop. */}
         <video
           ref={videoRef}
+          src={isMobile ? '/images/nebula-mobile-loop.mp4' : '/images/nebula-laptop-loop.mp4'}
           autoPlay
           loop
           muted
@@ -252,10 +257,7 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
             outline: 'none',
             border: 'none',
           }}
-        >
-          <source src="/images/nebula-mobile-loop.mp4"  type="video/mp4" />
-          <source src="/images/nebula-mobile-loop.webm" type="video/webm" />
-        </video>
+        />
       </div>
     );
   }

@@ -10,6 +10,7 @@ import { SciFiButton } from '@gfl/ui';
 import { cleanTitle, getSectionAccent, renderMarkdownContent } from '@gfl/utils';
 import SciFiRadarChart from '../components/assessment/SciFiRadarChart';
 import SubgroupCounters from '../components/assessment/SubgroupCounters';
+import PublicProfilesDirectory from '../components/assessment/PublicProfilesDirectory';
 
 /**
  * ProfileResultCard â€” loads the admin's own assessment from localStorage
@@ -445,20 +446,15 @@ const ProfileResultCard = ({ result: resultProp }) => {
 
       {/* ── 1. Header & Profile ── */}
       <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '2rem', paddingBottom: '1.5rem', borderBottom: `1px solid rgba(29, 153, 4, 0.2)` }}>
-        {/* Portrait container widened x2.1 (9rem -> 18.9rem) to hold the user's real orb */}
+        {/* Portrait: ALWAYS the archetype image (the orb lives on the profile card /
+            verbindingsmenu; here the persoonlijk-profiel page shows the portrait). */}
         <div style={{ position: 'relative', width: '18.9rem', height: '18.9rem', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {orbConfig ? (
-            <OrbSphere3D config={orbConfig} active size={300} style={{ filter: 'drop-shadow(0 0 40px rgba(120,80,200,0.25))' }} />
-          ) : (
-            <>
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px dashed rgba(29, 153, 4, 0.4)', animation: 'spin 20s linear infinite' }} />
-              <div style={{ position: 'absolute', inset: '-0.75rem', borderRadius: '50%', border: '1px dotted rgba(168, 85, 247, 0.4)', animation: 'spin 15s linear infinite reverse' }} />
-              <div style={{ width: '9rem', height: '9rem', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${green}`, background: '#000', position: 'relative' }}>
-                {imageUrl && <img src={imageUrl} alt={displayArchetype} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.25) sepia(0.2)', transform: 'scale(1.05)' }} />}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
-              </div>
-            </>
-          )}
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px dashed rgba(29, 153, 4, 0.4)', animation: 'spin 20s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: '-0.75rem', borderRadius: '50%', border: '1px dotted rgba(168, 85, 247, 0.4)', animation: 'spin 15s linear infinite reverse' }} />
+          <div style={{ width: '9rem', height: '9rem', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${green}`, background: '#000', position: 'relative' }}>
+            {imageUrl && <img src={imageUrl} alt={displayArchetype} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.25) sepia(0.2)', transform: 'scale(1.05)' }} />}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
+          </div>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ fontSize: 'clamp(1.2rem, 2vw, 2rem)', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold', background: 'linear-gradient(to right, #a855f7, #d8b4fe, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))', marginBottom: '0.5rem' }}>
@@ -880,6 +876,19 @@ const SLUG_TO_ID = Object.fromEntries(NAV_ITEMS.map(item => [item.slug, item.id]
 
 const EyedentityPage = memo(({ isVisible, onBack }) => {
   const { t } = useLanguage();
+  // CLIENT MODE: the left verbindingsmenu becomes the public-profiles directory.
+  // The policy/terms pages the visitor sees here live under Instellingen on the
+  // client's profile card instead. Derived locally (this page never gets clientMode).
+  //
+  // EXCEPTION — ?page= deep links: policy links across the platform (consent
+  // checkboxes, footers, emails) open a FRESH tab on /?page=<slug>. That tab shares
+  // localStorage, so it boots as a client session too — but the link's intent is the
+  // policy page, so an explicit ?page= always shows the policy hub, never the
+  // directory. (Read once at mount: fresh-tab boot is the scenario that matters.)
+  const [hasPageDeepLink] = useState(() => {
+    try { return !!new URLSearchParams(window.location.search).get('page'); } catch { return false; }
+  });
+  const isClient = !!(getToken() && getClientOrbConfig()) && !hasPageDeepLink;
   const getTabFromPath = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
     const page = params.get('page');
@@ -925,8 +934,12 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
   const selectedItem = NAV_ITEMS.find(item => item.id === selectedId);
   const accentColor = '#a855f7';
   const corners = CornerStone({ variant: 'purple' });
-  const shellW = windowWidth >= 1800 ? '70vw' : windowWidth >= 1079 ? '77vw' : '96vw';
-  const shellH = windowWidth >= 1800 ? '70vh' : windowWidth >= 1079 ? '77vh' : '96vh';
+  // CLIENT (Verbonden/profielen-directory): the shell takes the EXACT profile-card
+  // footprint (min(88vw,1500px) × 68vh) plus 15% extra width on the LEFT — still
+  // centered on screen. Closed: the full directory fills it; open: the extra 15%
+  // becomes the quick-nav bar and the card fills the rest exactly.
+  const shellW = isClient ? 'calc(min(88vw, 1500px) * 1.15)' : (windowWidth >= 1800 ? '70vw' : windowWidth >= 1079 ? '77vw' : '96vw');
+  const shellH = isClient ? '68vh' : (windowWidth >= 1800 ? '70vh' : windowWidth >= 1079 ? '77vh' : '96vh');
 
   return (
     <div style={{
@@ -987,10 +1000,11 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
           backgroundSize: '100% 300%',
           animation: 'eyeHoloScanline 14s linear infinite',
         }} />
-        {/* Content layer */}
-        <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%', width: '100%', padding: '1.5rem 2rem' }}>
+        {/* Content layer — client: zero padding (the directory/card fill the shell exactly) */}
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%', width: '100%', padding: isClient ? 0 : '1.5rem 2rem' }}>
 
-          {/* â”€â”€ Header â”€â”€ */}
+          {/* ── Header (visitor only — the client shell is exactly card-sized, no chrome) ── */}
+        {!isClient && (
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -1027,8 +1041,14 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
           </div>
           {/* (← TERUG removed — the global nav "← Terug" handles going back.) */}
         </div>
+        )}
 
-        {/* â”€â”€ Main: Sidebar + Content â”€â”€ */}
+        {/* ── CLIENT: the whole pane is the public-profiles directory ── */}
+        {isClient ? (
+          <div style={{ flex: 1, minHeight: 0 }}>
+            {isVisible && <PublicProfilesDirectory />}
+          </div>
+        ) : (
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, auto) 1fr',
@@ -1212,6 +1232,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
 
           </div>
         </div>
+        )}{/* /visitor sidebar+content */}
         </div>{/* /content layer */}
         </div>{/* /inner panel */}
       </div>{/* /outer shell */}

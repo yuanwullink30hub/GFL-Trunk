@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import TechContainer from './TechContainer';
 import { Activity, Lock } from 'lucide-react';
 import { useLanguage } from '@gfl/i18n';
+import { SciFiButton } from '@gfl/ui';
 
 // Import garden logos
 const karmanLogo = '/images/karmaneventsPNG.png';
@@ -94,72 +95,29 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
           paddingRight: 'clamp(1rem, 4vw, 1.5rem)',
           gap: 'clamp(1.5rem, 3vw, 2.5rem)'
         }}>
-          {/* 1. Filosofie */}
-          <div style={{minHeight: 'clamp(18rem, 45vh, 24rem)'}}>
-            <TechContainer title={t('desktopLayout.filosofieTitle')} variant="purple" className="w-full h-full">
-              <div className="w-full h-full flex flex-col items-center justify-start gap-3 p-4 overflow-visible">
-                {/* Header */}
-                <div className="flex flex-col items-center gap-2 w-full">
-                  <h2 style={{
-                    fontSize: 'clamp(1.02rem, 4.2vw, 1.5rem)',
-                    color: 'rgb(196, 181, 253)',
-                    margin: 0,
-                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                    fontWeight: 600,
-                    lineHeight: 0.9,
-                    textAlign: 'center',
-                    letterSpacing: '0.05em'
-                  }} dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofiePoem') }} />
-                  <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
-                </div>
-
-                {/* Content */}
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <Activity className="w-10 h-10 text-purple-400" />
-                  <div className="h-0.5 w-1/2 bg-purple-900/50 rounded-full overflow-hidden">
-                    <div className="h-full w-1/3 bg-purple-400 animate-pulse"></div>
-                  </div>
-                  <div style={{
-                    fontFamily: "'Figtree', sans-serif",
-                    fontWeight: 400,
-                    lineHeight: 1.5,
-                    color: '#FFFEF0',
-                    fontSize: 'clamp(15px, 3.4vw, 20px)',
-                    textAlign: 'center'
-                  }} dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofieSubtext') }} />
-                </div>
-
-                {/* Button */}
-                <button
-                  type="button"
-                  className="rounded-sm font-bold tracking-widest transition-all duration-300 mt-2"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))',
-                    border: '1px solid rgba(167, 139, 250, 0.5)',
-                    color: '#c4b5fd',
-                    fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                    fontSize: 'clamp(0.65rem, 2.2vw, 0.85rem)',
-                    padding: 'clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 4vw, 2rem)',
-                    minHeight: 'clamp(1.5rem, 4vw, 2rem)',
-                    cursor: shouldShowLock ? 'default' : 'pointer',
-                    boxShadow: '0 0 0px 0px rgba(167, 139, 250, 0.5)',
-                    transition: 'all 0.3s ease',
-                    pointerEvents: shouldShowLock ? 'none' : 'auto',
-                    opacity: shouldShowLock ? 0.35 : 1
-                  }}
-                  onClick={shouldShowLock ? undefined : (e) => setActiveSection('gardens', e)}
+          {/* 1. Filosofie — same structure as the desktop bar: the QUOTE is the container
+              header, subtext directly below, Leer-meer button centered (SciFi brackets). */}
+          <div style={{minHeight: 'clamp(12rem, 30vh, 18rem)'}}>
+            <TechContainer title="Voluntas Amor, Elefthéros Fati" titleSize="max(16px, 0.9vw)" variant="purple" className="w-full h-full">
+              <div className="w-full h-full flex flex-col items-center justify-center p-4 overflow-visible" style={{ gap: 'clamp(0.8rem, 2.5vw, 1.2rem)' }}>
+                <div style={{
+                  fontFamily: "'Figtree', sans-serif",
+                  fontWeight: 400,
+                  lineHeight: 1.5,
+                  color: '#FFFEF0',
+                  fontSize: 'clamp(15px, 3.4vw, 20px)',
+                  textAlign: 'center'
+                }} dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofieSubtext') }} />
+                <SciFiButton
+                  variant="orange"
+                  size="sm"
                   disabled={shouldShowLock}
-                  onMouseEnter={shouldShowLock ? undefined : (e) => {
-                    e.currentTarget.style.boxShadow = '0 0 20px 2px rgba(167, 139, 250, 0.6)';
-                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.5), rgba(168, 85, 247, 0.4))';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = '0 0 0px 0px rgba(167, 139, 250, 0.5)';
-                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(168, 85, 247, 0.2))';
-                  }}
+                  onClick={shouldShowLock ? undefined : (e) => setActiveSection('gardens', e)}
+                  fontSize="clamp(0.65rem, 2.2vw, 0.85rem)"
+                  padding="clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 4vw, 2rem)"
                 >
-                  LEARN MORE
-                </button>
+                  {t('desktopLayout.learnMore')}
+                </SciFiButton>
               </div>
             </TechContainer>
           </div>

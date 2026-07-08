@@ -6,6 +6,21 @@ import ProfileCard from './ProfileCard';
 import { getClientOrbConfig, getClientProfile, setClientOrbCode, setClientOrbConfig, setClientProfile, clearClientOrbCode } from '../../clientMode';
 import { getArchetypeImageByName } from '@gfl/assessment-core/data/archetypeImages';
 import { PRESET_KERNELS } from './presetKernels';
+import { POLICY_CONTENT } from '../../data/policyContent';
+
+// Policy/terms pages — for CLIENTS these live here under Instellingen (the left
+// verbindingsmenu shows the public-profiles directory instead; visitors still get
+// the policy hub there). Ids match POLICY_CONTENT keys.
+const POLICY_PAGES = [
+  { id: 'terms', label: 'Algemene voorwaarden' },
+  { id: 'privacy', label: 'Privacybeleid' },
+  { id: 'cookies', label: 'Cookiebeleid' },
+  { id: 'ai', label: 'AI-transparantie' },
+  { id: 'ip', label: 'Intellectueel eigendom' },
+  { id: 'usage', label: 'Gebruiksvoorwaarden & misbruik' },
+  { id: 'retention', label: 'Gegevensbehoud & verwijdering' },
+  { id: 'register', label: 'Verwerkingsregister' },
+];
 
 // Fallback card payload assembled from /me data — used only if GET /card fails, so the
 // Openbaar tab still renders. Mirrors the backend's buildCardPayload allowlist shape.
@@ -224,6 +239,25 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
   // Zichtbare naam — the public card name. Entirely separate from the login name (displayName):
   // editing one never touches the other. Part of the declared (Openbaar) channel.
   const [visibleName, setVisibleName] = useState(user.visibleName || '');
+  // Openbaar aan/uit — public visibility of the card + the profielen-directory entry.
+  // Saves IMMEDIATELY on toggle (not part of the Profiel-opslaan batch): visibility is
+  // a switch, not draft content. Absent flag = aan (the historical default).
+  const [listed, setListed] = useState(user.listed !== false);
+  const [listedBusy, setListedBusy] = useState(false);
+  const toggleListed = useCallback(async () => {
+    const next = !listed;
+    setListedBusy(true);
+    try {
+      await updateProfile({ listed: next });
+      setListed(next);
+    } catch (e) {
+      console.warn('[Profiel] openbaar-toggle failed:', e?.message);
+    } finally {
+      setListedBusy(false);
+    }
+  }, [listed]);
+  // Instellingen → Voorwaarden & beleid: which policy page is open in the overlay.
+  const [policyOpen, setPolicyOpen] = useState(null);
   // Socials: inputs edit the HANDLE; the verified flag lives server-side ({handle, verified})
   // and is read from the card payload. Editing a handle resets its verification.
   const socialHandles = (src) => {
@@ -662,7 +696,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
       {[{ key: 'openbaar', label: 'Openbaar' }, { key: 'prive', label: 'Privé' }, { key: 'instellingen', label: 'Instellingen' }].map((tb) => {
         const on = tab === tb.key;
         return (
-          <button key={tb.key} type="button" onClick={() => { setTab(tb.key); setMsg(''); setPwMsg(''); setDelErr(''); setStoryMsg(''); }}
+          <button key={tb.key} type="button" onClick={() => { setTab(tb.key); setPolicyOpen(null); setMsg(''); setPwMsg(''); setDelErr(''); setStoryMsg(''); }}
             style={{ flex: 1, minWidth: 0, cursor: 'pointer', background: on ? 'rgba(168,85,247,0.22)' : 'transparent', border: `1px solid ${on ? C.purple : 'rgba(168,85,247,0.28)'}`, color: on ? C.gold : 'rgba(255,255,255,0.55)', borderRadius: '0.4rem', padding: '0.42rem 0.3rem', fontFamily: FONT, fontSize: 'max(8px,0.46vw)', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transition: 'all 0.15s' }}>
             {tb.label}
           </button>
@@ -724,6 +758,18 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
               lives on the Openbaar card). */}
           <div style={{ width: '100%', minWidth: 0 }}>
 
+            {/* ── POLICY VIEW — a terms/policy page swaps the card body IN PLACE (same shell,
+                same footprint — the intro card's "Lees mij" pattern). Close button top-left. */}
+            {policyOpen ? (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.1rem' }}>
+                  <SciFiButton onClick={() => setPolicyOpen(null)} variant="purple" size="sm" padding="0.4rem 1.05rem" fontSize="max(9px,0.5vw)">← Sluiten</SciFiButton>
+                  <div style={SECTION_TITLE}>{(POLICY_PAGES.find((p) => p.id === policyOpen) || {}).label}</div>
+                </div>
+                {POLICY_CONTENT[policyOpen]}
+              </div>
+            ) : (
+            <>
             {/* ── PRIVÉ — personal data (not shown to others) ── */}
             {tab === 'prive' && (
               <div>
@@ -773,6 +819,37 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                     on the Openbaar card (register separation: this path never touches derived fields). */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ ...LABEL, marginBottom: '0.6rem' }}>Openbaar profiel — kaartinhoud</div>
+                  {/* Openbaar aan/uit — hides/shows the public card AND the profielen-directory
+                      entry. Saves direct on click (visibility is a switch, not draft content). */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={toggleListed}
+                      disabled={listedBusy}
+                      style={{
+                        background: '#000',
+                        border: `1px solid ${listed ? '#15b315' : 'rgba(21,179,21,0.35)'}`,
+                        color: listed ? '#15b315' : 'rgba(21,179,21,0.45)',
+                        boxShadow: listed ? '0 0 15px rgba(21,179,21,0.2)' : 'none',
+                        borderRadius: '0.15rem',
+                        padding: '0.4rem 1.2rem',
+                        fontFamily: FONT,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        fontSize: 'max(9px, 0.5vw)',
+                        cursor: listedBusy ? 'wait' : 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      Openbaar: {listed ? 'AAN' : 'UIT'}
+                    </button>
+                    <span style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(255,254,240,0.5)', lineHeight: 1.4 }}>
+                      {listed
+                        ? 'Je kaart is zichtbaar voor bezoekers en staat in de profielen-lijst.'
+                        : 'Je kaart is verborgen — niet vindbaar via link of profielen-lijst.'}
+                    </span>
+                  </div>
                   {/* Zichtbare naam — the name shown on the card. Separate from the Inlognaam above;
                       leave empty to fall back to your Inlognaam. */}
                   <div style={{ marginBottom: '0.8rem' }}>
@@ -932,6 +1009,36 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                   </div>
                 )}
 
+                {/* Voorwaarden & beleid — the policy/terms pages live HERE for clients
+                    (the left verbindingsmenu shows the profielen-directory instead). */}
+                <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ ...LABEL, marginBottom: '0.6rem' }}>Voorwaarden & beleid</div>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {POLICY_PAGES.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setPolicyOpen(p.id)}
+                        style={{
+                          background: 'rgba(168, 85, 247, 0.08)',
+                          border: '1px solid rgba(168, 85, 247, 0.35)',
+                          color: 'rgb(216, 190, 254)',
+                          borderRadius: '0.15rem',
+                          padding: '0.35rem 0.8rem',
+                          fontFamily: "'Figtree', sans-serif",
+                          fontSize: 'max(9px, 0.5vw)',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(168,85,247,0.2)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(168,85,247,0.08)'; }}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* danger: delete account */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(239,68,68,0.25)' }}>
                   <div style={{ color: '#fca5a5', fontSize: 'max(9px,0.52vw)', lineHeight: 1.5, marginBottom: '0.8rem' }}>
@@ -945,6 +1052,8 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                   </div>
                 </div>
               </div>
+            )}
+            </>
             )}
           </div>
         </ProfileCard>

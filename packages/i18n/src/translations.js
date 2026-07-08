@@ -866,8 +866,8 @@ const translations = {
       orange: { nl: "INTERNATIONAL", en: "INTERNATIONAL" }
     },
     // Hover tooltips on the connections-menu icons
-    identity: { nl: "Identiteit", en: "Identity" },
-    login: { nl: "Inloggen", en: "Log in" },
+    identity: { nl: "Verbonden", en: "Connected" },
+    login: { nl: "Account", en: "Account" },
     gardens: {
       karman: {
         tagline: { nl: "Underground Techno Events", en: "Underground Techno Events" },

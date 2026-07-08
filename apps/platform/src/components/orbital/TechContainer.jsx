@@ -1,10 +1,11 @@
 import React from 'react';
 
-const TechContainer = ({ 
-  children, 
-  className = '', 
-  style, 
+const TechContainer = ({
+  children,
+  className = '',
+  style,
   title = "NO_DATA",
+  titleSize = 'max(13px, 0.7vw)', // fluid-step override (e.g. the filosofie quote runs one step up)
   variant = 'purple',
   headerRight = null
 }) => {
@@ -90,7 +91,7 @@ const TechContainer = ({
           ${textColor} opacity-80 select-none
           left-0 right-0
           flex items-center justify-center
-        `} style={{fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", top: '0.4vw', fontSize: 'max(13px, 0.7vw)'}}>
+        `} style={{fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", top: '0.4vw', fontSize: titleSize}}>
           <span>{title}</span>
           {headerRight && (
             <div style={{ position: 'absolute', right: '0.6vw', top: '50%', transform: 'translateY(-50%)' }}>

@@ -121,11 +121,11 @@ export async function updateDisplayName(name) {
  * Only provided keys are changed. Auth required.
  * @returns {Promise<{ age?: number|null, country?: string, story?: string, link?: string, roleLine?: string, languages?: string[], intention?: string }>}
  */
-export async function updateProfile({ age, country, story, link, roleLine, languages, intention, socials, visibleName, descriptionSections, intentionSections }) {
+export async function updateProfile({ age, country, story, link, roleLine, languages, intention, socials, visibleName, descriptionSections, intentionSections, listed }) {
   const response = await fetch(`${API_BASE}/auth/profile`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ age, country, story, link, roleLine, languages, intention, socials, visibleName, descriptionSections, intentionSections }),
+    body: JSON.stringify({ age, country, story, link, roleLine, languages, intention, socials, visibleName, descriptionSections, intentionSections, listed }),
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
@@ -203,6 +203,71 @@ export async function markMessageRead(id) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.error || `Bijwerken mislukt (${response.status})`);
   }
+  return response.json();
+}
+
+/**
+ * Public profiles directory — all profiles with openbaar AAN (lean summaries;
+ * the full card stays behind getCard(handle)). No auth required.
+ * @returns {Promise<{ profiles: Array<{ name, archetypeName, roleLine, country, memberSince, readingCount, orb }> }>}
+ */
+export async function getPublicProfiles() {
+  const response = await fetch(`${API_BASE}/auth/profiles`);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Profielen ophalen mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+// ── Verbonden (connection requests between public profiles) ──
+
+/** "+ Verbond" — request a connection with a profile (by shown profile name). */
+export async function requestVerbond(to) {
+  const response = await fetch(`${API_BASE}/verbond/request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ to }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const e = new Error(data.error || `Verzoek mislukt (${response.status})`);
+    e.status = data.status; // 'pending' | 'accepted' when a verbond already exists
+    throw e;
+  }
+  return data;
+}
+
+/** Incoming pending verbond requests — shown at Berichten. */
+export async function getVerbondPending() {
+  const response = await fetch(`${API_BASE}/verbond/pending`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(`Verzoeken ophalen mislukt (${response.status})`);
+  return response.json();
+}
+
+/** Accept or decline a request. Decline REQUIRES a message (server enforces too). */
+export async function respondVerbond({ id, accept, message }) {
+  const response = await fetch(`${API_BASE}/verbond/respond`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ id, accept, message }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `Beantwoorden mislukt (${response.status})`);
+  return data;
+}
+
+/** Accepted verbonden (both directions) — shown at Contacten. */
+export async function getVerbondContacts() {
+  const response = await fetch(`${API_BASE}/verbond/contacts`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(`Contacten ophalen mislukt (${response.status})`);
+  return response.json();
+}
+
+/** My verbond status with one profile — drives the "+ Verbond" button state. */
+export async function getVerbondWith(handle) {
+  const response = await fetch(`${API_BASE}/verbond/with/${encodeURIComponent(handle)}`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(`Status ophalen mislukt (${response.status})`);
   return response.json();
 }
 

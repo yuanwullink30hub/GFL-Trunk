@@ -5,6 +5,7 @@ import { getCardMicrocopy } from './profileCardMicrocopy';
 import { getReadingThumb } from './getReadingThumb';
 import { leadFor } from './presetKernels';
 import WheelGlyph from '../WheelGlyph';
+import VerbondButton from './VerbondButton';
 
 /* ════════════════════════════════════════════════════════════════════════
    ProfileCard — the public profile card (Openbaar render).
@@ -42,6 +43,14 @@ const FS = {
 // Both render in a line box of THIS height so the content below each header starts at the
 // same y — cross-column alignment by construction, not by margin arithmetic.
 const HEADER_LINE = 'max(24px, 1.25vw)';
+
+// Viewport-scaled vertical rhythm (house rule: vw/vh for scaling gaps, rem floors).
+// GAP_V (title→block gap = column gap) and PAD_V (block top padding) are SHARED by the
+// rail's gift box and the main column's expressieprofiel block — both text tops sit at
+// pad + HEADER_LINE + GAP_V + PAD_V, so cross-divider alignment survives any viewport.
+const GAP_V = 'max(0.6rem, 1.5vh)';     // ≈1rem at 1080p
+const PAD_V = 'max(0.55rem, 1.35vh)';   // ≈0.9rem at 1080p
+const COL_PAD_V = 'max(0.8rem, 1.85vh)'; // ≈1.25rem at 1080p (columns' top/bottom padding)
 
 // OD-1 (OPEN — do not resolve implicitly): public radar is SHAPE-ONLY. The axis-value
 // layer is built behind this flag and stays off until OD-1 resolves.
@@ -223,9 +232,13 @@ function SocialRow({ socials }) {
   );
 }
 
-const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, active = true, orbBoxRef = null, children = null, wheelBaskets = null, wheelBasketsHistory = null }) => {
-  const { width: vpW } = useViewport();
+const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, active = true, orbBoxRef = null, children = null, wheelBaskets = null, wheelBasketsHistory = null, verbondHandle = null }) => {
+  const { width: vpW, height: vpH } = useViewport();
   const stacked = vpW < 900;
+  // Laptop tier and below (<1800, house breakpoint): the fixed-height card is too tight
+  // for the full layout — the rail|main row keeps its two columns but flows at natural
+  // height and SCROLLS as one section (desktop ≥1800 keeps the clamped no-scroll layout).
+  const compact = !stacked && vpW < 1800;
   const chipsRef = useRef(null);
 
   // Chip hover: while a chip is hovered, its reading REPLACES the orb zone at the top of
@@ -244,7 +257,8 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
   // Orb: owner's live client-mode config wins (freshest), else the payload's render ref.
   const orbConfig = orbConfigOverride || latest?.orbRenderRef?.orb || null;
   const orbImage = latest?.orbRenderRef?.image || null;
-  const orbSize = Math.round(Math.min(300, vpW * (stacked ? 0.4 : 0.125)));
+  // ×0.9: the orb is decoration on a card others read — the texts carry the card.
+  const orbSize = Math.round(Math.min(270, vpW * (stacked ? 0.36 : 0.1125)));
 
   // Chip size: exactly CHIPS_PER_ROW chips fill the rail's inner width
   // (card = min(88vw, 1500px); rail 32% of it; 1.25rem padding each side; 0.6rem gaps).
@@ -327,11 +341,17 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
         </div>
       ) : (
       <>
-      {/* Row 2: rail | main */}
-      <div style={{ position: 'relative', zIndex: 1, flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: stacked ? 'column' : 'row' }}>
+      {/* Row 2: rail | main — on laptop-and-below this row is the SCROLL SECTION.
+          alignItems flex-start in compact: default stretch would CLAMP both columns to
+          the row's fixed height (children then shrink and paint over each other, and the
+          row never overflows → never scrolls). Content-sized columns make the row taller
+          than its box, which is exactly what engages the scroll. */}
+      <div className={compact ? 'purple-scrollbar' : undefined} style={{ position: 'relative', zIndex: 1, flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: stacked ? 'column' : 'row', overflowY: compact ? 'auto' : 'visible', alignItems: compact ? 'flex-start' : 'stretch' }}>
 
-        {/* ── Left rail (32%) — identity spine ── */}
-        <div style={{ flex: stacked ? '0 0 auto' : '0 0 32%', minWidth: 0, minHeight: 0, overflowY: stacked ? 'visible' : 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', borderRight: stacked ? 'none' : '1px solid rgba(168, 85, 247, 0.15)', boxSizing: 'border-box' }} className="purple-scrollbar">
+        {/* ── Left rail (32%) — identity spine. NO scroll: longer gift text simply wraps
+            down — the orb below is mostly transparent, so a couple of extra lines just
+            eat into its whitespace instead of clipping. ── */}
+        <div style={{ flex: stacked ? '0 0 auto' : '0 0 32%', minWidth: 0, minHeight: 0, overflowY: 'visible', padding: `${COL_PAD_V} 1.25rem`, display: 'flex', flexDirection: 'column', gap: GAP_V, borderRight: stacked ? 'none' : '1px solid rgba(168, 85, 247, 0.15)', boxSizing: 'border-box' }}>
 
           {/* Orb zone — caption belongs to the ORB, not the person (SR-1).
               Hovering an individuatiepad chip REPLACES this whole zone with that reading:
@@ -341,7 +361,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
             const hoverMicro = hoverReading ? getCardMicrocopy(hoverReading.archetypePrimaryId) : null;
             if (hoverReading) {
               return (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.7rem' }}>
+                <div style={{ flex: '1 1 auto', minHeight: 0, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.7rem' }}>
                   {/* caption ABOVE the orb (archetype + date + text), orb below.
                       zIndex lift: the orb canvas is drawn 1.35× and overflows UP over this
                       caption — the text must paint on a higher layer or the canvas covers it. */}
@@ -351,13 +371,16 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
                     {/* same container grammar as the expressieprofiel block (instrument register) */}
                     {/* marginTop 1rem matches the main column's title→block gap, so this box
                       top-aligns with the expressieprofiel container across the divider */}
-                  <div style={{ position: 'relative', width: '100%', marginTop: '1rem', padding: '0.9rem 0.85rem', boxSizing: 'border-box' }}>
-                      <div style={{ fontFamily: FIGTREE, fontSize: FS.base, color: CREAM, fontStyle: 'italic', lineHeight: 1.5 }}>{hoverReading.giftMicro || (hoverReading.levensles ? `“${hoverReading.levensles}”` : hoverMicro.tendency)}</div>
+                  <div style={{ position: 'relative', width: '100%', marginTop: GAP_V, padding: `${PAD_V} 0.85rem`, boxSizing: 'border-box' }}>
+                      {/* maxHeight caps the LAYOUT at ~6 lines; longer text keeps rendering
+                          (overflow visible) over the orb-canvas whitespace below — the orb
+                          itself never gets pushed down. */}
+                      <div style={{ fontFamily: FIGTREE, fontSize: FS.base, color: CREAM, fontStyle: 'italic', lineHeight: 1.5, maxHeight: (stacked || compact) ? 'none' : '9em', overflow: 'visible' }}>{hoverReading.giftMicro || (hoverReading.levensles ? `“${hoverReading.levensles}”` : hoverMicro.tendency)}</div>
                     </div>
                   </div>
                   {/* fixed layout footprint (flexShrink 0) — the oversized canvas overflows
                       visually without pushing the caption above it out of alignment */}
-                  <div style={{ position: 'relative', zIndex: 1, width: orbSize, height: orbSize, flexShrink: 0, overflow: 'visible' }}>
+                  <div style={{ position: 'relative', zIndex: 1, width: orbSize, height: orbSize, flexShrink: 0, overflow: 'visible', marginTop: 'auto' }}>
                     <div style={{ width: orbSize, height: orbSize, borderRadius: '50%', overflow: 'hidden', background: '#0a0510' }}>
                       {hoverThumb.kind === 'image'
                         ? <img src={hoverThumb.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -372,7 +395,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
               );
             }
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.7rem' }}>
+              <div style={{ flex: '1 1 auto', minHeight: 0, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.7rem' }}>
                 {/* caption ABOVE the orb: archetype name + gift text at full rail width.
                     zIndex lift: the orb canvas below is drawn 1.35× and overflows UP over
                     this caption — the text must paint on a higher layer than the canvas. */}
@@ -383,14 +406,23 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
                       grammar as the expressieprofiel block (instrument register, amber brackets). */}
                   {/* marginTop 1rem matches the main column's title→block gap, so this box
                       top-aligns with the expressieprofiel container across the divider */}
-                  <div style={{ position: 'relative', width: '100%', marginTop: '1rem', padding: '0.9rem 0.85rem', boxSizing: 'border-box' }}>
-                    <div style={{ fontFamily: FIGTREE, fontSize: FS.base, color: CREAM, fontStyle: 'italic', lineHeight: 1.5 }}>{latest?.giftMicro || (latest?.levensles ? `“${latest.levensles}”` : micro.tendency)}</div>
+                  <div style={{ position: 'relative', width: '100%', marginTop: GAP_V, padding: `${PAD_V} 0.85rem`, boxSizing: 'border-box' }}>
+                    {/* maxHeight caps the LAYOUT at ~6 lines; longer text keeps rendering
+                        (overflow visible) over the orb-canvas whitespace below — the orb
+                        itself never gets pushed down (the canvas is bigger than the visible
+                        sphere, so ~2 extra lines land in dead space). */}
+                    <div style={{ fontFamily: FIGTREE, fontSize: FS.base, color: CREAM, fontStyle: 'italic', lineHeight: 1.5, maxHeight: (stacked || compact) ? 'none' : '9em', overflow: 'visible' }}>{latest?.giftMicro || (latest?.levensles ? `“${latest.levensles}”` : micro.tendency)}</div>
                   </div>
                 </div>
                 {/* fixed layout footprint (width/height pinned, flexShrink 0, overflow visible):
                     the canvas overflows the box VISUALLY only — it can never push the caption
                     up or shift the rail's vertical rhythm against the main column. */}
-                <div ref={orbBoxRef || undefined} style={{ position: 'relative', zIndex: 1, width: orbSize, height: orbSize, flexShrink: 0, overflow: 'visible' }}>
+                {/* marginTop:auto — the ONLY auto margin in the rail: ALL free space lands
+                    above the orb, so orb + name + chips form one bottom-anchored group
+                    (name flows up from the ghost orbs) at every viewport. Longer caption
+                    text first eats this auto gap (and its overflow paints over the canvas
+                    dead zone) — the orb is never pushed down. */}
+                <div ref={orbBoxRef || undefined} style={{ position: 'relative', zIndex: 1, width: orbSize, height: orbSize, flexShrink: 0, overflow: 'visible', marginTop: 'auto' }}>
                   {orbConfig
                     ? <OrbSphere3D config={orbConfig} active={active} size={orbSize} capturable style={{ filter: 'drop-shadow(0 0 60px rgba(120,80,200,0.2))', pointerEvents: 'none' }} />
                     : orbImage
@@ -406,12 +438,20 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
           <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
             <div style={{ fontFamily: FONT, fontSize: FS['4xl'], color: PURPLE, fontWeight: 700, lineHeight: 1.05, overflowWrap: 'break-word' }}>{declared.displayName || 'Reiziger'}</div>
             {declared.roleLine && <div style={{ fontFamily: FIGTREE, fontSize: 'max(11px, 0.6vw)', color: 'rgba(255,254,240,0.75)', marginTop: '0.35rem' }}>{declared.roleLine}</div>}
-            {identityLine && <div style={{ fontFamily: FIGTREE, fontSize: FS.sm, color: DIM, marginTop: '0.3rem', letterSpacing: '0.04em' }}>{identityLine}</div>}
-            <div style={{ fontFamily: FIGTREE, fontSize: FS.sm, color: 'rgba(255,254,240,0.35)', marginTop: '0.3rem' }}>Lid sinds {fmtLong(declared.memberSince)}</div>
+            {/* One line: age · country · languages · Lid sinds — membership sits right
+                of the languages (own dimmer tint preserved). */}
+            <div style={{ fontFamily: FIGTREE, fontSize: FS.sm, marginTop: '0.3rem', letterSpacing: '0.04em' }}>
+              {identityLine && <span style={{ color: DIM }}>{identityLine}</span>}
+              {identityLine && <span style={{ color: 'rgba(255,254,240,0.35)' }}> · </span>}
+              <span style={{ color: 'rgba(255,254,240,0.35)' }}>Lid sinds {fmtLong(declared.memberSince)}</span>
+            </div>
           </div>
 
-          {/* Individuatiepad — practice-claim only (SR-20); no arrows/deltas (SR-10) */}
-          <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+          {/* Individuatiepad — practice-claim only (SR-20); no arrows/deltas (SR-10).
+              NO auto margin here: the orb wrapper's single marginTop:auto pushes
+              orb + name + this chips row into ONE bottom-anchored group — the name
+              flows up directly from the ghost orbs, all free space sits above the orb. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
             <div style={zoneLabel()}>
               SCHADUWPROFIELEN · {readingCount} {readingCount === 1 ? 'LEZING' : 'LEZINGEN'}
             </div>
@@ -428,7 +468,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
         </div>
 
         {/* ── Main column (68%) ── */}
-        <div style={{ flex: '1 1 auto', minWidth: 0, minHeight: 0, overflowY: stacked ? 'visible' : 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', boxSizing: 'border-box' }} className="purple-scrollbar">
+        <div style={{ flex: '1 1 auto', minWidth: 0, minHeight: 0, overflowY: (stacked || compact) ? 'visible' : 'auto', padding: `${COL_PAD_V} 1.25rem`, display: 'flex', flexDirection: 'column', gap: GAP_V, boxSizing: 'border-box' }} className="purple-scrollbar">
 
           {/* Title */}
           <div style={{ fontFamily: FONT, fontSize: FS['2xl'], color: AMBER, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700, lineHeight: HEADER_LINE }}>Transparant profiel</div>
@@ -444,11 +484,17 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
           {(() => {
             const expr = hoverReading || latest;
             const exprMicro = hoverReading ? getCardMicrocopy(hoverReading.archetypePrimaryId) : micro;
+            // DYNAMIC block (rule 2026-07-08): natural height always — the full radar wheel
+            // always shows and the geometry text renders in full (no inner scroll, no cap).
+            // Longer text simply extends the block and pushes the declared row down; the
+            // description/intentie blocks handle the squeeze with their own inner scroll.
             return (
-          <div style={{ position: 'relative', flex: '0 0 auto', minHeight: stacked ? 0 : '24%', padding: '0.9rem 1rem', display: 'flex', gap: '1rem', alignItems: 'flex-start', boxSizing: 'border-box' }}>
+          <div style={{ position: 'relative', flex: '0 0 auto', minHeight: 0, padding: `${PAD_V} 1rem`, display: 'flex', gap: 'max(0.7rem, 0.8vw)', alignItems: 'flex-start', boxSizing: 'border-box', overflow: 'visible' }}>
             {/* Left column — the Expressieprofiel header (main + support archetype on their
-                own lines) stacked ABOVE the radar wheel. */}
-            <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
+                own lines) stacked ABOVE the radar wheel. paddingTop compensates the half-leading
+                of the neighbouring text (lineHeight 1.5-1.6): without it the tight-set label
+                paints a few px HIGHER than the gift text (left rail) and the body text. */}
+            <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem', paddingTop: '0.25rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                 <div style={zoneLabel()}>Expressieprofiel</div>
                 {expr?.archetypeMainId && (
@@ -463,27 +509,32 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
                 )}
               </div>
               {(() => {
+                // FULL wheel, always: the block is dynamic (natural height), so the wheel
+                // never has to shrink to fit a band — standard fluid size only.
                 const radarSize = Math.round(Math.min(150, Math.max(96, vpW * 0.075)));
-                // Owner view: the full split-colour 5-mandje wheel (identical to the PDF radar)
-                // for the ACTIVE reading and for hovered history readings alike — per-reading
-                // baskets come via wheelBasketsHistory (owner-only /me data, aligned 1:1 with
-                // the payload readings). Missing baskets (pre-extractor entries, public card)
-                // fall back to the shape-only glyph from the reading's own vector.
-                const baskets = hoverReading
-                  ? (Array.isArray(wheelBasketsHistory) ? wheelBasketsHistory[readings.indexOf(hoverReading)] : null)
-                  : wheelBaskets;
+                // Full split-colour 5-mandje wheel (identical to the PDF radar) — CARD-PUBLIC
+                // since 2026-07-08 (user resolved the §3 basket denial): the payload itself
+                // carries baskets12 per reading, so every viewer sees the colour wheel. The
+                // owner-prop path (/me wheelBaskets) stays as fallback for older payloads.
+                // No baskets at all (pre-extractor entries) → shape-only glyph.
+                const baskets = (expr && Array.isArray(expr.baskets12) && expr.baskets12.length === 12)
+                  ? expr.baskets12
+                  : hoverReading
+                    ? (Array.isArray(wheelBasketsHistory) ? wheelBasketsHistory[readings.indexOf(hoverReading)] : null)
+                    : wheelBaskets;
                 return Array.isArray(baskets) && baskets.length === 12
                   ? <div style={{ width: radarSize, height: radarSize, flexShrink: 0 }}><WheelGlyph baskets={baskets} /></div>
                   : <RadarGlyph vector={expr?.shapeVector12} size={radarSize} />;
               })()}
             </div>
-            {/* Body column — sits where the header block used to: expression text at the top. */}
+            {/* Body column — natural height, full text always visible (the block extends;
+                no inner scroll here — the declared row below absorbs via ITS scrolls). */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
               {/* Body: the AI-authored geometry summary (canon language) wins → then the
                   extracted Gift one-liner → then the placeholder microcopy. */}
               <div style={{ fontFamily: FIGTREE, fontSize: FS.base, lineHeight: 1.6, color: CREAM }}>{renderEmphasized(expr?.geomSummary || (expr?.gift ? `*Gift* — ${expr.gift}.` : exprMicro.expression))}</div>
               {/* Model-note: ships with the block in every render — not a tooltip, not removable. */}
-              <div style={{ fontFamily: FIGTREE, fontSize: FS.sm, color: DIM, fontStyle: 'italic' }}>Binnen dit model: een waarschijnlijke tendens, geen bepaling.</div>
+              <div style={{ fontFamily: FIGTREE, fontSize: FS.sm, color: DIM, fontStyle: 'italic', flexShrink: 0 }}>Binnen dit model: een waarschijnlijke tendens, geen bepaling.</div>
             </div>
           </div>
             );
@@ -492,7 +543,9 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
           {/* Declared row — self-write register (left-edge bar, purple; NEVER corner brackets).
               v1.1: each block = the self-written text + a SEPARATE readable section block of
               the user's own §6b question answers (small-caps purple lead-in per answer). */}
-          <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: stacked ? 'column' : 'row', gap: '1rem' }}>
+          {/* Top border spans the full row: from Profiel beschrijving's left edge to
+              Intentie's right edge — same purple divider grammar as the rail border. */}
+          <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: stacked ? 'column' : 'row', gap: '1rem', borderTop: '1px solid rgba(168, 85, 247, 0.15)', paddingTop: 'max(0.6rem, 1.5vh)' }}>
             {[
               { block: 'description', label: 'Profiel beschrijving', value: declared.description, empty: 'Nog geen beschrijving — voeg er een toe onder Privé.' },
               { block: 'intention', label: 'Intentie', value: declared.intention, empty: 'Wat zoek je hier? Samenwerking, werk, uitwisseling — schrijf het in je eigen woorden.' },
@@ -539,6 +592,10 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
         {/* Link + socials — terminal green, at the right end of the strip. The pill keeps the
             padding it had on its own row above the line. */}
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {/* "+ Verbond" — the invite lives in the sync line (terminal register), left of
+              the link pill. Only rendered on OTHER people's cards (verbondHandle prop);
+              the button hides itself for visitors / own profile. */}
+          {verbondHandle && <VerbondButton handle={verbondHandle} terminal />}
           {(() => {
             const pill = {
               fontFamily: FONT, fontSize: FS.sm, textDecoration: 'none', borderRadius: '0.15rem',

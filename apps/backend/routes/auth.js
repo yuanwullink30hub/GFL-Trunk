@@ -183,6 +183,9 @@ function buildCardPayload(u) {
     archetypeMainId: h.archetypeMainId || null,       // canonical-12 main (extracted)
     archetypeSupportId: h.archetypeSupportId || null, // canonical-12 support (extracted)
     shapeVector12: Array.isArray(h.shapeVector12) && h.shapeVector12.length === 12 ? h.shapeVector12 : null,
+    // 5-mandje decomposition — CARD-PUBLIC since 2026-07-08 (user resolved the §3 basket
+    // denial: the full-colour wheel shows on every public card). Curse/trigger stays denied.
+    baskets12: Array.isArray(h.baskets12) && h.baskets12.length === 12 ? h.baskets12 : null,
     // Reading texts (extracted from the report). levensles + gift + AI card fields are
     // card-public; curse/trigger is DENIED on the public card (§3), owner-side only.
     levensles: h.levensles || null,
@@ -209,6 +212,7 @@ function buildCardPayload(u) {
         archetypeMainId: last.archetypeMainId,       // extracted at reading-ingestion (PDF/register/link)
         archetypeSupportId: last.archetypeSupportId,
         shapeVector12: last.shapeVector12,           // normalized wheel vector → the radar's real shape
+        baskets12: last.baskets12,                   // 5-mandje → full-colour wheel (card-public since 2026-07-08)
         levensles: last.levensles,                   // the reading's own quote → tendens fallback
         gift: last.gift,                             // one-liner fallback (curse stays owner-side)
         giftMicro: last.giftMicro,                   // AI in-depth gift → tendens slot
@@ -412,7 +416,9 @@ router.get('/public/:handle', async (req, res) => {
     const handle = String(req.params.handle || '').trim();
     if (!handle) return res.status(400).json({ error: 'Geen naam opgegeven.' });
     const u = await collections.users().findOne({ nameHash: hash(nameKey(handle)) });
-    if (!u) return res.status(404).json({ error: 'Profiel niet gevonden.' });
+    // listed === false → openbaar staat UIT: the profile is invisible to the public
+    // (same response as non-existent, so the flag can't be probed).
+    if (!u || u.listed === false) return res.status(404).json({ error: 'Profiel niet gevonden.' });
     return res.json({
       displayName: (u.visibleName && String(u.visibleName).trim()) || decrypt(u.displayName),
       archetypeName: u.archetypeName || '',
@@ -451,11 +457,72 @@ router.get('/card/:handle', async (req, res) => {
     const handle = String(req.params.handle || '').trim();
     if (!handle) return res.status(400).json({ error: 'Geen naam opgegeven.' });
     const u = await collections.users().findOne({ nameHash: hash(nameKey(handle)) });
-    if (!u) return res.status(404).json({ error: 'Profiel niet gevonden.' });
+    // listed === false → openbaar UIT (404 identical to unknown handle — not probeable)
+    if (!u || u.listed === false) return res.status(404).json({ error: 'Profiel niet gevonden.' });
     return res.json(buildCardPayload(u));
   } catch (err) {
     console.error('[Auth] Public card error:', err.message);
     return res.status(500).json({ error: 'Kaart ophalen mislukt.' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/auth/profiles (PUBLIC) — the directory of all PUBLIC profiles
+// (openbaar aan; `listed === false` excluded). Lean summaries only — the full
+// card stays behind GET /card/:handle. Newest members first, capped.
+// ─────────────────────────────────────────────────────────────
+
+// Canonical-12 → biological (hardware) group. Matches the Dutch or English
+// archetype id extracted from the reading (e.g. "De Heerser" → Ruling).
+const HARDWARE_GROUPS = [
+  { group: 'Ruling', re: /heerser|ruler|rechter|judge/i },
+  { group: 'Relational', re: /minnaar|lover|verzorger|caregiver/i },
+  { group: 'Seeker', re: /onschuldige|innocent|ontdekk|explorer/i },
+  { group: 'Chaos', re: /rebel|outlaw|\bnar\b|trickster/i },
+  { group: 'Abstract', re: /wijze|sage|kunstenaar|artist/i },
+  { group: 'Agency', re: /magi[eë]r|magician|held|hero/i },
+];
+function hardwareGroupFor(archetypeId) {
+  const s = String(archetypeId || '');
+  const hit = HARDWARE_GROUPS.find((g) => g.re.test(s));
+  return hit ? hit.group : null;
+}
+
+router.get('/profiles', async (_req, res) => {
+  try {
+    const users = await collections.users()
+      // Exclude admin/dev accounts (the first user is admin) — they're never public profiles.
+      .find({ listed: { $ne: false }, role: { $ne: 'admin' } })
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .project({ visibleName: 1, displayName: 1, archetypeName: 1, roleLine: 1, country: 1, createdAt: 1, orbHistory: 1, publicOrb: 1, lastSeen: 1 })
+      .toArray();
+    const profiles = users.map((u) => {
+      let name = (u.visibleName && String(u.visibleName).trim()) || '';
+      if (!name) { try { name = decrypt(u.displayName); } catch { name = ''; } }
+      if (!name) return null;
+      const latest = Array.isArray(u.orbHistory) && u.orbHistory.length
+        ? u.orbHistory[u.orbHistory.length - 1] : null;
+      return {
+        name, // the shown profile name — also the ?u= handle for the full card
+        archetypeName: (latest && latest.archetypeName) || u.archetypeName || '',
+        roleLine: u.roleLine || '',
+        country: u.country || '',
+        memberSince: u.createdAt || null,
+        // Lookup facets (Verbonden search): activity, hardware group of the latest
+        // reading's MAIN archetype, main+support combination, schaduw-profielen count.
+        lastSeen: u.lastSeen || null,
+        hardwareGroup: hardwareGroupFor(latest && latest.archetypeMainId),
+        mainId: (latest && latest.archetypeMainId) || null,
+        supportId: (latest && latest.archetypeSupportId) || null,
+        readingCount: Array.isArray(u.orbHistory) ? u.orbHistory.length : 0,
+        orb: u.publicOrb || null, // render-only config (never a raw code)
+      };
+    }).filter(Boolean);
+    return res.json({ profiles });
+  } catch (err) {
+    console.error('[Auth] Profiles directory error:', err.message);
+    return res.status(500).json({ error: 'Profielen ophalen mislukt.' });
   }
 });
 
@@ -587,6 +654,8 @@ router.get('/me', authRequired, async (req, res) => {
       roleLine: user.roleLine || '',
       languages: Array.isArray(user.languages) ? user.languages : [],
       intention: user.intention || '',
+      // Openbaar aan/uit — absent means aan (public); only explicit false hides the card.
+      listed: user.listed !== false,
       descriptionSections: cleanSections(user.descriptionSections, 'description'),
       intentionSections: cleanSections(user.intentionSections, 'intention'),
       socials: publicSocials(user),
@@ -642,8 +711,11 @@ router.patch('/name', authRequired, async (req, res) => {
 
 router.patch('/profile', authRequired, async (req, res) => {
   try {
-    const { age, country, story, link, roleLine, languages, intention, socials, visibleName, descriptionSections, intentionSections } = req.body || {};
+    const { age, country, story, link, roleLine, languages, intention, socials, visibleName, descriptionSections, intentionSections, listed } = req.body || {};
     const set = { updatedAt: new Date() };
+    // Openbaar aan/uit — false hides the public card + directory entry (404 as if absent).
+    // Absent/true = openbaar (the default for every existing account).
+    if (listed !== undefined) set.listed = !!listed;
     // Zichtbare naam — the public card name (declared channel). Entirely separate from the unique
     // login name (displayName / Inlognaam): editing one never touches the other. Empty → card falls
     // back to the login name.
@@ -692,7 +764,7 @@ router.patch('/profile', authRequired, async (req, res) => {
       set.socials = clean;
     }
     await collections.users().updateOne({ _id: new ObjectId(req.user.userId) }, { $set: set });
-    return res.json({ age: set.age !== undefined ? set.age : undefined, country: set.country, story: set.story, link: set.link, roleLine: set.roleLine, languages: set.languages, intention: set.intention, socials: set.socials, visibleName: set.visibleName });
+    return res.json({ age: set.age !== undefined ? set.age : undefined, country: set.country, story: set.story, link: set.link, roleLine: set.roleLine, languages: set.languages, intention: set.intention, socials: set.socials, visibleName: set.visibleName, listed: set.listed });
   } catch (err) {
     console.error('[Auth] Profile update error:', err.message);
     return res.status(500).json({ error: 'Profiel bijwerken mislukt.' });

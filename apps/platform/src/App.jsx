@@ -553,7 +553,9 @@ const App = () => {
     { key: 'gardens',   label: 'Gardens' },
     { key: 'winkel',    label: 'Winkel' },
     { key: 'kook',      label: 'Kook-eiland' },
-    { key: 'menu',      label: 'Voorwaarden' },
+    // Client: the left menu is the public-profiles directory (policy pages live
+    // under Instellingen) — hence 'Verbonden', not 'Voorwaarden'.
+    { key: 'menu',      label: 'Verbonden' },
     { key: 'login',     label: 'Profiel' },
   ] : [
     { key: 'main',      label: 'Schaduw Werk' },

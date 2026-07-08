@@ -53,6 +53,10 @@ async function connectDB() {
   // Internal messages — inbox query (recipient, newest first)
   await db.collection('messages').createIndex({ toUserId: 1, at: -1 });
 
+  // Verbonden (connection requests) — incoming-pending lookup + both-direction contacts
+  await db.collection('verbonden').createIndex({ toUserId: 1, status: 1, at: -1 });
+  await db.collection('verbonden').createIndex({ fromUserId: 1, status: 1 });
+
   // Kaart-microcopy drafts — authored at report generation, keyed by orb-code hash;
   // merged into the reading when the code is claimed. Auto-expire with the beta window.
   await db.collection('kaartDrafts').createIndex({ codeHash: 1 }, { unique: true });

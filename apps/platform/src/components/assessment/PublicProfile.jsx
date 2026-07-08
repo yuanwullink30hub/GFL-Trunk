@@ -42,7 +42,8 @@ const PublicProfile = memo(({ handle, active = true, onClose }) => {
         </div>
       )}
 
-      {!loading && card && <ProfileCard payload={card} active={active} />}
+      {/* verbondHandle → the "+ Verbond" invite renders inside the card's sync line */}
+      {!loading && card && <ProfileCard payload={card} active={active} verbondHandle={handle} />}
     </div>
   );
 });

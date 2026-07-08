@@ -5,7 +5,7 @@ import WheelGlyph from '../WheelGlyph';
 import { Database, Lock, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
-import { getInbox, sendUserMessage, markMessageRead, getMe } from '@gfl/api-client';
+import { getInbox, sendUserMessage, markMessageRead, getMe, getVerbondPending, respondVerbond, getVerbondContacts } from '@gfl/api-client';
 
 import OrbSphere3D from '../../orb/OrbSphere3D';
 import { ORB3D_PRESETS } from '../../orb/orb3d';
@@ -113,6 +113,39 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   }, [clientMode, refreshInbox]);
   const messages = clientMode ? inbox : messagesProp;
 
+  // ── Verbonden: incoming pending requests (shown at Berichten, accept/decline) +
+  // accepted verbonden (merged into Contacten). Same 60s cadence as the inbox.
+  const [verbondPending, setVerbondPending] = useState([]);
+  const [verbondContacts, setVerbondContacts] = useState([]);
+  const refreshVerbond = useCallback(() => {
+    getVerbondPending().then((r) => setVerbondPending(Array.isArray(r.requests) ? r.requests : [])).catch(() => {});
+    getVerbondContacts().then((r) => setVerbondContacts(Array.isArray(r.contacts) ? r.contacts : [])).catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (!clientMode) return undefined;
+    refreshVerbond();
+    const timer = setInterval(refreshVerbond, 60000);
+    return () => clearInterval(timer);
+  }, [clientMode, refreshVerbond]);
+  // Decline flow: a decline is IMPOSSIBLE without a message — the textarea gates the button.
+  const [declineFor, setDeclineFor] = useState(null); // request id being declined
+  const [declineText, setDeclineText] = useState('');
+  const [verbondMsg, setVerbondMsg] = useState('');
+  const answerVerbond = async (id, accept) => {
+    try {
+      await respondVerbond({ id, accept, message: accept ? undefined : declineText.trim() });
+      setDeclineFor(null); setDeclineText('');
+      setVerbondMsg(accept ? 'Verbond geaccepteerd ✓' : 'Afgewezen — bericht verstuurd');
+      setTimeout(() => setVerbondMsg(''), 4000);
+      refreshVerbond();
+    } catch (e) {
+      setVerbondMsg(e.message || 'Beantwoorden mislukt');
+      setTimeout(() => setVerbondMsg(''), 4000);
+    }
+  };
+  // Accepted verbonden lead the contact list (client mode); the static contacts follow.
+  const allContacts = clientMode ? [...verbondContacts, ...contacts] : contacts;
+
   // Contacten overlays — Berichten + Contactlijst open a full glass panel over the page.
   const [contactenOverlay, setContactenOverlay] = useState(null); // 'berichten' | 'contactlijst'
   const [openMsgIdx, setOpenMsgIdx] = useState(null);             // selected thread in the Berichten catalog
@@ -126,8 +159,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   const titleInputRef = useRef(null);
   // Suggest names from the contact list so the sender doesn't need the exact username.
   const nameSuggestions = (compose.to.trim()
-    ? contacts.filter((c) => (c.name || c.company || c.label || '').toLowerCase().includes(compose.to.trim().toLowerCase()))
-    : contacts).slice(0, 6);
+    ? allContacts.filter((c) => (c.name || c.company || c.label || '').toLowerCase().includes(compose.to.trim().toLowerCase()))
+    : allContacts).slice(0, 6);
   // Send through the messages backend; recipient = the shown profile name ("Aan" field).
   const [composeMsg, setComposeMsg] = useState('');
   const sendMessage = async () => {
@@ -417,32 +450,16 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         {/* Only the visible bar captures clicks — the full-width flex wrapper stays pointer-events:none
             so its empty left/right areas don't sit over (and swallow clicks to) the header nav toggle. */}
         <div style={{ width: '37.8vw', maxWidth: '960px', pointerEvents: 'auto' }}>
-          <TechContainer title={t('desktopLayout.filosofieTitle')} variant="purple" className="w-full" style={{ minHeight: '9.9vh', backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
-            <div className="w-full h-full flex flex-col items-center justify-center" style={{ padding: '0.9vh 1.5vw', gap: '0.5vh', position: 'relative' }}>
-              {/* Header quote (centred; ignores the absolutely-placed button). */}
-              <p style={{
-                fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-                fontWeight: 600,
-                color: 'rgb(196, 181, 253)',
-                filter: 'brightness(0.9)',
-                fontSize: 'max(9px, 0.85vw)',
-                lineHeight: 1.2,
-                letterSpacing: '0.05em',
-                textAlign: 'center',
-                margin: 0,
-              }}>Voluntas amor, Elefthéros fati</p>
-              {/* The smaller white subtext from the old Filosofie box, below the quote —
-                  shown in BOTH modes (visitor and client). */}
+          {/* The QUOTE is the container header now (was the "Filosofie" label); the subtext
+              moves up and the Leer-meer button sits centered below it — brackets restored. */}
+          <TechContainer title="Voluntas Amor, Elefthéros Fati" titleSize="max(16px, 0.9vw)" variant="purple" className="w-full" style={{ minHeight: '9.9vh', backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
+            <div className="w-full h-full flex flex-col items-center justify-center" style={{ padding: '0.9vh 1.5vw', gap: '0.9vh', position: 'relative' }}>
+              {/* The smaller white subtext from the old Filosofie box — BOTH modes (visitor and client). */}
               <div style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 400, lineHeight: 1.5, color: '#FFFEF0', fontSize: 'max(13px, 0.7vw)', textAlign: 'center', maxWidth: '90%' }}
                 dangerouslySetInnerHTML={{ __html: t('desktopLayout.filosofieSubtext') }} />
-              {/* Button pinned bottom-right against the container border — frameless, text only.
-                  Negative offsets cancel TechContainer's 0.8vw content padding so the button
-                  actually reaches the outer border, not just the inner dashed box. */}
-              <div style={{ position: 'absolute', right: 'calc(-0.8vw + 0.3rem)', bottom: 'calc(-0.8vw + 0.3rem)' }}>
-                <SciFiButton variant="orange" size="sm" brackets={false} onClick={(e) => setActiveSection('filosofie', e)}>
-                  {t('desktopLayout.learnMore')}
-                </SciFiButton>
-              </div>
+              <SciFiButton variant="orange" size="sm" onClick={(e) => setActiveSection('filosofie', e)}>
+                {t('desktopLayout.learnMore')}
+              </SciFiButton>
             </div>
           </TechContainer>
         </div>
@@ -476,7 +493,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         {/* Winkel — an empty product template (image + description + price). Height +50% (grows on
             the bottom, since it's top-anchored by the transform); the image flexes to fill it. */}
         <div style={{ width: '85%', height: '22.28vh', flexShrink: 0, pointerEvents: 'auto', transform: 'translate(1vw, 4.56vh)' /* was calc(9vh - 4rem) — 4rem=4.44vh @1440 */ }}>
-          <TechContainer title="Winkel" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
+          <TechContainer title="WINKEL" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
             {/* No frosted lock overlay here: the product template (image/description, filled
                 later) stays readable for visitors — the lock lives on the Bekijk-winkel button. */}
             <div className="w-full h-full flex flex-col" style={{ gap: '0.5vw', padding: '0.6vw' }}>
@@ -552,7 +569,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       >
         {/* Top-right box: Contacten — live content for clients; for visitors the container shows but
             each action button carries a small lock (renderSectionBtn isLocked), not a full frost. */}
-        <TechContainer title="Contacten" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
+        <TechContainer title="CONTACTEN" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
           <div className="w-full h-full flex flex-col" style={{ padding: '0.5vw' }}>
 
             {/* Content row — the three sections get the full height (buttons sit below) */}
@@ -561,8 +578,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               {/* Left — Berichten: message headers, each with a slow green-flashing icon */}
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', padding: '0 0.6vw', overflow: 'hidden' }}>
                 <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)', marginBottom: '0.5vh' }}>Berichten</div>
-                {messages.length > 0 ? (
+                {(messages.length > 0 || verbondPending.length > 0) ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4vh', overflowY: 'auto', minHeight: 0 }}>
+                    {/* Verbond requests first — amber pulse; answered in the Berichten overlay */}
+                    {verbondPending.map((r) => (
+                      <button key={r.id} onClick={() => setContactenOverlay('berichten')} style={{ display: 'flex', alignItems: 'center', gap: '0.45vw', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', minWidth: 0 }}>
+                        <span style={{ width: 'max(6px, 0.5vw)', height: 'max(6px, 0.5vw)', flexShrink: 0, borderRadius: '50%', background: 'rgba(255, 174, 0, 0.9)', boxShadow: '0 0 6px rgba(255, 174, 0, 0.7)', animation: 'gflMsgPulse 2.4s ease-in-out infinite' }} />
+                        <span style={{ fontFamily: "'Figtree', sans-serif", color: '#ffae00', fontSize: 'max(13px, 0.7vw)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Verbond-verzoek — {r.from}</span>
+                      </button>
+                    ))}
                     {messages.map((m, i) => (
                       <div key={m.id || i} style={{ display: 'flex', alignItems: 'center', gap: '0.45vw' }}>
                         {/* Unread → slow green flash; read → static dim dot */}
@@ -581,9 +605,9 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               {/* Middle — Contactlijst: scrollable preview; a name routes to that contact (full list in the overlay) */}
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', padding: '0 0.6vw', overflow: 'hidden' }}>
                 <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)', marginBottom: '0.5vh' }}>Contactlijst</div>
-                {contacts.length > 0 ? (
+                {allContacts.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15vh', overflowY: 'auto', minHeight: 0 }}>
-                    {contacts.map((c, i) => (
+                    {allContacts.map((c, i) => (
                       <button
                         key={c.id || i}
                         onClick={() => openContact(c)}
@@ -677,6 +701,54 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       {/* Contacten overlays — portalled glass panels over the page, one per card section (each sized differently). */}
       {clientMode && contactenOverlay === 'berichten' && (
         <ContactenOverlay title="Berichten" onClose={() => setContactenOverlay(null)} width="62vw" height="66vh" dim={false}>
+          {/* Verbond requests — pinned above the threads; accept direct, decline ONLY with a message */}
+          {verbondPending.length > 0 && (
+            <div style={{ flexShrink: 0, borderBottom: '1px solid rgba(255, 174, 0, 0.3)', padding: '1.2vh 1.2vw', display: 'flex', flexDirection: 'column', gap: '1vh', background: 'rgba(255, 174, 0, 0.03)' }}>
+              <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.45vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255, 174, 0, 0.8)' }}>
+                Verbond-verzoeken · {verbondPending.length}
+              </div>
+              {verbondPending.map((r) => (
+                <div key={r.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.6vh' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8vw', flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: "'Figtree', sans-serif", color: '#FFFEF0', fontSize: 'max(12px, 0.65vw)' }}>
+                      <b style={{ color: '#d8befe' }}>{r.from}</b> wil een verbond aangaan
+                    </span>
+                    <span style={{ display: 'flex', gap: '0.5vw', marginLeft: 'auto' }}>
+                      <button onClick={() => answerVerbond(r.id, true)}
+                        style={{ background: '#000', border: '1px solid #15b315', color: '#15b315', borderRadius: '0.15rem', padding: '0.35rem 0.9rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 'max(8px, 0.45vw)', cursor: 'pointer' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#15b315'; e.currentTarget.style.color = '#000'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = '#000'; e.currentTarget.style.color = '#15b315'; }}>
+                        Accepteren
+                      </button>
+                      <button onClick={() => { setDeclineFor(declineFor === r.id ? null : r.id); setDeclineText(''); }}
+                        style={{ background: '#000', border: '1px solid rgba(239,68,68,0.6)', color: '#f87171', borderRadius: '0.15rem', padding: '0.35rem 0.9rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 'max(8px, 0.45vw)', cursor: 'pointer' }}>
+                        Afwijzen
+                      </button>
+                    </span>
+                  </div>
+                  {declineFor === r.id && (
+                    <div style={{ display: 'flex', gap: '0.6vw', alignItems: 'flex-start' }}>
+                      <textarea
+                        autoFocus
+                        value={declineText}
+                        onChange={(e) => setDeclineText(e.target.value)}
+                        placeholder="Afwijzen kan niet zonder bericht — schrijf waarom…"
+                        rows={2}
+                        style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '0.15rem', color: '#FFFEF0', fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.6vw)', padding: '0.5vh 0.5vw', outline: 'none', resize: 'vertical' }}
+                      />
+                      <button
+                        onClick={() => answerVerbond(r.id, false)}
+                        disabled={!declineText.trim()}
+                        style={{ background: declineText.trim() ? 'rgba(239,68,68,0.12)' : 'none', border: `1px solid ${declineText.trim() ? '#ef4444' : 'rgba(239,68,68,0.25)'}`, color: declineText.trim() ? '#f87171' : 'rgba(248,113,113,0.4)', borderRadius: '0.15rem', padding: '0.5rem 0.9rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 'max(8px, 0.45vw)', cursor: declineText.trim() ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+                        Verstuur afwijzing
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {verbondMsg && <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(10px, 0.55vw)', color: verbondMsg.includes('✓') ? '#4ade80' : verbondMsg.includes('verstuurd') ? 'rgba(255,174,0,0.9)' : '#f87171' }}>{verbondMsg}</div>}
+            </div>
+          )}
           {/* DM / email catalog — thread list on the left, the open message on the right */}
           <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
             <div style={{ width: '34%', minWidth: 0, borderRight: '1px solid rgba(168, 85, 247, 0.2)', overflowY: 'auto' }}>
@@ -713,7 +785,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         <ContactenOverlay title="Contactlijst" onClose={() => setContactenOverlay(null)} width="44vw" height="62vh" dim={false}>
           {/* Full list in view — a row routes to that contact's profile, or their page if they deliver a product/service */}
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '1vh 0' }}>
-            {contacts.length > 0 ? contacts.map((c, i) => {
+            {allContacts.length > 0 ? allContacts.map((c, i) => {
               const dest = (c.type === 'company' || c.type === 'service' || c.type === 'product') ? 'Pagina' : 'Profiel';
               return (
                 <button key={c.id || i} onClick={() => openContact(c)}

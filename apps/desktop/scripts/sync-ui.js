@@ -38,6 +38,44 @@ const stripMaps = (dir) => {
 };
 stripMaps(TARGET);
 
+// The app loads its UI from file://, where response-header CSP never applies — Electron's
+// webRequest hooks simply do not fire for that scheme. A <meta http-equiv> policy is the
+// only form the renderer will honour here, so it is injected into the copied index.html
+// rather than left to the main process.
+const API_ORIGIN = 'https://api.gardenforlife.nl';
+const CSP = [
+  "default-src 'self'",
+  // The platform bundle is built by Vite and includes inline style attributes; scripts
+  // stay strictly self-hosted, which is the part that matters next to a filesystem bridge.
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "img-src 'self' data: blob:",
+  "media-src 'self' blob:",
+  "worker-src 'self' blob:",
+  `connect-src 'self' ${API_ORIGIN}`,
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+  "frame-ancestors 'none'",
+].join('; ');
+
+const indexPath = path.join(TARGET, 'index.html');
+let html = fs.readFileSync(indexPath, 'utf8');
+if (html.includes('http-equiv="Content-Security-Policy"')) {
+  html = html.replace(
+    /<meta[^>]+http-equiv="Content-Security-Policy"[^>]*>/i,
+    `<meta http-equiv="Content-Security-Policy" content="${CSP}">`
+  );
+} else if (/<head[^>]*>/i.test(html)) {
+  html = html.replace(/<head[^>]*>/i, (m) => `${m}\n    <meta http-equiv="Content-Security-Policy" content="${CSP}">`);
+} else {
+  console.error('\n✘ No <head> in the built index.html — cannot install the CSP. Refusing to ship without it.');
+  process.exit(1);
+}
+fs.writeFileSync(indexPath, html, 'utf8');
+console.log('✓ CSP meta tag installed in ui/index.html');
+
 const size = (() => {
   let bytes = 0;
   const walk = (dir) => {

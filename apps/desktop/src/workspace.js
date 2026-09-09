@@ -43,6 +43,15 @@ function resolveInside(root, relPath) {
   return target;
 }
 
+/** The workspace root with symlinks resolved — the only form safe to compare against. */
+function realRoot(root) {
+  try {
+    return fs.realpathSync(path.resolve(root));
+  } catch {
+    return path.resolve(root);
+  }
+}
+
 /**
  * Containment check for a path that already exists: resolves symlinks before comparing,
  * so a link inside the folder cannot be used to reach outside it.
@@ -60,6 +69,23 @@ function assertRealPathInside(root, target) {
     throw new Error('Path resolves outside the workspace');
   }
   return real;
+}
+
+/**
+ * A single path segment supplied by the renderer — a tool id, a backup label. Anything
+ * that is not a plain name is refused outright rather than sanitised, because sanitising
+ * invites the question "did I catch every form of it?" and the answer is usually no.
+ * Rejects: empty, '.', '..', separators, drive letters, NUL, and anything exotic.
+ */
+function assertPlainSegment(value, what) {
+  const segment = String(value == null ? '' : value);
+  if (!segment) throw new Error(`A ${what} is required`);
+  if (segment.length > 64) throw new Error(`That ${what} is too long`);
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(segment)) {
+    throw new Error(`Invalid ${what}: only letters, digits, dot, dash and underscore are allowed`);
+  }
+  if (segment === '.' || segment === '..') throw new Error(`Invalid ${what}`);
+  return segment;
 }
 
 function assertAllowedExtension(target) {
@@ -137,8 +163,12 @@ async function writeJsonAtomic(target, data) {
  * Returns the backup directory, or null when there was nothing to copy.
  */
 async function backupFolder(root, label) {
+  // The label reaches us from the renderer. A stamp prefix does NOT neutralise it —
+  // path.join happily normalises '<stamp>-../../..' straight out of the workspace — so
+  // it is validated as a plain segment, and the result is contained a second time.
+  const suffix = label === undefined || label === null || label === '' ? '' : `-${assertPlainSegment(label, 'backup label')}`;
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const dest = path.join(root, '.backups', `${stamp}${label ? `-${label}` : ''}`);
+  const dest = resolveInside(root, path.join('.backups', `${stamp}${suffix}`));
   const entries = await fsp.readdir(root, { withFileTypes: true });
   const copyable = entries.filter((e) => e.name !== '.backups');
   if (!copyable.length) return null;
@@ -231,8 +261,17 @@ async function listIn(root, relPath = '.') {
 }
 
 async function removeIn(root, relPath) {
+  // '.' and '' name the root itself; refuse before resolving so the guard below never
+  // has to be the only thing standing between a renderer and the whole folder.
+  if (relPath === '.' || relPath === '' || relPath === './') {
+    throw new Error('Refusing to delete the workspace root');
+  }
   const target = assertRealPathInside(root, resolveInside(root, relPath));
-  if (target === path.resolve(root)) throw new Error('Refusing to delete the workspace root');
+  // BOTH sides must be realpath-resolved. assertRealPathInside returns a resolved path,
+  // so comparing it against an unresolved root fails open wherever the root is reached
+  // through a symlink or junction — which is every workspace under macOS /tmp or /var,
+  // and any redirected Windows folder.
+  if (target === realRoot(root)) throw new Error('Refusing to delete the workspace root');
   await fsp.rm(target, { recursive: true, force: true });
   return { removed: relPath };
 }
@@ -254,7 +293,9 @@ async function readConsent(root) {
 async function recordConsent(root, entry) {
   const ledger = await readConsent(root);
   ledger.entries.push({
-    toolId: String(entry.toolId || ''),
+    // Validated on the way IN as well, so the ledger can never hold an id that
+    // revocation would refuse — an unrevokable grant is worse than a rejected one.
+    toolId: assertPlainSegment(entry && entry.toolId, 'tool id'),
     purpose: String(entry.purpose || ''),
     dataUsed: Array.isArray(entry.dataUsed) ? entry.dataUsed.map(String) : [],
     sendsToServer: Array.isArray(entry.sendsToServer) ? entry.sendsToServer.map(String) : [],
@@ -266,14 +307,21 @@ async function recordConsent(root, entry) {
 }
 
 async function revokeConsent(root, toolId) {
+  const id = assertPlainSegment(toolId, 'tool id');
   const ledger = await readConsent(root);
   const now = new Date().toISOString();
   for (const e of ledger.entries) {
-    if (e.toolId === toolId && !e.revokedAt) e.revokedAt = now;
+    if (e.toolId === id && !e.revokedAt) e.revokedAt = now;
   }
   await writeJsonAtomic(path.join(root, 'consent', 'ledger.json'), ledger);
   // Revocation removes that tool's working data (§6) — its own directory, nothing else.
-  await fsp.rm(path.join(root, 'tools', toolId), { recursive: true, force: true }).catch(() => {});
+  // The id is contained the same way every other path in this module is: validated as a
+  // plain segment, resolved inside the root, and checked again after symlink resolution.
+  // Errors are NOT swallowed here — a revocation that failed to delete must not report
+  // success, or the ledger says the data is gone while it is still on disk.
+  const toolDir = assertRealPathInside(root, resolveInside(root, path.join('tools', id)));
+  if (toolDir === realRoot(root)) throw new Error('Refusing to delete the workspace root');
+  await fsp.rm(toolDir, { recursive: true, force: true });
   return ledger;
 }
 
@@ -281,6 +329,8 @@ module.exports = {
   SCHEMA_VERSION,
   ALLOWED_EXTENSIONS,
   resolveInside,
+  assertPlainSegment,
+  realRoot,
   ensureScaffold,
   readManifest,
   writeManifest,

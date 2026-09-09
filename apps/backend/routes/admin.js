@@ -146,10 +146,24 @@ const router = Router();
 
 const RETENTION_DAYS = 90;
 
+/**
+ * devActivity holds two different things with two different lifetimes: operational audit
+ * entries, which expire after 90 days, and consent records, which are the Art. 7(1) proof
+ * that processing was lawful and must last as long as the account they belong to.
+ *
+ * A blanket TTL on `timestamp` deleted both. The index now keys on `expiresAt` with
+ * expireAfterSeconds 0, so a document expires at the moment named in that field and a
+ * document WITHOUT the field never expires at all. Consent records simply omit it.
+ * Index management lives in db/index.js; this accessor no longer creates one.
+ */
 function activityCollection() {
-  const col = getDB().collection('devActivity');
-  col.createIndex({ timestamp: 1 }, { expireAfterSeconds: RETENTION_DAYS * 86400 }).catch(() => {});
-  return col;
+  return getDB().collection('devActivity');
+}
+
+/** When an operational audit entry should disappear. Consent records pass null. */
+function activityExpiry(type) {
+  if (type === 'consent_given') return null;
+  return new Date(Date.now() + RETENTION_DAYS * 86400 * 1000);
 }
 
 // POST /api/admin/sessions/activity — log a dev or admin activity event (no auth — called from git hooks and frontend)
@@ -161,9 +175,12 @@ router.post('/sessions/activity', async (req, res) => {
       return res.status(400).json({ error: `type must be one of: ${allowed.join(', ')}` });
     }
 
+    const expiresAt = activityExpiry(type);
     const doc = {
       type,
       timestamp: new Date(),
+      // Present on operational entries, absent on consent records — see activityCollection().
+      ...(expiresAt ? { expiresAt } : {}),
       // dev fields
       message: (message || '').slice(0, 512),
       branch: (branch || '').slice(0, 256),

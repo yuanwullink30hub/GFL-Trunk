@@ -11,7 +11,7 @@
  *   - navigation away from the bundled UI is blocked, and new windows open in the
  *     system browser rather than in a window that can see the bridge
  */
-const { app, BrowserWindow, dialog, ipcMain, shell, session } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const workspace = require('./workspace');
@@ -32,6 +32,9 @@ function writeConfig(cfg) {
 
 /** The chosen workspace root, or null when the user hasn't picked one yet. */
 let workspaceRoot = null;
+
+/** Why the saved folder could not be opened at startup, surfaced to the UI. */
+let startupWorkspaceError = null;
 
 /** Guard for every IPC handler: refuse to touch disk before a folder has been chosen. */
 function requireRoot() {
@@ -83,7 +86,7 @@ function createWindow() {
 function registerIpc() {
   // Which folder is in use, and whether it needs setting up. Safe before selection.
   ipcMain.handle('workspace:status', async () => {
-    if (!workspaceRoot) return { connected: false };
+    if (!workspaceRoot) return { connected: false, error: startupWorkspaceError };
     const manifest = await workspace.readManifest(workspaceRoot);
     return {
       connected: true,
@@ -108,6 +111,7 @@ function registerIpc() {
     const migration = await workspace.migrate(root, app.getVersion());
 
     workspaceRoot = root;
+    startupWorkspaceError = null;
     writeConfig({ ...readConfig(), workspaceRoot: root });
     return {
       connected: true,
@@ -154,32 +158,29 @@ function registerIpc() {
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 
-app.whenReady().then(() => {
-  // Content-Security-Policy for the bundled UI: it may talk to our API and load Google
-  // Fonts, and nothing else. Without this the renderer could be talked into fetching
-  // from anywhere, which matters a great deal more here than in a browser tab.
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src 'self';",
-          "script-src 'self';",
-          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
-          'font-src \'self\' https://fonts.gstatic.com data:;',
-          "img-src 'self' data: blob:;",
-          `connect-src 'self' ${API_ORIGIN};`,
-          "object-src 'none';",
-          "frame-ancestors 'none';",
-        ].join(' '),
-      },
-    });
-  });
+app.whenReady().then(async () => {
+  // NOTE: the CSP is delivered as a <meta> tag injected into the bundled index.html by
+  // scripts/sync-ui.js, NOT as a response header. Header interception via
+  // webRequest.onHeadersReceived does not fire for file:// loads, which is the only kind
+  // this app performs — so a header-based policy silently did nothing at all.
 
   // Restore the previously chosen folder, but only if it still exists — a moved or
   // deleted folder drops us back to "not connected" rather than erroring on every call.
   const saved = readConfig().workspaceRoot;
-  if (saved && fs.existsSync(saved)) workspaceRoot = saved;
+  if (saved && fs.existsSync(saved)) {
+    // Migration has to run on a RESTORED folder too, not just a freshly picked one:
+    // this is the path that runs on every subsequent launch, and it is where a folder
+    // written by a newer app version must be refused before anything writes to it.
+    try {
+      await workspace.migrate(saved, app.getVersion());
+      workspaceRoot = saved;
+    } catch (err) {
+      // A newer-schema folder (or an unreadable one) leaves us disconnected rather than
+      // silently operating on it with older assumptions.
+      console.error('[GFL Desktop] Workspace not opened:', err.message);
+      startupWorkspaceError = err.message;
+    }
+  }
 
   registerIpc();
   createWindow();

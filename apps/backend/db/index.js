@@ -79,6 +79,22 @@ async function connectDB() {
   await dropIndexes('assessmentReviews', ['assessmentReviews_ttl_90d', 'createdAt_-1'], { key: 'createdAt' });
   await ensureTtlIndex('assessmentReviews', { timestamp: 1 }, 90 * 24 * 60 * 60, 'assessmentReviews_ttl_90d');
 
+  // ── devActivity: split retention by document type ──
+  // Consent records are the Art. 7(1) proof that processing was lawful and must survive
+  // as long as the account. A blanket TTL on `timestamp` deleted them after 90 days along
+  // with the operational entries. Keying the TTL on `expiresAt` with expireAfterSeconds 0
+  // means each document expires when it says it does, and one without the field never
+  // expires — which is exactly the distinction consent needs.
+  await dropIndexes('devActivity', ['timestamp_1'], { key: 'timestamp' });
+  await ensureTtlIndex('devActivity', { expiresAt: 1 }, 0, 'devActivity_ttl_per_document');
+  // Existing operational entries predate the field, so they would now never expire.
+  // Backfill them once; consent records are deliberately left without it. Idempotent.
+  await db.collection('devActivity').updateMany(
+    { expiresAt: { $exists: false }, type: { $ne: 'consent_given' } },
+    [{ $set: { expiresAt: { $add: ['$timestamp', 90 * 24 * 60 * 60 * 1000] } } }]
+  ).then((r) => { if (r.modifiedCount) console.log(`[MongoDB] Backfilled expiresAt on ${r.modifiedCount} audit entr(ies)`); })
+    .catch((e) => console.warn('[MongoDB] devActivity backfill skipped:', e.message));
+
   console.log('[MongoDB] Connected to', db.databaseName);
   return db;
 }

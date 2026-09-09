@@ -995,6 +995,13 @@ async function eraseAccountData(userId, user) {
   let email = null;
   try { email = decrypt(user.email) || null; } catch { email = null; }
 
+  // The account email is lowercased at registration, but reviews and consent records
+  // store whatever the user typed. An exact match therefore misses every record from
+  // someone who capitalised anything — they would survive "delete my account" entirely.
+  const emailMatch = email
+    ? { $regex: `^${email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }
+    : null;
+
   const codeHashes = Array.isArray(user.orbHistory)
     ? user.orbHistory.map((e) => e && e.codeHash).filter(Boolean)
     : [];
@@ -1006,7 +1013,7 @@ async function eraseAccountData(userId, user) {
     await Promise.all([
       collections.assessments().deleteMany({ userId }),
       db.collection('assessmentReviews').deleteMany(
-        email ? { $or: [{ userId }, { email }] } : { userId }
+        emailMatch ? { $or: [{ userId }, { email: emailMatch }] } : { userId }
       ),
       collections.orbCodes().deleteMany({ userId }),
       db.collection('messages').deleteMany({ $or: [{ fromUserId: userId }, { toUserId: userId }] }),
@@ -1018,7 +1025,7 @@ async function eraseAccountData(userId, user) {
       // logins) are not the user's personal data and age out on the collection's 90-day TTL.
       db.collection('devActivity').deleteMany({
         type: 'consent_given',
-        $or: [{ userId }, ...(email ? [{ email }] : [])],
+        $or: [{ userId }, ...(emailMatch ? [{ email: emailMatch }] : [])],
       }),
     ]);
 

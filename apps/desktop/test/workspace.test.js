@@ -100,6 +100,60 @@ const throws = async (name, fn, match) => {
   fs.writeFileSync(path.join(root, 'manifest.json'), JSON.stringify(m));
   await throws('refuses a folder from a newer app', () => ws.migrate(root, '0.1.0'), 'newer version');
 
+  // ── Regressions for the pre-push review (all three were exploitable) ──
+  // Each of these reproduces the exact call an adversarial reviewer used to prove the
+  // hole. They exist because the original suite passed while the module was wide open:
+  // it tested the helpers that HAD containment, not the operations that lacked it.
+
+  console.log('\n── regression: revokeConsent containment ──');
+  const victim = path.join(root, '..', `gfl-victim-${process.pid}`);
+  fs.mkdirSync(victim, { recursive: true });
+  fs.writeFileSync(path.join(victim, 'precious.txt'), 'do not delete');
+  await throws('revoke rejects ../ traversal', () => ws.revokeConsent(root, '../../' + path.basename(victim)), 'invalid');
+  ok('traversal target survived', fs.existsSync(path.join(victim, 'precious.txt')));
+  await throws('revoke rejects ".."', () => ws.revokeConsent(root, '..'), 'invalid');
+  ok('workspace root survived revoke("..")', fs.existsSync(path.join(root, 'manifest.json')));
+  await throws('revoke rejects empty id', () => ws.revokeConsent(root, ''), 'required');
+  ok('tools/ survived revoke("")', fs.existsSync(path.join(root, 'tools')));
+  await throws('revoke rejects a separator', () => ws.revokeConsent(root, 'a/b'), 'invalid');
+  await throws('grant rejects a traversal id', () => ws.recordConsent(root, { toolId: '../evil', purpose: 'x' }), 'invalid');
+  fs.rmSync(victim, { recursive: true, force: true });
+
+  console.log('\n── regression: backup label containment ──');
+  await throws('backup rejects a traversal label', () => ws.backupFolder(root, '../../../../ESCAPED'), 'invalid');
+  await throws('backup rejects a separator in the label', () => ws.backupFolder(root, 'a/b'), 'invalid');
+  const okBackup = await ws.backupFolder(root, 'valid-label');
+  ok('backup still works with a plain label', okBackup && fs.existsSync(okBackup));
+  ok('backup stayed inside the root', okBackup && path.resolve(okBackup).startsWith(path.resolve(root)));
+
+  console.log('\n── regression: root guard resolves both sides ──');
+  await throws('remove rejects "."', () => ws.removeIn(root, '.'), 'root');
+  await throws('remove rejects ""', () => ws.removeIn(root, ''), 'root');
+  // The original guard compared a realpath against an unresolved root, so any symlinked
+  // root (every macOS /tmp workspace) slipped past it and deleted the whole folder.
+  let linked = null;
+  try {
+    linked = path.join(os.tmpdir(), `gfl-link-${process.pid}`);
+    fs.symlinkSync(root, linked, 'junction');
+  } catch {
+    linked = null; // no symlink privileges here — skip rather than fail
+  }
+  if (linked) {
+    await throws('remove via a symlinked root still refuses', () => ws.removeIn(linked, '.'), 'root');
+    ok('workspace survived the symlinked-root attempt', fs.existsSync(path.join(root, 'manifest.json')));
+    ok('realRoot resolves the link to the same place', ws.realRoot(linked) === ws.realRoot(root));
+    try { fs.unlinkSync(linked); } catch { /* leave it */ }
+  } else {
+    console.log('  skip  symlinked-root case (no symlink privilege on this machine)');
+  }
+
+  console.log('\n── regression: segment validation ──');
+  for (const bad of ['..', '.', '', 'a/b', 'a\\b', 'C:', 'x\u0000y', '-leading', 'a'.repeat(65)]) {
+    const shown = JSON.stringify(bad);
+    await throws(`rejects segment ${shown}`, async () => ws.assertPlainSegment(bad, 'tool id'));
+  }
+  ok('accepts a normal id', ws.assertPlainSegment('three-month-plan', 'tool id') === 'three-month-plan');
+
   fs.rmSync(root, { recursive: true, force: true });
   console.log(`\n${pass} passed, ${fail} failed\n`);
   process.exit(fail ? 1 : 0);

@@ -4,6 +4,7 @@ import { getHistory, getAssessment, downloadPdf, deleteOwnAccount } from '@gfl/a
 import { ERROR_STYLE, C, FONT, SciFiButton } from '@gfl/ui';
 import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
 import { extendedNameFor } from '@gfl/assessment-core/data';
+import WorkspaceTab from './WorkspaceTab.jsx';
 
 // ═══════════════════════════════════════════════════════════
 // DashboardCard — same as AdminDashboardModal (no corner accents)
@@ -237,7 +238,7 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
 
           {/* ── Tab Navigation (client-level only) ── */}
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {['overview', 'assessments', 'feedback', 'inbox', 'contacten', 'agenda'].map((key) => (
+            {['overview', 'werkruimte', 'assessments', 'feedback', 'inbox', 'contacten', 'agenda'].map((key) => (
               <SciFiButton key={key} onClick={() => setTab(key)} active={tab === key}>
                 {t(`clientOrb.modal.tabs.${key}`).toUpperCase()}
               </SciFiButton>
@@ -246,6 +247,7 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
 
           {/* ── Tab Content ── */}
           {tab === 'overview' && <ClientOverviewTab user={user} />}
+          {tab === 'werkruimte' && <WorkspaceTab DashboardCard={DashboardCard} />}
           {tab === 'assessments' && <ClientAssessmentsTab />}
           {tab === 'feedback' && <ClientFeedbackTab user={user} />}
           {tab === 'inbox' && <InboxTab />}

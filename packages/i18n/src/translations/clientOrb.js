@@ -79,8 +79,98 @@ export default {
         en: (name, role, email) => `USER: ${name} · ROLE: ${role} · ${email}`,
       },
 
+      // ═══ Werkruimte tab — the local workstation ═══
+      // Wording tracks Terms art. 5a/5b and privacy art. 6. If those change, change these.
+      workspace: {
+        whyTitle: { nl: 'Waarom een eigen werkmap', en: 'Why your own folder' },
+        whyLead: {
+          nl: 'Je rapport, je volledige profiel en alles wat toekomstige hulpmiddelen voor je maken horen bij jou — niet bij ons. Daarom bewaren we ze niet op onze servers, maar in een map op je eigen apparaat die jij kiest.',
+          en: 'Your report, your full profile and everything future tools produce for you belong to you — not to us. So we do not keep them on our servers; they live in a folder on your own device that you choose.',
+        },
+        why1: {
+          nl: 'Wij hebben geen toegang tot die map en bewaren er geen kopie van.',
+          en: 'We have no access to that folder and keep no copy of it.',
+        },
+        why2: {
+          nl: 'Op onze servers blijft alleen wat je account nodig heeft om te bestaan: je archetype-naam, de vorm van je orb en de teksten op je kaart.',
+          en: 'What stays on our servers is only what your account needs in order to exist: your archetype name, the shape of your orb and the texts on your card.',
+        },
+        why3: {
+          nl: 'Het model en de hulpmiddelen blijven bij ons draaien — alleen de gegevens waarmee ze rekenen staan bij jou.',
+          en: 'The model and the tools keep running on our side — only the data they work with lives with you.',
+        },
+        whyTail: {
+          nl: 'Dit is dezelfde afspraak als in artikel 5a van de voorwaarden en artikel 6 van het privacybeleid.',
+          en: 'This is the same arrangement set out in article 5a of the terms and article 6 of the privacy policy.',
+        },
+
+        grantTitle: { nl: 'Wat je toestemming precies inhoudt', en: 'What your permission actually covers' },
+        grantLead: {
+          nl: 'Je geeft eenmalig toegang tot één map die je zelf aanwijst. Die toestemming geldt alleen voor die map.',
+          en: 'You grant access once, to one folder that you choose yourself. That permission applies to that folder alone.',
+        },
+        grant1: {
+          nl: 'De applicatie doorzoekt je apparaat niet en opent geen andere mappen.',
+          en: 'The application does not scan your device and opens no other folder.',
+        },
+        grant2: {
+          nl: 'Elk hulpmiddel vraagt daarna apart om toestemming, met vooraf de vermelding welke gegevens het gebruikt en wat er naar ons wordt verstuurd.',
+          en: 'Each tool then asks for consent separately, stating in advance which data it uses and what is sent to us.',
+        },
+        grant3: {
+          nl: 'Je kunt de toestemming op elk moment intrekken; de map en de inhoud blijven van jou.',
+          en: 'You can withdraw the permission at any time; the folder and its contents remain yours.',
+        },
+        grantWarning: {
+          nl: 'Omdat wij geen kopie bewaren, ben jij verantwoordelijk voor het veiligstellen van die map. Raakt hij kwijt — door gewiste gegevens, een kapot apparaat of verplaatste bestanden — dan is de inhoud onherstelbaar weg. Wij kunnen die niet terughalen.',
+          en: 'Because we keep no copy, safeguarding that folder is your responsibility. If it is lost — through erased data, a failed device or moved files — its contents are gone for good. We cannot recover them.',
+        },
+
+        getTitle: { nl: 'De applicatie ophalen', en: 'Get the application' },
+        getLead: {
+          nl: 'De werkmap werkt via een programma dat je op je computer installeert. De website blijft gewoon werken voor de test, je rapport en je openbare profiel — het programma heb je alleen nodig voor de werkmap en de hulpmiddelen die daarop bouwen.',
+          en: 'The folder works through a program you install on your computer. The website keeps working for the test, your report and your public profile — you only need the program for the folder and the tools built on it.',
+        },
+        download: {
+          win: { nl: 'Download voor Windows', en: 'Download for Windows' },
+          macArm: { nl: 'Download voor Mac (Apple Silicon)', en: 'Download for Mac (Apple Silicon)' },
+          macIntel: { nl: 'Download voor Mac (Intel)', en: 'Download for Mac (Intel)' },
+          linux: { nl: 'Download voor Linux', en: 'Download for Linux' },
+        },
+        notYet: {
+          nl: 'De applicatie is er bijna. Zodra hij klaar is verschijnt de downloadknop hier en krijg je bericht op het e-mailadres van je account.',
+          en: 'The application is nearly ready. As soon as it is, the download button appears here and you will hear from us at your account email address.',
+        },
+        unsigned: {
+          nl: 'Tijdens de testfase brengen wij de applicatie uit zonder uitgeverscertificaat. Windows en macOS waarschuwen dan dat de uitgever niet geverifieerd is. Dat hoort erbij en betekent niet dat er iets mis is — maar installeer hem uitsluitend via de knop hierboven en nooit via een kopie van iemand anders.',
+          en: 'During the testing phase we release the application without a publisher certificate, so Windows and macOS will warn that the publisher cannot be verified. That is expected and does not mean anything is wrong — but install it only via the button above, never from a copy obtained elsewhere.',
+        },
+
+        chooseTitle: { nl: 'Kies je werkmap', en: 'Choose your folder' },
+        chooseLead: {
+          nl: 'Kies een map waarin je gegevens komen te staan. Een lege map op een plek die je zelf terugvindt werkt het prettigst — bijvoorbeeld in je documentenmap.',
+          en: 'Pick a folder for your data to live in. An empty folder somewhere you will find it again works best — inside your documents folder, for instance.',
+        },
+        chooseButton: { nl: 'Map kiezen', en: 'Choose folder' },
+        choosing: { nl: 'Bezig...', en: 'Working...' },
+
+        connectedTitle: { nl: 'Je werkmap', en: 'Your folder' },
+        rowFolder: { nl: 'Locatie', en: 'Location' },
+        rowLayout: { nl: 'Indeling', en: 'Layout' },
+        rowId: { nl: 'Map-id', en: 'Folder id' },
+        openFolder: { nl: 'Map openen', en: 'Open folder' },
+        backup: { nl: 'Reservekopie maken', en: 'Make a backup' },
+        backingUp: { nl: 'Bezig...', en: 'Working...' },
+        disconnect: { nl: 'Loskoppelen', en: 'Disconnect' },
+        disconnectNote: {
+          nl: 'Loskoppelen vergeet alleen waar de map staat. De map zelf en alles erin blijven op je apparaat staan.',
+          en: 'Disconnecting only forgets where the folder is. The folder itself and everything in it stay on your device.',
+        },
+      },
+
       tabs: {
         overview: { nl: 'Overzicht', en: 'Overview' },
+        werkruimte: { nl: 'Werkruimte', en: 'Workspace' },
         assessments: { nl: 'Assessments', en: 'Assessments' },
         feedback: { nl: 'Feedback', en: 'Feedback' },
         inbox: { nl: 'Inbox', en: 'Inbox' },

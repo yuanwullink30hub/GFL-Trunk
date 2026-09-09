@@ -19,6 +19,12 @@ const workspace = require('./workspace');
 const API_ORIGIN = 'https://api.gardenforlife.nl';
 const isDev = !app.isPackaged;
 
+// Without this, dev takes its userData path from the scoped package name and lands in
+// AppData/Roaming/@gfl/desktop while the packaged build uses productName — so a folder
+// connected while developing would not be remembered by the real app. Must run before
+// any getPath('userData') call.
+app.setName('Garden For Life');
+
 /** Where the app remembers which folder the user picked. Not the data — just the path. */
 const configFile = () => path.join(app.getPath('userData'), 'config.json');
 

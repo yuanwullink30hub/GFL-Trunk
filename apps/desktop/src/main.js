@@ -131,19 +131,29 @@ function registerIpc() {
     return { connected: false };
   });
 
-  ipcMain.handle('workspace:read', (_e, relPath) => workspace.readFileIn(requireRoot(), relPath));
-  ipcMain.handle('workspace:write', (_e, relPath, data, encoding) =>
-    workspace.writeFileIn(requireRoot(), relPath, data, encoding));
-  ipcMain.handle('workspace:list', (_e, relPath) => workspace.listIn(requireRoot(), relPath));
-  ipcMain.handle('workspace:remove', (_e, relPath) => workspace.removeIn(requireRoot(), relPath));
-  ipcMain.handle('workspace:backup', (_e, label) => workspace.backupFolder(requireRoot(), label));
+  // ── Named operations. None of these takes a path from the renderer. ──
+  ipcMain.handle('workspace:backup', () => workspace.backupFolder(requireRoot()));
+
+  ipcMain.handle('profile:read-partial', () => workspace.readPartial(requireRoot()));
+  ipcMain.handle('profile:write-partial', (_e, data) => workspace.writePartial(requireRoot(), data));
+  ipcMain.handle('profile:read-full', () => workspace.readFullProfile(requireRoot()));
+  ipcMain.handle('profile:write-full', (_e, data) => workspace.writeFullProfile(requireRoot(), data));
+
+  ipcMain.handle('reports:save', (_e, pdfBase64) => workspace.saveReport(requireRoot(), pdfBase64));
+  ipcMain.handle('reports:list', () => workspace.listReports(requireRoot()));
+  ipcMain.handle('reports:read', (_e, name) => workspace.readReport(requireRoot(), name));
+
+  ipcMain.handle('tools:read-state', (_e, toolId) => workspace.readToolState(requireRoot(), toolId));
+  ipcMain.handle('tools:write-state', (_e, toolId, data) => workspace.writeToolState(requireRoot(), toolId, data));
+  ipcMain.handle('tools:write-output', (_e, toolId, name, data) => workspace.writeToolOutput(requireRoot(), toolId, name, data));
+  ipcMain.handle('tools:list-output', (_e, toolId) => workspace.listToolOutput(requireRoot(), toolId));
 
   ipcMain.handle('consent:list', () => workspace.readConsent(requireRoot()));
   ipcMain.handle('consent:grant', (_e, entry) => workspace.recordConsent(requireRoot(), entry));
   ipcMain.handle('consent:revoke', (_e, toolId) => workspace.revokeConsent(requireRoot(), toolId));
 
-  // Opens the folder in Explorer/Finder so the user can see their own data. Scoped to
-  // the workspace root; it cannot be pointed anywhere else.
+  // Opens the folder in Explorer/Finder. Scoped to the root; it takes no argument, so it
+  // cannot be pointed anywhere else.
   ipcMain.handle('workspace:reveal', async () => {
     await shell.openPath(requireRoot());
     return { revealed: true };

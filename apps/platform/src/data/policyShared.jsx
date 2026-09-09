@@ -175,7 +175,7 @@ const RETENTION_COPY = {
   del1: { nl: 'Uw e-mailadres en accountgegevens', en: 'Your email address and account data' },
   del2: { nl: 'Uw gedeeltelijke profiel — archetype-naam, orb-geometrie, vormvector en kaartteksten', en: 'Your partial profile — archetype name, orb geometry, shape vector and card texts' },
   del3: { nl: 'De hash van elke aan uw account gekoppelde kristal-code, waarna de code van uw PDF weer inwisselbaar wordt', en: 'The hash of every crystal code linked to your account, after which the code in your PDF becomes redeemable again' },
-  del4: { nl: 'Uw openbare kaart en verbindingen, uw verzonden en ontvangen berichten, uw feedbackinzendingen en alle gekoppelde toestemmingsregistraties', en: 'Your public card and connections, the messages you sent and received, your feedback submissions and all linked consent records' },
+  del4: { nl: 'Uw openbare kaart en verbindingen, uw verzonden en ontvangen berichten, uw feedbackinzendingen en alle gekoppelde toestemmingsregistraties (die anders maximaal 7 jaar bewaard blijven als bewijs van rechtmatige verwerking)', en: 'Your public card and connections, the messages you sent and received, your feedback submissions and all linked consent records (otherwise kept for at most 7 years as proof that processing was lawful)' },
   notAuto: { nl: 'Wat niet automatisch wordt verwijderd bij accountverwijdering:', en: 'What is not automatically deleted on account deletion:' },
   notAutoItem: {
     nl: 'Uw lokale browseropslag (localStorage) — dit staat op uw eigen apparaat en kunt u zelf wissen zoals beschreven in Artikel 1.2',

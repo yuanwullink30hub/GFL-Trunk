@@ -161,6 +161,8 @@ async function purgeProfiles() {
     console.log(`[GFL-API] 🧹 Nightly profile purge: ${result.deletedCount} computed profile(s) removed`);
     if (result.deletedCount > 0) {
       db.collection('devActivity').insertOne({
+        // The TTL now keys on expiresAt; a row without it would live forever.
+        expiresAt: new Date(Date.now() + 90 * 86400 * 1000),
         type: 'admin_login',
         timestamp: new Date(),
         userId: 'SYSTEM',
@@ -221,6 +223,8 @@ async function executeBetaWipe() {
 
     // Log the wipe in the audit trail
     db.collection('devActivity').insertOne({
+      // The TTL now keys on expiresAt; a row without it would live forever.
+      expiresAt: new Date(Date.now() + 90 * 86400 * 1000),
       type: 'admin_login',
       timestamp: new Date(),
       userId: 'SYSTEM',

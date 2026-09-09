@@ -578,7 +578,10 @@ router.post('/login', async (req, res) => {
 
     // Audit log: record admin logins asynchronously (fire-and-forget)
     if (user.role === 'admin') {
+      // expiresAt keeps this row on the same 90-day sweep as every other audit entry;
+      // without it the row would now live forever (the TTL keys on this field).
       getDB().collection('devActivity').insertOne({
+        expiresAt: new Date(Date.now() + 90 * 86400 * 1000),
         type: 'admin_login',
         timestamp: new Date(),
         userId: String(user._id),

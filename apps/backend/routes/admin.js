@@ -160,10 +160,32 @@ function activityCollection() {
   return getDB().collection('devActivity');
 }
 
-/** When an operational audit entry should disappear. Consent records pass null. */
+/**
+ * Consent records are the Art. 7(1) proof that processing was lawful, so they must outlive
+ * the 90-day operational sweep. They cannot be exempt from expiry ALTOGETHER, though: the
+ * endpoint below is deliberately unauthenticated (git hooks and the pre-account consent
+ * screen both post to it), so "never expires" turns it into unbounded permanent storage
+ * anyone can write to. Seven years bounds that while comfortably outlasting any account —
+ * and the published retention page says exactly this.
+ */
+const CONSENT_RETENTION_YEARS = 7;
+
 function activityExpiry(type) {
-  if (type === 'consent_given') return null;
-  return new Date(Date.now() + RETENTION_DAYS * 86400 * 1000);
+  const days = type === 'consent_given' ? CONSENT_RETENTION_YEARS * 365 : RETENTION_DAYS;
+  return new Date(Date.now() + days * 86400 * 1000);
+}
+
+/**
+ * Truncate to a string of at most `max` characters.
+ *
+ * `(value || '').slice(max)` looks like it does this and does not: when the caller sends
+ * a JSON array, Array.prototype.slice returns ELEMENTS, so a single anonymous request
+ * could store megabytes in a field nominally capped at 512 characters. Coercing first is
+ * the whole fix.
+ */
+function cap(value, max) {
+  if (value === undefined || value === null) return '';
+  return String(value).slice(0, max);
 }
 
 // POST /api/admin/sessions/activity — log a dev or admin activity event (no auth — called from git hooks and frontend)
@@ -175,26 +197,26 @@ router.post('/sessions/activity', async (req, res) => {
       return res.status(400).json({ error: `type must be one of: ${allowed.join(', ')}` });
     }
 
-    const expiresAt = activityExpiry(type);
+    // Every field is coerced before truncation — see cap(). This endpoint takes
+    // unauthenticated input, so a field that only looks capped is a storage exhaustion bug.
     const doc = {
       type,
       timestamp: new Date(),
-      // Present on operational entries, absent on consent records — see activityCollection().
-      ...(expiresAt ? { expiresAt } : {}),
+      expiresAt: activityExpiry(type),
       // dev fields
-      message: (message || '').slice(0, 512),
-      branch: (branch || '').slice(0, 256),
-      hash: (hash || '').slice(0, 64),
+      message: cap(message, 512),
+      branch: cap(branch, 256),
+      hash: cap(hash, 64),
       // admin fields
-      userId: userId || null,
-      email: (email || '').slice(0, 256),
-      reportId: reportId || null,
-      reportType: (reportType || '').slice(0, 64),
+      userId: userId == null ? null : cap(userId, 64),
+      email: cap(email, 256),
+      reportId: reportId == null ? null : cap(reportId, 64),
+      reportType: cap(reportType, 64),
       // consent fields
       ...(type === 'consent_given' && {
-        consentType: (consentType || 'art9_assessment').slice(0, 64),
-        level: (level || '').slice(0, 32),
-        userAgent: req.get('user-agent') || '',
+        consentType: cap(consentType || 'art9_assessment', 64),
+        level: cap(level, 32),
+        userAgent: cap(req.get('user-agent'), 512),
       }),
     };
 

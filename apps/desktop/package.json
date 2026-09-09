@@ -1,0 +1,19 @@
+{
+  "name": "@gfl/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Garden For Life desktop app — the platform UI plus the local workstation folder",
+  "main": "src/main.js",
+  "scripts": {
+    "sync-ui": "node scripts/sync-ui.js",
+    "start": "pnpm run sync-ui && electron .",
+    "dist": "pnpm run sync-ui && electron-builder",
+    "dist:win": "pnpm run sync-ui && electron-builder --win",
+    "dist:mac": "pnpm run sync-ui && electron-builder --mac",
+    "test": "node test/workspace.test.js"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  }
+}

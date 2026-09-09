@@ -351,6 +351,13 @@ router.post('/register', async (req, res) => {
         await collections.users().deleteOne({ _id: result.insertedId }); // roll back the orphan account
         return res.status(409).json({ error: 'Deze kristal-code is al aan een ander account gekoppeld.' });
       }
+      // The draft has been folded into the account's orbHistory entry above, so the
+      // pre-account copy is now redundant profile text. Privacy policy art. 6 tier 3:
+      // nothing about the report survives the claim.
+      if (kaartDraft) {
+        await collections.kaartDrafts().deleteOne({ codeHash: orbCodeHash })
+          .catch((e) => console.warn('[Auth] kaart-draft cleanup failed:', e.message));
+      }
     }
 
     // Verification path: no session is issued until the email is confirmed. Send the mail and tell
@@ -962,6 +969,72 @@ router.get('/email/verify', async (req, res) => {
   }
 });
 
+
+/**
+ * Erase every trace of one account — the GDPR right-to-erasure implementation that the
+ * privacy policy (art. 8) and the retention page (§3) describe.
+ *
+ * Deletes: assessments, feedback reviews (by id AND by the account's email, since reviews
+ * can be submitted logged-out), the crystal-code ledger entries (so the PDF's code becomes
+ * redeemable again), messages in both directions, verbond relations in both directions,
+ * the pre-account kaart drafts for every code this account claimed, and its consent records.
+ *
+ * The user document is deleted LAST: its orbHistory is the only place the claimed code
+ * hashes are recorded, so it has to outlive the lookups.
+ *
+ * Shared by DELETE /api/auth/account and the admin delete-user route so the two can never
+ * disagree about what erasure means.
+ *
+ * @param {string} userId  stringified account id
+ * @param {object} user    the already-loaded user document
+ * @returns {Promise<object>} per-collection deletion counts
+ */
+async function eraseAccountData(userId, user) {
+  const db = getDB();
+  // Decrypting can fail on a legacy or malformed record; erasure must not be blocked by it.
+  let email = null;
+  try { email = decrypt(user.email) || null; } catch { email = null; }
+
+  const codeHashes = Array.isArray(user.orbHistory)
+    ? user.orbHistory.map((e) => e && e.codeHash).filter(Boolean)
+    : [];
+  const ownedCodes = await collections.orbCodes().find({ userId }).project({ codeHash: 1 }).toArray();
+  for (const c of ownedCodes) if (c.codeHash) codeHashes.push(c.codeHash);
+  const uniqueHashes = [...new Set(codeHashes)];
+
+  const [assessments, reviews, orbCodes, messages, verbonden, kaartDrafts, consentRecords] =
+    await Promise.all([
+      collections.assessments().deleteMany({ userId }),
+      db.collection('assessmentReviews').deleteMany(
+        email ? { $or: [{ userId }, { email }] } : { userId }
+      ),
+      collections.orbCodes().deleteMany({ userId }),
+      db.collection('messages').deleteMany({ $or: [{ fromUserId: userId }, { toUserId: userId }] }),
+      db.collection('verbonden').deleteMany({ $or: [{ fromUserId: userId }, { toUserId: userId }] }),
+      uniqueHashes.length
+        ? collections.kaartDrafts().deleteMany({ codeHash: { $in: uniqueHashes } })
+        : Promise.resolve({ deletedCount: 0 }),
+      // Only this account's own consent entries. Other devActivity types (commits, admin
+      // logins) are not the user's personal data and age out on the collection's 90-day TTL.
+      db.collection('devActivity').deleteMany({
+        type: 'consent_given',
+        $or: [{ userId }, ...(email ? [{ email }] : [])],
+      }),
+    ]);
+
+  await collections.users().deleteOne({ _id: new ObjectId(userId) });
+
+  return {
+    assessments: assessments.deletedCount,
+    reviews: reviews.deletedCount,
+    orbCodes: orbCodes.deletedCount,
+    messages: messages.deletedCount,
+    verbonden: verbonden.deletedCount,
+    kaartDrafts: kaartDrafts.deletedCount,
+    consentRecords: consentRecords.deletedCount,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────
 // DELETE /api/auth/account  (auth required)
 // GDPR right-to-erasure: deletes the authenticated user's account,
@@ -984,21 +1057,24 @@ router.delete('/account', authRequired, async (req, res) => {
       }
     }
 
-    // Delete all associated data
-    const [assessmentResult, reviewResult] = await Promise.all([
-      collections.assessments().deleteMany({ userId }),
-      getDB().collection('assessmentReviews').deleteMany({ userId }),
-    ]);
+    const counts = await eraseAccountData(userId, user);
 
-    // Delete the user record last
-    await collections.users().deleteOne({ _id: new ObjectId(userId) });
-
-    console.log(`[Auth] Account deleted: ${userId} — ${assessmentResult.deletedCount} assessments, ${reviewResult.deletedCount} reviews`);
+    console.log(
+      `[Auth] Account erased: ${userId} — ${counts.assessments} assessments, ` +
+      `${counts.reviews} reviews, ${counts.orbCodes} orb-codes, ${counts.messages} messages, ` +
+      `${counts.verbonden} verbonden, ${counts.kaartDrafts} kaart-drafts, ` +
+      `${counts.consentRecords} consent records`
+    );
 
     res.json({
       success: true,
-      deletedAssessments: assessmentResult.deletedCount,
-      deletedReviews: reviewResult.deletedCount,
+      deletedAssessments: counts.assessments,
+      deletedReviews: counts.reviews,
+      deletedOrbCodes: counts.orbCodes,
+      deletedMessages: counts.messages,
+      deletedVerbonden: counts.verbonden,
+      deletedKaartDrafts: counts.kaartDrafts,
+      deletedConsentRecords: counts.consentRecords,
     });
   } catch (err) {
     console.error('[Auth] Delete account error:', err.message);
@@ -1008,6 +1084,7 @@ router.delete('/account', authRequired, async (req, res) => {
 
 module.exports = router;
 module.exports.signToken = signToken;
+module.exports.eraseAccountData = eraseAccountData;
 
 // ─────────────────────────────────────────────────────────────
 // Helper

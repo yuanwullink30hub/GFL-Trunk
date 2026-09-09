@@ -32,11 +32,12 @@ const AdminDashboardModal = lazyRetry(() => import('@gfl/admin-ui'));
 // none; all foreground content renders above it.
 const NebulaBackground = lazyRetry(() => import('./components/NebulaBackground'));
 
-// ── Mobile portal: passkey → admin dashboard, or basic client assessment view
+// ── Mobile portal: ADMIN ONLY. The beta gate is gone; the admin passkey is all
+// that remains, and it is the only way to reach the dashboard on mobile.
 const MobileApp = () => {
   const { t } = useLanguage();
   const [user, setUser] = React.useState(null);
-  const [phase, setPhase] = React.useState('loading'); // 'loading' | 'passkey' | 'dashboard' | 'client'
+  const [phase, setPhase] = React.useState('loading'); // 'loading' | 'passkey' | 'dashboard'
   const [passkeyValue, setPasskeyValue] = React.useState('');
   const [passkeyError, setPasskeyError] = React.useState('');
   const [verifying, setVerifying] = React.useState(false);
@@ -80,17 +81,17 @@ const MobileApp = () => {
         body: JSON.stringify({ passkey: key }),
       });
       const data = await res.json();
-      if (!data.valid) { setPasskeyError(t('shell.mobile.invalidPasskey')); setVerifying(false); return; }
-      localStorage.setItem('gfl_beta_access', key);
-      localStorage.setItem('gfl_beta_access_time', Date.now().toString());
-      if (data.adminMode && data.token && data.user) {
+      // Only the admin passkey survives — anything else is rejected outright.
+      if (!data.valid || !data.adminMode) {
+        setPasskeyError(t('shell.mobile.invalidPasskey'));
+        setVerifying(false);
+        return;
+      }
+      if (data.token && data.user) {
         localStorage.setItem('gfl_admin_mode', '1');
         localStorage.setItem('gfl_token', data.token);
         setUser(data.user);
         setPhase('dashboard');
-      } else if (data.valid && !data.adminMode) {
-        // Valid non-admin (client) passkey — basic mobile assessment view
-        setPhase('client');
       } else {
         // Admin passkey but backend couldn't issue token
         setPasskeyError(t('shell.mobile.adminNotFound'));
@@ -109,66 +110,6 @@ const MobileApp = () => {
       <Suspense fallback={null}>
         <AdminDashboardModal user={user} onLogout={handleLogout} onClose={handleLogout} embedded />
       </Suspense>
-    );
-  }
-
-  // Valid non-admin passkey: minimal mobile assessment view — DELTAWERKEN header + logo, pinned to top
-  if (phase === 'client') {
-    return (
-      <>
-      {nebula}
-      <div style={{ position: 'fixed', inset: 0, background: 'transparent', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: 'clamp(1.5rem, 2vw, 2rem)' }}>
-        {/* Logo + header — same relative layout/sizing as the desktop build, pinned to top */}
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 'clamp(0.75rem, 1.5vw, 1.5rem)' }}>
-          <img
-            src="/images/landingpage/logo.png"
-            alt="Garden for Life"
-            style={{
-              width: 'clamp(4rem, 7vw, 12.5rem)',
-              height: 'clamp(4rem, 7vw, 12.5rem)',
-              flexShrink: 0,
-            }}
-          />
-          <div style={{ marginLeft: 'clamp(-1rem, -1vw, -1.5rem)' }}>
-            <h1 style={{
-              color: '#FFFEF0',
-              fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-              fontSize: 'clamp(1.7rem, 6vw, 2.2rem)',
-              fontWeight: 600,
-              lineHeight: 1,
-              letterSpacing: '0.1em',
-              margin: 0,
-              animation: 'headerBreathe 6s ease-in-out infinite',
-            }}>
-              DELTA<span style={{ color: '#f97316' }}>WERKEN</span>
-            </h1>
-            <div style={{
-              width: '100%',
-              height: '1px',
-              marginTop: 'clamp(0.2rem, 1vw, 0.4rem)',
-              background: 'linear-gradient(90deg, rgba(255,254,240,0.4) 0%, rgba(245,158,11,0.5) 50%, transparent 100%)',
-            }} />
-            {/* Subtitle — "SCHADUW WERK // V.4.9", same as the desktop header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 'clamp(0.25rem, 1vw, 0.5rem)' }}>
-              <span style={{
-                width: '0.5rem',
-                height: '0.5rem',
-                borderRadius: '9999px',
-                background: '#22c55e',
-                flexShrink: 0,
-                animation: 'dotBreathe 4s ease-in-out infinite',
-              }} />
-              <span style={{
-                color: '#9ca3af',
-                fontFamily: "'Figtree', sans-serif",
-                fontSize: 'clamp(0.7rem, 2.6vw, 0.9rem)',
-                letterSpacing: '0.1em',
-              }}>{t('header.versionText')} {'/'}{'/'} V.4.9</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      </>
     );
   }
 

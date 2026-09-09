@@ -33,11 +33,9 @@ import {
   getFeedbackEmailSettings,
   updateFeedbackEmailSettings,
   getPasskeys,
-  createPasskey,
   deletePasskey,
   togglePasskey,
   toggleAdminPasskey,
-  getPasskeyAuditLog,
 } from '@gfl/api-client';
 import {
   BTN, LABEL, TEXTAREA, INPUT_SM,
@@ -2936,13 +2934,14 @@ const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc', admi
 // Passkeys Tab
 // ═══════════════════════════════════════════════════════════
 
+// The beta access gate is gone, so passkeys are no longer issued and nothing here
+// creates one. What remains is the ADMIN passkey — the only way into the mobile
+// admin portal — which this tab can still list, toggle, revoke and audit.
 const PasskeysTab = memo(() => {
   const { t, tFunc } = useLanguage();
   const [passkeys, setPasskeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [newLabel, setNewLabel] = useState('');
-  const [creating, setCreating] = useState(false);
   const tc = CARD_COLORS.gold;
 
   const fetchData = useCallback(async () => {
@@ -2959,20 +2958,6 @@ const PasskeysTab = memo(() => {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  const handleCreate = async () => {
-    setCreating(true);
-    setError(null);
-    try {
-      await createPasskey(newLabel.trim() || undefined);
-      setNewLabel('');
-      await fetchData();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handleDelete = async (id, code) => {
     if (!window.confirm(tFunc('admin.dashboard.passkeys.confirmDelete')(code))) return;
@@ -3037,25 +3022,6 @@ const PasskeysTab = memo(() => {
         <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.passkeys.loading')}</div>
       ) : (
         <DashboardCard title={tFunc('admin.dashboard.passkeys.manageTitle')(passkeys.length)} color="gold">
-          {/* Generate new passkey */}
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
-            <input
-              type="text"
-              placeholder={t('admin.dashboard.passkeys.labelPlaceholder')}
-              value={newLabel}
-              onChange={e => setNewLabel(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleCreate()}
-              style={{
-                ...INPUT_SM,
-                flex: '1 1 140px',
-                minWidth: '140px',
-              }}
-            />
-            <SciFiButton onClick={handleCreate} disabled={creating} padding="0.35rem 0.8rem" fontSize="max(9px, 0.45vw)">
-              {creating ? '...' : t('admin.dashboard.passkeys.generate')}
-            </SciFiButton>
-          </div>
-
           {/* Passkeys list */}
           {passkeys.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '1.5rem', color: '#ffffff40', fontSize: 'max(10px, 0.5vw)' }}>
@@ -3124,7 +3090,6 @@ const PasskeysTab = memo(() => {
 
 const AUDIT_FOLDERS = [
   { key: 'admin',    labelKey: 'admin.dashboard.audit.folderAdmin',    icon: '🔐', color: '#f59e0b', descKey: 'admin.dashboard.audit.folderAdminDesc' },
-  { key: 'passkeys', labelKey: 'admin.dashboard.audit.folderPasskeys', icon: '🔑', color: '#c084fc', descKey: 'admin.dashboard.audit.folderPasskeysDesc' },
   { key: 'sessions', labelKey: 'admin.dashboard.audit.folderSessions', icon: '📊', color: C.gold,    descKey: 'admin.dashboard.audit.folderSessionsDesc' },
 ];
 
@@ -3133,7 +3098,6 @@ const AuditLogTab = memo(() => {
   const [folder, setFolder] = useState('admin');
   const [sessions, setSessions] = useState([]);
   const [accessEvents, setAccessEvents] = useState([]);
-  const [passkeyEvents, setPasskeyEvents] = useState([]);
   const [totalEvents, setTotalEvents] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -3144,15 +3108,13 @@ const AuditLogTab = memo(() => {
     setLoading(true);
     setError(null);
     try {
-      const [sessRes, accRes, pkRes] = await Promise.all([
+      const [sessRes, accRes] = await Promise.all([
         getSessions(200).catch(() => ({ sessions: [], totalEvents: 0 })),
         getAccessLog(500).catch(() => ({ events: [] })),
-        getPasskeyAuditLog(500).catch(() => ({ events: [] })),
       ]);
       setSessions(sessRes.sessions || []);
       setTotalEvents(sessRes.totalEvents || 0);
       setAccessEvents(accRes.events || []);
-      setPasskeyEvents(pkRes.events || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -3177,7 +3139,6 @@ const AuditLogTab = memo(() => {
   // Folder counts for badges
   const folderCounts = {
     admin: accessEvents.length,
-    passkeys: passkeyEvents.length,
     sessions: sessions.length,
   };
 
@@ -3192,7 +3153,6 @@ const AuditLogTab = memo(() => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
         {[
           { label: t('admin.dashboard.audit.statAdmin'), value: accessEvents.length, color: '#f59e0b' },
-          { label: t('admin.dashboard.audit.statPasskeys'), value: passkeyEvents.length, color: '#c084fc' },
           { label: t('admin.dashboard.audit.statSessions'), value: totalSessions, color: C.gold },
           { label: t('admin.dashboard.audit.statTotal'), value: totalEvents, color: '#60a5fa' },
           { label: t('admin.dashboard.audit.statAvgDuration'), value: formatDuration(avgDuration, t('admin.dashboard.audit.hourUnit')), color: '#4ade80' },
@@ -3286,45 +3246,6 @@ const AuditLogTab = memo(() => {
                         ) : (
                           <span style={{ color: '#64748b' }}>{ev.message || '—'}</span>
                         )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </DashboardCard>
-          )}
-
-          {/* ────── Passkeys ────── */}
-          {folder === 'passkeys' && (
-            <DashboardCard title={tFunc('admin.dashboard.audit.passkeysTitle')(passkeyEvents.length)} color="purple">
-              {passkeyEvents.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '1rem', color: '#c084fc60', fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.audit.passkeysEmpty')}</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '55vh', overflowY: 'auto' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 2fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(192,132,252,0.15)' }}>
-                    {[t('admin.dashboard.audit.colTimestamp'), t('admin.dashboard.audit.colCode'), t('admin.dashboard.audit.colValid'), t('admin.dashboard.audit.colName')].map(h => (
-                      <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#c084fc80', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
-                    ))}
-                  </div>
-                  {passkeyEvents.map((ev, i) => (
-                    <div key={i} style={{
-                      display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 2fr',
-                      gap: '0.3rem', padding: '0.3rem 0.5rem', alignItems: 'center',
-                      backgroundColor: i % 2 === 0 ? 'rgba(192,132,252,0.02)' : 'transparent',
-                      borderLeft: `2px solid ${ev.valid ? '#4ade80' : '#f87171'}`,
-                      borderRadius: '0 0.15rem 0.15rem 0',
-                    }}>
-                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>
-                        {new Date(ev.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                      </div>
-                      <div style={{ fontSize: 'max(9px, 0.48vw)', fontFamily: 'monospace', color: ev.valid ? '#4ade80' : '#f87171', fontWeight: 'bold', letterSpacing: '0.1em' }}>
-                        {ev.code}
-                      </div>
-                      <div style={{ fontSize: 'max(8px, 0.42vw)', fontWeight: 'bold', color: ev.valid ? '#4ade80' : '#f87171' }}>
-                        {ev.valid ? '✓' : '✗'}
-                      </div>
-                      <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#c084fc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {ev.label || '—'}
                       </div>
                     </div>
                   ))}

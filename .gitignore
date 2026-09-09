@@ -35,3 +35,7 @@ tmp/
 
 # Local data exports — contain personal data in the clear, never commit
 exports/
+
+# Desktop app: synced UI copy and packaged installers
+apps/desktop/ui/
+apps/desktop/release/

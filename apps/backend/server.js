@@ -78,19 +78,13 @@ app.post('/api/beta/verify', async (req, res) => {
   const trimmed = passkey.trim();
   try {
     const { collections, getDB } = require('./db');
-    const pk = await collections.passkeys().findOne({ code: trimmed, isActive: true });
+    // ADMIN ONLY. The beta access gate is gone; the sole surviving use of a passkey is
+    // the mobile admin portal, so a non-admin code is treated exactly like a wrong one.
+    const pk = await collections.passkeys().findOne({ code: trimmed, isActive: true, isAdminPasskey: true });
     const valid = !!pk;
 
-    // Log usage attempt to devActivity
-    await getDB().collection('devActivity').insertOne({
-      type: 'passkey_use',
-      timestamp: new Date(),
-      code: trimmed,
-      valid,
-      label: pk?.label || null,
-      ip: req.ip || req.connection?.remoteAddress || '',
-      userAgent: (req.get('user-agent') || '').slice(0, 512),
-    });
+    // Attempts are deliberately NOT logged: the beta gate is gone, this endpoint only
+    // serves the mobile admin passkey, and passkey telemetry has no consumer.
 
     if (valid) {
       // Bump usage counter
@@ -100,10 +94,10 @@ app.post('/api/beta/verify', async (req, res) => {
       );
     }
 
-    const result = { valid, adminMode: !!(pk && pk.isAdminPasskey) };
+    const result = { valid, adminMode: valid };
 
-    // Auto-login: issue JWT when admin passkey is used
-    if (valid && pk.isAdminPasskey) {
+    // Auto-login: issue JWT for the admin passkey
+    if (valid) {
       try {
         const adminUser = await collections.users().findOne({ role: 'admin' });
         if (adminUser) {

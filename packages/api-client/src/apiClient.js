@@ -1239,56 +1239,6 @@ export async function updateFeedbackEmailSettings(settings) {
   return response.json();
 }
 
-// ── Beta Access ──
-
-const BETA_KEY = 'gfl_beta_access';
-const BETA_KEY_TIME = 'gfl_beta_access_time';
-const BETA_SESSION_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-/**
- * Verify a beta passkey against the backend.
- * On success, stores the validated passkey + activation timestamp in localStorage.
- * Session expires 24 hours after first use.
- * @returns {Promise<boolean>} true if valid
- */
-export async function verifyBetaPasskey(passkey) {
-  const response = await fetch(`${API_BASE}/beta/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ passkey }),
-  });
-  if (!response.ok) return false;
-  const data = await response.json();
-  if (data.valid) {
-    localStorage.setItem(BETA_KEY, passkey);
-    localStorage.setItem(BETA_KEY_TIME, Date.now().toString());
-  }
-  return data.valid;
-}
-
-/**
- * Check if the user has a stored beta passkey that is still within 24h.
- * Auto-clears expired sessions.
- */
-export function hasBetaAccess() {
-  const key = localStorage.getItem(BETA_KEY);
-  if (!key) return false;
-  const activatedAt = parseInt(localStorage.getItem(BETA_KEY_TIME) || '0', 10);
-  if (!activatedAt || (Date.now() - activatedAt) > BETA_SESSION_MS) {
-    clearBetaAccess();
-    return false;
-  }
-  return true;
-}
-
-/**
- * Clear stored beta access.
- */
-export function clearBetaAccess() {
-  localStorage.removeItem(BETA_KEY);
-  localStorage.removeItem(BETA_KEY_TIME);
-}
-
 // ── Passkey Management (Admin) ──
 
 export async function getPasskeys() {
@@ -1296,19 +1246,6 @@ export async function getPasskeys() {
     headers: authHeaders(),
   });
   if (!response.ok) throw new Error(`Failed to load passkeys (${response.status})`);
-  return response.json();
-}
-
-export async function createPasskey(label) {
-  const response = await fetch(`${API_BASE}/admin/passkeys`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ label }),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Failed to create passkey (${response.status})`);
-  }
   return response.json();
 }
 
@@ -1347,16 +1284,6 @@ export async function toggleAdminPasskey(id) {
   }
   return response.json();
 }
-
-export async function getPasskeyAuditLog(limit = 500) {
-  const response = await fetch(`${API_BASE}/admin/passkeys/audit?limit=${limit}`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) throw new Error(`Failed to load passkey audit log (${response.status})`);
-  return response.json();
-}
-
-// ── Invoice Management ──
 
 export async function saveInvoice(invoiceData) {
   const response = await fetch(`${API_BASE}/admin/invoices`, {

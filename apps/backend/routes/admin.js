@@ -330,18 +330,22 @@ router.delete('/users/:id', async (req, res) => {
 
     const userId = req.params.id;
 
-    // Delete user's assessments first
-    const assessmentResult = await collections.assessments().deleteMany({ userId });
-
-    // Delete the user
-    const userResult = await collections.users().deleteOne({ _id: new ObjectId(userId) });
-
-    if (userResult.deletedCount === 0) {
+    // An admin-initiated deletion must erase exactly as much as a user-initiated one —
+    // same shared helper, so the two can never drift apart on what erasure means.
+    const user = await collections.users().findOne({ _id: new ObjectId(userId) });
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log(`[Admin] Deleted user ${userId} and ${assessmentResult.deletedCount} assessments`);
-    res.json({ success: true, deletedUserId: userId, deletedAssessments: assessmentResult.deletedCount });
+    const { eraseAccountData } = require('./auth');
+    const counts = await eraseAccountData(userId, user);
+
+    console.log(
+      `[Admin] Erased user ${userId} — ${counts.assessments} assessments, ${counts.reviews} reviews, ` +
+      `${counts.orbCodes} orb-codes, ${counts.messages} messages, ${counts.verbonden} verbonden, ` +
+      `${counts.kaartDrafts} kaart-drafts, ${counts.consentRecords} consent records`
+    );
+    res.json({ success: true, deletedUserId: userId, ...counts });
   } catch (err) {
     console.error('[Admin] Delete user error:', err.message);
     res.status(500).json({ error: 'Failed to delete user' });
@@ -1006,12 +1010,6 @@ function passkeysCollection() {
   return getDB().collection('passkeys');
 }
 
-function generatePasskeyCode() {
-  // Cryptographically random 6-digit code (000000–999999)
-  const crypto = require('crypto');
-  return crypto.randomInt(0, 1000000).toString().padStart(6, '0');
-}
-
 // GET /api/admin/passkeys — list all passkeys
 router.get('/passkeys', async (_req, res) => {
   try {
@@ -1023,38 +1021,6 @@ router.get('/passkeys', async (_req, res) => {
   } catch (err) {
     console.error('[Admin] List passkeys error:', err.message);
     res.status(500).json({ error: 'Failed to load passkeys' });
-  }
-});
-
-// POST /api/admin/passkeys — generate a new 6-digit passkey
-router.post('/passkeys', async (req, res) => {
-  try {
-    const label = (req.body.label || '').slice(0, 128) || null;
-
-    // Generate unique 6-digit code (retry on collision)
-    let code;
-    for (let i = 0; i < 10; i++) {
-      code = generatePasskeyCode();
-      const existing = await passkeysCollection().findOne({ code });
-      if (!existing) break;
-      if (i === 9) return res.status(500).json({ error: 'Could not generate unique code' });
-    }
-
-    const doc = {
-      code,
-      label,
-      isActive: true,
-      usageCount: 0,
-      lastUsedAt: null,
-      createdAt: new Date(),
-      createdBy: req.user.userId,
-    };
-
-    await passkeysCollection().insertOne(doc);
-    res.json({ success: true, passkey: doc });
-  } catch (err) {
-    console.error('[Admin] Create passkey error:', err.message);
-    res.status(500).json({ error: 'Failed to create passkey' });
   }
 });
 
@@ -1112,22 +1078,6 @@ router.patch('/passkeys/:id/toggle-admin', async (req, res) => {
   } catch (err) {
     console.error('[Admin] Toggle admin passkey error:', err.message);
     res.status(500).json({ error: 'Failed to toggle admin passkey' });
-  }
-});
-
-// GET /api/admin/passkeys/audit — passkey usage audit log
-router.get('/passkeys/audit', async (req, res) => {
-  try {
-    const limit = Math.min(parseInt(req.query.limit) || 500, 2000);
-    const events = await activityCollection()
-      .find({ type: 'passkey_use' })
-      .sort({ timestamp: -1 })
-      .limit(limit)
-      .toArray();
-    res.json({ events, total: events.length });
-  } catch (err) {
-    console.error('[Admin] Passkey audit error:', err.message);
-    res.status(500).json({ error: 'Failed to load passkey audit log' });
   }
 });
 

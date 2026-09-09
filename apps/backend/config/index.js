@@ -67,6 +67,4 @@ module.exports = {
   // request host (which would be localhost in dev / the API host in prod).
   siteUrl: (process.env.SITE_URL || 'https://www.gardenforlife.nl').replace(/\/+$/, ''),
 
-  // Beta access passkeys (comma-separated list)
-  betaPasskeys: (process.env.BETA_PASSKEYS || 'Beta-4.9').split(',').map(s => s.trim()),
 };

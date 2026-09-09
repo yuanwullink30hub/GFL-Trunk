@@ -62,8 +62,18 @@ export const POLICY_EN_PART1 = {
         <li style={S.li}>The Deltawerken Model, its corpus and the instruction layer remain with Garden For Life and are not placed in the local working environment.</li>
       </ol>
 
-      <h2 style={S.h2}>Article 6 — Processing of Personal Data</h2>
+      <h2 style={S.h2}>Article 5b — The Desktop Application</h2>
       <ol style={S.ol} start={24}>
+        <li style={S.li}>The local working environment is delivered as a desktop application for Windows and macOS, which the User downloads and installs themselves. The website remains usable without installation for the Assessment, the Report and the public profile; the working folder and the tools built on it require the application.</li>
+        <li style={S.li}>The application is given access only to the folder the User selects. It does not scan the device, does not access other folders, and sends no file listings to Garden For Life.</li>
+        <li style={S.li}>During the testing phase the application is released <strong style={S.strong}>without a publisher certificate</strong>. Windows and macOS will therefore warn on installation that the publisher cannot be verified. This is a property of the distribution, not an indication of harmful software. Install the application only via the official Garden For Life download link, never from a copy obtained elsewhere.</li>
+        <li style={S.li}>The application can update itself. Updates may change the layout of the working folder; where they do, a copy of the existing folder is made before the change is applied.</li>
+        <li style={S.li}>Removing the application does <strong style={S.strong}>not</strong> remove the working folder. The folder and its contents remain on the User's device until the User erases them.</li>
+        <li style={S.li}>Garden For Life is not liable for data loss in the local working environment, nor for damage arising from use of the application on a device the User shares with others or that is not protected by a password.</li>
+      </ol>
+
+      <h2 style={S.h2}>Article 6 — Processing of Personal Data</h2>
+      <ol style={S.ol} start={30}>
         <li style={S.li}>Garden For Life processes the User's personal data in accordance with the GDPR and the applicable Privacy Policy of Garden For Life, which can be consulted via <PolicyLink to="/privacybeleid">gardenforlife.nl/privacybeleid</PolicyLink>.</li>
         <li style={S.li}>The Assessment generates psychological profile data within the meaning of Article 9 GDPR. The User gives explicit consent for this via the consent screen preceding the Assessment.</li>
         <li style={S.li}>The User has the right to withdraw the consent given at any time via the contact form or by email. Withdrawal leads to deletion of all profile data within 30 days.</li>
@@ -72,7 +82,7 @@ export const POLICY_EN_PART1 = {
       </ol>
 
       <h2 style={S.h2}>Article 7 — Intellectual Property</h2>
-      <ol style={S.ol} start={29}>
+      <ol style={S.ol} start={35}>
         <li style={S.li}>All intellectual property rights in the Platform, the assessment methodology, the Garden For Life Deltawerken Model, the archetype system, the visual archetype models and the generated report structure vest exclusively in Garden For Life.</li>
         <li style={S.li}>The generated Report is intended solely for the personal use of the User. Commercial exploitation, reproduction or distribution of the Report or parts thereof without the prior written consent of Garden For Life is not permitted.</li>
         <li style={S.li}>For a full overview of protected works, permitted use and prohibited misuse — including commercial exploitation, manipulative misuse of results and AI training — Garden For Life refers to the Terms of Use & Misuse Policy page via <PolicyLink to="/gebruiksvoorwaarden-misbruik">gardenforlife.nl/gebruiksvoorwaarden-misbruik</PolicyLink> and the Intellectual Property page via <PolicyLink to="/intellectueel-eigendom">gardenforlife.nl/intellectueel-eigendom</PolicyLink>.</li>
@@ -80,7 +90,7 @@ export const POLICY_EN_PART1 = {
       </ol>
 
       <h2 style={S.h2}>Article 8 — Liability</h2>
-      <ol style={S.ol} start={33}>
+      <ol style={S.ol} start={39}>
         <li style={S.li}>Garden For Life makes every effort to have the Platform function properly, but gives no guarantee of uninterrupted or error-free operation.</li>
         <li style={S.li}>Garden For Life is not liable for damage arising from the use or interpretation of the Report, including but not limited to decisions in the areas of work, relationships, health or personal well-being.</li>
         <li style={S.li}>Garden For Life is not liable for indirect damage, consequential damage or lost profit.</li>
@@ -100,7 +110,7 @@ export const POLICY_EN_PART1 = {
       <p style={S.p}>In the event of a breach, Garden For Life reserves the right to terminate the User's access immediately.</p>
 
       <h2 style={S.h2}>Article 10 — Availability & Changes</h2>
-      <ol style={S.ol} start={38}>
+      <ol style={S.ol} start={44}>
         <li style={S.li}>Garden For Life reserves the right to modify, temporarily suspend or discontinue the Platform, the assessment methodology or the report structure at any time.</li>
         <li style={S.li}>Garden For Life aims for an availability of the Platform of at least 96% per month, but gives no guarantee in this respect.</li>
         <li style={S.li}>Planned maintenance is, where possible, communicated in advance by email.</li>
@@ -108,7 +118,7 @@ export const POLICY_EN_PART1 = {
       </ol>
 
       <h2 style={S.h2}>Article 11 — Applicable Law & Disputes</h2>
-      <ol style={S.ol} start={42}>
+      <ol style={S.ol} start={48}>
         <li style={S.li}>Dutch law applies to these General Terms and Conditions and to all agreements between Garden For Life and the User.</li>
         <li style={S.li}>Disputes will in the first instance be resolved through consultation. If this does not succeed, disputes will be submitted to the competent court in the district of Zutphen.</li>
         <li style={S.li}>Without prejudice to the foregoing, the User has the right to lodge a complaint with the Dutch Data Protection Authority (Autoriteit Persoonsgegevens, AP) via www.autoriteitpersoonsgegevens.nl.</li>
@@ -170,7 +180,6 @@ export const POLICY_EN_PART1 = {
       <p style={S.p}>Garden For Life uses no analytics, no trackers and no advertising networks. We build no profile of your browsing behaviour. What is recorded automatically is limited to:</p>
       <ul style={S.ul}>
         <li style={S.li}><strong style={S.strong}>Browser type (user agent):</strong> recorded at the moment you give consent and when you submit feedback — as evidence of that moment</li>
-        <li style={S.li}><strong style={S.strong}>IP address:</strong> solely when entering a beta access code, to protect against abuse. Not linked to your profile data.</li>
         <li style={S.li}><strong style={S.strong}>Technical server logs</strong> kept by our hosting provider, which expire automatically after a short period</li>
       </ul>
       <p style={S.p}>We do not record pages visited, clicks, time spent, geolocation or device identifiers.</p>
@@ -235,6 +244,10 @@ export const POLICY_EN_PART1 = {
         <li style={S.li}>The raw crystal code. We keep only its irreversible hash.</li>
       </ul>
 
+      <h3 style={S.h3}>Card text for a code that has not been redeemed</h3>
+      <p style={S.p}>While your report is being written, the model produces two short texts meant solely for your profile card in the account — an in-depth description of your gift and a summary of your geometry. Those two texts are deliberately <strong style={S.strong}>not</strong> included in the report or the PDF; they are stored separately, linked to the <em>hash</em> of your crystal code and to nothing else. No name, email address or account reference accompanies them.</p>
+      <p style={S.p}>For as long as the code has not been redeemed, this text is not traceable to a person by us: only someone holding the PDF with the matching code can make the connection. It carries <strong style={S.strong}>no retention period</strong>, because a crystal code stays valid for life — a report redeemed a year later must still be able to fill its card. The moment you redeem the code, the text is folded into your account and the separate copy is deleted.</p>
+
       <h3 style={S.h3}>Your own working folder</h3>
       <p style={S.p}>Garden For Life provides a local working environment in which your report, your full profile and everything future tools produce for you are stored on <strong style={S.strong}>your own device</strong>, in a folder you choose and control. We have no access to it and keep no copy. Once that folder is set up you can have the remaining data deleted from our servers in a single action; what then remains is only tier 1 above. Because we keep no copy, safeguarding that folder is your own responsibility.</p>
       <h2 style={S.h2}>7. Recipients / Transfers</h2>
@@ -268,7 +281,7 @@ export const POLICY_EN_PART1 = {
         <li style={S.li}><strong style={S.strong}>Encryption in transit:</strong> All connections run via TLS 1.2+ (HTTPS). Database connections are likewise encrypted.</li>
         <li style={S.li}><strong style={S.strong}>Encryption at rest:</strong> All server data is encrypted via AES-256-GCM (MongoDB Atlas standard). In addition, email addresses and display names are further encrypted at field level with AES-256-GCM before they are stored.</li>
         <li style={S.li}><strong style={S.strong}>Access restriction:</strong> The database is protected by credentials and network rules; only the application server and the administrator have access.</li>
-        <li style={S.li}><strong style={S.strong}>Audit logging:</strong> Consents, administrator access and automated sweeps are recorded with a timestamp at application level.</li>
+        <li style={S.li}><strong style={S.strong}>Consent record:</strong> The moment you give consent is recorded with a timestamp, so that it can be demonstrated that — and for what — you gave consent. This record is deleted together with your account.</li>
         <li style={S.li}><strong style={S.strong}>Server location:</strong> All server data is stored on servers in Frankfurt, Germany (EU).</li>
         <li style={S.li}><strong style={S.strong}>Password protection:</strong> Passwords are stored encrypted via bcrypt and are never readable by Garden For Life.</li>
         <li style={S.li}><strong style={S.strong}>Authentication:</strong> The platform uses JWT bearer tokens for authentication — no traditional session cookies.</li>
@@ -322,10 +335,7 @@ export const POLICY_EN_PART1 = {
         </tbody>
       </table>
 
-      <h3 style={S.h3}>2.3 Beta Access (localStorage)</h3>
-      <p style={S.p}>During the closed testing period, access to the platform was gated by an access code, which stored <em>gfl_beta_access</em> and <em>gfl_beta_access_time</em> locally. With the platform now open, this gate is removed and these items are no longer created.</p>
-
-      <h3 style={S.h3}>2.4 SessionStorage</h3>
+      <h3 style={S.h3}>2.3 SessionStorage</h3>
       <p style={S.p}>SessionStorage works identically to localStorage but is automatically cleared as soon as you close the browser window or tab.</p>
       <table style={S.table}>
         <thead><tr><th style={S.th}>Key</th><th style={S.th}>Retention period</th><th style={S.th}>Purpose</th></tr></thead>
@@ -451,9 +461,9 @@ export const POLICY_EN_PART1 = {
       <h2 style={S.h2}>9. Privacy & AI Transparency</h2>
       <ul style={S.ul}>
         <li style={S.li}>Original answers are separated from your profile</li>
-        <li style={S.li}>The AI model processes anonymised batch data</li>
+        <li style={S.li}>The AI model processes your answers individually — without name, email address or other direct identifiers from the platform</li>
         <li style={S.li}>No real-time personal monitoring</li>
-        <li style={S.li}>90-day retention with automatic deletion</li>
+        <li style={S.li}>The calculated profile exists for a maximum of 24 hours and is then deleted automatically</li>
         <li style={S.li}>No transfer into training data for future models</li>
       </ul>
       <h2 style={S.h2}>10. AI Improvements & Retraining</h2>

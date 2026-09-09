@@ -157,7 +157,7 @@ async function generatePdf(data) {
         },
         {
           title: '4. GEGEVENSBEWARING',
-          text: 'Uw assessment-resultaten worden maximaal 90 dagen bewaard op beveiligde servers, waarna ze automatisch en onherroepelijk worden verwijderd. Dit rapport is uw persoonlijke kopie. Garden for Life bewaart na verwijdering geen kopie.',
+          text: 'Het berekende profiel waaruit dit rapport is opgebouwd bestaat maximaal 24 uur op onze servers en wordt daarna automatisch en onherroepelijk verwijderd. Dit rapport is uw persoonlijke kopie — Garden for Life bewaart daarvan geen kopie. Maakt u een account aan, dan blijft daarin uitsluitend een gedeeltelijk profiel bewaard. Uw kristal-code verloopt niet en blijft altijd inwisselbaar.',
         },
         {
           title: '5. INTELLECTUEEL EIGENDOM',

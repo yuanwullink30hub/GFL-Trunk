@@ -87,12 +87,12 @@ const RETENTION_COPY = {
   srvRow3a: { nl: 'Volledig rapport', en: 'Full report' },
   srvRow3b: { nl: 'Éénmalig downloadbaar', en: 'Downloadable once' },
   srvRow3c: { nl: 'Niet bewaard na download', en: 'Not retained after download' },
-  srvRow4a: { nl: 'Partieel profiel — archetype-naam, orb-geometrie, vormvector, kaartteksten', en: 'Partial profile — archetype name, orb geometry, shape vector, card texts' },
+  srvRow4a: { nl: 'Gedeeltelijk profiel — archetype-naam, orb-geometrie, vormvector, kaartteksten', en: 'Partial profile — archetype name, orb geometry, shape vector, card texts' },
   srvRow4b: { nl: 'Zolang het account actief is', en: 'For as long as the account is active' },
   srvRow4c: { nl: 'Permanent verwijderd binnen 30 dagen na verzoek', en: 'Permanently erased within 30 days of the request' },
-  srvRow5a: { nl: 'Auditloggegevens (server)', en: 'Audit log data (server)' },
-  srvRow5b: { nl: '12 maanden', en: '12 months' },
-  srvRow5c: { nl: 'Automatisch verwijderd na 12 maanden', en: 'Automatically deleted after 12 months' },
+  srvRow5a: { nl: 'Toestemmingsregistratie', en: 'Consent record' },
+  srvRow5b: { nl: 'Zolang het account bestaat', en: 'For as long as the account exists' },
+  srvRow5c: { nl: 'Verwijderd bij accountverwijdering', en: 'Deleted when the account is deleted' },
 
   h3Local: { nl: '1.2 Lokale Browseropslag — Gegevens op Uw Eigen Apparaat', en: '1.2 Local Browser Storage — Data on Your Own Device' },
   localLeadA: { nl: 'Garden For Life gebruikt geen HTTP-cookies maar wel ', en: 'Garden For Life does not use HTTP cookies, but it does use ' },
@@ -173,10 +173,9 @@ const RETENTION_COPY = {
     en: 'On a full account deletion request, Garden For Life deletes the following from our servers:',
   },
   del1: { nl: 'Uw e-mailadres en accountgegevens', en: 'Your email address and account data' },
-  del2: { nl: 'Uw partiële profiel — archetype-naam, orb-geometrie, vormvector en kaartteksten', en: 'Your partial profile — archetype name, orb geometry, shape vector and card texts' },
+  del2: { nl: 'Uw gedeeltelijke profiel — archetype-naam, orb-geometrie, vormvector en kaartteksten', en: 'Your partial profile — archetype name, orb geometry, shape vector and card texts' },
   del3: { nl: 'De hash van elke aan uw account gekoppelde kristal-code, waarna de code van uw PDF weer inwisselbaar wordt', en: 'The hash of every crystal code linked to your account, after which the code in your PDF becomes redeemable again' },
   del4: { nl: 'Uw openbare kaart en verbindingen, uw verzonden en ontvangen berichten, uw feedbackinzendingen en alle gekoppelde toestemmingsregistraties', en: 'Your public card and connections, the messages you sent and received, your feedback submissions and all linked consent records' },
-  del5: { nl: 'Auditloggegevens na de wettelijke bewaartermijn van 12 maanden', en: 'Audit log data after the statutory retention period of 12 months' },
   notAuto: { nl: 'Wat niet automatisch wordt verwijderd bij accountverwijdering:', en: 'What is not automatically deleted on account deletion:' },
   notAutoItem: {
     nl: 'Uw lokale browseropslag (localStorage) — dit staat op uw eigen apparaat en kunt u zelf wissen zoals beschreven in Artikel 1.2',
@@ -300,7 +299,6 @@ const RetentionForm = ({ language = 'nl' }) => {
         <li style={S.li}>{t('del2')}</li>
         <li style={S.li}>{t('del3')}</li>
         <li style={S.li}>{t('del4')}</li>
-        <li style={S.li}>{t('del5')}</li>
       </ul>
       <p style={S.p}><strong style={S.strong}>{t('notAuto')}</strong></p>
       <ul style={S.ul}>

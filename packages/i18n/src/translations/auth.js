@@ -13,7 +13,7 @@ export default {
       uploadFailed: { nl: 'Upload mislukt.', en: 'Upload failed.' },
       confirmFailed: { nl: 'Er ging iets mis bij het bevestigen.', en: 'Something went wrong while confirming.' },
       fillFields: { nl: 'Vul gebruikersnaam, e-mail en wachtwoord in.', en: 'Enter a username, email address and password.' },
-      confirmTerms: { nl: 'Bevestig de voorwaarden om verder te gaan.', en: 'Confirm the terms to continue.' },
+      confirmTerms: { nl: 'Bevestig beide vinkjes om verder te gaan.', en: 'Confirm both checkboxes to continue.' },
       createAccountFailed: { nl: 'Account aanmaken mislukt.', en: 'Could not create your account.' },
     },
 
@@ -64,9 +64,21 @@ export default {
       username: { nl: 'Gebruikersnaam', en: 'Username' },
       age: { nl: 'Leeftijd', en: 'Age' },
       country: { nl: 'Land', en: 'Country' },
-      // Checkbox: [prefix] <terms> [middle] <privacy>.
+      // Checkbox A: [prefix] <terms> [middle] <privacy> [suffix]. Mirrors auth.consent.a*,
+      // so both account-creation routes ask for the same thing.
       consentPrefix: { nl: 'Ik ga akkoord met de', en: 'I agree to the' },
       consentMiddle: { nl: 'en het', en: 'and the' },
+      consentSuffix: {
+        nl: ', inclusief de verwerking van mijn accountgegevens. Ik verklaar dat ik 16 jaar of ouder ben.',
+        en: ', including the processing of my account data. I declare that I am 16 years or older.',
+      },
+      // Checkbox B: explicit Art. 9 consent for the partial profile this route stores.
+      // This is the only route that writes users.archetypeName + orbHistory, and the
+      // Art. 30 register puts that under Art. 9(2)(a) — so it is asked for separately.
+      consentArt9: {
+        nl: 'Ik geef uitdrukkelijke toestemming om een gedeeltelijk profiel in mijn account te bewaren: mijn archetype-naam, de render-only orb-geometrie, de genormaliseerde 12-punts vormvector, de scoreverdeling en de bijbehorende kaartteksten — psychologische kenmerken in de zin van artikel 9 AVG. Het bevat geen ruwe antwoorden en geen volledig rapport, blijft bewaard zolang mijn account bestaat, en verdwijnt zodra ik mijn account verwijder.',
+        en: 'I give explicit consent to keep a partial profile in my account: my archetype name, the render-only orb geometry, the normalised 12-point shape vector, the score distribution and the accompanying card texts — psychological characteristics within the meaning of Article 9 GDPR. It contains no raw answers and no full report, it persists for as long as my account exists, and it is gone as soon as I delete my account.',
+      },
       back: { nl: '← Terug', en: '← Back' },
       creating: { nl: 'Aanmaken…', en: 'Creating…' },
       enter: { nl: 'Betreed platform', en: 'Enter platform' },

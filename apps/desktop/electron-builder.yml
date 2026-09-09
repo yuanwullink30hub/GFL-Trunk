@@ -1,0 +1,51 @@
+appId: nl.gardenforlife.desktop
+productName: Garden For Life
+copyright: © Garden For Life
+
+directories:
+  output: release
+  buildResources: build
+
+# Only what the app actually runs. The platform source, the corpus and everything else
+# in the monorepo stay out of the installer.
+files:
+  - src/**/*
+  - ui/**/*
+  - package.json
+
+# ── Windows ──
+# Unsigned during the beta: SmartScreen will warn that the publisher is unverified.
+# That is stated in the Terms (article 5b) rather than hidden. To sign later, add a
+# `certificateFile`/`certificateSubjectName` here, or use Azure Trusted Signing.
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: GardenForLife-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  # The workspace folder is chosen by the user and lives outside the install directory,
+  # so uninstalling must never touch it (Terms art. 5b — removing the app does not
+  # remove the folder).
+  deleteAppDataOnUninstall: false
+
+# ── macOS ──
+# Notarisation needs an Apple Developer account; until then Gatekeeper blocks the app
+# and the user has to allow it in System Settings → Privacy & Security.
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+  artifactName: GardenForLife-${version}-${arch}.${ext}
+  hardenedRuntime: true
+  gatekeeperAssess: false
+
+# ── Linux (not a launch target; here so the config doesn't have to be invented later) ──
+linux:
+  target: [AppImage]
+  category: Utility
+  artifactName: GardenForLife-${version}.${ext}

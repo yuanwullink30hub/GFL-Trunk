@@ -58,12 +58,13 @@ async function connectDB() {
   await db.collection('verbonden').createIndex({ fromUserId: 1, status: 1 });
 
   // Kaart-microcopy drafts — authored at report generation, keyed by orb-code hash;
-  // merged into the reading when the code is claimed. Auto-expire with the beta window.
+  // merged into the reading when the code is claimed, and deleted at that moment.
+  // NO EXPIRY: an orb code stays valid for life, so its draft has to outlive any TTL —
+  // a report claimed a year later must still be able to fill its card. The draft is
+  // pseudonymous until claimed (a hash plus two paragraphs, no user reference), which
+  // is what makes indefinite retention proportionate here.
   await db.collection('kaartDrafts').createIndex({ codeHash: 1 }, { unique: true });
-  await db.collection('kaartDrafts').createIndex(
-    { at: 1 },
-    { expireAfterSeconds: 90 * 24 * 60 * 60, name: 'kaartDrafts_ttl_90d' }
-  );
+  await dropIndexes('kaartDrafts', ['kaartDrafts_ttl_90d'], { key: 'at' });
 
   // ── Data retention ──
   // A computed profile is a working cache, never a record: the account keeps only the

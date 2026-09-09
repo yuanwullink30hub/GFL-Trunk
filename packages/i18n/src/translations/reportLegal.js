@@ -109,8 +109,8 @@ export default {
         en: '4. Data Retention',
       },
       body: {
-        nl: 'Uw assessment-resultaten worden maximaal <strong>90 dagen</strong> bewaard op beveiligde servers, waarna ze automatisch en onherroepelijk worden verwijderd. Dit rapport is uw persoonlijke kopie. Garden for Life bewaart na verwijdering geen kopie van uw resultaten.',
-        en: 'Your assessment results are retained on secure servers for a maximum of <strong>90 days</strong>, after which they are automatically and irrevocably deleted. This report is your personal copy. After deletion Garden for Life keeps no copy of your results.',
+        nl: 'Het berekende profiel waaruit dit rapport is opgebouwd bestaat <strong>maximaal 24 uur</strong> op onze servers en wordt daarna automatisch en onherroepelijk verwijderd. Dit rapport is uw persoonlijke kopie — Garden for Life bewaart daarvan geen kopie. Maakt u een account aan, dan blijft daarin uitsluitend een gedeeltelijk profiel bewaard. Uw kristal-code verloopt niet en blijft altijd inwisselbaar.',
+        en: 'The calculated profile this report is built from exists on our servers for <strong>a maximum of 24 hours</strong>, after which it is automatically and irrevocably deleted. This report is your personal copy — Garden for Life keeps no copy of it. If you create an account, all that is retained in it is a partial profile. Your crystal code does not expire and can be redeemed at any time.',
       },
     },
 

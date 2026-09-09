@@ -199,7 +199,6 @@ const AssessmentResultsModal = ({
   // Backend-authored orb login-code (LC_ORB2_…), radial-gated with the real polar_gap.
   // Held in a ref so the PDF generator reads it synchronously without a re-render race.
   const orbCodeRef = useRef('');
-  const kaartFieldsRef = useRef({ gift: '', geometrie: '' }); // AI-authored card fields (## Kaart Microcopy)
   const [uploadedOceanScores, setUploadedOceanScores] = useState(null);
   const [aiReady, setAiReady] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
@@ -398,9 +397,10 @@ const AssessmentResultsModal = ({
         // Stage 3: frontend integration
         setAiStage(3);
         if (aiResult.uploadedOceanScores) setUploadedOceanScores(aiResult.uploadedOceanScores);
-        // Card fields: extract, then STRIP from the analysis so no rendering path (sections,
-        // v4, PDF pages) can ever show them — they exist only in kaartFieldsRef + machine block.
-        kaartFieldsRef.current = extractKaartFields(aiResult.analysis || '');
+        // Card fields are authored and held server-side (kaartDrafts, keyed by the code
+        // hash) and are stripped from the analysis before it reaches us. This second strip
+        // is defence in depth: the backend strip sits inside a catch-and-continue, so if it
+        // ever fails the fields still never reach a rendering path.
         const cleanedAnalysis = stripKaartFields(aiResult.analysis || '');
         // v4 structured parse (title-lines-as-tags) + the engine's C-runtime.
         try { setV4Data(assembleV4(cleanedAnalysis)); } catch (e) { console.warn('[GFL] v4 parse failed:', e.message); }
@@ -3120,16 +3120,13 @@ const AssessmentResultsModal = ({
         mLine(`${t('resultsModal.pdf.data.levensles')}: "${result.levensles || t('resultsModal.pdf.data.notAvailable')}"`);
         mGap();
 
-        // Kaart Microcopy — AI-authored profile-card fields (KAART_GIFT / KAART_GEOMETRIE),
-        // base64-marked like ORB::/ARCH:: so the card extractor recovers them regardless of
-        // how the PDF text layer wraps lines.
-        if (kaartFieldsRef.current.gift || kaartFieldsRef.current.geometrie) {
-          const b64u = (s) => { try { return btoa(unescape(encodeURIComponent(s))); } catch { return ''; } };
-          mBold(dash(t('resultsModal.pdf.data.kaartSection')), green);
-          if (kaartFieldsRef.current.gift) mLine(`CGIFT::${b64u(kaartFieldsRef.current.gift)}::CGIFT`, dimWhite);
-          if (kaartFieldsRef.current.geometrie) mLine(`CGEO::${b64u(kaartFieldsRef.current.geometrie)}::CGEO`, dimWhite);
-          mGap();
-        }
+        // Kaart Microcopy is deliberately NOT written into the PDF. The backend strips
+        // KAART_GIFT / KAART_GEOMETRIE out of the analysis before it reaches this client
+        // (routes/ai.js) and parks them server-side in kaartDrafts, keyed by the code's
+        // hash, so the card copy provably came from our model and cannot be forged by
+        // editing the report. It is merged into the account when the code is claimed.
+        // Older PDFs still carry CGIFT::/CGEO:: markers; readingExtract.js reads those as
+        // a legacy fallback, and the server-held draft wins whenever both exist.
 
         // Master Prompt v4.1 §5.10: dead v3 fields removed (MAIN ARCHETYPE DIEPTE block).
         mBold(dash(t('resultsModal.pdf.data.shadowSection')), green);
@@ -4232,17 +4229,9 @@ function preinsertTagHeadings(text) {
 }
 
 // ── Kaart Microcopy (## Kaart Microcopy): AI-authored profile-card fields.
-// KAART_GIFT = in-depth gift description (tendens slot); KAART_GEOMETRIE = geometry
-// summary in canon language (expressieprofiel slot). Printed into the PDF's machine
-// block as base64 markers so the card extractor recovers them whitespace-proof.
-function extractKaartFields(text) {
-  const t = String(text || '');
-  const gift = t.match(/KAART_GIFT:\s*([\s\S]*?)(?=\n\s*KAART_GEOMETRIE:|\n#{2,3}\s|$)/);
-  const geo = t.match(/KAART_GEOMETRIE:\s*([\s\S]*?)(?=\n#{2,3}\s|$)/);
-  const clean = (m) => (m ? m[1].replace(/\s+/g, ' ').replace(/^\[|\]$/g, '').trim() : '');
-  return { gift: clean(gift), geometrie: clean(geo) };
-}
-
+// KAART_GIFT / KAART_GEOMETRIE never reach this client: routes/ai.js strips them from
+// the analysis and parks them in kaartDrafts, keyed by the orb code's hash, so the card
+// copy provably came from our model. Only the stripper below remains, as a safety net.
 // Remove the Kaart Microcopy material from the analysis BEFORE any rendering path sees it —
 // guarantees the card fields never appear on a report page/PDF section, even when the model
 // drops the section heading and appends the labels to a previous section's body.
@@ -4342,7 +4331,7 @@ function parseAiSections(analysisText) {
     // Skip any standalone "Introductie" / "Inleiding" the AI may generate
     if (/^(introductie|inleiding)$/i.test(title)) continue;
     // Skip "Kaart Microcopy" — machine-consumed profile-card fields (KAART_GIFT/KAART_GEOMETRIE),
-    // extracted separately via extractKaartFields(); never rendered as a report page.
+    // held server-side in kaartDrafts by the backend; never rendered as a report page.
     if (/kaart\s*microcopy/i.test(title)) continue;
     // Skip umbrella "Profiel Dynamiek" / "Profiel Elementen" / "5 Elementen" / "De 5 Elementen"
     // headers — the individual elements are parsed by profileKeyFromTitle below. When the AI

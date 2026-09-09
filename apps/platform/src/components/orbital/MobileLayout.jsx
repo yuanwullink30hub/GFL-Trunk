@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import TechContainer from './TechContainer';
 import { Activity, Lock } from 'lucide-react';
 import { useLanguage } from '@gfl/i18n';
@@ -12,13 +12,10 @@ const rengiLogo = '/images/Rengi-logo.png';
 
 const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, position = 'top', isMobile, TimeSync, setActiveSection, pauseAutoSlide }) => {
   const { t } = useLanguage();
-  // Beta lock: passkey-based access control (reads from localStorage)
-  const [betaUnlocked] = useState(() => {
-    try { return !!localStorage.getItem('gfl_beta_access'); } catch { return false; }
-  });
+  // The beta passkey gate is gone, so sections are unlocked by default.
+  // `?lock` still forces the locked presentation for previewing it.
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const hasLockOverride = urlParams.has('lock');
-  const shouldShowLock = !betaUnlocked || hasLockOverride;
+  const shouldShowLock = urlParams.has('lock');
 
   // Calculate animation values based on progress (0 = visible, 1 = fully hidden/flown away)
   const containerOpacity = Math.max(0, 1 - animationProgress * 2);

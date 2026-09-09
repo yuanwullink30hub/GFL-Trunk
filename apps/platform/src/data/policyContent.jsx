@@ -55,7 +55,7 @@ export const POLICY_CONTENT_NL = {
         <li style={S.li}>Het berekende profiel waaruit het Rapport is opgebouwd bestaat maximaal 24 uur op de servers van Garden For Life en wordt daarna automatisch verwijderd, onder meer door een geautomatiseerde opruiming elke nacht om 00:00 (Europe/Amsterdam). Na dat moment kan Garden For Life het Rapport niet opnieuw genereren of beschikbaar stellen.</li>
         <li style={S.li}>Het Rapport bevat een unieke kristal-code. Deze code is levenslang geldig, maar kan slechts <strong style={S.strong}>éénmaal</strong> worden ingewisseld voor een account. Garden For Life bewaart uitsluitend een onomkeerbare hash van die code — nooit de code zelf — zodat een reeds ingewisselde code niet opnieuw kan worden gebruikt. Deze hash blijft bestaan zolang het account bestaat.</li>
         <li style={S.li}>De Gebruiker is zelf verantwoordelijk voor het bewaren van de PDF en de daarin opgenomen code. Wie over het bestand beschikt, kan toegang krijgen tot het bijbehorende account. Garden For Life adviseert het bestand te bewaren zoals men een wachtwoord bewaart.</li>
-        <li style={S.li}>In het account van de Gebruiker wordt uitsluitend een <em>partieel profiel</em> opgeslagen: de archetype-naam, de render-only orb-geometrie, de genormaliseerde 12-punts vormvector en de bijbehorende kaartteksten. Het partiële profiel bevat geen ruwe antwoorden en geen volledige analyse. Een volledige beschrijving staat in het Privacybeleid, artikel 6.</li>
+        <li style={S.li}>In het account van de Gebruiker wordt uitsluitend een <em>gedeeltelijk profiel</em> opgeslagen: de archetype-naam, de render-only orb-geometrie, de genormaliseerde 12-punts vormvector en de bijbehorende kaartteksten. Het gedeeltelijke profiel bevat geen ruwe antwoorden en geen volledige analyse. Een volledige beschrijving staat in het Privacybeleid, artikel 6.</li>
       </ol>
 
       <h2 style={S.h2}>Artikel 5a — Lokale Werkomgeving &amp; Toekomstige Hulpmiddelen</h2>
@@ -67,8 +67,18 @@ export const POLICY_CONTENT_NL = {
         <li style={S.li}>Het Deltawerken Model, het bijbehorende corpus en de instructielaag blijven bij Garden For Life en worden niet in de lokale werkomgeving geplaatst.</li>
       </ol>
 
-      <h2 style={S.h2}>Artikel 6 — Verwerking van Persoonsgegevens</h2>
+      <h2 style={S.h2}>Artikel 5b — De Desktopapplicatie</h2>
       <ol style={S.ol} start={24}>
+        <li style={S.li}>De lokale werkomgeving wordt geleverd als een desktopapplicatie voor Windows en macOS. De applicatie wordt door de Gebruiker zelf gedownload en geïnstalleerd. De website blijft zonder installatie bruikbaar voor de Assessment, het Rapport en het openbare profiel; de werkmap en de daarop gebouwde hulpmiddelen vereisen de applicatie.</li>
+        <li style={S.li}>De applicatie krijgt uitsluitend toegang tot de map die de Gebruiker zelf aanwijst. Zij doorzoekt het apparaat niet, benadert geen andere mappen en verzendt geen bestandsoverzichten naar Garden For Life.</li>
+        <li style={S.li}>Gedurende de testfase wordt de applicatie uitgebracht <strong style={S.strong}>zonder uitgeverscertificaat</strong>. Windows en macOS tonen daardoor bij installatie een waarschuwing dat de uitgever niet geverifieerd kan worden. Dit is een eigenschap van de distributie, geen indicatie van schadelijke software. Installeer de applicatie uitsluitend via de officiële downloadlink van Garden For Life en nooit via een kopie uit een andere bron.</li>
+        <li style={S.li}>De applicatie kan zichzelf bijwerken. Updates kunnen de indeling van de werkmap wijzigen; er wordt in dat geval eerst een kopie van de bestaande map gemaakt voordat de wijziging wordt doorgevoerd.</li>
+        <li style={S.li}>Het verwijderen van de applicatie verwijdert de werkmap <strong style={S.strong}>niet</strong>. De map en de inhoud daarvan blijven op het apparaat van de Gebruiker staan totdat deze die zelf wist.</li>
+        <li style={S.li}>Garden For Life is niet aansprakelijk voor gegevensverlies in de lokale werkomgeving, noch voor schade die voortvloeit uit het gebruik van de applicatie op een apparaat dat de Gebruiker met anderen deelt of dat niet met een wachtwoord is beveiligd.</li>
+      </ol>
+
+      <h2 style={S.h2}>Artikel 6 — Verwerking van Persoonsgegevens</h2>
+      <ol style={S.ol} start={30}>
         <li style={S.li}>Garden For Life verwerkt persoonsgegevens van de Gebruiker conform de AVG en het geldende Privacybeleid van Garden For Life, te raadplegen via <PolicyLink to="/privacybeleid">gardenforlife.nl/privacybeleid</PolicyLink>.</li>
         <li style={S.li}>De Assessment genereert psychologische profieldata als bedoeld in artikel 9 AVG. De Gebruiker geeft hiervoor uitdrukkelijke toestemming via het toestemmingsscherm voorafgaand aan de Assessment.</li>
         <li style={S.li}>De Gebruiker heeft het recht de verleende toestemming op elk moment in te trekken via het contactformulier of e-mail. Intrekking leidt tot verwijdering van alle profieldata binnen 30 dagen.</li>
@@ -77,7 +87,7 @@ export const POLICY_CONTENT_NL = {
       </ol>
 
       <h2 style={S.h2}>Artikel 7 — Intellectueel Eigendom</h2>
-      <ol style={S.ol} start={29}>
+      <ol style={S.ol} start={35}>
         <li style={S.li}>Alle intellectuele eigendomsrechten op het Platform, de assessmentmethodiek, het Garden For Life Deltawerken Model, de archetypensystematiek, de visuele archetypemodellen en de gegenereerde rapportstructuur berusten uitsluitend bij Garden For Life.</li>
         <li style={S.li}>Het gegenereerde Rapport is uitsluitend bestemd voor persoonlijk gebruik van de Gebruiker. Commerciële exploitatie, reproductie of verspreiding van het Rapport of onderdelen daarvan zonder voorafgaande schriftelijke toestemming van Garden For Life is niet toegestaan.</li>
         <li style={S.li}>Voor een volledig overzicht van beschermde werken, toegestaan gebruik en verboden misbruik — waaronder commerciële exploitatie, manipulatief misbruik van resultaten en AI-training — verwijst Garden For Life naar de pagina Gebruiksvoorwaarden & Misbruikbeleid via <PolicyLink to="/gebruiksvoorwaarden-misbruik">gardenforlife.nl/gebruiksvoorwaarden-misbruik</PolicyLink> en de pagina Intellectueel Eigendom via <PolicyLink to="/intellectueel-eigendom">gardenforlife.nl/intellectueel-eigendom</PolicyLink>.</li>
@@ -85,7 +95,7 @@ export const POLICY_CONTENT_NL = {
       </ol>
 
       <h2 style={S.h2}>Artikel 8 — Aansprakelijkheid</h2>
-      <ol style={S.ol} start={33}>
+      <ol style={S.ol} start={39}>
         <li style={S.li}>Garden For Life spant zich in het Platform naar behoren te laten functioneren, maar geeft geen garantie voor ononderbroken of foutloze werking.</li>
         <li style={S.li}>Garden For Life is niet aansprakelijk voor schade die voortvloeit uit het gebruik of de interpretatie van het Rapport, waaronder doch niet beperkt tot beslissingen op het gebied van werk, relaties, gezondheid of persoonlijk welzijn.</li>
         <li style={S.li}>Garden For Life is niet aansprakelijk voor indirecte schade, gevolgschade of gederfde winst.</li>
@@ -105,7 +115,7 @@ export const POLICY_CONTENT_NL = {
       <p style={S.p}>Bij overtreding behoudt Garden For Life zich het recht voor de toegang van de Gebruiker onmiddellijk te beëindigen.</p>
 
       <h2 style={S.h2}>Artikel 10 — Beschikbaarheid & Wijzigingen</h2>
-      <ol style={S.ol} start={38}>
+      <ol style={S.ol} start={44}>
         <li style={S.li}>Garden For Life behoudt zich het recht voor het Platform, de assessmentmethodiek of de rapportstructuur op elk moment te wijzigen, tijdelijk buiten gebruik te stellen of te beëindigen.</li>
         <li style={S.li}>Garden For Life streeft naar een beschikbaarheid van het Platform van minimaal 96% per maand, maar geeft hierover geen garantie.</li>
         <li style={S.li}>Gepland onderhoud wordt waar mogelijk vooraf gecommuniceerd via e-mail.</li>
@@ -113,7 +123,7 @@ export const POLICY_CONTENT_NL = {
       </ol>
 
       <h2 style={S.h2}>Artikel 11 — Toepasselijk Recht & Geschillen</h2>
-      <ol style={S.ol} start={42}>
+      <ol style={S.ol} start={48}>
         <li style={S.li}>Op deze Algemene Voorwaarden en alle overeenkomsten tussen Garden For Life en de Gebruiker is Nederlands recht van toepassing.</li>
         <li style={S.li}>Geschillen worden in eerste instantie geprobeerd op te lossen via overleg. Indien dit niet slaagt, worden geschillen voorgelegd aan de bevoegde rechter in het arrondissement Zutphen.</li>
         <li style={S.li}>Onverminderd het voorgaande heeft de Gebruiker het recht een klacht in te dienen bij de Autoriteit Persoonsgegevens (AP) via www.autoriteitpersoonsgegevens.nl.</li>
@@ -175,7 +185,6 @@ export const POLICY_CONTENT_NL = {
       <p style={S.p}>Garden For Life gebruikt geen analytics, geen trackers en geen advertentienetwerken. Wij bouwen geen profiel op van je surfgedrag. Wat automatisch wordt vastgelegd beperkt zich tot:</p>
       <ul style={S.ul}>
         <li style={S.li}><strong style={S.strong}>Browsertype (user-agent):</strong> vastgelegd op het moment dat je toestemming geeft en wanneer je feedback instuurt — als bewijs van dat moment</li>
-        <li style={S.li}><strong style={S.strong}>IP-adres:</strong> uitsluitend bij het invoeren van een beta-toegangscode, ter beveiliging tegen misbruik. Niet gekoppeld aan je profieldata.</li>
         <li style={S.li}><strong style={S.strong}>Technische serverlogs</strong> van onze hostingpartij, die na korte tijd automatisch verlopen</li>
       </ul>
       <p style={S.p}>Wij leggen géén bezochte pagina's vast, géén kliks, géén tijdsduur, géén geolocatie en géén apparaat-identificatoren.</p>
@@ -190,7 +199,7 @@ export const POLICY_CONTENT_NL = {
         <li style={S.li}><strong style={S.strong}>Volledig gegenereerd rapport:</strong> inclusief Main/Support Archetype, Extended Archetype, schaduw/blindspot analyse, tactische aanbevelingen en AI Agent Prompt</li>
         <li style={S.li}><strong style={S.strong}>Inhoud geüploade bestanden (uploadedFileContents):</strong> indien van toepassing — de geëxtraheerde tekst uit bestanden die de gebruiker optioneel uploadt (bijv. een OCEAN-rapport als PDF). Garden For Life slaat deze inhoud niet op — zij wordt uitsluitend verwerkt door het Claude AI-model voor rapportgeneratie. De gebruiker is zelf verantwoordelijk voor de inhoud van geüploade bestanden.</li>
       </ul>
-      <p style={S.p}>Bovenstaande data wordt verwerkt op beveiligde servers in Frankfurt ten behoeve van de rapportgeneratie. Zij wordt <strong style={S.strong}>niet als resultaat bewaard</strong>: het berekende profiel bestaat maximaal 24 uur als verwerkingscache en wordt daarna automatisch gewist. Wat in je account achterblijft is uitsluitend het <em>partiële profiel</em> — de gegevens die nodig zijn om je orb te tekenen en je account te vullen. Artikel 6 beschrijft precies wat dat is en hoe lang elk onderdeel blijft bestaan.</p>
+      <p style={S.p}>Bovenstaande data wordt verwerkt op beveiligde servers in Frankfurt ten behoeve van de rapportgeneratie. Zij wordt <strong style={S.strong}>niet als resultaat bewaard</strong>: het berekende profiel bestaat maximaal 24 uur als verwerkingscache en wordt daarna automatisch gewist. Wat in je account achterblijft is uitsluitend het <em>gedeeltelijke profiel</em> — de gegevens die nodig zijn om je orb te tekenen en je account te vullen. Artikel 6 beschrijft precies wat dat is en hoe lang elk onderdeel blijft bestaan.</p>
 
       <h2 style={S.h2}>4. Doeleinden van Gegevensverwerking</h2>
       <p style={S.p}>Wij verwerken je gegevens voor de volgende doeleinden:</p>
@@ -219,7 +228,7 @@ export const POLICY_CONTENT_NL = {
         <tbody>
           <tr><td style={S.td}>E-mailadres en weergavenaam (versleuteld), wachtwoord-hash</td><td style={S.td}>Om je te laten inloggen en je account te herkennen</td></tr>
           <tr><td style={S.td}>De <strong style={S.strong}>hash</strong> van je kristal-code (SHA-256) — nooit de code zelf</td><td style={S.td}>Een code blijft levenslang geldig maar kan slechts één keer worden ingewisseld. Zonder deze hash zou dezelfde PDF een tweede account kunnen openen.</td></tr>
-          <tr><td style={S.td}><strong style={S.strong}>Het partiële profiel:</strong> archetype-naam, de render-only orb-geometrie, de genormaliseerde 12-punts vormvector en de bijbehorende kaartteksten</td><td style={S.td}>Dit tekent je orb, vult je accountscherm en — als je je profiel op openbaar zet — je publieke kaart in de Verbonden-directory. Andere gebruikers moeten dit kunnen zien; daarom staat het op onze server en niet uitsluitend op jouw apparaat.</td></tr>
+          <tr><td style={S.td}><strong style={S.strong}>Het gedeeltelijke profiel:</strong> archetype-naam, de render-only orb-geometrie, de genormaliseerde 12-punts vormvector en de bijbehorende kaartteksten</td><td style={S.td}>Dit tekent je orb, vult je accountscherm en — als je je profiel op openbaar zet — je publieke kaart in de Verbonden-directory. Andere gebruikers moeten dit kunnen zien; daarom staat het op onze server en niet uitsluitend op jouw apparaat.</td></tr>
           <tr><td style={S.td}>Ontvangen berichten en verbond-verzoeken</td><td style={S.td}>Deze komen binnen terwijl jouw apparaat uit staat en moeten ergens landen</td></tr>
         </tbody>
       </table>
@@ -234,11 +243,15 @@ export const POLICY_CONTENT_NL = {
 
       <h3 style={S.h3}>Niveau 3 — Nooit opgeslagen</h3>
       <ul style={S.ul}>
-        <li style={S.li}>De PDF die je uploadt. Die wordt in het werkgeheugen gelezen om de code en het partiële profiel eruit te halen en daarna weggegooid — er wordt nooit een kopie op onze servers geschreven.</li>
+        <li style={S.li}>De PDF die je uploadt. Die wordt in het werkgeheugen gelezen om de code en het gedeeltelijke profiel eruit te halen en daarna weggegooid — er wordt nooit een kopie op onze servers geschreven.</li>
         <li style={S.li}>De inhoud van andere bestanden die je optioneel uploadt (bijvoorbeeld een OCEAN-rapport).</li>
         <li style={S.li}>Het gegenereerde rapport zelf. Jouw gedownloade PDF is het enige exemplaar dat blijft bestaan.</li>
         <li style={S.li}>De ruwe kristal-code. Wij bewaren uitsluitend de onomkeerbare hash daarvan.</li>
       </ul>
+
+      <h3 style={S.h3}>De kaarttekst bij een nog niet ingewisselde code</h3>
+      <p style={S.p}>Bij het opstellen van je rapport schrijft het model twee korte teksten die uitsluitend bedoeld zijn voor je profielkaart in het account — een uitgebreide beschrijving van je gift en een samenvatting van je geometrie. Die twee teksten worden bewust <strong style={S.strong}>niet</strong> in het rapport of de PDF opgenomen; zij worden apart bewaard, gekoppeld aan de <em>hash</em> van je kristal-code en aan niets anders. Er staat geen naam, e-mailadres of accountverwijzing bij.</p>
+      <p style={S.p}>Zolang de code niet is ingewisseld, is deze tekst voor ons niet herleidbaar tot een persoon: alleen wie de PDF met de bijbehorende code bezit, kan de koppeling leggen. Er staat <strong style={S.strong}>geen bewaartermijn</strong> op, omdat een kristal-code levenslang geldig blijft — een rapport dat pas een jaar later wordt ingewisseld moet zijn kaart nog kunnen vullen. Op het moment dat je de code inwisselt wordt de tekst in je account opgenomen en de losse kopie verwijderd.</p>
 
       <h3 style={S.h3}>Je eigen werkmap</h3>
       <p style={S.p}>Garden For Life levert een lokale werkomgeving waarin je rapport, je volledige profiel en alles wat toekomstige hulpmiddelen voor je maken op je <strong style={S.strong}>eigen apparaat</strong> worden opgeslagen, in een map die jij kiest en beheert. Wij hebben daar geen toegang toe en bewaren er geen kopie van. Zodra die map is ingericht kun je met één handeling de resterende gegevens van onze servers laten verwijderen; wat dan nog overblijft is uitsluitend niveau 1 hierboven. Omdat wij geen kopie bewaren, ben je zelf verantwoordelijk voor het veiligstellen van die map.</p>
@@ -273,7 +286,7 @@ export const POLICY_CONTENT_NL = {
         <li style={S.li}><strong style={S.strong}>Versleuteling in transit:</strong> Alle verbindingen verlopen via TLS 1.2+ (HTTPS). Databaseverbindingen zijn eveneens versleuteld.</li>
         <li style={S.li}><strong style={S.strong}>Versleuteling at rest:</strong> Alle serverdata is versleuteld via AES-256-GCM (MongoDB Atlas standaard). Daarnaast worden e-mailadressen en weergavenamen aanvullend versleuteld op veldniveau met AES-256-GCM voordat zij worden opgeslagen.</li>
         <li style={S.li}><strong style={S.strong}>Toegangsbeperking:</strong> De database is afgeschermd met inloggegevens en netwerkregels; alleen de applicatieserver en de beheerder hebben toegang.</li>
-        <li style={S.li}><strong style={S.strong}>Auditlogging:</strong> Toestemmingen, beheerderstoegang en geautomatiseerde opruimingen worden met tijdstempel vastgelegd op applicatieniveau.</li>
+        <li style={S.li}><strong style={S.strong}>Toestemmingsregistratie:</strong> Het moment waarop je toestemming geeft wordt met tijdstempel vastgelegd, zodat aantoonbaar is dat en waarvoor je toestemming hebt gegeven. Deze registratie wordt met je account verwijderd.</li>
         <li style={S.li}><strong style={S.strong}>Serverlocatie:</strong> Alle serverdata wordt opgeslagen op servers in Frankfurt, Duitsland (EU).</li>
         <li style={S.li}><strong style={S.strong}>Wachtwoordbeveiliging:</strong> Wachtwoorden worden versleuteld opgeslagen via bcrypt en zijn nooit leesbaar voor Garden For Life.</li>
         <li style={S.li}><strong style={S.strong}>Authenticatie:</strong> Het platform gebruikt JWT bearer tokens voor authenticatie — geen traditionele sessiecookies.</li>
@@ -327,10 +340,7 @@ export const POLICY_CONTENT_NL = {
         </tbody>
       </table>
 
-      <h3 style={S.h3}>2.3 Beta-toegang (localStorage)</h3>
-      <p style={S.p}>Tijdens de besloten testperiode werd de toegang tot het platform afgeschermd met een toegangscode. Daarbij werden <em>gfl_beta_access</em> en <em>gfl_beta_access_time</em> lokaal opgeslagen. Met het openstellen van het platform vervalt deze afscherming en worden deze items niet langer aangemaakt.</p>
-
-      <h3 style={S.h3}>2.4 SessionStorage</h3>
+      <h3 style={S.h3}>2.3 SessionStorage</h3>
       <p style={S.p}>SessionStorage werkt identiek aan localStorage maar wordt automatisch gewist zodra u het browservenster of tabblad sluit.</p>
       <table style={S.table}>
         <thead><tr><th style={S.th}>Sleutel</th><th style={S.th}>Bewaartermijn</th><th style={S.th}>Doel</th></tr></thead>
@@ -456,9 +466,9 @@ export const POLICY_CONTENT_NL = {
       <h2 style={S.h2}>9. Privacy & AI-Transparantie</h2>
       <ul style={S.ul}>
         <li style={S.li}>Originele antwoorden worden gescheiden van je profiel</li>
-        <li style={S.li}>Het AI-model verwerkt geanonimiseerde batch-data</li>
+        <li style={S.li}>Het AI-model verwerkt jouw antwoorden individueel — zonder naam, e-mailadres of andere directe identificatoren vanuit het platform</li>
         <li style={S.li}>Geen real-time persoonlijk monitoring</li>
-        <li style={S.li}>90-daagse retentie met automatische verwijdering</li>
+        <li style={S.li}>Het berekende profiel bestaat maximaal 24 uur en wordt daarna automatisch verwijderd</li>
         <li style={S.li}>Geen overdracht naar trainingsdata voor toekomstige modellen</li>
       </ul>
       <h2 style={S.h2}>10. AI-Verbeteringen & Retraining</h2>
@@ -875,27 +885,27 @@ export const POLICY_CONTENT_NL = {
           <tr><td style={S.td}>Categorieën betrokkenen</td><td style={S.td}>Gebruikers van het platform</td></tr>
           <tr><td style={S.td}>Categorieën persoonsgegevens</td><td style={S.td}>E-mailadres — accountidentificator<br/>Ruwe assessmentantwoorden (responses) — individuele keuzes per vraag — Art. 9<br/>Subjectresultaten per thema (subjectResults) — geaggregeerde scores per thema — Art. 9<br/>Archetype-scores (scores) — scoreprofiel per archetype — Art. 9<br/>Archetypedetails (archetypeDetails) — 5-mandje decompositie per archetype — Art. 9<br/>Volledig gegenereerd rapport — inclusief Extended Archetype, schaduw/blindspot, AI Agent Prompt — Art. 9</td></tr>
           <tr><td style={S.td}>Bijzondere categorieën (Art. 9)</td><td style={S.td}><strong style={S.strong}>JA</strong> — Psychologische karakteristieken en gedragsprofielen. Valt onder de definitie van bijzondere persoonsgegevens conform de UAVG en AP-richtlijnen.</td></tr>
-          <tr><td style={S.td}>Bewaartermijn</td><td style={S.td}><strong style={S.strong}>Maximaal 24 uur.</strong> Het berekende profiel bestaat uitsluitend als verwerkingscache en wordt langs twee onafhankelijke wegen verwijderd: een geautomatiseerde opruiming elke nacht om 00:00 (Europe/Amsterdam), en een TTL-index die elk record 24 uur na aanmaak verwijdert. Daarna kan Garden For Life het rapport niet meer herleiden of opnieuw genereren. Wat blijft is uitsluitend het partiële profiel (zie Verwerking 2).</td></tr>
+          <tr><td style={S.td}>Bewaartermijn</td><td style={S.td}><strong style={S.strong}>Maximaal 24 uur.</strong> Het berekende profiel bestaat uitsluitend als verwerkingscache en wordt langs twee onafhankelijke wegen verwijderd: een geautomatiseerde opruiming elke nacht om 00:00 (Europe/Amsterdam), en een TTL-index die elk record 24 uur na aanmaak verwijdert. Daarna kan Garden For Life het rapport niet meer herleiden of opnieuw genereren. Wat blijft is uitsluitend het gedeeltelijke profiel (zie Verwerking 2).</td></tr>
           <tr><td style={S.td}>Geautomatiseerde besluitvorming (Art. 22)</td><td style={S.td}>Het rapport wordt volledig gegenereerd door Claude (Anthropic). Er worden geen beslissingen over betrokkenen genomen op basis van uitsluitend geautomatiseerde verwerking. Het rapport dient als zelfreflectie-instrument; de interpretatie berust bij de gebruiker zelf.</td></tr>
           <tr><td style={S.td}>Ontvangers / doorgifte</td><td style={S.td}><strong style={S.strong}>Anthropic (Claude API)</strong> — verwerker, assessmentdata wordt doorgegeven voor rapportgeneratie. De doorgestuurde data omvat: de ruwe antwoordenreeks (responses), subjectresultaten per thema (subjectResults), archetype-scores (scores), archetypedetails (archetypeDetails) en de Garden For Life systeeminstructies. Persoonlijke identificatoren (naam, e-mail, IP) worden niet doorgegeven. DPA: automatisch van kracht via acceptatie Anthropic Commercial Terms of Service — maart 2026.<br/><br/><strong style={S.strong}>MongoDB Atlas</strong> — verwerker, opslag in Frankfurt (EU). Verwerkersovereenkomst: aanwezig via Atlas-platform DPA (online acceptatie).<br/><br/><strong style={S.strong}>Render.com</strong> — verwerker, hosting van de applicatieserver in de regio Frankfurt (EU). Alle verzoeken passeren deze host; er wordt geen profieldata op de host bewaard. Verwerkersovereenkomst: aanwezig via Render DPA (online acceptatie).</td></tr>
           <tr><td style={S.td}>Doorgifte buiten EU/EER</td><td style={S.td}><strong style={S.strong}>Anthropic (VS)</strong> — doorgifte op basis van standaardcontractbepalingen (SCC). [Verificatie aanbevolen bij juridisch adviseur]<br/><strong style={S.strong}>MongoDB Atlas (Frankfurt, EU)</strong> — geen doorgifte buiten EU/EER.</td></tr>
-          <tr><td style={S.td}>Beveiligingsmaatregelen</td><td style={S.td}>• Versleuteling in transit: TLS 1.2+<br/>• Versleuteling at rest: AES-256 (Atlas standaard)<br/>• Aanvullende veldversleuteling: e-mailadres en weergavenaam AES-256-GCM<br/>• Toegangsbeperking: database afgeschermd met inloggegevens en netwerkregels<br/>• Auditlog op applicatieniveau: toestemmingen, beheerderstoegang en geautomatiseerde opruimingen<br/>• Toegangsbeheer: uitsluitend de verwerkingsverantwoordelijke heeft admin-toegang<br/>• Serverlocatie: Frankfurt, Duitsland (EU)<br/>• JWT bearer-authenticatie — geen sessiecookies, daardoor geen CSRF-oppervlak</td></tr>
+          <tr><td style={S.td}>Beveiligingsmaatregelen</td><td style={S.td}>• Versleuteling in transit: TLS 1.2+<br/>• Versleuteling at rest: AES-256 (Atlas standaard)<br/>• Aanvullende veldversleuteling: e-mailadres en weergavenaam AES-256-GCM<br/>• Toegangsbeperking: database afgeschermd met inloggegevens en netwerkregels<br/>• Toestemmingsregistratie op applicatieniveau: het moment van toestemming wordt met tijdstempel vastgelegd<br/>• Toegangsbeheer: uitsluitend de verwerkingsverantwoordelijke heeft admin-toegang<br/>• Serverlocatie: Frankfurt, Duitsland (EU)<br/>• JWT bearer-authenticatie — geen sessiecookies, daardoor geen CSRF-oppervlak</td></tr>
         </tbody>
       </table>
 
-      <h2 style={S.h2}>3. Verwerking 2 — Gebruikersaccount &amp; Partieel Profiel</h2>
+      <h2 style={S.h2}>3. Verwerking 2 — Gebruikersaccount &amp; Gedeeltelijk Profiel</h2>
       <table style={S.table}>
         <thead><tr><th style={S.th}>Veld</th><th style={S.th}>Details</th></tr></thead>
         <tbody>
-          <tr><td style={S.td}>Naam verwerking</td><td style={S.td}>Garden For Life Gebruikersaccount — Partieel Profiel</td></tr>
+          <tr><td style={S.td}>Naam verwerking</td><td style={S.td}>Garden For Life Gebruikersaccount — Gedeeltelijk Profiel</td></tr>
           <tr><td style={S.td}>Doel van verwerking</td><td style={S.td}>Het account laten bestaan en tonen: de orb tekenen, het accountscherm vullen en — bij een openbaar profiel — de publieke kaart in de Verbonden-directory tonen.</td></tr>
-          <tr><td style={S.td}>Rechtsgrond partieel profiel</td><td style={S.td}>Toestemming — Art. 6 lid 1 sub a AVG (en Art. 9 lid 2 sub a AVG indien de samenvatting psychologische kenmerken bevat)</td></tr>
+          <tr><td style={S.td}>Rechtsgrond gedeeltelijk profiel</td><td style={S.td}>Toestemming — Art. 6 lid 1 sub a AVG (en Art. 9 lid 2 sub a AVG indien de samenvatting psychologische kenmerken bevat)</td></tr>
           <tr><td style={S.td}>Categorieën betrokkenen</td><td style={S.td}>Geregistreerde gebruikers van het Garden For Life platform</td></tr>
-          <tr><td style={S.td}>Categorieën persoonsgegevens — Samenvatting</td><td style={S.td}>E-mailadres en weergavenaam (beide AES-256-GCM versleuteld)<br/>Optioneel: leeftijd en land<br/>De SHA-256 hash van elke ingewisselde kristal-code — nooit de code zelf<br/><strong style={S.strong}>Het partiële profiel</strong>, per ingewisselde code: archetype-naam, de render-only orb-geometrie, de genormaliseerde 12-punts vormvector, de 5-mandje decompositie en de bijbehorende kaartteksten (levensles, gift, curse, geometriesamenvatting)<br/><em>Noot: bevat géén ruwe assessment-antwoorden en géén volledige analyse. De vormvector en de 5-mandje decompositie zijn afgeleide psychologische kenmerken en vallen daarmee onder Art. 9 AVG; zij worden verwerkt op grond van dezelfde uitdrukkelijke toestemming.</em></td></tr>
+          <tr><td style={S.td}>Categorieën persoonsgegevens — Samenvatting</td><td style={S.td}>E-mailadres en weergavenaam (beide AES-256-GCM versleuteld)<br/>Optioneel: leeftijd en land<br/>De SHA-256 hash van elke ingewisselde kristal-code — nooit de code zelf<br/><strong style={S.strong}>Het gedeeltelijke profiel</strong>, per ingewisselde code: archetype-naam, de render-only orb-geometrie, de genormaliseerde 12-punts vormvector, de 5-mandje decompositie en de bijbehorende kaartteksten (levensles, gift, curse, geometriesamenvatting)<br/><em>Noot: bevat géén ruwe assessment-antwoorden en géén volledige analyse. De vormvector en de 5-mandje decompositie zijn afgeleide psychologische kenmerken en vallen daarmee onder Art. 9 AVG; zij worden verwerkt op grond van dezelfde uitdrukkelijke toestemming.</em></td></tr>
           <tr><td style={S.td}>Volledig rapport</td><td style={S.td}>Het rapport is éénmalig downloadbaar direct na generatie. Na download of verlopen van de downloadtoken wordt het rapport niet bewaard door het platform.</td></tr>
-          <tr><td style={S.td}>Bewaartermijn</td><td style={S.td}>Partieel profiel: zolang het gebruikersaccount bestaat.<br/>Hash van de kristal-code: zolang het account bestaat — zonder deze hash zou dezelfde PDF een tweede account kunnen openen.<br/>Accountverwijdering: verwijdering binnen 30 dagen na verzoek.</td></tr>
-          <tr><td style={S.td}>Geautomatiseerde besluitvorming</td><td style={S.td}>Niet van toepassing op het partiële profiel. Het AI-model genereert het rapport eenmalig; de opgeslagen samenvatting is een statisch gegeven.</td></tr>
-          <tr><td style={S.td}>Ontvangers</td><td style={S.td}>Geen derden ontvangen het partiële profiel, tenzij de gebruiker het profiel zelf op openbaar zet (zie Verwerking 4). MongoDB Atlas (Frankfurt) — opslag als verwerker.</td></tr>
+          <tr><td style={S.td}>Bewaartermijn</td><td style={S.td}>Gedeeltelijk profiel: zolang het gebruikersaccount bestaat.<br/>Hash van de kristal-code: zolang het account bestaat — zonder deze hash zou dezelfde PDF een tweede account kunnen openen.<br/>Accountverwijdering: verwijdering binnen 30 dagen na verzoek.</td></tr>
+          <tr><td style={S.td}>Geautomatiseerde besluitvorming</td><td style={S.td}>Niet van toepassing op het gedeeltelijke profiel. Het AI-model genereert het rapport eenmalig; de opgeslagen samenvatting is een statisch gegeven.</td></tr>
+          <tr><td style={S.td}>Ontvangers</td><td style={S.td}>Geen derden ontvangen het gedeeltelijke profiel, tenzij de gebruiker het profiel zelf op openbaar zet (zie Verwerking 4). MongoDB Atlas (Frankfurt) — opslag als verwerker.</td></tr>
           <tr><td style={S.td}>Beveiligingsmaatregelen</td><td style={S.td}>Zie Verwerking 1 — zelfde technische maatregelen van toepassing.</td></tr>
         </tbody>
       </table>
@@ -944,7 +954,7 @@ export const POLICY_CONTENT_NL = {
           <tr><td style={S.td}>Toestemming</td><td style={S.td}>Eenmalige toestemming voor één specifieke map, door de gebruiker zelf gekozen. Elk hulpmiddel dat met die map werkt vraagt <strong style={S.strong}>afzonderlijk</strong> om toestemming, met vermelding vooraf van de gebruikte gegevens en van wat er naar Garden For Life wordt verzonden. Toestemmingen worden bijgehouden in een register in de map zelf en gespiegeld op het account.</td></tr>
           <tr><td style={S.td}>Wat er wél naar Garden For Life gaat</td><td style={S.td}>Uitsluitend afgeleide waarden die een hulpmiddel nodig heeft om te rekenen — bijvoorbeeld de genormaliseerde 12-punts vormvector. Nooit de ruwe antwoorden en nooit het volledige profiel. Wat voor een berekening wordt ontvangen, wordt na het teruggeven van het resultaat verwijderd en niet opgeslagen.</td></tr>
           <tr><td style={S.td}>Bewaartermijn bij Garden For Life</td><td style={S.td}>Niet van toepassing — er wordt niets bewaard.</td></tr>
-          <tr><td style={S.td}>Verwijdering van servergegevens</td><td style={S.td}>Zodra de lokale map is ingericht kan de gebruiker de resterende servergegevens laten verwijderen. Wat daarna blijft bestaan is uitsluitend Verwerking 2 (account, kristal-code-hash en partieel profiel) en, indien van toepassing, Verwerking 4.</td></tr>
+          <tr><td style={S.td}>Verwijdering van servergegevens</td><td style={S.td}>Zodra de lokale map is ingericht kan de gebruiker de resterende servergegevens laten verwijderen. Wat daarna blijft bestaan is uitsluitend Verwerking 2 (account, kristal-code-hash en gedeeltelijk profiel) en, indien van toepassing, Verwerking 4.</td></tr>
           <tr><td style={S.td}>Risico voor de betrokkene</td><td style={S.td}>Omdat Garden For Life geen kopie bewaart, leidt verlies van de map tot onherstelbaar verlies van de inhoud. De gebruiker wordt hierop gewezen op het moment dat de toestemming wordt gevraagd.</td></tr>
         </tbody>
       </table>
@@ -967,8 +977,8 @@ export const POLICY_CONTENT_NL = {
         <tbody>
           <tr><td style={S.td}>Type toestemming</td><td style={S.td}>Uitdrukkelijke, specifieke, geïnformeerde toestemming conform Art. 9 lid 2 sub a AVG</td></tr>
           <tr><td style={S.td}>Moment van toestemming</td><td style={S.td}>Vóór aanvang van het assessment, via een specifiek toestemmingsscherm (los van de algemene gebruiksvoorwaarden). Twee afzonderlijke checkboxes: (1) algemene voorwaarden, (2) Art. 9 psychologische profieldata.</td></tr>
-          <tr><td style={S.td}>Inhoud toestemmingsverklaring</td><td style={S.td}>De gebruiker wordt expliciet geïnformeerd over:<br/>• De verwerking van psychologische profieldata<br/>• Het doel (persoonlijke rapportage)<br/>• De verwerkingslocatie (Frankfurt, MongoDB Atlas)<br/>• Wie toegang heeft (beheerder als admin — gelogd in auditlog)<br/>• De bewaartermijn (maximaal 24 uur; daarna uitsluitend het partiële profiel)<br/>• Het recht op verwijdering via yuanwullink30@gfl.community</td></tr>
-          <tr><td style={S.td}>Vastlegging toestemming</td><td style={S.td}>Toestemming wordt gelogd met tijdstempel in het auditlog op zowel applicatie- als databaseniveau.</td></tr>
+          <tr><td style={S.td}>Inhoud toestemmingsverklaring</td><td style={S.td}>De gebruiker wordt expliciet geïnformeerd over:<br/>• De verwerking van psychologische profieldata<br/>• Het doel (persoonlijke rapportage)<br/>• De verwerkingslocatie (Frankfurt, MongoDB Atlas)<br/>• Wie toegang heeft (de beheerder, als admin)<br/>• De bewaartermijn (maximaal 24 uur; daarna uitsluitend het gedeeltelijke profiel)<br/>• Het recht op verwijdering via yuanwullink30@gfl.community</td></tr>
+          <tr><td style={S.td}>Vastlegging toestemming</td><td style={S.td}>Toestemming wordt met tijdstempel vastgelegd als toestemmingsregistratie. De registratie bevat het type toestemming en het moment, en wordt bij accountverwijdering mee verwijderd.</td></tr>
           <tr><td style={S.td}>Intrekking</td><td style={S.td}>Gebruiker kan toestemming intrekken via yuanwullink30@gfl.community. Data wordt binnen 30 dagen verwijderd.</td></tr>
         </tbody>
       </table>

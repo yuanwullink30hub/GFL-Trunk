@@ -185,6 +185,12 @@ router.post('/link', authRequired, async (req, res) => {
       }
     ).catch((e) => console.warn('[orb/link] history update failed:', e.message));
 
+    // The draft is now part of the account's orbHistory entry — drop the pre-account copy.
+    if (kaartDraft) {
+      await collections.kaartDrafts().deleteOne({ codeHash })
+        .catch((e) => console.warn('[orb/link] kaart-draft cleanup failed:', e.message));
+    }
+
     return res.json({ linked: true, accessUntil });
   } catch (e) {
     console.error('[orb/link] error:', e.message);

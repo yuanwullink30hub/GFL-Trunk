@@ -245,6 +245,9 @@ const LoginPage = memo(({ isVisible, onBack }) => {
   const [obArchetype, setObArchetype] = useState(''); // extended archetype name read from the PDF
   const [obReading, setObReading] = useState(null);   // extracted reading (main/support + shape vector) from the PDF
   const [obConsent, setObConsent] = useState(false);
+  // Art. 9 consent for the partial profile this route stores (users.archetypeName +
+  // orbHistory). Asked separately from the terms box, per the Art. 30 register.
+  const [obConsentArt9, setObConsentArt9] = useState(false);
   const [obErr, setObErr] = useState('');
   const [obBusy, setObBusy] = useState(false);
   const [verifyPending, setVerifyPending] = useState(false); // waiting for the email link to be clicked
@@ -298,7 +301,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       setObEmail(''); setObPassword(''); setObUsername(''); setObAge(''); setObCountry('');
       setObArchetype(res.archetypeName || '');
       setObReading(res.reading || null);
-      setObConsent(false); setObErr('');
+      setObConsent(false); setObConsentArt9(false); setObErr('');
       setOnboarding(true);                              // orb grows to full size
       clearFlowTimers();
       scheduleFlow(820, () => setEmerged(true));       // card flows out as the grow finishes
@@ -367,10 +370,13 @@ const LoginPage = memo(({ isVisible, onBack }) => {
   // confirmation link and we wait (polling /login) until the user clicks it, THEN boot into client.
   const handleCreateAccount = useCallback(async () => {
     if (!obUsername || !obEmail || !obPassword) { setObErr(t('auth.errors.fillFields')); return; }
-    if (!obConsent) { setObErr(t('auth.errors.confirmTerms')); return; }
+    if (!obConsent || !obConsentArt9) { setObErr(t('auth.errors.confirmTerms')); return; }
     setObErr(''); setObBusy(true);
     try {
       const data = await register({ email: obEmail, password: obPassword, displayName: obUsername, age: obAge, country: obCountry, orbCode: orbCodeStr, archetypeName: obArchetype, reading: obReading });
+      // Consent must be demonstrable (Art. 7(1)) — and eraseAccountData() deletes these
+      // records on erasure, so this route has to write one like the other one does.
+      logActivity({ type: 'consent_given', consentType: 'registration_onboarding', email: obEmail, message: 'User accepted terms + Art.9 partial-profile consent at account creation' }).catch(() => {});
       if (data && data.needsVerification) {
         setVerifyPending(true);   // show "check your inbox" and start polling; keep obBusy
         pollVerification();
@@ -381,7 +387,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       setObErr(e.message || t('auth.errors.createAccountFailed'));
       setObBusy(false);
     }
-  }, [obUsername, obEmail, obPassword, obAge, obCountry, obArchetype, obConsent, orbCodeStr, pollVerification, proceedIntoClient, t]);
+  }, [obUsername, obEmail, obPassword, obAge, obCountry, obArchetype, obConsent, obConsentArt9, obReading, orbCodeStr, pollVerification, proceedIntoClient, t]);
 
   // Responsive size for the template orb on the logged-out screen.
   const [vp, setVp] = useState(() => ({
@@ -773,7 +779,14 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                     {t('auth.onboarding.consentPrefix')}{' '}
                     <a href="/?page=algemene-voorwaarden" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: C.gold, textDecoration: 'underline' }}>{t('auth.legal.terms')}</a>
                     {' '}{t('auth.onboarding.consentMiddle')}{' '}
-                    <a href="/?page=privacybeleid" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: C.gold, textDecoration: 'underline' }}>{t('auth.legal.privacy')}</a>.
+                    <a href="/?page=privacybeleid" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: C.gold, textDecoration: 'underline' }}>{t('auth.legal.privacy')}</a>
+                    {t('auth.onboarding.consentSuffix')}
+                  </span>
+                </label>
+                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginTop: '0.35rem', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={obConsentArt9} onChange={(e) => setObConsentArt9(e.target.checked)} style={{ marginTop: '0.2rem', accentColor: C.gold, flexShrink: 0 }} />
+                  <span style={{ fontSize: 'max(9px,0.46vw)', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45 }}>
+                    {t('auth.onboarding.consentArt9')}
                   </span>
                 </label>
               </form>

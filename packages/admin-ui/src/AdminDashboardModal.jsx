@@ -123,15 +123,15 @@ const CARD_COLORS = {
 
 function DashboardCard({ children, title, color = 'gold', className, style = {} }) {
   const isMobile = React.useContext(MobileCtx);
-  const t = CARD_COLORS[color] || CARD_COLORS.gold;
+  const cc = CARD_COLORS[color] || CARD_COLORS.gold;
   return (
     <div style={{
       position: 'relative',
       backgroundColor: 'rgba(1, 0, 2, 0.3)',
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)',
-      border: `1px solid ${t.border}`,
-      boxShadow: t.shadow,
+      border: `1px solid ${cc.border}`,
+      boxShadow: cc.shadow,
       borderRadius: '0.5rem',
       padding: '1.25rem',
       fontFamily: FONT,
@@ -148,17 +148,17 @@ function DashboardCard({ children, title, color = 'gold', className, style = {} 
           display: 'flex', alignItems: 'center', gap: '0.4rem',
           marginBottom: '0.8rem',
           paddingBottom: '0.6rem',
-          borderBottom: `1px solid ${t.border}`,
+          borderBottom: `1px solid ${cc.border}`,
         }}>
           <div style={{
             width: '3px', height: '1rem',
-            backgroundColor: t.border,
+            backgroundColor: cc.border,
             borderRadius: '1px',
           }} />
           <span style={{
             fontSize: 'max(10px, 0.5vw)',
             fontWeight: 'bold',
-            color: t.titleColor,
+            color: cc.titleColor,
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
           }}>{title}</span>
@@ -196,7 +196,7 @@ const CORNER = (pos, mobile) => {
 };
 
 const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false }) => {
-  useLanguage();
+  const { t } = useLanguage();
   const [tab, setTab] = useState('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -330,14 +330,14 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
             <>
               <div />
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">Uitloggen</SciFiButton>
+                <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">{t('admin.dashboard.logout')}</SciFiButton>
               </div>
             </>
           ) : (
             <>
               <div />
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">Uitloggen</SciFiButton>
+                <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">{t('admin.dashboard.logout')}</SciFiButton>
               </div>
             </>
           )}
@@ -368,7 +368,7 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
             letterSpacing: '0.2em', fontFamily: FONT, margin: 0,
             textShadow: '0 0 5px #f97316, 0 0 10px #f97316',
           }}>
-            Commandocentrum
+            {t('admin.dashboard.title')}
           </h1>
         </div>
       </header>}
@@ -376,21 +376,21 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
       {/* ── Tab Navigatie ── */}
       {isMobile ? (() => {
         const mobileTabs = [
-          { key: 'overview', label: 'Overzicht' },
-          { key: 'users', label: 'Gebruikers' },
-          { key: 'assessments', label: 'Assessments' },
-          { key: 'questions', label: 'Vragen' },
-          { key: 'prompts', label: 'Prompts' },
-          { key: 'formulieren', label: 'Formulieren' },
-          { key: 'passkeys', label: 'Passkeys' },
-          { key: 'audit', label: 'Audit Log' },
-          { key: 'feedback', label: 'Feedback' },
-          { key: 'contact', label: 'Contact' },
+          { key: 'overview', label: t('admin.dashboard.tabs.overview') },
+          { key: 'users', label: t('admin.dashboard.tabs.users') },
+          { key: 'assessments', label: t('admin.dashboard.tabs.assessments') },
+          { key: 'questions', label: t('admin.dashboard.tabs.questions') },
+          { key: 'prompts', label: t('admin.dashboard.tabs.prompts') },
+          { key: 'formulieren', label: t('admin.dashboard.tabs.formulieren') },
+          { key: 'passkeys', label: t('admin.dashboard.tabs.passkeys') },
+          { key: 'audit', label: t('admin.dashboard.tabs.audit') },
+          { key: 'feedback', label: t('admin.dashboard.tabs.feedback') },
+          { key: 'contact', label: t('admin.dashboard.tabs.contact') },
         ];
         const mobileTabPadding = '0.52rem 0.9rem'; // +30% from default 0.4rem vertical
         const mobileTabFontSize = 'max(12.5px, 0.625vw)'; // +25% from default max(10px, 0.5vw)
         const mobileTabWeight = 900; // thicker than default bold
-        const activeTab = mobileTabs.find(t => t.key === tab) || mobileTabs[0];
+        const activeTab = mobileTabs.find(mt => mt.key === tab) || mobileTabs[0];
         return (
           <div style={{
             width: '100%',
@@ -440,15 +440,15 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
       })() : (
         <div style={{ display: 'flex', gap: ds.tabGap, flexWrap: 'wrap' }}>
           {[
-            { key: 'overview', label: 'Overzicht' },
-            { key: 'users', label: 'Gebruikers' },
-            { key: 'assessments', label: 'Assessments' },
-            { key: 'questions', label: 'Vragen' },
-            { key: 'prompts', label: 'Prompts' },
-            { key: 'formulieren', label: 'Formulieren' },
-            { key: 'passkeys', label: 'Passkeys' },
-            { key: 'audit', label: 'Audit Log' },
-            { key: 'contact', label: 'Contact' },
+            { key: 'overview', label: t('admin.dashboard.tabs.overview') },
+            { key: 'users', label: t('admin.dashboard.tabs.users') },
+            { key: 'assessments', label: t('admin.dashboard.tabs.assessments') },
+            { key: 'questions', label: t('admin.dashboard.tabs.questions') },
+            { key: 'prompts', label: t('admin.dashboard.tabs.prompts') },
+            { key: 'formulieren', label: t('admin.dashboard.tabs.formulieren') },
+            { key: 'passkeys', label: t('admin.dashboard.tabs.passkeys') },
+            { key: 'audit', label: t('admin.dashboard.tabs.audit') },
+            { key: 'contact', label: t('admin.dashboard.tabs.contact') },
           ].map(({ key, label, disabled }) => (
             <SciFiButton key={key} onClick={() => !disabled && setTab(key)} disabled={disabled} active={tab === key}>
               {label.toUpperCase()}
@@ -553,6 +553,7 @@ if (!window.__gflErrorCapture) {
 
 
 const OverviewTab = memo(({ user }) => {
+  const { t, tFunc } = useLanguage();
   const isMobile = React.useContext(MobileCtx);
   const ds = React.useContext(DashSizeCtx);
   const [stats, setStats] = useState(null);
@@ -598,10 +599,10 @@ const OverviewTab = memo(({ user }) => {
 
   /* ── API Gezondheidscheck — 3 gekoppelde API's + encryptie ── */
   const [apiHealth, setApiHealth] = useState({
-    backend:    { status: 'LADEN...', color: C.gold },
-    ai:         { status: 'LADEN...', color: C.gold },
-    pdf:        { status: 'LADEN...', color: C.gold },
-    encryption: { status: 'LADEN...', color: C.gold },
+    backend:    { status: t('admin.dashboard.overview.healthLoading'), color: C.gold },
+    ai:         { status: t('admin.dashboard.overview.healthLoading'), color: C.gold },
+    pdf:        { status: t('admin.dashboard.overview.healthLoading'), color: C.gold },
+    encryption: { status: t('admin.dashboard.overview.healthLoading'), color: C.gold },
   });
 
   useEffect(() => {
@@ -609,11 +610,11 @@ const OverviewTab = memo(({ user }) => {
     getAdminStats()
       .then((s) => {
         setStats(s);
-        setApiHealth((h) => ({ ...h, backend: { status: 'ONLINE', color: '#4ade80' } }));
+        setApiHealth((h) => ({ ...h, backend: { status: t('admin.dashboard.overview.healthOnline'), color: '#4ade80' } }));
       })
       .catch((e) => {
         setError(e.message);
-        setApiHealth((h) => ({ ...h, backend: { status: 'OFFLINE', color: '#ef4444' } }));
+        setApiHealth((h) => ({ ...h, backend: { status: t('admin.dashboard.overview.healthOffline'), color: '#ef4444' } }));
       });
 
     /* 2. AI Provider API — check if any provider has a real key configured */
@@ -622,27 +623,27 @@ const OverviewTab = memo(({ user }) => {
         const configured = data?.providers?.filter(p => p.key && p.defaultModel) || [];
         if (configured.length > 0) {
           const names = configured.map(p => p.name).join(', ');
-          setApiHealth((h) => ({ ...h, ai: { status: `ONLINE · ${names}`, color: '#4ade80' } }));
+          setApiHealth((h) => ({ ...h, ai: { status: tFunc('admin.dashboard.overview.healthOnlineWith')(names), color: '#4ade80' } }));
         } else {
-          setApiHealth((h) => ({ ...h, ai: { status: 'GEEN SLEUTEL', color: '#f59e0b' } }));
+          setApiHealth((h) => ({ ...h, ai: { status: t('admin.dashboard.overview.healthNoKey'), color: '#f59e0b' } }));
         }
       })
-      .catch(() => setApiHealth((h) => ({ ...h, ai: { status: 'OFFLINE', color: '#ef4444' } })));
+      .catch(() => setApiHealth((h) => ({ ...h, ai: { status: t('admin.dashboard.overview.healthOffline'), color: '#ef4444' } })));
 
     /* 3. PDF Service + Encryption status — from /api/status */
     getApiStatus()
       .then((data) => {
-        setApiHealth((h) => ({ ...h, pdf: { status: 'ONLINE', color: '#4ade80' } }));
+        setApiHealth((h) => ({ ...h, pdf: { status: t('admin.dashboard.overview.healthOnline'), color: '#4ade80' } }));
         // Check encryption status from the same endpoint
         if (data?.encryption && data.encryption !== 'disabled') {
-          setApiHealth((h) => ({ ...h, encryption: { status: `ACTIEF · ${data.encryption}`, color: '#4ade80' } }));
+          setApiHealth((h) => ({ ...h, encryption: { status: tFunc('admin.dashboard.overview.healthActiveWith')(data.encryption), color: '#4ade80' } }));
         } else {
-          setApiHealth((h) => ({ ...h, encryption: { status: 'UITGESCHAKELD', color: '#f59e0b' } }));
+          setApiHealth((h) => ({ ...h, encryption: { status: t('admin.dashboard.overview.healthDisabled'), color: '#f59e0b' } }));
         }
       })
       .catch(() => {
-        setApiHealth((h) => ({ ...h, pdf: { status: 'OFFLINE', color: '#ef4444' } }));
-        setApiHealth((h) => ({ ...h, encryption: { status: 'ONBEKEND', color: '#ef4444' } }));
+        setApiHealth((h) => ({ ...h, pdf: { status: t('admin.dashboard.overview.healthOffline'), color: '#ef4444' } }));
+        setApiHealth((h) => ({ ...h, encryption: { status: t('admin.dashboard.overview.healthUnknown'), color: '#ef4444' } }));
       });
 
     getAdminUsers({ limit: 5 }).then((d) => setRecentUsers(d.users || [])).catch(() => {});
@@ -662,7 +663,7 @@ const OverviewTab = memo(({ user }) => {
         : { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: ds.contentGap }
       }>
         {/* Kaart 1: Identiteitsmatrix (goud) — gebruikersprofiel */}
-        <DashboardCard title="Identiteitsmatrix" color="gold">
+        <DashboardCard title={t('admin.dashboard.overview.identityMatrix')} color="gold">
           <div style={{ display: 'flex', flexDirection: 'column', gap: ds.infoGap }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: ds.infoGap }}>
               <div style={{
@@ -672,16 +673,16 @@ const OverviewTab = memo(({ user }) => {
                 fontSize: ds.avatarFont,
               }}>🛡</div>
               <div>
-                <div style={{ fontSize: 'max(9px, 0.45vw)', color: tc.dimText, textTransform: 'uppercase' }}>Status</div>
-                <div style={{ color: C.gold, fontWeight: 'bold' }}>OPERATIONEEL</div>
+                <div style={{ fontSize: 'max(9px, 0.45vw)', color: tc.dimText, textTransform: 'uppercase' }}>{t('admin.dashboard.overview.status')}</div>
+                <div style={{ color: C.gold, fontWeight: 'bold' }}>{t('admin.dashboard.overview.operational')}</div>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: ds.infoGap, marginTop: ds.infoMt }}>
               {[
-                ['Gebruiker', user.displayName || '—'],
-                ['E-mail Protocol', user.email],
-                ['Toegangsniveau', (user.role || 'client').toUpperCase()],
-                ['Sessie', 'ACTIEF'],
+                [t('admin.dashboard.overview.rowUser'), user.displayName || '—'],
+                [t('admin.dashboard.overview.rowEmail'), user.email],
+                [t('admin.dashboard.overview.rowAccessLevel'), (user.role || 'client').toUpperCase()],
+                [t('admin.dashboard.overview.rowSession'), t('admin.dashboard.overview.sessionActive')],
               ].map(([label, value]) => (
                 <div key={label} style={{
                   display: 'flex', justifyContent: 'space-between',
@@ -696,14 +697,14 @@ const OverviewTab = memo(({ user }) => {
         </DashboardCard>
 
         {/* Kaart 2: Admin Notities (paars) — opslaan van notities */}
-        <DashboardCard title="Admin Notities" color="purple">
+        <DashboardCard title={t('admin.dashboard.overview.notesTitle')} color="purple">
           <div style={{ display: 'flex', flexDirection: 'column', gap: ds.noteGap }}>
             <div style={{ display: 'flex', gap: ds.noteGap }}>
               <input
                 value={noteInput}
                 onChange={(e) => setNoteInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') addNote(); }}
-                placeholder="Notitie toevoegen..."
+                placeholder={t('admin.dashboard.overview.notePlaceholder')}
                 style={{
                   flex: 1,
                   padding: ds.noteInputPad,
@@ -722,7 +723,7 @@ const OverviewTab = memo(({ user }) => {
             </div>
             {notesSaved && (
               <div style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase' }}>
-                ✓ Opgeslagen
+                {t('admin.dashboard.overview.noteSaved')}
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: ds.noteGap, maxHeight: ds.noteListMaxH, overflowY: 'auto' }}>
@@ -751,7 +752,7 @@ const OverviewTab = memo(({ user }) => {
                 </div>
               )) : (
                 <div style={{ textAlign: 'center', color: pc.dimText, padding: '1.5rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-                  Geen notities
+                  {t('admin.dashboard.overview.noNotes')}
                 </div>
               )}
             </div>
@@ -759,14 +760,14 @@ const OverviewTab = memo(({ user }) => {
         </DashboardCard>
 
         {/* Kaart 3: Foutmeldingen — Fout/Bug Audit Log (goud) */}
-        <DashboardCard title="Foutmeldingen" color="gold">
+        <DashboardCard title={t('admin.dashboard.overview.errorsTitle')} color="gold">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {errorLog.length > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase' }}>
-                  {errorLog.length} fout{errorLog.length !== 1 ? 'en' : ''} vastgelegd
+                  {tFunc('admin.dashboard.overview.errorsCaptured')(errorLog.length)}
                 </span>
-                <SciFiButton onClick={clearLog} variant="danger" size="xs" padding="0.2rem 0.4rem" fontSize="max(7px, 0.38vw)">Log Wissen</SciFiButton>
+                <SciFiButton onClick={clearLog} variant="danger" size="xs" padding="0.2rem 0.4rem" fontSize="max(7px, 0.38vw)">{t('admin.dashboard.overview.clearLog')}</SciFiButton>
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '280px', overflowY: 'auto' }}>
@@ -803,10 +804,10 @@ const OverviewTab = memo(({ user }) => {
                 <div style={{ textAlign: 'center', padding: '1.5rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                   <div style={{ fontSize: 'max(18px, 1vw)', opacity: 0.4 }}>✓</div>
                   <div style={{ color: '#4ade80', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-                    Geen fouten gedetecteerd
+                    {t('admin.dashboard.overview.noErrors')}
                   </div>
                   <div style={{ color: tc.dimText, fontSize: 'max(8px, 0.4vw)' }}>
-                    Console- en runtime fouten verschijnen hier
+                    {t('admin.dashboard.overview.noErrorsHint')}
                   </div>
                 </div>
               )}
@@ -819,10 +820,10 @@ const OverviewTab = memo(({ user }) => {
       {isMobile ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {[
-            { label: 'Backend API', key: 'backend', desc: 'REST / MongoDB' },
-            { label: 'AI Provider', key: 'ai', desc: 'Claude / Analyse' },
-            { label: 'PDF Service', key: 'pdf', desc: 'Rapportgeneratie' },
-            { label: 'Encryptie', key: 'encryption', desc: 'AES-256-GCM / PII' },
+            { label: t('admin.dashboard.overview.apiBackend'), key: 'backend', desc: t('admin.dashboard.overview.apiBackendDesc') },
+            { label: t('admin.dashboard.overview.apiAi'), key: 'ai', desc: t('admin.dashboard.overview.apiAiDesc') },
+            { label: t('admin.dashboard.overview.apiPdf'), key: 'pdf', desc: t('admin.dashboard.overview.apiPdfDesc') },
+            { label: t('admin.dashboard.overview.apiEncryption'), key: 'encryption', desc: t('admin.dashboard.overview.apiEncryptionDesc') },
           ].map(({ label, key, desc }) => (
             <DashboardCard key={key} color="gold" style={{ padding: '1rem 1.25rem' }}>
               <div style={{
@@ -849,13 +850,13 @@ const OverviewTab = memo(({ user }) => {
           ))}
         </div>
       ) : (
-        <DashboardCard title="API Verbindingen" color="gold" style={{ padding: '1rem 1.25rem' }}>
+        <DashboardCard title={t('admin.dashboard.overview.apiTitle')} color="gold" style={{ padding: '1rem 1.25rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
             {[
-              { label: 'Backend API', key: 'backend', desc: 'REST / MongoDB' },
-              { label: 'AI Provider', key: 'ai', desc: 'Claude / Analyse' },
-              { label: 'PDF Service', key: 'pdf', desc: 'Rapportgeneratie' },
-              { label: 'Encryptie', key: 'encryption', desc: 'AES-256-GCM / PII' },
+              { label: t('admin.dashboard.overview.apiBackend'), key: 'backend', desc: t('admin.dashboard.overview.apiBackendDesc') },
+              { label: t('admin.dashboard.overview.apiAi'), key: 'ai', desc: t('admin.dashboard.overview.apiAiDesc') },
+              { label: t('admin.dashboard.overview.apiPdf'), key: 'pdf', desc: t('admin.dashboard.overview.apiPdfDesc') },
+              { label: t('admin.dashboard.overview.apiEncryption'), key: 'encryption', desc: t('admin.dashboard.overview.apiEncryptionDesc') },
             ].map(({ label, key, desc }) => (
               <div key={key} style={{
                 display: 'flex', alignItems: 'center', gap: '0.6rem',
@@ -890,10 +891,10 @@ const OverviewTab = memo(({ user }) => {
         : { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: ds.infoGap }
       }>
         {[
-          { label: 'Gebruikers', value: stats.userCount },
-          { label: 'Assessments', value: stats.assessmentCount },
-          { label: 'Fouten Vastgelegd', value: errorLog.length, color: errorLog.length > 0 ? '#fca5a5' : '#4ade80' },
-          { label: 'Contactverzoeken', value: stats.contactCount ?? 0 },
+          { label: t('admin.dashboard.overview.statUsers'), value: stats.userCount },
+          { label: t('admin.dashboard.overview.statAssessments'), value: stats.assessmentCount },
+          { label: t('admin.dashboard.overview.statErrors'), value: errorLog.length, color: errorLog.length > 0 ? '#fca5a5' : '#4ade80' },
+          { label: t('admin.dashboard.overview.statContactRequests'), value: stats.contactCount ?? 0 },
         ].map((stat, i) => (
           <DashboardCard key={i} color="gold" style={{ padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
@@ -908,6 +909,7 @@ const OverviewTab = memo(({ user }) => {
 });
 
 const UsersTab = memo(({ currentUserId }) => {
+  const { t } = useLanguage();
   const isMobile = React.useContext(MobileCtx);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -966,9 +968,9 @@ const UsersTab = memo(({ currentUserId }) => {
           <div>
             <div style={{ fontWeight: 'bold' }}>{u.displayName || u.email}</div>
             <div style={{ opacity: 0.4, fontSize: 'max(9px, 0.4vw)' }}>
-              {u.email} · Aangemaakt: {new Date(u.createdAt).toLocaleDateString('nl-NL')}
-              {u.lastLogin && <> · Laatste login: {new Date(u.lastLogin).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
-              {!u.lastLogin && <> · <span style={{ color: '#f59e0b' }}>Nog niet ingelogd</span></>}
+              {u.email} · {t('admin.dashboard.users.created')} {new Date(u.createdAt).toLocaleDateString('nl-NL')}
+              {u.lastLogin && <> · {t('admin.dashboard.users.lastLogin')} {new Date(u.lastLogin).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+              {!u.lastLogin && <> · <span style={{ color: '#f59e0b' }}>{t('admin.dashboard.users.neverLoggedIn')}</span></>}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', ...(isMobile ? { flexWrap: 'wrap' } : {}) }}>
@@ -1343,6 +1345,7 @@ const AssessmentsTab = memo(({ adminEmail }) => {
 });
 
 const PromptsTab = memo(() => {
+  const { t } = useLanguage();
   const [promptLevel, setPromptLevel] = useState('advanced');
 
   return (
@@ -1365,7 +1368,7 @@ const PromptsTab = memo(() => {
             PROMPTS — {promptLevel.toUpperCase()}
           </div>
           <div style={{ fontSize: 'max(11px, 0.55vw)', opacity: 0.4, maxWidth: '400px', margin: '0 auto' }}>
-            Prompt configuratie voor dit level is nog in ontwikkeling.
+            {t('admin.dashboard.prompts.levelInDevelopment')}
           </div>
         </div>
       )}
@@ -1374,6 +1377,7 @@ const PromptsTab = memo(() => {
 });
 
 const PromptsTabContent = memo(() => {
+  const { t } = useLanguage();
   const isMobile = React.useContext(MobileCtx);
   const [config, setConfig] = useState(null);
   const [error, setError] = useState('');
@@ -1422,7 +1426,7 @@ const PromptsTabContent = memo(() => {
       <div>
         <div style={mLABEL}>SYSTEM PROMPT</div>
         <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)', opacity: 0.3, marginBottom: '0.3rem' }}>
-          Dit is de instructie die de AI ontvangt om alle assessment data te interpreteren.
+          {t('admin.dashboard.prompts.systemPromptHint')}
         </div>
         <textarea
           value={config.systemPromptTemplate || ''}
@@ -1437,9 +1441,9 @@ const PromptsTabContent = memo(() => {
 
       {/* ── Context Documents Section ── */}
       <div style={{ marginTop: '1.2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem' }}>
-        <div style={mLABEL}>CONTEXT DOCUMENTEN</div>
+        <div style={mLABEL}>{t('admin.dashboard.prompts.contextDocuments')}</div>
         <div style={{ fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)', opacity: 0.4, marginBottom: '0.5rem' }}>
-          Upload Word, PDF of tekst bestanden. De inhoud wordt automatisch meegestuurd met elk AI verzoek als kennisbank context.
+          {t('admin.dashboard.prompts.contextDocumentsHint')}
         </div>
 
         <ContextDocumentsSection />
@@ -1450,6 +1454,7 @@ const PromptsTabContent = memo(() => {
 
 // ── Context Documents Sub-component ──
 const ContextDocumentsSection = memo(() => {
+  const { t, tFunc } = useLanguage();
   const isMobile = React.useContext(MobileCtx);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1492,7 +1497,7 @@ const ContextDocumentsSection = memo(() => {
   }, [loadDocuments]);
 
   const handleDelete = useCallback(async (docId, filename) => {
-    if (!window.confirm(`Document "${filename}" verwijderen? Dit kan niet ongedaan worden.`)) return;
+    if (!window.confirm(tFunc('admin.dashboard.prompts.confirmDeleteDoc')(filename))) return;
     try {
       setError('');
       await deletePromptDocument(docId);
@@ -1512,7 +1517,7 @@ const ContextDocumentsSection = memo(() => {
       setVerified(result);
       if (!result.verified && result.totalDocuments > 0) {
         const invalid = result.documents.filter((d) => !d.hasText);
-        setError(`${invalid.length} document(en) bevatten geen leesbare tekst: ${invalid.map((d) => d.filename).join(', ')}`);
+        setError(tFunc('admin.dashboard.prompts.docsWithoutText')(invalid.length, invalid.map((d) => d.filename).join(', ')));
       }
     } catch (err) {
       setError(err.message);
@@ -1568,7 +1573,7 @@ const ContextDocumentsSection = memo(() => {
           {uploading ? '⏳' : '📁'}
         </div>
         <div style={{ fontSize: isMobile ? '14px' : 'max(10px, 0.5vw)', color: C.gold, opacity: 0.7 }}>
-          {uploading ? 'Uploading...' : 'Sleep bestanden hierheen of klik om te uploaden'}
+          {uploading ? 'Uploading...' : t('admin.dashboard.prompts.dropZone')}
         </div>
         <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)', opacity: 0.3, marginTop: '0.2rem' }}>
           PDF, Word (.docx), TXT — max 20 MB
@@ -1588,7 +1593,7 @@ const ContextDocumentsSection = memo(() => {
         <Loading />
       ) : documents.length === 0 ? (
         <div style={{ fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)', opacity: 0.3, textAlign: 'center', padding: '0.5rem' }}>
-          Geen documenten geüpload. Upload bestanden om de AI kennisbank te vullen.
+          {t('admin.dashboard.prompts.noDocuments')}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
@@ -1619,7 +1624,7 @@ const ContextDocumentsSection = memo(() => {
             </div>
           ))}
           <div style={{ fontSize: isMobile ? '12px' : 'max(8px, 0.38vw)', opacity: 0.3, textAlign: 'right' }}>
-            {documents.length} document{documents.length !== 1 ? 'en' : ''} · totaal {documents.reduce((s, d) => s + (d.charCount || 0), 0).toLocaleString()} tekens
+            {tFunc('admin.dashboard.prompts.docCountTotal')(documents.length, documents.reduce((s, d) => s + (d.charCount || 0), 0).toLocaleString())}
           </div>
         </div>
       )}
@@ -1635,7 +1640,7 @@ const ContextDocumentsSection = memo(() => {
                 rgb={verified?.verified ? '0, 255, 157' : undefined}
                 active={verified?.verified}
               >
-                {verifying ? '⏳ VERIFYING...' : verified?.verified ? '✓ DOCUMENTEN GEVERIFIEERD' : '💾 SAVE & VERIFY DOCUMENTEN'}
+                {verifying ? '⏳ VERIFYING...' : verified?.verified ? t('admin.dashboard.prompts.verified') : t('admin.dashboard.prompts.saveVerify')}
               </SciFiButton>
 
           {/* Verification result */}
@@ -1648,15 +1653,15 @@ const ContextDocumentsSection = memo(() => {
               fontSize: isMobile ? '13px' : 'max(9px, 0.45vw)',
             }}>
               <div style={{ color: '#00ff9d', fontWeight: 600, marginBottom: '0.3rem' }}>
-                ✓ Alle {verified.totalDocuments} document{verified.totalDocuments !== 1 ? 'en' : ''} succesvol geverifieerd
+                {tFunc('admin.dashboard.prompts.allVerified')(verified.totalDocuments)}
               </div>
               <div style={{ opacity: 0.5, fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)' }}>
-                {verified.totalChars?.toLocaleString()} tekens worden meegestuurd als AI kennisbank context
+                {tFunc('admin.dashboard.prompts.charsSentAsContext')(verified.totalChars?.toLocaleString())}
               </div>
               {verified.documents?.map((doc) => (
                 <div key={doc._id} style={{ marginTop: '0.3rem', padding: '0.3rem', background: 'rgba(0,255,157,0.03)', borderRadius: '4px' }}>
                   <div style={{ color: C.gold, fontSize: isMobile ? '12px' : 'max(8px, 0.4vw)', fontWeight: 600 }}>
-                    {doc.filename} — {doc.charCount?.toLocaleString()} tekens
+                    {tFunc('admin.dashboard.prompts.docChars')(doc.filename, doc.charCount?.toLocaleString())}
                   </div>
                   <div style={{ opacity: 0.4, fontSize: isMobile ? '11px' : 'max(7px, 0.35vw)', marginTop: '0.1rem', fontStyle: 'italic' }}>
                     "{doc.preview}"
@@ -1678,6 +1683,7 @@ const LEVEL_TABS = [
 ];
 
 const QuestionsTab = memo(() => {
+  const { t } = useLanguage();
   const [level, setLevel] = useState('advanced');
 
   return (
@@ -1697,10 +1703,10 @@ const QuestionsTab = memo(() => {
       ) : (
         <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
           <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold, marginBottom: '0.8rem' }}>
-            VRAGEN — {level.toUpperCase()}
+            {t('admin.dashboard.questions.heading')} — {level.toUpperCase()}
           </div>
           <div style={{ fontSize: 'max(11px, 0.55vw)', opacity: 0.4, maxWidth: '400px', margin: '0 auto' }}>
-            Dit vragenset is nog in ontwikkeling en wordt binnenkort toegevoegd.
+            {t('admin.dashboard.questions.levelInDevelopment')}
           </div>
         </div>
       )}
@@ -1709,6 +1715,7 @@ const QuestionsTab = memo(() => {
 });
 
 const QuestionsTabAdvanced = memo(() => {
+  const { t, tFunc } = useLanguage();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [seeding, setSeeding] = useState(false);
@@ -1813,13 +1820,13 @@ const QuestionsTabAdvanced = memo(() => {
 
   const handleImportDocx = useCallback(async (file) => {
     if (!file) return;
-    if (!window.confirm('Dit vervangt ALLE bestaande vragen met het Word-document. Doorgaan?')) return;
+    if (!window.confirm(t('admin.dashboard.questions.confirmImportDocx'))) return;
     setImportingDocx(true);
     setError('');
     try {
       const result = await importQuestionsDocx(file);
       load();
-      window.alert(`✓ Geïmporteerd: ${result.layersImported} lagen, ${result.questionsImported} vragen`);
+      window.alert(tFunc('admin.dashboard.questions.importedAlert')(result.layersImported, result.questionsImported));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -1975,13 +1982,13 @@ const QuestionsTabAdvanced = memo(() => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={LABEL}>VRAGEN — ADVANCED ({data.layers.reduce((s, l) => s + l.questions.length, 0)} total)</div>
+        <div style={LABEL}>{tFunc('admin.dashboard.questions.advancedTotal')(data.layers.reduce((s, l) => s + l.questions.length, 0))}</div>
       </div>
 
       {/* Toolbar: export / import / force re-seed */}
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
         <SciFiButton onClick={handleExportDocx} disabled={exportingDocx} variant="purple" size="sm" padding="0.3rem 0.7rem" fontSize="max(8px, 0.4vw)">
-          {exportingDocx ? 'EXPORTEREN...' : '📄 EXPORT WORD'}
+          {exportingDocx ? t('admin.dashboard.questions.exporting') : '📄 EXPORT WORD'}
         </SciFiButton>
         <label style={{ display: 'inline-flex' }}>
           <input type="file" accept=".docx" style={{ display: 'none' }}
@@ -1992,7 +1999,7 @@ const QuestionsTabAdvanced = memo(() => {
             cursor: importingDocx ? 'wait' : 'pointer', display: 'inline-block' }}
             onMouseEnter={(e) => { e.target.style.background = 'rgba(255, 174, 0, 0.15)'; }}
             onMouseLeave={(e) => { e.target.style.background = BTN.background; }}>
-            {importingDocx ? 'IMPORTEREN...' : '📄 IMPORT WORD'}
+            {importingDocx ? t('admin.dashboard.questions.importing') : '📄 IMPORT WORD'}
           </span>
         </label>
         <div style={{ borderLeft: '1px solid rgba(255,174,0,0.15)', margin: '0 0.1rem' }} />
@@ -2087,6 +2094,10 @@ const TYPE_COLORS = {
 const PassThrough = ({ children }) => children;
 
 const FormulierenTab = memo(() => {
+  const { t, tFunc } = useLanguage();
+  const tmplLabel = (id) => t(`admin.dashboard.formulieren.templates.${id}.label`);
+  const tmplDesc = (id) => t(`admin.dashboard.formulieren.templates.${id}.desc`);
+  const tmplStatus = (s) => (s === 'gereed' ? t('admin.dashboard.formulieren.statusReady') : t('admin.dashboard.formulieren.statusConcept'));
   const isMobile = React.useContext(MobileCtx);
   const CardWrap = isMobile ? PassThrough : DashboardCard;
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -2118,9 +2129,9 @@ const FormulierenTab = memo(() => {
 
   // Send via email directly (no DB save)
   const handleSend = async () => {
-    const tmpl = FORM_TEMPLATES.find(t => t.id === selectedTemplate);
+    const tmpl = FORM_TEMPLATES.find(ft => ft.id === selectedTemplate);
     if (!tmpl || !emailBody.trim()) return;
-    if (!recipientEmail.trim()) { setSendError('Vul een e-mailadres in'); return; }
+    if (!recipientEmail.trim()) { setSendError(t('admin.dashboard.formulieren.enterEmail')); return; }
     setSendingState('sending');
     setSendError('');
     try {
@@ -2136,7 +2147,7 @@ const FormulierenTab = memo(() => {
       setTimeout(() => setSendingState(null), 3000);
     } catch (err) {
       console.error('Send error:', err);
-      setSendError(err.message || 'Versturen mislukt');
+      setSendError(err.message || t('admin.dashboard.formulieren.sendFailed'));
       setSendingState('error');
       setTimeout(() => setSendingState(null), 4000);
     }
@@ -2151,7 +2162,7 @@ const FormulierenTab = memo(() => {
           backgroundColor: 'rgba(255, 174, 0, 0.04)', borderRadius: '0.3rem',
           borderLeft: `2px solid ${C.gold}`,
         }}>
-          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>Templates</div>
+          <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{t('admin.dashboard.formulieren.templatesStat')}</div>
           <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: C.gold }}>{FORM_TEMPLATES.length}</div>
         </div>
       </div>
@@ -2174,8 +2185,8 @@ const FormulierenTab = memo(() => {
             }}
           >
             <span>{selectedTemplate
-              ? `${FORM_TEMPLATES.find(t => t.id === selectedTemplate)?.icon || ''} ${FORM_TEMPLATES.find(t => t.id === selectedTemplate)?.label || 'Template'}`
-              : 'Kies een template'}</span>
+              ? `${FORM_TEMPLATES.find(ft => ft.id === selectedTemplate)?.icon || ''} ${tmplLabel(selectedTemplate) || t('admin.dashboard.formulieren.templateFallback')}`
+              : t('admin.dashboard.formulieren.chooseTemplate')}</span>
             <span style={{ fontSize: '0.7rem', transition: 'transform 0.2s', transform: showTemplateMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
           </button>
           {/* Slide menu */}
@@ -2205,7 +2216,7 @@ const FormulierenTab = memo(() => {
                   }}
                 >
                   <span style={{ fontSize: 'max(14px, 0.75vw)' }}>{tmpl.icon}</span>
-                  <span style={{ fontWeight: 'bold', fontSize: 'max(10px, 0.55vw)', color: C.gold, flex: 1 }}>{tmpl.label}</span>
+                  <span style={{ fontWeight: 'bold', fontSize: 'max(10px, 0.55vw)', color: C.gold, flex: 1 }}>{tmplLabel(tmpl.id)}</span>
                   <span style={{
                     fontSize: 'max(7px, 0.38vw)', padding: '0.1rem 0.3rem',
                     borderRadius: '0.1rem', backgroundColor: typeStyle.bg,
@@ -2217,14 +2228,14 @@ const FormulierenTab = memo(() => {
                     backgroundColor: tmpl.status === 'gereed' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(250, 204, 21, 0.12)',
                     color: tmpl.status === 'gereed' ? '#4ade80' : '#facc15',
                     fontWeight: 'bold', textTransform: 'uppercase',
-                  }}>{tmpl.status}</span>
+                  }}>{tmplStatus(tmpl.status)}</span>
                 </button>
               );
             })}
           </div>
         </div>
       ) : (
-        <CardWrap title="Document Templates" color="gold">
+        <CardWrap title={t('admin.dashboard.formulieren.documentTemplates')} color="gold">
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(min(220px, 100%), 1fr))',
@@ -2253,7 +2264,7 @@ const FormulierenTab = memo(() => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       <span style={{ fontSize: 'max(14px, 0.75vw)' }}>{tmpl.icon}</span>
-                      <span style={{ fontWeight: 'bold', fontSize: 'max(10px, 0.55vw)', color: C.gold }}>{tmpl.label}</span>
+                      <span style={{ fontWeight: 'bold', fontSize: 'max(10px, 0.55vw)', color: C.gold }}>{tmplLabel(tmpl.id)}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <span style={{
@@ -2267,11 +2278,11 @@ const FormulierenTab = memo(() => {
                         backgroundColor: tmpl.status === 'gereed' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(250, 204, 21, 0.12)',
                         color: tmpl.status === 'gereed' ? '#4ade80' : '#facc15',
                         fontWeight: 'bold', textTransform: 'uppercase',
-                      }}>{tmpl.status}</span>
+                      }}>{tmplStatus(tmpl.status)}</span>
                     </div>
                   </div>
                   <div style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText, lineHeight: 1.5 }}>
-                    {tmpl.desc}
+                    {tmplDesc(tmpl.id)}
                   </div>
                 </button>
               );
@@ -2282,14 +2293,14 @@ const FormulierenTab = memo(() => {
 
       {/* Editor panel — shows when a template is selected */}
       {selectedTemplate && (() => {
-        const tmpl = FORM_TEMPLATES.find(t => t.id === selectedTemplate);
+        const tmpl = FORM_TEMPLATES.find(ft => ft.id === selectedTemplate);
         if (!tmpl) return null;
         const typeStyle = TYPE_COLORS[tmpl.type] || TYPE_COLORS.word;
 
         // ── Factuur uses dedicated InvoiceTemplate component ──
         if (selectedTemplate === 'factuur') {
           return (
-            <CardWrap title={`${tmpl.icon} ${tmpl.label}`} color="gold">
+            <CardWrap title={`${tmpl.icon} ${tmplLabel(tmpl.id)}`} color="gold">
               <InvoiceTemplate isMobile={isMobile} />
             </CardWrap>
           );
@@ -2298,7 +2309,7 @@ const FormulierenTab = memo(() => {
         // ── Creditnota uses dedicated CreditNoteTemplate component ──
         if (selectedTemplate === 'creditnota') {
           return (
-            <CardWrap title={`${tmpl.icon} ${tmpl.label}`} color="gold">
+            <CardWrap title={`${tmpl.icon} ${tmplLabel(tmpl.id)}`} color="gold">
               <CreditNoteTemplate isMobile={isMobile} />
             </CardWrap>
           );
@@ -2307,7 +2318,7 @@ const FormulierenTab = memo(() => {
         // ── Email uses dedicated EmailTemplate component ──
         if (selectedTemplate === 'email') {
           return (
-            <CardWrap title={`${tmpl.icon} ${tmpl.label}`} color="gold">
+            <CardWrap title={`${tmpl.icon} ${tmplLabel(tmpl.id)}`} color="gold">
               <EmailTemplate isMobile={isMobile} />
             </CardWrap>
           );
@@ -2316,7 +2327,7 @@ const FormulierenTab = memo(() => {
         // ── All other templates use the generic textarea editor ──
         return (
           <>
-          <CardWrap title={`${tmpl.icon} ${tmpl.label} — Template`} color="gold">
+          <CardWrap title={`${tmpl.icon} ${tmplLabel(tmpl.id)} — Template`} color="gold">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               {/* Toolbar */}
               <div style={{
@@ -2334,7 +2345,7 @@ const FormulierenTab = memo(() => {
                     color: typeStyle.text, fontWeight: 'bold',
                   }}>{typeStyle.label} TEMPLATE</span>
                   <span style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText }}>
-                    {tmpl.label}.{tmpl.type === 'excel' ? 'xlsx' : tmpl.type === 'word' ? 'docx' : 'pdf'}
+                    {tmplLabel(tmpl.id)}.{tmpl.type === 'excel' ? 'xlsx' : tmpl.type === 'word' ? 'docx' : 'pdf'}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: '0.3rem' }}>
@@ -2343,11 +2354,11 @@ const FormulierenTab = memo(() => {
                     const blob = new Blob([editorContent], { type: 'text/plain;charset=utf-8' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.href = url; a.download = `${tmpl.label}.txt`;
+                    a.href = url; a.download = `${tmplLabel(tmpl.id)}.txt`;
                     document.body.appendChild(a); a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
-                  }} disabled={!editorContent.trim()} size="xs" padding="0.2rem 0.5rem" fontSize="max(8px, 0.4vw)">DOWNLOADEN</SciFiButton>
+                  }} disabled={!editorContent.trim()} size="xs" padding="0.2rem 0.5rem" fontSize="max(8px, 0.4vw)">{t('admin.dashboard.formulieren.download')}</SciFiButton>
                 </div>
               </div>
 
@@ -2355,7 +2366,7 @@ const FormulierenTab = memo(() => {
               <textarea
                 value={editorContent}
                 onChange={(e) => setEditorContent(e.target.value)}
-                placeholder={`Template-inhoud voor "${tmpl.label}"...\n\nImporteer of bewerk hier het documentsjabloon. Dit is de template — niet de e-mailtekst.`}
+                placeholder={tFunc('admin.dashboard.formulieren.editorPlaceholder')(tmplLabel(tmpl.id))}
                 style={{
                   width: '100%', minHeight: '250px', padding: '0.8rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.02)',
@@ -2369,7 +2380,7 @@ const FormulierenTab = memo(() => {
           </CardWrap>
 
           {/* E-mail versturen — below the template editor */}
-          <CardWrap title={`✉ E-mail Versturen — ${tmpl.label}`} color="gold">
+          <CardWrap title={tFunc('admin.dashboard.formulieren.emailCardTitle')(tmplLabel(tmpl.id))} color="gold">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               {/* Recipient fields */}
               <div style={isMobile
@@ -2377,11 +2388,11 @@ const FormulierenTab = memo(() => {
                 : { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem' }
               }>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                  <label style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase' }}>Ontvanger E-mail *</label>
+                  <label style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase' }}>{t('admin.dashboard.formulieren.recipientEmail')}</label>
                   <input
                     type="email" value={recipientEmail}
                     onChange={(e) => { setRecipientEmail(e.target.value); setSendError(''); }}
-                    placeholder="naam@voorbeeld.nl"
+                    placeholder={t('admin.dashboard.formulieren.emailPlaceholder')}
                     style={{
                       padding: '0.3rem 0.4rem', fontSize: 'max(9px, 0.45vw)',
                       backgroundColor: 'rgba(255,255,255,0.03)', color: C.text,
@@ -2392,11 +2403,11 @@ const FormulierenTab = memo(() => {
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                  <label style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase' }}>Naam Ontvanger</label>
+                  <label style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase' }}>{t('admin.dashboard.formulieren.recipientName')}</label>
                   <input
                     type="text" value={recipientName}
                     onChange={(e) => setRecipientName(e.target.value)}
-                    placeholder="Optioneel"
+                    placeholder={t('admin.dashboard.formulieren.optional')}
                     style={{
                       padding: '0.3rem 0.4rem', fontSize: 'max(9px, 0.45vw)',
                       backgroundColor: 'rgba(255,255,255,0.03)', color: C.text,
@@ -2407,11 +2418,11 @@ const FormulierenTab = memo(() => {
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                  <label style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase' }}>Onderwerp</label>
+                  <label style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase' }}>{t('admin.dashboard.formulieren.subject')}</label>
                   <input
                     type="text" value={emailSubject}
                     onChange={(e) => setEmailSubject(e.target.value)}
-                    placeholder={`Garden For Life — ${tmpl.label}`}
+                    placeholder={tFunc('admin.dashboard.formulieren.subjectPlaceholder')(tmplLabel(tmpl.id))}
                     style={{
                       padding: '0.3rem 0.4rem', fontSize: 'max(9px, 0.45vw)',
                       backgroundColor: 'rgba(255,255,255,0.03)', color: C.text,
@@ -2433,7 +2444,7 @@ const FormulierenTab = memo(() => {
               <textarea
                 value={emailBody}
                 onChange={(e) => setEmailBody(e.target.value)}
-                placeholder={`Typ hier de e-mailtekst voor "${tmpl.label}"...\n\nDeze tekst wordt als e-mailinhoud verstuurd naar de ontvanger.`}
+                placeholder={tFunc('admin.dashboard.formulieren.bodyPlaceholder')(tmplLabel(tmpl.id))}
                 style={{
                   width: '100%', minHeight: '180px', padding: '0.8rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.02)',
@@ -2454,11 +2465,11 @@ const FormulierenTab = memo(() => {
               }}>
                 <div style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText }}>
                   {emailBody.trim()
-                    ? `${emailBody.trim().length} tekens — klaar om te versturen`
-                    : 'Schrijf de e-mailtekst in het veld hierboven'}
-                  {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 'bold' }}>✓ Verstuurd!</span>}
+                    ? tFunc('admin.dashboard.formulieren.charsReady')(emailBody.trim().length)
+                    : t('admin.dashboard.formulieren.writeBodyHint')}
+                  {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 'bold' }}>{t('admin.dashboard.formulieren.sent')}</span>}
                 </div>
-                <SciFiButton onClick={handleSend} disabled={sendingState === 'sending' || !emailBody.trim() || !recipientEmail.trim()} variant="purple" size="sm" padding="0.3rem 0.8rem" fontSize="max(9px, 0.45vw)">{sendingState === 'sending' ? 'BEZIG MET VERSTUREN...' : '✉ VERSTUREN'}</SciFiButton>
+                <SciFiButton onClick={handleSend} disabled={sendingState === 'sending' || !emailBody.trim() || !recipientEmail.trim()} variant="purple" size="sm" padding="0.3rem 0.8rem" fontSize="max(9px, 0.45vw)">{sendingState === 'sending' ? t('admin.dashboard.formulieren.sending') : t('admin.dashboard.formulieren.send')}</SciFiButton>
               </div>
             </div>
           </CardWrap>
@@ -2484,6 +2495,7 @@ const BRAND_EDITS_KEY = 'gfl_brand_edits';
 // FeedbackEmailSettingsCard — edit confirmation email text + image
 // ═══════════════════════════════════════════════════════════
 const FeedbackEmailSettingsCard = memo(() => {
+  const { t } = useLanguage();
   const [text, setText] = useState('');
   const [imageBase64, setImageBase64] = useState('');
   const [imageMimeType, setImageMimeType] = useState('');
@@ -2511,8 +2523,8 @@ const FeedbackEmailSettingsCard = memo(() => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { setErrorMsg('Alleen afbeeldingsbestanden zijn toegestaan'); return; }
-    if (file.size > 5 * 1024 * 1024) { setErrorMsg('Afbeelding mag maximaal 5 MB zijn'); return; }
+    if (!file.type.startsWith('image/')) { setErrorMsg(t('admin.dashboard.feedbackEmail.onlyImages')); return; }
+    if (file.size > 5 * 1024 * 1024) { setErrorMsg(t('admin.dashboard.feedbackEmail.imageTooLarge')); return; }
     setErrorMsg('');
     const reader = new FileReader();
     reader.onload = () => {
@@ -2559,18 +2571,18 @@ const FeedbackEmailSettingsCard = memo(() => {
   };
 
   return (
-    <DashboardCard title="Feedback E-mail Instellingen" color="purple">
+    <DashboardCard title={t('admin.dashboard.feedbackEmail.title')} color="purple">
       <p style={{ fontSize: 'max(8px, 0.42vw)', color: pc.dimText, marginTop: 0, marginBottom: '0.75rem' }}>
-        Tekst en afbeelding die verschijnen in de bevestigingsmail na het indienen van feedback.
+        {t('admin.dashboard.feedbackEmail.intro')}
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
         {/* Text */}
         <div>
-          <div style={fieldLabelStyle}>Berichttekst</div>
+          <div style={fieldLabelStyle}>{t('admin.dashboard.feedbackEmail.messageText')}</div>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Bedankt voor je feedback! Wij zullen die gebruiken om het systeem te verbeteren."
+            placeholder={t('admin.dashboard.feedbackEmail.messagePlaceholder')}
             rows={4}
             style={{ ...inputBase, resize: 'vertical' }}
             onFocus={(e) => { e.target.style.borderColor = C.purple; }}
@@ -2580,7 +2592,7 @@ const FeedbackEmailSettingsCard = memo(() => {
 
         {/* File upload */}
         <div>
-          <div style={fieldLabelStyle}>Afbeelding (van je apparaat)</div>
+          <div style={fieldLabelStyle}>{t('admin.dashboard.feedbackEmail.imageLabel')}</div>
           {imagePreview ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
@@ -2591,8 +2603,8 @@ const FeedbackEmailSettingsCard = memo(() => {
                 />
               </div>
               <div style={{ display: 'flex', gap: '0.4rem' }}>
-                <SciFiButton onClick={() => fileInputRef.current?.click()} size="xs" fontSize="max(8px, 0.4vw)">&#128247; Vervangen</SciFiButton>
-                <SciFiButton onClick={removeImage} variant="danger" size="xs" fontSize="max(8px, 0.4vw)">&#128465; Verwijderen</SciFiButton>
+                <SciFiButton onClick={() => fileInputRef.current?.click()} size="xs" fontSize="max(8px, 0.4vw)">&#128247; {t('admin.dashboard.feedbackEmail.replace')}</SciFiButton>
+                <SciFiButton onClick={removeImage} variant="danger" size="xs" fontSize="max(8px, 0.4vw)">&#128465; {t('admin.dashboard.feedbackEmail.remove')}</SciFiButton>
               </div>
             </div>
           ) : (
@@ -2604,7 +2616,7 @@ const FeedbackEmailSettingsCard = memo(() => {
                 color: pc.dimText, paddingLeft: '0.6rem',
               }}
             >
-              &#128247; Klik om een afbeelding te kiezen...
+              &#128247; {t('admin.dashboard.feedbackEmail.chooseImage')}
             </button>
           )}
           <input
@@ -2619,10 +2631,10 @@ const FeedbackEmailSettingsCard = memo(() => {
         {/* Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <SciFiButton onClick={save} disabled={status === 'saving'} size="sm" fontSize="max(9px, 0.45vw)">
-            {status === 'saving' ? 'Opslaan...' : 'Opslaan'}
+            {status === 'saving' ? t('admin.dashboard.feedbackEmail.saving') : t('admin.dashboard.feedbackEmail.save')}
           </SciFiButton>
           {status === 'saved' && (
-            <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase' }}>✓ Opgeslagen</span>
+            <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase' }}>{t('admin.dashboard.feedbackEmail.saved')}</span>
           )}
           {(status === 'error' || errorMsg) && (
             <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#ef4444' }}>{errorMsg}</span>
@@ -2635,6 +2647,7 @@ const FeedbackEmailSettingsCard = memo(() => {
 FeedbackEmailSettingsCard.displayName = 'FeedbackEmailSettingsCard';
 
 const ContactTab = memo(() => {
+  const { t, tFunc } = useLanguage();
   const [requests, setRequests] = useState(() => {
     try { return JSON.parse(localStorage.getItem(CONTACT_REQUESTS_KEY) || '[]'); } catch { return []; }
   });
@@ -2711,8 +2724,8 @@ const ContactTab = memo(() => {
       {/* Section toggles */}
       <div style={{ display: 'flex', gap: '0.4rem' }}>
         {[
-          { key: 'clients', label: `Detailpagina Klanten (${BRANDS.length})` },
-          { key: 'requests', label: `Verzoeken${nieuwRequests > 0 ? ` (${nieuwRequests} nieuw)` : ''}` },
+          { key: 'clients', label: tFunc('admin.dashboard.contact.clientsSection')(BRANDS.length) },
+          { key: 'requests', label: tFunc('admin.dashboard.contact.requestsSection')(nieuwRequests) },
         ].map(({ key, label }) => (
           <SciFiButton key={key} onClick={() => setSection(key)} active={section === key}>
             {label}
@@ -2722,12 +2735,12 @@ const ContactTab = memo(() => {
 
       {editSaved && (
         <div style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase', textAlign: 'center' }}>
-          ✓ Wijzigingen opgeslagen
+          {t('admin.dashboard.contact.changesSaved')}
         </div>
       )}
 
       {section === 'clients' && (
-        <DashboardCard title="Klanten met Detailpagina" color="gold">
+        <DashboardCard title={t('admin.dashboard.contact.clientsTitle')} color="gold">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {BRANDS.map((brand) => {
               const b = getBrand(brand);
@@ -2761,7 +2774,7 @@ const ContactTab = memo(() => {
                               fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.25rem', borderRadius: '0.1rem',
                               backgroundColor: 'rgba(74, 222, 128, 0.15)', color: '#4ade80',
                               textTransform: 'uppercase',
-                            }}>Bewerkt</span>
+                            }}>{t('admin.dashboard.contact.edited')}</span>
                           )}
                         </div>
                         <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.5, marginBottom: '0.15rem' }}>{b.tagline}</div>
@@ -2771,9 +2784,9 @@ const ContactTab = memo(() => {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
-                        <SciFiButton onClick={() => startEdit(brand)} size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">✏ Bewerken</SciFiButton>
+                        <SciFiButton onClick={() => startEdit(brand)} size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">{t('admin.dashboard.contact.editButton')}</SciFiButton>
                         {hasEdits && (
-                          <SciFiButton onClick={() => resetBrand(brand.id)} variant="danger" size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">↩ Reset</SciFiButton>
+                          <SciFiButton onClick={() => resetBrand(brand.id)} variant="danger" size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">{t('admin.dashboard.contact.resetButton')}</SciFiButton>
                         )}
                       </div>
                     </div>
@@ -2781,35 +2794,35 @@ const ContactTab = memo(() => {
                     /* Edit mode */
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <div style={{ fontSize: 'max(9px, 0.45vw)', color: C.gold, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                        ✏ Bewerk: {brand.name}
+                        {tFunc('admin.dashboard.contact.editHeading')(brand.name)}
                       </div>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.15rem' }}>Naam</div>
+                          <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t('admin.dashboard.contact.fieldName')}</div>
                           <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} style={inputStyle}
                             onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.15rem' }}>E-mail</div>
+                          <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t('admin.dashboard.contact.fieldEmail')}</div>
                           <input value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} style={inputStyle}
                             onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
                         </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.15rem' }}>Tagline</div>
+                        <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t('admin.dashboard.contact.fieldTagline')}</div>
                         <input value={editForm.tagline} onChange={(e) => setEditForm({ ...editForm, tagline: e.target.value })} style={inputStyle}
                           onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
                       </div>
                       <div>
-                        <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.15rem' }}>Beschrijving</div>
+                        <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t('admin.dashboard.contact.fieldDescription')}</div>
                         <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                           rows={3}
                           style={{ ...inputStyle, resize: 'vertical' }}
                           onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
                       </div>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <SciFiButton onClick={saveEdit} size="sm" fontSize="max(9px, 0.45vw)">✓ Opslaan</SciFiButton>
-                        <SciFiButton onClick={() => setEditingBrand(null)} variant="white" size="sm" fontSize="max(9px, 0.45vw)">Annuleren</SciFiButton>
+                        <SciFiButton onClick={saveEdit} size="sm" fontSize="max(9px, 0.45vw)">{t('admin.dashboard.contact.saveEdit')}</SciFiButton>
+                        <SciFiButton onClick={() => setEditingBrand(null)} variant="white" size="sm" fontSize="max(9px, 0.45vw)">{t('admin.dashboard.contact.cancel')}</SciFiButton>
                       </div>
                     </div>
                   )}
@@ -2822,7 +2835,7 @@ const ContactTab = memo(() => {
 
       {section === 'requests' && (
         <>
-          <DashboardCard title={`Contactverzoeken (${requests.length})`} color="gold">
+          <DashboardCard title={tFunc('admin.dashboard.contact.requestsTitle')(requests.length)} color="gold">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               {requests.length > 0 ? requests.map((r) => (
                 <div key={r.id} style={{
@@ -2839,14 +2852,14 @@ const ContactTab = memo(() => {
                           fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.25rem', borderRadius: '0.1rem',
                           backgroundColor: 'rgba(188, 19, 254, 0.2)', color: C.purple,
                           textTransform: 'uppercase', fontWeight: 'bold',
-                        }}>Nieuw</span>
+                        }}>{t('admin.dashboard.contact.statusNew')}</span>
                       )}
                       {r.status === 'afgehandeld' && (
                         <span style={{
                           fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.25rem', borderRadius: '0.1rem',
                           backgroundColor: 'rgba(74, 222, 128, 0.15)', color: '#4ade80',
                           textTransform: 'uppercase',
-                        }}>Afgehandeld</span>
+                        }}>{t('admin.dashboard.contact.statusHandled')}</span>
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -2857,7 +2870,7 @@ const ContactTab = memo(() => {
                         background: 'none', border: 'none', cursor: 'pointer',
                         fontSize: 'max(9px, 0.45vw)', color: r.status === 'afgehandeld' ? tc.dimText : '#4ade80',
                         padding: '0 0.2rem',
-                      }} title={r.status === 'afgehandeld' ? 'Markeer als nieuw' : 'Markeer als afgehandeld'}>
+                      }} title={r.status === 'afgehandeld' ? t('admin.dashboard.contact.markAsNew') : t('admin.dashboard.contact.markAsHandled')}>
                         {r.status === 'afgehandeld' ? '○' : '●'}
                       </button>
                       <button onClick={() => removeRequest(r.id)} style={{
@@ -2879,7 +2892,7 @@ const ContactTab = memo(() => {
                 </div>
               )) : (
                 <div style={{ textAlign: 'center', color: tc.dimText, padding: '2rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-                  Geen contactverzoeken
+                  {t('admin.dashboard.contact.noRequests')}
                 </div>
               )}
             </div>
@@ -2896,14 +2909,15 @@ const ContactTab = memo(() => {
 // ═══════════════════════════════════════════════════════════
 
 function Loading() {
-  return <div style={{ textAlign: 'center', opacity: 0.4, padding: '1.5rem 0' }}>Laden...</div>;
+  const { t } = useLanguage();
+  return <div style={{ textAlign: 'center', opacity: 0.4, padding: '1.5rem 0' }}>{t('admin.dashboard.loading')}</div>;
 }
 
 // ═══════════════════════════════════════════════════════════
 // Audit Log Tab — categorized audit trail with folder sub-tabs
 // ═══════════════════════════════════════════════════════════
 
-function formatDuration(ms) {
+function formatDuration(ms, hUnit = 'u') {
   if (!ms || ms <= 0) return '< 1m';
   const totalSec = Math.floor(ms / 1000);
   if (totalSec < 60) return `${totalSec}s`;
@@ -2912,7 +2926,7 @@ function formatDuration(ms) {
   if (min < 60) return `${min}m ${sec}s`;
   const hr = Math.floor(min / 60);
   const rm = min % 60;
-  return `${hr}u ${rm}m`;
+  return `${hr}${hUnit} ${rm}m`;
 }
 
 const EVENT_ICONS  = { edit: '✏️', commit: '📦', push: '🚀', admin_login: '🔐', report_view: '📋' };
@@ -2923,6 +2937,7 @@ const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc', admi
 // ═══════════════════════════════════════════════════════════
 
 const PasskeysTab = memo(() => {
+  const { t, tFunc } = useLanguage();
   const [passkeys, setPasskeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -2960,7 +2975,7 @@ const PasskeysTab = memo(() => {
   };
 
   const handleDelete = async (id, code) => {
-    if (!window.confirm(`Passkey ${code} verwijderen? Dit kan niet ongedaan worden.`)) return;
+    if (!window.confirm(tFunc('admin.dashboard.passkeys.confirmDelete')(code))) return;
     try {
       await deletePasskey(id);
       await fetchData();
@@ -2995,10 +3010,10 @@ const PasskeysTab = memo(() => {
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
         {[
-          { label: 'Totaal', value: passkeys.length, color: C.gold },
-          { label: 'Actief', value: activeCount, color: '#4ade80' },
-          { label: 'Inactief', value: passkeys.length - activeCount, color: '#f87171' },
-          { label: 'Gebruik', value: totalUses, color: '#60a5fa' },
+          { label: t('admin.dashboard.passkeys.statTotal'), value: passkeys.length, color: C.gold },
+          { label: t('admin.dashboard.passkeys.statActive'), value: activeCount, color: '#4ade80' },
+          { label: t('admin.dashboard.passkeys.statInactive'), value: passkeys.length - activeCount, color: '#f87171' },
+          { label: t('admin.dashboard.passkeys.statUsage'), value: totalUses, color: '#60a5fa' },
         ].map((stat, i) => (
           <div key={i} style={{
             padding: '0.6rem 0.8rem',
@@ -3013,20 +3028,20 @@ const PasskeysTab = memo(() => {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <SciFiButton onClick={fetchData} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)">↻ VERNIEUWEN</SciFiButton>
+        <SciFiButton onClick={fetchData} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)">{t('admin.dashboard.passkeys.refresh')}</SciFiButton>
       </div>
 
       {error && <ErrorBox msg={error} />}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>Laden...</div>
+        <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.passkeys.loading')}</div>
       ) : (
-        <DashboardCard title={`Passkeys Beheer (${passkeys.length})`} color="gold">
+        <DashboardCard title={tFunc('admin.dashboard.passkeys.manageTitle')(passkeys.length)} color="gold">
           {/* Generate new passkey */}
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
             <input
               type="text"
-              placeholder="Label (optioneel)..."
+              placeholder={t('admin.dashboard.passkeys.labelPlaceholder')}
               value={newLabel}
               onChange={e => setNewLabel(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
@@ -3037,20 +3052,20 @@ const PasskeysTab = memo(() => {
               }}
             />
             <SciFiButton onClick={handleCreate} disabled={creating} padding="0.35rem 0.8rem" fontSize="max(9px, 0.45vw)">
-              {creating ? '...' : '+ GENEREER PASSKEY'}
+              {creating ? '...' : t('admin.dashboard.passkeys.generate')}
             </SciFiButton>
           </div>
 
           {/* Passkeys list */}
           {passkeys.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '1.5rem', color: '#ffffff40', fontSize: 'max(10px, 0.5vw)' }}>
-              Geen passkeys — klik op "Genereer Passkey" om er een aan te maken
+              {t('admin.dashboard.passkeys.empty')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '55vh', overflowY: 'auto' }}>
               {/* Header */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 0.6fr 1fr 1fr 1fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
-                {['CODE', 'LABEL', 'STATUS', 'GEBRUIK', 'AANGEMAAKT', 'ACTIES'].map(h => (
+                {[t('admin.dashboard.passkeys.colCode'), t('admin.dashboard.passkeys.colLabel'), t('admin.dashboard.passkeys.colStatus'), t('admin.dashboard.passkeys.colUsage'), t('admin.dashboard.passkeys.colCreated'), t('admin.dashboard.passkeys.colActions')].map(h => (
                   <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
                 ))}
               </div>
@@ -3070,10 +3085,10 @@ const PasskeysTab = memo(() => {
                     {pk.label || <span style={{ color: '#64748b', fontStyle: 'italic' }}>—</span>}
                   </div>
                   <div style={{ fontSize: 'max(8px, 0.42vw)', fontWeight: 'bold', color: pk.isActive ? '#4ade80' : '#f87171' }}>
-                    {pk.isActive ? '● ACTIEF' : '○ INACTIEF'}
+                    {pk.isActive ? t('admin.dashboard.passkeys.active') : t('admin.dashboard.passkeys.inactive')}
                   </div>
                   <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#60a5fa' }}>
-                    {pk.usageCount || 0}× gebruikt
+                    {tFunc('admin.dashboard.passkeys.usedTimes')(pk.usageCount || 0)}
                     {pk.lastUsedAt && (
                       <span style={{ color: '#64748b', marginLeft: '0.3rem' }}>
                         · {new Date(pk.lastUsedAt).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' })}
@@ -3084,15 +3099,15 @@ const PasskeysTab = memo(() => {
                     {new Date(pk.createdAt).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </div>
                   <div style={{ display: 'flex', gap: '0.3rem' }}>
-                    <button onClick={() => handleToggle(pk._id)} title={pk.isActive ? 'Deactiveer' : 'Activeer'}
+                    <button onClick={() => handleToggle(pk._id)} title={pk.isActive ? t('admin.dashboard.passkeys.deactivate') : t('admin.dashboard.passkeys.activate')}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem' }}>
                       {pk.isActive ? '⏸️' : '▶️'}
                     </button>
-                    <button onClick={() => handleToggleAdmin(pk._id)} title={pk.isAdminPasskey ? 'Verwijder admin toegang' : 'Maak admin passkey (mobiel portaal)'}
+                    <button onClick={() => handleToggleAdmin(pk._id)} title={pk.isAdminPasskey ? t('admin.dashboard.passkeys.removeAdmin') : t('admin.dashboard.passkeys.makeAdmin')}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem', opacity: pk.isAdminPasskey ? 1 : 0.3 }}>
                       👑
                     </button>
-                    <button onClick={() => handleDelete(pk._id, pk.code)} title="Verwijderen"
+                    <button onClick={() => handleDelete(pk._id, pk.code)} title={t('admin.dashboard.passkeys.delete')}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem' }}>
                       🗑️
                     </button>
@@ -3108,12 +3123,13 @@ const PasskeysTab = memo(() => {
 });
 
 const AUDIT_FOLDERS = [
-  { key: 'admin',   label: '📂 Admin & Toegang',  icon: '🔐', color: '#f59e0b', desc: 'Admin logins & rapportraadplegingen' },
-  { key: 'passkeys', label: '📂 Passkeys',         icon: '🔑', color: '#c084fc', desc: 'Passkey gebruik — alle pogingen (geldig & ongeldig)' },
-  { key: 'sessions', label: '📂 Sessies',          icon: '📊', color: C.gold,    desc: 'Alle events gegroepeerd per sessie' },
+  { key: 'admin',    labelKey: 'admin.dashboard.audit.folderAdmin',    icon: '🔐', color: '#f59e0b', descKey: 'admin.dashboard.audit.folderAdminDesc' },
+  { key: 'passkeys', labelKey: 'admin.dashboard.audit.folderPasskeys', icon: '🔑', color: '#c084fc', descKey: 'admin.dashboard.audit.folderPasskeysDesc' },
+  { key: 'sessions', labelKey: 'admin.dashboard.audit.folderSessions', icon: '📊', color: C.gold,    descKey: 'admin.dashboard.audit.folderSessionsDesc' },
 ];
 
 const AuditLogTab = memo(() => {
+  const { t, tFunc } = useLanguage();
   const [folder, setFolder] = useState('admin');
   const [sessions, setSessions] = useState([]);
   const [accessEvents, setAccessEvents] = useState([]);
@@ -3148,7 +3164,7 @@ const AuditLogTab = memo(() => {
 
   // eslint-disable-next-line no-unused-vars
   const handleClear = async () => {
-    if (!window.confirm('Alle dev-activiteit wissen? Dit kan niet ongedaan worden.')) return;
+    if (!window.confirm(t('admin.dashboard.audit.confirmClear'))) return;
     try {
       await clearSessions();
       setSessions([]);
@@ -3175,11 +3191,11 @@ const AuditLogTab = memo(() => {
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
         {[
-          { label: 'Admin', value: accessEvents.length, color: '#f59e0b' },
-          { label: 'Passkeys', value: passkeyEvents.length, color: '#c084fc' },
-          { label: 'Sessies', value: totalSessions, color: C.gold },
-          { label: 'Totaal', value: totalEvents, color: '#60a5fa' },
-          { label: 'Gem. Duur', value: formatDuration(avgDuration), color: '#4ade80' },
+          { label: t('admin.dashboard.audit.statAdmin'), value: accessEvents.length, color: '#f59e0b' },
+          { label: t('admin.dashboard.audit.statPasskeys'), value: passkeyEvents.length, color: '#c084fc' },
+          { label: t('admin.dashboard.audit.statSessions'), value: totalSessions, color: C.gold },
+          { label: t('admin.dashboard.audit.statTotal'), value: totalEvents, color: '#60a5fa' },
+          { label: t('admin.dashboard.audit.statAvgDuration'), value: formatDuration(avgDuration, t('admin.dashboard.audit.hourUnit')), color: '#4ade80' },
         ].map((stat, i) => (
           <div key={i} style={{
             padding: '0.6rem 0.8rem',
@@ -3211,7 +3227,7 @@ const AuditLogTab = memo(() => {
               }}
               onMouseEnter={e => { if (!active) e.target.style.backgroundColor = `${f.color}10`; }}
               onMouseLeave={e => { if (!active) e.target.style.backgroundColor = 'rgba(255,255,255,0.03)'; }}>
-              {f.label}
+              {t(f.labelKey)}
               <span style={{
                 marginLeft: '0.4rem', padding: '0.05rem 0.3rem',
                 backgroundColor: `${f.color}25`, borderRadius: '0.1rem',
@@ -3221,29 +3237,29 @@ const AuditLogTab = memo(() => {
           );
         })}
 
-        <SciFiButton onClick={fetchAll} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)" style={{ marginLeft: 'auto' }}>↻ VERNIEUWEN</SciFiButton>
+        <SciFiButton onClick={fetchAll} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)" style={{ marginLeft: 'auto' }}>{t('admin.dashboard.audit.refresh')}</SciFiButton>
       </div>
 
       {/* Folder description */}
       <div style={{ fontSize: 'max(8px, 0.4vw)', color: '#888', fontStyle: 'italic', marginTop: '-0.6rem' }}>
-        {AUDIT_FOLDERS.find(f => f.key === folder)?.desc}
+        {t(AUDIT_FOLDERS.find(f => f.key === folder)?.descKey || '')}
       </div>
 
       {error && <ErrorBox msg={error} />}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>Laden...</div>
+        <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.audit.loading')}</div>
       ) : (
         <>
           {/* ────── Admin & Toegang ────── */}
           {folder === 'admin' && (
-            <DashboardCard title={`Admin & Toegang — Logins & Raadplegingen (${accessEvents.length})`} color="green">
+            <DashboardCard title={tFunc('admin.dashboard.audit.adminTitle')(accessEvents.length)} color="green">
               {accessEvents.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '1rem', color: '#4ade8060', fontSize: 'max(10px, 0.5vw)' }}>Nog geen toegang geregistreerd</div>
+                <div style={{ textAlign: 'center', padding: '1rem', color: '#4ade8060', fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.audit.adminEmpty')}</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '55vh', overflowY: 'auto' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.5fr 1fr 1.6fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(74,222,128,0.15)' }}>
-                    {['TIJDSTIP', 'TYPE', 'REPORT ID', 'ADMIN / DETAIL'].map(h => (
+                    {[t('admin.dashboard.audit.colTimestamp'), t('admin.dashboard.audit.colType'), t('admin.dashboard.audit.colReportId'), t('admin.dashboard.audit.colAdminDetail')].map(h => (
                       <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#4ade8080', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
                     ))}
                   </div>
@@ -3259,7 +3275,7 @@ const AuditLogTab = memo(() => {
                         {new Date(ev.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       </div>
                       <div style={{ fontSize: 'max(8px, 0.42vw)', color: EVENT_COLORS[ev.type], fontWeight: 'bold', textTransform: 'uppercase' }}>
-                        {EVENT_ICONS[ev.type]} {ev.type === 'report_view' ? 'rapport' : 'login'}
+                        {EVENT_ICONS[ev.type]} {ev.type === 'report_view' ? t('admin.dashboard.audit.eventReport') : t('admin.dashboard.audit.eventLogin')}
                       </div>
                       <div style={{ fontSize: 'max(7px, 0.38vw)', color: '#34d399', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {ev.reportId || (ev.message && ev.type !== 'report_view' ? ev.message : '—')}
@@ -3280,13 +3296,13 @@ const AuditLogTab = memo(() => {
 
           {/* ────── Passkeys ────── */}
           {folder === 'passkeys' && (
-            <DashboardCard title={`Passkeys — Gebruik & Pogingen (${passkeyEvents.length})`} color="purple">
+            <DashboardCard title={tFunc('admin.dashboard.audit.passkeysTitle')(passkeyEvents.length)} color="purple">
               {passkeyEvents.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '1rem', color: '#c084fc60', fontSize: 'max(10px, 0.5vw)' }}>Nog geen passkey gebruik geregistreerd</div>
+                <div style={{ textAlign: 'center', padding: '1rem', color: '#c084fc60', fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.audit.passkeysEmpty')}</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '55vh', overflowY: 'auto' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 2fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(192,132,252,0.15)' }}>
-                    {['TIJDSTIP', 'CODE', 'GELDIG', 'NAAM'].map(h => (
+                    {[t('admin.dashboard.audit.colTimestamp'), t('admin.dashboard.audit.colCode'), t('admin.dashboard.audit.colValid'), t('admin.dashboard.audit.colName')].map(h => (
                       <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#c084fc80', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
                     ))}
                   </div>
@@ -3319,9 +3335,9 @@ const AuditLogTab = memo(() => {
 
           {/* ────── Sessions (all events grouped) ────── */}
           {folder === 'sessions' && (
-            <DashboardCard title={`Sessies — Alle Events Gegroepeerd (${totalSessions})`} color="gold">
+            <DashboardCard title={tFunc('admin.dashboard.audit.sessionsTitle')(totalSessions)} color="gold">
               {sessions.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>Nog geen activiteit geregistreerd</div>
+                <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.audit.sessionsEmpty')}</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '55vh', overflowY: 'auto' }}>
                   <div style={{
@@ -3329,7 +3345,7 @@ const AuditLogTab = memo(() => {
                     gap: '0.3rem', padding: '0.35rem 0.5rem',
                     borderBottom: `1px solid ${tc.border}`,
                   }}>
-                    {['DATUM', 'DUUR', 'EVENTS', 'TYPES'].map(h => (
+                    {[t('admin.dashboard.audit.colDate'), t('admin.dashboard.audit.colDuration'), t('admin.dashboard.audit.colEvents'), t('admin.dashboard.audit.colTypes')].map(h => (
                       <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
                     ))}
                   </div>
@@ -3361,7 +3377,7 @@ const AuditLogTab = memo(() => {
                             {endDate.toLocaleString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
                           </div>
                           <div style={{ fontSize: 'max(9px, 0.45vw)', color: C.gold, fontWeight: 'bold' }}>
-                            {formatDuration(s.durationMs)}
+                            {formatDuration(s.durationMs, t('admin.dashboard.audit.hourUnit'))}
                           </div>
                           <div style={{ fontSize: 'max(9px, 0.45vw)', color: tc.dimText }}>
                             {events.length}

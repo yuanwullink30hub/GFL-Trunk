@@ -1,14 +1,35 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import translations from './translations';
 
 const LanguageContext = createContext();
+
+// The chosen language is persisted so it survives reloads — several flows
+// (client-mode entry, password verification) hard-refresh the page, and an
+// English reader landing back in Dutch each time makes the toggle useless.
+const STORAGE_KEY = 'gfl_language';
+const SUPPORTED = ['nl', 'en'];
+
+function readStoredLanguage() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (SUPPORTED.includes(stored)) return stored;
+  } catch (_) { /* private mode / storage blocked */ }
+  return 'nl';
+}
 
 /**
  * LanguageProvider - Wraps the app and provides language state + translation helper
  * Default language: Dutch (nl)
  */
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState('nl');
+  const [language, setLanguage] = useState(readStoredLanguage);
+
+  // Persist the choice and keep <html lang> in sync for screen readers,
+  // browser translation prompts and CSS :lang() rules.
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, language); } catch (_) { /* ignore */ }
+    if (typeof document !== 'undefined') document.documentElement.lang = language;
+  }, [language]);
 
   const toggleLanguage = useCallback(() => {
     setLanguage(prev => prev === 'nl' ? 'en' : 'nl');

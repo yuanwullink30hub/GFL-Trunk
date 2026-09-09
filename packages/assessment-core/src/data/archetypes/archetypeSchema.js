@@ -14,7 +14,6 @@
  * @property {string} element     - Associated element
  * @property {string} color       - Brand color hex
  * @property {string[]} traits    - Radar chart traits this archetype strengthens
- * @property {string} imageUrl    - Profile image URL (placeholder for now)
  */
 
 export const ARCHETYPE_SCHEMA = {

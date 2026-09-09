@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SciFiButton } from '@gfl/ui';
+import { useLanguage } from '@gfl/i18n';
 import { isIntegratedGPU } from '@gfl/utils';
 
 /* ─── Animation keyframes + slider styles ─── */
@@ -131,7 +132,7 @@ const buildInitial = (initialValues) => {
 };
 
 /* ─── TraitRow sub-component ─── */
-const TraitRow = ({ trait, vals, expanded, onToggle, onChange }) => {
+const TraitRow = ({ trait, vals, expanded, onToggle, onChange, t }) => {
   const mainVal = vals[trait.key];
   const pct = mainVal !== '' && !isNaN(Number(mainVal)) ? Number(mainVal) : 50;
   const hasValue = mainVal !== '' && !isNaN(Number(mainVal));
@@ -174,12 +175,12 @@ const TraitRow = ({ trait, vals, expanded, onToggle, onChange }) => {
               {trait.key}
             </span>
             {trait.required
-              ? <span style={{ color: 'rgba(248,113,113,0.75)', fontSize: '0.52rem', fontFamily: 'monospace', letterSpacing: '0.04em' }}>VEREIST</span>
-              : <span style={{ color: 'rgba(148,163,184,0.4)', fontSize: '0.52rem', fontFamily: 'monospace', letterSpacing: '0.04em' }}>optioneel</span>
+              ? <span style={{ color: 'rgba(248,113,113,0.75)', fontSize: '0.52rem', fontFamily: 'monospace', letterSpacing: '0.04em' }}>{t('ocean.required')}</span>
+              : <span style={{ color: 'rgba(148,163,184,0.4)', fontSize: '0.52rem', fontFamily: 'monospace', letterSpacing: '0.04em' }}>{t('ocean.optional')}</span>
             }
           </div>
           <div style={{ color: 'rgba(226,232,240,0.85)', fontSize: '0.68rem', fontWeight: 600, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {trait.label}
+            {t(`ocean.traits.${trait.key}`)}
           </div>
         </div>
 
@@ -218,7 +219,7 @@ const TraitRow = ({ trait, vals, expanded, onToggle, onChange }) => {
           {trait.subTraits.length > 0 && (
             <button
               onClick={() => onToggle(trait.key)}
-              title="Sub-scores tonen/verbergen"
+              title={t('ocean.subToggleTitle')}
               style={{
                 background: isOpen ? `rgba(${trait.rgb},0.12)` : 'rgba(255,255,255,0.04)',
                 border: `1px solid ${isOpen ? `rgba(${trait.rgb},0.4)` : 'rgba(255,255,255,0.12)'}`,
@@ -237,7 +238,7 @@ const TraitRow = ({ trait, vals, expanded, onToggle, onChange }) => {
               }}
             >
               <span style={{ display: 'inline-block', transition: 'transform 0.2s', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▸</span>
-              <span>sub</span>
+              <span>{t('ocean.subToggleLabel')}</span>
             </button>
           )}
           {/* Spacer to align rows without subTraits toggle */}
@@ -268,7 +269,7 @@ const TraitRow = ({ trait, vals, expanded, onToggle, onChange }) => {
                 {/* Label */}
                 <div style={{ width: '9rem', flexShrink: 0 }}>
                   <span style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.63rem', fontStyle: 'italic' }}>
-                    ↳ {sub.label}
+                    ↳ {t(`ocean.subTraits.${sub.key}`)}
                   </span>
                 </div>
 
@@ -327,6 +328,7 @@ const OceanManualInputModal = ({ onClose, onConfirm, initialValues, origin = 'ce
   const [expanded, setExpanded] = useState({});
   const [errors, setErrors] = useState({});
   const [closing, setClosing] = useState(false);
+  const { t } = useLanguage();
 
   const set = (key, v) => setVals(prev => ({ ...prev, [key]: v }));
   const toggle = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
@@ -402,17 +404,18 @@ const OceanManualInputModal = ({ onClose, onConfirm, initialValues, origin = 'ce
                   color: '#e2e8f0', fontSize: '0.85rem', fontWeight: 700,
                   fontFamily: 'monospace', letterSpacing: '0.05em', margin: 0,
                 }}>
-                  Persoonlijkheidsscores Invoeren
+                  {t('ocean.title')}
                 </h2>
               </div>
               <p style={{
                 color: 'rgba(148,163,184,0.6)', fontSize: '0.67rem', lineHeight: 1.55, margin: 0,
               }}>
-                Verplichte hoofd-scores (0–100). Klik op ▾ om optionele sub-scores te tonen.
+                {t('ocean.subtitle')}
               </p>
             </div>
             <button
               onClick={close}
+              title={t('ocean.closeTitle')}
               style={{
                 background: 'none', border: 'none', color: '#475569', fontSize: '0.95rem',
                 cursor: 'pointer', flexShrink: 0, marginLeft: '0.75rem', padding: '0.1rem 0.3rem',
@@ -433,6 +436,7 @@ const OceanManualInputModal = ({ onClose, onConfirm, initialValues, origin = 'ce
                   expanded={expanded}
                   onToggle={(k) => { toggle(k); if (errors[k]) setErrors(prev => { const n = { ...prev }; delete n[k]; return n; }); }}
                   onChange={(k, v) => { set(k, v); if (errors[k]) setErrors(prev => { const n = { ...prev }; delete n[k]; return n; }); }}
+                  t={t}
                 />
               </div>
             ))}
@@ -444,7 +448,7 @@ const OceanManualInputModal = ({ onClose, onConfirm, initialValues, origin = 'ce
               color: '#f87171', fontSize: '0.67rem', marginTop: '0.7rem',
               fontFamily: 'monospace', lineHeight: 1.5,
             }}>
-              ✕ Vul alle scores met VEREIST in voordat u opslaat.
+              {t('ocean.validationError')}
             </p>
           )}
 
@@ -455,10 +459,10 @@ const OceanManualInputModal = ({ onClose, onConfirm, initialValues, origin = 'ce
             borderTop: '1px solid rgba(255,255,255,0.05)',
           }}>
             <SciFiButton onClick={close} color="#475569" rgb="71, 85, 105" size="sm">
-              Annuleren
+              {t('ocean.cancel')}
             </SciFiButton>
             <SciFiButton onClick={confirm} color="#a78bfa" rgb="167, 139, 250" size="sm">
-              Scores opslaan
+              {t('ocean.save')}
             </SciFiButton>
           </div>
         </div>

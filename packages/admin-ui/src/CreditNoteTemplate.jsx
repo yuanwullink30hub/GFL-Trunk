@@ -4,6 +4,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Plus, Trash2, Eraser, FileText, User, Hash, Receipt, Mail, Send, ChevronDown, UserPlus, X } from 'lucide-react';
 import { sendFormDirect } from '@gfl/api-client';
+import { useLanguage } from '@gfl/i18n';
 
 // ═══════════════════════════════════════════════════════════
 // GFL Credit Note Template — identical layout to InvoiceTemplate
@@ -51,7 +52,8 @@ const INITIAL_DATA = {
     { id: '1', description: '', quantity: -1, price: 0 },
   ],
   taxRate: 21,
-  notes: 'Het bedrag wordt verrekend met uw openstaande facturen.',
+  // Default remark is language-aware — see i18n key admin.creditNote.noteDefault
+  notes: '',
 };
 
 /* ── Style primitives (GFL dark theme) ── */
@@ -114,8 +116,10 @@ const loadContacts = () => { try { return JSON.parse(localStorage.getItem(CONTAC
 const persistContacts = (list) => localStorage.setItem(CONTACTS_KEY, JSON.stringify(list));
 
 const CreditNoteTemplate = memo(({ isMobile = false }) => {
+  const { t, tFunc } = useLanguage();
   const [creditNote, setCreditNote] = useState(() => ({
     ...INITIAL_DATA,
+    notes: t('admin.creditNote.noteDefault'),
     creditNoteNumber: getNextCNNumber(),
   }));
   const liveDate = useLiveDate();
@@ -256,16 +260,16 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
         try { doc.addImage(logoDataUrl, 'PNG', pw - 53, 10.5, 39, 39); } catch (e) { /* skip */ }
       }
       doc.setFontSize(20); doc.setTextColor(85, 85, 85);
-      doc.text('CREDITNOTA', pw - 14, 55, { align: 'right' });
+      doc.text(t('admin.creditNote.docTitle'), pw - 14, 55, { align: 'right' });
 
       // Payment info
       doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-      doc.text('Het bedrag wordt verrekend of teruggestort', 14, 62);
+      doc.text(t('admin.creditNote.settledOrRefunded'), 14, 62);
       doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-      doc.text(`Nr: ${creditNote.creditNoteNumber}`, pw - 14, 62, { align: 'right' });
+      doc.text(tFunc('admin.creditNote.nr')(creditNote.creditNoteNumber), pw - 14, 62, { align: 'right' });
       doc.setFont('helvetica', 'normal'); doc.setTextColor(187, 187, 187);
-      doc.text(`Ref Factuur: ${creditNote.originalInvoiceNumber}`, pw - 14, 67, { align: 'right' });
-      doc.text(`DATUM: ${liveDate}`, pw - 14, 72, { align: 'right' });
+      doc.text(tFunc('admin.creditNote.refInvoice')(creditNote.originalInvoiceNumber), pw - 14, 67, { align: 'right' });
+      doc.text(tFunc('admin.creditNote.dateCaps')(liveDate), pw - 14, 72, { align: 'right' });
 
       // Separator line
       doc.setDrawColor(51, 51, 51); doc.setLineWidth(0.2);
@@ -277,7 +281,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
 
     // Table
     const tableData = creditNote.items.map(item => [
-      item.description || 'Nieuw Item', item.quantity.toString(),
+      item.description || t('admin.creditNote.newItem'), item.quantity.toString(),
       `${item.price.toFixed(2)}.-`,
       `${(item.quantity * item.price).toFixed(2).replace('.', ',')}`,
     ]);
@@ -285,7 +289,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
     let isFirstPage = true;
     autoTable(doc, {
       startY: 83,
-      head: [['OMSCHRIJVING', 'UUR', 'TARIEF Ex.-', 'BEDRAG']],
+      head: [[t('admin.creditNote.colDescriptionCaps'), t('admin.creditNote.colHoursCaps'), t('admin.creditNote.colRateCaps'), t('admin.creditNote.colAmountCaps')]],
       body: tableData,
       theme: 'plain',
       headStyles: { textColor: [136, 136, 136], fontStyle: 'bold', fontSize: 10, cellPadding: { top: 2, bottom: 3, left: 0, right: 0 } },
@@ -323,18 +327,18 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
     // Total rows
     if (btwIncluded) {
       doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(187, 187, 187);
-      doc.text('Subtotaal', 140, finalY + 8);
+      doc.text(t('admin.creditNote.subtotal'), 140, finalY + 8);
       doc.text(`€${subtotal.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 8, { align: 'right' });
-      doc.text('BTW 21%', 140, finalY + 14);
+      doc.text(t('admin.creditNote.vat21'), 140, finalY + 14);
       doc.text(`€${taxAmount.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 14, { align: 'right' });
       doc.setDrawColor(68, 68, 68); doc.setLineWidth(0.2);
       doc.line(140, finalY + 17, pw - 14, finalY + 17);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
-      doc.text('TOTAAL', 140, finalY + 24);
+      doc.text(t('admin.creditNote.totalCaps'), 140, finalY + 24);
       doc.text(`€${total.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 24, { align: 'right' });
     } else {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
-      doc.text('TOTAAL', 140, finalY + 10);
+      doc.text(t('admin.creditNote.totalCaps'), 140, finalY + 10);
       doc.text(`€${total.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 10, { align: 'right' });
     }
 
@@ -345,7 +349,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
 
     // Creditnota voor
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(136, 136, 136);
-    doc.text('CREDITNOTA VOOR:', 14, footerY + 4);
+    doc.text(t('admin.creditNote.creditNoteForCaps'), 14, footerY + 4);
     doc.setTextColor(255, 255, 255);
     doc.text(creditNote.clientName || '', 14, footerY + 9);
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(187, 187, 187);
@@ -355,14 +359,14 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
     const sideY = footerY + 18;
 
     doc.setFontSize(10); doc.setFont('helvetica', 'italic'); doc.setTextColor(255, 255, 255);
-    doc.text('De luide stilte en de intense kalmte', 14, sideY + 4);
-    doc.text('Wijzen de euros van jouw Bank naar mijn Hart', 14, sideY + 9);
+    doc.text(t('admin.creditNote.spellLine1'), 14, sideY + 4);
+    doc.text(t('admin.creditNote.spellLine2'), 14, sideY + 9);
     doc.setFontSize(9); doc.setTextColor(136, 136, 136);
     if (creditNote.notes) doc.text(creditNote.notes, 14, sideY + 14);
 
     // Signature (right)
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('ONDERTEKEND DOOR:', pw - 14, footerY + 4, { align: 'right' });
+    doc.text(t('admin.creditNote.signedByCaps'), pw - 14, footerY + 4, { align: 'right' });
     const sigW = 56; const sigH = 18;
     const sigX = pw - 14 - sigW;
     const sigBoxY = footerY + 7;
@@ -374,13 +378,13 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
       doc.addImage(signatureData, 'PNG', sigX + 2, sigBoxY + 2, sigW - 4, sigH - 4);
     } else {
       doc.setFontSize(6); doc.setFont('helvetica', 'bold'); doc.setTextColor(85, 85, 85);
-      doc.text('WACHTEN OP', sigX + sigW / 2, sigBoxY + sigH / 2 - 2, { align: 'center' });
-      doc.text('HANDTEKENING', sigX + sigW / 2, sigBoxY + sigH / 2 + 3, { align: 'center' });
+      doc.text(t('admin.creditNote.waitingForCaps'), sigX + sigW / 2, sigBoxY + sigH / 2 - 2, { align: 'center' });
+      doc.text(t('admin.creditNote.signatureWordCaps'), sigX + sigW / 2, sigBoxY + sigH / 2 + 3, { align: 'center' });
     }
 
     // Bedankt
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(136, 136, 136);
-    doc.text('Bedankt voor uw vertrouwen', sigX + sigW / 2, sigBoxY + sigH + 5, { align: 'center' });
+    doc.text(t('admin.creditNote.thankYou'), sigX + sigW / 2, sigBoxY + sigH + 5, { align: 'center' });
 
     return doc;
   };
@@ -388,12 +392,12 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
   const generatePDF = () => {
     buildPDF().save(`${creditNote.creditNoteNumber}.pdf`);
     const next = incrementCNNumber(creditNote.creditNoteNumber);
-    setCreditNote(prev => ({ ...INITIAL_DATA, creditNoteNumber: next }));
+    setCreditNote(prev => ({ ...INITIAL_DATA, notes: t('admin.creditNote.noteDefault'), creditNoteNumber: next }));
   };
 
   /* ── Send credit note email with PDF attachment ── */
   const handleSendEmail = async () => {
-    if (!recipientEmail.trim()) { setSendError('Vul een e-mailadres in'); return; }
+    if (!recipientEmail.trim()) { setSendError(t('admin.creditNote.enterEmail')); return; }
     setSendingState('sending');
     setSendError('');
     try {
@@ -407,19 +411,19 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
         templateId: 'creditnota',
         templateLabel: 'Creditnota',
         type: 'pdf',
-        content: emailBody || `Creditnota ${creditNote.creditNoteNumber}`,
+        content: emailBody || tFunc('admin.creditNote.contentFallback')(creditNote.creditNoteNumber),
         recipientEmail,
-        subject: emailSubject || `Garden For Life — Creditnota ${creditNote.creditNoteNumber}`,
+        subject: emailSubject || tFunc('admin.creditNote.subjectDefault')(creditNote.creditNoteNumber),
         pdfBase64,
         attachmentFilename: `${creditNote.creditNoteNumber}.pdf`,
       };
       await sendFormDirect(payload);
       const next = incrementCNNumber(creditNote.creditNoteNumber);
-      setCreditNote(prev => ({ ...INITIAL_DATA, creditNoteNumber: next }));
+      setCreditNote(prev => ({ ...INITIAL_DATA, notes: t('admin.creditNote.noteDefault'), creditNoteNumber: next }));
       setSendingState('sent');
       setTimeout(() => setSendingState(null), 3000);
     } catch (err) {
-      setSendError(err.message || 'Versturen mislukt');
+      setSendError(err.message || t('admin.creditNote.sendFailed'));
       setSendingState('error');
       setTimeout(() => setSendingState(null), 4000);
     }
@@ -458,14 +462,14 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
           <section>
             <h2 style={sectionHeading}>
               <FileText size={20} color={ACCENT} />
-              Creditnota Gegevens
+              {t('admin.creditNote.detailsHeading')}
             </h2>
             <div style={isMobile
               ? { display: 'flex', flexDirection: 'column', gap: '1rem' }
               : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }
             }>
               <div>
-                <div style={labelCss}>Creditnotanummer</div>
+                <div style={labelCss}>{t('admin.creditNote.creditNoteNumber')}</div>
                 <div style={{ position: 'relative' }}>
                   <Hash size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
                   <input style={input} value={creditNote.creditNoteNumber}
@@ -473,16 +477,16 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                 </div>
               </div>
               <div>
-                <div style={labelCss}>Origineel Factuurnummer</div>
+                <div style={labelCss}>{t('admin.creditNote.originalInvoiceNumber')}</div>
                 <div style={{ position: 'relative' }}>
                   <Hash size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
                   <input style={input} value={creditNote.originalInvoiceNumber}
-                    placeholder="bijv. 20260002"
+                    placeholder={t('admin.creditNote.originalInvoicePlaceholder')}
                     onChange={(e) => setCreditNote({ ...creditNote, originalInvoiceNumber: e.target.value })} />
                 </div>
               </div>
               <div>
-                <div style={labelCss}>Datum (auto-sync)</div>
+                <div style={labelCss}>{t('admin.creditNote.dateAutoSync')}</div>
                 <div style={{
                   ...input,
                   paddingLeft: '0.85rem',
@@ -501,10 +505,10 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
               <h2 style={{ ...sectionHeading, marginBottom: 0 }}>
                 <User size={20} color={ACCENT} />
-                Creditnota Informatie
+                {t('admin.creditNote.infoHeading')}
               </h2>
               <div style={{ display: 'flex', gap: '0.4rem' }}>
-                <button onClick={saveCurrentContact} title="Contact opslaan" style={{
+                <button onClick={saveCurrentContact} title={t('admin.creditNote.saveContact')} style={{
                   display: 'flex', alignItems: 'center', gap: '0.3rem',
                   padding: '0.35rem 0.6rem', fontSize: '0.68rem', fontWeight: 700,
                   backgroundColor: 'rgba(255,174,0,0.08)', color: GOLD,
@@ -515,7 +519,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                   onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,174,0,0.16)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,174,0,0.08)'; }}
                 >
-                  <UserPlus size={13} /> Opslaan
+                  <UserPlus size={13} /> {t('admin.creditNote.save')}
                 </button>
               </div>
             </div>
@@ -541,8 +545,8 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <User size={14} color={DIM} />
                   {savedContacts.length
-                    ? `${savedContacts.length} opgeslagen contact${savedContacts.length !== 1 ? 'en' : ''} — kies een klant`
-                    : 'Geen opgeslagen contacten'}
+                    ? tFunc('admin.creditNote.contactsChoose')(savedContacts.length)
+                    : t('admin.creditNote.noSavedContacts')}
                 </span>
                 <ChevronDown size={14} color={DIM} style={{ transform: showContactList ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
               </button>
@@ -591,11 +595,11 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div>
-                <h3 style={{ fontSize: '0.68rem', fontWeight: 700, color: DIM, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.6rem' }}>Creditnota Voor</h3>
-                <input style={inputNoPad} placeholder="Klantnaam" value={creditNote.clientName}
+                <h3 style={{ fontSize: '0.68rem', fontWeight: 700, color: DIM, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.6rem' }}>{t('admin.creditNote.creditNoteFor')}</h3>
+                <input style={inputNoPad} placeholder={t('admin.creditNote.clientNamePlaceholder')} value={creditNote.clientName}
                   onChange={(e) => setCreditNote({ ...creditNote, clientName: e.target.value })} />
               </div>
-              <input style={inputNoPad} placeholder="Klant Adres / Contact" value={creditNote.clientAddress}
+              <input style={inputNoPad} placeholder={t('admin.creditNote.clientAddressPlaceholder')} value={creditNote.clientAddress}
                 onChange={(e) => setCreditNote({ ...creditNote, clientAddress: e.target.value })} />
             </div>
           </section>
@@ -605,7 +609,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
               <h2 style={{ ...sectionHeading, marginBottom: 0 }}>
                 <Receipt size={20} color={ACCENT} />
-                {isMobile ? <span>Creditnota<br/>regels</span> : 'Creditnotaregels'}
+                {isMobile ? <span>{t('admin.creditNote.linesHeadingMobile1')}<br/>{t('admin.creditNote.linesHeadingMobile2')}</span> : t('admin.creditNote.linesHeading')}
               </h2>
               <button onClick={handleAddItem} style={{
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -617,7 +621,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(188,19,254,0.16)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(188,19,254,0.08)'; }}
               >
-                <Plus size={14} /> Regel Toevoegen
+                <Plus size={14} /> {t('admin.creditNote.addLine')}
               </button>
             </div>
 
@@ -640,15 +644,15 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                 }}>
                   {isMobile ? (
                     <>
-                      <input style={{ ...inputNoPad, width: '100%', boxSizing: 'border-box' }} placeholder="Omschrijving" value={item.description}
+                      <input style={{ ...inputNoPad, width: '100%', boxSizing: 'border-box' }} placeholder={t('admin.creditNote.descriptionPlaceholder')} value={item.description}
                         onChange={(e) => handleItemChange(item.id, 'description', e.target.value)} />
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <input style={{ ...inputNoPad, flex: 1, textAlign: 'center', minHeight: '2.2rem' }} type="number" placeholder="Aantal"
+                        <input style={{ ...inputNoPad, flex: 1, textAlign: 'center', minHeight: '2.2rem' }} type="number" placeholder={t('admin.creditNote.quantityPlaceholder')}
                           value={item.quantity}
                           onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
                         <div style={{ position: 'relative', flex: 1 }}>
                           <span style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)', color: DIM, fontSize: '0.8rem' }}>€</span>
-                          <input style={{ ...input, paddingLeft: '1.6rem', width: '100%', boxSizing: 'border-box', minHeight: '2.2rem' }} type="number" placeholder="Prijs"
+                          <input style={{ ...input, paddingLeft: '1.6rem', width: '100%', boxSizing: 'border-box', minHeight: '2.2rem' }} type="number" placeholder={t('admin.creditNote.pricePlaceholder')}
                             value={item.price}
                             onChange={(e) => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} />
                         </div>
@@ -666,14 +670,14 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                     </>
                   ) : (
                     <>
-                      <input style={inputNoPad} placeholder="Omschrijving" value={item.description}
+                      <input style={inputNoPad} placeholder={t('admin.creditNote.descriptionPlaceholder')} value={item.description}
                         onChange={(e) => handleItemChange(item.id, 'description', e.target.value)} />
-                      <input style={{ ...inputNoPad, textAlign: 'center' }} type="number" placeholder="Aantal"
+                      <input style={{ ...inputNoPad, textAlign: 'center' }} type="number" placeholder={t('admin.creditNote.quantityPlaceholder')}
                         value={item.quantity}
                         onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
                       <div style={{ position: 'relative' }}>
                         <span style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)', color: DIM, fontSize: '0.8rem' }}>€</span>
-                        <input style={{ ...input, paddingLeft: '1.6rem' }} type="number" placeholder="Prijs"
+                        <input style={{ ...input, paddingLeft: '1.6rem' }} type="number" placeholder={t('admin.creditNote.pricePlaceholder')}
                           value={item.price}
                           onChange={(e) => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} />
                       </div>
@@ -720,22 +724,22 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                       letterSpacing: '0.08em',
                     }}
                   >
-                    {btwIncluded ? '✓ BTW 21%' : 'BTW 21%'}
+                    {btwIncluded ? t('admin.creditNote.vatToggleOn') : t('admin.creditNote.vatToggleOff')}
                   </button>
                   {!isMobile && (
                     <span style={{ fontSize: '0.65rem', color: DIM }}>
-                      {btwIncluded ? 'BTW wordt berekend over het subtotaal' : 'Prijzen exclusief BTW'}
+                      {btwIncluded ? t('admin.creditNote.vatOverSubtotal') : t('admin.creditNote.pricesExclVat')}
                     </span>
                   )}
                 </div>
                 <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '0.6rem', justifyContent: 'flex-end' }}>
                   {btwIncluded && (
                     <div style={{ fontSize: '0.65rem', color: DIM }}>
-                      BTW: €{taxAmount.toFixed(2).replace('.', ',')}
+                      {t('admin.creditNote.vatShort')}: €{taxAmount.toFixed(2).replace('.', ',')}
                     </div>
                   )}
                   <div style={{ fontSize: '0.85rem', fontWeight: 700, color: GOLD }}>
-                    Totaal: €{total.toFixed(2).replace('.', ',')}
+                    {t('admin.creditNote.totalLabel')}: €{total.toFixed(2).replace('.', ',')}
                   </div>
                 </div>
               </div>
@@ -744,8 +748,8 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
 
           {/* § Notitie */}
           <section style={{ paddingTop: '1.2rem', borderTop: `1px solid ${BORDER}` }}>
-            <div style={labelCss}>Opmerking creditnota</div>
-            <input style={inputNoPad} placeholder="Het bedrag wordt verrekend met uw openstaande facturen."
+            <div style={labelCss}>{t('admin.creditNote.noteHeading')}</div>
+            <input style={inputNoPad} placeholder={t('admin.creditNote.notePlaceholder')}
               value={creditNote.notes}
               onChange={(e) => setCreditNote({ ...creditNote, notes: e.target.value })} />
           </section>
@@ -754,7 +758,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
           <section style={isMobile ? {} : { paddingTop: '1.2rem', borderTop: `1px solid ${BORDER}` }}>
             <h2 style={sectionHeading}>
               <Eraser size={20} color={ACCENT} />
-              Handtekening
+              {t('admin.creditNote.signatureHeading')}
             </h2>
             <div style={{
               border: `2px dashed ${BORDER}`, borderRadius: '0.8rem',
@@ -786,7 +790,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                   onMouseEnter={(e) => { e.currentTarget.style.color = ACCENT; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = DIM; }}
                 >
-                  <Eraser size={14} /> Wissen
+                  <Eraser size={14} /> {t('admin.creditNote.clear')}
                 </button>
               </div>
             </div>
@@ -831,7 +835,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                       <img src={creditNote.logoUrl} alt="Logo" referrerPolicy="no-referrer"
                         style={{ width: '2.5em', height: '2.5em', objectFit: 'contain', marginBottom: '0.3em', borderRadius: '0.3em' }} />
                     )}
-                    <div style={{ fontSize: '1.1em', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.03em' }}>CREDITNOTA</div>
+                    <div style={{ fontSize: '1.1em', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{t('admin.creditNote.docTitle')}</div>
                   </div>
                 </div>
               </div>
@@ -842,12 +846,12 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                 borderBottom: '1px solid #333', paddingBottom: '0.5em', marginTop: '0.7em',
               }}>
                 <div>
-                  <p style={{ fontSize: '0.44em', color: '#fff', fontWeight: 700, margin: 0 }}>Het bedrag wordt verrekend of teruggestort</p>
+                  <p style={{ fontSize: '0.44em', color: '#fff', fontWeight: 700, margin: 0 }}>{t('admin.creditNote.settledOrRefunded')}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: 0 }}>Nr: {creditNote.creditNoteNumber}</p>
-                  <p style={{ fontSize: '0.44em', color: '#bbb', textTransform: 'uppercase', margin: '0.1em 0 0' }}>Ref Factuur: {creditNote.originalInvoiceNumber}</p>
-                  <p style={{ fontSize: '0.55em', color: '#bbb', textTransform: 'uppercase', margin: '0.1em 0 0' }}>Datum: {liveDate}</p>
+                  <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: 0 }}>{tFunc('admin.creditNote.nr')(creditNote.creditNoteNumber)}</p>
+                  <p style={{ fontSize: '0.44em', color: '#bbb', textTransform: 'uppercase', margin: '0.1em 0 0' }}>{tFunc('admin.creditNote.refInvoice')(creditNote.originalInvoiceNumber)}</p>
+                  <p style={{ fontSize: '0.55em', color: '#bbb', textTransform: 'uppercase', margin: '0.1em 0 0' }}>{t('admin.creditNote.dateLabel')} {liveDate}</p>
                 </div>
               </div>
 
@@ -856,10 +860,10 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #333' }}>
-                      <th style={{ textAlign: 'left', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Omschrijving</th>
-                      <th style={{ textAlign: 'center', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Uur</th>
-                      <th style={{ textAlign: 'center', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Tarief Ex.-</th>
-                      <th style={{ textAlign: 'right', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Bedrag</th>
+                      <th style={{ textAlign: 'left', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>{t('admin.creditNote.colDescription')}</th>
+                      <th style={{ textAlign: 'center', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>{t('admin.creditNote.colHours')}</th>
+                      <th style={{ textAlign: 'center', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>{t('admin.creditNote.colRate')}</th>
+                      <th style={{ textAlign: 'right', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>{t('admin.creditNote.colAmount')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -867,7 +871,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                       .slice((previewPage - 1) * itemsPerPage, previewPage * itemsPerPage)
                       .map((item) => (
                       <tr key={item.id} style={{ borderBottom: '1px solid #222' }}>
-                        <td style={{ padding: '0.5em 0', fontSize: '0.55em', color: '#fff' }}>{item.description || 'Nieuw Item'}</td>
+                        <td style={{ padding: '0.5em 0', fontSize: '0.55em', color: '#fff' }}>{item.description || t('admin.creditNote.newItem')}</td>
                         <td style={{ padding: '0.5em 0', fontSize: '0.55em', color: '#fff', textAlign: 'center' }}>{item.quantity}</td>
                         <td style={{ padding: '0.5em 0', fontSize: '0.55em', color: '#fff', textAlign: 'center' }}>{item.price.toFixed(2)}.-</td>
                         <td style={{ padding: '0.5em 0', fontSize: '0.55em', color: '#fff', textAlign: 'right', fontWeight: 600 }}>{(item.quantity * item.price).toFixed(2).replace('.', ',')}</td>
@@ -881,18 +885,18 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                     {btwIncluded && (
                       <>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8em' }}>
-                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>Subtotaal</span>
+                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>{t('admin.creditNote.subtotal')}</span>
                           <span style={{ fontSize: '0.50em', color: '#bbb' }}>€{subtotal.toFixed(2).replace('.', ',')}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8em' }}>
-                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>BTW 21%</span>
+                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>{t('admin.creditNote.vat21')}</span>
                           <span style={{ fontSize: '0.50em', color: '#bbb' }}>€{taxAmount.toFixed(2).replace('.', ',')}</span>
                         </div>
                         <div style={{ width: '5.5em', borderTop: '1px solid #444', marginTop: '0.1em', paddingTop: '0.2em' }} />
                       </>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.8em' }}>
-                      <span style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#fff' }}>TOTAAL</span>
+                      <span style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#fff' }}>{t('admin.creditNote.totalCaps')}</span>
                       <span style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff' }}>€{total.toFixed(2).replace('.', ',')}</span>
                     </div>
                   </div>
@@ -905,20 +909,20 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                   {/* Left column: Creditnota voor + Spell */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6em' }}>
                     <div>
-                      <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#888', margin: 0 }}>Creditnota voor:</p>
+                      <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#888', margin: 0 }}>{t('admin.creditNote.creditNoteForLabel')}</p>
                       <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: '0.15em 0' }}>{creditNote.clientName}</p>
                       <p style={{ fontSize: '0.50em', color: '#bbb', lineHeight: 1.5, margin: 0 }}>{creditNote.clientAddress}</p>
                     </div>
                     <div>
-                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: 0 }}>De luide stilte en de intense kalmte</p>
-                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: '0.1em 0 0' }}>Wijzen de euros van jouw Bank naar mijn Hart</p>
+                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: 0 }}>{t('admin.creditNote.spellLine1')}</p>
+                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: '0.1em 0 0' }}>{t('admin.creditNote.spellLine2')}</p>
                       <p style={{ fontSize: '0.50em', fontStyle: 'italic', color: '#888', margin: '0.5em 0 0' }}>{creditNote.notes}</p>
                     </div>
                   </div>
 
                   {/* Right column: Signature + Bedankt */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2em', flexShrink: 0 }}>
-                    <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Ondertekend door:</p>
+                    <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#fff', margin: 0 }}>{t('admin.creditNote.signedBy')}</p>
                     <div style={{
                       border: '2px solid rgba(188,19,254,0.35)',
                       borderRadius: '0.3em', padding: '0.2em',
@@ -929,16 +933,16 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                       overflow: 'hidden',
                     }}>
                       {signatureData ? (
-                        <img src={signatureData} alt="Handtekening"
+                        <img src={signatureData} alt={t('admin.creditNote.signatureAlt')}
                           style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', filter: 'brightness(2) contrast(1.25)' }} />
                       ) : (
                         <div style={{ textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>Wachten op</span>
-                          <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>handtekening</span>
+                          <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>{t('admin.creditNote.waitingFor')}</span>
+                          <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>{t('admin.creditNote.signatureWord')}</span>
                         </div>
                       )}
                     </div>
-                    <p style={{ fontSize: '0.42em', color: '#888', margin: '0.2em 0 0' }}>Bedankt voor uw vertrouwen</p>
+                    <p style={{ fontSize: '0.42em', color: '#888', margin: '0.2em 0 0' }}>{t('admin.creditNote.thankYou')}</p>
                   </div>
                 </div>
               )}
@@ -953,7 +957,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                       backgroundColor: previewPage === i + 1 ? ACCENT : '#222',
                       color: previewPage === i + 1 ? '#fff' : '#555',
                       transition: 'all 0.2s',
-                    }}>Pagina {i + 1}</button>
+                    }}>{t('admin.creditNote.page')} {i + 1}</button>
                   ))}
                 </div>
               )}
@@ -971,8 +975,8 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
         border: `1px solid ${BORDER}`,
       }}>
         <div style={{ fontSize: '0.72rem', color: DIM }}>
-          {creditNote.items.length} regel{creditNote.items.length !== 1 ? 's' : ''} · Totaal: €{total.toFixed(2).replace('.', ',')}
-          {btwIncluded && <span style={{ color: '#4ade80', marginLeft: '0.4rem' }}>(incl. BTW)</span>}
+          {tFunc('admin.creditNote.lineCount')(creditNote.items.length, total.toFixed(2).replace('.', ','))}
+          {btwIncluded && <span style={{ color: '#4ade80', marginLeft: '0.4rem' }}>{t('admin.creditNote.inclVat')}</span>}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button onClick={generatePDF} style={{
@@ -980,7 +984,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
             backgroundColor: 'rgba(188,19,254,0.12)', color: ACCENT,
             border: '1px solid rgba(188,19,254,0.25)', borderRadius: '0.35rem',
             cursor: 'pointer', textTransform: 'uppercase', fontFamily: FONT,
-          }}>📄 PDF DOWNLOADEN</button>
+          }}>{t('admin.creditNote.downloadPdf')}</button>
         </div>
       </div>
 
@@ -996,7 +1000,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
       }}>
         <h2 style={sectionHeading}>
           <Mail size={20} color={ACCENT} />
-          E-mail Versturen
+          {t('admin.creditNote.emailHeading')}
         </h2>
 
         {/* Recipient fields */}
@@ -1005,34 +1009,34 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
           : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }
         }>
           <div>
-            <div style={labelCss}>Ontvanger E-mail *</div>
+            <div style={labelCss}>{t('admin.creditNote.recipientEmail')}</div>
             <div style={{ position: 'relative' }}>
               <Mail size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="email"
                 value={recipientEmail}
                 onChange={(e) => { setRecipientEmail(e.target.value); setSendError(''); }}
-                placeholder="naam@voorbeeld.nl"
+                placeholder={t('admin.creditNote.emailPlaceholder')}
                 style={input}
               />
             </div>
           </div>
           <div>
-            <div style={labelCss}>Onderwerp</div>
+            <div style={labelCss}>{t('admin.creditNote.subject')}</div>
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
                 value={emailSubject}
                 onChange={(e) => setEmailSubject(e.target.value)}
-                placeholder={`Garden For Life — Creditnota ${creditNote.creditNoteNumber}`}
+                placeholder={tFunc('admin.creditNote.subjectDefault')(creditNote.creditNoteNumber)}
                 style={inputNoPad}
               />
               {emailSubject.length > 0 &&
-               emailSubject.length < `Garden For Life — Creditnota ${creditNote.creditNoteNumber}`.length &&
-               `Garden For Life — Creditnota ${creditNote.creditNoteNumber}`.toLowerCase().startsWith(emailSubject.toLowerCase()) && (
+               emailSubject.length < tFunc('admin.creditNote.subjectDefault')(creditNote.creditNoteNumber).length &&
+               tFunc('admin.creditNote.subjectDefault')(creditNote.creditNoteNumber).toLowerCase().startsWith(emailSubject.toLowerCase()) && (
                 <button
                   type="button"
-                  onClick={() => setEmailSubject(`Garden For Life — Creditnota ${creditNote.creditNoteNumber}`)}
+                  onClick={() => setEmailSubject(tFunc('admin.creditNote.subjectDefault')(creditNote.creditNoteNumber))}
                   style={{
                     position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
                     background: 'rgba(138,92,246,0.25)', color: '#c4b5fd', border: '1px solid rgba(138,92,246,0.4)',
@@ -1040,7 +1044,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  Autofill
+                  {t('admin.creditNote.autofill')}
                 </button>
               )}
             </div>
@@ -1049,11 +1053,11 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
 
         {/* Email body */}
         <div>
-          <div style={labelCss}>E-mailtekst (optioneel)</div>
+          <div style={labelCss}>{t('admin.creditNote.bodyLabel')}</div>
           <textarea
             value={emailBody}
             onChange={(e) => setEmailBody(e.target.value)}
-            placeholder={`Beste ${creditNote.clientName || 'klant'},\n\nBijgevoegd vindt u creditnota ${creditNote.creditNoteNumber}.\n\nMet vriendelijke groet,\nGarden For Life`}
+            placeholder={tFunc('admin.creditNote.bodyPlaceholder')(creditNote.clientName || t('admin.creditNote.bodyClientFallback'), creditNote.creditNoteNumber)}
             rows={4}
             style={{
               ...inputNoPad,
@@ -1078,8 +1082,8 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
           border: '1px solid rgba(188,19,254,0.1)',
         }}>
           <div style={{ fontSize: '0.7rem', color: DIM }}>
-            📎 {creditNote.creditNoteNumber}.pdf wordt als bijlage meegestuurd
-            {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 700 }}>✓ Verstuurd!</span>}
+            {tFunc('admin.creditNote.attachmentNote')(`${creditNote.creditNoteNumber}.pdf`)}
+            {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 700 }}>{t('admin.creditNote.sent')}</span>}
           </div>
           <button
             onClick={handleSendEmail}
@@ -1100,7 +1104,7 @@ const CreditNoteTemplate = memo(({ isMobile = false }) => {
             }}
           >
             <Send size={14} />
-            {sendingState === 'sending' ? 'BEZIG MET VERSTUREN...' : 'VERSTUREN MET PDF'}
+            {sendingState === 'sending' ? t('admin.creditNote.sending') : t('admin.creditNote.sendWithPdf')}
           </button>
         </div>
       </div>

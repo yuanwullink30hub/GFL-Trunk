@@ -81,51 +81,347 @@ const GREEN_ARCS = {
   'Groep 6 (Agency)':    ['MAGICIAN', 'HERO'],
 };
 
-/** 72 Extended Archetypes matrix: MAIN_SUPPORTGROUP → name */
+/**
+ * 132 Extended Archetypes matrix: MAIN_SUPPORTARCHETYPE → name.
+ * Official roster per "Extended Archetypes — Official Roster (132)":
+ * 12 mains × 11 support archetypes. Replaces the old 72 group-keyed matrix
+ * (two supports in the same hardware group are now distinct extensions).
+ */
 const EXTENDED_MATRIX = {
-  JUDGE_RULING: 'Arbiter', JUDGE_RELATIONAL: 'Mediator', JUDGE_SEEKER: 'Examiner',
-  JUDGE_CHAOS: 'Whistleblower', JUDGE_ABSTRACT: 'Critic', JUDGE_AGENCY: 'Avenger',
+  // Main: RULER (Positie 12) - #1-11
+  RULER_JUDGE:      'Emperor',
+  RULER_SAGE:       'Sovereign',
+  RULER_ARTIST:     'Designer',
+  RULER_EXPLORER:   'Entrepreneur',
+  RULER_INNOCENT:   'Founder',
+  RULER_OUTLAW:     'Reformer',
+  RULER_TRICKSTER:  'Puppeteer',
+  RULER_HERO:       'Commander',
+  RULER_MAGICIAN:   'Overlord',
+  RULER_CAREGIVER:  'Advocate',
+  RULER_LOVER:      'Patron',
 
-  LOVER_RULING: 'Companion', LOVER_RELATIONAL: 'Soulmate', LOVER_SEEKER: 'Poet',
-  LOVER_CHAOS: 'Seducer', LOVER_ABSTRACT: 'Mystic', LOVER_AGENCY: 'Romantic',
+  // Main: JUDGE (Positie 1) - #12-22
+  JUDGE_RULER:      'Arbiter',
+  JUDGE_OUTLAW:     'Whistleblower',
+  JUDGE_TRICKSTER:  'Inquisitor',
+  JUDGE_SAGE:       'Critic',
+  JUDGE_ARTIST:     'Appraiser',
+  JUDGE_INNOCENT:   'Examiner',
+  JUDGE_EXPLORER:   'Auditor',
+  JUDGE_HERO:       'Avenger',
+  JUDGE_MAGICIAN:   'Enforcer',
+  JUDGE_CAREGIVER:  'Mediator',
+  JUDGE_LOVER:      'Reconciler',
 
-  CAREGIVER_RULING: 'Advocate', CAREGIVER_RELATIONAL: 'Healer', CAREGIVER_SEEKER: 'Pathfinder',
-  CAREGIVER_CHAOS: 'Cultivator', CAREGIVER_ABSTRACT: 'Therapist', CAREGIVER_AGENCY: 'Protector',
+  // Main: LOVER (Positie 2) - #23-33
+  LOVER_CAREGIVER:  'Soulmate',
+  LOVER_RULER:      'Companion',
+  LOVER_JUDGE:      'Betrothed',
+  LOVER_TRICKSTER:  'Wingman',
+  LOVER_OUTLAW:     'Libertine',
+  LOVER_SAGE:       'Poet',
+  LOVER_ARTIST:     'Muse',
+  LOVER_INNOCENT:   'Votary',
+  LOVER_EXPLORER:   'Moth',
+  LOVER_HERO:       'Romantic',
+  LOVER_MAGICIAN:   'Spellbinder',
 
-  INNOCENT_RULING: 'Shepherd', INNOCENT_RELATIONAL: 'Samaritan', INNOCENT_SEEKER: 'Saint',
-  INNOCENT_CHAOS: 'Free Spirit', INNOCENT_ABSTRACT: 'Disciple', INNOCENT_AGENCY: 'Pioneer',
+  // Main: CAREGIVER (Positie 3) - #34-44
+  CAREGIVER_LOVER:      'Healer',
+  CAREGIVER_RULER:      'Patriarch/Matriarch',
+  CAREGIVER_JUDGE:      'Defender',
+  CAREGIVER_OUTLAW:     'Cultivator',
+  CAREGIVER_TRICKSTER:  'Empath',
+  CAREGIVER_SAGE:       'Therapist',
+  CAREGIVER_ARTIST:     'Restorer',
+  CAREGIVER_EXPLORER:   'Pilgrim',
+  CAREGIVER_INNOCENT:   'Devotee',
+  CAREGIVER_HERO:       'Guardian',
+  CAREGIVER_MAGICIAN:   'Warden',
 
-  EXPLORER_RULING: 'Scout', EXPLORER_RELATIONAL: 'Networker', EXPLORER_SEEKER: 'Navigator',
-  EXPLORER_CHAOS: 'Innovator', EXPLORER_ABSTRACT: 'Scholar', EXPLORER_AGENCY: 'Sailor',
+  // Main: INNOCENT (Positie 4) - #45-55
+  INNOCENT_EXPLORER:   'Saint',
+  INNOCENT_RULER:      'Shepherd',
+  INNOCENT_JUDGE:      'Traditionalist',
+  INNOCENT_TRICKSTER:  'Free Spirit',
+  INNOCENT_OUTLAW:     'Torchbearer',
+  INNOCENT_SAGE:       'Disciple',
+  INNOCENT_ARTIST:     'Utopian',
+  INNOCENT_HERO:       'Pioneer',
+  INNOCENT_MAGICIAN:   'Illuminator',
+  INNOCENT_CAREGIVER:  'Samaritan',
+  INNOCENT_LOVER:      'Sweetheart',
 
-  OUTLAW_RULING: 'Reformer', OUTLAW_RELATIONAL: 'Liberator', OUTLAW_SEEKER: 'Renegade',
-  OUTLAW_CHAOS: 'Anarchist', OUTLAW_ABSTRACT: 'Iconoclast', OUTLAW_AGENCY: 'Revolutionary',
+  // Main: EXPLORER (Positie 5) - #56-66
+  EXPLORER_INNOCENT:   'Navigator',
+  EXPLORER_RULER:      'Networker',
+  EXPLORER_JUDGE:      'Surveyor',
+  EXPLORER_OUTLAW:     'Innovator',
+  EXPLORER_TRICKSTER:  'Scout',
+  EXPLORER_SAGE:       'Philosopher',
+  EXPLORER_ARTIST:     'Bard',
+  EXPLORER_HERO:       'Sailor',
+  EXPLORER_MAGICIAN:   'Nomad',
+  EXPLORER_LOVER:      'Stargazer',
+  EXPLORER_CAREGIVER:  'Pathfinder',
 
-  TRICKSTER_RULING: 'Jester', TRICKSTER_RELATIONAL: 'Clown', TRICKSTER_SEEKER: 'Shapeshifter',
-  TRICKSTER_CHAOS: 'Fool', TRICKSTER_ABSTRACT: 'Comedian', TRICKSTER_AGENCY: 'Saboteur',
+  // Main: HERO (Positie 11) - #67-77
+  HERO_MAGICIAN:   'Legend',
+  HERO_RULER:      'Conqueror',
+  HERO_JUDGE:      'Templar',
+  HERO_OUTLAW:     'Raider',
+  HERO_TRICKSTER:  'Spy',
+  HERO_SAGE:       'Strategist',
+  HERO_ARTIST:     'Duelist',
+  HERO_EXPLORER:   'Astronaut',
+  HERO_INNOCENT:   'Crusader',
+  HERO_CAREGIVER:  'Protector',
+  HERO_LOVER:      'Chevalier',
 
-  SAGE_RULING: 'Analyst', SAGE_RELATIONAL: 'Mentor', SAGE_SEEKER: 'Dreamer',
-  SAGE_CHAOS: 'Hermit', SAGE_ABSTRACT: 'Enlightened', SAGE_AGENCY: 'Detective',
+  // Main: MAGICIAN (Positie 10) - #78-88
+  MAGICIAN_HERO:       'Alchemist',
+  MAGICIAN_RULER:      'Engineer',
+  MAGICIAN_JUDGE:      'Reckoner',
+  MAGICIAN_OUTLAW:     'Protagonist',
+  MAGICIAN_TRICKSTER:  'Enchanter',
+  MAGICIAN_SAGE:       'Sorcerer',
+  MAGICIAN_ARTIST:     'Performer',
+  MAGICIAN_INNOCENT:   'Catalyst',
+  MAGICIAN_EXPLORER:   'Trailblazer',
+  MAGICIAN_LOVER:      'Shaman',
+  MAGICIAN_CAREGIVER:  'Redeemer',
 
-  ARTIST_RULING: 'Architect', ARTIST_RELATIONAL: 'Storyteller', ARTIST_SEEKER: 'Visionary',
-  ARTIST_CHAOS: 'Illusionist', ARTIST_ABSTRACT: 'Demiurge', ARTIST_AGENCY: 'Forgemaster',
+  // Main: OUTLAW (Positie 6) - #89-99
+  OUTLAW_TRICKSTER:  'Anarchist',
+  OUTLAW_RULER:      'Maverick',
+  OUTLAW_JUDGE:      'Contrarian',
+  OUTLAW_CAREGIVER:  'Liberator',
+  OUTLAW_LOVER:      'Instigator',
+  OUTLAW_SAGE:       'Iconoclast',
+  OUTLAW_ARTIST:     'Punk',
+  OUTLAW_EXPLORER:   'Renegade',
+  OUTLAW_INNOCENT:   'Idealist',
+  OUTLAW_MAGICIAN:   'Revolutionary',
+  OUTLAW_HERO:       'Ronin',
 
-  MAGICIAN_RULING: 'Engineer', MAGICIAN_RELATIONAL: 'Shaman', MAGICIAN_SEEKER: 'Oracle',
-  MAGICIAN_CHAOS: 'Enchanter', MAGICIAN_ABSTRACT: 'Sorcerer', MAGICIAN_AGENCY: 'Alchemist',
+  // Main: TRICKSTER (Positie 7) - #100-110
+  TRICKSTER_OUTLAW:     'Fool',
+  TRICKSTER_RULER:      'Gatecrasher',
+  TRICKSTER_JUDGE:      "Devil's Advocate",
+  TRICKSTER_LOVER:      'Seducer',
+  TRICKSTER_CAREGIVER:  'Chameleon',
+  TRICKSTER_SAGE:       'Riddler',
+  TRICKSTER_ARTIST:     'Impressionist',
+  TRICKSTER_EXPLORER:   'Free-runner',
+  TRICKSTER_INNOCENT:   'Joyrider',
+  TRICKSTER_MAGICIAN:   'Shapeshifter',
+  TRICKSTER_HERO:       'Ace',
 
-  HERO_RULING: 'Commander', HERO_RELATIONAL: 'Guardian', HERO_SEEKER: 'Inventor',
-  HERO_CHAOS: 'Ronin', HERO_ABSTRACT: 'Strategist', HERO_AGENCY: 'Legend',
+  // Main: SAGE (Positie 8) - #111-121
+  SAGE_ARTIST:     'Developer',
+  SAGE_RULER:      'Analyst',
+  SAGE_JUDGE:      'Skeptic',
+  SAGE_CAREGIVER:  'Mentor',
+  SAGE_LOVER:      'Guru',
+  SAGE_OUTLAW:     'Hermit',
+  SAGE_TRICKSTER:  'Theorist',
+  SAGE_INNOCENT:   'Enlightened',
+  SAGE_EXPLORER:   'Scholar',
+  SAGE_HERO:       'Detective',
+  SAGE_MAGICIAN:   'Freemason',
 
-  RULER_RULING: 'Emperor', RULER_RELATIONAL: 'Patriarch/Matriarch', RULER_SEEKER: 'Entrepreneur',
-  RULER_CHAOS: 'Maverick', RULER_ABSTRACT: 'Philosopher-King', RULER_AGENCY: 'Conqueror',
+  // Main: ARTIST (Positie 9) - #122-132
+  ARTIST_SAGE:       'Demiurge',
+  ARTIST_RULER:      'Architect',
+  ARTIST_JUDGE:      'Editor',
+  ARTIST_LOVER:      'Troubadour',
+  ARTIST_CAREGIVER:  'Storyteller',
+  ARTIST_TRICKSTER:  'Oracle',
+  ARTIST_OUTLAW:     'Provocateur',
+  ARTIST_EXPLORER:   'Visionary',
+  ARTIST_INNOCENT:   'Prodigy',
+  ARTIST_MAGICIAN:   'Craftsman',
+  ARTIST_HERO:       'Forgemaster',
 };
 
-/** Harmonic matches (H) in the 72 matrix */
-const HARMONIC_KEYS = new Set([
-  'JUDGE_CHAOS', 'LOVER_ABSTRACT', 'CAREGIVER_ABSTRACT', 'INNOCENT_AGENCY',
-  'EXPLORER_AGENCY', 'OUTLAW_RULING', 'TRICKSTER_RULING', 'SAGE_RELATIONAL',
-  'ARTIST_RELATIONAL', 'MAGICIAN_SEEKER', 'HERO_SEEKER', 'RULER_CHAOS',
-]);
+/**
+ * Dutch names for the same 132 matrix (official NL canon). Selected when the
+ * test is taken in Dutch, so the extension name the model is told matches the
+ * Dutch corpus it receives and the Dutch name the user sees on their profile.
+ */
+const EXTENDED_MATRIX_NL = {
+  // Main: RULER (Positie 12) - #1-11
+  RULER_JUDGE:      'De Keizer',
+  RULER_SAGE:       'De Soevereine',
+  RULER_ARTIST:     'De Ontwerper',
+  RULER_EXPLORER:   'De Ondernemer',
+  RULER_INNOCENT:   'De Oprichter',
+  RULER_OUTLAW:     'De Hervormer',
+  RULER_TRICKSTER:  'De Poppenspeler',
+  RULER_HERO:       'De Commandant',
+  RULER_MAGICIAN:   'De Oppermeester',
+  RULER_CAREGIVER:  'De Advocaat',
+  RULER_LOVER:      'De Beschermheer',
+
+  // Main: JUDGE (Positie 1) - #12-22
+  JUDGE_RULER:      'De Arbiter',
+  JUDGE_OUTLAW:     'De Klokkenluider',
+  JUDGE_TRICKSTER:  'De Inquisitoir',
+  JUDGE_SAGE:       'De Criticus',
+  JUDGE_ARTIST:     'De Taxateur',
+  JUDGE_INNOCENT:   'De Examinator',
+  JUDGE_EXPLORER:   'De Controleur',
+  JUDGE_HERO:       'De Wreker',
+  JUDGE_MAGICIAN:   'De Handhaver',
+  JUDGE_CAREGIVER:  'De Bemiddelaar',
+  JUDGE_LOVER:      'De Verzoener',
+
+  // Main: LOVER (Positie 2) - #23-33
+  LOVER_CAREGIVER:  'De Zielsverwant',
+  LOVER_RULER:      'De Compagnon',
+  LOVER_JUDGE:      'De Verloofde',
+  LOVER_TRICKSTER:  'De Wingman',
+  LOVER_OUTLAW:     'De Genotzoeker',
+  LOVER_SAGE:       'De Dichter',
+  LOVER_ARTIST:     'De Muze',
+  LOVER_INNOCENT:   'De Getrouwe',
+  LOVER_EXPLORER:   'De Nachtvlinder',
+  LOVER_HERO:       'De Romanticus',
+  LOVER_MAGICIAN:   'De Betoveraar',
+
+  // Main: CAREGIVER (Positie 3) - #34-44
+  CAREGIVER_LOVER:      'De Genezer',
+  CAREGIVER_RULER:      'De Patriarch / Matriarch',
+  CAREGIVER_JUDGE:      'De Verdediger',
+  CAREGIVER_OUTLAW:     'De Kweker',
+  CAREGIVER_TRICKSTER:  'De Empaat',
+  CAREGIVER_SAGE:       'De Therapeut',
+  CAREGIVER_ARTIST:     'De Hersteller',
+  CAREGIVER_EXPLORER:   'De Pilgrim',
+  CAREGIVER_INNOCENT:   'De Toegewijde',
+  CAREGIVER_HERO:       'De Beschermer',
+  CAREGIVER_MAGICIAN:   'De Bewaker',
+
+  // Main: INNOCENT (Positie 4) - #45-55
+  INNOCENT_EXPLORER:   'De Heilige',
+  INNOCENT_RULER:      'De Herder',
+  INNOCENT_JUDGE:      'De Traditionalist',
+  INNOCENT_TRICKSTER:  'De Vrije Geest',
+  INNOCENT_OUTLAW:     'De Fakkeldrager',
+  INNOCENT_SAGE:       'De Discipel',
+  INNOCENT_ARTIST:     'De Utopist',
+  INNOCENT_HERO:       'De Pionier',
+  INNOCENT_MAGICIAN:   'De Verlichter',
+  INNOCENT_CAREGIVER:  'De Samaritaan',
+  INNOCENT_LOVER:      'De Lieveling',
+
+  // Main: EXPLORER (Positie 5) - #56-66
+  EXPLORER_INNOCENT:   'De Navigator',
+  EXPLORER_RULER:      'De Netwerker',
+  EXPLORER_JUDGE:      'De Verkenner',
+  EXPLORER_OUTLAW:     'De Vernieuwer',
+  EXPLORER_TRICKSTER:  'De Scout',
+  EXPLORER_SAGE:       'De Filosoof',
+  EXPLORER_ARTIST:     'De Bard',
+  EXPLORER_HERO:       'De Zeeman',
+  EXPLORER_MAGICIAN:   'De Nomade',
+  EXPLORER_LOVER:      'De Sterrenkijker',
+  EXPLORER_CAREGIVER:  'De Padvinder',
+
+  // Main: HERO (Positie 11) - #67-77
+  HERO_MAGICIAN:   'De Legende',
+  HERO_RULER:      'De Veroveraar',
+  HERO_JUDGE:      'De Tempelier',
+  HERO_OUTLAW:     'De Plunderaar',
+  HERO_TRICKSTER:  'De Spion',
+  HERO_SAGE:       'De Strateeg',
+  HERO_ARTIST:     'De Duellist',
+  HERO_EXPLORER:   'De Astronaut',
+  HERO_INNOCENT:   'De Kruisvaarder',
+  HERO_CAREGIVER:  'De Beschermer',
+  HERO_LOVER:      'De Ridder',
+
+  // Main: MAGICIAN (Positie 10) - #78-88
+  MAGICIAN_HERO:       'De Alchemist',
+  MAGICIAN_RULER:      'De Ingenieur',
+  MAGICIAN_JUDGE:      'De Berekenaar',
+  MAGICIAN_OUTLAW:     'De Hoofdrolspeler',
+  MAGICIAN_TRICKSTER:  'De Magiër',
+  MAGICIAN_SAGE:       'De Tovenaar',
+  MAGICIAN_ARTIST:     'De Presteerder',
+  MAGICIAN_INNOCENT:   'De Katalysator',
+  MAGICIAN_EXPLORER:   'De Baanbreker',
+  MAGICIAN_LOVER:      'De Sjamaan',
+  MAGICIAN_CAREGIVER:  'De Verlosser',
+
+  // Main: OUTLAW (Positie 6) - #89-99
+  OUTLAW_TRICKSTER:  'De Anarchist',
+  OUTLAW_RULER:      'De Eenling',
+  OUTLAW_JUDGE:      'De Dwarsligger',
+  OUTLAW_CAREGIVER:  'De Bevrijder',
+  OUTLAW_LOVER:      'De Aanstichter',
+  OUTLAW_SAGE:       'De Beeldenstormer',
+  OUTLAW_ARTIST:     'De Punker',
+  OUTLAW_EXPLORER:   'De Vogelvrije',
+  OUTLAW_INNOCENT:   'De Idealist',
+  OUTLAW_MAGICIAN:   'De Revolutionair',
+  OUTLAW_HERO:       'De Ronin',
+
+  // Main: TRICKSTER (Positie 7) - #100-110
+  TRICKSTER_OUTLAW:     'De Dwaas',
+  TRICKSTER_RULER:      'De Poortbreker',
+  TRICKSTER_JUDGE:      'De Advocaat van de Duivel',
+  TRICKSTER_LOVER:      'De Verleider',
+  TRICKSTER_CAREGIVER:  'De Kameleon',
+  TRICKSTER_SAGE:       'De Raadselmeester',
+  TRICKSTER_ARTIST:     'De Imitator',
+  TRICKSTER_EXPLORER:   'De Freerunner',
+  TRICKSTER_INNOCENT:   'De Joyrider',
+  TRICKSTER_MAGICIAN:   'De Gedaante-verwisselaar',
+  TRICKSTER_HERO:       'De Aas / De Uitblinker',
+
+  // Main: SAGE (Positie 8) - #111-121
+  SAGE_ARTIST:     'De Ontwikkelaar',
+  SAGE_RULER:      'De Analist',
+  SAGE_JUDGE:      'De Skepticus',
+  SAGE_CAREGIVER:  'De Mentor',
+  SAGE_LOVER:      'De Goeroe',
+  SAGE_OUTLAW:     'De Kluizenaar',
+  SAGE_TRICKSTER:  'De Theoreticus',
+  SAGE_INNOCENT:   'De Verlichte',
+  SAGE_EXPLORER:   'De Geleerde',
+  SAGE_HERO:       'De Speurder',
+  SAGE_MAGICIAN:   'De Vrijmetselaar',
+
+  // Main: ARTIST (Positie 9) - #122-132
+  ARTIST_SAGE:       'De Demiurg',
+  ARTIST_RULER:      'De Architect',
+  ARTIST_JUDGE:      'De Redacteur',
+  ARTIST_LOVER:      'De Troubadour',
+  ARTIST_CAREGIVER:  'De Verhalenverteller',
+  ARTIST_TRICKSTER:  'Het Orakel',
+  ARTIST_OUTLAW:     'De Provocateur',
+  ARTIST_EXPLORER:   'De Visionair',
+  ARTIST_INNOCENT:   'Het Wonderkind',
+  ARTIST_MAGICIAN:   'De Ambachtsman',
+  ARTIST_HERO:       'De Meestersmid',
+};
+
+/** Pick the roster for a report language (nl -> Dutch canon, anything else -> English). */
+function matrixFor(language) {
+  return String(language || '').toLowerCase().startsWith('nl') ? EXTENDED_MATRIX_NL : EXTENDED_MATRIX;
+}
+
+
+/**
+ * Harmonic match = Support IS the Main's 180° shadow partner (Purple Line).
+ * In the old 72 matrix this was tracked per support-GROUP; on the 132 matrix
+ * it is exact per support archetype.
+ */
+const HARMONIC_KEYS = new Set(
+  Object.entries(PURPLE_LINE).map(([main, shadow]) => `${main}_${shadow}`)
+);
 
 const ARCHETYPE_POSITIONS = {
   JUDGE: 1, LOVER: 2, CAREGIVER: 3, INNOCENT: 4, EXPLORER: 5, OUTLAW: 6,
@@ -175,17 +471,31 @@ const GROUP_FOR_ARCHETYPE = {
 
 
 // ═══════════════════════════════════════════════════════════════
-// HELPER: Build the 6-row Extended Archetype table for one Main
+// HELPER: Build the 11-row Extended Archetype table for one Main
+// (132-matrix: one row per possible support archetype, wheel order)
 // ═══════════════════════════════════════════════════════════════
 
-function buildExtendedRow(mainKey) {
-  const groups = ['RULING', 'RELATIONAL', 'SEEKER', 'CHAOS', 'ABSTRACT', 'AGENCY'];
-  return groups.map(g => {
-    const matrixKey = `${mainKey}_${g}`;
-    const name = EXTENDED_MATRIX[matrixKey] || '?';
+const WHEEL_ORDER = ['JUDGE', 'LOVER', 'CAREGIVER', 'INNOCENT', 'EXPLORER', 'OUTLAW',
+  'TRICKSTER', 'SAGE', 'ARTIST', 'MAGICIAN', 'HERO', 'RULER'];
+
+function buildExtendedRow(mainKey, language) {
+  return WHEEL_ORDER.filter(s => s !== mainKey).map(support => {
+    const matrixKey = `${mainKey}_${support}`;
+    const name = matrixFor(language)[matrixKey] || '?';
     const harmonic = HARMONIC_KEYS.has(matrixKey);
-    return { group: g, name, harmonic, matrixKey };
+    return { support, group: GROUP_FOR_ARCHETYPE[support], name, harmonic, matrixKey };
   });
+}
+
+/** Full 132-matrix as prompt text: one line per Main, its 11 support→extension pairs. */
+function buildFullMatrixText(language) {
+  const lines = WHEEL_ORDER.map((main, i) => {
+    const cells = buildExtendedRow(main, language)
+      .map(r => `×${r.support.charAt(0)}${r.support.slice(1).toLowerCase()}=${r.name}${r.harmonic ? ' (H)' : ''}`)
+      .join('\t');
+    return `${i + 1}. ${main.charAt(0)}${main.slice(1).toLowerCase()}\t${cells}\n`;
+  });
+  return lines.join('');
 }
 
 function getYellowTriangleFor(archetype) {
@@ -219,6 +529,7 @@ function buildSystemPrompt({
   consciousnessLevel, overallShadow, uploadedFileContents,
   oceanScores,
   subgroups,
+  language,
 }) {
   const mainPos = ARCHETYPE_POSITIONS[archetypeKey] || '?';
   const supportPos = ARCHETYPE_POSITIONS[supportArchetype] || '?';
@@ -241,9 +552,9 @@ function buildSystemPrompt({
   // Is Main–Support connected by Purple Line (180°)?
   const isPurpleBonded = mainPurple === supportArchetype;
 
-  // Build the extended archetype row for Main
-  const extendedRow = buildExtendedRow(archetypeKey);
-  const matrixKey = `${archetypeKey}_${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]}`;
+  // Build the extended archetype row for Main (132-matrix: keyed on support archetype)
+  const extendedRow = buildExtendedRow(archetypeKey, language);
+  const matrixKey = `${archetypeKey}_${supportArchetype}`;
   const isHarmonic = HARMONIC_KEYS.has(matrixKey);
 
   const parts = [];
@@ -316,22 +627,10 @@ function buildSystemPrompt({
     `BELANGRIJK: In de secties De Schaduw en De Blindspot: noem het archetype NOOIT bij naam in de lopende tekst. De archetypenaam staat al in de sectietitel. Verwijs uitsluitend als 'deze schaduw-modus', 'deze blinde vlek', 'de tegenpool', 'dit archetype'. Dit geldt voor ALLE paragrafen in deze secties.\\n\\n` +
     `Hardware Signaal: Wanneer beide leden van een biologische groep verhoogd zijn op de chart, leest de AI dit als actieve hardware-resonantie (Green/Blue bleed). Beschrijf als: 'Jouw scoreprofiel toont sterke activatie van het volledige [groep]-circuit.' Dit is een spectrum, geen schakelaar.\n\n` +
     `Blindspot: Definieer als externe trigger of blinde vlek in interacties. Lees van de radar chart als dalen tussen archetypen die geen Green, Purple of Yellow connectie delen. 'Het is aannemelijk dat gedrag dat lijkt op [archetype] bij anderen een sterke reactie oproept — dit kan een signaal zijn voor een onbewust spanningspunt.'\n\n` +
-    `7. De 72 Extended Archetypes (Leerling Matrix)\n` +
-    `Verwijs naar de volledige 72-matrix (Archetype_Extensions document) voor Extended Archetype bepaling. Communiceer altijd als samengesteld profiel: 'De combinatie van [Main] en [Support] plaatst jou binnen dit model in de categorie [Extended Archetype] — een profiel gekenmerkt door [beschrijving].'\n\n` +
-    `Main Archetype\t+ Ruling\t+ Relational\t+ Seeker\t+ Chaos\t+ Abstract\t+ Agency\n` +
-    `1. Judge\tArbiter\tMediator\tExaminer\tWhistleblower (H)\tCritic\tAvenger\n` +
-    `2. Lover\tCompanion\tSoulmate\tPoet\tSeducer\tMystic (H)\tRomantic\n` +
-    `3. Caregiver\tAdvocate\tHealer\tPathfinder\tCultivator\tTherapist (H)\tProtector\n` +
-    `4. Innocent\tShepherd\tSamaritan\tSaint\tFree Spirit\tDisciple\tPioneer (H)\n` +
-    `5. Explorer\tScout\tNetworker\tNavigator\tInnovator\tScholar\tSailor (H)\n` +
-    `6. Outlaw\tReformer (H)\tLiberator\tRenegade\tAnarchist\tIconoclast\tRevolutionary\n` +
-    `7. Trickster\tJester (H)\tClown\tShapeshifter\tFool\tComedian\tSaboteur\n` +
-    `8. Sage\tAnalyst\tMentor (H)\tDreamer\tHermit\tEnlightened\tDetective\n` +
-    `9. Artist\tArchitect\tStoryteller (H)\tVisionary\tIllusionist\tDemiurge\tForgemaster\n` +
-    `10. Magician\tEngineer\tShaman\tOracle (H)\tEnchanter\tSorcerer\tAlchemist\n` +
-    `11. Hero\tCommander\tGuardian\tInventor (H)\tRonin\tStrategist\tLegend\n` +
-    `12. Ruler\tEmperor\tPatriarch/Matriarch\tEntrepreneur\tMaverick (H)\tPhilosopher-King\tConqueror\n` +
-    `(H) = Harmonic match\n\n` +
+    `7. De 132 Extended Archetypes (Leerling Matrix)\n` +
+    `Verwijs naar de volledige 132-matrix (Extended Archetypes — Official Roster) voor Extended Archetype bepaling: 12 Main archetypen × 11 mogelijke Support archetypen. Communiceer altijd als samengesteld profiel: 'De combinatie van [Main] en [Support] plaatst jou binnen dit model in de categorie [Extended Archetype] — een profiel gekenmerkt door [beschrijving].'\n\n` +
+    buildFullMatrixText(language) +
+    `(H) = Harmonic match (Support = 180° schaduwpartner van Main)\n\n` +
     `8. AI Output Prompt: Leerling Ontological Report Generator\n` +
     `Systeemrol:\n` +
     `Je genereert een persoonlijk zelfreflectierapport op basis van de GardenForLife Deltawerken-assessment (Leerling Level). Je framework is Jungiaanse archetypentheorie gecombineerd met het Triple Network Model als conceptueel kader. Je analyseert antwoordpatronen — geen neurologie, geen psychopathologie. De test gebruikt 36 vragen met dubbele keuze (72 datapunten), 6 rotatiesleutels met perfecte symmetrie, en een Per-Pick Geometric Bleed scoring engine. Elke archetype score bestaat uit Core (directe picks) en Bleed (geometrische echo's).\n\n` +
@@ -808,7 +1107,7 @@ function buildSystemPrompt({
   parts.push(`Main Groep: ${mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]} (${GROUP_NEURAL_FOCUS[mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]] || ''})`);
   parts.push(`Support Archetype: ${supportArchetype} (Positie ${supportPos})`);
   parts.push(`Support Groep: ${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]} (${GROUP_NEURAL_FOCUS[supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]] || ''})`);
-  parts.push(`Extended Archetype (72-matrix): ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}${isHarmonic ? ' (Harmonic Match ✦)' : ''}`);
+  parts.push(`Extended Archetype (132-matrix): ${extendedArchetypeName || matrixFor(language)[matrixKey] || '?'}${isHarmonic ? ' (Harmonic Match ✦)' : ''}`);
 
   // 5-Basket decomposition summary
   parts.push('');
@@ -1004,12 +1303,12 @@ function buildSystemPrompt({
   parts.push(
     `## 1. De Identiteit\n` +
     `⚠️ WOORDLIMIET: Maximaal 75 woorden.\n` +
-    `[Extended Archetype Naam: ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}]\n` +
+    `[Extended Archetype Naam: ${extendedArchetypeName || matrixFor(language)[matrixKey] || '?'}]\n` +
     `Geef een krachtige beschrijving van 2 zinnen over hoe de Main en Support archetypen samensmelten tot deze unieke identiteit op het Leerling niveau.\n`
   );
 
   parts.push(
-    `## 2. Waarom jij het ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'} perspectief gebruikt\n` +
+    `## 2. Waarom jij het ${extendedArchetypeName || matrixFor(language)[matrixKey] || '?'} perspectief gebruikt\n` +
     `⚠️ WOORDLIMIET: Maximaal 135 woorden.\n` +
     `Leg uit hoe de twee hoogste scores in deze gebruiker samenwerken. Focus op de unieke kracht wanneer deze twee neurale netwerken elkaar ontmoeten.\n`
   );
@@ -1274,12 +1573,13 @@ function buildUserMessage({
   subjectResults, harmonyScore, consciousnessLevel,
   overallShadow, uploadedFileContents,
   oceanScores, subgroups, responses,
+  language,
 }) {
   const mainPos      = ARCHETYPE_POSITIONS[archetypeKey] || '?';
   const supportPos   = ARCHETYPE_POSITIONS[supportArchetype] || '?';
   const shadowPos    = ARCHETYPE_POSITIONS[shadowArchetype] || '?';
   const blindspotPos = ARCHETYPE_POSITIONS[blindspotArchetype] || '?';
-  const matrixKey    = `${archetypeKey}_${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]}`;
+  const matrixKey    = `${archetypeKey}_${supportArchetype}`;
   const isHarmonic   = HARMONIC_KEYS.has(matrixKey);
   const mainPurple   = PURPLE_LINE[archetypeKey];
   const mainBlue     = BLUE_LINE[archetypeKey];
@@ -1307,21 +1607,22 @@ function buildUserMessage({
   parts.push(`Main Groep: ${mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]} (${GROUP_NEURAL_FOCUS[mainGroup || GROUP_FOR_ARCHETYPE[archetypeKey]] || ''})`);
   parts.push(`Support Archetype: ${supportArchetype} (Positie ${supportPos})`);
   parts.push(`Support Groep: ${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]} (${GROUP_NEURAL_FOCUS[supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]] || ''})`);
-  parts.push(`Extended Archetype (72-matrix): ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'}${isHarmonic ? ' (Harmonic Match ✦)' : ''}`);
+  parts.push(`Extended Archetype (132-matrix): ${extendedArchetypeName || matrixFor(language)[matrixKey] || '?'}${isHarmonic ? ' (Harmonic Match ✦)' : ''}`);
 
-  // ─── Section 5: Full 72-matrix row for Main (all 6 possible extended archetypes) ───
-  const extendedRow = buildExtendedRow(archetypeKey);
-  parts.push(`\n── DE 72 MATRIX — 6 MOGELIJKE PROFIELEN VOOR ${archetypeKey} ──`);
-  parts.push(`Groep                | Extended Archetype      | Harmonic`);
-  parts.push(`---------------------|-------------------------|----------`);
+  // ─── Section 5: Full 132-matrix row for Main (all 11 possible extended archetypes) ───
+  const extendedRow = buildExtendedRow(archetypeKey, language);
+  parts.push(`\n── DE 132 MATRIX — 11 MOGELIJKE PROFIELEN VOOR ${archetypeKey} ──`);
+  parts.push(`Support              | Groep        | Extended Archetype      | Harmonic`);
+  parts.push(`---------------------|--------------|-------------------------|----------`);
   for (const row of extendedRow) {
-    const group   = row.group.padEnd(20);
+    const support = row.support.padEnd(20);
+    const group   = String(row.group || '').padEnd(12);
     const name    = row.name.padEnd(24);
     const harmStr = row.harmonic ? '✦ (H)' : '';
-    const marker  = row.group === (supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]) ? ' ← UITSLAG' : '';
-    parts.push(`${group} | ${name} | ${harmStr}${marker}`);
+    const marker  = row.support === supportArchetype ? ' ← UITSLAG' : '';
+    parts.push(`${support} | ${group} | ${name} | ${harmStr}${marker}`);
   }
-  parts.push(`Huidige uitslag: ${extendedArchetypeName || EXTENDED_MATRIX[matrixKey] || '?'} (Main=${archetypeKey} × Support Groep=${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]})`);
+  parts.push(`Huidige uitslag: ${extendedArchetypeName || matrixFor(language)[matrixKey] || '?'} (Main=${archetypeKey} × Support=${supportArchetype}, Groep=${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]})`);
 
   const mainDetails   = archetypeDetails && archetypeDetails.find(a => a.key === archetypeKey);
   const shadowDetails = archetypeDetails && archetypeDetails.find(a => a.key === shadowArchetype);

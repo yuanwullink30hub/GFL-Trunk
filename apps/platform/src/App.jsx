@@ -68,7 +68,7 @@ const MAP_TRANSITION_DURATION = 1800; // ms for smooth curved map movement (long
 
 // Keep Render free-tier backend alive: ping on page load so server is warm by the time the user wants to act.
 if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-  fetch('https://gfl-api.onrender.com/api/status', { method: 'GET' }).catch(() => {});
+  fetch('https://api.gardenforlife.nl/api/status', { method: 'GET' }).catch(() => {});
 }
 
 // Mobile detection hook
@@ -547,24 +547,24 @@ const App = () => {
   const closeNavMenu = useCallback(() => setNavMenuOpen(false), []);
   // Pages in the menu — visitor vs client interface (different homes + Inloggen vs Filosofie set).
   const navItems = useMemo(() => (clientMode ? [
-    { key: 'main',      label: 'Liquid Crystal identiteit' },
-    { key: 'filosofie', label: 'Filosofie' },
-    { key: 'monitor',   label: 'Data' },
-    { key: 'gardens',   label: 'Gardens' },
-    { key: 'winkel',    label: 'Winkel' },
-    { key: 'kook',      label: 'Kook-eiland' },
+    { key: 'main',      label: t('shell.nav.identity') },
+    { key: 'filosofie', label: t('shell.nav.filosofie') },
+    { key: 'monitor',   label: t('shell.nav.data') },
+    { key: 'gardens',   label: t('shell.nav.gardens') },
+    { key: 'winkel',    label: t('shell.nav.winkel') },
+    { key: 'kook',      label: t('shell.nav.kook') },
     // Client: the left menu is the public-profiles directory (policy pages live
     // under Instellingen) — hence 'Verbonden', not 'Voorwaarden'.
-    { key: 'menu',      label: 'Verbonden' },
-    { key: 'login',     label: 'Profiel' },
+    { key: 'menu',      label: t('shell.nav.verbonden') },
+    { key: 'login',     label: t('shell.nav.profiel') },
   ] : [
-    { key: 'main',      label: 'Schaduw Werk' },
-    { key: 'filosofie', label: 'Filosofie' },
-    { key: 'monitor',   label: 'Data' },
-    { key: 'gardens',   label: 'Gardens' },
-    { key: 'menu',      label: 'Voorwaarden' },
-    { key: 'login',     label: 'Inloggen' },
-  ]), [clientMode]);
+    { key: 'main',      label: t('shell.nav.schaduwWerk') },
+    { key: 'filosofie', label: t('shell.nav.filosofie') },
+    { key: 'monitor',   label: t('shell.nav.data') },
+    { key: 'gardens',   label: t('shell.nav.gardens') },
+    { key: 'menu',      label: t('shell.nav.voorwaarden') },
+    { key: 'login',     label: t('shell.nav.inloggen') },
+  ]), [clientMode, t]);
 
   // Handler for closing sections - navigate back to main
   const handleCloseSection = useCallback(() => {
@@ -1961,7 +1961,7 @@ const App = () => {
                   lineHeight: 1,
                   textShadow: '0 0 8px rgba(21, 179, 21, 0.3)',
                   animation: 'scrollPromptTextFlicker 8s linear infinite',
-                }}>SWIPE = SYNCHRONISATIE</span>
+                }}>{t('scrollPrompt.swipe')}</span>
               </div>
               <div style={{ position: 'absolute', top: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderTopLeftRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite' }} />
               <div style={{ position: 'absolute', top: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderTopRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 0.5s' }} />
@@ -2050,7 +2050,7 @@ const App = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                   </svg>
-                  {clientMode ? 'KOOKEILAND' : 'DELTAWERKEN'}
+                  {clientMode ? t('desktopLayout.kitchen') : 'DELTAWERKEN'}
                 </span>
               </SciFiButton>
             </div>
@@ -2167,7 +2167,7 @@ const App = () => {
                 transition: 'transform 0.2s ease',
               }} 
               onClick={() => activeSection && handleCloseSection()}
-              title={activeSection ? 'Back to Landing' : ''}
+              title={activeSection ? t('shell.backToLanding') : ''}
               onMouseEnter={(e) => activeSection && (e.target.style.transform = 'scale(1.05)')}
               onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
             />
@@ -2393,7 +2393,7 @@ const App = () => {
                   onAddFile={handleAddFile}
                   onRemoveFile={handleRemoveFile}
                   onBack={handleIntroBack}
-                  backLabel={clientMode ? 'KOOKEILAND' : 'DELTAWERKEN'}
+                  backLabel={clientMode ? t('desktopLayout.kitchen') : 'DELTAWERKEN'}
                 />
               </div>
             )}
@@ -2556,7 +2556,7 @@ const App = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                   </svg>
-                  {clientMode ? 'KOOKEILAND' : 'DELTAWERKEN'}
+                  {clientMode ? t('desktopLayout.kitchen') : 'DELTAWERKEN'}
                 </span>
               </SciFiButton>
             </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '@gfl/i18n';
 
 /**
  * SubgroupCounters - Dual-Core Dynamics visualization
@@ -6,17 +7,12 @@ import React from 'react';
  * Bars show per-archetype Nature/Culture. Below each pair: archetype name badges.
  */
 
-const GROUP_META = {
-  Ruling:     { network: 'CEN Dominantie',         drive: 'Externe structuur en orde' },
-  Relational: { network: 'Limbic Coupling',         drive: 'Emotionele fusie en empathie' },
-  Seeker:     { network: 'Hoge Openness',           drive: 'Zuiverheid en ontdekking' },
-  Chaos:      { network: 'Salience Network',        drive: 'Disruptie en lage consciÃ«ntieusheid' },
-  Abstract:   { network: 'DMN Hyper-connectie',     drive: 'Interne reflectie en subjectiviteit' },
-  Agency:     { network: 'Extraversie / Wilskracht', drive: 'Actie en transformatie' },
-};
+// Neural-pillar groups; the network name + drive line for each live in charts.subgroups.groups.
+const GROUP_KEYS = ['Ruling', 'Relational', 'Seeker', 'Chaos', 'Abstract', 'Agency'];
 
 
 const SubgroupCounters = ({ subgroups }) => {
+  const { t } = useLanguage();
 
   return (
     <div style={{ width: '100%' }}>
@@ -33,7 +29,7 @@ const SubgroupCounters = ({ subgroups }) => {
           whiteSpace: 'nowrap',
           padding: '0 1rem'
         }}>
-          Dual-Core Dynamics
+          {t('charts.subgroups.title')}
         </h3>
         <div style={{ height: 1, flex: 1, background: 'rgba(168, 85, 247, 0.3)' }} />
       </div>
@@ -48,7 +44,7 @@ const SubgroupCounters = ({ subgroups }) => {
         fontStyle: 'italic',
         margin: '0 0 0.9rem',
       }}>
-        Niet goed of slecht, maar meer of minder in gebruik.
+        {t('charts.subgroups.subtitle')}
       </p>
 
       {/* Legend */}
@@ -59,14 +55,14 @@ const SubgroupCounters = ({ subgroups }) => {
       }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{ width: 10, height: 10, borderRadius: 2, background: '#a855f7', display: 'inline-block' }} />
-          <span style={{ color: '#a855f7', fontWeight: 700 }}>NATURE</span>
+          <span style={{ color: '#a855f7', fontWeight: 700 }}>{t('charts.subgroups.nature')}</span>
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{ width: 10, height: 10, borderRadius: 2, background: '#f97316', display: 'inline-block' }} />
-          <span style={{ color: '#f97316', fontWeight: 700 }}>CULTURE</span>
+          <span style={{ color: '#f97316', fontWeight: 700 }}>{t('charts.subgroups.culture')}</span>
         </span>
         <span style={{ color: 'rgba(165, 243, 252, 0.35)', fontSize: '0.8rem', alignSelf: 'center' }}>
-          ( /36 max )
+          {t('charts.subgroups.maxNote')}
         </span>
       </div>
 
@@ -77,7 +73,9 @@ const SubgroupCounters = ({ subgroups }) => {
           const leftCulture = group.leftCulture || 0;
           const rightNature  = group.rightNature  || 0;
           const rightCulture = group.rightCulture || 0;
-          const meta = GROUP_META[group.group] || { network: group.group, drive: group.axis };
+          const meta = GROUP_KEYS.includes(group.group)
+            ? { network: t(`charts.subgroups.groups.${group.group}.network`), drive: t(`charts.subgroups.groups.${group.group}.drive`) }
+            : { network: group.group, drive: group.axis };
 
           const archs = [
             { label: group.leftLabel,  nature: leftNature,  culture: leftCulture  },

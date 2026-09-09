@@ -5,7 +5,7 @@ export const cleanTitle = (title) => {
   if (!title) return title;
   let t = title.trim();
   t = t.replace(/^\*\*(.+)\*\*$/, '$1').trim();
-  t = t.replace(/^\*?\*?SECTIE\s+\d+\*?\*?[\s:.—-]*\s*/i, '').trim();
+  t = t.replace(/^\*?\*?(?:SECTIE|SECTION)\s+\d+\*?\*?[\s:.—-]*\s*/i, '').trim();
   t = t.replace(/^\d+[a-zA-Z]?[\s.:—-]+\s*/i, '').trim();
   t = t.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
   return t;
@@ -14,23 +14,24 @@ export const cleanTitle = (title) => {
 /** Map cleaned section title to accent color */
 export const getSectionAccent = (title) => {
   const t = cleanTitle(title || '').toLowerCase();
-  if (t.includes('identiteit') || t.includes('waarom')) return { color: '#1d9904', rgb: '29, 153, 4' };
-  if (t.includes('essentie') || t.includes('schaduw')) return { color: '#a855f7', rgb: '168, 85, 247' };
-  if (t.includes('vermenigvuldiging')) return { color: '#f97316', rgb: '249, 115, 22' };
-  if (t.includes('blindspot')) return { color: '#ef4444', rgb: '239, 68, 68' };
-  if (t.includes('visuele')) return { color: '#a855f7', rgb: '168, 85, 247' };
-  if (t.includes('professionele') || t.includes('creatieve')) return { color: '#22d3ee', rgb: '34, 211, 238' };
-  if (t.includes('dual') || t.includes('dynamics')) return { color: '#f97316', rgb: '249, 115, 22' };
-  if (t.includes('cognitieve') || t.includes('driehoek')) return { color: '#fbbf24', rgb: '251, 191, 36' };
-  if (t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi')) return { color: '#fbbf24', rgb: '251, 191, 36' };
-  if (t.includes('ocean') || t.includes('persoonlijkheid')) return { color: '#00d4ff', rgb: '0, 212, 255' };
-  if (t.includes('neuroticisme')) return { color: '#ef4444', rgb: '239, 68, 68' };
-  if (t.includes('superkracht')) return { color: '#1d9904', rgb: '29, 153, 4' };
-  if (t.includes('conflictstijl')) return { color: '#f97316', rgb: '249, 115, 22' };
-  if (t.includes('relatiepatroon')) return { color: '#ec4899', rgb: '236, 72, 153' };
-  if (t.includes('individuatiepad')) return { color: '#a855f7', rgb: '168, 85, 247' };
-  if (t.includes('vergelijk') || t.includes('rapport')) return { color: '#00d4ff', rgb: '0, 212, 255' };
-  if (t.includes('groep dynamiek') || t.includes('neurobiologisch')) return { color: '#22d3ee', rgb: '34, 211, 238' };
+  const has = (...words) => words.some(w => t.includes(w));
+  if (has('identiteit', 'identity', 'waarom', 'why')) return { color: '#1d9904', rgb: '29, 153, 4' };
+  if (has('essentie', 'essence', 'schaduw', 'shadow')) return { color: '#a855f7', rgb: '168, 85, 247' };
+  if (has('vermenigvuldiging', 'multiplication')) return { color: '#f97316', rgb: '249, 115, 22' };
+  if (has('blindspot', 'blind spot')) return { color: '#ef4444', rgb: '239, 68, 68' };
+  if (has('visuele', 'visual')) return { color: '#a855f7', rgb: '168, 85, 247' };
+  if (has('professionele', 'professional', 'creatieve', 'creative')) return { color: '#22d3ee', rgb: '34, 211, 238' };
+  if (has('dual', 'dynamics', 'dynamiek')) return { color: '#f97316', rgb: '249, 115, 22' };
+  if (has('cognitieve', 'cognitive', 'driehoek', 'triangle')) return { color: '#fbbf24', rgb: '251, 191, 36' };
+  if (has('alchemie', 'alchemy', 'schakelbord', 'switchboard', 'evolutie', 'evolution', 'ontologi')) return { color: '#fbbf24', rgb: '251, 191, 36' };
+  if (has('ocean', 'persoonlijkheid', 'personality')) return { color: '#00d4ff', rgb: '0, 212, 255' };
+  if (has('neuroticisme', 'neuroticism')) return { color: '#ef4444', rgb: '239, 68, 68' };
+  if (has('superkracht', 'superpower')) return { color: '#1d9904', rgb: '29, 153, 4' };
+  if (has('conflictstijl', 'conflict style')) return { color: '#f97316', rgb: '249, 115, 22' };
+  if (has('relatiepatroon', 'relationship pattern')) return { color: '#ec4899', rgb: '236, 72, 153' };
+  if (has('individuatiepad', 'individuation')) return { color: '#a855f7', rgb: '168, 85, 247' };
+  if (has('vergelijk', 'compar', 'rapport', 'report')) return { color: '#00d4ff', rgb: '0, 212, 255' };
+  if (has('groep dynamiek', 'group dynamic', 'neurobiologisch', 'neurobiolog')) return { color: '#22d3ee', rgb: '34, 211, 238' };
   return null;
 };
 

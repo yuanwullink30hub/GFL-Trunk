@@ -44,12 +44,14 @@ const UI = {
   },
   searchPlaceholder: { nl: 'Doorzoek bronnen, claims of afwijkingen...', en: 'Search sources, claims or deviations...' },
   colBron: { nl: 'Bron', en: 'Source' },
+  colLink: { nl: 'Link', en: 'Link' },
+  clusterLabel: { nl: 'Cluster', en: 'Cluster' },
   colSource: { nl: 'Referentie', en: 'Reference' },
   colUnderpins: { nl: 'Wat het onderbouwt', en: 'What it underpins' },
   colDeviation: { nl: 'Waar wij afwijken (en waarom)', en: 'Where we deviate (and why)' },
   colCross: { nl: 'Kruisrelatie / Falsifieert', en: 'Cross-relation / Falsifies' },
   colCertainty: { nl: 'Zekerheid', en: 'Certainty' },
-  noResults: { nl: '{tr(UI.noResults)}', en: 'No sources found matching your criteria.' },
+  noResults: { nl: 'Geen bronnen gevonden die aan je criteria voldoen.', en: 'No sources found matching your criteria.' },
   remove: { nl: 'Verwijder', en: 'Remove' },
   showDetailsBracket: { nl: '[+ Toon Details]', en: '[+ Show details]' },
   hideDetailsBracket: { nl: '[- Verberg Details]', en: '[- Hide details]' },
@@ -76,7 +78,7 @@ const UI = {
   phTitle: { nl: 'bijv. The Free-Energy Principle, Nature', en: 'e.g. The Free-Energy Principle, Nature' },
   fieldUnderpins: { nl: 'Wat het onderbouwt *', en: 'What it underpins *' },
   phUnderpins: { nl: 'Beschrijf concreet welke stelling of fysiologische laag dit onderbouwt...', en: 'Describe concretely which claim or physiological layer this underpins...' },
-  send: { nl: 'Send', en: 'Send' },
+  send: { nl: 'Versturen', en: 'Send' },
   sending: { nl: 'Versturen...', en: 'Sending...' },
   // Alerts & fallbacks
   alertContactReq: { nl: 'Vul alstublieft ten minste uw e-mailadres en bericht in.', en: 'Please fill in at least your email address and message.' },
@@ -485,7 +487,7 @@ export default function ReferencesPanel({ bodyFont = '0.75rem' }) {
               <span className="flex items-center gap-2 truncate">
                 <Layers className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                 <span className="truncate">
-                  {selectedClusterId === 'All' ? tr(UI.allClusters) : selectedClusterId === 'custom' ? tr(UI.ownEntry) : `Cluster ${selectedClusterId}`}
+                  {selectedClusterId === 'All' ? tr(UI.allClusters) : selectedClusterId === 'custom' ? tr(UI.ownEntry) : `${tr(UI.clusterLabel)} ${selectedClusterId}`}
                 </span>
               </span>
               {isClusterDropdownOpen ? <ChevronUp className="w-3.5 h-3.5 text-slate-500 shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />}
@@ -567,7 +569,7 @@ export default function ReferencesPanel({ bodyFont = '0.75rem' }) {
             <table className="w-full table-fixed text-left border-collapse border border-[#2a2a30] [&_th]:border [&_th]:border-[#2a2a30] [&_td]:border [&_td]:border-[#2a2a30] [&_th]:break-words [&_td]:break-words">
               <thead>
                 <tr className="bg-slate-900/40 text-white font-mono tracking-wider  uppercase">
-                  <th className="p-4 w-[25%]">{tr(UI.colBron)} / <span className="underline decoration-2 decoration-green-500 underline-offset-2">Link</span> / {tr(UI.colSource)}</th>
+                  <th className="p-4 w-[25%]">{tr(UI.colBron)} / <span className="underline decoration-2 decoration-green-500 underline-offset-2">{tr(UI.colLink)}</span> / {tr(UI.colSource)}</th>
                   <th className="p-4 w-[25%]">{tr(UI.colUnderpins)}</th>
                   <th className="p-4 w-[25%]">{tr(UI.colDeviation)}</th>
                   <th className="p-4 w-[15%]">{tr(UI.colCross)}</th>

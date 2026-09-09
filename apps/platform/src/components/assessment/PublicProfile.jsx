@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect } from 'react';
 import { getCard } from '@gfl/api-client';
 import { C, FONT, SciFiButton } from '@gfl/ui';
+import { useLanguage } from '@gfl/i18n';
 import ProfileCard from './ProfileCard';
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -12,6 +13,7 @@ import ProfileCard from './ProfileCard';
    ════════════════════════════════════════════════════════════════════════ */
 
 const PublicProfile = memo(({ handle, active = true, onClose }) => {
+  const { t } = useLanguage();
   const [state, setState] = useState({ loading: true, error: '', card: null });
 
   useEffect(() => {
@@ -19,8 +21,9 @@ const PublicProfile = memo(({ handle, active = true, onClose }) => {
     setState({ loading: true, error: '', card: null });
     getCard(handle)
       .then((card) => { if (alive) setState({ loading: false, error: '', card }); })
-      .catch((e) => { if (alive) setState({ loading: false, error: e.message || 'Profiel niet gevonden.', card: null }); });
+      .catch((e) => { if (alive) setState({ loading: false, error: e.message || t('profile.publicView.notFoundError'), card: null }); });
     return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handle]);
 
   const { loading, error, card } = state;
@@ -28,16 +31,16 @@ const PublicProfile = memo(({ handle, active = true, onClose }) => {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'radial-gradient(ellipse at center, rgba(8,2,14,0.92), rgba(2,0,4,0.97))', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, color: C.text, padding: 'clamp(1rem, 4vh, 3rem)', overflowY: 'auto' }}>
       <div style={{ position: 'absolute', top: 'clamp(14px,3vh,34px)', right: 'clamp(16px,3vw,44px)', zIndex: 2 }}>
-        <SciFiButton onClick={onClose} size="sm" padding="0.4rem 1rem" fontSize="max(10px,0.5vw)">✕ Sluiten</SciFiButton>
+        <SciFiButton onClick={onClose} size="sm" padding="0.4rem 1rem" fontSize="max(10px,0.5vw)">{t('profile.publicView.close')}</SciFiButton>
       </div>
 
       {loading && (
-        <div style={{ fontFamily: FONT, fontSize: 'max(12px,0.7vw)', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)' }}>Kristal laden…</div>
+        <div style={{ fontFamily: FONT, fontSize: 'max(12px,0.7vw)', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)' }}>{t('profile.publicView.loading')}</div>
       )}
 
       {!loading && error && (
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 'max(16px,1vw)', color: '#f87171', marginBottom: '0.6rem' }}>Profiel niet gevonden</div>
+          <div style={{ fontSize: 'max(16px,1vw)', color: '#f87171', marginBottom: '0.6rem' }}>{t('profile.publicView.notFoundTitle')}</div>
           <div style={{ fontSize: 'max(11px,0.6vw)', color: 'rgba(255,255,255,0.45)' }}>{error}</div>
         </div>
       )}

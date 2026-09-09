@@ -267,10 +267,10 @@ const LoginPage = memo(({ isVisible, onBack }) => {
     const code = String(raw || '').trim();
     if (!code) return false;
     const cfg = code.startsWith('LC_ORB3_') ? decodeOrb3(code) : decodeDNA(code);
-    if (!cfg) { setUploadErr('Code kon niet ontcijferd worden.'); return false; }
+    if (!cfg) { setUploadErr(t('auth.errors.codeUndecipherable')); return false; }
     setUploadErr(''); setOrbCodeStr(code);
     return true;
-  }, []);
+  }, [t]);
 
   const handleOrbUpload = useCallback(async (file) => {
     if (!file) return;
@@ -294,7 +294,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         return;
       }
       // First-time (unlinked) code → the account-creation card flows OUT of the orb.
-      if (!acceptOrbCode(res.code)) throw new Error('Code kon niet ontcijferd worden.');
+      if (!acceptOrbCode(res.code)) throw new Error(t('auth.errors.codeUndecipherable'));
       setObEmail(''); setObPassword(''); setObUsername(''); setObAge(''); setObCountry('');
       setObArchetype(res.archetypeName || '');
       setObReading(res.reading || null);
@@ -303,12 +303,12 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       clearFlowTimers();
       scheduleFlow(820, () => setEmerged(true));       // card flows out as the grow finishes
     } catch (err) {
-      setUploadErr(err.message || 'Upload mislukt.');
+      setUploadErr(err.message || t('auth.errors.uploadFailed'));
       setAbsorbing(false);   // return the panels/card on failure
     } finally {
       setUploadBusy(false);
     }
-  }, [acceptOrbCode, clearFlowTimers, scheduleFlow, bootIntoClient]);
+  }, [acceptOrbCode, clearFlowTimers, scheduleFlow, bootIntoClient, t]);
 
   // "← Terug" on the account card — the EXACT reverse of the forward flow:
   //   1. card flows back INTO the orb  →  2. orb shrinks to template  →  3. panels flow back out.
@@ -355,19 +355,19 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         if (e.needsVerification) {
           verifyPollRef.current = setTimeout(tryOnce, 3500); // still unverified — keep waiting
         } else {
-          setObErr(e.message || 'Er ging iets mis bij het bevestigen.');
+          setObErr(e.message || t('auth.errors.confirmFailed'));
           setVerifyPending(false); setObBusy(false);
         }
       }
     };
     tryOnce();
-  }, [obEmail, obPassword, proceedIntoClient]);
+  }, [obEmail, obPassword, proceedIntoClient, t]);
 
   // Create the account. With email verification on, register does NOT return a session — it sends a
   // confirmation link and we wait (polling /login) until the user clicks it, THEN boot into client.
   const handleCreateAccount = useCallback(async () => {
-    if (!obUsername || !obEmail || !obPassword) { setObErr('Vul gebruikersnaam, e-mail en wachtwoord in.'); return; }
-    if (!obConsent) { setObErr('Bevestig de voorwaarden om verder te gaan.'); return; }
+    if (!obUsername || !obEmail || !obPassword) { setObErr(t('auth.errors.fillFields')); return; }
+    if (!obConsent) { setObErr(t('auth.errors.confirmTerms')); return; }
     setObErr(''); setObBusy(true);
     try {
       const data = await register({ email: obEmail, password: obPassword, displayName: obUsername, age: obAge, country: obCountry, orbCode: orbCodeStr, archetypeName: obArchetype, reading: obReading });
@@ -378,10 +378,10 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       }
       proceedIntoClient();        // dev / no-SMTP: already logged in
     } catch (e) {
-      setObErr(e.message || 'Account aanmaken mislukt.');
+      setObErr(e.message || t('auth.errors.createAccountFailed'));
       setObBusy(false);
     }
-  }, [obUsername, obEmail, obPassword, obAge, obCountry, obArchetype, obConsent, orbCodeStr, pollVerification, proceedIntoClient]);
+  }, [obUsername, obEmail, obPassword, obAge, obCountry, obArchetype, obConsent, orbCodeStr, pollVerification, proceedIntoClient, t]);
 
   // Responsive size for the template orb on the logged-out screen.
   const [vp, setVp] = useState(() => ({
@@ -520,7 +520,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
   const logoutOverlay = (loggingOut && typeof document !== 'undefined') ? createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 2147483647, background: 'rgba(0, 0, 0, 0.98)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.3rem' }}>
       <div className="animate-spin" style={{ width: '3rem', height: '3rem', borderRadius: '50%', border: '3px solid rgba(168,85,247,0.25)', borderTopColor: '#a855f7' }} />
-      <div style={{ fontFamily: "'Figtree', sans-serif", color: '#c4b5fd', letterSpacing: '0.24em', textTransform: 'uppercase', fontSize: 'max(12px, 0.7vw)' }}>Uitloggen…</div>
+      <div style={{ fontFamily: "'Figtree', sans-serif", color: '#c4b5fd', letterSpacing: '0.24em', textTransform: 'uppercase', fontSize: 'max(12px, 0.7vw)' }}>{t('auth.overlay.loggingOut')}</div>
     </div>,
     document.body
   ) : null;
@@ -545,7 +545,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         {bootLesson ? (
           <div style={{ width: '100%', maxWidth: '440px', textAlign: 'center' }}>
             {/* .gfl-lesson-label */}
-            <div style={{ margin: '0 0 0.9rem', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.28em', fontFamily: "'Rajdhani', sans-serif", fontSize: '0.72rem', color: '#c4b5fd' }}>Levensles</div>
+            <div style={{ margin: '0 0 0.9rem', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.28em', fontFamily: "'Rajdhani', sans-serif", fontSize: '0.72rem', color: '#c4b5fd' }}>{t('auth.overlay.lifeLesson')}</div>
             {/* .gfl-lesson-slide */}
             <div style={{ margin: 0, textAlign: 'center', letterSpacing: '0.02em', color: 'rgba(255, 254, 240, 0.9)', fontFamily: "'Rajdhani', sans-serif", fontSize: '1rem', lineHeight: 1.6, animation: 'gfl-fade-in 0.6s ease-out both' }}>{bootLesson}</div>
           </div>
@@ -589,7 +589,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
           title=""
           topRight={
             <SciFiButton onClick={() => { setShowConsent(false); setError(''); }} size="xs" padding="0.2rem 0.6rem" fontSize="max(8px, 0.42vw)">
-              TERUG
+              {t('auth.consent.back')}
             </SciFiButton>
           }
         >
@@ -597,23 +597,23 @@ const LoginPage = memo(({ isVisible, onBack }) => {
           <div style={{ flex: 1 }}>
             <div style={{ marginBottom: '1.2rem' }}>
               <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', letterSpacing: '0.15em', color: C.gold }}>
-                BEVESTIG AANMELDING
+                {t('auth.consent.title')}
               </div>
             </div>
 
             <p style={{ fontSize: 'max(10px, 0.52vw)', color: C.textDim, marginBottom: '1.2rem', lineHeight: 1.6 }}>
-              Blah blah, dit lees je toch niet, maar misschien zou je dat eens een keer moeten doen. Data is het nieuwe goud.
+              {t('auth.consent.intro')}
             </p>
 
             <label style={{ display: 'flex', gap: '0.7rem', alignItems: 'flex-start', marginBottom: '0.9rem', cursor: 'pointer' }}>
               <input type="checkbox" checked={consentA} onChange={(e) => setConsentA(e.target.checked)}
                 style={{ marginTop: '0.2rem', accentColor: C.gold, flexShrink: 0 }} />
               <span style={{ fontSize: 'max(10px, 0.5vw)', color: C.textDim, lineHeight: 1.55 }}>
-                Ik ga akkoord met de{' '}
-                <a href="/?page=algemene-voorwaarden" target="_blank" rel="noopener noreferrer" style={{ color: C.gold, textDecoration: 'underline' }}>Algemene Voorwaarden</a>
-                {' '}en het{' '}
-                <a href="/?page=privacybeleid" target="_blank" rel="noopener noreferrer" style={{ color: C.gold, textDecoration: 'underline' }}>Privacybeleid</a>
-                , inclusief de verwerking van mijn accountgegevens.
+                {t('auth.consent.aPrefix')}{' '}
+                <a href="/?page=algemene-voorwaarden" target="_blank" rel="noopener noreferrer" style={{ color: C.gold, textDecoration: 'underline' }}>{t('auth.legal.terms')}</a>
+                {' '}{t('auth.consent.aMiddle')}{' '}
+                <a href="/?page=privacybeleid" target="_blank" rel="noopener noreferrer" style={{ color: C.gold, textDecoration: 'underline' }}>{t('auth.legal.privacy')}</a>
+                {t('auth.consent.aSuffix')}
               </span>
             </label>
 
@@ -621,8 +621,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
               <input type="checkbox" checked={consentB} onChange={(e) => setConsentB(e.target.checked)}
                 style={{ marginTop: '0.2rem', accentColor: C.gold, flexShrink: 0 }} />
               <span style={{ fontSize: 'max(10px, 0.5vw)', color: C.textDim, lineHeight: 1.55 }}>
-                Ik begrijp dat dit een beta-platform is. Alle data wordt verwijderd vóór 27-09-2026.
-                Assessment-antwoorden worden anoniem verwerkt door Claude AI — zonder naam, e-mail of IP.
+                {t('auth.consent.b')}
               </span>
             </label>
 
@@ -640,7 +639,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
               disabled={!consentA || !consentB || loading}
               size="md"
             >
-              {loading ? t('pages.loginPage.loading') : 'BEVESTIG & AANMELDEN'}
+              {loading ? t('pages.loginPage.loading') : t('auth.consent.submit')}
             </SciFiButton>
           </div>
 
@@ -648,7 +647,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.6rem' }}>
             <span style={{ fontSize: '0.65rem', opacity: 0.3 }}>🛡</span>
             <span style={{ fontSize: 'max(8px, 0.4vw)', opacity: 0.25, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
-              Versleutelde Verbinding
+              {t('auth.consent.encrypted')}
             </span>
           </div>
         </LoginFrame>
@@ -703,43 +702,43 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         {onboarding && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
             <div style={{ width: 'min(440px, 72vw)', maxHeight: '68vh', overflowY: 'auto', background: 'rgba(2,0,3,0.66)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: `1px solid ${C.purple}`, borderRadius: '0.7rem', boxShadow: `0 0 46px -12px ${C.purple}, 0 12px 50px rgba(0,0,0,0.6)`, fontFamily: FONT, color: C.text, padding: '1.4rem 1.5rem', transformOrigin: 'center center', transform: emerged ? 'scale(1.3)' : 'scale(0.25)', opacity: emerged ? 1 : 0, transition: FLOW_TRANSITION }}>
-              <div style={{ fontSize: 'max(15px,0.85vw)', fontWeight: 700, letterSpacing: '0.1em', color: C.gold }}>{verifyPending ? 'Bevestig je e-mail' : 'Maak je account'}</div>
+              <div style={{ fontSize: 'max(15px,0.85vw)', fontWeight: 700, letterSpacing: '0.1em', color: C.gold }}>{verifyPending ? t('auth.onboarding.verifyTitle') : t('auth.onboarding.createTitle')}</div>
               {obErr && <div style={{ ...ERROR_STYLE, margin: '0.6rem 0' }}><span style={{ fontSize: '0.8rem' }}>⚠</span> {obErr}</div>}
               {verifyPending ? (
                 <div style={{ textAlign: 'center', padding: '0.4rem 0 0.2rem' }}>
                   <div className="animate-spin" style={{ width: '2.4rem', height: '2.4rem', margin: '0.8rem auto 1rem', borderRadius: '50%', border: '2px solid #a855f7', borderTopColor: 'transparent' }} />
                   <div style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-                    We hebben een bevestigingslink gestuurd naar<br /><b style={{ color: '#FFFEF0' }}>{obEmail}</b>.<br />
-                    Klik erop om je account te activeren — dit venster gaat daarna automatisch verder.
+                    {t('auth.onboarding.verifySentTo')}<br /><b style={{ color: '#FFFEF0' }}>{obEmail}</b>.<br />
+                    {t('auth.onboarding.verifyClick')}
                   </div>
-                  <button type="button" onClick={handleOnboardingBack} style={{ marginTop: '1.2rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 'max(9px,0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}>← Annuleren</button>
+                  <button type="button" onClick={handleOnboardingBack} style={{ marginTop: '1.2rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 'max(9px,0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}>{t('auth.onboarding.cancel')}</button>
                 </div>
               ) : (
               <>
               <div style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, margin: '0.35rem 0 1rem' }}>
-                Je kristal is uniek. Koppel het aan een account om het platform te betreden — je code wordt je sleutel.
+                {t('auth.onboarding.intro')}
               </div>
               {/* Real <form> — password managers skip fields that live outside one. Enter
                   submits; the SciFiButton below stays type=button and calls the handler itself. */}
               <form id="onboardForm" onSubmit={(e) => { e.preventDefault(); handleCreateAccount(); }} style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                 <div>
-                  <div style={FIELD_LABEL}><span>👤</span> Gebruikersnaam</div>
+                  <div style={FIELD_LABEL}><span>👤</span> {t('auth.onboarding.username')}</div>
                   {/* nickname, NOT username: login is by email — managers must not save this as the identifier */}
                   <input type="text" name="nickname" id="onboard-nickname" autoComplete="nickname" value={obUsername} onChange={(e) => setObUsername(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
                 <div>
-                  <div style={FIELD_LABEL}><span>✉</span> E-mail</div>
+                  <div style={FIELD_LABEL}><span>✉</span> {t('pages.loginPage.email')}</div>
                   <input type="email" name="email" id="onboard-email" autoComplete="username" value={obEmail} onChange={(e) => setObEmail(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
                 <div>
-                  <div style={FIELD_LABEL}><span>🔑</span> Wachtwoord</div>
+                  <div style={FIELD_LABEL}><span>🔑</span> {t('pages.loginPage.password')}</div>
                   <div style={{ position: 'relative' }}>
                     <input type={obShowPassword ? 'text' : 'password'} name="new-password" id="onboard-password" autoComplete="new-password" value={obPassword} onChange={(e) => setObPassword(e.target.value)} style={{ ...INPUT, paddingRight: '2.4rem' }} onFocus={inputFocus} onBlur={inputBlur} />
                     <button
                       type="button"
                       onClick={() => setObShowPassword((v) => !v)}
-                      aria-label={obShowPassword ? 'Verberg wachtwoord' : 'Toon wachtwoord'}
-                      title={obShowPassword ? 'Verberg wachtwoord' : 'Toon wachtwoord'}
+                      aria-label={obShowPassword ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
+                      title={obShowPassword ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
                       style={{ position: 'absolute', top: '50%', right: '0.6rem', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0, color: 'rgba(255,255,255,0.5)', display: 'inline-flex' }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = C.gold)}
                       onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
@@ -760,27 +759,27 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                 </div>
                 <div style={{ display: 'flex', gap: '0.55rem' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={FIELD_LABEL}>Leeftijd</div>
+                    <div style={FIELD_LABEL}>{t('auth.onboarding.age')}</div>
                     <input type="number" name="age" min="0" autoComplete="off" value={obAge} onChange={(e) => setObAge(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                   </div>
                   <div style={{ flex: 2 }}>
-                    <div style={FIELD_LABEL}>Land</div>
+                    <div style={FIELD_LABEL}>{t('auth.onboarding.country')}</div>
                     <input type="text" name="country" autoComplete="country-name" value={obCountry} onChange={(e) => setObCountry(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                   </div>
                 </div>
                 <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginTop: '0.3rem', cursor: 'pointer' }}>
                   <input type="checkbox" checked={obConsent} onChange={(e) => setObConsent(e.target.checked)} style={{ marginTop: '0.2rem', accentColor: C.gold, flexShrink: 0 }} />
                   <span style={{ fontSize: 'max(9px,0.46vw)', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45 }}>
-                    Ik ga akkoord met de{' '}
-                    <a href="/?page=algemene-voorwaarden" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: C.gold, textDecoration: 'underline' }}>Algemene Voorwaarden</a>
-                    {' '}en het{' '}
-                    <a href="/?page=privacybeleid" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: C.gold, textDecoration: 'underline' }}>Privacybeleid</a>.
+                    {t('auth.onboarding.consentPrefix')}{' '}
+                    <a href="/?page=algemene-voorwaarden" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: C.gold, textDecoration: 'underline' }}>{t('auth.legal.terms')}</a>
+                    {' '}{t('auth.onboarding.consentMiddle')}{' '}
+                    <a href="/?page=privacybeleid" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: C.gold, textDecoration: 'underline' }}>{t('auth.legal.privacy')}</a>.
                   </span>
                 </label>
               </form>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.1rem' }}>
-                <button type="button" onClick={handleOnboardingBack} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 'max(9px,0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}>← Terug</button>
-                <SciFiButton onClick={handleCreateAccount} disabled={obBusy} size="md">{obBusy ? 'Aanmaken…' : 'Betreed platform'}</SciFiButton>
+                <button type="button" onClick={handleOnboardingBack} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 'max(9px,0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}>{t('auth.onboarding.back')}</button>
+                <SciFiButton onClick={handleCreateAccount} disabled={obBusy} size="md">{obBusy ? t('auth.onboarding.creating') : t('auth.onboarding.enter')}</SciFiButton>
               </div>
               </>
               )}
@@ -788,7 +787,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
           </div>
         )}
         <LoginFrame
-        title={mode === 'login' ? 'Inloggen' : ''}
+        title={mode === 'login' ? t('auth.login.title') : ''}
         style={{ marginTop: '3rem', transition: FLOW_TRANSITION, transformOrigin: 'center top', transform: absorbing ? 'translateY(-72%) scale(0.06)' : 'none', opacity: absorbing ? 0 : 1 }}
       >
 
@@ -796,8 +795,8 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: usePassword ? 'flex-start' : 'center', ...(!usePassword && { alignItems: 'center', textAlign: 'center' }) }}>
           {!usePassword && (
             <div style={{ fontFamily: FONT, fontSize: 'max(9px, 0.5vw)', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, marginBottom: '0.8rem' }}>
-              Synchroniseer hier jouw essentie en ontgrendel<br />
-              3 maanden gebruik van het platform zijn intelligentie.
+              {t('auth.login.pitchLine1')}<br />
+              {t('auth.login.pitchLine2')}
             </div>
           )}
 
@@ -811,7 +810,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
               <input ref={fileInputRef} type="file" accept="application/pdf,.pdf" style={{ display: 'none' }}
                 onChange={(e) => { handleOrbUpload(e.target.files?.[0]); e.target.value = ''; }} />
               <SciFiButton onClick={() => fileInputRef.current?.click()} disabled={uploadBusy} size="md" style={{ alignSelf: 'center' }}>
-                {uploadBusy ? 'Kristal ontcijferen…' : '⬆  Upload je rapport (PDF)'}
+                {uploadBusy ? t('auth.login.decoding') : t('auth.login.upload')}
               </SciFiButton>
             </>
           ) : (
@@ -860,7 +859,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
               style={{ background: 'none', border: 'none', color: 'rgba(255,174,0,0.6)', cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}
               onMouseEnter={(e) => e.target.style.color = 'rgba(255,174,0,0.9)'}
               onMouseLeave={(e) => e.target.style.color = 'rgba(255,174,0,0.6)'}>
-              Al een account? login
+              {t('auth.login.haveAccount')}
             </button>
           ) : (
             <>
@@ -868,10 +867,10 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                 style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}
                 onMouseEnter={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}
                 onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.4)'}>
-                ← Terug
+                {t('auth.login.back')}
               </button>
               <SciFiButton onClick={() => { const f = document.getElementById('loginForm'); if (f) f.requestSubmit(); }} disabled={loading} size="md">
-                {loading ? t('pages.loginPage.loading') : 'IDENTIFICEER'}
+                {loading ? t('pages.loginPage.loading') : t('auth.login.submit')}
               </SciFiButton>
             </>
           )}

@@ -550,7 +550,7 @@ function drawContextPages(doc) {
       heading: 'Hoe Het Rapport Ontstaat',
       headingColor: GREEN,
       body: [
-        { type: 'para', text: 'Na het assessment berekent het systeem je volledige scoreprofiel inclusief de geometrische echo\u2019s. Een AI-model (Claude, Anthropic) analyseert dit profiel aan de hand van het volledige Deltawerken-framework: de drie bronmodellen, de biochemische archetypeprofielen, de 72 Extended Archetypes (Main \u00d7 Support-groep), en \u2014 indien aangeleverd \u2014 je OCEAN-data als externe validatie.' },
+        { type: 'para', text: 'Na het assessment berekent het systeem je volledige scoreprofiel inclusief de geometrische echo\u2019s. Een AI-model (Claude, Anthropic) analyseert dit profiel aan de hand van het volledige Deltawerken-framework: de drie bronmodellen, de biochemische archetypeprofielen, de 132 Extended Archetypes (Main \u00d7 Support-archetype), en \u2014 indien aangeleverd \u2014 je OCEAN-data als externe validatie.' },
         { type: 'para', text: 'Het rapport is geen generieke beschrijving van een type. Het is een dynamische analyse van jouw specifieke scoreprofiel: waar je hardware het sterkst resoneert, welke aangeleerde strategieën je inzet, waar je blinde vlekken zitten, en welke schaduw-integratie je groeirichting vormt.' },
         { type: 'italic', text: 'En mocht je nog twijfelen over de gegenereerde content, alles wat je zojuist hebt gelezen is geschreven door hetzelfde model dat jouw score heeft geanalyseerd.' },
       ],

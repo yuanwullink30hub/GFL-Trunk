@@ -146,8 +146,10 @@ router.post('/', authRequired, async (req, res) => {
   try {
     const {
       archetypeKey,
+      supportArchetype,
       supportGroup,
       extendedArchetypeName,
+      extendedArchetypeNameNl,
       oceanScores,
       responses,
       subjectResults,
@@ -170,8 +172,10 @@ router.post('/', authRequired, async (req, res) => {
     const doc = {
       userId: req.user.userId,
       archetypeKey,
+      supportArchetype: supportArchetype || null,
       supportGroup: supportGroup || null,
       extendedArchetypeName: extendedArchetypeName || null,
+      extendedArchetypeNameNl: extendedArchetypeNameNl || null,
       oceanScores: oceanScores || null,
       responses: Array.isArray(responses) ? responses : [],
       subjectResults: Array.isArray(subjectResults) ? subjectResults : [],

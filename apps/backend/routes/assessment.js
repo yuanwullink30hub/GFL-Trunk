@@ -149,8 +149,10 @@ router.post('/', authRequired, async (req, res) => {
     const {
       clientId,
       archetypeKey,
+      supportArchetype,
       supportGroup,
       extendedArchetypeName,
+      extendedArchetypeNameNl,
       oceanScores,
       responses,
       subjectResults,
@@ -174,8 +176,10 @@ router.post('/', authRequired, async (req, res) => {
       userId: req.user.userId,
       clientId: clientId || null,
       archetypeKey,
+      supportArchetype: supportArchetype || null,
       supportGroup: supportGroup || null,
       extendedArchetypeName: extendedArchetypeName || null,
+      extendedArchetypeNameNl: extendedArchetypeNameNl || null,
       oceanScores: oceanScores || null,
       responses: Array.isArray(responses) ? responses : [],
       subjectResults: Array.isArray(subjectResults) ? subjectResults : [],
@@ -222,8 +226,10 @@ router.get('/history', authRequired, async (req, res) => {
       .limit(limit)
       .project({
         archetypeKey: 1,
+        supportArchetype: 1,
         supportGroup: 1,
         extendedArchetypeName: 1,
+        extendedArchetypeNameNl: 1,
         aiProvider: 1,
         aiModel: 1,
         createdAt: 1,

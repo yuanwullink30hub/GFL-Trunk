@@ -16,7 +16,7 @@ const AssessmentResults = ({
   const [expandedSection, setExpandedSection] = useState('archetype');
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
-  const { t } = useLanguage();
+  const { t, tArray, tFunc } = useLanguage();
 
   if (!result || !isVisible) return null;
 
@@ -25,7 +25,7 @@ const AssessmentResults = ({
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
     try {
-      const content = generatePDFContent(result, archetypeInfo, t);
+      const content = generatePDFContent(result, archetypeInfo, t, tArray, tFunc);
       const blob = new Blob([content], { type: "text/html" });
       const url = URL.createObjectURL(blob);
       const printWindow = window.open(url, "_blank");
@@ -328,9 +328,11 @@ const LayerResultCard = ({ result, color, t }) => (
 );
 
 // PDF Content Generator
-function generatePDFContent(result, archetypeInfo, t) {
+function generatePDFContent(result, archetypeInfo, t, tArray, tFunc) {
+  const liList = (key) => tArray(key).map((item) => `<li>${item}</li>`).join('');
+  const locale = t('reportLegal.dateLocale');
   const colors = ["#22c55e", "#3b82f6", "#a855f7", "#ef4444", "#f97316"];
-  const dateStr = result.timestamp?.toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' }) || new Date().toLocaleDateString('nl-NL');
+  const dateStr = result.timestamp?.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' }) || new Date().toLocaleDateString(locale);
   const displayName = result.extendedArchetypeName || archetypeInfo?.name || result.overallArchetype;
   const profileImage = archetypeInfo?.imageUrl || '';
   
@@ -505,10 +507,10 @@ function generatePDFContent(result, archetypeInfo, t) {
   <!-- ════════════════════════════════════════════ -->
   <div class="cover-page">
     <p class="cover-brand">Garden for Life</p>
-    <p class="cover-brand-sub">Advanced Consciousness Assessment</p>
+    <p class="cover-brand-sub">${t('reportLegal.cover.brandSub')}</p>
     ${profileImage ? `<div class="cover-image-wrap"><img class="cover-image" src="${profileImage}" alt="${displayName}" /></div>` : ''}
     <h1 class="cover-name">${displayName}</h1>
-    ${result.supportArchetype ? `<p class="cover-subtitle">Support: ${result.supportArchetype}</p>` : ''}
+    ${result.supportArchetype ? `<p class="cover-subtitle">${tFunc('reportLegal.cover.support')(result.supportArchetype)}</p>` : ''}
     ${result.quantumResonance ? `<div class="cover-quote">&ldquo;${result.quantumResonance}&rdquo;</div>` : ''}
     <p class="cover-date">${dateStr}</p>
   </div>
@@ -518,73 +520,48 @@ function generatePDFContent(result, archetypeInfo, t) {
   <!-- ════════════════════════════════════════════ -->
   <div class="legal-page">
     <div class="legal-header">
-      <h2>Juridische Informatie</h2>
-      <p>Lees deze pagina zorgvuldig door voordat u verder leest</p>
+      <h2>${t('reportLegal.header.title')}</h2>
+      <p>${t('reportLegal.header.subtitle')}</p>
     </div>
 
     <div class="legal-highlight">
-      <p>Dit rapport is gegenereerd door een AI-model en vormt <strong>geen klinische diagnose</strong>,
-      medisch advies of psychologisch oordeel. De resultaten zijn indicatief binnen het
-      Garden for Life-model en mogen niet worden gebruikt als vervanging voor professionele hulpverlening.</p>
+      <p>${t('reportLegal.highlight')}</p>
     </div>
 
     <div class="legal-section">
-      <h4>1. Modeldisclaimer</h4>
-      <p>Garden for Life gebruikt het Deltawerken-Model, een metaforisch raamwerk gebaseerd op 12 archetypische
-      patronen. Alle termen zoals &ldquo;Nature&rdquo;, &ldquo;Culture&rdquo;, &ldquo;Shadow&rdquo; en
-      &ldquo;Polarization&rdquo; zijn <em>modelconcepten</em> &mdash; geen biologische, neurologische of
-      medische feiten. De analyse beschrijft antwoordpatronen, niet uw persoonlijkheid als vaststaand gegeven.</p>
+      <h4>${t('reportLegal.modelDisclaimer.title')}</h4>
+      <p>${t('reportLegal.modelDisclaimer.body')}</p>
     </div>
 
     <div class="legal-section">
-      <h4>2. AI-Transparantie (EU AI Act)</h4>
-      <p>De persoonlijkheidsanalyse in dit rapport is gegenereerd door een groot taalmodel (LLM).
-      Conform de EU AI Act informeren wij u dat:</p>
-      <ul>
-        <li>De analyse is gebaseerd op uw antwoorden op de assessment-vragen en eventueel ge&uuml;ploade documenten</li>
-        <li>Het AI-systeem kan onnauwkeurigheden, vooroordelen of hallucinaties bevatten</li>
-        <li>De output mag niet worden beschouwd als objectieve waarheid of wetenschappelijk bewijs</li>
-        <li>Er vindt g&eacute;&eacute;n geautomatiseerde besluitvorming plaats op basis van deze resultaten</li>
-      </ul>
+      <h4>${t('reportLegal.aiTransparency.title')}</h4>
+      <p>${t('reportLegal.aiTransparency.intro')}</p>
+      <ul>${liList('reportLegal.aiTransparency.items')}</ul>
     </div>
 
     <div class="legal-section">
-      <h4>3. Gegevensbescherming (AVG / GDPR)</h4>
-      <p>Uw assessment-gegevens worden verwerkt op grond van uw uitdrukkelijke toestemming (Art. 6 lid 1a AVG).
-      Bijzondere persoonsgegevens (antwoordpatronen die indirect psychologische kenmerken kunnen onthullen) worden
-      verwerkt op grond van Art. 9 lid 2a AVG. U heeft te allen tijde het recht op:</p>
-      <ul>
-        <li>Inzage, rectificatie en verwijdering van uw gegevens</li>
-        <li>Intrekking van uw toestemming</li>
-        <li>Overdraagbaarheid van uw gegevens (dataportabiliteit)</li>
-        <li>Het indienen van een klacht bij de Autoriteit Persoonsgegevens</li>
-      </ul>
+      <h4>${t('reportLegal.dataProtection.title')}</h4>
+      <p>${t('reportLegal.dataProtection.intro')}</p>
+      <ul>${liList('reportLegal.dataProtection.items')}</ul>
     </div>
 
     <div class="legal-section">
-      <h4>4. Gegevensbewaring</h4>
-      <p>Uw assessment-resultaten worden maximaal <strong>90 dagen</strong> bewaard op beveiligde servers,
-      waarna ze automatisch en onherroepelijk worden verwijderd. Dit rapport is uw persoonlijke kopie.
-      Garden for Life bewaart na verwijdering geen kopie van uw resultaten.</p>
+      <h4>${t('reportLegal.retention.title')}</h4>
+      <p>${t('reportLegal.retention.body')}</p>
     </div>
 
     <div class="legal-section">
-      <h4>5. Intellectueel Eigendom</h4>
-      <p>Het Deltawerken-Model, de archetypische geometrie, de vragenlijst en de visuele ontwerpen zijn
-      intellectueel eigendom van Garden for Life / Yuan Wu. Dit rapport is uitsluitend voor persoonlijk gebruik.
-      Reproductie, distributie of commerci&euml;le exploitatie zonder schriftelijke toestemming is verboden.</p>
+      <h4>${t('reportLegal.intellectualProperty.title')}</h4>
+      <p>${t('reportLegal.intellectualProperty.body')}</p>
     </div>
 
     <div class="legal-section">
-      <h4>6. Beperkingen &amp; Aansprakelijkheid</h4>
-      <p>Garden for Life aanvaardt geen aansprakelijkheid voor beslissingen genomen op basis van dit rapport.
-      Bij psychische klachten of zorgen wordt u dringend aangeraden contact op te nemen met een gekwalificeerde
-      zorgprofessional. De resultaten zijn een startpunt voor zelfreflectie, niet een eindoordeel.</p>
+      <h4>${t('reportLegal.liability.title')}</h4>
+      <p>${t('reportLegal.liability.body')}</p>
     </div>
 
     <div class="legal-footer-note">
-      Door dit rapport te downloaden bevestigt u kennis te hebben genomen van bovenstaande voorwaarden.<br/>
-      Volledige juridische documenten: www.gardenforlife.nl &nbsp;&bull;&nbsp; Contact: info@gardenforlife.nl
+      ${t('reportLegal.footerNote')}
     </div>
   </div>
 

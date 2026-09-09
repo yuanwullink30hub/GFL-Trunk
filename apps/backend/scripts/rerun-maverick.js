@@ -9,7 +9,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const { MongoClient, ObjectId } = require('mongodb');
 const fs = require('fs');
 
-const API = process.argv[2] || 'https://gfl-api.onrender.com/api';
+const API = process.argv[2] || 'https://api.gardenforlife.nl/api';
 const ASSESSMENT_ID = '6a4d05504d55a3ac5ea32bca';
 const USER_ID = '6a482814bd47be217a8c87cd';
 

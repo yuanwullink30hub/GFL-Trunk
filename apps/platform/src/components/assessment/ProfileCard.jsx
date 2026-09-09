@@ -1,5 +1,6 @@
 import React, { memo, useRef, useState, useEffect } from 'react';
 import { C, FONT, useViewport } from '@gfl/ui';
+import { useLanguage } from '@gfl/i18n';
 import { OrbSphere3D } from '../../orb';
 import { getCardMicrocopy } from './profileCardMicrocopy';
 import { getReadingThumb } from './getReadingThumb';
@@ -56,8 +57,8 @@ const COL_PAD_V = 'max(0.8rem, 1.85vh)'; // ≈1.25rem at 1080p (columns' top/bo
 // layer is built behind this flag and stays off until OD-1 resolves.
 const SHOW_RADAR_VALUES = false;
 
-// ── date helpers (Dutch) ──
-const fmtLong = (d) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' }); } catch { return '—'; } };
+// ── date helpers — the long form follows the active language, the numeric ones are locale-free ──
+const fmtLong = (d, locale = 'nl-NL') => { if (!d) return '—'; try { return new Date(d).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' }); } catch { return '—'; } };
 const p2 = (n) => String(n).padStart(2, '0');
 const fmtChip = (d) => { if (!d) return ''; try { const x = new Date(d); return `${p2(x.getDate())}·${p2(x.getMonth() + 1)}·${String(x.getFullYear()).slice(-2)}`; } catch { return ''; } };
 const fmtProv = (d) => { if (!d) return '—'; try { const x = new Date(d); return `${p2(x.getDate())}·${p2(x.getMonth() + 1)}·${x.getFullYear()}`; } catch { return '—'; } };
@@ -194,6 +195,7 @@ const SOCIALS = [
 ];
 
 function SocialRow({ socials }) {
+  const { t, tFunc } = useLanguage();
   // ALL five icons render at all times, in terminal green — three states:
   //   empty        → dimmed, inert (the slot exists)
   //   claimed      → medium green, clickable (handle typed, ownership not proven)
@@ -211,7 +213,7 @@ function SocialRow({ socials }) {
         };
         if (!v) {
           return (
-            <span key={s.key} title={s.label} aria-label={`${s.label} — niet gekoppeld`}
+            <span key={s.key} title={s.label} aria-label={tFunc('profile.card.socialNotLinked')(s.label)}
               style={{ ...box, color: 'rgba(21, 179, 21, 0.32)', border: '1px solid rgba(21, 179, 21, 0.18)', cursor: 'default' }}>
               <svg viewBox="0 0 24 24" style={{ width: '1.05rem', height: '1.05rem' }}>{s.icon}</svg>
             </span>
@@ -223,7 +225,7 @@ function SocialRow({ socials }) {
           : { ...box, color: 'rgba(21, 179, 21, 0.62)', border: '1px solid rgba(21, 179, 21, 0.4)' };
         return (
           <a key={s.key} href={href} target="_blank" rel="noopener noreferrer" aria-label={s.label}
-            title={`${s.label}${verified ? ' — gesynchroniseerd' : ''}`} style={style}>
+            title={`${s.label}${verified ? t('profile.card.socialSyncedSuffix') : ''}`} style={style}>
             <svg viewBox="0 0 24 24" style={{ width: '1.05rem', height: '1.05rem' }}>{s.icon}</svg>
           </a>
         );
@@ -233,6 +235,8 @@ function SocialRow({ socials }) {
 }
 
 const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, active = true, orbBoxRef = null, children = null, wheelBaskets = null, wheelBasketsHistory = null, verbondHandle = null }) => {
+  const { language, t, tFunc } = useLanguage();
+  const locale = language === 'en' ? 'en-GB' : 'nl-NL';
   const { width: vpW, height: vpH } = useViewport();
   const stacked = vpW < 900;
   // Laptop tier and below (<1800, house breakpoint): the fixed-height card is too tight
@@ -252,7 +256,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
   const latest = derived.latest || null;
   const readings = Array.isArray(derived.readings) ? derived.readings : [];
   const readingCount = derived.readingCount || readings.length;
-  const micro = getCardMicrocopy(latest?.archetypePrimaryId);
+  const micro = getCardMicrocopy(latest?.archetypePrimaryId, language);
 
   // Orb: owner's live client-mode config wins (freshest), else the payload's render ref.
   const orbConfig = orbConfigOverride || latest?.orbRenderRef?.orb || null;
@@ -294,8 +298,8 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
 
   // Provenance strip segments — activity spine: last reading + last time online.
   const provSegments = [
-    `LAATSTE LEZING ${fmtProv(latest?.readingDate)}`,
-    `LAATST ONLINE ${fmtProv(declared.lastSeen)}`,
+    tFunc('profile.card.lastReading')(fmtProv(latest?.readingDate)),
+    tFunc('profile.card.lastOnline')(fmtProv(declared.lastSeen)),
   ];
 
   // Chips row: wheel → horizontal scroll.
@@ -358,7 +362,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
               its orb still, configuration name, date, and tendens. */}
           {(() => {
             const hoverThumb = hoverReading ? getReadingThumb(hoverReading) : null;
-            const hoverMicro = hoverReading ? getCardMicrocopy(hoverReading.archetypePrimaryId) : null;
+            const hoverMicro = hoverReading ? getCardMicrocopy(hoverReading.archetypePrimaryId, language) : null;
             if (hoverReading) {
               return (
                 <div style={{ flex: '1 1 auto', minHeight: 0, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.7rem' }}>
@@ -436,14 +440,14 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
           {/* Name block — personal register only (no archetype label here).
               zIndex lift: the orb canvas above overflows DOWN over this block too. */}
           <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
-            <div style={{ fontFamily: FONT, fontSize: FS['4xl'], color: PURPLE, fontWeight: 700, lineHeight: 1.05, overflowWrap: 'break-word' }}>{declared.displayName || 'Reiziger'}</div>
+            <div style={{ fontFamily: FONT, fontSize: FS['4xl'], color: PURPLE, fontWeight: 700, lineHeight: 1.05, overflowWrap: 'break-word' }}>{declared.displayName || t('profile.card.travellerFallback')}</div>
             {declared.roleLine && <div style={{ fontFamily: FIGTREE, fontSize: 'max(11px, 0.6vw)', color: 'rgba(255,254,240,0.75)', marginTop: '0.35rem' }}>{declared.roleLine}</div>}
             {/* One line: age · country · languages · Lid sinds — membership sits right
                 of the languages (own dimmer tint preserved). */}
             <div style={{ fontFamily: FIGTREE, fontSize: FS.sm, marginTop: '0.3rem', letterSpacing: '0.04em' }}>
               {identityLine && <span style={{ color: DIM }}>{identityLine}</span>}
               {identityLine && <span style={{ color: 'rgba(255,254,240,0.35)' }}> · </span>}
-              <span style={{ color: 'rgba(255,254,240,0.35)' }}>Lid sinds {fmtLong(declared.memberSince)}</span>
+              <span style={{ color: 'rgba(255,254,240,0.35)' }}>{tFunc('profile.card.memberSince')(fmtLong(declared.memberSince, locale))}</span>
             </div>
           </div>
 
@@ -453,7 +457,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
               flows up directly from the ghost orbs, all free space sits above the orb. */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
             <div style={zoneLabel()}>
-              SCHADUWPROFIELEN · {readingCount} {readingCount === 1 ? 'LEZING' : 'LEZINGEN'}
+              {tFunc('profile.card.shadowProfiles')(readingCount)}
             </div>
             {/* Scrollable strip — sized so exactly CHIPS_PER_ROW fit; fills from the LEFT
                 (newest at the left edge, pushing older chips right). When full, the oldest
@@ -471,7 +475,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
         <div style={{ flex: '1 1 auto', minWidth: 0, minHeight: 0, overflowY: (stacked || compact) ? 'visible' : 'auto', padding: `${COL_PAD_V} 1.25rem`, display: 'flex', flexDirection: 'column', gap: GAP_V, boxSizing: 'border-box' }} className="purple-scrollbar">
 
           {/* Title */}
-          <div style={{ fontFamily: FONT, fontSize: FS['2xl'], color: AMBER, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700, lineHeight: HEADER_LINE }}>Transparant profiel</div>
+          <div style={{ fontFamily: FONT, fontSize: FS['2xl'], color: AMBER, letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700, lineHeight: HEADER_LINE }}>{t('profile.card.transparentProfile')}</div>
 
           {/* Derived block — instrument register (corner brackets, amber) */}
           {/* alignItems flex-start (not center): the block's first text line must sit at a
@@ -483,7 +487,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
               readings render the shape-only radar from their own shapeVector12. */}
           {(() => {
             const expr = hoverReading || latest;
-            const exprMicro = hoverReading ? getCardMicrocopy(hoverReading.archetypePrimaryId) : micro;
+            const exprMicro = hoverReading ? getCardMicrocopy(hoverReading.archetypePrimaryId, language) : micro;
             // DYNAMIC block (rule 2026-07-08): natural height always — the full radar wheel
             // always shows and the geometry text renders in full (no inner scroll, no cap).
             // Longer text simply extends the block and pushes the declared row down; the
@@ -496,7 +500,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
                 paints a few px HIGHER than the gift text (left rail) and the body text. */}
             <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem', paddingTop: '0.25rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                <div style={zoneLabel()}>Expressieprofiel</div>
+                <div style={zoneLabel()}>{t('profile.card.expressionProfile')}</div>
                 {expr?.archetypeMainId && (
                   <div style={{ fontFamily: FONT, fontSize: FS.xs, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255, 174, 0, 0.55)' }}>
                     {expr.archetypeMainId}
@@ -532,9 +536,9 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
               {/* Body: the AI-authored geometry summary (canon language) wins → then the
                   extracted Gift one-liner → then the placeholder microcopy. */}
-              <div style={{ fontFamily: FIGTREE, fontSize: FS.base, lineHeight: 1.6, color: CREAM }}>{renderEmphasized(expr?.geomSummary || (expr?.gift ? `*Gift* — ${expr.gift}.` : exprMicro.expression))}</div>
+              <div style={{ fontFamily: FIGTREE, fontSize: FS.base, lineHeight: 1.6, color: CREAM }}>{renderEmphasized(expr?.geomSummary || (expr?.gift ? tFunc('profile.card.giftLine')(expr.gift) : exprMicro.expression))}</div>
               {/* Model-note: ships with the block in every render — not a tooltip, not removable. */}
-              <div style={{ fontFamily: FIGTREE, fontSize: FS.sm, color: DIM, fontStyle: 'italic', flexShrink: 0 }}>Binnen dit model: een waarschijnlijke tendens, geen bepaling.</div>
+              <div style={{ fontFamily: FIGTREE, fontSize: FS.sm, color: DIM, fontStyle: 'italic', flexShrink: 0 }}>{t('profile.card.modelNote')}</div>
             </div>
           </div>
             );
@@ -547,8 +551,8 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
               Intentie's right edge — same purple divider grammar as the rail border. */}
           <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: stacked ? 'column' : 'row', gap: '1rem', borderTop: '1px solid rgba(168, 85, 247, 0.15)', paddingTop: 'max(0.6rem, 1.5vh)' }}>
             {[
-              { block: 'description', label: 'Profiel beschrijving', value: declared.description, empty: 'Nog geen beschrijving — voeg er een toe onder Privé.' },
-              { block: 'intention', label: 'Intentie', value: declared.intention, empty: 'Wat zoek je hier? Samenwerking, werk, uitwisseling — schrijf het in je eigen woorden.' },
+              { block: 'description', label: t('profile.card.descriptionLabel'), value: declared.description, empty: t('profile.card.descriptionEmpty') },
+              { block: 'intention', label: t('profile.card.intentionLabel'), value: declared.intention, empty: t('profile.card.intentionEmpty') },
             ].map((col) => {
               // v1.1 {text, sections} with back-compat for plain v1 strings
               const v = col.value && typeof col.value === 'object' ? col.value : { text: col.value || '', sections: [] };
@@ -565,7 +569,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
                       <div style={{ marginTop: text ? '0.9rem' : 0, paddingTop: text ? '0.9rem' : 0, borderTop: text ? '1px dashed rgba(168, 85, 247, 0.25)' : 'none', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
                         {sections.map((s) => (
                           <div key={s.key}>
-                            <div style={{ fontFamily: FONT, fontSize: FS.xs, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: PURPLE, opacity: 0.85, marginBottom: '0.2rem' }}>{leadFor(col.block, s.key)}</div>
+                            <div style={{ fontFamily: FONT, fontSize: FS.xs, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: PURPLE, opacity: 0.85, marginBottom: '0.2rem' }}>{leadFor(col.block, s.key, language)}</div>
                             <div style={{ fontFamily: FIGTREE, fontSize: FS.base, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: CREAM }}>{s.text}</div>
                           </div>
                         ))}
@@ -605,7 +609,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
             if (!links.length) {
               return (
                 <span style={{ ...pill, color: 'rgba(21, 179, 21, 0.32)', border: '1px solid rgba(21, 179, 21, 0.18)', cursor: 'default' }}>
-                  https://jouweigenlink.nl
+                  {t('profile.card.linkPlaceholder')}
                 </span>
               );
             }

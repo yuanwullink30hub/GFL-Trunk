@@ -1,25 +1,27 @@
 import React, { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { updateDisplayName, updateProfile, updatePassword, updateEmail, deleteOwnAccount, saveOrbSnapshot, getCard, orbLinkCode, orbLoginFromPdf, startSocialVerify } from '@gfl/api-client';
 import { C, FONT, SciFiButton } from '@gfl/ui';
+import { useLanguage } from '@gfl/i18n';
 import { OrbSphere3D } from '../../orb';
 import ProfileCard from './ProfileCard';
 import { getClientOrbConfig, getClientProfile, setClientOrbCode, setClientOrbConfig, setClientProfile, clearClientOrbCode } from '../../clientMode';
 import { getArchetypeImageByName } from '@gfl/assessment-core/data/archetypeImages';
 import { PRESET_KERNELS } from './presetKernels';
-import { POLICY_CONTENT } from '../../data/policyContent';
+import { getPolicyContent } from '../../data/policyIndex';
 
 // Policy/terms pages — for CLIENTS these live here under Instellingen (the left
 // verbindingsmenu shows the public-profiles directory instead; visitors still get
-// the policy hub there). Ids match POLICY_CONTENT keys.
+// the policy hub there). Ids match the policy document keys.
+// Labels are resolved at render time from profile.dashboard.policy.<id>.
 const POLICY_PAGES = [
-  { id: 'terms', label: 'Algemene voorwaarden' },
-  { id: 'privacy', label: 'Privacybeleid' },
-  { id: 'cookies', label: 'Cookiebeleid' },
-  { id: 'ai', label: 'AI-transparantie' },
-  { id: 'ip', label: 'Intellectueel eigendom' },
-  { id: 'usage', label: 'Gebruiksvoorwaarden & misbruik' },
-  { id: 'retention', label: 'Gegevensbehoud & verwijdering' },
-  { id: 'register', label: 'Verwerkingsregister' },
+  { id: 'terms' },
+  { id: 'privacy' },
+  { id: 'cookies' },
+  { id: 'ai' },
+  { id: 'ip' },
+  { id: 'usage' },
+  { id: 'retention' },
+  { id: 'register' },
 ];
 
 // Fallback card payload assembled from /me data — used only if GET /card fails, so the
@@ -121,6 +123,7 @@ const FIELD = { background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(168,85,24
    SEPARATE readable block on the card (inspiration next to the self-written story). The
    main text is never pre-filled; these are the user's own answers, skippable, any order. ── */
 const PresetQuestions = ({ block, values, onChange }) => {
+  const { t } = useLanguage();
   const [openKey, setOpenKey] = useState(null);
   const [copied, setCopied] = useState(false);
   const kernels = PRESET_KERNELS[block];
@@ -149,7 +152,7 @@ const PresetQuestions = ({ block, values, onChange }) => {
           return (
             <button key={k.key} type="button" onClick={() => setOpenKey(isOpen ? null : k.key)}
               style={{ cursor: 'pointer', background: isOpen ? 'rgba(168,85,247,0.22)' : answered ? 'rgba(168,85,247,0.12)' : 'transparent', border: `1px solid ${isOpen || answered ? 'rgba(168,85,247,0.6)' : 'rgba(168,85,247,0.25)'}`, color: answered ? '#c4b5fd' : 'rgba(255,254,240,0.8)', borderRadius: '0.3rem', padding: '0.28rem 0.55rem', fontFamily: FONT, fontSize: 'max(8px,0.45vw)', letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'all 0.15s' }}>
-              {k.lead}{answered ? ' ✓' : ''}
+              {t(k.lead)}{answered ? ' ✓' : ''}
             </button>
           );
         })}
@@ -162,35 +165,35 @@ const PresetQuestions = ({ block, values, onChange }) => {
             boxShadow: promptReady ? '0 0 8px rgba(21,179,21,0.35)' : 'none',
             borderRadius: '0.3rem', padding: '0.28rem 0.55rem', fontFamily: FONT, fontSize: 'max(8px,0.45vw)', letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'all 0.15s',
           }}>
-          Prompt
+          {t('profile.dashboard.questions.prompt')}
         </button>
       </div>
       {openKey === '__prompt' && (
         <div style={{ marginTop: '0.5rem' }}>
           <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px,0.5vw)', color: 'rgba(255,254,240,0.8)', fontStyle: 'italic', marginBottom: '0.3rem' }}>
-            Al je antwoorden gebundeld — gebruik dit als grondstof voor je eigen verhaal.
+            {t('profile.dashboard.questions.bundleHint')}
           </div>
           <textarea
-            value={bundled || 'Nog geen antwoorden — vul eerst een of meer vragen in.'}
+            value={bundled || t('profile.dashboard.questions.bundleEmpty')}
             readOnly
             rows={Math.min(12, Math.max(4, bundled.split('\n').length + 1))}
             style={{ ...FIELD, minHeight: '5rem', resize: 'vertical', lineHeight: 1.6, fontFamily: "'Figtree', sans-serif", opacity: bundled ? 1 : 0.55, cursor: 'text' }}
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.3rem' }}>
-            <SciFiButton onClick={copyBundle} disabled={!bundled} variant="purple" size="sm" padding="0.3rem 0.9rem" fontSize="max(8px,0.45vw)">{copied ? 'Gekopieerd ✓' : 'Kopieer'}</SciFiButton>
+            <SciFiButton onClick={copyBundle} disabled={!bundled} variant="purple" size="sm" padding="0.3rem 0.9rem" fontSize="max(8px,0.45vw)">{copied ? t('profile.dashboard.questions.copied') : t('profile.dashboard.questions.copy')}</SciFiButton>
           </div>
         </div>
       )}
       {open && (
         <div style={{ marginTop: '0.5rem' }}>
-          <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px,0.6vw)', color: '#FFFEF0', marginBottom: '0.25rem' }}>{open.kernel}</div>
-          {open.sub && <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px,0.5vw)', color: 'rgba(255,254,240,0.8)', fontStyle: 'italic', marginBottom: '0.3rem' }}>{open.sub}</div>}
+          <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px,0.6vw)', color: '#FFFEF0', marginBottom: '0.25rem' }}>{t(open.kernel)}</div>
+          {open.sub && <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px,0.5vw)', color: 'rgba(255,254,240,0.8)', fontStyle: 'italic', marginBottom: '0.3rem' }}>{t(open.sub)}</div>}
           <textarea
             value={values[open.key] || ''}
             onChange={(e) => onChange(open.key, e.target.value)}
             maxLength={600}
             rows={3}
-            placeholder="Schrijf je eigen antwoord — 2–3 zinnen is genoeg."
+            placeholder={t('profile.dashboard.questions.answerPlaceholder')}
             style={{ ...FIELD, minHeight: '3.6rem', resize: 'vertical', lineHeight: 1.5, fontFamily: "'Figtree', sans-serif" }}
           />
           <div style={{ textAlign: 'right', fontSize: 'max(8px,0.42vw)', color: 'rgba(255,254,240,0.7)', marginTop: '0.15rem' }}>{(values[open.key] || '').length}/600</div>
@@ -205,6 +208,8 @@ const LABEL = { fontSize: 'max(9px,0.48vw)', letterSpacing: '0.14em', textTransf
 const SECTION_TITLE = { fontSize: 'max(13px,0.75vw)', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#f59e0b' };
 
 const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
+  const { language, t, tFunc } = useLanguage();
+  const locale = language === 'en' ? 'en-GB' : 'nl-NL';
   // Active orb config — LOCAL cache first, but the server is the truth: when /me carries a
   // newer publicOrb (e.g. a code linked out-of-band or on another device), adopt it. The stale
   // raw code must be dropped, since it takes precedence in getClientOrbConfig and would keep
@@ -318,11 +323,11 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
     setBusy(true); setMsg('');
     try {
       const r = await updateDisplayName(v);
-      setName(r.displayName); setNameInput(r.displayName); flash('Naam opgeslagen ✓');
+      setName(r.displayName); setNameInput(r.displayName); flash(t('profile.dashboard.msg.nameSaved'));
       refreshCard(); // the Openbaar card renders the fetched payload — refetch so the new name shows
     }
-    catch (e) { flash(e.message || 'Naam bijwerken mislukt'); } finally { setBusy(false); }
-  }, [nameInput, name, refreshCard]);
+    catch (e) { flash(e.message || t('profile.dashboard.msg.nameFailed')); } finally { setBusy(false); }
+  }, [nameInput, name, refreshCard, t]);
 
   // ONE save for the whole Privé tab — inlognaam (when changed), age/country, and the
   // openbaar card content (declared channel) together. The single "Profiel opslaan"
@@ -336,57 +341,58 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
         setName(r.displayName); setNameInput(r.displayName);
       }
       await updateProfile({ age, country, story, link, roleLine, languages, intention, socials, visibleName, descriptionSections: mapToSections(descAnswers), intentionSections: mapToSections(intentAnswers) });
-      setStoryMsg('Profiel opgeslagen ✓');
+      setStoryMsg(t('profile.dashboard.msg.profileSaved'));
       refreshCard();
     }
-    catch (e) { setStoryMsg(e.message || 'Opslaan mislukt'); } finally { setBusy(false); }
-  }, [nameInput, name, age, country, story, link, roleLine, languages, intention, socials, visibleName, descAnswers, intentAnswers, refreshCard]);
+    catch (e) { setStoryMsg(e.message || t('profile.dashboard.msg.saveFailed')); } finally { setBusy(false); }
+  }, [nameInput, name, age, country, story, link, roleLine, languages, intention, socials, visibleName, descAnswers, intentAnswers, refreshCard, t]);
 
   // Ensure a placed link is a valid absolute URL (prepend https:// when the user omits the scheme).
   const hrefFor = (u) => (/^https?:\/\//i.test(u) ? u : `https://${u}`);
 
   const savePassword = useCallback(async () => {
-    if (!newPw || newPw.length < 6) { setPwMsg('Nieuw wachtwoord: minstens 6 tekens.'); return; }
+    if (!newPw || newPw.length < 6) { setPwMsg(t('profile.dashboard.msg.pwTooShort')); return; }
     setBusy(true); setPwMsg('');
     try {
       const r = await updatePassword({ currentPassword: curPw, newPassword: newPw });
       setCurPw(''); setNewPw('');
       // Gated by email: the change only takes effect after the confirmation link is clicked.
       setPwMsg(r && r.pending === false
-        ? 'Wachtwoord gewijzigd ✓'
-        : 'Bevestigingsmail verzonden — activeer je nieuwe wachtwoord via je inbox ✓');
+        ? t('profile.dashboard.msg.pwChanged')
+        : t('profile.dashboard.msg.pwPending'));
     }
-    catch (e) { setPwMsg(e.message || 'Wachtwoord bijwerken mislukt'); } finally { setBusy(false); }
-  }, [curPw, newPw]);
+    catch (e) { setPwMsg(e.message || t('profile.dashboard.msg.pwFailed')); } finally { setBusy(false); }
+  }, [curPw, newPw, t]);
 
   // Change the account email. Requires the current password. When SMTP is on, the change is gated:
   // a confirmation link goes to the NEW address and the account email stays put until it's clicked.
   const saveEmail = useCallback(async () => {
     const next = emailInput.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) { setEmailMsg('Voer een geldig e-mailadres in.'); return; }
-    if (next === (user.email || '').toLowerCase()) { setEmailMsg('Dit is al je huidige e-mailadres.'); return; }
-    if (!emailPw) { setEmailMsg('Vul je huidige wachtwoord in ter bevestiging.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) { setEmailMsg(t('profile.dashboard.msg.emailInvalid')); return; }
+    if (next === (user.email || '').toLowerCase()) { setEmailMsg(t('profile.dashboard.msg.emailSame')); return; }
+    if (!emailPw) { setEmailMsg(t('profile.dashboard.msg.emailNeedPw')); return; }
     setBusy(true); setEmailMsg('');
     try {
       const r = await updateEmail({ newEmail: next, currentPassword: emailPw });
       setEmailPw('');
       if (r && r.pending === false) {
         setPendingEmail('');
-        setEmailMsg('E-mailadres gewijzigd ✓');
+        setEmailMsg(t('profile.dashboard.msg.emailChanged'));
       } else {
         setPendingEmail(next);
-        setEmailMsg(`Bevestigingsmail verzonden naar ${next} — je e-mailadres verandert pas na bevestiging.`);
+        setEmailMsg(tFunc('profile.dashboard.msg.emailPending')(next));
       }
     }
-    catch (e) { setEmailMsg(e.message || 'E-mailadres bijwerken mislukt'); } finally { setBusy(false); }
-  }, [emailInput, emailPw, user.email]);
+    catch (e) { setEmailMsg(e.message || t('profile.dashboard.msg.emailFailed')); } finally { setBusy(false); }
+  }, [emailInput, emailPw, user.email, t, tFunc]);
 
   const handleDelete = useCallback(async () => {
-    if (delInput !== 'VERWIJDER') { setDelErr('Typ precies "VERWIJDER".'); return; }
+    const word = t('profile.dashboard.settings.deleteWord');
+    if (delInput !== word) { setDelErr(tFunc('profile.dashboard.msg.deleteTypeExactly')(word)); return; }
     setBusy(true); setDelErr('');
     try { await deleteOwnAccount(); onLogout(); }
-    catch (e) { setDelErr(e.message || 'Verwijderen mislukt'); setBusy(false); }
-  }, [delInput, onLogout]);
+    catch (e) { setDelErr(e.message || t('profile.dashboard.msg.deleteFailed')); setBusy(false); }
+  }, [delInput, onLogout, t, tFunc]);
 
   // ── Social OAuth verification: opens the platform's own consent popup; the callback
   // page posts 'gfl-social-verified' back, after which we re-pull the card (the platform's
@@ -397,15 +403,16 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
     try {
       const { url } = await startSocialVerify(platform);
       window.open(url, 'gfl-social-verify', 'width=520,height=680');
-    } catch (e) { setStoryMsg(e.message || 'Synchronisatie mislukt'); }
-  }, []);
+    } catch (e) { setStoryMsg(e.message || t('profile.dashboard.msg.socialSyncFailed')); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t]);
   useEffect(() => {
     const onMsg = (e) => {
       if (!e.data || e.data.type !== 'gfl-social-verified') return;
       getCard().then((fresh) => {
         setCard(fresh);
         setSocials(socialHandles(fresh && fresh.declared && fresh.declared.socials));
-        if (e.data.ok) setStoryMsg('Social gesynchroniseerd ✓');
+        if (e.data.ok) setStoryMsg(t('profile.dashboard.msg.socialSynced'));
       }).catch(() => {});
     };
     window.addEventListener('message', onMsg);
@@ -433,8 +440,8 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
       if (orb) { setClientOrbConfig(orb); setOrbConfig(orb); } // swap the on-screen orb too
     } catch { refreshCard(); }
     if (archetypeName) { try { setClientProfile({ ...(getClientProfile() || {}), archetypeName }); } catch { /* ignore */ } }
-    setSyncMsg('Nieuw kristal gesynchroniseerd ✓');
-  }, [refreshCard]);
+    setSyncMsg(t('profile.dashboard.msg.crystalSynced'));
+  }, [refreshCard, t]);
 
   // ── Upload gate (access model): a new kristal-code may be attached 2 months after the
   // last one. /me delivers nextUploadAvailableAt; fall back to computing it from orbHistory.
@@ -446,7 +453,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
     const d = new Date(lastAt); d.setMonth(d.getMonth() + 2); return d;
   })();
   const uploadGateClosed = !!(nextUploadAt && nextUploadAt > new Date());
-  const fmtDateNL = (d) => (d ? new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
+  const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) : '');
   // Access expired: still logged in, but the profile card hides behind an overlay and Privé
   // reduces to the PDF-upload block; only Instellingen stays fully usable.
   const accessExpired = !!(user.accessUntil && new Date(user.accessUntil) < new Date());
@@ -456,11 +463,11 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
     setSyncBusy(true); setSyncMsg('');
     try {
       const r = await orbLoginFromPdf(file);
-      if (!r || !r.code) throw new Error('Geen kristal-code gevonden in deze PDF.');
+      if (!r || !r.code) throw new Error(t('profile.dashboard.msg.noCodeInPdf'));
       await finishSync(r.code, r.archetypeName || '', r.reading || null);
-    } catch (e) { setSyncMsg(e.message || 'Synchroniseren mislukt'); }
+    } catch (e) { setSyncMsg(e.message || t('profile.dashboard.msg.syncFailed')); }
     finally { setSyncBusy(false); if (syncFileRef.current) syncFileRef.current.value = ''; }
-  }, [finishSync]);
+  }, [finishSync, t]);
 
   // ── Download the orb in FHD: a still PNG + a 12-second 60fps loop (WebM). ──
   // Captured from a HIDDEN 1080px capture orb (not the small on-screen one), composited into a
@@ -471,7 +478,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
   const [frozen, setFrozen] = useState(false);            // stop rotation before the still
   const [recording, setRecording] = useState(false);
   const [dlMsg, setDlMsg] = useState('');
-  const fileBase = `${(name || 'kristal').trim().replace(/\s+/g, '-')}-orb`;
+  const fileBase = `${(name || t('profile.dashboard.files.crystalFallback')).trim().replace(/\s+/g, '-')}-orb`;
   const captureSupported = typeof window !== 'undefined' && typeof MediaRecorder !== 'undefined';
 
   // ── Crystal snapshots: EVERY reading gets a COLOUR still for the individuatiepad chips —
@@ -573,7 +580,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
   const archetypeName = user.archetypeName || profile.archetypeName || '';
   const archetypeImg = getArchetypeImageByName(archetypeName);
   const downloadArchetypePhoto = useCallback(async () => {
-    if (!archetypeImg) { setDlMsg('Geen archetype-afbeelding gevonden.'); return; }
+    if (!archetypeImg) { setDlMsg(t('profile.dashboard.msg.noArchetypeImage')); return; }
     setDlMsg('');
     try {
       const img = new Image();
@@ -589,17 +596,17 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
       cx.drawImage(img, (S - SRC) / 2, (S - SRC) / 2, SRC, SRC);
       const blob = await new Promise((res) => cnv.toBlob(res, 'image/jpeg', 0.95));
       if (!blob) throw new Error('toBlob failed');
-      triggerDownload(blob, `${(archetypeName || 'archetype').trim().replace(/\s+/g, '-')}-profielfoto.jpg`);
-      setDlMsg('Profielfoto opgeslagen ✓');
-    } catch { setDlMsg('Download mislukt.'); }
-  }, [archetypeImg, archetypeName]);
+      triggerDownload(blob, `${(archetypeName || 'archetype').trim().replace(/\s+/g, '-')}-${t('profile.dashboard.files.photoSuffix')}.jpg`);
+      setDlMsg(t('profile.dashboard.msg.photoSaved'));
+    } catch { setDlMsg(t('profile.dashboard.msg.downloadFailed')); }
+  }, [archetypeImg, archetypeName, t]);
 
   const startImage = useCallback(() => { if (capturePhase || !orbConfig) return; setDlMsg(''); setFrozen(false); setCapturePhase('image'); }, [capturePhase, orbConfig]);
   const startVideo = useCallback(() => {
     if (capturePhase || !orbConfig) return;
-    if (!captureSupported) { setDlMsg('Video wordt niet ondersteund in deze browser.'); return; }
+    if (!captureSupported) { setDlMsg(t('profile.dashboard.msg.videoUnsupported')); return; }
     setDlMsg(''); setFrozen(false); setCapturePhase('video');
-  }, [capturePhase, orbConfig, captureSupported]);
+  }, [capturePhase, orbConfig, captureSupported, t]);
 
   // Runs the capture once the hidden orb has mounted + rendered a few frames.
   useEffect(() => {
@@ -617,14 +624,14 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
         timers.push(setTimeout(() => { // …then screenshot the settled frame
           if (cancelled) return;
           const src = srcCanvas();
-          if (!src) { setDlMsg('Orb nog niet gereed.'); setCapturePhase(null); setFrozen(false); return; }
+          if (!src) { setDlMsg(t('profile.dashboard.msg.orbNotReady')); setCapturePhase(null); setFrozen(false); return; }
           const out = document.createElement('canvas'); out.width = 1920; out.height = 1080;
           const octx = out.getContext('2d');
           octx.fillStyle = '#000'; octx.fillRect(0, 0, 1920, 1080); // full black background (JPEG has no alpha)
           octx.drawImage(src, (1920 - 1080) / 2, 0, 1080, 1080);
           out.toBlob((blob) => {
-            if (blob) { triggerDownload(blob, `${fileBase}.jpg`); setDlMsg('Afbeelding opgeslagen ✓ (FHD)'); }
-            else setDlMsg('Afbeelding mislukt.');
+            if (blob) { triggerDownload(blob, `${fileBase}.jpg`); setDlMsg(t('profile.dashboard.msg.imageSaved')); }
+            else setDlMsg(t('profile.dashboard.msg.imageFailed'));
             setCapturePhase(null); setFrozen(false);
           }, 'image/jpeg', 0.95);
         }, 280));
@@ -636,17 +643,17 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
     timers.push(setTimeout(() => {
       if (cancelled) return;
       const src = srcCanvas();
-      if (!src) { setDlMsg('Orb nog niet gereed.'); setCapturePhase(null); return; }
+      if (!src) { setDlMsg(t('profile.dashboard.msg.orbNotReady')); setCapturePhase(null); return; }
       setRecording(true);
-      setDlMsg('Opnemen… (12s · 60fps · FHD)');
+      setDlMsg(t('profile.dashboard.msg.recordingStart'));
 
       const finish = (blob, ext) => {
         if (cancelled) return;
         triggerDownload(blob, `${fileBase}-12s.${ext}`);
-        setDlMsg(`12s-loop opgeslagen ✓ (60fps FHD · ${ext.toUpperCase()})`);
+        setDlMsg(tFunc('profile.dashboard.msg.loopSaved')(ext.toUpperCase()));
         setRecording(false); setCapturePhase(null);
       };
-      const fail = () => { if (cancelled) return; setDlMsg('Opname mislukt.'); setRecording(false); setCapturePhase(null); };
+      const fail = () => { if (cancelled) return; setDlMsg(t('profile.dashboard.msg.recordFailed')); setRecording(false); setCapturePhase(null); };
 
       // Fallback path — MediaRecorder (older browsers without WebCodecs).
       const viaMediaRecorder = () => {
@@ -673,7 +680,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
         recordOrbMp4({
           srcCanvas: src, durationMs: 12000, fps: 60, bitrate: 12_000_000,
           isCancelled: () => cancelled,
-          onProgress: (p) => { if (!cancelled) setDlMsg(`Opnemen… ${Math.round(p * 100)}% (60fps FHD · MP4)`); },
+          onProgress: (p) => { if (!cancelled) setDlMsg(tFunc('profile.dashboard.msg.recordingProgress')(Math.round(p * 100))); },
         }).then((blob) => finish(blob, 'mp4'))
           .catch((e) => { console.error('[orb mp4] WebCodecs failed, falling back:', e); if (!cancelled) viaMediaRecorder(); });
       } else {
@@ -681,6 +688,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
       }
     }, 600));
     return () => { cancelled = true; timers.forEach(clearTimeout); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capturePhase, fileBase]);
 
   // Auto-dismiss the download status after 5s — but keep the in-progress "…" message on screen.
@@ -693,7 +701,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
   // Tab switcher — rendered above the orb (two-column tabs) OR as row 1 of the Openbaar card.
   const tabsRow = (
     <div style={{ display: 'flex', gap: '0.35rem', width: '100%', alignSelf: 'stretch', position: 'relative', zIndex: 2, maxWidth: '26rem' }}>
-      {[{ key: 'openbaar', label: 'Openbaar' }, { key: 'prive', label: 'Privé' }, { key: 'instellingen', label: 'Instellingen' }].map((tb) => {
+      {[{ key: 'openbaar', label: t('profile.dashboard.tabs.openbaar') }, { key: 'prive', label: t('profile.dashboard.tabs.prive') }, { key: 'instellingen', label: t('profile.dashboard.tabs.instellingen') }].map((tb) => {
         const on = tab === tb.key;
         return (
           <button key={tb.key} type="button" onClick={() => { setTab(tb.key); setPolicyOpen(null); setMsg(''); setPwMsg(''); setDelErr(''); setStoryMsg(''); }}
@@ -734,18 +742,18 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
             ? (
               <ProfileCard payload={card || {}} tabsRow={tabsRow}>
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '0.9rem', padding: '3rem 2rem' }}>
-                  <div style={{ fontFamily: FONT, fontSize: 'max(14px,0.8vw)', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#f59e0b' }}>Toegang verlopen</div>
+                  <div style={{ fontFamily: FONT, fontSize: 'max(14px,0.8vw)', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#f59e0b' }}>{t('profile.dashboard.expired.title')}</div>
                   <div style={{ fontSize: 'max(11px,0.6vw)', color: '#FFFEF0', lineHeight: 1.6, maxWidth: '34rem' }}>
-                    Je toegang was geldig tot <b>{fmtDateNL(user.accessUntil)}</b>. Upload een nieuw rapport-PDF onder <b>Privé</b> om je profiel opnieuw te ontgrendelen — elke nieuwe kristal-code opent 3 maanden toegang.
+                    {t('profile.dashboard.expired.p1')} <b>{fmtDate(user.accessUntil)}</b>{t('profile.dashboard.expired.p2')} <b>{t('profile.dashboard.tabs.prive')}</b>{t('profile.dashboard.expired.p3')}
                   </div>
-                  <SciFiButton onClick={() => setTab('prive')} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">Naar Privé — upload rapport</SciFiButton>
+                  <SciFiButton onClick={() => setTab('prive')} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.expired.toPrive')}</SciFiButton>
                 </div>
               </ProfileCard>
             )
             : card
               ? <ProfileCard payload={card} tabsRow={tabsRow} orbConfigOverride={orbConfig} active={active} orbBoxRef={onScreenOrbRef} wheelBaskets={user.readingBaskets}
                   wheelBasketsHistory={(Array.isArray(user.orbHistory) ? user.orbHistory : []).map((h) => (Array.isArray(h?.baskets12) && h.baskets12.length === 12 ? h.baskets12 : null))} />
-              : <div style={{ fontFamily: FONT, fontSize: 'max(12px,0.7vw)', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)' }}>Kaart laden…</div>
+              : <div style={{ fontFamily: FONT, fontSize: 'max(12px,0.7vw)', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)' }}>{t('profile.dashboard.cardLoading')}</div>
         )}
 
         {/* Privé/Instellingen render inside the SAME ProfileCard shell as Openbaar (glass, brackets,
@@ -763,34 +771,34 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
             {policyOpen ? (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.1rem' }}>
-                  <SciFiButton onClick={() => setPolicyOpen(null)} variant="purple" size="sm" padding="0.4rem 1.05rem" fontSize="max(9px,0.5vw)">← Sluiten</SciFiButton>
-                  <div style={SECTION_TITLE}>{(POLICY_PAGES.find((p) => p.id === policyOpen) || {}).label}</div>
+                  <SciFiButton onClick={() => setPolicyOpen(null)} variant="purple" size="sm" padding="0.4rem 1.05rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.close')}</SciFiButton>
+                  <div style={SECTION_TITLE}>{t(`profile.dashboard.policy.${policyOpen}`)}</div>
                 </div>
-                {POLICY_CONTENT[policyOpen]}
+                {getPolicyContent(language)[policyOpen]}
               </div>
             ) : (
             <>
             {/* ── PRIVÉ — personal data (not shown to others) ── */}
             {tab === 'prive' && (
               <div>
-                <div style={{ ...SECTION_TITLE, marginBottom: '1.1rem' }}>Privégegevens</div>
+                <div style={{ ...SECTION_TITLE, marginBottom: '1.1rem' }}>{t('profile.dashboard.prive.title')}</div>
                 {/* Inlognaam (the unique account name / ?u= handle) is ACCOUNT data — it lives
                     under Instellingen. Privé only carries the Zichtbare naam (card name) below. */}
 
                 {/* synchroniseer nieuw kristal — at the top, above age/country: upload a new
                     reading's PDF; it becomes the active orb */}
                 <div style={{ marginBottom: '1.05rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ ...LABEL, marginBottom: '0.6rem' }}>Synchroniseer nieuw kristal</div>
+                  <div style={{ ...LABEL, marginBottom: '0.6rem' }}>{t('profile.dashboard.prive.syncTitle')}</div>
                   <div style={{ fontSize: 'max(11px,0.58vw)', color: '#FFFEF0', lineHeight: 1.5, marginBottom: '0.7rem' }}>
-                    Nieuwe lezing gedaan? Upload de rapport-PDF — we halen alleen je kristal en archetype eruit om je profiel bij te werken, de rest wordt genegeerd. De nieuwe orb wordt je actieve profiel-orb, de vorige schuift door naar je individuatiepad.
+                    {t('profile.dashboard.prive.syncBody')}
                   </div>
                   <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <input ref={syncFileRef} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => syncFromPdf(e.target.files && e.target.files[0])} />
                     {/* Gate: disabled + no pointer events until 2 months after the last code. */}
-                    <SciFiButton onClick={() => syncFileRef.current && syncFileRef.current.click()} disabled={syncBusy || uploadGateClosed} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)" style={{ pointerEvents: uploadGateClosed ? 'none' : 'auto' }}>{syncBusy ? 'Bezig…' : 'Upload rapport-PDF'}</SciFiButton>
+                    <SciFiButton onClick={() => syncFileRef.current && syncFileRef.current.click()} disabled={syncBusy || uploadGateClosed} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)" style={{ pointerEvents: uploadGateClosed ? 'none' : 'auto' }}>{syncBusy ? t('profile.dashboard.busy') : t('profile.dashboard.prive.uploadPdf')}</SciFiButton>
                     {uploadGateClosed && (
                       <span style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(251,191,36,0.9)' }}>
-                        Nieuw rapport uploaden kan vanaf {fmtDateNL(nextUploadAt)}
+                        {tFunc('profile.dashboard.prive.uploadGate')(fmtDate(nextUploadAt))}
                       </span>
                     )}
                     {syncMsg && <span style={{ fontSize: 'max(9px,0.5vw)', color: syncMsg.includes('✓') ? '#4ade80' : '#f87171' }}>{syncMsg}</span>}
@@ -801,24 +809,24 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                     (declared card content, socials, save) hides until a new code re-opens access. */}
                 {accessExpired && (
                   <div style={{ fontSize: 'max(10px,0.55vw)', color: 'rgba(251,191,36,0.9)', lineHeight: 1.5 }}>
-                    Je toegang is verlopen. Upload hierboven een nieuw rapport-PDF om je profiel opnieuw te ontgrendelen.
+                    {t('profile.dashboard.expired.priveNotice')}
                   </div>
                 )}
                 {!accessExpired && (<>
                 <div style={{ display: 'flex', gap: '0.9rem', marginBottom: '1.05rem' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={LABEL}>Leeftijd</div>
+                    <div style={LABEL}>{t('profile.dashboard.prive.age')}</div>
                     <input type="number" min="0" value={age} onChange={(e) => { setAge(e.target.value); setMsg(''); }} style={FIELD} />
                   </div>
                   <div style={{ flex: 2 }}>
-                    <div style={LABEL}>Land</div>
+                    <div style={LABEL}>{t('profile.dashboard.prive.country')}</div>
                     <input value={country} onChange={(e) => { setCountry(e.target.value); setMsg(''); }} style={FIELD} />
                   </div>
                 </div>
                 {/* Openbaar-card content — the DECLARED channel, edited here, rendered read-only
                     on the Openbaar card (register separation: this path never touches derived fields). */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ ...LABEL, marginBottom: '0.6rem' }}>Openbaar profiel — kaartinhoud</div>
+                  <div style={{ ...LABEL, marginBottom: '0.6rem' }}>{t('profile.dashboard.prive.publicSection')}</div>
                   {/* Openbaar aan/uit — hides/shows the public card AND the profielen-directory
                       entry. Saves direct on click (visibility is a switch, not draft content). */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
@@ -842,68 +850,68 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                         transition: 'all 0.2s ease',
                       }}
                     >
-                      Openbaar: {listed ? 'AAN' : 'UIT'}
+                      {tFunc('profile.dashboard.prive.listedToggle')(listed)}
                     </button>
                     <span style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(255,254,240,0.5)', lineHeight: 1.4 }}>
                       {listed
-                        ? 'Je kaart is zichtbaar voor bezoekers en staat in de profielen-lijst.'
-                        : 'Je kaart is verborgen — niet vindbaar via link of profielen-lijst.'}
+                        ? t('profile.dashboard.prive.listedOnNote')
+                        : t('profile.dashboard.prive.listedOffNote')}
                     </span>
                   </div>
                   {/* Zichtbare naam — the name shown on the card. Separate from the Inlognaam above;
                       leave empty to fall back to your Inlognaam. */}
                   <div style={{ marginBottom: '0.8rem' }}>
-                    <div style={{ ...LABEL, color: '#FFFEF0' }}>Zichtbare naam — op je kaart</div>
-                    <input value={visibleName} onChange={(e) => { setVisibleName(e.target.value); setStoryMsg(''); }} maxLength={40} placeholder={name || 'Zoals getoond op je profielkaart'} style={FIELD} />
+                    <div style={{ ...LABEL, color: '#FFFEF0' }}>{t('profile.dashboard.prive.visibleName')}</div>
+                    <input value={visibleName} onChange={(e) => { setVisibleName(e.target.value); setStoryMsg(''); }} maxLength={40} placeholder={name || t('profile.dashboard.prive.visibleNamePlaceholder')} style={FIELD} />
                   </div>
                   <div style={{ display: 'flex', gap: '0.9rem', marginBottom: '0.8rem' }}>
                     <div style={{ flex: 2 }}>
-                      <div style={LABEL}>Rolregel — optioneel</div>
-                      <input value={roleLine} onChange={(e) => { setRoleLine(e.target.value); setStoryMsg(''); }} maxLength={80} placeholder="Platformbouwer · Ontwerper" style={FIELD} />
+                      <div style={LABEL}>{t('profile.dashboard.prive.roleLine')}</div>
+                      <input value={roleLine} onChange={(e) => { setRoleLine(e.target.value); setStoryMsg(''); }} maxLength={80} placeholder={t('profile.dashboard.prive.roleLinePlaceholder')} style={FIELD} />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={LABEL}>Talen</div>
+                      <div style={LABEL}>{t('profile.dashboard.prive.languages')}</div>
                       <input value={languages} onChange={(e) => { setLanguages(e.target.value); setStoryMsg(''); }} maxLength={60} placeholder="NL, EN" style={FIELD} />
                     </div>
                   </div>
                   <div style={{ marginBottom: '0.8rem' }}>
-                    <div style={LABEL}>Beschrijving</div>
+                    <div style={LABEL}>{t('profile.dashboard.prive.description')}</div>
                     {/* §6b vragen ABOVE the self-write block — answers form an APART leesbaar blok
                         op de kaart (inspiratie naast het eigen verhaal); nooit ingevuld in de tekst. */}
-                    <div style={{ ...LABEL, marginTop: '0.15rem', color: '#FFFEF0' }}>Vragen — vul in wat je wil; antwoorden verschijnen als apart blok op je kaart</div>
+                    <div style={{ ...LABEL, marginTop: '0.15rem', color: '#FFFEF0' }}>{t('profile.dashboard.prive.questionsHint')}</div>
                     <PresetQuestions block="description" values={descAnswers} onChange={(k, v) => { setDescAnswers((m) => ({ ...m, [k]: v })); setStoryMsg(''); }} />
                     <textarea
                       value={story}
                       onChange={(e) => { setStory(e.target.value); setStoryMsg(''); }}
                       maxLength={2000}
                       rows={5}
-                      placeholder="Schrijf een diep verhaal over jezelf — je kan de bovenstaande vragen gebruiken als kompas."
+                      placeholder={t('profile.dashboard.prive.storyPlaceholder')}
                       style={{ ...FIELD, minHeight: '6.5rem', resize: 'vertical', lineHeight: 1.5, fontFamily: FONT, marginTop: '0.55rem' }}
                     />
                     <div style={{ textAlign: 'right', fontSize: 'max(8px,0.42vw)', color: 'rgba(255,254,240,0.7)', marginTop: '0.2rem' }}>{story.length}/2000</div>
                   </div>
                   <div style={{ marginBottom: '0.8rem' }}>
-                    <div style={LABEL}>Intentie</div>
-                    <div style={{ ...LABEL, marginTop: '0.15rem', color: '#FFFEF0' }}>Vragen — vul in wat je wil; antwoorden verschijnen als apart blok op je kaart</div>
+                    <div style={LABEL}>{t('profile.dashboard.prive.intention')}</div>
+                    <div style={{ ...LABEL, marginTop: '0.15rem', color: '#FFFEF0' }}>{t('profile.dashboard.prive.questionsHint')}</div>
                     <PresetQuestions block="intention" values={intentAnswers} onChange={(k, v) => { setIntentAnswers((m) => ({ ...m, [k]: v })); setStoryMsg(''); }} />
                     <textarea
                       value={intention}
                       onChange={(e) => { setIntention(e.target.value); setStoryMsg(''); }}
                       maxLength={2000}
                       rows={4}
-                      placeholder="Schrijf wat je hier komt zoeken én brengen — de vragen hierboven wijzen de richting."
+                      placeholder={t('profile.dashboard.prive.intentionPlaceholder')}
                       style={{ ...FIELD, minHeight: '5rem', resize: 'vertical', lineHeight: 1.5, fontFamily: FONT, marginTop: '0.55rem' }}
                     />
                     <div style={{ textAlign: 'right', fontSize: 'max(8px,0.42vw)', color: 'rgba(255,254,240,0.7)', marginTop: '0.2rem' }}>{intention.length}/2000</div>
                   </div>
                   <div style={{ marginBottom: '0.8rem' }}>
-                    <div style={LABEL}>Link</div>
+                    <div style={LABEL}>{t('profile.dashboard.prive.link')}</div>
                     <input value={link} onChange={(e) => { setLink(e.target.value); setStoryMsg(''); }} maxLength={200} placeholder="https://…" style={FIELD} />
                   </div>
                   {/* Socials — all optional; handle of volledige URL. Shown as icons bottom-right on the
                       card. "Sync" proves ownership via het platform zelf (OAuth) → ✓ gesynchroniseerd. */}
                   <div style={{ marginBottom: '0.8rem' }}>
-                    <div style={LABEL}>Socials — optioneel (handle of URL)</div>
+                    <div style={LABEL}>{t('profile.dashboard.prive.socials')}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(12rem, 1fr))', gap: '0.6rem' }}>
                       {[['instagram', 'Instagram'], ['youtube', 'YouTube'], ['tiktok', 'TikTok'], ['x', 'X'], ['linkedin', 'LinkedIn']].map(([k, lbl]) => (
                         <div key={k} style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
@@ -911,18 +919,18 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                             onChange={(e) => { const v = e.target.value; setSocials((s) => ({ ...s, [k]: v })); setStoryMsg(''); }}
                             style={{ ...FIELD, flex: 1, minWidth: 0 }} />
                           {socialVerified(k)
-                            ? <span title="Gesynchroniseerd via het platform" style={{ color: '#15b315', fontSize: 'max(10px,0.55vw)', whiteSpace: 'nowrap' }}>✓</span>
+                            ? <span title={t('profile.dashboard.prive.socialVerified')} style={{ color: '#15b315', fontSize: 'max(10px,0.55vw)', whiteSpace: 'nowrap' }}>✓</span>
                             : (
-                              <button type="button" onClick={() => syncSocial(k)} title={`Bewijs eigenaarschap via ${lbl} zelf`}
+                              <button type="button" onClick={() => syncSocial(k)} title={tFunc('profile.dashboard.prive.socialSyncTitle')(lbl)}
                                 style={{ background: 'none', border: '1px solid rgba(21,179,21,0.4)', borderRadius: '0.3rem', color: 'rgba(21,179,21,0.8)', cursor: 'pointer', fontSize: 'max(8px,0.45vw)', padding: '0.3rem 0.5rem', fontFamily: FONT, whiteSpace: 'nowrap' }}>
-                                Sync
+                                {t('profile.dashboard.prive.sync')}
                               </button>
                             )}
                         </div>
                       ))}
                     </div>
                   </div>
-                  <SciFiButton onClick={saveAll} disabled={busy} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">Profiel opslaan</SciFiButton>
+                  <SciFiButton onClick={saveAll} disabled={busy} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.prive.saveProfile')}</SciFiButton>
                   {storyMsg && <div style={{ marginTop: '0.6rem', fontSize: 'max(9px,0.5vw)', color: storyMsg.includes('✓') ? '#4ade80' : '#f87171' }}>{storyMsg}</div>}
                 </div>
                 </>)}
@@ -933,17 +941,17 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
             {tab === 'instellingen' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.2rem', marginBottom: '1.1rem' }}>
-                  <div style={SECTION_TITLE}>Instellingen</div>
-                  <SciFiButton onClick={onLogout} variant="purple" size="sm" padding="0.4rem 1.4rem" fontSize="max(9px,0.5vw)">Uitloggen</SciFiButton>
+                  <div style={SECTION_TITLE}>{t('profile.dashboard.settings.title')}</div>
+                  <SciFiButton onClick={onLogout} variant="purple" size="sm" padding="0.4rem 1.4rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.logout')}</SciFiButton>
                 </div>
 
                 {/* name (unique) */}
                 <div style={{ marginBottom: '0.9rem' }}>
-                  <div style={LABEL}>Inlognaam — uniek</div>
+                  <div style={LABEL}>{t('profile.dashboard.settings.loginName')}</div>
                   <div style={{ display: 'flex', gap: '0.6rem' }}>
                     <input value={nameInput} onChange={(e) => { setNameInput(e.target.value); setMsg(''); }} maxLength={40}
                       onKeyDown={(e) => { if (e.key === 'Enter') saveName(); }} style={FIELD} />
-                    <SciFiButton onClick={saveName} disabled={busy || !nameInput.trim() || nameInput.trim() === name} variant="purple" size="sm" padding="0.4rem 1.05rem" fontSize="max(9px,0.5vw)">Opslaan</SciFiButton>
+                    <SciFiButton onClick={saveName} disabled={busy || !nameInput.trim() || nameInput.trim() === name} variant="purple" size="sm" padding="0.4rem 1.05rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.save')}</SciFiButton>
                   </div>
                   {msg && <div style={{ marginTop: '0.6rem', fontSize: 'max(9px,0.5vw)', color: msg.includes('✓') ? '#4ade80' : '#f87171' }}>{msg}</div>}
                 </div>
@@ -951,41 +959,41 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                 {/* email — editable, but a change is gated behind a confirmation click on the NEW
                     address; the current email stays active until then. Requires the current password. */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={LABEL}>E-mailadres</div>
+                  <div style={LABEL}>{t('profile.dashboard.settings.emailLabel')}</div>
                   <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.6rem' }}>
-                    <input type="email" value={emailInput} onChange={(e) => { setEmailInput(e.target.value); setEmailMsg(''); }} autoComplete="email" placeholder="jij@voorbeeld.nl" style={{ ...FIELD, flex: 2 }} />
-                    <input type={showPw ? 'text' : 'password'} value={emailPw} onChange={(e) => { setEmailPw(e.target.value); setEmailMsg(''); }} placeholder="Huidig wachtwoord" autoComplete="current-password" style={{ ...FIELD, flex: 1 }} />
+                    <input type="email" value={emailInput} onChange={(e) => { setEmailInput(e.target.value); setEmailMsg(''); }} autoComplete="email" placeholder={t('profile.dashboard.settings.emailPlaceholder')} style={{ ...FIELD, flex: 2 }} />
+                    <input type={showPw ? 'text' : 'password'} value={emailPw} onChange={(e) => { setEmailPw(e.target.value); setEmailMsg(''); }} placeholder={t('profile.dashboard.settings.currentPassword')} autoComplete="current-password" style={{ ...FIELD, flex: 1 }} />
                   </div>
-                  <SciFiButton onClick={saveEmail} disabled={busy || !emailInput.trim() || emailInput.trim().toLowerCase() === (user.email || '').toLowerCase() || !emailPw} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">E-mailadres wijzigen</SciFiButton>
+                  <SciFiButton onClick={saveEmail} disabled={busy || !emailInput.trim() || emailInput.trim().toLowerCase() === (user.email || '').toLowerCase() || !emailPw} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.changeEmail')}</SciFiButton>
                   {pendingEmail && pendingEmail.toLowerCase() !== (user.email || '').toLowerCase() && (
                     <div style={{ marginTop: '0.6rem', fontSize: 'max(9px,0.5vw)', color: 'rgba(251,191,36,0.9)', lineHeight: 1.5 }}>
-                      In afwachting van bevestiging: <b>{pendingEmail}</b>. Je huidige e-mailadres ({user.email}) blijft actief tot je de link in die inbox opent.
+                      {t('profile.dashboard.settings.pending1')} <b>{pendingEmail}</b>{tFunc('profile.dashboard.settings.pending2')(user.email)}
                     </div>
                   )}
-                  {emailMsg && <div style={{ marginTop: '0.6rem', fontSize: 'max(9px,0.5vw)', lineHeight: 1.5, color: emailMsg.includes('✓') ? '#4ade80' : emailMsg.includes('verzonden') ? 'rgba(196,181,253,0.9)' : '#f87171' }}>{emailMsg}</div>}
+                  {emailMsg && <div style={{ marginTop: '0.6rem', fontSize: 'max(9px,0.5vw)', lineHeight: 1.5, color: emailMsg.includes('✓') ? '#4ade80' : emailMsg.includes(t('profile.dashboard.msg.emailSentMarker')) ? 'rgba(196,181,253,0.9)' : '#f87171' }}>{emailMsg}</div>}
                 </div>
 
                 {/* password */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-                    <div style={{ ...LABEL, marginBottom: 0 }}>Wachtwoord</div>
-                    <button type="button" onClick={() => setShowPw((v) => !v)} style={{ background: 'none', border: 'none', color: 'rgba(196,181,253,0.75)', cursor: 'pointer', fontSize: 'max(9px,0.48vw)', textDecoration: 'underline', padding: 0 }}>{showPw ? 'verberg' : 'toon'}</button>
+                    <div style={{ ...LABEL, marginBottom: 0 }}>{t('profile.dashboard.settings.passwordLabel')}</div>
+                    <button type="button" onClick={() => setShowPw((v) => !v)} style={{ background: 'none', border: 'none', color: 'rgba(196,181,253,0.75)', cursor: 'pointer', fontSize: 'max(9px,0.48vw)', textDecoration: 'underline', padding: 0 }}>{showPw ? t('profile.dashboard.settings.hide') : t('profile.dashboard.settings.show')}</button>
                   </div>
                   <div style={{ display: 'flex', gap: '0.9rem', marginBottom: '0.6rem' }}>
-                    <input type={showPw ? 'text' : 'password'} value={curPw} onChange={(e) => { setCurPw(e.target.value); setPwMsg(''); }} placeholder="Huidig wachtwoord" autoComplete="current-password" style={{ ...FIELD, flex: 1 }} />
-                    <input type={showPw ? 'text' : 'password'} value={newPw} onChange={(e) => { setNewPw(e.target.value); setPwMsg(''); }} placeholder="Nieuw wachtwoord" autoComplete="new-password" style={{ ...FIELD, flex: 1 }} />
+                    <input type={showPw ? 'text' : 'password'} value={curPw} onChange={(e) => { setCurPw(e.target.value); setPwMsg(''); }} placeholder={t('profile.dashboard.settings.currentPassword')} autoComplete="current-password" style={{ ...FIELD, flex: 1 }} />
+                    <input type={showPw ? 'text' : 'password'} value={newPw} onChange={(e) => { setNewPw(e.target.value); setPwMsg(''); }} placeholder={t('profile.dashboard.settings.newPassword')} autoComplete="new-password" style={{ ...FIELD, flex: 1 }} />
                   </div>
-                  <SciFiButton onClick={savePassword} disabled={busy || !curPw || !newPw} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">Wachtwoord wijzigen</SciFiButton>
+                  <SciFiButton onClick={savePassword} disabled={busy || !curPw || !newPw} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.changePassword')}</SciFiButton>
                   {pwMsg && <div style={{ marginTop: '0.6rem', fontSize: 'max(9px,0.5vw)', color: pwMsg.includes('✓') ? '#4ade80' : '#f87171' }}>{pwMsg}</div>}
                 </div>
 
                 {/* downloads — archetype portrait + orb still + 12s rotation loop */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ ...LABEL, marginBottom: '0.6rem' }}>Downloaden</div>
+                  <div style={{ ...LABEL, marginBottom: '0.6rem' }}>{t('profile.dashboard.settings.downloads')}</div>
                   <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <SciFiButton onClick={downloadArchetypePhoto} disabled={!!capturePhase || !archetypeImg} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">Archetype profielfoto</SciFiButton>
-                    <SciFiButton onClick={startImage} disabled={!!capturePhase || !orbConfig} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{capturePhase === 'image' ? 'Bezig…' : 'Kristal screenshot'}</SciFiButton>
-                    <SciFiButton onClick={startVideo} disabled={!!capturePhase || !orbConfig} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{recording ? 'Opnemen…' : 'Kristal 60fps 12s-Loop'}</SciFiButton>
+                    <SciFiButton onClick={downloadArchetypePhoto} disabled={!!capturePhase || !archetypeImg} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.archetypePhoto')}</SciFiButton>
+                    <SciFiButton onClick={startImage} disabled={!!capturePhase || !orbConfig} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{capturePhase === 'image' ? t('profile.dashboard.busy') : t('profile.dashboard.settings.crystalScreenshot')}</SciFiButton>
+                    <SciFiButton onClick={startVideo} disabled={!!capturePhase || !orbConfig} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{recording ? t('profile.dashboard.settings.recording') : t('profile.dashboard.settings.crystalLoop')}</SciFiButton>
                     {dlMsg && <span style={{ fontSize: 'max(9px,0.48vw)', color: dlMsg.includes('✓') ? '#4ade80' : dlMsg.includes('…') ? 'rgba(196,181,253,0.85)' : '#f87171' }}>{dlMsg}</span>}
                   </div>
                 </div>
@@ -995,16 +1003,16 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                     lifetime. No payment rails yet → options render disabled with a coming-soon note. */}
                 {(Array.isArray(user.orbHistory) ? user.orbHistory : []).length >= 3 && (
                   <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ ...LABEL, marginBottom: '0.6rem' }}>Toegang</div>
+                    <div style={{ ...LABEL, marginBottom: '0.6rem' }}>{t('profile.dashboard.settings.accessTitle')}</div>
                     <div style={{ fontSize: 'max(11px,0.58vw)', color: '#FFFEF0', lineHeight: 1.5, marginBottom: '0.7rem' }}>
-                      Je hebt drie kristal-codes gekoppeld — vanaf nu kun je je toegang ook zonder nieuwe test voortzetten.
-                      {user.accessUntil && <> Je huidige toegang is geldig tot <b>{fmtDateNL(user.accessUntil)}</b>.</>}
+                      {t('profile.dashboard.settings.accessBody')}
+                      {user.accessUntil && <>{t('profile.dashboard.settings.accessValidPre')} <b>{fmtDate(user.accessUntil)}</b>{t('profile.dashboard.settings.accessValidPost')}</>}
                     </div>
                     <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">Abonnement — per 3 maanden</SciFiButton>
-                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">Jaartoegang</SciFiButton>
-                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">Levenslange toegang</SciFiButton>
-                      <span style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(196,181,253,0.75)' }}>Binnenkort beschikbaar</span>
+                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.planQuarter')}</SciFiButton>
+                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.planYear')}</SciFiButton>
+                      <SciFiButton disabled variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.planLifetime')}</SciFiButton>
+                      <span style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(196,181,253,0.75)' }}>{t('profile.dashboard.settings.comingSoon')}</span>
                     </div>
                   </div>
                 )}
@@ -1012,7 +1020,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                 {/* Voorwaarden & beleid — the policy/terms pages live HERE for clients
                     (the left verbindingsmenu shows the profielen-directory instead). */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ ...LABEL, marginBottom: '0.6rem' }}>Voorwaarden & beleid</div>
+                  <div style={{ ...LABEL, marginBottom: '0.6rem' }}>{t('profile.dashboard.policy.heading')}</div>
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {POLICY_PAGES.map((p) => (
                       <button
@@ -1033,7 +1041,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                         onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(168,85,247,0.2)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(168,85,247,0.08)'; }}
                       >
-                        {p.label}
+                        {t(`profile.dashboard.policy.${p.id}`)}
                       </button>
                     ))}
                   </div>
@@ -1042,12 +1050,12 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                 {/* danger: delete account */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(239,68,68,0.25)' }}>
                   <div style={{ color: '#fca5a5', fontSize: 'max(9px,0.52vw)', lineHeight: 1.5, marginBottom: '0.8rem' }}>
-                    ⚠ Verwijdert je account permanent (AVG/GDPR). Typ <b>VERWIJDER</b>:
+                    {t('profile.dashboard.settings.deleteWarnPre')} <b>{t('profile.dashboard.settings.deleteWord')}</b>{t('profile.dashboard.settings.deleteWarnPost')}
                   </div>
                   <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <input value={delInput} onChange={(e) => setDelInput(e.target.value)} placeholder="VERWIJDER"
+                    <input value={delInput} onChange={(e) => setDelInput(e.target.value)} placeholder={t('profile.dashboard.settings.deleteWord')}
                       style={{ ...FIELD, width: '15rem', borderColor: 'rgba(239,68,68,0.4)', color: '#fca5a5' }} />
-                    <SciFiButton onClick={handleDelete} disabled={busy} variant="danger" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">Verwijderen</SciFiButton>
+                    <SciFiButton onClick={handleDelete} disabled={busy} variant="danger" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.deleteButton')}</SciFiButton>
                     {delErr && <span style={{ color: '#f87171', fontSize: 'max(9px,0.48vw)' }}>{delErr}</span>}
                   </div>
                 </div>

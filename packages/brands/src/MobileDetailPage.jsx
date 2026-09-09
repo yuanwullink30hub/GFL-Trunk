@@ -24,6 +24,7 @@ import { BRANDS } from './brandData';
 // EXTERNAL LINK MODAL - Zoom animation from button origin
 // ============================================
 const ExternalLinkModal = ({ isOpen, url, onClose, onConfirm, buttonElement }) => {
+  const { t } = useLanguage();
   const [isClosing, setIsClosing] = React.useState(false);
   const [zoomOrigin, setZoomOrigin] = React.useState({ x: '50%', y: '50%' });
 
@@ -89,7 +90,7 @@ const ExternalLinkModal = ({ isOpen, url, onClose, onConfirm, buttonElement }) =
               <Globe size={28.8} style={{ color: '#15B315' }} />
             </div>
             <p className="text-xs uppercase tracking-widest font-bold" style={{ color: '#FFFEF0', letterSpacing: '0.05em' }}>
-              U staat op het punt door te stromen
+              {t({ nl: 'U staat op het punt door te stromen', en: 'You are about to move on' })}
             </p>
           </div>
 
@@ -112,7 +113,7 @@ const ExternalLinkModal = ({ isOpen, url, onClose, onConfirm, buttonElement }) =
                 color: '#FFFEF0'
               }}
             >
-              Terug
+              {t({ nl: 'Terug', en: 'Back' })}
             </button>
             <button
               onClick={handleConfirm}
@@ -123,7 +124,7 @@ const ExternalLinkModal = ({ isOpen, url, onClose, onConfirm, buttonElement }) =
                 color: '#f59e0b'
               }}
             >
-              Doorstromen
+              {t({ nl: 'Doorstromen', en: 'Continue' })}
             </button>
           </div>
         </div>
@@ -155,6 +156,7 @@ const ExternalLinkModal = ({ isOpen, url, onClose, onConfirm, buttonElement }) =
 // SOCIAL SHARE MODAL - Zoom animation from button origin
 // ============================================
 const SocialShareModal = ({ isOpen, onClose, buttonElement, brandData }) => {
+  const { t } = useLanguage();
   const [isClosing, setIsClosing] = React.useState(false);
   const [zoomOrigin, setZoomOrigin] = React.useState({ x: '50%', y: '50%' });
 
@@ -222,7 +224,7 @@ const SocialShareModal = ({ isOpen, onClose, buttonElement, brandData }) => {
               <Share2 size={28.8} style={{ color: '#E0E30B' }} />
             </div>
             <p className="text-xs uppercase tracking-widest font-bold" style={{ color: '#FFFEF0', letterSpacing: '0.05em' }}>
-              VIND VERBINDING VIA SOCIALS
+              {t({ nl: 'VIND VERBINDING VIA SOCIALS', en: 'FIND US ON SOCIALS' })}
             </p>
           </div>
 
@@ -524,7 +526,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                 color: '#f59e0b',
                 boxShadow: '0 0 8px rgba(168, 85, 247, 0.2)',
                 cursor: 'pointer'
-              }}>Activeer Meldingen</button>
+              }}>{t({ nl: 'Activeer Meldingen', en: 'Enable Notifications' })}</button>
               <button className="!px-3 !py-2 !rounded-md transition-all" onClick={(e) => {
                 setSocialShareModal({ isOpen: true, buttonElement: e.currentTarget });
               }} style={{
@@ -608,7 +610,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                     boxShadow: '0 0 8px rgba(168, 85, 247, 0.15)'
                   }}>
                     <Calendar size={12} className="mx-auto mb-1" style={{ color: '#15B315' }} />
-                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#FFFEF0', marginBottom: '0.25rem' }}>Opgericht</div>
+                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#FFFEF0', marginBottom: '0.25rem' }}>{t({ nl: 'Opgericht', en: 'Founded' })}</div>
                     <div className="font-sans font-normal" style={{ fontSize: '0.86rem', color: '#FFFEF0' }}>{brand.foundedYear}</div>
                   </div>
                   <div className="rounded border p-2 text-center" style={{
@@ -617,7 +619,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                     boxShadow: '0 0 8px rgba(168, 85, 247, 0.15)'
                   }}>
                     <MapPin size={12} className="mx-auto mb-1" style={{ color: '#E0E30B' }} />
-                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#FFFEF0', marginBottom: '0.25rem' }}>LOCATIE</div>
+                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#FFFEF0', marginBottom: '0.25rem' }}>{t({ nl: 'LOCATIE', en: 'LOCATION' })}</div>
                     <div className="font-sans font-normal" style={{ fontSize: '0.86rem', color: '#FFFEF0' }}>{brand.origin}</div>
                   </div>
                   <div className="rounded border p-2 text-center" style={{
@@ -633,7 +635,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
 
                 {/* Stats */}
                 <div className="space-y-2">
-                  <SectionHeader title="Analyse" />
+                  <SectionHeader title={t({ nl: 'Analyse', en: 'Analysis' })} />
                   <BrandStats metrics={brand.metrics} />
                 </div>
 
@@ -652,7 +654,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
 
                 {/* Gallery with Slideshow */}
                 <div className="space-y-2">
-                  <SectionHeader title="Beeldvorming" />
+                  <SectionHeader title={t({ nl: 'Beeldvorming', en: 'Imagery' })} />
                   <div className="grid grid-cols-1 gap-2">
                     {brand.gallery.map((item, idx) => (
                       <HoloCard
@@ -665,7 +667,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                           <Slideshow images={brand.gallery} />
                         ) : (
                           <div className="relative w-full h-full group cursor-pointer">
-                            <img src={item.url || item.image} alt={t(item.title)} className="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
+                            <img src={t(item.urlI18n) || item.url || item.image} alt={t(item.title)} className="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
                             <div className="absolute inset-0 flex items-center justify-center">
                               <div className="w-10 h-10 rounded-full flex items-center justify-center bg-black/50 group-hover:bg-orange-500 transition-all" style={{
                                 border: '2px solid rgba(168, 85, 247, 0.6)',

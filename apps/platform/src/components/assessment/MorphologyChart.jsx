@@ -7,6 +7,7 @@
  * endpoint. Used both on-screen and rasterised (html2canvas) into the PDF.
  */
 
+import { useLanguage } from '@gfl/i18n';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
@@ -25,6 +26,7 @@ const COLORS = {
  *           mainName?: string, supportName?: string, height?: number }} props
  */
 export default function MorphologyChart({ chart, mainName = 'Main', supportName = 'Support', height = 280, language = 'nl' }) {
+  const { t } = useLanguage();
   if (!chart || (!chart.main && !chart.support && !chart.composed)) return null;
   const { main, support, composed } = chart;
 
@@ -57,7 +59,7 @@ export default function MorphologyChart({ chart, mainName = 'Main', supportName 
             (same-group archetypes share a stored D-curve) the purple dashes sit over the solid
             green Main, so both series stay visible instead of one hiding the other. */}
         {composed && (
-          <Line type="monotone" dataKey="composed" name="Samengesteld" stroke={COLORS.composed}
+          <Line type="monotone" dataKey="composed" name={t('charts.morphology.composed')} stroke={COLORS.composed}
             strokeWidth={2.5} strokeDasharray="6 3" dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
         )}
         {main && (

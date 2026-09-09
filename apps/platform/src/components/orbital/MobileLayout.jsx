@@ -139,7 +139,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                   <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-2">
                       <Lock className="w-6 h-6" style={{color: '#f59e0b'}} strokeWidth={1.5} />
-                      <span style={{fontSize: 'clamp(9px, 2vw, 12px)', tracking: 'widest', color: 'rgba(245, 158, 11, 0.8)', fontFamily: "'Figtree', sans-serif"}}>LOCKED</span>
+                      <span style={{fontSize: 'clamp(9px, 2vw, 12px)', tracking: 'widest', color: 'rgba(245, 158, 11, 0.8)', fontFamily: "'Figtree', sans-serif"}}>{t('desktopLayout.locked')}</span>
                     </div>
                   </div>
                 </div>
@@ -152,38 +152,38 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
 
           {/* 3. Gardens Slideshow */}
           <div style={{height: 'clamp(12rem, 26vh, 16rem)'}}>
-            <TechContainer title="GARDENS" variant="purple" className="w-full h-full">
+            <TechContainer title={t('desktopLayout.gardensTitle')} variant="purple" className="w-full h-full">
               {(() => {
                 const gardensData = [
                   {
                     id: 'karman',
                     name: 'KARMAN',
-                    tagline: 'Underground Techno Events',
-                    description: 'Amsterdam-based techno organization, born from a desire to restore the raw, intimate spirit of underground gatherings.',
+                    tagline: t('desktopLayout.gardens.karman.tagline'),
+                    description: t('desktopLayout.gardens.karman.description'),
                     accentColor: '#8b5cf6',
                     logo: karmanLogo
                   },
                   {
                     id: 'code49',
                     name: 'CODE49',
-                    tagline: 'AI Solutions',
-                    description: 'Cutting-edge software development company specializing in AI-driven solutions and advanced technology integration.',
+                    tagline: t('desktopLayout.gardens.code49.tagline'),
+                    description: t('desktopLayout.gardens.code49.description'),
                     accentColor: '#06b6d4',
                     logo: code49Logo
                   },
                   {
                     id: 'tattooshop',
                     name: 'TATTOO SHOP',
-                    tagline: 'Artistic Expression & Body Art',
-                    description: 'A premier tattoo studio specializing in custom designs, traditional and modern styles.',
+                    tagline: t('desktopLayout.gardens.elevenEleven.tagline'),
+                    description: t('desktopLayout.gardens.elevenEleven.description'),
                     accentColor: '#ec4899',
                     logo: tattooshopLogo
                   },
                   {
                     id: 'rengifoods',
                     name: 'RENGI FOODS',
-                    tagline: 'Sustainable Organic Nutrition',
-                    description: 'Dedicated to providing the highest quality organic and sustainably-sourced food products.',
+                    tagline: t('desktopLayout.gardens.rengiFoods.tagline'),
+                    description: t('desktopLayout.gardens.rengiFoods.description'),
                     accentColor: '#10b981',
                     logo: rengiLogo
                   }

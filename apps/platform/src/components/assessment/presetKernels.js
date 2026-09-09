@@ -7,26 +7,100 @@
  *
  * Chip order is fixed as listed (WAARDEN precedes PRIJS — the "daarvoor" coupling).
  * Reserved key: `vrij` (freeform).
+ *
+ * i18n: the Dutch stays the locked copy verbatim; every copy value is an { nl, en } pair.
+ * Components resolve them with t(value) (LanguageContext accepts an inline object) or via
+ * `leadFor(block, key, language)`.
  */
 
 export const PRESET_KERNELS = {
   description: [
-    { key: 'richting', lead: 'RICHTING', kernel: 'Waar beweeg je naartoe — en wat is er al veranderd?', sub: null },
-    { key: 'praktijk', lead: 'PRAKTIJK', kernel: 'Wat doe je werkelijk, week in week uit?', sub: 'Niet je titel — je handelingen. Opleiding hoort hier, als materiaal.' },
-    { key: 'zelfkennis', lead: 'ZELFKENNIS', kernel: 'Hoe werk jij — en wanneer kantelt dat?', sub: null },
-    { key: 'waarden', lead: 'WAARDEN', kernel: 'Wat is voor jou werkelijk van waarde?', sub: null },
-    { key: 'prijs', lead: 'PRIJS', kernel: 'Wat betaal je daarvoor — en wat heb je al betaald?', sub: 'In tijd, zekerheid, comfort.' },
+    {
+      key: 'richting',
+      lead: { nl: 'RICHTING', en: 'DIRECTION' },
+      kernel: {
+        nl: 'Waar beweeg je naartoe — en wat is er al veranderd?',
+        en: 'Where are you moving towards — and what has already changed?',
+      },
+      sub: null,
+    },
+    {
+      key: 'praktijk',
+      lead: { nl: 'PRAKTIJK', en: 'PRACTICE' },
+      kernel: {
+        nl: 'Wat doe je werkelijk, week in week uit?',
+        en: 'What do you actually do, week in, week out?',
+      },
+      sub: {
+        nl: 'Niet je titel — je handelingen. Opleiding hoort hier, als materiaal.',
+        en: 'Not your title — your actions. Training belongs here too, as material.',
+      },
+    },
+    {
+      key: 'zelfkennis',
+      lead: { nl: 'ZELFKENNIS', en: 'SELF-KNOWLEDGE' },
+      kernel: {
+        nl: 'Hoe werk jij — en wanneer kantelt dat?',
+        en: 'How do you work — and when does that tip over?',
+      },
+      sub: null,
+    },
+    {
+      key: 'waarden',
+      lead: { nl: 'WAARDEN', en: 'VALUES' },
+      kernel: {
+        nl: 'Wat is voor jou werkelijk van waarde?',
+        en: 'What truly holds value for you?',
+      },
+      sub: null,
+    },
+    {
+      key: 'prijs',
+      lead: { nl: 'PRIJS', en: 'PRICE' },
+      kernel: {
+        nl: 'Wat betaal je daarvoor — en wat heb je al betaald?',
+        en: 'What do you pay for that — and what have you already paid?',
+      },
+      sub: { nl: 'In tijd, zekerheid, comfort.', en: 'In time, security, comfort.' },
+    },
   ],
   intention: [
-    { key: 'zoeken', lead: 'ZOEKEN', kernel: 'Wat zoek je hier concreet?', sub: null },
-    { key: 'bieden', lead: 'BIEDEN', kernel: 'Wat breng je mee — ook bínnen de samenwerking zelf?', sub: 'Niet alleen wat je kunt — wat heeft de ander aan jou in de relatie.' },
-    { key: 'vorm', lead: 'VORM', kernel: 'Hoe wil je verbonden worden?', sub: null },
-    { key: 'nu', lead: 'NU', kernel: 'Wat is je eerstvolgende stap?', sub: null },
+    {
+      key: 'zoeken',
+      lead: { nl: 'ZOEKEN', en: 'SEEKING' },
+      kernel: { nl: 'Wat zoek je hier concreet?', en: 'What are you concretely looking for here?' },
+      sub: null,
+    },
+    {
+      key: 'bieden',
+      lead: { nl: 'BIEDEN', en: 'OFFERING' },
+      kernel: {
+        nl: 'Wat breng je mee — ook bínnen de samenwerking zelf?',
+        en: 'What do you bring — including within the collaboration itself?',
+      },
+      sub: {
+        nl: 'Niet alleen wat je kunt — wat heeft de ander aan jou in de relatie.',
+        en: 'Not just what you can do — what the other person gets from you in the relationship.',
+      },
+    },
+    {
+      key: 'vorm',
+      lead: { nl: 'VORM', en: 'FORM' },
+      kernel: { nl: 'Hoe wil je verbonden worden?', en: 'How do you want to be connected?' },
+      sub: null,
+    },
+    {
+      key: 'nu',
+      lead: { nl: 'NU', en: 'NOW' },
+      kernel: { nl: 'Wat is je eerstvolgende stap?', en: 'What is your very next step?' },
+      sub: null,
+    },
   ],
 };
 
 /** lead-in label for a section key (card render anchors) */
-export function leadFor(block, key) {
+export function leadFor(block, key, language = 'nl') {
   const k = (PRESET_KERNELS[block] || []).find((p) => p.key === key);
-  return k ? k.lead : key.toUpperCase();
+  if (!k) return String(key).toUpperCase();
+  return k.lead[language] || k.lead.nl;
 }

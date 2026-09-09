@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLanguage } from '@gfl/i18n';
 import { isNatureSlot } from '@gfl/assessment-core/assessmentData';
+import { getExtendedArchetype } from '@gfl/assessment-core/data';
 import { pingBackend } from '@gfl/api-client';
 import { getCardSizes } from './assessmentSizes';
 import { isIntegratedGPU } from '@gfl/utils';
@@ -67,55 +68,53 @@ function parseColoredText(text, questionId, answerIdx) {
   return parts.length === 0 ? cleanText : parts;
 }
 
-// ═══ DEV AUTO-FILL: 72-OUTCOME WEIGHTED SYSTEM ═══
-// 12 main archetypes × 6 support groups = 72 possible outcomes
+/** Render translated overlay copy that carries inline colour markers.
+ *  \n -> <br/>, {c:#rrggbb|text} / {c:accent|text} -> coloured span, {cb:...|text} -> bold.
+ */
+const OVERLAY_MARK = /\{(c|cb):(accent|#[0-9a-fA-F]{6})\|([^}]*)\}/g;
+function renderOverlayText(text, accent) {
+  const out = [];
+  String(text).split('\n').forEach((line, li) => {
+    if (li > 0) out.push(<br key={`obr-${li}`} />);
+    let last = 0;
+    let m;
+    OVERLAY_MARK.lastIndex = 0;
+    while ((m = OVERLAY_MARK.exec(line)) !== null) {
+      if (m.index > last) out.push(line.slice(last, m.index));
+      const color = m[2] === 'accent' ? accent : m[2];
+      out.push(
+        <span key={`om-${li}-${m.index}`} style={m[1] === 'cb' ? { color, fontWeight: 'bold' } : { color }}>
+          {m[3]}
+        </span>
+      );
+      last = OVERLAY_MARK.lastIndex;
+    }
+    if (last < line.length) out.push(line.slice(last));
+  });
+  return out;
+}
+
+// ═══ DEV AUTO-FILL: 132-OUTCOME WEIGHTED SYSTEM ═══
+// 12 main archetypes × 11 support archetypes = 132 possible outcomes
 // Target persists across layers; resets on layer 0 AUTO click
 const DEV_ALL_ARCHETYPES = [
   'JUDGE','LOVER','CAREGIVER','INNOCENT','EXPLORER','OUTLAW',
   'TRICKSTER','SAGE','ARTIST','MAGICIAN','HERO','RULER'
 ];
-const DEV_ALL_GROUPS = ['RULING','RELATIONAL','SEEKER','CHAOS','ABSTRACT','AGENCY'];
-const DEV_GROUP_MEMBERS = {
-  RULING: ['JUDGE','RULER'], RELATIONAL: ['LOVER','CAREGIVER'],
-  SEEKER: ['INNOCENT','EXPLORER'], CHAOS: ['OUTLAW','TRICKSTER'],
-  ABSTRACT: ['SAGE','ARTIST'], AGENCY: ['MAGICIAN','HERO'],
-};
-const DEV_EXTENDED_NAMES = {
-  JUDGE_RULING:'Arbiter', JUDGE_RELATIONAL:'Mediator', JUDGE_SEEKER:'Examiner',
-  JUDGE_CHAOS:'Whistleblower', JUDGE_ABSTRACT:'Critic', JUDGE_AGENCY:'Avenger',
-  LOVER_RULING:'Companion', LOVER_RELATIONAL:'Soulmate', LOVER_SEEKER:'Poet',
-  LOVER_CHAOS:'Seducer', LOVER_ABSTRACT:'Mystic', LOVER_AGENCY:'Romantic',
-  CAREGIVER_RULING:'Advocate', CAREGIVER_RELATIONAL:'Healer', CAREGIVER_SEEKER:'Pathfinder',
-  CAREGIVER_CHAOS:'Cultivator', CAREGIVER_ABSTRACT:'Therapist', CAREGIVER_AGENCY:'Protector',
-  INNOCENT_RULING:'Shepherd', INNOCENT_RELATIONAL:'Samaritan', INNOCENT_SEEKER:'Saint',
-  INNOCENT_CHAOS:'Free Spirit', INNOCENT_ABSTRACT:'Disciple', INNOCENT_AGENCY:'Pioneer',
-  EXPLORER_RULING:'Scout', EXPLORER_RELATIONAL:'Networker', EXPLORER_SEEKER:'Navigator',
-  EXPLORER_CHAOS:'Innovator', EXPLORER_ABSTRACT:'Scholar', EXPLORER_AGENCY:'Sailor',
-  OUTLAW_RULING:'Reformer', OUTLAW_RELATIONAL:'Liberator', OUTLAW_SEEKER:'Renegade',
-  OUTLAW_CHAOS:'Anarchist', OUTLAW_ABSTRACT:'Iconoclast', OUTLAW_AGENCY:'Revolutionary',
-  TRICKSTER_RULING:'Jester', TRICKSTER_RELATIONAL:'Clown', TRICKSTER_SEEKER:'Shapeshifter',
-  TRICKSTER_CHAOS:'Fool', TRICKSTER_ABSTRACT:'Comedian', TRICKSTER_AGENCY:'Saboteur',
-  SAGE_RULING:'Analyst', SAGE_RELATIONAL:'Mentor', SAGE_SEEKER:'Dreamer',
-  SAGE_CHAOS:'Hermit', SAGE_ABSTRACT:'Enlightened', SAGE_AGENCY:'Detective',
-  ARTIST_RULING:'Architect', ARTIST_RELATIONAL:'Storyteller', ARTIST_SEEKER:'Visionary',
-  ARTIST_CHAOS:'Illusionist', ARTIST_ABSTRACT:'Demiurge', ARTIST_AGENCY:'Forgemaster',
-  MAGICIAN_RULING:'Engineer', MAGICIAN_RELATIONAL:'Shaman', MAGICIAN_SEEKER:'Oracle',
-  MAGICIAN_CHAOS:'Enchanter', MAGICIAN_ABSTRACT:'Sorcerer', MAGICIAN_AGENCY:'Alchemist',
-  HERO_RULING:'Commander', HERO_RELATIONAL:'Guardian', HERO_SEEKER:'Inventor',
-  HERO_CHAOS:'Ronin', HERO_ABSTRACT:'Strategist', HERO_AGENCY:'Legend',
-  RULER_RULING:'Emperor', RULER_RELATIONAL:'Patriarch/Matriarch', RULER_SEEKER:'Entrepreneur',
-  RULER_CHAOS:'Maverick', RULER_ABSTRACT:'Philosopher-King', RULER_AGENCY:'Conqueror',
+const DEV_GROUP_FOR = {
+  JUDGE: 'RULING', RULER: 'RULING', LOVER: 'RELATIONAL', CAREGIVER: 'RELATIONAL',
+  INNOCENT: 'SEEKER', EXPLORER: 'SEEKER', OUTLAW: 'CHAOS', TRICKSTER: 'CHAOS',
+  SAGE: 'ABSTRACT', ARTIST: 'ABSTRACT', MAGICIAN: 'AGENCY', HERO: 'AGENCY',
 };
 
 let devAutoFillTarget = null;
 
 function devPickRandomTarget() {
   const main = DEV_ALL_ARCHETYPES[Math.floor(Math.random() * 12)];
-  const supportGroup = DEV_ALL_GROUPS[Math.floor(Math.random() * 6)];
-  const members = DEV_GROUP_MEMBERS[supportGroup];
-  const opts = members.filter(a => a !== main);
-  const support = opts.length > 0 ? opts[Math.floor(Math.random() * opts.length)] : members[0];
-  const extended = DEV_EXTENDED_NAMES[`${main}_${supportGroup}`] || main;
+  const supports = DEV_ALL_ARCHETYPES.filter(a => a !== main);
+  const support = supports[Math.floor(Math.random() * supports.length)];
+  const supportGroup = DEV_GROUP_FOR[support];
+  const extended = (getExtendedArchetype(main, support) || main).replace(/^The\s+/, '');
   return { mainArchetype: main, supportArchetype: support, supportGroup, extended };
 }
 
@@ -163,7 +162,20 @@ const AssessmentCard = ({
   const [buttonLockSeconds, setButtonLockSeconds] = useState(process.env.NODE_ENV === 'production' ? 3 : 0);
   const levelConfigRef = useRef(levelConfig);
   levelConfigRef.current = levelConfig;
-  const { t } = useLanguage();
+  const { t, tFunc, language } = useLanguage();
+
+  // Questions and answers come from the API, which carries both `text` (Dutch)
+  // and `textEn`. A local translations override still wins if one exists, then
+  // the API's English, then Dutch.
+  const apiText = (key, item) => {
+    const override = t(key);
+    if (override !== key) return override;
+    if (language === 'en' && item?.textEn) return item.textEn;
+    return item?.text;
+  };
+
+  // Layer descriptors come from the same API documents (name / nameEn).
+  const subjectName = (language === 'en' && currentSubject?.nameEn) || currentSubject?.name;
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -315,16 +327,15 @@ const AssessmentCard = ({
       );
     }
 
-    const { mainArchetype, supportArchetype, supportGroup } = devAutoFillTarget;
-    const groupMembers = DEV_GROUP_MEMBERS[supportGroup];
+    const { mainArchetype, supportArchetype } = devAutoFillTarget;
 
     questions.forEach((q) => {
       const ans = q.answers;
       const mainIdx = ans.findIndex(a => a.archetype === mainArchetype);
       const supportIdx = ans.findIndex(a => a.archetype === supportArchetype);
-      const altSupportIdx = ans.findIndex(a =>
-        groupMembers.includes(a.archetype) && a.archetype !== mainArchetype
-      );
+      // 132-matrix: the support ARCHETYPE itself is the target — no group-partner
+      // stand-in (that would bias the score toward a different extension).
+      const altSupportIdx = -1;
 
       let pick1, pick2;
 
@@ -411,7 +422,7 @@ const AssessmentCard = ({
                 marginBottom: '0.25rem',
                 textAlign: 'center',
               }}>
-                Voordat je begint
+                {t('assessmentCard.intro.title')}
               </h3>
 
               <p style={{
@@ -421,9 +432,7 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 lineHeight: 1.7,
               }}>
-                Elk <span style={{ color: '#f97316' }}>woord</span> is met <span style={{ color: '#a855f7' }}>intentie</span> gezet. Twee opties die op elkaar lijken kunnen fundamenteel anders zijn.
-                Lees niet alleen wát er staat, maar hoe het <span style={{ color: '#a855f7' }}>voelt</span>.
-                De timer is er om je hoofd uit te schakelen.
+                {renderOverlayText(t('assessmentCard.intro.words'), subjectColor)}
               </p>
 
               <p style={{
@@ -433,11 +442,7 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 lineHeight: 1.7,
               }}>
-                Zes antwoorden per vraag. Kies eerst wat het dichtst bij je <span style={{ color: '#a855f7' }}>kern</span> zit.
-                Kies daarna wat je ook raakt, maar minder.
-                <br/>Let op: Dus twee antwoorden kiezen!
-                <br/>&nbsp;
-                <br/><span style={{ color: '#f97316' }}>Geen antwoord is ook een antwoord...</span> één mag ook. dit verandert verder niks aan de verdeling van het puntensysteem, onze data is dynamisch, net zoals jij.
+                {renderOverlayText(t('assessmentCard.intro.picks'), subjectColor)}
               </p>
 
               <p style={{
@@ -447,9 +452,7 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 lineHeight: 1.7,
               }}>
-                Elke keuze resoneert door naar verbonden punten op het wiel.
-                Een eerste keuze weegt zwaarder dan een tweede.
-                Het resultaat is geen plat getal maar een gelaagd profiel.
+                {renderOverlayText(t('assessmentCard.intro.resonance'), subjectColor)}
               </p>
 
               <p style={{
@@ -459,9 +462,7 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 lineHeight: 1.7,
               }}>
-                36 vragen over 5 onderwerpen.
-                <br />
-                Timer per onderwerp:
+                {renderOverlayText(t('assessmentCard.intro.timerIntro'), subjectColor)}
                 <br />
                 <span style={{ color: '#a855f7' }}>
                 {levelConfig.timerType === 'layered' && levelConfig.layerTimers
@@ -469,13 +470,7 @@ const AssessmentCard = ({
                   : <>111s → 90s → 72s → 60s → 49s</>
                 }
                 </span>
-                <br />
-                &nbsp;
-                <br />
-                Bij het aflopen van de timer gaat de vraag automatisch door, ook met 0 of 1 antwoord.
-                Je kunt altijd zelf doorklikken,
-                <br />
-                niet terug, alleen voorwaartse beweging.
+                {renderOverlayText(t('assessmentCard.intro.timerOutro'), subjectColor)}
               </p>
 
               <p style={{
@@ -487,11 +482,12 @@ const AssessmentCard = ({
                 fontStyle: 'italic',
                 marginTop: '0.25rem',
               }}>
-                Er zijn geen <span style={{ color: '#f97316' }}>goede</span> of <span style={{ color: '#f97316' }}>foute</span> antwoorden. Er is alleen <span style={{ color: '#a855f7' }}>eerlijkheid</span>.
+                {renderOverlayText(t('assessmentCard.intro.honesty'), subjectColor)}
               </p>
 
               <button
                 onClick={() => setShowIntro(false)}
+                aria-label={t('assessmentCard.intro.continueLabel')}
                 className="px-8 py-2.5 rounded font-bold uppercase tracking-wider transition-all duration-300"
                 style={{
                   fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
@@ -531,7 +527,7 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 marginBottom: '0.25rem',
               }}>
-                {currentSubject?.name || `Laag ${currentSubjectIndex + 1}`}
+                {subjectName || tFunc('assessmentCard.layerIntro.fallbackName')(currentSubjectIndex + 1)}
               </h3>
 
               {levelConfig.timerType === 'layered' && levelConfig.layerTimers && (
@@ -542,8 +538,8 @@ const AssessmentCard = ({
                   textAlign: 'center',
                   lineHeight: '1.7',
                 }}>
-                  <span style={{ color: subjectColor }}>{levelConfig.layerTimers[currentSubjectIndex] || 30}s per vraag</span>
-                  {' · '}{totalQuestions} vragen
+                  <span style={{ color: subjectColor }}>{tFunc('assessmentCard.layerIntro.secondsPerQuestion')(levelConfig.layerTimers[currentSubjectIndex] || 30)}</span>
+                  {' · '}{tFunc('assessmentCard.layerIntro.questionCount')(totalQuestions)}
                 </div>
               )}
 
@@ -556,18 +552,16 @@ const AssessmentCard = ({
                 maxWidth: '26rem',
                 marginTop: '0.25rem',
               }}>
-                <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '1rem' }}>LET OP!</span>
+                <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '1rem' }}>{t('assessmentCard.layerIntro.attention')}</span>
                 <br />
-                Er is geen één maat voor allen. Kies dus wat het meest synchroniseert.
-                <br />
-                <span style={{ color: subjectColor }}>Gekleurde woorden</span> zijn een middel voor de eerste snelle scan, dit is geen waarde systeem voor de punten telling.
+                {renderOverlayText(t('assessmentCard.layerIntro.body'), subjectColor)}
                 <br /><br />
-                <em style={{ color: 'rgba(255, 254, 240, 0.55)' }}>Stereotype vergroot om het archetype te onderscheiden:</em>
+                <em style={{ color: 'rgba(255, 254, 240, 0.55)' }}>{t('assessmentCard.layerIntro.stereotypeLabel')}</em>
                 <br />
-                {currentSubjectIndex === 1 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>aandacht en actie</span>}
-                {currentSubjectIndex === 2 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>projectie</span>}
-                {currentSubjectIndex === 3 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>verharding</span>}
-                {currentSubjectIndex === 4 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>extremisme</span>}
+                {currentSubjectIndex === 1 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>{t('assessmentCard.layerIntro.stereotypes.attentionAction')}</span>}
+                {currentSubjectIndex === 2 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>{t('assessmentCard.layerIntro.stereotypes.projection')}</span>}
+                {currentSubjectIndex === 3 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>{t('assessmentCard.layerIntro.stereotypes.hardening')}</span>}
+                {currentSubjectIndex === 4 && <span style={{ color: subjectColor, fontWeight: 'bold' }}>{t('assessmentCard.layerIntro.stereotypes.extremism')}</span>}
               </p>
 
               <button
@@ -595,7 +589,7 @@ const AssessmentCard = ({
                   e.currentTarget.style.boxShadow = `0 0 20px ${subjectColor}25`;
                 }}
               >
-                Start
+                {t('assessmentCard.layerIntro.start')}
               </button>
             </div>
           )}
@@ -631,7 +625,7 @@ const AssessmentCard = ({
               textAlign: 'center',
               marginBottom: '0.25rem',
             }}>
-              {currentSubject?.name || `Laag ${currentSubjectIndex + 1}`}
+              {subjectName || tFunc('assessmentCard.layerIntro.fallbackName')(currentSubjectIndex + 1)}
             </h3>
 
             {levelConfig.timerType === 'layered' && levelConfig.layerTimers && (
@@ -642,8 +636,8 @@ const AssessmentCard = ({
                 textAlign: 'center',
                 lineHeight: '1.7',
               }}>
-                <span style={{ color: subjectColor }}>{levelConfig.layerTimers[currentSubjectIndex] || 30}s per vraag</span>
-                {' · '}{totalQuestions} vragen
+                <span style={{ color: subjectColor }}>{tFunc('assessmentCard.layerIntro.secondsPerQuestion')(levelConfig.layerTimers[currentSubjectIndex] || 30)}</span>
+                {' · '}{tFunc('assessmentCard.layerIntro.questionCount')(totalQuestions)}
               </div>
             )}
 
@@ -656,15 +650,13 @@ const AssessmentCard = ({
               maxWidth: '26rem',
               marginTop: '0.25rem',
             }}>
-              <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '1rem' }}>LET OP!</span>
+              <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '1rem' }}>{t('assessmentCard.layerIntro.attention')}</span>
               <br />
-              Er is geen één maat voor allen. Kies dus wat het meest synchroniseert.
-              <br />
-              <span style={{ color: subjectColor }}>Gekleurde woorden</span> zijn een middel voor de eerste snelle scan, dit is geen waarde systeem voor de punten telling.
+              {renderOverlayText(t('assessmentCard.layerIntro.body'), subjectColor)}
               <br /><br />
-              <em style={{ color: 'rgba(255, 254, 240, 0.55)' }}>Stereotype vergroot om het archetype te onderscheiden:</em>
+              <em style={{ color: 'rgba(255, 254, 240, 0.55)' }}>{t('assessmentCard.layerIntro.stereotypeLabel')}</em>
               <br />
-              <span style={{ color: subjectColor, fontWeight: 'bold' }}>intentie en potentie</span>
+              <span style={{ color: subjectColor, fontWeight: 'bold' }}>{t('assessmentCard.layerIntro.stereotypes.intentionPotential')}</span>
             </p>
 
             <button
@@ -688,7 +680,7 @@ const AssessmentCard = ({
                 e.currentTarget.style.boxShadow = `0 0 20px ${subjectColor}25`;
               }}
             >
-              Start
+              {t('assessmentCard.layerIntro.start')}
             </button>
           </div>
         </div>
@@ -808,10 +800,10 @@ const AssessmentCard = ({
               ${isCollapsed ? 'items-center flex-1' : 'items-end'}
             `}>
               <span className="text-[9px] uppercase tracking-widest mb-0.5" style={{ color: `${subjectColor}80`, fontFamily: "'Figtree', sans-serif" }}>
-                SECTION //
+                {t('assessmentCard.header.section')}
               </span>
               <h2 className="text-base font-bold tracking-wider" style={{ color: subjectColor, fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}>
-                {currentSubject?.name?.toUpperCase() || `LAYER ${currentSubjectIndex + 1}`}
+                {subjectName?.toUpperCase() || tFunc('assessmentCard.header.fallbackLayer')(currentSubjectIndex + 1)}
               </h2>
             </div>
 
@@ -819,7 +811,7 @@ const AssessmentCard = ({
             {isCollapsed && showScrollMode && (
               <div className="flex items-center gap-1" style={{ color: subjectColor }}>
                 <span className="text-xs font-bold uppercase tracking-widest" style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}>
-                  Scroll
+                  {t('assessmentCard.header.scroll')}
                 </span>
                 <ChevronDown className="w-4 h-4" />
               </div>
@@ -841,9 +833,7 @@ const AssessmentCard = ({
             <div className="relative pl-3" style={{ minHeight: s.questionMinH }}>
             <div className="absolute left-0 top-1 bottom-1 w-[2px]" style={{ background: `linear-gradient(to bottom, ${subjectColor}, transparent)` }} />
             <p style={{ fontSize: s.questionFont, lineHeight: 1.5, color: '#FFFEF0', fontFamily: "'Figtree', sans-serif" }}>
-              {stripMeta(t(`questions.${currentQuestion.id}`) !== `questions.${currentQuestion.id}` 
-                ? t(`questions.${currentQuestion.id}`) 
-                : currentQuestion.text)}
+              {stripMeta(apiText(`questions.${currentQuestion.id}`, currentQuestion))}
             </p>
           </div>
 
@@ -916,9 +906,7 @@ const AssessmentCard = ({
                     }}
                   >
                     <span style={{ fontSize: s.answerFont, fontFamily: "'Figtree', sans-serif" }}>
-                      {parseColoredText(t(`answers.${answer.id}`) !== `answers.${answer.id}` 
-                        ? t(`answers.${answer.id}`) 
-                        : answer.text, currentQuestion.id, idx)}
+                      {parseColoredText(apiText(`answers.${answer.id}`, answer), currentQuestion.id, idx)}
                     </span>
                   </div>
                 </button>
@@ -994,7 +982,7 @@ const AssessmentCard = ({
                   e.currentTarget.style.borderColor = `${subjectColor}40`;
                 }}
               >
-                Doorgaan
+                {t('assessmentCard.footer.next')}
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                 </svg>
@@ -1023,7 +1011,7 @@ const AssessmentCard = ({
                   }}
                   title={devAutoFillTarget
                     ? `DEV: Re-fill → ${devAutoFillTarget.mainArchetype} / ${devAutoFillTarget.supportGroup} ("${devAutoFillTarget.extended}")`
-                    : 'DEV: Auto-fill → picks 1 of 72 outcomes (80/20 weighted)'}
+                    : 'DEV: Auto-fill → picks 1 of 132 outcomes (80/20 weighted)'}
                 >
                   AUTO
                 </button>

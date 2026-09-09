@@ -42,7 +42,16 @@ const PH = {
 };
 
 const LOGO_URL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='50' fill='%23ffffff08' stroke='%23ffffff20' stroke-width='2'/%3E%3Ctext x='50' y='62' text-anchor='middle' fill='%23ffffff25' font-size='42' font-family='monospace'%3E%3F%3C/text%3E%3C/svg%3E";
-const GALLERY_URL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 180'%3E%3Crect width='320' height='180' fill='%23ffffff05'/%3E%3Ctext x='160' y='98' text-anchor='middle' fill='%23ffffff25' font-size='15' font-family='monospace'%3EBINNENKORT%3C/text%3E%3C/svg%3E";
+// Gallery placeholder as a function of language, so the label baked into the
+// inline SVG follows the language toggle. Default 'nl' keeps old call sites working.
+export const galleryUrl = (lang = 'nl') => {
+  const label = (lang === 'en' || lang === 'EN') ? 'COMING%20SOON' : 'BINNENKORT';
+  return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 180'%3E%3Crect width='320' height='180' fill='%23ffffff05'/%3E%3Ctext x='160' y='98' text-anchor='middle' fill='%23ffffff25' font-size='15' font-family='monospace'%3E" + label + "%3C/text%3E%3C/svg%3E";
+};
+
+// Back-compat: the original constant (Dutch label).
+const GALLERY_URL = galleryUrl('nl');
+const GALLERY_URL_I18N = { nl: galleryUrl('nl'), en: galleryUrl('en') };
 
 // Build one placeholder/template brand. id/slug differ; everything else is shared.
 const makeTemplate = (id, slug) => ({
@@ -57,7 +66,7 @@ const makeTemplate = (id, slug) => ({
   heroImageUrl: '',
   accentColor: '#00ff9d',
   metrics: generateMetrics(),
-  gallery: [{ id: '1', type: 'image', url: GALLERY_URL, title: PH.introduction }],
+  gallery: [{ id: '1', type: 'image', url: GALLERY_URL, urlI18n: GALLERY_URL_I18N, title: PH.introduction }],
   featuredProducts: [
     { id: 'p1', name: PH.productA, price: PH.onRequest, specs: [PH.specDescription, PH.specTbd] },
     { id: 'p2', name: PH.productB, price: PH.onRequest, specs: [PH.specDescription, PH.specTbd] },

@@ -350,6 +350,9 @@ router.post('/analyze', async (req, res) => {
       responses, subjectResults, harmonyScore,
       consciousnessLevel, overallShadow, uploadedFileContents,
       subgroups,
+      // Report language — picks the Dutch or English 132-roster for the extension
+      // name + matrix table, matching the corpus selected above.
+      language,
     };
 
     // System prompt = the AI Master Prompt (v4), stored in the MongoDB admin config

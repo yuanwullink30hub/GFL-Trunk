@@ -420,7 +420,7 @@ const Slideshow = ({ items }) => {
     <div className="relative w-full h-full group overflow-hidden bg-black rounded-sm">
       {currentItem.type === 'video' ? (
         <video 
-          src={currentItem.url} 
+          src={t(currentItem.urlI18n) || currentItem.url} 
           className="w-full h-full object-cover opacity-80 transition-opacity duration-500"
           autoPlay
           loop
@@ -429,7 +429,7 @@ const Slideshow = ({ items }) => {
         />
       ) : (
         <img
-          src={currentItem.url}
+          src={t(currentItem.urlI18n) || currentItem.url}
           alt={t(currentItem.title)}
           className="w-full h-full object-cover opacity-80 transition-opacity duration-500"
         />

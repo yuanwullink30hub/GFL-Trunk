@@ -2,7 +2,7 @@
 import { useLanguage } from '@gfl/i18n';
 import { ARCHETYPES, getArchetypeQuote } from '@gfl/assessment-core';
 import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
-import { POLICY_CONTENT } from '../data/policyContent';
+import { getPolicyContent } from '../data/policyIndex';
 import { submitAssessmentReview, getToken, updateDisplayName, deleteOwnAccount } from '@gfl/api-client';
 import { getClientOrbConfig, getClientOrbCode, getClientProfile } from '../clientMode';
 import { OrbSphere3D } from '../orb';
@@ -16,11 +16,12 @@ import PublicProfilesDirectory from '../components/assessment/PublicProfilesDire
  * ProfileResultCard â€” loads the admin's own assessment from localStorage
  * and renders a result card matching the AssessmentResultsModal visual.
  */
+// 132-roster: Ruler × Outlaw is now "The Reformer" ("The Maverick" moved to Outlaw × Ruler)
 const MAVERICK_DEFAULT = {
   mainArchetype: 'RULER',
   supportArchetype: 'OUTLAW',
   supportGroup: 'CHAOS',
-  extendedArchetype: 'The Maverick',
+  extendedArchetype: 'The Reformer',
   harmonyActive: true,
   shadowBonusActive: true,
   shadowArchetype: 'OUTLAW',
@@ -32,212 +33,52 @@ const MAVERICK_DEFAULT = {
  * Accepts a `result` prop matching the resultObj shape from AssessmentResultsModal.
  * Falls back to derived MAVERICK_DEFAULT demo data when no prop is provided.
  */
+// The four cognitive triangles. Every archetype in a triangle shares the SAME
+// profile, so the copy lives once per mode (was: the identical block repeated 3x).
+// Prose lives in eyedentityReport.cog.modes.<key> (nl + en).
+const COG_MODE_BY_ARCHETYPE = {
+  RULER: 'idealisme',  INNOCENT: 'idealisme',  SAGE: 'idealisme',
+  JUDGE: 'exploratie', EXPLORER: 'exploratie', ARTIST: 'exploratie',
+  LOVER: 'impact',     OUTLAW: 'impact',       MAGICIAN: 'impact',
+  CAREGIVER: 'engagement', TRICKSTER: 'engagement', HERO: 'engagement',
+};
 const COG_TRIANGLES = {
-  RULER:     { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-    tagline: 'Ik navigeer via principes, visie en structuur.',
-    what: 'Mijn aangeleerde cognitieve gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen waarvan ik geloof dat ze universeel geldig zijn.',
-    drive: 'Aangeleerde navigatie: Mijn Culture picks tonen dat ik heb leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-    high: 'Hoog geel profiel: Hoge gele activatie hier betekent dat ik sterk leef vanuit geleerde regels, idealen en kenniskaders. Ik beoordeel situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan mijn architectuur voldoet.',
-    growth: 'Groeirichting: Duik in de driehoeken die ik het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium die mijn systemen niet kunnen verklaren: emotionele chaos en blinde disruptie.',
-  },
-  INNOCENT:  { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-    tagline: 'Ik navigeer via principes, visie en structuur.',
-    what: 'Mijn aangeleerde cognitieve gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen waarvan ik geloof dat ze universeel geldig zijn.',
-    drive: 'Aangeleerde navigatie: Mijn Culture picks tonen dat ik heb leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-    high: 'Hoog geel profiel: Hoge gele activatie hier betekent dat ik sterk leef vanuit geleerde regels, idealen en kenniskaders. Ik beoordeel situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan mijn architectuur voldoet.',
-    growth: 'Groeirichting: Duik in de driehoeken die ik het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium die mijn systemen niet kunnen verklaren: emotionele chaos en blinde disruptie.',
-  },
-  SAGE:      { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN',
-    tagline: 'Ik navigeer via principes, visie en structuur.',
-    what: 'Mijn aangeleerde cognitieve gedrag organiseert zich rondom het bouwen van systemen die kloppen. Niet alleen praktisch — ook moreel. Ruler, Innocent en Sage vormen samen een driehoek die zoekt naar de ideale orde: een wereld die gehoorzaamt aan beginselen waarvan ik geloof dat ze universeel geldig zijn.',
-    drive: 'Aangeleerde navigatie: Mijn Culture picks tonen dat ik heb leren navigeren via autoriteit en visie (Ruler), reinheid en beginseltrouw (Innocent), en kennis als kompas (Sage). Je bouwt mentale architectuur — frameworks, overtuigingen, systemen — als aangeleerde strategie om de chaos te beheersen.',
-    high: 'Hoog geel profiel: Hoge gele activatie hier betekent dat ik sterk leef vanuit geleerde regels, idealen en kenniskaders. Ik beoordeel situaties langs de lat van hoe het "zou moeten" zijn. Dit geeft stabiliteit en richting — maar kan ook rigiditeit en teleurstelling opleveren wanneer de werkelijkheid niet aan mijn architectuur voldoet.',
-    growth: 'Groeirichting: Duik in de driehoeken die ik het minst activeert — met name Impact Modus (Lover · Outlaw · Magician). Dat is precies het territorium die mijn systemen niet kunnen verklaren: emotionele chaos en blinde disruptie.',
-  },
-  JUDGE:    { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
-    tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
-    what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
-    drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
-    high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
-    growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
-  },
-  EXPLORER: { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
-    tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
-    what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
-    drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
-    high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
-    growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
-  },
-  ARTIST:   { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN',
-    tagline: 'Jij navigeert via perceptie, ontdekking en vorm.',
-    what: 'Rechter, Ontdekker en Kunstenaar vormen de cognitieve driehoek van verfijning. Je hebt leren navigeren door scherp te analyseren (Judge), grenzen te verleggen (Explorer) en ervaring te vertalen naar expressie (Artist). Dit is het patroon van iemand die de wereld wil begrijpen door haar te doorzoeken — en wat ze vinden willen verwerken tot iets wat méér zegt dan de feiten.',
-    drive: 'Je Culture picks activeren een netwerk dat evalueert, verkent en synthetiseert. Je hebt aangeleerd dat begrijpen meer waard is dan accepteren. Je cognitieve motor draait op nieuwsgierigheid en het verlangen om patronen te zien waar anderen ruis zien.',
-    high: 'Hoge activatie in deze driehoek betekent dat je een sterke aangeleerde tendens hebt om te beoordelen vóór je handelt, breed te verkennen vóór je kiest, en ervaring te willen distilleren tot iets zinvols. Dit geeft diepgang en oorspronkelijkheid — maar kan leiden tot analyse-verlamming of overprikkeling wanneer de input de verwerkingscapaciteit overstijgt.',
-    growth: 'De tegenhanger hier is Engagement Modus (Caregiver · Trickster · Hero) — de driehoek van concrete actie, spelende subversie en directe inzet. Dat is het domein dat jouw verfijnde analyse soms overslaat: het gewoon dóen, het verbinden, het inzetten.',
-  },
-  LOVER:    { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
-    tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
-    what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
-    drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
-    high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
-    growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
-  },
-  OUTLAW:   { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
-    tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
-    what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
-    drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
-    high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
-    growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
-  },
-  MAGICIAN: { id: 3, mode: 'Impact Modus',     color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency',
-    tagline: 'Jij navigeert via emotie, disruptie en transformatie.',
-    what: 'Minnaar, Outlaw en Magiër vormen de cognitieve driehoek van alchemie. Je hebt leren navigeren door je diep te verbinden (Lover), te doorbreken wat vast zit (Outlaw) en de werkelijkheid actief te her-schrijven (Magician). Dit is het patroon van iemand die verandering niet afwacht — maar haar veroorzaakt door aanwezig te zijn.',
-    drive: 'Je Culture picks activeren een netwerk dat voelt, confronteert en transformeert. Je aangeleerde navigatiestijl draait op intensiteit: verbinding als instrument, disruptie als methode, magie als overtuiging dat alles anders kan. Je hebt geleerd dat passiviteit de grootste kostenpost is.',
-    high: 'Hoge activatie in Impact Modus betekent dat je sterk reageert vanuit emotionele intensiteit en het verlangen om impact te maken. Je bent aangeleerd om niet te accepteren wat is — maar het te bewegen. Dit geeft transformatieve kracht en magnetische aanwezigheid — maar kan leiden tot uitputting, overdrive of brandend gevoel als de transformatie uitblijft.',
-    growth: 'De tegenhanger hier is Idealisme Modus (Ruler · Innocent · Sage) — de driehoek van structuur, principe en kennis. Dat is wat jouw vuur soms mist: het kader dat de energie kanaliseert, het principe dat de richting houdt, de wijsheid die de actie vertraagt.',
-  },
-  CAREGIVER: { id: 4, mode: 'Engagement Modus', color: '#1d9904', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
-    tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
-    what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
-    drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
-    high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
-    growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
-  },
-  TRICKSTER: { id: 4, mode: 'Engagement Modus', color: '#1d9904', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
-    tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
-    what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
-    drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
-    high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
-    growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
-  },
-  HERO:     { id: 4, mode: 'Engagement Modus', color: '#1d9904', members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency',
-    tagline: 'Jij navigeert via verbinding, subversie en directe actie.',
-    what: 'Verzorger, Trickster en Held vormen de cognitieve driehoek van actieve inzet. Je hebt leren navigeren door te beschermen en te voeden (Caregiver), door spelend te ontregelen (Trickster) en door direct in te grijpen wanneer het ertoe doet (Hero). Dit is het patroon van iemand die niet toekijkt — die zich inmengt, inzet en daadwerkelijk verschijnt.',
-    drive: 'Je Culture picks activeren een netwerk dat de ander centraal stelt — zelfs wanneer dat via de achterdeur gaat (Trickster) of via frontale actie (Hero). Je hebt aangeleerd dat betrokkenheid de maatstaf is. Niet wat je weet of wilt — maar wat je doet.',
-    high: 'Hoge activatie in Engagement Modus betekent dat je sterk aanwezig bent in de levens van anderen, snel handelt wanneer iemand hulp nodig heeft, en moeite hebt om op afstand te blijven van wat fout gaat. Dit geeft loyaliteit en daadkracht — maar kan leiden tot overbelasting, het dragen van andermans last, of verlies van eigen richting.',
-    growth: 'De tegenhanger hier is Exploratie Modus (Judge · Explorer · Artist) — de driehoek van perceptie, ontdekking en expressie. Dat is het domein dat jouw actiegeoriënteerde stijl soms overslaat: de tijd nemen om te beoordelen, te verkennen en iets voor jezelf te maken.',
-  },
+  idealisme:  { id: 1, color: '#a855f7', members: ['Ruler', 'Innocent', 'Sage'] },
+  exploratie: { id: 2, color: '#3b82f6', members: ['Judge', 'Explorer', 'Artist'] },
+  impact:     { id: 3, color: '#ec4899', members: ['Lover', 'Outlaw', 'Magician'] },
+  engagement: { id: 4, color: '#1d9904', members: ['Caregiver', 'Trickster', 'Hero'] },
 };
 const ALL_COG_TRIANGLES = [
-  { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: 'Ruler · Innocent · Sage' },
-  { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: 'Judge · Explorer · Artist' },
-  { id: 3, mode: 'Impact Modus',     color: '#f97316', members: 'Lover · Outlaw · Magician' },
-  { id: 4, mode: 'Engagement Modus', color: '#1d9904', members: 'Caregiver · Trickster · Hero' },
+  { id: 1, key: 'idealisme',  color: '#a855f7', members: 'Ruler · Innocent · Sage' },
+  { id: 2, key: 'exploratie', color: '#3b82f6', members: 'Judge · Explorer · Artist' },
+  { id: 3, key: 'impact',     color: '#f97316', members: 'Lover · Outlaw · Magician' },
+  { id: 4, key: 'engagement', color: '#1d9904', members: 'Caregiver · Trickster · Hero' },
 ];
 
 /* ═══ Hardcoded AI analysis sections for the Maverick profile ═══ */
+// `title` stays Dutch on purpose: it is the language-independent routing key used
+// by the section grouping filters and by getSectionAccent(). The copy that is
+// actually rendered comes from eyedentityReport.sections.<id> (title + content).
 const HARDCODED_SECTIONS = [
-  {
-    title: 'De Identiteit',
-    content: `**The Maverick**
-
-De Maverick combineert de architecturale kracht van de Ruler met de disruptieve eerlijkheid van de Outlaw. Jij bouwt systemen die de wereld kunnen veranderen — en bent tegelijkertijd bereid die systemen te slopen wanneer ze niet meer dienen wat ze zouden moeten dienen.
-
-*Dit is een modelinterpretatie van jouw antwoordprofiel, geen vastgestelde identiteit.*`,
-  },
-  {
-    title: 'Waarom Jij Dit Perspectief Gebruikt',
-    content: `Jouw antwoordpatronen suggereren een zeldzame combinatie: de drang om orde te scheppen én de weigering om orde te accepteren die niet op waarheid is gebouwd. Binnen dit model wijst de hoge CEN-dominantie (76% Nature) op een biologisch verankerd vermogen om structuur te zien, te bouwen en te handhaven. Tegelijkertijd activeert de Salience-as (Outlaw/Trickster, 60% Nature) een scherp radar voor wat niet klopt — voor hypocrisie, voor systemen die zichzelf in stand houden ten koste van mensen.
-
-De combinatie van Ruler en Outlaw is geen contradictie. Het is een navigatiestijl: jij bouwt vanuit principes, niet vanuit conventie. Binnen dit model suggereert jouw data dat je gezag erkent wanneer het verdiend is — en het aanvecht wanneer dat niet zo is.`,
-  },
-  {
-    title: 'De Essentie (Main Archetype)',
-    content: `**Archetype & Groep:** Ruler | Ruling (CEN — Externe Structuur & Wet)
-
-**TNM-Associatie:** Binnen dit model wordt de Ruler geassocieerd met het Central Executive Network — de verwerkingsmodus die gericht is op externe structuur, hiërarchie en langetermijnarchitectuur.
-
-**Drijfveer:** Primair Nature-gedreven (76% Nature binnen de CEN-as). Vanuit dit scoreprofiel is het aannemelijk dat jouw drang om te leiden en te structureren biologisch verankerd is — geen aangeleerde strategie maar een instinctieve oriëntatie op verantwoordelijkheid.
-
-**Meester Inzicht:** De Ruler functioneert als primaire gedragslens wanneer er iets op het spel staat. Jij ziet de architectuur van een situatie voordat anderen de details zien. Binnen dit model suggereert jouw data dat dit patroon het sterkst actief is onder druk — dat is het moment waarop de Ruler niet reageert maar regeert.`,
-  },
-  {
-    title: 'De Vermenigvuldiging (Support Archetype)',
-    content: `**Archetype & Groep:** Outlaw | Chaos (Salience — Disruptie & Waarheid)
-
-**TNM-Associatie:** Binnen dit model wordt de Outlaw geassocieerd met het Salience Network — de verwerkingsmodus die gericht is op wat urgent, authentiek en onaanvaardbaar is.
-
-**Rol:** De Outlaw vult de Ruler niet aan — hij daagt hem uit. Vanuit jouw scoreprofiel is het aannemelijk dat deze spanning productief is: de Ruler bouwt de structuur, de Outlaw test of die structuur de waarheid verdraagt.
-
-**Hardware / Schaduw Check:** Main (Ruler, positie 12) en Support (Outlaw, positie 6) staan op de Paarse Lijn — 180° tegenpolen. Dit is geen hardware-resonantie maar schaduw-integratie. Binnen dit model is het aannemelijk dat jij bewust of onbewust werkt met de spanning tussen bouwen en vernietigen, tussen orde en chaos, tussen institutie en rebellie. Dit is het kernmechanisme van The Maverick.`,
-  },
-  {
-    title: 'De Schaduw',
-    content: `Binnen dit model is het opmerkelijk dat jouw Shadow-archetype identiek is aan jouw Support-archetype. Dit suggereert dat jij al actief werkt met de energie van de Outlaw — maar de vraag is of dat bewust gebeurt of als reactie op externe druk.
-
-**De Polarization Index:** Main (Ruler) en Shadow (Outlaw) staan op 180°. Vanuit de scoreverhoudingen is de gap significant — dit wijst op een gezonde maar nog niet volledig geïntegreerde spanning.
-
-De Outlaw als schaduw betekent: de energie van radicale eerlijkheid, van het doorbreken van conventies omwille van waarheid, van het accepteren van verlies als prijs voor integriteit — dit is de brandstof die de Ruler nodig heeft om niet te degenereren tot een systeem dat zichzelf in stand houdt. Binnen dit model is het aannemelijk dat jouw groeipad ligt in het bewust kiezen voor Outlaw-energie, in plaats van er door omstandigheden in gedwongen te worden.`,
-  },
-  {
-    title: 'De Blindspot',
-    content: `Vanuit het scoreprofiel is het aannemelijk dat het gedragspatroon van de Trickster — speelsheid, ambiguïteit, het gebruik van humor en indirect taalgebruik als navigatiemiddel — bij anderen onbewust een reactie triggert die jij niet altijd ziet aankomen.
-
-De Trickster opereert in de ruimte tussen regels. Jij, als Ruler-dominant profiel, leest die ruimte als ruis of als onbetrouwbaarheid. Het is aannemelijk dat jij mensen die via indirectheid opereren systematisch onderschat — en dat zij jou als rigide of voorspelbaar lezen, wat hen een strategisch voordeel geeft.
-
-De Rode Lijn genereert geen punten en ontvangt geen bleed. Dit is structurele spanning: de Trickster is niet jouw vijand, maar jouw blinde vlek. Houd er rekening mee dat situaties die om diplomatieke ambiguïteit vragen — onderhandelingen, politieke omgevingen, creatieve chaos — de context zijn waar dit profiel het meeste adaptatie-energie kost.`,
-  },
-  {
-    title: 'Visuele Analyse',
-    content: `De radar chart toont een profiel met twee dominante pieken: Ruler en Judge vormen samen een uitgesproken CEN-cluster aan de ordezijde van het wiel. De eerste laag (paars, Nature picks) is sterk geconcentreerd op deze as, met een secundaire piek op de Outlaw-Magician-Hero cluster.
-
-De tweede schil (oranje, Culture picks) waaiert breder uit — met zichtbare activiteit op Trickster, Artist en Sage — wat suggereert dat de aangeleerde strategieën het profiel diversifiëren buiten de biologische kern.
-
-Het dal tussen Trickster en Caregiver is opvallend: hier stroomt geen Green, Blue of Yellow bleed naartoe. Dit is de structurele blindezone van het profiel. De Innocent-score is aanwezig maar laag, wat binnen dit model wijst op beperkte resonantie met naïviteit of onbevangen vertrouwen. De Magician-piek in de Agency-groep is geometrisch interessant: als CultureForce-signaal suggereert het dat de aangeleerde strategie transformationele taal en systeemdenken inzet als primair communicatie-instrument.`,
-  },
-  {
-    title: 'De Alchemie van Individuatie',
-    content: `**De Switch:** Vanuit dit scoreprofiel is het aannemelijk dat de schakelbeweging tussen Ruler-modus en Outlaw-modus snel en grotendeels onbewust verloopt. De hoge Nature-percentages op beide assen (76% CEN, 60% Salience) suggereren dat beide modi biologisch beschikbaar zijn — geen van beide vereist significante adaptatie-energie. Het risico is niet dat de switch niet werkt, maar dat hij ongecontroleerd werkt: van structuurbouwer naar systeembreker zonder bewuste keuze.
-
-**Nature vs. Culture Balans:** De Authenticity Index is sterk Nature-dominant. Met name op de Agency-as (Magician/Hero: 90% Nature) en de Limbic-as (Lover/Caregiver: 86% Nature) is de biologische stroom overweldigend. Binnen dit model suggereert dit dat ik grotendeels opereert vanuit instinctieve gedragspatronen — met weinig energieverlies door sociale aanpassing.
-
-**De Paradox:** De spanning tussen Ruler (orde) en Outlaw (disruptie) is niet pathologisch — het is het centrale generatieve principe van dit profiel. De paradox vraagt niet om oplossing maar om bewoning.
-
-**Hardware Resonantie:** De Judge-Ruler hardware-as is sterk actief. Beide groepsleden scoren hoog, wat binnen dit model wijst op een robuust structuurcircuit.
-
-**CultureForce Netwerk:** De Gele Driehoek-activiteit concentreert zich rond Magician, Trickster en Artist — wat suggereert dat het aangeleerde cognitieve netwerk transformationeel en creatief gekleurd is, ondanks de dominante Nature-kern.`,
-  },
-  {
-    title: 'Het Neurale Schakelbord',
-    content: `**De Focus-hendel:** Wanneer ik merk dat ik een situatie primair beoordeel op haar structurele tekortkomingen — pauzeer en stel mezelf de vraag: wat werkt hier al? Dit is geen positief denken, maar een bewust activeren van de Ruler-modus vóór de Outlaw het frame overneemt. Als experiment: begin één vergadering per week met een expliciete inventarisatie van wat al functioneert, voordat je je agenda voor verbetering presenteert.
-
-**De Schaduw-injectie:** De Outlaw-energie is al aanwezig in dit profiel — de uitdaging is niet hem te activeren maar hem bewust te richten. Experiment: kies één systeem of afspraak in mijn omgeving die ik al lang als inefficiënt ervaar maar nooit hebt aangevochten. Schrijf in drie zinnen op waarom je het hebt laten bestaan. Dit opent de vraag of de Outlaw hier brandstof levert of comfort beschermt.
-
-**De Blindspot-check:** Let deze week op momenten waarop ik iemand als 'onserious' of 'onbetrouwbaar' ervaar. Stel jezelf de reflectievraag: wat probeert deze persoon te communiceren via de indirecte route die ik niet zie? De Trickster-blindspot manifesteert zich vaak als ongeduld met mensen die spelen waar jij werkt.`,
-  },
-  {
-    title: 'Ontologische Evolutie',
-    content: `**Richting het Centrum:** Vanuit jouw scoreprofiel is het aannemelijk dat de meest vruchtbare beweging richting balans niet ligt in het temperen van de Ruler of de Outlaw — maar in het bewust verbinden van beide. De extreme uitslagen aan de CEN-kant (Judge + Ruler samen dominant) kunnen richting meer balans bewegen door de DMN-as (Sage, Artist) bewust te voeden: reflectie, abstractie, het loslaten van de uitkomst.
-
-**Ontologische Vraag:** Wanneer je een systeem hebt gebouwd dat werkt — wie ben jij dan nog?
-
-Deze vraag raakt de kern van de Maverick-paradox: identiteit die gebonden is aan het bouwen van orde heeft een existentieel probleem wanneer de orde er is. Het individuatiepad van dit profiel loopt via de ontdekking dat de waarde niet in het systeem zit — maar in de intentie waarmee het gebouwd werd.
-
-**AI Agent Prompt:** Zie Sectie 11.`,
-  },
-  {
-    title: 'Neuroticisme Trigger',
-    content: `Binnen dit model is het aannemelijk dat mijn stresspatroon zich manifesteert als een diep gevoel van structurele incompetentie bij anderen — niet mijn eigen falen, maar het falen van systemen die ik verantwoordelijk acht. De Outlaw-Support versterkt dit: wanneer regels worden gebroken zonder reden of autoriteit haar legitimiteit verliest, viert de stressrespons op. Met een uitzonderlijk lage N-score (2) zal deze trigger zelden vuren — maar wanneer hij dat doet, is de respons koel, doelgericht en potentieel langdurig vastgehouden.`,
-  },
-  {
-    title: 'Superkracht op de Werkvloer',
-    content: `Vanuit dit scoreprofiel is het aannemelijk dat mijn professionele kernkwaliteit zich uit als het vermogen om *systemen te bouwen die zichzelf bevragen*. De Ruler-kern levert de architectuur; de Outlaw-Support levert de stresstest. Met een Authenticity Index die sterk Nature-dominant is (met name op de CEN- en Agency-as), opereert deze kwaliteit instinctief — ik hoef niet na te denken over of een structuur robuust is, ik voel het. Dit profiel gedijt bij organisaties in transitie, bij complexe herstructureringen of waar anderen vastlopen in legacy-systemen.`,
-  },
-  {
-    title: 'Conflictstijl',
-    content: `Binnen dit model is het aannemelijk dat ik conflict benader als een *correctiemechanisme*, niet als emotionele ontlading. Lage A (39) gecombineerd met uitzonderlijk lage N (2) produceert een koelbloedige confrontatiestijl: rustig, doelgericht, zonder zichtbare emotie. De Ruler-Main confronteert via gezag en argumentstructuur; de Outlaw-Support voegt bereidheid toe om regels te breken als de situatie het vraagt. Escalatiepunt: wanneer de ander de structurele logica weigert te erkennen. Ná het conflict: het grootboek wordt bijgehouden, maar niet getoond.`,
-  },
-  {
-    title: 'Relatiepatroon',
-    content: `Mijn antwoordprofiel suggereert een relatiedynamiek waarin ik *de architect ben die de ander ruimte geeft* — maar wel binnen een kader dat ik heb ontworpen. Hoge E (88) gecombineerd met lage A (39) en lage N (2) creëert een dominant, aantrekkelijk maar onvermurwbaar patroon. De Ruler-Main biedt stabiliteit en richting; de Outlaw-Support maakt me onvoorspelbaar genoeg om fascinerend te blijven. Valkuil: de partner ervaart de structuur als veiligheid totdat ze haar beperking voelt. Ik trek mogelijk mensen aan die vrijheid zoeken — en biedt hen orde.`,
-  },
-  {
-    title: 'Individuatiepad',
-    content: `Binnen dit model wijst mijn profiel op een individuatiepad waarin de paradox centraal staat: *de Ruler die de Outlaw niet vreest, maar hem ook niet volledig loslaat*. De spanning tussen Main en Support is hier geen externe frictie maar een intern architectuurprobleem — wanneer is het systeem of persoon goed genoeg om los te laten? Het schakelpunt is het moment dat ik iets vertrouw zonder het te controleren. De 180° schaduw-energie van de Outlaw is niet mijn tegenstander — het is de brandstof die mijn systemen levend houdt. Het individuatiepad loopt via *vertrouwen in onvolmaaktheid*.`,
-  },
+  { id: 'identiteit',        title: 'De Identiteit' },
+  { id: 'waarom',            title: 'Waarom Jij Dit Perspectief Gebruikt' },
+  { id: 'essentie',          title: 'De Essentie (Main Archetype)' },
+  { id: 'vermenigvuldiging', title: 'De Vermenigvuldiging (Support Archetype)' },
+  { id: 'schaduw',           title: 'De Schaduw' },
+  { id: 'blindspot',         title: 'De Blindspot' },
+  { id: 'visuele',           title: 'Visuele Analyse' },
+  { id: 'alchemie',          title: 'De Alchemie van Individuatie' },
+  { id: 'schakelbord',       title: 'Het Neurale Schakelbord' },
+  { id: 'ontologie',         title: 'Ontologische Evolutie' },
+  { id: 'neuroticisme',      title: 'Neuroticisme Trigger' },
+  { id: 'superkracht',       title: 'Superkracht op de Werkvloer' },
+  { id: 'conflictstijl',     title: 'Conflictstijl' },
+  { id: 'relatiepatroon',    title: 'Relatiepatroon' },
+  { id: 'individuatiepad',   title: 'Individuatiepad' },
 ];
 
 const ProfileResultCard = ({ result: resultProp }) => {
+  const { t } = useLanguage();
   const green = '#1d9904';
   const sectionPad = '1.25rem';
 
@@ -250,8 +91,9 @@ const ProfileResultCard = ({ result: resultProp }) => {
 
   const main         = ARCHETYPES[mainKey]    || {};
   const support      = ARCHETYPES[supportKey] || {};
-  const levenslesQuote = resultProp?.levensles || getArchetypeQuote(mainKey, supportGroup);
-  const imageUrl       = resultProp?.imageUrl  || getArchetypeImage(mainKey, supportGroup) || main.imageUrl;
+  const levenslesQuote = resultProp?.levensles || getArchetypeQuote(mainKey, supportKey || supportGroup);
+  // null while the 132 artwork is in production - the portrait block is skipped.
+  const imageUrl       = resultProp?.imageUrl  || getArchetypeImage(mainKey, supportKey || supportGroup);
 
   // ── Client-profile front + owner-only manage ──
   // Front (public, visitable by anyone): the user's real orb + archetype name.
@@ -274,17 +116,17 @@ const ProfileResultCard = ({ result: resultProp }) => {
     const v = nameInput.trim();
     if (!v) return;
     setNameBusy(true); setNameMsg('');
-    try { const { displayName } = await updateDisplayName(v); setNameInput(displayName); setNameMsg('Opgeslagen ✓'); }
-    catch (e) { setNameMsg(e.message || 'Bijwerken mislukt'); }
+    try { const { displayName } = await updateDisplayName(v); setNameInput(displayName); setNameMsg(t('eyedentityReport.manage.saved')); }
+    catch (e) { setNameMsg(e.message || t('eyedentityReport.manage.saveFailed')); }
     finally { setNameBusy(false); }
-  }, [nameInput]);
+  }, [nameInput, t]);
 
   const handleDeleteAccount = useCallback(async () => {
-    if (delInput !== 'VERWIJDER') { setDelErr('Typ precies "VERWIJDER" om te bevestigen'); return; }
+    if (delInput !== t('eyedentityReport.manage.deleteWord')) { setDelErr(t('eyedentityReport.manage.deleteMismatch')); return; }
     setDelBusy(true); setDelErr('');
     try { await deleteOwnAccount(); window.location.reload(); }
-    catch (e) { setDelErr(e.message || 'Verwijderen mislukt'); setDelBusy(false); }
-  }, [delInput]);
+    catch (e) { setDelErr(e.message || t('eyedentityReport.manage.deleteFailed')); setDelBusy(false); }
+  }, [delInput, t]);
   const copyCode = useCallback(() => { if (orbCode) navigator.clipboard?.writeText(orbCode); }, [orbCode]);
 
   // Data for visualizations — fall back to hardcoded session data when localStorage lacks these fields
@@ -303,12 +145,12 @@ const ProfileResultCard = ({ result: resultProp }) => {
     { subject: 'Hero',      green: 48, lime: 57, orange: 65, blue: 71, gold: 73, purple: 73, nature_core: 48, green_hw: 9,  culture_core: 8,  blue_fb: 6,  yellow_cog: 2,  purple_shadow: 0, A: 73, fullMark: 500 },
   ];
   const FALLBACK_SUBGROUPS = [
-    { id: 1, leftLabel: 'Judge', rightLabel: 'Ruler', group: 'Ruling', axis: 'Autoriteit & Structuur', leftScore: 45, rightScore: 40, leftNature: 7, leftCulture: 2, rightNature: 6, rightCulture: 2, harmonyPoints: 0, shadowPoints: 0 },
-    { id: 2, leftLabel: 'Lover', rightLabel: 'Caregiver', group: 'Relational', axis: 'Relatie & Verbinding', leftScore: 25, rightScore: 10, leftNature: 4, leftCulture: 1, rightNature: 2, rightCulture: 0, harmonyPoints: 0, shadowPoints: 0 },
-    { id: 3, leftLabel: 'Innocent', rightLabel: 'Explorer', group: 'Seeker', axis: 'Waarheid & Ontdekking', leftScore: 35, rightScore: 0, leftNature: 5, leftCulture: 2, rightNature: 0, rightCulture: 0, harmonyPoints: 0, shadowPoints: 0 },
-    { id: 4, leftLabel: 'Outlaw', rightLabel: 'Trickster', group: 'Chaos', axis: 'Disruptie & Perspectief', leftScore: 55, rightScore: 20, leftNature: 6, leftCulture: 5, rightNature: 3, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
-    { id: 5, leftLabel: 'Sage', rightLabel: 'Artist', group: 'Abstract', axis: 'Wijsheid & Creatie', leftScore: 15, rightScore: 35, leftNature: 1, leftCulture: 2, rightNature: 5, rightCulture: 2, harmonyPoints: 0, shadowPoints: 0 },
-    { id: 6, leftLabel: 'Magician', rightLabel: 'Hero', group: 'Agency', axis: 'Manifestatie & Actie', leftScore: 15, rightScore: 35, leftNature: 3, leftCulture: 0, rightNature: 6, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 1, leftLabel: 'Judge', rightLabel: 'Ruler', group: 'Ruling', axis: t('eyedentityReport.axes.ruling'), leftScore: 45, rightScore: 40, leftNature: 7, leftCulture: 2, rightNature: 6, rightCulture: 2, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 2, leftLabel: 'Lover', rightLabel: 'Caregiver', group: 'Relational', axis: t('eyedentityReport.axes.relational'), leftScore: 25, rightScore: 10, leftNature: 4, leftCulture: 1, rightNature: 2, rightCulture: 0, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 3, leftLabel: 'Innocent', rightLabel: 'Explorer', group: 'Seeker', axis: t('eyedentityReport.axes.seeker'), leftScore: 35, rightScore: 0, leftNature: 5, leftCulture: 2, rightNature: 0, rightCulture: 0, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 4, leftLabel: 'Outlaw', rightLabel: 'Trickster', group: 'Chaos', axis: t('eyedentityReport.axes.chaos'), leftScore: 55, rightScore: 20, leftNature: 6, leftCulture: 5, rightNature: 3, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 5, leftLabel: 'Sage', rightLabel: 'Artist', group: 'Abstract', axis: t('eyedentityReport.axes.abstract'), leftScore: 15, rightScore: 35, leftNature: 1, leftCulture: 2, rightNature: 5, rightCulture: 2, harmonyPoints: 0, shadowPoints: 0 },
+    { id: 6, leftLabel: 'Magician', rightLabel: 'Hero', group: 'Agency', axis: t('eyedentityReport.axes.agency'), leftScore: 15, rightScore: 35, leftNature: 3, leftCulture: 0, rightNature: 6, rightCulture: 1, harmonyPoints: 0, shadowPoints: 0 },
   ];
   const radarData = resultProp?.radarData || FALLBACK_RADAR;
   const subgroups = resultProp?.subgroups || FALLBACK_SUBGROUPS;
@@ -366,7 +208,8 @@ const ProfileResultCard = ({ result: resultProp }) => {
 
   // Cognitive triangle data
   const archKey = (mainKey || '').toUpperCase();
-  const tri = COG_TRIANGLES[archKey];
+  const triKey = COG_MODE_BY_ARCHETYPE[archKey];
+  const tri = triKey ? COG_TRIANGLES[triKey] : undefined;
 
   // Accent color cycling fallback
   const accentCycle = [
@@ -417,7 +260,7 @@ const ProfileResultCard = ({ result: resultProp }) => {
           }}>
             {idx + 1}
           </span>
-          {cleanTitle(section.title)}
+          {cleanTitle(t(`eyedentityReport.sections.${section.id}.title`))}
         </h3>
         <div style={{
           color: 'rgba(209, 213, 219, 1)',
@@ -435,7 +278,7 @@ const ProfileResultCard = ({ result: resultProp }) => {
             boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.5)',
           } : {}),
         }}>
-          {renderMarkdownContent(section.content, accent.color)}
+          {renderMarkdownContent(t(`eyedentityReport.sections.${section.id}.content`), accent.color)}
         </div>
       </div>
     );
@@ -477,7 +320,7 @@ const ProfileResultCard = ({ result: resultProp }) => {
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(168,85,247,0.22)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(168,85,247,0.12)'; }}
             >
-              {manageOpen ? 'Sluiten' : 'Beheer'}
+              {manageOpen ? t('eyedentityReport.manage.close') : t('eyedentityReport.manage.open')}
             </button>
           )}
         </div>
@@ -488,12 +331,12 @@ const ProfileResultCard = ({ result: resultProp }) => {
         <div style={{ border: '1px solid rgba(168,85,247,0.35)', borderRadius: '0.6rem', background: 'rgba(20,10,30,0.5)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
           {/* Zichtbare naam */}
           <div>
-            <div style={{ fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)', marginBottom: '0.4rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700 }}>Zichtbare naam</div>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)', marginBottom: '0.4rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700 }}>{t('eyedentityReport.manage.displayNameLabel')}</div>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <input value={nameInput} onChange={(e) => { setNameInput(e.target.value); setNameMsg(''); }} maxLength={40}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); }}
                 style={{ flex: 1, minWidth: '10rem', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(168,85,247,0.35)', color: '#fff', fontFamily: "'Figtree', sans-serif", fontSize: '0.9rem', padding: '0.45rem 0.7rem', borderRadius: '0.35rem', outline: 'none' }} />
-              <SciFiButton onClick={handleSaveName} disabled={nameBusy || !nameInput.trim()} variant="purple" size="sm">{nameBusy ? '...' : 'Opslaan'}</SciFiButton>
+              <SciFiButton onClick={handleSaveName} disabled={nameBusy || !nameInput.trim()} variant="purple" size="sm">{nameBusy ? '...' : t('eyedentityReport.manage.save')}</SciFiButton>
             </div>
             {nameMsg && <div style={{ fontSize: '0.75rem', color: nameMsg.includes('✓') ? '#4ade80' : '#f87171', marginTop: '0.35rem' }}>{nameMsg}</div>}
           </div>
@@ -501,21 +344,21 @@ const ProfileResultCard = ({ result: resultProp }) => {
           {/* Profielcode */}
           {orbCode && (
             <div>
-              <div style={{ fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)', marginBottom: '0.4rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700 }}>Profielcode</div>
+              <div style={{ fontSize: '0.7rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.7)', marginBottom: '0.4rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700 }}>{t('eyedentityReport.manage.profileCodeLabel')}</div>
               <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.72rem', color: '#c4b5fd', background: '#050505', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '0.35rem', padding: '0.55rem', wordBreak: 'break-all', lineHeight: 1.5 }}>{orbCode}</div>
-              <div style={{ marginTop: '0.5rem' }}><SciFiButton onClick={copyCode} variant="purple" size="sm">Kopieer code</SciFiButton></div>
+              <div style={{ marginTop: '0.5rem' }}><SciFiButton onClick={copyCode} variant="purple" size="sm">{t('eyedentityReport.manage.copyCode')}</SciFiButton></div>
             </div>
           )}
 
           {/* Account verwijderen */}
           <div style={{ borderTop: '1px solid rgba(239,68,68,0.25)', paddingTop: '0.9rem' }}>
             <div style={{ color: '#fca5a5', fontSize: '0.78rem', lineHeight: 1.5, marginBottom: '0.55rem' }}>
-              Dit verwijdert je account en alle assessments permanent (AVG/GDPR). Typ <b>VERWIJDER</b> om te bevestigen:
+              {t('eyedentityReport.manage.deleteIntroBefore')}<b>{t('eyedentityReport.manage.deleteWord')}</b>{t('eyedentityReport.manage.deleteIntroAfter')}
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <input value={delInput} onChange={(e) => setDelInput(e.target.value)} placeholder="VERWIJDER"
+              <input value={delInput} onChange={(e) => setDelInput(e.target.value)} placeholder={t('eyedentityReport.manage.deleteWord')}
                 style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(239,68,68,0.4)', color: '#fca5a5', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', padding: '0.4rem 0.7rem', borderRadius: '0.35rem', outline: 'none', width: '10rem' }} />
-              <SciFiButton onClick={handleDeleteAccount} disabled={delBusy} variant="danger" size="sm">{delBusy ? 'Bezig...' : 'Verwijderen'}</SciFiButton>
+              <SciFiButton onClick={handleDeleteAccount} disabled={delBusy} variant="danger" size="sm">{delBusy ? t('eyedentityReport.manage.deleting') : t('eyedentityReport.manage.delete')}</SciFiButton>
               {delErr && <span style={{ color: '#f87171', fontSize: '0.75rem' }}>{delErr}</span>}
             </div>
           </div>
@@ -539,8 +382,8 @@ const ProfileResultCard = ({ result: resultProp }) => {
           lineHeight: 1.7,
           fontStyle: 'italic',
         }}>
-          <strong style={{ color: '#a855f7' }}>Meta-Disclaimer:</strong>{' '}
-          Dit rapport is gegenereerd door het Garden For Life Deltawerken Model — een zelfreflectie-instrument, geen klinische diagnose. De gebruikte neurobiologische termen zijn metaforen binnen dit specifieke model. Raadpleeg een professional voor medisch of psychologisch advies.
+          <strong style={{ color: '#a855f7' }}>{t('eyedentityReport.metaDisclaimer.label')}</strong>{' '}
+          {t('eyedentityReport.metaDisclaimer.body')}
         </p>
       </div>
 
@@ -612,40 +455,40 @@ const ProfileResultCard = ({ result: resultProp }) => {
           padding: sectionPad,
         }}>
           <h3 style={{ margin: '0 0 0.2rem', fontSize: '1.05rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#fbbf24', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Cognitieve Driehoek
+            {t('eyedentityReport.cog.heading')}
           </h3>
           <p style={{ margin: '0.3rem 0 0.85rem', fontSize: '0.85rem', color: 'rgba(148,163,184,0.75)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-            Gele driehoeken vuren uitsluitend op <strong style={{ color: 'rgba(251,191,36,0.85)' }}>Culture picks</strong> — ze representeren aangeleerd cognitief gedrag, niet biologische hardware. Groene en blauwe signalen tonen wie je <em>bent</em>; gele signalen tonen hoe je hebt <em>leren navigeren</em>.
+            {t('eyedentityReport.cog.introA')}<strong style={{ color: 'rgba(251,191,36,0.85)' }}>{t('eyedentityReport.cog.introCulturePicks')}</strong>{t('eyedentityReport.cog.introB')}<em>{t('eyedentityReport.cog.introAre')}</em>{t('eyedentityReport.cog.introC')}<em>{t('eyedentityReport.cog.introLearned')}</em>{t('eyedentityReport.cog.introD')}
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
             <span style={{ width: '1.4rem', height: '1.4rem', borderRadius: '50%', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#fbbf24', flexShrink: 0 }}>
               {tri.id}
             </span>
             <div>
-              <div style={{ fontSize: '0.9rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#1d9904', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{tri.mode}</div>
-              <div style={{ fontSize: '0.82rem', color: 'rgba(209,213,219,0.6)', fontFamily: "'Figtree', sans-serif" }}>{tri.members.join(' · ')} — {tri.networks}</div>
+              <div style={{ fontSize: '0.9rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#1d9904', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t(`eyedentityReport.cog.modes.${triKey}.mode`)}</div>
+              <div style={{ fontSize: '0.82rem', color: 'rgba(209,213,219,0.6)', fontFamily: "'Figtree', sans-serif" }}>{tri.members.join(' · ')} — {t(`eyedentityReport.cog.modes.${triKey}.networks`)}</div>
             </div>
           </div>
           <p style={{ margin: '0 0 0.1rem', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(251,191,36,0.9)', fontWeight: 600, fontStyle: 'italic' }}>
-            {tri.tagline}
+            {t(`eyedentityReport.cog.modes.${triKey}.tagline`)}
           </p>
           <p style={{ margin: '0.45rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.85)', lineHeight: 1.65, textAlign: 'justify', overflowWrap: 'break-word' }}>
-            {tri.what}
+            {t(`eyedentityReport.cog.modes.${triKey}.what`)}
           </p>
           <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-            <span style={{ color: 'rgba(251,191,36,0.9)', fontWeight: 600 }}>Aangeleerde navigatie: </span>{tri.drive}
+            <span style={{ color: 'rgba(251,191,36,0.9)', fontWeight: 600 }}>{t('eyedentityReport.cog.driveLabel')}</span>{t(`eyedentityReport.cog.modes.${triKey}.drive`)}
           </p>
           <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-            <span style={{ color: 'rgba(251,191,36,0.9)', fontWeight: 600 }}>Hoog geel profiel: </span>{tri.high}
+            <span style={{ color: 'rgba(251,191,36,0.9)', fontWeight: 600 }}>{t('eyedentityReport.cog.highLabel')}</span>{t(`eyedentityReport.cog.modes.${triKey}.high`)}
           </p>
           <p style={{ margin: '0.4rem 0 0.75rem', fontSize: '0.85rem', fontFamily: "'Figtree', sans-serif", color: 'rgba(209,213,219,0.9)', lineHeight: 1.6, textAlign: 'justify', overflowWrap: 'break-word' }}>
-            <span style={{ color: 'rgba(251,191,36,0.9)', fontWeight: 600 }}>Groeirichting: </span>{tri.growth}
+            <span style={{ color: 'rgba(251,191,36,0.9)', fontWeight: 600 }}>{t('eyedentityReport.cog.growthLabel')}</span>{t(`eyedentityReport.cog.modes.${triKey}.growth`)}
           </p>
           <div style={{ display: 'flex', gap: '0.4rem' }}>
-            {ALL_COG_TRIANGLES.filter(t => t.id !== tri.id).map(t => (
-              <div key={t.id} style={{ flex: 1, border: '1px solid rgba(251,191,36,0.15)', borderRadius: '0.4rem', padding: '0.4rem 0.5rem' }}>
-                <div style={{ fontSize: '0.8rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#1d9904', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t.mode}</div>
-                <div style={{ fontSize: '0.78rem', color: 'rgba(148,163,184,0.8)', fontFamily: "'Figtree', sans-serif" }}>{t.members}</div>
+            {ALL_COG_TRIANGLES.filter(x => x.id !== tri.id).map(tItem => (
+              <div key={tItem.id} style={{ flex: 1, border: '1px solid rgba(251,191,36,0.15)', borderRadius: '0.4rem', padding: '0.4rem 0.5rem' }}>
+                <div style={{ fontSize: '0.8rem', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, color: '#1d9904', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.15rem' }}>{t(`eyedentityReport.cog.modes.${tItem.key}.mode`)}</div>
+                <div style={{ fontSize: '0.78rem', color: 'rgba(148,163,184,0.8)', fontFamily: "'Figtree', sans-serif" }}>{tItem.members}</div>
               </div>
             ))}
           </div>
@@ -736,10 +579,10 @@ const FeedbackStandaloneForm = () => {
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     const { email, whatWorked, whatDidntWork, suggestions } = formData;
-    if (!email.trim()) { setError('Vul je e-mailadres in'); return; }
-    if (!formData.starRating) { setError('Selecteer een score (1-9)'); return; }
+    if (!email.trim()) { setError(t('eyedentityReport.feedback.emailRequired')); return; }
+    if (!formData.starRating) { setError(t('eyedentityReport.feedback.scoreRequired')); return; }
     if (!whatWorked.trim() && !whatDidntWork.trim() && !suggestions.trim()) {
-      setError('Vul minimaal \u00e9\u00e9n tekstveld in'); return;
+      setError(t('eyedentityReport.feedback.textRequired')); return;
     }
     setIsSubmitting(true);
     setError('');
@@ -760,17 +603,17 @@ const FeedbackStandaloneForm = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, assessmentId]);
+  }, [formData, assessmentId, t]);
 
   if (submitted) {
     return (
       <div style={{ textAlign: 'center', padding: '2rem' }}>
         <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{'\u2705'}</div>
         <p style={{ color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: '1rem', marginBottom: '0.5rem', margin: '0 0 0.5rem' }}>
-          Dank je wel voor je feedback!
+          {t('eyedentityReport.feedback.thanksTitle')}
         </p>
         <p style={{ color: 'rgba(209,213,219,0.6)', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', margin: 0 }}>
-          Jouw reactie is ontvangen en draagt bij aan de verbetering van dit systeem.
+          {t('eyedentityReport.feedback.thanksBody')}
         </p>
       </div>
     );
@@ -861,21 +704,21 @@ const FeedbackStandaloneForm = () => {
 
 const NAV_ITEMS = [
   { id: 'profile', slug: 'profiel', titleKey: 'eyedentity.nav.profile', icon: '\u{1F9EC}', version: 'v1.0' },
-  { id: 'terms', slug: 'algemene-voorwaarden', titleKey: 'eyedentity.nav.terms', icon: '\u{1F4CB}', version: 'Beta 1.0' },
+  { id: 'terms', slug: 'algemene-voorwaarden', titleKey: 'eyedentity.nav.terms', icon: '\u{1F4CB}', version: 'v1.0' },
   { id: 'privacy', slug: 'privacybeleid', titleKey: 'eyedentity.nav.privacy', icon: '\u{1F512}', version: 'v1.0' },
   { id: 'cookies', slug: 'cookiebeleid', titleKey: 'eyedentity.nav.cookies', icon: '\u{1F36A}', version: 'v1.1' },
   { id: 'ai', slug: 'ai-transparantie', titleKey: 'eyedentity.nav.ai', icon: '\u{1F916}', version: 'v1.0' },
   { id: 'ip', slug: 'intellectueel-eigendom', titleKey: 'eyedentity.nav.ip', icon: '\u{00A9}', version: 'v2.0' },
   { id: 'usage', slug: 'gebruiksvoorwaarden-misbruik', titleKey: 'eyedentity.nav.usage', icon: '\u{2696}', version: 'v2.1' },
   { id: 'retention', slug: 'gegevensbehoud-en-verwijdering', titleKey: 'eyedentity.nav.retention', icon: '\u{1F5C2}', version: 'v1.0' },
-  { id: 'register', slug: 'verwerkingsregister', titleKey: 'eyedentity.nav.register', icon: '\u{1F4DC}', version: 'v2.0' },
-  { id: 'feedback', slug: 'feedback', titleKey: 'eyedentity.nav.feedback', icon: '\u{2B50}', version: 'Beta' },
+  { id: 'register', slug: 'verwerkingsregister', titleKey: 'eyedentity.nav.register', icon: '\u{1F4DC}', version: 'v2.1' },
+  { id: 'feedback', slug: 'feedback', titleKey: 'eyedentity.nav.feedback', icon: '\u{2B50}', version: 'v1.0' },
 ];
 
 const SLUG_TO_ID = Object.fromEntries(NAV_ITEMS.map(item => [item.slug, item.id]));
 
 const EyedentityPage = memo(({ isVisible, onBack }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   // CLIENT MODE: the left verbindingsmenu becomes the public-profiles directory.
   // The policy/terms pages the visitor sees here live under Instellingen on the
   // client's profile card instead. Derived locally (this page never gets clientMode).
@@ -904,8 +747,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
   // inside a content-visibility:auto section, so its <img> would otherwise only start fetching
   // once the user navigates in — arriving late. Fetching it here caches it ahead of time.
   useEffect(() => {
-    const url = getArchetypeImage(MAVERICK_DEFAULT.mainArchetype, MAVERICK_DEFAULT.supportGroup)
-      || (ARCHETYPES[MAVERICK_DEFAULT.mainArchetype] || {}).imageUrl;
+    const url = getArchetypeImage(MAVERICK_DEFAULT.mainArchetype, MAVERICK_DEFAULT.supportArchetype);
     if (url) { const img = new Image(); img.src = url; }
   }, []);
 
@@ -1025,7 +867,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
                 textTransform: 'uppercase',
                 fontWeight: 600,
               }}>
-                Persoonlijk Protocol Interface
+                {t('eyedentityReport.shell.protocolLabel')}
               </span>
             </div>
             <h1 style={{
@@ -1199,7 +1041,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
                     fontWeight: 600,
                     letterSpacing: '0.1em',
                   }}>
-                    {new Date().toLocaleDateString('nl-NL')}
+                    {new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL')}
                   </span>
                 </div>
               </div>
@@ -1226,7 +1068,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
               ) : selectedId === 'feedback' ? (
                 <FeedbackStandaloneForm />
               ) : (
-                POLICY_CONTENT[selectedId] || <p style={{ color: '#94a3b8' }}>{t('eyedentity.contentUnavailable')}</p>
+                getPolicyContent(language)[selectedId] || <p style={{ color: '#94a3b8' }}>{t('eyedentity.contentUnavailable')}</p>
               )}
             </div>
 

@@ -13,10 +13,18 @@
  *   tendency          — orb caption line 2 (italic tendency microcopy, ~24ch max width)
  *   expression        — EXPRESSIEPROFIEL body (probabilistic phrasing; fragments to
  *                        emphasize in amber are wrapped in *asterisks*)
+ *
+ * i18n: copy values are { nl, en } pairs; `getCardMicrocopy(id, language)` resolves them.
  */
 
-const PLACEHOLDER_TENDENCY = 'PLACEHOLDER — tendens-microcopy volgt uit de schrijfronde.';
-const PLACEHOLDER_EXPRESSION = 'PLACEHOLDER — dit expressieprofiel beschrijft straks in *waarschijnlijke tendensen* hoe deze configuratie zich doorgaans uitdrukt. De definitieve twaalf teksten worden apart geschreven en hier ingeladen.';
+const PLACEHOLDER_TENDENCY = {
+  nl: 'PLACEHOLDER — tendens-microcopy volgt uit de schrijfronde.',
+  en: 'PLACEHOLDER — tendency microcopy follows from the writing round.',
+};
+const PLACEHOLDER_EXPRESSION = {
+  nl: 'PLACEHOLDER — dit expressieprofiel beschrijft straks in *waarschijnlijke tendensen* hoe deze configuratie zich doorgaans uitdrukt. De definitieve twaalf teksten worden apart geschreven en hier ingeladen.',
+  en: 'PLACEHOLDER — this expression profile will soon describe, in *likely tendencies*, how this configuration usually expresses itself. The definitive twelve texts are written separately and loaded in here.',
+};
 
 // Default entry: used whenever the archetype id has no dedicated copy yet.
 const DEFAULT_ENTRY = {
@@ -27,14 +35,21 @@ const DEFAULT_ENTRY = {
 
 // Per-archetype overrides land here as the writing task delivers them.
 const MICROCOPY = {
-  // 'De Hervormer': { configurationName: 'DE HERVORMER', tendency: '…', expression: '…' },
+  // 'De Hervormer': { configurationName: { nl: 'DE HERVORMER', en: 'THE REFORMER' }, tendency: {…}, expression: {…} },
 };
 
-export function getCardMicrocopy(archetypePrimaryId) {
+// Resolve an { nl, en } copy pair (or a plain string, for back-compat) to one language.
+const pick = (v, language) => {
+  if (v && typeof v === 'object') return v[language] || v.nl || v.en || '';
+  return v;
+};
+
+export function getCardMicrocopy(archetypePrimaryId, language = 'nl') {
   const entry = MICROCOPY[archetypePrimaryId] || DEFAULT_ENTRY;
+  const name = pick(entry.configurationName, language);
   return {
-    configurationName: (entry.configurationName || archetypePrimaryId || '—').toUpperCase(),
-    tendency: entry.tendency,
-    expression: entry.expression,
+    configurationName: (name || archetypePrimaryId || '—').toUpperCase(),
+    tendency: pick(entry.tendency, language),
+    expression: pick(entry.expression, language),
   };
 }

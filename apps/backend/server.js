@@ -21,12 +21,17 @@ const verbondRoutes = require('./routes/verbond');
 
 const app = express();
 const PRIVATE_DEV_ORIGIN_RE = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+// Cloudflare Pages preview deployments: every non-production branch is served from its own
+// <branch|hash>.gfl-trunk.pages.dev subdomain, which an exact-match allowlist can never cover.
+// Scoped to this project's subdomains only — Cloudflare will not serve another account there.
+const PAGES_PREVIEW_ORIGIN_RE = /^https:\/\/[a-z0-9][a-z0-9-]*\.gfl-trunk\.pages\.dev$/;
 
 // ── Middleware ──
 app.use(cors({
   origin: (origin, cb) => {
     // Allow same-machine and LAN dev origins without forcing .env edits.
-    if (!origin || config.corsOrigins.includes(origin) || PRIVATE_DEV_ORIGIN_RE.test(origin)) {
+    if (!origin || config.corsOrigins.includes(origin)
+        || PRIVATE_DEV_ORIGIN_RE.test(origin) || PAGES_PREVIEW_ORIGIN_RE.test(origin)) {
       return cb(null, true);
     }
     return cb(new Error('Not allowed by CORS'));
@@ -129,7 +134,59 @@ app.post('/api/beta/verify', async (req, res) => {
   }
 });
 
-// ── BETA END: delete all assessment data on 27-08-2026 12:00 UTC ──
+// ── Nightly profile purge — 00:00 Europe/Amsterdam ──
+// A computed profile is a working cache, not a record. The account keeps only the partial
+// profile (users.orbHistory: archetype names, shape vector, card texts); everything the
+// engine computed to get there is swept at midnight. The 24h TTL index on
+// assessments.createdAt (db/index.js) is the safety net for restarts — this sweep is what
+// makes "cleared daily at 00:00" literally true.
+const PURGE_TZ = 'Europe/Amsterdam';
+
+/**
+ * Milliseconds until the next 00:00 wall-clock in PURGE_TZ.
+ * Derived from the zone's own clock rather than the server's, so the sweep lands at
+ * midnight in Amsterdam wherever the host runs. On the two DST switch days the computed
+ * delay is an hour off (the day is 23h or 25h long); the sweep fires at 23:00 or 01:00
+ * that once and re-arms correctly for the next day.
+ */
+function msUntilMidnight(tz = PURGE_TZ) {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz, hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(now).reduce((acc, part) => { acc[part.type] = part.value; return acc; }, {});
+  const secondsIntoDay = Number(parts.hour) * 3600 + Number(parts.minute) * 60 + Number(parts.second);
+  const ms = (86400 - secondsIntoDay) * 1000 - now.getMilliseconds();
+  return ms > 0 ? ms : 86400000;
+}
+
+async function purgeProfiles() {
+  try {
+    const { getDB } = require('./db');
+    const db = getDB();
+    const result = await db.collection('assessments').deleteMany({});
+    console.log(`[GFL-API] 🧹 Nightly profile purge: ${result.deletedCount} computed profile(s) removed`);
+    if (result.deletedCount > 0) {
+      db.collection('devActivity').insertOne({
+        type: 'admin_login',
+        timestamp: new Date(),
+        userId: 'SYSTEM',
+        email: 'system@gardenforlife.nl',
+        message: `PROFILE PURGE: deleted ${result.deletedCount} computed profiles (00:00 ${PURGE_TZ})`,
+        branch: '', hash: '', reportId: null, reportType: '',
+      }).catch(() => {});
+    }
+  } catch (err) {
+    console.error('[GFL-API] ❌ Nightly profile purge failed:', err.message);
+  }
+}
+
+function scheduleProfilePurge() {
+  const delay = msUntilMidnight();
+  console.log(`[GFL-API] Profile purge scheduled for 00:00 ${PURGE_TZ} (in ${Math.round(delay / 60000)} min)`);
+  setTimeout(() => { purgeProfiles().finally(scheduleProfilePurge); }, delay);
+}
+
+// ── BETA END: delete all assessment data on 27-09-2026 12:00 UTC (launch day) ──
 // Keeps: user accounts, audit logs (devActivity), questions.
 // Deletes: assessments, assessmentReviews.
 const BETA_WIPE_DATE = new Date('2026-09-27T12:00:00Z');
@@ -191,8 +248,11 @@ async function start() {
     await connectDB();
     console.log('[GFL-API] MongoDB connected');
 
-    // ── BETA END: hard-coded wipe of all assessment data on 27-08-2026 12:00 UTC ──
+    // ── BETA END: hard-coded wipe of all assessment data on 27-09-2026 12:00 UTC ──
     scheduleBetaWipe();
+
+    // Computed profiles never survive the night — swept at 00:00 Europe/Amsterdam.
+    scheduleProfilePurge();
   } else {
     console.log('[GFL-API] MONGODB_URI not set — auth & assessment routes will fail');
   }

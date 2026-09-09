@@ -617,6 +617,7 @@ const ShapeIcon = ({ shape, size = 20, color = NEON_GREEN, className = '' }) => 
 
 // Draggable Symbol Item - Icon-only drag
 const DraggableSymbol = memo(({ symbol, onDragStart, onDragEnd, isInPlayground, justReturned, onDropToPlayground }) => {
+  const { t, tFunc } = useLanguage();
   const [isHolding, setIsHolding] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -638,7 +639,7 @@ const DraggableSymbol = memo(({ symbol, onDragStart, onDragEnd, isInPlayground, 
           flexShrink: 0,
           position: 'relative'
         }}
-        title={`${symbol.dutchName} is in playground`}
+        title={tFunc('filosofie.ui.inPlaygroundTitle')(t(symbol.displayName))}
       >
         <div style={{ opacity: 0.15 }}>
           <ShapeIcon shape={symbol.shape} size={40} color={NEON_GREEN} />
@@ -779,7 +780,7 @@ const DraggableSymbol = memo(({ symbol, onDragStart, onDragEnd, isInPlayground, 
         onMouseEnter={() => !isHolding && setIsHovered(true)}
         onMouseLeave={() => !isHolding && setIsHovered(false)}
         style={containerStyle}
-        title={`Drag ${symbol.dutchName} to playground`}
+        title={tFunc('filosofie.ui.dragToPlaygroundTitle')(t(symbol.displayName))}
       >
         {/* Icon - show in container when not dragging */}
         {!isDragging && (
@@ -822,7 +823,9 @@ const DraggableSymbol = memo(({ symbol, onDragStart, onDragEnd, isInPlayground, 
 DraggableSymbol.displayName = 'DraggableSymbol';
 
 // Symbol Description Panel
-const SymbolDescription = memo(({ symbol, isActive }) => (
+const SymbolDescription = memo(({ symbol, isActive }) => {
+  const { t } = useLanguage();
+  return (
   <div
     style={{
       padding: '0.5rem 0.75rem',
@@ -840,7 +843,7 @@ const SymbolDescription = memo(({ symbol, isActive }) => (
       letterSpacing: '0.1em',
       marginBottom: '0.25rem'
     }}>
-      {symbol.dutchName}
+      {t(symbol.displayName)}
     </div>
     <div style={{
       fontSize: 'clamp(0.7rem, 0.9vw, 0.85rem)',
@@ -848,7 +851,7 @@ const SymbolDescription = memo(({ symbol, isActive }) => (
       fontFamily: "'Figtree', sans-serif",
       marginBottom: '0.35rem'
     }}>
-      {symbol.englishName} :: {symbol.meaning}
+      {symbol.englishName} :: {t(symbol.meaning)}
     </div>
     <div style={{
       fontSize: 'clamp(0.65rem, 0.85vw, 0.8rem)',
@@ -859,7 +862,8 @@ const SymbolDescription = memo(({ symbol, isActive }) => (
       {symbol.description}
     </div>
   </div>
-));
+  );
+});
 SymbolDescription.displayName = 'SymbolDescription';
 
 // Symbol Column Component (Left Side) - With draggable symbols
@@ -946,6 +950,7 @@ SymbolColumn.displayName = 'SymbolColumn';
 
 // Sacred Geometry / Consciousness Playground (Center) with 3D Support
 const SacredGeometry = memo(({ onInfoClick, playgroundSymbols = [], onDrop, onRemoveSymbol, newlyAddedId }) => {
+  const { t, tFunc } = useLanguage();
   const [rotation, setRotation] = useState(0);
   const [infoHovered, setInfoHovered] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -1252,7 +1257,7 @@ const SacredGeometry = memo(({ onInfoClick, playgroundSymbols = [], onDrop, onRe
                       size={shapeSize}
                       rotation={shapeRotation}
                       onClick={() => onRemoveSymbol?.(symbol)}
-                      title={`Click to return ${symbol.dutchName} to constants`}
+                      title={tFunc('filosofie.ui.returnToConstantsTitle')(t(symbol.displayName))}
                     />
                   </div>
                 );
@@ -1323,7 +1328,7 @@ const SacredGeometry = memo(({ onInfoClick, playgroundSymbols = [], onDrop, onRe
                     transition: 'all 0.2s ease',
                     transformStyle: 'preserve-3d'
                   }}
-                  title={`${symbol.dutchName} - Click to remove`}
+                  title={tFunc('filosofie.ui.removeSymbolTitle')(t(symbol.displayName))}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(0, 255, 65, 0.1)';
                     e.currentTarget.style.transform = 'scale(1.1) translateZ(10px)';
@@ -1530,6 +1535,7 @@ EntropyGraph.displayName = 'EntropyGraph';
 
 // Quote Network / Insight Panel (Bottom) - Shows content based on playground symbols
 const QuoteNetwork = memo(({ playgroundSymbols = [] }) => {
+  const { t } = useLanguage();
   const combinationInsight = getCombinationInsight(playgroundSymbols);
   const hasSymbols = playgroundSymbols.length > 0;
 
@@ -1545,7 +1551,7 @@ const QuoteNetwork = memo(({ playgroundSymbols = [] }) => {
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <span>{hasSymbols ? 'SYMBOL INSIGHT' : 'MUZIEK / FOOD FOR THOUGHT'}</span>
+        <span>{hasSymbols ? t('filosofie.ui.symbolInsight') : t('filosofie.ui.musicHeader')}</span>
         {hasSymbols && (
           <span style={{ 
             fontSize: 'clamp(0.7rem, 0.85vw, 0.85rem)', 
@@ -1658,7 +1664,7 @@ const QuoteNetwork = memo(({ playgroundSymbols = [] }) => {
               }}
             >
               <p style={{ fontSize: 'clamp(0.8rem, 1vw, 0.95rem)', color: NEON_GREEN, fontFamily: "'Figtree', sans-serif", marginBottom: '0.35rem', lineHeight: '1.4' }}>
-                "{quote.text}"
+                "{t(quote.text)}"
               </p>
               <div style={{ fontSize: 'clamp(0.7rem, 0.85vw, 0.85rem)', color: 'rgba(0, 255, 65, 0.5)', textTransform: 'uppercase', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif" }}>
                 {quote.category}
@@ -1788,11 +1794,11 @@ const InfoModal = memo(({ isOpen, onClose }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
                     <ShapeIcon shape={symbol.shape} size={16} color={NEON_GREEN} />
                     <span style={{ fontSize: 'clamp(0.85rem, 1vw, 1rem)', color: NEON_GREEN, fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontWeight: 'bold' }}>
-                      {symbol.dutchName}
+                      {t(symbol.displayName)}
                     </span>
                   </div>
                   <div style={{ fontSize: 'clamp(0.8rem, 0.95vw, 0.95rem)', color: 'rgba(0, 255, 65, 0.7)', fontFamily: "'Figtree', sans-serif", marginBottom: '0.2rem' }}>
-                    {symbol.meaning}
+                    {t(symbol.meaning)}
                   </div>
                   <div style={{ fontSize: 'clamp(0.75rem, 0.9vw, 0.9rem)', color: 'rgba(0, 255, 65, 0.5)', fontFamily: "'Figtree', sans-serif", lineHeight: '1.4' }}>
                     {symbol.description}

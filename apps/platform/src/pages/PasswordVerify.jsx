@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { verifyPasswordChange, verifyEmailChange } from '@gfl/api-client';
+import { useLanguage } from '@gfl/i18n';
 
 /**
  * PasswordVerify — landing page for the confirmation emails (password OR email change).
@@ -9,6 +10,7 @@ import { verifyPasswordChange, verifyEmailChange } from '@gfl/api-client';
  * (no heavy 3D app), so it works for logged-out users on any device.
  */
 export default function PasswordVerify() {
+  const { t } = useLanguage();
   const [state, setState] = useState({ loading: true, ok: false, msg: '' });
 
   // Which flow: an ?emailverify token → email change; otherwise ?pwverify → password change.
@@ -18,21 +20,21 @@ export default function PasswordVerify() {
   const token = emailToken || params.get('pwverify');
 
   useEffect(() => {
-    if (!token) { setState({ loading: false, ok: false, msg: 'Ongeldige of ontbrekende link.' }); return; }
+    if (!token) { setState({ loading: false, ok: false, msg: t('auth.verify.invalidLink') }); return; }
     let alive = true;
     const verify = isEmail ? verifyEmailChange : verifyPasswordChange;
     const okMsg = isEmail
-      ? 'Je nieuwe e-mailadres is bevestigd. Je kunt nu inloggen met je nieuwe e-mailadres.'
-      : 'Je nieuwe wachtwoord is geactiveerd. Je kunt nu inloggen met je nieuwe wachtwoord.';
+      ? t('auth.verify.emailOk')
+      : t('auth.verify.passwordOk');
     verify(token)
       .then(() => { if (alive) setState({ loading: false, ok: true, msg: okMsg }); })
-      .catch((e) => { if (alive) setState({ loading: false, ok: false, msg: e.message || 'Bevestiging mislukt.' }); });
+      .catch((e) => { if (alive) setState({ loading: false, ok: false, msg: e.message || t('auth.verify.failedMsg') }); });
     return () => { alive = false; };
-  }, [token, isEmail]);
+  }, [token, isEmail, t]);
 
   const { loading, ok, msg } = state;
   const accent = ok ? '#22c55e' : '#f87171';
-  const okTitle = isEmail ? 'E-mailadres bevestigd ✓' : 'Wachtwoord bevestigd ✓';
+  const okTitle = isEmail ? t('auth.verify.emailTitle') : t('auth.verify.passwordTitle');
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0a0510', color: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui, "Segoe UI", sans-serif', padding: '2rem' }}>
@@ -40,13 +42,13 @@ export default function PasswordVerify() {
         {loading ? (
           <>
             <div className="pwv-spin" style={{ width: '2.6rem', height: '2.6rem', margin: '0 auto 1.3rem', border: '2px solid #a855f7', borderTopColor: 'transparent', borderRadius: '50%' }} />
-            <div style={{ letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.8)', fontSize: '0.85rem' }}>Bevestigen…</div>
+            <div style={{ letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.8)', fontSize: '0.85rem' }}>{t('auth.verify.busy')}</div>
           </>
         ) : (
           <>
-            <h1 style={{ margin: '0 0 0.9rem', fontSize: '1.35rem', color: accent }}>{ok ? okTitle : 'Bevestiging mislukt'}</h1>
+            <h1 style={{ margin: '0 0 0.9rem', fontSize: '1.35rem', color: accent }}>{ok ? okTitle : t('auth.verify.failedTitle')}</h1>
             <p style={{ margin: '0 0 1.7rem', lineHeight: 1.6, color: 'rgba(255,255,255,0.75)', fontSize: '0.95rem' }}>{msg}</p>
-            <a href="/" style={{ display: 'inline-block', padding: '0.7rem 1.6rem', borderRadius: '0.5rem', background: 'linear-gradient(135deg,#a855f7,#7c3aed)', color: '#fff', textDecoration: 'none', fontWeight: 600 }}>Naar Garden For Life</a>
+            <a href="/" style={{ display: 'inline-block', padding: '0.7rem 1.6rem', borderRadius: '0.5rem', background: 'linear-gradient(135deg,#a855f7,#7c3aed)', color: '#fff', textDecoration: 'none', fontWeight: 600 }}>{t('auth.verify.home')}</a>
           </>
         )}
       </div>

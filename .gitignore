@@ -32,3 +32,6 @@ yarn-error.log*
 
 # Local profiling scratch (Firefox profiles + analyzer)
 tmp/
+
+# Local data exports — contain personal data in the clear, never commit
+exports/

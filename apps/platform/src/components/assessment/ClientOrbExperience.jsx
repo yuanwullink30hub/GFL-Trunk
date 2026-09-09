@@ -1,6 +1,8 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
+import { useLanguage } from '@gfl/i18n';
 import { getHistory, getAssessment, downloadPdf, deleteOwnAccount, updateDisplayName } from '@gfl/api-client';
 import { C, FONT, SciFiButton } from '@gfl/ui';
+import { extendedNameFor } from '@gfl/assessment-core/data';
 import { OrbSphere, OrbSphere3D, configFromResult, orbCodeFromResult, deriveOrb3, encodeOrb3, decodeOrb3, GROUP } from '../../orb';
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -68,6 +70,8 @@ const Panel = ({ title, accent = C.purple, onClose, children }) => (
 );
 
 const ClientOrbExperience = memo(({ user, active = true, onLogout, onClose, onNavigate }) => {
+  const { t, tFunc, language } = useLanguage();
+  const locale = language === 'en' ? 'en-GB' : 'nl-NL';
   const vp = useViewport();
   const orbSize = Math.round(Math.max(280, Math.min(vp.h * 0.64, vp.w * 0.46, 720)));
 
@@ -117,23 +121,23 @@ const ClientOrbExperience = memo(({ user, active = true, onLogout, onClose, onNa
     return () => { alive = false; };
   }, []);
 
-  const archetype = detail ? (detail.extendedArchetypeName || detail.archetypeKey || '—') : '—';
+  const archetype = detail ? (extendedNameFor(detail, language) || detail.archetypeKey || '—') : '—';
   const group = config?._dominant ? GROUP[config._dominant] : (detail?.supportGroup || '');
 
   const handleDownload = useCallback(async () => {
     if (!detail?._id) return;
     setBusy('report'); setMsg('');
     try { await downloadPdf(detail._id); }
-    catch (e) { setMsg(e.message || 'Download mislukt'); }
+    catch (e) { setMsg(e.message || t('clientOrb.downloadFailed')); }
     finally { setBusy(''); }
-  }, [detail]);
+  }, [detail, t]);
 
   const handleDelete = useCallback(async () => {
-    if (delInput !== 'VERWIJDER') { setDelErr('Typ precies "VERWIJDER" om te bevestigen'); return; }
+    if (delInput !== t('clientOrb.deleteWord')) { setDelErr(t('clientOrb.deleteTypedError')); return; }
     setBusy('delete'); setDelErr('');
     try { await deleteOwnAccount(); onLogout(); }
-    catch (e) { setDelErr(e.message || 'Verwijderen mislukt'); setBusy(''); }
-  }, [delInput, onLogout]);
+    catch (e) { setDelErr(e.message || t('clientOrb.deleteFailed')); setBusy(''); }
+  }, [delInput, onLogout, t]);
 
   const copyCode = useCallback(() => { if (code) navigator.clipboard?.writeText(code); }, [code]);
 
@@ -143,11 +147,11 @@ const ClientOrbExperience = memo(({ user, active = true, onLogout, onClose, onNa
     setNameBusy(true); setNameMsg('');
     try {
       const { displayName } = await updateDisplayName(v);
-      setName(displayName); setNameInput(displayName); setNameMsg('Opgeslagen ✓');
+      setName(displayName); setNameInput(displayName); setNameMsg(t('clientOrb.savedCheck'));
     } catch (e) {
-      setNameMsg(e.message || 'Bijwerken mislukt');
+      setNameMsg(e.message || t('clientOrb.updateFailed'));
     } finally { setNameBusy(false); }
-  }, [nameInput, name]);
+  }, [nameInput, name, t]);
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', fontFamily: FONT, color: C.text }}>
@@ -155,7 +159,7 @@ const ClientOrbExperience = memo(({ user, active = true, onLogout, onClose, onNa
       {/* ── top-left identity ── */}
       <div style={{ position: 'absolute', top: 'clamp(14px, 3vh, 34px)', left: 'clamp(16px, 3vw, 44px)', zIndex: 6 }}>
         <div style={{ fontSize: 'max(9px, 0.5vw)', letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>
-          {name || 'Reiziger'}
+          {name || t('clientOrb.traveler')}
         </div>
         <div style={{ fontSize: 'max(20px, 1.5vw)', fontWeight: 700, letterSpacing: '0.06em', color: C.gold, textShadow: `0 0 14px ${C.gold}55` }}>
           {loading ? '…' : archetype}
@@ -165,16 +169,16 @@ const ClientOrbExperience = memo(({ user, active = true, onLogout, onClose, onNa
 
       {/* ── top-right session controls ── */}
       <div style={{ position: 'absolute', top: 'clamp(14px, 3vh, 34px)', right: 'clamp(16px, 3vw, 44px)', zIndex: 6, display: 'flex', gap: '0.5rem' }}>
-        <SciFiButton onClick={onClose} size="sm" padding="0.35rem 0.9rem" fontSize="max(9px, 0.46vw)">← Terug</SciFiButton>
-        <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 0.9rem" fontSize="max(9px, 0.46vw)">Uitloggen</SciFiButton>
+        <SciFiButton onClick={onClose} size="sm" padding="0.35rem 0.9rem" fontSize="max(9px, 0.46vw)">{t('clientOrb.back')}</SciFiButton>
+        <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 0.9rem" fontSize="max(9px, 0.46vw)">{t('clientOrb.logout')}</SciFiButton>
       </div>
 
       {/* ── product destinations (top-centre) — the platform hub ── */}
       {onNavigate && (
         <div style={{ position: 'absolute', top: 'clamp(14px, 3vh, 34px)', left: '50%', transform: 'translateX(-50%)', zIndex: 6, display: 'flex', gap: '0.55rem' }}>
-          <Node label="Data" sub="tests & cursussen" accent={C.gold} onClick={() => onNavigate('data')} style={{ position: 'relative' }} />
-          <Node label="Kook-eiland" sub="kook je maaltijden" accent="#22d3ee" onClick={() => onNavigate('kook')} style={{ position: 'relative' }} />
-          <Node label="Gardens" sub="verbind" accent="#22c55e" onClick={() => onNavigate('gardens')} style={{ position: 'relative' }} />
+          <Node label={t('clientOrb.nav.data')} sub={t('clientOrb.nav.dataSub')} accent={C.gold} onClick={() => onNavigate('data')} style={{ position: 'relative' }} />
+          <Node label={t('clientOrb.nav.kook')} sub={t('clientOrb.nav.kookSub')} accent="#22d3ee" onClick={() => onNavigate('kook')} style={{ position: 'relative' }} />
+          <Node label={t('clientOrb.nav.gardens')} sub={t('clientOrb.nav.gardensSub')} accent="#22c55e" onClick={() => onNavigate('gardens')} style={{ position: 'relative' }} />
         </div>
       )}
 
@@ -186,9 +190,9 @@ const ClientOrbExperience = memo(({ user, active = true, onLogout, onClose, onNa
             <div style={{ width: orbSize, height: orbSize, borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
               <div>
                 <div style={{ fontSize: 'max(13px, 0.8vw)', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em', lineHeight: 1.7 }}>
-                  {loading ? 'Profiel laden…' : 'Nog geen kristal.'}
+                  {loading ? t('clientOrb.profileLoading') : t('clientOrb.noCrystal')}
                 </div>
-                {!loading && <div style={{ marginTop: '1rem' }}><SciFiButton onClick={onClose} size="md">Doe de test</SciFiButton></div>}
+                {!loading && <div style={{ marginTop: '1rem' }}><SciFiButton onClick={onClose} size="md">{t('clientOrb.doTest')}</SciFiButton></div>}
               </div>
             </div>
           )}
@@ -197,16 +201,16 @@ const ClientOrbExperience = memo(({ user, active = true, onLogout, onClose, onNa
       {/* ── spread-out interaction nodes (only with a profile) ── */}
       {config && (
         <>
-          <Node label="Rapport" sub={busy === 'report' ? 'bezig…' : 'download PDF'} accent={C.gold}
+          <Node label={t('clientOrb.node.report')} sub={busy === 'report' ? t('clientOrb.node.reportBusy') : t('clientOrb.node.reportSub')} accent={C.gold}
             onClick={handleDownload}
             style={{ left: 'clamp(16px, 5vw, 90px)', top: '38%' }} />
-          <Node label="Profielcode" sub="je unieke kristal-code" accent={C.purple}
+          <Node label={t('clientOrb.node.code')} sub={t('clientOrb.node.codeSub')} accent={C.purple}
             onClick={() => setPanel('code')}
             style={{ right: 'clamp(16px, 5vw, 90px)', top: '38%', textAlign: 'right', alignItems: 'flex-end' }} />
-          <Node label="Geschiedenis" sub={`${history.length} assessment${history.length === 1 ? '' : 's'}`} accent={C.gold}
+          <Node label={t('clientOrb.node.history')} sub={tFunc('clientOrb.node.historySub')(history.length)} accent={C.gold}
             onClick={() => setPanel('history')}
             style={{ left: 'clamp(16px, 7vw, 130px)', bottom: 'clamp(20px, 7vh, 80px)' }} />
-          <Node label="Account" sub="beheer & verwijderen" accent="#ef4444"
+          <Node label={t('clientOrb.node.account')} sub={t('clientOrb.node.accountSub')} accent="#ef4444"
             onClick={() => setPanel('account')}
             style={{ right: 'clamp(16px, 7vw, 130px)', bottom: 'clamp(20px, 7vh, 80px)', textAlign: 'right', alignItems: 'flex-end' }} />
         </>
@@ -218,25 +222,25 @@ const ClientOrbExperience = memo(({ user, active = true, onLogout, onClose, onNa
 
       {/* ── panels ── */}
       {panel === 'code' && (
-        <Panel title="Profielcode" accent={C.purple} onClose={() => setPanel(null)}>
+        <Panel title={t('clientOrb.node.code')} accent={C.purple} onClose={() => setPanel(null)}>
           <p style={{ fontSize: 'max(10px, 0.52vw)', color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, marginTop: 0 }}>
-            Dit is de unieke code van jouw vloeibare kristal — dezelfde die op je PDF staat. Bewaar hem; hij genereert je orb overal opnieuw, zonder dat wij iets opslaan.
+            {t('clientOrb.codeIntro')}
           </p>
           <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 'max(9px, 0.46vw)', color: '#c4b5fd', background: '#050505', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '0.4rem', padding: '0.7rem', wordBreak: 'break-all', lineHeight: 1.5 }}>{code}</div>
-          <div style={{ marginTop: '0.8rem' }}><SciFiButton onClick={copyCode} variant="purple" size="sm">Kopieer code</SciFiButton></div>
+          <div style={{ marginTop: '0.8rem' }}><SciFiButton onClick={copyCode} variant="purple" size="sm">{t('clientOrb.copyCode')}</SciFiButton></div>
         </Panel>
       )}
 
       {panel === 'history' && (
-        <Panel title="Geschiedenis" accent={C.gold} onClose={() => setPanel(null)}>
+        <Panel title={t('clientOrb.node.history')} accent={C.gold} onClose={() => setPanel(null)}>
           {history.length === 0 ? (
-            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '1.5rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>Geen assessments</div>
+            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '1.5rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>{t('clientOrb.noAssessments')}</div>
           ) : history.map((a) => (
             <div key={a._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.55rem 0.7rem', borderBottom: '1px solid rgba(249,115,22,0.12)' }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 'max(10px, 0.52vw)' }}>{a.extendedArchetypeName || a.archetypeKey}</div>
+                <div style={{ fontWeight: 700, fontSize: 'max(10px, 0.52vw)' }}>{extendedNameFor(a, language) || a.archetypeKey}</div>
                 <div style={{ fontSize: 'max(8px, 0.42vw)', color: 'rgba(255,255,255,0.35)' }}>
-                  {new Date(a.createdAt).toLocaleDateString('nl-NL')}{a.harmonyScore != null ? ` · ${a.harmonyScore}%` : ''}
+                  {new Date(a.createdAt).toLocaleDateString(locale)}{a.harmonyScore != null ? ` · ${a.harmonyScore}%` : ''}
                 </div>
               </div>
               <SciFiButton onClick={() => downloadPdf(a._id).catch(() => {})} size="sm" padding="0.3rem 0.6rem" fontSize="max(9px, 0.4vw)">PDF</SciFiButton>
@@ -246,32 +250,32 @@ const ClientOrbExperience = memo(({ user, active = true, onLogout, onClose, onNa
       )}
 
       {panel === 'account' && (
-        <Panel title="Account" accent="#ef4444" onClose={() => { setPanel(null); setDelInput(''); setDelErr(''); }}>
+        <Panel title={t('clientOrb.node.account')} accent="#ef4444" onClose={() => { setPanel(null); setDelInput(''); setDelErr(''); }}>
           <div style={{ fontSize: 'max(10px, 0.52vw)', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
             <div style={{ marginBottom: '0.7rem' }}>
-              <div style={{ fontSize: 'max(9px,0.46vw)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: '0.3rem' }}>Zichtbare naam</div>
+              <div style={{ fontSize: 'max(9px,0.46vw)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: '0.3rem' }}>{t('clientOrb.visibleName')}</div>
               <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                 <input value={nameInput} onChange={(e) => { setNameInput(e.target.value); setNameMsg(''); }} maxLength={40}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); }}
                   style={{ flex: 1, minWidth: 0, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(168,85,247,0.35)', color: C.text, fontFamily: FONT, fontSize: 'max(10px,0.5vw)', padding: '0.35rem 0.6rem', borderRadius: '0.3rem', outline: 'none' }} />
                 <SciFiButton onClick={handleSaveName} disabled={nameBusy || !nameInput.trim() || nameInput.trim() === name} variant="purple" size="sm" padding="0.32rem 0.7rem" fontSize="max(9px,0.44vw)">
-                  {nameBusy ? '…' : 'Opslaan'}
+                  {nameBusy ? '…' : t('clientOrb.save')}
                 </SciFiButton>
               </div>
               {nameMsg && <div style={{ fontSize: 'max(8px,0.42vw)', color: nameMsg.includes('✓') ? '#4ade80' : '#f87171', marginTop: '0.3rem' }}>{nameMsg}</div>}
-              <div style={{ fontSize: 'max(8px,0.42vw)', color: 'rgba(255,255,255,0.3)', marginTop: '0.25rem' }}>Uniek — geen twee gebruikers delen dezelfde naam.</div>
+              <div style={{ fontSize: 'max(8px,0.42vw)', color: 'rgba(255,255,255,0.3)', marginTop: '0.25rem' }}>{t('clientOrb.nameUnique')}</div>
             </div>
-            <div style={{ marginBottom: '1rem' }}>E-mail: <b>{user.email}</b></div>
+            <div style={{ marginBottom: '1rem' }}>{t('clientOrb.emailLabel')}: <b>{user.email}</b></div>
           </div>
           <div style={{ borderTop: '1px solid rgba(239,68,68,0.25)', paddingTop: '0.9rem' }}>
             <div style={{ color: '#fca5a5', fontSize: 'max(9px, 0.48vw)', lineHeight: 1.5, marginBottom: '0.6rem' }}>
-              ⚠ Dit verwijdert je account én alle assessments permanent (AVG/GDPR). Typ <b>VERWIJDER</b> om te bevestigen:
+              {tFunc('clientOrb.deleteWarnOrb')(<b key="w">{t('clientOrb.deleteWord')}</b>)}
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <input value={delInput} onChange={(e) => setDelInput(e.target.value)} placeholder="VERWIJDER"
+              <input value={delInput} onChange={(e) => setDelInput(e.target.value)} placeholder={t('clientOrb.deleteWord')}
                 style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(239,68,68,0.4)', color: '#fca5a5', fontFamily: FONT, fontSize: 'max(9px, 0.48vw)', padding: '0.3rem 0.6rem', borderRadius: '0.25rem', outline: 'none', width: '10rem' }} />
               <SciFiButton onClick={handleDelete} disabled={busy === 'delete'} variant="danger" size="sm" padding="0.3rem 0.8rem" fontSize="max(9px, 0.46vw)">
-                {busy === 'delete' ? 'Bezig…' : 'Verwijderen'}
+                {busy === 'delete' ? t('clientOrb.deleting') : t('clientOrb.deleteAction')}
               </SciFiButton>
               {delErr && <span style={{ color: '#f87171', fontSize: 'max(8px, 0.44vw)' }}>{delErr}</span>}
             </div>

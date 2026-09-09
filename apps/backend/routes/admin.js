@@ -190,10 +190,13 @@ router.post('/sessions/activity', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /api/admin/prompts — Get AI prompt configuration (NO AUTH)
+// GET /api/admin/prompts — Get AI prompt configuration (admin only)
+// The prompt config is the instruction layer that applies the Deltawerken corpus —
+// proprietary, and previously served unauthenticated because this route sits above the
+// router-level auth on line ~226. Guarded inline rather than moved, so route order stays put.
 // ─────────────────────────────────────────────────────────────
 
-router.get('/prompts', async (_req, res) => {
+router.get('/prompts', authRequired, adminRequired, async (_req, res) => {
   try {
     console.log('[Admin] GET /prompts called');
     let config = await promptsCollection().findOne({ _id: 'default' });
@@ -1247,7 +1250,7 @@ function getDefaultPromptConfig() {
       '• Sectie 2: Waarom jij dit perspectief gebruikt — Ontologische onderbouwing.\n' +
       '• Sectie 3: De Essentie (Main Archetype) — TNM Dominantie, Platonische Pointer & ZPE. Beschrijf de staat van Flow.\n' +
       '• Sectie 4: De Vermenigvuldiging (Support Archetype) — Hoe de Support de Main aanvult.\n' +
-      '• Sectie 5: De Matrix van 72 Mogelijkheden — Toon de 6 Extended Archetypen voor het Main Archetype.\n' +
+      '• Sectie 5: De Matrix van 132 Mogelijkheden — Toon de 11 Extended Archetypen voor het Main Archetype.\n' +
       '• Sectie 6: De Schaduw (Innerlijke Brandstof) — Constructieve Interferentie & schaduwintegratie.\n' +
       '• Sectie 7: De Blindspot (De Saboteur) — De externe blinde vlek via het Support-archetype.\n' +
       '• Sectie 8: Visuele Analyse — 5-Laag Gestapeld Webdiagram.\n' +

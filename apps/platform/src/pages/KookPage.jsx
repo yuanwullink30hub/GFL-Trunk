@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { SciFiButton } from '@gfl/ui';
+import { useLanguage } from '@gfl/i18n';
 
 /**
  * KookPage — the map destination for the Kook-eiland container (client-only feature;
@@ -23,6 +24,7 @@ import { SciFiButton } from '@gfl/ui';
 const ENTITY_ANCHOR = '23vh';
 
 const KookPage = memo(({ isVisible, mapAnimating = false, assessmentActive = false, onStartAssessment = null }) => {
+  const { t } = useLanguage();
   // Menu-card pop progress: 0 = inside the entity, 1 = fully open. Expand mirrors App's
   // intro-card float-out (700ms ease-out cubic from the entity anchor); collapse mirrors
   // its float-back-in (500ms ease-in quadratic).
@@ -100,25 +102,25 @@ const KookPage = memo(({ isVisible, mapAnimating = false, assessmentActive = fal
   const MENU = [
     {
       key: 'individuatie',
-      label: 'Individuatie',
-      desc: 'Doe de test — de entiteit begeleidt je door de volledige lezing. Je nieuwe kristal schuift door naar je individuatiepad.',
-      cta: 'Start de test',
+      label: t('misc.kook.individuation.label'),
+      desc: t('misc.kook.individuation.desc'),
+      cta: t('misc.kook.individuation.cta'),
       onClick: startTest,
       enabled: typeof onStartAssessment === 'function',
     },
     {
       key: 'recepten',
-      label: 'Recepten',
-      desc: 'Maaltijden en recepten op basis van je configuratie — binnenkort beschikbaar.',
-      cta: 'Binnenkort',
+      label: t('misc.kook.recipes.label'),
+      desc: t('misc.kook.recipes.desc'),
+      cta: t('misc.kook.soon'),
       onClick: null,
       enabled: false,
     },
     {
       key: 'keuken',
-      label: 'Keukenplanning',
-      desc: 'Plan je week rond je eigen ritme — binnenkort beschikbaar.',
-      cta: 'Binnenkort',
+      label: t('misc.kook.kitchen.label'),
+      desc: t('misc.kook.kitchen.desc'),
+      cta: t('misc.kook.soon'),
       onClick: null,
       enabled: false,
     },
@@ -160,10 +162,10 @@ const KookPage = memo(({ isVisible, mapAnimating = false, assessmentActive = fal
               {/* Header */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6vh', paddingTop: '1vh' }}>
                 <h2 style={{ margin: 0, fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#ffae00', fontSize: 'max(18px, 1vw)', lineHeight: 1.1 }}>
-                  Kook-eiland
+                  {t('misc.kook.title')}
                 </h2>
                 <div style={{ fontFamily: "'Figtree', sans-serif", color: 'rgba(255, 254, 240, 0.7)', fontSize: 'max(12px, 0.65vw)', lineHeight: 1.5, maxWidth: '52ch' }}>
-                  Jouw individuatie-eiland. Alles hier draait om je eigen pad — te beginnen met de test.
+                  {t('misc.kook.subtitle')}
                 </div>
               </div>
 

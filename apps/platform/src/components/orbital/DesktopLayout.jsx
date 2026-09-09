@@ -41,7 +41,7 @@ function VisitorLoginOrb({ size }) {
 // card lives inside a scaled/transformed container — a `position:fixed` child there
 // would anchor to the transformed ancestor, not the viewport. Backdrop click / Esc closes.
 // dim=false → the modal floats without darkening/blurring the whole screen behind it.
-function ContactenOverlay({ title, onClose, width, height, closeLabel = 'Gereed', dim = true, children }) {
+function ContactenOverlay({ title, onClose, width, height, closeLabel, dim = true, children }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
@@ -98,7 +98,7 @@ const ovBlur = (e) => { e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 
 
 const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, gardenAnimationProgress, verbindingsAnimationProgress, setActiveSection, pauseAutoSlide, clientProfile = null, clientMode = false, messages: messagesProp = [], contacts = [], onOpenProfile = null }) => {
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, toggleLanguage, t, tFunc } = useLanguage();
 
   // ── Real inbox (client mode): fetched from the messages backend, refreshed every minute.
   const [inbox, setInbox] = useState([]);
@@ -135,11 +135,11 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
     try {
       await respondVerbond({ id, accept, message: accept ? undefined : declineText.trim() });
       setDeclineFor(null); setDeclineText('');
-      setVerbondMsg(accept ? 'Verbond geaccepteerd ✓' : 'Afgewezen — bericht verstuurd');
+      setVerbondMsg(accept ? t('shell.desktop.verbondAccepted') : t('shell.desktop.verbondDeclined'));
       setTimeout(() => setVerbondMsg(''), 4000);
       refreshVerbond();
     } catch (e) {
-      setVerbondMsg(e.message || 'Beantwoorden mislukt');
+      setVerbondMsg(e.message || t('shell.desktop.verbondFailed'));
       setTimeout(() => setVerbondMsg(''), 4000);
     }
   };
@@ -165,15 +165,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   const [composeMsg, setComposeMsg] = useState('');
   const sendMessage = async () => {
     const to = compose.to.trim();
-    if (!to || !compose.body.trim()) { setComposeMsg('Vul ontvanger en bericht in.'); return; }
+    if (!to || !compose.body.trim()) { setComposeMsg(t('shell.desktop.composeMissing')); return; }
     setComposeMsg('');
     try {
       await sendUserMessage({ to, title: compose.title, body: compose.body });
       setCompose({ to: '', title: '', body: '' }); setComposeBodyOpen(false); setNameOpen(false); setTitleOpen(false);
-      setComposeMsg('Verstuurd ✓');
+      setComposeMsg(t('shell.desktop.composeSent'));
       refreshInbox();
       setTimeout(() => setComposeMsg(''), 4000);
-    } catch (e) { setComposeMsg(e.message || 'Versturen mislukt'); }
+    } catch (e) { setComposeMsg(e.message || t('shell.desktop.composeFailed')); }
   };
   // Opening a message marks it read (recipient-side) — the green flash stops.
   const openMessage = (i) => {
@@ -493,7 +493,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         {/* Winkel — an empty product template (image + description + price). Height +50% (grows on
             the bottom, since it's top-anchored by the transform); the image flexes to fill it. */}
         <div style={{ width: '85%', height: '22.28vh', flexShrink: 0, pointerEvents: 'auto', transform: 'translate(1vw, 4.56vh)' /* was calc(9vh - 4rem) — 4rem=4.44vh @1440 */ }}>
-          <TechContainer title="WINKEL" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
+          <TechContainer title={t('shell.desktop.winkelTitle')} variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
             {/* No frosted lock overlay here: the product template (image/description, filled
                 later) stays readable for visitors — the lock lives on the Bekijk-winkel button. */}
             <div className="w-full h-full flex flex-col" style={{ gap: '0.5vw', padding: '0.6vw' }}>
@@ -505,7 +505,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 </div>
                 {/* Description — right */}
                 <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
-                  <div style={{ fontFamily: "'Figtree', sans-serif", color: '#FFFEF0', fontSize: 'max(13px, 0.7vw)', lineHeight: 1.4 }}>Productnaam — korte beschrijving…</div>
+                  <div style={{ fontFamily: "'Figtree', sans-serif", color: '#FFFEF0', fontSize: 'max(13px, 0.7vw)', lineHeight: 1.4 }}>{t('shell.desktop.productPlaceholder')}</div>
                 </div>
               </div>
               {/* Price + action (stays) */}
@@ -514,7 +514,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 <SciFiButton variant="purple" size="sm" disabled={restricted} onClick={() => setActiveSection('winkel')}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
                     {restricted && <Lock style={{ width: 'max(9px, 0.5vw)', height: 'max(9px, 0.5vw)', flexShrink: 0, color: '#f59e0b' }} strokeWidth={2} />}
-                    Bekijk winkel
+                    {t('shell.desktop.viewShop')}
                   </span>
                 </SciFiButton>
               </div>
@@ -547,7 +547,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               size="sm"
               onClick={(e) => setActiveSection('kook', e)}
             >
-              Openen
+              {t('shell.desktop.open')}
             </SciFiButton>
           </div>
           )}
@@ -569,7 +569,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
       >
         {/* Top-right box: Contacten — live content for clients; for visitors the container shows but
             each action button carries a small lock (renderSectionBtn isLocked), not a full frost. */}
-        <TechContainer title="CONTACTEN" variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
+        <TechContainer title={t('shell.desktop.contactsTitle')} variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
           <div className="w-full h-full flex flex-col" style={{ padding: '0.5vw' }}>
 
             {/* Content row — the three sections get the full height (buttons sit below) */}
@@ -577,14 +577,14 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
               {/* Left — Berichten: message headers, each with a slow green-flashing icon */}
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', padding: '0 0.6vw', overflow: 'hidden' }}>
-                <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)', marginBottom: '0.5vh' }}>Berichten</div>
+                <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)', marginBottom: '0.5vh' }}>{t('shell.desktop.messages')}</div>
                 {(messages.length > 0 || verbondPending.length > 0) ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4vh', overflowY: 'auto', minHeight: 0 }}>
                     {/* Verbond requests first — amber pulse; answered in the Berichten overlay */}
                     {verbondPending.map((r) => (
                       <button key={r.id} onClick={() => setContactenOverlay('berichten')} style={{ display: 'flex', alignItems: 'center', gap: '0.45vw', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', minWidth: 0 }}>
                         <span style={{ width: 'max(6px, 0.5vw)', height: 'max(6px, 0.5vw)', flexShrink: 0, borderRadius: '50%', background: 'rgba(255, 174, 0, 0.9)', boxShadow: '0 0 6px rgba(255, 174, 0, 0.7)', animation: 'gflMsgPulse 2.4s ease-in-out infinite' }} />
-                        <span style={{ fontFamily: "'Figtree', sans-serif", color: '#ffae00', fontSize: 'max(13px, 0.7vw)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Verbond-verzoek — {r.from}</span>
+                        <span style={{ fontFamily: "'Figtree', sans-serif", color: '#ffae00', fontSize: 'max(13px, 0.7vw)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tFunc('shell.desktop.verbondRequest')(r.from)}</span>
                       </button>
                     ))}
                     {messages.map((m, i) => (
@@ -596,7 +596,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     ))}
                   </div>
                 ) : (
-                  <span style={{ fontFamily: "'Figtree', sans-serif", color: '#FFFEF0', fontSize: 'max(13px, 0.7vw)' }}>Geen berichten</span>
+                  <span style={{ fontFamily: "'Figtree', sans-serif", color: '#FFFEF0', fontSize: 'max(13px, 0.7vw)' }}>{t('shell.desktop.noMessages')}</span>
                 )}
               </div>
 
@@ -604,7 +604,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
               {/* Middle — Contactlijst: scrollable preview; a name routes to that contact (full list in the overlay) */}
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', padding: '0 0.6vw', overflow: 'hidden' }}>
-                <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)', marginBottom: '0.5vh' }}>Contactlijst</div>
+                <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)', marginBottom: '0.5vh' }}>{t('shell.desktop.contactList')}</div>
                 {allContacts.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15vh', overflowY: 'auto', minHeight: 0 }}>
                     {allContacts.map((c, i) => (
@@ -620,7 +620,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     ))}
                   </div>
                 ) : (
-                  <span style={{ fontFamily: "'Figtree', sans-serif", color: '#FFFEF0', fontSize: 'max(13px, 0.7vw)' }}>Geen contacten</span>
+                  <span style={{ fontFamily: "'Figtree', sans-serif", color: '#FFFEF0', fontSize: 'max(13px, 0.7vw)' }}>{t('shell.desktop.noContacts')}</span>
                 )}
               </div>
 
@@ -630,7 +630,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   title card enlarges to read the full onderwerp, text card opens the larger editor.
                   None of the three dims the screen. */}
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', padding: '0 0.6vw', overflow: 'hidden' }}>
-                <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)', marginBottom: '0.5vh' }}>Versturen</div>
+                <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)', marginBottom: '0.5vh' }}>{t('shell.desktop.send')}</div>
                 <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '0.5vh' }}>
                   {/* Name card — free text with contact-name suggestions below */}
                   <input
@@ -639,7 +639,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     onChange={(e) => { setCompose((c) => ({ ...c, to: e.target.value })); setNameOpen(true); }}
                     onFocus={(e) => { ovFocus(e); setNameOpen(true); }}
                     onBlur={(e) => { ovBlur(e); setTimeout(() => setNameOpen(false), 120); }}
-                    placeholder="Aan"
+                    placeholder={t('shell.desktop.toPlaceholder')}
                     style={{ width: '100%', flexShrink: 0, background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.35)', borderRadius: '0.15rem', color: '#FFFEF0', fontFamily: "'Figtree', sans-serif", fontSize: 'max(13px, 0.7vw)', padding: '0.5vh 0.4vw', outline: 'none', boxShadow: 'none' }}
                   />
                   {/* Title card — enlarges (popover below) to read the full onderwerp */}
@@ -649,7 +649,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     onChange={(e) => setCompose((c) => ({ ...c, title: e.target.value }))}
                     onFocus={(e) => { ovFocus(e); setTitleOpen(true); }}
                     onBlur={(e) => { ovBlur(e); setTitleOpen(false); }}
-                    placeholder="Onderwerp"
+                    placeholder={t('shell.desktop.subjectPlaceholder')}
                     style={{ width: '100%', flexShrink: 0, background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.35)', borderRadius: '0.15rem', color: '#FFFEF0', fontFamily: "'Figtree', sans-serif", fontSize: 'max(13px, 0.7vw)', padding: '0.5vh 0.4vw', outline: 'none', boxShadow: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                   />
                   {/* Text card — opens the larger editor overlay */}
@@ -659,7 +659,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.6)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)'; }}
                   >
-                    {compose.body || 'Bericht…'}
+                    {compose.body || t('shell.desktop.bodyPlaceholder')}
                   </button>
                 </div>
                 {/* Contact-name suggestions — portalled, no screen dim */}
@@ -685,11 +685,11 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
             {/* Button row — Berichten/Openen open a full panel; Versturen sends the inline draft */}
             <div style={{ display: 'flex', marginTop: '0.6vh' }}>
-              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn('Berichten', () => setContactenOverlay('berichten'), restricted)}</div>
+              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn(t('shell.desktop.messages'), () => setContactenOverlay('berichten'), restricted)}</div>
               <div style={{ width: '1px' }} />
-              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn('Openen', () => setContactenOverlay('contactlijst'), restricted)}</div>
+              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn(t('shell.desktop.open'), () => setContactenOverlay('contactlijst'), restricted)}</div>
               <div style={{ width: '1px' }} />
-              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn('Versturen', () => sendMessage(), restricted)}</div>
+              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn(t('shell.desktop.send'), () => sendMessage(), restricted)}</div>
             </div>
             {composeMsg && (
               <div style={{ marginTop: '0.4vh', textAlign: 'center', fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px, 0.5vw)', color: composeMsg.includes('✓') ? '#4ade80' : '#f87171' }}>{composeMsg}</div>
@@ -700,29 +700,29 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
       {/* Contacten overlays — portalled glass panels over the page, one per card section (each sized differently). */}
       {clientMode && contactenOverlay === 'berichten' && (
-        <ContactenOverlay title="Berichten" onClose={() => setContactenOverlay(null)} width="62vw" height="66vh" dim={false}>
+        <ContactenOverlay title={t('shell.desktop.messages')} closeLabel={t('shell.desktop.done')} onClose={() => setContactenOverlay(null)} width="62vw" height="66vh" dim={false}>
           {/* Verbond requests — pinned above the threads; accept direct, decline ONLY with a message */}
           {verbondPending.length > 0 && (
             <div style={{ flexShrink: 0, borderBottom: '1px solid rgba(255, 174, 0, 0.3)', padding: '1.2vh 1.2vw', display: 'flex', flexDirection: 'column', gap: '1vh', background: 'rgba(255, 174, 0, 0.03)' }}>
               <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.45vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255, 174, 0, 0.8)' }}>
-                Verbond-verzoeken · {verbondPending.length}
+                {tFunc('shell.desktop.verbondRequests')(verbondPending.length)}
               </div>
               {verbondPending.map((r) => (
                 <div key={r.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.6vh' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8vw', flexWrap: 'wrap' }}>
                     <span style={{ fontFamily: "'Figtree', sans-serif", color: '#FFFEF0', fontSize: 'max(12px, 0.65vw)' }}>
-                      <b style={{ color: '#d8befe' }}>{r.from}</b> wil een verbond aangaan
+                      <b style={{ color: '#d8befe' }}>{r.from}</b> {t('shell.desktop.verbondWants')}
                     </span>
                     <span style={{ display: 'flex', gap: '0.5vw', marginLeft: 'auto' }}>
                       <button onClick={() => answerVerbond(r.id, true)}
                         style={{ background: '#000', border: '1px solid #15b315', color: '#15b315', borderRadius: '0.15rem', padding: '0.35rem 0.9rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 'max(8px, 0.45vw)', cursor: 'pointer' }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = '#15b315'; e.currentTarget.style.color = '#000'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = '#000'; e.currentTarget.style.color = '#15b315'; }}>
-                        Accepteren
+                        {t('shell.desktop.accept')}
                       </button>
                       <button onClick={() => { setDeclineFor(declineFor === r.id ? null : r.id); setDeclineText(''); }}
                         style={{ background: '#000', border: '1px solid rgba(239,68,68,0.6)', color: '#f87171', borderRadius: '0.15rem', padding: '0.35rem 0.9rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 'max(8px, 0.45vw)', cursor: 'pointer' }}>
-                        Afwijzen
+                        {t('shell.desktop.decline')}
                       </button>
                     </span>
                   </div>
@@ -732,7 +732,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         autoFocus
                         value={declineText}
                         onChange={(e) => setDeclineText(e.target.value)}
-                        placeholder="Afwijzen kan niet zonder bericht — schrijf waarom…"
+                        placeholder={t('shell.desktop.declinePlaceholder')}
                         rows={2}
                         style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '0.15rem', color: '#FFFEF0', fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.6vw)', padding: '0.5vh 0.5vw', outline: 'none', resize: 'vertical' }}
                       />
@@ -740,13 +740,13 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                         onClick={() => answerVerbond(r.id, false)}
                         disabled={!declineText.trim()}
                         style={{ background: declineText.trim() ? 'rgba(239,68,68,0.12)' : 'none', border: `1px solid ${declineText.trim() ? '#ef4444' : 'rgba(239,68,68,0.25)'}`, color: declineText.trim() ? '#f87171' : 'rgba(248,113,113,0.4)', borderRadius: '0.15rem', padding: '0.5rem 0.9rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 'max(8px, 0.45vw)', cursor: declineText.trim() ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
-                        Verstuur afwijzing
+                        {t('shell.desktop.sendDecline')}
                       </button>
                     </div>
                   )}
                 </div>
               ))}
-              {verbondMsg && <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(10px, 0.55vw)', color: verbondMsg.includes('✓') ? '#4ade80' : verbondMsg.includes('verstuurd') ? 'rgba(255,174,0,0.9)' : '#f87171' }}>{verbondMsg}</div>}
+              {verbondMsg && <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(10px, 0.55vw)', color: verbondMsg.includes('✓') ? '#4ade80' : verbondMsg === t('shell.desktop.verbondDeclined') ? 'rgba(255,174,0,0.9)' : '#f87171' }}>{verbondMsg}</div>}
             </div>
           )}
           {/* DM / email catalog — thread list on the left, the open message on the right */}
@@ -759,34 +759,34 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     style={{ display: 'block', textAlign: 'left', width: '100%', border: 'none', borderBottom: '1px solid rgba(168, 85, 247, 0.12)', cursor: 'pointer', padding: '1.1vh 1vw', background: active ? 'rgba(168, 85, 247, 0.16)' : 'transparent', transition: 'background 0.15s ease' }}
                     onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'rgba(168, 85, 247, 0.08)'; }}
                     onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent'; }}>
-                    <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(9px, 0.5vw)', letterSpacing: '0.06em', color: 'rgb(216, 190, 254)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.from || m.sender || 'Onbekend'}</div>
-                    <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(10px, 0.58vw)', color: '#FFFEF0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '0.3vh' }}>{m.header || m.title || m.subject || '(geen onderwerp)'}</div>
+                    <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(9px, 0.5vw)', letterSpacing: '0.06em', color: 'rgb(216, 190, 254)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.from || m.sender || t('shell.desktop.unknownSender')}</div>
+                    <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(10px, 0.58vw)', color: '#FFFEF0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '0.3vh' }}>{m.header || m.title || m.subject || t('shell.desktop.noSubject')}</div>
                   </button>
                 );
               }) : (
-                <div style={{ padding: '2vh 1vw', fontFamily: "'Figtree', sans-serif", color: 'rgba(255, 254, 240, 0.4)', fontSize: 'max(10px, 0.6vw)' }}>Geen berichten</div>
+                <div style={{ padding: '2vh 1vw', fontFamily: "'Figtree', sans-serif", color: 'rgba(255, 254, 240, 0.4)', fontSize: 'max(10px, 0.6vw)' }}>{t('shell.desktop.noMessages')}</div>
               )}
             </div>
             <div style={{ flex: 1, minWidth: 0, padding: '2vh 1.6vw', overflowY: 'auto' }}>
               {openMsgIdx != null && messages[openMsgIdx] ? (
                 <>
-                  <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(12px, 0.8vw)', letterSpacing: '0.08em', color: 'rgb(216, 190, 254)', marginBottom: '0.6vh' }}>{messages[openMsgIdx].header || messages[openMsgIdx].title || messages[openMsgIdx].subject || '(geen onderwerp)'}</div>
-                  <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px, 0.52vw)', color: 'rgba(255, 254, 240, 0.5)', marginBottom: '1.6vh' }}>{messages[openMsgIdx].from || messages[openMsgIdx].sender || 'Onbekend'}</div>
+                  <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(12px, 0.8vw)', letterSpacing: '0.08em', color: 'rgb(216, 190, 254)', marginBottom: '0.6vh' }}>{messages[openMsgIdx].header || messages[openMsgIdx].title || messages[openMsgIdx].subject || t('shell.desktop.noSubject')}</div>
+                  <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px, 0.52vw)', color: 'rgba(255, 254, 240, 0.5)', marginBottom: '1.6vh' }}>{messages[openMsgIdx].from || messages[openMsgIdx].sender || t('shell.desktop.unknownSender')}</div>
                   <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.62vw)', color: '#FFFEF0', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{messages[openMsgIdx].body || messages[openMsgIdx].text || messages[openMsgIdx].content || ''}</div>
                 </>
               ) : (
-                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Figtree', sans-serif", color: 'rgba(255, 254, 240, 0.35)', fontSize: 'max(11px, 0.62vw)' }}>Selecteer een bericht</div>
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Figtree', sans-serif", color: 'rgba(255, 254, 240, 0.35)', fontSize: 'max(11px, 0.62vw)' }}>{t('shell.desktop.selectMessage')}</div>
               )}
             </div>
           </div>
         </ContactenOverlay>
       )}
       {clientMode && contactenOverlay === 'contactlijst' && (
-        <ContactenOverlay title="Contactlijst" onClose={() => setContactenOverlay(null)} width="44vw" height="62vh" dim={false}>
+        <ContactenOverlay title={t('shell.desktop.contactList')} closeLabel={t('shell.desktop.done')} onClose={() => setContactenOverlay(null)} width="44vw" height="62vh" dim={false}>
           {/* Full list in view — a row routes to that contact's profile, or their page if they deliver a product/service */}
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '1vh 0' }}>
             {allContacts.length > 0 ? allContacts.map((c, i) => {
-              const dest = (c.type === 'company' || c.type === 'service' || c.type === 'product') ? 'Pagina' : 'Profiel';
+              const dest = (c.type === 'company' || c.type === 'service' || c.type === 'product') ? t('shell.desktop.destPage') : t('shell.desktop.destProfile');
               return (
                 <button key={c.id || i} onClick={() => openContact(c)}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1vw', textAlign: 'left', width: '100%', border: 'none', borderBottom: '1px solid rgba(168, 85, 247, 0.12)', cursor: 'pointer', background: 'transparent', padding: '1.2vh 1.6vw', transition: 'background 0.15s ease' }}
@@ -797,16 +797,16 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 </button>
               );
             }) : (
-              <div style={{ padding: '2vh 1.6vw', fontFamily: "'Figtree', sans-serif", color: 'rgba(255, 254, 240, 0.4)', fontSize: 'max(11px, 0.62vw)' }}>Geen contacten</div>
+              <div style={{ padding: '2vh 1.6vw', fontFamily: "'Figtree', sans-serif", color: 'rgba(255, 254, 240, 0.4)', fontSize: 'max(11px, 0.62vw)' }}>{t('shell.desktop.noContacts')}</div>
             )}
           </div>
         </ContactenOverlay>
       )}
       {clientMode && composeBodyOpen && (
         // The text card's editor — a larger modal, but NON-dimming (dim={false}), "Gereed" to close back.
-        <ContactenOverlay title="Bericht" onClose={() => setComposeBodyOpen(false)} width="52vw" height="62vh" closeLabel="Gereed" dim={false}>
+        <ContactenOverlay title={t('shell.desktop.messageTitle')} onClose={() => setComposeBodyOpen(false)} width="52vw" height="62vh" closeLabel={t('shell.desktop.done')} dim={false}>
           <div style={{ flex: 1, minHeight: 0, display: 'flex', padding: '2vh 1.6vw' }}>
-            <textarea autoFocus value={compose.body} onChange={(e) => setCompose((c) => ({ ...c, body: e.target.value }))} onFocus={ovFocus} onBlur={ovBlur} placeholder="Schrijf hier je bericht…"
+            <textarea autoFocus value={compose.body} onChange={(e) => setCompose((c) => ({ ...c, body: e.target.value }))} onFocus={ovFocus} onBlur={ovBlur} placeholder={t('shell.desktop.bodyEditorPlaceholder')}
               style={{ ...OV_FIELD, flex: 1, resize: 'none', lineHeight: 1.6 }} />
           </div>
         </ContactenOverlay>
@@ -955,7 +955,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     }}
                     className="rounded transition-colors border border-purple-500 bg-transparent hover:border-purple-400 cursor-pointer z-50"
                     style={{ padding: '0.2vw' }}
-                    title="Previous slide"
+                    title={t('shell.desktop.previousSlide')}
                   >
                     <ChevronLeft style={{ width: '1vw', height: '1vw', color: 'rgb(192, 132, 252)' }} className="pointer-events-none" />
                   </button>
@@ -1022,7 +1022,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                     }}
                     className="rounded transition-colors border border-purple-500 bg-transparent hover:border-purple-400 cursor-pointer z-50"
                     style={{ padding: '0.2vw' }}
-                    title="Next slide"
+                    title={t('shell.desktop.nextSlide')}
                   >
                     <ChevronRight style={{ width: '1vw', height: '1vw', color: 'rgb(192, 132, 252)' }} className="pointer-events-none" />
                   </button>

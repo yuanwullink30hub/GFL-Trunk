@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
 import { Mail, Send, Paperclip, X, FileText, User, UserPlus, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { sendFormDirect } from '@gfl/api-client';
+import { useLanguage } from '@gfl/i18n';
 
 // ═══════════════════════════════════════════════════════════
 // GFL Email Template — standalone email card with PDF attach
@@ -74,6 +75,7 @@ const formatFileSize = (bytes) => {
 };
 
 const EmailTemplate = memo(({ isMobile }) => {
+  const { t, tFunc } = useLanguage();
   const [recipientEmail, setRecipientEmail] = useState('');
   const [ccEmail, setCcEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
@@ -134,7 +136,7 @@ const EmailTemplate = memo(({ isMobile }) => {
           blobUrl,
         });
       } catch {
-        setSendError(`Fout bij inlezen van ${file.name}`);
+        setSendError(tFunc('admin.email.readError')(file.name));
       }
     }
     setAttachments(prev => [...prev, ...newAttachments]);
@@ -156,21 +158,21 @@ const EmailTemplate = memo(({ isMobile }) => {
   /* ── Send email ── */
   const handleSendEmail = async () => {
     if (!recipientEmail.trim()) {
-      setSendError('Vul minimaal één e-mailadres in');
+      setSendError(t('admin.email.enterAtLeastOneEmail'));
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const emails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
     const invalid = emails.filter(e => !emailRegex.test(e));
     if (invalid.length > 0) {
-      setSendError(`Ongeldig e-mailadres: ${invalid[0]}`);
+      setSendError(tFunc('admin.email.invalidEmail')(invalid[0]));
       return;
     }
 
     const ccEmails = ccEmail.split(',').map(e => e.trim()).filter(Boolean);
     const invalidCc = ccEmails.filter(e => !emailRegex.test(e));
     if (invalidCc.length > 0) {
-      setSendError(`Ongeldig CC e-mailadres: ${invalidCc[0]}`);
+      setSendError(tFunc('admin.email.invalidCcEmail')(invalidCc[0]));
       return;
     }
 
@@ -181,7 +183,7 @@ const EmailTemplate = memo(({ isMobile }) => {
         templateId: 'email',
         templateLabel: 'E-mail',
         type: 'email',
-        content: emailBody || '(geen berichttekst)',
+        content: emailBody || t('admin.email.noBodyFallback'),
         recipientEmail,
         subject: emailSubject || 'Garden For Life',
       };
@@ -216,7 +218,7 @@ const EmailTemplate = memo(({ isMobile }) => {
         setAttachments([]);
       }, 3000);
     } catch (err) {
-      setSendError(err.message || 'Versturen mislukt');
+      setSendError(err.message || t('admin.email.sendFailed'));
       setSendingState('error');
       setTimeout(() => setSendingState(null), 4000);
     }
@@ -241,9 +243,9 @@ const EmailTemplate = memo(({ isMobile }) => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0' }}>
           <h2 style={{ ...sectionHeading, marginBottom: 0 }}>
             <Mail size={20} color={ACCENT} />
-            E-mail Versturen
+            {t('admin.email.heading')}
           </h2>
-          <button onClick={saveCurrentContact} title="Contact opslaan" style={{
+          <button onClick={saveCurrentContact} title={t('admin.email.saveContact')} style={{
             display: 'flex', alignItems: 'center', gap: '0.3rem',
             padding: '0.35rem 0.6rem', fontSize: '0.68rem', fontWeight: 700,
             backgroundColor: 'rgba(255,174,0,0.08)', color: GOLD,
@@ -254,7 +256,7 @@ const EmailTemplate = memo(({ isMobile }) => {
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,174,0,0.16)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,174,0,0.08)'; }}
           >
-            <UserPlus size={13} /> Opslaan
+            <UserPlus size={13} /> {t('admin.email.save')}
           </button>
         </div>
 
@@ -279,8 +281,8 @@ const EmailTemplate = memo(({ isMobile }) => {
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <User size={14} color={DIM} />
               {savedContacts.length
-                ? `${savedContacts.length} opgeslagen contact${savedContacts.length !== 1 ? 'en' : ''} — kies een ontvanger`
-                : 'Geen opgeslagen contacten'}
+                ? tFunc('admin.email.contactsChoose')(savedContacts.length)
+                : t('admin.email.noSavedContacts')}
             </span>
             <ChevronDown size={14} color={DIM} style={{ transform: showContactList ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
           </button>
@@ -331,52 +333,52 @@ const EmailTemplate = memo(({ isMobile }) => {
           : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }
         }>
           <div>
-            <div style={labelCss}>Naam</div>
+            <div style={labelCss}>{t('admin.email.name')}</div>
             <div style={{ position: 'relative' }}>
               <User size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="text"
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
-                placeholder="Naam ontvanger"
+                placeholder={t('admin.email.namePlaceholder')}
                 style={input}
               />
             </div>
           </div>
           <div>
-            <div style={labelCss}>Onderwerp</div>
+            <div style={labelCss}>{t('admin.email.subject')}</div>
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
                 value={emailSubject}
                 onChange={(e) => setEmailSubject(e.target.value)}
-                placeholder="Garden For Life"
+                placeholder={t('admin.email.subjectPlaceholder')}
                 style={inputNoPad}
               />
             </div>
           </div>
           <div>
-            <div style={labelCss}>Ontvanger E-mail(s) *</div>
+            <div style={labelCss}>{t('admin.email.recipientEmails')}</div>
             <div style={{ position: 'relative' }}>
               <Mail size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="text"
                 value={recipientEmail}
                 onChange={(e) => { setRecipientEmail(e.target.value); setSendError(''); }}
-                placeholder="naam@voorbeeld.nl, naam2@voorbeeld.nl"
+                placeholder={t('admin.email.recipientEmailsPlaceholder')}
                 style={input}
               />
             </div>
           </div>
           <div>
-            <div style={labelCss}>CC E-mail(s)</div>
+            <div style={labelCss}>{t('admin.email.ccEmails')}</div>
             <div style={{ position: 'relative' }}>
               <Mail size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="text"
                 value={ccEmail}
                 onChange={(e) => setCcEmail(e.target.value)}
-                placeholder="cc@voorbeeld.nl"
+                placeholder={t('admin.email.ccPlaceholder')}
                 style={input}
               />
             </div>
@@ -385,11 +387,11 @@ const EmailTemplate = memo(({ isMobile }) => {
 
         {/* Email body */}
         <div>
-          <div style={labelCss}>E-mailtekst</div>
+          <div style={labelCss}>{t('admin.email.bodyLabel')}</div>
           <textarea
             value={emailBody}
             onChange={(e) => setEmailBody(e.target.value)}
-            placeholder={`Beste,\n\nBijgevoegd vindt u de gevraagde documenten.\n\nMet vriendelijke groet,\nGarden For Life`}
+            placeholder={t('admin.email.bodyPlaceholder')}
             rows={6}
             style={{
               ...inputNoPad,
@@ -402,7 +404,7 @@ const EmailTemplate = memo(({ isMobile }) => {
 
         {/* ── PDF Attachments ── */}
         <div>
-          <div style={labelCss}>PDF Bijlagen</div>
+          <div style={labelCss}>{t('admin.email.attachmentsLabel')}</div>
 
           {/* Attachment list */}
           {attachments.length > 0 && (
@@ -443,7 +445,7 @@ const EmailTemplate = memo(({ isMobile }) => {
                       flexShrink: 0,
                       transition: 'all 0.2s',
                     }}
-                    title={previewIdx === idx ? 'Sluiten' : 'Voorbeeld'}
+                    title={previewIdx === idx ? t('admin.email.close') : t('admin.email.preview')}
                   >
                     {previewIdx === idx ? <EyeOff size={12} /> : <Eye size={12} />}
                   </button>
@@ -459,7 +461,7 @@ const EmailTemplate = memo(({ isMobile }) => {
                       color: '#f87171',
                       flexShrink: 0,
                     }}
-                    title="Verwijderen"
+                    title={t('admin.email.remove')}
                   >
                     <X size={12} />
                   </button>
@@ -511,7 +513,7 @@ const EmailTemplate = memo(({ isMobile }) => {
               ) : attachments[previewIdx].type === 'application/pdf' ? (
                 <iframe
                   src={attachments[previewIdx].blobUrl}
-                  title={`Preview: ${attachments[previewIdx].name}`}
+                  title={tFunc('admin.email.previewTitle')(attachments[previewIdx].name)}
                   style={{
                     width: '100%',
                     height: '500px',
@@ -526,7 +528,7 @@ const EmailTemplate = memo(({ isMobile }) => {
                   color: DIM,
                   fontSize: '0.75rem',
                 }}>
-                  Preview niet beschikbaar voor dit bestandstype
+                  {t('admin.email.previewUnavailable')}
                 </div>
               )}
             </div>
@@ -569,7 +571,7 @@ const EmailTemplate = memo(({ isMobile }) => {
             }}
           >
             <Paperclip size={14} />
-            Bijlage Toevoegen
+            {t('admin.email.addAttachment')}
           </button>
         </div>
 
@@ -588,9 +590,9 @@ const EmailTemplate = memo(({ isMobile }) => {
         }}>
           <div style={{ fontSize: '0.7rem', color: DIM }}>
             {attachments.length > 0
-              ? `📎 ${attachments.length} bijlage${attachments.length > 1 ? 'n' : ''}`
-              : '📭 Geen bijlagen'}
-            {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 700 }}>✓ Verstuurd!</span>}
+              ? tFunc('admin.email.attachmentCount')(attachments.length)
+              : t('admin.email.noAttachments')}
+            {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 700 }}>{t('admin.email.sent')}</span>}
           </div>
           <button
             onClick={handleSendEmail}
@@ -611,7 +613,7 @@ const EmailTemplate = memo(({ isMobile }) => {
             }}
           >
             <Send size={14} />
-            {sendingState === 'sending' ? 'BEZIG MET VERSTUREN...' : 'VERSTUREN'}
+            {sendingState === 'sending' ? t('admin.email.sending') : t('admin.email.send')}
           </button>
         </div>
       </div>

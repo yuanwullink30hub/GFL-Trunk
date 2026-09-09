@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useLanguage } from '@gfl/i18n';
 import {
   Radar,
   RadarChart,
@@ -25,12 +26,12 @@ const LAYER_COLORS = {
 // eslint-disable-next-line no-unused-vars
 const LAYER_META = [
   // draw order: largest polygon first (outermost → innermost)
-  { key: 'purple', label: 'Schaduw',          color: LAYER_COLORS.purple, field: 'purple_shadow' },
-  { key: 'gold',   label: 'Cognitieve Lens',  color: LAYER_COLORS.gold,   field: 'yellow_cog'    },
-  { key: 'blue',   label: 'Feedback loop',      color: LAYER_COLORS.blue,   field: 'blue_fb'       },
-  { key: 'orange', label: 'Cultuur Kern',     color: LAYER_COLORS.orange, field: 'culture_core'  },
-  { key: 'lime',   label: 'Bio Hardware',     color: LAYER_COLORS.lime,   field: 'green_hw'      },
-  { key: 'green',  label: 'Natuur Kern',      color: LAYER_COLORS.green,  field: 'nature_core'   },
+  { key: 'purple', label: 'charts.radar.shadow',        color: LAYER_COLORS.purple, field: 'purple_shadow' },
+  { key: 'gold',   label: 'charts.radar.cognitiveLens',  color: LAYER_COLORS.gold,   field: 'yellow_cog'    },
+  { key: 'blue',   label: 'charts.radar.feedbackLoop',   color: LAYER_COLORS.blue,   field: 'blue_fb'       },
+  { key: 'orange', label: 'charts.radar.cultureCore',    color: LAYER_COLORS.orange, field: 'culture_core'  },
+  { key: 'lime',   label: 'charts.radar.bioHardware',    color: LAYER_COLORS.lime,   field: 'green_hw'      },
+  { key: 'green',  label: 'charts.radar.natureCore',     color: LAYER_COLORS.green,  field: 'nature_core'   },
 ];
 
 /**
@@ -44,6 +45,7 @@ const LAYER_META = [
  * @param {{ data: Array, shadow?: string, blindspot?: string, mainArchetype?: string, supportArchetype?: string }} props
  */
 const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchetype }) => {
+  const { t } = useLanguage();
   // Dynamic domain: find max total across all archetypes, round up to next 50
   const fullMark = useMemo(() => {
     if (!data || !data.length) return 200;
@@ -80,12 +82,12 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
     const d = payload[0]?.payload;
     if (!d) return null;
     const rows = [
-      { label: 'Natuur Kern',  value: d.nature_core,    color: LAYER_COLORS.green },
-      { label: 'Hardware',     value: d.green_hw,       color: LAYER_COLORS.lime },
-      { label: 'Cultuur Kern', value: d.culture_core,   color: LAYER_COLORS.orange },
-      { label: 'HW Feedback',  value: d.blue_fb,        color: LAYER_COLORS.blue },
-      { label: 'Cognitief',    value: d.yellow_cog,     color: LAYER_COLORS.gold },
-      { label: 'Schaduw',      value: d.purple_shadow,  color: LAYER_COLORS.purple },
+      { label: t('charts.radar.natureCore'),  value: d.nature_core,    color: LAYER_COLORS.green },
+      { label: t('charts.radar.hardware'),    value: d.green_hw,       color: LAYER_COLORS.lime },
+      { label: t('charts.radar.cultureCore'), value: d.culture_core,   color: LAYER_COLORS.orange },
+      { label: t('charts.radar.hwFeedback'),  value: d.blue_fb,        color: LAYER_COLORS.blue },
+      { label: t('charts.radar.cognitive'),   value: d.yellow_cog,     color: LAYER_COLORS.gold },
+      { label: t('charts.radar.shadow'),      value: d.purple_shadow,  color: LAYER_COLORS.purple },
     ];
     return (
       <div style={{
@@ -103,7 +105,7 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
           </p>
         ))}
         <p style={{ color: 'rgba(255,255,255,0.5)', margin: '0.25rem 0 0', fontSize: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.2rem' }}>
-          Total: {d.A || d.purple || 0}
+          {t('charts.radar.total')}: {d.A || d.purple || 0}
         </p>
       </div>
     );
@@ -111,12 +113,12 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
 
   // Legend items (display order: innermost → outermost, matching visual layer order)
   const legendPayload = [
-    { value: 'Natuur Kern',  type: 'square', color: LAYER_COLORS.green, labelColor: '#4ade80' },  // swatch = dark green, text = bright green
-    { value: 'Hardware',     type: 'square', color: LAYER_COLORS.lime },    // light green
-    { value: 'Cultuur Kern', type: 'square', color: LAYER_COLORS.orange },  // orange
-    { value: 'HW Feedback',  type: 'square', color: LAYER_COLORS.blue },    // blue
-    { value: 'Cognitief',    type: 'square', color: LAYER_COLORS.gold },    // yellow
-    { value: 'Schaduw',      type: 'square', color: LAYER_COLORS.purple },  // purple — outermost
+    { value: t('charts.radar.natureCore'),  type: 'square', color: LAYER_COLORS.green, labelColor: '#4ade80' },  // swatch = dark green, text = bright green
+    { value: t('charts.radar.hardware'),    type: 'square', color: LAYER_COLORS.lime },    // light green
+    { value: t('charts.radar.cultureCore'), type: 'square', color: LAYER_COLORS.orange },  // orange
+    { value: t('charts.radar.hwFeedback'),  type: 'square', color: LAYER_COLORS.blue },    // blue
+    { value: t('charts.radar.cognitive'),   type: 'square', color: LAYER_COLORS.gold },    // yellow
+    { value: t('charts.radar.shadow'),      type: 'square', color: LAYER_COLORS.purple },  // purple — outermost
   ];
 
   return (
@@ -141,37 +143,37 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
               Order (outermost → innermost): purple > gold > blue > lime > orange > green */}
 
           {/* Layer 6: Purple — Schaduw drip (outermost = total) */}
-          <Radar name="Schaduw" dataKey="purple"
+          <Radar name={t('charts.radar.shadow')} dataKey="purple"
             stroke={LAYER_COLORS.purple} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.purple} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} />
 
           {/* Layer 5: Gold — Cognitieve Lens */}
-          <Radar name="Cognitief" dataKey="gold"
+          <Radar name={t('charts.radar.cognitive')} dataKey="gold"
             stroke={LAYER_COLORS.gold} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.gold} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} animationBegin={100} />
 
           {/* Layer 4: Blue — Hardware Feedback */}
-          <Radar name="HW Feedback" dataKey="blue"
+          <Radar name={t('charts.radar.hwFeedback')} dataKey="blue"
             stroke={LAYER_COLORS.blue} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.blue} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} animationBegin={200} />
 
           {/* Layer 3: Orange — Cultuur Kern (direct culture picks) */}
-          <Radar name="Cultuur Kern" dataKey="orange"
+          <Radar name={t('charts.radar.cultureCore')} dataKey="orange"
             stroke={LAYER_COLORS.orange} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.orange} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} animationBegin={300} />
 
           {/* Layer 2: Lime — Bio Hardware bleed (light green, between nature & culture) */}
-          <Radar name="Hardware" dataKey="lime"
+          <Radar name={t('charts.radar.hardware')} dataKey="lime"
             stroke={LAYER_COLORS.lime} strokeWidth={1} strokeOpacity={0.6}
             fill={LAYER_COLORS.lime} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} animationBegin={400} />
 
           {/* Layer 1: Green — Natuur Kern (innermost, drawn last = on top) */}
-          <Radar name="Natuur Kern" dataKey="green"
+          <Radar name={t('charts.radar.natureCore')} dataKey="green"
             stroke={LAYER_COLORS.green} strokeWidth={2}
             fill={LAYER_COLORS.green} fillOpacity={1}
             isAnimationActive={true} animationDuration={800} animationBegin={500} />

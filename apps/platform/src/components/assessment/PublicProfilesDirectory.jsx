@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '@gfl/i18n';
 import { getPublicProfiles, getCard } from '@gfl/api-client';
 import { EXTENDED_ARCHETYPES, EXTENDED_ARCHETYPES_NL } from '@gfl/assessment-core/data';
 import ProfileCard from './ProfileCard';
@@ -28,55 +29,51 @@ const QUICKNAV_W = `${(15 / 115) * 100}%`;
 
 // Canonical-12 for the main+support combination facet. Regex tolerates the Dutch or
 // English id as stored in the extracted reading ("De Heerser" / "Ruler").
+// Display names live in i18n (directory.arch12 / directory.arch12Short).
 const ARCHETYPES_12 = [
-  { key: 'judge', label: 'De Rechter', re: /rechter|judge/i },
-  { key: 'lover', label: 'De Minnaar', re: /minnaar|lover/i },
-  { key: 'caregiver', label: 'De Verzorger', re: /verzorger|caregiver/i },
-  { key: 'innocent', label: 'De Onschuldige', re: /onschuldige|innocent/i },
-  { key: 'explorer', label: 'De Ontdekkingsreiziger', re: /ontdekk|explorer/i },
-  { key: 'outlaw', label: 'De Rebel', re: /rebel|outlaw/i },
-  { key: 'trickster', label: 'De Nar', re: /\bnar\b|trickster/i },
-  { key: 'sage', label: 'De Wijze', re: /wijze|sage/i },
-  { key: 'artist', label: 'De Kunstenaar', re: /kunstenaar|artist/i },
-  { key: 'magician', label: 'De Magiër', re: /magi[eë]r|magician/i },
-  { key: 'hero', label: 'De Held', re: /held|hero/i },
-  { key: 'ruler', label: 'De Heerser', re: /heerser|ruler/i },
+  { key: 'judge', re: /rechter|judge/i },
+  { key: 'lover', re: /minnaar|lover/i },
+  { key: 'caregiver', re: /verzorger|caregiver/i },
+  { key: 'innocent', re: /onschuldige|innocent/i },
+  { key: 'explorer', re: /ontdekk|explorer/i },
+  { key: 'outlaw', re: /rebel|outlaw/i },
+  { key: 'trickster', re: /\bnar\b|trickster/i },
+  { key: 'sage', re: /wijze|sage/i },
+  { key: 'artist', re: /kunstenaar|artist/i },
+  { key: 'magician', re: /magi[eë]r|magician/i },
+  { key: 'hero', re: /held|hero/i },
+  { key: 'ruler', re: /heerser|ruler/i },
 ];
 const archMatches = (key, id) => {
   const a = ARCHETYPES_12.find((x) => x.key === key);
   return !!(a && id && a.re.test(String(id)));
 };
-// Support facet = the EXTENSION (72-archetype) name for the selected main: picking a
-// main lists its six main×supportgroup extended names (De Held → Legende, Ronin, …).
-// A group key still filters cleanly: extension = main + support GROUP, so matching the
-// profile's supportId against the group's two canonical members is exact.
+// Support facet = the EXTENSION (132-matrix) name for the selected main: picking a
+// main lists its eleven main×support extended names (De Held → Legende, Veroveraar, …).
+// The facet value is the support ARCHETYPE key, so matching the profile's supportId
+// is exact — the 132-roster distinguishes the two supports within one hardware group.
 const MAIN_TO_CONST = { judge: 'JUDGE', lover: 'LOVER', caregiver: 'CAREGIVER', innocent: 'INNOCENT', explorer: 'EXPLORER', outlaw: 'OUTLAW', trickster: 'TRICKSTER', sage: 'SAGE', artist: 'ARTIST', magician: 'MAGICIAN', hero: 'HERO', ruler: 'RULER' };
-const SUPPORT_GROUPS = [
-  { key: 'RULING', members: ['judge', 'ruler'] },
-  { key: 'RELATIONAL', members: ['lover', 'caregiver'] },
-  { key: 'SEEKER', members: ['innocent', 'explorer'] },
-  { key: 'CHAOS', members: ['outlaw', 'trickster'] },
-  { key: 'ABSTRACT', members: ['sage', 'artist'] },
-  { key: 'AGENCY', members: ['magician', 'hero'] },
-];
-const extensionName = (mainKey, groupKey) => {
-  const k = `${MAIN_TO_CONST[mainKey] || ''}_${groupKey}`;
-  return EXTENDED_ARCHETYPES_NL[k] || EXTENDED_ARCHETYPES[k] || groupKey;
+const supportsFor = (mainKey) => ARCHETYPES_12.filter((a) => a.key !== mainKey);
+const extensionName = (mainKey, supportKey, en) => {
+  const k = `${MAIN_TO_CONST[mainKey] || ''}_${MAIN_TO_CONST[supportKey] || ''}`;
+  const nl = EXTENDED_ARCHETYPES_NL[k];
+  const gb = EXTENDED_ARCHETYPES[k];
+  return (en ? (gb || nl) : (nl || gb)) || supportKey;
 };
 const ACTIVITY_OPTIONS = [
-  { key: 'alle', label: 'Alle activiteit', ms: null },
-  { key: 'vandaag', label: 'Actief vandaag', ms: 24 * 60 * 60 * 1000 },
-  { key: 'week', label: 'Actief deze week', ms: 7 * 24 * 60 * 60 * 1000 },
-  { key: 'maand', label: 'Actief deze maand', ms: 30 * 24 * 60 * 60 * 1000 },
+  { key: 'alle', ms: null },
+  { key: 'vandaag', ms: 24 * 60 * 60 * 1000 },
+  { key: 'week', ms: 7 * 24 * 60 * 60 * 1000 },
+  { key: 'maand', ms: 30 * 24 * 60 * 60 * 1000 },
 ];
 const READING_OPTIONS = [
-  { key: 'alle', label: 'Alle integraties', min: 0 },
-  { key: '1', label: '1+ integraties', min: 1 },
-  { key: '2', label: '2+ integraties', min: 2 },
-  { key: '3', label: '3+ integraties', min: 3 },
+  { key: 'alle', tk: 'alle', min: 0 },
+  { key: '1', tk: 'one', min: 1 },
+  { key: '2', tk: 'two', min: 2 },
+  { key: '3', tk: 'three', min: 3 },
 ];
 
-const fmtLong = (d) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' }); } catch { return '—'; } };
+const fmtLong = (d, locale) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' }); } catch { return '—'; } };
 const fmtShort = (d) => { if (!d) return null; try { const x = new Date(d); return `${String(x.getDate()).padStart(2, '0')}·${String(x.getMonth() + 1).padStart(2, '0')}·${x.getFullYear()}`; } catch { return null; } };
 
 const FIELD = {
@@ -93,6 +90,8 @@ const FIELD = {
 };
 
 export default function PublicProfilesDirectory() {
+  const { t, tFunc, language } = useLanguage();
+  const locale = language === 'en' ? 'en-GB' : 'nl-NL';
   const [profiles, setProfiles] = useState(null); // null = loading
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);  // shown profile name (handle) or null
@@ -112,7 +111,7 @@ export default function PublicProfilesDirectory() {
     let alive = true;
     getPublicProfiles()
       .then((r) => { if (alive) setProfiles(Array.isArray(r.profiles) ? r.profiles : []); })
-      .catch((e) => { if (alive) { setError(e.message || 'Profielen ophalen mislukt'); setProfiles([]); } });
+      .catch((e) => { if (alive) { setError(e.message || t('directory.profilesFailed')); setProfiles([]); } });
     return () => { alive = false; };
   }, []);
 
@@ -124,7 +123,7 @@ export default function PublicProfilesDirectory() {
     setCardError('');
     getCard(selected)
       .then((p) => { if (alive) setCardPayload(p); })
-      .catch((e) => { if (alive) setCardError(e.message || 'Kaart ophalen mislukt'); });
+      .catch((e) => { if (alive) setCardError(e.message || t('directory.cardFailed')); });
     return () => { alive = false; };
   }, [selected]);
 
@@ -145,12 +144,11 @@ export default function PublicProfilesDirectory() {
         }
         if ((p.readingCount || 0) < minReadings) return false;
         // Main + extension: main set → must match; extension ('alle' = every support
-        // within that main) filters on the support GROUP behind the extended name.
+        // within that main) filters on the exact support ARCHETYPE behind the extended name.
         if (qMain !== 'alle') {
           if (!archMatches(qMain, p.mainId)) return false;
           if (qSupport !== 'alle') {
-            const grp = SUPPORT_GROUPS.find((g) => g.key === qSupport);
-            if (!grp || !grp.members.some((m) => archMatches(m, p.supportId))) return false;
+            if (!archMatches(qSupport, p.supportId)) return false;
           }
         }
         return true;
@@ -173,13 +171,13 @@ export default function PublicProfilesDirectory() {
             onClick={() => setSelected(null)}
             style={{ textAlign: 'left', background: 'none', border: 'none', color: AMBER, fontFamily: FONT, fontSize: 'max(8px, 0.45vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', padding: '0.4rem 0.5rem', marginBottom: '0.4rem' }}
           >
-            ← Zoeken
+            {t('directory.backToSearch')}
           </button>
           {/* Search — filters the quick-nav on name or archetype */}
           <input
             value={navQuery}
             onChange={(e) => setNavQuery(e.target.value)}
-            placeholder="Zoeken…"
+            placeholder={t('directory.searchPlaceholder')}
             style={{ ...FIELD, marginBottom: '0.45rem' }}
             onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,174,0,0.5)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(255,174,0,0.12)'; }}
             onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(168,85,247,0.3)'; e.currentTarget.style.boxShadow = 'none'; }}
@@ -226,7 +224,7 @@ export default function PublicProfilesDirectory() {
             ? dimText(cardError, true)
             : cardPayload
               ? <ProfileCard payload={cardPayload} active verbondHandle={selected} />
-              : dimText('Kaart laden…')}
+              : dimText(t('directory.cardLoading'))}
         </div>
       </div>
     );
@@ -236,17 +234,17 @@ export default function PublicProfilesDirectory() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%', minHeight: 0, padding: '1.5rem', boxSizing: 'border-box' }}>
       <div style={{ fontFamily: FONT, fontSize: 'max(9px, 0.5vw)', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,174,0,0.7)' }}>
-        Zoek een profiel
+        {t('directory.title')}
       </div>
 
       {/* ── Facets, in order: naam · archetype (main + extensie) · activiteit · integratie ── */}
       <div style={{ display: 'flex', gap: '0.9rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ flex: '2 1 240px', minWidth: 0 }}>
-          <div style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,254,240,0.55)', marginBottom: '0.35rem' }}>Naam</div>
+          <div style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,254,240,0.55)', marginBottom: '0.35rem' }}>{t('directory.labelName')}</div>
           <input
             value={qName}
             onChange={(e) => setQName(e.target.value)}
-            placeholder="Typ een naam…"
+            placeholder={t('directory.namePlaceholder')}
             style={FIELD}
             onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,174,0,0.5)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(255,174,0,0.12)'; }}
             onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(168,85,247,0.3)'; e.currentTarget.style.boxShadow = 'none'; }}
@@ -255,45 +253,45 @@ export default function PublicProfilesDirectory() {
         {/* Main + extensie — the support dropdown shows the EXTENSION names of the selected
             main (De Held → Legende, Ronin, …), never the support archetype's own name. */}
         <div style={{ flex: '1 1 180px', minWidth: 0 }}>
-          <div style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,254,240,0.55)', marginBottom: '0.35rem' }}>Main archetype</div>
+          <div style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,254,240,0.55)', marginBottom: '0.35rem' }}>{t('directory.labelMain')}</div>
           <select value={qMain} onChange={(e) => { setQMain(e.target.value); setQSupport('alle'); }} style={{ ...FIELD, cursor: 'pointer' }}>
-            <option value="alle" style={{ background: '#0a0510' }}>Alle mains</option>
-            {ARCHETYPES_12.map((a) => <option key={a.key} value={a.key} style={{ background: '#0a0510' }}>{a.label}</option>)}
+            <option value="alle" style={{ background: '#0a0510' }}>{t('directory.allMains')}</option>
+            {ARCHETYPES_12.map((a) => <option key={a.key} value={a.key} style={{ background: '#0a0510' }}>{t(`directory.arch12.${a.key}`)}</option>)}
           </select>
         </div>
         <div style={{ flex: '1 1 180px', minWidth: 0, opacity: qMain === 'alle' ? 0.45 : 1, transition: 'opacity 0.2s ease' }}>
-          <div style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,254,240,0.55)', marginBottom: '0.35rem' }}>Extensie — optioneel</div>
+          <div style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,254,240,0.55)', marginBottom: '0.35rem' }}>{t('directory.labelExtension')}</div>
           <select value={qSupport} onChange={(e) => setQSupport(e.target.value)} disabled={qMain === 'alle'} style={{ ...FIELD, cursor: qMain === 'alle' ? 'not-allowed' : 'pointer' }}>
-            <option value="alle" style={{ background: '#0a0510' }}>Alle extensies</option>
-            {/* Extension name + the hardware-group tag in brackets (De Ronin (Chaos)) —
-                one tag, not the pair of core archetype names. */}
-            {qMain !== 'alle' && SUPPORT_GROUPS.map((g) => (
-              <option key={g.key} value={g.key} style={{ background: '#0a0510' }}>
-                {extensionName(qMain, g.key)} ({g.key.charAt(0) + g.key.slice(1).toLowerCase()})
+            <option value="alle" style={{ background: '#0a0510' }}>{t('directory.allExtensions')}</option>
+            {/* Extension name + the support archetype tag in brackets (De Ronin (Held)) —
+                132-matrix: one entry per possible support archetype. */}
+            {qMain !== 'alle' && supportsFor(qMain).map((s) => (
+              <option key={s.key} value={s.key} style={{ background: '#0a0510' }}>
+                {extensionName(qMain, s.key, language === 'en')} ({t(`directory.arch12Short.${s.key}`)})
               </option>
             ))}
           </select>
         </div>
         <div style={{ flex: '1 1 180px', minWidth: 0 }}>
-          <div style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,254,240,0.55)', marginBottom: '0.35rem' }}>Activiteit</div>
+          <div style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,254,240,0.55)', marginBottom: '0.35rem' }}>{t('directory.labelActivity')}</div>
           <select value={qActivity} onChange={(e) => setQActivity(e.target.value)} style={{ ...FIELD, cursor: 'pointer' }}>
-            {ACTIVITY_OPTIONS.map((o) => <option key={o.key} value={o.key} style={{ background: '#0a0510' }}>{o.label}</option>)}
+            {ACTIVITY_OPTIONS.map((o) => <option key={o.key} value={o.key} style={{ background: '#0a0510' }}>{t(`directory.activity.${o.key}`)}</option>)}
           </select>
         </div>
         <div style={{ flex: '1 1 180px', minWidth: 0 }}>
-          <div style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,254,240,0.55)', marginBottom: '0.35rem' }}>Integratie</div>
+          <div style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,254,240,0.55)', marginBottom: '0.35rem' }}>{t('directory.labelIntegration')}</div>
           <select value={qReadings} onChange={(e) => setQReadings(e.target.value)} style={{ ...FIELD, cursor: 'pointer' }}>
-            {READING_OPTIONS.map((o) => <option key={o.key} value={o.key} style={{ background: '#0a0510' }}>{o.label}</option>)}
+            {READING_OPTIONS.map((o) => <option key={o.key} value={o.key} style={{ background: '#0a0510' }}>{t(`directory.readings.${o.tk}`)}</option>)}
           </select>
         </div>
       </div>
 
       {/* ── Results — only when a facet is active ── */}
       <div className="purple-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', borderTop: '1px solid rgba(168, 85, 247, 0.15)', paddingTop: '0.9rem' }}>
-        {profiles === null && dimText('Profielen laden…')}
+        {profiles === null && dimText(t('directory.profilesLoading'))}
         {error && dimText(error, true)}
-        {profiles !== null && !error && !hasActiveFacet && dimText('Gebruik de zoekopties hierboven om profielen te vinden.')}
-        {hasActiveFacet && profiles !== null && !error && !results.length && dimText('Geen profielen gevonden met deze filters.')}
+        {profiles !== null && !error && !hasActiveFacet && dimText(t('directory.useSearchOptions'))}
+        {hasActiveFacet && profiles !== null && !error && !results.length && dimText(t('directory.noResults'))}
 
         {results.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -332,8 +330,8 @@ export default function PublicProfilesDirectory() {
                   )}
                 </div>
                 <div style={{ fontFamily: FIGTREE, fontSize: 'max(9px, 0.5vw)', color: 'rgba(255,254,240,0.4)', flexShrink: 0, textAlign: 'right' }}>
-                  {p.lastSeen && <div>Laatst actief {fmtShort(p.lastSeen)}</div>}
-                  <div>{[p.country, `Lid sinds ${fmtLong(p.memberSince)}`].filter(Boolean).join(' · ')}</div>
+                  {p.lastSeen && <div>{tFunc('directory.lastActive')(fmtShort(p.lastSeen))}</div>}
+                  <div>{[p.country, tFunc('directory.memberSince')(fmtLong(p.memberSince, locale))].filter(Boolean).join(' · ')}</div>
                 </div>
               </button>
             ))}

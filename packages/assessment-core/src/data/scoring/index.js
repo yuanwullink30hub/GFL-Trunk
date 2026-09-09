@@ -8,7 +8,7 @@
  * 2. Radar chart data (12 archetype anchors)
  * 3. Subgroup dynamics (6 archetype group polarity pairs)
  * 4. Primary & secondary archetype determination
- * 5. Extended Archetype name (72-outcome matrix)
+ * 5. Extended Archetype name (132-outcome matrix: 12 mains × 11 supports)
  * 6. Nature vs Culture/Force dual-tracking (Leerling Ontology)
  * 7. Polarization Index & Authenticity Index (Leerling Metrics)
  *
@@ -418,160 +418,438 @@ export const SCORING_TIERS = {
 };
 
 /**
- * Extended Archetype Matrix: 12 Main × 6 Support Groups = 72 outcomes.
- * Key format: "MAINKEY_GROUPNAME"
- * Based on neuro-archetypal framework with 6 biological support groups:
- * RULING, RELATIONAL, SEEKER, CHAOS, ABSTRACT, AGENCY
+ * Extended Archetype Matrix: 12 Main × 11 Support Archetypes = 132 outcomes.
+ * Key format: "MAINKEY_SUPPORTKEY" (both canonical-12 archetype keys).
+ *
+ * Official roster per "Extended Archetypes - Official Roster (132)", including
+ * the two post-roster corrections: #41/#66 The Pilgrim and The Pathfinder are
+ * swapped onto their combinations (Caregiver x Explorer = Pilgrim, Explorer x
+ * Caregiver = Pathfinder), and #71 Hero x Trickster is The Spy (was The Agent).
+ *
+ * Replaces the old 72-outcome matrix that was keyed on the 6 hardware groups
+ * (two supports in one group used to collapse into a single extension; they are
+ * now distinct archetypes). EXTENDED_ARCHETYPES_NL holds the Dutch canon.
  */
 export const EXTENDED_ARCHETYPES = {
-  // Main: JUDGE (Positie 1)
-  JUDGE_RULING: 'The Arbiter', JUDGE_RELATIONAL: 'The Mediator',
-  JUDGE_SEEKER: 'The Examiner', JUDGE_CHAOS: 'The Whistleblower',
-  JUDGE_ABSTRACT: 'The Critic', JUDGE_AGENCY: 'The Avenger',
+  // Main: RULER (Positie 12) - #1-11
+  RULER_JUDGE:      'The Emperor',
+  RULER_SAGE:       'The Sovereign',
+  RULER_ARTIST:     'The Designer',
+  RULER_EXPLORER:   'The Entrepreneur',
+  RULER_INNOCENT:   'The Founder',
+  RULER_OUTLAW:     'The Reformer',
+  RULER_TRICKSTER:  'The Puppeteer',
+  RULER_HERO:       'The Commander',
+  RULER_MAGICIAN:   'The Overlord',
+  RULER_CAREGIVER:  'The Advocate',
+  RULER_LOVER:      'The Patron',
 
-  // Main: LOVER (Positie 2)
-  LOVER_RELATIONAL: 'The Soulmate', LOVER_SEEKER: 'The Poet',
-  LOVER_CHAOS: 'The Seducer', LOVER_ABSTRACT: 'The Mystic',
-  LOVER_AGENCY: 'The Romantic', LOVER_RULING: 'The Companion',
+  // Main: JUDGE (Positie 1) - #12-22
+  JUDGE_RULER:      'The Arbiter',
+  JUDGE_OUTLAW:     'The Whistleblower',
+  JUDGE_TRICKSTER:  'The Inquisitor',
+  JUDGE_SAGE:       'The Critic',
+  JUDGE_ARTIST:     'The Appraiser',
+  JUDGE_INNOCENT:   'The Examiner',
+  JUDGE_EXPLORER:   'The Auditor',
+  JUDGE_HERO:       'The Avenger',
+  JUDGE_MAGICIAN:   'The Enforcer',
+  JUDGE_CAREGIVER:  'The Mediator',
+  JUDGE_LOVER:      'The Reconciler',
 
-  // Main: CAREGIVER (Positie 3)
-  CAREGIVER_RELATIONAL: 'The Healer', CAREGIVER_SEEKER: 'The Pathfinder',
-  CAREGIVER_CHAOS: 'The Cultivator', CAREGIVER_ABSTRACT: 'The Therapist',
-  CAREGIVER_AGENCY: 'The Protector', CAREGIVER_RULING: 'The Advocate',
+  // Main: LOVER (Positie 2) - #23-33
+  LOVER_CAREGIVER:  'The Soulmate',
+  LOVER_RULER:      'The Companion',
+  LOVER_JUDGE:      'The Betrothed',
+  LOVER_TRICKSTER:  'The Wingman',
+  LOVER_OUTLAW:     'The Libertine',
+  LOVER_SAGE:       'The Poet',
+  LOVER_ARTIST:     'The Muse',
+  LOVER_INNOCENT:   'The Votary',
+  LOVER_EXPLORER:   'The Moth',
+  LOVER_HERO:       'The Romantic',
+  LOVER_MAGICIAN:   'The Spellbinder',
 
-  // Main: INNOCENT (Positie 4)
-  INNOCENT_SEEKER: 'The Saint', INNOCENT_CHAOS: 'The Free Spirit',
-  INNOCENT_ABSTRACT: 'The Disciple', INNOCENT_AGENCY: 'The Pioneer',
-  INNOCENT_RULING: 'The Shepherd', INNOCENT_RELATIONAL: 'The Samaritan',
+  // Main: CAREGIVER (Positie 3) - #34-44
+  CAREGIVER_LOVER:      'The Healer',
+  CAREGIVER_RULER:      'The Patriarch/Matriarch',
+  CAREGIVER_JUDGE:      'The Defender',
+  CAREGIVER_OUTLAW:     'The Cultivator',
+  CAREGIVER_TRICKSTER:  'The Empath',
+  CAREGIVER_SAGE:       'The Therapist',
+  CAREGIVER_ARTIST:     'The Restorer',
+  CAREGIVER_EXPLORER:   'The Pilgrim',
+  CAREGIVER_INNOCENT:   'The Devotee',
+  CAREGIVER_HERO:       'The Guardian',
+  CAREGIVER_MAGICIAN:   'The Warden',
 
-  // Main: EXPLORER (Positie 5)
-  EXPLORER_SEEKER: 'The Navigator', EXPLORER_CHAOS: 'The Innovator',
-  EXPLORER_ABSTRACT: 'The Scholar', EXPLORER_AGENCY: 'The Sailor',
-  EXPLORER_RULING: 'The Scout', EXPLORER_RELATIONAL: 'The Networker',
+  // Main: INNOCENT (Positie 4) - #45-55
+  INNOCENT_EXPLORER:   'The Saint',
+  INNOCENT_RULER:      'The Shepherd',
+  INNOCENT_JUDGE:      'The Traditionalist',
+  INNOCENT_TRICKSTER:  'The Free Spirit',
+  INNOCENT_OUTLAW:     'The Torchbearer',
+  INNOCENT_SAGE:       'The Disciple',
+  INNOCENT_ARTIST:     'The Utopian',
+  INNOCENT_HERO:       'The Pioneer',
+  INNOCENT_MAGICIAN:   'The Illuminator',
+  INNOCENT_CAREGIVER:  'The Samaritan',
+  INNOCENT_LOVER:      'The Sweetheart',
 
-  // Main: OUTLAW (Positie 6)
-  OUTLAW_CHAOS: 'The Anarchist', OUTLAW_ABSTRACT: 'The Iconoclast',
-  OUTLAW_AGENCY: 'The Revolutionary', OUTLAW_RULING: 'The Reformer',
-  OUTLAW_RELATIONAL: 'The Liberator', OUTLAW_SEEKER: 'The Renegade',
+  // Main: EXPLORER (Positie 5) - #56-66
+  EXPLORER_INNOCENT:   'The Navigator',
+  EXPLORER_RULER:      'The Networker',
+  EXPLORER_JUDGE:      'The Surveyor',
+  EXPLORER_OUTLAW:     'The Innovator',
+  EXPLORER_TRICKSTER:  'The Scout',
+  EXPLORER_SAGE:       'The Philosopher',
+  EXPLORER_ARTIST:     'The Bard',
+  EXPLORER_HERO:       'The Sailor',
+  EXPLORER_MAGICIAN:   'The Nomad',
+  EXPLORER_LOVER:      'The Stargazer',
+  EXPLORER_CAREGIVER:  'The Pathfinder',
 
-  // Main: TRICKSTER (Positie 7)
-  TRICKSTER_CHAOS: 'The Fool', TRICKSTER_ABSTRACT: 'The Comedian',
-  TRICKSTER_AGENCY: 'The Saboteur', TRICKSTER_RULING: 'The Jester',
-  TRICKSTER_RELATIONAL: 'The Clown', TRICKSTER_SEEKER: 'The Shapeshifter',
+  // Main: HERO (Positie 11) - #67-77
+  HERO_MAGICIAN:   'The Legend',
+  HERO_RULER:      'The Conqueror',
+  HERO_JUDGE:      'The Templar',
+  HERO_OUTLAW:     'The Raider',
+  HERO_TRICKSTER:  'The Spy',
+  HERO_SAGE:       'The Strategist',
+  HERO_ARTIST:     'The Duelist',
+  HERO_EXPLORER:   'The Astronaut',
+  HERO_INNOCENT:   'The Crusader',
+  HERO_CAREGIVER:  'The Protector',
+  HERO_LOVER:      'The Chevalier',
 
-  // Main: SAGE (Positie 8)
-  SAGE_ABSTRACT: 'The Enlightened', SAGE_AGENCY: 'The Detective',
-  SAGE_RULING: 'The Analyst', SAGE_RELATIONAL: 'The Mentor',
-  SAGE_SEEKER: 'The Dreamer', SAGE_CHAOS: 'The Hermit',
+  // Main: MAGICIAN (Positie 10) - #78-88
+  MAGICIAN_HERO:       'The Alchemist',
+  MAGICIAN_RULER:      'The Engineer',
+  MAGICIAN_JUDGE:      'The Reckoner',
+  MAGICIAN_OUTLAW:     'The Protagonist',
+  MAGICIAN_TRICKSTER:  'The Enchanter',
+  MAGICIAN_SAGE:       'The Sorcerer',
+  MAGICIAN_ARTIST:     'The Performer',
+  MAGICIAN_INNOCENT:   'The Catalyst',
+  MAGICIAN_EXPLORER:   'The Trailblazer',
+  MAGICIAN_LOVER:      'The Shaman',
+  MAGICIAN_CAREGIVER:  'The Redeemer',
 
-  // Main: ARTIST (Positie 9)
-  ARTIST_ABSTRACT: 'The Demiurge', ARTIST_AGENCY: 'The Forgemaster',
-  ARTIST_RULING: 'The Architect', ARTIST_RELATIONAL: 'The Storyteller',
-  ARTIST_SEEKER: 'The Visionary', ARTIST_CHAOS: 'The Illusionist',
+  // Main: OUTLAW (Positie 6) - #89-99
+  OUTLAW_TRICKSTER:  'The Anarchist',
+  OUTLAW_RULER:      'The Maverick',
+  OUTLAW_JUDGE:      'The Contrarian',
+  OUTLAW_CAREGIVER:  'The Liberator',
+  OUTLAW_LOVER:      'The Instigator',
+  OUTLAW_SAGE:       'The Iconoclast',
+  OUTLAW_ARTIST:     'The Punk',
+  OUTLAW_EXPLORER:   'The Renegade',
+  OUTLAW_INNOCENT:   'The Idealist',
+  OUTLAW_MAGICIAN:   'The Revolutionary',
+  OUTLAW_HERO:       'The Ronin',
 
-  // Main: MAGICIAN (Positie 10)
-  MAGICIAN_AGENCY: 'The Alchemist', MAGICIAN_RULING: 'The Engineer',
-  MAGICIAN_RELATIONAL: 'The Shaman', MAGICIAN_SEEKER: 'The Oracle',
-  MAGICIAN_CHAOS: 'The Enchanter', MAGICIAN_ABSTRACT: 'The Sorcerer',
+  // Main: TRICKSTER (Positie 7) - #100-110
+  TRICKSTER_OUTLAW:     'The Fool',
+  TRICKSTER_RULER:      'The Gatecrasher',
+  TRICKSTER_JUDGE:      "The Devil's Advocate",
+  TRICKSTER_LOVER:      'The Seducer',
+  TRICKSTER_CAREGIVER:  'The Chameleon',
+  TRICKSTER_SAGE:       'The Riddler',
+  TRICKSTER_ARTIST:     'The Impressionist',
+  TRICKSTER_EXPLORER:   'The Free-runner',
+  TRICKSTER_INNOCENT:   'The Joyrider',
+  TRICKSTER_MAGICIAN:   'The Shapeshifter',
+  TRICKSTER_HERO:       'The Ace',
 
-  // Main: HERO (Positie 11)
-  HERO_AGENCY: 'The Legend', HERO_RULING: 'The Commander',
-  HERO_RELATIONAL: 'The Guardian', HERO_SEEKER: 'The Inventor',
-  HERO_CHAOS: 'The Ronin', HERO_ABSTRACT: 'The Strategist',
+  // Main: SAGE (Positie 8) - #111-121
+  SAGE_ARTIST:     'The Developer',
+  SAGE_RULER:      'The Analyst',
+  SAGE_JUDGE:      'The Skeptic',
+  SAGE_CAREGIVER:  'The Mentor',
+  SAGE_LOVER:      'The Guru',
+  SAGE_OUTLAW:     'The Hermit',
+  SAGE_TRICKSTER:  'The Theorist',
+  SAGE_INNOCENT:   'The Enlightened',
+  SAGE_EXPLORER:   'The Scholar',
+  SAGE_HERO:       'The Detective',
+  SAGE_MAGICIAN:   'The Freemason',
 
-  // Main: RULER (Positie 12)
-  RULER_RULING: 'The Emperor', RULER_RELATIONAL: 'The Patriarch/Matriarch',
-  RULER_SEEKER: 'The Entrepreneur', RULER_CHAOS: 'The Maverick',
-  RULER_ABSTRACT: 'The Philosopher-King', RULER_AGENCY: 'The Conqueror',
+  // Main: ARTIST (Positie 9) - #122-132
+  ARTIST_SAGE:       'The Demiurge',
+  ARTIST_RULER:      'The Architect',
+  ARTIST_JUDGE:      'The Editor',
+  ARTIST_LOVER:      'The Troubadour',
+  ARTIST_CAREGIVER:  'The Storyteller',
+  ARTIST_TRICKSTER:  'The Oracle',
+  ARTIST_OUTLAW:     'The Provocateur',
+  ARTIST_EXPLORER:   'The Visionary',
+  ARTIST_INNOCENT:   'The Prodigy',
+  ARTIST_MAGICIAN:   'The Craftsman',
+  ARTIST_HERO:       'The Forgemaster',
 };
 
 /**
- * Dutch translations for all 72 Extended Archetype names.
+ * Official Dutch names for all 132 Extended Archetypes.
+ *
+ * This is the authored NL canon (not machine translation): it is what the
+ * Dutch report, profile card and PDF display, and what the model is told the
+ * user's extension is called when the test is taken in Dutch.
+ *
+ * NOTE: 'De Beschermer' is currently used twice - CAREGIVER_HERO (The Guardian)
+ * and HERO_CAREGIVER (The Protector). Display is unaffected, but name -> key
+ * reverse lookup (archetypeImages.js) cannot tell those two apart and resolves
+ * both to the first one in roster order (#43 The Guardian, Caregiver x Hero).
+ * Give one of them a distinct Dutch name to remove the ambiguity.
  */
 export const EXTENDED_ARCHETYPES_NL = {
-  // Main: JUDGE (Positie 1)
-  JUDGE_RULING: 'De Arbiter', JUDGE_RELATIONAL: 'De Bemiddelaar',
-  JUDGE_SEEKER: 'De Examinator', JUDGE_CHAOS: 'De Klokkenluider',
-  JUDGE_ABSTRACT: 'De Criticus', JUDGE_AGENCY: 'De Wreker',
+  // Main: RULER (Positie 12) - #1-11
+  RULER_JUDGE:      'De Keizer',
+  RULER_SAGE:       'De Soevereine',
+  RULER_ARTIST:     'De Ontwerper',
+  RULER_EXPLORER:   'De Ondernemer',
+  RULER_INNOCENT:   'De Oprichter',
+  RULER_OUTLAW:     'De Hervormer',
+  RULER_TRICKSTER:  'De Poppenspeler',
+  RULER_HERO:       'De Commandant',
+  RULER_MAGICIAN:   'De Oppermeester',
+  RULER_CAREGIVER:  'De Advocaat',
+  RULER_LOVER:      'De Beschermheer',
 
-  // Main: LOVER (Positie 2)
-  LOVER_RELATIONAL: 'De Zielsverwant', LOVER_SEEKER: 'De Dichter',
-  LOVER_CHAOS: 'De Verleider', LOVER_ABSTRACT: 'De Mysticus',
-  LOVER_AGENCY: 'De Romanticus', LOVER_RULING: 'De Metgezel',
+  // Main: JUDGE (Positie 1) - #12-22
+  JUDGE_RULER:      'De Arbiter',
+  JUDGE_OUTLAW:     'De Klokkenluider',
+  JUDGE_TRICKSTER:  'De Inquisitoir',
+  JUDGE_SAGE:       'De Criticus',
+  JUDGE_ARTIST:     'De Taxateur',
+  JUDGE_INNOCENT:   'De Examinator',
+  JUDGE_EXPLORER:   'De Controleur',
+  JUDGE_HERO:       'De Wreker',
+  JUDGE_MAGICIAN:   'De Handhaver',
+  JUDGE_CAREGIVER:  'De Bemiddelaar',
+  JUDGE_LOVER:      'De Verzoener',
 
-  // Main: CAREGIVER (Positie 3)
-  CAREGIVER_RELATIONAL: 'De Genezer', CAREGIVER_SEEKER: 'De Padvinder',
-  CAREGIVER_CHAOS: 'De Kweker', CAREGIVER_ABSTRACT: 'De Therapeut',
-  CAREGIVER_AGENCY: 'De Beschermer', CAREGIVER_RULING: 'De Voorvechter',
+  // Main: LOVER (Positie 2) - #23-33
+  LOVER_CAREGIVER:  'De Zielsverwant',
+  LOVER_RULER:      'De Compagnon',
+  LOVER_JUDGE:      'De Verloofde',
+  LOVER_TRICKSTER:  'De Wingman',
+  LOVER_OUTLAW:     'De Genotzoeker',
+  LOVER_SAGE:       'De Dichter',
+  LOVER_ARTIST:     'De Muze',
+  LOVER_INNOCENT:   'De Getrouwe',
+  LOVER_EXPLORER:   'De Nachtvlinder',
+  LOVER_HERO:       'De Romanticus',
+  LOVER_MAGICIAN:   'De Betoveraar',
 
-  // Main: INNOCENT (Positie 4)
-  INNOCENT_SEEKER: 'De Heilige', INNOCENT_CHAOS: 'De Vrije-geest',
-  INNOCENT_ABSTRACT: 'De Discipel', INNOCENT_AGENCY: 'De Pionier',
-  INNOCENT_RULING: 'De Herder', INNOCENT_RELATIONAL: 'De Samaritaan',
+  // Main: CAREGIVER (Positie 3) - #34-44
+  CAREGIVER_LOVER:      'De Genezer',
+  CAREGIVER_RULER:      'De Patriarch / Matriarch',
+  CAREGIVER_JUDGE:      'De Verdediger',
+  CAREGIVER_OUTLAW:     'De Kweker',
+  CAREGIVER_TRICKSTER:  'De Empaat',
+  CAREGIVER_SAGE:       'De Therapeut',
+  CAREGIVER_ARTIST:     'De Hersteller',
+  CAREGIVER_EXPLORER:   'De Pilgrim',
+  CAREGIVER_INNOCENT:   'De Toegewijde',
+  CAREGIVER_HERO:       'De Beschermer',
+  CAREGIVER_MAGICIAN:   'De Bewaker',
 
-  // Main: EXPLORER (Positie 5)
-  EXPLORER_SEEKER: 'De Navigator', EXPLORER_CHAOS: 'De Innovator',
-  EXPLORER_ABSTRACT: 'De Geleerde', EXPLORER_AGENCY: 'De Zeeman',
-  EXPLORER_RULING: 'De Verkenner', EXPLORER_RELATIONAL: 'De Verbinder',
+  // Main: INNOCENT (Positie 4) - #45-55
+  INNOCENT_EXPLORER:   'De Heilige',
+  INNOCENT_RULER:      'De Herder',
+  INNOCENT_JUDGE:      'De Traditionalist',
+  INNOCENT_TRICKSTER:  'De Vrije Geest',
+  INNOCENT_OUTLAW:     'De Fakkeldrager',
+  INNOCENT_SAGE:       'De Discipel',
+  INNOCENT_ARTIST:     'De Utopist',
+  INNOCENT_HERO:       'De Pionier',
+  INNOCENT_MAGICIAN:   'De Verlichter',
+  INNOCENT_CAREGIVER:  'De Samaritaan',
+  INNOCENT_LOVER:      'De Lieveling',
 
-  // Main: OUTLAW (Positie 6)
-  OUTLAW_CHAOS: 'De Anarchist', OUTLAW_ABSTRACT: 'De Beeldenstormer',
-  OUTLAW_AGENCY: 'De Revolutionair', OUTLAW_RULING: 'De Hervormer',
-  OUTLAW_RELATIONAL: 'De Bevrijder', OUTLAW_SEEKER: 'De Columnist',
+  // Main: EXPLORER (Positie 5) - #56-66
+  EXPLORER_INNOCENT:   'De Navigator',
+  EXPLORER_RULER:      'De Netwerker',
+  EXPLORER_JUDGE:      'De Verkenner',
+  EXPLORER_OUTLAW:     'De Vernieuwer',
+  EXPLORER_TRICKSTER:  'De Scout',
+  EXPLORER_SAGE:       'De Filosoof',
+  EXPLORER_ARTIST:     'De Bard',
+  EXPLORER_HERO:       'De Zeeman',
+  EXPLORER_MAGICIAN:   'De Nomade',
+  EXPLORER_LOVER:      'De Sterrenkijker',
+  EXPLORER_CAREGIVER:  'De Padvinder',
 
-  // Main: TRICKSTER (Positie 7)
-  TRICKSTER_CHAOS: 'De Dwaas', TRICKSTER_ABSTRACT: 'De Komiek',
-  TRICKSTER_AGENCY: 'De Saboteur', TRICKSTER_RULING: 'De Hofnar',
-  TRICKSTER_RELATIONAL: 'De Clown', TRICKSTER_SEEKER: 'De Gedaanteverwisselaar',
+  // Main: HERO (Positie 11) - #67-77
+  HERO_MAGICIAN:   'De Legende',
+  HERO_RULER:      'De Veroveraar',
+  HERO_JUDGE:      'De Tempelier',
+  HERO_OUTLAW:     'De Plunderaar',
+  HERO_TRICKSTER:  'De Spion',
+  HERO_SAGE:       'De Strateeg',
+  HERO_ARTIST:     'De Duellist',
+  HERO_EXPLORER:   'De Astronaut',
+  HERO_INNOCENT:   'De Kruisvaarder',
+  HERO_CAREGIVER:  'De Beschermer',
+  HERO_LOVER:      'De Ridder',
 
-  // Main: SAGE (Positie 8)
-  SAGE_ABSTRACT: 'De Verlichte', SAGE_AGENCY: 'De Detective',
-  SAGE_RULING: 'De Analist', SAGE_RELATIONAL: 'De Mentor',
-  SAGE_SEEKER: 'De Dromer', SAGE_CHAOS: 'De Kluizenaar',
+  // Main: MAGICIAN (Positie 10) - #78-88
+  MAGICIAN_HERO:       'De Alchemist',
+  MAGICIAN_RULER:      'De Ingenieur',
+  MAGICIAN_JUDGE:      'De Berekenaar',
+  MAGICIAN_OUTLAW:     'De Hoofdrolspeler',
+  MAGICIAN_TRICKSTER:  'De Magiër',
+  MAGICIAN_SAGE:       'De Tovenaar',
+  MAGICIAN_ARTIST:     'De Presteerder',
+  MAGICIAN_INNOCENT:   'De Katalysator',
+  MAGICIAN_EXPLORER:   'De Baanbreker',
+  MAGICIAN_LOVER:      'De Sjamaan',
+  MAGICIAN_CAREGIVER:  'De Verlosser',
 
-  // Main: ARTIST (Positie 9)
-  ARTIST_ABSTRACT: 'De Ontwerper', ARTIST_AGENCY: 'De Smidmeester',
-  ARTIST_RULING: 'De Architect', ARTIST_RELATIONAL: 'De Verteller',
-  ARTIST_SEEKER: 'De Visionair', ARTIST_CHAOS: 'De Illusionist',
+  // Main: OUTLAW (Positie 6) - #89-99
+  OUTLAW_TRICKSTER:  'De Anarchist',
+  OUTLAW_RULER:      'De Eenling',
+  OUTLAW_JUDGE:      'De Dwarsligger',
+  OUTLAW_CAREGIVER:  'De Bevrijder',
+  OUTLAW_LOVER:      'De Aanstichter',
+  OUTLAW_SAGE:       'De Beeldenstormer',
+  OUTLAW_ARTIST:     'De Punker',
+  OUTLAW_EXPLORER:   'De Vogelvrije',
+  OUTLAW_INNOCENT:   'De Idealist',
+  OUTLAW_MAGICIAN:   'De Revolutionair',
+  OUTLAW_HERO:       'De Ronin',
 
-  // Main: MAGICIAN (Positie 10)
-  MAGICIAN_AGENCY: 'De Alchemist', MAGICIAN_RULING: 'De Ingenieur',
-  MAGICIAN_RELATIONAL: 'De Sjamaan', MAGICIAN_SEEKER: 'Het Orakel',
-  MAGICIAN_CHAOS: 'De Betoveraar', MAGICIAN_ABSTRACT: 'De Tovenaar',
+  // Main: TRICKSTER (Positie 7) - #100-110
+  TRICKSTER_OUTLAW:     'De Dwaas',
+  TRICKSTER_RULER:      'De Poortbreker',
+  TRICKSTER_JUDGE:      'De Advocaat van de Duivel',
+  TRICKSTER_LOVER:      'De Verleider',
+  TRICKSTER_CAREGIVER:  'De Kameleon',
+  TRICKSTER_SAGE:       'De Raadselmeester',
+  TRICKSTER_ARTIST:     'De Imitator',
+  TRICKSTER_EXPLORER:   'De Freerunner',
+  TRICKSTER_INNOCENT:   'De Joyrider',
+  TRICKSTER_MAGICIAN:   'De Gedaante-verwisselaar',
+  TRICKSTER_HERO:       'De Aas / De Uitblinker',
 
-  // Main: HERO (Positie 11)
-  HERO_AGENCY: 'De Legende', HERO_RULING: 'De Bevelhebber',
-  HERO_RELATIONAL: 'De Bewaker', HERO_SEEKER: 'De Uitvinder',
-  HERO_CHAOS: 'De Ronin', HERO_ABSTRACT: 'De Strateeg',
+  // Main: SAGE (Positie 8) - #111-121
+  SAGE_ARTIST:     'De Ontwikkelaar',
+  SAGE_RULER:      'De Analist',
+  SAGE_JUDGE:      'De Skepticus',
+  SAGE_CAREGIVER:  'De Mentor',
+  SAGE_LOVER:      'De Goeroe',
+  SAGE_OUTLAW:     'De Kluizenaar',
+  SAGE_TRICKSTER:  'De Theoreticus',
+  SAGE_INNOCENT:   'De Verlichte',
+  SAGE_EXPLORER:   'De Geleerde',
+  SAGE_HERO:       'De Speurder',
+  SAGE_MAGICIAN:   'De Vrijmetselaar',
 
-  // Main: RULER (Positie 12)
-  RULER_RULING: 'De Keizer', RULER_RELATIONAL: 'De Patriarch / Matriarch',
-  RULER_SEEKER: 'De Ondernemer', RULER_CHAOS: 'De lonewolf',
-  RULER_ABSTRACT: 'De Filosoof-Koning', RULER_AGENCY: 'De Veroveraar',
+  // Main: ARTIST (Positie 9) - #122-132
+  ARTIST_SAGE:       'De Demiurg',
+  ARTIST_RULER:      'De Architect',
+  ARTIST_JUDGE:      'De Redacteur',
+  ARTIST_LOVER:      'De Troubadour',
+  ARTIST_CAREGIVER:  'De Verhalenverteller',
+  ARTIST_TRICKSTER:  'Het Orakel',
+  ARTIST_OUTLAW:     'De Provocateur',
+  ARTIST_EXPLORER:   'De Visionair',
+  ARTIST_INNOCENT:   'Het Wonderkind',
+  ARTIST_MAGICIAN:   'De Ambachtsman',
+  ARTIST_HERO:       'De Meestersmid',
 };
 
 /**
- * Get the Extended Archetype name from main + support archetype keys.
- * @param {string} mainKey - e.g. 'SAGE'
- * @param {string} supportKey - e.g. 'OUTLAW'
- * @returns {string} Extended archetype name, e.g. 'The Detective'
+ * Map from hardware group → its two archetype keys (wheel order).
+ * Used to resolve legacy group-keyed lookups against the 132-matrix.
  */
-export function getExtendedArchetype(mainKey, supportKey) {
-  const supportGroup = ARCHETYPE_TO_GROUP[supportKey] || 'WISDOM';
-  const lookupKey = `${mainKey}_${supportGroup}`;
-  return EXTENDED_ARCHETYPES[lookupKey] || mainKey;
+export const GROUP_TO_ARCHETYPES = {
+  RULING:     ['JUDGE', 'RULER'],
+  RELATIONAL: ['LOVER', 'CAREGIVER'],
+  SEEKER:     ['INNOCENT', 'EXPLORER'],
+  CHAOS:      ['OUTLAW', 'TRICKSTER'],
+  ABSTRACT:   ['SAGE', 'ARTIST'],
+  AGENCY:     ['MAGICIAN', 'HERO'],
+};
+
+/**
+ * Resolve a (main, support) pair to its canonical 132-matrix key.
+ * `support` is normally a support ARCHETYPE key ('OUTLAW'); for backward
+ * compatibility it also accepts a legacy hardware-GROUP name ('CHAOS'),
+ * in which case the group member that yields a valid combination is used
+ * (for main's own group that is unambiguously the green-line partner; for
+ * other groups the wheel-order member is picked — legacy data cannot
+ * distinguish the two).
+ *
+ * @param {string} mainKey - e.g. 'SAGE'
+ * @param {string} support - support archetype key or legacy group name
+ * @returns {string|null} e.g. 'SAGE_OUTLAW', or null if unresolvable
+ */
+export function resolveExtendedKey(mainKey, support) {
+  const main = String(mainKey || '').toUpperCase();
+  const sup = String(support || '').toUpperCase();
+  if (!main || !sup) return null;
+  const direct = `${main}_${sup}`;
+  if (EXTENDED_ARCHETYPES[direct]) return direct;
+  // Legacy: support given as a hardware group name
+  const members = GROUP_TO_ARCHETYPES[sup];
+  if (members) {
+    for (const m of members) {
+      if (m === main) continue;
+      const key = `${main}_${m}`;
+      if (EXTENDED_ARCHETYPES[key]) return key;
+    }
+  }
+  return null;
 }
 
 /**
- * Get the Dutch Extended Archetype name from main + support archetype keys.
+ * Get the Extended Archetype name from main + support archetype keys (132-matrix).
  * @param {string} mainKey - e.g. 'SAGE'
- * @param {string} supportKey - e.g. 'OUTLAW'
- * @returns {string} Dutch extended archetype name, e.g. 'De Detective'
+ * @param {string} supportKey - support archetype key (or legacy group name)
+ * @returns {string} Extended archetype name, e.g. 'The Hermit'
+ */
+export function getExtendedArchetype(mainKey, supportKey) {
+  const lookupKey = resolveExtendedKey(mainKey, supportKey);
+  return (lookupKey && EXTENDED_ARCHETYPES[lookupKey]) || mainKey;
+}
+
+/**
+ * Get the Dutch Extended Archetype name from main + support archetype keys (132-matrix).
+ * @param {string} mainKey - e.g. 'SAGE'
+ * @param {string} supportKey - support archetype key (or legacy group name)
+ * @returns {string} Dutch extended archetype name, e.g. 'De Kluizenaar'
  */
 export function getExtendedArchetypeNl(mainKey, supportKey) {
-  const supportGroup = ARCHETYPE_TO_GROUP[supportKey] || 'WISDOM';
-  const lookupKey = `${mainKey}_${supportGroup}`;
+  const lookupKey = resolveExtendedKey(mainKey, supportKey);
+  if (!lookupKey) return mainKey;
   return EXTENDED_ARCHETYPES_NL[lookupKey] || EXTENDED_ARCHETYPES[lookupKey] || mainKey;
+}
+
+/**
+ * Display name for a stored assessment record, in the given UI language.
+ *
+ * Records carry the English name (`extendedArchetypeName`) and, since the 132
+ * roster, the Dutch one (`extendedArchetypeNameNl`). Records written before that
+ * have only one of the two, so whichever is present is used; if neither is, the
+ * name is re-derived from the stored main/support keys — which is what lets an
+ * older English-only record still render its Dutch name under the NL toggle.
+ *
+ * @param {Object} record   - assessment/history document (or a live result object)
+ * @param {string} language - 'nl' | 'en'
+ * @returns {string} '' when the record carries no usable archetype at all
+ */
+export function extendedNameFor(record, language = 'nl') {
+  if (!record) return '';
+  const wantEn = String(language || '').toLowerCase().startsWith('en');
+  const en = record.extendedArchetypeName || record.extendedName || '';
+  const nl = record.extendedArchetypeNameNl || record.extendedNameNl || '';
+  const picked = wantEn ? (en || nl) : (nl || en);
+  if (picked) return picked;
+  const main = record.archetypeKey || record.mainArchetype || record.overallArchetype;
+  if (!main) return '';
+  const support = record.supportArchetype || record.supportGroup;
+  return wantEn ? getExtendedArchetype(main, support) : getExtendedArchetypeNl(main, support);
 }
 
 /**
@@ -845,7 +1123,7 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
   const shadowArchetype = SHADOW_PAIRS[mainArchetype] || null;
   const blindspotArchetype = RED_LINE[mainArchetype] || null;
 
-  // ── Extended Archetype (72-matrix) ──
+  // ── Extended Archetype (132-matrix: main × support archetype) ──
   const supportGroup = ARCHETYPE_TO_GROUP[supportArchetype];
   const mainGroup = ARCHETYPE_TO_GROUP[mainArchetype];
   const extendedArchetypeName = getExtendedArchetype(mainArchetype, supportArchetype);

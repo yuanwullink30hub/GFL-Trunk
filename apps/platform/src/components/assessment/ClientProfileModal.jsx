@@ -3,6 +3,7 @@ import { useLanguage } from '@gfl/i18n';
 import { getHistory, getAssessment, downloadPdf, deleteOwnAccount } from '@gfl/api-client';
 import { ERROR_STYLE, C, FONT, SciFiButton } from '@gfl/ui';
 import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
+import { extendedNameFor } from '@gfl/assessment-core/data';
 
 // ═══════════════════════════════════════════════════════════
 // DashboardCard — same as AdminDashboardModal (no corner accents)
@@ -29,15 +30,15 @@ const CARD_COLORS = {
 };
 
 function DashboardCard({ children, title, color = 'gold', style = {} }) {
-  const t = CARD_COLORS[color] || CARD_COLORS.gold;
+  const theme = CARD_COLORS[color] || CARD_COLORS.gold;
   return (
     <div style={{
       position: 'relative',
       backgroundColor: 'rgba(1, 0, 2, 0.3)',
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)',
-      border: `1px solid ${t.border}`,
-      boxShadow: t.shadow,
+      border: `1px solid ${theme.border}`,
+      boxShadow: theme.shadow,
       borderRadius: '0.5rem',
       padding: '1.25rem',
       fontFamily: FONT,
@@ -51,17 +52,17 @@ function DashboardCard({ children, title, color = 'gold', style = {} }) {
           display: 'flex', alignItems: 'center', gap: '0.4rem',
           marginBottom: '0.8rem',
           paddingBottom: '0.6rem',
-          borderBottom: `1px solid ${t.border}`,
+          borderBottom: `1px solid ${theme.border}`,
         }}>
           <div style={{
             width: '3px', height: '1rem',
-            backgroundColor: t.border,
+            backgroundColor: theme.border,
             borderRadius: '1px',
           }} />
           <span style={{
             fontSize: 'max(10px, 0.5vw)',
             fontWeight: 'bold',
-            color: t.titleColor,
+            color: theme.titleColor,
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
           }}>{title}</span>
@@ -75,11 +76,14 @@ function DashboardCard({ children, title, color = 'gold', style = {} }) {
 // ═══════════════════════════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════════════════════════
-const Loading = () => (
-  <div style={{ textAlign: 'center', padding: '3rem 0', color: C.gold, fontFamily: FONT, fontSize: 'max(12px, 0.6vw)', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
-    Laden...
-  </div>
-);
+const Loading = () => {
+  const { t } = useLanguage();
+  return (
+    <div style={{ textAlign: 'center', padding: '3rem 0', color: C.gold, fontFamily: FONT, fontSize: 'max(12px, 0.6vw)', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+      {t('clientOrb.modal.loading')}
+    </div>
+  );
+};
 const ErrorBox = ({ msg }) => (
   <div style={ERROR_STYLE}>⚠ {msg}</div>
 );
@@ -101,7 +105,7 @@ const CORNER = (pos) => ({
  * Tabs: overview, assessments
  */
 const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
-  useLanguage();
+  const { t, tFunc } = useLanguage();
   const [tab, setTab] = useState('overview');
   const [deleteStep, setDeleteStep] = useState(0); // 0=hidden 1=confirm 2=typing
   const [deleteInput, setDeleteInput] = useState('');
@@ -109,8 +113,8 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleDeleteAccount = useCallback(async () => {
-    if (deleteInput !== 'VERWIJDER') {
-      setDeleteError('Typ precies "VERWIJDER" om te bevestigen');
+    if (deleteInput !== t('clientOrb.deleteWord')) {
+      setDeleteError(t('clientOrb.deleteTypedError'));
       return;
     }
     setDeleteLoading(true);
@@ -119,10 +123,10 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
       await deleteOwnAccount();
       onLogout(); // token is cleared — return to logged-out state
     } catch (err) {
-      setDeleteError(err.message || 'Verwijderen mislukt');
+      setDeleteError(err.message || t('clientOrb.deleteFailed'));
       setDeleteLoading(false);
     }
-  }, [deleteInput, onLogout]);
+  }, [deleteInput, onLogout, t]);
 
   return (
     <>
@@ -188,7 +192,7 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
             fontFamily: FONT, fontSize: 'max(10px, 0.55vw)',
             textTransform: 'uppercase', letterSpacing: '0.2em',
             fontWeight: 'bold', color: C.gold,
-          }}>Profiel Dashboard</span>
+          }}>{t('clientOrb.modal.dashboardTitle')}</span>
           <div style={{ display: 'flex', gap: 3 }}>
             <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: C.gold }} />
             <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: C.purple }} />
@@ -220,29 +224,22 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
                 letterSpacing: '0.2em', fontFamily: FONT, margin: 0,
                 textShadow: `0 0 5px ${C.gold}, 0 0 10px ${C.gold}`,
               }}>
-                Profiel Dashboard
+                {t('clientOrb.modal.dashboardTitle')}
               </h1>
               <p style={{
                 color: 'rgba(249, 115, 22, 0.35)', fontSize: 'max(10px, 0.55vw)',
                 marginTop: '0.25rem', fontFamily: FONT,
               }}>
-                GEBRUIKER: {user.displayName} {'·'} ROL: {(user.role || 'client').toUpperCase()} {'·'} {user.email}
+                {tFunc('clientOrb.modal.userLine')(user.displayName, (user.role || 'client').toUpperCase(), user.email)}
               </p>
             </div>
           </header>
 
           {/* ── Tab Navigation (client-level only) ── */}
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {[
-              { key: 'overview', label: 'Overzicht' },
-              { key: 'assessments', label: 'Assessments' },
-              { key: 'feedback', label: 'Feedback' },
-              { key: 'inbox', label: 'Inbox' },
-              { key: 'contacten', label: 'Contacten' },
-              { key: 'agenda', label: 'Agenda' },
-            ].map(({ key, label }) => (
+            {['overview', 'assessments', 'feedback', 'inbox', 'contacten', 'agenda'].map((key) => (
               <SciFiButton key={key} onClick={() => setTab(key)} active={tab === key}>
-                {label.toUpperCase()}
+                {t(`clientOrb.modal.tabs.${key}`).toUpperCase()}
               </SciFiButton>
             ))}
           </div>
@@ -272,29 +269,29 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
               {deleteStep === 1 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <span style={{ color: '#fca5a5', fontSize: 'max(9px, 0.48vw)', fontFamily: FONT }}>
-                    ⚠ Dit verwijdert je account én alle bijbehorende assessments permanent. Weet je het zeker?
+                    {t('clientOrb.modal.deleteConfirm')}
                   </span>
                   <SciFiButton
                     onClick={() => setDeleteStep(2)}
                     variant="danger" size="xs" padding="0.25rem 0.7rem" fontSize="max(9px, 0.46vw)">
-                    Ja, doorgaan
+                    {t('clientOrb.modal.deleteProceed')}
                   </SciFiButton>
                   <SciFiButton
                     onClick={() => { setDeleteStep(0); setDeleteError(''); }}
                     size="xs" padding="0.25rem 0.7rem" fontSize="max(9px, 0.46vw)">
-                    Annuleren
+                    {t('clientOrb.modal.cancel')}
                   </SciFiButton>
                 </div>
               )}
               {deleteStep === 2 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                   <span style={{ color: '#fca5a5', fontSize: 'max(9px, 0.48vw)', fontFamily: FONT }}>
-                    Typ <strong>VERWIJDER</strong> om te bevestigen:
+                    {tFunc('clientOrb.modal.typeToConfirm')(<strong key="w">{t('clientOrb.deleteWord')}</strong>)}
                   </span>
                   <input
                     value={deleteInput}
                     onChange={(e) => setDeleteInput(e.target.value)}
-                    placeholder="VERWIJDER"
+                    placeholder={t('clientOrb.deleteWord')}
                     style={{
                       background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(239,68,68,0.4)',
                       color: '#fca5a5', fontFamily: FONT, fontSize: 'max(9px, 0.48vw)',
@@ -305,12 +302,12 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
                     onClick={handleDeleteAccount}
                     disabled={deleteLoading}
                     variant="danger" size="xs" padding="0.25rem 0.7rem" fontSize="max(9px, 0.46vw)">
-                    {deleteLoading ? 'Bezig...' : 'Account verwijderen'}
+                    {deleteLoading ? t('clientOrb.modal.deleting') : t('clientOrb.modal.deleteAccount')}
                   </SciFiButton>
                   <SciFiButton
                     onClick={() => { setDeleteStep(0); setDeleteInput(''); setDeleteError(''); }}
                     size="xs" padding="0.25rem 0.7rem" fontSize="max(9px, 0.46vw)">
-                    Annuleren
+                    {t('clientOrb.modal.cancel')}
                   </SciFiButton>
                   {deleteError && <span style={{ color: '#f87171', fontSize: 'max(8px, 0.44vw)', fontFamily: FONT }}>{deleteError}</span>}
                 </div>
@@ -332,11 +329,11 @@ const ClientProfileModal = memo(({ user, onLogout, onClose }) => {
               }}
               onMouseEnter={(e) => { e.target.style.color = '#fca5a5'; }}
               onMouseLeave={(e) => { e.target.style.color = 'rgba(239, 68, 68, 0.4)'; }}>
-              Account verwijderen
+              {t('clientOrb.modal.deleteAccount')}
             </button>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <SciFiButton onClick={onClose} size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">← Terug</SciFiButton>
-              <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">Uitloggen</SciFiButton>
+              <SciFiButton onClick={onClose} size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">{t('clientOrb.modal.back')}</SciFiButton>
+              <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">{t('clientOrb.modal.logout')}</SciFiButton>
             </div>
           </div>
         </div>
@@ -354,6 +351,8 @@ export default ClientProfileModal;
 // Client Overview Tab — full-width profile, 2-col row, 4-stat footer
 // ═══════════════════════════════════════════════════════════
 const ClientOverviewTab = memo(({ user }) => {
+  const { t, language } = useLanguage();
+  const locale = language === 'en' ? 'en-GB' : 'nl-NL';
   const [history, setHistory] = useState(null);
   const [error, setError] = useState('');
 
@@ -394,19 +393,22 @@ const ClientOverviewTab = memo(({ user }) => {
 
   /* Derive stats from history */
   const totalAssessments = history.length;
-  const latestArchetype = history.length > 0 ? (history[0].extendedArchetypeName || history[0].archetypeKey || '—') : '—';
+  const latestArchetype = history.length > 0 ? (extendedNameFor(history[0], language) || history[0].archetypeKey || '—') : '—';
   const avgHarmony = history.length > 0
     ? Math.round(history.reduce((sum, a) => sum + (a.harmonyScore || 0), 0) / history.length)
     : 0;
 
-  /* Resolve archetype portrait from latest assessment */
+  /* Resolve archetype portrait from latest assessment (132-matrix: prefer the
+     exact support archetype; older records only stored the support group) */
   const latest = history.length > 0 ? history[0] : null;
-  const archetypeImg = latest ? getArchetypeImage(latest.archetypeKey, latest.supportGroup) : null;
+  const archetypeImg = latest
+    ? getArchetypeImage(latest.archetypeKey, latest.supportArchetype || latest.supportGroup)
+    : null;
 
   return (
     <>
       {/* ── Row 1: Full-width Profile Card ── */}
-      <DashboardCard title="Identiteitsmatrix" color="gold">
+      <DashboardCard title={t('clientOrb.modal.identityMatrix')} color="gold">
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
           {/* Archetype portrait */}
           <div style={{
@@ -438,7 +440,7 @@ const ClientOverviewTab = memo(({ user }) => {
                   {user.displayName || '—'}
                 </div>
                 <div style={{ fontSize: 'max(9px, 0.45vw)', color: tc.dimText, textTransform: 'uppercase', marginTop: '0.15rem' }}>
-                  {latestArchetype !== '—' ? latestArchetype : 'Geen archetype'}
+                  {latestArchetype !== '—' ? latestArchetype : t('clientOrb.modal.noArchetype')}
                 </div>
               </div>
               <div style={{
@@ -448,17 +450,17 @@ const ClientOverviewTab = memo(({ user }) => {
                 color: '#4ade80', fontSize: 'max(9px, 0.45vw)', fontWeight: 'bold',
                 textTransform: 'uppercase', letterSpacing: '0.1em',
               }}>
-                ACTIEF
+                {t('clientOrb.modal.activeBadge')}
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.4rem 1.5rem', marginTop: '0.3rem' }}>
               {[
-                ['Gebruiker', user.displayName || '—'],
-                ['E-mail', user.email],
-                ['Toegangsniveau', (user.role || 'client').toUpperCase()],
-                ['Assessments', String(totalAssessments)],
-                ['Archetype', latestArchetype],
-                ['Harmonie', avgHarmony > 0 ? `${avgHarmony}%` : '—'],
+                [t('clientOrb.modal.fieldUser'), user.displayName || '—'],
+                [t('clientOrb.modal.fieldEmail'), user.email],
+                [t('clientOrb.modal.fieldAccessLevel'), (user.role || 'client').toUpperCase()],
+                [t('clientOrb.modal.fieldAssessments'), String(totalAssessments)],
+                [t('clientOrb.modal.fieldArchetype'), latestArchetype],
+                [t('clientOrb.modal.fieldHarmony'), avgHarmony > 0 ? `${avgHarmony}%` : '—'],
               ].map(([label, value]) => (
                 <div key={label} style={{
                   display: 'flex', justifyContent: 'space-between',
@@ -478,14 +480,14 @@ const ClientOverviewTab = memo(({ user }) => {
         display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem',
       }}>
         {/* Card 2: Persoonlijke Notities (purple) */}
-        <DashboardCard title="Persoonlijke Notities" color="purple">
+        <DashboardCard title={t('clientOrb.modal.personalNotes')} color="purple">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <div style={{ display: 'flex', gap: '0.4rem' }}>
               <input
                 value={noteInput}
                 onChange={(e) => setNoteInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') addNote(); }}
-                placeholder="Notitie toevoegen..."
+                placeholder={t('clientOrb.modal.notePlaceholder')}
                 style={{
                   flex: 1, padding: '0.4rem 0.6rem',
                   backgroundColor: 'rgba(0,0,0,0.4)',
@@ -502,7 +504,7 @@ const ClientOverviewTab = memo(({ user }) => {
             </div>
             {notesSaved && (
               <div style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase' }}>
-                ✓ Opgeslagen
+                {t('clientOrb.modal.noteSaved')}
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '220px', overflowY: 'auto' }}>
@@ -517,7 +519,7 @@ const ClientOverviewTab = memo(({ user }) => {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 'max(10px, 0.5vw)', wordBreak: 'break-word' }}>{n.text}</div>
                     <div style={{ fontSize: 'max(7px, 0.35vw)', color: pc.dimText, marginTop: '0.2rem' }}>
-                      {new Date(n.ts).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(n.ts).toLocaleString(locale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                   <button onClick={() => removeNote(n.id)} style={{
@@ -531,7 +533,7 @@ const ClientOverviewTab = memo(({ user }) => {
                 </div>
               )) : (
                 <div style={{ textAlign: 'center', color: pc.dimText, padding: '1.5rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-                  Geen notities
+                  {t('clientOrb.modal.noNotes')}
                 </div>
               )}
             </div>
@@ -539,7 +541,7 @@ const ClientOverviewTab = memo(({ user }) => {
         </DashboardCard>
 
         {/* Card 3: Recente Assessments (gold) */}
-        <DashboardCard title="Recente Assessments" color="gold">
+        <DashboardCard title={t('clientOrb.modal.recentAssessments')} color="gold">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
             {history.length > 0 ? history.slice(0, 8).map((a) => (
               <div key={a._id} style={{
@@ -549,7 +551,7 @@ const ClientOverviewTab = memo(({ user }) => {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.2rem' }}>
                   <span style={{ fontWeight: 'bold', fontSize: 'max(10px, 0.5vw)' }}>
-                    {a.extendedArchetypeName || a.archetypeKey}
+                    {extendedNameFor(a, language) || a.archetypeKey}
                   </span>
                   <span style={{
                     fontSize: 'max(8px, 0.4vw)', padding: '0.1rem 0.3rem', borderRadius: '0.15rem',
@@ -570,12 +572,12 @@ const ClientOverviewTab = memo(({ user }) => {
                   }} />
                 </div>
                 <div style={{ fontSize: 'max(8px, 0.42vw)', color: tc.dimText }}>
-                  {new Date(a.createdAt).toLocaleDateString('nl-NL')}
+                  {new Date(a.createdAt).toLocaleDateString(locale)}
                 </div>
               </div>
             )) : (
               <div style={{ textAlign: 'center', color: tc.dimText, padding: '1.5rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-                Geen assessments gevonden
+                {t('clientOrb.modal.noAssessmentsFound')}
               </div>
             )}
           </div>
@@ -587,10 +589,10 @@ const ClientOverviewTab = memo(({ user }) => {
         display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.8rem',
       }}>
         {[
-          { label: 'Assessments', value: totalAssessments },
-          { label: 'Laatste Archetype', value: latestArchetype, small: true },
-          { label: 'Gem. Harmonie', value: `${avgHarmony}%` },
-          { label: 'Account', value: 'ACTIEF', color: '#4ade80' },
+          { label: t('clientOrb.modal.fieldAssessments'), value: totalAssessments },
+          { label: t('clientOrb.modal.statLastArchetype'), value: latestArchetype, small: true },
+          { label: t('clientOrb.modal.statAvgHarmony'), value: `${avgHarmony}%` },
+          { label: t('clientOrb.modal.statAccount'), value: t('clientOrb.modal.activeBadge'), color: '#4ade80' },
         ].map((stat, i) => (
           <DashboardCard key={i} color="gold" style={{ padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ overflow: 'hidden' }}>
@@ -614,6 +616,8 @@ const ClientOverviewTab = memo(({ user }) => {
 // Client Assessments Tab — history list with detail view + PDF
 // ═══════════════════════════════════════════════════════════
 const ClientAssessmentsTab = memo(() => {
+  const { t, tFunc, language } = useLanguage();
+  const locale = language === 'en' ? 'en-GB' : 'nl-NL';
   const [history, setHistory] = useState(null);
   const [error, setError] = useState('');
   const [detail, setDetail] = useState(null);
@@ -647,29 +651,29 @@ const ClientAssessmentsTab = memo(() => {
   if (detail) {
     const d = detail;
     return (
-      <DashboardCard title="Assessment Detail" color="gold">
+      <DashboardCard title={t('clientOrb.modal.assessmentDetail')} color="gold">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontSize: 'max(14px, 0.75vw)', fontWeight: 'bold' }}>
-              {d.extendedArchetypeName || d.archetypeKey}
+              {extendedNameFor(d, language) || d.archetypeKey}
             </div>
-            <SciFiButton onClick={() => setDetail(null)}>← Terug</SciFiButton>
+            <SciFiButton onClick={() => setDetail(null)}>{t('clientOrb.modal.back')}</SciFiButton>
           </div>
 
           {/* Summary */}
           <div style={{ fontSize: 'max(10px, 0.5vw)', opacity: 0.5, lineHeight: 1.6 }}>
-            <div>Archetype: {d.archetypeKey} · Support Group: {d.supportGroup || '—'}</div>
-            {d.harmonyScore != null && <div>Harmony Score: {d.harmonyScore}%</div>}
-            {d.consciousnessLevel && <div>Bewustzijnsniveau: {d.consciousnessLevel}</div>}
-            {d.overallShadow && <div>Schaduw: {d.overallShadow}</div>}
-            <div>Datum: {new Date(d.createdAt).toLocaleString('nl-NL')}</div>
+            <div>{tFunc('clientOrb.modal.summaryArchetype')(d.archetypeKey, d.supportGroup || '—')}</div>
+            {d.harmonyScore != null && <div>{tFunc('clientOrb.modal.summaryHarmony')(d.harmonyScore)}</div>}
+            {d.consciousnessLevel && <div>{tFunc('clientOrb.modal.summaryConsciousness')(d.consciousnessLevel)}</div>}
+            {d.overallShadow && <div>{tFunc('clientOrb.modal.summaryShadow')(d.overallShadow)}</div>}
+            <div>{tFunc('clientOrb.modal.summaryDate')(new Date(d.createdAt).toLocaleString(locale))}</div>
           </div>
 
           {/* OCEAN Scores */}
           {d.oceanScores && (
             <div>
               <div style={{ fontSize: 'max(10px, 0.5vw)', fontWeight: 'bold', opacity: 0.6, marginBottom: '0.3rem', textTransform: 'uppercase' }}>
-                OCEAN Scores
+                {t('clientOrb.modal.oceanScores')}
               </div>
               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                 {Object.entries(d.oceanScores).map(([key, val]) => (
@@ -688,7 +692,7 @@ const ClientAssessmentsTab = memo(() => {
           {d.subjectResults && d.subjectResults.length > 0 && (
             <div>
               <div style={{ fontSize: 'max(10px, 0.5vw)', fontWeight: 'bold', opacity: 0.6, marginBottom: '0.3rem', textTransform: 'uppercase' }}>
-                Laag Resultaten
+                {t('clientOrb.modal.layerResults')}
               </div>
               {d.subjectResults.map((sr) => (
                 <div key={sr.subjectId || sr.subjectName} style={{
@@ -721,7 +725,7 @@ const ClientAssessmentsTab = memo(() => {
           {d.analysis && (
             <div>
               <div style={{ fontSize: 'max(10px, 0.5vw)', fontWeight: 'bold', opacity: 0.6, marginBottom: '0.3rem', textTransform: 'uppercase' }}>
-                AI Analyse
+                {t('clientOrb.modal.aiAnalysis')}
               </div>
               <div style={{
                 padding: '0.5rem', borderRadius: '0.2rem',
@@ -736,7 +740,7 @@ const ClientAssessmentsTab = memo(() => {
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.3rem' }}>
-            <SciFiButton onClick={() => setDetail(null)}>Terug</SciFiButton>
+            <SciFiButton onClick={() => setDetail(null)}>{t('clientOrb.modal.backPlain')}</SciFiButton>
           </div>
         </div>
       </DashboardCard>
@@ -745,11 +749,11 @@ const ClientAssessmentsTab = memo(() => {
 
   /* ── History list ── */
   return (
-    <DashboardCard title="Assessment Geschiedenis" color="gold">
+    <DashboardCard title={t('clientOrb.modal.assessmentHistory')} color="gold">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
         {history.length === 0 ? (
           <div style={{ textAlign: 'center', color: tc.dimText, padding: '2rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-            Geen assessments gevonden
+            {t('clientOrb.modal.noAssessmentsFound')}
           </div>
         ) : (
           history.map((a) => (
@@ -764,9 +768,9 @@ const ClientAssessmentsTab = memo(() => {
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
               <div>
-                <div style={{ fontWeight: 'bold' }}>{a.extendedArchetypeName || a.archetypeKey}</div>
+                <div style={{ fontWeight: 'bold' }}>{extendedNameFor(a, language) || a.archetypeKey}</div>
                 <div style={{ opacity: 0.4, fontSize: 'max(8px, 0.42vw)', marginTop: '0.1rem' }}>
-                  {a.aiProvider && `${a.aiProvider} · `}{new Date(a.createdAt).toLocaleDateString('nl-NL')}
+                  {a.aiProvider && `${a.aiProvider} · `}{new Date(a.createdAt).toLocaleDateString(locale)}
                   {a.harmonyScore != null && ` · ${a.harmonyScore}%`}
                 </div>
               </div>
@@ -775,7 +779,7 @@ const ClientAssessmentsTab = memo(() => {
                   onClick={() => viewDetail(a._id)}
                   disabled={loadingDetail}
                   size="sm" padding="0.3rem 0.6rem" fontSize="max(9px, 0.4vw)">
-                  DETAIL
+                  {t('clientOrb.modal.detailButton')}
                 </SciFiButton>
               </div>
             </div>
@@ -792,6 +796,8 @@ const ClientAssessmentsTab = memo(() => {
 // ═══════════════════════════════════════════════════════════
 const CLIENT_FEEDBACK_KEY = 'gfl_admin_feedback'; // writes to same store admin reads
 const ClientFeedbackTab = memo(({ user }) => {
+  const { t, tFunc, language } = useLanguage();
+  const locale = language === 'en' ? 'en-GB' : 'nl-NL';
   const [items, setItems] = useState(() => {
     try { return JSON.parse(localStorage.getItem(CLIENT_FEEDBACK_KEY) || '[]'); } catch { return []; }
   });
@@ -805,7 +811,7 @@ const ClientFeedbackTab = memo(({ user }) => {
     if (!form.bericht.trim()) return;
     const entry = {
       id: Date.now(),
-      naam: user.displayName || 'Client',
+      naam: user.displayName || t('clientOrb.modal.clientFallbackName'),
       email: user.email || '—',
       bericht: form.bericht.trim(),
       type: form.type,
@@ -826,14 +832,14 @@ const ClientFeedbackTab = memo(({ user }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Inquiry form */}
-      <DashboardCard title="Feedback Versturen" color="purple">
+      <DashboardCard title={t('clientOrb.modal.sendFeedback')} color="purple">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.2rem' }}>
             {[
-              { key: 'feedback', label: 'Feedback' },
-              { key: 'review', label: 'Review' },
-              { key: 'vraag', label: 'Vraag' },
-              { key: 'bug', label: 'Bug Report' },
+              { key: 'feedback', label: t('clientOrb.modal.typeFeedback') },
+              { key: 'review', label: t('clientOrb.modal.typeReview') },
+              { key: 'vraag', label: t('clientOrb.modal.typeQuestion') },
+              { key: 'bug', label: t('clientOrb.modal.typeBug') },
             ].map(({ key, label }) => (
               <SciFiButton key={key} onClick={() => setForm({ ...form, type: key })}
                 variant="purple" active={form.type === key}
@@ -845,7 +851,7 @@ const ClientFeedbackTab = memo(({ user }) => {
           <textarea
             value={form.bericht}
             onChange={(e) => setForm({ ...form, bericht: e.target.value })}
-            placeholder="Schrijf je feedback, review of vraag..."
+            placeholder={t('clientOrb.modal.feedbackPlaceholder')}
             rows={3}
             style={{
               padding: '0.4rem 0.6rem',
@@ -861,11 +867,11 @@ const ClientFeedbackTab = memo(({ user }) => {
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <SciFiButton onClick={submit} variant="purple" size="sm" padding="0.35rem 0.8rem" fontSize="max(9px, 0.45vw)">
-              Versturen
+              {t('clientOrb.modal.send')}
             </SciFiButton>
             {saved && (
               <span style={{ fontSize: 'max(8px, 0.4vw)', color: '#4ade80', textTransform: 'uppercase' }}>
-                ✓ Feedback verzonden
+                {t('clientOrb.modal.feedbackSent')}
               </span>
             )}
           </div>
@@ -873,7 +879,7 @@ const ClientFeedbackTab = memo(({ user }) => {
       </DashboardCard>
 
       {/* Reviews / feedback overzicht */}
-      <DashboardCard title={`Reviews & Feedback (${allFeedback.length})`} color="gold">
+      <DashboardCard title={tFunc('clientOrb.modal.reviewsTitle')(allFeedback.length)} color="gold">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           {allFeedback.length > 0 ? allFeedback.map((it) => (
             <div key={it.id} style={{
@@ -890,7 +896,7 @@ const ClientFeedbackTab = memo(({ user }) => {
                       fontSize: 'max(7px, 0.35vw)', padding: '0.05rem 0.25rem', borderRadius: '0.1rem',
                       backgroundColor: 'rgba(188, 19, 254, 0.2)', color: C.purple,
                       textTransform: 'uppercase',
-                    }}>Jij</span>
+                    }}>{t('clientOrb.modal.you')}</span>
                   )}
                   {it.type && (
                     <span style={{
@@ -901,7 +907,7 @@ const ClientFeedbackTab = memo(({ user }) => {
                   )}
                 </div>
                 <span style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText }}>
-                  {new Date(it.ts).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  {new Date(it.ts).toLocaleString(locale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
               <div style={{ fontSize: 'max(9px, 0.45vw)', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
@@ -910,7 +916,7 @@ const ClientFeedbackTab = memo(({ user }) => {
             </div>
           )) : (
             <div style={{ textAlign: 'center', color: tc.dimText, padding: '2rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-              Geen feedback of reviews
+              {t('clientOrb.modal.noFeedback')}
             </div>
           )}
         </div>
@@ -925,6 +931,8 @@ const ClientFeedbackTab = memo(({ user }) => {
 // ═══════════════════════════════════════════════════════════
 const INBOX_KEY = 'gfl_client_inbox';
 const InboxTab = memo(() => {
+  const { t, tFunc, language } = useLanguage();
+  const locale = language === 'en' ? 'en-GB' : 'nl-NL';
   const [messages, setMessages] = useState(() => {
     try { const raw = localStorage.getItem(INBOX_KEY); return raw ? JSON.parse(raw) : []; } catch { return []; }
   });
@@ -945,11 +953,11 @@ const InboxTab = memo(() => {
   const unread = messages.filter((m) => !m.read).length;
 
   return (
-    <DashboardCard title={`Inbox${unread > 0 ? ` (${unread} nieuw)` : ''}`} color="purple">
+    <DashboardCard title={tFunc('clientOrb.modal.inboxTitle')(unread)} color="purple">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
         {messages.length === 0 ? (
           <div style={{ textAlign: 'center', color: pc.dimText, padding: '2rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-            📭 Geen berichten
+            {t('clientOrb.modal.noMessages')}
           </div>
         ) : (
           messages.map((m) => (
@@ -967,20 +975,20 @@ const InboxTab = memo(() => {
                     width: 6, height: 6, borderRadius: '50%', backgroundColor: C.purple, flexShrink: 0,
                   }} />}
                   <span style={{ fontWeight: m.read ? 'normal' : 'bold', fontSize: 'max(10px, 0.5vw)' }}>
-                    {m.subject || 'Bericht'}
+                    {m.subject || t('clientOrb.modal.messageFallback')}
                   </span>
                 </div>
                 <div style={{ fontSize: 'max(9px, 0.45vw)', opacity: 0.6, wordBreak: 'break-word' }}>
                   {m.body || ''}
                 </div>
                 <div style={{ fontSize: 'max(7px, 0.35vw)', color: pc.dimText, marginTop: '0.2rem' }}>
-                  {m.ts ? new Date(m.ts).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
+                  {m.ts ? new Date(m.ts).toLocaleString(locale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
                   {m.from && ` · ${m.from}`}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
                 {!m.read && (
-                  <SciFiButton onClick={() => markRead(m.id)} variant="purple" size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">Gelezen</SciFiButton>
+                  <SciFiButton onClick={() => markRead(m.id)} variant="purple" size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">{t('clientOrb.modal.markRead')}</SciFiButton>
                 )}
                 <SciFiButton onClick={() => deleteMsg(m.id)} variant="danger" size="xs" padding="0.25rem 0.5rem" fontSize="max(8px, 0.4vw)">✕</SciFiButton>
               </div>
@@ -998,6 +1006,7 @@ const InboxTab = memo(() => {
 // ═══════════════════════════════════════════════════════════
 const CONTACTS_KEY = 'gfl_client_contacts';
 const ContactenTab = memo(() => {
+  const { t, tFunc } = useLanguage();
   const [contacts, setContacts] = useState(() => {
     try { const raw = localStorage.getItem(CONTACTS_KEY); return raw ? JSON.parse(raw) : []; } catch { return []; }
   });
@@ -1031,23 +1040,23 @@ const ContactenTab = memo(() => {
   };
 
   return (
-    <DashboardCard title={`Contacten (${contacts.length})`} color="gold">
+    <DashboardCard title={tFunc('clientOrb.modal.contactsTitle')(contacts.length)} color="gold">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
         {/* Add contact button / form */}
         {!showForm ? (
-          <SciFiButton onClick={() => setShowForm(true)} style={{ alignSelf: 'flex-start' }} fontSize="max(9px, 0.45vw)">+ Contact Toevoegen</SciFiButton>
+          <SciFiButton onClick={() => setShowForm(true)} style={{ alignSelf: 'flex-start' }} fontSize="max(9px, 0.45vw)">{t('clientOrb.modal.addContact')}</SciFiButton>
         ) : (
           <div style={{ padding: '0.8rem', border: `1px solid ${tc.rowBorder}`, borderRadius: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <input value={form.naam} onChange={(e) => setForm({ ...form, naam: e.target.value })} placeholder="Naam *" style={inputStyle}
+            <input value={form.naam} onChange={(e) => setForm({ ...form, naam: e.target.value })} placeholder={t('clientOrb.modal.contactNamePlaceholder')} style={inputStyle}
               onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
-            <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="E-mail" style={inputStyle}
+            <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t('clientOrb.modal.contactEmailPlaceholder')} style={inputStyle}
               onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
-            <input value={form.notitie} onChange={(e) => setForm({ ...form, notitie: e.target.value })} placeholder="Notitie" style={inputStyle}
+            <input value={form.notitie} onChange={(e) => setForm({ ...form, notitie: e.target.value })} placeholder={t('clientOrb.modal.notePlaceholderPlain')} style={inputStyle}
               onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
             <div style={{ display: 'flex', gap: '0.4rem' }}>
-              <SciFiButton onClick={addContact} fontSize="max(9px, 0.45vw)">Opslaan</SciFiButton>
+              <SciFiButton onClick={addContact} fontSize="max(9px, 0.45vw)">{t('clientOrb.modal.saveButton')}</SciFiButton>
               <SciFiButton onClick={() => { setShowForm(false); setForm({ naam: '', email: '', notitie: '' }); }}
-                variant="white" fontSize="max(9px, 0.45vw)">Annuleren</SciFiButton>
+                variant="white" fontSize="max(9px, 0.45vw)">{t('clientOrb.modal.cancel')}</SciFiButton>
             </div>
           </div>
         )}
@@ -1056,7 +1065,7 @@ const ContactenTab = memo(() => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '400px', overflowY: 'auto' }}>
           {contacts.length === 0 ? (
             <div style={{ textAlign: 'center', color: tc.dimText, padding: '2rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-              👥 Geen contacten
+              {t('clientOrb.modal.noContacts')}
             </div>
           ) : (
             contacts.map((c) => (
@@ -1098,6 +1107,7 @@ const ContactenTab = memo(() => {
 // ═══════════════════════════════════════════════════════════
 const AGENDA_KEY = 'gfl_client_agenda';
 const AgendaTab = memo(() => {
+  const { t, tFunc } = useLanguage();
   const [events, setEvents] = useState(() => {
     try { const raw = localStorage.getItem(AGENDA_KEY); return raw ? JSON.parse(raw) : []; } catch { return []; }
   });
@@ -1168,14 +1178,14 @@ const AgendaTab = memo(() => {
   );
 
   return (
-    <DashboardCard title={`Agenda (${upcoming.length} aankomend)`} color="gold">
+    <DashboardCard title={tFunc('clientOrb.modal.agendaTitle')(upcoming.length)} color="gold">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
         {/* Add event button / form */}
         {!showForm ? (
-          <SciFiButton onClick={() => setShowForm(true)} style={{ alignSelf: 'flex-start' }} fontSize="max(9px, 0.45vw)">+ Afspraak Toevoegen</SciFiButton>
+          <SciFiButton onClick={() => setShowForm(true)} style={{ alignSelf: 'flex-start' }} fontSize="max(9px, 0.45vw)">{t('clientOrb.modal.addEvent')}</SciFiButton>
         ) : (
           <div style={{ padding: '0.8rem', border: `1px solid ${tc.rowBorder}`, borderRadius: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <input value={form.titel} onChange={(e) => setForm({ ...form, titel: e.target.value })} placeholder="Titel *" style={inputStyle}
+            <input value={form.titel} onChange={(e) => setForm({ ...form, titel: e.target.value })} placeholder={t('clientOrb.modal.eventTitlePlaceholder')} style={inputStyle}
               onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
             <div style={{ display: 'flex', gap: '0.4rem' }}>
               <input type="date" value={form.datum} onChange={(e) => setForm({ ...form, datum: e.target.value })} style={{ ...inputStyle, flex: 1 }}
@@ -1183,12 +1193,12 @@ const AgendaTab = memo(() => {
               <input type="time" value={form.tijd} onChange={(e) => setForm({ ...form, tijd: e.target.value })} style={{ ...inputStyle, flex: 1 }}
                 onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
             </div>
-            <input value={form.notitie} onChange={(e) => setForm({ ...form, notitie: e.target.value })} placeholder="Notitie" style={inputStyle}
+            <input value={form.notitie} onChange={(e) => setForm({ ...form, notitie: e.target.value })} placeholder={t('clientOrb.modal.notePlaceholderPlain')} style={inputStyle}
               onFocus={(e) => { e.target.style.borderColor = C.gold; }} onBlur={(e) => { e.target.style.borderColor = tc.rowBorder; }} />
             <div style={{ display: 'flex', gap: '0.4rem' }}>
-              <SciFiButton onClick={addEvent} fontSize="max(9px, 0.45vw)">Opslaan</SciFiButton>
+              <SciFiButton onClick={addEvent} fontSize="max(9px, 0.45vw)">{t('clientOrb.modal.saveButton')}</SciFiButton>
               <SciFiButton onClick={() => { setShowForm(false); setForm({ titel: '', datum: '', tijd: '', notitie: '' }); }}
-                variant="white" fontSize="max(9px, 0.45vw)">Annuleren</SciFiButton>
+                variant="white" fontSize="max(9px, 0.45vw)">{t('clientOrb.modal.cancel')}</SciFiButton>
             </div>
           </div>
         )}
@@ -1196,7 +1206,7 @@ const AgendaTab = memo(() => {
         {/* Upcoming events */}
         {upcoming.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Aankomend</div>
+            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t('clientOrb.modal.upcoming')}</div>
             {upcoming.map((ev) => renderEvent(ev, false))}
           </div>
         )}
@@ -1204,14 +1214,14 @@ const AgendaTab = memo(() => {
         {/* Past events */}
         {past.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-            <div style={{ fontSize: 'max(8px, 0.4vw)', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Verlopen</div>
+            <div style={{ fontSize: 'max(8px, 0.4vw)', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t('clientOrb.modal.past')}</div>
             {past.map((ev) => renderEvent(ev, true))}
           </div>
         )}
 
         {events.length === 0 && (
           <div style={{ textAlign: 'center', color: tc.dimText, padding: '2rem 0', textTransform: 'uppercase', fontSize: 'max(9px, 0.45vw)' }}>
-            📅 Geen afspraken
+            {t('clientOrb.modal.noEvents')}
           </div>
         )}
       </div>

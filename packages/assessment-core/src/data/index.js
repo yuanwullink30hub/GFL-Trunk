@@ -19,7 +19,7 @@
 export { QUESTION_SCHEMA, getQuestionsForLayer, getAllQuestionsFlat } from './questions';
 
 // Archetypes
-export { ARCHETYPES, ARCHETYPE_KEYS, ARCHETYPE_GROUPS, ARCHETYPE_SCHEMA, getArchetype } from './archetypes';
+export { ARCHETYPES, ARCHETYPE_KEYS, ARCHETYPE_GROUPS, ARCHETYPE_SCHEMA, getArchetype, archetypeField, archetypeGroupField } from './archetypes';
 
 // Layers
 export { LAYERS, getLayer, subjectMetadata } from './layers';
@@ -41,8 +41,11 @@ export {
   ARCHETYPE_NUMBERS,
   EXTENDED_ARCHETYPES,
   EXTENDED_ARCHETYPES_NL,
+  GROUP_TO_ARCHETYPES,
+  resolveExtendedKey,
   getExtendedArchetype,
   getExtendedArchetypeNl,
+  extendedNameFor,
   isComplementaryPair,
   // Line Connection Maps (Triple Network Geometry)
   GREEN_LINE,

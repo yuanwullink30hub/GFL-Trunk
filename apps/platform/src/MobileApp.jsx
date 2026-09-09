@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { getMe, logout } from '@gfl/api-client';
+import { useLanguage } from '@gfl/i18n';
 import { clearClientMode } from './clientMode';
 
 // ============================================================================
@@ -33,6 +34,7 @@ const NebulaBackground = lazyRetry(() => import('./components/NebulaBackground')
 
 // ── Mobile portal: passkey → admin dashboard, or basic client assessment view
 const MobileApp = () => {
+  const { t } = useLanguage();
   const [user, setUser] = React.useState(null);
   const [phase, setPhase] = React.useState('loading'); // 'loading' | 'passkey' | 'dashboard' | 'client'
   const [passkeyValue, setPasskeyValue] = React.useState('');
@@ -71,14 +73,14 @@ const MobileApp = () => {
       const isLocalHost = host === 'localhost' || host === '127.0.0.1';
       const apiBase = (isLocalHost || isPrivateHost)
         ? `http://${host}:8080/api`
-        : 'https://gfl-api.onrender.com/api';
+        : 'https://api.gardenforlife.nl/api';
       const res = await fetch(apiBase + '/beta/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ passkey: key }),
       });
       const data = await res.json();
-      if (!data.valid) { setPasskeyError('Ongeldige passkey'); setVerifying(false); return; }
+      if (!data.valid) { setPasskeyError(t('shell.mobile.invalidPasskey')); setVerifying(false); return; }
       localStorage.setItem('gfl_beta_access', key);
       localStorage.setItem('gfl_beta_access_time', Date.now().toString());
       if (data.adminMode && data.token && data.user) {
@@ -91,14 +93,14 @@ const MobileApp = () => {
         setPhase('client');
       } else {
         // Admin passkey but backend couldn't issue token
-        setPasskeyError('Admin account niet gevonden — neem contact op');
+        setPasskeyError(t('shell.mobile.adminNotFound'));
       }
     } catch (e) {
-      setPasskeyError('Verbindingsfout — probeer opnieuw');
+      setPasskeyError(t('shell.mobile.connectionError'));
     } finally {
       setVerifying(false);
     }
-  }, [passkeyValue]);
+  }, [passkeyValue, t]);
 
   if (phase === 'loading') return nebula;
 
@@ -161,7 +163,7 @@ const MobileApp = () => {
                 fontFamily: "'Figtree', sans-serif",
                 fontSize: 'clamp(0.7rem, 2.6vw, 0.9rem)',
                 letterSpacing: '0.1em',
-              }}>SCHADUW WERK {'/'}{'/'} V.4.9</span>
+              }}>{t('header.versionText')} {'/'}{'/'} V.4.9</span>
             </div>
           </div>
         </div>
@@ -180,21 +182,21 @@ const MobileApp = () => {
     {nebula}
     <div style={{ position: 'fixed', inset: 0, background: 'transparent', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
       <div style={{ width: '85vw', maxWidth: 380, padding: '2rem 1.75rem', background: 'rgba(8,2,12,0.85)', backdropFilter: 'blur(4px)', border: '1px solid rgba(147,51,234,0.3)', borderRadius: 8 }}>
-        <p style={{ color: '#a855f7', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 6px', fontFamily: "'Figtree', sans-serif" }}>Garden For Life</p>
+        <p style={{ color: '#a855f7', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 6px', fontFamily: "'Figtree', sans-serif" }}>{t('shell.mobile.brand')}</p>
         <p style={{ color: '#666', fontSize: 11, margin: '0 0 16px', fontFamily: "'Figtree', sans-serif" }}>
-          Voer je passkey in om toegang te krijgen.
+          {t('shell.mobile.passkeyPrompt')}
         </p>
         <input
           type="text"
           value={passkeyValue}
           onChange={e => setPasskeyValue(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleVerify()}
-          placeholder="Passkey..."
+          placeholder={t('shell.mobile.passkeyPlaceholder')}
           autoComplete="off"
           style={S.input}
         />
         {passkeyError && <p style={{ color: '#f87171', fontSize: 11, margin: '0 0 8px', fontFamily: "'Figtree', sans-serif" }}>{passkeyError}</p>}
-        <button onClick={handleVerify} disabled={verifying} style={S.btn}>{verifying ? '...' : 'Unlock'}</button>
+        <button onClick={handleVerify} disabled={verifying} style={S.btn}>{verifying ? '...' : t('shell.mobile.unlock')}</button>
       </div>
     </div>
     </>

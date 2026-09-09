@@ -10,118 +10,52 @@ const aiIcon = '/images/Import ready/AIicon.PNG';
 const wheelAnatomy = '/images/TNM wheel PNG.png';
 const triangleHardware = '/images/Deltawerken png.png';
 import { SciFiButton } from '@gfl/ui';
-const vulnerabilityOrder = '/images/Nature Nurture png.png';
 const cellsImage = '/images/Model imports/Cells within Cells png.png';
 import OceanManualInputModal from './OceanManualInputModal';
 import ReferencesPanel from './ReferencesPanel';
 
-// Render inline **bold** / *italic* markers from the source-ledger copy as JSX.
-const renderRich = (text) => {
-  const parts = String(text).split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} style={{ color: '#FFFEF0' }}>{part.slice(2, -2)}</strong>;
+/** Render translated copy that carries inline markers.
+ *    \n                -> <br/>
+ *    {b|text}          -> <strong> in accent lilac (#c4b5fd)
+ *    {a|text}          -> <strong> in amber (#fdba74)
+ *    {g:#rrggbb|text}  -> coloured semibold span
+ *    {link:slug|text}  -> clickable policy link (calls onLink(slug))
+ */
+const COPY_MARK = /\{(b|a)\|([^}]*)\}|\{g:(#[0-9a-fA-F]{6})\|([^}]*)\}|\{link:([a-z-]+)\|([^}]*)\}/g;
+const LINK_STYLE = { color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' };
+const renderCopy = (text, onLink) => {
+  const out = [];
+  String(text).split('\n').forEach((line, li) => {
+    if (li > 0) out.push(<br key={`cbr-${li}`} />);
+    let last = 0;
+    let m;
+    COPY_MARK.lastIndex = 0;
+    while ((m = COPY_MARK.exec(line)) !== null) {
+      if (m.index > last) out.push(line.slice(last, m.index));
+      const key = `cm-${li}-${m.index}`;
+      if (m[1]) {
+        out.push(<strong key={key} style={{ color: m[1] === 'a' ? '#fdba74' : '#c4b5fd' }}>{m[2]}</strong>);
+      } else if (m[3]) {
+        out.push(<span key={key} style={{ color: m[3], fontWeight: 600 }}>{m[4]}</span>);
+      } else {
+        const slug = m[5];
+        out.push(
+          <span
+            key={key}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (onLink) onLink(slug); }}
+            style={LINK_STYLE}
+          >
+            {m[6]}
+          </span>
+        );
+      }
+      last = COPY_MARK.lastIndex;
     }
-    if (part.startsWith('*') && part.endsWith('*')) {
-      return <em key={i}>{part.slice(1, -1)}</em>;
-    }
-    return part;
+    if (last < line.length) out.push(line.slice(last));
   });
+  return out;
 };
 
-// ── Referenties card content — Bronnen & Verantwoording (Open Onderzoek) ──
-// "Waarom we dit laten zien" intro paragraphs.
-const REFS_INTRO_PARAGRAPHS = [
-  'De meeste modellen noemen een paar grote namen en laten het daarbij. Wij laten iets anders zien: per bron tonen we niet alleen waar we op bouwen, maar **waar we bewust afwijken, en wat onze eigen claim zou weerleggen.**',
-  'Dat doen we niet om gelijk te krijgen. We bouwen dit in de open, en we weten dat we het op punten mis kunnen hebben. De interessante gesprekken ontstaan juist daar — bij de plekken waar een bron iets *net niet* zegt wat wij nodig hadden, en we een stap hebben gezet die we eerlijk als stap benoemen. Wie daar dieper in wil kijken, vindt hieronder precies waar die stappen zitten.',
-  'Elke bron krijgt vijf velden: wat het onderbouwt, waar wij ervan afwijken en waarom, wat het kruisrelateert of zou falsifiëren, en onze eerlijke inschatting van de zekerheid. Een hoge zekerheid betekent: stevig onderbouwd. Een lagere betekent niet "zwak" — het betekent dat we de gok benoemen in plaats van hem te verbergen.',
-  '**En dit is het belangrijkste om te weten:** een bron met frictie, een omstreden link of een lage zekerheid wordt in het model zélf nooit als vaststaand fundament behandeld. We laten een zwakke schakel zwak — helemaal tot onderin. Hij voedt een voorzichtige, laag-gewogen neiging, nooit een harde claim. Het model bouwt niet bovenop een betwiste bron alsof die bewezen is; het draagt die bron precies zoals het jóuw scores leest: als een waarschijnlijkheid, niet als een verdict. De zekerheid van een lezing wordt begrensd door de zekerheid van de bron eronder — en de omstreden bronnen houden we daarom bewust níét dragend.',
-  'Dat is de symmetrie die het hele model draagt: **we behandelen onze eigen bronnen op exact dezelfde manier als we jouw data lezen** — nooit als een vast gegeven, altijd als een gewogen neiging die herzien kan worden. De frictie is geen fout die de audit blootlegt; de frictie wordt mét opzet als frictie vastgehouden, en nooit stilletjes tot feit gepromoveerd.',
-];
-
-// Cluster A sources — each rendered as a block (a 5-col table won't fit the modal width).
-const REFS_CLUSTER_A = [
-  {
-    name: 'Friston (2010)',
-    cite: 'Free-energy principle / actieve inferentie · Nature Reviews Neuroscience',
-    onderbouwt: 'De hele voorspellende architectuur: het brein minimaliseert verrassing via top-down verwachtingen (priors). Dit is de formele basis voor "archetype = configuratie van priors."',
-    afwijking: 'Het raamwerk is algemeen; de vertaling naar één archetype per cel is **onze constructie, geen meting**. We dragen actieve inferentie als aangenomen substraat — een fundament dat we niet per archetype apart hebben geverifieerd.',
-    kruis: 'Falsifieert als de per-archetype prior-toewijzing geen voorspellende waarde blijkt te hebben. Draagt het hele B-component.',
-    zekerheid: 'Hoog als raamwerk · Middel voor de cel-toepassing',
-  },
-  {
-    name: 'Buzsáki (2019)',
-    cite: 'The Brain from Inside Out · Oxford UP',
-    onderbouwt: 'De omkering: archetypen zijn geen reactieve circuits maar **actieve generatoren** die de wereld op fitness testen. Grondt onze taal "de configuratie neigt zich te uiten als…" — actief, niet reactief.',
-    afwijking: 'We nemen een sterke interpretatieve positie ("inside-out") als uitgangspunt, terwijl het een synthese is, geen enkele meting. We kiezen bewust de kant van het zelf-organiserende brein.',
-    kruis: 'Kruisrelateert met de dynamische-matrix-lezing (priors als actieve generatoren).',
-    zekerheid: 'Middel–Hoog',
-  },
-  {
-    name: 'Menon (2011)',
-    cite: 'Triple Network Model / CEN–DMN-competitie · Trends in Cognitive Sciences',
-    onderbouwt: 'De netwerk-competitiestructuur: CEN houdt orde deels door DMN te onderdrukken; het Salience Network schakelt ertussen. Onderbouwt direct onze zes-groepen-naar-netwerk-mapping (Ruling=CEN, Abstract=DMN, Chaos=SN).',
-    afwijking: 'De schone driedeling is een **vereenvoudiging** — echte netwerkgrenzen lopen vloeiend in elkaar over, niet in scherpe lijnen. We weten dat we de kaart strakker trekken dan het terrein.',
-    kruis: 'Bevestigd door onze eigen Fase-2-bevinding (CEN⊥DMN: Ruler/Judge-dalen = Sage/Artist-pieken).',
-    zekerheid: 'Hoog (fundamenteel, veelvuldig gerepliceerd)',
-  },
-  {
-    name: 'Bassett (2011, 2017)',
-    cite: 'Dynamische netwerk-herconfiguratie · PNAS',
-    onderbouwt: 'Het onderscheid tussen snelle, omkeerbare aanpassing (D2) en tragere structurele verandering (D3) in onze spannings-curve. De snelheid waarmee netwerken loskoppelen en hercombineren onder druk.',
-    afwijking: 'De flexibiliteits-metingen zijn correlationeel; het koppelen ervan aan onze toestandsklassen (D2/D3) is **interpretatie, geen directe afleiding**.',
-    kruis: 'Onderbouwt de D2→D3-overgang in de spannings-curve; specifiek de Chaos-groep (Outlaw/Trickster).',
-    zekerheid: 'Hoog (robuust, gerepliceerd)',
-  },
-  {
-    name: 'Carhart-Harris & Friston (2019)',
-    cite: 'REBUS / het anarchische brein · Pharmacological Reviews',
-    onderbouwt: 'Het mechanisme van schaduw-integratie: onder hoge DMN-activiteit/entropie ontspannen rigide verwachtingen, waardoor er ruimte komt. Geeft de richting voor de schaduw-as.',
-    afwijking: 'Het model is **farmacologisch** gegrond (psychedelica). Het gebruiken als algemeen mechanisme voor schaduw-ontspanning is een analogische uitbreiding — een brug die we slaan, geen meting die we overnemen.',
-    kruis: 'Gekoppeld aan Carhart-Harris (2014, entropisch brein); samen dragen ze de REBUS-richting.',
-    zekerheid: 'Middel–Hoog (model goed onderbouwd; generalisatie is inferentie)',
-  },
-  {
-    name: 'Carhart-Harris (2014)',
-    cite: 'Het entropische brein · Frontiers in Human Neuroscience',
-    onderbouwt: 'Het rigiditeit↔chaos-spectrum: hersentoestanden liggen op een meetbare entropie-as; hoge entropie lost rigide priors op. Anker voor de omgekeerde, entropische dynamiek van de Chaos-groep.',
-    afwijking: 'Entropie-als-flexibiliteit is één specifieke operationalisatie; de koppeling aan archetype-toestanden is interpretatie.',
-    kruis: 'Paart met de entry hierboven (REBUS-richting).',
-    zekerheid: 'Middel–Hoog',
-  },
-  {
-    name: 'Christoff (2016)',
-    cite: 'Ongebonden DMN-incubatie · Nature Reviews Neuroscience',
-    onderbouwt: 'Het DMN bereikt zijn maximale generatieve capaciteit pas wanneer het níét door het CEN wordt ingeperkt. Anker voor de "naar-binnen-spiraal" van de Abstract-groep: generativiteit stijgt naarmate externe inperking daalt.',
-    afwijking: 'De inperkings-dimensies zijn een raamwerk; onze D3-piek-mapping erop is interpretatie.',
-    kruis: 'Onderbouwt de Abstract-groep (Sage/Artist) curve.',
-    zekerheid: 'Middel–Hoog',
-  },
-  {
-    name: 'Buckner (2008)',
-    cite: 'Het default-netwerk / mentale tijdreis · Annals NYAS',
-    onderbouwt: 'Het DMN is sterk actief bij herinneren, toekomst-simulatie en het invoelen van anderen — het constructieve-simulatie-substraat. Grondt de naar-binnen-gerichte functie van de Abstract-groep.',
-    afwijking: '— (directe toepassing; geen materiële afwijking)',
-    kruis: 'Fundamentele DMN-review; consistent over autobiografisch geheugen, vooruitkijken en mentaliseren.',
-    zekerheid: 'Hoog (fundamenteel, veelvuldig gerepliceerd)',
-  },
-  {
-    name: 'Aston-Jones & Cohen (2005)',
-    cite: 'LC-NE faseschakeling · Annual Review of Neuroscience',
-    onderbouwt: 'De verken/benut-afweging als fysiologische regelknop (tonische vs. fasische LC-NE-vuring). Het mechanisme achter de ontdekkingsdrang van de Seeker-groep en hun gebufferde inzakking.',
-    afwijking: '— (een van onze best-gegronde ankers; geen materiële afwijking)',
-    kruis: 'Onderbouwt de Seeker-groep (Innocent/Explorer) en de gebufferde-crash-curve.',
-    zekerheid: 'Hoog (robuuste systeem-neurowetenschap)',
-  },
-  {
-    name: 'DeYoung (2015)',
-    cite: 'Cybernetic Big Five / Openheid–dopamine · Journal of Research in Personality',
-    onderbouwt: 'Koppelt de exploratieve drive aan dopamine-gelinkte hoge Openheid; levert het trait-substraat voor de Openheid-primaire archetypen (Seeker/Abstract).',
-    afwijking: '**Dit is onze zwakste schakel in de fundamentele set, en we benoemen het als zodanig.** De link tussen Openheid en dopamine/plasticiteit is omstreden (zie o.a. Gurven et al. over cross-culturele Big-Five-replicatie). We houden de Openheid-primairen bewust op verlaagde zekerheid.',
-    kruis: 'Het trait→neurotransmitter-verband is het kwetsbaarste punt van het fundament. Falsifieert als Openheid-als-dopamine cross-cultureel niet standhoudt.',
-    zekerheid: 'Middel — bewust verlaagd, openlijk gemarkeerd risico',
-  },
-];
 
 /**
  * AssessmentIntro - Modal shown when entity appears
@@ -135,7 +69,7 @@ const REFS_CLUSTER_A = [
  * - onNavigateToData() - called when user clicks the research button
  */
 const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolicy, uploadedFiles = [], onAddFile, onRemoveFile, onBack = null, backLabel = '' }) => {
-  const { t } = useLanguage();
+  const { t, tArray, tFunc } = useLanguage();
   const fileInputRef = useRef(null);
   const infoIconRef = useRef(null);
   const referentiesRef = useRef(null);
@@ -325,7 +259,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         try { userId = JSON.parse(atob(token.split('.')[1])).sub; } catch {}
       }
       const API_BASE = import.meta.env.VITE_API_URL ||
-        (window.location.hostname === 'localhost' ? 'http://localhost:8080/api' : 'https://gfl-api.onrender.com/api');
+        (window.location.hostname === 'localhost' ? 'http://localhost:8080/api' : 'https://api.gardenforlife.nl/api');
       fetch(`${API_BASE}/admin/sessions/activity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -568,27 +502,21 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     {
       id: 'quick',
       nameKey: 'assessmentIntro.levels.quick.name',
-      name: 'Beginner',
       descKey: 'assessmentIntro.levels.quick.description',
-      description: '',
       questionsPerLayer: 3,
       color: '#22c55e'
     },
     {
       id: 'standard',
       nameKey: 'assessmentIntro.levels.standard.name',
-      name: 'Gevorderd',
       descKey: 'assessmentIntro.levels.standard.description',
-      description: '',
       questionsPerLayer: 6,
       color: '#a855f7'
     },
     {
       id: 'deep',
       nameKey: 'assessmentIntro.levels.deep.name',
-      name: 'Leerling',
       descKey: 'assessmentIntro.levels.deep.description',
-      description: '36 QA - 30min - Vuurproef quickfire',
       questionsPerLayer: 6,
       includeUpload: true,
       color: '#f97316'
@@ -763,14 +691,14 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             <div style={{ position: 'relative', display: 'inline-block' }}>
               <img 
                 src={archetypeHeader} 
-                alt="A+ Archetype Analyse" 
+                alt={t('assessmentIntro.title')} 
                 style={{ maxWidth: s.headerMaxWidth, width: '100%', display: 'block' }}
               />
 
             </div>
 
             <p className="mx-auto leading-relaxed" style={{ fontSize: s.pyramidLabelFont, marginTop: s.descMt, whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'center', color: '#FFFEF0' }}>
-              De meest complete en complexe analyse van de relatie tussen jouw essentie en intelligentie.
+              {t('assessmentIntroExtra.headline')}
             </p>
           </div>
 
@@ -821,7 +749,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 active={showInfo}
                 fullWidth
               >
-                Lees mij!
+                {t('assessmentIntroExtra.readMe')}
               </SciFiButton>
               </div>
 
@@ -882,7 +810,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       color: '#a78bfa', fontSize: '0.62rem', fontWeight: 700, fontStyle: 'italic',
                       cursor: 'pointer', lineHeight: 1,
                     }}
-                    title="Info"
+                    title={t('assessmentIntroExtra.infoTitle')}
                   >
                     i
                     {showOceanInfo && (
@@ -916,7 +844,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                           fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
                           flexShrink: 0, lineHeight: 1,
                         }}
-                        title="Upload informatie"
+                        title={t('assessmentIntroExtra.uploadInfoTitle')}
                       >
                         i
                       </span>
@@ -931,8 +859,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                           boxShadow: '0 4px 20px rgba(0,0,0,0.4)', zIndex: 50,
                           color: 'rgba(148,163,184,0.9)', fontSize: '0.7rem', lineHeight: 1.6,
                         }}>
-                          <span style={{ color: '#fb923c', fontWeight: 600 }}>Let op: </span>
-                          De volledige tekst van dit bestand wordt meegestuurd naar het Claude AI-model (Anthropic, VS). Als dit bestand persoonlijke informatie bevat — zoals uw naam — bereikt die informatie de servers van Anthropic. Garden For Life is niet verantwoordelijk voor persoonsgegevens die u in geüploade bestanden opneemt.
+                          <span style={{ color: '#fb923c', fontWeight: 600 }}>{t('assessmentIntroExtra.uploadWarningLabel')}</span>
+                          {t('assessmentIntroExtra.uploadWarningText')}
                         </div>
                       )}
                     </div>
@@ -952,7 +880,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                           onClick={(e) => { e.stopPropagation(); onRemoveFile(0); }}
                           className="text-slate-500 hover:text-red-400 transition-colors"
                           style={{ fontSize: '0.65rem', lineHeight: 1, marginRight: '0.25rem', flexShrink: 0, cursor: 'pointer' }}
-                          title="Remove file"
+                          title={t('assessmentIntroExtra.removeFileTitle')}
                         >
                           ✕
                         </span>
@@ -969,7 +897,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   {/* Divider label */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '10rem' }}>
                     <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
-                    <span style={{ color: 'rgba(148,163,184,0.35)', fontSize: '0.58rem', fontFamily: 'monospace' }}>of</span>
+                    <span style={{ color: 'rgba(148,163,184,0.35)', fontSize: '0.58rem', fontFamily: 'monospace' }}>{t('assessmentIntroExtra.orDivider')}</span>
                     <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
                   </div>
 
@@ -984,7 +912,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                     fullWidth
                     style={{ width: '10rem', fontSize: '0.65rem' }}
                   >
-                    {oceanManualScores ? '✓ Scores opgeslagen' : 'Handmatig'}
+                    {oceanManualScores ? t('assessmentIntroExtra.scoresSaved') : t('assessmentIntroExtra.manualScores')}
                   </SciFiButton>
                   </div>
                 </>
@@ -1125,7 +1053,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                         color: '#f97316', fontSize: '0.68rem', fontWeight: 700, fontStyle: 'italic',
                         cursor: 'pointer', lineHeight: 1,
                       }}
-                      title="Info"
+                      title={t('assessmentIntroExtra.infoTitle')}
                     >
                       i
                       {infoLevel === level.id && (
@@ -1142,8 +1070,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                             cursor: 'default',
                           }}
                         >
-                          Level keuze is irrelevant voor jouw account.<br />
-                          Deze keuze helpt ons gepaste vragen te stellen naar jouw verhouding.
+                          {renderCopy(t('assessmentIntroExtra.levelInfo'))}
                         </div>
                       )}
                     </span>
@@ -1160,7 +1087,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                     >
                       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', width: '100%' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: s.levelTitleFont }}>
-                          {level.name || t(level.nameKey)}
+                          {t(level.nameKey)}
                           {isLocked && (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -1168,7 +1095,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                           )}
                         </span>
                         <span style={{ color: '#94a3b8', fontSize: s.levelDescFont, textTransform: 'none', letterSpacing: 'normal', fontWeight: 400, textAlign: 'center' }}>
-                          {level.description || t(level.descKey)}
+                          {t(level.descKey)}
                         </span>
                       </span>
                     </SciFiButton>
@@ -1225,7 +1152,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 letterSpacing: '0.05em',
                 textAlign: 'center',
               }}>
-                Je verlaat de test, weet je het zeker?
+                {t('assessmentIntroExtra.leaveConfirm.question')}
               </p>
               <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center' }}>
                 <SciFiButton
@@ -1234,7 +1161,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   rgb="100, 116, 139"
                   size="sm"
                 >
-                  Terug
+                  {t('assessmentIntroExtra.leaveConfirm.back')}
                 </SciFiButton>
                 <SciFiButton
                   onClick={() => { closeLeaveConfirm(); setTimeout(() => { onNavigateToData && onNavigateToData(); }, 360); }}
@@ -1242,7 +1169,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   rgb="34, 197, 94"
                   size="sm"
                 >
-                  Door
+                  {t('assessmentIntroExtra.leaveConfirm.proceed')}
                 </SciFiButton>
               </div>
             </div>
@@ -1285,20 +1212,20 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 fontSize: s.levelTitleFont, color: '#a855f7', marginBottom: '0.2rem',
                 textShadow: '0 0 10px rgba(168,85,247,0.35)',
               }}>
-                Toestemming & Transparantie
+                {t('assessmentIntroExtra.consent.title')}
               </h2>
               <p className="text-center" style={{ color: 'rgba(148,163,184,0.5)', fontSize: s.featureDescFont, marginBottom: '1.5rem', fontStyle: 'italic' }}>
-                Lees dit door voordat je begint — je hebt het recht dit te weten
+                {t('assessmentIntroExtra.consent.subtitle')}
               </p>
 
               {/* Pre-text: Wat we doen */}
               <div style={{ borderLeft: '2px solid rgba(168,85,247,0.4)', paddingLeft: '1rem', marginBottom: '1.5rem' }}>
-                <p style={{ color: '#c4b5fd', fontSize: s.featureTitleFont, fontWeight: 600, marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Wat we doen</p>
+                <p style={{ color: '#c4b5fd', fontSize: s.featureTitleFont, fontWeight: 600, marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('assessmentIntroExtra.consent.whatWeDoLabel')}</p>
                 <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, marginBottom: '0.6rem' }}>
-                  Je antwoorden worden verwerkt door het AI-model <strong style={{ color: '#c4b5fd' }}>Claude van Anthropic</strong> om een persoonlijk zelfreflectierapport te genereren op basis van het Garden For Life Deltawerken Model. Dit rapport is uitsluitend bedoeld als persoonlijk zelfinzichtinstrument — <strong style={{ color: '#c4b5fd' }}>geen klinische diagnose, geen medisch oordeel</strong>.
+                  {renderCopy(t('assessmentIntroExtra.consent.whatWeDoP1'))}
                 </p>
                 <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7 }}>
-                  Wij bewaren het volledig rapport tijdelijk op beveiligde servers in <strong style={{ color: '#c4b5fd' }}>Frankfurt</strong>, uitsluitend ten behoeve van betaevaluatie. De beheerder van Garden For Life heeft toegang via een beveiligd beheerderspaneel. Dit wordt geregistreerd in een auditlog.
+                  {renderCopy(t('assessmentIntroExtra.consent.whatWeDoP2'))}
                 </p>
               </div>
 
@@ -1311,7 +1238,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   style={{ marginTop: '0.15rem', accentColor: '#a855f7', width: '1rem', height: '1rem', flexShrink: 0, cursor: 'pointer' }}
                 />
                 <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureDescFont, lineHeight: 1.6 }}>
-                  Ik heb de <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingPolicySlug('algemene-voorwaarden'); }} style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' }}>Algemene Voorwaarden</span> en het <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingPolicySlug('privacybeleid'); }} style={{ color: '#c4b5fd', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' }}>Privacybeleid</span> gelezen en ga hiermee akkoord. Ik begrijp dat Garden For Life mijn e-mailadres en accountgegevens verwerkt om de dienst te leveren.
+                  {renderCopy(t('assessmentIntroExtra.consent.checkboxTerms'), setPendingPolicySlug)}
                 </span>
               </label>
 
@@ -1324,25 +1251,13 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   style={{ marginTop: '0.15rem', accentColor: '#a855f7', width: '1rem', height: '1rem', flexShrink: 0, cursor: 'pointer' }}
                 />
                 <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureDescFont, lineHeight: 1.6 }}>
-                  Ik geef uitdrukkelijke toestemming voor de verwerking van mijn <strong style={{ color: '#c4b5fd' }}>persoonlijkheidsprofieldata</strong> zoals bedoeld in artikel 9 van de AVG. Ik begrijp dat:
+                  {renderCopy(t('assessmentIntroExtra.consent.checkboxArt9'))}
                 </span>
               </label>
               <ul style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, paddingLeft: '2.75rem', listStyle: 'none', marginBottom: '1.5rem' }}>
-                {[
-                  'Mijn antwoorden en het berekende scoreprofiel worden opgeslagen op beveiligde servers in Frankfurt en verwerkt door het Claude AI-model (Anthropic) voor rapportgeneratie',
-                  'Het AI-model ontvangt mijn antwoorden, scores en profieldata — maar geen naam, e-mailadres of andere directe identificatoren vanuit het platform',
-                  'Als ik een bestand upload (bijv. een OCEAN-rapport als PDF), wordt de volledige tekst van dat bestand meegestuurd naar Claude. Ik ben zelf verantwoordelijk voor welke informatie ik in geüploade bestanden opneem. Garden For Life is niet verantwoordelijk voor persoonsgegevens die ik daarin opneem.',
-                  <>Dit profiel psychologische kenmerken bevat zoals <strong style={{ color: '#c4b5fd' }}>archetypepatronen</strong>, <strong style={{ color: '#c4b5fd' }}>gedragstendensen</strong> en <strong style={{ color: '#c4b5fd' }}>persoonlijkheidsoriëntaties</strong></>,
-                  'Het volledige rapport wordt tijdelijk opgeslagen uitsluitend ten behoeve van de betaevaluatie — niet voor commerciële doeleinden',
-                  'De beheerder van Garden For Life toegang heeft tot opgeslagen rapporten en assessmentdata uitsluitend ten behoeve van betaevaluatie en systeemverbetering — dit wordt bijgehouden in een beveiligd auditlog',
-                  <>Alle rapportdata wordt uiterlijk op <strong style={{ color: '#fdba74' }}>27-09-2026</strong> permanent en onherroepelijk verwijderd</>,
-                  'Mijn laatste assessmentsessies worden lokaal opgeslagen op mijn eigen apparaat uitsluitend voor mijn eigen raadpleging — Garden For Life heeft geen toegang tot deze lokale opslag',
-                  'Ik het recht heb mijn toestemming op elk moment in te trekken via yuanwullink30@gfl.community',
-                  'Intrekking betekent dat mijn volledige profieldata binnen 30 dagen wordt verwijderd',
-                  'Dit rapport geen klinische diagnose is en professionele psychologische of medische begeleiding niet vervangt',
-                ].map((item, i) => (
+                {tArray('assessmentIntroExtra.consent.bullets').map((item, i) => (
                   <li key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.2rem' }}>
-                    <span style={{ color: '#a855f7', flexShrink: 0 }}>·</span><span>{item}</span>
+                    <span style={{ color: '#a855f7', flexShrink: 0 }}>·</span><span>{renderCopy(item)}</span>
                   </li>
                 ))}
               </ul>
@@ -1354,7 +1269,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   variant="white"
                   size="sm"
                 >
-                  Annuleren
+                  {t('assessmentIntroExtra.consent.cancel')}
                 </SciFiButton>
                 <SciFiButton
                   onClick={() => { if (consentChecked && consentAiPromptChecked) { const lvl = consentLevelId; closeConsent(); logConsent(lvl); onStart(lvl); } }}
@@ -1363,7 +1278,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   size="sm"
                   active={consentChecked && consentAiPromptChecked}
                 >
-                  Ik ga akkoord — Start
+                  {t('assessmentIntroExtra.consent.agree')}
                 </SciFiButton>
               </div>
             </div>
@@ -1390,7 +1305,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   transformOrigin: 'center center',
                 }}>
                   <p style={{ color: 'rgba(148,163,184,0.9)', fontSize: 'max(10px, 0.5vw)', marginBottom: '0.8rem', lineHeight: 1.5 }}>
-                    Je verlaat deze pagina
+                    {t('assessmentIntroExtra.policyRedirect.text')}
                   </p>
                   <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                     <SciFiButton
@@ -1400,7 +1315,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       padding="0.25rem 0.7rem"
                       fontSize="max(8px, 0.4vw)"
                     >
-                      Terug
+                      {t('assessmentIntroExtra.policyRedirect.back')}
                     </SciFiButton>
                     <SciFiButton
                       onClick={() => {
@@ -1416,7 +1331,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       padding="0.25rem 0.7rem"
                       fontSize="max(8px, 0.4vw)"
                     >
-                      Doorgaan
+                      {t('assessmentIntroExtra.policyRedirect.proceed')}
                     </SciFiButton>
                   </div>
                 </div>
@@ -1437,29 +1352,30 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               // Clear any uploaded PDF file and inject scores as a synthetic text file
               if (uploadedFiles.length > 0 && onRemoveFile) onRemoveFile(0);
               if (onAddFile) {
+                const tf = (k) => tFunc(`assessmentIntroExtra.oceanFile.${k}`);
                 const lines = [
-                  '=== OCEAN Persoonlijkheidsscores (handmatig ingevoerd) ===',
+                  t('assessmentIntroExtra.oceanFile.header'),
                   '',
-                  `A — Meegaandheid (Agreeableness): ${scores.A}/100`,
-                  scores.A_compassie !== null   ? `   ↳ Compassie: ${scores.A_compassie}/100`   : null,
-                  scores.A_beleefdheid !== null ? `   ↳ Beleefdheid: ${scores.A_beleefdheid}/100` : null,
-                  `C — Consciëntieusheid (Conscientiousness): ${scores.C}/100`,
-                  scores.C_ijver !== null        ? `   ↳ IJver: ${scores.C_ijver}/100`            : null,
-                  scores.C_ordelijkheid !== null ? `   ↳ Ordelijkheid: ${scores.C_ordelijkheid}/100` : null,
-                  `E — Extraversie (Extraversion): ${scores.E}/100`,
-                  scores.E_enthousiasme !== null  ? `   ↳ Enthousiasme: ${scores.E_enthousiasme}/100`  : null,
-                  scores.E_assertiviteit !== null ? `   ↳ Assertiviteit: ${scores.E_assertiviteit}/100` : null,
-                  `N — Neuroticisme (Neuroticism): ${scores.N}/100`,
-                  scores.N_terughoudendheid !== null ? `   ↳ Terughoudendheid: ${scores.N_terughoudendheid}/100` : null,
-                  scores.N_volatiliteit !== null    ? `   ↳ Volatiliteit: ${scores.N_volatiliteit}/100`       : null,
-                  `O — Openheid voor Ervaringen (Openness): ${scores.O}/100`,
-                  scores.O_intellect !== null ? `   ↳ Intellect: ${scores.O_intellect}/100` : null,
-                  scores.O_esthetiek !== null ? `   ↳ Esthetiek: ${scores.O_esthetiek}/100` : null,
-                  scores.H !== null ? `H — Eerlijkheid-Nederigheid (Honesty-Humility): ${scores.H}/100` : null,
+                  tf('agreeableness')(scores.A),
+                  scores.A_compassie !== null   ? tf('compassion')(scores.A_compassie)   : null,
+                  scores.A_beleefdheid !== null ? tf('politeness')(scores.A_beleefdheid) : null,
+                  tf('conscientiousness')(scores.C),
+                  scores.C_ijver !== null        ? tf('industriousness')(scores.C_ijver)      : null,
+                  scores.C_ordelijkheid !== null ? tf('orderliness')(scores.C_ordelijkheid)   : null,
+                  tf('extraversion')(scores.E),
+                  scores.E_enthousiasme !== null  ? tf('enthusiasm')(scores.E_enthousiasme)   : null,
+                  scores.E_assertiviteit !== null ? tf('assertiveness')(scores.E_assertiviteit) : null,
+                  tf('neuroticism')(scores.N),
+                  scores.N_terughoudendheid !== null ? tf('withdrawal')(scores.N_terughoudendheid) : null,
+                  scores.N_volatiliteit !== null    ? tf('volatility')(scores.N_volatiliteit)      : null,
+                  tf('openness')(scores.O),
+                  scores.O_intellect !== null ? tf('intellect')(scores.O_intellect) : null,
+                  scores.O_esthetiek !== null ? tf('aesthetics')(scores.O_esthetiek) : null,
+                  scores.H !== null ? tf('honestyHumility')(scores.H) : null,
                   '',
-                  'Scores zijn op een schaal van 0 tot 100 (hoger = meer aanwezig).',
+                  t('assessmentIntroExtra.oceanFile.scaleNote'),
                 ].filter(Boolean).join('\n');
-                const file = new File([lines], 'OCEAN_scores_handmatig.txt', { type: 'text/plain' });
+                const file = new File([lines], t('assessmentIntroExtra.oceanFile.fileName'), { type: 'text/plain' });
                 onAddFile(file);
               }
             }}
@@ -1543,7 +1459,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               paddingBottom: '0.85rem',
               margin: 0,
             }}>
-              Achter de Analyse — De Symetrische Synergie
+              {t('assessmentIntroExtra.leesmij.title')}
             </h2>
             {/* Top rule */}
             <div style={{ flexShrink: 0, height: '0.75px', backgroundColor: 'rgba(168,85,247,0.45)', borderRadius: '1px', marginRight: s.padding.split(' ')[1] }} />
@@ -1554,26 +1470,26 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
               <div className="rounded-lg" style={{ padding: '1rem' }}>
-                <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>Waarom dit geen persoonlijkheidstest is</h3>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>De meeste tests geven je een hokje. Vier letters, een kleur, een dier — een etiket dat je meedraagt en dat nooit verandert, hoe het leven ook aan je trekt.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Dit model vraagt iets anders. Niet ‘’wat ben je’’ maar ‘’hoe navigeer je’’ — tussen instinct en aanleg, wie je van nature bent en wie je hebt leren zijn. <br /> En belangrijker: wat kost dat je wanneer de druk oploopt. Want een mens is geen vast punt. Een mens is een vorm die buigt, aan ons de kunst om jou te vertellen waar, hoe ver en wat er overeind blijft.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Daarvoor bouwen we op drie originele modellen — elk bezielt op zeer intieme wijze de schoonheid van onze tuin.</p>
+                <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>{t('assessmentIntroExtra.leesmij.notATest.heading')}</h3>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{t('assessmentIntroExtra.leesmij.notATest.p1')}</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.notATest.p2'))}</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{t('assessmentIntroExtra.leesmij.notATest.p3')}</p>
               </div>
 
               <div className="rounded-lg" style={{ padding: '1rem', display: 'flex', alignItems: 'stretch' }}>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
                   <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
-                    <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>Het wiel — Archetype landschap</h3>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>We hebben het wiel niet opnieuw uitgevonden. Zijn voorganger is het antieke oosterse zodiak wiel — exact dezelfde geometrie, dezelfde aantallen en dezelfde regels dat elke relatie of conversatie een transformatie is voor beide.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>De oude kaart had de vorm goed, wij hebben de wetenschap zijn werk laten doen. De twaalf posities zitten nu geketend op de drie grote hersennetwerken die ‘’Vinod Menon’’ beschreef: het netwerk dat plant en beslist (Central Executive Network), het netwerk dat reflecteert en betekenis geeft (Default Mode Network), en het netwerk dat bepaalt wat aandacht verdient (Salience Network). Dezelfde eeuwenoude geometrie — nu verankerd in de neurobiologie van het brein.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Ja — dit is een bewuste knipoog naar de omstreden astrologie. Niet naar de verscholen sterren, maar naar haar belichaming: het idee dat een mens onderdeel is van een groot geordend wiel en haar onderlinge relaties. <br />De astrologie had die intuïtie eeuwen geleden al, en ze blijkt gevaarlijker dan haar reputatie. Dus wij namen de geometrie serieus en gaven haar een grond die de oude kaart niet had.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Zoals een astroloog een geboortekaart leest, lezen wij de verbanden recht van die geometrie af:</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Wie naast je staat, deelt je <span style={{ color: '#22c55e', fontWeight: 600 }}>hardware</span>. Buur-archetypen in dezelfde biologische groep draaien op exact dezelfde neurale grond — je stevigste, meest moeiteloze kracht.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Wie tegenover je staat, is je <span style={{ color: '#a855f7', fontWeight: 600 }}>schaduw</span>. De 180°-tegenpool: alles wat je niet bent, en juist daarom je grootste groeirichting. Niet omdat zij de tegenovergestelde hardware hebben, maar omdat ze deze naar jou toe spiegelen.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Sommige verbindingen kruisen het wiel als een <span style={{ color: '#3b82f6', fontWeight: 600 }}>brug</span>. Archetypen uit verschillende groepen die elkaars tegengewicht dragen — een spanning die, wie haar kan houden, in beweging zet.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Tegenstrijdigheid is hier geen politiek maar <span style={{ color: '#ef4444', fontWeight: 600 }}>contrasterende</span> hardware, de natuur die een keuze heeft gemaakt en de mens die dit moet respecteren.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>En over alles heen ligt wat je hebt <span style={{ color: '#eab308', fontWeight: 600 }}>geléérd</span>. Driehoeken van archetypen die biologisch niets delen, maar die jaren van vorming tot één aangeleerd netwerk hebben gesmeed — de software die je schreef om te overleven.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Geen van deze verbindingen is verzonnen, ze presenteerden zichzelf. Dit is de synchronisatie tussen determinatie en vrije wil.</p>
+                    <h3 className="font-medium" style={{ color: '#22c55e', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,197,94,0.3)' }}>{t('assessmentIntroExtra.leesmij.wheel.heading')}</h3>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{t('assessmentIntroExtra.leesmij.wheel.p1')}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{t('assessmentIntroExtra.leesmij.wheel.p2')}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.wheel.p3'))}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{t('assessmentIntroExtra.leesmij.wheel.p4')}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.wheel.hardware'))}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.wheel.shadow'))}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.wheel.bridge'))}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.wheel.friction'))}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.wheel.learned'))}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{t('assessmentIntroExtra.leesmij.wheel.closing')}</p>
                   </div>
                   <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
                     <div style={{ width: 'min(375px, 34.65vw)', height: 'min(375px, 34.65vw)', borderRadius: '50%', filter: 'drop-shadow(0 0 14px rgba(34,197,94,0.4)) drop-shadow(0 0 30px rgba(34,197,94,0.15))' }}>
@@ -1586,9 +1502,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               <div className="rounded-lg" style={{ padding: '1rem', display: 'flex', alignItems: 'stretch' }}>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
                   <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
-                    <h3 className="font-medium" style={{ color: '#f97316', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(249,115,22,0.3)' }}>De driehoek — waar het om draait</h3>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>In het wiel ligt een driehoek, en die transfigureert een oude vraag: In welke mate trekt een waarde je richting bepaald gedrag wanneer keuze schaars voelt?</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Het zijn de drie waarden die Plato herkende als het hoogste waar een mens zich naar kan richten. Wij citeren hem niet — we zetten zijn intuïtie voort. De Deltawerken is de moderne gestalte van diezelfde platonische geest: niet drie idealen aan een hemel, maar drie geneste richtingen waarin een levend mens zich wendt. <br />Elk archetype navigeert hierop — niet als externe uitstraling, maar als waar je je naartoe keert wanneer het er werkelijk toe doet. De driehoek bepaalt de diepte: niet alleen wat je doet, maar waarvoor en voor wie.</p>
+                    <h3 className="font-medium" style={{ color: '#f97316', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(249,115,22,0.3)' }}>{t('assessmentIntroExtra.leesmij.triangle.heading')}</h3>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{t('assessmentIntroExtra.leesmij.triangle.p1')}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.triangle.p2'))}</p>
                   </div>
                   <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
                     <div style={{ width: 'min(375px, 34.65vw)', height: 'min(375px, 34.65vw)', marginTop: '-6rem', filter: 'drop-shadow(0 0 14px rgba(249,115,22,0.4)) drop-shadow(0 0 30px rgba(249,115,22,0.15))' }}>
@@ -1601,9 +1517,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               <div className="rounded-lg" style={{ padding: '1rem', display: 'flex', alignItems: 'stretch' }}>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', alignItems: 'stretch', width: '100%' }}>
                   <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'flex-start' }}>
-                    <h3 className="font-medium" style={{ color: '#22d3ee', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,211,238,0.3)' }}>Cellen in cellen — hoe diep het gaat</h3>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Kijk goed naar dit beeld, het is het patroon dat de wetenschap als geheel probeert te ontvouwen: dezelfde nesten, dezelfde geometrie van vorm-binnen-vorm, die terugkeert van het kleinste naar het grootste. <br />De chemie vindt het in moleculen, de biologie in cellen, de fysica in velden, de kosmologie en astronomie in de structuur van het heelal — en de psychologie in jou. <br />Eén substraat, uitgedrukt op verschillende frequenties.</p>
-                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Een mens is daar geen uitzondering op, maar een instantie ervan: genest in lagen, van het lijf dat ademt tot de betekenis die je zoekt — van de eerste fysiologische behoefte, via zelf en gemeenschap, naar intimiteit en wat daarboven uitreikt. <br />Daarom raakt deze test niet alleen je persoonlijkheid maar jouw levensverhaal: de intense spanning tussen je natuurlijke aanleg en wat de cultuur van je maakte. Piaget noemde het cognitieve stadia. Jung noemde het individuatie. Wij brengen het in kaart als een dynamiek — niet een eindpunt, maar een beweging die nooit stopt.</p>
+                    <h3 className="font-medium" style={{ color: '#22d3ee', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(34,211,238,0.3)' }}>{t('assessmentIntroExtra.leesmij.cells.heading')}</h3>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.cells.p1'))}</p>
+                    <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.cells.p2'))}</p>
                   </div>
                   <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ width: 'min(375px, 34.65vw)', height: 'min(375px, 34.65vw)', marginTop: '-2rem', filter: 'drop-shadow(0 0 14px rgba(34,211,238,0.4)) drop-shadow(0 0 30px rgba(34,211,238,0.15))' }}>
@@ -1614,12 +1530,12 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               </div>
 
               <div className="rounded-lg" style={{ padding: '1rem' }}>
-                <h3 className="font-medium" style={{ color: '#a855f7', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(168,85,247,0.3)' }}>Wat dit model draagt, en de meeste niet</h3>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Een gewone test vraagt je een paar vinkjes en geeft je wat data terug. Hier kies je tweeledig op zesendertig vragen, die onderscheid maken tussen aangeleerd gedrag en de essentie — en elke keuze stroomt niet naar één punt, maar door de geometrie van het hele wiel. Tweeënzeventig datapunten waarvan er geen één op zichzelf staat.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Tel je uit hoeveel verschillende geometrieën daaruit kunnen ontstaan, dan kom je op een getal van vierenvijftig cijfers: 30³⁶ — meer dan honderdvijftig quadriljard maal een biljoen. Meer dan er sterren aan de hemel staan, meer dan er atomen in je lichaam zitten.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Dit is geen losse statistiek: het is een gevolg van hoe het model leest. Elke keuze stroomt niet naar één oceaan, maar verspreidt zich in vijf afzonderlijke geometrische kanalen — gedeelde hardware, bruggen, schaduw, aangeleerde driehoeken, frictie. <br />Geen etiket, een vingerafdruk.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}><br />Toch zit de diepte niet eens in hoeveel vormen er mogelijk zijn. Ze zit in wat we eruit lezen. Dit model reikt tot het oog van de storm: hoe jouw specifieke configuratie zich houdt wanneer de druk oploopt, waar ze het langst standhoudt — waar en op welk punt ze breekt. Niet om je een diagnose te geven, maar om je de vorm van je eigen veerkracht te tonen: waar je rust, waar je rekt, en wat je het kost om overeind te blijven.</p>
-                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>Een etiket zegt wie je bent, een kaart laat zien hoe je in die headspace kan bewegen.</p>
+                <h3 className="font-medium" style={{ color: '#a855f7', fontSize: s.descFontSize, marginBottom: '0.5rem', textShadow: '0 0 8px rgba(168,85,247,0.3)' }}>{t('assessmentIntroExtra.leesmij.carries.heading')}</h3>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{t('assessmentIntroExtra.leesmij.carries.p1')}</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{t('assessmentIntroExtra.leesmij.carries.p2')}</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.carries.p3'))}</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{renderCopy(t('assessmentIntroExtra.leesmij.carries.p4'))}</p>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: s.descFontSize, marginBottom: '0.5rem' }}>{t('assessmentIntroExtra.leesmij.carries.p5')}</p>
               </div>
 
             </div>

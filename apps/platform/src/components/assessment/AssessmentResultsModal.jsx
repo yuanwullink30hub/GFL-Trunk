@@ -19,6 +19,7 @@ import {
   isComplementaryPair,
   computeAdvancedScores,
   getArchetypeQuote,
+  archetypeField,
 } from '@gfl/assessment-core';
 import { isNatureSlot } from '@gfl/assessment-core/assessmentData';
 import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
@@ -146,18 +147,26 @@ const AssessmentResultsModal = ({
   onDownload,
   onCreateAccount,
   onAiReady,
-  t,
+  // The parent still passes `t`; this component now takes its translator from
+  // useLanguage() (below) so the whole file — UI *and* PDF — can translate.
+  // The prop is accepted and ignored to keep the existing call-site contract.
+  // eslint-disable-next-line no-unused-vars
+  t: tProp,
   // ── Dev PDF live-preview (see src/dev/PdfPreviewHarness.jsx) ──
   previewMode = false,   // when true: build the PDF and hand back a blob URL instead of downloading
   onPreviewReady,        // (blobUrl) => void
 }) => {
+  // Declared before the result memo below: that memo reads `language` to pick the
+  // Dutch or English archetype copy, so the hook must run first.
+  const { language, t, tArray, tFunc } = useLanguage(); // 'nl' | 'en' — selects the corpus sent to the model + all copy
+
   // Compute archetype result from layer answers
   const result = useMemo(() => {
     const keys = layerAnswers ? Object.keys(layerAnswers) : [];
     const totalAnswers = keys.reduce((sum, k) => sum + Object.keys(layerAnswers[k] || {}).length, 0);
     console.log('[GFL] computeResultFromAnswers — layers:', keys.length, 'totalAnswers:', totalAnswers, 'sample:', JSON.stringify(layerAnswers).slice(0, 300));
-    return computeResultFromAnswers(layerAnswers, liveSubjects);
-  }, [layerAnswers, liveSubjects]);
+    return computeResultFromAnswers(layerAnswers, liveSubjects, language);
+  }, [layerAnswers, liveSubjects, language]);
   
   // Ref for the scroll container
   const scrollRef = useRef(null);
@@ -174,7 +183,14 @@ const AssessmentResultsModal = ({
   const [pdfKind, setPdfKind] = useState('full');
 
   // ── AI Analysis state ──
-  const { language } = useLanguage(); // 'nl' | 'en' — selects the corpus sent to the model
+  // The extension name in the report language: the Dutch canon under the NL toggle,
+  // the English roster under EN. Every visible surface, the PDF cover and the name
+  // handed to the model use this, so the name never disagrees with the corpus.
+  const extName = useMemo(() => (
+    language === 'en'
+      ? (result?.extendedName || result?.extendedNameNl || '')
+      : (result?.extendedNameNl || result?.extendedName || '')
+  ), [language, result]);
   const [aiSections, setAiSections] = useState(null);
   const [aiProfileData, setAiProfileData] = useState(null);
   // v4: structured parse of the model output (assembleV4) + the engine C-runtime.
@@ -210,8 +226,10 @@ const AssessmentResultsModal = ({
     if (!result) return null;
     return {
       archetypeKey: result.mainArchetype,
+      supportArchetype: result.supportArchetype || result.secondaryArchetype || result._secondaryKey || null,
       supportGroup: result.supportGroup,
       extendedArchetypeName: result.extendedName,
+      extendedArchetypeNameNl: result.extendedNameNl,
       oceanScores: result.oceanScores || result.extendedOcean?.ocean || null,
       responses: result._answerLog || [],
       subjectResults: result.subjectResults || [],
@@ -253,12 +271,12 @@ const AssessmentResultsModal = ({
     const { email } = reviewFormData;
 
     if (!email.trim()) {
-      setReviewError('Vul je e-mailadres in');
+      setReviewError(t('resultsModal.ui.emailRequired'));
       return;
     }
     // Basic email format check
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setReviewError('Vul een geldig e-mailadres in');
+      setReviewError(t('resultsModal.ui.emailInvalid'));
       return;
     }
 
@@ -278,11 +296,11 @@ const AssessmentResultsModal = ({
       console.log('[GFL] Email submitted — PDF unlocked');
     } catch (err) {
       console.error('[GFL] Email submission failed:', err);
-      setReviewError(err.message || 'Verzenden mislukt. Probeer opnieuw.');
+      setReviewError(err.message || t('resultsModal.ui.submitFailed'));
     } finally {
       setIsSubmittingReview(false);
     }
-  }, [reviewFormData, result, savedAssessmentId]);
+  }, [reviewFormData, result, savedAssessmentId, t]);
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -343,7 +361,7 @@ const AssessmentResultsModal = ({
           archetypeKey: result.mainArchetype,
           supportArchetype: result.secondaryArchetype || result._secondaryKey,
           supportGroup: result.supportGroup,
-          extendedArchetypeName: result.extendedName || result.name,
+          extendedArchetypeName: extName || result.extendedName || result.name,
           shadowArchetype: result.shadowPartner,
           blindspotArchetype: result.blindspotPartner,
           isIndividuated: result.shadowBonusActive,
@@ -358,7 +376,11 @@ const AssessmentResultsModal = ({
           subgroups: result.subgroups,
           // The relevant Levensles (Main×SupportGroup) — sent so the backend hands it
           // to the AI directly (it needn't search the corpus for it).
-          levensles: getArchetypeQuote(result.mainArchetype, result.supportGroup),
+          levensles: getArchetypeQuote(
+            result.mainArchetype,
+            result.secondaryArchetype || result._secondaryKey || result.supportGroup,
+            language,
+          ),
           // UI language → backend picks the matching corpus (nl → Dutch, else English).
           language,
           level: 'advanced',
@@ -533,15 +555,15 @@ const AssessmentResultsModal = ({
     const shadTot = dm[(result.shadowPartner || '').toUpperCase()]?.total || 0;
     const polGap = mainTot > 0 ? Math.round((Math.abs(mainTot - shadTot) / mainTot) * 100) : null;
     const polBand = polGap == null ? null
-      : polGap > 60 ? 'Schaduw onderdrukt'
-      : polGap > 30 ? 'Gezonde spanning'
-      : 'Actieve integratie';
+      : polGap > 60 ? t('resultsModal.bands.suppressed')
+      : polGap > 30 ? t('resultsModal.bands.healthy')
+      : t('resultsModal.bands.integrating');
     return {
       main: result.mainName, support: result.secondaryName,
       shadow: result.shadowName, blindspot: result.blindspotName,
       authPct, polGap, polBand,
     };
-  }, [result]);
+  }, [result, t]);
 
   const aiGroup1b = useMemo(() => visibleSections.filter(s => {
     const t = cleanTitle(s.title || '').toLowerCase();
@@ -678,25 +700,33 @@ const AssessmentResultsModal = ({
   }, [rs.sectionPad, renderMarkdownContent]);
 
   // ── Cognitieve Driehoek lookup — structural data only (content is now AI-generated Section 8) ──
+  const COG_MODE = {
+    idealisme:  t('resultsModal.cog.modes.idealisme'),
+    exploratie: t('resultsModal.cog.modes.exploratie'),
+    impact:     t('resultsModal.cog.modes.impact'),
+    engagement: t('resultsModal.cog.modes.engagement'),
+  };
+  const COG_NET_A = t('resultsModal.cog.networks.cenOpennessDmn');
+  const COG_NET_B = t('resultsModal.cog.networks.limbicSalienceAgency');
   const COG_TRIANGLES = {
-    RULER:     { id: 1, mode: 'Idealisme Modus',  members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN' },
-    INNOCENT:  { id: 1, mode: 'Idealisme Modus',  members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN' },
-    SAGE:      { id: 1, mode: 'Idealisme Modus',  members: ['Ruler', 'Innocent', 'Sage'],     networks: 'CEN · Openness · DMN' },
-    JUDGE:     { id: 2, mode: 'Exploratie Modus',  members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN' },
-    EXPLORER:  { id: 2, mode: 'Exploratie Modus',  members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN' },
-    ARTIST:    { id: 2, mode: 'Exploratie Modus',  members: ['Judge', 'Explorer', 'Artist'],   networks: 'CEN · Openness · DMN' },
-    LOVER:     { id: 3, mode: 'Impact Modus',      members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency' },
-    OUTLAW:    { id: 3, mode: 'Impact Modus',      members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency' },
-    MAGICIAN:  { id: 3, mode: 'Impact Modus',      members: ['Lover', 'Outlaw', 'Magician'],   networks: 'Limbisch · Salience · Agency' },
-    CAREGIVER: { id: 4, mode: 'Engagement Modus',  members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency' },
-    TRICKSTER: { id: 4, mode: 'Engagement Modus',  members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency' },
-    HERO:      { id: 4, mode: 'Engagement Modus',  members: ['Caregiver', 'Trickster', 'Hero'], networks: 'Limbisch · Salience · Agency' },
+    RULER:     { id: 1, mode: COG_MODE.idealisme,  members: ['Ruler', 'Innocent', 'Sage'],      networks: COG_NET_A },
+    INNOCENT:  { id: 1, mode: COG_MODE.idealisme,  members: ['Ruler', 'Innocent', 'Sage'],      networks: COG_NET_A },
+    SAGE:      { id: 1, mode: COG_MODE.idealisme,  members: ['Ruler', 'Innocent', 'Sage'],      networks: COG_NET_A },
+    JUDGE:     { id: 2, mode: COG_MODE.exploratie, members: ['Judge', 'Explorer', 'Artist'],    networks: COG_NET_A },
+    EXPLORER:  { id: 2, mode: COG_MODE.exploratie, members: ['Judge', 'Explorer', 'Artist'],    networks: COG_NET_A },
+    ARTIST:    { id: 2, mode: COG_MODE.exploratie, members: ['Judge', 'Explorer', 'Artist'],    networks: COG_NET_A },
+    LOVER:     { id: 3, mode: COG_MODE.impact,     members: ['Lover', 'Outlaw', 'Magician'],    networks: COG_NET_B },
+    OUTLAW:    { id: 3, mode: COG_MODE.impact,     members: ['Lover', 'Outlaw', 'Magician'],    networks: COG_NET_B },
+    MAGICIAN:  { id: 3, mode: COG_MODE.impact,     members: ['Lover', 'Outlaw', 'Magician'],    networks: COG_NET_B },
+    CAREGIVER: { id: 4, mode: COG_MODE.engagement, members: ['Caregiver', 'Trickster', 'Hero'], networks: COG_NET_B },
+    TRICKSTER: { id: 4, mode: COG_MODE.engagement, members: ['Caregiver', 'Trickster', 'Hero'], networks: COG_NET_B },
+    HERO:      { id: 4, mode: COG_MODE.engagement, members: ['Caregiver', 'Trickster', 'Hero'], networks: COG_NET_B },
   };
   const ALL_COG_TRIANGLES = [
-    { id: 1, mode: 'Idealisme Modus',  color: '#a855f7', members: 'Ruler · Innocent · Sage' },
-    { id: 2, mode: 'Exploratie Modus', color: '#3b82f6', members: 'Judge · Explorer · Artist' },
-    { id: 3, mode: 'Impact Modus',     color: '#f97316', members: 'Lover · Outlaw · Magician' },
-    { id: 4, mode: 'Engagement Modus', color: '#1d9904', members: 'Caregiver · Trickster · Hero' },
+    { id: 1, mode: COG_MODE.idealisme,  color: '#a855f7', members: 'Ruler · Innocent · Sage' },
+    { id: 2, mode: COG_MODE.exploratie, color: '#3b82f6', members: 'Judge · Explorer · Artist' },
+    { id: 3, mode: COG_MODE.impact,     color: '#f97316', members: 'Lover · Outlaw · Magician' },
+    { id: 4, mode: COG_MODE.engagement, color: '#1d9904', members: 'Caregiver · Trickster · Hero' },
   ];
 
   // Generate and download a clean, document-style PDF
@@ -1098,11 +1128,11 @@ const AssessmentResultsModal = ({
       // ═══════════════════════════════════════════════════
 
       // Top brand line — "GARDEN FOR LIFE: Archetype Analyse" left, date right
-      const coverDate = new Date().toLocaleDateString('nl-NL');
+      const coverDate = new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL');
       pdf.setFontSize(8.5);
       pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('GARDEN FOR LIFE: Archetype Analyse', margin, y);
+      pdf.text(t('resultsModal.pdf.cover.brandLine'), margin, y);
       pdf.text(coverDate, W - margin, y, { align: 'right' });
       y += 3;
       pdf.setDrawColor(...purple);
@@ -1110,8 +1140,8 @@ const AssessmentResultsModal = ({
       pdf.line(margin, y, W - margin, y);
       y += 16;
 
-      // Large profile image (centered, ~90mm)
-      try {
+      // Large profile image (centered, ~90mm) - skipped while artwork is unavailable.
+      if (result.imageUrl) try {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         await new Promise((resolve, reject) => {
@@ -1146,11 +1176,11 @@ const AssessmentResultsModal = ({
         y += 8;
       }
 
-      // Extended Archetype Name — large, centered (1 of 72)
+      // Extended Archetype Name — large, centered (1 of 132)
       pdf.setFontSize(26);
       pdf.setTextColor(...purple);
       pdf.setFont('helvetica', 'bold');
-      pdf.text(result.name || '', W / 2, y, { align: 'center' });
+      pdf.text(extName || result.name || '', W / 2, y, { align: 'center' });
       y += 10;
 
       // Subtitle (extendedSubtitle)
@@ -1187,7 +1217,7 @@ const AssessmentResultsModal = ({
       pdf.setFontSize(8.5);
       pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('DELTAWERKEN DATAPUNTEN', W / 2, y, { align: 'center' });
+      pdf.text(t('resultsModal.pdf.cover.datapoints'), W / 2, y, { align: 'center' });
       y += 10;
 
       // ═══════════════════════════════════════════════════
@@ -1217,7 +1247,7 @@ const AssessmentResultsModal = ({
             // Fixed Meta-Disclaimer (same block + top bar as the full report's identity page).
             ensureSpace(20);
             pdf.setFillColor(20, 16, 36);
-            const disclaimerText = 'Meta-Disclaimer: Dit rapport is gegenereerd door het Garden For Life Deltawerken Model — een zelfreflectie-instrument, geen klinische diagnose. De gebruikte neurobiologische termen zijn metaforen binnen dit specifieke model. Raadpleeg een professional voor medisch of psychologisch advies.';
+            const disclaimerText = t('resultsModal.pdf.metaDisclaimer');
             pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
             const disclaimerLines = pdf.splitTextToSize(disclaimerText, contentW - 8);
             const dlH = disclaimerLines.length * 3.5 + 4;
@@ -1267,15 +1297,15 @@ const AssessmentResultsModal = ({
             const shadTot = dm[(result.shadowPartner || '').toUpperCase()]?.total || 0;
             const polGap = mainTot > 0 ? Math.round((Math.abs(mainTot - shadTot) / mainTot) * 100) : null;
             const polBand = polGap == null ? null
-              : polGap > 60 ? 'Schaduw onderdrukt'
-              : polGap > 30 ? 'Gezonde spanning'
-              : 'Actieve integratie';
+              : polGap > 60 ? t('resultsModal.bands.suppressed')
+              : polGap > 30 ? t('resultsModal.bands.healthy')
+              : t('resultsModal.bands.integrating');
             const rows = [
-              ['Kern', result.mainName, green],
-              ['Support', result.secondaryName, orange],
-              ['Schaduw', result.shadowName, purple],
-              ['Blindspot', result.blindspotName, red],
-              ...(polBand ? [['Polarisatie', polGap + '% — ' + polBand, amber]] : []),
+              [t('resultsModal.labels.kern'), result.mainName, green],
+              [t('resultsModal.labels.support'), result.secondaryName, orange],
+              [t('resultsModal.labels.schaduw'), result.shadowName, purple],
+              [t('resultsModal.labels.blindspot'), result.blindspotName, red],
+              ...(polBand ? [[t('resultsModal.labels.polarisatie'), polGap + '% — ' + polBand, amber]] : []),
             ].filter((r) => r[1]);
             if (rows.length) {
               const boxH = rows.length * 7 + 6;
@@ -1317,7 +1347,7 @@ const AssessmentResultsModal = ({
           await justifiedPage(async (gap) => {
             const savedNPB = noPageBreak; noPageBreak = true;
             stilleSecs.forEach((section, i) => {
-              renderSection('De Stille Stem — ' + cleanTitle(section.title), section.content, purple);
+              renderSection(t('resultsModal.labels.stilleStemPrefix') + cleanTitle(section.title), section.content, purple);
               if (i < stilleSecs.length - 1) { hr(); gap(); }
             });
             noPageBreak = savedNPB;
@@ -1328,10 +1358,10 @@ const AssessmentResultsModal = ({
         await justifiedPage(async () => {
           y += 40;
           pdf.setFontSize(16); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...green);
-          pdf.text('Tot Slot', W / 2, y, { align: 'center' });
+          pdf.text(t('resultsModal.pdf.short.closingTitle'), W / 2, y, { align: 'center' });
           y += 12;
           pdf.setFontSize(9); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...dimWhite);
-          const placeholder = pdf.splitTextToSize('Deze afsluiting wordt binnenkort toegevoegd.', contentW - 40);
+          const placeholder = pdf.splitTextToSize(t('resultsModal.pdf.short.closingPlaceholder'), contentW - 40);
           for (const l of placeholder) { pdf.text(l, W / 2, y, { align: 'center' }); y += 5; }
         });
 
@@ -1340,7 +1370,7 @@ const AssessmentResultsModal = ({
         for (let p = tp; p >= 1; p--) { if (!pagesWithContent.has(p)) pdf.deletePage(p); }
         const an = (result?.extendedName || 'Archetype').replace(/\s+/g, '_');
         if (pvw) { try { onPreviewReadyRef.current?.(pdf.output('bloburl')); } catch (_) {} return; }
-        pdf.save(`GardenForLife_${an}_kort.pdf`);
+        pdf.save(`GardenForLife_${an}${t('resultsModal.pdf.short.fileSuffix')}.pdf`);
         // Short report downloaded → send the SHORT report email to the gate email
         // (fire-and-forget). The gate itself no longer emails on entry — the chosen
         // download decides which mail goes out (full sends the access email below).
@@ -1364,7 +1394,7 @@ const AssessmentResultsModal = ({
       pdf.setFontSize(16);
       pdf.setTextColor(...green);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Juridische Informatie & Disclaimer', margin, y);
+      pdf.text(t('resultsModal.pdf.legal.pageTitle'), margin, y);
       y += 4;
       pdf.setDrawColor(...green);
       pdf.setLineWidth(0.4);
@@ -1401,56 +1431,22 @@ const AssessmentResultsModal = ({
       };
       gap();
 
-      legalSection(
-        '1. Productomschrijving',
-        'Dit document is gegenereerd door het Garden for Life Assessment System, een zelfreflectie-instrument gebaseerd op het Deltawerken model. ' +
-        'De resultaten in dit rapport zijn gebaseerd op een AI-gestuurd archetyperingsmodel en vormen geen klinische diagnose, psychologisch advies of medische beoordeling. ' +
-        'Het systeem kent op basis van uw antwoorden een archetypecombinatie toe die bedoeld is als spiegel voor persoonlijke reflectie.'
-      );
+      legalSection(t('resultsModal.pdf.legal.c1Title'), t('resultsModal.pdf.legal.c1Body'));
       gap();
 
-      legalSection(
-        '2. Metaforisch Kader & Wetenschappelijke Context',
-        'Dit systeem maakt gebruik van termen en concepten uit de neurowetenschappen, kwantumbiologie en Zero Point Energy (ZPE). ' +
-        'Deze worden uitsluitend metaforisch ingezet als denkkader en worden niet gepresenteerd als gevestigde wetenschap. ' +
-        'Verwijzingen naar neurotransmitters, kwantumvelden of energetische patronen dienen als beeldspraak om gedragspatronen te duiden, niet als wetenschappelijke claims.'
-      );
+      legalSection(t('resultsModal.pdf.legal.c2Title'), t('resultsModal.pdf.legal.c2Body'));
       gap();
 
-      legalSection(
-        '3. AI Agent Prompt — Verantwoordelijkheid',
-        'De AI Agent Prompt die in dit document is opgenomen, is een experimenteel gegenereerd stijlprofiel. ' +
-        'De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. ' +
-        'Gebruik in externe AI-tools (zoals ChatGPT, Claude of andere) valt volledig buiten de verantwoordelijkheid van Garden For Life. ' +
-        'De gebruiker aanvaardt volledige verantwoordelijkheid voor het gebruik van deze prompt buiten het Garden for Life platform.'
-      );
+      legalSection(t('resultsModal.pdf.legal.c3Title'), t('resultsModal.pdf.legal.c3Body'));
       gap();
 
-      legalSection(
-        '4. Gegevensbescherming (AVG/GDPR)',
-        'Garden for Life verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). ' +
-        'Assessment-resultaten worden maximaal 90 dagen bewaard op beveiligde servers binnen de EU (Frankfurt, Duitsland). ' +
-        'E-mailadressen en weergavenamen worden versleuteld opgeslagen (AES-256-GCM). ' +
-        'Na de bewaartermijn worden gegevens automatisch en onherroepelijk verwijderd. ' +
-        'U heeft te allen tijde het recht om uw account en alle bijbehorende gegevens direct te verwijderen via uw profielinstellingen.'
-      );
+      legalSection(t('resultsModal.pdf.legal.c4Title'), t('resultsModal.pdf.legal.c4Body'));
       gap();
 
-      legalSection(
-        '5. Intellectueel Eigendom',
-        'Het Deltawerken model, de archetypenstructuur, het scoringssysteem en alle bijbehorende teksten en visualisaties zijn intellectueel eigendom van Garden For Life. ' +
-        'Dit document is uitsluitend bedoeld voor persoonlijk gebruik door de ontvanger. ' +
-        'Reproductie, publicatie of commercieel gebruik van (delen van) dit rapport zonder schriftelijke toestemming is niet toegestaan.'
-      );
+      legalSection(t('resultsModal.pdf.legal.c5Title'), t('resultsModal.pdf.legal.c5Body'));
       gap();
 
-      legalSection(
-        '6. Aansprakelijkheid',
-        'Garden for Life aanvaardt geen aansprakelijkheid voor beslissingen genomen op basis van de resultaten in dit rapport. ' +
-        'Dit instrument is geen vervanging voor professioneel psychologisch, medisch of therapeutisch advies. ' +
-        'Bij psychische klachten of zorgen wordt geadviseerd contact op te nemen met een gekwalificeerde zorgverlener. ' +
-        'Het gebruik van dit rapport en de daarin opgenomen AI Agent Prompt geschiedt geheel op eigen risico van de gebruiker.'
-      );
+      legalSection(t('resultsModal.pdf.legal.c6Title'), t('resultsModal.pdf.legal.c6Body'));
       gap();
 
       // Consent acknowledgment
@@ -1463,12 +1459,12 @@ const AssessmentResultsModal = ({
       pdf.setFontSize(8);
       pdf.setTextColor(...green);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Toestemming bevestigd', margin + 8, y + 4);
+      pdf.text(t('resultsModal.pdf.legal.consentTitle'), margin + 8, y + 4);
       pdf.setFontSize(7.5);
       pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('De gebruiker heeft bij het downloaden van dit document bevestigd kennis te hebben', margin + 8, y + 9);
-      pdf.text('genomen van bovenstaande voorwaarden en de verantwoordelijkheid voor gebruik te aanvaarden.', margin + 8, y + 13);
+      pdf.text(t('resultsModal.pdf.legal.consentLine1'), margin + 8, y + 9);
+      pdf.text(t('resultsModal.pdf.legal.consentLine2'), margin + 8, y + 13);
       y += 22;
       gap();
 
@@ -1476,7 +1472,7 @@ const AssessmentResultsModal = ({
       pdf.setFontSize(7);
       pdf.setTextColor(...white);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('Vragen of verzoeken? Neem contact op via het Garden for Life platform.', W / 2, y, { align: 'center' });
+      pdf.text(t('resultsModal.pdf.legal.contact'), W / 2, y, { align: 'center' });
       });
 
       // ═══════════════════════════════════════════════════
@@ -1529,21 +1525,21 @@ const AssessmentResultsModal = ({
 
       // ── PAGE 3: Belangrijke Context (Triple-Network/Cells bottom-anchored, Deltawerken fills gap) ──
       pdf.addPage(); paintBg(); markPage(); y = margin;
-      sectionHeading('Belangrijke Context', green);
-      writeWrapped('Verouderde persoonlijkheidstesten classificeren: ze plaatsen je in een type en tot ziens. Dit model leeft in je voort. Het brengt in kaart hoe jouw zenuwstelsel navigeert tussen aangeboren aanleg en aangeleerde strategie — en, doorslaggevend, hoe die configuratie zich houdt onder toenemende druk.\nNiet een classificatie, maar een dynamisch profiel.', margin + 2, y, contentW - 4, 8.5, white); y += 3;
-      writeWrapped('Het rust op drie gouden draden, gesynchroniseerd tot één instrument: de archetypische psychologie van Carl Jung, het neurobiologische Triple Network Model (Menon e.a.), en de Big Five (OCEAN). De synthese meet niet alleen wát je doet, maar vanuit welke neurale laag je het doet.', margin + 2, y, contentW - 4, 8.5, white); y += 5;
+      sectionHeading(t('resultsModal.pdf.context.title'), green);
+      writeWrapped(t('resultsModal.pdf.context.intro1'), margin + 2, y, contentW - 4, 8.5, white); y += 3;
+      writeWrapped(t('resultsModal.pdf.context.intro2'), margin + 2, y, contentW - 4, 8.5, white); y += 5;
 
-      subtitle('Methodologische noot');
-      writeWrapped('Een noot vooraf, in lijn met de discipline van het model: de neurowetenschappelijke termen die volgen zijn zuiver mechanistisch — beschrijvingen van verwerkingspatronen, geen klinische claims. Het model leest tendensen, geen vaststaande feiten. Waar het naar neigt, richting weegt, en dus nooit per definitie is.', margin + 2, y, contentW - 4, 8.5, dimWhite, 'italic'); y += 5;
+      subtitle(t('resultsModal.pdf.context.methodTitle'));
+      writeWrapped(t('resultsModal.pdf.context.methodBody'), margin + 2, y, contentW - 4, 8.5, dimWhite, 'italic'); y += 5;
 
-      subtitle('Deltawerken');
-      writeWrapped("Het Deltawerken model legt de waarde-oriëntatie vast: waarheid, goedheid, schoonheid — Plato's transcendentalia, hier niet als citaat maar als operationele as. Elk archetype navigeert middels deze drie polen. De driehoek bepaalt de dieptelaag: niet het gedrag, maar de oriëntatie eronder — waar een configuratie zich naartoe wendt wanneer het moet.", margin + 2, y, contentW - 4, 8.5, white); y += 4;
+      subtitle(t('resultsModal.pdf.context.deltaTitle'));
+      writeWrapped(t('resultsModal.pdf.context.deltaBody'), margin + 2, y, contentW - 4, 8.5, white); y += 4;
       const yAfterDelta3 = y;
 
       // Bottom-anchored block: Het Triple-Network-Wiel + Cells within Cells + closing.
-      const P3_wiel = "Het Triple-Network-Wiel plaatst de twaalf kern-archetypen op een geometrische map, verankerd in de drie hersennetwerken die Menon en collega's beschreven: het Central Executive Network (orde, executie), het Default Mode Network (reflectie, betekenis) en het Salience Network (responsiviteit, adaptatie).\nDe geometrie is een extensie van het oosterse zodiak-wiel — dezelfde interne bruggen, dezelfde logica van magnetisme — maar opnieuw verankerd: niet in sterrenbeelden, in netwerken. De ankers zijn verbonden via vijf lijntypes, elk een ander soort relatie.";
-      const P3_cells = 'Cells within Cells Interlinked levert de schaal-as: de geneste ontologische lagen, van fysiologische basisbehoefte via zelf en gemeenschap naar intimiteit en transcendentie.';
-      const P3_close = 'Daarom meet dit instrument niet alleen persoonlijkheid maar de ontwikkelingslaag — de spanning tussen aanleg en conditionering. Piaget noemde het cognitieve stadia; Jung individuatie. De vraag is alleen: hoe meet je waar iemand op die lagen staat?';
+      const P3_wiel = t('resultsModal.pdf.context.wielBody');
+      const P3_cells = t('resultsModal.pdf.context.cellsBody');
+      const P3_close = t('resultsModal.pdf.context.close');
       pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal');
       const lh3 = 8.5 * 0.45, subH3 = 7;
       const wielH3 = pdf.splitTextToSize(sanitizePdf(P3_wiel), contentW - 4).length * lh3;
@@ -1565,15 +1561,15 @@ const AssessmentResultsModal = ({
       } catch { /* image load failed */ }
 
       y = bottomStartY3;
-      subtitle('Het Triple-Network-Wiel');
+      subtitle(t('resultsModal.pdf.context.wielTitle'));
       writeWrapped(P3_wiel, margin + 2, y, contentW - 4, 8.5, white); y += 5;
-      subtitle('Cells within Cells');
+      subtitle(t('resultsModal.pdf.context.cellsTitle'));
       writeWrapped(P3_cells, margin + 2, y, contentW - 4, 8.5, white); y += 3;
       writeWrapped(P3_close, margin + 2, y, contentW - 4, 8.5, white);
 
       // ── PAGE 4: Van Vraag naar Score (Wat-leest centered, Dat-leest+legend bottom-anchored) ──
       pdf.addPage(); paintBg(); markPage(); y = margin;
-      sectionHeading('Van vraag naar verband', purple);
+      sectionHeading(t('resultsModal.pdf.vanVraag.title'), purple);
 
       let vvNarrowW = contentW - 4, vvImgTop = y, vvImgBottom = y;
       try {
@@ -1583,28 +1579,31 @@ const AssessmentResultsModal = ({
         const cX = margin + contentW - cW; const cY = y + 4 + H * 0.10; // moved down 10%
         pdf.addImage(cellsImg, 'PNG', cX, cY, cW, cH);
         pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...mutedGray);
-        const lbl = 'Cells within Cells'; pdf.text(lbl, cX + cW - pdf.getTextWidth(lbl), cY + 4.5);
+        const lbl = t('resultsModal.pdf.vanVraag.imgLabel'); pdf.text(lbl, cX + cW - pdf.getTextWidth(lbl), cY + 4.5);
         vvImgTop = cY; vvImgBottom = cY + cH; vvNarrowW = (cX - 4) - (margin + 2);
       } catch { /* image load failed */ }
 
-      flowAroundImage([
-        'Het antwoord begint bij 36 vragen over vijf domeinen: Zelf, Ander, Macht, Wijsheid en Mysterie. Elke vraag biedt zes antwoorden — drie vanuit Nature (het ongedwongen instinct) en drie vanuit Culture (de aangeleerde strategie). Je kiest tussen geen en twee: de eerste is de kern, de tweede resoneert maar weegt minder zwaar. Samen: 72 datapunten.',
-        "Het onderscheid Nature/Culture rust op Vervaeke's 4P-model van kennen. Nature = participatory en perspectival knowing: je weet het doordat je het bent. Culture = propositional en procedural knowing: je weet dat je het hebt en hoe je ermee navigeert. Beide antwoorden voelen even authentiek; het verschil zit in de korrel van de taal, niet in de oppervlakte.",
-        'Elke keuze distribueert punten naar meerdere vectors, het vloeit door de geometrische verbindingen van het wiel.\nEen Nature-keuze activeert de gedeelde hardware en werpt tegelijk een schaduw naar de 180°-tegenpool.\nEen Culture-keuze activeert het aangeleerde netwerk, de gele driehoek.\nGeen enkel datapunt staat op zichzelf; gedrag resoneert door de netwerken heen, consistent met Menons werk over cross-network connectiviteit en Raichles Default Mode-hypothese.',
-        'Het resultaat is geen positie maar een verdeling: een geometrie.\nEn omdat elke keuze door vijf kanalen tegelijk bloedt, convergeren verschillende antwoordpaden vrijwel nooit op dezelfde eindvorm —\nde antwoordruimte telt 30^36 configuraties, een getal van 54 cijfers. Geen twee profielen zijn gelijk, en toch verschuilt zich in die chaos een gedeeld patroon.',
-      ], margin + 2, vvNarrowW, contentW - 4, vvImgTop, vvImgBottom, 8.5, white);
+      flowAroundImage(tArray('resultsModal.pdf.vanVraag.paras'), margin + 2, vvNarrowW, contentW - 4, vvImgTop, vvImgBottom, 8.5, white);
       const yAfterVanVraag4 = y;
 
       // Strings for the centered + bottom-anchored blocks.
-      const P4_wat = 'Want het bovenstaande beschrijft de meting bij rust. De werkelijke diepte ligt in de transformatie-delta: voor elke configuratie modelleren we niet alleen hoe ze (animistische delen) zich uitdrukt bij basislast, maar hoe ze vervormt naarmate de druk oploopt — waar ze het langst standhoudt, op welk punt ze omslaat, en hoe het herstel verloopt.\nDit is de plastische laag: een traject van baseline, via belasting, naar bezwijken, met het mechanisme benoemd bij elke fase.';
-      const P4_dat = 'Dat is wat het rapport hierna doet. Geen typebeschrijving, maar een dynamische analyse van jouw scoreprofiel — geschreven in de taal van je dominante netwerk, gericht op de vorm van je veerkracht: waar je rust, waar je rekt, en wat het je kost om overeind te blijven. Hiervoor moeten we eerst de structuur blootleggen.';
-      const P4_lijnIntro = 'De vijf verbindingen volgen uit de positie op het wiel, en elk routeert punten anders:';
+      const P4_wat = t('resultsModal.pdf.vanVraag.watBody');
+      const P4_dat = t('resultsModal.pdf.vanVraag.datBody');
+      const P4_lijnIntro = t('resultsModal.pdf.vanVraag.lijnIntro');
       const B = {
-        groen: '— gedeelde hardware. Buur-archetypen in dezelfde biologische groep draaien op dezelfde neurale grond. De stevigste, meest moeiteloze koppeling. (Nature)',
-        paars: '— de schaduw-as (180°). De tegenpool die de configuratie naar zich toe spiegelt. Grootste groeirichting.',
-        blauw: '— de feedback-brug. Kruist de groepen en draagt reorganisatie: een runtime-kanaal dat tegengewicht overbrengt.',
-        geel:  '— de aangeleerde driehoek. Archetypen zonder biologische verwantschap, door conditionering tot één getraind netwerk gesmeed. (Culture)',
-        rood:  '— de frictie-as. De cross-group botsing waar de neurale schaduw zijn oorsprong heeft; de plek waar projectie ontstaat.',
+        groen: t('resultsModal.pdf.vanVraag.lines.groen'),
+        paars: t('resultsModal.pdf.vanVraag.lines.paars'),
+        blauw: t('resultsModal.pdf.vanVraag.lines.blauw'),
+        geel:  t('resultsModal.pdf.vanVraag.lines.geel'),
+        rood:  t('resultsModal.pdf.vanVraag.lines.rood'),
+      };
+      // Colour names as bullet labels — translated alongside their bodies.
+      const BL = {
+        groen: t('resultsModal.pdf.vanVraag.lines.groenLabel'),
+        paars: t('resultsModal.pdf.vanVraag.lines.paarsLabel'),
+        blauw: t('resultsModal.pdf.vanVraag.lines.blauwLabel'),
+        geel:  t('resultsModal.pdf.vanVraag.lines.geelLabel'),
+        rood:  t('resultsModal.pdf.vanVraag.lines.roodLabel'),
       };
 
       // Pre-measure the bottom-anchored block: Dat-leest (subtitle+para) + De-vijf-lijntypes (subtitle+intro+5 bullets).
@@ -1618,7 +1617,7 @@ const AssessmentResultsModal = ({
       const introLines4 = pdf.splitTextToSize(sanitizePdf(P4_lijnIntro), lijnRightX4 - (margin + 2)).length;
       let bulletsH4 = 0;
       for (const k of ['groen', 'paars', 'blauw', 'geel', 'rood']) {
-        const ln = pdf.splitTextToSize(sanitizePdf(k.charAt(0).toUpperCase() + k.slice(1) + ' ' + B[k]), bulletWrap4).length;
+        const ln = pdf.splitTextToSize(sanitizePdf(BL[k] + ' ' + B[k]), bulletWrap4).length;
         bulletsH4 += ln * lh4 + 2.5;
       }
       const bottomBlockH4 = subH4 + datLines * lh4 + 5 + subH4 + introLines4 * lh4 + 3 + bulletsH4;
@@ -1628,14 +1627,14 @@ const AssessmentResultsModal = ({
       const watLines = pdf.splitTextToSize(sanitizePdf(P4_wat), contentW - 4).length;
       const watBlockH = subH4 + watLines * lh4;
       y = Math.max(yAfterVanVraag4 + 4, (H - watBlockH) / 2);
-      subtitle('Wat het instrument leest');
+      subtitle(t('resultsModal.pdf.vanVraag.watTitle'));
       writeWrapped(P4_wat, margin + 2, y, contentW - 4, 8.5, white);
 
       // Bottom-anchored: Dat is wat het rapport leest + De vijf lijntypes + TNM wiel.
       y = bottomStartY4;
-      subtitle('Dat is wat het rapport leest');
+      subtitle(t('resultsModal.pdf.vanVraag.datTitle'));
       writeWrapped(P4_dat, margin + 2, y, contentW - 4, 8.5, white); y += 5;
-      subtitle('De vijf lijntypes');
+      subtitle(t('resultsModal.pdf.vanVraag.lijnTitle'));
       const lijnTop4 = y;
       let lijnRightXr = margin + contentW - 2;
       try {
@@ -1648,45 +1647,36 @@ const AssessmentResultsModal = ({
         lijnRightXr = (margin + contentW - wWi) - 4;
       } catch { /* image load failed */ }
       writeWrapped(P4_lijnIntro, margin + 2, y, lijnRightXr - (margin + 2), 8.5, white); y += 3;
-      coloredBullet('Groen', green, B.groen, lijnRightXr);
-      coloredBullet('Paars', purple, B.paars, lijnRightXr);
-      coloredBullet('Blauw', blue, B.blauw, lijnRightXr);
-      coloredBullet('Geel', amber, B.geel, lijnRightXr);
-      coloredBullet('Rood', red, B.rood, lijnRightXr);
+      coloredBullet(BL.groen, green, B.groen, lijnRightXr);
+      coloredBullet(BL.paars, purple, B.paars, lijnRightXr);
+      coloredBullet(BL.blauw, blue, B.blauw, lijnRightXr);
+      coloredBullet(BL.geel, amber, B.geel, lijnRightXr);
+      coloredBullet(BL.rood, red, B.rood, lijnRightXr);
 
       // ═══════════════════════════════════════════════════
       // PAGE 4: DE TAAL VAN DE TEST (was page 5)
       // ═══════════════════════════════════════════════════
       await justifiedPage(async (gap) => {
 
-      sectionHeading('De taal van de test', purple);
+      sectionHeading(t('resultsModal.pdf.taal.title'), purple);
 
-      writeWrapped(
-        'Want die structuur rust op universele geometrie: eeuwenoude wijsheid, vertaald in spiritualiteit. De numerologie is niet ontworpen maar ontdekt \u2014 het resoneert met oude mythologie\u00EBn \u00E9n met moderne wetenschap; kwantumfysica, neurobiologie, astronomie. Niet te verwarren met astrologie; dit raakt van nature aan persoonlijkheidspsychologie.',
-        margin + 2, y, contentW - 4, 9, white
-      );
+      writeWrapped(t('resultsModal.pdf.taal.p1'), margin + 2, y, contentW - 4, 9, white);
       y += 4;
-      writeWrapped(
-        'Realiteit wordt pas kenbaar door differentiatie: de splitsing naar twee. Maar wat is determinatie waard wanneer alles vastligt? De derde as is de motor van transformatie \u2014 deze verschijning is het patroon van onze gemodelleerde psychologie, de plek waar beweging ontstaat.',
-        margin + 2, y, contentW - 4, 9, white
-      );
+      writeWrapped(t('resultsModal.pdf.taal.p2'), margin + 2, y, contentW - 4, 9, white);
       y += 4;
-      writeWrapped(
-        'Westerse neurobiologie wijst op een tweedeling van het brein: een gebalanceerde deling tussen orde en chaos. Waar die twee elkaar raken, kristalliseren zes biologische cognitieve netwerken uit \u2014 gehardwired, de grond waarop alles wat volgt is gebouwd:',
-        margin + 2, y, contentW - 4, 9, white
-      );
+      writeWrapped(t('resultsModal.pdf.taal.p3'), margin + 2, y, contentW - 4, 9, white);
       y += 5;
       gap();
 
       drawTable(
-        ['GROEP', 'NETWERK', 'ARCHETYPEN', 'DRIJFVEER'],
+        tArray('resultsModal.pdf.taal.groupHeaders'),
         [
-          ['Ruling',     'CEN Dominantie',        'Ruler (12), Judge (1)',      'Externe structuur en orde'],
-          ['Relational', 'Limbic Coupling',        'Lover (2), Caregiver (3)',   'Emotionele fusie en empathie'],
-          ['Seeker',     'Hoge Openness',          'Innocent (4), Explorer (5)', 'Zuiverheid en ontdekking'],
-          ['Chaos',      'Salience Network',       'Outlaw (6), Trickster (7)',  'Disruptie en lage consci\u00EBntieusheid'],
-          ['Abstract',   'DMN Hyper-connectie',    'Sage (8), Artist (9)',       'Interne reflectie en subjectiviteit'],
-          ['Agency',     'Extraversie / Wilskracht','Magician (10), Hero (11)',   'Actie en transformatie'],
+          ['Ruling',     t('resultsModal.groups.ruling.network'),     'Ruler (12), Judge (1)',      t('resultsModal.groups.ruling.drive')],
+          ['Relational', t('resultsModal.groups.relational.network'), 'Lover (2), Caregiver (3)',   t('resultsModal.groups.relational.drive')],
+          ['Seeker',     t('resultsModal.groups.seeker.network'),     'Innocent (4), Explorer (5)', t('resultsModal.groups.seeker.drive')],
+          ['Chaos',      t('resultsModal.groups.chaos.network'),      'Outlaw (6), Trickster (7)',  t('resultsModal.groups.chaos.drive')],
+          ['Abstract',   t('resultsModal.groups.abstract.network'),   'Sage (8), Artist (9)',       t('resultsModal.groups.abstract.drive')],
+          ['Agency',     t('resultsModal.groups.agency.network'),     'Magician (10), Hero (11)',   t('resultsModal.groups.agency.drive')],
         ],
         [30, 42, 50, 52],
         { fontSize: 7, vPad: 3 }
@@ -1695,37 +1685,25 @@ const AssessmentResultsModal = ({
       y += 5;
       gap();
       drawTable(
-        ['Diepte', 'Getal', 'Afleiding', 'Manifestatie'],
-        [
-          ['0', '3',                  'kiem',                                'Drievoudig Netwerkmodel (DMN, SN, CEN)'],
-          ['1', '6 = 3 \u00D7 2',      'polariteitssplitsing',                '6 biogroepen, 6 antwoorden, 6 rotatiesleutels'],
-          ['2', '12 = 3 \u00D7 2\u00B2','Start van complexiteit',              '12 archetypen op het wiel'],
-          ['3', '36 = 3\u00B2 \u00D7 2\u00B2','3 in het kwadraat \u00D7 4',  '36 vragen (3 per archetype)'],
-          ['4', '72 = 3\u00B2 \u00D7 2\u00B3','binaire verdubbeling',        '72 keuzes, 72 uitgebreide uitkomsten'],
-        ],
+        tArray('resultsModal.pdf.taal.depthHeaders'),
+        tArray('resultsModal.pdf.taal.depthRows'),
         [16, 42, 52, 64],
         { fontSize: 7, vPad: 3 }
       );
 
       y += 5;
       gap();
-      subtitle('Atoom \u2014 3');
-      writeWrapped(
-        'Drie is het ware atoom. Al het andere is drie \u2014 verdubbeld, gekwadrateerd, of als faculteit berekend: drie netwerken, verdubbeld door polariteit, verdubbeld door individuatie, gekwadrateerd tot vragen, verdubbeld tot keuzes, als faculteit tot punten.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
+      subtitle(t('resultsModal.pdf.taal.atom3Title'));
+      writeWrapped(t('resultsModal.pdf.taal.atom3Body'), margin + 2, y, contentW - 4, 8.5, white);
       y += 3;
-      subtitle('Atoom \u2014 6');
-      writeWrapped(
-        'Vijf doorbreekt als enige het patroon \u2014 maar vijf is zelf twee plus drie: 2\u00D79 vragen, 3\u00D76 domeinen. De triade, herenigd met haar dualiteitsoperator. Het systeem rust op een drie die onophoudelijk in een spiegel kijkt. Zelf-9 en Ander-9 sturen Macht-6, Magie-6 en de gespiegelde Wijsheid-6. Zes is het atoom van het hele systeem, en alles vloeit daaruit voort:',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
+      subtitle(t('resultsModal.pdf.taal.atom6Title'));
+      writeWrapped(t('resultsModal.pdf.taal.atom6Body'), margin + 2, y, contentW - 4, 8.5, white);
       y += 5;
       gap();
 
       drawTable(
-        ['Hoeken', 'Toepassing', 'Weergave'],
-        [['30\u00B0 = 360/12', 'Boog per archetype', 'Hoekafstand in het radardiagram']],
+        tArray('resultsModal.pdf.taal.angleHeaders'),
+        tArray('resultsModal.pdf.taal.angleRows'),
         [42, 50, 82],
         { fontSize: 7, vPad: 3 }
       );
@@ -1733,13 +1711,9 @@ const AssessmentResultsModal = ({
       ensureSpace(8);
       y += 5;
       pdf.setFontSize(9); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...white);
-      pdf.text('Geometrische / heilige verbindingen:', margin + 2, y);
+      pdf.text(t('resultsModal.pdf.taal.sacredTitle'), margin + 2, y);
       y += 5;
-      [
-        '72\u00B0 = 360\u00B0/5 = de hoek van een regelmatige vijfhoek \u2014 en we hebben exact 5 lagen',
-        '36\u00B0 = 360\u00B0/10 = de helft van een vijfhoekige hoek \u2014 tevens 6\u00B2',
-        '6 is zowel het kleinste perfecte getal (1+2+3 = 6 = 1\u00D72\u00D73) als het enige getal dat zowel een driehoeksgetal als een faculteit is',
-      ].forEach(b => {
+      tArray('resultsModal.pdf.taal.sacredBullets').forEach(b => {
         ensureSpace(6);
         pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
         pdf.text('\u2022', margin + 2, y);
@@ -1749,7 +1723,7 @@ const AssessmentResultsModal = ({
       y += 5;
       ensureSpace(8);
       pdf.setFontSize(8.5); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...dimWhite);
-      pdf.text('Niet slecht voor een psychologische test.', margin + 2, y);
+      pdf.text(t('resultsModal.pdf.taal.kicker'), margin + 2, y);
       y += 10;
       });
 
@@ -1761,42 +1735,23 @@ const AssessmentResultsModal = ({
       // and the TABLE stretched (via vPad) to fill exactly the space between them.
       const savedNPBmyth = noPageBreak; noPageBreak = true;
 
-      sectionHeading('72 Archetypes \u2014 Culturele & Mythologische Kruisverwijzing', orange);
+      sectionHeading(t('resultsModal.pdf.myth.title'), orange);
 
-      writeWrapped(
-        'Deze mythologie beschrijft de karakter laag van transformatie \u2014 hoe iets beweegt en verandert.\nTwaalf kern-archetypen, elk gedragen door \u00E9\u00E9n van zes neurale hardware-groepen, geven twee\u00EBnzeventig patronen.',
-        margin + 2, y, contentW - 4, 8.5, white
-      );
+      writeWrapped(t('resultsModal.pdf.myth.intro'), margin + 2, y, contentW - 4, 8.5, white);
       y += 5;
 
       // Bottom-anchored closer \u2014 measured first so the table knows its budget.
-      const MYTH_CLOSER_1 = 'De traditie komt telkens op hetzelfde getal uit, maar moderne wetenschap verfijnt de resolutie; onder elke transformatie ligt een dieper biologisch detail die de mythologie niet kon meten.';
-      const MYTH_CLOSER_2 = 'Precies die laag hebben wij voor jou in kaart gebracht.';
+      const MYTH_CLOSER_1 = t('resultsModal.pdf.myth.closer1');
+      const MYTH_CLOSER_2 = t('resultsModal.pdf.myth.closer2');
       pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal');
       const mythCloserLines = pdf.splitTextToSize(MYTH_CLOSER_1, contentW - 4).length
         + pdf.splitTextToSize(MYTH_CLOSER_2, contentW - 4).length;
       const mythCloserH = mythCloserLines * 4.5 + 6; // + paragraph gap
       const mythBottomY = (H - margin) - mythCloserH; // top of the closer block
 
-      const MYTH_HEADERS = ['Traditie / Discipline', 'Het Concept', 'Betekenis & Belang', 'Thematische Kruisverwijzing'];
+      const MYTH_HEADERS = tArray('resultsModal.pdf.myth.headers');
       const MYTH_COLS = [36, 32, 68, 38];
-      const MYTH_ROWS = [
-          ['Hellenistische Oudheid', 'De 72 Vertalers (Septuagint)', 'Volgens de Brief van Aristeas koos de hogepriester zes vertalers uit elk van de twaalf stammen — 12 × 6 = 72 — die de Torah in het Grieks vertaalden.', 'Overdracht van Wijsheid'],
-          ['Numerologie',          'Oneindige Voltooiing',     '8 (Oneindigheid) \u00D7 9 (Voltooiing) = 72. Reduceert tot 9 (7+2), het getal van dienstbaarheid.', 'Transformatie & Wedergeboorte'],
-          ['Heilige Geometrie',   'De Vijfhoek',               '72 graden is de exacte middelpuntshoek van een regelmatige vijfhoek.', 'Goddelijke Architectuur'],
-          ['Astronomie',          'Precessie van de equinoxen', 'De zon verplaatst zich elke 72 jaar 1 graad t.o.v. de sterrenbeelden (cyclus van 25.920 jaar).', 'Kosmisch Uurwerk'],
-          ['Chinese Mythologie',  '72 Transformaties',         'Sun Wukong beheerst 72 Aardse-Demon transformaties voor ultiem aanpassingsvermogen.', 'Controle over Chaos'],
-          ['Chinese Filosofie',   '72 Discipelen',             'Confucius had 72 kerndiscipelen die zijn werk volledig beheersten.', 'Verspreiding over de Wereld'],
-          ['Chinese Mythologie',  '72 Grotten',                'De Bloemen-Fruitberg telt 72 grotten, elk met een demonenkoning die eer bewijst.', 'Kosmisch Bestuur'],
-          ['Joodse Mystiek',      '72 Namen van God',          '72 drietallen van Hebreeuwse letters afgeleid uit Exodus, kanalen voor goddelijke transformatie.', 'Goddelijke Architectuur'],
-          ['Joodse Mystiek',      '72 Engelen',                'De wereld krijgt supervisie van 72 beschermengelen, elk met een specifiek deel van de aarde.', 'Kosmisch Bestuur'],
-          ['Westerse Esoterie',   'De 72 Geesten (Ars Goetia)', 'De Ars Goetia somt exact 72 geesten op — bewust gespiegeld aan de 72 engelen van de Shem HaMephorash: licht en schaduw op hetzelfde getal.', 'Kaart van de Schaduw'],
-          ['Joodse Mystiek',      'Jakobs ladder',             'De ladder die hemel en aarde verbindt, wordt ge\u00EFnterpreteerd als hebbende 72 sporten.', 'Verbinding van Werelden'],
-          ['Christendom',         'De 72 Discipelen',          'Jezus zendt 72 discipelen uit om zijn leer onder alle naties te verspreiden.', 'Verspreiding over de Wereld'],
-          ['Christelijke Mystiek', 'De Wederopstanding',       '72 uur vertegenwoordigt de exacte tijd verstreken tussen de kruisiging en de wederopstanding.', 'Transformatie & Wedergeboorte'],
-          ['Islamitische Traditie','72 Metgezellen',           'Imam Hoessein werd vergezeld door 72 volgelingen tijdens de Slag bij Karbala \u2014 ultieme toewijding.', 'Opoffering & Toewijding'],
-          ['Egyptische Mythologie','Het Osiris-complot',       '72 samenzweerders spanden samen met Seth om de god Osiris te doden.', 'Transformatie & Wedergeboorte'],
-      ];
+      const MYTH_ROWS = tArray('resultsModal.pdf.myth.rows');
 
       // Stretch: natural text height at 7.5pt \u2192 the surplus up to the closer becomes
       // per-row padding (capped 3..12 so extremes can't wreck the rhythm).
@@ -1825,7 +1780,7 @@ const AssessmentResultsModal = ({
       const savedNPBhro = noPageBreak; noPageBreak = true; // no bottom padding — let content flow to the page edge, never spill to a new page
 
       // ── Hoe Het Rapport Ontstaat — vier stappen ──
-      sectionHeading('Hoe Het Rapport Ontstaat', orange);
+      sectionHeading(t('resultsModal.pdf.ontstaat.title'), orange);
 
       const leadPara = (lead, leadColor, rest) => {
         // Subtitle on its own line — blue and larger, matching the report's other sub-headings.
@@ -1837,13 +1792,13 @@ const AssessmentResultsModal = ({
         y += 3;
       };
 
-      writeWrapped('En die map is de aarde van jouw rapport, waarvan er geen twee hetzelfde lezen \u2014 niet alleen in inhoud, maar in toon. Taal en structuur worden afgestemd op je dominante netwerk: analytisch en gestructureerd voor CEN, reflectief en associatief voor DMN, direct en responsief voor het Salience Network. Het rapport spreekt, met andere woorden, de taal van het systeem dat het beschrijft.\nWat volgt is geen typebeschrijving uit een printer, maar een hologram die in meerdere stappen uit jouw antwoordprofiel wordt opgebouwd.', margin + 2, y, contentW - 4, 8.5, white);
+      writeWrapped(t('resultsModal.pdf.ontstaat.intro'), margin + 2, y, contentW - 4, 8.5, white);
       y += 5;
 
-      leadPara("De geometrische echo's", green, "Na de toetsing berekent het systeem geen rijtje scores maar een gelaagde geometrie. Elke keuze heeft door de vijf kanalen van het wiel gebloed, en dat laat sporen na: schaduwen geworpen naar de tegenpolen, gewicht verschoven naar ondersteunende archetypen, polarisatie tussen wat sterk en wat onderdrukt staat. Deze echo's \u2014 niet de kale totalen \u2014 vormen de werkelijke vorm die gelezen wordt. Twee mensen met dezelfde top-archetypen kunnen een volstrekt andere geometrie hebben.");
-      leadPara("Main \u00D7 Support \u2014 de relationele lezing", purple, "Je resultaat is geen archetype maar een relatie. Het dominante archetype levert het anker; de resterende, via hen biologische groep, kleuren hoe dit anker zich uitdrukt. Dezelfde Minnaar leest anders met een ordenend support dan met een ontwrichtend support \u2014 de gave \u00E9n de valkuil ontstaan juist in die combinatie, niet in het archetype alleen.\nZo worden twaalf kernen twee\u00EBnzeventig configuraties: de relatie is de eenheid van de lezing, niet het etiket.");
-      leadPara('De analyse', amber, "Het taalmodel Claude leest dit volledige profiel tegen het complete Deltawerken-framework: de drie bronmodellen, de archetype-profielen, en de twee\u00EBnzeventig Extended Archetypes. Is er eigen OCEAN-data aangeleverd, dan wordt die als verdieping ge\u00EFntegreerd \u2014 inclusief, juist op de plekken waar de gemeten persoonlijkheid en de geometrie uiteenlopen.\nDie divergentie wordt niet gladgestreken; ze is vaak het meest verhelderende deel van de lezing.");
-      leadPara('De toestand-lezing', red, "Dus, het rapport leest niet alleen wie je bent bij rust, maar hoe je configuratie zich houdt onder druk. Voor elk profiel modelleert het de plastische laag: waar je het sterkst staat, waar je rekt, op welk punt je omslaat, en hoe het herstel verloopt. Dit is wat een statisch type nooit kan tonen \u2014 de vorm van je veerkracht, en wat het je kost om overeind te blijven.\n\nWat nu volgt, is precies dat \u2014 voor jou.");
+      leadPara(t('resultsModal.pdf.ontstaat.s1Lead'), green, t('resultsModal.pdf.ontstaat.s1Body'));
+      leadPara(t('resultsModal.pdf.ontstaat.s2Lead'), purple, t('resultsModal.pdf.ontstaat.s2Body'));
+      leadPara(t('resultsModal.pdf.ontstaat.s3Lead'), amber, t('resultsModal.pdf.ontstaat.s3Body'));
+      leadPara(t('resultsModal.pdf.ontstaat.s4Lead'), red, t('resultsModal.pdf.ontstaat.s4Body'));
 
       // C12 model image \u2014 bottom-anchored, centered; 1.5x the previous size (TNM wheel * 1.1 * 1.5).
       try {
@@ -1867,8 +1822,8 @@ const AssessmentResultsModal = ({
       const endWetContext = trackBlock('wet_context');
       await justifiedPage(async (gap) => {
 
-      sectionHeading('Wetenschappelijke Context', orange);
-      writeWrapped('Het Deltawerken Model is een zelfreflectie-instrument, geen klinisch diagnostisch systeem. De neurobiologische termen worden conceptueel ingezet \u2014 wetenschappelijk onderzoek als inspiratiebron en denkkader, niet als diagnostische claim.', margin + 2, y, contentW - 4, 8.5, white);
+      sectionHeading(t('resultsModal.pdf.wetenschap.title'), orange);
+      writeWrapped(t('resultsModal.pdf.wetenschap.intro'), margin + 2, y, contentW - 4, 8.5, white);
       y += 5;
 
       const refEntry = (label, sources) => {
@@ -1904,38 +1859,38 @@ const AssessmentResultsModal = ({
 
       ensureSpace(10);
       pdf.setFontSize(9.5); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...green);
-      pdf.text('Empirisch fundament', margin + 2, y); y += 5;
+      pdf.text(t('resultsModal.pdf.wetenschap.empiricalTitle'), margin + 2, y); y += 5;
 
-      refEntry('Archetypische psychologie', "C.G. Jung (1921), Psychological Types; Carol Pearson (1991), Awakening the Heroes Within");
-      refEntry('Neurale netwerken', "V. Menon (2011), Large-scale brain networks, Trends Cogn. Sci.; M.E. Raichle (2001), A default mode of brain function, PNAS");
-      refEntry('Default Mode & interne simulatie', "R.L. Buckner (2008), The brain's default network, Annals NYAS; K. Christoff (2016), Mind-wandering as spontaneous thought, Nat. Rev. Neurosci.");
-      refEntry('Voorspellend brein', "K. Friston (2010), The free-energy principle, Nat. Rev. Neurosci.; G. Buzs\u00E1ki (2019), The Brain from Inside Out");
-      refEntry('Netwerkdynamiek & binding', "D. Bassett (2011), Dynamic reconfiguration of brain networks, PNAS; G. Buzs\u00E1ki & X.-J. Wang (2012), Mechanisms of gamma oscillations, Annu. Rev. Neurosci.");
-      refEntry('Entropie & herorganisatie', "R. Carhart-Harris (2014), The entropic brain, Front. Hum. Neurosci.; R. Carhart-Harris & K. Friston (2019), REBUS and the anarchic brain, Pharmacol. Rev.");
-      refEntry('Persoonlijkheidstheorie', "P.T. Costa & R.R. McCrae (1992), NEO-PI-R; L.R. Goldberg (1993), Phenotypic personality traits, Am. Psychol.; C. DeYoung (2015), Cybernetic Big Five Theory, J. Res. Pers.");
-      refEntry('Motivatie & drijfveer', "J. Panksepp (1998), Affective Neuroscience; J. Gray & N. McNaughton (2000), The Neuropsychology of Anxiety; E. Aston-Jones & J. Cohen (2005), LC-NE function, Annu. Rev. Neurosci.");
-      refEntry('Emotie & belichaming', "L.F. Barrett (2017), How Emotions Are Made; A. Damasio (2003), Looking for Spinoza; M. Solms (2021), The Hidden Spring; A. Seth (2021), Being You");
-      refEntry('Perceptie & hemisferische asymmetrie', "L. Robertson & R. Ivry (1998), The Two Sides of Perception");
-      refEntry('Beperking & context', "A. Juarrero (2023), Context Changes Everything");
-      refEntry('Cognitieve ontwikkeling', "J. Piaget (1954), The Construction of Reality in the Child; R. Kegan (1994), In Over Our Heads; J. Vervaeke (2019), Awakening from the Meaning Crisis; J. Peterson (1999), Maps of Meaning");
-      refEntry('Psychodynamiek, empirisch getrieerd', "D. Westen (1999), The scientific status of unconscious processes, Psychol. Bull.");
-      refEntry('Stress-neuroplasticiteit', "S. Russo & E. Nestler (2013), Brain reward circuitry in mood disorders, Nat. Rev. Neurosci.; R. Shansky et al. (2009), dendritische hermodellering; R. Duman & G. Aghajanian (2012), Synaptic dysfunction in depression, Science");
-      refEntry('Multischaal-biologie', "M. Levin (2019), The computational boundary of a 'self', Front. Psychol.");
-      refEntry('Relationele co-regulatie', "J. Coutinho et al. (2021), Cardiac synchrony in dyadic co-regulation, Psychophysiology; D. Palumbo et al. (2017), Interpersonal autonomic physiology");
-      refEntry('Creativiteit & neurale integratie', "M. Benedek et al. (2014), Brain connectivity during creative cognition, Neuropsychologia; R.E. Beaty et al. (2018), Robust prediction of creativity from brain activity, PNAS");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.archetypal'), "C.G. Jung (1921), Psychological Types; Carol Pearson (1991), Awakening the Heroes Within");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.networks'), "V. Menon (2011), Large-scale brain networks, Trends Cogn. Sci.; M.E. Raichle (2001), A default mode of brain function, PNAS");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.dmn'), "R.L. Buckner (2008), The brain's default network, Annals NYAS; K. Christoff (2016), Mind-wandering as spontaneous thought, Nat. Rev. Neurosci.");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.predictive'), "K. Friston (2010), The free-energy principle, Nat. Rev. Neurosci.; G. Buzs\u00E1ki (2019), The Brain from Inside Out");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.dynamics'), "D. Bassett (2011), Dynamic reconfiguration of brain networks, PNAS; G. Buzs\u00E1ki & X.-J. Wang (2012), Mechanisms of gamma oscillations, Annu. Rev. Neurosci.");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.entropy'), "R. Carhart-Harris (2014), The entropic brain, Front. Hum. Neurosci.; R. Carhart-Harris & K. Friston (2019), REBUS and the anarchic brain, Pharmacol. Rev.");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.personality'), "P.T. Costa & R.R. McCrae (1992), NEO-PI-R; L.R. Goldberg (1993), Phenotypic personality traits, Am. Psychol.; C. DeYoung (2015), Cybernetic Big Five Theory, J. Res. Pers.");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.motivation'), "J. Panksepp (1998), Affective Neuroscience; J. Gray & N. McNaughton (2000), The Neuropsychology of Anxiety; E. Aston-Jones & J. Cohen (2005), LC-NE function, Annu. Rev. Neurosci.");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.emotion'), "L.F. Barrett (2017), How Emotions Are Made; A. Damasio (2003), Looking for Spinoza; M. Solms (2021), The Hidden Spring; A. Seth (2021), Being You");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.perception'), "L. Robertson & R. Ivry (1998), The Two Sides of Perception");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.constraint'), "A. Juarrero (2023), Context Changes Everything");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.development'), "J. Piaget (1954), The Construction of Reality in the Child; R. Kegan (1994), In Over Our Heads; J. Vervaeke (2019), Awakening from the Meaning Crisis; J. Peterson (1999), Maps of Meaning");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.psychodynamics'), "D. Westen (1999), The scientific status of unconscious processes, Psychol. Bull.");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.stress'), t('resultsModal.pdf.wetenschap.stressSources'));
+      refEntry(t('resultsModal.pdf.wetenschap.refs.multiscale'), "M. Levin (2019), The computational boundary of a 'self', Front. Psychol.");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.coregulation'), "J. Coutinho et al. (2021), Cardiac synchrony in dyadic co-regulation, Psychophysiology; D. Palumbo et al. (2017), Interpersonal autonomic physiology");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.creativity'), "M. Benedek et al. (2014), Brain connectivity during creative cognition, Neuropsychologia; R.E. Beaty et al. (2018), Robust prediction of creativity from brain activity, PNAS");
 
       y += 1.5;
       ensureSpace(8);
-      writeWrapped('Theoretische & frontier-ankers \u2014 richtinggevend, bewust lichter gewogen; nooit dragend voor een afzonderlijke waarde.', margin + 2, y, contentW - 4, 8, dimWhite, 'italic');
+      writeWrapped(t('resultsModal.pdf.wetenschap.frontierNote'), margin + 2, y, contentW - 4, 8, dimWhite, 'italic');
       y += 2;
 
-      refEntry('Bewustzijnstheorie', "G. Tononi e.a. (2023), IIT 4.0, PLoS Comput. Biol.; Cogitate Consortium (2025), Adversarial testing of consciousness theories, Nature");
-      refEntry('Oscillatoir bindingsveld', "J. McFadden (2020), Integrating information in the brain's EM field (CEMI), Neurosci. Conscious.");
-      refEntry('Emergentie op schaaldrempels', "J. Wei e.a. (2022), Emergent abilities of LLMs; R. Schaeffer e.a. (2023), Are emergent abilities a mirage?; Templeton e.a. (2024), Scaling Monosemanticity");
-      refEntry('Ontologische verankering', "D. Bohm (1980), Wholeness and the Implicate Order; E. Verlinde (2016), Emergent gravity and the dark universe; B. Kastrup (2019), Reasonable inferences from quantum mechanics");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.consciousness'), "G. Tononi e.a. (2023), IIT 4.0, PLoS Comput. Biol.; Cogitate Consortium (2025), Adversarial testing of consciousness theories, Nature");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.oscillatory'), "J. McFadden (2020), Integrating information in the brain's EM field (CEMI), Neurosci. Conscious.");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.emergence'), "J. Wei e.a. (2022), Emergent abilities of LLMs; R. Schaeffer e.a. (2023), Are emergent abilities a mirage?; Templeton e.a. (2024), Scaling Monosemanticity");
+      refEntry(t('resultsModal.pdf.wetenschap.refs.ontological'), "D. Bohm (1980), Wholeness and the Implicate Order; E. Verlinde (2016), Emergent gravity and the dark universe; B. Kastrup (2019), Reasonable inferences from quantum mechanics");
 
       y += 3;
-      writeWrapped('Niet elke bron weegt even zwaar. Menon, Friston en de stress-neuroplasticiteit-literatuur dragen het meeste gewicht; de theoretische ankers zijn richtinggevend maar opener, en worden navenant lichter gewogen \u2014 nooit als vaststaand fundament behandeld. Volledige bronverantwoording \u2014 inclusief waar wij afwijken en wat onze claims zou weerleggen \u2014 onder Bronnen & Verantwoording.', margin + 2, y, contentW - 4, 8, dimWhite);
+      writeWrapped(t('resultsModal.pdf.wetenschap.closing'), margin + 2, y, contentW - 4, 8, dimWhite);
       });
       endWetContext();
 
@@ -1947,7 +1902,7 @@ const AssessmentResultsModal = ({
 
       // ── WHY THIS COMBINATION ──
       if (result.combinationText) {
-        sectionHeading(`Waarom jij ${result.name} bent`, green);
+        sectionHeading(`Waarom jij ${extName || result.name} bent`, green);
         writeWrapped(result.combinationText, margin + 2, y, contentW - 4, 8.5, white);
         y += 4;
         hr();
@@ -2073,7 +2028,7 @@ const AssessmentResultsModal = ({
           pdf.setFontSize(7);
           pdf.setFont('helvetica', 'bold');
           pdf.setTextColor(...(sa.isActive ? [168, 85, 247] : [100, 160, 140]));
-          pdf.text(sa.group, col0x + 1, y + 2.5);
+          pdf.text(sa.supportName || sa.group, col0x + 1, y + 2.5);
           cellText(sa.extendedName, col0x, y + 5, nameColW, nameFontSize, sa.isActive ? white : [160, 185, 175], 'bold');
           if (sa.isActive) {
             // active row highlighted — no extra label needed
@@ -2097,7 +2052,10 @@ const AssessmentResultsModal = ({
       // 1 page tendency reads, NO numbers + explicit instrument-disclaimer.
       const hasOceanUpload = !!uploadedOceanScores;
       const OCEAN_DIMS_P = ['O', 'C', 'E', 'A', 'N'];
-      const OCEAN_FULL_P = { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
+      const OCEAN_FULL_P = {
+        O: t('resultsModal.ocean.O'), C: t('resultsModal.ocean.C'), E: t('resultsModal.ocean.E'),
+        A: t('resultsModal.ocean.A'), N: t('resultsModal.ocean.N'),
+      };
       const OCEAN_COLORS_P = { O: [167, 139, 250], C: [34, 211, 238], E: [103, 232, 249], A: [129, 140, 248], N: [196, 181, 253] };
       const oceanTraitOf = (letter) =>
         (displaySections || []).find(s => new RegExp('^\\**\\s*trait\\s+' + letter + '\\b', 'i').test(cleanTitle(s.title || '')));
@@ -2113,12 +2071,8 @@ const AssessmentResultsModal = ({
       // Instrument disclaimer (heavy when no upload, lighter when upload present).
       const oceanDisclaimer = (heavy) => {
         const txt = heavy
-          ? (language === 'en'
-              ? 'No external OCEAN report was uploaded. The reads below are hedged tendencies grounded in your geometry — NOT measured Big Five scores. For an accurate trait reading, take a validated OCEAN/Big Five test.'
-              : 'Er is geen extern OCEAN-rapport geüpload. De lezingen hieronder zijn gehedgde tendensen, gegrond in je geometrie — GEEN gemeten Big Five-scores. Voor een accurate trait-lezing neem je een gevalideerde OCEAN/Big Five-test af.')
-          : (language === 'en'
-              ? 'This model translates how your configuration EXPRESSES each trait; it does not measure or certify the traits themselves. An accurate trait reading requires a real OCEAN instrument.'
-              : 'Dit model VERTAALT hoe jouw configuratie elk trait uitdrukt; het meet of certificeert de traits niet. Een accurate trait-lezing vereist een echt OCEAN-instrument.');
+          ? t('resultsModal.pdf.oceanPage.disclaimerHeavy')
+          : t('resultsModal.pdf.oceanPage.disclaimerLight');
         pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
         const lines = pdf.splitTextToSize(txt, contentW - 10);
         const dH = lines.length * 3.6 + 5;
@@ -2137,7 +2091,7 @@ const AssessmentResultsModal = ({
       const drawUploadedOceanTable = () => {
         if (!uploadedOceanScores) return;
         pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...blue);
-        pdf.text(language === 'en' ? 'UPLOADED OCEAN VALUES' : 'GEÜPLOADE OCEAN-WAARDEN', margin + 2, y);
+        pdf.text(t('resultsModal.pdf.oceanPage.uploadedTableTitle'), margin + 2, y);
         y += 6;
         const labelW = 30, scoreColW = 16, barW = contentW - labelW - scoreColW - 4, barH = 4;
         OCEAN_DIMS_P.forEach(dim => {
@@ -2235,9 +2189,7 @@ const AssessmentResultsModal = ({
               backgroundColor: '#060612', scale: 2, useCORS: true, logging: false,
             });
             const morphImg = morphCanvas.toDataURL('image/jpeg', 0.85);
-            const capTxt = language === 'en'
-              ? 'Main and Support show each archetype’s absolute cost-curve (0–100). Samengesteld (composed) is the blended load normalised to its own peak (=100%) — it shows the SHAPE within your configuration, not an absolute comparison, so it can sit above the individual lines.'
-              : 'Hoofd en Support tonen elk de absolute kostencurve van het archetype (0–100). Samengesteld is de gecombineerde belasting, genormaliseerd op zijn eigen piek (=100%) — het toont de VORM binnen jouw configuratie, geen absolute vergelijking, en kan daarom boven de losse lijnen liggen.';
+            const capTxt = t('resultsModal.pdf.morph.caption');
 
             const innerPad = 3;
             const MORPH_SCALE = 0.75;                         // 25% smaller than full width
@@ -2291,7 +2243,7 @@ const AssessmentResultsModal = ({
       await justifiedPage(async (gap) => {
       const savedNPBdc = noPageBreak; noPageBreak = true; // no bottom padding — let text flow to edge
       if (result.subgroups && result.subgroups.length > 0) {
-        sectionHeading('Dual-Core Dynamics', amber);
+        sectionHeading(t('resultsModal.pdf.dualCore.title'), amber);
 
         // Legend
         const legY = y;
@@ -2308,8 +2260,8 @@ const AssessmentResultsModal = ({
         y += 7;
 
         const GROUP_META_PDF = {
-          Ruling:     { network: 'CEN Dominantie',          drive: 'Externe structuur en orde' },
-          Relational: { network: 'Limbic Coupling',          drive: 'Emotionele fusie en empathie' },
+          Ruling:     { network: t('resultsModal.groups.ruling.network'),     drive: t('resultsModal.groups.ruling.drive') },
+          Relational: { network: t('resultsModal.groups.relational.network'), drive: t('resultsModal.groups.relational.drive') },
           Seekr: 1, Judge: 2, Lover: 3, Caregiver: 4,
           Innocent: 5, Explorer: 6, Outlaw: 7, Trickster: 8,
           Sage: 9, Artist: 10, Magician: 11, Hero: 12,
@@ -2450,7 +2402,7 @@ const AssessmentResultsModal = ({
       // Used on the Schaduw/Blindspot page (p9) per the page-map. Returns true if drawn.
       const renderRadarChart = async (maxH = 0, { caption = true } = {}) => {
         if (!radarRef.current) return false;
-        if (caption) sectionHeading('Visuele Analyse — Triple Network Wiel', green);
+        if (caption) sectionHeading(t('resultsModal.pdf.radar.heading'), green);
         try {
           const radarCanvas = await html2canvas(radarRef.current, {
             backgroundColor: null, scale: 3, useCORS: true, logging: false,
@@ -2487,7 +2439,7 @@ const AssessmentResultsModal = ({
         paintBg();
         y = margin;
         markPage();
-        sectionHeading('Groep Dynamiek — Neurobiologische Interpretatie', cyan);
+        sectionHeading(t('resultsModal.pdf.groepDyn.heading'), cyan);
         writePdfMarkdown(groepDynSection.content, margin + 2, contentW - 4);
         y += 3;
         hr();
@@ -2621,7 +2573,7 @@ const AssessmentResultsModal = ({
             pdf.setFillColor(20, 16, 36);
             const disclaimerX = margin;
             const disclaimerW = contentW;
-            const disclaimerText = 'Meta-Disclaimer: Dit rapport is gegenereerd door het Garden For Life Deltawerken Model \u2014 een zelfreflectie-instrument, geen klinische diagnose. De gebruikte neurobiologische termen zijn metaforen binnen dit specifieke model. Raadpleeg een professional voor medisch of psychologisch advies.';
+            const disclaimerText = t('resultsModal.pdf.metaDisclaimer');
             pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
             const disclaimerLines = pdf.splitTextToSize(disclaimerText, disclaimerW - 8);
             const dlH = disclaimerLines.length * 3.5 + 4;
@@ -2727,7 +2679,7 @@ const AssessmentResultsModal = ({
             noPageBreak = true; // no bottom padding — let the text flow down to the page edge
             // No page title — each read gets its own "De Stille Stem — <read>" header instead.
             stillePage.forEach((section, i) => {
-              renderSection('De Stille Stem — ' + cleanTitle(section.title), section.content, purple);
+              renderSection(t('resultsModal.labels.stilleStemPrefix') + cleanTitle(section.title), section.content, purple);
               if (i < stillePage.length - 1) { hr(); gap(); }
             });
             noPageBreak = savedNPB;
@@ -2831,25 +2783,25 @@ const AssessmentResultsModal = ({
           // disclaimer) and never writes its agent-prompt section. This deterministic prompt,
           // built from the archetype configuration, is used whenever the model omits its own.
           const buildFallbackAgentPrompt = () => {
-            const mn = result.mainName || result.overallArchetype || 'mijn Kern';
-            const sn = result.secondaryName || result.supportArchetype || 'mijn Support';
-            const shn = result.shadowName || result.shadowArchetype || 'mijn Schaduw';
-            const bn = result.blindspotName || result.blindspotArchetype || 'mijn Blindspot';
+            const mn = result.mainName || result.overallArchetype || t('resultsModal.pdf.prompt.fallbackCoreName');
+            const sn = result.secondaryName || result.supportArchetype || t('resultsModal.pdf.prompt.fallbackSupportName');
+            const shn = result.shadowName || result.shadowArchetype || t('resultsModal.pdf.prompt.fallbackShadowName');
+            const bn = result.blindspotName || result.blindspotArchetype || t('resultsModal.pdf.prompt.fallbackBlindspotName');
             const en = result.extendedName || '';
             return [
-              `Je bent mijn persoonlijke reflectie-sparringspartner, afgestemd op mijn Garden For Life Deltawerken-configuratie${en ? ` (${en})` : ''}.`,
+              tFunc('resultsModal.pdf.prompt.fallbackIntro')(en),
               '',
-              '**Mijn configuratie**',
-              `- Kern (Main): ${mn}`,
-              `- Support: ${sn}`,
-              `- Schaduw (180° tegenpool): ${shn}`,
-              `- Blindspot (Rode Lijn): ${bn}`,
+              t('resultsModal.pdf.prompt.fallbackConfigHeading'),
+              tFunc('resultsModal.pdf.prompt.fallbackCoreLine')(mn),
+              tFunc('resultsModal.pdf.prompt.fallbackSupportLine')(sn),
+              tFunc('resultsModal.pdf.prompt.fallbackShadowLine')(shn),
+              tFunc('resultsModal.pdf.prompt.fallbackBlindspotLine')(bn),
               '',
-              '**Toon & aanpak**',
-              `Spreek mij aan vanuit mijn Kern (${mn}) en ondersteun met de kwaliteiten van mijn Support (${sn}). Daag mijn Schaduw (${shn}) en Blindspot (${bn}) respectvol uit zodra ik in oude patronen verval. Wees direct maar warm; spiegel mij, stuur mij niet.`,
+              t('resultsModal.pdf.prompt.fallbackToneHeading'),
+              tFunc('resultsModal.pdf.prompt.fallbackToneBody')(mn, sn, shn, bn),
               '',
-              '**Gebruik**',
-              'Voeg het volledige PDF-rapport toe als context voor de scherpste sparringspartner. Stel telkens één gerichte vraag die mij een stap verder brengt in mijn vernieuwde landschap.',
+              t('resultsModal.pdf.prompt.fallbackUseHeading'),
+              t('resultsModal.pdf.prompt.fallbackUseBody'),
             ].join('\n');
           };
 
@@ -2862,10 +2814,10 @@ const AssessmentResultsModal = ({
             paintBg(); markPage();
             y = margin;
             // Fixed heading in orange
-            sectionHeading('De volledige AI prompt', orange);
+            sectionHeading(t('resultsModal.pdf.prompt.heading'), orange);
             // Instruction tip in purple
             pdf.setFontSize(8); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(...purple);
-            pdf.splitTextToSize('Kopieer deze prompt en configureer je ai agent. Voeg de PDF toe als bijlage voor de beste sparringspartner.', contentW - 4).forEach(line => { pdf.text(line, margin + 2, y); y += 4.5; });
+            pdf.splitTextToSize(t('resultsModal.pdf.prompt.tip'), contentW - 4).forEach(line => { pdf.text(line, margin + 2, y); y += 4.5; });
             y += 2;
             // Agent prompt: strip intro text + first ## heading (KERN DISCLAIMER), show its body, then rest with headings
             if (agentSection) {
@@ -2905,11 +2857,11 @@ const AssessmentResultsModal = ({
           pdf.setFontSize(7);
           pdf.setTextColor(...white);
           pdf.setFont('helvetica', 'normal');
-          pdf.text('Garden for Life  \u2022  Archetype Analyse', W / 2, y, { align: 'center' });
+          pdf.text(t('resultsModal.pdf.footer.brand'), W / 2, y, { align: 'center' });
           y += 3.5;
-          pdf.text(`Score: ${result.totalScore} / ${result.maxScore}`, W / 2, y, { align: 'center' });
+          pdf.text(tFunc('resultsModal.pdf.footer.score')(result.totalScore, result.maxScore), W / 2, y, { align: 'center' });
           y += 3.5;
-          pdf.text(`Gegenereerd op ${new Date().toLocaleDateString('nl-NL')}`, W / 2, y, { align: 'center' });
+          pdf.text(tFunc('resultsModal.pdf.footer.generatedOn')(new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL')), W / 2, y, { align: 'center' });
           y += 6;
 
           // ── Closing message + image: pinned to the bottom of the last page ──
@@ -2921,12 +2873,12 @@ const AssessmentResultsModal = ({
           const lineH = 4.0;
           const closingTextW = hasBannerImage ? contentW - imgSizeMm - 6 : contentW - 4;
           pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
-          const line1 = pdf.splitTextToSize('Hoogachtende Leerling,', closingTextW);
-          const line2 = pdf.splitTextToSize('Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en reik ik nog \u00E9\u00E9n laatste keer uit voor jouw hulp.', closingTextW);
-          const line3 = pdf.splitTextToSize('Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data hoe beter wij kunnen optimaliseren.', closingTextW);
-          const line4 = pdf.splitTextToSize('Zolang de beta-fase loopt is alleen het leerling niveau toegankelijk.', closingTextW);
-          const line4b = pdf.splitTextToSize('Een donatie is optioneel, maar is meer dan welkom en is directe voeding voor ons project! =)', closingTextW);
-          const line5 = pdf.splitTextToSize('Anyway- pionier, hartelijk dank voor de tijd en attentie!', closingTextW);
+          const line1 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l1'), closingTextW);
+          const line2 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l2'), closingTextW);
+          const line3 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l3'), closingTextW);
+          const line4 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l4'), closingTextW);
+          const line4b = pdf.splitTextToSize(t('resultsModal.pdf.closing.l4b'), closingTextW);
+          const line5 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l5'), closingTextW);
           const gapSingle = lineH;
           const gapDouble = lineH * 2;
           const totalTextH =
@@ -2980,7 +2932,14 @@ const AssessmentResultsModal = ({
         const monoH = 3.5;
 
         const POS = { JUDGE:1,LOVER:2,CAREGIVER:3,INNOCENT:4,EXPLORER:5,OUTLAW:6,TRICKSTER:7,SAGE:8,ARTIST:9,MAGICIAN:10,HERO:11,RULER:12 };
-        const NET = { RULING:'CEN Dominantie',RELATIONAL:'Limbic Coupling',SEEKER:'Hoge Openness',CHAOS:'Salience Network',ABSTRACT:'DMN Hyper-connectie',AGENCY:'Extraversie/Wilskracht' };
+        const NET = {
+          RULING: t('resultsModal.groups.ruling.network'),
+          RELATIONAL: t('resultsModal.groups.relational.network'),
+          SEEKER: t('resultsModal.groups.seeker.network'),
+          CHAOS: t('resultsModal.groups.chaos.network'),
+          ABSTRACT: t('resultsModal.groups.abstract.network'),
+          AGENCY: t('resultsModal.groups.agency.networkCompact'),
+        };
         const GA = { RULING:['JUDGE','RULER'],RELATIONAL:['LOVER','CAREGIVER'],SEEKER:['INNOCENT','EXPLORER'],CHAOS:['OUTLAW','TRICKSTER'],ABSTRACT:['SAGE','ARTIST'],AGENCY:['MAGICIAN','HERO'] };
 
         const dm = {}; (result.archetypeDetails || []).forEach(d => { dm[(d.key || '').toUpperCase()] = d; });
@@ -2995,7 +2954,9 @@ const AssessmentResultsModal = ({
         const counterTriId = cogTri ? ({ 1:3, 2:4, 3:1, 4:2 })[cogTri.id] : null;
         const counterTri = counterTriId ? ALL_COG_TRIANGLES.find(t => t.id === counterTriId) : null;
         const currentExt = (result.allSupportArchetypes || []).find(
-          sa => (sa.group || '').toUpperCase() === (result.supportGroup || '').toUpperCase()
+          sa => sa.support
+            ? (sa.support || '').toUpperCase() === sk
+            : (sa.group || '').toUpperCase() === (result.supportGroup || '').toUpperCase()
         );
         const cp = aiProfileData || {};
         const eo = result.extendedOcean || {};
@@ -3009,7 +2970,7 @@ const AssessmentResultsModal = ({
         const mainTot = dm[mk]?.total || 0;
         const shadTot = dm[shk]?.total || 0;
         const polGap = mainTot > 0 ? Math.round(Math.abs(mainTot - shadTot) / mainTot * 100) : 0;
-        const polCat = polGap > 60 ? 'Hoge Polarisatie' : polGap > 30 ? 'Matig' : 'Hoge Individuatie';
+        const polCat = polGap > 60 ? t('resultsModal.pdf.data.polHigh') : polGap > 30 ? t('resultsModal.pdf.data.polMid') : t('resultsModal.pdf.data.polLow');
 
         let sGroup = '', sScore = 0;
         Object.entries(GA).forEach(([gk, [a1, a2]]) => {
@@ -3020,12 +2981,12 @@ const AssessmentResultsModal = ({
           ? (result.archetypeDetails || []).reduce((s, d) => s + (d.total || 0), 0) / 12 : 0;
         const [hw1, hw2] = GA[sGroup] || ['',''];
         const hwRes = (dm[hw1]?.total || 0) > avgS && (dm[hw2]?.total || 0) > avgS
-          ? `Beide leden van ${sGroup} zijn verhoogd (${dm[hw1]?.total || 0} + ${dm[hw2]?.total || 0} > gem. ${Math.round(avgS)})`
-          : `${sGroup} groep heeft de hoogste concentratie`;
+          ? tFunc('resultsModal.pdf.data.hwBoth')(sGroup, dm[hw1]?.total || 0, dm[hw2]?.total || 0, Math.round(avgS))
+          : tFunc('resultsModal.pdf.data.hwSingle')(sGroup);
         const yCogPts = dm[mk]?.yellow_cog || 0;
         const cfDesc = yCogPts > 4
-          ? `Yellow bleed actief (${yCogPts}pt) via cognitieve driehoek ${cogTri?.mode || ''}`
-          : `Lage cognitieve driehoek activatie (${yCogPts}pt)`;
+          ? tFunc('resultsModal.pdf.data.cfActive')(yCogPts, cogTri?.mode || '')
+          : tFunc('resultsModal.pdf.data.cfLow')(yCogPts);
 
         const mLine = (text, color = white) => {
           ensureSpace(monoH);
@@ -3044,9 +3005,9 @@ const AssessmentResultsModal = ({
         const dash = (label) => `-- ${label} --`;
 
         mBold(SEP, green);
-        mBold('PROFIEL DATA VOOR AI VERWERKING', green);
-        mLine('Deze sectie is machineleesbaar en bedoeld als primaire databron', dimWhite);
-        mLine('voor externe AI-agents. Upload het volledige rapport als bijlage.', dimWhite);
+        mBold(t('resultsModal.pdf.data.title'), green);
+        mLine(t('resultsModal.pdf.data.introLine1'), dimWhite);
+        mLine(t('resultsModal.pdf.data.introLine2'), dimWhite);
         mBold(SEP, green);
         mGap();
 
@@ -3055,11 +3016,11 @@ const AssessmentResultsModal = ({
         // client re-derivation (gate open) only when a backend code isn't present (back-compat).
         const orbCode = orbCodeRef.current || orbCodeFromResult(result);
         if (orbCode) {
-          mBold(dash('ORB-SIGNATUUR (LOGIN-CODE)'), green);
+          mBold(dash(t('resultsModal.pdf.data.orbSection')), green);
           mLine(`ORB::${orbCode}::ORB`, dimWhite);
           // Extended archetype name, wrapped like the orb code so PDF-login can recover it even
           // after whitespace-stripping. Base64 (UTF-8) keeps spaces/diacritics intact as one token.
-          const archName = result.extendedNameNl || result.extendedName || '';
+          const archName = result.extendedName || result.extendedNameNl || '';
           if (archName) {
             let archB64 = '';
             try { archB64 = btoa(unescape(encodeURIComponent(archName))); } catch (_) {}
@@ -3068,16 +3029,16 @@ const AssessmentResultsModal = ({
           mGap();
         }
 
-        mBold(dash('IDENTITEIT'), green);
-        mLine(`Extended Archetype: ${result.extendedName || 'N/A'}`);
-        mLine(`Main: ${result.mainName || ''} (${POS[mk] || '?'}) | Groep: ${ARCHETYPE_TO_GROUP[mk] || ''} | Netwerk: ${NET[ARCHETYPE_TO_GROUP[mk]] || ''}`);
-        mLine(`Support: ${result.secondaryName || ''} (${POS[sk] || '?'}) | Groep: ${result.supportGroup || ''}`);
-        mLine(`Shadow: ${result.shadowName || ''} (${POS[shk] || '?'}) | 180 tegenpool van Main`);
-        mLine(`Blindspot: ${result.blindspotName || ''} (${POS[bk] || '?'}) | Rode Lijn van Main`);
-        mLine(`Harmony Match: ${eo.harmony ? 'Ja' : 'Nee'}`);
+        mBold(dash(t('resultsModal.pdf.data.identitySection')), green);
+        mLine(`${t('resultsModal.pdf.data.extendedArchetype')}: ${result.extendedName || t('resultsModal.pdf.data.notAvailable')}`);
+        mLine(`${t('resultsModal.pdf.data.main')}: ${result.mainName || ''} (${POS[mk] || '?'}) | ${t('resultsModal.pdf.data.group')}: ${ARCHETYPE_TO_GROUP[mk] || ''} | ${t('resultsModal.pdf.data.network')}: ${NET[ARCHETYPE_TO_GROUP[mk]] || ''}`);
+        mLine(`${t('resultsModal.pdf.data.support')}: ${result.secondaryName || ''} (${POS[sk] || '?'}) | ${t('resultsModal.pdf.data.group')}: ${result.supportGroup || ''}`);
+        mLine(`${t('resultsModal.pdf.data.shadow')}: ${result.shadowName || ''} (${POS[shk] || '?'}) | ${t('resultsModal.pdf.data.shadowNote')}`);
+        mLine(`${t('resultsModal.pdf.data.blindspot')}: ${result.blindspotName || ''} (${POS[bk] || '?'}) | ${t('resultsModal.pdf.data.blindspotNote')}`);
+        mLine(`${t('resultsModal.pdf.data.harmonyMatch')}: ${eo.harmony ? t('resultsModal.pdf.data.yes') : t('resultsModal.pdf.data.no')}`);
         mGap();
 
-        mBold(dash('SCORES (12-PUNTS WIEL)'), green);
+        mBold(dash(t('resultsModal.pdf.data.scoresSection')), green);
         [
           ['Judge','JUDGE',1],['Lover','LOVER',2],['Caregiver','CAREGIVER',3],
           ['Innocent','INNOCENT',4],['Explorer','EXPLORER',5],['Outlaw','OUTLAW',6],
@@ -3092,7 +3053,7 @@ const AssessmentResultsModal = ({
         mGap();
 
         // Master Prompt v4.1 §5.10: 5-mandje decompositie per archetype.
-        mBold(dash('5-MANDJE DECOMPOSITIE'), green);
+        mBold(dash(t('resultsModal.pdf.data.basketSection')), green);
         [
           ['Judge','JUDGE'],['Lover','LOVER'],['Caregiver','CAREGIVER'],
           ['Innocent','INNOCENT'],['Explorer','EXPLORER'],['Outlaw','OUTLAW'],
@@ -3104,7 +3065,7 @@ const AssessmentResultsModal = ({
         });
         mGap();
 
-        mBold(dash('NATURE / CULTURE VERDELING PER GROEP'), green);
+        mBold(dash(t('resultsModal.pdf.data.natCultSection')), green);
         ['RULING','RELATIONAL','SEEKER','CHAOS','ABSTRACT','AGENCY'].forEach(gk => {
           const sg = sgm[gk] || {};
           const n = (sg.leftNature || 0) + (sg.rightNature || 0);
@@ -3113,49 +3074,50 @@ const AssessmentResultsModal = ({
         });
         mGap();
 
-        mBold(dash('AFGELEIDE INDICES'), green);
-        mLine(`Authenticity Index: ${natTotal}/72 Nature (${authPct}%)`);
-        mLine(`Polarization Index: ${mainTot} (Main) - ${shadTot} (Shadow) = gap ${polGap}% -> ${polCat}`);
-        mLine(`Totaal Deltawerken Datapunten: ${result.totalScore || 0} / 792`);
+        mBold(dash(t('resultsModal.pdf.data.indicesSection')), green);
+        mLine(tFunc('resultsModal.pdf.data.authenticityIndex')(natTotal, authPct));
+        mLine(tFunc('resultsModal.pdf.data.polarizationIndex')(mainTot, shadTot, polGap, polCat));
+        mLine(tFunc('resultsModal.pdf.data.totalDatapoints')(result.totalScore || 0));
         mGap();
 
         // Master Prompt v4.1 §5.10 / D-10: model-derived OCEAN scalars are NEVER emitted.
         // §5.10: OCEAN PROFIEL (EXTERN GEUPLOAD) — ALLEEN bij upload; omit the whole block otherwise.
         if (uploadedOceanScores) {
-          mBold(dash('OCEAN PROFIEL (EXTERN GEUPLOAD)'), green);
-          mLine(`Openheid:       ${Math.round(uploadedOceanScores.O || 0)}/100`);
-          mLine(`Ordelijkheid:   ${Math.round(uploadedOceanScores.C || 0)}/100`);
-          mLine(`Extraversie:    ${Math.round(uploadedOceanScores.E || 0)}/100`);
-          mLine(`Meegaandheid:   ${Math.round(uploadedOceanScores.A || 0)}/100`);
-          mLine(`Neuroticisme:   ${Math.round(uploadedOceanScores.N || 0)}/100`);
+          mBold(dash(t('resultsModal.pdf.data.oceanSection')), green);
+          const oceanLbl = (k) => t('resultsModal.pdf.data.ocean' + k).padEnd(19);
+          mLine(`${oceanLbl('O')}${Math.round(uploadedOceanScores.O || 0)}/100`);
+          mLine(`${oceanLbl('C')}${Math.round(uploadedOceanScores.C || 0)}/100`);
+          mLine(`${oceanLbl('E')}${Math.round(uploadedOceanScores.E || 0)}/100`);
+          mLine(`${oceanLbl('A')}${Math.round(uploadedOceanScores.A || 0)}/100`);
+          mLine(`${oceanLbl('N')}${Math.round(uploadedOceanScores.N || 0)}/100`);
           mGap();
         }
 
-        mBold(dash('COGNITIEVE DRIEHOEK (YELLOW)'), green);
+        mBold(dash(t('resultsModal.pdf.data.cogSection')), green);
         if (cogTri) {
           const triMembers = Array.isArray(cogTri.members) ? cogTri.members.join(' \u00b7 ') : (cogTri.members || '');
-          mLine(`Actieve Driehoek: ${cogTri.mode} (Driehoek ${cogTri.id})`);
-          mLine(`Partners: ${triMembers}`);
-          mLine(`Netwerken: ${cogTri.networks || ''}`);
-          mLine(`Superkracht: ${cogTri.tagline || ''}`);
+          mLine(tFunc('resultsModal.pdf.data.activeTriangle')(cogTri.mode, cogTri.id));
+          mLine(`${t('resultsModal.pdf.data.partners')}: ${triMembers}`);
+          mLine(`${t('resultsModal.pdf.data.networks')}: ${cogTri.networks || ''}`);
+          mLine(`${t('resultsModal.pdf.data.superpower')}: ${cogTri.tagline || ''}`);
           const weakParts = (cogTri.high || '').split(/maar kan ook\s*/i);
-          mLine(`Cognitieve Val: ${weakParts.length > 1 ? weakParts[1].replace(/^leiden tot\s*/i, '').trim() : 'Zie analyse'}`);
-          if (counterTri) mLine(`Groeirichting: ${counterTri.mode} (Driehoek ${counterTri.id})`);
+          mLine(`${t('resultsModal.pdf.data.cognitiveTrap')}: ${weakParts.length > 1 ? weakParts[1].replace(/^leiden tot\s*/i, '').trim() : t('resultsModal.pdf.data.seeAnalysis')}`);
+          if (counterTri) mLine(tFunc('resultsModal.pdf.data.growthDirection')(counterTri.mode, counterTri.id));
         } else {
-          mLine('Driehoekdata niet beschikbaar.', dimWhite);
+          mLine(t('resultsModal.pdf.data.triangleUnavailable'), dimWhite);
         }
         mGap();
 
-        mBold(dash('HARDWARE SIGNALEN'), green);
-        mLine(`Sterkste Groep: ${sGroup} (${sScore})`);
-        mLine(`Hardware Resonantie: ${hwRes}`);
-        mLine(`CultureForce Signaal: ${cfDesc}`);
+        mBold(dash(t('resultsModal.pdf.data.hardwareSection')), green);
+        mLine(tFunc('resultsModal.pdf.data.strongestGroup')(sGroup, sScore));
+        mLine(`${t('resultsModal.pdf.data.hardwareResonance')}: ${hwRes}`);
+        mLine(`${t('resultsModal.pdf.data.cultureForceSignal')}: ${cfDesc}`);
         mGap();
 
-        mBold(dash('EXTENDED ARCHETYPE PROFIEL'), green);
-        mLine(`Gift: ${currentExt?.gift || result.mainPositive || 'N/A'}`);
-        mLine(`Curse / Trigger: ${currentExt?.shadow || result.mainShadowTrait || 'N/A'}`);
-        mLine(`Levensles: "${result.levensles || 'N/A'}"`);
+        mBold(dash(t('resultsModal.pdf.data.extendedSection')), green);
+        mLine(`${t('resultsModal.pdf.data.gift')}: ${currentExt?.gift || result.mainPositive || t('resultsModal.pdf.data.notAvailable')}`);
+        mLine(`${t('resultsModal.pdf.data.curse')}: ${currentExt?.shadow || result.mainShadowTrait || t('resultsModal.pdf.data.notAvailable')}`);
+        mLine(`${t('resultsModal.pdf.data.levensles')}: "${result.levensles || t('resultsModal.pdf.data.notAvailable')}"`);
         mGap();
 
         // Kaart Microcopy — AI-authored profile-card fields (KAART_GIFT / KAART_GEOMETRIE),
@@ -3163,29 +3125,29 @@ const AssessmentResultsModal = ({
         // how the PDF text layer wraps lines.
         if (kaartFieldsRef.current.gift || kaartFieldsRef.current.geometrie) {
           const b64u = (s) => { try { return btoa(unescape(encodeURIComponent(s))); } catch { return ''; } };
-          mBold(dash('KAART MICROCOPY'), green);
+          mBold(dash(t('resultsModal.pdf.data.kaartSection')), green);
           if (kaartFieldsRef.current.gift) mLine(`CGIFT::${b64u(kaartFieldsRef.current.gift)}::CGIFT`, dimWhite);
           if (kaartFieldsRef.current.geometrie) mLine(`CGEO::${b64u(kaartFieldsRef.current.geometrie)}::CGEO`, dimWhite);
           mGap();
         }
 
         // Master Prompt v4.1 §5.10: dead v3 fields removed (MAIN ARCHETYPE DIEPTE block).
-        mBold(dash('SHADOW INTEGRATIE'), green);
-        mLine(`Shadow Archetype: ${result.shadowName || 'N/A'}`);
-        mLine(`Integration Path: ${result.shadowDescription || 'Zie AI analyse sectie'}`);
+        mBold(dash(t('resultsModal.pdf.data.shadowSection')), green);
+        mLine(`${t('resultsModal.pdf.data.shadowArchetype')}: ${result.shadowName || t('resultsModal.pdf.data.notAvailable')}`);
+        mLine(`${t('resultsModal.pdf.data.integrationPath')}: ${result.shadowDescription || t('resultsModal.pdf.data.seeAiSection')}`);
         mGap();
 
-        mBold(dash('BLINDSPOT'), green);
-        mLine(`Blindspot Archetype: ${result.blindspotName || 'N/A'}`);
-        mLine(`Kerngedrag: ${result.blindspotDescription || 'Zie AI analyse sectie'}`);
-        mLine(`Integration Path: ${result.blindspotTension || 'Zie AI analyse sectie'}`);
+        mBold(dash(t('resultsModal.pdf.data.blindspotSection')), green);
+        mLine(`${t('resultsModal.pdf.data.blindspotArchetype')}: ${result.blindspotName || t('resultsModal.pdf.data.notAvailable')}`);
+        mLine(`${t('resultsModal.pdf.data.coreBehaviour')}: ${result.blindspotDescription || t('resultsModal.pdf.data.seeAiSection')}`);
+        mLine(`${t('resultsModal.pdf.data.integrationPath')}: ${result.blindspotTension || t('resultsModal.pdf.data.seeAiSection')}`);
         mGap();
 
         mBold(SEP, green);
         mGap();
-        mLine('Dit blok is automatisch gegenereerd door het Garden For Life', dimWhite);
-        mLine('Assessment System. Het Deltawerken-framework is een conceptueel', dimWhite);
-        mLine('zelfreflectiemodel, geen klinisch diagnostisch systeem.', dimWhite);
+        mLine(t('resultsModal.pdf.data.outroLine1'), dimWhite);
+        mLine(t('resultsModal.pdf.data.outroLine2'), dimWhite);
+        mLine(t('resultsModal.pdf.data.outroLine3'), dimWhite);
       }
       endData();
 
@@ -3279,7 +3241,7 @@ const AssessmentResultsModal = ({
       setIsGeneratingPdf(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, displaySections, uploadedFiles, v4Data, language, cRuntime]);
+  }, [result, displaySections, uploadedFiles, v4Data, language, cRuntime, t, tArray, tFunc]);
 
   // Dev PDF live-preview: once the (replayed) analysis is ready, auto-build the PDF
   // and hand the blob URL back to the harness instead of downloading.
@@ -3388,7 +3350,7 @@ const AssessmentResultsModal = ({
               lineHeight: '1.6',
               maxWidth: '320px',
             }}>
-              We berekenen niet wie je bent.<br/>We berekenen de fysiologische prijs van wie je probeert te zijn.
+              {t('resultsModal.ui.loadingLine1')}<br/>{t('resultsModal.ui.loadingLine2')}
             </p>
 
             {/* Time estimate */}
@@ -3399,7 +3361,7 @@ const AssessmentResultsModal = ({
               margin: 0,
               letterSpacing: '0.05em',
             }}>
-              ca. 9 min
+              {t('resultsModal.ui.timeEstimate')}
             </p>
 
             {/* Persistent preload: load + decode the archetype portrait during the wait so it's
@@ -3419,7 +3381,7 @@ const AssessmentResultsModal = ({
                   fontFamily: "'Figtree', sans-serif",
                   margin: 0,
                 }}>
-                  AI analyse niet beschikbaar — basisresultaten beschikbaar.
+                  {t('resultsModal.ui.aiUnavailable')}
                 </p>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                   <button
@@ -3445,7 +3407,7 @@ const AssessmentResultsModal = ({
                     onMouseEnter={e => e.target.style.opacity = '0.85'}
                     onMouseLeave={e => e.target.style.opacity = '1'}
                   >
-                    Probeer opnieuw
+                    {t('resultsModal.ui.retry')}
                   </button>
                   <button
                     onClick={() => {
@@ -3468,7 +3430,7 @@ const AssessmentResultsModal = ({
                     onMouseEnter={e => e.target.style.opacity = '0.85'}
                     onMouseLeave={e => e.target.style.opacity = '1'}
                   >
-                    Doorgaan zonder AI
+                    {t('resultsModal.ui.continueWithoutAi')}
                   </button>
                 </div>
               </div>
@@ -3583,9 +3545,10 @@ const AssessmentResultsModal = ({
                       background: '#000',
                       position: 'relative',
                     }}>
+                      {result.imageUrl && (
                       <img
                         src={result.imageUrl}
-                        alt={result.name}
+                        alt={extName || result.name}
                         loading="eager"
                         fetchpriority="high"
                         decoding="async"
@@ -3597,6 +3560,7 @@ const AssessmentResultsModal = ({
                           transform: 'scale(1.05)',
                         }}
                       />
+                      )}
                       <div style={{
                         position: 'absolute',
                         inset: 0,
@@ -3617,7 +3581,7 @@ const AssessmentResultsModal = ({
                       filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))',
                       marginBottom: '0.5rem',
                     }}>
-                      {result.name}
+                      {extName || result.name}
                     </h1>
                     {result.mainName && result.secondaryName && (
                       <p style={{
@@ -3643,670 +3607,6 @@ const AssessmentResultsModal = ({
                   </div>
                 </div>
 
-                {/* ── Sections 2–4c: PDF-only, hidden from UI card (shown on pages 7–9) ── */}
-                {false && (<>
-                {/* ── 2. Combination Profile — Why Main + Support = Extended Archetype ── */}
-                {result.combinationText && (
-                  <div style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid rgba(29, 153, 4, 0.25)',
-                    borderRadius: '0.75rem',
-                    padding: rs.sectionPad,
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #1d9904, transparent)',
-                    }} />
-                    <h3 style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#1d9904',
-                      fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '0.85rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.15em',
-                      marginBottom: '0.75rem',
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-                      </svg>
-                      Waarom jij {result.name} bent
-                    </h3>
-                    <p style={{
-                      color: 'rgba(209, 213, 219, 1)',
-                      fontFamily: "'Figtree', sans-serif",
-                      fontSize: '0.95rem',
-                      lineHeight: 1.7,
-                      textAlign: 'justify',
-                    }}>
-                      {result.combinationText}
-                    </p>
-                  </div>
-                )}
-
-                {/* ── 3. Main & Support Archetype Cards ── */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                  gap: '1rem',
-                }}>
-                  {/* Main Archetype Card */}
-                  <div style={{
-                    background: 'transparent',
-                    border: '1px solid rgba(168, 85, 247, 0.2)',
-                    borderRadius: '0.75rem',
-                    padding: rs.cardPad,
-                    position: 'relative',
-                  }}>
-                    <div style={{
-                      position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, #a855f7, transparent)',
-                    }} />
-                    <div style={{
-                      fontSize: '0.75rem', color: 'rgba(168, 85, 247, 0.5)',
-                      fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em',
-                      textTransform: 'uppercase', marginBottom: '0.75rem',
-                    }}>
-                      {/* MAIN ARCHETYPE */}
-                    </div>
-                    <h4 style={{
-                      color: '#a855f7',
-                      fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '1.1rem',
-                      fontWeight: 'bold',
-                      marginBottom: '0.25rem',
-                    }}>
-                      {result.mainName}
-                    </h4>
-                    <p style={{
-                      fontSize: '0.75rem', color: 'rgba(156, 163, 175, 0.7)',
-                      fontFamily: "'Rajdhani', sans-serif", fontWeight: 600,
-                      textTransform: 'uppercase', letterSpacing: '0.1em',
-                      marginBottom: '0.75rem',
-                    }}>
-                      {result.mainNameEn} — {result.group}
-                    </p>
-                    {result.mainMotivation && (
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#a855f7', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Motivatie: </span>
-                        <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif" }}>{result.mainMotivation}</span>
-                      </div>
-                    )}
-                    {result.mainPositive && (
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#a855f7', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Kracht: </span>
-                        <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif" }}>{result.mainPositive}</span>
-                      </div>
-                    )}
-                    {result.mainShadowTrait && (
-                      <div>
-                        <span style={{ fontSize: '0.7rem', color: '#a855f7', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Schaduw: </span>
-                        <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.7)', fontFamily: "'Figtree', sans-serif" }}>{result.mainShadowTrait}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Support Archetype Card */}
-                  <div style={{
-                    background: 'transparent',
-                    border: '1px solid rgba(249, 115, 22, 0.2)',
-                    borderRadius: '0.75rem',
-                    padding: rs.cardPad,
-                    position: 'relative',
-                  }}>
-                    <div style={{
-                      position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, #f97316, transparent)',
-                    }} />
-                    <div style={{
-                      fontSize: '0.75rem', color: 'rgba(249, 115, 22, 0.5)',
-                      fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.2em',
-                      textTransform: 'uppercase', marginBottom: '0.75rem',
-                    }}>
-                      {/* SUPPORT ARCHETYPE */}
-                    </div>
-                    <h4 style={{
-                      color: '#f97316',
-                      fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '1.1rem',
-                      fontWeight: 'bold',
-                      marginBottom: '0.25rem',
-                    }}>
-                      {result.secondaryName}
-                    </h4>
-                    <p style={{
-                      fontSize: '0.75rem', color: 'rgba(156, 163, 175, 0.7)',
-                      fontFamily: "'Rajdhani', sans-serif", fontWeight: 600,
-                      textTransform: 'uppercase', letterSpacing: '0.1em',
-                      marginBottom: '0.75rem',
-                    }}>
-                      {result.secondaryNameEn} — {result.supportGroup}
-                    </p>
-                    {result.secondaryMotivation && (
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Motivatie: </span>
-                        <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif" }}>{result.secondaryMotivation}</span>
-                      </div>
-                    )}
-                    {result.secondaryPositive && (
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#f97316', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Kracht: </span>
-                        <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif" }}>{result.secondaryPositive}</span>
-                      </div>
-                    )}
-                    {result.secondaryDescription && (
-                      <div>
-                        <span style={{ fontSize: '0.7rem', color: '#a855f7', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Profiel: </span>
-                        <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.9)', fontFamily: "'Figtree', sans-serif" }}>{result.secondaryDescription}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* ── 3b. All Support Archetype Outcomes ── */}
-                {result.allSupportArchetypes && (
-                  <div style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid rgba(29, 153, 4, 0.15)',
-                    borderRadius: '0.75rem',
-                    padding: rs.cardPad,
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #1d9904, transparent)',
-                    }} />
-                    <h3 style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#1d9904',
-                      fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '0.8rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.15em',
-                      marginBottom: '1rem',
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" />
-                        <line x1="12" y1="22" x2="12" y2="15.5" /><line x1="22" y1="8.5" x2="12" y2="15.5" /><line x1="2" y1="8.5" x2="12" y2="15.5" />
-                      </svg>
-                      Alle Uitkomsten voor {result.mainName}
-                    </h3>
-                    {/* Archetypes as rows, Betekenis / Gift / Valkuil as columns */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                      {/* Column header row */}
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr 1fr 1fr',
-                        gap: '0',
-                        padding: '0.15rem 0',
-                        borderBottom: '1px solid rgba(255,255,255,0.07)',
-                        marginBottom: '0',
-                      }}>
-                        {[['ARCHETYPE','rgba(168,85,247,0.85)'],['BETEKENIS','rgba(249,115,22,0.85)'],['GIFT','rgba(29,153,4,0.85)'],['VALKUIL','rgba(239,68,68,0.85)']].map(([label, color]) => (
-                          <div key={label} style={{ fontSize: '0.75rem', color, fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', paddingLeft: '0.4rem' }}>
-                            {label}
-                          </div>
-                        ))}
-                      </div>
-                      {result.allSupportArchetypes.map((sa) => {
-                        const splitCombo = (text) => {
-                          if (!text) return { meaning: '', gift: '' };
-                          const m = text.match(/^([^.!?]+[.!?])\s*(.*)$/s);
-                          return m ? { meaning: m[1].trim(), gift: m[2].trim() } : { meaning: text, gift: '' };
-                        };
-                        const { meaning, gift } = splitCombo(sa.combination);
-                        const cellText = { fontSize: '0.65rem', fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 };
-                        return (
-                          <div key={sa.group} style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 1fr 1fr 1fr',
-                            alignItems: 'start',
-                            gap: '0',
-                            background: sa.isActive ? 'rgba(168,85,247,0.05)' : 'transparent',
-                            borderBottom: sa.isActive ? '1px solid rgba(168,85,247,0.25)' : '1px solid rgba(255,255,255,0.06)',
-                            borderLeft: sa.isActive ? '2px solid rgba(168,85,247,0.5)' : '2px solid transparent',
-                            maxHeight: '4.5rem',
-                            overflow: 'hidden',
-                          }}>
-                            {/* Archetype name */}
-                            <div style={{ padding: '0.2rem 0.4rem 0', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: '0.65rem', color: sa.isActive ? '#a855f7' : 'rgba(29,153,4,0.55)', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: 1.2 }}>
-                                {(sa.group || '').trim()}
-                              </div>
-                              <div style={{ fontSize: '0.7rem', color: sa.isActive ? '#fff' : 'rgba(29,153,4,0.75)', fontFamily: "'Figtree', sans-serif", fontWeight: sa.isActive ? 700 : 400, lineHeight: 1.2, marginTop: '0.05rem' }}>
-                                {(sa.extendedName || '').trim()}
-                              </div>
-                            </div>
-                            {/* Betekenis */}
-                            <div style={{ padding: '0.2rem 0.4rem 0', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ ...cellText, color: 'rgba(209,213,219,0.85)' }}>{meaning.trim()}</div>
-                            </div>
-                            {/* Gift */}
-                            <div style={{ padding: '0.2rem 0.4rem 0', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ ...cellText, color: 'rgba(209,213,219,0.85)' }}>{gift.trim()}</div>
-                            </div>
-                            {/* Valkuil */}
-                            <div style={{ padding: '0.2rem 0.4rem 0' }}>
-                              <div style={{ ...cellText, color: 'rgba(209,213,219,0.75)' }}>{(sa.shadow || '').trim()}</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── 4. Shadow Integration ── */}
-                {result.shadowPartner && (
-                  <div style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid rgba(168, 85, 247, 0.2)',
-                    borderRadius: '0.75rem',
-                    padding: rs.cardPad,
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #a855f7, transparent)',
-                    }} />
-                    <h3 style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#a855f7',
-                      fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '0.85rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.15em',
-                      marginBottom: '0.75rem',
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 0 0 0 20"/>
-                      </svg>
-                      Schaduw Archetype — {result.shadowName} ({result.shadowNameEn})
-                    </h3>
-                    {result.mainShadowTension && (
-                      <p style={{
-                        color: 'rgba(168, 85, 247, 0.8)',
-                        fontFamily: "'Rajdhani', sans-serif",
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                        fontStyle: 'italic',
-                        marginBottom: '0.75rem',
-                        letterSpacing: '0.05em',
-                      }}>
-                        {result.mainShadowTension}
-                      </p>
-                    )}
-                    {result.shadowInsight && (
-                      <p style={{
-                        color: 'rgba(209, 213, 219, 0.9)',
-                        fontFamily: "'Figtree', sans-serif",
-                        fontSize: '0.9rem',
-                        lineHeight: 1.7,
-                        textAlign: 'justify',
-                      }}>
-                        {result.shadowInsight}
-                      </p>
-                    )}
-                    {result.shadowDescription && !result.shadowInsight && (
-                      <p style={{
-                        color: 'rgba(209, 213, 219, 0.7)',
-                        fontFamily: "'Figtree', sans-serif",
-                        fontSize: '0.9rem',
-                        lineHeight: 1.7,
-                      }}>
-                        {result.shadowDescription}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* ── 4b. Blindspot — Red Line of Main (external saboteur) ── */}
-                {result.blindspotPartner && (
-                  <div style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                    borderRadius: '0.75rem',
-                    padding: rs.cardPad,
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #ef4444, transparent)',
-                    }} />
-                    <h3 style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#ef4444',
-                      fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '0.85rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.15em',
-                      marginBottom: '0.25rem',
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="1" y1="1" x2="23" y2="23"/>
-                      </svg>
-                      Blindspot — {result.blindspotName} ({result.blindspotNameEn})
-                    </h3>
-                    <p style={{
-                      fontSize: '0.75rem',
-                      color: 'rgba(239, 68, 68, 0.6)',
-                      fontFamily: "'Rajdhani', sans-serif",
-                      fontWeight: 600,
-                      fontStyle: 'italic',
-                      marginBottom: '0.75rem',
-                      letterSpacing: '0.05em',
-                    }}>
-                      De tegenhanger van je Support ({result.secondaryNameEn}) — jouw externe blinde vlek
-                    </p>
-                    {result.blindspotDescription && (
-                      <p style={{
-                        color: 'rgba(209, 213, 219, 0.9)',
-                        fontFamily: "'Figtree', sans-serif",
-                        fontSize: '0.9rem',
-                        lineHeight: 1.7,
-                        textAlign: 'justify',
-                        marginBottom: '0.5rem',
-                      }}>
-                        {result.blindspotDescription}
-                      </p>
-                    )}
-                    {result.blindspotShadowTrait && (
-                      <div>
-                        <span style={{ fontSize: '0.7rem', color: '#ef4444', fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sabotage patroon: </span>
-                        <span style={{ fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.7)', fontFamily: "'Figtree', sans-serif" }}>{result.blindspotShadowTrait}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ── 4c. OCEAN Personality Profile ── */}
-                {result.extendedOcean && (
-                  <div style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid rgba(59, 130, 246, 0.15)',
-                    borderRadius: '0.75rem',
-                    padding: rs.cardPad,
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-                      background: 'linear-gradient(to right, transparent, #3b82f6, transparent)',
-                    }} />
-                    <h3 style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      color: '#3b82f6',
-                      fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '0.85rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.15em',
-                      marginBottom: '1rem',
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>
-                      </svg>
-                      OCEAN Persoonlijkheidsprofiel
-                    </h3>
-
-                    {/* OCEAN Bars */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.25rem' }}>
-                      {['O', 'C', 'E', 'A', 'N'].map(dim => {
-                        const score = result.extendedOcean.ocean[dim];
-                        const textRating = result.extendedOcean.oceanText[dim];
-                        const color = result.oceanColors[dim];
-                        const pct = (score / 10) * 100;
-                        return (
-                          <div key={dim} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{
-                              width: '2rem', textAlign: 'right',
-                              fontFamily: "'Lexend Mega', sans-serif",
-                              fontSize: '0.7rem', fontWeight: 700,
-                              color: color, letterSpacing: '0.05em',
-                            }}>
-                              {dim}
-                            </div>
-                            <div style={{
-                              flex: 1, height: '1.2rem', borderRadius: '0.6rem',
-                              background: 'rgba(0, 0, 0, 0.4)',
-                              border: `1px solid ${color}22`,
-                              overflow: 'hidden', position: 'relative',
-                            }}>
-                              <div style={{
-                                height: '100%', width: `${pct}%`,
-                                background: `linear-gradient(to right, ${color}33, ${color}aa)`,
-                                borderRadius: '0.6rem',
-                                transition: 'width 1s ease-out',
-                              }} />
-                              <span style={{
-                                position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)',
-                                fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif",
-                                color: 'rgba(209, 213, 219, 0.6)', fontWeight: 600,
-                              }}>
-                                {textRating}
-                              </span>
-                            </div>
-                            <div style={{
-                              width: '1.5rem', textAlign: 'center',
-                              fontFamily: "'Rajdhani', sans-serif",
-                              fontSize: '0.75rem', fontWeight: 700,
-                              color: color,
-                            }}>
-                              {score}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* OCEAN Dimension Legend */}
-                    <div style={{
-                      display: 'flex', flexWrap: 'wrap', gap: '0.25rem 0.75rem',
-                      marginBottom: '1rem', paddingBottom: '0.75rem',
-                      borderBottom: '1px solid rgba(59, 130, 246, 0.1)',
-                    }}>
-                      {['O', 'C', 'E', 'A', 'N'].map(dim => (
-                        <span key={dim} style={{
-                          fontSize: '0.75rem', fontFamily: "'Rajdhani', sans-serif",
-                          color: 'rgba(209, 213, 219, 0.5)',
-                        }}>
-                          <span style={{ color: result.oceanColors[dim], fontWeight: 700 }}>{dim}</span>
-                          {' = '}{result.oceanLabels[dim].dutch}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* OCEAN Resonance / Dissonance Analysis */}
-                    {result.oceanImported && (() => {
-                      const ocean = result.extendedOcean.ocean;
-                      const group = result.group; // e.g. 'RULING', 'RELATIONAL', etc.
-                      // What each pillar biologically expects (high/low per OCEAN trait)
-                      const GROUP_OCEAN_EXPECT = {
-                        RULING:     { O: 'low',  C: 'high', E: 'mid',  A: 'low',  N: 'low'  },
-                        RELATIONAL: { O: 'mid',  C: 'mid',  E: 'high', A: 'high', N: 'mid'  },
-                        SEEKER:     { O: 'high', C: 'low',  E: 'mid',  A: 'mid',  N: 'mid'  },
-                        CHAOS:      { O: 'mid',  C: 'low',  E: 'mid',  A: 'low',  N: 'high' },
-                        ABSTRACT:   { O: 'high', C: 'mid',  E: 'low',  A: 'mid',  N: 'mid'  },
-                        AGENCY:     { O: 'mid',  C: 'high', E: 'high', A: 'mid',  N: 'low'  },
-                      };
-                      const OCEAN_FULL = {
-                        O: 'Openness', C: 'Conscientiousness', E: 'Extraversion',
-                        A: 'Agreeableness', N: 'Neuroticism',
-                      };
-                      const expect = GROUP_OCEAN_EXPECT[group] || GROUP_OCEAN_EXPECT.RULING;
-                      const analyses = ['O', 'C', 'E', 'A', 'N'].map(dim => {
-                        const raw = ocean[dim]; // 0-10
-                        const pct = raw * 10;   // 0-100
-                        const exp = expect[dim];
-                        let status, explanation;
-                        if (exp === 'high') {
-                          if (pct >= 60) {
-                            status = 'resonance';
-                            explanation = `Je ${OCEAN_FULL[dim]} (${pct}) is in resonantie met je ${group}-netwerk. De kans is groot dat dit je geen energie kost, maar functioneert als je Platonische motor.`;
-                          } else {
-                            status = 'dissonance';
-                            explanation = `Je ${group}-profiel verwacht hoge ${OCEAN_FULL[dim]}, maar je scoort ${pct}. Het is aannemelijk dat dit gedrag een gecloakt pantser is — aangeleerd, niet biologisch verankerd.`;
-                          }
-                        } else if (exp === 'low') {
-                          if (pct <= 40) {
-                            status = 'resonance';
-                            explanation = `Je lage ${OCEAN_FULL[dim]} (${pct}) past bij je ${group}-architectuur. Dit is je biologische blauwdruk — geen weerstand, pure flow.`;
-                          } else {
-                            status = 'dissonance';
-                            explanation = `Je ${group}-netwerk verwacht lage ${OCEAN_FULL[dim]}, maar je scoort ${pct}. Houd er rekening mee dat dit aangeleerde compensatie kan zijn die energie kost.`;
-                          }
-                        } else {
-                          status = 'neutral';
-                          explanation = `Je ${OCEAN_FULL[dim]} (${pct}) beweegt in het neutrale spectrum voor je ${group}-netwerk.`;
-                        }
-                        return { dim, pct, status, explanation };
-                      });
-
-                      const hasSignal = analyses.some(a => a.status !== 'neutral');
-                      if (!hasSignal) return null;
-
-                      return (
-                        <div style={{
-                          background: 'transparent',
-                          border: '1px solid rgba(59, 130, 246, 0.12)',
-                          borderRadius: '0.5rem',
-                          padding: '0.75rem 1rem',
-                          marginBottom: '1rem'
-                        }}>
-                          <div style={{
-                            fontSize: '0.75rem', color: '#3b82f6',
-                            fontFamily: "'Rajdhani', sans-serif",
-                            fontWeight: 700, textTransform: 'uppercase',
-                            letterSpacing: '0.1em', marginBottom: '0.6rem',
-                          }}>
-                            OCEAN Resonantie & Dissonantie Analyse (0–100 schaal)
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {analyses.filter(a => a.status !== 'neutral').map(({ dim, pct, status }) => {
-                              const isRes = status === 'resonance';
-                              const color = isRes ? '#22d3ee' : '#fbbf24';
-                              const icon = isRes ? '✦' : '⚠';
-                              const label = isRes ? 'Resonantie' : 'Dissonantie';
-                              const expVal = expect[dim];
-                              return (
-                                <div key={dim} style={{
-                                  display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
-                                  padding: '0.5rem 0.6rem',
-                                  background: 'transparent',
-                                  border: `1px solid ${isRes ? 'rgba(34, 211, 238, 0.15)' : 'rgba(251, 191, 36, 0.15)'}`,
-                                  borderRadius: '0.4rem',
-                                }}>
-                                  <span style={{ fontSize: '0.85rem', color, flexShrink: 0, marginTop: '0.05rem' }}>{icon}</span>
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{
-                                      display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem',
-                                    }}>
-                                      <span style={{
-                                        fontFamily: "'Lexend Mega', sans-serif",
-                                        fontSize: '0.7rem', fontWeight: 700,
-                                        color: result.oceanColors[dim],
-                                      }}>
-                                        {dim}
-                                      </span>
-                                      <span style={{
-                                        fontFamily: "'Rajdhani', sans-serif",
-                                        fontSize: '0.75rem', fontWeight: 700,
-                                        color, textTransform: 'uppercase', letterSpacing: '0.05em',
-                                      }}>
-                                        {label}
-                                      </span>
-                                      <span style={{
-                                        fontFamily: "'Rajdhani', sans-serif",
-                                        fontSize: '0.75rem', color: 'rgba(209, 213, 219, 0.5)',
-                                      }}>
-                                        Score: {pct}/100 | Verwacht: {expVal}
-                                      </span>
-                                    </div>
-                                    <p style={{
-                                      fontSize: '0.78rem', color: 'rgba(209, 213, 219, 0.75)',
-                                      fontFamily: "'Figtree', sans-serif",
-                                      lineHeight: 1.5, margin: 0,
-                                    }}>
-                                      {analyses.find(a => a.dim === dim).explanation}
-                                    </p>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Neuroticism Trigger */}
-                    {aiProfileData?.neuroticismTrigger && (
-                      <div style={{
-                        background: 'transparent',
-                        border: '1px solid rgba(239, 68, 68, 0.15)',
-                        borderRadius: '0.5rem',
-                        padding: '0.75rem 1rem',
-                        marginBottom: '1rem'
-                      }}>
-                        <div style={{
-                          fontSize: '0.75rem', color: '#ef4444',
-                          fontFamily: "'Rajdhani', sans-serif",
-                          fontWeight: 700, textTransform: 'uppercase',
-                          letterSpacing: '0.1em', marginBottom: '0.35rem',
-                        }}>
-                          Neuroticisme Trigger
-                        </div>
-                        <p style={{
-                          fontSize: '0.85rem', color: 'rgba(209, 213, 219, 0.85)',
-                          fontFamily: "'Figtree', sans-serif",
-                          lineHeight: 1.6, margin: 0,
-                        }}>
-                          {aiProfileData.neuroticismTrigger}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Core Profile: Workplace & Conflict */}
-                    {aiProfileData && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {[
-                          { label: 'Superkracht op de Werkvloer', text: aiProfileData.workplaceSuperpower, color: '#f97316' },
-                          { label: 'Conflictstijl', text: aiProfileData.conflictStyle, color: '#f97316' },
-                          { label: 'Relatiepatroon', text: aiProfileData.relationshipPattern, color: '#f97316' },
-                          { label: 'Individuatiepad', text: aiProfileData.individuationPath, color: '#f97316' },
-                        ].map(({ label, text, color: c }) => (
-                          <div key={label}>
-                            <div style={{
-                              fontSize: '0.75rem', color: c,
-                              fontFamily: "'Rajdhani', sans-serif",
-                              fontWeight: 700, textTransform: 'uppercase',
-                              letterSpacing: '0.1em', marginBottom: '0.25rem',
-                            }}>
-                              {label}
-                            </div>
-                            <p style={{
-                              fontSize: '0.85rem',
-                              color: 'rgba(209, 213, 219, 0.8)',
-                              fontFamily: "'Figtree', sans-serif",
-                              lineHeight: 1.6, margin: 0,
-                              textAlign: 'justify',
-                            }}>
-                              {text}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-                </>)}
 
                 {/* ── Fixed Disclaimer — always shown before AI sections ── */}
                 <div style={{
@@ -4326,8 +3626,8 @@ const AssessmentResultsModal = ({
                     lineHeight: 1.7,
                     fontStyle: 'italic',
                   }}>
-                    <strong style={{ color: '#a855f7' }}>Meta-Disclaimer:</strong>{' '}
-                    Dit rapport is gegenereerd door het Garden For Life Deltawerken Model — een zelfreflectie-instrument, geen klinische diagnose. De gebruikte neurobiologische termen zijn metaforen binnen dit specifieke model. Raadpleeg een professional voor medisch of psychologisch advies.
+                    <strong style={{ color: '#a855f7' }}>{t('resultsModal.ui.metaDisclaimerLabel')}</strong>{' '}
+                    {t('resultsModal.ui.metaDisclaimerBody')}
                   </p>
                 </div>
 
@@ -4360,11 +3660,11 @@ const AssessmentResultsModal = ({
                     fontFamily: "'Figtree', sans-serif",
                   }}>
                     {[
-                      { label: 'Kern', value: cardKeyFindings.main, color: '#1d9904' },
-                      { label: 'Support', value: cardKeyFindings.support, color: '#f97316' },
-                      { label: 'Schaduw', value: cardKeyFindings.shadow, color: '#a855f7' },
-                      { label: 'Blindspot', value: cardKeyFindings.blindspot, color: '#ef4444' },
-                      ...(cardKeyFindings.polBand ? [{ label: 'Polarisatie', value: `${cardKeyFindings.polGap}% — ${cardKeyFindings.polBand}`, color: '#fbbf24' }] : []),
+                      { label: t('resultsModal.labels.kern'), value: cardKeyFindings.main, color: '#1d9904' },
+                      { label: t('resultsModal.labels.support'), value: cardKeyFindings.support, color: '#f97316' },
+                      { label: t('resultsModal.labels.schaduw'), value: cardKeyFindings.shadow, color: '#a855f7' },
+                      { label: t('resultsModal.labels.blindspot'), value: cardKeyFindings.blindspot, color: '#ef4444' },
+                      ...(cardKeyFindings.polBand ? [{ label: t('resultsModal.labels.polarisatie'), value: `${cardKeyFindings.polGap}% — ${cardKeyFindings.polBand}`, color: '#fbbf24' }] : []),
                     ].filter((f) => f.value).map((f) => (
                       <div key={f.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minWidth: '8rem' }}>
                         <span style={{ fontSize: '0.62rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(156,163,175,0.8)' }}>{f.label}</span>
@@ -4413,7 +3713,7 @@ const AssessmentResultsModal = ({
                 {/* De Stille Stem — Reflectie */}
                 {cardStille
                   .filter((s) => /reflectie/.test(cleanTitle(s.title || '').toLowerCase()))
-                  .map((s, i) => renderAiSectionCard({ ...s, title: 'De Stille Stem — ' + cleanTitle(s.title) }, 6000 + i))}
+                  .map((s, i) => renderAiSectionCard({ ...s, title: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(s.title) }, 6000 + i))}
 
                 {/* D-curve chart (visible) — between Reflectie and Motivatie. Same ref the PDF rasterises. */}
                 {cRuntime?.d_curve && (
@@ -4447,9 +3747,7 @@ const AssessmentResultsModal = ({
                       margin: '0.5rem 0.25rem 0.1rem', fontSize: '0.72rem', lineHeight: 1.45,
                       color: 'rgba(156, 163, 175, 0.9)', fontFamily: "'Figtree', sans-serif", fontStyle: 'italic',
                     }}>
-                      {language === 'en'
-                        ? 'Main and Support show each archetype’s absolute cost-curve (0–100). Samengesteld (composed) is the blended load normalised to its own peak (=100%) — it shows the shape within your configuration, not an absolute comparison, so it can sit above the individual lines.'
-                        : 'Hoofd en Support tonen elk de absolute kostencurve van het archetype (0–100). Samengesteld is de gecombineerde belasting, genormaliseerd op zijn eigen piek (=100%) — het toont de vorm binnen jouw configuratie, geen absolute vergelijking, en kan daarom boven de losse lijnen liggen.'}
+                      {t('resultsModal.ui.morphCaption')}
                     </p>
                   </div>
                 )}
@@ -4457,7 +3755,7 @@ const AssessmentResultsModal = ({
                 {/* De Stille Stem — Motivatie */}
                 {cardStille
                   .filter((s) => /motivatie/.test(cleanTitle(s.title || '').toLowerCase()))
-                  .map((s, i) => renderAiSectionCard({ ...s, title: 'De Stille Stem — ' + cleanTitle(s.title) }, 6100 + i))}
+                  .map((s, i) => renderAiSectionCard({ ...s, title: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(s.title) }, 6100 + i))}
 
                 {/* Essentie/Vermenigvuldiging/Schaduw/Blindspot/Morfologie-reads/Beweging/Resonantie/
                     Alchemie etc. are PDF-only now — pulled off the teaser card. */}
@@ -4479,10 +3777,10 @@ const AssessmentResultsModal = ({
                     letterSpacing: '0.15em',
                     marginBottom: '0.75rem',
                   }}>
-                    Volledig Rapport (3× zoveel data)
+                    {t('resultsModal.ui.teaserTitle')}
                   </h3>
                   <p style={{ fontSize: '0.85rem', color: 'rgba(148,163,184,0.85)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.6, fontStyle: 'italic' }}>
-                    Dit is een korte samenvatting. Je volledige rapport bevat ongeveer 3× zoveel data — alle secties, de grafieken, de D-curve, het OCEAN-profiel, de complete AI-prompt en de machine-leesbare profieldata. Download de PDF om alles te lezen, wanneer je maar wilt.
+                    {t('resultsModal.ui.teaserBody')}
                   </p>
                 </div>
 
@@ -4517,14 +3815,14 @@ const AssessmentResultsModal = ({
                             fontWeight: 'bold',
                             marginBottom: '0.5rem',
                           }}>
-                            E-mailadres
+                            {t('resultsModal.ui.emailLabel')}
                           </label>
                           <input
                             type="email"
                             required
                             value={reviewFormData.email}
                             onChange={(e) => setReviewFormData({ ...reviewFormData, email: e.target.value })}
-                            placeholder="jouw@email.nl"
+                            placeholder={t('resultsModal.ui.emailPlaceholder')}
                             style={{
                               width: '100%',
                               padding: '0.75rem',
@@ -4545,8 +3843,7 @@ const AssessmentResultsModal = ({
                             lineHeight: 1.55,
                             fontStyle: 'italic',
                           }}>
-                            We sturen je in de toekomst éénmalig een reclamebrief om je te herinneren aan je vooruitgang.
-                            De keuze is daarna aan jou om te navigeren in je vernieuwde landschap.
+                            {t('resultsModal.ui.emailNote')}
                           </p>
                         </div>
 
@@ -4595,7 +3892,7 @@ const AssessmentResultsModal = ({
                             e.currentTarget.style.boxShadow = 'none';
                           }}
                         >
-                          {isSubmittingReview ? 'Versturen...' : 'PROCEED'}
+                          {isSubmittingReview ? t('resultsModal.ui.sending') : t('resultsModal.ui.proceed')}
                         </button>
                       </form>
                     </div>
@@ -4627,17 +3924,17 @@ const AssessmentResultsModal = ({
                           fontFamily: "'Lexend Mega', sans-serif",
                         }}>
                           <h3 style={{ color: '#1d9904', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
-                            {pdfKind === 'short' ? 'Verantwoordelijkheid PDF' : 'Verantwoordelijkheid PDF & AI Prompt'}
+                            {pdfKind === 'short' ? t('resultsModal.ui.consentTitleShort') : t('resultsModal.ui.consentTitleFull')}
                           </h3>
                           <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', fontStyle: 'italic', marginBottom: '1.25rem' }}>
-                            Lees dit door voordat je de PDF downloadt
+                            {t('resultsModal.ui.consentLead')}
                           </p>
 
                           <div style={{ borderLeft: '2px solid rgba(29,153,4,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
                             <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: '0.75rem', lineHeight: 1.75 }}>
                               {pdfKind === 'short'
-                                ? 'Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model — geen klinische diagnose. De gebruikte termen zijn metaforen binnen dit model.'
-                                : 'Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik in externe AI-tools valt buiten de verantwoordelijkheid van Garden For Life.'}
+                                ? t('resultsModal.ui.consentBodyShort')
+                                : t('resultsModal.ui.consentBodyFull')}
                             </p>
                           </div>
 
@@ -4650,8 +3947,8 @@ const AssessmentResultsModal = ({
                             />
                             <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: '0.75rem', lineHeight: 1.65 }}>
                               {pdfKind === 'short'
-                                ? 'Ik begrijp het.'
-                                : 'Ik begrijp dat de AI Agent Prompt in deze PDF experimenteel is en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.'}
+                                ? t('resultsModal.ui.consentCheckShort')
+                                : t('resultsModal.ui.consentCheckFull')}
                             </span>
                           </label>
 
@@ -4662,7 +3959,7 @@ const AssessmentResultsModal = ({
                               onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#94a3b8'; e.currentTarget.style.color = '#94a3b8'; }}
                               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(100,116,139,0.4)'; e.currentTarget.style.color = '#64748b'; }}
                             >
-                              Annuleren
+                              {t('resultsModal.ui.cancel')}
                             </button>
                             <button
                               onClick={() => { if (pdfConsentChecked) { const wasShort = pdfKind === 'short'; setShowPdfConsent(false); logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: wasShort ? 'pdf_short' : 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {}); handleDownloadPdf({ shortVersion: wasShort }); } }}
@@ -4671,7 +3968,7 @@ const AssessmentResultsModal = ({
                               onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(29,153,4,0.25)'; }}
                               onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
                             >
-                              Begrepen en akkoord — Download PDF
+                              {t('resultsModal.ui.consentConfirm')}
                             </button>
                           </div>
                         </div>
@@ -4719,11 +4016,11 @@ const AssessmentResultsModal = ({
                               ? <path d="M21 12a9 9 0 11-6.219-8.56" />
                               : <><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></>}
                           </svg>
-                          {(isGeneratingPdf && pdfKind === 'short') ? 'Generating...' : 'Korte versie'}
+                          {(isGeneratingPdf && pdfKind === 'short') ? t('resultsModal.ui.generating') : t('resultsModal.ui.shortVersion')}
                         </span>
                         {!(isGeneratingPdf && pdfKind === 'short') && (
                           <span style={{ fontSize: '0.7em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.02em', opacity: 0.85 }}>
-                            Download nu
+                            {t('resultsModal.ui.downloadNow')}
                           </span>
                         )}
                       </span>
@@ -4788,11 +4085,11 @@ const AssessmentResultsModal = ({
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" />
                           </svg>
-                          {showLeaveWarning ? 'CONTINUE' : t('results.createAccount')}
+                          {showLeaveWarning ? t('resultsModal.ui.continueBtn') : t('results.createAccount')}
                         </span>
                         {showLeaveWarning && (
                           <span style={{ fontSize: '0.7em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.01em', opacity: 0.85 }}>
-                            Als je deze pagina verlaat kun je het rapport niet meer downloaden.
+                            {t('resultsModal.ui.leaveWarning')}
                           </span>
                         )}
                       </span>
@@ -4848,11 +4145,11 @@ const AssessmentResultsModal = ({
                               ? <path d="M21 12a9 9 0 11-6.219-8.56" />
                               : <><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></>}
                           </svg>
-                          {(isGeneratingPdf && pdfKind === 'full') ? 'Generating...' : 'Volledige rapport'}
+                          {(isGeneratingPdf && pdfKind === 'full') ? t('resultsModal.ui.generating') : t('resultsModal.ui.fullReport')}
                         </span>
                         {!(isGeneratingPdf && pdfKind === 'full') && (
                           <span style={{ fontSize: '0.7em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.02em', opacity: 0.85 }}>
-                            € 00,00
+                            {t('resultsModal.ui.price')}
                           </span>
                         )}
                       </span>
@@ -5402,7 +4699,7 @@ function formatInline(text) {
  * Accepts: { layerIndex: { questionId: answerId } }
  * e.g. { 0: { 1: "1a", 2: "2c" }, 1: { 7: "7b" }, ... }
  */
-function computeResultFromAnswers(layerAnswers, liveSubjects) {
+function computeResultFromAnswers(layerAnswers, liveSubjects, lang = 'nl') {
   // ──────────────────────────────────────────────────────────
   // 1. Convert layerAnswers → flat response array for scoring engine
   //    Handles dual-pick arrays [pick1, pick2] per question
@@ -5478,7 +4775,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
             archetypeGroup: archetypeData.group || null,
             archetypeSet: archetypeData.set || null,
             archetypeDescription: archetypeData.description || null,
-            archetypeMotivation: archetypeData.motivation || null,
+            archetypeMotivation: archetypeField(archetypeData, 'motivation', lang) || null,
           });
         });
       });
@@ -5496,7 +4793,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
   const supportKey = advanced.supportArchetype;
 
   // ──────────────────────────────────────────────────────────
-  // 4. Extended Archetype Name (72-outcome matrix)
+  // 4. Extended Archetype Name (132-outcome matrix: main × support archetype)
   // ──────────────────────────────────────────────────────────
   const supportGroup = ARCHETYPE_TO_GROUP[supportKey] || 'RULING';
   const extendedName = getExtendedArchetype(mainKey, supportKey);
@@ -5505,7 +4802,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
   // ──────────────────────────────────────────────────────────
   // 4b. Extended Archetype portrait image + description
   // ──────────────────────────────────────────────────────────
-  const archetypeImage = getArchetypeImage(mainKey, supportGroup);
+  const archetypeImage = getArchetypeImage(mainKey, supportKey);
   const extendedDesc = null; // description now comes from the AI (corpus-grounded), not a static file
 
   // ──────────────────────────────────────────────────────────
@@ -5532,43 +4829,49 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
 
   // ──────────────────────────────────────────────────────────
   // 6b. All possible support archetypes for this main archetype
+  //     (132-matrix: one entry per support ARCHETYPE, 11 per main)
   // ──────────────────────────────────────────────────────────
-  const ALL_GROUPS = ['RULING', 'RELATIONAL', 'SEEKER', 'CHAOS', 'ABSTRACT', 'AGENCY'];
-  const allSupportArchetypes = ALL_GROUPS.map(group => {
-    const extKey = `${mainKey}_${group}`;
-    const extName = EXTENDED_ARCHETYPES[extKey] || mainKey;
-    const extNameNl = EXTENDED_ARCHETYPES_NL[extKey] || extName;
-    const desc = null; // extended descriptions now live in the corpus / AI output
-    return {
-      group,
-      extendedName: extName,
-      extendedNameNl: extNameNl,
-      subtitle: desc?.subtitle || group,
-      combination: desc?.combination || '',
-      shadow: desc?.shadow || '',
-      isActive: group === supportGroup,
-    };
-  });
+  const allSupportArchetypes = ALL_ARCHETYPE_KEYS
+    .filter(sk => sk !== mainKey)
+    .map(sk => {
+      const extKey = `${mainKey}_${sk}`;
+      const extName = EXTENDED_ARCHETYPES[extKey] || mainKey;
+      const extNameNl = EXTENDED_ARCHETYPES_NL[extKey] || extName;
+      const group = ARCHETYPE_TO_GROUP[sk];
+      const desc = null; // extended descriptions now live in the corpus / AI output
+      return {
+        support: sk,
+        supportName: ARCHETYPES[sk]?.nameEn || sk,
+        group,
+        extendedName: extName,
+        extendedNameNl: extNameNl,
+        subtitle: desc?.subtitle || group,
+        combination: desc?.combination || '',
+        shadow: desc?.shadow || '',
+        isActive: sk === supportKey,
+      };
+    });
 
   // ──────────────────────────────────────────────────────────
-  // 6c. Full 72 Matrix: 12 Main × 6 Support Groups
-  //     For the "Matrix van 72 Mogelijkheden" display
+  // 6c. Full 132 Matrix: 12 Main × 11 Support Archetypes
+  //     For the "Matrix van 132 Mogelijkheden" display
   // ──────────────────────────────────────────────────────────
   const ALL_MAIN_KEYS = ALL_ARCHETYPE_KEYS;
-  const fullMatrix72 = ALL_MAIN_KEYS.map(mk => {
+  const fullMatrix132 = ALL_MAIN_KEYS.map(mk => {
     const mainArch = ARCHETYPES[mk] || {};
     const row = {
       mainKey: mk,
       mainName: mainArch.name || mk,
       mainNameEn: mainArch.nameEn || mk,
       isActiveMain: mk === mainKey,
-      outcomes: ALL_GROUPS.map(group => {
-        const extKey = `${mk}_${group}`;
+      outcomes: ALL_ARCHETYPE_KEYS.filter(sk => sk !== mk).map(sk => {
+        const extKey = `${mk}_${sk}`;
         const extName = EXTENDED_ARCHETYPES[extKey] || mk;
         return {
-          group,
+          support: sk,
+          group: ARCHETYPE_TO_GROUP[sk],
           extendedName: extName,
-          isActive: mk === mainKey && group === supportGroup,
+          isActive: mk === mainKey && sk === supportKey,
         };
       }),
     };
@@ -5647,20 +4950,20 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
     mainArchetype: mainKey,
     mainName: primaryArchetype.name,                  // e.g. "De Wijze"
     mainNameEn: primaryArchetype.nameEn || mainKey,
-    description: primaryArchetype.description,
-    levensles: getArchetypeQuote(mainKey, supportGroup) || null,
-    mainMotivation: primaryArchetype.motivation || null,
-    mainPositive: primaryArchetype.positive || null,
-    mainShadowTrait: primaryArchetype.shadow || null,
-    mainComplementaryAxis: primaryArchetype.complementaryAxis || null,
-    mainShadowTension: primaryArchetype.shadowTension || null,
+    description: archetypeField(primaryArchetype, 'description', lang),
+    levensles: getArchetypeQuote(mainKey, supportGroup, lang) || null,
+    mainMotivation: archetypeField(primaryArchetype, 'motivation', lang) || null,
+    mainPositive: archetypeField(primaryArchetype, 'positive', lang) || null,
+    mainShadowTrait: archetypeField(primaryArchetype, 'shadow', lang) || null,
+    mainComplementaryAxis: archetypeField(primaryArchetype, 'complementaryAxis', lang) || null,
+    mainShadowTension: archetypeField(primaryArchetype, 'shadowTension', lang) || null,
     // Support archetype
     secondaryArchetype: supportKey,
     secondaryName: supportArchetype.name,              // e.g. "De Rebel"
     secondaryNameEn: supportArchetype.nameEn || supportKey,
     secondaryDescription: supportArchetype.description || null,
-    secondaryMotivation: supportArchetype.motivation || null,
-    secondaryPositive: supportArchetype.positive || null,
+    secondaryMotivation: archetypeField(supportArchetype, 'motivation', lang) || null,
+    secondaryPositive: archetypeField(supportArchetype, 'positive', lang) || null,
     // Shadow (180° opposite of Main — internal fuel)
     shadowPartner: shadowKey,
     shadowName: shadowKey ? (ARCHETYPES[shadowKey]?.name || shadowKey) : null,
@@ -5672,7 +4975,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
     blindspotNameEn: blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn || blindspotKey) : null,
     blindspotDescription: blindspotKey ? (ARCHETYPES[blindspotKey]?.description || null) : null,
     blindspotShadowTrait: blindspotKey ? (ARCHETYPES[blindspotKey]?.shadow || null) : null,
-    blindspotTension: blindspotKey ? (ARCHETYPES[blindspotKey]?.shadowTension || null) : null,
+    blindspotTension: blindspotKey ? (archetypeField(blindspotKey, 'shadowTension', lang) || null) : null,
     // Harmony & Bonuses (Geometric Bleed — no separate counters, kept for backward compat)
     harmonyActive: false,
     shadowBonusActive: false,
@@ -5682,12 +4985,14 @@ function computeResultFromAnswers(layerAnswers, liveSubjects) {
     // Metadata
     group: primaryArchetype.group || null,
     supportGroup: supportGroup,
-    imageUrl: archetypeImage || primaryArchetype.imageUrl || 'https://picsum.photos/seed/gfl-archetype/400/400',
+    // null while the 132 artwork is in production - every consumer skips the image.
+    imageUrl: archetypeImage,
     // Scores & visualization
     radarData,
     subgroups,
     allSupportArchetypes,
-    fullMatrix72,
+    fullMatrix132,
+    fullMatrix72: fullMatrix132, // legacy alias
     analysisSections,
     totalScore,
     maxScore: advanced.totalMaxScore || 369,

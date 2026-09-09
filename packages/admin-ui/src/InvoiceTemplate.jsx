@@ -4,6 +4,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Plus, Trash2, Eraser, FileText, User, Hash, Receipt, Mail, Send, ChevronDown, UserPlus, X } from 'lucide-react';
 import { sendFormDirect, saveInvoice, getInvoices, deleteInvoice } from '@gfl/api-client';
+import { useLanguage } from '@gfl/i18n';
 
 // ═══════════════════════════════════════════════════════════
 // GFL Invoice Template — faithful replica of AI Studio layout
@@ -106,6 +107,7 @@ const persistContacts = (list) => localStorage.setItem(CONTACTS_KEY, JSON.string
 const EMPTY_TEMPLATE_ID = 'gfl-empty-template';
 
 const InvoiceTemplate = memo(({ isMobile = false }) => {
+  const { t, tFunc } = useLanguage();
   const [invoice, setInvoice] = useState(() => ({
     ...INITIAL_DATA,
     invoiceNumber: getNextInvoiceNumber(),
@@ -153,7 +155,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
       isTemplate: true,
       savedAt: null,
       invoiceNumber: '-',
-      clientName: 'Leeg template',
+      clientName: t('admin.invoice.emptyTemplate'),
       data: { ...INITIAL_DATA, invoiceNumber: getNextInvoiceNumber() },
     },
     ...savedInvoices,
@@ -281,10 +283,10 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   const handleTouchMoveReorder = (e) => {
     const sourceId = dragItemIdRef.current;
     if (!sourceId) return;
-    const t = e.touches && e.touches[0];
-    if (!t) return;
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
     e.preventDefault();
-    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
     const row = el && el.closest('[data-invoice-row-id]');
     if (!row) return;
     const targetId = row.getAttribute('data-invoice-row-id');
@@ -304,7 +306,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
   const handleSaveInvoice = async () => {
     const entry = {
       invoiceNumber: invoice.invoiceNumber,
-      clientName: invoice.clientName || '(geen klant)',
+      clientName: invoice.clientName || t('admin.invoice.noClient'),
       data: { ...invoice },
     };
     try {
@@ -377,17 +379,17 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
         try { doc.addImage(logoDataUrl, 'PNG', pw - 53, 10.5, 39, 39); } catch (e) { /* skip */ }
       }
       doc.setFontSize(20); doc.setTextColor(85, 85, 85);
-      doc.text('FACTUUR', pw - 14, 55, { align: 'right' });
+      doc.text(t('admin.invoice.docTitle'), pw - 14, 55, { align: 'right' });
 
       // Payment info
       doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(255, 255, 255);
-      doc.text(`Rekening: ${invoice.bankAccount} (Ref: ${invoice.invoiceNumber})`, 14, 62);
+      doc.text(tFunc('admin.invoice.accountLine')(invoice.bankAccount, invoice.invoiceNumber), 14, 62);
       doc.setTextColor(136, 136, 136); doc.setFont('helvetica', 'bold');
-      doc.text('gelieve te betalen binnen 30 werkdagen', 14, 67);
+      doc.text(t('admin.invoice.payWithin30'), 14, 67);
       doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-      doc.text(`Nr: ${invoice.invoiceNumber}`, pw - 14, 62, { align: 'right' });
+      doc.text(tFunc('admin.invoice.nr')(invoice.invoiceNumber), pw - 14, 62, { align: 'right' });
       doc.setFont('helvetica', 'normal'); doc.setTextColor(187, 187, 187);
-      doc.text(`DATUM: ${liveDate}`, pw - 14, 67, { align: 'right' });
+      doc.text(tFunc('admin.invoice.dateCaps')(liveDate), pw - 14, 67, { align: 'right' });
 
       // ─── Separator line: payment info → table ───
       doc.setDrawColor(51, 51, 51); doc.setLineWidth(0.2);
@@ -399,7 +401,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
 
     // Table
     const tableData = invoice.items.map(item => [
-      item.description || 'Nieuw Item', item.quantity.toString(),
+      item.description || t('admin.invoice.newItem'), item.quantity.toString(),
       `${item.price.toFixed(2)}.-`,
       `${(item.quantity * item.price).toFixed(2).replace('.', ',')}`,
     ]);
@@ -407,7 +409,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
     let isFirstPage = true;
     autoTable(doc, {
       startY: 79,
-      head: [['OMSCHRIJVING', 'UUR', 'TARIEF Ex.-', 'BEDRAG']],
+      head: [[t('admin.invoice.colDescriptionCaps'), t('admin.invoice.colHoursCaps'), t('admin.invoice.colRateCaps'), t('admin.invoice.colAmountCaps')]],
       body: tableData,
       theme: 'plain',
       headStyles: { textColor: [136, 136, 136], fontStyle: 'bold', fontSize: 10, cellPadding: { top: 2, bottom: 3, left: 0, right: 0 } },
@@ -447,18 +449,18 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
     // Total rows — right-aligned, matching preview
     if (btwIncluded) {
       doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(187, 187, 187);
-      doc.text('Subtotaal', 140, finalY + 8);
+      doc.text(t('admin.invoice.subtotal'), 140, finalY + 8);
       doc.text(`€${subtotal.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 8, { align: 'right' });
-      doc.text('BTW 21%', 140, finalY + 14);
+      doc.text(t('admin.invoice.vat21'), 140, finalY + 14);
       doc.text(`€${taxAmount.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 14, { align: 'right' });
       doc.setDrawColor(68, 68, 68); doc.setLineWidth(0.2);
       doc.line(140, finalY + 17, pw - 14, finalY + 17);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
-      doc.text('TOTAAL', 140, finalY + 24);
+      doc.text(t('admin.invoice.totalCaps'), 140, finalY + 24);
       doc.text(`€${total.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 24, { align: 'right' });
     } else {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
-      doc.text('TOTAAL', 140, finalY + 10);
+      doc.text(t('admin.invoice.totalCaps'), 140, finalY + 10);
       doc.text(`€${total.toFixed(2).replace('.', ',')}`, pw - 14, finalY + 10, { align: 'right' });
     }
 
@@ -469,7 +471,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
 
     // Factuur voor
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(136, 136, 136);
-    doc.text('FACTUUR VOOR:', 14, footerY + 4);
+    doc.text(t('admin.invoice.invoiceForCaps'), 14, footerY + 4);
     doc.setTextColor(255, 255, 255);
     doc.text(invoice.clientName || '', 14, footerY + 9);
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(187, 187, 187);
@@ -480,14 +482,14 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
 
     // Spell (left)
     doc.setFontSize(10); doc.setFont('helvetica', 'italic'); doc.setTextColor(255, 255, 255);
-    doc.text('De luide stilte en de intense kalmte', 14, sideY + 4);
-    doc.text('Wijzen de euros van jouw Bank naar mijn Hart', 14, sideY + 9);
+    doc.text(t('admin.invoice.spellLine1'), 14, sideY + 4);
+    doc.text(t('admin.invoice.spellLine2'), 14, sideY + 9);
     doc.setFontSize(9); doc.setTextColor(136, 136, 136);
     if (invoice.notes) doc.text(invoice.notes, 14, sideY + 14);
 
     // Signature (right) — aligned with Factuur voor
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-    doc.text('ONDERTEKEND DOOR:', pw - 14, footerY + 4, { align: 'right' });
+    doc.text(t('admin.invoice.signedByCaps'), pw - 14, footerY + 4, { align: 'right' });
     const sigW = 56; const sigH = 18;
     const sigX = pw - 14 - sigW;
     const sigBoxY = footerY + 7;
@@ -499,13 +501,13 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
       doc.addImage(signatureData, 'PNG', sigX + 2, sigBoxY + 2, sigW - 4, sigH - 4);
     } else {
       doc.setFontSize(6); doc.setFont('helvetica', 'bold'); doc.setTextColor(85, 85, 85);
-      doc.text('WACHTEN OP', sigX + sigW / 2, sigBoxY + sigH / 2 - 2, { align: 'center' });
-      doc.text('HANDTEKENING', sigX + sigW / 2, sigBoxY + sigH / 2 + 3, { align: 'center' });
+      doc.text(t('admin.invoice.waitingForCaps'), sigX + sigW / 2, sigBoxY + sigH / 2 - 2, { align: 'center' });
+      doc.text(t('admin.invoice.signatureWordCaps'), sigX + sigW / 2, sigBoxY + sigH / 2 + 3, { align: 'center' });
     }
 
     // Bedankt — right-aligned below signature
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(136, 136, 136);
-    doc.text('Bedankt voor uw vertrouwen', sigX + sigW / 2, sigBoxY + sigH + 5, { align: 'center' });
+    doc.text(t('admin.invoice.thankYou'), sigX + sigW / 2, sigBoxY + sigH + 5, { align: 'center' });
 
     return doc;
   };
@@ -518,7 +520,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
 
   /* ── Send invoice email with PDF attachment ── */
   const handleSendEmail = async () => {
-    if (!recipientEmail.trim()) { setSendError('Vul een e-mailadres in'); return; }
+    if (!recipientEmail.trim()) { setSendError(t('admin.invoice.enterEmail')); return; }
     setSendingState('sending');
     setSendError('');
     try {
@@ -534,10 +536,10 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
         templateId: 'factuur',
         templateLabel: 'Factuur',
         type: 'pdf',
-        content: emailBody || `Factuur ${invoice.invoiceNumber}`,
+        content: emailBody || tFunc('admin.invoice.contentFallback')(invoice.invoiceNumber),
         recipientEmail,
         ...(ccEmail.trim() ? { cc: ccEmail.trim() } : {}),
-        subject: emailSubject || `Garden For Life — Factuur ${invoice.invoiceNumber}`,
+        subject: emailSubject || tFunc('admin.invoice.subjectDefault')(invoice.invoiceNumber),
         pdfBase64,
         attachmentFilename: `${invoice.invoiceNumber}.pdf`,
       };
@@ -547,7 +549,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
       setSendingState('sent');
       setTimeout(() => setSendingState(null), 3000);
     } catch (err) {
-      setSendError(err.message || 'Versturen mislukt');
+      setSendError(err.message || t('admin.invoice.sendFailed'));
       setSendingState('error');
       setTimeout(() => setSendingState(null), 4000);
     }
@@ -587,7 +589,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Receipt size={16} color={historyOpen ? ACCENT : DIM} />
-            Factuurgeschiedenis
+            {t('admin.invoice.historyTitle')}
             {historyEntries.length > 0 && (
               <span style={{
                 fontSize: '0.62rem', fontWeight: 800,
@@ -620,7 +622,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                           {new Date(entry.savedAt).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </div>
                       ) : (
-                        <div style={{ fontSize: '0.62rem', color: '#4ade80' }}>Altijd beschikbaar</div>
+                        <div style={{ fontSize: '0.62rem', color: '#4ade80' }}>{t('admin.invoice.alwaysAvailable')}</div>
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: '0.4rem', marginLeft: '0.6rem' }}>
@@ -632,7 +634,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                           border: '1px solid rgba(188,19,254,0.25)', borderRadius: '0.35rem',
                           cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap',
                         }}
-                      >Laden</button>
+                      >{t('admin.invoice.load')}</button>
                       {!entry.isTemplate && (
                         <button
                           onClick={() => handleDeleteSavedInvoice(entry._id)}
@@ -673,14 +675,14 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
           <section>
             <h2 style={sectionHeading}>
               <FileText size={20} color={ACCENT} />
-              Factuur Gegevens
+              {t('admin.invoice.detailsHeading')}
             </h2>
             <div style={isMobile
               ? { display: 'flex', flexDirection: 'column', gap: '1rem' }
               : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }
             }>
               <div>
-                <div style={labelCss}>Factuurnummer</div>
+                <div style={labelCss}>{t('admin.invoice.invoiceNumber')}</div>
                 <div style={{ position: 'relative' }}>
                   <Hash size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
                   <input style={input} value={invoice.invoiceNumber}
@@ -688,7 +690,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                 </div>
               </div>
               <div>
-                <div style={labelCss}>Datum (auto-sync)</div>
+                <div style={labelCss}>{t('admin.invoice.dateAutoSync')}</div>
                 <div style={{
                   ...input,
                   paddingLeft: '0.85rem',
@@ -707,10 +709,10 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
               <h2 style={{ ...sectionHeading, marginBottom: 0 }}>
                 <User size={20} color={ACCENT} />
-                Factuur Informatie
+                {t('admin.invoice.infoHeading')}
               </h2>
               <div style={{ display: 'flex', gap: '0.4rem' }}>
-                <button onClick={saveCurrentContact} title="Contact opslaan" style={{
+                <button onClick={saveCurrentContact} title={t('admin.invoice.saveContact')} style={{
                   display: 'flex', alignItems: 'center', gap: '0.3rem',
                   padding: '0.35rem 0.6rem', fontSize: '0.68rem', fontWeight: 700,
                   backgroundColor: 'rgba(255,174,0,0.08)', color: GOLD,
@@ -721,7 +723,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                   onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,174,0,0.16)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,174,0,0.08)'; }}
                 >
-                  <UserPlus size={13} /> Opslaan
+                  <UserPlus size={13} /> {t('admin.invoice.save')}
                 </button>
               </div>
             </div>
@@ -747,8 +749,8 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <User size={14} color={DIM} />
                   {savedContacts.length
-                    ? `${savedContacts.length} opgeslagen contact${savedContacts.length !== 1 ? 'en' : ''} — kies een klant`
-                    : 'Geen opgeslagen contacten'}
+                    ? tFunc('admin.invoice.contactsChoose')(savedContacts.length)
+                    : t('admin.invoice.noSavedContacts')}
                 </span>
                 <ChevronDown size={14} color={DIM} style={{ transform: showContactList ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
               </button>
@@ -797,11 +799,11 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div>
-                <h3 style={{ fontSize: '0.68rem', fontWeight: 700, color: DIM, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.6rem' }}>Factuur Voor</h3>
-                <input style={inputNoPad} placeholder="Klantnaam" value={invoice.clientName}
+                <h3 style={{ fontSize: '0.68rem', fontWeight: 700, color: DIM, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.6rem' }}>{t('admin.invoice.invoiceFor')}</h3>
+                <input style={inputNoPad} placeholder={t('admin.invoice.clientNamePlaceholder')} value={invoice.clientName}
                   onChange={(e) => setInvoice({ ...invoice, clientName: e.target.value })} />
               </div>
-              <input style={inputNoPad} placeholder="Klant Adres / Contact" value={invoice.clientAddress}
+              <input style={inputNoPad} placeholder={t('admin.invoice.clientAddressPlaceholder')} value={invoice.clientAddress}
                 onChange={(e) => setInvoice({ ...invoice, clientAddress: e.target.value })} />
             </div>
           </section>
@@ -811,7 +813,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
               <h2 style={{ ...sectionHeading, marginBottom: 0 }}>
                 <Receipt size={20} color={ACCENT} />
-                {isMobile ? <span>Factuur<br/>regels</span> : 'Factuurregels'}
+                {isMobile ? <span>{t('admin.invoice.linesHeadingMobile1')}<br/>{t('admin.invoice.linesHeadingMobile2')}</span> : t('admin.invoice.linesHeading')}
               </h2>
               <button onClick={handleAddItem} style={{
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -823,7 +825,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(188,19,254,0.16)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(188,19,254,0.08)'; }}
               >
-                <Plus size={14} /> Regel Toevoegen
+                <Plus size={14} /> {t('admin.invoice.addLine')}
               </button>
             </div>
 
@@ -874,17 +876,17 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                         }}
                       >
                         <span style={{ letterSpacing: '0.16em', fontSize: '0.78rem', lineHeight: 1 }}>⋮⋮</span>
-                        <span>{touchDraggingId === item.id ? 'Sleep om te verplaatsen' : 'Houd vast en sleep regel'}</span>
+                        <span>{touchDraggingId === item.id ? t('admin.invoice.dragToMove') : t('admin.invoice.holdAndDrag')}</span>
                       </div>
-                      <input style={{ ...inputNoPad, width: '100%', boxSizing: 'border-box' }} placeholder="Omschrijving" value={item.description}
+                      <input style={{ ...inputNoPad, width: '100%', boxSizing: 'border-box' }} placeholder={t('admin.invoice.descriptionPlaceholder')} value={item.description}
                         onChange={(e) => handleItemChange(item.id, 'description', e.target.value)} />
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <input style={{ ...inputNoPad, flex: 1, textAlign: 'center', minHeight: '2.2rem' }} type="number" placeholder="Aantal"
+                        <input style={{ ...inputNoPad, flex: 1, textAlign: 'center', minHeight: '2.2rem' }} type="number" placeholder={t('admin.invoice.quantityPlaceholder')}
                           value={item.quantity}
                           onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
                         <div style={{ position: 'relative', flex: 1 }}>
                           <span style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)', color: DIM, fontSize: '0.8rem' }}>€</span>
-                          <input style={{ ...input, paddingLeft: '1.6rem', width: '100%', boxSizing: 'border-box', minHeight: '2.2rem' }} type="number" placeholder="Prijs"
+                          <input style={{ ...input, paddingLeft: '1.6rem', width: '100%', boxSizing: 'border-box', minHeight: '2.2rem' }} type="number" placeholder={t('admin.invoice.pricePlaceholder')}
                             value={item.price}
                             onChange={(e) => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} />
                         </div>
@@ -902,14 +904,14 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                     </>
                   ) : (
                     <>
-                      <input style={inputNoPad} placeholder="Omschrijving" value={item.description}
+                      <input style={inputNoPad} placeholder={t('admin.invoice.descriptionPlaceholder')} value={item.description}
                         onChange={(e) => handleItemChange(item.id, 'description', e.target.value)} />
-                      <input style={{ ...inputNoPad, textAlign: 'center' }} type="number" placeholder="Aantal"
+                      <input style={{ ...inputNoPad, textAlign: 'center' }} type="number" placeholder={t('admin.invoice.quantityPlaceholder')}
                         value={item.quantity}
                         onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
                       <div style={{ position: 'relative' }}>
                         <span style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)', color: DIM, fontSize: '0.8rem' }}>€</span>
-                        <input style={{ ...input, paddingLeft: '1.6rem' }} type="number" placeholder="Prijs"
+                        <input style={{ ...input, paddingLeft: '1.6rem' }} type="number" placeholder={t('admin.invoice.pricePlaceholder')}
                           value={item.price}
                           onChange={(e) => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} />
                       </div>
@@ -956,22 +958,22 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                       letterSpacing: '0.08em',
                     }}
                   >
-                    {btwIncluded ? '✓ BTW 21%' : 'BTW 21%'}
+                    {btwIncluded ? t('admin.invoice.vatToggleOn') : t('admin.invoice.vatToggleOff')}
                   </button>
                   {!isMobile && (
                     <span style={{ fontSize: '0.65rem', color: DIM }}>
-                      {btwIncluded ? 'BTW wordt berekend over het subtotaal' : 'Prijzen exclusief BTW'}
+                      {btwIncluded ? t('admin.invoice.vatOverSubtotal') : t('admin.invoice.pricesExclVat')}
                     </span>
                   )}
                 </div>
                 <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '0.6rem', justifyContent: 'flex-end' }}>
                   {btwIncluded && (
                     <div style={{ fontSize: '0.65rem', color: DIM }}>
-                      BTW: €{taxAmount.toFixed(2).replace('.', ',')}
+                      {t('admin.invoice.vatShort')}: €{taxAmount.toFixed(2).replace('.', ',')}
                     </div>
                   )}
                   <div style={{ fontSize: '0.85rem', fontWeight: 700, color: GOLD }}>
-                    Totaal: €{total.toFixed(2).replace('.', ',')}
+                    {t('admin.invoice.totalLabel')}: €{total.toFixed(2).replace('.', ',')}
                   </div>
                 </div>
               </div>
@@ -982,7 +984,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
           <section style={isMobile ? {} : { paddingTop: '1.2rem', borderTop: `1px solid ${BORDER}` }}>
             <h2 style={sectionHeading}>
               <Eraser size={20} color={ACCENT} />
-              Handtekening
+              {t('admin.invoice.signatureHeading')}
             </h2>
             <div style={{
               border: `2px dashed ${BORDER}`, borderRadius: '0.8rem',
@@ -1014,7 +1016,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                   onMouseEnter={(e) => { e.currentTarget.style.color = ACCENT; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = DIM; }}
                 >
-                  <Eraser size={14} /> Wissen
+                  <Eraser size={14} /> {t('admin.invoice.clear')}
                 </button>
               </div>
             </div>
@@ -1059,7 +1061,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                       <img src={invoice.logoUrl} alt="Logo" referrerPolicy="no-referrer"
                         style={{ width: '2.5em', height: '2.5em', objectFit: 'contain', marginBottom: '0.3em', borderRadius: '0.3em' }} />
                     )}
-                    <div style={{ fontSize: '1.1em', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.03em' }}>FACTUUR</div>
+                    <div style={{ fontSize: '1.1em', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{t('admin.invoice.docTitle')}</div>
                   </div>
                 </div>
               </div>
@@ -1070,12 +1072,12 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                 borderBottom: '1px solid #333', paddingBottom: '0.5em', marginTop: '0.7em',
               }}>
                 <div>
-                  <p style={{ fontSize: '0.44em', color: '#fff', margin: 0 }}>Rekening: {invoice.bankAccount} (Ref: {invoice.invoiceNumber})</p>
-                  <p style={{ fontSize: '0.44em', color: '#888', fontWeight: 700, margin: '0.15em 0 0' }}>gelieve te betalen binnen 30 werkdagen</p>
+                  <p style={{ fontSize: '0.44em', color: '#fff', margin: 0 }}>{tFunc('admin.invoice.accountLine')(invoice.bankAccount, invoice.invoiceNumber)}</p>
+                  <p style={{ fontSize: '0.44em', color: '#888', fontWeight: 700, margin: '0.15em 0 0' }}>{t('admin.invoice.payWithin30')}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: 0 }}>Nr: {invoice.invoiceNumber}</p>
-                  <p style={{ fontSize: '0.55em', color: '#bbb', textTransform: 'uppercase', margin: '0.1em 0 0' }}>Datum: {liveDate}</p>
+                  <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: 0 }}>{tFunc('admin.invoice.nr')(invoice.invoiceNumber)}</p>
+                  <p style={{ fontSize: '0.55em', color: '#bbb', textTransform: 'uppercase', margin: '0.1em 0 0' }}>{t('admin.invoice.dateLabel')} {liveDate}</p>
                 </div>
               </div>
 
@@ -1084,10 +1086,10 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #333' }}>
-                      <th style={{ textAlign: 'left', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Omschrijving</th>
-                      <th style={{ textAlign: 'center', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Uur</th>
-                      <th style={{ textAlign: 'center', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Tarief Ex.-</th>
-                      <th style={{ textAlign: 'right', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Bedrag</th>
+                      <th style={{ textAlign: 'left', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>{t('admin.invoice.colDescription')}</th>
+                      <th style={{ textAlign: 'center', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>{t('admin.invoice.colHours')}</th>
+                      <th style={{ textAlign: 'center', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>{t('admin.invoice.colRate')}</th>
+                      <th style={{ textAlign: 'right', padding: '0.35em 0', fontSize: '0.50em', fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>{t('admin.invoice.colAmount')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1095,7 +1097,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                       .slice((previewPage - 1) * itemsPerPage, previewPage * itemsPerPage)
                       .map((item) => (
                       <tr key={item.id} style={{ borderBottom: '1px solid #222' }}>
-                        <td style={{ padding: '0.5em 0', fontSize: '0.55em', color: '#fff' }}>{item.description || 'Nieuw Item'}</td>
+                        <td style={{ padding: '0.5em 0', fontSize: '0.55em', color: '#fff' }}>{item.description || t('admin.invoice.newItem')}</td>
                         <td style={{ padding: '0.5em 0', fontSize: '0.55em', color: '#fff', textAlign: 'center' }}>{item.quantity}</td>
                         <td style={{ padding: '0.5em 0', fontSize: '0.55em', color: '#fff', textAlign: 'center' }}>{item.price.toFixed(2)}.-</td>
                         <td style={{ padding: '0.5em 0', fontSize: '0.55em', color: '#fff', textAlign: 'right', fontWeight: 600 }}>{(item.quantity * item.price).toFixed(2).replace('.', ',')}</td>
@@ -1109,18 +1111,18 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                     {btwIncluded && (
                       <>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8em' }}>
-                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>Subtotaal</span>
+                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>{t('admin.invoice.subtotal')}</span>
                           <span style={{ fontSize: '0.50em', color: '#bbb' }}>€{subtotal.toFixed(2).replace('.', ',')}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8em' }}>
-                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>BTW 21%</span>
+                          <span style={{ fontSize: '0.50em', color: '#bbb' }}>{t('admin.invoice.vat21')}</span>
                           <span style={{ fontSize: '0.50em', color: '#bbb' }}>€{taxAmount.toFixed(2).replace('.', ',')}</span>
                         </div>
                         <div style={{ width: '5.5em', borderTop: '1px solid #444', marginTop: '0.1em', paddingTop: '0.2em' }} />
                       </>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.8em' }}>
-                      <span style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#fff' }}>TOTAAL</span>
+                      <span style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#fff' }}>{t('admin.invoice.totalCaps')}</span>
                       <span style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff' }}>€{total.toFixed(2).replace('.', ',')}</span>
                     </div>
                   </div>
@@ -1133,20 +1135,20 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                   {/* Left column: Factuur voor + Spell */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6em' }}>
                     <div>
-                      <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#888', margin: 0 }}>Factuur voor:</p>
+                      <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#888', margin: 0 }}>{t('admin.invoice.invoiceForLabel')}</p>
                       <p style={{ fontSize: '0.55em', fontWeight: 700, color: '#fff', margin: '0.15em 0' }}>{invoice.clientName}</p>
                       <p style={{ fontSize: '0.50em', color: '#bbb', lineHeight: 1.5, margin: 0 }}>{invoice.clientAddress}</p>
                     </div>
                     <div>
-                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: 0 }}>De luide stilte en de intense kalmte</p>
-                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: '0.1em 0 0' }}>Wijzen de euros van jouw Bank naar mijn Hart</p>
+                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: 0 }}>{t('admin.invoice.spellLine1')}</p>
+                      <p style={{ fontSize: '0.55em', fontStyle: 'italic', color: '#fff', lineHeight: 1.4, margin: '0.1em 0 0' }}>{t('admin.invoice.spellLine2')}</p>
                       <p style={{ fontSize: '0.50em', fontStyle: 'italic', color: '#888', margin: '0.5em 0 0' }}>{invoice.notes}</p>
                     </div>
                   </div>
 
                   {/* Right column: Signature + Bedankt */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2em', flexShrink: 0 }}>
-                    <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Ondertekend door:</p>
+                    <p style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', color: '#fff', margin: 0 }}>{t('admin.invoice.signedBy')}</p>
                     <div style={{
                       border: '2px solid rgba(188,19,254,0.35)',
                       borderRadius: '0.3em', padding: '0.2em',
@@ -1157,16 +1159,16 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                       overflow: 'hidden',
                     }}>
                       {signatureData ? (
-                        <img src={signatureData} alt="Handtekening"
+                        <img src={signatureData} alt={t('admin.invoice.signatureAlt')}
                           style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', filter: 'brightness(2) contrast(1.25)' }} />
                       ) : (
                         <div style={{ textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>Wachten op</span>
-                          <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>handtekening</span>
+                          <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>{t('admin.invoice.waitingFor')}</span>
+                          <span style={{ fontSize: '0.35em', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block' }}>{t('admin.invoice.signatureWord')}</span>
                         </div>
                       )}
                     </div>
-                    <p style={{ fontSize: '0.42em', color: '#888', margin: '0.2em 0 0' }}>Bedankt voor uw vertrouwen</p>
+                    <p style={{ fontSize: '0.42em', color: '#888', margin: '0.2em 0 0' }}>{t('admin.invoice.thankYou')}</p>
                   </div>
                 </div>
               )}
@@ -1181,7 +1183,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                       backgroundColor: previewPage === i + 1 ? ACCENT : '#222',
                       color: previewPage === i + 1 ? '#fff' : '#555',
                       transition: 'all 0.2s',
-                    }}>Pagina {i + 1}</button>
+                    }}>{t('admin.invoice.page')} {i + 1}</button>
                   ))}
                 </div>
               )}
@@ -1199,8 +1201,8 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
         border: `1px solid ${BORDER}`,
       }}>
         <div style={{ fontSize: '0.72rem', color: DIM }}>
-          {invoice.items.length} regel{invoice.items.length !== 1 ? 's' : ''} · Totaal: €{total.toFixed(2).replace('.', ',')}
-          {btwIncluded && <span style={{ color: '#4ade80', marginLeft: '0.4rem' }}>(incl. BTW)</span>}
+          {tFunc('admin.invoice.lineCount')(invoice.items.length, total.toFixed(2).replace('.', ','))}
+          {btwIncluded && <span style={{ color: '#4ade80', marginLeft: '0.4rem' }}>{t('admin.invoice.inclVat')}</span>}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button onClick={generatePDF} style={{
@@ -1208,7 +1210,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
             backgroundColor: 'rgba(188,19,254,0.12)', color: ACCENT,
             border: '1px solid rgba(188,19,254,0.25)', borderRadius: '0.35rem',
             cursor: 'pointer', textTransform: 'uppercase', fontFamily: FONT,
-          }}>📄 DOWNLOAD</button>
+          }}>{t('admin.invoice.downloadPdf')}</button>
           <button onClick={handleSaveInvoice} style={{
             padding: '0.4rem 0.8rem', fontSize: '0.72rem', fontWeight: 700,
             backgroundColor: saveSuccess ? 'rgba(74,222,128,0.14)' : 'rgba(255,174,0,0.10)',
@@ -1217,7 +1219,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
             borderRadius: '0.35rem',
             cursor: 'pointer', textTransform: 'uppercase', fontFamily: FONT,
             transition: 'all 0.2s',
-          }}>{saveSuccess ? '✓ SAVED' : '💾 SAVE'}</button>
+          }}>{saveSuccess ? t('admin.invoice.savedButton') : t('admin.invoice.saveButton')}</button>
         </div>
       </div>
 
@@ -1233,7 +1235,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
       }}>
         <h2 style={sectionHeading}>
           <Mail size={20} color={ACCENT} />
-          E-mail Versturen
+          {t('admin.invoice.emailHeading')}
         </h2>
 
         {/* Recipient fields */}
@@ -1242,47 +1244,47 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
           : { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.8rem' }
         }>
           <div>
-            <div style={labelCss}>Ontvanger E-mail *</div>
+            <div style={labelCss}>{t('admin.invoice.recipientEmail')}</div>
             <div style={{ position: 'relative' }}>
               <Mail size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="email"
                 value={recipientEmail}
                 onChange={(e) => { setRecipientEmail(e.target.value); setSendError(''); }}
-                placeholder="naam@voorbeeld.nl"
+                placeholder={t('admin.invoice.emailPlaceholder')}
                 style={input}
               />
             </div>
           </div>
           <div>
-            <div style={labelCss}>CC (optioneel)</div>
+            <div style={labelCss}>{t('admin.invoice.ccOptional')}</div>
             <div style={{ position: 'relative' }}>
               <Mail size={14} color={DIM} style={{ position: 'absolute', left: '0.7rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="email"
                 value={ccEmail}
                 onChange={(e) => setCcEmail(e.target.value)}
-                placeholder="cc@voorbeeld.nl"
+                placeholder={t('admin.invoice.ccPlaceholder')}
                 style={input}
               />
             </div>
           </div>
           <div>
-            <div style={labelCss}>Onderwerp</div>
+            <div style={labelCss}>{t('admin.invoice.subject')}</div>
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
                 value={emailSubject}
                 onChange={(e) => setEmailSubject(e.target.value)}
-                placeholder={`Garden For Life — Factuur ${invoice.invoiceNumber}`}
+                placeholder={tFunc('admin.invoice.subjectDefault')(invoice.invoiceNumber)}
                 style={inputNoPad}
               />
               {emailSubject.length > 0 &&
-               emailSubject.length < `Garden For Life — Factuur ${invoice.invoiceNumber}`.length &&
-               `Garden For Life — Factuur ${invoice.invoiceNumber}`.toLowerCase().startsWith(emailSubject.toLowerCase()) && (
+               emailSubject.length < tFunc('admin.invoice.subjectDefault')(invoice.invoiceNumber).length &&
+               tFunc('admin.invoice.subjectDefault')(invoice.invoiceNumber).toLowerCase().startsWith(emailSubject.toLowerCase()) && (
                 <button
                   type="button"
-                  onClick={() => setEmailSubject(`Garden For Life — Factuur ${invoice.invoiceNumber}`)}
+                  onClick={() => setEmailSubject(tFunc('admin.invoice.subjectDefault')(invoice.invoiceNumber))}
                   style={{
                     position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
                     background: 'rgba(138,92,246,0.25)', color: '#c4b5fd', border: '1px solid rgba(138,92,246,0.4)',
@@ -1290,7 +1292,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  Autofill
+                  {t('admin.invoice.autofill')}
                 </button>
               )}
             </div>
@@ -1299,11 +1301,11 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
 
         {/* Email body */}
         <div>
-          <div style={labelCss}>E-mailtekst (optioneel)</div>
+          <div style={labelCss}>{t('admin.invoice.bodyLabel')}</div>
           <textarea
             value={emailBody}
             onChange={(e) => setEmailBody(e.target.value)}
-            placeholder={`Beste ${invoice.clientName || 'klant'},\n\nBijgevoegd vindt u factuur ${invoice.invoiceNumber}.\n\nMet vriendelijke groet,\nGarden For Life`}
+            placeholder={tFunc('admin.invoice.bodyPlaceholder')(invoice.clientName || t('admin.invoice.bodyClientFallback'), invoice.invoiceNumber)}
             rows={4}
             style={{
               ...inputNoPad,
@@ -1328,8 +1330,8 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
           border: '1px solid rgba(188,19,254,0.1)',
         }}>
           <div style={{ fontSize: '0.7rem', color: DIM }}>
-            📎 {invoice.invoiceNumber}.pdf wordt als bijlage meegestuurd
-            {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 700 }}>✓ Verstuurd!</span>}
+            {tFunc('admin.invoice.attachmentNote')(`${invoice.invoiceNumber}.pdf`)}
+            {sendingState === 'sent' && <span style={{ marginLeft: '0.5rem', color: '#4ade80', fontWeight: 700 }}>{t('admin.invoice.sent')}</span>}
           </div>
           <button
             onClick={handleSendEmail}
@@ -1350,7 +1352,7 @@ const InvoiceTemplate = memo(({ isMobile = false }) => {
             }}
           >
             <Send size={14} />
-            {sendingState === 'sending' ? 'BEZIG MET VERSTUREN...' : 'VERSTUREN MET PDF'}
+            {sendingState === 'sending' ? t('admin.invoice.sending') : t('admin.invoice.sendWithPdf')}
           </button>
         </div>
       </div>

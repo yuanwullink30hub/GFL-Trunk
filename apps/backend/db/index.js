@@ -37,7 +37,7 @@ async function connectDB() {
   // backfill) don't block the index; they re-pick a unique name on their next edit.
   await db.collection('users').createIndex({ nameHash: 1 }, { unique: true, sparse: true });
   await db.collection('assessments').createIndex({ userId: 1, createdAt: -1 });
-  await db.collection('assessmentReviews').createIndex({ createdAt: -1 });
+  await db.collection('assessmentReviews').createIndex({ timestamp: -1 });
   await db.collection('assessmentReviews').createIndex({ userId: 1 }, { sparse: true });
 
   // Passkeys — unique 6-digit codes
@@ -65,20 +65,59 @@ async function connectDB() {
     { expireAfterSeconds: 90 * 24 * 60 * 60, name: 'kaartDrafts_ttl_90d' }
   );
 
-  // ── BETA data retention: auto-expire assessment data after 90 days ──
-  // MongoDB's TTL index removes documents automatically — no cron job needed.
-  const BETA_RETENTION_SECONDS = 90 * 24 * 60 * 60; // 90 days
-  await db.collection('assessments').createIndex(
-    { createdAt: 1 },
-    { expireAfterSeconds: BETA_RETENTION_SECONDS, name: 'assessments_ttl_90d' }
-  );
-  await db.collection('assessmentReviews').createIndex(
-    { createdAt: 1 },
-    { expireAfterSeconds: BETA_RETENTION_SECONDS, name: 'assessmentReviews_ttl_90d' }
-  );
+  // ── Data retention ──
+  // A computed profile is a working cache, never a record: the account keeps only the
+  // partial profile (users.orbHistory). `assessments` is swept every night at 00:00
+  // (scheduleProfilePurge in server.js); this TTL is the safety net for the window in
+  // which the sweep can't run (process restart, crash), capping retention at 24 hours.
+  await ensureTtlIndex('assessments', { createdAt: 1 }, 24 * 60 * 60, 'assessments_ttl_24h');
+  // Feedback reviews are business data (no raw profile): 90 days, as declared in the
+  // Art. 30 register. NOTE the key is `timestamp` — the review documents carry no
+  // `createdAt`, so the old TTL on that field expired nothing at all. Its name is reused
+  // below, so the dead indexes have to go first or the new one collides on the name.
+  await dropIndexes('assessmentReviews', ['assessmentReviews_ttl_90d', 'createdAt_-1'], { key: 'createdAt' });
+  await ensureTtlIndex('assessmentReviews', { timestamp: 1 }, 90 * 24 * 60 * 60, 'assessmentReviews_ttl_90d');
 
   console.log('[MongoDB] Connected to', db.databaseName);
   return db;
+}
+
+/**
+ * Drop named indexes, but only when they still key on `guard.key` — so a re-run after the
+ * replacement index exists under the same name can never delete the new one.
+ */
+async function dropIndexes(collectionName, names, guard) {
+  const coll = db.collection(collectionName);
+  const existing = await coll.indexes().catch(() => []);
+  for (const ix of existing) {
+    if (!names.includes(ix.name)) continue;
+    if (guard && !Object.prototype.hasOwnProperty.call(ix.key, guard.key)) continue;
+    await coll.dropIndex(ix.name)
+      .then(() => console.log(`[MongoDB] Dropped stale index ${collectionName}.${ix.name}`))
+      .catch((e) => console.warn(`[MongoDB] Could not drop ${collectionName}.${ix.name}:`, e.message));
+  }
+}
+
+/**
+ * Create a TTL index, or retune an existing one on the same key.
+ * `createIndex` throws IndexOptionsConflict when the key already carries a TTL with a
+ * different lifetime or name, so an existing index is amended with collMod instead —
+ * otherwise a shortened retention period would never take effect on a live database.
+ */
+async function ensureTtlIndex(collectionName, key, expireAfterSeconds, name) {
+  const coll = db.collection(collectionName);
+  const existing = await coll.indexes().catch(() => []);
+  const match = existing.find((ix) => JSON.stringify(ix.key) === JSON.stringify(key));
+  if (match) {
+    if (match.expireAfterSeconds !== expireAfterSeconds) {
+      await db.command({ collMod: collectionName, index: { name: match.name, expireAfterSeconds } })
+        .then(() => console.log(`[MongoDB] TTL on ${collectionName}.${Object.keys(key)[0]} set to ${expireAfterSeconds}s`))
+        .catch((e) => console.warn(`[MongoDB] Could not retune TTL on ${collectionName}:`, e.message));
+    }
+    return;
+  }
+  await coll.createIndex(key, { expireAfterSeconds, name })
+    .catch((e) => console.warn(`[MongoDB] Could not create TTL on ${collectionName}:`, e.message));
 }
 
 /**

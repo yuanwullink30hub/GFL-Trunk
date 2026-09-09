@@ -1,262 +1,242 @@
-import { EXTENDED_ARCHETYPES, EXTENDED_ARCHETYPES_NL } from './scoring/index.js';
+import { EXTENDED_ARCHETYPES, EXTENDED_ARCHETYPES_NL, resolveExtendedKey } from './scoring/index.js';
 
 /**
- * Archetype Image Map
- * -------------------
- * Maps each of the 72 extended archetype keys (MAIN_SUPPORTGROUP)
- * to their corresponding portrait image.
+ * Archetype Image Map - 132-matrix
+ * --------------------------------
+ * ARTWORK IS CURRENTLY REMOVED. The 72-era portraits were retired together with
+ * the 72-matrix (their names no longer line up with the 132 roster), and the 132
+ * artwork is still in production. Every entry below is therefore null and every
+ * getter returns null, so no card, profile or PDF renders a portrait for now.
  *
- * Support Groups (Neurobiological):
- *   RULING, RELATIONAL, SEEKER, CHAOS, ABSTRACT, AGENCY
+ * The keys are kept deliberately: this table is the manifest of exactly which
+ * combination needs which portrait. When the art lands, replace a combination's
+ * null with its asset path - nothing else has to change.
  *
- * 12 Main × 6 Support Groups = 72 entries.
- * All 72 archetypes have unique names and unique images.
+ * Callers already treat null as "no portrait" and skip the image entirely.
  */
 
-// ── JUDGE images ───────────────────────────────────────────
-const imgArbiter = '/images/Import ready/Arbiter.PNG';
-const imgMediator = '/images/Import ready/Mediator.png';
-const imgExaminer = '/images/Import ready/Examiner.png';
-const imgWhistleblower = '/images/Import ready/Whistleblower.png';
-const imgCritic = '/images/Import ready/Critic.PNG';
-const imgAvenger = '/images/Import ready/Avenger.png';
-
-// ── LOVER images ───────────────────────────────────────────
-const imgSoulmate = '/images/Import ready/Soulmate.png';
-const imgPoet = '/images/Import ready/Poet.png';
-const imgSeducer = '/images/Import ready/Seducer.PNG';
-const imgMystic = '/images/Import ready/Mystic.png';
-const imgRomantic = '/images/Import ready/Romantist.png';
-const imgCompanion = '/images/Import ready/Companion.png';
-
-// ── CAREGIVER images ───────────────────────────────────────
-const imgHealer = '/images/Import ready/Healer.PNG';
-const imgPathfinder = '/images/Import ready/Pathfinder.png';
-const imgCultivator = '/images/Import ready/Cultivator.png';
-const imgTherapist = '/images/Import ready/Therapist.PNG';
-const imgProtector = '/images/Import ready/Protector.png';
-const imgAdvocate = '/images/Import ready/Advocate.PNG';
-
-// ── INNOCENT images ────────────────────────────────────────
-const imgSaint = '/images/Import ready/Saint.png';
-const imgFreeSpirit = '/images/Import ready/Free spirit.PNG';
-const imgDisciple = '/images/Import ready/Disciple.png';
-const imgPioneer = '/images/Import ready/Pioneer.png';
-const imgShepherd = '/images/Import ready/Shepherd.png';
-const imgSamaritan = '/images/Import ready/Samaritan.png';
-
-// ── EXPLORER images ────────────────────────────────────────
-const imgNavigator = '/images/Import ready/Navigator.png';
-const imgInnovator = '/images/Import ready/Innovator.png';
-const imgScholar = '/images/Import ready/Scholar.png';
-const imgSailor = '/images/Import ready/Sailor.png';
-const imgScout = '/images/Import ready/Scout.PNG';
-const imgNetworker = '/images/Import ready/Networker.png';
-
-// ── OUTLAW images ──────────────────────────────────────────
-const imgAnarchist = '/images/Import ready/Anarchist.png';
-const imgIconoclast = '/images/Import ready/Iconoclast.PNG';
-const imgRevolutionary = '/images/Import ready/Revolutionary.png';
-const imgReformer = '/images/Import ready/Reformer.png';
-const imgLiberator = '/images/Import ready/Liberator.png';
-const imgRenegade = '/images/Import ready/Renegade.PNG';
-
-// ── TRICKSTER images ───────────────────────────────────────
-const imgFool = '/images/Import ready/Fool.png';
-const imgComedian = '/images/Import ready/Comedian.PNG';
-const imgSaboteur = '/images/Import ready/Saboteur copy.png';
-const imgJester = '/images/Import ready/Jester.PNG';
-const imgClown = '/images/Import ready/Clown.png';
-const imgShapeshifter = '/images/Import ready/Shapeshifter.png';
-
-// ── SAGE images ────────────────────────────────────────────
-const imgEnlightened = '/images/Import ready/Enlightened.PNG';
-const imgDetective = '/images/Import ready/Detective.PNG';
-const imgAnalyst = '/images/Import ready/Analyst.png';
-const imgMentor = '/images/Import ready/Mentor.png';
-const imgDreamer = '/images/Import ready/Dreamer.PNG';
-const imgHermit = '/images/Import ready/Hermit.PNG';
-
-// ── ARTIST images ──────────────────────────────────────────
-const imgDemiurge = '/images/Import ready/Demiurge.png';
-const imgForgemaster = '/images/Import ready/Forgemaster.png';
-const imgArchitect = '/images/Import ready/Architect.png';
-const imgStoryteller = '/images/Import ready/Storyteller.PNG';
-const imgVisionary = '/images/Import ready/Visionair.png';
-const imgIllusionist = '/images/Import ready/Illusionist.png';
-
-// ── MAGICIAN images ────────────────────────────────────────
-const imgAlchemist = '/images/Import ready/Alchemist.png';
-const imgEngineer = '/images/Import ready/Engineer.png';
-const imgShaman = '/images/Import ready/Shaman.png';
-const imgOracle = '/images/Import ready/Oracle.png';
-const imgEnchanter = '/images/Import ready/Enchanter.png';
-const imgSorcerer = '/images/Import ready/Sorcerer.PNG';
-
-// ── HERO images ────────────────────────────────────────────
-const imgLegend = '/images/Import ready/Legend.PNG';
-const imgCommander = '/images/Import ready/Commander.png';
-const imgGuardian = '/images/Import ready/Guardian.png';
-const imgInventor = '/images/Import ready/Inventor.png';
-const imgRonin = '/images/Import ready/Ronin.PNG';
-const imgStrategist = '/images/Import ready/Strategist.PNG';
-
-// ── RULER images ───────────────────────────────────────────
-const imgEmperor = '/images/Import ready/Emperor-Emperess.png';
-const imgPatriarch = '/images/Import ready/Patriarch-Matriarch.png';
-const imgEntrepreneur = '/images/Import ready/Entrepeneur.PNG';
-const imgMaverick = '/images/Import ready/Maverick.png';
-const imgPhilosopher = '/images/Import ready/Philosopher king.png';
-const imgConqueror = '/images/Import ready/Conqueror.png';
-
-
 /**
- * Lookup table: extended-archetype key → imported image.
- *
- * Key format: `${MAIN}_${SUPPORT_GROUP}`
- * Groups: RULING, RELATIONAL, SEEKER, CHAOS, ABSTRACT, AGENCY
+ * Lookup table: 132-matrix key (`${MAIN}_${SUPPORT}`) -> portrait path.
+ * null = artwork not available yet (currently: all 132).
  */
 const ARCHETYPE_IMAGES = {
-  // ── JUDGE (Positie 1) ──────────────────────────────────
-  JUDGE_RULING:          imgArbiter,        // The Arbiter
-  JUDGE_RELATIONAL:      imgMediator,       // The Mediator
-  JUDGE_SEEKER:          imgExaminer,       // The Examiner
-  JUDGE_CHAOS:           imgWhistleblower,  // The Whistleblower
-  JUDGE_ABSTRACT:        imgCritic,         // The Critic
-  JUDGE_AGENCY:          imgAvenger,        // The Avenger
+  // RULER (Positie 12) - #1-11
+  RULER_JUDGE:      null,  // #1   The Emperor
+  RULER_SAGE:       null,  // #2   The Sovereign
+  RULER_ARTIST:     null,  // #3   The Designer
+  RULER_EXPLORER:   null,  // #4   The Entrepreneur
+  RULER_INNOCENT:   null,  // #5   The Founder
+  RULER_OUTLAW:     null,  // #6   The Reformer
+  RULER_TRICKSTER:  null,  // #7   The Puppeteer
+  RULER_HERO:       null,  // #8   The Commander
+  RULER_MAGICIAN:   null,  // #9   The Overlord
+  RULER_CAREGIVER:  null,  // #10  The Advocate
+  RULER_LOVER:      null,  // #11  The Patron
 
-  // ── LOVER (Positie 2) ──────────────────────────────────
-  LOVER_RELATIONAL:      imgSoulmate,       // The Soulmate
-  LOVER_SEEKER:          imgPoet,           // The Poet
-  LOVER_CHAOS:           imgSeducer,        // The Seducer
-  LOVER_ABSTRACT:        imgMystic,         // The Mystic
-  LOVER_AGENCY:          imgRomantic,       // The Romantic
-  LOVER_RULING:          imgCompanion,      // The Companion
+  // JUDGE (Positie 1) - #12-22
+  JUDGE_RULER:      null,  // #12  The Arbiter
+  JUDGE_OUTLAW:     null,  // #13  The Whistleblower
+  JUDGE_TRICKSTER:  null,  // #14  The Inquisitor
+  JUDGE_SAGE:       null,  // #15  The Critic
+  JUDGE_ARTIST:     null,  // #16  The Appraiser
+  JUDGE_INNOCENT:   null,  // #17  The Examiner
+  JUDGE_EXPLORER:   null,  // #18  The Auditor
+  JUDGE_HERO:       null,  // #19  The Avenger
+  JUDGE_MAGICIAN:   null,  // #20  The Enforcer
+  JUDGE_CAREGIVER:  null,  // #21  The Mediator
+  JUDGE_LOVER:      null,  // #22  The Reconciler
 
-  // ── CAREGIVER (Positie 3) ──────────────────────────────
-  CAREGIVER_RELATIONAL:  imgHealer,         // The Healer
-  CAREGIVER_SEEKER:      imgPathfinder,     // The Pathfinder
-  CAREGIVER_CHAOS:       imgCultivator,     // The Cultivator
-  CAREGIVER_ABSTRACT:    imgTherapist,      // The Therapist
-  CAREGIVER_AGENCY:      imgProtector,      // The Protector
-  CAREGIVER_RULING:      imgAdvocate,       // The Advocate
+  // LOVER (Positie 2) - #23-33
+  LOVER_CAREGIVER:  null,  // #23  The Soulmate
+  LOVER_RULER:      null,  // #24  The Companion
+  LOVER_JUDGE:      null,  // #25  The Betrothed
+  LOVER_TRICKSTER:  null,  // #26  The Wingman
+  LOVER_OUTLAW:     null,  // #27  The Libertine
+  LOVER_SAGE:       null,  // #28  The Poet
+  LOVER_ARTIST:     null,  // #29  The Muse
+  LOVER_INNOCENT:   null,  // #30  The Votary
+  LOVER_EXPLORER:   null,  // #31  The Moth
+  LOVER_HERO:       null,  // #32  The Romantic
+  LOVER_MAGICIAN:   null,  // #33  The Spellbinder
 
-  // ── INNOCENT (Positie 4) ───────────────────────────────
-  INNOCENT_SEEKER:       imgSaint,          // The Saint
-  INNOCENT_CHAOS:        imgFreeSpirit,     // The Free Spirit
-  INNOCENT_ABSTRACT:     imgDisciple,       // The Disciple
-  INNOCENT_AGENCY:       imgPioneer,        // The Pioneer
-  INNOCENT_RULING:       imgShepherd,       // The Shepherd
-  INNOCENT_RELATIONAL:   imgSamaritan,      // The Samaritan
+  // CAREGIVER (Positie 3) - #34-44
+  CAREGIVER_LOVER:      null,  // #34  The Healer
+  CAREGIVER_RULER:      null,  // #35  The Patriarch/Matriarch
+  CAREGIVER_JUDGE:      null,  // #36  The Defender
+  CAREGIVER_OUTLAW:     null,  // #37  The Cultivator
+  CAREGIVER_TRICKSTER:  null,  // #38  The Empath
+  CAREGIVER_SAGE:       null,  // #39  The Therapist
+  CAREGIVER_ARTIST:     null,  // #40  The Restorer
+  CAREGIVER_EXPLORER:   null,  // #41  The Pilgrim
+  CAREGIVER_INNOCENT:   null,  // #42  The Devotee
+  CAREGIVER_HERO:       null,  // #43  The Guardian
+  CAREGIVER_MAGICIAN:   null,  // #44  The Warden
 
-  // ── EXPLORER (Positie 5) ──────────────────────────────
-  EXPLORER_SEEKER:       imgNavigator,      // The Navigator
-  EXPLORER_CHAOS:        imgInnovator,      // The Innovator
-  EXPLORER_ABSTRACT:     imgScholar,        // The Scholar
-  EXPLORER_AGENCY:       imgSailor,         // The Sailor
-  EXPLORER_RULING:       imgScout,          // The Scout
-  EXPLORER_RELATIONAL:   imgNetworker,      // The Networker
+  // INNOCENT (Positie 4) - #45-55
+  INNOCENT_EXPLORER:   null,  // #45  The Saint
+  INNOCENT_RULER:      null,  // #46  The Shepherd
+  INNOCENT_JUDGE:      null,  // #47  The Traditionalist
+  INNOCENT_TRICKSTER:  null,  // #48  The Free Spirit
+  INNOCENT_OUTLAW:     null,  // #49  The Torchbearer
+  INNOCENT_SAGE:       null,  // #50  The Disciple
+  INNOCENT_ARTIST:     null,  // #51  The Utopian
+  INNOCENT_HERO:       null,  // #52  The Pioneer
+  INNOCENT_MAGICIAN:   null,  // #53  The Illuminator
+  INNOCENT_CAREGIVER:  null,  // #54  The Samaritan
+  INNOCENT_LOVER:      null,  // #55  The Sweetheart
 
-  // ── OUTLAW (Positie 6) ────────────────────────────────
-  OUTLAW_CHAOS:          imgAnarchist,      // The Anarchist
-  OUTLAW_ABSTRACT:       imgIconoclast,     // The Iconoclast
-  OUTLAW_AGENCY:         imgRevolutionary,  // The Revolutionary
-  OUTLAW_RULING:         imgReformer,       // The Reformer
-  OUTLAW_RELATIONAL:     imgLiberator,      // The Liberator
-  OUTLAW_SEEKER:         imgRenegade,       // The Renegade
+  // EXPLORER (Positie 5) - #56-66
+  EXPLORER_INNOCENT:   null,  // #56  The Navigator
+  EXPLORER_RULER:      null,  // #57  The Networker
+  EXPLORER_JUDGE:      null,  // #58  The Surveyor
+  EXPLORER_OUTLAW:     null,  // #59  The Innovator
+  EXPLORER_TRICKSTER:  null,  // #60  The Scout
+  EXPLORER_SAGE:       null,  // #61  The Philosopher
+  EXPLORER_ARTIST:     null,  // #62  The Bard
+  EXPLORER_HERO:       null,  // #63  The Sailor
+  EXPLORER_MAGICIAN:   null,  // #64  The Nomad
+  EXPLORER_LOVER:      null,  // #65  The Stargazer
+  EXPLORER_CAREGIVER:  null,  // #66  The Pathfinder
 
-  // ── TRICKSTER (Positie 7) ─────────────────────────────
-  TRICKSTER_CHAOS:       imgFool,           // The Fool
-  TRICKSTER_ABSTRACT:    imgComedian,       // The Comedian
-  TRICKSTER_AGENCY:      imgSaboteur,       // The Saboteur
-  TRICKSTER_RULING:      imgJester,         // The Jester
-  TRICKSTER_RELATIONAL:  imgClown,          // The Clown
-  TRICKSTER_SEEKER:      imgShapeshifter,   // The Shapeshifter
+  // HERO (Positie 11) - #67-77
+  HERO_MAGICIAN:   null,  // #67  The Legend
+  HERO_RULER:      null,  // #68  The Conqueror
+  HERO_JUDGE:      null,  // #69  The Templar
+  HERO_OUTLAW:     null,  // #70  The Raider
+  HERO_TRICKSTER:  null,  // #71  The Spy
+  HERO_SAGE:       null,  // #72  The Strategist
+  HERO_ARTIST:     null,  // #73  The Duelist
+  HERO_EXPLORER:   null,  // #74  The Astronaut
+  HERO_INNOCENT:   null,  // #75  The Crusader
+  HERO_CAREGIVER:  null,  // #76  The Protector
+  HERO_LOVER:      null,  // #77  The Chevalier
 
-  // ── SAGE (Positie 8) ──────────────────────────────────
-  SAGE_ABSTRACT:         imgEnlightened,    // The Enlightened
-  SAGE_AGENCY:           imgDetective,      // The Detective
-  SAGE_RULING:           imgAnalyst,        // The Analyst
-  SAGE_RELATIONAL:       imgMentor,         // The Mentor
-  SAGE_SEEKER:           imgDreamer,        // The Dreamer
-  SAGE_CHAOS:            imgHermit,         // The Hermit
+  // MAGICIAN (Positie 10) - #78-88
+  MAGICIAN_HERO:       null,  // #78  The Alchemist
+  MAGICIAN_RULER:      null,  // #79  The Engineer
+  MAGICIAN_JUDGE:      null,  // #80  The Reckoner
+  MAGICIAN_OUTLAW:     null,  // #81  The Protagonist
+  MAGICIAN_TRICKSTER:  null,  // #82  The Enchanter
+  MAGICIAN_SAGE:       null,  // #83  The Sorcerer
+  MAGICIAN_ARTIST:     null,  // #84  The Performer
+  MAGICIAN_INNOCENT:   null,  // #85  The Catalyst
+  MAGICIAN_EXPLORER:   null,  // #86  The Trailblazer
+  MAGICIAN_LOVER:      null,  // #87  The Shaman
+  MAGICIAN_CAREGIVER:  null,  // #88  The Redeemer
 
-  // ── ARTIST (Positie 9) ────────────────────────────────
-  ARTIST_ABSTRACT:       imgDemiurge,       // The Demiurge
-  ARTIST_AGENCY:         imgForgemaster,    // The Forgemaster
-  ARTIST_RULING:         imgArchitect,      // The Architect
-  ARTIST_RELATIONAL:     imgStoryteller,    // The Storyteller
-  ARTIST_SEEKER:         imgVisionary,      // The Visionary
-  ARTIST_CHAOS:          imgIllusionist,    // The Illusionist
+  // OUTLAW (Positie 6) - #89-99
+  OUTLAW_TRICKSTER:  null,  // #89  The Anarchist
+  OUTLAW_RULER:      null,  // #90  The Maverick
+  OUTLAW_JUDGE:      null,  // #91  The Contrarian
+  OUTLAW_CAREGIVER:  null,  // #92  The Liberator
+  OUTLAW_LOVER:      null,  // #93  The Instigator
+  OUTLAW_SAGE:       null,  // #94  The Iconoclast
+  OUTLAW_ARTIST:     null,  // #95  The Punk
+  OUTLAW_EXPLORER:   null,  // #96  The Renegade
+  OUTLAW_INNOCENT:   null,  // #97  The Idealist
+  OUTLAW_MAGICIAN:   null,  // #98  The Revolutionary
+  OUTLAW_HERO:       null,  // #99  The Ronin
 
-  // ── MAGICIAN (Positie 10) ─────────────────────────────
-  MAGICIAN_AGENCY:       imgAlchemist,      // The Alchemist
-  MAGICIAN_RULING:       imgEngineer,       // The Engineer
-  MAGICIAN_RELATIONAL:   imgShaman,         // The Shaman
-  MAGICIAN_SEEKER:       imgOracle,         // The Oracle
-  MAGICIAN_CHAOS:        imgEnchanter,      // The Enchanter
-  MAGICIAN_ABSTRACT:     imgSorcerer,       // The Sorcerer
+  // TRICKSTER (Positie 7) - #100-110
+  TRICKSTER_OUTLAW:     null,  // #100 The Fool
+  TRICKSTER_RULER:      null,  // #101 The Gatecrasher
+  TRICKSTER_JUDGE:      null,  // #102 The Devil's Advocate
+  TRICKSTER_LOVER:      null,  // #103 The Seducer
+  TRICKSTER_CAREGIVER:  null,  // #104 The Chameleon
+  TRICKSTER_SAGE:       null,  // #105 The Riddler
+  TRICKSTER_ARTIST:     null,  // #106 The Impressionist
+  TRICKSTER_EXPLORER:   null,  // #107 The Free-runner
+  TRICKSTER_INNOCENT:   null,  // #108 The Joyrider
+  TRICKSTER_MAGICIAN:   null,  // #109 The Shapeshifter
+  TRICKSTER_HERO:       null,  // #110 The Ace
 
-  // ── HERO (Positie 11) ─────────────────────────────────
-  HERO_AGENCY:           imgLegend,         // The Legend
-  HERO_RULING:           imgCommander,      // The Commander
-  HERO_RELATIONAL:       imgGuardian,       // The Guardian
-  HERO_SEEKER:           imgInventor,       // The Inventor
-  HERO_CHAOS:            imgRonin,          // The Ronin
-  HERO_ABSTRACT:         imgStrategist,     // The Strategist
+  // SAGE (Positie 8) - #111-121
+  SAGE_ARTIST:     null,  // #111 The Developer
+  SAGE_RULER:      null,  // #112 The Analyst
+  SAGE_JUDGE:      null,  // #113 The Skeptic
+  SAGE_CAREGIVER:  null,  // #114 The Mentor
+  SAGE_LOVER:      null,  // #115 The Guru
+  SAGE_OUTLAW:     null,  // #116 The Hermit
+  SAGE_TRICKSTER:  null,  // #117 The Theorist
+  SAGE_INNOCENT:   null,  // #118 The Enlightened
+  SAGE_EXPLORER:   null,  // #119 The Scholar
+  SAGE_HERO:       null,  // #120 The Detective
+  SAGE_MAGICIAN:   null,  // #121 The Freemason
 
-  // ── RULER (Positie 12) ────────────────────────────────
-  RULER_RULING:          imgEmperor,        // The Emperor
-  RULER_RELATIONAL:      imgPatriarch,      // The Patriarch
-  RULER_SEEKER:          imgEntrepreneur,   // The Entrepreneur
-  RULER_CHAOS:           imgMaverick,       // The Maverick
-  RULER_ABSTRACT:        imgPhilosopher,    // The Philosopher-King
-  RULER_AGENCY:          imgConqueror,      // The Conqueror
+  // ARTIST (Positie 9) - #122-132
+  ARTIST_SAGE:       null,  // #122 The Demiurge
+  ARTIST_RULER:      null,  // #123 The Architect
+  ARTIST_JUDGE:      null,  // #124 The Editor
+  ARTIST_LOVER:      null,  // #125 The Troubadour
+  ARTIST_CAREGIVER:  null,  // #126 The Storyteller
+  ARTIST_TRICKSTER:  null,  // #127 The Oracle
+  ARTIST_OUTLAW:     null,  // #128 The Provocateur
+  ARTIST_EXPLORER:   null,  // #129 The Visionary
+  ARTIST_INNOCENT:   null,  // #130 The Prodigy
+  ARTIST_MAGICIAN:   null,  // #131 The Craftsman
+  ARTIST_HERO:       null,  // #132 The Forgemaster
 };
 
 /**
- * Get the archetype portrait image for a given extended-archetype key.
+ * Get the archetype portrait for a main + support combination.
  *
- * @param {string} mainKey      – e.g. 'SAGE'
- * @param {string} supportGroup – e.g. 'ABSTRACT'  (the functional group, NOT the support archetype key)
- * @returns {string|null} Imported image path, or null if no image is available
+ * @param {string} mainKey - e.g. 'SAGE'
+ * @param {string} support - support ARCHETYPE key ('OUTLAW', canonical for the
+ *                           132-matrix) or a legacy support GROUP ('CHAOS')
+ * @returns {string|null} Image path, or null while the artwork is unavailable
  */
-export function getArchetypeImage(mainKey, supportGroup) {
-  const lookupKey = `${mainKey}_${supportGroup}`;
-  return ARCHETYPE_IMAGES[lookupKey] || null;
+export function getArchetypeImage(mainKey, support) {
+  const key = resolveExtendedKey(mainKey, support);
+  return (key && ARCHETYPE_IMAGES[key]) || null;
 }
 
 /**
- * Get archetype image by the combined lookup key directly.
- * @param {string} lookupKey – e.g. 'SAGE_ABSTRACT'
+ * Get a portrait by the combined lookup key directly.
+ * Accepts a 132-matrix key ('SAGE_OUTLAW') or a legacy group key ('SAGE_CHAOS').
+ * @param {string} lookupKey
  * @returns {string|null}
  */
 export function getArchetypeImageByKey(lookupKey) {
-  return ARCHETYPE_IMAGES[lookupKey] || null;
+  if (!lookupKey) return null;
+  const k = String(lookupKey).toUpperCase();
+  if (ARCHETYPE_IMAGES[k]) return ARCHETYPE_IMAGES[k];
+  const sep = k.lastIndexOf('_');
+  return sep > 0 ? getArchetypeImage(k.slice(0, sep), k.slice(sep + 1)) : null;
 }
 
 /**
- * Reverse lookup: the display NAME of an extended archetype → its portrait.
- * Accepts either the English ("The Mentor") or Dutch ("De Mentor") name, since
- * the client profile only stores the resolved name string (not the key).
+ * Reverse lookup: the display NAME of an extended archetype -> its key.
+ * Accepts either the English ("The Mentor") or Dutch ("De Mentor") name, since a
+ * stored profile only keeps the resolved name string, not the key.
+ *
+ * This is NOT artwork and stays live while the portraits are gone - the boot
+ * Levensles (LoginPage) resolves a stored name back to its combination with it.
  */
 const NAME_TO_KEY = {};
-for (const [key, name] of Object.entries(EXTENDED_ARCHETYPES)) NAME_TO_KEY[name.trim().toLowerCase()] = key;
-for (const [key, name] of Object.entries(EXTENDED_ARCHETYPES_NL)) NAME_TO_KEY[name.trim().toLowerCase()] = key;
+const claim = (name, key) => {
+  const k = String(name || '').trim().toLowerCase();
+  // First claim wins, so a name shared by two combinations always resolves to the
+  // same one (roster order) instead of depending on iteration order. English names
+  // are unique across all 132; the Dutch canon currently shares 'De Beschermer'
+  // between CAREGIVER_HERO (The Guardian) and HERO_CAREGIVER (The Protector).
+  if (k && !NAME_TO_KEY[k]) NAME_TO_KEY[k] = key;
+};
+for (const [key, name] of Object.entries(EXTENDED_ARCHETYPES)) claim(name, key);
+for (const [key, name] of Object.entries(EXTENDED_ARCHETYPES_NL)) claim(name, key);
 
 /**
- * @param {string} name – e.g. 'The Mentor' or 'De Mentor'
- * @returns {string|null} portrait image path, or null if unknown
+ * @param {string} name - e.g. 'The Mentor' or 'De Mentor'
+ * @returns {string|null} portrait path, or null while the artwork is unavailable
  */
 export function getArchetypeImageByName(name) {
   if (!name) return null;
   const key = NAME_TO_KEY[String(name).trim().toLowerCase()];
-  return key ? (ARCHETYPE_IMAGES[key] || null) : null;
+  return key ? getArchetypeImageByKey(key) : null;
 }
 
 /**
  * Resolve a stored extended-archetype display name (EN or NL) to its
- * MAINARCHETYPE_SUPPORTGROUP key — e.g. 'The Mediator' / 'De Bemiddelaar' → 'JUDGE_RELATIONAL'.
+ * MAIN_SUPPORTARCHETYPE key - e.g. 'The Mediator' / 'De Bemiddelaar' -> 'JUDGE_CAREGIVER'.
  * @param {string} name
  * @returns {string|null}
  */

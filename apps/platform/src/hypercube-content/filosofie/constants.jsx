@@ -2,57 +2,59 @@
 export const SYMBOLS = [
   {
     id: 'reality',
-    dutchName: 'Realiteit',
+    // displayName / meaning are bilingual pairs — render with t(symbol.displayName).
+    displayName: { nl: 'Realiteit', en: 'Reality' },
     englishName: 'Reality',
-    meaning: 'Creatie / Visie / Waarde',
+    meaning: { nl: 'Creatie / Visie / Waarde', en: 'Creation / Vision / Value' },
     shape: 'circle',
     description: 'The absolute wholeness. The container of all potential.',
     color: '#00ff41'
   },
   {
     id: 'consciousness',
-    dutchName: 'Bewustzijn',
+    displayName: { nl: 'Bewustzijn', en: 'Consciousness' },
     englishName: 'Consciousness',
-    meaning: 'Evolutie / Sensatie / Entropie',
+    meaning: { nl: 'Evolutie / Sensatie / Entropie', en: 'Evolution / Sensation / Entropy' },
     shape: 'wave',
     description: 'The vibration that observes reality. Moves from formless to form.',
     color: '#39ff14'
   },
   {
     id: 'space',
-    dutchName: 'Ruimte',
+    displayName: { nl: 'Ruimte', en: 'Space' },
     englishName: 'Space',
-    meaning: 'Realisatie / Licht / Innovatie',
+    meaning: { nl: 'Realisatie / Licht / Innovatie', en: 'Realisation / Light / Innovation' },
     shape: 'triangle',
     description: 'Geometric description of self-knowledge within authentic realization.',
     color: '#00ff65'
   },
   {
     id: 'time',
-    dutchName: 'Tijd',
+    displayName: { nl: 'Tijd', en: 'Time' },
     englishName: 'Time',
-    meaning: 'Evaluatie / Focus / Intuïtie',
+    meaning: { nl: 'Evaluatie / Focus / Intuïtie', en: 'Evaluation / Focus / Intuition' },
     shape: 'plus',
     description: 'The intersection of being. Focus points in the infinite.',
     color: '#00ff99'
   },
   {
     id: 'relation',
-    dutchName: 'Relatie',
+    displayName: { nl: 'Relatie', en: 'Relation' },
     englishName: 'Relation',
-    meaning: 'Wijsheid / Roeping / Systeem',
+    meaning: { nl: 'Wijsheid / Roeping / Systeem', en: 'Wisdom / Calling / System' },
     shape: 'square',
     description: 'Supersymmetry: Connection and cooperation of multiple callings.',
     color: '#33ff77'
   }
 ];
 
+// `text` is a bilingual pair — render with t(quote.text).
 export const QUOTES = [
-  { id: 1, text: "I think therefore I am", category: "Logic" },
-  { id: 2, text: "Father please forgive me for these gains I'm about to make", category: "Ambition" },
-  { id: 3, text: "Science is a beautiful gift to humanity", category: "Science" },
-  { id: 4, text: "Ik geloof dat ik niet geloof... wacht huh?", category: "Faith" },
-  { id: 5, text: "Mijn entropie is sterker en eist dus meer realisatie", category: "Entropy" },
+  { id: 1, text: { nl: "I think therefore I am", en: "I think therefore I am" }, category: "Logic" },
+  { id: 2, text: { nl: "Father please forgive me for these gains I'm about to make", en: "Father please forgive me for these gains I'm about to make" }, category: "Ambition" },
+  { id: 3, text: { nl: "Science is a beautiful gift to humanity", en: "Science is a beautiful gift to humanity" }, category: "Science" },
+  { id: 4, text: { nl: "Ik geloof dat ik niet geloof... wacht huh?", en: "I believe that I don't believe... wait, huh?" }, category: "Faith" },
+  { id: 5, text: { nl: "Mijn entropie is sterker en eist dus meer realisatie", en: "My entropy is stronger, and so it demands more realisation" }, category: "Entropy" },
 ];
 
 // The single quote surfaced on the client-mode Filosofie bar (DesktopLayout, above the orb).

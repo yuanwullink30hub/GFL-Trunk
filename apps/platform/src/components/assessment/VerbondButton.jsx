@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '@gfl/i18n';
 import { getToken, getVerbondWith, requestVerbond } from '@gfl/api-client';
 
 /**
@@ -7,6 +8,7 @@ import { getToken, getVerbondWith, requestVerbond } from '@gfl/api-client';
  * points to Berichten · accepted → Verbonden ✓ · self/visitor → renders nothing.
  */
 export default function VerbondButton({ handle, style, terminal = false }) {
+  const { t } = useLanguage();
   const [state, setState] = useState('loading'); // loading|none|pending-out|pending-in|accepted|self|hidden
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -39,17 +41,17 @@ export default function VerbondButton({ handle, style, terminal = false }) {
     } catch (e) {
       if (e.status === 'accepted') setState('accepted');
       else if (e.status === 'pending') setState('pending-out');
-      else setErr(e.message || 'Verzoek mislukt');
+      else setErr(e.message || t('directory.verbond.requestFailed'));
     } finally {
       setBusy(false);
     }
   };
 
-  const label = state === 'loading' ? '…'
-    : state === 'accepted' ? 'Verbonden ✓'
-    : state === 'pending-out' ? 'Verbond aangevraagd'
-    : state === 'pending-in' ? 'Verzoek ontvangen — zie Berichten'
-    : '+ Verbond';
+  const label = state === 'loading' ? t('directory.verbond.loading')
+    : state === 'accepted' ? t('directory.verbond.accepted')
+    : state === 'pending-out' ? t('directory.verbond.pendingOut')
+    : state === 'pending-in' ? t('directory.verbond.pendingIn')
+    : t('directory.verbond.request');
   const actionable = state === 'none' && !busy;
 
   // Terminal variant: the green pill grammar of the card's sync line (link pill family).

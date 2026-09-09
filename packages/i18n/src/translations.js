@@ -4,6 +4,8 @@
  * Supported languages: nl, en
  */
 
+import domainModules from './translations/index.js';
+
 const translations = {
   // =======================================
   // ASSESSMENT INTRO MODAL
@@ -91,7 +93,7 @@ const translations = {
       },
       deep: {
         name: { nl: "Leerling", en: "Advanced" },
-        description: { nl: "36 vragen — 25 min • Volledige zelfbeheersing", en: "36 questions — 25 min • Complete self-mastery" }
+        description: { nl: "36 QA - 30min - Vuurproef quickfire", en: "36 QA - 30min - Trial-by-fire quickfire" }
       }
     },
     footerResearch: {
@@ -852,7 +854,7 @@ const translations = {
     filosofieTitle: { nl: "FILOSOFIE", en: "PHILOSOPHY" },
     gardensTitle: { nl: "DE TUINEN", en: "THE GARDENS" },
     connectionsMenu: { nl: "VERBINDINGS_MENU", en: "CONNECTIONS_MENU" },
-    kitchen: { nl: "KOOKEILAND", en: "KITCHEN" },
+    kitchen: { nl: "KOOKEILAND", en: "KITCHEN ISLAND" },
     // Gardens slideshow (business types + shared prompt)
     gardenConnectPrompt: {
       nl: "Verbinden met ons platform? Maak de test en benader ons team.",
@@ -1012,5 +1014,9 @@ const translations = {
     }
   }
 };
+
+// Domain modules (packages/i18n/src/translations/) are merged in at the root so
+// their namespaces resolve through the same t('namespace.key') lookup.
+Object.assign(translations, domainModules);
 
 export default translations;

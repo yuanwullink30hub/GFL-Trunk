@@ -59,12 +59,18 @@ const translations = {
         en: "Free Analysis — a prompt worth ~€3 on average, plus priceless scientific self-knowledge"
       },
       free: {
-        nl: "Download de basis om je archetype in kaart te brengen — De identiteit, de verklaring, gevisualiseerd op ons eigen model, en uiteraard de prijs die je betaalt voor de belichaming van dit archetype.",
+        nl: "Download de fundering om je archetype in kaart te brengen — De identiteit, de verklaring, gevisualiseerd op ons eigen model, en uiteraard de prijs die je betaalt voor de belichaming van dit archetype.",
         en: "Download the basics to map your archetype — the identity, the explanation, visualized on our own model, and of course the price you pay for the embodiment of this archetype."
       },
       paid: {
-        nl: "Optioneel voor €00,00 — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt en toegang tot de complete online-extensie.",
-        en: "Optional for €00.00 — The full exposition (3× the data), reading = transforming in itself. Incl. AI prompt and access to the complete online extension."
+        // {net} (excl. VAT) and {launch} are filled in by AssessmentIntro from config/pricing.js.
+        nl: "Optioneel voor {net} excl. BTW{launch} — De volledige uiteenzetting (3x de hoeveelheid data), lezen = transformeren op zich. Incl. AI-prompt en toegang tot de complete online-extensie.",
+        en: "Optional for {net} excl. VAT{launch} — The full exposition (3× the data), reading = transforming in itself. Incl. AI prompt and access to the complete online extension."
+      },
+      // Appended to the price while the launch price applies.
+      launchSuffix: {
+        nl: " — Lanceringsprijs tot Equinox {end}, daarna {regularNet} excl. BTW",
+        en: " — Launch price until Equinox {end}, then {regularNet} excl. VAT"
       }
     },
     layersTitle: {

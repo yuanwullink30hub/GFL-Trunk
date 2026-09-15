@@ -6,6 +6,7 @@
  * (location.reload) — App.jsx then boots in client mode: HoloEarth → the user's orb, sections
  * unlocked, the login slot becomes the account view. Clearing it (logout) returns to visitor mode.
  */
+import { logout } from '@gfl/api-client';
 import { decodeOrb3 } from './orb';
 
 const ORB_CODE_KEY = 'gfl_orb_code';
@@ -53,6 +54,19 @@ export function clearClientMode() {
     localStorage.removeItem(ORB_CONFIG_KEY);
     localStorage.removeItem(PROFILE_KEY);
   } catch { /* ignore */ }
+}
+
+/** Full logout: token, client-mode flag, 24h session stamp and admin flag, then hard-refresh so
+ *  App re-evaluates clientMode as false and boots the visitor interface. Clearing the token alone
+ *  leaves the orb code behind and logout appears to do nothing. */
+export function logoutAndReload() {
+  logout();
+  clearClientMode();
+  try {
+    localStorage.removeItem('gfl_session_ts');
+    localStorage.removeItem('gfl_admin_mode');
+  } catch { /* ignore */ }
+  window.location.reload();
 }
 
 export function isClientMode() {

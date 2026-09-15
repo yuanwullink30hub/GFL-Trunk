@@ -13,6 +13,7 @@ import { SciFiButton } from '@gfl/ui';
 const cellsImage = '/images/Model imports/Cells within Cells png.png';
 import OceanManualInputModal from './OceanManualInputModal';
 import ReferencesPanel from './ReferencesPanel';
+import { formatNetPrice, formatLaunchPriceEndShort, isLaunchPricing, REGULAR_PRICE } from '../../config/pricing';
 
 /** Render translated copy that carries inline markers.
  *    \n                -> <br/>
@@ -69,7 +70,7 @@ const renderCopy = (text, onLink) => {
  * - onNavigateToData() - called when user clicks the research button
  */
 const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolicy, uploadedFiles = [], onAddFile, onRemoveFile, onBack = null, backLabel = '' }) => {
-  const { t, tArray, tFunc } = useLanguage();
+  const { t, tArray, tFunc, language } = useLanguage();
   const fileInputRef = useRef(null);
   const infoIconRef = useRef(null);
   const referentiesRef = useRef(null);
@@ -97,6 +98,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   const [consentLevelId, setConsentLevelId] = useState(null);
   const [consentChecked, setConsentChecked] = useState(false);
   const [consentAiPromptChecked, setConsentAiPromptChecked] = useState(false);
+  const [consentDetailsOpen, setConsentDetailsOpen] = useState(false);
   const [consentClosing, setConsentClosing] = useState(false);
   const [consentOrigin, setConsentOrigin] = useState('center center');
   const consentOverlayRef = useRef(null);
@@ -247,6 +249,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
     setTimeout(() => {
       setConsentLevelId(null);
       setConsentClosing(false);
+      setConsentDetailsOpen(false);
     }, 350);
   };
 
@@ -1021,9 +1024,17 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               {t('assessmentIntro.pricing.free')}
             </p>
             {(() => {
-              const full = t('assessmentIntro.pricing.paid');
-              const idx = full.indexOf('—');
-              const head = idx >= 0 ? full.slice(0, idx) : full; // "Optioneel voor €00,00 "
+              const launch = isLaunchPricing()
+                ? t('assessmentIntro.pricing.launchSuffix')
+                  .replace('{end}', formatLaunchPriceEndShort())
+                  .replace('{regularNet}', formatNetPrice(language, REGULAR_PRICE))
+                : '';
+              const full = t('assessmentIntro.pricing.paid')
+                .replace('{net}', formatNetPrice(language))
+                .replace('{launch}', launch);
+              // Split on the LAST dash: the launch suffix carries its own " — ".
+              const idx = full.lastIndexOf(' — ') >= 0 ? full.lastIndexOf(' — ') + 1 : full.indexOf('—');
+              const head = idx >= 0 ? full.slice(0, idx) : full; // "Optioneel voor € 12,00 (introductieprijs …) " — prices from config/pricing.js
               const tail = idx >= 0 ? full.slice(idx) : ''; // "— De volledige…" (white, incl. dash)
               return (
                 <p style={{ fontSize: s.featureTitleFont, lineHeight: 1.5 }}>
@@ -1214,19 +1225,20 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               }}>
                 {t('assessmentIntroExtra.consent.title')}
               </h2>
-              <p className="text-center" style={{ color: 'rgba(148,163,184,0.5)', fontSize: s.featureDescFont, marginBottom: '1.5rem', fontStyle: 'italic' }}>
+              <p className="text-center" style={{ color: 'rgba(148,163,184,0.5)', fontSize: s.featureTitleFont, marginBottom: '1.5rem', fontStyle: 'italic' }}>
                 {t('assessmentIntroExtra.consent.subtitle')}
               </p>
 
-              {/* Pre-text: Wat we doen */}
+              {/* Always visible: the essentials. The full disclosure folds out under checkbox 2. */}
               <div style={{ borderLeft: '2px solid rgba(168,85,247,0.4)', paddingLeft: '1rem', marginBottom: '1.5rem' }}>
-                <p style={{ color: '#c4b5fd', fontSize: s.featureTitleFont, fontWeight: 600, marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('assessmentIntroExtra.consent.whatWeDoLabel')}</p>
-                <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, marginBottom: '0.6rem' }}>
-                  {renderCopy(t('assessmentIntroExtra.consent.whatWeDoP1'))}
-                </p>
-                <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7 }}>
-                  {renderCopy(t('assessmentIntroExtra.consent.whatWeDoP2'))}
-                </p>
+                <p style={{ color: '#c4b5fd', fontSize: s.featureTitleFont, fontWeight: 600, marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('assessmentIntroExtra.consent.keyPointsLabel')}</p>
+                <ul style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureTitleFont, lineHeight: 1.7, listStyle: 'none', padding: 0, margin: 0 }}>
+                  {tArray('assessmentIntroExtra.consent.keyPoints').map((item, i) => (
+                    <li key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.35rem' }}>
+                      <span style={{ color: '#a855f7', flexShrink: 0 }}>·</span><span>{renderCopy(item)}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               {/* Checkbox 1: Algemene voorwaarden & privacybeleid */}
@@ -1237,7 +1249,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   onChange={(e) => setConsentChecked(e.target.checked)}
                   style={{ marginTop: '0.15rem', accentColor: '#a855f7', width: '1rem', height: '1rem', flexShrink: 0, cursor: 'pointer' }}
                 />
-                <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureDescFont, lineHeight: 1.6 }}>
+                <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureTitleFont, lineHeight: 1.6 }}>
                   {renderCopy(t('assessmentIntroExtra.consent.checkboxTerms'), setPendingPolicySlug)}
                 </span>
               </label>
@@ -1250,17 +1262,43 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   onChange={(e) => setConsentAiPromptChecked(e.target.checked)}
                   style={{ marginTop: '0.15rem', accentColor: '#a855f7', width: '1rem', height: '1rem', flexShrink: 0, cursor: 'pointer' }}
                 />
-                <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureDescFont, lineHeight: 1.6 }}>
+                <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: s.featureTitleFont, lineHeight: 1.6 }}>
                   {renderCopy(t('assessmentIntroExtra.consent.checkboxArt9'))}
                 </span>
               </label>
-              <ul style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, paddingLeft: '2.75rem', listStyle: 'none', marginBottom: '1.5rem' }}>
-                {tArray('assessmentIntroExtra.consent.bullets').map((item, i) => (
-                  <li key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.2rem' }}>
-                    <span style={{ color: '#a855f7', flexShrink: 0 }}>·</span><span>{renderCopy(item)}</span>
-                  </li>
-                ))}
-              </ul>
+              {/* Foldable full disclosure — what checkbox 2's "I understand that:" refers to. */}
+              <div style={{ paddingLeft: '1.75rem', marginBottom: '1.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setConsentDetailsOpen((v) => !v)}
+                  aria-expanded={consentDetailsOpen}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'none', border: 'none', padding: '0.2rem 0', cursor: 'pointer', color: '#c4b5fd', fontSize: s.featureDescFont, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600, transition: 'color 0.15s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#ffae00'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#c4b5fd'; }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.9em', height: '0.9em', transition: 'transform 0.2s', transform: consentDetailsOpen ? 'rotate(180deg)' : 'none' }}>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                  {t(consentDetailsOpen ? 'assessmentIntroExtra.consent.detailsHide' : 'assessmentIntroExtra.consent.detailsShow')}
+                </button>
+                {consentDetailsOpen && (
+                  <div style={{ marginTop: '0.6rem' }}>
+                    <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, marginBottom: '0.6rem' }}>
+                      {renderCopy(t('assessmentIntroExtra.consent.whatWeDoP1'))}
+                    </p>
+                    <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, marginBottom: '0.6rem' }}>
+                      {renderCopy(t('assessmentIntroExtra.consent.whatWeDoP2'))}
+                    </p>
+                    <ul style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, listStyle: 'none', padding: 0, margin: 0 }}>
+                      {tArray('assessmentIntroExtra.consent.bullets').map((item, i) => (
+                        <li key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.2rem' }}>
+                          <span style={{ color: '#a855f7', flexShrink: 0 }}>·</span><span>{renderCopy(item)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
 
               {/* Buttons */}
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>

@@ -254,6 +254,7 @@ export default {
         noCodeInPdf: { nl: 'Geen kristal-code gevonden in deze PDF.', en: 'No crystal code found in this PDF.' },
         syncFailed: { nl: 'Synchroniseren mislukt', en: 'Synchronising failed' },
         noArchetypeImage: { nl: 'Geen archetype-afbeelding gevonden.', en: 'No archetype image found.' },
+        photoDownloading: { nl: 'Profielfoto downloaden…', en: 'Downloading profile photo…' },
         photoSaved: { nl: 'Profielfoto opgeslagen ✓', en: 'Profile photo saved ✓' },
         downloadFailed: { nl: 'Download mislukt.', en: 'Download failed.' },
         videoUnsupported: {

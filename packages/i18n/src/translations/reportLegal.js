@@ -109,8 +109,8 @@ export default {
         en: '4. Data Retention',
       },
       body: {
-        nl: 'Het berekende profiel waaruit dit rapport is opgebouwd bestaat <strong>maximaal 24 uur</strong> op onze servers en wordt daarna automatisch en onherroepelijk verwijderd. Dit rapport is uw persoonlijke kopie — Garden for Life bewaart daarvan geen kopie. Maakt u een account aan, dan blijft daarin uitsluitend een gedeeltelijk profiel bewaard. Uw kristal-code verloopt niet en blijft altijd inwisselbaar.',
-        en: 'The calculated profile this report is built from exists on our servers for <strong>a maximum of 24 hours</strong>, after which it is automatically and irrevocably deleted. This report is your personal copy — Garden for Life keeps no copy of it. If you create an account, all that is retained in it is a partial profile. Your crystal code does not expire and can be redeemed at any time.',
+        nl: 'Het volledige profiel waaruit dit rapport is opgebouwd is <strong>nergens opgeslagen</strong>: het bestond alleen tijdens uw sessie en is daarna verwijderd. Dit rapport is het enige exemplaar — Garden for Life bewaart geen kopie en kan het niet opnieuw genereren. Maakt u een account aan, dan blijft daarin uitsluitend een gedeeltelijk profiel bewaard. De kristal-code in een vrijgegeven rapport verloopt niet en blijft één keer inwisselbaar.',
+        en: 'The full profile this report is built from is <strong>stored nowhere</strong>: it existed only during your session and has since been deleted. This report is the only copy — Garden for Life keeps no copy and cannot regenerate it. If you create an account, all that is retained in it is a partial profile. The crystal code in an unlocked report does not expire and can be redeemed once.',
       },
     },
 

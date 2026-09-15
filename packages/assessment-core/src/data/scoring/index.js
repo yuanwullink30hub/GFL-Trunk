@@ -14,14 +14,14 @@
  *
  * Line Connections (from 12-point Neuro-Archetypal Wheel):
  *   Green Line:  Hardware Anker (group partner — same biological substrate)
- *   Blue Line:   Feedback Brug (same partner as Green — activation signal)
+ *   Blue Line:   Feedback Brug (positions sum to 13 — symbiotic bridge)
  *   Yellow A/B:  Same-cluster archetypes at distance 4 (cognitive network synergy)
- *   Red Line:    Neurale Kortsluiting (cross-network conflict, diagnostic only)
+ *   Red Line:    Neurale Kortsluiting (positions sum to 7 — hardware seam, diagnostic only)
  *   Purple Line: 180° shadow (position + 6, passive shadow integration)
  *
  * Per-Pick Geometric Bleed (36 vragen × 2 picks, per-slot N/C routing):
  *   1st Nature:  +9 Core, +3 Green, +2 Blue, +1 Purple  = 15 pts
- *   1st Culture: +8 Core, +1 Blue, +2 Yellow ×2          = 13 pts
+ *   1st Culture: +7 Core, +1 Blue, +2 Yellow ×2          = 12 pts
  *   2nd Nature:  +6 Core, +1 Green                       =  7 pts
  *   2nd Culture: +4 Core, +1 Yellow ×2                   =  6 pts
  *
@@ -295,23 +295,28 @@ export const GREEN_LINE = {
 };
 
 /**
- * BLUE LINE: Feedback Brug — same partner as GREEN (shared biological substrate).
- * Blue Bleed: 1st pick echoes to same-group partner (+2 Nature, +1 Culture).
+ * BLUE LINE: Feedback Brug — symbiotic bridge, positions sum to 13.
+ * Blue Bleed: 1st pick echoes to the Blue partner (+2 Nature, +1 Culture).
+ * For Ruling and Chaos the Blue partner is also the group partner.
  *
- * B1 (CEN):      Ruler(12)    ↔ Judge(1)
- * B2 (Limbisch):  Lover(2)     ↔ Caregiver(3)
- * B3 (Seeker):    Innocent(4)  ↔ Explorer(5)
- * B4 (Salience):  Outlaw(6)    ↔ Trickster(7)
- * B5 (Abstract):  Sage(8)      ↔ Artist(9)
- * B6 (Agency):    Magician(10) ↔ Hero(11)
+ * Ruler(12)    ↔ Judge(1)
+ * Hero(11)     ↔ Lover(2)
+ * Magician(10) ↔ Caregiver(3)
+ * Artist(9)    ↔ Innocent(4)
+ * Sage(8)      ↔ Explorer(5)
+ * Trickster(7) ↔ Outlaw(6)
  */
 export const BLUE_LINE = {
-  // Blauw = identiek aan Groen (hyper-activatie van zelfde bio-groep)
-  ...GREEN_LINE,
+  RULER: 'JUDGE',       JUDGE: 'RULER',        // 12 ↔ 1
+  HERO: 'LOVER',        LOVER: 'HERO',         // 11 ↔ 2
+  MAGICIAN: 'CAREGIVER', CAREGIVER: 'MAGICIAN', // 10 ↔ 3
+  ARTIST: 'INNOCENT',   INNOCENT: 'ARTIST',    // 9 ↔ 4
+  SAGE: 'EXPLORER',     EXPLORER: 'SAGE',      // 8 ↔ 5
+  TRICKSTER: 'OUTLAW',  OUTLAW: 'TRICKSTER',   // 7 ↔ 6
 };
 
-// Legacy alias
-export const COMPLEMENTARY_PAIRS = { ...BLUE_LINE };
+// Legacy alias — complementary = same-group (Green) pair
+export const COMPLEMENTARY_PAIRS = { ...GREEN_LINE };
 
 /**
  * Shadow archetype pairs (psychological tension / integration point).
@@ -367,17 +372,16 @@ export const YELLOW_LINES = {
 };
 
 /**
- * RED LINE: Neurale Kortsluiting — Frictie counter (+1).
- * Cross-network conflict pairs: same-half opposites on wheel.
- * 1↔6, 12↔7, 2↔9, 3↔8, 4↔11, 5↔10
+ * RED LINE: Neurale Kortsluiting — hardware seam, diagnostic only (no points).
+ * Positions sum to 7 (mod 12): 1↔6, 12↔7, 2↔5, 3↔4, 11↔8, 10↔9
  */
 export const RED_LINE = {
   JUDGE: 'OUTLAW',       OUTLAW: 'JUDGE',         // 1 ↔ 6
   RULER: 'TRICKSTER',    TRICKSTER: 'RULER',      // 12 ↔ 7
-  LOVER: 'ARTIST',       ARTIST: 'LOVER',         // 2 ↔ 9
-  CAREGIVER: 'SAGE',     SAGE: 'CAREGIVER',       // 3 ↔ 8
-  INNOCENT: 'HERO',      HERO: 'INNOCENT',        // 4 ↔ 11
-  EXPLORER: 'MAGICIAN',  MAGICIAN: 'EXPLORER',    // 5 ↔ 10
+  LOVER: 'EXPLORER',     EXPLORER: 'LOVER',       // 2 ↔ 5
+  CAREGIVER: 'INNOCENT', INNOCENT: 'CAREGIVER',   // 3 ↔ 4
+  HERO: 'SAGE',          SAGE: 'HERO',            // 11 ↔ 8
+  MAGICIAN: 'ARTIST',    ARTIST: 'MAGICIAN',      // 10 ↔ 9
 };
 
 /**
@@ -421,10 +425,12 @@ export const SCORING_TIERS = {
  * Extended Archetype Matrix: 12 Main × 11 Support Archetypes = 132 outcomes.
  * Key format: "MAINKEY_SUPPORTKEY" (both canonical-12 archetype keys).
  *
- * Official roster per "Extended Archetypes - Official Roster (132)", including
- * the two post-roster corrections: #41/#66 The Pilgrim and The Pathfinder are
- * swapped onto their combinations (Caregiver x Explorer = Pilgrim, Explorer x
- * Caregiver = Pathfinder), and #71 Hero x Trickster is The Spy (was The Agent).
+ * Official roster per Extended_Archetypes_Official_132 v1.3, as used by Extensions 132 v1.0
+ * RATIFIED (all 132 names unique in both languages): #43 The Guardian / De Wachter, #71 The
+ * Agent / De Spion, #76 The Protector / De Beschermer, #90 The Usurper / De Troonrover,
+ * #130 The Source / De Bron.
+ * Canon's lowercase 'De padvinder' (#66) is title-cased here like every other name, and
+ * #102 keeps a straight apostrophe (The Devil's Advocate).
  *
  * Replaces the old 72-outcome matrix that was keyed on the 6 hardware groups
  * (two supports in one group used to collapse into a single extension; they are
@@ -472,7 +478,7 @@ export const EXTENDED_ARCHETYPES = {
 
   // Main: CAREGIVER (Positie 3) - #34-44
   CAREGIVER_LOVER:      'The Healer',
-  CAREGIVER_RULER:      'The Patriarch/Matriarch',
+  CAREGIVER_RULER:      'The Patriarch / Matriarch',
   CAREGIVER_JUDGE:      'The Defender',
   CAREGIVER_OUTLAW:     'The Cultivator',
   CAREGIVER_TRICKSTER:  'The Empath',
@@ -514,7 +520,7 @@ export const EXTENDED_ARCHETYPES = {
   HERO_RULER:      'The Conqueror',
   HERO_JUDGE:      'The Templar',
   HERO_OUTLAW:     'The Raider',
-  HERO_TRICKSTER:  'The Spy',
+  HERO_TRICKSTER:  'The Agent',
   HERO_SAGE:       'The Strategist',
   HERO_ARTIST:     'The Duelist',
   HERO_EXPLORER:   'The Astronaut',
@@ -537,7 +543,7 @@ export const EXTENDED_ARCHETYPES = {
 
   // Main: OUTLAW (Positie 6) - #89-99
   OUTLAW_TRICKSTER:  'The Anarchist',
-  OUTLAW_RULER:      'The Maverick',
+  OUTLAW_RULER:      'The Usurper',
   OUTLAW_JUDGE:      'The Contrarian',
   OUTLAW_CAREGIVER:  'The Liberator',
   OUTLAW_LOVER:      'The Instigator',
@@ -583,7 +589,7 @@ export const EXTENDED_ARCHETYPES = {
   ARTIST_TRICKSTER:  'The Oracle',
   ARTIST_OUTLAW:     'The Provocateur',
   ARTIST_EXPLORER:   'The Visionary',
-  ARTIST_INNOCENT:   'The Prodigy',
+  ARTIST_INNOCENT:   'The Source',
   ARTIST_MAGICIAN:   'The Craftsman',
   ARTIST_HERO:       'The Forgemaster',
 };
@@ -595,11 +601,8 @@ export const EXTENDED_ARCHETYPES = {
  * Dutch report, profile card and PDF display, and what the model is told the
  * user's extension is called when the test is taken in Dutch.
  *
- * NOTE: 'De Beschermer' is currently used twice - CAREGIVER_HERO (The Guardian)
- * and HERO_CAREGIVER (The Protector). Display is unaffected, but name -> key
- * reverse lookup (archetypeImages.js) cannot tell those two apart and resolves
- * both to the first one in roster order (#43 The Guardian, Caregiver x Hero).
- * Give one of them a distinct Dutch name to remove the ambiguity.
+ * All 132 Dutch names are unique, so a stored name resolves back to exactly one
+ * combination (see NAME_TO_KEY in archetypeImages.js).
  */
 export const EXTENDED_ARCHETYPES_NL = {
   // Main: RULER (Positie 12) - #1-11
@@ -651,7 +654,7 @@ export const EXTENDED_ARCHETYPES_NL = {
   CAREGIVER_ARTIST:     'De Hersteller',
   CAREGIVER_EXPLORER:   'De Pilgrim',
   CAREGIVER_INNOCENT:   'De Toegewijde',
-  CAREGIVER_HERO:       'De Beschermer',
+  CAREGIVER_HERO:       'De Wachter',
   CAREGIVER_MAGICIAN:   'De Bewaker',
 
   // Main: INNOCENT (Positie 4) - #45-55
@@ -708,7 +711,7 @@ export const EXTENDED_ARCHETYPES_NL = {
 
   // Main: OUTLAW (Positie 6) - #89-99
   OUTLAW_TRICKSTER:  'De Anarchist',
-  OUTLAW_RULER:      'De Eenling',
+  OUTLAW_RULER:      'De Troonrover',
   OUTLAW_JUDGE:      'De Dwarsligger',
   OUTLAW_CAREGIVER:  'De Bevrijder',
   OUTLAW_LOVER:      'De Aanstichter',
@@ -729,8 +732,8 @@ export const EXTENDED_ARCHETYPES_NL = {
   TRICKSTER_ARTIST:     'De Imitator',
   TRICKSTER_EXPLORER:   'De Freerunner',
   TRICKSTER_INNOCENT:   'De Joyrider',
-  TRICKSTER_MAGICIAN:   'De Gedaante-verwisselaar',
-  TRICKSTER_HERO:       'De Aas / De Uitblinker',
+  TRICKSTER_MAGICIAN:   'De Gedaanteverwisselaar',
+  TRICKSTER_HERO:       'De Aas',
 
   // Main: SAGE (Positie 8) - #111-121
   SAGE_ARTIST:     'De Ontwikkelaar',
@@ -754,14 +757,13 @@ export const EXTENDED_ARCHETYPES_NL = {
   ARTIST_TRICKSTER:  'Het Orakel',
   ARTIST_OUTLAW:     'De Provocateur',
   ARTIST_EXPLORER:   'De Visionair',
-  ARTIST_INNOCENT:   'Het Wonderkind',
+  ARTIST_INNOCENT:   'De Bron',
   ARTIST_MAGICIAN:   'De Ambachtsman',
   ARTIST_HERO:       'De Meestersmid',
 };
 
 /**
  * Map from hardware group → its two archetype keys (wheel order).
- * Used to resolve legacy group-keyed lookups against the 132-matrix.
  */
 export const GROUP_TO_ARCHETYPES = {
   RULING:     ['JUDGE', 'RULER'],
@@ -773,40 +775,57 @@ export const GROUP_TO_ARCHETYPES = {
 };
 
 /**
- * Resolve a (main, support) pair to its canonical 132-matrix key.
- * `support` is normally a support ARCHETYPE key ('OUTLAW'); for backward
- * compatibility it also accepts a legacy hardware-GROUP name ('CHAOS'),
- * in which case the group member that yields a valid combination is used
- * (for main's own group that is unambiguously the green-line partner; for
- * other groups the wheel-order member is picked — legacy data cannot
- * distinguish the two).
+ * Resolve a (main, support) pair to its 132-matrix key. Both must be archetype keys
+ * ('SAGE', 'OUTLAW'); anything outside the live roster — including the retired
+ * group-grain combinations ('SAGE', 'CHAOS') — resolves to null.
  *
  * @param {string} mainKey - e.g. 'SAGE'
- * @param {string} support - support archetype key or legacy group name
- * @returns {string|null} e.g. 'SAGE_OUTLAW', or null if unresolvable
+ * @param {string} support - support archetype key, e.g. 'OUTLAW'
+ * @returns {string|null} e.g. 'SAGE_OUTLAW', or null if not a live combination
  */
 export function resolveExtendedKey(mainKey, support) {
   const main = String(mainKey || '').toUpperCase();
   const sup = String(support || '').toUpperCase();
-  if (!main || !sup) return null;
-  const direct = `${main}_${sup}`;
-  if (EXTENDED_ARCHETYPES[direct]) return direct;
-  // Legacy: support given as a hardware group name
-  const members = GROUP_TO_ARCHETYPES[sup];
-  if (members) {
-    for (const m of members) {
-      if (m === main) continue;
-      const key = `${main}_${m}`;
-      if (EXTENDED_ARCHETYPES[key]) return key;
-    }
-  }
-  return null;
+  const key = `${main}_${sup}`;
+  return main && sup && EXTENDED_ARCHETYPES[key] ? key : null;
+}
+
+// Every live extended-archetype name, English and Dutch (case-insensitive), → its key.
+// Both languages are unique across all 132, so each name maps to exactly one combination.
+const EXTENDED_NAME_TO_KEY = {};
+for (const table of [EXTENDED_ARCHETYPES, EXTENDED_ARCHETYPES_NL]) {
+  for (const [key, name] of Object.entries(table)) EXTENDED_NAME_TO_KEY[name.trim().toLowerCase()] = key;
+}
+
+/**
+ * The 132-matrix key for a stored extended-archetype NAME (English or Dutch).
+ * Only names in the live roster resolve; a retired name returns null.
+ * @param {string} name - e.g. 'The Mediator' or 'De Bemiddelaar'
+ * @returns {string|null} e.g. 'JUDGE_CAREGIVER'
+ */
+export function extendedKeyForName(name) {
+  return EXTENDED_NAME_TO_KEY[String(name || '').trim().toLowerCase()] || null;
+}
+
+const extendedNameForKey = (key, language) =>
+  (String(language || '').toLowerCase().startsWith('en') ? EXTENDED_ARCHETYPES[key] : EXTENDED_ARCHETYPES_NL[key]) || '';
+
+/**
+ * A stored extended-archetype NAME rendered from the live roster in the given language,
+ * e.g. ('The Mediator', 'nl') → 'De Bemiddelaar'. Retired names render as ''.
+ * @param {string} name
+ * @param {string} language - 'nl' | 'en'
+ * @returns {string}
+ */
+export function liveExtendedName(name, language = 'nl') {
+  const key = extendedKeyForName(name);
+  return key ? extendedNameForKey(key, language) : '';
 }
 
 /**
  * Get the Extended Archetype name from main + support archetype keys (132-matrix).
  * @param {string} mainKey - e.g. 'SAGE'
- * @param {string} supportKey - support archetype key (or legacy group name)
+ * @param {string} supportKey - support archetype key, e.g. 'OUTLAW'
  * @returns {string} Extended archetype name, e.g. 'The Hermit'
  */
 export function getExtendedArchetype(mainKey, supportKey) {
@@ -817,7 +836,7 @@ export function getExtendedArchetype(mainKey, supportKey) {
 /**
  * Get the Dutch Extended Archetype name from main + support archetype keys (132-matrix).
  * @param {string} mainKey - e.g. 'SAGE'
- * @param {string} supportKey - support archetype key (or legacy group name)
+ * @param {string} supportKey - support archetype key, e.g. 'OUTLAW'
  * @returns {string} Dutch extended archetype name, e.g. 'De Kluizenaar'
  */
 export function getExtendedArchetypeNl(mainKey, supportKey) {
@@ -827,29 +846,22 @@ export function getExtendedArchetypeNl(mainKey, supportKey) {
 }
 
 /**
- * Display name for a stored assessment record, in the given UI language.
- *
- * Records carry the English name (`extendedArchetypeName`) and, since the 132
- * roster, the Dutch one (`extendedArchetypeNameNl`). Records written before that
- * have only one of the two, so whichever is present is used; if neither is, the
- * name is re-derived from the stored main/support keys — which is what lets an
- * older English-only record still render its Dutch name under the NL toggle.
+ * Display name for a stored assessment record, in the given UI language, always taken
+ * from the live roster — never the name string a record was saved with. The main and
+ * support archetype keys decide the combination; a record without a support key falls
+ * back to its stored name only while that name is still in the roster.
  *
  * @param {Object} record   - assessment/history document (or a live result object)
  * @param {string} language - 'nl' | 'en'
- * @returns {string} '' when the record carries no usable archetype at all
+ * @returns {string} '' for a retired name or a record with no live combination
  */
 export function extendedNameFor(record, language = 'nl') {
   if (!record) return '';
-  const wantEn = String(language || '').toLowerCase().startsWith('en');
-  const en = record.extendedArchetypeName || record.extendedName || '';
-  const nl = record.extendedArchetypeNameNl || record.extendedNameNl || '';
-  const picked = wantEn ? (en || nl) : (nl || en);
-  if (picked) return picked;
   const main = record.archetypeKey || record.mainArchetype || record.overallArchetype;
-  if (!main) return '';
-  const support = record.supportArchetype || record.supportGroup;
-  return wantEn ? getExtendedArchetype(main, support) : getExtendedArchetypeNl(main, support);
+  const key = resolveExtendedKey(main, record.supportArchetype || record.secondaryArchetype)
+    || extendedKeyForName(record.extendedArchetypeName || record.extendedName)
+    || extendedKeyForName(record.extendedArchetypeNameNl || record.extendedNameNl);
+  return key ? extendedNameForKey(key, language) : '';
 }
 
 /**
@@ -963,12 +975,12 @@ export function isShadowPair(key1, key2) {
  *   geometrically connected archetypes (Bleed). No separate counters.
  *
  *   1st Nature:  +9 Core, +3 Green, +2 Blue, +1 Purple          = 15 pts
- *   1st Culture: +8 Core, +1 Blue, +2 Yellow (×2 partners)      = 13 pts
+ *   1st Culture: +7 Core, +1 Blue, +2 Yellow (×2 partners)      = 12 pts
  *   2nd Nature:  +6 Core, +1 Green                               =  7 pts
  *   2nd Culture: +4 Core, +1 Yellow (×2 partners)                =  6 pts
  *
  *   Green → same-group partner (hardware echo)
- *   Blue  → same-group partner (feedback signal)
+ *   Blue  → sum-13 Blue Line partner (feedback signal)
  *   Purple → 180° shadow partner (passive shadow integration)
  *   Yellow → both Yellow Triangle partners (cognitive synergy)
  *   Red   → NO points (purely diagnostic — AI reads from radar chart)
@@ -1050,9 +1062,12 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
           scores[greenPartner].green_hw += isFirstPick ? 3 : 1;
         }
 
-        // Blue Feedback → blue_fb (1st pick only → same-group partner)
-        if (isFirstPick && greenPartner && scores[greenPartner]) {
-          scores[greenPartner].blue_fb += 2;
+        // Blue Feedback → blue_fb (1st pick only → Blue Line partner)
+        if (isFirstPick) {
+          const bluePartner = BLUE_LINE[archetype];
+          if (bluePartner && scores[bluePartner]) {
+            scores[bluePartner].blue_fb += 2;
+          }
         }
 
         // Purple Shadow → purple_shadow (1st pick only → 180° shadow)
@@ -1068,11 +1083,11 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
         // ══════════════════════════════════════════════════
 
         // Core Culture → culture_core
-        scores[archetype].culture_core += isFirstPick ? 8 : 4;
+        scores[archetype].culture_core += isFirstPick ? 7 : 4;
 
-        // Blue Feedback → blue_fb (1st pick only → same-group partner)
+        // Blue Feedback → blue_fb (1st pick only → Blue Line partner)
         if (isFirstPick) {
-          const bluePartner = GREEN_LINE[archetype];
+          const bluePartner = BLUE_LINE[archetype];
           if (bluePartner && scores[bluePartner]) {
             scores[bluePartner].blue_fb += 1;
           }
@@ -1094,7 +1109,7 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
   ALL_ARCHETYPE_KEYS.forEach(key => {
     const s = scores[key];
     s.total = s.nature_core + s.green_hw + s.culture_core + s.blue_fb + s.yellow_cog + s.purple_shadow;
-    // Weighted support score: de-emphasise same-group echoes
+    // Weighted support score: de-emphasise hardware/feedback echoes
     // Support(a) = NK + CK + Y + P + 0.5×HW + 0.3×FB
     s.supportScore = s.nature_core + s.culture_core + s.yellow_cog + s.purple_shadow
                    + 0.5 * s.green_hw + 0.3 * s.blue_fb;

@@ -3,7 +3,7 @@
  * ==================================================
  * Reads the canon corpus (deltawerken_corpus.json) and exposes the two
  * per-archetype inputs the C-magnitude path needs:
- *   - stored_D   : the 5-state D-curve (0..100) per archetype (Matrix v3.3 D_states)
+ *   - stored_D   : the 5-state D-curve (0..100) per archetype (Matrix v4.3 D_states)
  *   - C [Effect] : the Support's per-function modulation DIRECTION (+1 / -1 / null)
  *
  * It also normalises between the two key formats in play:
@@ -14,7 +14,10 @@
  * The backend reads it by relative path for now; final location/access (workspace
  * dep vs. a backend copy) is an open wiring decision. The EDGE structure the
  * C-magnitude path also needs (edge_to_main + red sign) comes from the Connection
- * Matrix v2.1, which is NOT in the corpus — that adapter is blocked separately.
+ * Matrix, which is NOT in the corpus — see connectionMatrix.js.
+ *
+ * The B/C/D cells here are identical to Matrix_360_v4_3_reconstructed.xlsx (all 360
+ * cells checked). τ and the 660 D-transform articulations live only in that workbook.
  */
 
 'use strict';

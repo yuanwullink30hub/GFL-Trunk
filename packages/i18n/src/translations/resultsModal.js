@@ -85,6 +85,13 @@ export default {
     // ON-SCREEN UI
     // ═══════════════════════════════════════════════════════════════════
     ui: {
+      // Portrait variant toggle under the results-card portrait (also decides the PDF portrait)
+      portraitToggle: {
+        label: { nl: 'Portret', en: 'Portrait' },
+        female: { nl: 'Vrouw', en: 'Female' },
+        male: { nl: 'Man', en: 'Male' },
+      },
+
       // Email gate validation
       emailRequired: { nl: 'Vul je e-mailadres in', en: 'Please enter your email address' },
       emailInvalid: { nl: 'Vul een geldig e-mailadres in', en: 'Please enter a valid email address' },
@@ -134,37 +141,179 @@ export default {
       sending: { nl: 'Versturen...', en: 'Sending...' },
       proceed: { nl: 'PROCEED', en: 'PROCEED' },
 
-      // PDF consent micro-modal
-      consentTitleShort: { nl: 'Verantwoordelijkheid PDF', en: 'PDF Responsibility' },
-      consentTitleFull: { nl: 'Verantwoordelijkheid PDF & AI Prompt', en: 'PDF & AI Prompt Responsibility' },
-      consentLead: { nl: 'Lees dit door voordat je de PDF downloadt', en: 'Please read this before downloading the PDF' },
-      consentBodyShort: {
-        nl: 'Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model — geen klinische diagnose. De gebruikte termen zijn metaforen binnen dit model.',
-        en: 'This is a self-reflection instrument based on the Deltawerken model — not a clinical diagnosis. The terms used are metaphors within this model.',
+      // PDF consent (PdfConsentStep) — the same card for the Fundament and Essentie downloads
+      consentTitle: { nl: 'Verantwoording voor gebruik', en: 'Accountability for use' },
+      consentLeadDownload: { nl: 'Lees dit door voordat je de PDF downloadt', en: 'Please read this before downloading the PDF' },
+      consentLeadPay: { nl: 'Lees dit voordat je betaalt.', en: 'Read this before you pay.' },
+      consentBody: {
+        nl: 'Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik hiervan valt buiten de directe verantwoordelijkheid van Garden For Life, wel nemen wij volledige verantwoordelijkheid voor de data die wij leveren.',
+        en: 'This is a self-reflection instrument based on the Deltawerken model. The style guidelines in this prompt are not a clinical profile but a behavioural reflection preference. Use of it falls outside the direct responsibility of Garden For Life; we do take full responsibility for the data we deliver.',
       },
-      consentBodyFull: {
-        nl: 'Dit is een zelfreflectie-instrument gebaseerd op het Deltawerken model. De stijlrichtlijnen in deze prompt zijn geen klinisch profiel maar een gedragsmatige reflectievoorkeur. Gebruik in externe AI-tools valt buiten de verantwoordelijkheid van Garden For Life.',
-        en: 'This is a self-reflection instrument based on the Deltawerken model. The style guidelines in this prompt are not a clinical profile but a behavioural reflection preference. Use in external AI tools falls outside the responsibility of Garden For Life.',
-      },
-      consentCheckShort: { nl: 'Ik begrijp het.', en: 'I understand.' },
-      consentCheckFull: {
-        nl: 'Ik begrijp dat de AI Agent Prompt in deze PDF experimenteel is en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.',
-        en: 'I understand that the AI Agent Prompt in this PDF is experimental and I accept full responsibility for its use.',
+      consentCheck: {
+        nl: 'Ik begrijp dat deze data geen toestemming is om misbruik te maken van anderen of mijn eigen situatie en aanvaard volledige verantwoordelijkheid voor het gebruik ervan.',
+        en: 'I understand that this data gives no permission to take advantage of others or of my own situation, and I accept full responsibility for its use.',
       },
       cancel: { nl: 'Annuleren', en: 'Cancel' },
       consentConfirm: { nl: 'Begrepen en akkoord — Download PDF', en: 'Understood and agreed — Download PDF' },
 
       // Footer action buttons
       generating: { nl: 'Generating...', en: 'Generating...' },
-      shortVersion: { nl: 'Korte versie', en: 'Short version' },
+      shortVersion: { nl: 'Fundament', en: 'Foundation' },
       downloadNow: { nl: 'Download nu', en: 'Download now' },
-      continueBtn: { nl: 'CONTINUE', en: 'CONTINUE' },
-      leaveWarning: {
-        nl: 'Als je deze pagina verlaat kun je het rapport niet meer downloaden.',
-        en: 'If you leave this page you will no longer be able to download the report.',
+      fullReport: { nl: 'Essentie', en: 'Essence' },
+    },
+
+    // ── Pay component for the full report (PaywallModal) ──
+    paywall: {
+      title: { nl: 'Tuinierder', en: 'Gardener' },
+      includesReport: { nl: 'Volledige rapport met 3x meer inhoudelijke data', en: 'The full report with 3x more in-depth data' },
+      includesPrompt: { nl: 'AI prompt om je eigen agent op jouw psyche af te stellen', en: 'An AI prompt to tune your own agent to your psyche' },
+      includesPlatform: { nl: 'Volledige toegang tot het platform:', en: 'Full access to the platform:' },
+      platformTools: { nl: "Ontwikkelings programma's", en: 'Development programmes' },
+      platformMedia: { nl: 'Verbindings-media voor netwerken en rekrutering', en: 'Connection media for networking and recruitment' },
+      platformStorage: { nl: 'Lokale data opslag (Anti data-lek)', en: 'Local data storage (anti data leak)' },
+      priceNote: { nl: 'Eenmalig · incl. {rate}% btw', en: 'One-off · incl. {rate}% VAT' },
+      netPrice: { nl: '{net} excl. btw', en: '{net} excl. VAT' },
+      launchPrice: {
+        nl: 'Introductieprijs tot de lente-equinox van {end}. Daarna {regular} incl. btw ({regularNet} excl. btw).',
+        en: 'Launch price until the spring equinox of {end}. After that {regular} incl. VAT ({regularNet} excl. VAT).',
       },
-      fullReport: { nl: 'Volledige rapport', en: 'Full report' },
-      price: { nl: '€ 00,00', en: '€ 00,00' },
+      methods: {
+        nl: 'Veilig betalen via Stripe met iDEAL of creditcard.',
+        en: 'Pay securely via Stripe with iDEAL or credit card.',
+      },
+      countryLabel: { nl: 'Land', en: 'Country' },
+      countryOther: { nl: 'Ander land', en: 'Other country' },
+      countryNotAvailable: {
+        nl: 'Het volledige rapport is op dit moment alleen beschikbaar in {countries}.',
+        en: 'The full report is currently only available in {countries}.',
+      },
+      paymentLoading: { nl: 'Betaalmethoden laden…', en: 'Loading payment methods…' },
+      paying: { nl: 'Bezig…', en: 'Processing…' },
+      waiver: {
+        nl: 'Ik stem ermee in dat ik 14-dagen garantie heb en daarna mijn wettelijke herroepingsrecht vervalt. Ik ga akkoord met de',
+        en: 'I agree that I have a 14-day guarantee and that my statutory right of withdrawal lapses after that. I agree to the',
+      },
+      termsLink: { nl: 'Algemene Voorwaarden', en: 'Terms and Conditions' },
+      guaranteeTitle: { nl: '14 dagen geld-terug-garantie', en: '14-day money-back guarantee' },
+      guaranteeBody: {
+        nl: 'Niet tevreden? Vraag binnen 14 dagen via het contactformulier je volledige bedrag terug. Je kristal-code wordt dan geblokkeerd. Opende je met deze code je account, dan wordt dat account verwijderd; had je al een account met andere lezingen, dan blijft het bestaan en wordt alleen deze lezing verwijderd.',
+        en: 'Not satisfied? Ask for a full refund through the contact form within 14 days. Your crystal code is then blocked. If you opened your account with this code, that account is deleted; if you already had an account with other readings, it stays and only this reading is deleted.',
+      },
+      pay: { nl: 'Betaal', en: 'Pay' },
+
+      awaitingTitle: { nl: 'Wacht op betaling', en: 'Waiting for payment' },
+      awaitingBody: {
+        nl: 'Rond de betaling af in het venster van je bank. Dit scherm werkt zichzelf bij zodra de betaling binnen is.',
+        en: 'Complete the payment in your bank\'s window. This screen updates itself as soon as the payment is in.',
+      },
+      processingTitle: { nl: 'Betaling wordt verwerkt', en: 'Processing payment' },
+      processingBody: {
+        nl: 'Je betaling wordt bevestigd. Dit duurt meestal een paar seconden.',
+        en: 'Your payment is being confirmed. This usually takes a few seconds.',
+      },
+      stayOnPage: {
+        nl: 'Sluit deze pagina niet — je rapport bestaat alleen in dit tabblad.',
+        en: 'Do not close this page — your report only exists in this tab.',
+      },
+      reopen: { nl: 'Betaalvenster opnieuw openen', en: 'Reopen payment window' },
+      popupBlocked: {
+        nl: 'Je browser hield het betaalvenster tegen. Open het met de knop hieronder.',
+        en: 'Your browser blocked the payment window. Open it with the button below.',
+      },
+      openBankPage: { nl: 'Betaalvenster openen', en: 'Open payment window' },
+      paymentDeclined: {
+        nl: 'De betaling is geweigerd. Er is niets afgeschreven. Probeer een andere betaalmethode.',
+        en: 'The payment was declined. Nothing has been charged. Try another payment method.',
+      },
+      paymentError: {
+        nl: 'De betaling kon niet worden gestart. Controleer je verbinding en probeer het opnieuw.',
+        en: 'The payment could not be started. Check your connection and try again.',
+      },
+      alreadyUnlocked: { nl: 'Dit rapport is al vrijgegeven.', en: 'This report has already been unlocked.' },
+      reportExpired: {
+        nl: 'Dit rapport is verlopen en kan niet meer worden vrijgegeven.',
+        en: 'This report has expired and can no longer be unlocked.',
+      },
+      consentRequired: {
+        nl: 'Vink de voorwaarden aan en probeer het opnieuw (herlaad de pagina als dit blijft gebeuren).',
+        en: 'Tick the terms and try again (reload the page if this keeps happening).',
+      },
+      returnTitle: { nl: 'Betaling afgerond', en: 'Payment completed' },
+      returnBody: {
+        nl: 'Ga terug naar het tabblad met je rapport — daar wordt je betaling bevestigd en start je download. Dit venster sluit vanzelf.',
+        en: 'Go back to the tab with your report — your payment is confirmed there and your download starts. This window closes by itself.',
+      },
+      returnClose: { nl: 'Venster sluiten', en: 'Close window' },
+      rejectedTitle: { nl: 'Betaling teruggestort', en: 'Payment refunded' },
+      rejectedBody: {
+        nl: 'Deze betaling kwam van buiten {countries}. Het volledige rapport is daar nog niet beschikbaar; het bedrag is automatisch teruggestort.',
+        en: 'This payment came from outside {countries}. The full report is not available there yet; the amount has been refunded automatically.',
+      },
+
+      paidTitle: { nl: 'Betaling ontvangen', en: 'Payment received' },
+      paidBody: { nl: 'Dank je wel. Je volledige rapport wordt klaargezet…', en: 'Thank you. Your full report is being prepared…' },
+
+      failedTitle: { nl: 'Betaling niet voltooid', en: 'Payment not completed' },
+      failedBody: {
+        nl: 'De betaling is geannuleerd, verlopen of mislukt. Er is niets afgeschreven. Je kunt het opnieuw proberen.',
+        en: 'The payment was cancelled, expired or failed. Nothing has been charged. You can try again.',
+      },
+      retry: { nl: 'Opnieuw proberen', en: 'Try again' },
+
+      unavailableTitle: { nl: 'Online betalen nog niet actief', en: 'Online payment not active yet' },
+      unavailableBody: {
+        nl: 'Online betalen wordt binnenkort geactiveerd. Je korte rapport kun je nu al gratis downloaden.',
+        en: 'Online payment will be activated shortly. You can already download your short report for free.',
+      },
+      close: { nl: 'Sluiten', en: 'Close' },
+      devSimulate: { nl: 'Simuleer betaling (dev)', en: 'Simulate payment (dev)' },
+
+      // One-time activation code (alternative to paying)
+      unlocked: { nl: 'Vrijgegeven', en: 'Unlocked' }, // results-card button, after payment or code
+      // After unlock the full PDF downloads automatically; until it is saved the user is held here.
+      autoDownloading: { nl: 'Betaling bevestigd — je volledige rapport wordt nu gedownload…', en: 'Payment confirmed — your full report is downloading now…' },
+      notDownloadedTitle: { nl: 'Je volledige rapport is nog niet opgeslagen', en: 'Your full report has not been saved yet' },
+      notDownloadedBody: {
+        nl: 'Je hebt betaald, maar de PDF staat nog niet op je apparaat. Download hem nu: wij bewaren geen kopie, en zodra je deze pagina verlaat is het rapport weg.',
+        en: 'You have paid, but the PDF is not on your device yet. Download it now: we keep no copy, and once you leave this page the report is gone.',
+      },
+      downloadNow: { nl: 'Download nu', en: 'Download now' },
+      // Final warning before leaving the report page (in-app exits).
+      leaveTitle: { nl: 'Pagina verlaten', en: 'Leave this page' },
+      leaveUnpaid: {
+        nl: 'Bij het verlaten van deze pagina verlies ik ook het volledige resultaat en de optie tot toegang.',
+        en: 'By leaving this page I also lose the full result and the option to gain access.',
+      },
+      leavePaidCheck: { nl: 'Ik heb mijn pdf veilig opgeslagen', en: 'I have saved my PDF safely' },
+      leaveContinue: { nl: 'Doorgaan', en: 'Continue' },
+      leaveBack: { nl: 'Teruggaan', en: 'Go back' },
+      haveCode: { nl: 'Heb je een activatiecode?', en: 'Have an activation code?' },
+      codeLabel: { nl: 'Code', en: 'Code' },
+      codeActivate: { nl: 'Activeren', en: 'Activate' },
+      codeChecking: { nl: 'Controleren…', en: 'Checking…' },
+      codeAcceptedTitle: { nl: 'Code geaccepteerd', en: 'Code accepted' },
+      codeInvalid: {
+        nl: 'Deze code bestaat niet of is niet meer geldig. Controleer de tekens en probeer het opnieuw.',
+        en: 'This code does not exist or is no longer valid. Check the characters and try again.',
+      },
+      codeUsed: { nl: 'Deze code is al gebruikt.', en: 'This code has already been used.' },
+      codeRateLimited: {
+        nl: 'Te veel pogingen. Probeer het over een kwartier opnieuw.',
+        en: 'Too many attempts. Try again in fifteen minutes.',
+      },
+      codeReportExpired: {
+        nl: 'Dit rapport is ouder dan 24 uur en kan niet meer worden vrijgegeven. Je activatiecode is niet gebruikt.',
+        en: 'This report is older than 24 hours and can no longer be unlocked. Your activation code has not been used.',
+      },
+      codeNetwork: {
+        nl: 'Geen verbinding met de server. Controleer je verbinding en probeer het opnieuw.',
+        en: 'Could not reach the server. Check your connection and try again.',
+      },
+      codeServer: {
+        nl: 'Er ging iets mis bij het controleren. Probeer het opnieuw.',
+        en: 'Something went wrong while checking. Please try again.',
+      },
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -213,8 +362,8 @@ export default {
         },
         c4Title: { nl: '4. Gegevensbescherming (AVG/GDPR)', en: '4. Data Protection (GDPR/AVG)' },
         c4Body: {
-          nl: 'Garden for Life verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). Het berekende profiel bestaat maximaal 24 uur op beveiligde servers binnen de EU (Frankfurt, Duitsland); daarna blijft, als u een account heeft, uitsluitend een gedeeltelijk profiel bewaard. E-mailadressen en weergavenamen worden versleuteld opgeslagen (AES-256-GCM). Na de bewaartermijn worden gegevens automatisch en onherroepelijk verwijderd. U heeft te allen tijde het recht om uw account en alle bijbehorende gegevens direct te verwijderen via uw profielinstellingen.',
-          en: 'Garden for Life processes personal data in accordance with the General Data Protection Regulation (GDPR/AVG). The calculated profile exists for a maximum of 24 hours on secure servers within the EU (Frankfurt, Germany); after that, if you have an account, only a partial profile is retained. Email addresses and display names are stored encrypted (AES-256-GCM). After the retention period the data is deleted automatically and irrevocably. You have the right at any time to delete your account and all associated data immediately via your profile settings.',
+          nl: 'Garden for Life verwerkt persoonsgegevens in overeenstemming met de Algemene Verordening Gegevensbescherming (AVG/GDPR). Het volledige profiel en dit rapport worden nergens opgeslagen: zij bestonden alleen tijdens uw sessie, en dit document is het enige exemplaar. Maakt u met de kristal-code een account aan, dan blijft daarin uitsluitend een gedeeltelijk profiel bewaard, op beveiligde servers binnen de EU (Frankfurt, Duitsland). E-mailadressen en weergavenamen worden versleuteld opgeslagen (AES-256-GCM). U heeft te allen tijde het recht om uw account en alle bijbehorende gegevens direct te verwijderen via uw profielinstellingen.',
+          en: 'Garden for Life processes personal data in accordance with the General Data Protection Regulation (GDPR/AVG). The full profile and this report are stored nowhere: they existed only during your session, and this document is the only copy. If you create an account with the crystal code, only a partial profile is retained in it, on secure servers within the EU (Frankfurt, Germany). Email addresses and display names are stored encrypted (AES-256-GCM). You have the right at any time to delete your account and all associated data immediately via your profile settings.',
         },
         c5Title: { nl: '5. Intellectueel Eigendom', en: '5. Intellectual Property' },
         c5Body: {
@@ -652,10 +801,6 @@ export default {
         l4: {
           nl: 'Zolang de beta-fase loopt is alleen het leerling niveau toegankelijk.',
           en: 'While the beta phase is running, only the student level is accessible.',
-        },
-        l4b: {
-          nl: 'Een donatie is optioneel, maar is meer dan welkom en is directe voeding voor ons project! =)',
-          en: 'A donation is optional, but more than welcome, and is direct nourishment for our project! =)',
         },
         l5: {
           nl: 'Anyway- pionier, hartelijk dank voor de tijd en attentie!',

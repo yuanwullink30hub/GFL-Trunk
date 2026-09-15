@@ -4,6 +4,7 @@
  * All env vars with sensible defaults. Copy .env.example → .env and fill in.
  */
 require('dotenv').config();
+const { resolveStripeEnv } = require('./stripeEnv');
 
 module.exports = {
   port: parseInt(process.env.PORT, 10) || 8080,
@@ -61,6 +62,12 @@ module.exports = {
     // Inbox that public contact/feedback/source-suggestion forms land in.
     contactTo: process.env.CONTACT_EMAIL || process.env.SMTP_USER || process.env.SMTP_FROM || 'noreply@gardenforlife.nl',
   },
+
+  // Stripe — payment for the full report (services/stripe.js, services/payments.js). STRIPE_MODE
+  // (test | live, default test) picks the key set; see config/stripeEnv.js for the accepted names.
+  // Without the secret key, publishable key and both price IDs (and in production the webhook
+  // secret), payments stay disabled everywhere and the paywall says so.
+  stripe: resolveStripeEnv(process.env),
 
   // Public frontend base URL — used to build clickable links in transactional emails
   // (e.g. the password-change confirmation). Defaults to the production site, NOT the

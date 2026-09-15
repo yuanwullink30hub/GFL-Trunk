@@ -4,6 +4,7 @@ import TechContainer from './TechContainer';
 import WheelGlyph from '../WheelGlyph';
 import { Database, Lock, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useLanguage } from '@gfl/i18n';
+import { liveExtendedName } from '@gfl/assessment-core/data';
 import { SciFiButton } from '@gfl/ui';
 import { getInbox, sendUserMessage, markMessageRead, getMe, getVerbondPending, respondVerbond, getVerbondContacts } from '@gfl/api-client';
 
@@ -195,14 +196,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   // Verbindingsmenu centre block. Logged-in client mode shows the user's identity in green
   // (name · archetype · country/age from the PDF+account); visitors see the default contact lines.
   const renderContactCentre = (fontSize) => {
-    if (clientProfile && (clientProfile.displayName || clientProfile.archetypeName)) {
+    const archetypeName = liveExtendedName(clientProfile?.archetypeName, language);
+    if (clientProfile && (clientProfile.displayName || archetypeName)) {
       const loc = [clientProfile.country, clientProfile.age].filter((v) => v !== '' && v != null).join(' · ');
       // TimeSync green, but the normal body font (not the Lexend Mega header font).
       const tag = { fontSize, color: 'rgba(21, 179, 21, 0.8)', fontWeight: 'bold' };
       return (
         <div className="flex flex-col items-center justify-center gap-0.5" style={{ textAlign: 'center' }}>
           {clientProfile.displayName && <span style={tag}>{clientProfile.displayName}</span>}
-          {clientProfile.archetypeName && <span style={tag}>{clientProfile.archetypeName}</span>}
+          {archetypeName && <span style={tag}>{archetypeName}</span>}
           {loc && <span style={tag}>{loc}</span>}
         </div>
       );

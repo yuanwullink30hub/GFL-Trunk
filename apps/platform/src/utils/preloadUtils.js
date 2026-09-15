@@ -189,21 +189,13 @@ export const preloadImages = () => {
     'images/landingpage/logo.png',
   ];
   
-  // Slideshow images (important but can load slightly later)
-  const slideshowImages = [
-    'images/slideshow images/1111logo.png',
-    'images/slideshow images/club49-logo.png', 
-    'images/slideshow images/karmaneventsPNG.png',
-    'images/slideshow images/Rengi-logo.png',
-  ];
-  
   // UI images
   const uiImages = [
     'images/Eyedentity.png',
     'images/illustrativesun.png',
   ];
   
-  const allImages = [...criticalImages, ...slideshowImages, ...uiImages];
+  const allImages = [...criticalImages, ...uiImages];
   
   return Promise.all(allImages.map(preloadImage)).then(() => {
     console.log('[Preload] Images loaded');
@@ -307,10 +299,6 @@ export const preloadAll = async (onProgress, options = {}) => {
   // ── Background: images + fonts (fire-and-forget) ──
   const bgImages = [
     'images/landingpage/logo.png',
-    'images/slideshow images/1111logo.png',
-    'images/slideshow images/club49-logo.png',
-    'images/slideshow images/karmaneventsPNG.png',
-    'images/slideshow images/Rengi-logo.png',
     'images/Eyedentity.png',
     'images/illustrativesun.png',
   ];

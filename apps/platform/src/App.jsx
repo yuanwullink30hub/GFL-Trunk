@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense, lazy } from 'react';
 import { getClientOrbConfig, getClientProfile, setClientProfile, clearClientMode } from './clientMode';
+import { requestLeaveReport } from './reportDownloadGuard';
 import ClientSubnav from './components/ClientNav';
 
 // Lazy-load NebulaBackground — procedural WebGL nebula; keeps it out of the
@@ -226,14 +227,15 @@ const App = () => {
     let alive = true;
     (async () => {
       try {
-        const [me, hist] = await Promise.all([
+        const [me, hist, { extendedNameFor }] = await Promise.all([
           getMe().catch(() => null),
           getHistory({ limit: 1 }).catch(() => null),
+          import('@gfl/assessment-core/data/scoring/index.js'),
         ]);
         const latest = hist?.assessments?.[0] || null;
         const profile = {
           displayName: me?.displayName || stored?.displayName || '',
-          archetypeName: latest?.extendedArchetypeName || latest?.archetypeKey || stored?.archetypeName || '',
+          archetypeName: extendedNameFor(latest) || stored?.archetypeName || '',
           country: (me?.country ?? stored?.country) || '',
           age: (me?.age ?? stored?.age) ?? '',
         };
@@ -1681,7 +1683,10 @@ const App = () => {
   }, []);
 
   // Reset to frame 0 — smooth rAF-based animation to avoid per-frame React re-renders
-  const handleReset = () => {
+  // Leaving an open report drops it for good (single instance) — the results modal shows the
+  // final warning first; without a mounted report this runs straight through.
+  const handleReset = () => requestLeaveReport(doReset);
+  const doReset = () => {
     // Client-mode (kook-eiland) assessment: there is no earth journey to rewind through —
     // snap straight back to the static orbital landing (frame 0, orb restored).
     if (clientMode) {
@@ -2241,6 +2246,7 @@ const App = () => {
                     onToggle={toggleNavMenu}
                     onClose={closeNavMenu}
                     hovered={navHovered}
+                    showLogout={clientMode}
                   />
                 </div>
               </div>
@@ -2504,32 +2510,6 @@ const App = () => {
                 onDownload={() => {
                   console.log('Download PDF:', layerAnswers);
                   // TODO: Generate and download PDF
-                }}
-                onCreateAccount={() => {
-                  // Phase 1 — collapse modal toward entity (700ms ease-in: slow out, fast into entity)
-                  const collapseStart = performance.now();
-                  const COLLAPSE_DURATION = 700;
-                  const animateCollapse = (now) => {
-                    const elapsed = now - collapseStart;
-                    const progress = Math.min(elapsed / COLLAPSE_DURATION, 1);
-                    const eased = progress * progress * progress; // ease-in cubic
-                    setResultsModalProgress(1 - eased);
-                    if (progress < 1) {
-                      requestAnimationFrame(animateCollapse);
-                    } else {
-                      setResultsModalProgress(0);
-                      // Phase 2 — navigate to login. Keep assessmentPhase='results' so the
-                      // invisible modal stays mounted — prevents the expanded pyramid flashing.
-                      navigateToSection('login');
-                      // Phase 3 — reset exactly when map arrives at login position (+200ms buffer).
-                      // MAP_TRANSITION_DURATION (1800ms) is the const used by navigateToSection.
-                      setTimeout(() => {
-                        resetAssessmentState(); // phase→'hidden', all scores/answers/progress reset
-                        setCurrentFrame(0);     // rewind HoloEarth back to frame 0, off-screen
-                      }, MAP_TRANSITION_DURATION + 200);
-                    }
-                  };
-                  requestAnimationFrame(animateCollapse);
                 }}
                 t={t}
               />

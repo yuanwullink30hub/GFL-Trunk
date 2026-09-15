@@ -19,6 +19,11 @@ const { ObjectId } = require('mongodb');
 const { collections, getDB } = require('../db');
 const { authRequired, adminRequired } = require('../middleware/auth');
 const { decryptUser, decryptUsers } = require('../services/encryption');
+const { generateCode, hashCode, formatCode } = require('../services/activationCodes');
+const { declineRefund, RefundError, REFUND_WINDOW_DAYS, readEmail } = require('../services/reportAccess');
+const { adminRefund, PaymentError } = require('../services/payments');
+const { loadSettings, updateSettings, resolvePaymentConfig, paymentDiagnostics } = require('../services/paymentConfig');
+const { ensureRecords, buildZip, archivePath, yearOf } = require('../services/paymentRecords');
 const config = require('../config');
 const multer = require('multer');
 const mammoth = require('mammoth');
@@ -996,11 +1001,7 @@ function siteSettingsCollection() {
 router.get('/settings/feedback-email', async (_req, res) => {
   try {
     const settings = await siteSettingsCollection().findOne({ _id: 'feedback-email' });
-    res.json({
-      text: settings?.text || '',
-      imageBase64: settings?.imageBase64 || '',
-      imageMimeType: settings?.imageMimeType || '',
-    });
+    res.json({ text: settings?.text || '' });
   } catch (err) {
     console.error('[Admin] Get feedback-email settings error:', err.message);
     res.status(500).json({ error: 'Failed to load settings' });
@@ -1010,28 +1011,12 @@ router.get('/settings/feedback-email', async (_req, res) => {
 router.put('/settings/feedback-email', async (req, res) => {
   try {
     const text = (req.body.text || '').slice(0, 2000);
-    const imageBase64 = req.body.imageBase64 ?? null;   // null = don't touch, '' = clear
-    const imageMimeType = (req.body.imageMimeType || '').slice(0, 100);
 
-    if (imageBase64 && imageMimeType) {
-      if (!imageMimeType.startsWith('image/')) {
-        return res.status(400).json({ error: 'imageMimeType must be an image/* type' });
-      }
-      // Guard against oversized uploads (~5 MB raw = ~6.7 MB base64)
-      if (imageBase64.length > 7 * 1024 * 1024) {
-        return res.status(413).json({ error: 'Image too large (max ~5 MB)' });
-      }
-    }
-
-    const $set = { text, updatedAt: new Date() };
-    if (typeof imageBase64 === 'string') {
-      $set.imageBase64  = imageBase64;   // '' clears it
-      $set.imageMimeType = imageMimeType;
-    }
-
+    // Text only. The donation QR image (and its uploader) was removed; any legacy image
+    // still on the document is dropped on save so it cannot linger.
     await siteSettingsCollection().updateOne(
       { _id: 'feedback-email' },
-      { $set },
+      { $set: { text, updatedAt: new Date() }, $unset: { imageBase64: '', imageMimeType: '' } },
       { upsert: true }
     );
     res.json({ success: true });
@@ -1117,6 +1102,264 @@ router.patch('/passkeys/:id/toggle-admin', async (req, res) => {
   } catch (err) {
     console.error('[Admin] Toggle admin passkey error:', err.message);
     res.status(500).json({ error: 'Failed to toggle admin passkey' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Activation Codes (admin only — already behind authRequired + adminRequired)
+// One-time vouchers for a full report. Stored hashed; the plaintext is returned exactly
+// once, by the POST that creates it. Used/revoked codes remain as the logbook.
+// ─────────────────────────────────────────────────────────────
+
+const MAX_CODES_PER_BATCH = 50;
+const CODE_PUBLIC_FIELDS = { codeHash: 0, unlockId: 0 };
+
+// GET /api/admin/activation-codes — active codes + logbook (used and revoked)
+router.get('/activation-codes', async (_req, res) => {
+  try {
+    const col = collections.activationCodes();
+    const [active, logbook] = await Promise.all([
+      col.find({ status: 'active' }, { projection: CODE_PUBLIC_FIELDS }).sort({ createdAt: -1 }).toArray(),
+      col.find({ status: { $in: ['used', 'revoked'] } }, { projection: CODE_PUBLIC_FIELDS }).toArray(),
+    ]);
+    // Newest event first, whichever kind it was.
+    logbook.sort((x, y) => new Date(y.usedAt || y.revokedAt) - new Date(x.usedAt || x.revokedAt));
+    res.json({ active, logbook });
+  } catch (err) {
+    console.error('[Admin] List activation codes error:', err.message);
+    res.status(500).json({ error: 'Failed to load activation codes' });
+  }
+});
+
+// POST /api/admin/activation-codes — generate { count, label } codes; plaintext returned once
+router.post('/activation-codes', async (req, res) => {
+  const count = Number.parseInt(req.body?.count, 10) || 1;
+  if (count < 1 || count > MAX_CODES_PER_BATCH) {
+    return res.status(400).json({ error: `count must be 1-${MAX_CODES_PER_BATCH}` });
+  }
+  const label = String(req.body?.label || '').trim().slice(0, 80);
+  try {
+    const now = new Date();
+    const created = [];
+    for (let i = 0; i < count; i++) {
+      // A collision on a 59-bit code is practically impossible; retry anyway rather than
+      // fail the whole batch on the unique index.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const raw = generateCode();
+        const doc = {
+          codeHash: hashCode(raw), hint: raw.slice(-4), label,
+          status: 'active', createdAt: now, createdBy: req.user.userId,
+        };
+        try {
+          const r = await collections.activationCodes().insertOne(doc);
+          created.push({ _id: r.insertedId, code: formatCode(raw), hint: doc.hint, label, createdAt: now });
+          break;
+        } catch (e) {
+          if (e.code !== 11000 || attempt === 2) throw e;
+        }
+      }
+    }
+    res.status(201).json({ codes: created });
+  } catch (err) {
+    console.error('[Admin] Create activation codes error:', err.message);
+    res.status(500).json({ error: 'Failed to create activation codes' });
+  }
+});
+
+// PATCH /api/admin/activation-codes/:id/revoke — stop an unused code; it moves to the logbook
+router.patch('/activation-codes/:id/revoke', async (req, res) => {
+  try {
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid activation code ID' });
+    }
+    const r = await collections.activationCodes().updateOne(
+      { _id: new ObjectId(req.params.id), status: 'active' },
+      { $set: { status: 'revoked', revokedAt: new Date(), revokedBy: req.user.userId } },
+    );
+    if (r.matchedCount === 0) {
+      return res.status(409).json({ error: 'Code is not active (already used or revoked)' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Admin] Revoke activation code error:', err.message);
+    res.status(500).json({ error: 'Failed to revoke activation code' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Report unlocks + 14-day money-back guarantee (admin only)
+// A refund blocks the report's crystal code and takes its access off the account that
+// claimed it (services/reportAccess.js). Irreversible.
+// ─────────────────────────────────────────────────────────────
+
+// GET /api/admin/report-unlocks — newest first
+router.get('/report-unlocks', async (_req, res) => {
+  try {
+    const unlocks = await collections.reportUnlocks()
+      .find({}, { projection: { codeHash: 0 } })
+      .sort({ unlockedAt: -1 }).limit(500).toArray();
+    const emailHashes = [...new Set(unlocks.map((x) => x.emailHash).filter(Boolean))];
+    const grey = new Map((await collections.refundGreylist()
+      .find({ emailHash: { $in: emailHashes } }, { projection: { emailHash: 1, refunds: 1 } }).toArray())
+      .map((g) => [g.emailHash, g]));
+    // Whether the report's code has been claimed by an account (without exposing the hash).
+    const withHash = await collections.reportUnlocks()
+      .find({ _id: { $in: unlocks.map((x) => x._id) }, codeHash: { $ne: null } }, { projection: { codeHash: 1 } }).toArray();
+    const linked = new Set((await collections.orbCodes()
+      .find({ codeHash: { $in: withHash.map((x) => x.codeHash) } }, { projection: { codeHash: 1 } }).toArray())
+      .map((x) => x.codeHash));
+    const hashById = new Map(withHash.map((x) => [String(x._id), x.codeHash]));
+    res.json({
+      refundWindowDays: REFUND_WINDOW_DAYS,
+      unlocks: unlocks.map((x) => {
+        const h = hashById.get(String(x._id));
+        const g = x.emailHash ? grey.get(x.emailHash) : null;
+        // A refunded row is itself on the grey list; what matters for the button is an EARLIER refund.
+        const earlier = g ? (g.refunds || []).filter((r) => !x.refundedAt || new Date(r.refundedAt) < new Date(x.refundedAt)) : [];
+        return {
+          ...x,
+          email: readEmail(x.email),
+          emailHash: undefined,
+          unlockId: undefined,
+          hasCode: !!h,
+          accountLinked: !!h && linked.has(h),
+          greylisted: earlier.length > 0,
+          previousRefunds: earlier.map((r) => r.refundedAt),
+          moderatorReviews: (x.moderatorReviews || []).map((v) => ({ decision: v.decision, at: v.at })),
+        };
+      }),
+    });
+  } catch (err) {
+    console.error('[Admin] List report unlocks error:', err.message);
+    res.status(500).json({ error: 'Failed to load report unlocks' });
+  }
+});
+
+// POST /api/admin/report-unlocks/:id/refund — refund under the guarantee
+router.post('/report-unlocks/:id/refund', async (req, res) => {
+  try {
+    // Stripe payments: the ledger checks run first (nothing moves if the refund would be refused),
+    // then Stripe sends the money back, then the ledger records it (services/payments.js adminRefund).
+    // Unlocks without a Stripe reference are still recorded as a manual refund.
+    const result = await adminRefund({ id: req.params.id, by: req.user.userId, review: req.body?.review });
+    res.json({
+      success: true,
+      codeBlocked: result.codeBlocked,
+      secondRefund: result.secondRefund,
+      accountEffect: result.accountEffect ? {
+        accountDeleted: !!result.accountEffect.accountDeleted,
+        accessUntilBefore: result.accountEffect.accessUntilBefore,
+        accessUntilAfter: result.accountEffect.accessUntilAfter || null,
+        readingsLeft: result.accountEffect.readingsLeft ?? 0,
+        accountMissing: !!result.accountEffect.accountMissing,
+      } : null,
+    });
+  } catch (err) {
+    if (err instanceof RefundError) {
+      const status = { not_found: 404, not_refundable: 400, already_refunded: 409, window_closed: 409, greylisted: 409, review_incomplete: 400 }[err.code] || 400;
+      return res.status(status).json({ error: err.message, code: err.code, ...(err.previousRefunds ? { previousRefunds: err.previousRefunds } : {}) });
+    }
+    if (err instanceof PaymentError) {
+      return res.status(err.status).json({ error: 'Stripe is not configured — the refund was not sent', code: err.code });
+    }
+    console.error('[Admin] Refund error:', err.message);
+    // A Stripe error means the money did NOT go back and the ledger was not touched.
+    res.status(502).json({ error: `Refund failed at Stripe: ${err.message}`, code: 'provider_error' });
+  }
+});
+
+// GET /api/admin/payment-config — the flip schedule and country gate (stored + what applies now)
+router.get('/payment-config', async (_req, res) => {
+  try {
+    // The admin sees the config as the gates see it (test token applied) plus what is missing.
+    const [stored, effective] = await Promise.all([loadSettings(), resolvePaymentConfig(new Date(), { testAccess: true })]);
+    res.json({ stored, effective: { ...effective, publishableKey: undefined }, diagnostics: paymentDiagnostics() });
+  } catch (err) {
+    console.error('[Admin] Payment config error:', err.message);
+    res.status(500).json({ error: 'Failed to load payment config' });
+  }
+});
+
+// PUT /api/admin/payment-config — body { flipAt?, gate?: { launchCountries?, openCountries?, openAtFlip? } }
+// Takes effect within seconds, no deploy. openAtFlip = the OSS registration is active.
+router.put('/payment-config', async (req, res) => {
+  try {
+    const stored = await updateSettings(req.body || {}, req.user.userId);
+    const effective = await resolvePaymentConfig(new Date(), { testAccess: true });
+    res.json({ stored, effective: { ...effective, publishableKey: undefined }, diagnostics: paymentDiagnostics() });
+  } catch (err) {
+    if (err.code === 'invalid') return res.status(400).json({ error: err.message });
+    console.error('[Admin] Update payment config error:', err.message);
+    res.status(500).json({ error: 'Failed to update payment config' });
+  }
+});
+
+// POST /api/admin/report-unlocks/:id/decline — moderator declines a refund request after the review
+router.post('/report-unlocks/:id/decline', async (req, res) => {
+  try {
+    const r = await declineRefund({ id: req.params.id, by: req.user.userId, review: req.body?.review });
+    res.json({ success: true, reviews: (r.moderatorReviews || []).length });
+  } catch (err) {
+    if (err instanceof RefundError) {
+      return res.status(err.code === 'not_found' ? 404 : 400).json({ error: err.message, code: err.code });
+    }
+    console.error('[Admin] Decline refund error:', err.message);
+    res.status(500).json({ error: 'Decline failed' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Payment records (admin only) — the stored PDF per payment and per refund.
+// Individually downloadable, and as one ZIP folder (all, or one year).
+// ─────────────────────────────────────────────────────────────
+
+const RECORD_META = { pdf: 0 };
+
+// GET /api/admin/payment-records — metadata of every record, newest first (re-issues any missing PDF)
+router.get('/payment-records', async (_req, res) => {
+  try {
+    const issued = await ensureRecords().catch((e) => { console.error('[Admin] ensureRecords:', e.message); return 0; });
+    const records = await collections.paymentRecords().find({}, { projection: RECORD_META }).sort({ issuedAt: -1 }).toArray();
+    res.json({ records: records.map((r) => ({ ...r, year: yearOf(r.issuedAt) })), issued });
+  } catch (err) {
+    console.error('[Admin] List payment records error:', err.message);
+    res.status(500).json({ error: 'Failed to load payment records' });
+  }
+});
+
+// GET /api/admin/payment-records/archive.zip?year=2026 — the folder (all years when omitted)
+router.get('/payment-records/archive.zip', async (req, res) => {
+  try {
+    const year = req.query.year ? Number(req.query.year) : null;
+    if (req.query.year && !Number.isInteger(year)) return res.status(400).json({ error: 'Invalid year' });
+    await ensureRecords().catch(() => 0);
+    const filter = year
+      ? { issuedAt: { $gte: new Date(`${year - 1}-12-31T00:00:00Z`), $lt: new Date(`${year + 1}-01-02T00:00:00Z`) } }
+      : {};
+    const records = (await collections.paymentRecords().find(filter).sort({ issuedAt: 1 }).toArray())
+      .filter((r) => !year || yearOf(r.issuedAt) === year);
+    const zip = buildZip(records.map((r) => ({ name: archivePath(r), data: Buffer.from(r.pdf.buffer), date: r.issuedAt })));
+    const name = `Betaalbewijzen${year ? `_${year}` : ''}.zip`;
+    res.set({ 'Content-Type': 'application/zip', 'Content-Disposition': `attachment; filename="${name}"`, 'Content-Length': zip.length });
+    res.end(zip);
+  } catch (err) {
+    console.error('[Admin] Payment records zip error:', err.message);
+    res.status(500).json({ error: 'Failed to build archive' });
+  }
+});
+
+// GET /api/admin/payment-records/:id/pdf — one record
+router.get('/payment-records/:id/pdf', async (req, res) => {
+  try {
+    if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid record ID' });
+    const r = await collections.paymentRecords().findOne({ _id: new ObjectId(req.params.id) });
+    if (!r) return res.status(404).json({ error: 'Record not found' });
+    const buf = Buffer.from(r.pdf.buffer);
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${r.filename}"`, 'Content-Length': buf.length });
+    res.end(buf);
+  } catch (err) {
+    console.error('[Admin] Payment record pdf error:', err.message);
+    res.status(500).json({ error: 'Failed to load record' });
   }
 });
 

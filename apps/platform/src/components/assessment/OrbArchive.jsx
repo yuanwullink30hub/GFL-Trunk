@@ -1,5 +1,6 @@
 import React, { memo, useRef } from 'react';
 import { useLanguage } from '@gfl/i18n';
+import { liveExtendedName } from '@gfl/assessment-core/data';
 import { C, FONT } from '@gfl/ui';
 import { OrbSphere3D } from '../../orb';
 
@@ -57,11 +58,11 @@ const OrbArchive = memo(({ entries, size = 44, title, accent = C.purple }) => {
         {shown.map((e, i) => (
           <div
             key={i}
-            title={[e.archetypeName, fmtDate(e.at, locale)].filter(Boolean).join(' · ')}
+            title={[liveExtendedName(e.archetypeName, language), fmtDate(e.at, locale)].filter(Boolean).join(' · ')}
             style={{ flex: '0 0 auto', width: size, height: size }}
           >
             {e.image
-              ? <img src={e.image} alt={e.archetypeName || t('directory.orbArchive.crystalAlt')} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${accent}55`, display: 'block' }} />
+              ? <img src={e.image} alt={liveExtendedName(e.archetypeName, language) || t('directory.orbArchive.crystalAlt')} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${accent}55`, display: 'block' }} />
               : e.orb
                 ? <OrbSphere3D config={e.orb} active={false} size={size} style={{ pointerEvents: 'none' }} />
                 : <div style={{ width: size, height: size, borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.12)' }} />}

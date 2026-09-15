@@ -1,7 +1,7 @@
 /**
  * Garden For Life — Assessment Routes
  *
- * POST /api/assessment          — Save assessment result (requires auth)
+ * POST /api/assessment          — RETIRED (410): assessments are never stored
  * GET  /api/assessment/history  — List user's past assessments (requires auth)
  * POST /api/assessment/review   — Save assessment feedback (optional auth)
  * GET  /api/assessment/:id      — Get single assessment detail (requires auth)
@@ -15,7 +15,7 @@ const nodemailer = require('nodemailer');
 const config = require('../config');
 
 // ─────────────────────────────────────────────────────────────
-// Build HTML confirmation email (text + editable image from admin settings)
+// Build HTML confirmation email (text from admin settings)
 // ─────────────────────────────────────────────────────────────
 
 function esc(str) {
@@ -36,7 +36,6 @@ function buildFeedbackEmail(settings, review) {
   const archName = (review.extendedArchetypeName || review.archetypeKey || 'pionier').replace(/^(De|Het)\s+/i, '');
   const closingText =
     `Anyway— ${archName}, hartelijk dank voor de tijd en attentie!`;
-  const imageBlock = '';
   const attachments = [];
 
   const ratingBlock = review.starRating
@@ -84,7 +83,6 @@ function buildFeedbackEmail(settings, review) {
         </table>
       </td>
     </tr>
-    ${imageBlock}
     <tr>
       <td class="body-cell" style="padding:28px 30px;line-height:1.7;color:#333;font-size:15px;">
         <p style="margin:0 0 0;">${bodyText}</p>
@@ -141,72 +139,15 @@ function authOptional(req, res, next) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/assessment — Save an assessment result (requires auth)
+// POST /api/assessment — RETIRED: assessments are never stored
 // ─────────────────────────────────────────────────────────────
+// Single-instance profile: the full profile (answers, scores, analysis) exists only in the
+// browser tab. It is unlocked and carried out in the PDF, or discarded in full (POST
+// /api/ai/discard). Nothing — logged in or not — is written to `assessments`. The body is
+// deliberately not read.
 
-router.post('/', authRequired, async (req, res) => {
-  try {
-    const {
-      clientId,
-      archetypeKey,
-      supportArchetype,
-      supportGroup,
-      extendedArchetypeName,
-      extendedArchetypeNameNl,
-      oceanScores,
-      responses,
-      subjectResults,
-      scores,
-      archetypeDetails,
-      harmonyScore,
-      consciousnessLevel,
-      overallShadow,
-      aiProvider,
-      aiModel,
-      analysis,
-      promptTokens,
-      completionTokens,
-    } = req.body;
-
-    if (!archetypeKey) {
-      return res.status(400).json({ error: 'archetypeKey is required' });
-    }
-
-    const doc = {
-      userId: req.user.userId,
-      clientId: clientId || null,
-      archetypeKey,
-      supportArchetype: supportArchetype || null,
-      supportGroup: supportGroup || null,
-      extendedArchetypeName: extendedArchetypeName || null,
-      extendedArchetypeNameNl: extendedArchetypeNameNl || null,
-      oceanScores: oceanScores || null,
-      responses: Array.isArray(responses) ? responses : [],
-      subjectResults: Array.isArray(subjectResults) ? subjectResults : [],
-      scores: scores || null,
-      archetypeDetails: Array.isArray(archetypeDetails) ? archetypeDetails : null,
-      harmonyScore: harmonyScore ?? null,
-      consciousnessLevel: consciousnessLevel || null,
-      overallShadow: overallShadow || null,
-      aiProvider: aiProvider || null,
-      aiModel: aiModel || null,
-      analysis: analysis || null,
-      promptTokens: promptTokens || 0,
-      completionTokens: completionTokens || 0,
-      pdfUrl: null,
-      createdAt: new Date(),
-    };
-
-    const result = await collections.assessments().insertOne(doc);
-
-    res.status(201).json({
-      id: result.insertedId,
-      ...doc,
-    });
-  } catch (err) {
-    console.error('[Assessment] Save error:', err.message);
-    res.status(500).json({ error: 'Failed to save assessment' });
-  }
+router.post('/', (_req, res) => {
+  res.status(410).json({ error: 'Assessments are not stored.' });
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -244,25 +185,6 @@ router.get('/history', authRequired, async (req, res) => {
   } catch (err) {
     console.error('[Assessment] History error:', err.message);
     res.status(500).json({ error: 'Failed to load history' });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────
-// GET /api/assessment/site-banner — Public: PDF footer image from admin settings
-// Returns { imageBase64, imageMimeType, text } — no auth required
-// ─────────────────────────────────────────────────────────────
-router.get('/site-banner', async (_req, res) => {
-  try {
-    const settings = await getDB().collection('siteSettings')
-      .findOne({ _id: 'feedback-email' }).catch(() => null) || {};
-    res.json({
-      imageBase64: settings.imageBase64 || '',
-      imageMimeType: settings.imageMimeType || '',
-      text: settings.text || '',
-    });
-  } catch (err) {
-    console.error('[Assessment] site-banner error:', err.message);
-    res.json({ imageBase64: '', imageMimeType: '', text: '' });
   }
 });
 

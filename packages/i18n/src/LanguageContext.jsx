@@ -3,37 +3,87 @@ import translations from './translations';
 
 const LanguageContext = createContext();
 
-// The chosen language is persisted so it survives reloads — several flows
-// (client-mode entry, password verification) hard-refresh the page, and an
-// English reader landing back in Dutch each time makes the toggle useless.
-const STORAGE_KEY = 'gfl_language';
+// Only a language the visitor actively picks with the NL/EN toggle is stored, so it
+// survives reloads — several flows (client-mode entry, password verification)
+// hard-refresh the page. Without a pick, every visit starts in the language of the
+// visitor's IP country (functions/_middleware.js), or the browser language where that
+// isn't available (local dev). apps/platform/index.html repeats this rule for the
+// pre-React loading screen.
+const STORAGE_KEY = 'gfl_language_choice';
 const SUPPORTED = ['nl', 'en'];
+
+// Earlier builds wrote this key on every visit with Dutch as the default, so a stored
+// 'nl' says nothing about the visitor. Only 'en' (reachable solely via the toggle)
+// is carried over; the key itself is removed.
+const LEGACY_STORAGE_KEY = 'gfl_language';
+
+function resolveBrowserLanguage() {
+  if (typeof navigator === 'undefined') return 'en';
+
+  const candidates = [];
+  if (Array.isArray(navigator.languages)) {
+    candidates.push(...navigator.languages);
+  }
+  if (typeof navigator.language === 'string') {
+    candidates.push(navigator.language);
+  }
+
+  const preferred = candidates.find(Boolean)?.toLowerCase();
+  if (!preferred) return 'en';
+
+  const primary = preferred.split('-')[0];
+  return primary === 'nl' ? 'nl' : 'en';
+}
+
+// Set on <html data-geo-lang> by the Cloudflare Pages middleware; absent in local dev.
+function resolveGeoLanguage() {
+  if (typeof document === 'undefined') return null;
+  const geoLang = document.documentElement.getAttribute('data-geo-lang');
+  return SUPPORTED.includes(geoLang) ? geoLang : null;
+}
 
 function readStoredLanguage() {
   try {
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy !== null) {
+      if (legacy === 'en' && localStorage.getItem(STORAGE_KEY) === null) {
+        localStorage.setItem(STORAGE_KEY, 'en');
+      }
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
     const stored = localStorage.getItem(STORAGE_KEY);
     if (SUPPORTED.includes(stored)) return stored;
   } catch (_) { /* private mode / storage blocked */ }
-  return 'nl';
+
+  return resolveGeoLanguage() || resolveBrowserLanguage();
+}
+
+function storeLanguageChoice(language) {
+  try { localStorage.setItem(STORAGE_KEY, language); } catch (_) { /* ignore */ }
 }
 
 /**
  * LanguageProvider - Wraps the app and provides language state + translation helper
- * Default language: Dutch (nl)
+ * Default language: the visitor's toggle pick, else their IP country's language, else the browser's
  */
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState(readStoredLanguage);
+  const [language, setLanguageState] = useState(readStoredLanguage);
 
-  // Persist the choice and keep <html lang> in sync for screen readers,
-  // browser translation prompts and CSS :lang() rules.
+  // Keep <html lang> in sync for screen readers, browser translation prompts
+  // and CSS :lang() rules.
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, language); } catch (_) { /* ignore */ }
     if (typeof document !== 'undefined') document.documentElement.lang = language;
   }, [language]);
 
-  const toggleLanguage = useCallback(() => {
-    setLanguage(prev => prev === 'nl' ? 'en' : 'nl');
+  const setLanguage = useCallback((next) => {
+    if (!SUPPORTED.includes(next)) return;
+    storeLanguageChoice(next);
+    setLanguageState(next);
   }, []);
+
+  const toggleLanguage = useCallback(() => {
+    setLanguage(language === 'nl' ? 'en' : 'nl');
+  }, [language, setLanguage]);
 
   /**
    * t(key) - Translate a dot-notation key path

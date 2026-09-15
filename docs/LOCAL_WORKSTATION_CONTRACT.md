@@ -37,7 +37,7 @@ Garden For Life/
 │  ├─ partial.json            # mirror of the server-side account profile
 │  ├─ full.json               # the complete computed profile (server never keeps this)
 │  └─ reports/
-│     └─ 2026-09-27-maverick.pdf
+│     └─ 2026-09-27-usurper.pdf
 ├─ tools/
 │  └─ <tool-id>/              # one directory per tool, owned by that tool
 │     ├─ state.json

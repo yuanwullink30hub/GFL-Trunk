@@ -36,9 +36,20 @@ import {
   deletePasskey,
   togglePasskey,
   toggleAdminPasskey,
+  getActivationCodes,
+  createActivationCodes,
+  revokeActivationCode,
+  getReportUnlocks,
+  refundReportUnlock,
+  declineReportRefund,
+  getPaymentRecords,
+  downloadPaymentRecord,
+  downloadPaymentRecordsArchive,
+  getPaymentConfigAdmin,
+  updatePaymentConfigAdmin,
 } from '@gfl/api-client';
 import {
-  BTN, LABEL, TEXTAREA, INPUT_SM,
+  BTN, LABEL, FIELD_LABEL, TEXTAREA, INPUT_SM,
   C, FONT, SciFiButton,
 } from '@gfl/ui';
 import { BRANDS } from '@gfl/brands';
@@ -380,6 +391,9 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
           { key: 'questions', label: t('admin.dashboard.tabs.questions') },
           { key: 'prompts', label: t('admin.dashboard.tabs.prompts') },
           { key: 'formulieren', label: t('admin.dashboard.tabs.formulieren') },
+          { key: 'activationCodes', label: t('admin.dashboard.tabs.activationCodes') },
+          { key: 'reportUnlocks', label: t('admin.dashboard.tabs.reportUnlocks') },
+          { key: 'paymentRecords', label: t('admin.dashboard.tabs.paymentRecords') },
           { key: 'passkeys', label: t('admin.dashboard.tabs.passkeys') },
           { key: 'audit', label: t('admin.dashboard.tabs.audit') },
           { key: 'feedback', label: t('admin.dashboard.tabs.feedback') },
@@ -444,6 +458,9 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
             { key: 'questions', label: t('admin.dashboard.tabs.questions') },
             { key: 'prompts', label: t('admin.dashboard.tabs.prompts') },
             { key: 'formulieren', label: t('admin.dashboard.tabs.formulieren') },
+            { key: 'activationCodes', label: t('admin.dashboard.tabs.activationCodes') },
+            { key: 'reportUnlocks', label: t('admin.dashboard.tabs.reportUnlocks') },
+            { key: 'paymentRecords', label: t('admin.dashboard.tabs.paymentRecords') },
             { key: 'passkeys', label: t('admin.dashboard.tabs.passkeys') },
             { key: 'audit', label: t('admin.dashboard.tabs.audit') },
             { key: 'contact', label: t('admin.dashboard.tabs.contact') },
@@ -462,6 +479,9 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
       {tab === 'questions' && <QuestionsTab />}
       {tab === 'prompts' && <PromptsTab />}
       {tab === 'formulieren' && <FormulierenTab />}
+      {tab === 'activationCodes' && <ActivationCodesTab />}
+      {tab === 'reportUnlocks' && <ReportUnlocksTab />}
+      {tab === 'paymentRecords' && <PaymentRecordsTab />}
       {tab === 'passkeys' && <PasskeysTab />}
       {tab === 'audit' && <AuditLogTab />}
       {tab === 'contact' && <ContactTab />}
@@ -2490,63 +2510,28 @@ const CONTACT_REQUESTS_KEY = 'gfl_contact_requests';
 const BRAND_EDITS_KEY = 'gfl_brand_edits';
 
 // ═══════════════════════════════════════════════════════════
-// FeedbackEmailSettingsCard — edit confirmation email text + image
+// FeedbackEmailSettingsCard — edit confirmation email text
 // ═══════════════════════════════════════════════════════════
 const FeedbackEmailSettingsCard = memo(() => {
   const { t } = useLanguage();
   const [text, setText] = useState('');
-  const [imageBase64, setImageBase64] = useState('');
-  const [imageMimeType, setImageMimeType] = useState('');
-  const [imagePreview, setImagePreview] = useState(''); // data URI for browser preview
   const [status, setStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const [errorMsg, setErrorMsg] = useState('');
-  const fileInputRef = useRef(null);
 
   const pc = CARD_COLORS.purple;
 
   // Load on mount
   useEffect(() => {
     getFeedbackEmailSettings()
-      .then((s) => {
-        setText(s.text || '');
-        if (s.imageBase64 && s.imageMimeType) {
-          setImageBase64(s.imageBase64);
-          setImageMimeType(s.imageMimeType);
-          setImagePreview(`data:${s.imageMimeType};base64,${s.imageBase64}`);
-        }
-      })
+      .then((s) => { setText(s.text || ''); })
       .catch(() => {});
   }, []);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { setErrorMsg(t('admin.dashboard.feedbackEmail.onlyImages')); return; }
-    if (file.size > 5 * 1024 * 1024) { setErrorMsg(t('admin.dashboard.feedbackEmail.imageTooLarge')); return; }
-    setErrorMsg('');
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      const base64 = dataUrl.split(',')[1];
-      setImageBase64(base64);
-      setImageMimeType(file.type);
-      setImagePreview(dataUrl);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const removeImage = () => {
-    setImageBase64('');
-    setImageMimeType('');
-    setImagePreview('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
 
   const save = async () => {
     setStatus('saving');
     setErrorMsg('');
     try {
-      await updateFeedbackEmailSettings({ text, imageBase64, imageMimeType });
+      await updateFeedbackEmailSettings({ text });
       setStatus('saved');
       setTimeout(() => setStatus(null), 2500);
     } catch (err) {
@@ -2585,44 +2570,6 @@ const FeedbackEmailSettingsCard = memo(() => {
             style={{ ...inputBase, resize: 'vertical' }}
             onFocus={(e) => { e.target.style.borderColor = C.purple; }}
             onBlur={(e) => { e.target.style.borderColor = pc.rowBorder; }}
-          />
-        </div>
-
-        {/* File upload */}
-        <div>
-          <div style={fieldLabelStyle}>{t('admin.dashboard.feedbackEmail.imageLabel')}</div>
-          {imagePreview ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  style={{ maxWidth: '100%', maxHeight: '140px', borderRadius: '4px', objectFit: 'contain', display: 'block', border: `1px solid ${pc.rowBorder}` }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
-                <SciFiButton onClick={() => fileInputRef.current?.click()} size="xs" fontSize="max(8px, 0.4vw)">&#128247; {t('admin.dashboard.feedbackEmail.replace')}</SciFiButton>
-                <SciFiButton onClick={removeImage} variant="danger" size="xs" fontSize="max(8px, 0.4vw)">&#128465; {t('admin.dashboard.feedbackEmail.remove')}</SciFiButton>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                ...inputBase,
-                cursor: 'pointer', textAlign: 'left',
-                color: pc.dimText, paddingLeft: '0.6rem',
-              }}
-            >
-              &#128247; {t('admin.dashboard.feedbackEmail.chooseImage')}
-            </button>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
           />
         </div>
 
@@ -2929,6 +2876,756 @@ function formatDuration(ms, hUnit = 'u') {
 
 const EVENT_ICONS  = { edit: '✏️', commit: '📦', push: '🚀', admin_login: '🔐', report_view: '📋' };
 const EVENT_COLORS = { edit: '#60a5fa', commit: '#4ade80', push: '#c084fc', admin_login: '#f59e0b', report_view: '#34d399' };
+
+// ═══════════════════════════════════════════════════════════
+// Activation Codes Tab
+// ═══════════════════════════════════════════════════════════
+
+// One-time codes that unlock a full report instead of paying. The backend stores only a
+// hash, so a code's plaintext is visible exactly once: in the "just created" panel below,
+// until the admin dismisses it. Used and revoked codes are the logbook.
+const fmtDateTime = (d) => (d ? new Date(d).toLocaleString('nl-NL', {
+  day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit',
+}) : '—');
+
+const CODE_GRID = '1fr 1.6fr 1fr 0.8fr';
+
+const ActivationCodesTab = memo(() => {
+  const { t, tFunc } = useLanguage();
+  const [active, setActive] = useState([]);
+  const [logbook, setLogbook] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [count, setCount] = useState(1);
+  const [label, setLabel] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [justCreated, setJustCreated] = useState([]);
+  const [copied, setCopied] = useState(false);
+  const tc = CARD_COLORS.gold;
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getActivationCodes();
+      setActive(res.active || []);
+      setLogbook(res.logbook || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Plaintext codes must not outlive their panel: leaving the tab drops them from memory.
+  useEffect(() => () => setJustCreated([]), []);
+
+  const handleGenerate = async () => {
+    const n = Math.min(50, Math.max(1, Number.parseInt(count, 10) || 1));
+    setGenerating(true);
+    setError(null);
+    try {
+      const res = await createActivationCodes({ count: n, label });
+      setJustCreated(res.codes || []);
+      setCopied(false);
+      setLabel('');
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleCopyAll = async () => {
+    try {
+      await navigator.clipboard.writeText(justCreated.map(c => c.code).join('\n'));
+      setCopied(true);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleRevoke = async (id, hint) => {
+    if (!window.confirm(tFunc('admin.dashboard.activationCodes.confirmRevoke')(hint))) return;
+    try {
+      await revokeActivationCode(id);
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const usedCount = logbook.filter(c => c.status === 'used').length;
+  const headerRow = (cols) => (
+    <div style={{ display: 'grid', gridTemplateColumns: CODE_GRID, gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
+      {cols.map(h => (
+        <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
+      ))}
+    </div>
+  );
+  const rowStyle = (i, accent) => ({
+    display: 'grid', gridTemplateColumns: CODE_GRID, gap: '0.3rem', padding: '0.4rem 0.5rem', alignItems: 'center',
+    backgroundColor: i % 2 === 0 ? 'rgba(255,174,0,0.02)' : 'transparent',
+    borderLeft: `2px solid ${accent}`, borderRadius: '0 0.15rem 0.15rem 0',
+  });
+  const hintCell = (hint) => (
+    <div style={{ fontSize: 'max(11px, 0.55vw)', fontFamily: 'monospace', color: '#FFFEF0', fontWeight: 'bold', letterSpacing: '0.12em' }}>
+      ····-····-{hint}
+    </div>
+  );
+  const labelCell = (text) => (
+    <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      {text || <span style={{ color: '#64748b', fontStyle: 'italic' }}>—</span>}
+    </div>
+  );
+  const smallCell = (text, color = '#cbd5e1') => (
+    <div style={{ fontSize: 'max(8px, 0.42vw)', color }}>{text}</div>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
+        {[
+          { label: t('admin.dashboard.activationCodes.statActive'), value: active.length, color: '#4ade80' },
+          { label: t('admin.dashboard.activationCodes.statUsed'), value: usedCount, color: '#60a5fa' },
+          { label: t('admin.dashboard.activationCodes.statRevoked'), value: logbook.length - usedCount, color: '#f87171' },
+        ].map((stat, i) => (
+          <div key={i} style={{
+            padding: '0.6rem 0.8rem',
+            backgroundColor: 'rgba(255, 174, 0, 0.04)',
+            borderRadius: '0.3rem',
+            borderLeft: `2px solid ${stat.color}`,
+          }}>
+            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{stat.label}</div>
+            <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {error && <ErrorBox msg={error} />}
+
+      {/* Generate */}
+      <DashboardCard title={t('admin.dashboard.activationCodes.generateTitle')} color="gold">
+        <div style={{ fontSize: 'max(10px, 0.5vw)', color: '#cbd5e1', lineHeight: 1.6, marginBottom: '0.8rem' }}>
+          {t('admin.dashboard.activationCodes.generateHelp')}
+        </div>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', width: '5rem' }}>
+            <span style={FIELD_LABEL}>{t('admin.dashboard.activationCodes.countLabel')}</span>
+            <input type="number" min={1} max={50} value={count} onChange={e => setCount(e.target.value)} style={INPUT_SM} />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', flex: '1 1 12rem' }}>
+            <span style={FIELD_LABEL}>{t('admin.dashboard.activationCodes.labelLabel')}</span>
+            <input type="text" maxLength={80} value={label} onChange={e => setLabel(e.target.value)}
+              placeholder={t('admin.dashboard.activationCodes.labelPlaceholder')} style={INPUT_SM} />
+          </label>
+          <SciFiButton onClick={handleGenerate} disabled={generating}>
+            {generating ? t('admin.dashboard.activationCodes.generating') : t('admin.dashboard.activationCodes.generate')}
+          </SciFiButton>
+        </div>
+
+        {justCreated.length > 0 && (
+          <div style={{
+            marginTop: '1rem', padding: '0.8rem', borderRadius: '0.15rem',
+            border: '1px solid rgba(74, 222, 128, 0.35)', background: 'rgba(74, 222, 128, 0.05)',
+          }}>
+            <div style={{ ...LABEL, color: '#4ade80', opacity: 1 }}>
+              {tFunc('admin.dashboard.activationCodes.newCodesTitle')(justCreated.length)}
+            </div>
+            <div style={{ fontSize: 'max(10px, 0.5vw)', color: '#fca5a5', margin: '0.3rem 0 0.7rem' }}>
+              {t('admin.dashboard.activationCodes.newCodesWarning')}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(11rem, 1fr))', gap: '0.4rem', marginBottom: '0.8rem' }}>
+              {justCreated.map(c => (
+                <div key={c._id} style={{
+                  fontFamily: 'monospace', fontWeight: 'bold', letterSpacing: '0.12em', color: '#FFFEF0',
+                  fontSize: 'max(12px, 0.62vw)', padding: '0.35rem 0.5rem', background: 'rgba(0,0,0,0.4)', borderRadius: '0.15rem',
+                  userSelect: 'all',
+                }}>{c.code}</div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <SciFiButton size="sm" onClick={handleCopyAll}>
+                {copied ? t('admin.dashboard.activationCodes.copied') : t('admin.dashboard.activationCodes.copyAll')}
+              </SciFiButton>
+              <SciFiButton size="sm" variant="white" onClick={() => setJustCreated([])}>
+                {t('admin.dashboard.activationCodes.dismiss')}
+              </SciFiButton>
+            </div>
+          </div>
+        )}
+      </DashboardCard>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <SciFiButton onClick={fetchData} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)">{t('admin.dashboard.activationCodes.refresh')}</SciFiButton>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.activationCodes.loading')}</div>
+      ) : (
+        <>
+          {/* Active */}
+          <DashboardCard title={tFunc('admin.dashboard.activationCodes.activeTitle')(active.length)} color="gold">
+            {active.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: '#ffffff40', fontSize: 'max(10px, 0.5vw)' }}>
+                {t('admin.dashboard.activationCodes.activeEmpty')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '40vh', overflowY: 'auto' }}>
+                {headerRow([
+                  t('admin.dashboard.activationCodes.colCode'), t('admin.dashboard.activationCodes.colLabel'),
+                  t('admin.dashboard.activationCodes.colCreated'), t('admin.dashboard.activationCodes.colActions'),
+                ])}
+                {active.map((c, i) => (
+                  <div key={c._id} style={rowStyle(i, '#4ade80')}>
+                    {hintCell(c.hint)}
+                    {labelCell(c.label)}
+                    {smallCell(fmtDateTime(c.createdAt))}
+                    <div>
+                      <SciFiButton size="xs" variant="danger" onClick={() => handleRevoke(c._id, c.hint)}>
+                        {t('admin.dashboard.activationCodes.revoke')}
+                      </SciFiButton>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </DashboardCard>
+
+          {/* Logbook */}
+          <DashboardCard title={tFunc('admin.dashboard.activationCodes.logbookTitle')(logbook.length)} color="gold">
+            {logbook.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: '#ffffff40', fontSize: 'max(10px, 0.5vw)' }}>
+                {t('admin.dashboard.activationCodes.logbookEmpty')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '55vh', overflowY: 'auto' }}>
+                {headerRow([
+                  t('admin.dashboard.activationCodes.colCode'), t('admin.dashboard.activationCodes.colLabel'),
+                  t('admin.dashboard.activationCodes.colWhen'), t('admin.dashboard.activationCodes.colStatus'),
+                ])}
+                {logbook.map((c, i) => {
+                  const used = c.status === 'used';
+                  return (
+                    <div key={c._id} style={{ ...rowStyle(i, used ? '#60a5fa' : '#f87171'), opacity: 0.85 }}>
+                      {hintCell(c.hint)}
+                      {labelCell(c.label)}
+                      {smallCell(fmtDateTime(used ? c.usedAt : c.revokedAt))}
+                      {smallCell(
+                        used ? t('admin.dashboard.activationCodes.statusUsed') : t('admin.dashboard.activationCodes.statusRevoked'),
+                        used ? '#60a5fa' : '#f87171',
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </DashboardCard>
+        </>
+      )}
+    </div>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════
+// Report Unlocks Tab — the 14-day money-back guarantee
+// ═══════════════════════════════════════════════════════════
+
+const UNLOCK_GRID = '1fr 1.3fr 0.9fr 1.3fr 0.9fr';
+const UNLOCK_BADGE = { display: 'inline-block', padding: '0.05rem 0.35rem', borderRadius: '0.15rem', border: '1px solid', fontSize: 'max(7px, 0.35vw)', fontWeight: 'bold', letterSpacing: '0.1em' };
+const fmtEuro = (cents, currency = 'EUR') => new Intl.NumberFormat('nl-NL', { style: 'currency', currency }).format((cents || 0) / 100);
+const fmtDay = (d) => (d ? new Date(d).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
+
+const ReportUnlocksTab = memo(() => {
+  const { t, tFunc } = useLanguage();
+  const [unlocks, setUnlocks] = useState([]);
+  const [windowDays, setWindowDays] = useState(14);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [notice, setNotice] = useState('');
+  const [query, setQuery] = useState('');
+  const [busyId, setBusyId] = useState(null);
+  // Moderator review for a grey-listed email: { unlock, answers: {reason, readFully, expected}, notes }
+  const [review, setReview] = useState(null);
+  const tc = CARD_COLORS.gold;
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getReportUnlocks();
+      setUnlocks(res.unlocks || []);
+      if (res.refundWindowDays) setWindowDays(res.refundWindowDays);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const refLabel = (u) => (u.method === 'payment' ? (u.reference || '—') : `····-····-${u.referenceHint || '····'}`);
+  const searchText = (u) => `${refLabel(u)} ${u.email || ''}`;
+
+  const REVIEW_KEYS = [['reason', 'qReason'], ['readFully', 'qReadFully'], ['expected', 'qExpected']];
+
+  const handleRefund = async (u, reviewPayload) => {
+    if (u.greylisted && !reviewPayload) {
+      setReview({ unlock: u, answers: { reason: '', readFully: '', expected: '' }, notes: '' });
+      return;
+    }
+    if (!window.confirm(tFunc('admin.dashboard.reportUnlocks.confirmRefund')(refLabel(u)))) return;
+    setBusyId(u._id);
+    setError(null);
+    setNotice('');
+    try {
+      const res = await refundReportUnlock(u._id, reviewPayload);
+      const effect = res.accountEffect;
+      if (effect && effect.accountDeleted) {
+        setNotice(t('admin.dashboard.reportUnlocks.refundedAccountDeleted'));
+      } else {
+        const until = effect && !effect.accountMissing && effect.accessUntilAfter ? fmtDay(effect.accessUntilAfter) : '';
+        setNotice(tFunc('admin.dashboard.reportUnlocks.refundedResult')(until));
+      }
+      setReview(null);
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const reviewComplete = () => {
+    const complete = REVIEW_KEYS.every(([k]) => review.answers[k].trim());
+    if (!complete) setError(t('admin.dashboard.reportUnlocks.reviewIncomplete'));
+    return complete;
+  };
+
+  const submitReview = () => {
+    if (!reviewComplete()) return;
+    handleRefund(review.unlock, { answers: review.answers, notes: review.notes });
+  };
+
+  const submitDecline = async () => {
+    if (!reviewComplete()) return;
+    setBusyId(review.unlock._id);
+    setError(null);
+    setNotice('');
+    try {
+      await declineReportRefund(review.unlock._id, { answers: review.answers, notes: review.notes });
+      setNotice(t('admin.dashboard.reportUnlocks.declinedResult'));
+      setReview(null);
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const q = query.trim().toLowerCase();
+  const shown = q ? unlocks.filter(u => searchText(u).toLowerCase().includes(q)) : unlocks;
+  const now = Date.now();
+  const paid = unlocks.filter(u => u.method === 'payment');
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
+        {[
+          { label: t('admin.dashboard.reportUnlocks.statTotal'), value: unlocks.length, color: C.gold },
+          { label: t('admin.dashboard.reportUnlocks.statPaid'), value: paid.length, color: '#4ade80' },
+          { label: t('admin.dashboard.reportUnlocks.statCode'), value: unlocks.length - paid.length, color: '#60a5fa' },
+          { label: t('admin.dashboard.reportUnlocks.statRefunded'), value: unlocks.filter(u => u.status === 'refunded').length, color: '#f87171' },
+        ].map((stat, i) => (
+          <div key={i} style={{
+            padding: '0.6rem 0.8rem',
+            backgroundColor: 'rgba(255, 174, 0, 0.04)',
+            borderRadius: '0.3rem',
+            borderLeft: `2px solid ${stat.color}`,
+          }}>
+            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{stat.label}</div>
+            <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {error && <ErrorBox msg={error} />}
+      {notice && (
+        <div role="status" style={{ padding: '0.5rem 0.7rem', borderLeft: '2px solid rgba(74, 222, 128, 0.6)', background: 'rgba(74, 222, 128, 0.08)', color: '#86efac', fontSize: 'max(10px, 0.5vw)' }}>
+          {notice}
+        </div>
+      )}
+
+      {review && (
+        <DashboardCard title={t('admin.dashboard.reportUnlocks.reviewTitle')} color="gold">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+            <div style={{ fontSize: 'max(10px, 0.5vw)', color: '#cbd5e1', lineHeight: 1.6 }}>
+              <strong style={{ color: '#FFFEF0' }}>{review.unlock.email || refLabel(review.unlock)}</strong>
+              {' · '}{tFunc('admin.dashboard.reportUnlocks.greylistedTitle')((review.unlock.previousRefunds || []).map(fmtDay).join(', '))}
+            </div>
+            <div style={{ fontSize: 'max(10px, 0.5vw)', color: '#cbd5e1', lineHeight: 1.6 }}>{t('admin.dashboard.reportUnlocks.reviewLead')}</div>
+            {REVIEW_KEYS.map(([k, labelKey]) => (
+              <label key={k} style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={FIELD_LABEL}>{t(`admin.dashboard.reportUnlocks.${labelKey}`)}</span>
+                <textarea rows={2} maxLength={1000} value={review.answers[k]}
+                  onChange={e => setReview(r => ({ ...r, answers: { ...r.answers, [k]: e.target.value } }))}
+                  style={{ ...TEXTAREA, minHeight: '3.2rem', fontFamily: 'inherit' }} />
+              </label>
+            ))}
+            <label style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={FIELD_LABEL}>{t('admin.dashboard.reportUnlocks.reviewNotes')}</span>
+              <textarea rows={2} maxLength={2000} value={review.notes}
+                onChange={e => setReview(r => ({ ...r, notes: e.target.value }))}
+                style={{ ...TEXTAREA, minHeight: '3.2rem', fontFamily: 'inherit' }} />
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <SciFiButton size="sm" variant="white" onClick={() => setReview(null)}>{t('admin.dashboard.reportUnlocks.cancel')}</SciFiButton>
+              <SciFiButton size="sm" variant="purple" disabled={busyId === review.unlock._id} onClick={submitDecline}>
+                {t('admin.dashboard.reportUnlocks.declineAfterReview')}
+              </SciFiButton>
+              <SciFiButton size="sm" variant="danger" disabled={busyId === review.unlock._id} onClick={submitReview}>
+                {t('admin.dashboard.reportUnlocks.refundAfterReview')}
+              </SciFiButton>
+            </div>
+          </div>
+        </DashboardCard>
+      )}
+
+      <DashboardCard title={tFunc('admin.dashboard.reportUnlocks.title')(unlocks.length)} color="gold">
+        <div style={{ fontSize: 'max(10px, 0.5vw)', color: '#cbd5e1', lineHeight: 1.6, marginBottom: '0.4rem' }}>
+          {tFunc('admin.dashboard.reportUnlocks.help')(windowDays)}
+        </div>
+        <div style={{ fontSize: 'max(9px, 0.45vw)', color: tc.dimText, lineHeight: 1.6, marginBottom: '0.8rem' }}>
+          {t('admin.dashboard.reportUnlocks.manualNote')}
+        </div>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.8rem' }}>
+          <input type="search" value={query} onChange={e => setQuery(e.target.value)}
+            placeholder={t('admin.dashboard.reportUnlocks.searchPlaceholder')} style={{ ...INPUT_SM, flex: '1 1 14rem' }} />
+          <SciFiButton onClick={fetchData} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)">{t('admin.dashboard.reportUnlocks.refresh')}</SciFiButton>
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.reportUnlocks.loading')}</div>
+        ) : shown.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '1.5rem', color: '#ffffff40', fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.reportUnlocks.empty')}</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: '36rem', maxHeight: '60vh', overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: UNLOCK_GRID, gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
+                {['colWhen', 'colMethod', 'colAccount', 'colStatus', 'colActions'].map(k => (
+                  <div key={k} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{t(`admin.dashboard.reportUnlocks.${k}`)}</div>
+                ))}
+              </div>
+              {shown.map((u, i) => {
+                const refunded = u.status === 'refunded';
+                const isPayment = u.method === 'payment';
+                const inWindow = isPayment && u.refundableUntil && new Date(u.refundableUntil).getTime() > now;
+                return (
+                  <div key={u._id} style={{
+                    display: 'grid', gridTemplateColumns: UNLOCK_GRID, gap: '0.3rem', padding: '0.4rem 0.5rem', alignItems: 'center',
+                    backgroundColor: i % 2 === 0 ? 'rgba(255,174,0,0.02)' : 'transparent',
+                    borderLeft: `2px solid ${refunded ? '#f87171' : isPayment ? '#4ade80' : '#60a5fa'}`,
+                    borderRadius: '0 0.15rem 0.15rem 0', opacity: refunded ? 0.75 : 1,
+                  }}>
+                    <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>{fmtDateTime(u.unlockedAt)}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#FFFEF0', fontWeight: 'bold' }}>
+                        {isPayment ? `${t('admin.dashboard.reportUnlocks.methodPayment')} · ${fmtEuro(u.amountCents, u.currency)}` : t('admin.dashboard.reportUnlocks.methodCode')}
+                      </div>
+                      <div style={{ fontSize: 'max(8px, 0.4vw)', fontFamily: 'monospace', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{refLabel(u)}</div>
+                      {isPayment && (
+                        <div style={{ fontSize: 'max(8px, 0.4vw)', color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {u.email || <span style={{ color: '#64748b', fontStyle: 'italic' }}>{t('admin.dashboard.reportUnlocks.noEmail')}</span>}
+                        </div>
+                      )}
+                      {u.greylisted && (
+                        <div title={tFunc('admin.dashboard.reportUnlocks.greylistedTitle')((u.previousRefunds || []).map(fmtDay).join(', '))}
+                          style={{ display: 'inline-block', marginTop: '0.2rem', padding: '0.05rem 0.35rem', borderRadius: '0.15rem', border: '1px solid rgba(148, 163, 184, 0.5)', background: 'rgba(148, 163, 184, 0.12)', color: '#cbd5e1', fontSize: 'max(7px, 0.35vw)', fontWeight: 'bold', letterSpacing: '0.1em' }}>
+                          {tFunc('admin.dashboard.reportUnlocks.greylisted')((u.previousRefunds || []).length)}
+                        </div>
+                      )}
+                      {(u.moderatorReviews || []).some(v => v.decision === 'declined') && (
+                        <div style={{ fontSize: 'max(7px, 0.35vw)', color: '#c4b5fd', marginTop: '0.15rem' }}>
+                          {tFunc('admin.dashboard.reportUnlocks.declined')((u.moderatorReviews || []).filter(v => v.decision === 'declined').length)}
+                        </div>
+                      )}
+                      {/* Download log + provider flags (Stripe payments) */}
+                      <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
+                        {isPayment && !refunded && !u.deliveredAt && (
+                          <span title={t('admin.dashboard.reportUnlocks.notDeliveredTitle')} style={{ ...UNLOCK_BADGE, borderColor: 'rgba(249, 115, 22, 0.6)', background: 'rgba(249, 115, 22, 0.12)', color: '#fdba74' }}>
+                            {t('admin.dashboard.reportUnlocks.notDelivered')}
+                          </span>
+                        )}
+                        {u.disputedAt && (
+                          <span style={{ ...UNLOCK_BADGE, borderColor: 'rgba(239, 68, 68, 0.6)', background: 'rgba(239, 68, 68, 0.12)', color: '#fca5a5' }}>
+                            {tFunc('admin.dashboard.reportUnlocks.disputed')(u.disputeReason || '')}
+                          </span>
+                        )}
+                        {u.testmode && (
+                          <span style={{ ...UNLOCK_BADGE, borderColor: 'rgba(34, 211, 238, 0.5)', background: 'rgba(34, 211, 238, 0.1)', color: '#67e8f9' }}>
+                            {t('admin.dashboard.reportUnlocks.testmode')}
+                          </span>
+                        )}
+                      </div>
+                      {isPayment && u.deliveredAt && (
+                        <div style={{ fontSize: 'max(7px, 0.35vw)', color: '#94a3b8', marginTop: '0.15rem' }}>
+                          {tFunc('admin.dashboard.reportUnlocks.delivered')(fmtDateTime(u.deliveredAt))}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 'max(8px, 0.42vw)', color: u.accountLinked ? '#4ade80' : '#94a3b8' }}>
+                      {!u.hasCode ? t('admin.dashboard.reportUnlocks.noCode') : u.accountLinked ? t('admin.dashboard.reportUnlocks.accountLinked') : t('admin.dashboard.reportUnlocks.accountNone')}
+                    </div>
+                    <div style={{ fontSize: 'max(8px, 0.42vw)' }}>
+                      <div style={{ fontWeight: 'bold', color: refunded ? '#f87171' : '#4ade80' }}>
+                        {refunded ? t('admin.dashboard.reportUnlocks.statusRefunded') : t('admin.dashboard.reportUnlocks.statusActive')}
+                      </div>
+                      <div style={{ color: '#94a3b8' }}>
+                        {refunded ? fmtDateTime(u.refundedAt)
+                          : !isPayment ? t('admin.dashboard.reportUnlocks.notRefundable')
+                          : inWindow ? tFunc('admin.dashboard.reportUnlocks.refundableUntil')(fmtDay(u.refundableUntil))
+                          : t('admin.dashboard.reportUnlocks.windowClosed')}
+                      </div>
+                    </div>
+                    <div>
+                      {!refunded && inWindow && (
+                        <SciFiButton size="xs" variant="danger" disabled={busyId === u._id} onClick={() => handleRefund(u)}>
+                          {t('admin.dashboard.reportUnlocks.refund')}
+                        </SciFiButton>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </DashboardCard>
+    </div>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════
+// Payment Records Tab — stored PDF per payment / refund, single + folder download
+// ═══════════════════════════════════════════════════════════
+
+const RECORD_GRID = '1fr 1fr 0.9fr 1.3fr 0.8fr 0.8fr';
+
+/** ISO instant → value for <input type="datetime-local"> in the admin's local time, and back. */
+const toLocalInput = (iso) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+const parseCountries = (s) => String(s || '').split(/[\s,;]+/).map(c => c.trim().toUpperCase()).filter(Boolean);
+
+/**
+ * Payment settings — the flip moment and the country gate (apps/backend/services/paymentConfig.js).
+ * Read at request time by the backend, so a save takes effect within seconds, without a deploy.
+ */
+const PaymentConfigCard = memo(() => {
+  const { t, tFunc } = useLanguage();
+  const [data, setData] = useState(null);
+  const [form, setForm] = useState(null);
+  const [error, setError] = useState(null);
+  const [notice, setNotice] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const apply = useCallback((res) => {
+    setData(res);
+    setForm({
+      flipAt: toLocalInput(res.stored.flipAt),
+      openAtFlip: !!res.stored.gate.openAtFlip,
+      launchCountries: res.stored.gate.launchCountries.join(', '),
+      openCountries: res.stored.gate.openCountries.join(', '),
+    });
+  }, []);
+
+  useEffect(() => { getPaymentConfigAdmin().then(apply).catch(err => setError(err.message)); }, [apply]);
+
+  const save = async () => {
+    setSaving(true); setError(null); setNotice('');
+    try {
+      const res = await updatePaymentConfigAdmin({
+        flipAt: new Date(form.flipAt).toISOString(),
+        gate: { openAtFlip: form.openAtFlip, launchCountries: parseCountries(form.launchCountries), openCountries: parseCountries(form.openCountries) },
+      });
+      apply(res);
+      setNotice(t('admin.dashboard.paymentRecords.configSaved'));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const eff = data?.effective;
+  return (
+    <DashboardCard title={t('admin.dashboard.paymentRecords.configTitle')} color="gold">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+        <div style={{ fontSize: 'max(10px, 0.5vw)', color: '#cbd5e1', lineHeight: 1.6 }}>{t('admin.dashboard.paymentRecords.configHelp')}</div>
+        {error && <ErrorBox msg={error} />}
+        {eff && (
+          <div style={{ fontSize: 'max(9px, 0.45vw)', color: eff.enabled ? '#86efac' : '#fdba74', fontFamily: 'monospace' }}>
+            {tFunc('admin.dashboard.paymentRecords.configNow')(eff.enabled, fmtEuro(eff.grossCents, eff.currency), (eff.allowedCountries || []).join(', '))}
+          </div>
+        )}
+        {form && (
+          <>
+            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <label style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={FIELD_LABEL}>{t('admin.dashboard.paymentRecords.configFlipAt')}</span>
+                <input type="datetime-local" value={form.flipAt} onChange={e => setForm(f => ({ ...f, flipAt: e.target.value }))} style={{ ...INPUT_SM, minWidth: '13rem' }} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', flex: '1 1 8rem' }}>
+                <span style={FIELD_LABEL}>{t('admin.dashboard.paymentRecords.configLaunchCountries')}</span>
+                <input value={form.launchCountries} onChange={e => setForm(f => ({ ...f, launchCountries: e.target.value }))} style={INPUT_SM} />
+              </label>
+            </div>
+            <label style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={FIELD_LABEL}>{t('admin.dashboard.paymentRecords.configOpenCountries')}</span>
+              <input value={form.openCountries} onChange={e => setForm(f => ({ ...f, openCountries: e.target.value }))} style={INPUT_SM} />
+            </label>
+            <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: 'max(10px, 0.5vw)', color: '#FFFEF0', cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.openAtFlip} onChange={e => setForm(f => ({ ...f, openAtFlip: e.target.checked }))} style={{ accentColor: C.gold }} />
+              {t('admin.dashboard.paymentRecords.configOpenAtFlip')}
+            </label>
+            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', justifyContent: 'flex-end' }}>
+              {notice && <span style={{ fontSize: 'max(9px, 0.45vw)', color: '#86efac' }}>{notice}</span>}
+              <SciFiButton size="sm" disabled={saving || !form.flipAt} onClick={save}>{t('admin.dashboard.paymentRecords.configSave')}</SciFiButton>
+            </div>
+          </>
+        )}
+      </div>
+    </DashboardCard>
+  );
+});
+
+const PaymentRecordsTab = memo(() => {
+  const { t, tFunc } = useLanguage();
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [year, setYear] = useState('all');
+  const [busy, setBusy] = useState(null); // record id | 'zip'
+  const tc = CARD_COLORS.gold;
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getPaymentRecords();
+      setRecords(res.records || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const years = [...new Set(records.map(r => r.year))].sort((a, b) => b - a);
+  const shown = year === 'all' ? records : records.filter(r => r.year === Number(year));
+  // Stripe test-mode records (TEST- numbers) never count as money.
+  const received = shown.filter(r => r.kind === 'payment' && !r.testmode).reduce((n, r) => n + r.amountCents, 0);
+  const refunded = shown.filter(r => r.kind === 'refund' && !r.testmode).reduce((n, r) => n + r.amountCents, 0);
+
+  const run = async (key, fn) => {
+    setBusy(key);
+    setError(null);
+    try { await fn(); } catch (err) { setError(err.message); } finally { setBusy(null); }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
+        {[
+          { label: t('admin.dashboard.paymentRecords.received'), value: fmtEuro(received), color: '#4ade80' },
+          { label: t('admin.dashboard.paymentRecords.refunded'), value: fmtEuro(refunded), color: '#f87171' },
+          { label: t('admin.dashboard.paymentRecords.net'), value: fmtEuro(received + refunded), color: C.gold },
+          { label: t('admin.dashboard.paymentRecords.count'), value: shown.length, color: '#60a5fa' },
+        ].map((stat, i) => (
+          <div key={i} style={{ padding: '0.6rem 0.8rem', backgroundColor: 'rgba(255, 174, 0, 0.04)', borderRadius: '0.3rem', borderLeft: `2px solid ${stat.color}` }}>
+            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{stat.label}</div>
+            <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {error && <ErrorBox msg={error} />}
+
+      <PaymentConfigCard />
+
+      <DashboardCard title={tFunc('admin.dashboard.paymentRecords.title')(shown.length)} color="gold">
+        <div style={{ fontSize: 'max(10px, 0.5vw)', color: '#cbd5e1', lineHeight: 1.6, marginBottom: '0.8rem' }}>
+          {t('admin.dashboard.paymentRecords.help')}
+        </div>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '0.8rem' }}>
+          <label style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={FIELD_LABEL}>{t('admin.dashboard.paymentRecords.year')}</span>
+            <select value={year} onChange={e => setYear(e.target.value)} style={{ ...INPUT_SM, minWidth: '8rem' }}>
+              <option value="all">{t('admin.dashboard.paymentRecords.allYears')}</option>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </label>
+          <SciFiButton disabled={busy === 'zip' || shown.length === 0}
+            onClick={() => run('zip', () => downloadPaymentRecordsArchive(year === 'all' ? undefined : Number(year)))}>
+            {busy === 'zip' ? t('admin.dashboard.paymentRecords.downloading') : t('admin.dashboard.paymentRecords.downloadFolder')}
+          </SciFiButton>
+          <SciFiButton onClick={fetchData} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)">{t('admin.dashboard.paymentRecords.refresh')}</SciFiButton>
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.paymentRecords.loading')}</div>
+        ) : shown.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '1.5rem', color: '#ffffff40', fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.paymentRecords.empty')}</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: '38rem', maxHeight: '60vh', overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: RECORD_GRID, gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
+                {['colNumber', 'colDate', 'colKind', 'colReference', 'colAmount', 'colFile'].map(k => (
+                  <div key={k} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{t(`admin.dashboard.paymentRecords.${k}`)}</div>
+                ))}
+              </div>
+              {shown.map((r, i) => {
+                const refund = r.kind === 'refund';
+                return (
+                  <div key={r._id} style={{
+                    display: 'grid', gridTemplateColumns: RECORD_GRID, gap: '0.3rem', padding: '0.4rem 0.5rem', alignItems: 'center',
+                    backgroundColor: i % 2 === 0 ? 'rgba(255,174,0,0.02)' : 'transparent',
+                    borderLeft: `2px solid ${refund ? '#f87171' : '#4ade80'}`, borderRadius: '0 0.15rem 0.15rem 0',
+                  }}>
+                    <div style={{ fontSize: 'max(9px, 0.45vw)', fontFamily: 'monospace', color: '#FFFEF0', fontWeight: 'bold' }}>{r.number}</div>
+                    <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>{fmtDateTime(r.issuedAt)}</div>
+                    <div style={{ fontSize: 'max(8px, 0.42vw)', color: refund ? '#f87171' : '#4ade80' }}>
+                      {refund ? t('admin.dashboard.paymentRecords.kindRefund') : t('admin.dashboard.paymentRecords.kindPayment')}
+                      {refund && r.relatesTo && <div style={{ color: '#94a3b8' }}>{tFunc('admin.dashboard.paymentRecords.relatesTo')(r.relatesTo)}</div>}
+                    </div>
+                    <div style={{ fontSize: 'max(8px, 0.4vw)', fontFamily: 'monospace', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.reference || '—'}</div>
+                    <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#FFFEF0', fontWeight: 'bold' }}>{fmtEuro(r.amountCents, r.currency)}</div>
+                    <div>
+                      <SciFiButton size="xs" disabled={busy === r._id} onClick={() => run(r._id, () => downloadPaymentRecord(r._id))}>
+                        {t('admin.dashboard.paymentRecords.download')}
+                      </SciFiButton>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </DashboardCard>
+    </div>
+  );
+});
 
 // ═══════════════════════════════════════════════════════════
 // Passkeys Tab

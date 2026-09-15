@@ -52,10 +52,10 @@ const SHADOW_PAIRS = {
 const RED_LINE = {
   JUDGE: 'OUTLAW', OUTLAW: 'JUDGE',
   RULER: 'TRICKSTER', TRICKSTER: 'RULER',
-  LOVER: 'ARTIST', ARTIST: 'LOVER',
-  CAREGIVER: 'SAGE', SAGE: 'CAREGIVER',
-  INNOCENT: 'HERO', HERO: 'INNOCENT',
-  EXPLORER: 'MAGICIAN', MAGICIAN: 'EXPLORER',
+  LOVER: 'EXPLORER', EXPLORER: 'LOVER',
+  CAREGIVER: 'INNOCENT', INNOCENT: 'CAREGIVER',
+  HERO: 'SAGE', SAGE: 'HERO',
+  MAGICIAN: 'ARTIST', ARTIST: 'MAGICIAN',
 };
 
 // ── Complementary pairs (Green Line — same biological pillar) ──
@@ -119,7 +119,7 @@ const EXTENDED_MATRIX = {
 
   // Main: CAREGIVER (Positie 3) - #34-44
   CAREGIVER_LOVER:      'Healer',
-  CAREGIVER_RULER:      'Patriarch/Matriarch',
+  CAREGIVER_RULER:      'Patriarch / Matriarch',
   CAREGIVER_JUDGE:      'Defender',
   CAREGIVER_OUTLAW:     'Cultivator',
   CAREGIVER_TRICKSTER:  'Empath',
@@ -161,7 +161,7 @@ const EXTENDED_MATRIX = {
   HERO_RULER:      'Conqueror',
   HERO_JUDGE:      'Templar',
   HERO_OUTLAW:     'Raider',
-  HERO_TRICKSTER:  'Spy',
+  HERO_TRICKSTER:  'Agent',
   HERO_SAGE:       'Strategist',
   HERO_ARTIST:     'Duelist',
   HERO_EXPLORER:   'Astronaut',
@@ -184,7 +184,7 @@ const EXTENDED_MATRIX = {
 
   // Main: OUTLAW (Positie 6) - #89-99
   OUTLAW_TRICKSTER:  'Anarchist',
-  OUTLAW_RULER:      'Maverick',
+  OUTLAW_RULER:      'Usurper',
   OUTLAW_JUDGE:      'Contrarian',
   OUTLAW_CAREGIVER:  'Liberator',
   OUTLAW_LOVER:      'Instigator',
@@ -230,7 +230,7 @@ const EXTENDED_MATRIX = {
   ARTIST_TRICKSTER:  'Oracle',
   ARTIST_OUTLAW:     'Provocateur',
   ARTIST_EXPLORER:   'Visionary',
-  ARTIST_INNOCENT:   'Prodigy',
+  ARTIST_INNOCENT:   'Source',
   ARTIST_MAGICIAN:   'Craftsman',
   ARTIST_HERO:       'Forgemaster',
 };

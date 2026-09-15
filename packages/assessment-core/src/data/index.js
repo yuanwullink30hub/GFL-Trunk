@@ -43,6 +43,8 @@ export {
   EXTENDED_ARCHETYPES_NL,
   GROUP_TO_ARCHETYPES,
   resolveExtendedKey,
+  extendedKeyForName,
+  liveExtendedName,
   getExtendedArchetype,
   getExtendedArchetypeNl,
   extendedNameFor,
@@ -64,7 +66,7 @@ export {
   computeAdvancedScores,
 } from './scoring';
 
-// Archetype Levensles Quotes — the 72 combination life-lessons. Kept standalone
+// Archetype Levensles — the 132 extended-archetype life-lessons (Main × Support). Kept standalone
 // (fetched and sent to the AI directly so it needn't search the corpus for them).
 export { getArchetypeQuote, getArchetypeQuoteByKey } from './archetypeQuotes';
 export { getArchetypeKeyByName } from './archetypeImages';

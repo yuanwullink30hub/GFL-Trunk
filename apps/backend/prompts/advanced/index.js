@@ -23,14 +23,14 @@ const GROUP_NEURAL_FOCUS = {
   AGENCY:     'Extraversie: Wilskracht',
 };
 
-/** Blue Line pairs — Feedback Brug (same biological substrate, Blue bleed per-pick) */
+/** Blue Line pairs — Feedback Brug (symbiotic bridge, positions sum to 13; Blue bleed per-pick) */
 const BLUE_LINE = {
-  JUDGE: 'RULER', RULER: 'JUDGE',             // G1: CEN
-  LOVER: 'CAREGIVER', CAREGIVER: 'LOVER',     // G2: Limbisch
-  INNOCENT: 'EXPLORER', EXPLORER: 'INNOCENT', // G3: Seeker
-  OUTLAW: 'TRICKSTER', TRICKSTER: 'OUTLAW',   // G4: Salience
-  SAGE: 'ARTIST', ARTIST: 'SAGE',             // G5: Abstract
-  MAGICIAN: 'HERO', HERO: 'MAGICIAN',         // G6: Agency
+  RULER: 'JUDGE', JUDGE: 'RULER',             // 12 ↔ 1
+  HERO: 'LOVER', LOVER: 'HERO',               // 11 ↔ 2
+  MAGICIAN: 'CAREGIVER', CAREGIVER: 'MAGICIAN', // 10 ↔ 3
+  ARTIST: 'INNOCENT', INNOCENT: 'ARTIST',     // 9 ↔ 4
+  SAGE: 'EXPLORER', EXPLORER: 'SAGE',         // 8 ↔ 5
+  TRICKSTER: 'OUTLAW', OUTLAW: 'TRICKSTER',   // 7 ↔ 6
 };
 
 /** Green Line / Groene Bogen — Hardware Ankers (group partners, same biological substrate) */
@@ -53,14 +53,14 @@ const PURPLE_LINE = {
   OUTLAW: 'RULER', RULER: 'OUTLAW',
 };
 
-/** Red Line pairs — Neurale Kortsluiting (cross-network conflict, diagnostic only — no points) */
+/** Red Line pairs — Neurale Kortsluiting (hardware seam, positions sum to 7; diagnostic only — no points) */
 const RED_LINE = {
   JUDGE: 'OUTLAW', OUTLAW: 'JUDGE',              // 1 ↔ 6
   RULER: 'TRICKSTER', TRICKSTER: 'RULER',        // 12 ↔ 7
-  LOVER: 'ARTIST', ARTIST: 'LOVER',              // 2 ↔ 9
-  CAREGIVER: 'SAGE', SAGE: 'CAREGIVER',          // 3 ↔ 8
-  INNOCENT: 'HERO', HERO: 'INNOCENT',            // 4 ↔ 11
-  EXPLORER: 'MAGICIAN', MAGICIAN: 'EXPLORER',    // 5 ↔ 10
+  LOVER: 'EXPLORER', EXPLORER: 'LOVER',          // 2 ↔ 5
+  CAREGIVER: 'INNOCENT', INNOCENT: 'CAREGIVER',  // 3 ↔ 4
+  HERO: 'SAGE', SAGE: 'HERO',                    // 11 ↔ 8
+  MAGICIAN: 'ARTIST', ARTIST: 'MAGICIAN',        // 10 ↔ 9
 };
 
 /** Yellow triangle groups — cognitive synergy triads */
@@ -129,7 +129,7 @@ const EXTENDED_MATRIX = {
 
   // Main: CAREGIVER (Positie 3) - #34-44
   CAREGIVER_LOVER:      'Healer',
-  CAREGIVER_RULER:      'Patriarch/Matriarch',
+  CAREGIVER_RULER:      'Patriarch / Matriarch',
   CAREGIVER_JUDGE:      'Defender',
   CAREGIVER_OUTLAW:     'Cultivator',
   CAREGIVER_TRICKSTER:  'Empath',
@@ -171,7 +171,7 @@ const EXTENDED_MATRIX = {
   HERO_RULER:      'Conqueror',
   HERO_JUDGE:      'Templar',
   HERO_OUTLAW:     'Raider',
-  HERO_TRICKSTER:  'Spy',
+  HERO_TRICKSTER:  'Agent',
   HERO_SAGE:       'Strategist',
   HERO_ARTIST:     'Duelist',
   HERO_EXPLORER:   'Astronaut',
@@ -194,7 +194,7 @@ const EXTENDED_MATRIX = {
 
   // Main: OUTLAW (Positie 6) - #89-99
   OUTLAW_TRICKSTER:  'Anarchist',
-  OUTLAW_RULER:      'Maverick',
+  OUTLAW_RULER:      'Usurper',
   OUTLAW_JUDGE:      'Contrarian',
   OUTLAW_CAREGIVER:  'Liberator',
   OUTLAW_LOVER:      'Instigator',
@@ -240,7 +240,7 @@ const EXTENDED_MATRIX = {
   ARTIST_TRICKSTER:  'Oracle',
   ARTIST_OUTLAW:     'Provocateur',
   ARTIST_EXPLORER:   'Visionary',
-  ARTIST_INNOCENT:   'Prodigy',
+  ARTIST_INNOCENT:   'Source',
   ARTIST_MAGICIAN:   'Craftsman',
   ARTIST_HERO:       'Forgemaster',
 };
@@ -300,7 +300,7 @@ const EXTENDED_MATRIX_NL = {
   CAREGIVER_ARTIST:     'De Hersteller',
   CAREGIVER_EXPLORER:   'De Pilgrim',
   CAREGIVER_INNOCENT:   'De Toegewijde',
-  CAREGIVER_HERO:       'De Beschermer',
+  CAREGIVER_HERO:       'De Wachter',
   CAREGIVER_MAGICIAN:   'De Bewaker',
 
   // Main: INNOCENT (Positie 4) - #45-55
@@ -357,7 +357,7 @@ const EXTENDED_MATRIX_NL = {
 
   // Main: OUTLAW (Positie 6) - #89-99
   OUTLAW_TRICKSTER:  'De Anarchist',
-  OUTLAW_RULER:      'De Eenling',
+  OUTLAW_RULER:      'De Troonrover',
   OUTLAW_JUDGE:      'De Dwarsligger',
   OUTLAW_CAREGIVER:  'De Bevrijder',
   OUTLAW_LOVER:      'De Aanstichter',
@@ -378,8 +378,8 @@ const EXTENDED_MATRIX_NL = {
   TRICKSTER_ARTIST:     'De Imitator',
   TRICKSTER_EXPLORER:   'De Freerunner',
   TRICKSTER_INNOCENT:   'De Joyrider',
-  TRICKSTER_MAGICIAN:   'De Gedaante-verwisselaar',
-  TRICKSTER_HERO:       'De Aas / De Uitblinker',
+  TRICKSTER_MAGICIAN:   'De Gedaanteverwisselaar',
+  TRICKSTER_HERO:       'De Aas',
 
   // Main: SAGE (Positie 8) - #111-121
   SAGE_ARTIST:     'De Ontwikkelaar',
@@ -403,7 +403,7 @@ const EXTENDED_MATRIX_NL = {
   ARTIST_TRICKSTER:  'Het Orakel',
   ARTIST_OUTLAW:     'De Provocateur',
   ARTIST_EXPLORER:   'De Visionair',
-  ARTIST_INNOCENT:   'Het Wonderkind',
+  ARTIST_INNOCENT:   'De Bron',
   ARTIST_MAGICIAN:   'De Ambachtsman',
   ARTIST_HERO:       'De Meestersmid',
 };
@@ -547,7 +547,8 @@ function buildSystemPrompt({
   const supportGreen = GREEN_LINE[supportArchetype];
   const supportPurple = PURPLE_LINE[supportArchetype];
 
-  // Is Main–Support connected by Blue Line (Symbiotische Brug)?
+  // Is Main–Support connected by Green Line (same group) or Blue Line (Symbiotische Brug)?
+  const isGreenBonded = mainGreen === supportArchetype;
   const isBlueBonded = mainBlue === supportArchetype;
   // Is Main–Support connected by Purple Line (180°)?
   const isPurpleBonded = mainPurple === supportArchetype;
@@ -580,7 +581,7 @@ function buildSystemPrompt({
     `Groep 6 — Agency: Magician (10) / Hero (11)\n\n` +
     `Geometrische Verbindingen\n` +
     `Groene Lijn: Gedeelde neurale hardware per biologische groep. Nature picks activeren de structurele echo — het instinct vuurt en de same-group partner resoneert mee.\n` +
-    `Blauwe Lijn: Feedback-brug door gedeelde hardware. Nature picks genereren een sterke feedback-echo (+2), Culture picks een zwakkere (+1) — de aangeleerde strategie maakt nog steeds gebruik van de gedeelde circuitry.\n` +
+    `Blauwe Lijn: Symbiotische feedback-brug tussen posities die samen 13 zijn. Nature picks genereren een sterke feedback-echo (+2), Culture picks een zwakkere (+1). Voor Ruling en Chaos valt de Blauwe partner samen met de groepspartner.\n` +
     `Paarse Lijn: 180° schaduw-integratie. Uitsluitend eerste Nature keuze. De identiteitsverklaring werpt een schaduw — een passieve biologische echo naar de absolute tegenpool.\n` +
     `Gele Driehoeken: Cognitieve synergiemodi. Uitsluitend Culture picks. De aangeleerde strategie activeert de Gele Driehoek partners — de netwerken die door conditioning aan elkaar zijn gekoppeld.\n` +
     `Rode Lijn: Spanningsas — conceptueel tegengestelde netwerken. Genereert GEEN punten en ontvangt GEEN bleed. De AI leest frictie als structurele spanning op de chart: dalen tussen onverbonden archetypen.\n\n` +
@@ -589,12 +590,12 @@ function buildSystemPrompt({
     `3.1 De Bleed Tabel\n` +
     `                 Core   Green  Blue   Purple  Yellow(×2)  Totaal\n` +
     `1e Keuze Nature:  +9     +3     +2     +1      —           15\n` +
-    `1e Keuze Culture: +8     —      +1     —       +2 elk      13\n` +
+    `1e Keuze Culture: +7     —      +1     —       +2 elk      12\n` +
     `2e Keuze Nature:  +6     +1     —      —       —            7\n` +
     `2e Keuze Culture: +4     —      —      —       +1 elk       6\n\n` +
     `Bleed Bestemmingen:\n` +
     `• Green (+3/+1): Naar de same-group partner. Alleen bij Nature picks. Het instinct vuurt en echoot door de gedeelde hardware.\n` +
-    `• Blue (+2/+1): Naar de same-group partner. Bij 1e Nature (+2) of 1e Culture (+1). Het feedback-signaal door de hardware.\n` +
+    `• Blue (+2/+1): Naar de Blauwe Lijn-partner (posities samen 13). Bij 1e Nature (+2) of 1e Culture (+1). Het feedback-signaal over de symbiotische brug.\n` +
     `• Purple (+1): Naar de 180° schaduw. Uitsluitend bij 1e Nature keuze. Passieve schaduwintegratie.\n` +
     `• Yellow (+2/+1): Naar beide Gele Driehoek partners. Uitsluitend bij Culture picks. De aangeleerde cognitieve synergie.\n` +
     `• Red: GEEN bleed, GEEN punten. Puur diagnostisch — de AI leest frictie direct van de radar chart.\n\n` +
@@ -611,7 +612,7 @@ function buildSystemPrompt({
     `Score Plafonds (Leerling Engine):\n` +
     `• Core max (alle Nature): 36×9 + 36×6 = 540 punten.\n` +
     `• Green bleed max: 36×3 + 36×1 = 144 (naar same-group partner).\n` +
-    `• Blue bleed max: 36×2 + 36×1 = 108 (naar same-group partner).\n` +
+    `• Blue bleed max: 36×2 + 36×1 = 108 (naar Blauwe Lijn-partner).\n` +
     `• Purple drip max (36 eerste Nature keuzes): 36 (naar 180° schaduw).\n` +
     `• Yellow bleed max: 36×2×2 + 36×1×2 = 216 (verdeeld over driehoek partners).\n` +
     `• Red: GEEN punten.\n\n` +
@@ -769,7 +770,7 @@ function buildSystemPrompt({
     `  - Vertaalslag: Beschrijf de alchemie van het integreren van hun 180°-tegenpool. ` +
     `Het is zeer aannemelijk dat het synchroniseren van deze uitersten (bijv. CEN en DMN tegelijk activeren) resulteert in exponentiële versterking zonder fysiologische wrijving.\n\n` +
     `Sectie 6: Archetype Extensions & Werkvloer Dynamiek\n` +
-    `  - Benoem hun specifieke gecombineerde titel (bijv. The Maverick) en leg probabilistisch uit hoe deze neurologische cocktail zich manifesteert op de werkvloer, inclusief hun specifieke Tech Multiplier.\n\n` +
+    `  - Benoem hun specifieke gecombineerde titel (bijv. The Usurper) en leg probabilistisch uit hoe deze neurologische cocktail zich manifesteert op de werkvloer, inclusief hun specifieke Tech Multiplier.\n\n` +
     `Sectie 7: Het Neurale Schakelbord (Tactische Implementatie)\n` +
     `  - Geef 3 kille, uitvoerbare hendels: 1. De Focus-hendel (TNM-manipulatie), 2. De Schaduw-injectie, 3. De Blindspot-check. ` +
     `Formuleer deze als krachtige, probabilistische strategieën ("Als je X doet, is de kans groot dat Y het systeem stabiliseert").\n\n` +
@@ -908,10 +909,10 @@ function buildSystemPrompt({
     `     Gebruik: als iemand hoog scoort op één kant van een zuil maar laag op de andere, benoem de biologische asymmetrie.\n` +
     `     Voorbeeld: Hoog Sage maar laag Artist → "Je reflecteert diep (DMN), maar blokkeert de creatieve output van hetzelfde netwerk."\n\n` +
 
-    `  🔵 BLAUWE LIJN (Feedback Brug): Verbindt dezelfde paren als de Groene Lijn (zelfde biologische zuil).\n` +
-    `     Ruler(12)↔Judge(1), Lover(2)↔Caregiver(3), Innocent(4)↔Explorer(5), Outlaw(6)↔Trickster(7), Sage(8)↔Artist(9), Magician(10)↔Hero(11).\n` +
-    `     Per-Pick Blue Bleed: 1e Nature pick → +2 naar same-group partner. 1e Culture pick → +1 naar same-group partner. Max: 108.\n` +
-    `     Blauw is het feedback-signaal dat door de gedeelde hardware reist. Bij Nature is de feedback het sterkst.\n\n` +
+    `  🔵 BLAUWE LIJN (Feedback Brug): Symbiotische brug tussen posities die samen 13 zijn.\n` +
+    `     Ruler(12)↔Judge(1), Hero(11)↔Lover(2), Magician(10)↔Caregiver(3), Artist(9)↔Innocent(4), Sage(8)↔Explorer(5), Trickster(7)↔Outlaw(6).\n` +
+    `     Per-Pick Blue Bleed: 1e Nature pick → +2 naar de Blauwe Lijn-partner. 1e Culture pick → +1 naar de Blauwe Lijn-partner. Max: 108.\n` +
+    `     Blauw is het feedback-signaal over de symbiotische brug. Voor Ruling en Chaos valt de Blauwe partner samen met de groepspartner. Bij Nature is de feedback het sterkst.\n\n` +
 
     `  🟣 PAARSE LIJN (180° Schaduw): Verbindt archetypen die exact tegenover elkaar liggen (positie + 6).\n` +
     `     Dit is de maximale neurologische spanning — twee netwerken die biologisch niet tegelijk kunnen vuren.\n` +
@@ -1015,7 +1016,7 @@ function buildSystemPrompt({
   parts.push(
     `3. Geometrische Bleed (per-pick distributie):\n` +
     `   Green Bleed: 1e Nature +3, 2e Nature +1 → naar same-group partner. Max: 144.\n` +
-    `   Blue Bleed: 1e Nature +2, 1e Culture +1 → naar same-group partner. Max: 108.\n` +
+    `   Blue Bleed: 1e Nature +2, 1e Culture +1 → naar Blauwe Lijn-partner (posities samen 13). Max: 108.\n` +
     `   Yellow Bleed: 1e Culture +2, 2e Culture +1 → naar BEIDE driehoek partners. Max: 216.\n` +
     `   Red: GEEN bleed, GEEN punten. Puur diagnostisch.\n`
   );
@@ -1023,7 +1024,7 @@ function buildSystemPrompt({
   parts.push(
     `4. Bleed Logica (accumulerend per pick):\n` +
     `   Green: Hardware echo — Nature picks only. Het instinct vuurt en echoot door de gedeelde hardware.\n` +
-    `   Blue: Feedback brug — 1e picks only. Het feedback-signaal reist door de biologische zuil.\n` +
+    `   Blue: Feedback brug — 1e picks only. Het feedback-signaal reist over de symbiotische brug.\n` +
     `   Purple: Passieve schaduwintegratie — 1e Nature only. De schaduw groeit mee.\n` +
     `   Yellow: Cognitieve synergie — Culture picks only. De aangeleerde strategie activeert de driehoek.\n`
   );
@@ -1330,9 +1331,11 @@ function buildSystemPrompt({
     `- Rol: Hoe dit archetype de Main aanvult of uitdaagt — in gedragsmatige termen.\n` +
     `- Hardware / Schaduw Check: ${isPurpleBonded
       ? `Main en Support zijn 180° tegenpolen (Paarse Lijn). Beschrijf als paradoxale integratie — de gebruiker werkt met fundamenteel tegengestelde gedragspatronen.`
-      : isBlueBonded
-        ? `Main en Support delen dezelfde biologische zuil (Green/Blue bleed). Beschrijf als sterke hardware-resonantie — feedback-circuits die elkaar versterken.`
-        : 'GEEN directe Main-Support lijn-relatie — Main en Support zitten in verschillende neurale pijlers.'}\n`
+      : isGreenBonded
+        ? `Main en Support delen dezelfde biologische zuil (Groene Lijn). Beschrijf als sterke hardware-resonantie — feedback-circuits die elkaar versterken.`
+        : isBlueBonded
+          ? `Main en Support zijn verbonden via de Blauwe Lijn (symbiotische feedback-brug). Beschrijf als feedback-circuits die elkaar over de groepsgrens heen versterken.`
+          : 'GEEN directe Main-Support lijn-relatie — Main en Support zitten in verschillende neurale pijlers.'}\n`
   );
 
   // Sectie 4B: Profiel Dynamiek (5 Elementen) — each gets its own ## section
@@ -1583,7 +1586,9 @@ function buildUserMessage({
   const isHarmonic   = HARMONIC_KEYS.has(matrixKey);
   const mainPurple   = PURPLE_LINE[archetypeKey];
   const mainBlue     = BLUE_LINE[archetypeKey];
+  const mainGreen    = GREEN_LINE[archetypeKey];
   const isPurpleBonded = mainPurple === supportArchetype;
+  const isGreenBonded  = mainGreen  === supportArchetype;
   const isBlueBonded   = mainBlue   === supportArchetype;
 
   const hasReport = uploadedFileContents && uploadedFileContents.length > 0;
@@ -1641,7 +1646,8 @@ function buildUserMessage({
 
   parts.push(`\nMain-Support Verbinding: ${
     isPurpleBonded ? 'PAARSE LIJN (180° tegenpolen — paradoxale integratie)' :
-    isBlueBonded   ? 'BLAUWE LIJN (zelfde biologische zuil — hardware resonantie)' :
+    isGreenBonded  ? 'GROENE LIJN (zelfde biologische zuil — hardware resonantie)' :
+    isBlueBonded   ? 'BLAUWE LIJN (symbiotische feedback-brug)' :
     'GEEN directe lijn-relatie'
   }`);
 

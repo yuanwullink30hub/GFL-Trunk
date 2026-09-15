@@ -47,6 +47,48 @@ async function connectDB() {
   // Once linked, PDF-upload login for that code is denied (the account is the credential).
   await db.collection('orbCodes').createIndex({ codeHash: 1 }, { unique: true });
 
+  // Activation codes — one-time vouchers for a full report (hashed, see services/activationCodes.js).
+  // Used and revoked codes stay as the logbook, so there is deliberately no TTL.
+  await db.collection('activationCodes').createIndex({ codeHash: 1 }, { unique: true });
+  await db.collection('activationCodes').createIndex({ status: 1, createdAt: -1 });
+
+  // Report unlocks — which full report (by crystal-code hash) was unlocked how, and whether
+  // it was refunded under the 14-day guarantee (see services/reportAccess.js). No TTL: a
+  // refunded code must stay blocked for as long as the code itself stays valid (lifetime).
+  await db.collection('reportUnlocks').createIndex({ unlockId: 1 }, { unique: true });
+  await db.collection('reportUnlocks').createIndex({ codeHash: 1 }, { sparse: true });
+  await db.collection('reportUnlocks').createIndex({ unlockedAt: -1 });
+  await db.collection('reportUnlocks').createIndex({ codeHash: 1, status: 1 });
+
+  // Refund grey list — emails that received a refund under the guarantee. A later refund for
+  // the same email needs a moderator review first. Kept 2 years after the latest refund.
+  await db.collection('refundGreylist').createIndex({ emailHash: 1 }, { unique: true });
+  await ensureTtlIndex('refundGreylist', { expiresAt: 1 }, 0, 'refundGreylist_ttl_expiresAt');
+
+  // Payment records — the issued PDF per payment and per refund (services/paymentRecords.js).
+  // No TTL: bookkeeping records, kept at least 7 years. One record per unlock per kind.
+  await db.collection('paymentRecords').createIndex({ unlockRef: 1, kind: 1 }, { unique: true });
+  await db.collection('paymentRecords').createIndex({ issuedAt: -1 });
+
+  // Payments (Stripe) — transient working state of one payment attempt (services/payments.js):
+  // opaque ref, PaymentIntent id, the report's code hash, encrypted email, consent evidence.
+  // Never the seal or the raw code. The ledger (reportUnlocks) is the permanent record, so each
+  // doc expires on its own `expiresAt` (unpaid: 30 days; paid: refund window + 1 day).
+  await db.collection('payments').createIndex({ ref: 1 }, { unique: true });
+  await db.collection('payments').createIndex({ paymentIntentId: 1 }, { unique: true, sparse: true });
+  await db.collection('payments').createIndex({ codeHash: 1, status: 1 });
+  await ensureTtlIndex('payments', { expiresAt: 1 }, 0, 'payments_ttl_expiresAt');
+  // Double-fire proof, layer 1: one row per Stripe event id (webhook dedupe). 30 days covers
+  // Stripe's retry horizon (3 days) with room to spare.
+  await db.collection('stripeEvents').createIndex({ eventId: 1 }, { unique: true });
+  await ensureTtlIndex('stripeEvents', { expiresAt: 1 }, 0, 'stripeEvents_ttl_expiresAt');
+  // Double-fire proof, layer 3: at most one ledger row per paid PaymentIntent, whatever races upstream.
+  // A failure here (existing duplicates) must not take the API down; layers 1–2 still hold.
+  await db.collection('reportUnlocks').createIndex(
+    { reference: 1 },
+    { unique: true, partialFilterExpression: { method: 'payment' }, name: 'reportUnlocks_payment_reference_unique' },
+  ).catch((e) => console.error('[MongoDB] ❌ Could not create the unique payment-reference index on reportUnlocks:', e.message));
+
   // Invoices — indexed by userId for fast lookup across viewports/devices
   await db.collection('invoices').createIndex({ userId: 1, savedAt: -1 });
 
@@ -235,6 +277,13 @@ const collections = {
   assessmentReviews: () => getDB().collection('assessmentReviews'),
   passkeys: () => getDB().collection('passkeys'),
   orbCodes: () => getDB().collection('orbCodes'),
+  activationCodes: () => getDB().collection('activationCodes'),
+  reportUnlocks: () => getDB().collection('reportUnlocks'),
+  refundGreylist: () => getDB().collection('refundGreylist'),
+  paymentRecords: () => getDB().collection('paymentRecords'),
+  payments: () => getDB().collection('payments'),
+  stripeEvents: () => getDB().collection('stripeEvents'),
+  paymentSettings: () => getDB().collection('paymentSettings'),
   messages: () => getDB().collection('messages'),
   kaartDrafts: () => getDB().collection('kaartDrafts'),
 };

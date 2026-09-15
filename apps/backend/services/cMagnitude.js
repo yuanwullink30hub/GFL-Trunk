@@ -1,8 +1,9 @@
 /**
  * Deltawerken — C-magnitude pre-compute path (Node port)
  * ======================================================
- * Faithful Node/CommonJS port of c_magnitude_precompute_FINAL.py (D Relational
- * Operations v1.0 §3/§4). Backend compute step that runs POST-TEST, PRE-MODEL:
+ * Faithful Node/CommonJS port of c_magnitude_precompute_v2.py (D Relational
+ * Operations v1.0 §3/§4). v2 is a cosmetic refresh of FINAL (version strings
+ * v3.3 -> v4.3; no behaviour change). Backend compute step that runs POST-TEST, PRE-MODEL:
  *
  *   answers -> bleed engine -> 12-arc geometry  (LOCKED, upstream, given)
  *     -> [THIS PATH] compose D-states + compute C-magnitude for this geometry
@@ -26,7 +27,7 @@
  *   - P5/P9: magnitude FORMS committed; scalar CONSTANTS stay geometry-functions
  *     or declared-provisional, never fitted-and-locked pre-engine-run.
  *
- * Source of all data: Matrix_360 v3.3 (now canon/deltawerken_corpus.json) +
+ * Source of all data: Matrix_360 v4.3 (now canon/deltawerken_corpus.json) +
  * Rosetta v1.4.5 + Connection Matrix v2.1. This path reads those; it stores
  * nothing and calibrates nothing.
  */
@@ -59,7 +60,7 @@ const PROVISIONAL_FLAGGED = true;
 // Counted basket magnitudes (~0..ceiling) are normalised against their own channel
 // ceiling BEFORE the edge-structure (gate, sign, polar-scaling) applies, returning
 // the magnitude axis to [0,1] — the scale the §3 composition form was written for.
-// Ceilings from Matrix v3.3 bleed maxima.
+// Ceilings from Matrix v4.3 bleed maxima.
 // ─────────────────────────────────────────────────────────────────────────────
 const CHANNEL_CEILING = {
   green: 144.0, // Green echo max
@@ -171,7 +172,7 @@ function sigma(a, geo) {
 // ─────────────────────────────────────────────────────────────────────────────
 // STEP 1 result — composed D-state per class k (D1..D5), §3.
 // D_composed[k] = activation-weighted, edge-typed blend across active archetypes.
-// storedD: name -> [D1..D5] (0..100 absolute, from Matrix v3.3 / corpus).
+// storedD: name -> [D1..D5] (0..100 absolute, from Matrix v4.3 / corpus).
 // Unresolved σ (null) propagates as a REFUSAL marker for that archetype, not 0.
 //
 // D-9 (RESOLVED): the composed curve is normalised against a DYNAMIC CEILING —
@@ -226,7 +227,7 @@ function composeDState(geo, storedD) {
 //
 //   C_mag = support_weight_norm · (1 − polar_norm) · base[Effect]
 //
-// base[Effect] is the Support's stored [Effect] DIRECTION map (Matrix v3.3 C-cells:
+// base[Effect] is the Support's stored [Effect] DIRECTION map (Matrix v4.3 C-cells:
 // +1 / −1 / no-channel per function). WHICH functions and the SIGN come from
 // storage; the SCALAR falls out of the geometry.
 // ─────────────────────────────────────────────────────────────────────────────

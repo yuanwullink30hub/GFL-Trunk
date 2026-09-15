@@ -77,7 +77,6 @@ export default function PdfPreviewHarness() {
           resultsModalProgress={1}
           onClose={() => {}}
           onDownload={() => {}}
-          onCreateAccount={() => {}}
           onAiReady={() => {}}
           t={t}
         />

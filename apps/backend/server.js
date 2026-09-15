@@ -18,6 +18,9 @@ const orbRoutes = require('./routes/orb');
 const socialRoutes = require('./routes/social');
 const messagesRoutes = require('./routes/messages');
 const verbondRoutes = require('./routes/verbond');
+const activationCodeRoutes = require('./routes/activationCodes');
+const paymentRoutes = require('./routes/payments');
+const stripeWebhookRoutes = require('./routes/stripeWebhook');
 
 const app = express();
 const PRIVATE_DEV_ORIGIN_RE = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
@@ -38,6 +41,8 @@ app.use(cors({
   },
   credentials: true,
 }));
+// Stripe signs the raw request bytes — this route must see the body before express.json parses it.
+app.use('/api/payments/webhook', stripeWebhookRoutes);
 app.use(express.json({ limit: '25mb' }));
 
 // ── Routes ──
@@ -52,6 +57,8 @@ app.use('/api/orb', orbRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/verbond', verbondRoutes);
+app.use('/api/activation-codes', activationCodeRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Lightweight keepalive — frontend pings on every card save to prevent Render sleep
 app.get('/api/ping', (_req, res) => res.json({ pong: true }));
@@ -159,6 +166,32 @@ async function purgeProfiles() {
     const db = getDB();
     const result = await db.collection('assessments').deleteMany({});
     console.log(`[GFL-API] 🧹 Nightly profile purge: ${result.deletedCount} computed profile(s) removed`);
+
+    // Reports that were never unlocked: their crystal code only ever existed sealed in the tab
+    // (services/sealedCode.js) and that seal has expired, so the card draft keyed by the code's
+    // hash can go too. Only drafts authored under the sealed model (sealed: true) are touched.
+    try {
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const stale = await db.collection('kaartDrafts').find({ sealed: true, at: { $lt: cutoff } }, { projection: { codeHash: 1 } }).toArray();
+      if (stale.length) {
+        const unlocked = new Set((await db.collection('reportUnlocks')
+          .find({ codeHash: { $in: stale.map((x) => x.codeHash) } }, { projection: { codeHash: 1 } }).toArray())
+          .map((x) => x.codeHash));
+        // A payment under way (or paid, awaiting its ledger row) keeps its report's draft.
+        const { codeHashesWithLivePayment } = require('./services/payments');
+        const paying = await codeHashesWithLivePayment(stale.map((x) => x.codeHash));
+        const orphan = stale.filter((x) => !unlocked.has(x.codeHash) && !paying.has(x.codeHash)).map((x) => x._id);
+        if (orphan.length) {
+          const r = await db.collection('kaartDrafts').deleteMany({ _id: { $in: orphan } });
+          console.log(`[GFL-API] 🧹 Unpaid report drafts removed: ${r.deletedCount}`);
+        }
+      }
+      const { stripExpiredUnlockEmails } = require('./services/reportAccess');
+      const stripped = await stripExpiredUnlockEmails();
+      if (stripped) console.log(`[GFL-API] 🧹 Payer emails removed after the refund window: ${stripped}`);
+    } catch (e) {
+      console.error('[GFL-API] ❌ Unlock cleanup failed:', e.message);
+    }
     if (result.deletedCount > 0) {
       db.collection('devActivity').insertOne({
         // The TTL now keys on expiresAt; a row without it would live forever.
@@ -251,6 +284,11 @@ async function start() {
 
     // Computed profiles never survive the night — swept at 00:00 Europe/Amsterdam.
     scheduleProfilePurge();
+
+    // Which Stripe pieces are present for the active mode (never the values).
+    const d = require('./services/paymentConfig').paymentDiagnostics();
+    const mark = (ok) => (ok ? '✓' : '✗');
+    console.log(`[GFL-API] Stripe mode=${d.mode} · secret ${mark(d.secretKey)} · publishable ${mark(d.publishableKey)} · webhook ${mark(d.webhookSecret)} · price launch ${mark(d.priceLaunch)} · price normal ${mark(d.priceNormal)}${d.production && d.mode === 'test' ? ` · test token ${mark(d.testAccessToken)} (test mode locked to it)` : ''}`);
   } else {
     console.log('[GFL-API] MONGODB_URI not set — auth & assessment routes will fail');
   }

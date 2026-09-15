@@ -5,7 +5,8 @@ import { useLanguage } from '@gfl/i18n';
 import { OrbSphere3D } from '../../orb';
 import ProfileCard from './ProfileCard';
 import { getClientOrbConfig, getClientProfile, setClientOrbCode, setClientOrbConfig, setClientProfile, clearClientOrbCode } from '../../clientMode';
-import { getArchetypeImageByName } from '@gfl/assessment-core/data/archetypeImages';
+import { resolvePortraitByName } from '@gfl/assessment-core/data/archetypeImages';
+import { liveExtendedName } from '@gfl/assessment-core/data';
 import { PRESET_KERNELS } from './presetKernels';
 import { getPolicyContent } from '../../data/policyIndex';
 
@@ -573,33 +574,22 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapIdx]);
 
-  // Archetype portrait — MUST match the PDF cover circle exactly (some portraits are
-  // hand-photoshopped to fit that circle): 600×600, circular clip, source drawn to fill
-  // the full square — content outside the circle is cut off, never the raw asset file.
-  // Exported as JPEG on full black — matching the orb downloads' black-frame look.
-  const archetypeName = user.archetypeName || profile.archetypeName || '';
-  const archetypeImg = getArchetypeImageByName(archetypeName);
+  // Archetype portrait — the full-resolution original, handed out as-is (transparent PNG). The
+  // results card and the PDF render the web copy; this download is where the original lives.
+  const archetypeName = liveExtendedName(user.archetypeName || profile.archetypeName, language);
+  const archetypeFullImg = resolvePortraitByName(archetypeName).fullUrl;
   const downloadArchetypePhoto = useCallback(async () => {
-    if (!archetypeImg) { setDlMsg(t('profile.dashboard.msg.noArchetypeImage')); return; }
-    setDlMsg('');
+    if (!archetypeFullImg) { setDlMsg(t('profile.dashboard.msg.noArchetypeImage')); return; }
+    setDlMsg(t('profile.dashboard.msg.photoDownloading')); // "…" keeps it on screen while the large file loads
     try {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = archetypeImg; });
-      // Same framing as the PDF cover circle (600 source-square → 567 visible circle, the
-      // ring-covered rim cropped away).
-      const SRC = 600, S = 567;
-      const cnv = document.createElement('canvas'); cnv.width = S; cnv.height = S;
-      const cx = cnv.getContext('2d');
-      cx.fillStyle = '#000'; cx.fillRect(0, 0, S, S); // full black corners (JPEG has no alpha)
-      cx.beginPath(); cx.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2); cx.closePath(); cx.clip();
-      cx.drawImage(img, (S - SRC) / 2, (S - SRC) / 2, SRC, SRC);
-      const blob = await new Promise((res) => cnv.toBlob(res, 'image/jpeg', 0.95));
-      if (!blob) throw new Error('toBlob failed');
-      triggerDownload(blob, `${(archetypeName || 'archetype').trim().replace(/\s+/g, '-')}-${t('profile.dashboard.files.photoSuffix')}.jpg`);
+      const res = await fetch(archetypeFullImg);
+      if (!res.ok) throw new Error(`portrait ${res.status}`);
+      const blob = await res.blob();
+      const ext = (archetypeFullImg.split('.').pop() || 'png').toLowerCase();
+      triggerDownload(blob, `${(archetypeName || 'archetype').trim().replace(/\s+/g, '-')}-${t('profile.dashboard.files.photoSuffix')}.${ext}`);
       setDlMsg(t('profile.dashboard.msg.photoSaved'));
     } catch { setDlMsg(t('profile.dashboard.msg.downloadFailed')); }
-  }, [archetypeImg, archetypeName, t]);
+  }, [archetypeFullImg, archetypeName, t]);
 
   const startImage = useCallback(() => { if (capturePhase || !orbConfig) return; setDlMsg(''); setFrozen(false); setCapturePhase('image'); }, [capturePhase, orbConfig]);
   const startVideo = useCallback(() => {
@@ -991,7 +981,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ ...LABEL, marginBottom: '0.6rem' }}>{t('profile.dashboard.settings.downloads')}</div>
                   <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <SciFiButton onClick={downloadArchetypePhoto} disabled={!!capturePhase || !archetypeImg} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.archetypePhoto')}</SciFiButton>
+                    <SciFiButton onClick={downloadArchetypePhoto} disabled={!!capturePhase || !archetypeFullImg} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.archetypePhoto')}</SciFiButton>
                     <SciFiButton onClick={startImage} disabled={!!capturePhase || !orbConfig} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{capturePhase === 'image' ? t('profile.dashboard.busy') : t('profile.dashboard.settings.crystalScreenshot')}</SciFiButton>
                     <SciFiButton onClick={startVideo} disabled={!!capturePhase || !orbConfig} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{recording ? t('profile.dashboard.settings.recording') : t('profile.dashboard.settings.crystalLoop')}</SciFiButton>
                     {dlMsg && <span style={{ fontSize: 'max(9px,0.48vw)', color: dlMsg.includes('✓') ? '#4ade80' : dlMsg.includes('…') ? 'rgba(196,181,253,0.85)' : '#f87171' }}>{dlMsg}</span>}

@@ -4,6 +4,7 @@
  * POST /api/ai/analyze       — Run assessment analysis via any AI provider
  * GET  /api/ai/providers     — List available (configured) providers
  */
+const { sealCode } = require('../services/sealedCode');
 const { Router } = require('express');
 const { callAI, getAvailableProviders } = require('../services/aiProviders');
 const { computeCRuntime } = require('../services/cRuntime');
@@ -505,7 +506,9 @@ router.post('/analyze', async (req, res) => {
           const { hash } = require('../services/encryption');
           await getDB().collection('kaartDrafts').updateOne(
             { codeHash: hash(orbCode) },
-            { $set: { ...(kaart.giftMicro ? { giftMicro: kaart.giftMicro } : {}), ...(kaart.geomSummary ? { geomSummary: kaart.geomSummary } : {}), at: new Date() } },
+            // sealed: true — authored under the sealed-code model, so the nightly sweep may delete
+            // it when the report is never unlocked (server.js). Beta drafts lack the flag and stay.
+            { $set: { ...(kaart.giftMicro ? { giftMicro: kaart.giftMicro } : {}), ...(kaart.geomSummary ? { geomSummary: kaart.geomSummary } : {}), at: new Date(), sealed: true } },
             { upsert: true }
           );
           console.log('[AI] kaart-microcopy extracted → draft stored (gift:', !!kaart.giftMicro, '| geometrie:', !!kaart.geomSummary, ')');
@@ -528,9 +531,10 @@ router.post('/analyze', async (req, res) => {
       // frontend can render the Plastische Morfologie / De Stille Stem visuals
       // without recomputing. null when the geometry was incomplete.
       cRuntime: cRuntime || null,
-      // Authoritative orb profile code (LC_ORB3_…), radial+purple-gated with the real polar_gap.
-      // The client prints this on the PDF instead of re-deriving it. '' when geometry incomplete.
-      orbCode: orbCode || '',
+      // Authoritative orb profile code (LC_ORB3_…), radial+purple-gated with the real polar_gap —
+      // SEALED (services/sealedCode.js): the browser cannot read it. The raw code is handed over
+      // only when the full report is unlocked (payment or activation code). '' when geometry incomplete.
+      sealedOrbCode: orbCode ? sealCode(orbCode) : '',
       ...result,
     });
 
@@ -540,6 +544,34 @@ router.post('/analyze', async (req, res) => {
     sendEvent('error', { error: err.message });
     res.end();
   }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/ai/discard — the user left the report page without unlocking it
+// ─────────────────────────────────────────────────────────────
+// Single-instance profile: an unpaid report is deleted in full, crystal code included. The code
+// itself only ever existed sealed in the tab; what the server holds is the card draft keyed by
+// its hash. Holding the seal proves it is this report. A report that was unlocked is never
+// touched (its code stays valid for life). Body is the raw seal as text/plain (keepalive fetch
+// from an unloading page, no CORS preflight). Always 204 — reveals nothing.
+router.post('/discard', require('express').text({ type: 'text/plain', limit: '2kb' }), async (req, res) => {
+  try {
+    const { unsealCode } = require('../services/sealedCode');
+    const { codeHashFor } = require('../services/reportAccess');
+    const orbCode = unsealCode(String(req.body || '').trim(), Date.now(), { allowExpired: true });
+    const codeHash = codeHashFor(orbCode);
+    if (codeHash) {
+      const unlocked = await getDB().collection('reportUnlocks').findOne({ codeHash }, { projection: { _id: 1 } });
+      // The tab can close while the payment is still at the bank (iDEAL) — the webhook will
+      // still unlock the report, so its draft stays until the payment settles.
+      const { hasLivePayment } = require('../services/payments');
+      if (!unlocked && !(await hasLivePayment(codeHash))) {
+        const r = await getDB().collection('kaartDrafts').deleteOne({ codeHash, sealed: true });
+        if (r.deletedCount) console.log('[AI] unpaid report discarded — card draft deleted');
+      }
+    }
+  } catch (_) { /* invalid seal or db hiccup — the nightly sweep remains the fallback */ }
+  res.status(204).end();
 });
 
 // ─────────────────────────────────────────────────────────────

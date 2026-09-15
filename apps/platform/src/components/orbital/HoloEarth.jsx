@@ -667,7 +667,8 @@ const HoloEarthSphere = ({
   
   // Track orbital rotation to pass to PyramidInner when in orbital mode (button invisible)
   const orbitalRotationY = useRef(0);
-  
+  const smoothEpRef = useRef(null); // displayed (smoothed) explosion progress — see useFrame
+
   // Scale: base scale with mobile multiplier for larger earth on mobile
   const baseScale = Math.min(1, viewport.width / 5.5) * 0.65;
   const scale = isMobile ? baseScale * 1.15 : baseScale;
@@ -744,8 +745,28 @@ const HoloEarthSphere = ({
         coreRef.current.rotation.y += 0.0014;
         coreRef.current.rotation.x = Math.sin(time * 0.35) * 0.1;
         
-        // Read from ref for smooth animation between React state updates
-        const ep = explosionProgressRef ? explosionProgressRef.current : explosionProgress;
+        // Read from ref, then glide toward it: frames arrive as discrete steps (and the eased
+        // curve makes the late steps large), so an exponential approach turns each step into a
+        // short smooth move that always converges exactly on the frame's target — no overshoot.
+        const targetEp = explosionProgressRef ? explosionProgressRef.current : explosionProgress;
+        let ep = smoothEpRef.current === null ? targetEp
+          : smoothEpRef.current + (targetEp - smoothEpRef.current) * (1 - Math.exp(-delta * 14));
+        if (Math.abs(targetEp - ep) < 0.0005) ep = targetEp;
+        smoothEpRef.current = ep;
+
+        // Landing drop (globe sits 6.3vh low so the top-row containers overlap its edges). Applied
+        // as a camera view offset — a uniform screen-space shift — driven by the SAME smoothed
+        // progress as the pyramid, so it bleeds out in lock-step and is 0 when the pyramid lands.
+        const cam = state.camera;
+        const { width: cw, height: ch } = state.size;
+        const dropPx = (!isMobile && !isActive) ? Math.round(0.063 * window.innerHeight * (1 - ep) * 10) / 10 : 0;
+        const vo = cam.userData.dropView;
+        if (!vo || vo.px !== dropPx || vo.w !== cw || vo.h !== ch) {
+          if (dropPx) cam.setViewOffset(cw, ch, 0, -dropPx, cw, ch);
+          else cam.clearViewOffset();
+          cam.userData.dropView = { px: dropPx, w: cw, h: ch };
+        }
+
         const zoomZ = 4.5 * ep;
         const pyramidYOffset = window.innerWidth >= 1280 ? 0.27 :
                                window.innerWidth >= 1100 ? 0.27 :
@@ -951,11 +972,8 @@ const HoloEarth = ({
         height: isMobile ? '100vh' : undefined,
         pointerEvents: exploding ? 'none' : 'auto',
         overflow: 'visible',
-        // Landing only: drop the globe + its shadow so the top-row containers overlap its edges.
-        // vh (not rem) so it tracks the viewport (≈ 7rem on desktop); re-centres during the
-        // assessment (isActive) so the zoomed-in pyramid stays exactly where it is.
-        transform: (!isMobile && !isActive) ? 'translateY(6.3vh)' : undefined,
-        transition: 'transform 0.4s ease',
+        // The landing 6.3vh globe drop lives in the 3D camera (HoloEarthSphere useFrame) so it
+        // moves in lock-step with the pyramid; only the CSS shadow below carries its own copy.
       }}
     >
       {/* Depth shadow behind the sphere (desktop only) — scale() with the globe's viewport falloff
@@ -964,7 +982,8 @@ const HoloEarth = ({
         position: 'absolute',
         top: 'calc(50% - 6.5vh - 0.5rem)',
         left: '50%',
-        transform: `translate(-50%, -50%) scale(${landingShadowScale})`,
+        // + 6.3vh = the landing globe drop (camera offset); the shadow is hidden past frame 3.
+        transform: `translate(-50%, calc(-50% + 6.3vh)) scale(${landingShadowScale})`,
         width: '55vh',
         height: '55vh',
         borderRadius: '50%',

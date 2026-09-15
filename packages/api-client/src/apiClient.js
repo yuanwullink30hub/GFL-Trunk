@@ -414,6 +414,25 @@ export async function deleteOwnAccount() {
 /**
  * Save an assessment result to the database.
  */
+/**
+ * Discard an unpaid report: the server deletes the card draft keyed by the sealed crystal code
+ * (only when that report was never unlocked). Fired while the page may be unloading, so it is a
+ * keepalive request with a text/plain body — a CORS "simple" request that needs no preflight.
+ * Fire-and-forget; the nightly sweep remains the fallback.
+ */
+export function discardUnpaidReport(sealedOrbCode) {
+  if (!sealedOrbCode) return;
+  try {
+    fetch(`${API_BASE}/ai/discard`, {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'text/plain' },
+      body: String(sealedOrbCode),
+    }).catch(() => {});
+  } catch (_) { /* ignore */ }
+}
+
+/** @deprecated The server no longer stores assessments (single-instance profile); always rejected. */
 export async function saveAssessment(data) {
   const response = await fetch(`${API_BASE}/assessment`, {
     method: 'POST',
@@ -1198,20 +1217,6 @@ export async function clearSessions() {
 }
 
 /**
- * Get site banner settings for PDF footer (public — no auth required).
- * Returns { imageBase64, imageMimeType, text }
- */
-export async function getPublicSiteBanner() {
-  try {
-    const response = await fetch(`${API_BASE}/assessment/site-banner`);
-    if (!response.ok) return { imageBase64: '', imageMimeType: '', text: '' };
-    return response.json();
-  } catch {
-    return { imageBase64: '', imageMimeType: '', text: '' };
-  }
-}
-
-/**
  * Get feedback confirmation email settings (admin only).
  */
 export async function getFeedbackEmailSettings() {
@@ -1224,7 +1229,7 @@ export async function getFeedbackEmailSettings() {
 
 /**
  * Update feedback confirmation email settings (admin only).
- * @param {{ text: string, imageBase64: string, imageMimeType: string }} settings
+ * @param {{ text: string }} settings
  */
 export async function updateFeedbackEmailSettings(settings) {
   const response = await fetch(`${API_BASE}/admin/settings/feedback-email`, {
@@ -1240,6 +1245,148 @@ export async function updateFeedbackEmailSettings(settings) {
 }
 
 // ── Passkey Management (Admin) ──
+
+// ── Activation codes (admin) ──
+
+/** @returns {Promise<{ active: object[], logbook: object[] }>} */
+export async function getActivationCodes() {
+  const response = await fetch(`${API_BASE}/admin/activation-codes`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(`Failed to load activation codes (${response.status})`);
+  return response.json();
+}
+
+/**
+ * Generate one-time activation codes. The plaintext `code` is in this response ONLY —
+ * the backend keeps a hash, so it can never be shown again.
+ * @returns {Promise<{ codes: { _id, code, hint, label, createdAt }[] }>}
+ */
+export async function createActivationCodes({ count = 1, label = '' } = {}) {
+  const response = await fetch(`${API_BASE}/admin/activation-codes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ count, label }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Failed to create activation codes (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function revokeActivationCode(id) {
+  const response = await fetch(`${API_BASE}/admin/activation-codes/${id}/revoke`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Failed to revoke activation code (${response.status})`);
+  }
+  return response.json();
+}
+
+// ── Report unlocks + refunds (admin) ──
+
+/** @returns {Promise<{ refundWindowDays: number, unlocks: object[] }>} */
+export async function getReportUnlocks() {
+  const response = await fetch(`${API_BASE}/admin/report-unlocks`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(`Failed to load report unlocks (${response.status})`);
+  return response.json();
+}
+
+/**
+ * Refund a paid report under the 14-day guarantee. Irreversible: blocks the report's crystal
+ * code and removes the access it gave from the account that claimed it.
+ */
+export async function refundReportUnlock(id, review) {
+  const response = await fetch(`${API_BASE}/admin/report-unlocks/${id}/refund`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(review ? { review } : {}),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    const e = new Error(err.error || `Refund failed (${response.status})`);
+    e.code = err.code;
+    throw e;
+  }
+  return response.json();
+}
+
+/** Moderator declines a refund request after the review. */
+export async function declineReportRefund(id, review) {
+  const response = await fetch(`${API_BASE}/admin/report-unlocks/${id}/decline`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ review }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Decline failed (${response.status})`);
+  }
+  return response.json();
+}
+
+// ── Payment config (admin): flip schedule + country gate, applied without a deploy ──
+
+/** @returns {Promise<{ stored: { flipAt, gate: { launchCountries, openCountries, openAtFlip } }, effective: object }>} */
+export async function getPaymentConfigAdmin() {
+  const response = await fetch(`${API_BASE}/admin/payment-config`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(`Failed to load payment config (${response.status})`);
+  return response.json();
+}
+
+/** @param {{ flipAt?: string, gate?: { launchCountries?: string[], openCountries?: string[], openAtFlip?: boolean } }} patch */
+export async function updatePaymentConfigAdmin(patch) {
+  const response = await fetch(`${API_BASE}/admin/payment-config`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(patch),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Update failed (${response.status})`);
+  }
+  return response.json();
+}
+
+// ── Payment records (admin) ──
+
+/** @returns {Promise<{ records: object[] }>} metadata only; PDFs are fetched per record */
+export async function getPaymentRecords() {
+  const response = await fetch(`${API_BASE}/admin/payment-records`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(`Failed to load payment records (${response.status})`);
+  return response.json();
+}
+
+/** Fetch an authenticated file and hand it to the browser as a download. */
+async function downloadAuthed(url, fallbackName) {
+  const response = await fetch(url, { headers: authHeaders() });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Download failed (${response.status})`);
+  }
+  const disposition = response.headers.get('Content-Disposition') || '';
+  const name = (disposition.match(/filename="([^"]+)"/) || [])[1] || fallbackName;
+  const href = URL.createObjectURL(await response.blob());
+  const a = document.createElement('a');
+  a.href = href;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 10000);
+}
+
+/** Download one payment record PDF. */
+export function downloadPaymentRecord(id) {
+  return downloadAuthed(`${API_BASE}/admin/payment-records/${id}/pdf`, 'betaalbewijs.pdf');
+}
+
+/** Download the payment records folder as a ZIP — one year, or everything when year is omitted. */
+export function downloadPaymentRecordsArchive(year) {
+  return downloadAuthed(`${API_BASE}/admin/payment-records/archive.zip${year ? `?year=${year}` : ''}`, 'Betaalbewijzen.zip');
+}
 
 export async function getPasskeys() {
   const response = await fetch(`${API_BASE}/admin/passkeys`, {

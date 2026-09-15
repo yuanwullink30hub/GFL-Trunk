@@ -7,6 +7,7 @@ const { hash, decrypt } = require('../services/encryption');
 const { signToken } = require('./auth');
 const { decodeOrb3 } = require('@gfl/orb-engine');
 const { extractReading, sanitizeReading } = require('../services/readingExtract');
+const { isCodeBlocked, isCodeActivatable, visibleHistory, BLOCKED_MESSAGE, NOT_UNLOCKED_MESSAGE } = require('../services/reportAccess');
 
 // ── Access model (spec 2026-07-07): every code grants ACCESS_MONTHS of platform access,
 // cumulative on the current expiry (3→6, 6→9 — never "3 from redemption"). A new code can
@@ -67,6 +68,11 @@ router.post('/login', async (req, res) => {
     // shape vector from the PROFIEL DATA block. Allowlist-only; `text` is discarded below.
     const reading = extractReading(text);
 
+    // Refunded report (14-day guarantee): its code no longer opens anything.
+    if (await isCodeBlocked(hash(code))) {
+      return res.status(403).json({ error: BLOCKED_MESSAGE, refunded: true });
+    }
+
     // The code IS the login (product decision). A code already LINKED to an account →
     // recognise it and issue a session (skip onboarding). An UNLINKED code (first-time) →
     // { linked:false } so the client runs the account-creation onboarding.
@@ -84,6 +90,11 @@ router.post('/login', async (req, res) => {
       }
     } catch (e) {
       console.warn('[orb/login] link-check failed (treating as unlinked):', e.message);
+    }
+
+    // An unlinked code can only start onboarding when its report was unlocked (paid or code).
+    if (!(await isCodeActivatable(hash(code)))) {
+      return res.status(403).json({ error: NOT_UNLOCKED_MESSAGE, notUnlocked: true });
     }
 
     return res.json({ code, archetypeName, reading, linked: false });
@@ -109,6 +120,9 @@ router.post('/link', authRequired, async (req, res) => {
     }
     const userId = String(req.user.userId);
     const codeHash = hash(String(code));
+    if (await isCodeBlocked(codeHash)) {
+      return res.status(403).json({ error: BLOCKED_MESSAGE, refunded: true });
+    }
     // Server-authored kaart-microcopy draft (stored at generation, keyed by code hash) rides
     // along with whatever the PDF extraction delivered — the draft wins (it never left the server).
     let kaartDraft = null;
@@ -127,8 +141,8 @@ router.post('/link', authRequired, async (req, res) => {
       { projection: { orbHistory: 1, accessUntil: 1 } }
     );
     if (!userDoc) return res.status(404).json({ error: 'Account niet gevonden.' });
-    const lastEntry = Array.isArray(userDoc.orbHistory) && userDoc.orbHistory.length
-      ? userDoc.orbHistory[userDoc.orbHistory.length - 1] : null;
+    // Refunded readings don't count toward the gate: the client may buy a new report.
+    const lastEntry = visibleHistory(userDoc.orbHistory).pop()?.entry || null;
     const gateOpensAt = lastEntry && lastEntry.at ? addMonths(lastEntry.at, UPLOAD_GATE_MONTHS) : null;
     const gateClosed = gateOpensAt && gateOpensAt > new Date();
 
@@ -148,6 +162,10 @@ router.post('/link', authRequired, async (req, res) => {
         return res.json({ linked: true, alreadyOwned: true, backfilled: !!cleanReading });
       }
       return res.status(409).json({ error: 'Deze kristal-code is al aan een ander account gekoppeld.' });
+    }
+
+    if (!(await isCodeActivatable(codeHash))) {
+      return res.status(403).json({ error: NOT_UNLOCKED_MESSAGE, notUnlocked: true });
     }
 
     if (gateClosed) {

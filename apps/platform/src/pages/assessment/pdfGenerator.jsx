@@ -49,7 +49,7 @@ function renderMarkdownish(text) {
 
 function generatePDFContent(result) {
   const archetypeInfo = ARCHETYPES[result.overallArchetype];
-  const levensles = getArchetypeQuote(result.mainArchetype || result.overallArchetype, result.supportGroup);
+  const levensles = getArchetypeQuote(result.mainArchetype || result.overallArchetype, result.supportArchetype);
   const colors = ['#22d3ee', '#a855f7', '#f472b6', '#fbbf24', '#f97316'];
   const date = result.timestamp?.toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' }) || new Date().toLocaleDateString('nl-NL');
   const displayName = result.extendedArchetypeName || archetypeInfo?.name || result.overallArchetype;

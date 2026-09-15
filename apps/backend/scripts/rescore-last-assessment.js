@@ -30,10 +30,10 @@ const SHADOW_PAIRS = {
 const RED_LINE = {
   JUDGE: 'OUTLAW', OUTLAW: 'JUDGE',
   RULER: 'TRICKSTER', TRICKSTER: 'RULER',
-  LOVER: 'ARTIST', ARTIST: 'LOVER',
-  CAREGIVER: 'SAGE', SAGE: 'CAREGIVER',
-  INNOCENT: 'HERO', HERO: 'INNOCENT',
-  EXPLORER: 'MAGICIAN', MAGICIAN: 'EXPLORER',
+  LOVER: 'EXPLORER', EXPLORER: 'LOVER',
+  CAREGIVER: 'INNOCENT', INNOCENT: 'CAREGIVER',
+  HERO: 'SAGE', SAGE: 'HERO',
+  MAGICIAN: 'ARTIST', ARTIST: 'MAGICIAN',
 };
 
 const ARCHETYPE_TO_GROUP = {
@@ -87,7 +87,7 @@ const EXTENDED_ARCHETYPES = {
 
   // Main: CAREGIVER (Positie 3) - #34-44
   CAREGIVER_LOVER:      'The Healer',
-  CAREGIVER_RULER:      'The Patriarch/Matriarch',
+  CAREGIVER_RULER:      'The Patriarch / Matriarch',
   CAREGIVER_JUDGE:      'The Defender',
   CAREGIVER_OUTLAW:     'The Cultivator',
   CAREGIVER_TRICKSTER:  'The Empath',
@@ -129,7 +129,7 @@ const EXTENDED_ARCHETYPES = {
   HERO_RULER:      'The Conqueror',
   HERO_JUDGE:      'The Templar',
   HERO_OUTLAW:     'The Raider',
-  HERO_TRICKSTER:  'The Spy',
+  HERO_TRICKSTER:  'The Agent',
   HERO_SAGE:       'The Strategist',
   HERO_ARTIST:     'The Duelist',
   HERO_EXPLORER:   'The Astronaut',
@@ -152,7 +152,7 @@ const EXTENDED_ARCHETYPES = {
 
   // Main: OUTLAW (Positie 6) - #89-99
   OUTLAW_TRICKSTER:  'The Anarchist',
-  OUTLAW_RULER:      'The Maverick',
+  OUTLAW_RULER:      'The Usurper',
   OUTLAW_JUDGE:      'The Contrarian',
   OUTLAW_CAREGIVER:  'The Liberator',
   OUTLAW_LOVER:      'The Instigator',
@@ -198,7 +198,7 @@ const EXTENDED_ARCHETYPES = {
   ARTIST_TRICKSTER:  'The Oracle',
   ARTIST_OUTLAW:     'The Provocateur',
   ARTIST_EXPLORER:   'The Visionary',
-  ARTIST_INNOCENT:   'The Prodigy',
+  ARTIST_INNOCENT:   'The Source',
   ARTIST_MAGICIAN:   'The Craftsman',
   ARTIST_HERO:       'The Forgemaster',
 };
@@ -253,7 +253,7 @@ const EXTENDED_ARCHETYPES_NL = {
   CAREGIVER_ARTIST:     'De Hersteller',
   CAREGIVER_EXPLORER:   'De Pilgrim',
   CAREGIVER_INNOCENT:   'De Toegewijde',
-  CAREGIVER_HERO:       'De Beschermer',
+  CAREGIVER_HERO:       'De Wachter',
   CAREGIVER_MAGICIAN:   'De Bewaker',
 
   // Main: INNOCENT (Positie 4) - #45-55
@@ -310,7 +310,7 @@ const EXTENDED_ARCHETYPES_NL = {
 
   // Main: OUTLAW (Positie 6) - #89-99
   OUTLAW_TRICKSTER:  'De Anarchist',
-  OUTLAW_RULER:      'De Eenling',
+  OUTLAW_RULER:      'De Troonrover',
   OUTLAW_JUDGE:      'De Dwarsligger',
   OUTLAW_CAREGIVER:  'De Bevrijder',
   OUTLAW_LOVER:      'De Aanstichter',
@@ -331,8 +331,8 @@ const EXTENDED_ARCHETYPES_NL = {
   TRICKSTER_ARTIST:     'De Imitator',
   TRICKSTER_EXPLORER:   'De Freerunner',
   TRICKSTER_INNOCENT:   'De Joyrider',
-  TRICKSTER_MAGICIAN:   'De Gedaante-verwisselaar',
-  TRICKSTER_HERO:       'De Aas / De Uitblinker',
+  TRICKSTER_MAGICIAN:   'De Gedaanteverwisselaar',
+  TRICKSTER_HERO:       'De Aas',
 
   // Main: SAGE (Positie 8) - #111-121
   SAGE_ARTIST:     'De Ontwikkelaar',
@@ -356,7 +356,7 @@ const EXTENDED_ARCHETYPES_NL = {
   ARTIST_TRICKSTER:  'Het Orakel',
   ARTIST_OUTLAW:     'De Provocateur',
   ARTIST_EXPLORER:   'De Visionair',
-  ARTIST_INNOCENT:   'Het Wonderkind',
+  ARTIST_INNOCENT:   'De Bron',
   ARTIST_MAGICIAN:   'De Ambachtsman',
   ARTIST_HERO:       'De Meestersmid',
 };
@@ -369,6 +369,14 @@ const GREEN_LINE = {
   OUTLAW: 'TRICKSTER', TRICKSTER: 'OUTLAW',
   SAGE: 'ARTIST', ARTIST: 'SAGE',
   MAGICIAN: 'HERO', HERO: 'MAGICIAN',
+};
+const BLUE_LINE = {
+  RULER: 'JUDGE', JUDGE: 'RULER',
+  HERO: 'LOVER', LOVER: 'HERO',
+  MAGICIAN: 'CAREGIVER', CAREGIVER: 'MAGICIAN',
+  ARTIST: 'INNOCENT', INNOCENT: 'ARTIST',
+  SAGE: 'EXPLORER', EXPLORER: 'SAGE',
+  TRICKSTER: 'OUTLAW', OUTLAW: 'TRICKSTER',
 };
 const PURPLE_LINE = {
   JUDGE: 'TRICKSTER', TRICKSTER: 'JUDGE',
@@ -454,8 +462,8 @@ function computeScores(responses) {
         if (greenPartner && scores[greenPartner]) {
           scores[greenPartner].green_hw += isFirstPick ? 3 : 1;
         }
-        if (isFirstPick && greenPartner && scores[greenPartner]) {
-          scores[greenPartner].blue_fb += 2;
+        if (isFirstPick && BLUE_LINE[archetype] && scores[BLUE_LINE[archetype]]) {
+          scores[BLUE_LINE[archetype]].blue_fb += 2;
         }
         if (isFirstPick) {
           const shadowPartner = PURPLE_LINE[archetype];
@@ -464,9 +472,9 @@ function computeScores(responses) {
           }
         }
       } else {
-        scores[archetype].culture_core += isFirstPick ? 8 : 4;
+        scores[archetype].culture_core += isFirstPick ? 7 : 4;
         if (isFirstPick) {
-          const bluePartner = GREEN_LINE[archetype];
+          const bluePartner = BLUE_LINE[archetype];
           if (bluePartner && scores[bluePartner]) {
             scores[bluePartner].blue_fb += 1;
           }

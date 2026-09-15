@@ -1,5 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '@gfl/i18n';
+import { logoutAndReload } from '../clientMode';
 
 /**
  * ClientSubnav — the header's "SCHADUW WERK // V.4.9" line, turned into a nav.
@@ -11,8 +13,16 @@ import { useLanguage } from '@gfl/i18n';
 
 const GOLD = '#f59e0b';
 
-export default function ClientSubnav({ activeSection, items = [], onNavigate, onBack, canBack, open, onToggle, onClose, hovered }) {
+export default function ClientSubnav({ activeSection, items = [], onNavigate, onBack, canBack, open, onToggle, onClose, hovered, showLogout = false }) {
   const { t } = useLanguage();
+  // Logout (client mode only) — last dropdown item. Paints the overlay first (two rAFs) so the
+  // reboot doesn't read as a frozen click; same flow as LoginPage.
+  const [loggingOut, setLoggingOut] = useState(false);
+  const handleLogout = () => {
+    onClose?.();
+    setLoggingOut(true);
+    requestAnimationFrame(() => requestAnimationFrame(logoutAndReload));
+  };
   const rootRef = useRef(null);
   const activeKey = activeSection || 'main';
   // The subheader tag reads the CURRENT page (falls back to the brand version-text label).
@@ -76,7 +86,28 @@ export default function ClientSubnav({ activeSection, items = [], onNavigate, on
               </button>
             );
           })}
+          {showLogout && (
+            <>
+              <span style={{ alignSelf: 'stretch', height: 1, margin: '0.3rem 0', background: 'rgba(255,255,255,0.1)' }} />
+              <button
+                type="button"
+                onClick={handleLogout}
+                style={{ textAlign: 'left', background: 'none', border: 'none', padding: '0.25rem 0', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontFamily: 'inherit', fontSize: 'clamp(0.82rem, 1vw, 0.98rem)', letterSpacing: '0.04em', textShadow: '0 1px 8px rgba(0,0,0,0.85)', whiteSpace: 'nowrap', transition: 'color 0.12s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#f87171'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+              >
+                {t('clientOrb.logout')}
+              </button>
+            </>
+          )}
         </div>
+      )}
+      {loggingOut && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2147483647, background: 'rgba(0, 0, 0, 0.98)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.3rem' }}>
+          <div className="animate-spin keep-spinning" style={{ width: '3rem', height: '3rem', borderRadius: '50%', border: '3px solid rgba(168,85,247,0.25)', borderTopColor: '#a855f7' }} />
+          <div style={{ fontFamily: "'Figtree', sans-serif", color: '#c4b5fd', letterSpacing: '0.24em', textTransform: 'uppercase', fontSize: 'max(12px, 0.7vw)' }}>{t('auth.overlay.loggingOut')}</div>
+        </div>,
+        document.body
       )}
     </div>
   );

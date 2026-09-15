@@ -26,9 +26,11 @@ const PLACEHOLDER_EXPRESSION = {
   en: 'PLACEHOLDER — this expression profile will soon describe, in *likely tendencies*, how this configuration usually expresses itself. The definitive twelve texts are written separately and loaded in here.',
 };
 
+import { liveExtendedName } from '@gfl/assessment-core/data';
+
 // Default entry: used whenever the archetype id has no dedicated copy yet.
 const DEFAULT_ENTRY = {
-  configurationName: null, // null → renderer falls back to the archetype id itself
+  configurationName: null, // null → the archetype's live roster name in the UI language
   tendency: PLACEHOLDER_TENDENCY,
   expression: PLACEHOLDER_EXPRESSION,
 };
@@ -44,11 +46,13 @@ const pick = (v, language) => {
   return v;
 };
 
+// The id is a stored extended-archetype name; it is keyed and captioned through the live
+// roster, so a retired name finds no copy and shows no caption.
 export function getCardMicrocopy(archetypePrimaryId, language = 'nl') {
-  const entry = MICROCOPY[archetypePrimaryId] || DEFAULT_ENTRY;
-  const name = pick(entry.configurationName, language);
+  const entry = MICROCOPY[liveExtendedName(archetypePrimaryId, 'nl')] || DEFAULT_ENTRY;
+  const name = pick(entry.configurationName, language) || liveExtendedName(archetypePrimaryId, language);
   return {
-    configurationName: (name || archetypePrimaryId || '—').toUpperCase(),
+    configurationName: (name || '—').toUpperCase(),
     tendency: pick(entry.tendency, language),
     expression: pick(entry.expression, language),
   };

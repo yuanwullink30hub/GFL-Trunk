@@ -56,8 +56,8 @@ export default {
     },
     emailLabel: { nl: 'E-mail', en: 'Email' },
     deleteWarnOrb: {
-      nl: (w) => ['⚠ Dit verwijdert je account én alle assessments permanent (AVG/GDPR). Typ ', w, ' om te bevestigen:'],
-      en: (w) => ['⚠ This permanently deletes your account and all assessments (GDPR). Type ', w, ' to confirm:'],
+      nl: (w) => ['⚠ Dit verwijdert je account én alle bijbehorende lezingen permanent (AVG/GDPR). Typ ', w, ' om te bevestigen:'],
+      en: (w) => ['⚠ This permanently deletes your account and all readings that belong to it (GDPR). Type ', w, ' to confirm:'],
     },
     deleting: { nl: 'Bezig…', en: 'Working…' },
     deleteAction: { nl: 'Verwijderen', en: 'Delete' },
@@ -180,8 +180,8 @@ export default {
 
       // Delete-account flow
       deleteConfirm: {
-        nl: '⚠ Dit verwijdert je account én alle bijbehorende assessments permanent. Weet je het zeker?',
-        en: '⚠ This permanently deletes your account and every assessment that belongs to it. Are you sure?',
+        nl: '⚠ Dit verwijdert je account én alle bijbehorende lezingen permanent. Weet je het zeker?',
+        en: '⚠ This permanently deletes your account and every reading that belongs to it. Are you sure?',
       },
       deleteProceed: { nl: 'Ja, doorgaan', en: 'Yes, continue' },
       cancel: { nl: 'Annuleren', en: 'Cancel' },

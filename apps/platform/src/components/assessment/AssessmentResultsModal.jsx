@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useRef, useEffect, useLayoutEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 // html2canvas + jsPDF are lazy-loaded inside handleDownloadPdf (export click) so the
 // ~250 KB gz export-vendor chunk stays out of the results-modal mount.
 import SciFiRadarChart from './SciFiRadarChart';
@@ -12,6 +13,7 @@ import {
   SHADOW_PAIRS,
   RED_LINE,
   ARCHETYPE_TO_GROUP,
+  GROUP_TO_ARCHETYPES,
   EXTENDED_ARCHETYPES,
   EXTENDED_ARCHETYPES_NL,
   getExtendedArchetype,
@@ -22,9 +24,15 @@ import {
   archetypeField,
 } from '@gfl/assessment-core';
 import { isNatureSlot } from '@gfl/assessment-core/assessmentData';
-import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
+import { getArchetypeImage, resolvePortrait, DEFAULT_PORTRAIT_VARIANT } from '@gfl/assessment-core/data/archetypeImages';
+import PaywallModal from './PaywallModal';
+import PdfConsentStep from './PdfConsentStep';
+import { PopupShell, PopupTitle, POP_MS, PURPLE } from './PopupShell';
+import { SciFiButton } from '@gfl/ui';
+import { registerLeaveHandler } from '../../reportDownloadGuard';
+import { formatCents, formatPrice } from '../../config/pricing';
+import { getPaymentConfig, markPaymentDelivered } from '../../services/paymentService';
 import { assembleV4, NARRATIVE_TAGS, matchNarrativeTag } from './v4Parser';
-import { orbCodeFromResult } from '../../orb';
 import MorphologyChart from './MorphologyChart';
 import { sectionTitle, relabelProse } from './v4Labels';
 
@@ -41,10 +49,11 @@ const OCEAN_LABELS = {
   N: { short: 'N', full: 'Neuroticism', dutch: 'Neuroticisme' },
 };
 const OCEAN_COLORS = { O: '#a78bfa', C: '#22d3ee', E: '#67e8f9', A: '#818cf8', N: '#c4b5fd' };
-import { getToken, saveAssessment, analyzeAssessment, submitAssessmentReview, sendAccessEmail, sendReportEmail, logActivity, getPublicSiteBanner } from '@gfl/api-client';
+// Profile copies earlier builds left in localStorage; cleared whenever a result is computed.
+const LEGACY_PROFILE_KEYS = ['gfl_assessment_session', 'gfl_assessment_history', 'gfl_analysis_sections', 'gfl_pending_assessment', 'gfl_assessment_id'];
+import { analyzeAssessment, discardUnpaidReport, submitAssessmentReview, sendAccessEmail, sendReportEmail, logActivity } from '@gfl/api-client';
 import { isIntegratedGPU } from '@gfl/utils';
 import { useLanguage } from '@gfl/i18n';
-// SciFiButton removed — unused in this component
 const tnmWheelImg = '/images/Model imports/TNM wheel PNG.png';
 const deltawerkenImg = '/images/Model imports/Deltawerken png.png';
 const cellsImg = '/images/Model imports/Cells within Cells png.png';
@@ -63,7 +72,6 @@ const c12Img = '/images/Model imports/C12.png';
  *   layerAnswers: object,
  *   onClose: () => void,
  *   onDownload: () => void,
- *   onCreateAccount: () => void,
  *   onAiReady: () => void,
  *   t: (key: string) => string
  * }} props
@@ -137,6 +145,67 @@ const getSectionAccent = (title) => {
   return null; // fallback to cycle
 };
 
+/**
+ * PortraitVariantToggle — male/female switch under the results-card portrait.
+ * Styled to the `components.tab` spec in gfl-design-tokens.json: amber tab gradients at
+ * 135deg, 0.15rem radius, Lexend Mega uppercase tracked chrome, solid-accent flip on
+ * hover (text -> #000, 20px glow) and the amber focus treatment for keyboard users.
+ */
+const TOGGLE_AMBER = '255, 174, 0';
+const PortraitVariantToggle = ({ value, onChange, labels }) => {
+  const [hovered, setHovered] = useState(null);
+  const [focused, setFocused] = useState(null);
+  const options = [['female', labels.female], ['male', labels.male]];
+  return (
+    <div role="radiogroup" aria-label={labels.label} style={{ display: 'flex', gap: '0.35rem' }}>
+      {options.map(([v, text]) => {
+        const active = value === v;
+        const hover = hovered === v && !active;
+        const focus = focused === v;
+        return (
+          <button
+            key={v}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(v)}
+            onMouseEnter={() => setHovered(v)}
+            onMouseLeave={() => setHovered(null)}
+            onFocus={(e) => { if (e.target.matches(':focus-visible')) setFocused(v); }}
+            onBlur={() => setFocused(null)}
+            style={{
+              padding: '0.4rem 0.9rem',
+              borderRadius: '0.15rem',
+              fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
+              fontSize: 'max(10px, 0.5vw)',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              cursor: active ? 'default' : 'pointer',
+              transition: 'all 0.3s',
+              outline: 'none',
+              color: hover ? '#000000' : '#ffae00',
+              background: hover
+                ? `linear-gradient(135deg, rgba(${TOGGLE_AMBER}, 0.8), rgba(${TOGGLE_AMBER}, 0.9))`
+                : active
+                  ? `linear-gradient(135deg, rgba(${TOGGLE_AMBER}, 0.2), rgba(${TOGGLE_AMBER}, 0.3))`
+                  : focus
+                    ? `rgba(${TOGGLE_AMBER}, 0.04)`
+                    : `linear-gradient(135deg, rgba(${TOGGLE_AMBER}, 0.03), rgba(${TOGGLE_AMBER}, 0.06))`,
+              border: `1px solid rgba(${TOGGLE_AMBER}, ${focus ? 0.5 : active ? 0.7 : 0.2})`,
+              boxShadow: hover
+                ? `0 0 20px rgba(${TOGGLE_AMBER}, 0.6)`
+                : focus ? `0 0 15px rgba(${TOGGLE_AMBER}, 0.15)` : 'none',
+            }}
+          >
+            {text}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 const AssessmentResultsModal = ({
   resultsLoadingProgress,
   resultsModalProgress,
@@ -145,7 +214,6 @@ const AssessmentResultsModal = ({
   uploadedFiles,
   onClose,
   onDownload,
-  onCreateAccount,
   onAiReady,
   // The parent still passes `t`; this component now takes its translator from
   // useLanguage() (below) so the whole file — UI *and* PDF — can translate.
@@ -155,6 +223,8 @@ const AssessmentResultsModal = ({
   // ── Dev PDF live-preview (see src/dev/PdfPreviewHarness.jsx) ──
   previewMode = false,   // when true: build the PDF and hand back a blob URL instead of downloading
   onPreviewReady,        // (blobUrl) => void
+  // ── Dev report preview (see src/dev/ReportPreviewHarness.jsx) ──
+  portraitOverride,      // { url, fullUrl } shown as the portrait (card + PDF cover) whatever the archetype
 }) => {
   // Declared before the result memo below: that memo reads `language` to pick the
   // Dutch or English archetype copy, so the hook must run first.
@@ -176,11 +246,57 @@ const AssessmentResultsModal = ({
   
   // PDF download state
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [showPdfConsent, setShowPdfConsent] = useState(false);
   const [pdfConsentChecked, setPdfConsentChecked] = useState(false);
-  // Which variant the consent modal / spinner refers to: 'short' (free) or 'full' (paid).
+  const [pdfConsentClosing, setPdfConsentClosing] = useState(false);
+  const closePdfConsent = useCallback(() => {
+    setPdfConsentClosing(true);
+    setTimeout(() => { setShowPdfConsent(false); setPdfConsentChecked(false); setPdfConsentClosing(false); }, POP_MS);
+  }, []);
+  // The consent card covers the report card (nothing outside it to click): focus it, Escape closes.
+  const pdfConsentRef = useRef(null);
+  useEffect(() => {
+    if (!showPdfConsent || pdfConsentClosing) return undefined;
+    requestAnimationFrame(() => pdfConsentRef.current?.focus());
+    const onKey = (e) => { if (e.key === 'Escape') closePdfConsent(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showPdfConsent, pdfConsentClosing, closePdfConsent]);
+  // Which variant the generating spinner refers to: 'short' (free) or 'full' (paid).
   const [pdfKind, setPdfKind] = useState('full');
+  // Paywall: the full report is paid, the short report free. `paidPaymentId` is the
+  // server-confirmed payment for this report; once set, the button skips the pay step.
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [paidPaymentId, setPaidPaymentId] = useState('');
+  // Mirrors paidPaymentId synchronously, so the auto-download fired from onPaid passes the
+  // paywall check before the state update has rendered.
+  const paidRef = useRef(false);
+  // The Stripe payment ref (pay_…) behind the unlock, read synchronously by the PDF build's download log.
+  const paymentRefRef = useRef('');
+  // Server payment config (price per the flip schedule) for the Essentie button label.
+  const [payConfig, setPayConfig] = useState(null);
+  useEffect(() => { let live = true; getPaymentConfig().then((c) => { if (live) setPayConfig(c); }); return () => { live = false; }; }, []);
+  // The paid PDF is the user's only copy; until it is saved a "download now" banner stays up.
+  const [fullDownloaded, setFullDownloaded] = useState(false);
+  const paidNotSaved = !!paidPaymentId && !fullDownloaded;
+  // Final warning before leaving the report — unpaid: the result and the option to unlock it are
+  // lost; paid: confirm the PDF is saved. In-app exits (reportDownloadGuard) get the Doorgaan /
+  // Teruggaan dialog below; closing / reloading the tab gets the browser's own generic prompt
+  // (browsers do not allow custom text there).
+  const [leaveProceed, setLeaveProceed] = useState(null);
+  const [leaveSavedChecked, setLeaveSavedChecked] = useState(false);
+  const [leaveClosing, setLeaveClosing] = useState(false);
+  useEffect(() => registerLeaveHandler((proceed) => { setLeaveSavedChecked(false); setLeaveClosing(false); setLeaveProceed(() => proceed); }), []);
+  // Pop-ups contract before they unmount (PopupShell `closing`).
+  const closeLeave = useCallback(() => {
+    setLeaveClosing(true);
+    setTimeout(() => { setLeaveProceed(null); setLeaveClosing(false); }, POP_MS);
+  }, []);
+  useEffect(() => {
+    const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, []);
 
   // ── AI Analysis state ──
   // The extension name in the report language: the Dutch canon under the NL toggle,
@@ -191,13 +307,25 @@ const AssessmentResultsModal = ({
       ? (result?.extendedName || result?.extendedNameNl || '')
       : (result?.extendedNameNl || result?.extendedName || '')
   ), [language, result]);
+  // Portrait variant picked on the results card (male/female). The card and BOTH PDF
+  // portrait placements read `portrait`, so the download always matches what was shown.
+  const [portraitVariant, setPortraitVariant] = useState(DEFAULT_PORTRAIT_VARIANT);
+  const portrait = useMemo(
+    () => (portraitOverride
+      ? { ...portraitOverride, variant: portraitVariant, available: { male: false, female: false } }
+      : resolvePortrait(result?.mainArchetype, result?.secondaryArchetype || result?._secondaryKey, portraitVariant)),
+    [result, portraitVariant, portraitOverride]
+  );
   const [aiSections, setAiSections] = useState(null);
   const [aiProfileData, setAiProfileData] = useState(null);
   // v4: structured parse of the model output (assembleV4) + the engine C-runtime.
   const [v4Data, setV4Data] = useState(null);
   const [cRuntime, setCRuntime] = useState(null);
-  // Backend-authored orb login-code (LC_ORB2_…), radial-gated with the real polar_gap.
-  // Held in a ref so the PDF generator reads it synchronously without a re-render race.
+  // The crystal code (the account key) is NOT known here until the full report is unlocked:
+  // the analysis only carries a SEALED copy the browser cannot read. The pay component sends
+  // the seal back and receives the real code on payment / activation. Refs, so the PDF
+  // generator reads them synchronously without a re-render race.
+  const sealedOrbCodeRef = useRef('');
   const orbCodeRef = useRef('');
   const [uploadedOceanScores, setUploadedOceanScores] = useState(null);
   const [aiReady, setAiReady] = useState(false);
@@ -210,50 +338,24 @@ const AssessmentResultsModal = ({
   const onPreviewReadyRef = useRef(onPreviewReady);
   onPreviewReadyRef.current = onPreviewReady;
 
-  // ── Site banner for PDF footer (admin-configured image) ──
-  const [siteBanner, setSiteBanner] = useState(null);
-  useEffect(() => {
-    getPublicSiteBanner().then(setSiteBanner).catch(() => {});
-  }, []);
 
-  // ── Auto-save to backend when user is logged in ──
-  const [savedToBackend, setSavedToBackend] = useState(false);
-  const [savedAssessmentId, setSavedAssessmentId] = useState(null);
-  // Build the backend save payload from the computed result — shared by the auto-save
-  // below AND the "create account" hand-off, so the two can never drift out of sync.
-  const buildSavePayload = useCallback(() => {
-    if (!result) return null;
-    return {
-      archetypeKey: result.mainArchetype,
-      supportArchetype: result.supportArchetype || result.secondaryArchetype || result._secondaryKey || null,
-      supportGroup: result.supportGroup,
-      extendedArchetypeName: result.extendedName,
-      extendedArchetypeNameNl: result.extendedNameNl,
-      oceanScores: result.oceanScores || result.extendedOcean?.ocean || null,
-      responses: result._answerLog || [],
-      subjectResults: result.subjectResults || [],
-      scores: result.scores || null,
-      archetypeDetails: result.archetypeDetails || null,
-      harmonyScore: result.harmonyScore ?? null,
-      consciousnessLevel: result.consciousnessLevel || null,
-      overallShadow: result.overallShadow || null,
-    };
-  }, [result]);
+  // ── Single-instance profile ──
+  // The full profile (answers, scores, analysis) lives ONLY in this tab's memory — never on the
+  // server, never in storage, logged in or not. It is either unlocked (paid / activation code)
+  // and carried out in the PDF, or discarded in full. Leaving the report page without an unlock
+  // also discards the server-side card draft keyed by the (sealed) crystal code, so nothing of
+  // an unpaid report survives. Unmount = leaving; pagehide covers closing / reloading the tab.
   useEffect(() => {
-    if (!result || savedToBackend || !getToken()) return;
-    const payload = buildSavePayload();
-    if (!payload) return;
-    saveAssessment(payload).then((saved) => {
-      setSavedToBackend(true);
-      if (saved?.id) {
-        setSavedAssessmentId(String(saved.id));
-        try { localStorage.setItem('gfl_assessment_id', String(saved.id)); } catch (_) {}
-      }
-      console.log('[GFL] Assessment saved to account, id:', saved?.id);
-    }).catch((err) => {
-      console.warn('[GFL] Could not save assessment:', err.message);
-    });
-  }, [result, savedToBackend, buildSavePayload]);
+    const discard = () => {
+      const sealed = sealedOrbCodeRef.current;
+      if (!sealed || orbCodeRef.current) return; // nothing sealed, or unlocked → keep
+      sealedOrbCodeRef.current = '';
+      discardUnpaidReport(sealed);
+    };
+    const onPageHide = (e) => { if (!e.persisted) discard(); }; // bfcache keeps the tab alive
+    window.addEventListener('pagehide', onPageHide);
+    return () => { window.removeEventListener('pagehide', onPageHide); discard(); };
+  }, []);
 
   // ── Email gate state (unlocks PDF download) ──
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
@@ -284,7 +386,7 @@ const AssessmentResultsModal = ({
 
     try {
       await submitAssessmentReview({
-        assessmentId: savedAssessmentId || 'anonymous',
+        assessmentId: 'anonymous', // no assessment is ever stored server-side
         email: email.trim(),
         archetypeKey: result?.mainArchetype || '',
         extendedArchetypeName: result?.extendedNameNl || result?.extendedName || '',
@@ -299,7 +401,7 @@ const AssessmentResultsModal = ({
     } finally {
       setIsSubmittingReview(false);
     }
-  }, [reviewFormData, result, savedAssessmentId, t]);
+  }, [reviewFormData, result, t]);
 
   // ── Responsive breakpoints (matches DesktopLayout pattern) ──
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
@@ -347,14 +449,17 @@ const AssessmentResultsModal = ({
       // Warm the archetype image now — we know it before the ~5s AI call, so kicking off
       // the fetch here means it's decoded and cached by the time the result card renders
       // (otherwise the card appears first and the image pops in ~2s later).
-      if (result.imageUrl) { const warmImg = new Image(); warmImg.src = result.imageUrl; warmImg.decode?.().catch(() => {}); }
+      for (const v of ['female', 'male']) {
+        const u = resolvePortrait(result.mainArchetype, result.secondaryArchetype || result._secondaryKey, v).url;
+        if (u) { const warmImg = new Image(); warmImg.src = u; warmImg.decode?.().catch(() => {}); }
+      }
 
       try {
         // Dev PDF preview: replay the last real generation instead of calling the API.
         const __replay = (typeof window !== 'undefined' && window.__GFL_PDF_REPLAY) || null;
         let aiResult;
         if (__replay) {
-          aiResult = { analysis: __replay.analysis, cRuntime: __replay.cRuntime, uploadedOceanScores: __replay.uploadedOceanScores, orbCode: __replay.orbCode };
+          aiResult = { analysis: __replay.analysis, cRuntime: __replay.cRuntime, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode };
         } else {
         aiResult = await analyzeAssessment({
           archetypeKey: result.mainArchetype,
@@ -373,11 +478,11 @@ const AssessmentResultsModal = ({
           archetypeDetails: result.archetypeDetails,
           responses: result._answerLog,
           subgroups: result.subgroups,
-          // The relevant Levensles (Main×SupportGroup) — sent so the backend hands it
+          // The relevant Levensles (Main×Support) — sent so the backend hands it
           // to the AI directly (it needn't search the corpus for it).
           levensles: getArchetypeQuote(
             result.mainArchetype,
-            result.secondaryArchetype || result._secondaryKey || result.supportGroup,
+            result.secondaryArchetype || result._secondaryKey,
             language,
           ),
           // UI language → backend picks the matching corpus (nl → Dutch, else English).
@@ -405,7 +510,8 @@ const AssessmentResultsModal = ({
         // v4 structured parse (title-lines-as-tags) + the engine's C-runtime.
         try { setV4Data(assembleV4(cleanedAnalysis)); } catch (e) { console.warn('[GFL] v4 parse failed:', e.message); }
         if (aiResult.cRuntime) setCRuntime(aiResult.cRuntime);
-        orbCodeRef.current = aiResult.orbCode || '';   // backend-authored code (empty on replay/back-compat)
+        sealedOrbCodeRef.current = aiResult.sealedOrbCode || ''; // opaque until unlock
+        orbCodeRef.current = '';
         const sections = parseAiSections(cleanedAnalysis);
         // ── DIAGNOSTIC: shows whether a section was "never sent" (not in this list) vs "not
         //    rendered" (in the list but missing from the PDF). Also flags truncation: if the
@@ -432,11 +538,6 @@ const AssessmentResultsModal = ({
         }
         const mainSections = sections.filter(s => !s.isProfileElement);
         setAiSections(mainSections);
-        // Persist all sections (profile elements + main) for EyedentityPage
-        try {
-          const allForEye = sections.filter(s => !s.isAgentPrompt);
-          localStorage.setItem('gfl_analysis_sections', JSON.stringify(allForEye));
-        } catch (_) {}
         setAiReady(true);
         // Dev: capture this real generation so the PDF live-preview can replay it.
         try {
@@ -444,7 +545,7 @@ const AssessmentResultsModal = ({
             localStorage.setItem('gfl_pdf_replay', JSON.stringify({
               layerAnswers, liveSubjects,
               analysis: aiResult.analysis, cRuntime: aiResult.cRuntime,
-              uploadedOceanScores: aiResult.uploadedOceanScores, orbCode: aiResult.orbCode,
+              uploadedOceanScores: aiResult.uploadedOceanScores, sealedOrbCode: aiResult.sealedOrbCode,
               savedAt: Date.now(),
             }));
           }
@@ -731,6 +832,7 @@ const AssessmentResultsModal = ({
 
   // Generate and download a clean, document-style PDF
   const handleDownloadPdf = useCallback(async ({ shortVersion = false, previewMode: pvw = false } = {}) => {
+    if (!shortVersion && !pvw && !paidPaymentId && !paidRef.current) { setShowPaywall(true); return; }
     if (!result) return;
     setPdfKind(shortVersion ? 'short' : 'full');
     setIsGeneratingPdf(true);
@@ -1141,13 +1243,13 @@ const AssessmentResultsModal = ({
       y += 16;
 
       // Large profile image (centered, ~90mm) - skipped while artwork is unavailable.
-      if (result.imageUrl) try {
+      if (portrait.url) try {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = reject;
-          img.src = result.imageUrl;
+          img.src = portrait.url;
         });
         const imgCanvas = document.createElement('canvas');
         const imgSize = 600;
@@ -1165,8 +1267,7 @@ const AssessmentResultsModal = ({
         const pdfImgSize = 90;
         const imgX = W / 2 - pdfImgSize / 2;
         pdf.addImage(imgData, 'JPEG', imgX, y, pdfImgSize, pdfImgSize);
-        // Clickable hyperlink over the image — opens full-res in browser
-        if (result.imageUrl) pdf.link(imgX, y, pdfImgSize, pdfImgSize, { url: result.imageUrl });
+        // No link to the original here: the full-resolution portrait download lives in the account dashboard.
         // Purple border ring around circular image
         pdf.setDrawColor(...purple);
         pdf.setLineWidth(1.5);
@@ -2721,8 +2822,14 @@ const AssessmentResultsModal = ({
             if (result.mainArchetype && (result.secondaryArchetype || result._secondaryKey)) {
               try {
                 const supportKey = result.secondaryArchetype || result._secondaryKey;
-                const mainImgSrc = getArchetypeImage(result.mainArchetype, ARCHETYPE_TO_GROUP[(result.mainArchetype || '').toUpperCase()] || result.group);
-                const supImgSrc = getArchetypeImage(supportKey, ARCHETYPE_TO_GROUP[(supportKey || '').toUpperCase()] || result.supportGroup);
+                // Each circle shows its archetype paired with its green-line partner (e.g.
+                // Ruler × Judge) — the 132-matrix combination inside its own hardware group.
+                const greenPartner = (k) => {
+                  const key = String(k || '').toUpperCase();
+                  return (GROUP_TO_ARCHETYPES[ARCHETYPE_TO_GROUP[key]] || []).find((m) => m !== key);
+                };
+                const mainImgSrc = getArchetypeImage(result.mainArchetype, greenPartner(result.mainArchetype), portraitVariant);
+                const supImgSrc = getArchetypeImage(supportKey, greenPartner(supportKey), portraitVariant);
                 if (mainImgSrc && supImgSrc) {
                   const [mainEl, supEl] = await Promise.all([
                     new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = mainImgSrc; }),
@@ -2864,20 +2971,18 @@ const AssessmentResultsModal = ({
           pdf.text(tFunc('resultsModal.pdf.footer.generatedOn')(new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL')), W / 2, y, { align: 'center' });
           y += 6;
 
-          // ── Closing message + image: pinned to the bottom of the last page ──
-          const hasBannerImage = siteBanner?.imageBase64 && siteBanner?.imageMimeType;
-          const imgSizeMm = 26.5;
-          const imgX = W - margin - imgSizeMm;
-          const imgY = H - margin - imgSizeMm;
+          // ── Closing message: pinned to the bottom of the last page ──
+          // Absolutely positioned (anchored upward from the bottom margin) and never calls
+          // ensureSpace/addPage, so it cannot change the page count or page distribution.
+          const closingBottomY = H - margin;
 
           const lineH = 4.0;
-          const closingTextW = hasBannerImage ? contentW - imgSizeMm - 6 : contentW - 4;
+          const closingTextW = contentW - 4;
           pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
           const line1 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l1'), closingTextW);
           const line2 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l2'), closingTextW);
           const line3 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l3'), closingTextW);
           const line4 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l4'), closingTextW);
-          const line4b = pdf.splitTextToSize(t('resultsModal.pdf.closing.l4b'), closingTextW);
           const line5 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l5'), closingTextW);
           const gapSingle = lineH;
           const gapDouble = lineH * 2;
@@ -2885,10 +2990,9 @@ const AssessmentResultsModal = ({
             line1.length * lineH + gapDouble +
             line2.length * lineH +
             line3.length * lineH + gapSingle +
-            line4.length * lineH +
-            line4b.length * lineH + gapDouble +
+            line4.length * lineH + gapDouble +
             line5.length * lineH;
-          let yMsg = imgY + imgSizeMm - totalTextH;
+          let yMsg = closingBottomY - totalTextH;
 
           pdf.setFontSize(7.5);
           pdf.setTextColor(...white);
@@ -2899,17 +3003,8 @@ const AssessmentResultsModal = ({
           for (const l of line3) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
           yMsg += gapSingle;
           for (const l of line4) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-          for (const l of line4b) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
           yMsg += gapDouble;
           for (const l of line5) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-
-          if (hasBannerImage) {
-            try {
-              const imgFormat = siteBanner.imageMimeType.toLowerCase().includes('png') ? 'PNG' : 'JPEG';
-              const bannerData = `data:${siteBanner.imageMimeType};base64,${siteBanner.imageBase64}`;
-              pdf.addImage(bannerData, imgFormat, imgX, imgY, imgSizeMm, imgSizeMm);
-            } catch { /* skip banner image on error */ }
-          }
 
           endAiPrompt();
         }
@@ -3012,9 +3107,9 @@ const AssessmentResultsModal = ({
         mGap();
 
         // ── Orb login-code: the PDF IS the login. Backend extracts this and discards the file. ──
-        // Prefer the backend-authored code (radial-gated with the real polar_gap); fall back to
-        // client re-derivation (gate open) only when a backend code isn't present (back-compat).
-        const orbCode = orbCodeRef.current || orbCodeFromResult(result);
+        // Only the code the server handed over on unlock. No client-side fallback: a code the
+        // browser derives itself is not an activated code and would not open an account.
+        const orbCode = orbCodeRef.current;
         if (orbCode) {
           mBold(dash(t('resultsModal.pdf.data.orbSection')), green);
           mLine(`ORB::${orbCode}::ORB`, dimWhite);
@@ -3220,6 +3315,9 @@ const AssessmentResultsModal = ({
       const archetypeName = (result?.extendedName || 'Archetype').replace(/\s+/g, '_');
       if (pvw) { try { onPreviewReadyRef.current?.(pdf.output('bloburl')); } catch (_) {} return; }
       pdf.save(`GardenForLife_${archetypeName}.pdf`);
+      setFullDownloaded(true);
+      // Download log for a Stripe payment (a timestamp on the ledger — nothing of the report).
+      markPaymentDelivered(paymentRefRef.current, sealedOrbCodeRef.current);
       // Full (paid) report downloaded → send the access/welcome email to the gate
       // email (fire-and-forget; never blocks the download). Language + archetype
       // name follow the language of the taken test.
@@ -3238,7 +3336,7 @@ const AssessmentResultsModal = ({
       setIsGeneratingPdf(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, displaySections, uploadedFiles, v4Data, language, cRuntime, t, tArray, tFunc]);
+  }, [result, displaySections, uploadedFiles, v4Data, language, cRuntime, t, tArray, tFunc, portrait, portraitVariant, paidPaymentId]);
 
   // Dev PDF live-preview: once the (replayed) analysis is ready, auto-build the PDF
   // and hand the blob URL back to the harness instead of downloading.
@@ -3364,8 +3462,8 @@ const AssessmentResultsModal = ({
             {/* Persistent preload: load + decode the archetype portrait during the wait so it's
                 already cached when the result card paints (otherwise the card shows first and the
                 image pops in a moment later). Hidden, off the layout. */}
-            {result?.imageUrl && (
-              <img src={result.imageUrl} alt="" aria-hidden="true" decoding="async"
+            {portrait.url && (
+              <img src={portrait.url} alt="" aria-hidden="true" decoding="async"
                 style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }} />
             )}
 
@@ -3514,56 +3612,40 @@ const AssessmentResultsModal = ({
                   paddingBottom: '1.5rem',
                   borderBottom: '1px solid rgba(29, 153, 4, 0.2)',
                 }}>
-                  {/* Profile Image with Holographic Rings — responsive size */}
+                  {/* Portrait column: the archetype image + the male/female toggle */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem', flexShrink: 0 }}>
+                  {/* Archetype portrait — responsive square box. The art is transparent PNG, shown whole:
+                      no frame, no crop (contain, not cover). */}
                   <div style={{ position: 'relative', width: rs.profileImgSize, height: rs.profileImgSize, flexShrink: 0 }}>
-                    {/* Dashed spinning ring */}
-                    <div style={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '50%',
-                      border: '1px dashed rgba(29, 153, 4, 0.4)',
-                      animation: 'spin 20s linear infinite',
-                    }} />
-                    {/* Dotted reverse-spinning ring */}
-                    <div style={{
-                      position: 'absolute',
-                      inset: '-0.75rem',
-                      borderRadius: '50%',
-                      border: '1px dotted rgba(168, 85, 247, 0.4)',
-                      animation: 'spin 15s linear infinite reverse',
-                    }} />
-                    {/* Actual image */}
-                    <div style={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: '2px solid #1d9904',
-                      background: '#000',
-                      position: 'relative',
-                    }}>
-                      {result.imageUrl && (
-                      <img
-                        src={result.imageUrl}
-                        alt={extName || result.name}
-                        loading="eager"
-                        fetchpriority="high"
-                        decoding="async"
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          filter: 'contrast(1.25) sepia(0.2)',
-                          transform: 'scale(1.05)',
-                        }}
-                      />
-                      )}
-                      <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
-                      }} />
-                    </div>
+                    {portrait.url && (
+                    <img
+                      src={portrait.url}
+                      alt={extName || result.name}
+                      loading="eager"
+                      fetchpriority="high"
+                      decoding="async"
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        filter: 'contrast(1.25) sepia(0.2)',
+                      }}
+                    />
+                    )}
+                  </div>
+                  {/* Offered only when both portraits exist — the PDF follows this choice. */}
+                  {portrait.available.male && portrait.available.female && (
+                    <PortraitVariantToggle
+                      value={portrait.variant}
+                      onChange={setPortraitVariant}
+                      labels={{
+                        label: t('resultsModal.ui.portraitToggle.label'),
+                        female: t('resultsModal.ui.portraitToggle.female'),
+                        male: t('resultsModal.ui.portraitToggle.male'),
+                      }}
+                    />
+                  )}
                   </div>
 
                   <div style={{ maxWidth: rs.profileTextMaxW }}>
@@ -3895,6 +3977,40 @@ const AssessmentResultsModal = ({
                     </div>
                   )}
 
+                  
+
+                  {/* Paid but the PDF is not on the device yet: auto-download running, or it failed. */}
+                  {paidNotSaved && (
+                    <div data-pdf-hide role="status" aria-live="polite" style={{
+                      width: '100%', boxSizing: 'border-box', marginBottom: '1rem', padding: '0.9rem 1.1rem',
+                      display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
+                      background: 'rgba(255, 174, 0, 0.06)', border: '1px solid rgba(255, 174, 0, 0.5)', borderRadius: '0.5rem',
+                      boxShadow: '0 0 20px rgba(255, 174, 0, 0.12)',
+                    }}>
+                      <div style={{ flex: '1 1 16rem', minWidth: 0 }}>
+                        <div style={{ color: '#ffae00', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 'max(10px, 0.55vw)', marginBottom: '0.3rem' }}>
+                          {isGeneratingPdf ? t('resultsModal.paywall.autoDownloading') : t('resultsModal.paywall.notDownloadedTitle')}
+                        </div>
+                        {!isGeneratingPdf && (
+                          <div style={{ color: '#FFFEF0', fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.62vw)', lineHeight: 1.5 }}>
+                            {t('resultsModal.paywall.notDownloadedBody')}
+                          </div>
+                        )}
+                      </div>
+                      {!isGeneratingPdf && (
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadPdf()}
+                          style={{ padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid #ffae00', borderRadius: '0.15rem', color: '#ffae00', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 'max(10px, 0.55vw)', cursor: 'pointer', transition: 'all 0.25s' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = '#ffae00'; e.currentTarget.style.color = '#000'; e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 174, 0, 0.5)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ffae00'; e.currentTarget.style.boxShadow = 'none'; }}
+                        >
+                          {t('resultsModal.paywall.downloadNow')}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   <div data-pdf-hide style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -3903,78 +4019,9 @@ const AssessmentResultsModal = ({
                     width: '100%',
                     flexWrap: 'wrap',
                   }}>
-                    {/* PDF consent micro-modal */}
-                    {showPdfConsent && (
-                      <div style={{
-                        position: 'fixed', inset: 0, zIndex: 9999,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)',
-                        padding: '1rem',
-                      }}>
-                        <div style={{
-                          maxWidth: '34rem', width: '100%',
-                          backgroundColor: 'rgba(6, 2, 10, 0.98)',
-                          border: '1px solid rgba(29,153,4,0.2)',
-                          borderRadius: '0.5rem',
-                          padding: '1.75rem',
-                          boxShadow: '0 0 40px rgba(29,153,4,0.08)',
-                          fontFamily: "'Lexend Mega', sans-serif",
-                        }}>
-                          <h3 style={{ color: '#1d9904', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
-                            {pdfKind === 'short' ? t('resultsModal.ui.consentTitleShort') : t('resultsModal.ui.consentTitleFull')}
-                          </h3>
-                          <p style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem', fontStyle: 'italic', marginBottom: '1.25rem' }}>
-                            {t('resultsModal.ui.consentLead')}
-                          </p>
-
-                          <div style={{ borderLeft: '2px solid rgba(29,153,4,0.3)', paddingLeft: '0.875rem', marginBottom: '1.25rem' }}>
-                            <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: '0.75rem', lineHeight: 1.75 }}>
-                              {pdfKind === 'short'
-                                ? t('resultsModal.ui.consentBodyShort')
-                                : t('resultsModal.ui.consentBodyFull')}
-                            </p>
-                          </div>
-
-                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', marginBottom: '1.25rem' }}>
-                            <input
-                              type="checkbox"
-                              checked={pdfConsentChecked}
-                              onChange={(e) => setPdfConsentChecked(e.target.checked)}
-                              style={{ marginTop: '0.1rem', accentColor: '#1d9904', width: '0.9rem', height: '0.9rem', flexShrink: 0, cursor: 'pointer' }}
-                            />
-                            <span style={{ color: 'rgba(148,163,184,0.9)', fontSize: '0.75rem', lineHeight: 1.65 }}>
-                              {pdfKind === 'short'
-                                ? t('resultsModal.ui.consentCheckShort')
-                                : t('resultsModal.ui.consentCheckFull')}
-                            </span>
-                          </label>
-
-                          <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end' }}>
-                            <button
-                              onClick={() => { setShowPdfConsent(false); setPdfConsentChecked(false); }}
-                              style={{ background: 'none', border: '1px solid rgba(100,116,139,0.4)', color: '#64748b', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}
-                              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#94a3b8'; e.currentTarget.style.color = '#94a3b8'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(100,116,139,0.4)'; e.currentTarget.style.color = '#64748b'; }}
-                            >
-                              {t('resultsModal.ui.cancel')}
-                            </button>
-                            <button
-                              onClick={() => { if (pdfConsentChecked) { const wasShort = pdfKind === 'short'; setShowPdfConsent(false); logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: wasShort ? 'pdf_short' : 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {}); handleDownloadPdf({ shortVersion: wasShort }); } }}
-                              disabled={!pdfConsentChecked}
-                              style={{ background: pdfConsentChecked ? 'transparent' : 'none', border: `1px solid ${pdfConsentChecked ? '#1d9904' : 'rgba(29,153,4,0.2)'}`, color: pdfConsentChecked ? '#1d9904' : 'rgba(29,153,4,0.3)', borderRadius: '9999px', padding: '0.35rem 1rem', fontSize: '0.55rem', fontFamily: "'Lexend Mega', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', cursor: pdfConsentChecked ? 'pointer' : 'not-allowed', backgroundColor: pdfConsentChecked ? 'rgba(29,153,4,0.07)' : 'none' }}
-                              onMouseEnter={(e) => { if (pdfConsentChecked) e.currentTarget.style.boxShadow = '0 0 16px rgba(29,153,4,0.25)'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
-                            >
-                              {t('resultsModal.ui.consentConfirm')}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Korte versie — FREE short summary PDF (shorter consent, no AI-prompt clause) */}
+                    {/* Fundament (short report) — FREE short summary PDF (shorter consent, no AI-prompt clause) */}
                     <button
-                      onClick={() => { if (!isGeneratingPdf && reviewSubmitted) { setPdfKind('short'); setPdfConsentChecked(false); setShowPdfConsent(true); } }}
+                      onClick={() => { if (!isGeneratingPdf && reviewSubmitted) { setPdfConsentChecked(false); setShowPdfConsent(true); } }}
                       disabled={isGeneratingPdf || !reviewSubmitted}
                       style={{
                         flex: '1 1 0',
@@ -4023,87 +4070,15 @@ const AssessmentResultsModal = ({
                       </span>
                     </button>
 
-                    {/* Save & Create Account */}
+                    {/* Essentie (full report) — PAID. The pay component (PDF consent is its first step); a
+                        confirmed payment / activation code downloads the PDF automatically. Once saved,
+                        the button re-downloads directly (consent already given). */}
                     <button
                       onClick={() => {
-                        if (!reviewSubmitted) return;
-                        if (showLeaveWarning) {
-                          setShowLeaveWarning(false);
-                          // Path: test done + NOT logged in + "create account" clicked.
-                          // Stash the profile so LoginPage can link it to the new account
-                          // once it's made. (If already logged in, the auto-save above
-                          // already handled it — don't stash a pending copy.)
-                          if (!getToken()) {
-                            try {
-                              const payload = buildSavePayload();
-                              if (payload) localStorage.setItem('gfl_pending_assessment', JSON.stringify(payload));
-                            } catch (_) { /* storage disabled — skip */ }
-                          }
-                          onCreateAccount();
-                        } else {
-                          setShowLeaveWarning(true);
-                        }
+                        if (isGeneratingPdf || !reviewSubmitted) return;
+                        if (paidPaymentId) { handleDownloadPdf(); return; }
+                        setShowPaywall(true);
                       }}
-                      disabled={!reviewSubmitted}
-                      style={{
-                        flex: showLeaveWarning ? '2 1 0' : '1 1 0',
-                        minWidth: rs.btnMinWidth,
-                        position: 'relative',
-                        overflow: 'hidden',
-                        padding: rs.btnPad,
-                        background: showLeaveWarning ? 'linear-gradient(to right, #a855f7, #581c87)' : '#000',
-                        border: `1px solid ${showLeaveWarning ? 'transparent' : '#a855f7'}`,
-                        color: showLeaveWarning ? '#fff' : '#a855f7',
-                        fontFamily: "'Lexend Mega', sans-serif",
-                        fontWeight: 'bold',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        fontSize: rs.btnFont,
-                        cursor: !reviewSubmitted ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.3s',
-                        boxShadow: showLeaveWarning ? '0 0 20px rgba(168, 85, 247, 0.3)' : '0 0 15px rgba(168, 85, 247, 0.1)',
-                        opacity: !reviewSubmitted ? 0.5 : 1,
-                      }}
-                      onMouseEnter={e => {
-                        if (reviewSubmitted && !showLeaveWarning) {
-                          e.currentTarget.style.background = '#a855f7';
-                          e.currentTarget.style.color = '#000';
-                        }
-                      }}
-                      onMouseLeave={e => {
-                        if (!showLeaveWarning) {
-                          e.currentTarget.style.background = '#000';
-                          e.currentTarget.style.color = '#a855f7';
-                        }
-                      }}
-                    >
-                      <span style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" />
-                          </svg>
-                          {showLeaveWarning ? t('resultsModal.ui.continueBtn') : t('results.createAccount')}
-                        </span>
-                        {showLeaveWarning && (
-                          <span style={{ fontSize: '0.7em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.01em', opacity: 0.85 }}>
-                            {t('resultsModal.ui.leaveWarning')}
-                          </span>
-                        )}
-                      </span>
-                      {showLeaveWarning && (
-                        <div style={{
-                          position: 'absolute',
-                          inset: 0,
-                          background: 'linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.15) 50%, transparent 75%)',
-                          backgroundSize: '250% 250%',
-                          animation: 'shimmerBtn 3s infinite',
-                        }} />
-                      )}
-                    </button>
-
-                    {/* Volledige rapport — PAID (placeholder €00,00, instant). Consent gate, no paywall. */}
-                    <button
-                      onClick={() => { if (!isGeneratingPdf && reviewSubmitted) { setPdfKind('full'); setPdfConsentChecked(false); setShowPdfConsent(true); } }}
                       disabled={isGeneratingPdf || !reviewSubmitted}
                       style={{
                         flex: '1 1 0',
@@ -4145,8 +4120,10 @@ const AssessmentResultsModal = ({
                           {(isGeneratingPdf && pdfKind === 'full') ? t('resultsModal.ui.generating') : t('resultsModal.ui.fullReport')}
                         </span>
                         {!(isGeneratingPdf && pdfKind === 'full') && (
-                          <span style={{ fontSize: '0.7em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.02em', opacity: 0.85 }}>
-                            {t('resultsModal.ui.price')}
+                          <span style={{ fontSize: '0.85em', fontWeight: 'normal', textTransform: 'none', letterSpacing: '0.02em', opacity: 0.85 }}>
+                            {paidPaymentId
+                              ? t('resultsModal.paywall.unlocked')
+                              : (payConfig?.enabled ? formatCents(language, payConfig.grossCents, payConfig.currency) : formatPrice(language))}
                           </span>
                         )}
                       </span>
@@ -4159,7 +4136,112 @@ const AssessmentResultsModal = ({
               </div>
             </div>
           </div>
+
+          {/* Fundament PDF consent — the same consent card as the Essentie pay component's first step,
+              laid over the report card the same way */}
+          {showPdfConsent && (
+            <PopupShell fill closing={pdfConsentClosing} labelledBy="gfl-pdf-consent-title" panelRef={pdfConsentRef}>
+              <PdfConsentStep
+                titleId="gfl-pdf-consent-title"
+                t={t}
+                lead={t('resultsModal.ui.consentLeadDownload')}
+                checked={pdfConsentChecked}
+                onCheck={setPdfConsentChecked}
+                onCancel={closePdfConsent}
+                onConfirm={() => {
+                  closePdfConsent();
+                  logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: 'pdf_short', message: 'User confirmed PDF download consent' }).catch(() => {});
+                  handleDownloadPdf({ shortVersion: true });
+                }}
+              />
+            </PopupShell>
+          )}
+
+          {/* Paywall — black card laid exactly over the report card (sibling of the card, so it
+              covers the border box and stays put while the report scrolls underneath) */}
+          <PaywallModal
+            fill
+            open={showPaywall}
+            sealedOrbCode={sealedOrbCodeRef.current}
+            email={reviewFormData.email.trim()}
+            language={language}
+            t={t}
+            onClose={() => setShowPaywall(false)}
+            onConsent={() => {
+              logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {});
+            }}
+            onPaid={(paymentId, orbCode) => {
+              orbCodeRef.current = orbCode || '';
+              paidRef.current = true;
+              paymentRefRef.current = paymentId;
+              setPaidPaymentId(paymentId);
+              setShowPaywall(false);
+              // PDF consent was the paywall's first step → download right away.
+              handleDownloadPdf();
+            }}
+          />
         </div>
+      )}
+
+      {/* Final leave warning (in-app exits) — shared pop-up frame (PopupShell) */}
+      {leaveProceed && (
+        <PopupShell
+          closing={leaveClosing}
+          onDismiss={closeLeave}
+          role="alertdialog"
+          labelledBy="gfl-leave-title"
+          width="30rem"
+          zIndex={2147483600}
+        >
+          <PopupTitle id="gfl-leave-title">{t('resultsModal.paywall.leaveTitle')}</PopupTitle>
+          {paidPaymentId ? (
+            <>
+              {paidNotSaved && (
+                <p style={{ margin: 0, color: '#FFFEF0', fontFamily: "'Figtree', sans-serif", fontSize: 'max(12px, 0.65vw)', lineHeight: 1.65 }}>
+                  {t('resultsModal.paywall.notDownloadedBody')}
+                </p>
+              )}
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={leaveSavedChecked}
+                  onChange={(e) => setLeaveSavedChecked(e.target.checked)}
+                  style={{ marginTop: '0.2rem', width: '0.95rem', height: '0.95rem', accentColor: PURPLE, flexShrink: 0, cursor: 'pointer' }}
+                />
+                <span style={{ color: '#FFFEF0', fontFamily: "'Figtree', sans-serif", fontSize: 'max(12px, 0.65vw)', lineHeight: 1.65 }}>
+                  {t('resultsModal.paywall.leavePaidCheck')}
+                </span>
+              </label>
+            </>
+          ) : (
+            <p style={{ margin: 0, color: '#FFFEF0', fontFamily: "'Figtree', sans-serif", fontSize: 'max(12px, 0.65vw)', lineHeight: 1.65 }}>
+              {t('resultsModal.paywall.leaveUnpaid')}
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+            {paidNotSaved && !isGeneratingPdf && (
+              <span style={{ marginRight: 'auto' }}>
+                <SciFiButton variant="purple" size="md" onClick={() => { closeLeave(); handleDownloadPdf(); }}>
+                  {t('resultsModal.paywall.downloadNow')}
+                </SciFiButton>
+              </span>
+            )}
+            <SciFiButton variant="purple" size="md" onClick={closeLeave}>{t('resultsModal.paywall.leaveBack')}</SciFiButton>
+            <SciFiButton
+              variant="white"
+              size="md"
+              disabled={!!paidPaymentId && !leaveSavedChecked}
+              onClick={() => {
+                if (paidPaymentId && !leaveSavedChecked) return;
+                const go = leaveProceed;
+                closeLeave();
+                go();
+              }}
+            >
+              {t('resultsModal.paywall.leaveContinue')}
+            </SciFiButton>
+          </div>
+        </PopupShell>
       )}
 
       {/* Keyframe animations + scrollbar styling */}
@@ -4175,10 +4257,6 @@ const AssessmentResultsModal = ({
         @keyframes resultsModalFadeIn {
           from { opacity: 0; transform: scale(0.95) translateY(10px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes shimmerBtn {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
         }
         .results-modal-scroll::-webkit-scrollbar {
           width: 6px;
@@ -4940,7 +5018,7 @@ function computeResultFromAnswers(layerAnswers, liveSubjects, lang = 'nl') {
     mainName: primaryArchetype.name,                  // e.g. "De Wijze"
     mainNameEn: primaryArchetype.nameEn || mainKey,
     description: archetypeField(primaryArchetype, 'description', lang),
-    levensles: getArchetypeQuote(mainKey, supportGroup, lang) || null,
+    levensles: getArchetypeQuote(mainKey, supportKey, lang) || null,
     mainMotivation: archetypeField(primaryArchetype, 'motivation', lang) || null,
     mainPositive: archetypeField(primaryArchetype, 'positive', lang) || null,
     mainShadowTrait: archetypeField(primaryArchetype, 'shadow', lang) || null,
@@ -4998,41 +5076,16 @@ function computeResultFromAnswers(layerAnswers, liveSubjects, lang = 'nl') {
     _secondaryKey: supportKey,
     _extendedName: extendedName,
     _harmonyActive: harmonyActive,
-    // Full answer log (backend-only, for account-linked retrieval)
+    // Full answer log — in-memory only (single-instance profile, never stored)
     _answerLog: answerLog,
     // AI Agent prompt (for Ontologische Evolutie section)
     _aiAgentPrompt: `Je bent een persoonlijke ontwikkelingscoach gespecialiseerd in Jungiaanse archetypen en het OCEAN persoonlijkheidsmodel. Mijn profiel: Extended Archetype "${extendedName}" (Main: ${primaryArchetype.nameEn || mainKey}, Support: ${supportArchetype.nameEn || supportKey}, Support Group: ${supportGroup}). Mijn schaduw (180° indicatie) is ${shadowKey ? (ARCHETYPES[shadowKey]?.nameEn || shadowKey) : 'onbekend'}, mijn blindspot is ${blindspotKey ? (ARCHETYPES[blindspotKey]?.nameEn || blindspotKey) : 'onbekend'}. OCEAN profiel: O=${extendedOcean?.ocean?.O || '?'}, C=${extendedOcean?.ocean?.C || '?'}, E=${extendedOcean?.ocean?.E || '?'}, A=${extendedOcean?.ocean?.A || '?'}, N=${extendedOcean?.ocean?.N || '?'}. Neuroticisme-trigger, superkracht en individuatiepad zijn te vinden in het rapport. Help me mijn schaduw te integreren en mijn blindspot te herkennen in dagelijkse situaties.`,
   };
 
-  // ──────────────────────────────────────────────────────────
-  // Persist full session to localStorage for account retrieval
-  // ──────────────────────────────────────────────────────────
+  // The single-instance profile is never written to storage. Earlier builds kept the answer log,
+  // a 10-session history, the AI sections and a pending copy in localStorage — clear leftovers.
   try {
-    const sessionData = {
-      timestamp: new Date().toISOString(),
-      extendedArchetype: extendedName,
-      mainArchetype: mainKey,
-      supportArchetype: supportKey,
-      supportGroup: supportGroup,
-      harmonyActive,
-      shadowBonusActive,
-      totalScore,
-      maxScore: resultObj.maxScore,
-      archetypeScores: advanced.scores || archetypeScores,
-      answerLog,
-      radarData,
-      subgroups,
-      shadowArchetype: shadowKey,
-      blindspotArchetype: blindspotKey,
-      overallArchetype: mainKey,
-    };
-    // Store current session
-    localStorage.setItem('gfl_assessment_session', JSON.stringify(sessionData));
-    // Append to history (keep last 10 sessions)
-    const history = JSON.parse(localStorage.getItem('gfl_assessment_history') || '[]');
-    history.unshift(sessionData);
-    if (history.length > 10) history.length = 10;
-    localStorage.setItem('gfl_assessment_history', JSON.stringify(history));
+    for (const k of LEGACY_PROFILE_KEYS) localStorage.removeItem(k);
   } catch (e) {
     // localStorage may be unavailable — fail silently
   }

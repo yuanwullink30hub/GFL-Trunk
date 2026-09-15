@@ -1,8 +1,8 @@
 import React, { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '@gfl/i18n';
-import { login, register, getMe, logout, getToken, setToken, logActivity, saveAssessment, orbLoginFromPdf, orbLinkCode, getHistory, getAssessment } from '@gfl/api-client';
-import { setClientOrbCode, setClientOrbConfig, setClientProfile, clearClientMode, getClientOrbCode, getClientOrbConfig } from '../clientMode';
+import { login, register, getMe, getToken, setToken, logActivity, orbLoginFromPdf, orbLinkCode, getHistory, getAssessment } from '@gfl/api-client';
+import { setClientOrbCode, setClientOrbConfig, setClientProfile, getClientOrbCode, getClientOrbConfig, logoutAndReload } from '../clientMode';
 import ClientOrbExperience from '../components/assessment/ClientOrbExperience';
 import ProfileDashboard from '../components/assessment/ProfileDashboard';
 import AdminDashboardModal from '@gfl/admin-ui';
@@ -12,6 +12,7 @@ import {
 } from '@gfl/ui';
 import { OrbSphere3D, LeverDashboard, PaletteDashboard, decodeDNA, decodeOrb3, deriveOrb3, encodeOrb3, orbCodeFromResult, ORB3D_PRESETS } from '../orb';
 import { getArchetypeKeyByName } from '@gfl/assessment-core/data/archetypeImages';
+import { extendedNameFor } from '@gfl/assessment-core/data';
 import { getArchetypeQuoteByKey } from '@gfl/assessment-core/data/archetypeQuotes';
 
 // localStorage key the reload's loading screen (index.html) reads to show the archetype
@@ -45,7 +46,7 @@ async function enterClientModeFromAccount(user, lang = 'nl') {
     if (!code) return false;
     let me = null; try { me = await getMe(); } catch (_) {}
     setClientOrbCode(code);
-    const archetypeName = d.extendedArchetypeName || d.archetypeKey || '';
+    const archetypeName = extendedNameFor(d, lang);
     setClientProfile({
       displayName: me?.displayName || user?.displayName || '',
       archetypeName,
@@ -68,24 +69,6 @@ async function enterClientModeFromAccount(user, lang = 'nl') {
 const TEMPLATE_ORB = ORB3D_PRESETS.Agency;
 const SESSION_TS_KEY = 'gfl_session_ts';
 const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
-
-/* If the user completed the assessment, hit "create account" while logged out, and
-   just registered/logged in, link that stashed profile to the now-authenticated
-   account. Runs once after auth (the token is already set by register()/login()). */
-async function linkPendingAssessment() {
-  let pending;
-  try { pending = localStorage.getItem('gfl_pending_assessment'); } catch (_) { return; }
-  if (!pending) return;
-  try {
-    const saved = await saveAssessment(JSON.parse(pending));
-    if (saved?.id) localStorage.setItem('gfl_assessment_id', String(saved.id));
-    localStorage.removeItem('gfl_pending_assessment');
-    console.log('[GFL] Linked pending assessment to account, id:', saved?.id);
-  } catch (err) {
-    console.warn('[GFL] Could not link pending assessment:', err?.message);
-    // Leave it in storage so a later successful auth can still pick it up.
-  }
-}
 
 /* ═══════════════════════════════════════════════════════════════════════
    LoginFrame — bespoke translucent container for the login modal.
@@ -446,7 +429,6 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       stampSession();
       // Claim a crystal-code the user uploaded this session to their account (adds to the timeline).
       if (orbCodeStr) orbLinkCode(orbCodeStr, data.archetypeName, obReading).catch(() => {});
-      await linkPendingAssessment();
       if (data.user?.role === 'admin') {
         logActivity({
           type: 'admin_login',
@@ -489,7 +471,6 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       setUser(data.user);
       // Claim a crystal-code the user uploaded this session to their new account (adds to the timeline).
       if (orbCodeStr) orbLinkCode(orbCodeStr, obArchetype, obReading).catch(() => {});
-      await linkPendingAssessment();
       setEmail(''); setPassword(''); setDisplayName('');
       setShowConsent(false);
       setConsentA(false); setConsentB(false);
@@ -500,24 +481,13 @@ const LoginPage = memo(({ isVisible, onBack }) => {
     finally { setLoading(false); }
   }, [email, password, displayName, orbCodeStr]);
 
-  // Logout must clear ALL auth state, not just the token: the client-mode flag (gfl_orb_code +
-  // profile), the 24h session stamp, and the admin flag. Clearing the token alone leaves the orb
-  // code behind, so App.jsx keeps booting the orb/client interface and logout appears to do nothing.
-  // The hard-refresh makes App re-evaluate clientMode as false and boot the visitor interface.
+  // Logout clears ALL auth state and hard-refreshes — see logoutAndReload in clientMode.js.
   const [loggingOut, setLoggingOut] = useState(false);
   const handleLogout = useCallback(() => {
     // Paint an instant overlay first — the reboot below takes a beat and without feedback the
     // button reads as broken/frozen. Two rAFs guarantees the overlay renders before reload().
     setLoggingOut(true);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      logout();
-      clearClientMode();
-      try {
-        localStorage.removeItem(SESSION_TS_KEY);
-        localStorage.removeItem('gfl_admin_mode');
-      } catch (_) { /* ignore */ }
-      window.location.reload();
-    }));
+    requestAnimationFrame(() => requestAnimationFrame(logoutAndReload));
   }, []);
 
   // Portaled to <body> (not inside the login section) so it escapes that stacking context and sits

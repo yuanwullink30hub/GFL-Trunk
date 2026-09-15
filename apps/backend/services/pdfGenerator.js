@@ -157,7 +157,7 @@ async function generatePdf(data) {
         },
         {
           title: '4. GEGEVENSBEWARING',
-          text: 'Het berekende profiel waaruit dit rapport is opgebouwd bestaat maximaal 24 uur op onze servers en wordt daarna automatisch en onherroepelijk verwijderd. Dit rapport is uw persoonlijke kopie — Garden for Life bewaart daarvan geen kopie. Maakt u een account aan, dan blijft daarin uitsluitend een gedeeltelijk profiel bewaard. Uw kristal-code verloopt niet en blijft altijd inwisselbaar.',
+          text: 'Het volledige profiel waaruit dit rapport is opgebouwd is nergens opgeslagen: het bestond alleen tijdens uw sessie en is daarna verwijderd. Dit rapport is het enige exemplaar — Garden for Life bewaart geen kopie en kan het niet opnieuw genereren. Maakt u een account aan, dan blijft daarin uitsluitend een gedeeltelijk profiel bewaard. De kristal-code in een vrijgegeven rapport verloopt niet en blijft één keer inwisselbaar.',
         },
         {
           title: '5. INTELLECTUEEL EIGENDOM',

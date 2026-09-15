@@ -10,6 +10,24 @@
     <meta name="msapplication-navbutton-color" content="#0a0510">
     <meta name="color-scheme" content="dark">
     <title>Garden For Life - DELTAWERKEN</title>
+    <!-- Loading-screen language, decided before the body paints so the overlay never flashes
+         the wrong language. Same rule as @gfl/i18n's LanguageProvider (keep in sync): the
+         visitor's NL/EN toggle pick if any, else the language of their IP country (data-geo-lang,
+         set by functions/_middleware.js), else Dutch for a Dutch browser, else English. -->
+    <script>
+      (function() {
+        var lang = null;
+        try { lang = localStorage.getItem('gfl_language_choice'); } catch (e) {}
+        if (lang !== 'nl' && lang !== 'en') {
+          lang = document.documentElement.getAttribute('data-geo-lang');
+        }
+        if (lang !== 'nl' && lang !== 'en') {
+          var browserLang = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+          lang = browserLang.toLowerCase().split('-')[0] === 'nl' ? 'nl' : 'en';
+        }
+        document.documentElement.lang = lang;
+      })();
+    </script>
     <!-- Google Fonts - Rajdhani -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -110,8 +128,8 @@
               min-height: 3.6rem;
               overflow: hidden;
             ">
-              <p class="gfl-slide keep-spinning" style="animation-delay: 0s">Omgeving initialiseren</p>
-              <p class="gfl-slide keep-spinning" style="animation-delay: 2.8s">Exclusieve toegang<br>tot Beta V4.9</p>
+              <p class="gfl-slide keep-spinning" style="animation-delay: 0s"><span class="gfl-nl">Omgeving initialiseren</span><span class="gfl-en">Initializing environment</span></p>
+              <p class="gfl-slide keep-spinning" style="animation-delay: 2.8s"><span class="gfl-nl">Exclusieve toegang<br>tot Beta V4.9</span><span class="gfl-en">Exclusive access<br>to Beta V4.9</span></p>
               <p class="gfl-slide keep-spinning" style="animation-delay: 5.6s">Six Seven</p>
             </div>
           </div>
@@ -126,6 +144,9 @@
     <style>
       @keyframes gfl-spin { to { transform: rotate(360deg); } }
       #gfl-loading-spinner { animation: gfl-spin 1s linear infinite; }
+
+      /* Bilingual loading copy — <html lang> is set by the head script */
+      html[lang="nl"] .gfl-en, html:not([lang="nl"]) .gfl-nl { display: none; }
 
       /* Text slideshow: 3 cards, 8.4s total cycle, each visible 2.8s */
       @keyframes gfl-slide-cycle {
@@ -225,7 +246,7 @@
           ss.style.maxWidth = '440px';
           var label = document.createElement('p');
           label.className = 'gfl-lesson-label';
-          label.textContent = 'Levensles';
+          label.textContent = document.documentElement.lang === 'nl' ? 'Levensles' : 'Life lesson';
           var body = document.createElement('p');
           body.className = 'gfl-lesson-slide';
           body.textContent = lesson;           // textContent — safe, no HTML injection

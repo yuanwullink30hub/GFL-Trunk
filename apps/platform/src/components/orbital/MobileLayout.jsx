@@ -5,10 +5,6 @@ import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
 
 // Import garden logos
-const karmanLogo = '/images/karmaneventsPNG.png';
-const code49Logo = '/images/club49-logo.png';
-const tattooshopLogo = '/images/1111logo.png';
-const rengiLogo = '/images/Rengi-logo.png';
 
 const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, animationProgress = 0, position = 'top', isMobile, TimeSync, setActiveSection, pauseAutoSlide }) => {
   const { t } = useLanguage();
@@ -157,32 +153,28 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                     name: 'KARMAN',
                     tagline: t('desktopLayout.gardens.karman.tagline'),
                     description: t('desktopLayout.gardens.karman.description'),
-                    accentColor: '#8b5cf6',
-                    logo: karmanLogo
+                    accentColor: '#8b5cf6'
                   },
                   {
                     id: 'code49',
                     name: 'CODE49',
                     tagline: t('desktopLayout.gardens.code49.tagline'),
                     description: t('desktopLayout.gardens.code49.description'),
-                    accentColor: '#06b6d4',
-                    logo: code49Logo
+                    accentColor: '#06b6d4'
                   },
                   {
                     id: 'tattooshop',
                     name: 'TATTOO SHOP',
                     tagline: t('desktopLayout.gardens.elevenEleven.tagline'),
                     description: t('desktopLayout.gardens.elevenEleven.description'),
-                    accentColor: '#ec4899',
-                    logo: tattooshopLogo
+                    accentColor: '#ec4899'
                   },
                   {
                     id: 'rengifoods',
                     name: 'RENGI FOODS',
                     tagline: t('desktopLayout.gardens.rengiFoods.tagline'),
                     description: t('desktopLayout.gardens.rengiFoods.description'),
-                    accentColor: '#10b981',
-                    logo: rengiLogo
+                    accentColor: '#10b981'
                   }
                 ];
                 return (
@@ -199,9 +191,10 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                             style={{transform: `translateX(${translateX}%)`}}
                           >
                             <div className="w-full h-full flex flex-col items-center justify-center" style={{background: `linear-gradient(135deg, ${garden.accentColor}20, ${garden.accentColor}10)`}}>
-                              {/* Logo Image */}
-                              <img 
-                                src={garden.logo} 
+                              {/* Logo slot — empty until a garden has a real logo (add `logo: '/images/...'` to its entry) */}
+                              {garden.logo && (
+                              <img
+                                src={garden.logo}
                                 alt={`${garden.name} logo`}
                                 className="object-contain mb-2"
                                 style={{
@@ -210,6 +203,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                                   filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))'
                                 }}
                               />
+                              )}
                               
                               {/* Header */}
                               <div className="text-center">

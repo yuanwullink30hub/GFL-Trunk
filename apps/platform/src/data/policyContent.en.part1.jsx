@@ -5,7 +5,7 @@ import { S, PolicyLink } from './policyShared.jsx';
 export const POLICY_EN_PART1 = {
   terms: (
     <>
-      <p style={S.updated}>Version date: 27 September 2026 | Version: 2.0</p>
+      <p style={S.updated}>Version date: 27 September 2026 | Version: 2.1</p>
       <p style={S.p}>These terms apply to the use of the Garden For Life platform.</p>
 
       <h2 style={S.h2}>Article 1 — Definitions</h2>
@@ -29,8 +29,7 @@ export const POLICY_EN_PART1 = {
       <h2 style={S.h2}>Article 3 — Access</h2>
       <ol style={S.ol} start={4}>
         <li style={S.li}>The User must be at least 16 years old. By using the Platform the User declares that they meet this age requirement. Garden For Life does not verify the age given, but will delete an account as soon as it emerges that the User is under 16.</li>
-        <li style={S.li}>Use of the Platform is free of charge.</li>
-        <li style={S.li}>The feedback confirmation email contains an optional donation link via Tikkie (KNAB). Donations are entirely voluntary, non-refundable and confer no additional rights, access or services. The assessment, the results and the PDF are offered unconditionally and free of charge, regardless of whether a donation is made.</li>
+        <li style={S.li}>Taking the analysis and downloading the short Report are free of charge. The full Report costs a one-off € 30.00 excluding VAT per Report (€ 36.30 including 21% VAT); until the spring equinox of March 2027 a launch price of € 12.00 excluding VAT (€ 14.52 including 21% VAT) applies. The User pays the amount including VAT. Payment is handled by Stripe (Stripe Payments Europe, Limited), by iDEAL or credit card. At launch the full Report is only for sale to Users in the Netherlands; a payment from outside the Netherlands is refunded automatically and gives no access to the full Report. The full Report can also be unlocked with an activation code from Garden For Life; an activation code can be used once and cannot be exchanged for money. The full Report is delivered digitally immediately after payment or activation; the User expressly consents to this when paying and thereby loses the statutory right of withdrawal. In addition, Garden For Life offers a money-back guarantee: within 14 days of payment the User can request a full refund through the contact form, without giving reasons. On refund, the crystal code in that Report is blocked: the code no longer gives access to the Platform. If an account was opened with that code and this is that account's only reading, the account is deleted; if the account also holds readings from other Reports, only the reading of the refunded Report is deleted and the access from those other Reports remains in full. The email address the refund was requested with is recorded. On a later refund request from the same email address, a moderator of Garden For Life first asks a few questions about the request before a decision on the refund is made. Reports unlocked with an activation code are not covered by the guarantee.</li>
         <li style={S.li}>Garden For Life reserves the right to terminate or restrict a User's access, without stating reasons.</li>
       </ol>
 
@@ -46,9 +45,9 @@ export const POLICY_EN_PART1 = {
 
       <h2 style={S.h2}>Article 5 — The Report, the Crystal Code & the Account</h2>
       <ol style={S.ol} start={14}>
-        <li style={S.li}>After completion of the Assessment, the Report is made available for download. The downloaded PDF is the User's copy; Garden For Life does not retain the full Report.</li>
-        <li style={S.li}>The computed profile from which the Report is built exists on Garden For Life's servers for a maximum of 24 hours and is then deleted automatically, including by an automated sweep each night at 00:00 (Europe/Amsterdam). After that moment Garden For Life cannot regenerate the Report or make it available again.</li>
-        <li style={S.li}>The Report contains a unique crystal code. That code remains valid for life but can be redeemed for an account <strong style={S.strong}>only once</strong>. Garden For Life stores only an irreversible hash of the code — never the code itself — so that an already redeemed code cannot be used again. This hash persists for as long as the account exists.</li>
+        <li style={S.li}>After completion of the Assessment, the short Report is made available for download free of charge; the full Report can be downloaded once it has been paid for or unlocked with an activation code. The downloaded PDF is the User's only copy, intended for use in the User's own local working environment; Garden For Life does not retain the Report.</li>
+        <li style={S.li}>The full profile from which the Report is built (the raw answers, the scores, the archetype decomposition and the generated analysis) exists as a single instance, only in the User's own browser tab and only for the duration of the session. To generate the analysis it is sent to Garden For Life's server and to the Claude AI model (Anthropic) for processing; the server processes it in working memory and does not store it — whether or not the User is logged in. Garden For Life, including its administrator, therefore has no access to the User's answers, full profile or Report afterwards and cannot regenerate the Report or make it available again.</li>
+        <li style={S.li}>The full Report contains a unique crystal code; the short Report does not. The code only appears in the Report once it has been paid for or unlocked with an activation code — until then it exists only in encrypted form that the User's browser cannot read. If the User leaves the Report page without unlocking the Report (by closing the tab, reloading or navigating away), the Report is deleted in full: the full profile disappears from the tab together with the encrypted code, and the server deletes the card text it held under that code's hash. Only if that deletion signal does not arrive (for example because the connection is lost) does the encrypted code lapse after 24 hours, and the card text is deleted in the nightly sweep at 00:00 (Europe/Amsterdam). A Report that has not been unlocked can therefore never be retrieved later: the full Report can be purchased only once, directly after the Assessment, and a User who wishes to pay or download later must take a new Assessment. An unlocked code remains valid for life but can be redeemed for an account <strong style={S.strong}>only once</strong>. Garden For Life stores only an irreversible hash of the code — never the code itself — so that an already redeemed code cannot be used again. This hash persists for as long as the account exists.</li>
         <li style={S.li}>The User is responsible for safekeeping the PDF and the code it contains. Whoever holds the file can obtain access to the associated account. Garden For Life advises keeping the file as one would keep a password.</li>
         <li style={S.li}>Only a <em>partial profile</em> is stored in the User's account: the archetype name, the render-only orb geometry, the normalised 12-point shape vector and the accompanying card texts. The partial profile contains no raw answers and no full analysis. A complete description is given in the Privacy Policy, article 6.</li>
       </ol>
@@ -94,7 +93,7 @@ export const POLICY_EN_PART1 = {
         <li style={S.li}>Garden For Life makes every effort to have the Platform function properly, but gives no guarantee of uninterrupted or error-free operation.</li>
         <li style={S.li}>Garden For Life is not liable for damage arising from the use or interpretation of the Report, including but not limited to decisions in the areas of work, relationships, health or personal well-being.</li>
         <li style={S.li}>Garden For Life is not liable for indirect damage, consequential damage or lost profit.</li>
-        <li style={S.li}>Insofar as the liability of Garden For Life cannot be fully excluded, it is limited to the amount that the User has paid for the use of the Platform. As the Platform is offered free of charge, liability is limited to € 0.</li>
+        <li style={S.li}>Insofar as the liability of Garden For Life cannot be fully excluded, it is limited to the amount that the User has paid for the Report concerned. For free use of the Platform, liability is limited to € 0.</li>
         <li style={S.li}>The User indemnifies Garden For Life against claims by third parties arising from the User's use of the Platform.</li>
       </ol>
 
@@ -173,8 +172,9 @@ export const POLICY_EN_PART1 = {
       <ul style={S.ul}>
         <li style={S.li}>Registration data: display name, email address, password</li>
         <li style={S.li}>Profile data: language preference and, optionally, age and country</li>
-        <li style={S.li}>Assessment answers: your choices per question — processed to calculate your report, not retained as a result (see article 6)</li>
+        <li style={S.li}>Assessment answers: your choices per question — processed in working memory to calculate your report, never stored (see article 6)</li>
         <li style={S.li}>Communication data: messages to other users and feedback you send us</li>
+        <li style={S.li}>Payment data (full report only): the email address you request the report with, the payment reference, the amount and the VAT, the date, whether a refund was made, the country you state, the time of your agreement to the terms (with their version) and the time you saved the PDF. You enter your card or account details in the payment form of our payment provider Stripe; we do not receive them</li>
       </ul>
       <h3 style={S.h3}>3.2 Data we collect automatically:</h3>
       <p style={S.p}>Garden For Life uses no analytics, no trackers and no advertising networks. We build no profile of your browsing behaviour. What is recorded automatically is limited to:</p>
@@ -187,14 +187,14 @@ export const POLICY_EN_PART1 = {
       <h3 style={S.h3}>3.3 Assessment Data &amp; Profile Data (Art. 9 GDPR)</h3>
       <p style={S.p}>The following data is processed after explicit consent and falls under Art. 9 GDPR:</p>
       <ul style={S.ul}>
-        <li style={S.li}><strong style={S.strong}>Raw assessment answers:</strong> your individual choices per question (responses array) — stored as part of the assessment session</li>
+        <li style={S.li}><strong style={S.strong}>Raw assessment answers:</strong> your individual choices per question (responses array) — held only in your own browser tab during the session, never stored by us</li>
         <li style={S.li}><strong style={S.strong}>Subject results per theme:</strong> aggregated scores for each of the 5 themes (subjectResults)</li>
         <li style={S.li}><strong style={S.strong}>Archetype scores:</strong> the calculated score profile per archetype (scores)</li>
         <li style={S.li}><strong style={S.strong}>Archetype details:</strong> the elaborated archetype analysis including the 5-basket decomposition per archetype — Nature Core, Green Hardware, Culture Core, Blue Feedback, Yellow Cognitive, Purple Shadow (archetypeDetails)</li>
         <li style={S.li}><strong style={S.strong}>Full generated report:</strong> including Main/Support Archetype, Extended Archetype, shadow/blindspot analysis, tactical recommendations and AI Agent Prompt</li>
         <li style={S.li}><strong style={S.strong}>Content of uploaded files (uploadedFileContents):</strong> where applicable — the text extracted from files that the user optionally uploads (e.g. an OCEAN report as a PDF). Garden For Life does not store this content — it is processed solely by the Claude AI model for report generation. The user is themselves responsible for the content of uploaded files.</li>
       </ul>
-      <p style={S.p}>The above data is processed on secure servers in Frankfurt for the purpose of report generation. It is <strong style={S.strong}>not retained as a result</strong>: the computed profile exists for a maximum of 24 hours as a processing cache and is then erased automatically. What remains in your account is only the <em>partial profile</em> — the data needed to draw your orb and fill your account screen. Article 6 sets out exactly what that is and how long each part persists.</p>
+      <p style={S.p}>Together with any OCEAN scores, this is your <em>full profile</em>. It exists as a single instance, only in your own browser tab during your session. To generate your report it is sent to our server in Frankfurt and to the Claude AI model (Anthropic) for processing; our server processes it in working memory and <strong style={S.strong}>does not store it</strong> — no database record and no cache, whether or not you are logged in. Garden For Life, including its administrator, therefore has no access to your answers, full profile or report afterwards. What remains in your account is only the <em>partial profile</em> — the data needed to draw your orb and fill your account screen. Article 6 sets out exactly what that is and how long each part persists.</p>
 
       <h2 style={S.h2}>4. Purposes of Data Processing</h2>
       <p style={S.p}>We process your data for the following purposes:</p>
@@ -202,20 +202,21 @@ export const POLICY_EN_PART1 = {
         <li style={S.li}>Delivery of Assessment services and generation of personal profile reports</li>
         <li style={S.li}>Account management and authentication</li>
         <li style={S.li}>Communication about the Services</li>
+        <li style={S.li}>Handling payments, activation codes and the 14-day money-back guarantee</li>
         <li style={S.li}>System improvements (on the basis of anonymised data)</li>
         <li style={S.li}>Compliance with legal obligations</li>
-        <li style={S.li}>Protection against fraud and misuse</li>
+        <li style={S.li}>Protection against fraud and misuse, including misuse of the money-back guarantee</li>
       </ul>
       <h2 style={S.h2}>5. Legal Basis for Processing</h2>
       <p style={S.p}>The processing of your data is based on:</p>
       <ul style={S.ul}>
-        <li style={S.li}>Performance of a contract (use of the Platform)</li>
+        <li style={S.li}>Performance of a contract (use of the Platform, the purchase of the full report and the money-back guarantee)</li>
         <li style={S.li}>Explicit consent (for Art. 9 psychological data)</li>
-        <li style={S.li}>Legitimate interest (system security, fraud prevention)</li>
-        <li style={S.li}>Compliance with legal obligations</li>
+        <li style={S.li}>Legitimate interest (system security, fraud prevention and the grey list after a refund)</li>
+        <li style={S.li}>Compliance with legal obligations (the tax retention obligation for payments)</li>
       </ul>
       <h2 style={S.h2}>6. Storage and Retention Period</h2>
-      <p style={S.p}>Garden For Life operates three clearly separated tiers. Anything that does not fall under tier 1 or tier 2 is not stored.</p>
+      <p style={S.p}>Garden For Life operates three clearly separated tiers. On our servers only tier 1 is kept, together with the payment data and the card text of unlocked reports described below. Tier 2 exists only in your own browser tab during your session; anything else is not stored.</p>
 
       <h3 style={S.h3}>Tier 1 — Permanent, for as long as your account exists</h3>
       <table style={S.table}>
@@ -228,25 +229,41 @@ export const POLICY_EN_PART1 = {
         </tbody>
       </table>
 
-      <h3 style={S.h3}>Tier 2 — A maximum of 24 hours (processing cache)</h3>
-      <p style={S.p}>The full computed profile — your raw answers, the scores per archetype, the 5-basket decomposition and the generated analysis — exists only for as long as it takes to build your report and show it to you. It is erased in two independent ways:</p>
+      <h3 style={S.h3}>Tier 2 — Only during your session (not stored)</h3>
+      <p style={S.p}>Your full profile — your raw answers, the results per theme, the scores per archetype, the 5-basket decomposition, any OCEAN scores and the generated analysis — exists as a <strong style={S.strong}>single instance in your own browser tab</strong>, for as long as your session lasts. To build your report it is sent to our server and to the Claude AI model (Anthropic); our server processes it in working memory and does not store it — no database record, no cache, whether or not you are logged in. We, including our administrator, therefore cannot look at your answers, full profile or report afterwards. Each report then ends in one of two ways:</p>
       <ul style={S.ul}>
-        <li style={S.li}>An automated sweep deletes every computed profile <strong style={S.strong}>each night at 00:00 (Europe/Amsterdam)</strong>.</li>
-        <li style={S.li}>Independently, the database deletes each computed profile automatically <strong style={S.strong}>24 hours</strong> after creation, even if the nightly sweep were skipped due to a fault.</li>
+        <li style={S.li}><strong style={S.strong}>Unlocked</strong> (paid via Stripe or opened with an activation code): only then does the crystal code appear in the full report. You download the PDF; that PDF is your only copy, meant for your own local working folder. The crystal code in it stays valid for life and can be redeemed for an account once.</li>
+        <li style={S.li}><strong style={S.strong}>Not unlocked:</strong> as soon as you leave the report page (close the tab, reload or navigate away), the report is deleted in full — your full profile disappears from the tab together with the encrypted crystal code, and our server deletes the card text it held under that code's hash. Only if that deletion signal does not arrive (for example because the connection drops) does the encrypted code expire after 24 hours, and the card text is deleted in the nightly sweep at 00:00 (Europe/Amsterdam).</li>
       </ul>
+      <p style={S.p}>An unpaid report can therefore never be retrieved later. The full report can only be bought once, directly after the test; to pay or download later, you take a new test. The short report remains free to download and contains no crystal code.</p>
       <p style={S.p}>Feedback you send us voluntarily (the review form) does not fall under this: we keep it for 90 days, after which it is deleted automatically.</p>
+
+      <h3 style={S.h3}>Payments, activation codes and refunds</h3>
+      <p style={S.p}>The short report is free. For the full report you pay via Stripe (iDEAL or credit card) or use an activation code. The payment form on our page is loaded by Stripe: your card or account details go straight to Stripe and never reach us. At launch the full report is only for sale in the Netherlands.</p>
+      <table style={S.table}>
+        <thead><tr><th style={S.th}>Data</th><th style={S.th}>How long</th><th style={S.th}>Why</th></tr></thead>
+        <tbody>
+          <tr><td style={S.td}>Payment record: payment reference, amount and VAT, date, status (paid or refunded), the time you saved the PDF, the proof of your agreement (time, terms version and a hash of the agreement text) and the <strong style={S.strong}>hash</strong> of the crystal code in that report — with a numbered payment record (PDF) per payment and per refund, without name or email address</td><td style={S.td}>At least 7 years, and for as long as that crystal code remains valid</td><td style={S.td}>The law requires us to keep payment records for 7 years. The link to the code hash proves the report was unlocked: without that record the code opens no account. The proof of agreement and the download time show, in a dispute, that you agreed and received the report.</td></tr>
+          <tr><td style={S.td}>A payment attempt: internal reference, the hash of the crystal code, the email address (encrypted), the country you state, amount, VAT and status</td><td style={S.td}>Unpaid: 30 days. Paid: until 1 day after the 14-day refund period. Deleted automatically afterwards</td><td style={S.td}>To link the payment to the right report, also when your tab closes while your bank is still processing the payment.</td></tr>
+          <tr><td style={S.td}>The email address with a payment (encrypted)</td><td style={S.td}>Until the 14-day refund period has passed; deleted automatically afterwards</td><td style={S.td}>To match a refund request to the right payment.</td></tr>
+          <tr><td style={S.td}><strong style={S.strong}>Grey list</strong> after a refund: the email address (encrypted), the date and payment reference of each refund and — on a later request — the answers to the moderator's questions</td><td style={S.td}>2 years after the latest refund; deleted automatically afterwards</td><td style={S.td}>To prevent misuse of the money-back guarantee.</td></tr>
+          <tr><td style={S.td}>Activation codes</td><td style={S.td}>Until used; afterwards as a logbook line (time only)</td><td style={S.td}>A code can be used once. We record nothing about you when you redeem it.</td></tr>
+        </tbody>
+      </table>
+      <p style={S.p}>If you ask for your money back within 14 days, the crystal code in that report is blocked. If you opened an account with that code and it is the only reading in that account, the account is deleted (as in a regular account deletion). If the account also holds readings from other reports, only the refunded reading is deleted and you keep the full access your other reports give. Your email address goes on the grey list, also if you have an account. That does not stop you from buying: only on a later refund request does a moderator first ask you a few questions and then decide — a person, never an automated system.</p>
 
       <h3 style={S.h3}>Tier 3 — Never stored</h3>
       <ul style={S.ul}>
+        <li style={S.li}>Your raw assessment answers and your full profile (results per theme, scores per archetype, 5-basket decomposition, OCEAN scores and the generated analysis). Our server processes them in working memory only and writes nothing to a database or cache.</li>
         <li style={S.li}>The PDF you upload. It is read in working memory to extract the code and the partial profile, then discarded — no copy is ever written to our servers.</li>
         <li style={S.li}>The contents of other files you optionally upload (for example an OCEAN report).</li>
         <li style={S.li}>The generated report itself. The PDF you downloaded is the only copy that continues to exist.</li>
-        <li style={S.li}>The raw crystal code. We keep only its irreversible hash.</li>
+        <li style={S.li}>The raw crystal code. With your analysis your browser receives only an encrypted copy it cannot read; the code itself only appears in the full report once it has been paid for or unlocked. We keep only its irreversible hash.</li>
       </ul>
 
       <h3 style={S.h3}>Card text for a code that has not been redeemed</h3>
       <p style={S.p}>While your report is being written, the model produces two short texts meant solely for your profile card in the account — an in-depth description of your gift and a summary of your geometry. Those two texts are deliberately <strong style={S.strong}>not</strong> included in the report or the PDF; they are stored separately, linked to the <em>hash</em> of your crystal code and to nothing else. No name, email address or account reference accompanies them.</p>
-      <p style={S.p}>For as long as the code has not been redeemed, this text is not traceable to a person by us: only someone holding the PDF with the matching code can make the connection. It carries <strong style={S.strong}>no retention period</strong>, because a crystal code stays valid for life — a report redeemed a year later must still be able to fill its card. The moment you redeem the code, the text is folded into your account and the separate copy is deleted.</p>
+      <p style={S.p}>For as long as the code has not been redeemed, this text is not traceable to a person by us: only someone holding the PDF with the matching code can make the connection. If the report is not paid for or unlocked, this text is deleted as soon as you leave the report page; only if that deletion signal does not arrive does the encrypted code expire after 24 hours, and the text is then deleted in the nightly sweep at 00:00 (Europe/Amsterdam). For an unlocked report it carries <strong style={S.strong}>no retention period</strong>, because a crystal code stays valid for life — a report redeemed a year later must still be able to fill its card. The moment you redeem the code, the text is folded into your account and the separate copy is deleted.</p>
 
       <h3 style={S.h3}>Your own working folder</h3>
       <p style={S.p}>Garden For Life provides a local working environment in which your report, your full profile and everything future tools produce for you are stored on <strong style={S.strong}>your own device</strong>, in a folder you choose and control. We have no access to it and keep no copy. Once that folder is set up you can have the remaining data deleted from our servers in a single action; what then remains is only tier 1 above. Because we keep no copy, safeguarding that folder is your own responsibility.</p>
@@ -259,20 +276,20 @@ export const POLICY_EN_PART1 = {
           <tr><td style={S.td}>Render.com</td><td style={S.td}>Processor — hosting of the application server (Frankfurt region, EU). All requests pass through it; no profile data is retained on the host.</td><td style={S.td}>In place via the Render DPA (online acceptance)</td></tr>
           <tr><td style={S.td}>Cloudflare</td><td style={S.td}>Processor — delivery of the website (CDN) and DNS</td><td style={S.td}>Automatically via the Self-Serve Subscription Agreement</td></tr>
           <tr><td style={S.td}>Google Workspace</td><td style={S.td}>Processor — sending of email (confirmations, verification links)</td><td style={S.td}>Covered by the Google Workspace DPA</td></tr>
+          <tr><td style={S.td}>Stripe Payments Europe, Limited (Dublin, Ireland, EU)</td><td style={S.td}>Independent controller for the payment — processes your payment details, carries out the payment and any refund, calculates the VAT (Stripe Tax) and runs fraud checks. We pass Stripe the amount, a description, a random internal reference and the country for the VAT calculation; we receive the payment status, the payment reference, the country of your card or billing address and the VAT amount. Stripe may transfer data to Stripe, Inc. in the United States under the EU-US Data Privacy Framework and standard contractual clauses.</td><td style={S.td}>Not applicable: Stripe processes payment data under its own responsibility and its own privacy statement [Verification recommended]</td></tr>
         </tbody>
       </table>
       <p style={S.p}>Report generation runs exclusively through Claude (Anthropic). The platform configuration contains connections for other AI providers; these are not used in the production environment. Should that change, this list will be updated before they are put into use.</p>
       <p style={S.p}>If the user uploads a file (e.g. an OCEAN report), the text extracted from that file is likewise processed by Claude. If that file contains personal information, that information is transferred to Anthropic. Garden For Life is not responsible for the personal data that the user includes in uploaded files. Users are alerted to this in the consent screen and at the moment of upload.</p>
-      <p style={S.p}>The feedback confirmation email contains an optional donation link via Tikkie (KNAB). Garden For Life does not receive, process or store any payment data of the User in connection with donations. The entire transaction runs via Tikkie and is subject to the privacy policy of Tikkie/KNAB (ABN AMRO). No personal data is linked to donations by Garden For Life.</p>
       <h2 style={S.h2}>8. Your Rights</h2>
       <p style={S.p}>Under the GDPR you have the following rights:</p>
       <ul style={S.ul}>
         <li style={S.li}><strong style={S.strong}>Right of access:</strong> You can request a copy of your personal data</li>
         <li style={S.li}><strong style={S.strong}>Right to rectification:</strong> You can have inaccurate data corrected</li>
-        <li style={S.li}><strong style={S.strong}>Right to erasure:</strong> You can request deletion of your data ("right to be forgotten")</li>
+        <li style={S.li}><strong style={S.strong}>Right to erasure:</strong> You can request deletion of your data ("right to be forgotten"). We keep payment records after such a request for as long as the law requires</li>
         <li style={S.li}><strong style={S.strong}>Right to restriction:</strong> You can restrict the processing of your data</li>
         <li style={S.li}><strong style={S.strong}>Right to data portability:</strong> You can receive your data in a structured format</li>
-        <li style={S.li}><strong style={S.strong}>Right to object:</strong> You can object to certain processing activities</li>
+        <li style={S.li}><strong style={S.strong}>Right to object:</strong> You can object to certain processing activities, including your placement on the grey list</li>
       </ul>
       <p style={S.p}>To exercise these rights, send an email to <strong style={S.strong}>yuanwullink30@gfl.community</strong>.</p>
       <h2 style={S.h2}>9. Security</h2>
@@ -314,15 +331,9 @@ export const POLICY_EN_PART1 = {
         <thead><tr><th style={S.th}>Key</th><th style={S.th}>Retention</th><th style={S.th}>Purpose</th></tr></thead>
         <tbody>
           <tr><td style={S.td}>gfl_token</td><td style={S.td}>Until logout</td><td style={S.td}>JWT authentication token — identifies your logged-in session. Contains no password; it does contain a user ID and your email address.</td></tr>
-          <tr><td style={S.td}>gfl_assessment_session</td><td style={S.td}>Until a new assessment is started</td><td style={S.td}>The assessment in progress, so you can resume where you left off.</td></tr>
-          <tr><td style={S.td}>gfl_assessment_history</td><td style={S.td}>Locally permanent</td><td style={S.td}>Your most recent assessment sessions, on your own device only, for your own reference.</td></tr>
-          <tr><td style={S.td}>gfl_pending_assessment</td><td style={S.td}>Until the account is created</td><td style={S.td}><strong style={S.strong}>Contains your full computed profile.</strong> Held locally when you create an account from the results screen, so the result is not lost during registration.</td></tr>
-          <tr><td style={S.td}>gfl_assessment_id</td><td style={S.td}>Until a new assessment is started</td><td style={S.td}>Reference to your most recently stored result, so the corresponding report can be retrieved.</td></tr>
-          <tr><td style={S.td}>gfl_pdf_replay</td><td style={S.td}>Until a new report is generated</td><td style={S.td}><strong style={S.strong}>Contains the composition of your report.</strong> Allows the PDF to be rebuilt without recomputing it.</td></tr>
-          <tr><td style={S.td}>gfl_analysis_sections</td><td style={S.td}>Until a new report is generated</td><td style={S.td}>The sections of the generated analysis, so the results screen can display them.</td></tr>
         </tbody>
       </table>
-      <p style={S.p}><strong style={S.strong}>Please note:</strong> three of these items — gfl_pending_assessment, gfl_pdf_replay and gfl_analysis_sections — contain your psychological profile data. They reside on your own device only and are never sent to our servers of their own accord. To remove them, clear local storage as described in article 4.</p>
+      <p style={S.p}><strong style={S.strong}>Please note:</strong> none of these items contains psychological profile data. Your answers, your full profile and your report are not placed in localStorage or sessionStorage: they exist only in the working memory of your browser tab during your session and disappear when you leave the report page. Leftovers of storage keys from earlier versions of the platform that did hold assessment data (such as gfl_assessment_session, gfl_assessment_history, gfl_pending_assessment, gfl_assessment_id and gfl_analysis_sections) are cleared automatically.</p>
 
       <h3 style={S.h3}>2.2 Administrator Storage (localStorage)</h3>
       <p style={S.p}>The following items are stored only when the platform is used as an administrator. For ordinary users they are never created.</p>
@@ -396,7 +407,7 @@ export const POLICY_EN_PART1 = {
         <li style={S.li}><strong style={S.strong}>Statistical Modeling:</strong> Shadow and blind spot analysis</li>
       </ul>
       <h2 style={S.h2}>4. Which Data Is Provided to the AI System?</h2>
-      <p style={S.p}>The AI system receives the full assessment data — anonymised (no name/email/IP), but including raw answers.</p>
+      <p style={S.p}>The AI system receives the full assessment data — anonymised (no name/email/IP), but including raw answers. This full profile is sent from your own browser tab, via our server, for processing only: neither our server nor Garden For Life stores it (see the Privacy Policy, article 6).</p>
       <table style={S.table}>
         <thead><tr><th style={S.th}>Data</th><th style={S.th}>Explanation</th></tr></thead>
         <tbody>
@@ -460,10 +471,10 @@ export const POLICY_EN_PART1 = {
       </div>
       <h2 style={S.h2}>9. Privacy & AI Transparency</h2>
       <ul style={S.ul}>
-        <li style={S.li}>Original answers are separated from your profile</li>
+        <li style={S.li}>Your original answers and full profile exist only in your own browser tab during your session; Garden For Life does not store them</li>
         <li style={S.li}>The AI model processes your answers individually — without name, email address or other direct identifiers from the platform</li>
         <li style={S.li}>No real-time personal monitoring</li>
-        <li style={S.li}>The calculated profile exists for a maximum of 24 hours and is then deleted automatically</li>
+        <li style={S.li}>The calculated profile is processed in working memory only and is not stored on our servers; a report that is not unlocked is deleted in full as soon as you leave the report page</li>
         <li style={S.li}>No transfer into training data for future models</li>
       </ul>
       <h2 style={S.h2}>10. AI Improvements & Retraining</h2>

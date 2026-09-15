@@ -28,9 +28,6 @@ const PILLAR = {
   10: 'AGENCY', 11: 'AGENCY',
 };
 
-// Same-pillar partner of a position (the other member of its group).
-const PARTNER = { 1: 12, 12: 1, 2: 3, 3: 2, 4: 5, 5: 4, 6: 7, 7: 6, 8: 9, 9: 8, 10: 11, 11: 10 };
-
 const posOf = (key) => POSITIONS[String(key || '').toUpperCase()] || null;
 
 /**
@@ -48,9 +45,8 @@ function resolveLineType(mainKey, supportKey) {
   if (Math.abs(a - b) === 6) return 'Paarse Lijn';
   // 3. BLAUWE LIJN — sum-13 cross-group feedback bridge (same-group sum-13 already GREEN above)
   if (a + b === 13) return 'Blauwe Lijn';
-  // 4. RODE LIJN — friction/blindspot: Support is the same-group partner of Main's 180° shadow
-  const shadowPos = ((a - 1 + 6) % 12) + 1;
-  if (b === PARTNER[shadowPos]) return 'Rode Lijn';
+  // 4. RODE LIJN — hardware seam / blindspot: positions sum to 7 (mod 12)
+  if ((a + b) % 12 === 7) return 'Rode Lijn';
   // 5. none of the canonical lines
   return '(geen kanonieke lijn)';
 }
@@ -112,22 +108,10 @@ Innocent (4)–Magician (10) | Explorer (5)–Hero (11) | Outlaw (6)–Ruler (12
 Lover (2)–Hero (11) | Caregiver (3)–Magician (10) | Innocent (4)–Artist (9) | Explorer (5)–Sage (8)
 (Judge (1)+Ruler (12)=13 → GROEN | Outlaw (6)+Trickster (7)=13 → GROEN)
 
-## RODE LIJN — frictie / blindspot-as
-Rule: the red-line/blindspot of a Main is the same-group partner of that Main's 180° shadow (directional, Main → blindspot).
-| Main | Shadow (Paars) | Red/Blindspot |
-|---|---|---|
-| Judge (1) | Trickster (7) | Outlaw (6) |
-| Lover (2) | Sage (8) | Artist (9) |
-| Caregiver (3) | Artist (9) | Sage (8) |
-| Innocent (4) | Magician (10) | Hero (11) |
-| Explorer (5) | Hero (11) | Magician (10) |
-| Outlaw (6) | Ruler (12) | Judge (1) |
-| Trickster (7) | Judge (1) | Ruler (12) |
-| Sage (8) | Lover (2) | Caregiver (3) |
-| Artist (9) | Caregiver (3) | Lover (2) |
-| Magician (10) | Innocent (4) | Explorer (5) |
-| Hero (11) | Explorer (5) | Innocent (4) |
-| Ruler (12) | Outlaw (6) | Trickster (7) |
+## RODE LIJN — frictie / blindspot-as (hardware seam)
+Rule: positions sum to 7 (mod 12) — the red-line/blindspot of a Main is its seam partner.
+Judge (1)–Outlaw (6) | Lover (2)–Explorer (5) | Caregiver (3)–Innocent (4)
+Ruler (12)–Trickster (7) | Hero (11)–Sage (8) | Magician (10)–Artist (9)
 `;
 
 module.exports = { resolveLineType, formatLineTypeBlock, LINE_TYPE_LOOKUP_DOC, ARCHETYPE_POSITIONS: POSITIONS };

@@ -17,6 +17,7 @@ const { authRequired } = require('../middleware/auth');
 const { encrypt, decrypt, hash, decryptUser } = require('../services/encryption');
 const { decodeOrb3 } = require('@gfl/orb-engine');
 const { sanitizeReading } = require('../services/readingExtract');
+const { isCodeBlocked, isCodeActivatable, visibleHistory, BLOCKED_MESSAGE, NOT_UNLOCKED_MESSAGE } = require('../services/reportAccess');
 
 // Email verification is ENFORCED only when SMTP is configured (so local dev without mail still
 // works — those accounts are created pre-verified). Token is single-use, 24h.
@@ -110,7 +111,8 @@ function publicOrbHistory(u) {
   if (!u || !Array.isArray(u.orbHistory)) return [];
   // baskets12 rides along per entry: /me is OWNER-ONLY, so the 5-mandje stays off the
   // public card (§3) — the dashboard uses it for the chip-hover full-colour radar.
-  return u.orbHistory.map((h) => ({
+  // Refunded readings are hidden everywhere (services/reportAccess.js).
+  return visibleHistory(u.orbHistory).map(({ entry: h }) => ({
     orb: h.orb || null, archetypeName: h.archetypeName || '', at: h.at || null, image: h.image || null,
     baskets12: Array.isArray(h.baskets12) && h.baskets12.length === 12 ? h.baskets12 : null,
   }));
@@ -174,9 +176,9 @@ function publicSocials(u) {
 }
 
 function buildCardPayload(u) {
-  const hist = Array.isArray(u.orbHistory) ? u.orbHistory : [];
-  // readingId: stable per entry (userId + index) — orbHistory is append-only.
-  const readings = hist.map((h, i) => ({
+  // readingId: stable per entry (userId + STORED index) — orbHistory is append-only, and a
+  // refunded reading is hidden but keeps its slot, so later ids never shift.
+  const readings = visibleHistory(u.orbHistory).map(({ entry: h, index: i }) => ({
     readingId: `${u._id}-r${i}`,
     readingDate: h.at || null,
     archetypePrimaryId: h.archetypeName || '', // per-reading (§2.1) — drives the chip-hover microcopy
@@ -288,10 +290,16 @@ router.post('/register', async (req, res) => {
     // after insert below (the unique codeHash index is the real guard).
     const hasOrbCode = orbCode && /^LC_ORB[23]?_/.test(String(orbCode));
     const orbCodeHash = hasOrbCode ? hash(String(orbCode)) : null;
+    if (hasOrbCode && await isCodeBlocked(orbCodeHash)) {
+      return res.status(403).json({ error: BLOCKED_MESSAGE, refunded: true });
+    }
     if (hasOrbCode) {
       const alreadyLinked = await collections.orbCodes().findOne({ codeHash: orbCodeHash });
       if (alreadyLinked) {
         return res.status(409).json({ error: 'Deze kristal-code is al aan een ander account gekoppeld.' });
+      }
+      if (!(await isCodeActivatable(orbCodeHash))) {
+        return res.status(403).json({ error: NOT_UNLOCKED_MESSAGE, notUnlocked: true });
       }
     }
 
@@ -508,8 +516,8 @@ router.get('/profiles', async (_req, res) => {
       let name = (u.visibleName && String(u.visibleName).trim()) || '';
       if (!name) { try { name = decrypt(u.displayName); } catch { name = ''; } }
       if (!name) return null;
-      const latest = Array.isArray(u.orbHistory) && u.orbHistory.length
-        ? u.orbHistory[u.orbHistory.length - 1] : null;
+      const visible = visibleHistory(u.orbHistory);
+      const latest = visible.length ? visible[visible.length - 1].entry : null;
       return {
         name, // the shown profile name — also the ?u= handle for the full card
         archetypeName: (latest && latest.archetypeName) || u.archetypeName || '',
@@ -522,7 +530,7 @@ router.get('/profiles', async (_req, res) => {
         hardwareGroup: hardwareGroupFor(latest && latest.archetypeMainId),
         mainId: (latest && latest.archetypeMainId) || null,
         supportId: (latest && latest.archetypeSupportId) || null,
-        readingCount: Array.isArray(u.orbHistory) ? u.orbHistory.length : 0,
+        readingCount: visible.length,
         orb: u.publicOrb || null, // render-only config (never a raw code)
       };
     }).filter(Boolean);
@@ -655,7 +663,7 @@ router.get('/me', authRequired, async (req, res) => {
       // after the last one). The Privé upload button disables itself on this date.
       accessUntil: user.accessUntil || null,
       nextUploadAvailableAt: (() => {
-        const h = Array.isArray(user.orbHistory) ? user.orbHistory[user.orbHistory.length - 1] : null;
+        const h = visibleHistory(user.orbHistory).pop()?.entry || null;
         if (!h || !h.at) return null;
         const d = new Date(h.at); d.setMonth(d.getMonth() + 2); return d;
       })(),
@@ -672,7 +680,7 @@ router.get('/me', authRequired, async (req, res) => {
       // 5-mandje wheel colours of the ACTIVE reading — OWNER-ONLY (denied on the public
       // card per extraction-spec §3; the public shape is shapeVector12).
       readingBaskets: (() => {
-        const h = Array.isArray(user.orbHistory) ? user.orbHistory[user.orbHistory.length - 1] : null;
+        const h = visibleHistory(user.orbHistory).pop()?.entry || null;
         return h && Array.isArray(h.baskets12) ? h.baskets12 : null;
       })(),
     });
@@ -798,16 +806,19 @@ router.post('/orb-snapshot', authRequired, async (req, res) => {
       { _id: new ObjectId(req.user.userId) },
       { projection: { orbHistory: 1 } }
     );
-    const hist = Array.isArray(user?.orbHistory) ? user.orbHistory : [];
-    if (!hist.length) return res.json({ ok: true, skipped: 'no-history' });
-    let idx = hist.length - 1;                         // default: the active (most recent) orb
+    // The client indexes the history it got from /me, which hides refunded readings, so its
+    // index is a position in the VISIBLE list; map it back to the stored slot.
+    const visible = visibleHistory(user?.orbHistory);
+    if (!visible.length) return res.json({ ok: true, skipped: 'no-history' });
+    let pos = visible.length - 1;                      // default: the active (most recent) orb
     if (readingIndex !== undefined) {
       const n = Number(readingIndex);
-      if (!Number.isInteger(n) || n < 0 || n >= hist.length) return res.status(400).json({ error: 'Ongeldige lezing.' });
-      idx = n;
+      if (!Number.isInteger(n) || n < 0 || n >= visible.length) return res.status(400).json({ error: 'Ongeldige lezing.' });
+      pos = n;
     }
+    const idx = visible[pos].index;
     // force=true replaces an existing still (repair path: a too-early capture stored a black frame)
-    if (hist[idx].image && !force) return res.json({ ok: true, skipped: 'exists' });
+    if (visible[pos].entry.image && !force) return res.json({ ok: true, skipped: 'exists' });
     await collections.users().updateOne(
       { _id: new ObjectId(req.user.userId) },
       { $set: { [`orbHistory.${idx}.image`]: image, updatedAt: new Date() } }

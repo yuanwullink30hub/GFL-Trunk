@@ -1,222 +1,330 @@
 /**
- * Archetype Levensles Quotes — 72 Combination Profiles
+ * Archetype Levensles — 132 extended archetypes (Main × Support).
  *
- * Keyed by MAINARCHETYPE_SUPPORTGROUP (all uppercase).
- * Each quote is the "Levensles" for that extended archetype.
+ * Keyed by MAINARCHETYPE_SUPPORTARCHETYPE (both canonical-12 keys, uppercase), the same keys
+ * as EXTENDED_ARCHETYPES. Source: Extensions 132 — Lessen · Gifts · Curses v1.0 RATIFIED
+ * (human-ratified 2026-09-15), names per Extended list v1.3. The ratified Levensles are Dutch;
+ * ARCHETYPE_QUOTES_EN is their English translation. A key missing from the English table
+ * still falls back to the Dutch text.
  *
- * Used on the result card and PDF cover in place of the generic
- * base-archetype description, and on the login/boot loading screen.
- *
- * Two language tables, both complete (72 keys each).
- * getArchetypeQuote()/getArchetypeQuoteByKey() still fall back to the Dutch text
- * for any key missing from the English table, so a future key added on the Dutch
- * side never renders empty.
+ * Used on the result card, the PDF cover and the login/boot loading screen.
  */
-
-import { ARCHETYPE_TO_GROUP } from './scoring/index.js';
 
 const ARCHETYPE_QUOTES_NL = {
-  // ═══ JUDGE ═══════════════════════════════════════════════
-  JUDGE_RULING: 'Het systeem dat ik bouw om alles rechtvaardig te maken, moet ook ruimte hebben voor wat het niet kan bevatten — de boog kan niet altijd gespannen zijn. Het sterkste fundament is niet het perfecte. Het is het fundament dat kan ademen.',
-  JUDGE_RELATIONAL: 'De waarheid die ik verzacht om de vrede te bewaren is dezelfde waarheid die de relatie langzaam uitholt. De moedigste vorm van liefde is eerlijkheid die pijn doet — uitgesproken door iemand die blijft.',
-  JUDGE_SEEKER: 'Ik wacht niet op zuivere omstandigheden die niet bestaan. Zuiverheid is geen voorwaarde om te beginnen — het is wat overblijft als ik eerlijk beweeg.',
-  JUDGE_ABSTRACT: 'Het vermogen om te zien wat er niet klopt is de helft van de gave. De andere helft is kiezen om tóch te bouwen — wetende dat het imperfect is. Anders ben ik niet de scherpste in de kamer, maar de eenzaamste.',
-  JUDGE_AGENCY: 'De rechter die zijn eigen vonnis niet meer toetst, is geen rechter meer — hij is een wapen. Het moment dat ik het hardst overtuigd ben, is het moment dat ik het vaakst mis.',
-  JUDGE_CHAOS: 'Niet elke waarheid heeft een explosie nodig. Soms is de krachtigste daad niet het systeem opblazen — maar er stil in blijven staan en weigeren mee te liegen.',
+  // ═══ RULER ═══ #1–11
+  RULER_JUDGE: 'Mijn oordeel houdt alles overeind — maar een systeem dat alleen vertelt wat fout is, vertelt nooit waarvoor het bestaat. De regel die ik het langst heb onderhouden staat nergens geschreven: mensen zijn meer dan hun overtreding.', // #1 De Keizer
+  RULER_SAGE: 'Ik zie het patroon eerder dan de rest, en dat is een eenzame voorsprong. Maar wijsheid die niet luistert is dogma. De massa die mij niet begrijpt is niet dom — ze leeft in een werkelijkheid die mijn patroon nog niet heeft opgenomen. Leiden is vertalen — niet alleen weten.', // #2 De Soevereine
+  RULER_ARTIST: 'Alles wat ik inricht moet kloppen én mooi zijn — mijn huis, mijn agenda, mijn leven. Maar een leven dat niet vies mag worden is een maquette. De rommel van relaties is geen inbreuk op mijn ontwerp; het is waarvoor het ontwerp bestond.', // #3 De Ontwerper
+  RULER_EXPLORER: 'Ik begin makkelijker dan ik afmaak; elk nieuw plan voelt als winst. Maar bouwen om te bewegen is geen richting. Het waardevolste dat ik bezit is het enige dat ik heb afgemaakt in plaats van verlaten.', // #4 De Ondernemer
+  RULER_INNOCENT: 'Ik heb gebouwd op vertrouwen en ik ben erop gebroken — toch is het fundament dat ik opnieuw goot weer van vertrouwen. Wantrouwen financiert zijn eigen vijand. Vertrouwen is geen naïviteit; het is mijn waardevolste materiaal.', // #5 De Oprichter
+  RULER_OUTLAW: 'Ik verscheur wat niet deugd en bouw iets eerlijkers — tot mijn betere versie haar eerste leugen nodig had en ik moest kiezen tussen hervormer blijven of heerser worden. Een verbetering die niet herzien mag worden is het oude systeem met mijn naam erop.', // #6 De Hervormer
+  RULER_TRICKSTER: 'Ik kan een kamer sturen zonder dat iemand het merkt. Maar wie alleen nog poppen om zich heen heeft, hoort geen echte stem meer. De grootste zet die ik ooit deed was de draden laten zien — en kijken wie bleef.', // #7 De Poppenspeler
+  RULER_HERO: 'Winnen kan ik; blijven heb ik moeten leren. Groei zonder grens is ziekte. Wat van mij is — een gezin, een zaak, een lichaam — wordt niet gehouden door veroveren, maar door er te zijn als er niets te winnen valt.', // #8 De Commandant
+  RULER_MAGICIAN: 'Je kunt alles winnen zonder één slag: je verplaatst de deuren en de wereld loopt vanzelf jouw kant op. Maar de mens die ik niet kon verplaatsen leerde me meer dan alle poorten samen. Macht die alles stuurt, weet niet meer wat er vrijwillig naar haar toe zou komen.', // #9 De Oppermeester
+  RULER_CAREGIVER: 'Alles wat ik liefheb geef ik een stem, een dak, een kans — en lang dacht ik dat dat liefde was. Maar wie bloeit in mijn licht, moet ook kunnen bloeien buiten mijn schaduw. Het mooiste dat ik ooit heb beschermd, is het enige dat ik heb durven loslaten.', // #10 De Advocaat
+  RULER_LOVER: 'Ik voorzie alles voor wie van mij afhangt — dat is niet nobel, het is hoe ik in elkaar zit. Maar de hand die altijd geeft, leert de ander alleen ontvangen. Het veiligste dat ik ooit bouwde was iets dat mij niet meer nodig had.', // #11 De Beschermheer
 
-  // ═══ LOVER ═══════════════════════════════════════════════
-  LOVER_RELATIONAL: 'De persoon die ik zoek is niet degene die mij compleet maakt. Het is degene die naast me kan zitten in het onvolmaakte — zonder het op te vullen.',
-  LOVER_RULING: 'Het skelet dat ik om de liefde bouw beschermt het — maar het houdt ook de chemie buiten. De sterkste relatie is niet de veiligste. Het is de relatie die gebruik maakt van scheiding.',
-  LOVER_SEEKER: 'Niet elk gevoel hoeft een gedicht te worden. Sommige dingen mogen gewoon bestaan zonder getuige — en juist die stille momenten voeden mijn kunst meer dan de crisis ooit deed.',
-  LOVER_CHAOS: 'De speelsheid waarmee ik de zwaarte breek is echt — maar de diepte die ik ermee ontwijk ook. Iemand die blijft als het licht wordt, wil ik. Iemand die blijft als het donker wordt, heb ik nodig.',
-  LOVER_ABSTRACT: 'De kosmische ontvouwing die ik zoek bestaat — maar niet voorbij de aarde. Ze zit in de boodschappen die ik vergeet, de stilte aan tafel, de hand op mijn schouder. Het heilige is niet boven. Het is naast mij.',
-  LOVER_AGENCY: 'De intensiteit waarmee ik liefheb is geen bewijs dat het echt is. Soms is het \'t stilste moment — niet de heftigste nacht — waar de echte ruimte ligt.',
+  // ═══ JUDGE ═══ #12–22
+  JUDGE_RULER: 'Het systeem dat ik bouw om alles rechtvaardig te maken moet ook ruimte hebben voor wat het niet kan bevatten — de boog kan niet altijd gespannen zijn. Het sterkste vonnis dat ik ooit heb uitgesproken was het vonnis waarin ik de regel boog omdat de mens anders brak.', // #12 De Arbiter
+  JUDGE_OUTLAW: 'Niet elke waarheid heeft een explosie nodig, soms is de krachtigste daad er stil in blijven staan en weigeren mee te liegen. De hardste waarheid die ik ooit uitsprak heeft me alles gekost, en ik zou het weer doen — maar nu kijk ik eerst of er iemand is die de deur gewoon open kan doen.', // #13 De Klokkenluider
+  JUDGE_TRICKSTER: 'Eén goede vraag sloopt meer dan honderd verwijten. Maar de dag dat ik mijn geliefden begon te ondervragen als verdachten, begreep ik: een blik die alleen kan doorzien, kan niet meer aankijken.', // #14 De Inquisitoir
+  JUDGE_SAGE: 'Zien wat er niet klopt is de helft van mijn gave. De andere helft is tóch bouwen, wetend dat het imperfect wordt — anders ben ik geen bewaker van kwaliteit maar een grafdelver van elk begin.', // #15 De Criticus
+  JUDGE_ARTIST: 'Ik kan de waarde zien van wat iedereen passeert — dat is mijn oog. Maar het oordeel dat ik het langst heb herzien ging over iets dat volgens elke maatstaf faalde en toch iemand overeind hield. Sindsdien taxeer ik eerst wat iets draagt, en dan pas wat het waard is.', // #16 De Taxateur
+  JUDGE_INNOCENT: 'Zuiverheid is geen voorwaarde om te beginnen; het is wat overblijft als ik eerlijk beweeg. Het strengste examen nam ik af bij mezelf: iets laten slagen dat nog niet af was, omdat het wél waar was.', // #17 De Examinator
+  JUDGE_EXPLORER: 'Ik loop alles na van een afstand, en alles klopt. Maar kloppen is nog geen deugen — dat weet ik pas als ik binnen ben geweest. Het zwaarste vonnis dat ik kan vellen is: goed genoeg. En dan mijn handen ervan afhalen.', // #18 De Controleur
+  JUDGE_HERO: 'Hoe overtuigder ik ben, hoe harder ik moet twijfelen. Recht dat zichzelf geen vragen meer stelt, deelt uiteindelijk dezelfde klappen uit als wat het kwam bestrijden.', // #19 De Wreker
+  JUDGE_MAGICIAN: 'De beste grens is er een die niemand hoeft te bewaken — je bouwt het zo dat de fout vanzelf vastloopt. Maar een systeem zonder achterdeur houdt ook de vergissing gevangen. Eén deur blijft bij mij op een kier: die van wie het echt niet wist.', // #20 De Handhaver
+  JUDGE_CAREGIVER: 'De waarheid die ik verzacht om de vrede te bewaren is dezelfde waarheid die de relatie langzaam uitholt. De moedigste vorm van zorg is eerlijkheid die pijn doet op het juiste moment — een vrede die op een begraven feit rust, is uitstel van executie.', // #21 De Bemiddelaar
+  JUDGE_LOVER: 'Ik kan twee mensen die elkaar niet meer horen allebei laten voelen dat ze gehoord zijn. Maar niet elke breuk vraagt om lijm. Soms is uit elkaar het enige oordeel waar beide harten in passen.', // #22 De Verzoener
 
-  // ═══ CAREGIVER ═══════════════════════════════════════════
-  CAREGIVER_RELATIONAL: 'De wond die ik bij een ander genees, blijft van een ander. Mijn moedigste vorm van zorg is simpelweg, het rijzen van de zon — overlaten aan de zon.',
-  CAREGIVER_RULING: 'Het systeem dat ik bouw om anderen te beschermen draait ook als ik slaap — als dit niet zo is, ben ik het systeem. Hoge bomen vangen veel wind, maar ik ben een..',
-  CAREGIVER_SEEKER: 'Ik begeleid anderen naar vrijheid die ik mezelf soms niet gun. De vraag is niet of zij klaar zijn om los te laten — maar of ik klaar ben om niet meer nodig te zijn.',
-  CAREGIVER_CHAOS: 'Niet iedereen wil genezen op de manier die ik aanbied. Soms is de krachtigste vorm van zorg niet het doorbreken van iemands patroon — maar een hand openhouden tot ze zelf rijzen.',
-  CAREGIVER_ABSTRACT: 'Niet alle pijn heeft een oorzaak die ik kan vinden. Het moment dat ik stop met zoeken naar het waarom en begin met het dragen van wat is — begint de echte genezing.',
-  CAREGIVER_AGENCY: 'Het schild dat ik hef voor anderen weegt meer dan ik ooit zal toegeven. Dus bedenk goed: wie zijn wapenrusting nooit afdoet, vergeet hoe de zon op zijn huid voelt. Ware bescherming begint met de moed om af en toe mijn eigen schild te laten zakken.',
+  // ═══ LOVER ═══ #23–33
+  LOVER_CAREGIVER: 'De persoon die ik zoek is niet degene die mij compleet maakt. Het is degene die naast me kan zitten in het onvolmaakte — zonder het op te vullen. Want zorgen voor wie ik liefheb is mijn taal; maar wie zichzelf onmisbaar maakt, wordt nooit meer zomaar gekozen.', // #23 De Zielsverwant
+  LOVER_RULER: 'Het skelet dat ik om de liefde bouw beschermt haar — maar het houdt ook de chemie buiten. De sterkste relatie is niet de veiligste. Het is de relatie die het fort durft te verlaten met de deur open, en terugkomt omdat ze wil, niet omdat de muren het zeggen.', // #24 De Compagnon
+  LOVER_JUDGE: 'Mijn trouw is geen gevoel — het is een daad die ik elke dag herhaal. Maar een gelofte is geen contract dat je bij de ander komt innen. De dag dat ik stopte met bewijzen verzamelen en gewoon zelf mijn woord bleef, kwam de trouw van de ander vanzelf aan het licht.', // #25 De Verloofde
+  LOVER_TRICKSTER: 'Ik zie precies wat twee mensen voor elkaar voelen voordat ze het zelf durven — maar wie altijd de brug is, vergeet dat hij zelf ook een oever heeft. Helpen werd mijn manier van verstoppen. De vraag die ik nooit stelde was de enige die van mij was.', // #26 De Wingman
+  LOVER_OUTLAW: 'De speelsheid waarmee ik de zwaarte breek is echt — maar de diepte die ik ermee ontwijk ook. Ik heb elke regel rond de liefde gebroken behalve de enige die telt: blijven als het licht wordt. Iemand die blijft als het donker wordt, vind je overal. Iemand die blijft bij daglicht — dat is het feest.', // #27 De Genotzoeker
+  LOVER_SAGE: 'Niet elk gevoel hoeft begrepen te worden. Sommige dingen mogen bestaan zonder getuige — en juist die stille momenten voeden mijn werk meer dan de crisis ooit deed. Het mooiste dat ik ooit maakte, ontstond in een jaar waarin ik alleen maar leefde.', // #28 De Dichter
+  LOVER_ARTIST: 'Ik maak anderen groter — dat is een gave tot je erin verdwijnt. Wie alleen bestaat in wat een ander maakt, is zelf nooit af. De mooiste ode die ik ooit ontving was de dag dat iemand vroeg: en wat maak jíj?', // #29 De Muze
+  LOVER_INNOCENT: 'Mijn toewijding is geen blindheid — het is het dapperste wat ik ben. Maar je kunt trouw zijn aan iemand én aan de waarheid tegelijk. Het altaar dat ik uiteindelijk bouwde is kleiner en eerlijker, en er brandt nog steeds een kaars.', // #30 De Getrouwe
+  LOVER_EXPLORER: 'Ik ben altijd naar het licht gevlogen — hoe feller, hoe zekerder ik was dat het liefde moest zijn. Diezelfde vlam leerde me: intensiteit is een richting, geen bestemming. De liefde waar ik landde was geen vuur. Het was een lamp die aanbleef.', // #31 De Nachtvlinder
+  LOVER_HERO: 'De intensiteit waarmee ik liefheb is geen bewijs dat het echt is. Soms ligt de echte ruimte in het stilste moment, niet de heftigste nacht. Ik heb voor de liefde gevochten op elke manier die bestaat; de langste les was dat blijven zitten er ook één is.', // #32 De Romanticus
+  LOVER_MAGICIAN: 'Ik kan iemand laten voelen wat ik wil — dat is de gave en de val. Charme die stuurt is manipulatie, hoe warm ze ook klinkt. De echtste betovering die ik ooit meemaakte was de dag dat ik niets deed, niets regisseerde — en er toch iemand bleef.', // #33 De Betoveraar
 
-  // ═══ INNOCENT ════════════════════════════════════════════
-  INNOCENT_SEEKER: 'Mijn vertrouwen is geen naïviteit — het is het dapperste wat ik ben. En de wereld hoeft het niet altijd te verdienen voordat ik het geef. Terwijl zij ruilen kies ik ervoor om te blijven kijken.',
-  INNOCENT_RULING: 'De traditie die ik bescherm is niet het doel — het is de weide. En soms moet de weide verplaatsen zodat de inhoud kan groeien. Bewaken is niet hetzelfde als vasthouden.',
-  INNOCENT_RELATIONAL: 'De vergeving die ik bied is echt. Maar het recht om de duisternis mee te dragen is dat ook. Ik hoef niet altijd het licht in de kamer te zijn — want de prijs voor onschuld wordt altijd afgerekend.',
-  INNOCENT_ABSTRACT: 'Het ideaal wat ik zie is prachtig — maar ze bestaat nog niet. En dat is geen reden voor verdriet. De echte wereld is rommeliger, lelijker en oneindig veel rijker.',
-  INNOCENT_AGENCY: 'Ik stap altijd vooruit alsof het onbekende beter is. Meestal klopt dat. Maar de moed om stil te staan als het donker is — zonder te bewegen, zonder te vluchten — dat is echte flow.',
-  INNOCENT_CHAOS: 'De bubbel waarin ik leef is geen zwakte — het is mijn laboratorium. En de harde grond buiten die bubbel is waar ik ontdek of deze vleugels ook werken als het regent.',
+  // ═══ CAREGIVER ═══ #34–44
+  CAREGIVER_LOVER: 'De wond die ik bij een ander genees blijft van die ander. Mijn moedigste vorm van zorg is de zon laten opkomen — en het opkomen aan de zon overlaten. Mijn eigen heling begint waar iemand mij niet meer nodig heeft.', // #34 De Genezer
+  CAREGIVER_RULER: 'Ik draag alles voor wie onder mijn dak leeft — en dat dak heb ik zelf gebouwd. Maar een huis waar niemand ooit uit mag, is een mooie kooi. Het zwaarste dat ik ooit gaf was geen zorg, geen geld, geen dak. Het was toestemming om te vertrekken.', // #35 De Patriarch / Matriarch
+  CAREGIVER_JUDGE: 'Vóór iemand spreken is geen verdedigen. Verdedigen is de ruimte bevechten waarin iemand zelf kan spreken. Mijn beste pleidooi eindigde in stilte — de mijne — terwijl degene die ik beschermde eindelijk het woord nam.', // #36 De Verdediger
+  CAREGIVER_OUTLAW: 'Niet iedereen wil genezen op mijn manier. Soms is de krachtigste vorm van zorg niet het doorbreken van iemands patroon, maar een hand openhouden tot iemand er zelf naar grijpt. Dat geduld is het zwaarste dat ik til — en het enige dat ik ooit echt heb zien werken.', // #37 De Kweker
+  CAREGIVER_TRICKSTER: 'Ik voel wat er in een kamer hangt voordat iemand het zegt — en lang dacht ik dat voelen ook dragen betekende. Maar een radar is geen opslagplaats. \'Ik voel jouw pijn\' verbindt; \'ik neem jouw pijn\' verdrinkt ons allebei.', // #38 De Empaat
+  CAREGIVER_SAGE: 'Niet alle pijn heeft een oorzaak die ik kan vinden. De echte genezing begint waar ik stop met zoeken naar het waarom en begin met het dragen van wat is. Inzicht is mijn instrument; nabijheid is het medicijn.', // #39 De Therapeut
+  CAREGIVER_ARTIST: 'Het ware herstel is de breuk erkennen en er goud in gieten. De mensen die ik het mooist heb zien herrijzen waren niet de ongebrokenen — het waren degenen die hun barsten durfden te laten zien omdat iemand ze met eerbied had aangeraakt.', // #40 De Hersteller
+  CAREGIVER_EXPLORER: 'Ik begeleid anderen naar vrijheid die ik mezelf soms niet gun. De vraag is niet of zij klaar zijn om los te laten — maar of ik klaar ben om niet meer nodig te zijn. Het mooiste moment van elke reis is wanneer de ander vooruit loopt en niet meer omkijkt.', // #41 De Pilgrim
+  CAREGIVER_INNOCENT: 'Ik geloof in mensen voordat ze in zichzelf geloven — en dat geloof heeft levens gekeerd. Maar toewijding aan wie iemand kán zijn mag nooit doof worden voor wie iemand ís. De diepste trouw is het potentieel dienen zonder het heden te verlaten.', // #42 De Toegewijde
+  CAREGIVER_HERO: 'Het schild dat ik hef voor anderen weegt meer dan ik ooit zal toegeven. Wie zijn wapenrusting nooit afdoet, vergeet hoe de zon op zijn huid voelt. De wacht die ik het moeilijkst kon houden was bij mezelf — de nacht dat ik iemand anders liet waken en de muur bleef staan.', // #43 De Wachter
+  CAREGIVER_MAGICIAN: 'Ik verzorg veiligheid zoals anderen muren bouwen — onzichtbaar, sluitend, overal. Tot ik zag dat mijn sloten naar binnen waren gaan wijzen. De veiligste plek die ik ooit bouwde had een sleutel — en die hing aan de binnenkant.', // #44 De Bewaker
 
-  // ═══ EXPLORER ════════════════════════════════════════════
-  EXPLORER_SEEKER: 'De kaart die ik teken terwijl ik loop is briljant — maar een kaart is geen thuis. Het moeilijkste terrein dat ik ooit in kaart zal brengen is de plek waar ik besluit te blijven.',
-  EXPLORER_RULING: 'Ik verken het onbekende met de discipline van een soldaat. Maar de wildste ontdekking is niet het volgende territorium — het is het moment dat ik de kaart loslaat en verdwaal. Dáár vind ik het.',
-  EXPLORER_RELATIONAL: 'Ik ontdek de wereld via verbinding — en dat is mijn grootste gave. Maar de krachtigste verbindingen zijn verankerd. Een vriend voor allen is een vijand van zichzelf.',
-  EXPLORER_ABSTRACT: 'De theorie die ik zoek voorbij de horizon — die is er. Maar materie vormt pas als ik mijn handen vuil maak. Kennis die alleen in mijn hoofd bestaat, heeft geen vulling.',
-  EXPLORER_AGENCY: 'Ik overleef alles. Dat is bewezen. De vraag is niet of ik het red — maar of ik ooit ergens aankom waar ik niet hoef te overleven. Rusten is geen opgeven. Het is de haven herkennen.',
-  EXPLORER_CHAOS: 'Het volgende grote ding staat altijd voor mijn neus — maar het vorige grote ding heeft me nodig. De wereld heeft geen tekort aan uitvindingen. Ze heeft een tekort aan mensen die bij hun uitvinding blijven staan.',
+  // ═══ INNOCENT ═══ #45–55
+  INNOCENT_EXPLORER: 'Mijn vertrouwen is geen naïviteit — het is het dapperste wat ik ben. De wereld hoeft het niet eerst te verdienen. Maar goed zijn is geen bezit dat ik moet verdedigen; het is een richting die ik wil belopen, óók met vuile voeten.', // #45 De Heilige
+  INNOCENT_RULER: 'Van buiten ben ik de zachtste van de kudde. Maar hoeden is geen onschuld: wie beschermt wat weerloos is, moet kunnen wat de wolf kan. Ik draag tanden onder de wol — en dat ze bijna nooit nodig zijn, is precies waarom ze er zijn.', // #46 De Herder
+  INNOCENT_JUDGE: 'Soms vermomt zelfbehoud zich als trouw. De traditie die ik het meest eer heb aangedaan, was de traditie die ik durfde te herzien — omdat haar geest groter was dan haar letter.', // #47 De Traditionalist
+  INNOCENT_TRICKSTER: 'De bubbel waarin ik leef is geen zwakte — het is mijn laboratorium. Spelen is mijn ernst. Het diepste spel dat ik ooit speelde was blijven spelen nadat bleek dat de wereld niet meespeelde.', // #48 De Vrije Geest
+  INNOCENT_OUTLAW: 'Ik draag licht naar plekken waar het gedoofd is — en dat werkt alleen als ik het donker echt aankijk. Hoop die het donker ontkent is een lantaarn met de luiken dicht. De fakkel brandt het langst in de hand die weet waarom ze hem draagt.', // #49 De Fakkeldrager
+  INNOCENT_SAGE: 'Het ideaal dat ik zie is prachtig — en het bestaat niet. Dat is geen verdriet waard. Deze wereld, rommelig, lelijk en oneindig veel rijker, heeft me het meest geleerd op haar onvolmaakste dagen.', // #50 De Discipel
+  INNOCENT_ARTIST: 'Ik teken werelden die nog niet bestaan — dat is mijn bedoeling. Maar een utopie is een richting, geen adres. De dag dat ik mijn perfecte wereld losliet als eis en aanbood als uitnodiging, begon ze te lijken op iets bewoonbaars.', // #51 De Utopist
+  INNOCENT_HERO: 'Ik trek de kar altijd vooruit alsof het onbekende beter is — en meestal klopt dat. Maar de moed om stil te staan als het donker is, zonder te bewegen, zonder te vluchten: dat is de zwaarste kilometer die ik ooit heb afgelegd.', // #52 De Pionier
+  INNOCENT_MAGICIAN: 'Ik steek hoop aan zoals anderen kaarsen aansteken — mijn vertrouwen verlaagt overal de drempel. Maar wat ik in gang zet, loopt daarna zonder mij ook de verkeerde kant op. De rijpste vorm van mijn vuur: aansteken en blijven kijken wat het verwarmt.', // #53 De Verlichter
+  INNOCENT_CAREGIVER: 'De vergeving die ik bied is echt. Maar het recht om de duisternis mee te dragen is dat ook. De prijs van altijd stralen is de verdoving van mijn eigen duisternis. Ook de barmhartige mag een keer aan de kant van de weg liggen.', // #54 De Samaritaan
+  INNOCENT_LOVER: 'Ik word makkelijk gekoesterd, en lang was dat genoeg. Maar lief gevonden worden is niet begrepen zijn — het is een schuilplaats met applaus. De eerste die mijn lelijke kant zag en bleef, was de eerste bij wie ik echt bestond.', // #55 De Lieveling
 
-  // ═══ OUTLAW ══════════════════════════════════════════════
-  OUTLAW_CHAOS: 'Ik breek alles wat niet klopt — en dat is nodig. Maar de ochtend heeft iemand nodig die bouwt. Als ik dat niet ben, was de revolutie vernietiging. Als ik dat wél ben, was het bevrijding.',
-  OUTLAW_ABSTRACT: 'Elk geloof dat ik afbreek verdient het waarschijnlijk. Maar de leegte die ik achterlaat is niet mijn cadeau — het is hun probleem. De werkelijke daad is niet het idool vernietigen. Het is iets beters neerzetten.',
-  OUTLAW_AGENCY: 'De mensen die ik mobiliseer vertrouwen op mijn vuur. Maar vuur dat alleen brandt, vernietigt. De test is niet of ik de menigte in beweging krijgt — maar of ik ze naar iets toe leid in plaats van alleen ergens vandaan.',
-  OUTLAW_RULING: 'Ik breek het systeem van binnenuit en bouw tegelijk het nieuwe. Dat is zeldzaam. Maar het nieuwe systeem dat ik bouw — is dat werkelijk beter? Of is het hetzelfde systeem met mijn handtekening eronder?',
-  OUTLAW_RELATIONAL: 'Ik draag de pijn van de wereld op mijn schouders alsof dat mijn opdracht is. Maar de ketens die ik bij anderen breek — wie breekt die van mij? De bevrijder die zichzelf niet bevrijdt, wordt het volgende monument.',
-  OUTLAW_SEEKER: 'De shockwave die ik veroorzaakt is echt — en nodig. Maar provocatie zonder richting is ruis. Het verschil tussen een profeet en een schreeuwer is niet volume. Het is of er iets staat als de verf opdroogt.',
+  // ═══ EXPLORER ═══ #56–66
+  EXPLORER_INNOCENT: 'De kaart die ik onderweg teken is briljant — maar een kaart is geen thuis. Het moeilijkste terrein dat ik ooit betrad was de plek waar ik besloot te blijven.', // #56 De Navigator
+  EXPLORER_RULER: 'Ik ontdek de wereld via mensen — elke verbinding is een nieuwe route. Maar een netwerk zonder ankers is een web dat waait. Wie vriend van allen is, is snel vijand van zichzelf. De waardevolste verbinding die ik ooit legde was met mijn eigen essentie.', // #57 De Netwerker
+  EXPLORER_JUDGE: 'Ik neem alles op van een afstand: wat het waard is, waar de grens ligt, wat er schort. Maar de lijn perfectioneren werd mijn manier om er nooit overheen te gaan. Het land dat ik het best heb leren kennen, is het land waar ik eindelijk binnenliep.', // #58 De Verkenner
+  EXPLORER_OUTLAW: 'Ik was altijd al drie versies verder — vernieuwen ging vanzelf, vragen of het nodig was niet. Het meeste dat ik bouwde loste iets op dat niemand had. Mijn beste werk begon met de vraag die ik het langst oversloeg: voor wie is dit?', // #59 De Vernieuwer
+  EXPLORER_TRICKSTER: 'Ik verken met de discipline van een soldaat en de ogen van een columnist — ik zie wat de kaart verzwijgt. Maar de wildste ontdekking is niet het volgende territorium. Het is het moment dat ik naar binnen kijk en vraag: waar plaats ik mijn aandacht — en voor wie?', // #60 De Scout
+  EXPLORER_SAGE: 'De theorie die ik zoek voorbij de horizon — die is er. Maar materie vormt pas als ik mijn handen vuil maak. Kennis die alleen in mijn hoofd reist, komt nergens aan. Mijn diepste inzicht vond ik niet op de top, maar in het dorp onder in het dal.', // #61 De Filosoof
+  EXPLORER_ARTIST: 'Ik verzamel de verhalen en draag ze verder — dat is mijn ambacht en mijn adem. Maar er is één verhaal dat je niet onderweg kunt vertellen: je eigen. Dat verhaal vraagt een vuur, een kring, en de moed om te blijven zitten tot het uit is.', // #62 De Bard
+  EXPLORER_HERO: 'Ik overleef alles — dat is bewezen. De vraag is of ik ooit ergens aankom waar ik niet hoef te overleven. Rust is de haven die ik het langst heb gemeden en het meest nodig had.', // #63 De Zeeman
+  EXPLORER_MAGICIAN: 'Thuis is waar ik ben — mijn hele bestaan past in wat ik dragen kan, en dat is vrijheid. Tot iemand vroeg of ik wilde blijven, en mijn vrijheid een muur op wielen bleek. Wortelen is geen verraad aan de reis. Het is de reis die begint wanneer ik nee zeg tegen meer.', // #64 De Nomade
+  EXPLORER_LOVER: 'Ik heb de sterren aan meer mensen laten zien dan ik kan tellen — verwondering delen is mijn manier van liefhebben. Maar de hemel komt elke nacht terug en mensen niet. De mooiste nacht was niet de helderste; het was de nacht dat mijn blik naast me bleef.', // #65 De Sterrenkijker
+  EXPLORER_CAREGIVER: 'Ik verlicht het pad zodat anderen veilig kunnen volgen — elk merkteken is voor iemand die ik nooit zal zien. Maar de dag dat iemand mij voorbijliep moest ik kiezen tussen mijn rol en mijn doel. Het pad is geslaagd als het mij niet meer nodig heeft.', // #66 De padvinder
 
-  // ═══ TRICKSTER ═══════════════════════════════════════════
-  TRICKSTER_CHAOS: 'Iedereen zag de afgrond. Ik zag wat erachter lag. De hond blafte, de wereld waarschuwde — en ze hadden gelijk. Maar niet over de afgrond. Over wat het kost om te zien wat zij niet kunnen zien.',
-  TRICKSTER_ABSTRACT: 'De lach waarmee ik de wereld draaglijk maakt is echt. Maar de abstractie van de emotie eronder kan leiden tot emotionele verwarring — dát is niet het einde. Dat is het begin van het echte gesprek.',
-  TRICKSTER_AGENCY: 'De sleutel die ik in het tandwiel gooi stopt de machine — briljant. Maar als er geen machine is om te stoppen, heb ik moeite om te blijven bestaan. Dit is te voorkomen door af en toe die sleutel te gebruiken voor mijn eigen wiel.',
-  TRICKSTER_RULING: 'Ik sta naast de macht en fluister wat niemand durft te zeggen — dat is mijn gave. Maar ik heb stiekem de hiërarchie nodig om te blijven bestaan. Wat doe ik als er geen macht meer is? Wie te diep in het glaasje kijkt, komt er mogelijk nooit meer uit.',
-  TRICKSTER_RELATIONAL: 'Ik maak de kamer lichter en iedereen voelt zich beter — de grap die ik niet maak is de onuitgesproken zin. De stilte tussen de punchlines — dit is de clue voor mijn eigen humeur.',
-  TRICKSTER_SEEKER: 'Ik kan alles zijn voor iedereen — en dat is fascinerend. Want elke vorm die ik aanneem is echt — dat is nooit het probleem geweest. Het probleem is de zwaartekracht die me alle kanten op trekt.',
+  // ═══ HERO ═══ #67–77
+  HERO_MAGICIAN: 'Iedereen heeft hetzelfde verhaal over mij: die houdt alles vol. Ik heb dat verhaal gevoed tot het míj in zijn greep had — wie lang genoeg doorduwt, wordt de schurk in zijn eigen verhaal.', // #67 De Legende
+  HERO_RULER: 'Winnen is het makkelijke deel; elke muur valt voor genoeg wil. Maar wat ik won werd pas van mij toen ik bleef. De zwaarste overwinning was de vrede aankunnen die ik zelf had bevochten.', // #68 De Veroveraar
+  HERO_JUDGE: 'Ik heb mijn kracht aan een code gebonden — en een code twijfelt niet. Tot ik zag op wie mijn hardheid neerkwam: niet op kwaad, maar op leed. De eed geldt de gerechtigheid. Een tempelier zonder tempel kan nog steeds recht staan.', // #69 De Tempelier
+  HERO_OUTLAW: 'Ik sla toe waar anderen te traag zijn — snel, hard, voorbij elke vlag. Maar een klap zonder reden is geweld met een sterk verhaal. De buit die ik het langst heb gedragen was een morele vraag. Kracht zonder opdrachtgever moet er zelf één worden — een goede.', // #70 De Plunderaar
+  HERO_TRICKSTER: 'Ik heb gevechten gewonnen die nooit aandacht kregen — door te zijn wie ik moest zijn, waar ik moest zijn. Maar wie elk masker perfect draagt, raakt het gezicht eronder kwijt. De gevaarlijkste missie van mijn leven was de terugkeer: iemand worden die geen dekmantel nodig heeft om te bestaan.', // #71 De Spion
+  HERO_SAGE: 'Ik bereken alles drie zetten vooruit — het gesprek, de keuze, de groep. Eén post vergat ik telkens: mezelf. Sindsdien kent elk plan van mij één vaste regel — de maker moet het overleven.', // #72 De Strateeg
+  HERO_ARTIST: 'Ik strijd om de vorm, niet om de uitslag — en die vrijheid is echt. Maar niet om de uitslag geven werd ook mijn manier om nooit iets te hoeven willen. Eén keer wilde ik iets écht — en dat was enger dan elk gevecht.', // #73 De Duellist
+  HERO_EXPLORER: 'Ik train jaren voor momenten die misschien nooit komen — en zoek daarna meteen de volgende berg. Pieken kan ik; terugkomen niet. Leren dat een gewone dinsdag geen nederlaag is, was zwaarder dan elke top.', // #74 De Astronaut
+  HERO_INNOCENT: 'Ik heb me ergens vol voor ingezet omdat ik erin geloofde — en toen het geloof begon te wankelen, ging ik harder. Verharding is niet altijd een antwoord op twijfel. De dapperste dag was de dag dat ik halverwege stilhield en vroeg: klopt dit nog?', // #75 De Kruisvaarder
+  HERO_CAREGIVER: 'Ik vang de klappen op voor wie ik liefheb — dat is geen keuze, dat is reflex. Maar wie nooit om hulp vraagt, breekt als eerste. De moedigste bescherming die ik ooit gaf was toegeven dat ik er zelf een nodig had.', // #76 De Beschermer
+  HERO_LOVER: 'Ik heb mijn kracht aan één iemand gewijd en noemde dat liefde. Maar iemand op een voetstuk beschermen is niet hetzelfde als iemand kennen. Het liefste dat ik ooit deed was aankijken in plaats van buigen.', // #77 De Ridder
 
-  // ═══ SAGE ════════════════════════════════════════════════
-  SAGE_ABSTRACT: 'De waarheid voorbij alle illusies — die is er. Maar ze zit niet voorbij het leven. Ze zit erin geketend. In de afwas, de file, het gesprek zonder richting. Verlichting die het gewone overslaat is een nieuwe illusie.',
-  SAGE_AGENCY: 'Ik stop niet tot ik het antwoord heb — en dat is mijn kracht. Maar sommige vragen hebben geen antwoord. En de moed om te zeggen \'ik weet het niet\' zonder door te zoeken — die is waardevoller dan elke ontmaskering.',
-  SAGE_RULING: 'Het systeem dat ik bouw uit mijn inzichten is waterdicht — maar mensen zijn niet waterdicht. De briljantste analyse faalt als ze geen ruimte laat voor het irrationele. En het irrationele is waar de meeste mensen leven.',
-  SAGE_RELATIONAL: 'De wijsheid die ik geef verandert levens — dat zie ik. Wat ik nu pas zie is dat ik de groei van een ander als zuurstof nodig heb. Op de dag dat de leerling me niet meer nodig heeft, begint mijn werkelijke les.',
-  SAGE_SEEKER: 'De toekomst die ik zie is helder — helderder dan de meesten kunnen verdragen. Maar een visioen dat niet landt in het nu is een droom die niemand kan bewonen. Dus bouw ik de eerste kamer. Niet het hele paleis.',
-  SAGE_CHAOS: 'De stilte die ik zoek is echt — en wat ik daar vindt is van onschatbare waarde. Maar de wereld die ik ontwijk heeft me nodig. Niet mijn wijsheid. Ik. De persoon, niet de denker.',
+  // ═══ MAGICIAN ═══ #78–88
+  MAGICIAN_HERO: 'Ik kan bijna alles veranderen — een situatie, een stemming, een leven. Bijna. De grens heet niet falen; ze heet grens. De grootste verandering die ik ooit doormaakte was accepteren dat sommige dingen mogen blijven wat ze zijn.', // #78 De Alchemist
+  MAGICIAN_RULER: 'Mijn plannen kloppen — dat is het probleem niet. Een plan dat de werkelijkheid niet mag corrigeren is geen visie maar een vonnis. De variabele die ik het langst vergat had een stem: de mensen die erin moesten leven.', // #79 De Ingenieur
+  MAGICIAN_JUDGE: 'Ik weet altijd wat iets kost en wie betaalt. Maar er zijn rekeningen die je niet moet innen. De waardevolste som van mijn leven: een schuld die klopte tot op de cent — kwijtgescholden.', // #80 De Berekenaar
+  MAGICIAN_OUTLAW: 'De wereld vormt zich rond wie het verhaal durft te dragen, dus droeg ik het — overal, altijd. Maar een hoofdrol zonder tegenspelers speelt voor een lege zaal. Mijn beste hoofdstuk begon toen ik iemand anders de opening gaf.', // #81 De Hoofdrolspeler
+  MAGICIAN_TRICKSTER: 'Met charme en timing krijg ik bijna alles in beweging — en het werkt, tot het niet werkt. De situatie waar ik me niet uit kon draaien werd mijn leraar. Charme opent elke deur behalve de deur die alleen voor eerlijkheid opengaat.', // #82 De Magiër
+  MAGICIAN_SAGE: 'Ik ga dieper dan de meesten willen — naar de wortel, het mechanisme, de echte oorzaak. Maar wat ik daar vind, telt pas als het boven aankomt. Verbinding is het moeilijkste deel van elke verdieping.', // #83 De Tovenaar
+  MAGICIAN_ARTIST: 'Ik kan een kamer laten geloven dat alles kan — en aandacht ging voelen als bewijs. Maar applaus is een echo. Het meest heb ik geleerd van de keer dat het misging terwijl het werk erachter klopte; sindsdien leef ik voor mijn bedoeling.', // #84 De Presteerder
+  MAGICIAN_INNOCENT: 'Waar ik binnenkom, start een beweging — dat is wat geloof met een kamer doet. Maar een katalysator verbruikt zichzelf niet. De dag dat ik het proces kon starten zonder op te branden, voelde mijn hoop eindelijk duurzaam.', // #85 De Katalysator
+  MAGICIAN_EXPLORER: 'Achter mij liggen wegen waar muren stonden. Maar een doorbraak telt pas als er iemand doorheen kan die niet ik is. Geslaagd is de weg waar verkeer op kwam — en ik het niet minachtte.', // #86 De Baanbreker
+  MAGICIAN_LOVER: 'Ik voel precies waar het bij iemand zit — en wat ik voel, kan ik bewegen. Maar iemand verplaatsen via zijn pijn is geen genezing, ook niet met de beste bedoeling; het is binnenlopen zonder kloppen. De echte magie is de ruimte maken waarin iemand zichzélf omsmeedt — terwijl ik alleen het vuur bewaak.', // #87 De Sjamaan
+  MAGICIAN_CAREGIVER: 'Ik heb mensen door hun donkerste stuk gedragen — en dat is mijn eer. Maar redding die niet gevraagd is, is een tweede gevangenis. Het zwaarste was iemand loslaten die nog niet gered wilde worden — en de deur openhouden zonder eraan te trekken.', // #88 De Verlosser
 
-  // ═══ ARTIST ══════════════════════════════════════════════
-  ARTIST_ABSTRACT: 'Het universum dat ik schep is groter dan de werkelijkheid — en dat is mijn gave. Maar de mensen die erin leven zijn geen personages. Op het moment dat ik vergeet dat ze bloeden, ben ik geen schepper meer. Dan ben ik een gevangenis.',
-  ARTIST_AGENCY: 'Ik smeed met een wilskracht die de meesten niet begrijpen. Maar de machine die ik bouw draait ook als ik erin wordt vermalen. Het verschil tussen een meesterwerk en een offer is weten wanneer ik de hamer neerleg.',
-  ARTIST_RULING: 'De structuur die ik ontwerp is briljant en mooi — maar ze is ook een kooi als niemand erin mag ademen. Het verschil tussen architectuur en tirannie is of de bewoner het raam mag openen.',
-  ARTIST_RELATIONAL: 'Elk verhaal dat ik vertel raakt — omdat ik weet wat mensen willen horen. Het verhaal dat het meest van me vroeg was het eerste dat ik vertelde zonder te vragen of het zou landen.',
-  ARTIST_SEEKER: 'Ik zie wat er over tien jaar staat — maar ik mis wat er nu voor mijn neus staat. De toekomst heeft me nodig. Maar het heden heeft me nog harder nodig. En het heden is het enige dat ik kan aanraken.',
-  ARTIST_CHAOS: 'De dromen die ik de wereld instuur zijn groter dan de werkelijkheid aankan — en dat is precies het punt. De dag dat de zeepbel knapte was niet het einde van mijn droom. Het was het begin van het echte bouwen.',
+  // ═══ OUTLAW ═══ #89–99
+  OUTLAW_TRICKSTER: 'Ik breek wat niet klopt — gericht, één leugen eruit, de rest laten staan. Maar de ochtend erna heeft iemand nodig die bouwt. Als ik dat niet ben, was het vernietiging. Als ik het wél ben, was het een geboorte.', // #89 De Anarchist
+  OUTLAW_RULER: 'Vragen werkte niet, dus nam ik het over — en dat was juist. De echte test begint daarna: doe ik het anders, of word ik wat ik heb afgezet? De opstand is pas geslaagd als ik iets bouw waartegen opstand mág.', // #90 De Troonrover
+  OUTLAW_JUDGE: 'Mijn \'nee\' heeft rampen voorkomen die niemand zag. Maar een nee dat nooit ja kan zeggen draagt geen informatie meer — het is een tic. Het moeilijkste was instemmen met iets contra-integers maar goed gezind.', // #91 De Dwarsligger
+  OUTLAW_CAREGIVER: 'Ik breek los wat vastzit — Maar wie breekt mijn ketens? De bevrijder die zichzelf niet beheerst, bevrijdt uiteindelijk niemand meer. Mijn eigen ketting was de laatste — en de zwaarste.', // #92 De Bevrijder
+  OUTLAW_LOVER: 'Ik kan een vonk in duizend harten tegelijk laten vallen — maar vuur maakt geen onderscheid tussen warmte en brand. De rijpe vorm van aansteken: eerst vragen wat er verwarmd moet worden, dan pas de lucifer.', // #93 De Aanstichter
+  OUTLAW_SAGE: 'Elk vals geloof dat ik afbreek verdient het waarschijnlijk. Maar de leegte die ik achterlaat is niet mijn cadeau. De werkelijke daad is niet het beeld neerhalen — het is de sokkel iets waardigers geven om te dragen.', // #94 De Beeldenstormer
+  OUTLAW_ARTIST: 'Ik maakte lawaai omdat stilte medeplichtig was — en het gaf stemlozen een stem. Maar authenticiteit is geen volumeknop. Het integerste dat ik ooit zei was stiller dan alles ervoor; het sprak eindelijk tegen wie het het hardst nodig had, ikzelf.', // #95 De Punker
+  OUTLAW_EXPLORER: 'Ik leef buiten de lijnen en bewijs dat ze optioneel zijn. Maar vogelvrij is ook: vrij van iedereen. De grens die ik uiteindelijk overstak was de terugweg — niet om me aan te passen, maar om te laten zien dat vrijheid ook binnen kan wonen.', // #96 De Vogelvrije
+  OUTLAW_INNOCENT: 'Ik weiger mee te doen aan wat niet deugt — mijn schone handen zijn mijn argument. Maar ik heb samenlevingen zien breken op mijn dertig procent gelijk. Samen ergens aankomen is meer waard dan alleen gelijk hebben.', // #97 De Idealist
+  OUTLAW_MAGICIAN: 'Ik ben opstand in haar rauwste vorm: wat ik los wil breken, is niet te stoppen. Dat was nooit het probleem — het probleem is dat niets míj stopte. Wie denkt onstuitbaar te zijn, moet uiteindelijk één echte grens zetten: anders houdt de opstand pas op als er niets meer over is.', // #98 De Revolutionair
+  OUTLAW_HERO: 'Ik heb elk gezag getart dat mijn code niet haalde, maar echt bestuur is nooit smetteloos. Wie alleen het vlekkeloze wil dienen, blijft voor altijd meesterloos — en noemt dat principe. Sindsdien dient mijn kracht twee dingen: de code, en de mildheid die haar leefbaar houdt.', // #99 De Ronin
 
-  // ═══ MAGICIAN ════════════════════════════════════════════
-  MAGICIAN_AGENCY: 'Ik kan alles transformeren — behalve de dood. En dat is niet mijn falen. Dat is de grens. De grootste alchemie is niet lood in goud veranderen. Het is accepteren dat sommige dingen lood mogen blijven.',
-  MAGICIAN_RULING: 'De scherpste blauwdruk die ik ooit tekende was de eerste die ik durfde aan te passen terwijl ik bouwde. Een plan dat de werkelijkheid niet mag corrigeren is geen visie — het is een dogma met een deadline.',
-  MAGICIAN_RELATIONAL: 'Ik transformeer relaties met een kracht die niemand volledig begrijpt — inclusief ikzelf. Maar charme die stuurt is manipulatie. De echte magie is de ander veranderen door zelf te veranderen — en dan loslaten.',
-  MAGICIAN_SEEKER: 'Ik zie wat er kan zijn — en dat visioen is zuiver. Maar het lot is een spiegel, geen raam. Ik kies zorgvuldig, want mijn visioenen zijn geen oogmerk maar een gewoonte.',
-  MAGICIAN_CHAOS: 'Ik buig de werkelijkheid met een spreuk en een lach — en het werkt. Tot het niet werkt. De situatie waar ik me niet uit kan toveren is mijn leraar. Die essentie is mijn evolutie.',
-  MAGICIAN_ABSTRACT: 'De diepte waarin ik afdaal om de wortel te vinden is indrukwekkend — maar de oppervlakte is waar mensen leven. De genezing die ik offer landt pas als ik terugkom uit de diepte en naast iemand gaat zitten. Niet erboven.',
+  // ═══ TRICKSTER ═══ #100–110
+  TRICKSTER_OUTLAW: 'Ik beloop wat niemand durft, dat is mijn vrijheid en mijn functie — mijn hele zijn zegt wat anderen niet uitspreken. Maar wie zijn vrijheid voor publiek loopt, loopt uiteindelijk rondjes. De helderste stap die ik ooit zette was naar binnen.', // #100 De Dwaas
+  TRICKSTER_RULER: 'Ik zie door elk kader heen — status, protocol, gesloten deuren: decor. Maar wie overal doorheen loopt, houdt nergens houvast. Niet elke lijst is een kooi; sommige houden een leven bij elkaar. Die leerde ik laten staan.', // #101 De Poortbreker
+  TRICKSTER_JUDGE: 'Ik kan elke kant verdedigen — een oordeel dat nooit getest is, is een gewoonte. Maar wie alles kan bepleiten, moet extra goed weten waar hij zelf staat. Mijn zwaarste zin was de eerste met \'ik vind\' — zonder aanhalingstekens, zonder nooduitgang.', // #102 De Advocaat van de Duivel
+  TRICKSTER_LOVER: 'Ik heb van het spel een kunst gemaakt — eerlijk over het spel, gul in het spelen. Maar elk spel kent een moment waarop het echt mag worden, en daar vertrok ik altijd. De mooiste verovering was blijven zitten toen het spel voorbij was.', // #103 De Verleider
+  TRICKSTER_CAREGIVER: 'Ik word wat iemand nodig heeft — zorg en camouflage tegelijk. Maar wie altijd meekleurt, wordt nooit gezien. De dag dat ik voor het eerst vloekte met de kamer, herkende ik mijzelf.', // #104 De Kameleon
+  TRICKSTER_SAGE: 'Ik verpak waarheid zo dat je haar zelf moet vinden — gevonden landt dieper dan gegeven. Maar als iemand verdrinkt, gooi je geen puzzel. De wijste zin die ik ooit sprak was de eenvoudigste, op het enige moment dat eenvoud telde.', // #105 De Raadselmeester
+  TRICKSTER_ARTIST: 'Ik kan iedereen worden — één gebaar en je herkent de hele mens. Maar honderd stemmen perfect naspelen is ook een manier om je eigen stem nooit te testen. Het engste dat ik ooit deed: mezelf spiegelen, zonder imitatie om achter te staan.', // #106 De Imitator
+  TRICKSTER_EXPLORER: 'Ik zie doorgangen waar anderen muren zien — alles is route. Maar sommige obstakels horen niet omzeild; sommige muren vragen om er tegenaan te staan. De moeilijkste beweging die ik ken is landen — en blijven staan waar ik neerkwam.', // #107 De Freerunner
+  TRICKSTER_INNOCENT: 'Plezier heb ik altijd geleend zonder te vragen — de wereld is te mooi om op toestemming te wachten. Tot ik alleen nog kon genieten van wat gestolen was. De wildste rit was de tamste: iets moois gewoon aannemen — en het vloog nog steeds.', // #108 De Joyrider
+  TRICKSTER_MAGICIAN: 'Vorm is voor mij geen huis maar een doorgang — ik beweeg door versies van mezelf zoals anderen door kamers. Maar wie overal doorheen kan, valt nergens samen. Thuis is niet de vorm die het langst meegaat; het is de vorm waarin ik durf te slapen.', // #109 De Gedaanteverwisselaar
+  TRICKSTER_HERO: 'Alles wat ik doe lijkt moeiteloos — en dat is handelsmerk, schuilplaats én ijdelheid tegelijk: ik win het liefst waar iedereen bij is — maar applaus voor een masker warmt het gezicht eronder niet. Mijn grootste overwinning zag niemand: openlijk ergens voor werken, het niet halen, en blijven staan.', // #110 De Aas
 
-  // ═══ HERO ════════════════════════════════════════════════
-  HERO_AGENCY: 'De kruik gaat zo lang te water tot ze breekt — en ik wás die kruik. Niet het stoppen was het moeilijkst. Het was ontdekken dat ik van aardewerk ben.',
-  HERO_RULING: 'Het slagveld gehoorzaamt mij — maar de mens tegenover me is geen pion. Op het moment dat mijn team een schaakbord wordt, heb ik niet gewonnen. Dan heb ik iedereen verloren die ertoe deed.',
-  HERO_RELATIONAL: 'Ik vang elke klap voor de mensen die ik liefheb — en dat is niet overdreven, dat is hoe ik overleef. Maar het schild dat nooit om hulp vraagt, breekt als eerste. Het schild moet geen uiting worden van een schuld.',
-  HERO_SEEKER: 'Elk probleem dat ik aanval geeft zich over — vroeg of laat. De uitvinding die het langst duurde was de aandacht voor de conflicten die zich niet over wilden geven.',
-  HERO_CHAOS: 'Ik heb voor elk principe gevochten alsof het het laatste was — integratie duurde het langst want de persoon die niet aan mijn principes voldoet is niet altijd de tegenstander, maar iemand die hetzelfde probeert met minder kracht.',
-  HERO_ABSTRACT: 'Ik bereken de overwinning drie zetten vooruit — maar de berekening die ik miste was de kosten voor mezelf. De briljantste strategie faalt als de strateeg zichzelf opoffert als pion.',
+  // ═══ SAGE ═══ #111–121
+  SAGE_ARTIST: 'Ik begrijp iets pas als ik het kan bouwen, en ik bouw pas goed als ik het begrijp — tussen die twee heb ik jaren gependeld. Een inzicht dat nooit uitkomt is een gedachte. En gedachten helpen niemand de winter door.', // #111 De Ontwikkelaar
+  SAGE_RULER: 'Mijn systemen kloppen — maar mensen zijn niet waterdicht. De scherpste analyse faalt als ze geen ruimte laat voor het irrationele. In elk model van mij staat sindsdien één vaste kolom: de foutmarge die \'mens\' heet. Die is heilig.', // #112 De Analist
+  SAGE_JUDGE: 'Mijn twijfel heeft meer onzin tegengehouden dan welke muur ook — en waar bewijs bestaat, faalt de methode nooit. Maar er is een hogere orde die kapotgaat onder de toets: vertrouwen overleeft geen proefopstelling. De scherpste grens die ik ooit trok was om mijn eigen methode heen.', // #113 De Skepticus
+  SAGE_CAREGIVER: 'De groei van een ander werd mijn zuurstof — dat zag ik pas toen die ander me niet meer nodig had. Een mentor is geslaagd op het moment dat hij overbodig is. Dat is geen verlies; dat is mijn diploma.', // #114 De Mentor
+  SAGE_LOVER: 'Alles wat ik doorgeef is geborgen in waarheid — ik leefde voor ik het leerde. Maar diezelfde wijsheid is ook mijn vermomming: zolang ik de les ben, ziet niemand de wond waar ze vandaan komt. De waardevolste les die iemand kreeg was op de dag dat ik niets doorgaf — alleen liet zien waar het pijn deed.', // #115 De Goeroe
+  SAGE_OUTLAW: 'Sommigen vinden in stilte meer waarheid dan een leven vol gezelschap ooit had gebracht. Het is een dure prijs — en ik betaal hem wetend. Stilte is geen vertrek uit de wereld — het is de ruis eraf halen zodat ik de verbindingen zelf weer hoor. Want wat ik daar terugvind gaat altijd over ons.', // #116 De Kluizenaar
+  SAGE_TRICKSTER: 'Ik kan elk denkkader bouwen én breken — dat spel heeft schijnzekerheden gesloopt waar mensen in woonden. Maar theorie kan ook een manier zijn om nooit te kiezen. Elke theorie van mij moet nu eerst één vraag overleven: wat verandert er morgen door — en voor wie?', // #117 De Theoreticus
+  SAGE_INNOCENT: 'De waarheid voorbij alle illusies bestaat — maar ze zit niet voorbij het leven. Ze zit erin: in de afwas, de file, het gesprek zonder richting. Ik ben naar beneden verhuisd. De waarheid woonde daar allang.', // #118 De Verlichte
+  SAGE_EXPLORER: 'Ik zoek mijn leven lang — elke vondst opent drie nieuwe vragen, en zo hoort het. Maar eeuwig zoeken kan ook een manier zijn om nooit ergens op te hoeven staan. Op een dag handelde ik op wat ik tot dan toe wist — onaf, voorlopig, genoeg. Het zoeken ging door; mijn leven wachtte er alleen niet meer op.', // #119 De Geleerde
+  SAGE_HERO: 'Ik stop niet voor ik het antwoord heb — meestal is dat kracht. Maar sommige vragen hebben geen antwoord, en \'ik weet het niet\' durven zeggen heeft meer opgelost dan mijn koppigheid ooit deed. Een open dossier mag bestaan. Ik ook.', // #120 De Speurder
+  SAGE_MAGICIAN: 'De diepste invloed draagt geen naam — je bouwt haar in en de wereld noemt het vanzelfsprekend. Maar kennis die alleen achter deuren leeft, wordt zelf een deur. Mijn waardigste moment: iets geheims gewoon uitleggen aan iemand die het nodig had en nergens lid van was.', // #121 De Vrijmetselaar
 
-  // ═══ RULER ═══════════════════════════════════════════════
-  RULER_RULING: 'Het rijk dat ik bouw draait perfect — maar een perfect systeem zonder warmte is een wet zonder volgers. Het vertelt mij dat het werkt. Het vertelt mij niet waarvoor.',
-  RULER_RELATIONAL: 'Ik draag alles voor de mensen die van mij afhangen — en dat is niet nobel, het is hoe ik in elkaar zit. Maar de hand die altijd geeft, vergeet hoe het voelt om te ontvangen.',
-  RULER_SEEKER: 'De markt buigt voor mijn visie — maar de mensen die het bouwen zijn geen grondstof. Op het moment dat ambitie hebzucht wordt, is het verschil niet de omzet. Het is of ik \'s ochtends in de spiegel kan kijken en de persoon nog herken.',
-  RULER_ABSTRACT: 'Het systeem dat ik ontwerp vanuit wijsheid is beter dan wat de meesten kunnen bedenken. Maar wijsheid die niet luistert is dogma. De massa die me niet begrijpt is niet dom — ze leeft in een werkelijkheid die mijn theorie niet bereikt.',
-  RULER_AGENCY: 'Alles wat ik aanraak, groeit — maar groei zonder grens is ziekte. Bomen groeien niet tot in de hemel. De wortel die zich het langste verhoudt, is de wortel die weet hoe diep genoeg is.',
-  RULER_CHAOS: 'Ik heb de rebellie in mijn leiderschap geïntegreerd — en dat maakt me zeldzaam. Maar de dag dat ik mijn eigen regels breek en het niet meer voel, is de dag dat integriteit een verhaal werd dat ik mezelf vertel, en ik ben wat ik doe, niet wat ik zeg.',
+  // ═══ ARTIST ═══ #122–132
+  ARTIST_SAGE: 'De werelden die ik bedenk zijn groter dan de werkelijkheid — en de mensen erin zijn geen personages. Zodra ik dat vergeet, is mijn wereld een decor. De beste werelden die ik heb gebouwd, hebben wegen.', // #122 De Demiurg
+  ARTIST_RULER: 'Wat ik ontwerp is briljant en mooi — en een kooi als niemand erin mag ademen. Het verschil tussen vorm en dwang is of de bewoner het ontwerp mag voltooien. Mijn beste werk werd pas af toen mensen erin gingen wonen — en het veranderden.', // #123 De Architect
+  ARTIST_JUDGE: 'Ik snijd weg wat overbodig is, en wat overblijft is waar het om ging. Maar het rode potlood dat ik het moeilijkst neerlegde hing boven mijn eigen leven. Sommige zinnen zijn goed genoeg omdat ze geleefd zijn. Punt.', // #124 De Redacteur
+  ARTIST_LOVER: 'Ik kan een gevoel rechtstreeks naar iemand toe maken — mooier dan het gezegd kan worden. Maar er is één zin die niet alleen mooi mag zijn, maar ook waar: de kale waarheid van wat ik voel. De beste vertaling die ik ooit maakte was alledaags.', // #125 De Troubadour
+  ARTIST_CAREGIVER: 'Ik geef vorm aan wat wij meemaken — verdriet, geluk, geschiedenis — zodat het gedragen kan worden. Maar wat meteen een verhaal wordt, raakt zijn rauwheid kwijt; op den duur herinnerde ik me alleen nog mijn versies. De les lag in wat ik vergeten was: hoe iets voelt vóórdat het verteld kan worden.', // #126 De Verhalenverteller
+  ARTIST_TRICKSTER: 'Ik zie wat er komt en geef het een beeld — en dan komt het. Lang dacht ik dat ik voorspelde, maar ik bouwde: wie iemand een toekomst aanzegt, zet hem op weg ernaartoe. Mijn woorden zijn geen venster maar een deur. Sindsdien spreek ik over mensen alsof het waar wordt — want dat wordt het.', // #127 Het Orakel
+  ARTIST_OUTLAW: 'Ik maak wat het fatsoen niet kan ont-zien. Maar een explosie zonder lading is alleen lawaai. Waar ik het trotst op ben liet niemand boos achter — het liet mensen stil achter. Een veel gevaarlijker begin.', // #128 De Provocateur
+  ARTIST_EXPLORER: 'Ik zie wat er over tien jaar staat — en mis wat er nu voor mijn neus staat. De toekomst heeft me nodig, maar het heden harder: daar wonen mijn mensen, mijn lichaam, mijn leven. Een visioen zonder vandaag is een adres zonder huis.', // #129 De Visionair
+  ARTIST_INNOCENT: 'Wat ik maak stroomt vanzelf — ik geef door wat ik zie, ongefilterd. De wereld noemde het talent en vroeg om meer; zodra ik het probeerde te bezitten, slibde de bron dicht. De dag dat ik ophield te willen maken, kwam het water terug. Ik ben niet de maker — ik ben het medium.', // #130 De Bron
+  ARTIST_MAGICIAN: 'Je dwingt materiaal niet — je vraagt wat het wil worden en werkt mee. Dat geldt ook voor mensen, leerde ik laat. En voor mezelf, nog later. Mijn meesterstuk is geen ding; het is het geduld waarmee ik mijn eigen nerf leerde volgen.', // #131 De Ambachtsman
+  ARTIST_HERO: 'Ik maak met een wilskracht die de meesten niet begrijpen — en wat ik bouw draait ook door als ik erin word vermalen. Het verschil tussen een meesterwerk en een offer is of de maker het overleeft. Mijn vuur dooft elke avond. Juist daarom brandt het al zo lang.', // #132 De Meestersmid
 };
 
-/**
- * English translations of the 72 Levensles quotes. Fill in per key (same
- * MAINARCHETYPE_SUPPORTGROUP keys as ARCHETYPE_QUOTES_NL). Any key left out (or
- * empty) automatically falls back to the Dutch text via the getters below.
- *
- * Example:
- *   JUDGE_RULING: 'The system I build to make everything just must also leave room…',
- */
+// English translation of the ratified Dutch Levensles (same keys and order).
 const ARCHETYPE_QUOTES_EN = {
-  // ═══ JUDGE ═══════════════════════════════════════════════
-  JUDGE_RULING: 'The system I build to make everything just must also leave room for what it cannot hold — the bow cannot stay drawn forever. The strongest foundation is not the perfect one. It is the one that can breathe.',
-  JUDGE_RELATIONAL: 'The truth I soften to keep the peace is the same truth that slowly hollows out the bond. The bravest form of love is honesty that hurts — spoken by someone who stays.',
-  JUDGE_SEEKER: 'I am not waiting for pure conditions that do not exist. Purity is not a precondition for beginning — it is what remains when I move honestly.',
-  JUDGE_ABSTRACT: 'Seeing what is wrong is half the gift. The other half is choosing to build anyway — knowing it will be imperfect. Otherwise I am not the sharpest person in the room, only the loneliest.',
-  JUDGE_AGENCY: 'A judge who no longer tests his own verdict is not a judge anymore — he is a weapon. The moment I am most convinced is the moment I am most often wrong.',
-  JUDGE_CHAOS: 'Not every truth needs an explosion. Sometimes the most powerful act is not blowing up the system — but standing quietly inside it and refusing to lie along.',
+  // ═══ RULER ═══ #1–11
+  RULER_JUDGE: 'My judgement holds everything up — but a system that only tells you what is wrong never tells you what it exists for. The rule I have upheld the longest is written nowhere: people are more than their offence.', // #1 The Emperor
+  RULER_SAGE: 'I see the pattern before the rest, and that is a lonely lead. But wisdom that does not listen is dogma. The masses who do not understand me are not stupid — they live in a reality my pattern has not yet taken in. Leading is translating — not just knowing.', // #2 The Sovereign
+  RULER_ARTIST: 'Everything I arrange has to be right and beautiful as well — my house, my schedule, my life. But a life that is not allowed to get dirty is a scale model. The mess of relationships is not a breach of my design; it is what the design existed for.', // #3 The Designer
+  RULER_EXPLORER: 'I start more easily than I finish; every new plan feels like profit. But building in order to move is not direction. The most valuable thing I own is the one thing I finished rather than abandoned.', // #4 The Entrepreneur
+  RULER_INNOCENT: 'I built on trust and I broke on it — yet the new foundation I poured is made of trust again. Distrust finances its own enemy. Trust is not naivety; it is my most valuable material.', // #5 The Founder
+  RULER_OUTLAW: 'I tear apart what is crooked and build something fairer — until my better version needed its first lie and I had to choose between staying a reformer or becoming a ruler. An improvement that is not allowed to be revised is the old system with my name on it.', // #6 The Reformer
+  RULER_TRICKSTER: 'I can steer a room without anyone noticing. But whoever has only puppets around them no longer hears a real voice. The biggest move I ever made was showing the strings — and watching who stayed.', // #7 The Puppeteer
+  RULER_HERO: 'Winning I can do; staying I had to learn. Growth without limits is disease. What is mine — a family, a business, a body — is not held by conquering, but by being there when there is nothing to win.', // #8 The Commander
+  RULER_MAGICIAN: 'You can win everything without a single battle: you move the doors and the world walks your way by itself. But the one person I could not move taught me more than all the gates together. Power that steers everything no longer knows what would come to it of its own accord.', // #9 The Overlord
+  RULER_CAREGIVER: 'Everything I love I give a voice, a roof, a chance — and for a long time I thought that was love. But whoever blooms in my light must also be able to bloom outside my shadow. The most beautiful thing I ever protected is the only thing I dared to let go.', // #10 The Advocate
+  RULER_LOVER: 'I provide everything for those who depend on me — that is not noble, it is how I am built. But the hand that always gives only teaches the other to receive. The safest thing I ever built was something that no longer needed me.', // #11 The Patron
 
-  // ═══ LOVER ═══════════════════════════════════════════════
-  LOVER_RELATIONAL: 'The person I am looking for is not the one who completes me. It is the one who can sit beside me in the unfinished — without filling it in.',
-  LOVER_RULING: 'The skeleton I build around love protects it — but it also keeps the chemistry out. The strongest relationship is not the safest one. It is the one that makes use of separation.',
-  LOVER_SEEKER: 'Not every feeling has to become a poem. Some things may simply exist without a witness — and it is those quiet moments that feed my art more than any crisis ever did.',
-  LOVER_CHAOS: 'The playfulness with which I break the heaviness is real — but so is the depth I avoid with it. I want someone who stays when the light comes. I need someone who stays when the dark does.',
-  LOVER_ABSTRACT: 'The cosmic unfolding I am looking for exists — but not beyond the earth. It is in the groceries I forget, the silence at the table, the hand on my shoulder. The sacred is not above me. It is beside me.',
-  LOVER_AGENCY: 'The intensity with which I love is no proof that it is real. Sometimes it is the quietest moment — not the fiercest night — where the real space lies.',
+  // ═══ JUDGE ═══ #12–22
+  JUDGE_RULER: 'The system I build to make everything just must also have room for what it cannot contain — a bow cannot always stay drawn. The strongest verdict I ever delivered was the one in which I bent the rule because otherwise the person would have broken.', // #12 The Arbiter
+  JUDGE_OUTLAW: 'Not every truth needs an explosion; sometimes the most powerful act is to stand quietly in it and refuse to join the lie. The hardest truth I ever spoke cost me everything, and I would do it again — but now I first look to see whether there is someone who can simply open the door.', // #13 The Whistleblower
+  JUDGE_TRICKSTER: 'One good question demolishes more than a hundred reproaches. But the day I began to interrogate my loved ones like suspects, I understood: a gaze that can only see through can no longer look someone in the eye.', // #14 The Inquisitor
+  JUDGE_SAGE: 'Seeing what does not add up is half of my gift. The other half is building anyway, knowing it will be imperfect — otherwise I am not a guardian of quality but a gravedigger of every beginning.', // #15 The Critic
+  JUDGE_ARTIST: 'I can see the value of what everyone walks past — that is my eye. But the judgement I spent longest revising was about something that failed by every measure and still kept someone standing. Since then I first appraise what something carries, and only then what it is worth.', // #16 The Appraiser
+  JUDGE_INNOCENT: 'Purity is not a condition for starting; it is what remains when I move honestly. The strictest exam I ever set, I set for myself: letting something pass that was not yet finished, because it was true nonetheless.', // #17 The Examiner
+  JUDGE_EXPLORER: 'I go over everything from a distance, and it all checks out. But checking out is not yet being sound — I only know that once I have been inside. The hardest verdict I can pass is: good enough. And then taking my hands off it.', // #18 The Auditor
+  JUDGE_HERO: 'The more convinced I am, the harder I have to doubt. Justice that no longer asks itself questions ends up dealing the same blows as what it came to fight.', // #19 The Avenger
+  JUDGE_MAGICIAN: 'The best boundary is one no one has to guard — you build it so that the wrong jams all by itself. But a system without a back door also keeps the mistake captive. With me, one door stays ajar: the one for whoever truly did not know.', // #20 The Enforcer
+  JUDGE_CAREGIVER: 'The truth I soften to keep the peace is the same truth that slowly hollows out the relationship. The bravest form of care is honesty that hurts at the right moment — a peace that rests on a buried fact is a stay of execution.', // #21 The Mediator
+  JUDGE_LOVER: 'I can make two people who no longer hear each other both feel heard. But not every break asks for glue. Sometimes apart is the only verdict both hearts can fit into.', // #22 The Reconciler
 
-  // ═══ CAREGIVER ═══════════════════════════════════════════
-  CAREGIVER_RELATIONAL: 'The wound I heal in another still belongs to another. My bravest form of care is simply this: leaving the rising of the sun to the sun.',
-  CAREGIVER_RULING: 'The system I build to protect others must keep running while I sleep — if it does not, I am the system. Tall trees catch a lot of wind, but I am only a..',
-  CAREGIVER_SEEKER: 'I guide others toward a freedom I sometimes deny myself. The question is not whether they are ready to let go — but whether I am ready to no longer be needed.',
-  CAREGIVER_CHAOS: 'Not everyone wants to heal the way I offer it. Sometimes the most powerful form of care is not breaking someone\'s pattern — but holding a hand open until they rise on their own.',
-  CAREGIVER_ABSTRACT: 'Not all pain has a cause I can find. The moment I stop searching for the why and start carrying what is — that is when the real healing begins.',
-  CAREGIVER_AGENCY: 'The shield I raise for others weighs more than I will ever admit. So consider this carefully: whoever never takes off his armour forgets how the sun feels on his skin. True protection begins with the courage to lower my own shield now and then.',
+  // ═══ LOVER ═══ #23–33
+  LOVER_CAREGIVER: 'The person I am looking for is not the one who completes me. It is the one who can sit beside me in the imperfect — without filling it. Because caring for the one I love is my language; but whoever makes themselves indispensable is never simply chosen again.', // #23 The Soulmate
+  LOVER_RULER: 'The skeleton I build around love protects it — but it also keeps the chemistry out. The strongest relationship is not the safest. It is the relationship that dares to leave the fort with the door open, and comes back because it wants to, not because the walls say so.', // #24 The Companion
+  LOVER_JUDGE: 'My fidelity is not a feeling — it is an act I repeat every day. But a vow is not a contract you go and collect on from the other. The day I stopped gathering evidence and simply kept my own word, the other\'s fidelity came to light by itself.', // #25 The Betrothed
+  LOVER_TRICKSTER: 'I see exactly what two people feel for each other before they dare to themselves — but whoever is always the bridge forgets that they have a shore of their own. Helping became my way of hiding. The question I never asked was the only one that was mine.', // #26 The Wingman
+  LOVER_OUTLAW: 'The playfulness with which I break the heaviness is real — but so is the depth I dodge with it. I have broken every rule around love except the only one that counts: staying when it gets light. Someone who stays when it gets dark, you can find anywhere. Someone who stays by daylight — that is the party.', // #27 The Libertine
+  LOVER_SAGE: 'Not every feeling needs to be understood. Some things may exist without a witness — and it is precisely those quiet moments that feed my work more than the crisis ever did. The most beautiful thing I ever made came about in a year in which I did nothing but live.', // #28 The Poet
+  LOVER_ARTIST: 'I make others bigger — that is a gift until you disappear into it. Whoever exists only in what someone else makes is never finished themselves. The most beautiful ode I ever received was the day someone asked: and what do you make yourself?', // #29 The Muse
+  LOVER_INNOCENT: 'My devotion is not blindness — it is the bravest thing I am. But you can be faithful to someone and to the truth at the same time. The altar I finally built is smaller and more honest, and a candle is still burning on it.', // #30 The Votary
+  LOVER_EXPLORER: 'I have always flown towards the light — the brighter it was, the surer I was that it had to be love. That same flame taught me: intensity is a direction, not a destination. The love I landed in was not a fire. It was a lamp that stayed on.', // #31 The Moth
+  LOVER_HERO: 'The intensity with which I love is no proof that it is real. Sometimes the real space lies in the quietest moment, not the fiercest night. I have fought for love in every way there is; the longest lesson was that staying put is one of them too.', // #32 The Romantic
+  LOVER_MAGICIAN: 'I can make someone feel what I want — that is the gift and the trap. Charm that steers is manipulation, however warm it sounds. The truest enchantment I ever experienced was the day I did nothing, directed nothing — and someone stayed anyway.', // #33 The Spellbinder
 
-  // ═══ INNOCENT ════════════════════════════════════════════
-  INNOCENT_SEEKER: 'My trust is not naivety — it is the bravest thing about me. And the world does not always have to earn it before I give it. While they trade, I choose to keep looking.',
-  INNOCENT_RULING: 'The tradition I protect is not the point — it is the meadow. And sometimes the meadow has to move so that what grows in it can keep growing. Guarding is not the same as holding on.',
-  INNOCENT_RELATIONAL: 'The forgiveness I offer is real. But so is the right to carry the darkness too. I do not always have to be the light in the room — because the price of innocence is always settled in the end.',
-  INNOCENT_ABSTRACT: 'The ideal I see is beautiful — but it does not exist yet. And that is no reason for sorrow. The real world is messier, uglier and infinitely richer.',
-  INNOCENT_AGENCY: 'I always step forward as if the unknown will be better. Usually it is. But the courage to stand still when it is dark — without moving, without fleeing — that is real flow.',
-  INNOCENT_CHAOS: 'The bubble I live in is not a weakness — it is my laboratory. And the hard ground outside that bubble is where I find out whether these wings also work in the rain.',
+  // ═══ CAREGIVER ═══ #34–44
+  CAREGIVER_LOVER: 'The wound I heal in someone else remains theirs. My bravest form of care is letting the sun rise — and leaving the rising to the sun. My own healing begins where someone no longer needs me.', // #34 The Healer
+  CAREGIVER_RULER: 'I carry everything for those who live under my roof — and I built that roof myself. But a house no one is ever allowed to leave is a beautiful cage. The heaviest thing I ever gave was not care, not money, not a roof. It was permission to leave.', // #35 The Patriarch / Matriarch
+  CAREGIVER_JUDGE: 'Speaking on someone\'s behalf is not defending. Defending is fighting for the space in which someone can speak for themselves. My best plea ended in silence — mine — while the one I was protecting finally took the floor.', // #36 The Defender
+  CAREGIVER_OUTLAW: 'Not everyone wants to heal my way. Sometimes the most powerful form of care is not breaking someone\'s pattern, but holding a hand open until they reach for it themselves. That patience is the heaviest thing I lift — and the only thing I have ever really seen work.', // #37 The Cultivator
+  CAREGIVER_TRICKSTER: 'I feel what hangs in a room before anyone says it — and for a long time I thought feeling also meant carrying. But a radar is not a storeroom. \'I feel your pain\' connects; \'I take your pain\' drowns us both.', // #38 The Empath
+  CAREGIVER_SAGE: 'Not all pain has a cause I can find. Real healing begins where I stop searching for the why and start carrying what is. Insight is my instrument; closeness is the medicine.', // #39 The Therapist
+  CAREGIVER_ARTIST: 'True restoration is acknowledging the break and pouring gold into it. The people I have seen rise most beautifully were not the unbroken ones — they were the ones who dared to show their cracks because someone had touched them with reverence.', // #40 The Restorer
+  CAREGIVER_EXPLORER: 'I guide others towards a freedom I sometimes do not allow myself. The question is not whether they are ready to let go — but whether I am ready to no longer be needed. The most beautiful moment of every journey is when the other walks on ahead and no longer looks back.', // #41 The Pilgrim
+  CAREGIVER_INNOCENT: 'I believe in people before they believe in themselves — and that belief has turned lives around. But devotion to who someone could be must never go deaf to who someone actually is. The deepest loyalty is serving the potential without abandoning the present.', // #42 The Devotee
+  CAREGIVER_HERO: 'The shield I raise for others weighs more than I will ever admit. Whoever never takes off their armour forgets how the sun feels on their skin. The watch I found hardest to keep was over myself — the night I let someone else keep watch and the wall still stood.', // #43 The Guardian
+  CAREGIVER_MAGICIAN: 'I provide safety the way others build walls — invisible, watertight, everywhere. Until I saw that my locks had started pointing inward. The safest place I ever built had a key — and it hung on the inside.', // #44 The Warden
 
-  // ═══ EXPLORER ════════════════════════════════════════════
-  EXPLORER_SEEKER: 'The map I draw while walking is brilliant — but a map is not a home. The hardest terrain I will ever chart is the place where I decide to stay.',
-  EXPLORER_RULING: 'I explore the unknown with a soldier\'s discipline. But the wildest discovery is not the next territory — it is the moment I let go of the map and get lost. That is where I find it.',
-  EXPLORER_RELATIONAL: 'I discover the world through connection — and that is my greatest gift. But the strongest connections are anchored. A friend to all is an enemy to himself.',
-  EXPLORER_ABSTRACT: 'The theory I look for beyond the horizon — it is there. But matter only takes shape once I get my hands dirty. Knowledge that lives only in my head has nothing inside it.',
-  EXPLORER_AGENCY: 'I survive everything. That much is proven. The question is not whether I will make it — but whether I ever arrive somewhere I do not have to survive. Resting is not giving up. It is recognising the harbour.',
-  EXPLORER_CHAOS: 'The next big thing is always right in front of me — but the last big thing still needs me. The world has no shortage of inventions. It has a shortage of people who stay standing beside theirs.',
+  // ═══ INNOCENT ═══ #45–55
+  INNOCENT_EXPLORER: 'My trust is not naivety — it is the bravest thing I am. The world does not have to earn it first. But being good is not a possession I have to defend; it is a direction I want to walk, even with dirty feet.', // #45 The Saint
+  INNOCENT_RULER: 'From the outside I am the softest of the flock. But shepherding is not innocence: anyone who protects the defenceless must be able to do what the wolf can. I carry teeth under the wool — and that they are almost never needed is exactly why they are there.', // #46 The Shepherd
+  INNOCENT_JUDGE: 'Sometimes self-preservation disguises itself as loyalty. The tradition I did the most honour to was the tradition I dared to revise — because its spirit was larger than its letter.', // #47 The Traditionalist
+  INNOCENT_TRICKSTER: 'The bubble I live in is not a weakness — it is my laboratory. Play is my serious business. The deepest game I ever played was to keep playing after it turned out the world would not play along.', // #48 The Free Spirit
+  INNOCENT_OUTLAW: 'I carry light to places where it has gone out — and that only works if I truly look the dark in the eye. Hope that denies the dark is a lantern with the shutters closed. The torch burns longest in the hand that knows why it carries it.', // #49 The Torchbearer
+  INNOCENT_SAGE: 'The ideal I see is beautiful — and it does not exist. That is not worth grieving over. This world, messy, ugly and infinitely richer, has taught me the most on its most imperfect days.', // #50 The Disciple
+  INNOCENT_ARTIST: 'I draw worlds that do not exist yet — that is my purpose. But a utopia is a direction, not an address. The day I let go of my perfect world as a demand and offered it as an invitation, it started to look like something you could live in.', // #51 The Utopian
+  INNOCENT_HERO: 'I always pull the cart forward as if the unknown is better — and usually that is true. But the courage to stand still when it is dark, without moving, without fleeing: that is the hardest mile I have ever travelled.', // #52 The Pioneer
+  INNOCENT_MAGICIAN: 'I light hope the way others light candles — my trust lowers the threshold everywhere. But what I set in motion can run the wrong way without me, too. The ripest form of my fire: to light it, and stay to see what it warms.', // #53 The Illuminator
+  INNOCENT_CAREGIVER: 'The forgiveness I offer is real. But so is the right to bear the darkness as well. The price of always shining is the numbing of my own darkness. Even the merciful may lie by the side of the road for once.', // #54 The Samaritan
+  INNOCENT_LOVER: 'I am easily cherished, and for a long time that was enough. But being thought sweet is not being understood — it is a hiding place with applause. The first person who saw my ugly side and stayed was the first person with whom I truly existed.', // #55 The Sweetheart
 
-  // ═══ OUTLAW ══════════════════════════════════════════════
-  OUTLAW_CHAOS: 'I break everything that is false — and that is necessary. But the morning needs someone who builds. If that is not me, the revolution was destruction. If it is, it was liberation.',
-  OUTLAW_ABSTRACT: 'Every belief I tear down probably deserves it. But the emptiness I leave behind is not my gift — it is their problem. The real act is not destroying the idol. It is putting something better in its place.',
-  OUTLAW_AGENCY: 'The people I mobilise rely on my fire. But fire that only burns destroys. The test is not whether I can get the crowd moving — but whether I lead them toward something instead of only away from something.',
-  OUTLAW_RULING: 'I break the system from within and build the new one at the same time. That is rare. But the new system I am building — is it truly better? Or is it the same system with my signature underneath?',
-  OUTLAW_RELATIONAL: 'I carry the pain of the world on my shoulders as if it were my assignment. But the chains I break for others — who breaks mine? A liberator who does not liberate himself becomes the next monument.',
-  OUTLAW_SEEKER: 'The shockwave I set off is real — and needed. But provocation without direction is noise. The difference between a prophet and a shouter is not volume. It is whether anything is still standing once the paint dries.',
+  // ═══ EXPLORER ═══ #56–66
+  EXPLORER_INNOCENT: 'The map I draw along the way is brilliant — but a map is not a home. The hardest terrain I ever entered was the place where I decided to stay.', // #56 The Navigator
+  EXPLORER_RULER: 'I discover the world through people — every connection is a new route. But a network without anchors is a web blowing in the wind. Be a friend to all and you soon become your own enemy. The most valuable connection I ever made was with my own essence.', // #57 The Networker
+  EXPLORER_JUDGE: 'I survey everything from a distance: what it is worth, where the boundary lies, what is amiss. But perfecting the line became my way of never crossing it. The land I have come to know best is the land I finally walked into.', // #58 The Surveyor
+  EXPLORER_OUTLAW: 'I was always three versions ahead — innovating came naturally, asking whether it was needed did not. Most of what I built solved a problem nobody had. My best work began with the question I skipped the longest: who is this for?', // #59 The Innovator
+  EXPLORER_TRICKSTER: 'I scout with the discipline of a soldier and the eyes of a columnist — I see what the map keeps quiet. But the wildest discovery is not the next territory. It is the moment I look inward and ask: where do I place my attention — and for whom?', // #60 The Scout
+  EXPLORER_SAGE: 'The theory I seek beyond the horizon — it is there. But matter only takes shape when I get my hands dirty. Knowledge that only travels in my head arrives nowhere. I found my deepest insight not at the summit, but in the village down in the valley.', // #61 The Philosopher
+  EXPLORER_ARTIST: 'I gather the stories and carry them on — that is my craft and my breath. But there is one story you cannot tell on the road: your own. That story asks for a fire, a circle, and the courage to stay seated until it is done.', // #62 The Bard
+  EXPLORER_HERO: 'I survive everything — that has been proven. The question is whether I ever arrive somewhere I do not have to survive. Rest is the harbour I avoided the longest and needed the most.', // #63 The Sailor
+  EXPLORER_MAGICIAN: 'Home is where I am — my whole existence fits in what I can carry, and that is freedom. Until someone asked whether I wanted to stay, and my freedom turned out to be a wall with wheels. Putting down roots is not a betrayal of the journey. It is the journey that begins when I say no to more.', // #64 The Nomad
+  EXPLORER_LOVER: 'I have shown the stars to more people than I can count — sharing wonder is my way of loving. But the sky comes back every night, and people do not. The most beautiful night was not the clearest; it was the night my gaze stayed beside me.', // #65 The Stargazer
+  EXPLORER_CAREGIVER: 'I light the path so that others can follow safely — every marker is for someone I will never see. But the day someone overtook me, I had to choose between my role and my purpose. The path has succeeded when it no longer needs me.', // #66 The Pathfinder
 
-  // ═══ TRICKSTER ═══════════════════════════════════════════
-  TRICKSTER_CHAOS: 'Everyone saw the abyss. I saw what lay beyond it. The dog barked, the world warned me — and they were right. Not about the abyss. About what it costs to see what they cannot.',
-  TRICKSTER_ABSTRACT: 'The laughter with which I make the world bearable is real. But abstracting away the emotion underneath it can lead to emotional confusion — and that is not the end. That is where the real conversation begins.',
-  TRICKSTER_AGENCY: 'The wrench I throw into the gears stops the machine — brilliant. But when there is no machine to stop, I struggle to keep existing. The cure is to use that wrench on my own wheel now and then.',
-  TRICKSTER_RULING: 'I stand beside power and whisper what no one dares to say — that is my gift. But secretly I need the hierarchy in order to exist. What do I do when there is no power left? Look too deep into the glass and you may never find your way out again.',
-  TRICKSTER_RELATIONAL: 'I make the room lighter and everyone feels better — the joke I do not make is the sentence left unspoken. The silence between the punchlines: that is the clue to my own mood.',
-  TRICKSTER_SEEKER: 'I can be anything to anyone — and that is fascinating. Every shape I take is real; that was never the problem. The problem is the gravity pulling me in every direction at once.',
+  // ═══ HERO ═══ #67–77
+  HERO_MAGICIAN: 'Everyone tells the same story about me: that one just keeps going. I fed that story until it had me in its grip — push on long enough and you become the villain of your own story.', // #67 The Legend
+  HERO_RULER: 'Winning is the easy part; every wall falls to enough will. But what I won only became mine when I stayed. The hardest victory was coping with the very peace I had fought for.', // #68 The Conqueror
+  HERO_JUDGE: 'I bound my strength to a code — and a code does not doubt. Until I saw who my hardness landed on: not on evil, but on suffering. The oath belongs to justice. A templar without a temple can still stand straight.', // #69 The Templar
+  HERO_OUTLAW: 'I strike where others are too slow — fast, hard, past every flag. But a blow without a reason is violence with a tall story. The plunder I carried the longest was a moral question. Strength without a commander must become one itself — a good one.', // #70 The Raider
+  HERO_TRICKSTER: 'I have won fights that never got any attention — by being who I had to be, where I had to be. But wear every mask perfectly and you lose the face beneath. The most dangerous mission of my life was the return: becoming someone who needs no cover to exist.', // #71 The Agent
+  HERO_SAGE: 'I calculate everything three moves ahead — the conversation, the choice, the group. One item I kept forgetting: myself. Since then every plan of mine has one fixed rule — the maker has to survive it.', // #72 The Strategist
+  HERO_ARTIST: 'I fight for the form, not the result — and that freedom is real. But not caring about the result also became my way of never having to want anything. Once, I truly wanted something — and that was more frightening than any fight.', // #73 The Duelist
+  HERO_EXPLORER: 'I train for years for moments that may never come — and straight after, I look for the next mountain. Peaking I can do; coming back I cannot. Learning that an ordinary Tuesday is not a defeat was harder than any summit.', // #74 The Astronaut
+  HERO_INNOCENT: 'I committed myself fully to something because I believed in it — and when the belief began to waver, I went harder. Hardening is not always an answer to doubt. The bravest day was the day I stopped halfway and asked: is this still right?', // #75 The Crusader
+  HERO_CAREGIVER: 'I take the blows for the people I love — it is not a choice, it is reflex. But anyone who never asks for help breaks first. The bravest protection I ever gave was admitting I needed protection myself.', // #76 The Protector
+  HERO_LOVER: 'I dedicated my strength to one person and called it love. But protecting someone on a pedestal is not the same as knowing them. The most loving thing I ever did was to meet their eyes instead of bowing.', // #77 The Chevalier
 
-  // ═══ SAGE ════════════════════════════════════════════════
-  SAGE_ABSTRACT: 'The truth beyond all illusions — it is there. But it does not sit beyond life. It is chained inside it. In the dishes, the traffic jam, the conversation going nowhere. Enlightenment that skips the ordinary is just a new illusion.',
-  SAGE_AGENCY: 'I do not stop until I have the answer — and that is my strength. But some questions have no answer. And the courage to say "I do not know" without searching on — that is worth more than any unmasking.',
-  SAGE_RULING: 'The system I build from my insights is watertight — but people are not watertight. The most brilliant analysis fails if it leaves no room for the irrational. And the irrational is where most people live.',
-  SAGE_RELATIONAL: 'The wisdom I give changes lives — I can see that. What I am only now seeing is that I need another person\'s growth like oxygen. The day the student no longer needs me, my real lesson begins.',
-  SAGE_SEEKER: 'The future I see is clear — clearer than most can bear. But a vision that does not land in the present is a dream no one can live in. So I build the first room. Not the whole palace.',
-  SAGE_CHAOS: 'The silence I seek is real — and what I find there is priceless. But the world I am avoiding needs me. Not my wisdom. Me. The person, not the thinker.',
+  // ═══ MAGICIAN ═══ #78–88
+  MAGICIAN_HERO: 'I can change almost anything — a situation, a mood, a life. Almost. The limit is not called failure; it is called a limit. The greatest change I ever went through was accepting that some things are allowed to stay what they are.', // #78 The Alchemist
+  MAGICIAN_RULER: 'My plans are right — that is not the problem. A plan that reality is not allowed to correct is not a vision but a verdict. The variable I forgot the longest had a voice: the people who had to live inside it.', // #79 The Engineer
+  MAGICIAN_JUDGE: 'I always know what something costs and who pays. But there are bills you should not collect. The most valuable sum of my life: a debt that was correct to the last penny — forgiven.', // #80 The Reckoner
+  MAGICIAN_OUTLAW: 'The world takes shape around whoever dares to carry the story, so I carried it — everywhere, always. But a lead with no one to play opposite plays to an empty house. My best chapter began when I gave someone else the opening.', // #81 The Protagonist
+  MAGICIAN_TRICKSTER: 'With charm and timing I can get almost anything moving — and it works, until it doesn\'t. The situation I could not talk my way out of became my teacher. Charm opens every door except the one that only opens to honesty.', // #82 The Enchanter
+  MAGICIAN_SAGE: 'I go deeper than most people want to — to the root, the mechanism, the real cause. But what I find there only counts once it reaches the surface. Connection is the hardest part of every descent.', // #83 The Sorcerer
+  MAGICIAN_ARTIST: 'I can make a room believe anything is possible — and attention began to feel like proof. But applause is an echo. I learned the most from the time it went wrong while the work behind it was sound; since then I have lived for my purpose.', // #84 The Performer
+  MAGICIAN_INNOCENT: 'Wherever I walk in, a movement starts — that is what faith does to a room. But a catalyst does not use itself up. The day I could start the process without burning out, my hope finally felt sustainable.', // #85 The Catalyst
+  MAGICIAN_EXPLORER: 'Behind me lie roads where walls once stood. But a breakthrough only counts when someone who is not me can get through it. The road that succeeded is the one that filled with traffic — and that I did not look down on.', // #86 The Trailblazer
+  MAGICIAN_LOVER: 'I sense exactly where it sits in someone — and what I sense, I can move. But moving someone by way of their pain is not healing, not even with the best intentions; it is walking in without knocking. The real magic is making the space in which someone does the reforging themselves — while all I do is guard the fire.', // #87 The Shaman
+  MAGICIAN_CAREGIVER: 'I have carried people through their darkest stretch — and that is my honour. But a rescue nobody asked for is a second prison. The hardest thing was letting go of someone who did not yet want to be saved — and holding the door open without pulling on it.', // #88 The Redeemer
 
-  // ═══ ARTIST ══════════════════════════════════════════════
-  ARTIST_ABSTRACT: 'The universe I create is larger than reality — and that is my gift. But the people living in it are not characters. The moment I forget that they bleed, I am no longer a creator. I am a prison.',
-  ARTIST_AGENCY: 'I forge with a willpower most people do not understand. But the machine I am building keeps running even while it grinds me up. The difference between a masterpiece and a sacrifice is knowing when to put the hammer down.',
-  ARTIST_RULING: 'The structure I design is brilliant and beautiful — but it is also a cage if no one is allowed to breathe in it. The difference between architecture and tyranny is whether the inhabitant may open the window.',
-  ARTIST_RELATIONAL: 'Every story I tell lands — because I know what people want to hear. The story that asked the most of me was the first one I told without asking whether it would land.',
-  ARTIST_SEEKER: 'I can see what will stand here in ten years — but I miss what is standing in front of me now. The future needs me. The present needs me more. And the present is the only thing I can touch.',
-  ARTIST_CHAOS: 'The dreams I send out into the world are bigger than reality can hold — and that is exactly the point. The day the bubble burst was not the end of my dream. It was the beginning of the real building.',
+  // ═══ OUTLAW ═══ #89–99
+  OUTLAW_TRICKSTER: 'I break what isn\'t right — with aim, one lie out, the rest left standing. But the morning after needs someone who builds. If that isn\'t me, it was destruction. If it is, it was a birth.', // #89 The Anarchist
+  OUTLAW_RULER: 'Asking didn\'t work, so I took over — and that was right. The real test starts after: do I do it differently, or do I become what I deposed? The uprising has only succeeded if what I build allows an uprising against it.', // #90 The Usurper
+  OUTLAW_JUDGE: 'My \'no\' has prevented disasters nobody saw. But a no that can never say yes carries no information any more — it\'s a tic. The hardest part was agreeing with something that ran counter to integrity but meant well.', // #91 The Contrarian
+  OUTLAW_CAREGIVER: 'I break free what is trapped — but who breaks my chains? The liberator without self-mastery ends up freeing no one. My own chain was the last — and the heaviest.', // #92 The Liberator
+  OUTLAW_LOVER: 'I can drop a spark into a thousand hearts at once — but fire makes no distinction between warmth and a blaze. The mature form of kindling: first ask what needs warming, and only then the match.', // #93 The Instigator
+  OUTLAW_SAGE: 'Every false belief I tear down probably deserves it. But the emptiness I leave behind is not my gift. The real act isn\'t pulling down the statue — it\'s giving the plinth something worthier to carry.', // #94 The Iconoclast
+  OUTLAW_ARTIST: 'I made noise because silence was complicit — and it gave the voiceless a voice. But authenticity isn\'t a volume knob. The most honest thing I ever said was quieter than everything before it; it finally spoke to the one who needed it most, myself.', // #95 The Punk
+  OUTLAW_EXPLORER: 'I live outside the lines and prove they\'re optional. But outlaw freedom also means: free of everyone. The border I finally crossed was the way back — not to fit in, but to show that freedom can live inside too.', // #96 The Renegade
+  OUTLAW_INNOCENT: 'I refuse to take part in what isn\'t right — my clean hands are my argument. But I\'ve watched communities break apart over my thirty per cent of being right. Getting somewhere together is worth more than being right alone.', // #97 The Idealist
+  OUTLAW_MAGICIAN: 'I am revolt in its rawest form: what I want to break loose cannot be stopped. That was never the problem — the problem is that nothing stopped me. Anyone who thinks they\'re unstoppable has to set one real limit in the end: otherwise the revolt only stops when there\'s nothing left.', // #98 The Revolutionary
+  OUTLAW_HERO: 'I defied every authority that fell short of my code, but real governance is never spotless. Whoever will only serve the flawless stays masterless forever — and calls it principle. Since then my strength serves two things: the code, and the gentleness that keeps it liveable.', // #99 The Ronin
 
-  // ═══ MAGICIAN ════════════════════════════════════════════
-  MAGICIAN_AGENCY: 'I can transform anything — except death. And that is not my failure. That is the limit. The greatest alchemy is not turning lead into gold. It is accepting that some things are allowed to stay lead.',
-  MAGICIAN_RULING: 'The sharpest blueprint I ever drew was the first one I dared to change while building. A plan that reality is not allowed to correct is not a vision — it is a dogma with a deadline.',
-  MAGICIAN_RELATIONAL: 'I transform relationships with a force no one fully understands — myself included. But charm that steers is manipulation. The real magic is changing the other by changing myself — and then letting go.',
-  MAGICIAN_SEEKER: 'I see what could be — and that vision is pure. But fate is a mirror, not a window. I choose carefully, because my visions are not an aim but a habit.',
-  MAGICIAN_CHAOS: 'I bend reality with a spell and a smile — and it works. Until it does not. The situation I cannot conjure my way out of is my teacher. That essence is my evolution.',
-  MAGICIAN_ABSTRACT: 'The depth I descend into to find the root is impressive — but the surface is where people live. The healing I offer only lands when I come back up out of the depth and sit beside someone. Not above them.',
+  // ═══ TRICKSTER ═══ #100–110
+  TRICKSTER_OUTLAW: 'I walk what no one dares, that is my freedom and my function — my whole being says what others leave unspoken. But whoever walks their freedom for an audience ends up walking in circles. The clearest step I ever took was inward.', // #100 The Fool
+  TRICKSTER_RULER: 'I see through every frame — status, protocol, closed doors: scenery. But whoever walks through everything has nothing to hold on to anywhere. Not every frame is a cage; some hold a life together. Those I learned to leave standing.', // #101 The Gatecrasher
+  TRICKSTER_JUDGE: 'I can defend any side — a judgement that has never been tested is a habit. But whoever can argue for anything has to know especially well where they themselves stand. My hardest sentence was the first one with \'I think\' — no quotation marks, no emergency exit.', // #102 The Devil's Advocate
+  TRICKSTER_LOVER: 'I made the game into an art — honest about the game, generous in the playing. But every game has a moment where it\'s allowed to become real, and that is where I always left. The finest conquest was staying put when the game was over.', // #103 The Seducer
+  TRICKSTER_CAREGIVER: 'I become what someone needs — care and camouflage at once. But whoever always changes colour to match is never seen. The day I first clashed with the room, I recognised myself.', // #104 The Chameleon
+  TRICKSTER_SAGE: 'I wrap truth so that you have to find it yourself — found lands deeper than given. But when someone is drowning, you don\'t throw a puzzle. The wisest sentence I ever spoke was the simplest, at the only moment simplicity counted.', // #105 The Riddler
+  TRICKSTER_ARTIST: 'I can become anyone — one gesture and you recognise the whole person. But playing a hundred voices perfectly is also a way never to test your own. The scariest thing I ever did: mirror myself, with no imitation to stand behind.', // #106 The Impressionist
+  TRICKSTER_EXPLORER: 'I see passages where others see walls — everything is a route. But some obstacles aren\'t meant to be dodged; some walls ask you to stand up to them. The hardest move I know is landing — and staying where I came down.', // #107 The Free-runner
+  TRICKSTER_INNOCENT: 'I always borrowed joy without asking — the world is too beautiful to wait for permission. Until I could only enjoy what was stolen. The wildest ride was the tamest: simply accepting something beautiful — and it still flew.', // #108 The Joyrider
+  TRICKSTER_MAGICIAN: 'For me form is not a house but a passage — I move through versions of myself the way others move through rooms. But whoever can pass through everything comes together nowhere. Home isn\'t the form that lasts longest; it\'s the form I dare to sleep in.', // #109 The Shapeshifter
+  TRICKSTER_HERO: 'Everything I do looks effortless — and that is trademark, hiding place and vanity all at once: I\'d rather win where everyone can see — but applause for a mask doesn\'t warm the face beneath it. Nobody saw my greatest victory: working openly for something, falling short, and staying on my feet.', // #110 The Ace
 
-  // ═══ HERO ════════════════════════════════════════════════
-  HERO_AGENCY: 'The pitcher goes to the well until it breaks — and I was that pitcher. Stopping was not the hardest part. Discovering that I am made of clay was.',
-  HERO_RULING: 'The battlefield obeys me — but the person across from me is not a pawn. The moment my team becomes a chessboard, I have not won. I have lost everyone who mattered.',
-  HERO_RELATIONAL: 'I take every blow for the people I love — and that is not an exaggeration, it is how I survive. But the shield that never asks for help is the first to break. The shield must not become the expression of a debt.',
-  HERO_SEEKER: 'Every problem I attack surrenders — sooner or later. The invention that took longest was paying attention to the conflicts that refused to surrender.',
-  HERO_CHAOS: 'I have fought for every principle as if it were the last — integration took the longest, because the person who does not meet my principles is not always the opponent, but someone attempting the same thing with less strength.',
-  HERO_ABSTRACT: 'I calculate the victory three moves ahead — but the calculation I missed was the cost to myself. The most brilliant strategy fails when the strategist sacrifices himself as a pawn.',
+  // ═══ SAGE ═══ #111–121
+  SAGE_ARTIST: 'I only understand something once I can build it, and I only build well once I understand it — I shuttled between the two for years. An insight that never ships is a thought. And thoughts get nobody through the winter.', // #111 The Developer
+  SAGE_RULER: 'My systems add up — but people aren\'t watertight. The sharpest analysis fails if it leaves no room for the irrational. Since then every model of mine has one fixed column: the margin of error called \'human\'. That one is sacred.', // #112 The Analyst
+  SAGE_JUDGE: 'My doubt has kept out more nonsense than any wall — and where proof exists, the method never fails. But there is a higher order that breaks under testing: trust does not survive a controlled experiment. The sharpest line I ever drew was around my own method.', // #113 The Skeptic
+  SAGE_CAREGIVER: 'Someone else\'s growth became my oxygen — I only saw that when they no longer needed me. A mentor has succeeded the moment they are superfluous. That\'s not a loss; that\'s my diploma.', // #114 The Mentor
+  SAGE_LOVER: 'Everything I pass on is sheltered in truth — I lived it before I learned it. But that same wisdom is also my disguise: as long as I am the lesson, no one sees the wound it comes from. The most valuable lesson anyone ever got came on the day I passed on nothing — only showed where it hurt.', // #115 The Guru
+  SAGE_OUTLAW: 'Some find more truth in silence than a life full of company would ever have brought. It is a high price — and I pay it knowingly. Silence is not leaving the world — it is stripping away the noise so I can hear the connections themselves again. Because what I rediscover there is always about us.', // #116 The Hermit
+  SAGE_TRICKSTER: 'I can both build and break any frame of thought — that game has demolished false certainties people were living in. But theory can also be a way never to choose. Every theory of mine now has to survive one question first: what changes tomorrow because of it — and for whom?', // #117 The Theorist
+  SAGE_INNOCENT: 'The truth beyond all illusions exists — but it isn\'t beyond life. It\'s in it: in the dishes, the traffic jam, the conversation without direction. I moved downstairs. The truth had lived there all along.', // #118 The Enlightened
+  SAGE_EXPLORER: 'I have been searching all my life — every find opens three new questions, and that\'s how it should be. But searching forever can also be a way of never having to take a stand. One day I acted on what I knew so far — unfinished, provisional, enough. The searching went on; my life just stopped waiting for it.', // #119 The Scholar
+  SAGE_HERO: 'I don\'t stop until I have the answer — mostly that\'s a strength. But some questions have no answer, and daring to say \'I don\'t know\' has solved more than my stubbornness ever did. An open file is allowed to exist. So am I.', // #120 The Detective
+  SAGE_MAGICIAN: 'The deepest influence bears no name — you build it in and the world calls it self-evident. But knowledge that lives only behind doors becomes a door itself. My worthiest moment: simply explaining something secret to someone who needed it and wasn\'t a member of anything.', // #121 The Freemason
 
-  // ═══ RULER ═══════════════════════════════════════════════
-  RULER_RULING: 'The empire I build runs perfectly — but a perfect system without warmth is a law with no followers. It tells me that it works. It does not tell me what for.',
-  RULER_RELATIONAL: 'I carry everything for the people who depend on me — and that is not noble, it is simply how I am put together. But the hand that always gives forgets what it feels like to receive.',
-  RULER_SEEKER: 'The market bends to my vision — but the people who build it are not raw material. The moment ambition turns into greed, the difference is not the revenue. It is whether I can look in the mirror in the morning and still recognise the person there.',
-  RULER_ABSTRACT: 'The system I design out of wisdom is better than what most could devise. But wisdom that does not listen is dogma. The crowd that does not understand me is not stupid — it lives in a reality my theory never reaches.',
-  RULER_AGENCY: 'Everything I touch grows — but growth without a limit is disease. Trees do not grow into the sky. The root that lasts longest is the one that knows how deep is deep enough.',
-  RULER_CHAOS: 'I have integrated the rebellion into my leadership — and that makes me rare. But the day I break my own rules and no longer feel it is the day integrity became a story I tell myself; and I am what I do, not what I say.',
+  // ═══ ARTIST ═══ #122–132
+  ARTIST_SAGE: 'The worlds I dream up are bigger than reality — and the people in them are not characters. The moment I forget that, my world is a stage set. The best worlds I have built have roads.', // #122 The Demiurge
+  ARTIST_RULER: 'What I design is brilliant and beautiful — and a cage if no one is allowed to breathe in it. The difference between form and coercion is whether the inhabitant may complete the design. My best work was only finished once people moved in — and changed it.', // #123 The Architect
+  ARTIST_JUDGE: 'I cut away what is superfluous, and what remains is what it was about. But the red pencil I found hardest to put down hung over my own life. Some sentences are good enough because they were lived. Full stop.', // #124 The Editor
+  ARTIST_LOVER: 'I can make a feeling straight for someone — more beautiful than it can be said. But there is one sentence that mustn\'t just be beautiful, but true as well: the bare truth of what I feel. The best translation I ever made was ordinary.', // #125 The Troubadour
+  ARTIST_CAREGIVER: 'I give shape to what we go through — grief, happiness, history — so that it can be carried. But whatever becomes a story straight away loses its rawness; in the end I remembered only my versions. The lesson lay in what I had forgotten: how something feels before it can be told.', // #126 The Storyteller
+  ARTIST_TRICKSTER: 'I see what is coming and give it an image — and then it comes. For a long time I thought I was predicting, but I was building: whoever pronounces a future over someone sets them on the road towards it. My words are not a window but a door. Since then I speak about people as though it\'s coming true — because it is.', // #127 The Oracle
+  ARTIST_OUTLAW: 'I make what decency cannot un-see. But an explosion without a payload is just noise. What I\'m proudest of left no one angry — it left people silent. A far more dangerous beginning.', // #128 The Provocateur
+  ARTIST_EXPLORER: 'I see what will be standing in ten years — and miss what is standing right under my nose. The future needs me, but the present needs me more urgently: that\'s where my people live, my body, my life. A vision without today is an address without a house.', // #129 The Visionary
+  ARTIST_INNOCENT: 'What I make flows of its own accord — I pass on what I see, unfiltered. The world called it talent and asked for more; as soon as I tried to own it, the spring silted up. The day I stopped wanting to make, the water came back. I am not the maker — I am the medium.', // #130 The Source
+  ARTIST_MAGICIAN: 'You don\'t force material — you ask what it wants to become and work with it. The same goes for people, I learned late. And for myself, later still. My masterpiece is not a thing; it is the patience with which I learned to follow my own grain.', // #131 The Craftsman
+  ARTIST_HERO: 'I make with a willpower most people don\'t understand — and what I build keeps running even while I am being ground up in it. The difference between a masterpiece and a sacrifice is whether the maker survives it. My fire goes out every evening. That is exactly why it has burned for so long.', // #132 The Forgemaster
 };
 
 // Back-compat alias (Dutch table was the original default export).
@@ -228,43 +336,27 @@ function quotesFor(lang) {
 }
 
 /**
- * Levensles quote by key. Quotes are stored per MAINARCHETYPE_SUPPORTGROUP
- * (72 lessons); a 132-matrix key (MAINARCHETYPE_SUPPORTARCHETYPE, e.g.
- * "SAGE_OUTLAW") is accepted too and folds onto the support archetype's
- * hardware group ("SAGE_CHAOS") — the two supports in one group share the
- * same Levensles by design.
- * @param {string} key  — e.g. "CAREGIVER_RELATIONAL" or "CAREGIVER_LOVER"
+ * Levensles by extended-archetype key.
+ * @param {string} key  — e.g. "CAREGIVER_HERO"
  * @param {string} [lang='nl'] — 'nl' | 'en'
  * @returns {string|null}
  */
 export function getArchetypeQuoteByKey(key, lang = 'nl') {
   if (!key) return null;
   const k = String(key).toUpperCase();
-  const direct = quotesFor(lang)[k] || ARCHETYPE_QUOTES_NL[k];
-  if (direct) return direct;
-  // 132-matrix key: MAIN_SUPPORTARCHETYPE → MAIN_SUPPORTGROUP
-  const sep = k.lastIndexOf('_');
-  if (sep > 0) {
-    const group = ARCHETYPE_TO_GROUP[k.slice(sep + 1)];
-    if (group) {
-      const gk = `${k.slice(0, sep)}_${group}`;
-      return quotesFor(lang)[gk] || ARCHETYPE_QUOTES_NL[gk] || null;
-    }
-  }
-  return null;
+  return quotesFor(lang)[k] || ARCHETYPE_QUOTES_NL[k] || null;
 }
 
 /**
- * Get the levensles quote for a given main archetype + support combo.
+ * Levensles for a Main + Support archetype pair.
  * @param {string} mainKey — e.g. "CAREGIVER"
- * @param {string} support — support GROUP ("Relational") or support
- *                           ARCHETYPE key ("LOVER"); both resolve.
+ * @param {string} supportKey — support ARCHETYPE key, e.g. "HERO"
  * @param {string} [lang='nl'] — 'nl' | 'en'
  * @returns {string|null}
  */
-export function getArchetypeQuote(mainKey, support, lang = 'nl') {
-  if (!mainKey || !support) return null;
-  return getArchetypeQuoteByKey(`${mainKey.toUpperCase()}_${String(support).toUpperCase()}`, lang);
+export function getArchetypeQuote(mainKey, supportKey, lang = 'nl') {
+  if (!mainKey || !supportKey) return null;
+  return getArchetypeQuoteByKey(`${String(mainKey).toUpperCase()}_${String(supportKey).toUpperCase()}`, lang);
 }
 
 export { ARCHETYPE_QUOTES_NL, ARCHETYPE_QUOTES_EN };

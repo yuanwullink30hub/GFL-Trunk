@@ -35,8 +35,8 @@ export default {
       // the placeholder + inline <b> in the confirmation sentence.
       deleteWord: { nl: 'VERWIJDER', en: 'DELETE' },
       deleteIntroBefore: {
-        nl: 'Dit verwijdert je account en alle assessments permanent (AVG/GDPR). Typ ',
-        en: 'This permanently deletes your account and all assessments (GDPR). Type ',
+        nl: 'Dit verwijdert je account en alle bijbehorende lezingen permanent (AVG/GDPR). Typ ',
+        en: 'This permanently deletes your account and all readings that belong to it (GDPR). Type ',
       },
       deleteIntroAfter: {
         nl: ' om te bevestigen:',
@@ -219,14 +219,14 @@ export default {
       identiteit: {
         title: { nl: 'De Identiteit', en: 'The Identity' },
         content: {
-          nl: `**The Maverick**
+          nl: `**De Hervormer**
 
-De Maverick combineert de architecturale kracht van de Ruler met de disruptieve eerlijkheid van de Outlaw. Jij bouwt systemen die de wereld kunnen veranderen — en bent tegelijkertijd bereid die systemen te slopen wanneer ze niet meer dienen wat ze zouden moeten dienen.
+De Hervormer combineert de architecturale kracht van de Ruler met de disruptieve eerlijkheid van de Outlaw. Jij bouwt systemen die de wereld kunnen veranderen — en bent tegelijkertijd bereid die systemen te slopen wanneer ze niet meer dienen wat ze zouden moeten dienen.
 
 *Dit is een modelinterpretatie van jouw antwoordprofiel, geen vastgestelde identiteit.*`,
-          en: `**The Maverick**
+          en: `**The Reformer**
 
-The Maverick combines the architectural force of the Ruler with the disruptive honesty of the Outlaw. You build systems capable of changing the world — and you are willing, at the same time, to tear those systems down when they no longer serve what they were meant to serve.
+The Reformer combines the architectural force of the Ruler with the disruptive honesty of the Outlaw. You build systems capable of changing the world — and you are willing, at the same time, to tear those systems down when they no longer serve what they were meant to serve.
 
 *This is a model interpretation of your answer profile, not an established identity.*`,
         },
@@ -276,14 +276,14 @@ The combination of Ruler and Outlaw is not a contradiction. It is a navigation s
 
 **Rol:** De Outlaw vult de Ruler niet aan — hij daagt hem uit. Vanuit jouw scoreprofiel is het aannemelijk dat deze spanning productief is: de Ruler bouwt de structuur, de Outlaw test of die structuur de waarheid verdraagt.
 
-**Hardware / Schaduw Check:** Main (Ruler, positie 12) en Support (Outlaw, positie 6) staan op de Paarse Lijn — 180° tegenpolen. Dit is geen hardware-resonantie maar schaduw-integratie. Binnen dit model is het aannemelijk dat jij bewust of onbewust werkt met de spanning tussen bouwen en vernietigen, tussen orde en chaos, tussen institutie en rebellie. Dit is het kernmechanisme van The Maverick.`,
+**Hardware / Schaduw Check:** Main (Ruler, positie 12) en Support (Outlaw, positie 6) staan op de Paarse Lijn — 180° tegenpolen. Dit is geen hardware-resonantie maar schaduw-integratie. Binnen dit model is het aannemelijk dat jij bewust of onbewust werkt met de spanning tussen bouwen en vernietigen, tussen orde en chaos, tussen institutie en rebellie. Dit is het kernmechanisme van De Hervormer.`,
           en: `**Archetype & Group:** Outlaw | Chaos (Salience — Disruption & Truth)
 
 **TNM Association:** Within this model the Outlaw is associated with the Salience Network — the processing mode oriented toward what is urgent, authentic and unacceptable.
 
 **Role:** The Outlaw does not complement the Ruler — it challenges him. On the basis of your score profile it is plausible that this tension is productive: the Ruler builds the structure, the Outlaw tests whether that structure can withstand the truth.
 
-**Hardware / Shadow Check:** Main (Ruler, position 12) and Support (Outlaw, position 6) sit on the Purple Line — 180° opposites. This is not hardware resonance but shadow integration. Within this model it is plausible that you work, consciously or unconsciously, with the tension between building and destroying, between order and chaos, between institution and rebellion. This is the core mechanism of The Maverick.`,
+**Hardware / Shadow Check:** Main (Ruler, position 12) and Support (Outlaw, position 6) sit on the Purple Line — 180° opposites. This is not hardware resonance but shadow integration. Within this model it is plausible that you work, consciously or unconsciously, with the tension between building and destroying, between order and chaos, between institution and rebellion. This is the core mechanism of The Reformer.`,
         },
       },
 
@@ -382,14 +382,14 @@ The valley between Trickster and Caregiver is striking: no Green, Blue or Yellow
 
 **Ontologische Vraag:** Wanneer je een systeem hebt gebouwd dat werkt — wie ben jij dan nog?
 
-Deze vraag raakt de kern van de Maverick-paradox: identiteit die gebonden is aan het bouwen van orde heeft een existentieel probleem wanneer de orde er is. Het individuatiepad van dit profiel loopt via de ontdekking dat de waarde niet in het systeem zit — maar in de intentie waarmee het gebouwd werd.
+Deze vraag raakt de kern van de Hervormer-paradox: identiteit die gebonden is aan het bouwen van orde heeft een existentieel probleem wanneer de orde er is. Het individuatiepad van dit profiel loopt via de ontdekking dat de waarde niet in het systeem zit — maar in de intentie waarmee het gebouwd werd.
 
 **AI Agent Prompt:** Zie Sectie 11.`,
           en: `**Toward the Centre:** On the basis of your score profile it is plausible that the most fruitful movement toward balance lies not in tempering the Ruler or the Outlaw — but in consciously connecting the two. The extreme readings on the CEN side (Judge + Ruler dominant together) can move toward greater balance by deliberately feeding the DMN axis (Sage, Artist): reflection, abstraction, letting go of the outcome.
 
 **Ontological Question:** Once you have built a system that works — who are you then?
 
-This question touches the heart of the Maverick paradox: an identity bound to the building of order has an existential problem once the order exists. The individuation path of this profile runs through the discovery that the value does not lie in the system — but in the intention with which it was built.
+This question touches the heart of the Reformer paradox: an identity bound to the building of order has an existential problem once the order exists. The individuation path of this profile runs through the discovery that the value does not lie in the system — but in the intention with which it was built.
 
 **AI Agent Prompt:** See Section 11.`,
         },

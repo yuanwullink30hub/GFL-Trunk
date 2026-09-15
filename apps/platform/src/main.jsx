@@ -27,11 +27,20 @@ if (!rootElement) {
 const isPdfPreview = import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has('pdfpreview');
 
+// Dev-only report-card preview: ?reportpreview=1 mounts the real results modal on the
+// replayed generation, with AI requests blocked. See src/dev/ReportPreviewHarness.jsx.
+const isReportPreview = import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).has('reportpreview');
+
 // Password- or email-change confirmation landing (?pwverify / ?emailverify token from the email
 // link). Mounts a tiny standalone page that applies the change and shows the result — no heavy
 // 3D app, any device.
 const _verifySearch = new URLSearchParams(window.location.search);
 const isPwVerify = _verifySearch.has('pwverify') || _verifySearch.has('emailverify');
+
+// Bank-window landing after iDEAL (Stripe return_url ?betaling=terug): a tiny standalone page that
+// sends the client back to the report tab. See src/pages/PaymentReturn.jsx.
+const isPaymentReturn = _verifySearch.get('betaling') === 'terug';
 
 // Mobile vs desktop are two fully separate code paths (MobileApp.jsx vs App.jsx).
 // Decided once at mount: a mobile viewport mounts ONLY MobileApp, so the heavy
@@ -40,7 +49,16 @@ const isPwVerify = _verifySearch.has('pwverify') || _verifySearch.has('emailveri
 const isMobile = window.innerWidth < 768;
 
 const root = ReactDOM.createRoot(rootElement);
-if (isPwVerify) {
+if (isPaymentReturn) {
+  const PaymentReturn = React.lazy(() => import('./pages/PaymentReturn'));
+  root.render(
+    <LanguageProvider>
+      <React.Suspense fallback={null}>
+        <PaymentReturn />
+      </React.Suspense>
+    </LanguageProvider>
+  );
+} else if (isPwVerify) {
   const PasswordVerify = React.lazy(() => import('./pages/PasswordVerify'));
   root.render(
     <LanguageProvider>
@@ -55,6 +73,15 @@ if (isPwVerify) {
     <LanguageProvider>
       <React.Suspense fallback={null}>
         <PdfPreviewHarness />
+      </React.Suspense>
+    </LanguageProvider>
+  );
+} else if (isReportPreview) {
+  const ReportPreviewHarness = React.lazy(() => import('./dev/ReportPreviewHarness'));
+  root.render(
+    <LanguageProvider>
+      <React.Suspense fallback={null}>
+        <ReportPreviewHarness />
       </React.Suspense>
     </LanguageProvider>
   );

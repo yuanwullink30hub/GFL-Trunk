@@ -400,11 +400,10 @@ const ClientOverviewTab = memo(({ user }) => {
     ? Math.round(history.reduce((sum, a) => sum + (a.harmonyScore || 0), 0) / history.length)
     : 0;
 
-  /* Resolve archetype portrait from latest assessment (132-matrix: prefer the
-     exact support archetype; older records only stored the support group) */
+  /* Resolve archetype portrait from latest assessment (132-matrix main × support) */
   const latest = history.length > 0 ? history[0] : null;
   const archetypeImg = latest
-    ? getArchetypeImage(latest.archetypeKey, latest.supportArchetype || latest.supportGroup)
+    ? getArchetypeImage(latest.archetypeKey, latest.supportArchetype)
     : null;
 
   return (

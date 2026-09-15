@@ -15,7 +15,8 @@ import { getPaymentConfig, getPaymentStatus, redeemActivationCode, UNSUCCESSFUL_
  * download automatically the moment the payment / activation code is confirmed. `onConsent`
  * fires when it is given (the parent logs it).
  *
- * Payment: Stripe Payment Element in the summary step (StripeCheckout.jsx), confirmed on the server.
+ * Steps: consent card → offer card (what you get, price, guarantee, the refund waiver, activation
+ * code) → payment card (country + Stripe Payment Element, StripeCheckout.jsx, confirmed on the server).
  * Price, country gate and whether paying is possible at all come from GET /api/payments/config;
  * when that can't be loaded, paying is disabled — never a stale price with a live Pay button.
  * The report only exists in this tab's memory, so nothing here navigates the tab: iDEAL opens the
@@ -67,7 +68,7 @@ const INPUT_BLUR = { borderColor: `rgba(${CYAN_RGB}, 0.2)`, background: 'rgba(0,
 const OTHER_COUNTRY = 'OTHER';
 
 const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrbCode = '', email = '', origin = 'center center', fill = false }) => {
-  const [step, setStep] = useState('consent'); // consent | summary | awaiting | processing | paid | failed | rejected | codeAccepted
+  const [step, setStep] = useState('consent'); // consent | summary | payment | awaiting | processing | paid | failed | rejected | codeAccepted
   const [consentChecked, setConsentChecked] = useState(false);
   // Activation code: an inline form under "Heb je een activatiecode?" (summary step).
   const [codeOpen, setCodeOpen] = useState(false);
@@ -131,6 +132,11 @@ const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrb
 
   useEffect(() => stopPolling, [stopPolling]);
 
+  // Every step starts at the top of the card (the offer card scrolls; its button sits at the bottom).
+  useEffect(() => { if (dialogRef.current) dialogRef.current.scrollTop = 0; }, [step]);
+
+  const backToOffer = () => { setPayError(''); setStep('summary'); };
+
   const close = useCallback(() => {
     stopPolling();
     setClosing(true);
@@ -191,6 +197,7 @@ const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrb
   const payErrorMessage = (res) => {
     switch (res.error) {
       case 'country_not_allowed': return t('resultsModal.paywall.countryNotAvailable').replace('{countries}', countriesLabel(res.allowedCountries));
+      case 'method_not_allowed': return t('resultsModal.paywall.methodNotAllowed');
       case 'payment_failed': return t('resultsModal.paywall.paymentDeclined');
       case 'already_unlocked': return t('resultsModal.paywall.alreadyUnlocked');
       case 'report_expired': return t('resultsModal.paywall.reportExpired');
@@ -414,57 +421,14 @@ const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrb
 
             {payConfig?.enabled && (
               <>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                  <label htmlFor="gfl-pay-country" style={{
-                    color: `rgba(${PURPLE_RGB}, 0.6)`, fontFamily: UI_FONT, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 'max(9px, 0.48vw)',
-                  }}>
-                    {t('resultsModal.paywall.countryLabel')}
-                  </label>
-                  <select
-                    id="gfl-pay-country"
-                    value={country}
-                    onChange={(e) => { setCountry(e.target.value); setPayError(''); }}
-                    onFocus={(e) => Object.assign(e.target.style, INPUT_FOCUS)}
-                    onBlur={(e) => Object.assign(e.target.style, INPUT_BLUR)}
-                    style={{ ...INPUT_STYLE, textAlign: 'left', letterSpacing: '0.02em', fontFamily: BODY_FONT, cursor: 'pointer' }}
-                  >
-                    {allowedCountries.map((c) => <option key={c} value={c} style={{ background: '#0a0510' }}>{regionName(c)}</option>)}
-                    <option value={OTHER_COUNTRY} style={{ background: '#0a0510' }}>{t('resultsModal.paywall.countryOther')}</option>
-                  </select>
-                  {country === OTHER_COUNTRY && body(
-                    t('resultsModal.paywall.countryNotAvailable').replace('{countries}', countriesLabel()),
-                    { color: ORANGE, fontSize: 'max(10px, 0.55vw)' },
-                  )}
-                </div>
-
-                {country !== OTHER_COUNTRY && (
-                  <StripeCheckout
-                    t={t}
-                    language={language}
-                    config={payConfig}
-                    country={country}
-                    price={price}
-                    sealedOrbCode={sealedOrbCode}
-                    email={email}
-                    canPayReason={!waiverChecked ? 'consent' : ''}
-                    consentText={consentText}
-                    consentNode={waiver}
-                    onCancel={close}
-                    onStarted={onPaymentStarted}
-                    onError={setPayError}
-                    errorMessageFor={payErrorMessage}
-                  />
-                )}
-                {country === OTHER_COUNTRY && actions(
-                  <SciFiButton variant="white" size="md" onClick={close}>{t('resultsModal.ui.cancel')}</SciFiButton>
-                )}
-                {payError && (
-                  <div role="alert" style={{
-                    padding: '0.5rem 0.7rem', borderLeft: '2px solid rgba(239, 68, 68, 0.6)', background: 'rgba(239, 68, 68, 0.08)',
-                    color: '#fca5a5', fontFamily: BODY_FONT, fontSize: 'max(10px, 0.5vw)',
-                  }}>
-                    {payError}
-                  </div>
+                {waiver}
+                {actions(
+                  <>
+                    <SciFiButton variant="white" size="md" onClick={close}>{t('resultsModal.ui.cancel')}</SciFiButton>
+                    <SciFiButton variant="purple" size="md" disabled={!waiverChecked} onClick={() => { if (waiverChecked) setStep('payment'); }}>
+                      {t('resultsModal.paywall.continueToPayment')}
+                    </SciFiButton>
+                  </>
                 )}
               </>
             )}
@@ -493,6 +457,65 @@ const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrb
             )}
 
             {codeOption}
+          </>
+        )}
+
+        {/* The waiver was given on the offer card; Back returns there with it still ticked. */}
+        {step === 'payment' && payConfig?.enabled && (
+          <>
+            {title(t('resultsModal.paywall.paymentTitle'))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+              <label htmlFor="gfl-pay-country" style={{
+                color: `rgba(${PURPLE_RGB}, 0.6)`, fontFamily: UI_FONT, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 'max(9px, 0.48vw)',
+              }}>
+                {t('resultsModal.paywall.countryLabel')}
+              </label>
+              <select
+                id="gfl-pay-country"
+                value={country}
+                onChange={(e) => { setCountry(e.target.value); setPayError(''); }}
+                onFocus={(e) => Object.assign(e.target.style, INPUT_FOCUS)}
+                onBlur={(e) => Object.assign(e.target.style, INPUT_BLUR)}
+                style={{ ...INPUT_STYLE, textAlign: 'left', letterSpacing: '0.02em', fontFamily: BODY_FONT, cursor: 'pointer' }}
+              >
+                {allowedCountries.map((c) => <option key={c} value={c} style={{ background: '#0a0510' }}>{regionName(c)}</option>)}
+                <option value={OTHER_COUNTRY} style={{ background: '#0a0510' }}>{t('resultsModal.paywall.countryOther')}</option>
+              </select>
+              {country === OTHER_COUNTRY && body(
+                t('resultsModal.paywall.countryNotAvailable').replace('{countries}', countriesLabel()),
+                { color: ORANGE, fontSize: 'max(10px, 0.55vw)' },
+              )}
+            </div>
+
+            {country !== OTHER_COUNTRY && (
+              <StripeCheckout
+                t={t}
+                language={language}
+                config={payConfig}
+                country={country}
+                price={price}
+                sealedOrbCode={sealedOrbCode}
+                email={email}
+                canPayReason={!waiverChecked ? 'consent' : ''}
+                consentText={consentText}
+                cancelLabel={t('resultsModal.paywall.back')}
+                onCancel={backToOffer}
+                onStarted={onPaymentStarted}
+                onError={setPayError}
+                errorMessageFor={payErrorMessage}
+              />
+            )}
+            {country === OTHER_COUNTRY && actions(
+              <SciFiButton variant="white" size="md" onClick={backToOffer}>{t('resultsModal.paywall.back')}</SciFiButton>
+            )}
+            {payError && (
+              <div role="alert" style={{
+                padding: '0.5rem 0.7rem', borderLeft: '2px solid rgba(239, 68, 68, 0.6)', background: 'rgba(239, 68, 68, 0.08)',
+                color: '#fca5a5', fontFamily: BODY_FONT, fontSize: 'max(10px, 0.5vw)',
+              }}>
+                {payError}
+              </div>
+            )}
           </>
         )}
 
@@ -555,7 +578,7 @@ const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrb
             {actions(
               <>
                 <SciFiButton variant="white" size="md" onClick={close}>{t('resultsModal.ui.cancel')}</SciFiButton>
-                <SciFiButton variant="purple" size="md" onClick={() => { setErrorText(''); setPayError(''); setStep('summary'); }}>
+                <SciFiButton variant="purple" size="md" onClick={() => { setErrorText(''); setPayError(''); setStep('payment'); }}>
                   {t('resultsModal.paywall.retry')}
                 </SciFiButton>
               </>

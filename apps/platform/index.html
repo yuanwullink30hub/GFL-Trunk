@@ -255,6 +255,37 @@
           ss.appendChild(body);
         })();
 
+        // ── iDEAL bank window returning (?betaling=terug): a result card, then close ──
+        // The report tab follows the payment itself (status poll + webhook) and main.jsx mounts no
+        // app here, so this window never shows the site loading. Stripe appends redirect_status
+        // (succeeded | processing | failed); the card only reflects the bank step, the report tab
+        // stays the source of truth. A window opened by script may close itself; when the browser
+        // refuses, the card stays and says so.
+        if (/[?&]betaling=terug(&|$)/.test(window.location.search)) {
+          var returnOverlay = document.getElementById('gfl-loading-overlay');
+          if (returnOverlay && returnOverlay.parentNode) returnOverlay.parentNode.removeChild(returnOverlay);
+          var redirectStatus = new URLSearchParams(window.location.search).get('redirect_status');
+          var en = false;
+          try { en = localStorage.getItem('gfl_language_choice') === 'en'; } catch (e) {}
+          var result = redirectStatus === 'succeeded'
+            ? { color: '#a855f7', rgb: '168, 85, 247', title: en ? 'Payment successful' : 'Betaling gelukt', body: en ? 'Your report is ready in your other tab.' : 'Je rapport staat klaar in je andere tabblad.' }
+            : redirectStatus === 'processing'
+              ? { color: '#a855f7', rgb: '168, 85, 247', title: en ? 'Payment processing' : 'Betaling wordt verwerkt', body: en ? 'Your other tab updates as soon as the payment is in.' : 'Je andere tabblad werkt zichzelf bij zodra de betaling binnen is.' }
+              : { color: '#f97316', rgb: '249, 115, 22', title: en ? 'Payment not completed' : 'Betaling niet gelukt', body: en ? 'Go back to your other tab to try again.' : 'Ga terug naar je andere tabblad om het opnieuw te proberen.' };
+          var el = function(tag, css, text) { var n = document.createElement(tag); n.style.cssText = css; if (text) n.textContent = text; return n; };
+          var screen = el('div', 'position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:#0a0510');
+          var card = el('div', 'max-width:28rem;padding:2rem;text-align:center;border-radius:0.5rem;background:rgba(2,0,3,0.3);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(' + result.rgb + ',0.3);box-shadow:0 6px 30px rgba(0,0,0,0.7),inset 0 0 12px rgba(' + result.rgb + ',0.06)');
+          card.appendChild(el('h1', "margin:0 0 1rem;color:" + result.color + ";font-family:'Lexend Mega',Arial,Helvetica,sans-serif;font-weight:bold;text-transform:uppercase;letter-spacing:0.15em;font-size:max(13px,0.7vw);text-shadow:0 0 10px rgba(" + result.rgb + ",0.3)", result.title));
+          card.appendChild(el('p', "margin:0 0 1.25rem;color:#FFFEF0;font-family:'Figtree',sans-serif;font-size:max(12px,0.65vw);line-height:1.65", result.body));
+          var note = el('p', "margin:0;color:rgba(255,254,240,0.5);font-family:'Figtree',sans-serif;font-size:max(10px,0.5vw)", en ? 'This window closes by itself.' : 'Dit venster sluit vanzelf.');
+          card.appendChild(note);
+          screen.appendChild(card);
+          document.body.appendChild(screen);
+          setTimeout(function() { try { window.close(); } catch (e) {} }, 1500);
+          setTimeout(function() { note.textContent = en ? 'You can close this window now.' : 'Je kunt dit venster nu sluiten.'; }, 3000);
+          return;
+        }
+
         // ── Mobile: React owns the entire experience (MobileApp) ──
         // Remove the overlay outright rather than fading it, so the spinner never
         // flashes on a surface that is not going to use it.

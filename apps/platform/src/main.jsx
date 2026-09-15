@@ -38,8 +38,8 @@ const isReportPreview = import.meta.env.DEV &&
 const _verifySearch = new URLSearchParams(window.location.search);
 const isPwVerify = _verifySearch.has('pwverify') || _verifySearch.has('emailverify');
 
-// Bank-window landing after iDEAL (Stripe return_url ?betaling=terug): a tiny standalone page that
-// sends the client back to the report tab. See src/pages/PaymentReturn.jsx.
+// Bank-window landing after iDEAL (Stripe return_url ?betaling=terug): index.html shows the result
+// card and closes the window, so no app is mounted here at all.
 const isPaymentReturn = _verifySearch.get('betaling') === 'terug';
 
 // Mobile vs desktop are two fully separate code paths (MobileApp.jsx vs App.jsx).
@@ -50,14 +50,7 @@ const isMobile = window.innerWidth < 768;
 
 const root = ReactDOM.createRoot(rootElement);
 if (isPaymentReturn) {
-  const PaymentReturn = React.lazy(() => import('./pages/PaymentReturn'));
-  root.render(
-    <LanguageProvider>
-      <React.Suspense fallback={null}>
-        <PaymentReturn />
-      </React.Suspense>
-    </LanguageProvider>
-  );
+  // Nothing to mount: see the ?betaling=terug branch in index.html.
 } else if (isPwVerify) {
   const PasswordVerify = React.lazy(() => import('./pages/PasswordVerify'));
   root.render(

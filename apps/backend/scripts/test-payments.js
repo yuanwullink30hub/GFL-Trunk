@@ -12,6 +12,16 @@
 const crypto = require('crypto');
 
 // ── Environment BEFORE anything reads config (dotenv never overrides what is already set) ──
+// Blank the mode-specific Stripe names first: a developer's .env with real STRIPE_TEST_* keys would
+// otherwise win over the stub values below (config/stripeEnv.js prefers the specific names).
+for (const mode of ['TEST', 'LIVE']) {
+  for (const base of ['SECRET_KEY', 'PUBLISHABLE_KEY', 'WEBHOOK_SECRET', 'PRICE_LAUNCH', 'PRICE_NORMAL']) {
+    process.env[`STRIPE_${mode}_${base}`] = '';
+    process.env[`STRIPE_${base}_${mode}`] = '';
+  }
+}
+process.env.STRIPE_MODE = '';
+process.env.PAYMENTS_TEST_TOKEN = '';
 process.env.NODE_ENV = 'test';
 process.env.STRIPE_SECRET_KEY = 'sk_test_stub';
 process.env.STRIPE_PUBLISHABLE_KEY = 'pk_test_stub';
@@ -36,8 +46,11 @@ function makeStripeStub() {
   const id = (p) => `${p}_${++n}${crypto.randomBytes(3).toString('hex')}`;
   const s = { calls: { piCreate: 0, taxCalc: 0, refunds: [], cancel: [] }, tokens: new Map(), intents: new Map(), chargeStore: new Map(), idem: new Map(), createParams: [] };
   const clone = (o) => JSON.parse(JSON.stringify(o));
-  const attachCharge = (pi, country) => {
-    const ch = { id: id('ch'), object: 'charge', payment_intent: pi.id, amount: pi.amount, refunded: false, payment_method_details: { type: 'card', card: { country } }, billing_details: { address: { country } } };
+  // A card charge carries its country; other methods (iDEAL, Klarna…) carry none, like Stripe's.
+  const attachCharge = (pi, country, type = 'card') => {
+    const details = type === 'card' ? { type, card: { country } } : { type, [type]: {} };
+    const billing = type === 'card' ? { address: { country } } : { name: 'Test Persoon', address: null };
+    const ch = { id: id('ch'), object: 'charge', payment_intent: pi.id, amount: pi.amount, refunded: false, payment_method_details: details, billing_details: billing };
     s.chargeStore.set(ch.id, ch);
     pi.latest_charge = ch.id;
     return ch;
@@ -65,7 +78,7 @@ function makeStripeStub() {
       }
       if (scenario === 'requires_action_redirect') { pi.status = 'requires_action'; pi.next_action = { type: 'redirect_to_url', redirect_to_url: { url: 'https://stripe.test/ideal/authorize', return_url: params.return_url } }; }
       if (scenario === 'requires_action_sdk') { pi.status = 'requires_action'; pi.next_action = { type: 'use_stripe_sdk' }; }
-      if (scenario === 'succeeded') attachCharge(pi, token.chargeCountry || 'NL');
+      if (scenario === 'succeeded') attachCharge(pi, token.chargeCountry || 'NL', token.chargeMethod || token.payment_method_preview?.type);
       s.intents.set(pi.id, pi);
       if (opts?.idempotencyKey) s.idem.set(opts.idempotencyKey, pi);
       return clone(pi);
@@ -86,7 +99,7 @@ function makeStripeStub() {
     return r;
   } };
   /** The bank / 3DS finished: the PaymentIntent succeeds with a charge from `country`. */
-  s.succeed = (pid, country = 'NL') => { const pi = s.intents.get(pid); pi.status = 'succeeded'; pi.next_action = null; attachCharge(pi, country); return clone(pi); };
+  s.succeed = (pid, country = 'NL', type = 'card') => { const pi = s.intents.get(pid); pi.status = 'succeeded'; pi.next_action = null; attachCharge(pi, country, type); return clone(pi); };
   s.chargeOf = (pid) => clone(s.chargeStore.get(s.intents.get(pid).latest_charge));
   return s;
 }
@@ -124,9 +137,12 @@ function makeStripeStub() {
     return { status: r.status, body: await r.json().catch(() => ({})) };
   };
   const newReport = () => { const code = `LC_ORB3_${crypto.randomBytes(10).toString('hex')}`; return { code, seal: sealCode(code), hash: reportAccess.codeHashFor(code) }; };
-  const token = ({ previewCountry = 'NL', billingCountry, scenario = 'succeeded', chargeCountry, livemode } = {}) => {
+  const token = ({ type = 'card', previewCountry = 'NL', billingCountry, scenario = 'succeeded', chargeCountry, chargeMethod, livemode } = {}) => {
     const tid = `ctoken_${crypto.randomBytes(8).toString('hex')}`;
-    stub.tokens.set(tid, { id: tid, payment_method_preview: { type: 'card', card: { country: previewCountry }, billing_details: { address: { country: billingCountry || previewCountry } } }, scenario, chargeCountry, livemode });
+    const preview = type === 'card'
+      ? { type, card: { country: previewCountry }, billing_details: { address: { country: billingCountry || previewCountry } } }
+      : { type, billing_details: { name: 'Test Persoon', address: null } }; // iDEAL, Bancontact…: no country
+    stub.tokens.set(tid, { id: tid, payment_method_preview: preview, scenario, chargeCountry, chargeMethod, livemode });
     return tid;
   };
   const CONSENT_TEXT = 'Ik stem ermee in dat ik 14-dagen garantie heb en daarna mijn wettelijke herroepingsrecht vervalt. Ik ga akkoord met de Algemene Voorwaarden';
@@ -187,6 +203,10 @@ function makeStripeStub() {
     check('declared NL + FR card → 403 pre-charge (payment_method)', r.status === 403 && r.body.error === 'country_not_allowed' && r.body.stage === 'payment_method', r);
     r = await api('/api/payments/full-report', payBody(pre, token({ previewCountry: 'NL', billingCountry: 'BE' })));
     check('NL card + BE billing → 403 pre-charge', r.status === 403 && r.body.stage === 'payment_method', r);
+    for (const method of ['bancontact', 'klarna', 'mb_way', 'link']) {
+      r = await api('/api/payments/full-report', payBody(pre, token({ type: method })));
+      check(`declared NL + ${method} → 403 method_not_allowed pre-charge`, r.status === 403 && r.body.error === 'method_not_allowed', r);
+    }
     r = await api('/api/payments/full-report', payBody({ seal: 's1.garbage' }, token()));
     check('garbage seal → 400 malformed', r.status === 400 && r.body.error === 'malformed', r);
     const expiredCode = `LC_ORB3_${crypto.randomBytes(10).toString('hex')}`;
@@ -255,13 +275,13 @@ function makeStripeStub() {
     check('still one ledger row and one betaalbewijs', unlocks.length === 1 && records.length === 1);
 
     const ideal = newReport();
-    r = await api('/api/payments/full-report', payBody(ideal, token({ scenario: 'requires_action_redirect' })));
+    r = await api('/api/payments/full-report', payBody(ideal, token({ type: 'ideal', scenario: 'requires_action_redirect' })));
     check('iDEAL → requires_action with redirectUrl (opened in a separate window)', r.status === 200 && r.body.status === 'requires_action' && r.body.redirectUrl === 'https://stripe.test/ideal/authorize', r);
     const idealRef = r.body.ref;
     const idealPi = (await collections.payments().findOne({ ref: idealRef })).paymentIntentId;
     r = await api(`/api/payments/${idealRef}/status`, { sealedOrbCode: ideal.seal });
     check('status while at the bank → requires_action, no code', r.body.status === 'requires_action' && !r.body.orbCode, r);
-    const succeededPi = stub.succeed(idealPi, 'NL');
+    const succeededPi = stub.succeed(idealPi, 'NL', 'ideal');
     const sameId = `evt_${crypto.randomBytes(8).toString('hex')}`;
     const storm = await Promise.all([
       ...Array.from({ length: 5 }, () => sendEvent('payment_intent.succeeded', succeededPi, sameId)),
@@ -297,6 +317,12 @@ function makeStripeStub() {
       && stub.calls.refunds.filter((x) => x.payment_intent === foreignPi).length === 1 && (await unlocksFor(foreignPi)).length === 0, r);
     const gateRefundEvt = await sendEvent('charge.refunded', { ...stub.chargeOf(foreignPi), refunded: true });
     check('charge.refunded for the gate refund → 200, nothing to revoke', gateRefundEvt.status === 200 && (await unlocksFor(foreignPi)).length === 0);
+    const klarna = newReport();
+    const refundsBeforeMethod = stub.calls.refunds.length;
+    r = await api('/api/payments/full-report', payBody(klarna, token({ chargeMethod: 'klarna' })));
+    const klarnaPi = (await collections.payments().findOne({ ref: r.body.ref }))?.paymentIntentId;
+    check('charged with a method outside the gate (Klarna) → rejected + refunded, never unlocked', r.body.status === 'rejected_country'
+      && stub.calls.refunds.length === refundsBeforeMethod + 1 && (await unlocksFor(klarnaPi)).length === 0, r);
 
     // ───────────────────────────────────────────────────────────
     section('F. Never charge twice: payments in flight');

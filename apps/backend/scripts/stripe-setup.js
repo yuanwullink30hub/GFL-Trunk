@@ -10,8 +10,9 @@
  * Run once with the TEST secret key now, and again with the LIVE key when the account is
  * activated — same lookup keys, different price IDs.
  *
- * Usage (from apps/backend):  node scripts/stripe-setup.js            (uses STRIPE_SECRET_KEY from .env)
+ * Usage (from apps/backend):  node scripts/stripe-setup.js            (key set picked by STRIPE_MODE, config/stripeEnv.js)
  *                             node scripts/stripe-setup.js --dry-run  (only reports what exists)
+ *                             STRIPE_MODE=live node scripts/stripe-setup.js --live   (live key: refused without --live)
  *
  * Prices are immutable in Stripe: if a lookup key exists with a different amount, the script
  * stops and says so rather than guessing.
@@ -23,18 +24,23 @@ const { API_VERSION } = require('../services/stripe');
 const PRODUCT_MARKER = 'essentie';
 const TAX_CODE = 'txcd_10000000'; // General - Electronically Supplied Services
 const PRICES = [
-  { lookupKey: 'essentie_launch', unitAmount: 1452, nickname: 'Essentie — introductieprijs (incl. BTW)', env: 'STRIPE_PRICE_LAUNCH' },
-  { lookupKey: 'essentie_normal', unitAmount: 3630, nickname: 'Essentie — normale prijs (incl. BTW)', env: 'STRIPE_PRICE_NORMAL' },
+  { lookupKey: 'essentie_launch', unitAmount: 1452, nickname: 'Essentie — introductieprijs (incl. BTW)', env: 'PRICE_LAUNCH' },
+  { lookupKey: 'essentie_normal', unitAmount: 3630, nickname: 'Essentie — normale prijs (incl. BTW)', env: 'PRICE_NORMAL' },
 ];
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
+  const M = config.stripe.mode.toUpperCase();
   if (!config.stripe.secretKey) {
-    console.error('STRIPE_SECRET_KEY is not set (apps/backend/.env).');
+    console.error(`No ${M} secret key: set STRIPE_${M}_SECRET_KEY (apps/backend/.env).`);
+    process.exit(1);
+  }
+  const mode = /^(sk|rk)_live_/.test(config.stripe.secretKey) ? 'LIVE' : 'TEST';
+  if (mode === 'LIVE' && !process.argv.includes('--live')) {
+    console.error('This is a LIVE key. Rerun with --live to create live objects.');
     process.exit(1);
   }
   const stripe = new Stripe(config.stripe.secretKey, { apiVersion: API_VERSION });
-  const mode = config.stripe.secretKey.startsWith('sk_live_') ? 'LIVE' : 'TEST';
   console.log(`Stripe ${mode} mode${dryRun ? ' (dry run)' : ''}`);
 
   // Existing prices by lookup key tell us the product too.
@@ -74,7 +80,7 @@ async function main() {
         console.error(`  Expected ${spec.unitAmount} eur inclusive and active. Prices are immutable: create a new one with this lookup key (transfer_lookup_key) in the Dashboard, then rerun.`);
         process.exitCode = 1;
       }
-      envLines.push(`${spec.env}=${price.id}`);
+      envLines.push(`STRIPE_${mode}_${spec.env}=${price.id}`);
       continue;
     }
     if (dryRun || !product) { console.log(`Price ${spec.lookupKey}: missing (would create)`); continue; }
@@ -87,14 +93,14 @@ async function main() {
       nickname: spec.nickname,
     });
     console.log(`Price ${spec.lookupKey} created: ${created.id}`);
-    envLines.push(`${spec.env}=${created.id}`);
+    envLines.push(`STRIPE_${mode}_${spec.env}=${created.id}`);
   }
 
   if (envLines.length) {
-    console.log('\nPut these in apps/backend/.env:');
+    console.log('\nPut these in the Render environment (and apps/backend/.env if you run locally):');
     envLines.forEach((l) => console.log(`  ${l}`));
   }
-  console.log('\nDashboard checklist: enable iDEAL + cards · Stripe Tax on with the NL registration · register the payment method domain (Apple/Google Pay) · webhook endpoint → STRIPE_WEBHOOK_SECRET');
+  console.log(`\nDashboard checklist: enable iDEAL + cards · Stripe Tax on with the NL registration · register the payment method domain (Apple/Google Pay) · webhook endpoint → STRIPE_${mode}_WEBHOOK_SECRET`);
 }
 
 main().catch((e) => { console.error('Stripe setup failed:', e.message); process.exit(1); });

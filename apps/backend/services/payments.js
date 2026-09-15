@@ -43,6 +43,12 @@ const CREATING_STALE_MS = 2 * 60 * 1000;
 const ADMIN_REFUND_GUARD_MS = 2 * 60 * 1000; // the admin route records its own refund; the webhook echo steps aside
 const DESCRIPTION = 'Garden For Life — Essentie (volledig rapport)';
 
+// Payment methods the country gate can vouch for, whatever the Dashboard enables: a card carries its
+// issuing country (Apple Pay / Google Pay are cards), iDEAL is the Dutch bank scheme. Bancontact,
+// Klarna, MB WAY, EPS… say nothing about where the payer is, so they are refused before charging
+// and, should one slip through, refunded like any other payment from outside the gate.
+const ALLOWED_METHOD_TYPES = new Set(['card', 'ideal']);
+
 // Statuses of a payments doc. 'creating' = doc written, PaymentIntent not created yet.
 const LIVE = ['creating', 'requires_action', 'processing', 'paid'];
 const FINAL = ['paid', 'failed', 'canceled', 'rejected_country', 'refunded'];
@@ -188,6 +194,9 @@ async function payFullReport({ confirmationTokenId, sealedOrbCode, email, countr
   if (!/^ctoken_[A-Za-z0-9]+$/.test(String(confirmationTokenId || ''))) throw new PaymentError('malformed', 400);
   const token = await stripe.confirmationTokens.retrieve(confirmationTokenId);
   const preview = token?.payment_method_preview || {};
+  if (!ALLOWED_METHOD_TYPES.has(preview.type)) {
+    throw new PaymentError('method_not_allowed', 403, { stage: 'payment_method' });
+  }
   const methodCountries = countriesOf(preview.card, preview.billing_details);
   if (methodCountries.some((c) => !cfg.allowedCountries.includes(c))) {
     throw new PaymentError('country_not_allowed', 403, { stage: 'payment_method', allowedCountries: cfg.allowedCountries });
@@ -299,12 +308,13 @@ async function syncStatus(doc, pi) {
   return r || doc;
 }
 
-/** Card / billing country of the charge behind a PaymentIntent. */
-async function chargeCountries(pi) {
+/** What was actually charged behind a PaymentIntent: method type and card / billing country. */
+async function chargeOrigin(pi) {
   let charge = pi?.latest_charge;
   if (charge && typeof charge === 'string') charge = await getStripe().charges.retrieve(charge);
-  if (!charge || typeof charge !== 'object') return [];
-  return countriesOf(charge.payment_method_details?.card, charge.billing_details);
+  if (!charge || typeof charge !== 'object') return { type: '', countries: [] };
+  const details = charge.payment_method_details || {};
+  return { type: details.type || '', countries: countriesOf(details.card, charge.billing_details) };
 }
 
 /** Gate backstop: paid from outside the allowed countries → refund, never unlock. */
@@ -346,11 +356,12 @@ async function confirmFromIntent(pi, source = 'webhook') {
   if (doc.status === 'paid' && doc.confirmState === 'done') return doc;
 
   // Gate, stage 3 (backstop): what was actually charged.
-  const countries = await chargeCountries(pi);
+  const charged = await chargeOrigin(pi);
+  if (charged.type && !ALLOWED_METHOD_TYPES.has(charged.type)) return rejectForCountry(doc, pi, [`method:${charged.type}`]);
   const allowed = Array.isArray(doc.allowedCountries) && doc.allowedCountries.length
     ? doc.allowedCountries
     : (await resolvePaymentConfig(new Date(doc.createdAt))).allowedCountries;
-  if (countries.some((c) => !allowed.includes(c))) return rejectForCountry(doc, pi, countries);
+  if (charged.countries.some((c) => !allowed.includes(c))) return rejectForCountry(doc, pi, charged.countries);
 
   const now = new Date();
   const claimed = await payments.findOneAndUpdate(

@@ -60,8 +60,8 @@ const APPEARANCE = {
 const FONTS = [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Lexend+Mega:wght@700&display=swap' }];
 
 function CheckoutForm({
-  t, language, config, country, canPayReason, consentText, consentNode, sealedOrbCode, email, price,
-  onCancel, onStarted, onError, errorMessageFor,
+  t, language, config, country, canPayReason, consentText, sealedOrbCode, email, price,
+  cancelLabel, onCancel, onStarted, onError, errorMessageFor,
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -142,7 +142,7 @@ function CheckoutForm({
         <PaymentElement
           key={country}
           options={{
-            layout: { type: 'accordion', defaultCollapsed: false, radios: true, spacedAccordionItems: false },
+            layout: { type: 'accordion', defaultCollapsed: false, radios: 'always', spacedAccordionItems: false },
             defaultValues: { billingDetails: { address: { country } } },
             business: { name: 'Garden For Life' },
             terms: { card: 'never', ideal: 'never' },
@@ -151,9 +151,8 @@ function CheckoutForm({
           onChange={(e) => { setComplete(!!e.complete); setMethodType(e.value?.type || ''); }}
         />
       </div>
-      {consentNode}
       <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-        <SciFiButton variant="white" size="md" onClick={onCancel} disabled={busy}>{t('resultsModal.ui.cancel')}</SciFiButton>
+        <SciFiButton variant="white" size="md" onClick={onCancel} disabled={busy}>{cancelLabel || t('resultsModal.ui.cancel')}</SciFiButton>
         <SciFiButton variant="purple" size="lg" onClick={pay} disabled={!canPay}>
           {busy ? t('resultsModal.paywall.paying') : `${t('resultsModal.paywall.pay')} ${price}`}
         </SciFiButton>
@@ -162,8 +161,38 @@ function CheckoutForm({
   );
 }
 
+/**
+ * The report lives only in this tab's memory, so a Stripe.js failure (an IntegrationError thrown while
+ * the Element mounts, a failed script load) must not unmount the report with it: the paywall shows
+ * the generic payment error instead and the customer can close it.
+ */
+class PaymentFormBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { failed: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error) {
+    console.error('[Payments] Payment form failed:', error);
+    this.props.onError(this.props.t('resultsModal.paywall.paymentError'));
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+        <SciFiButton variant="white" size="md" onClick={this.props.onCancel}>{this.props.cancelLabel || this.props.t('resultsModal.ui.cancel')}</SciFiButton>
+      </div>
+    );
+  }
+}
+
 export default function StripeCheckout(props) {
-  const { config, language } = props;
+  const { config, language, t, onError, onCancel, cancelLabel } = props;
   const stripePromise = useMemo(() => getStripePromise(config.publishableKey), [config.publishableKey]);
   const options = useMemo(() => ({
     mode: 'payment',
@@ -176,8 +205,10 @@ export default function StripeCheckout(props) {
   }), [config.grossCents, config.currency, language]);
 
   return (
-    <Elements stripe={stripePromise} options={options}>
-      <CheckoutForm {...props} />
-    </Elements>
+    <PaymentFormBoundary t={t} onError={onError} onCancel={onCancel} cancelLabel={cancelLabel}>
+      <Elements stripe={stripePromise} options={options}>
+        <CheckoutForm {...props} />
+      </Elements>
+    </PaymentFormBoundary>
   );
 }

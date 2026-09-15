@@ -52,7 +52,12 @@ export function PopupShell({
   panelProps = {},
   fill = false,
 }) {
-  const pop = `${closing ? 'gflPopContract' : 'gflPopExpand'} ${POP_MS}ms cubic-bezier(0.4, 0, 0.2, 1) forwards`;
+  // Opening animations end on the element's natural state, so they must not fill `forwards`: a filled
+  // transform/opacity animation stays active on the ancestor, and Firefox then mis-targets pointer
+  // and keyboard input for cross-origin iframes inside it (the Stripe Payment Element: glitchy hover,
+  // typing lost). Only the contract holds its end state (scale 0) until the parent unmounts us.
+  const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
+  const pop = closing ? `gflPopContract ${POP_MS}ms ${EASE} forwards` : `gflPopExpand ${POP_MS}ms ${EASE} backwards`;
   const brackets = Object.entries(BRACKETS).map(([k, pos]) => (
     <div key={k} aria-hidden="true" style={{ position: 'absolute', width: '1rem', height: '1rem', pointerEvents: 'none', zIndex: 10, border: `1.5px solid ${PURPLE}`, ...pos }} />
   ));
@@ -62,7 +67,7 @@ export function PopupShell({
       <div style={{
         position: 'absolute', inset: 0, zIndex, borderRadius: FILL_RADIUS, background: '#000',
         boxShadow: IS_LOW_GPU ? 'none' : PURPLE_INSET,
-        animation: `${closing ? 'gflPopFadeOut' : 'gflPopFadeIn'} ${POP_MS}ms ease forwards`,
+        animation: closing ? `gflPopFadeOut ${POP_MS}ms ease forwards` : `gflPopFadeIn ${POP_MS}ms ease backwards`,
       }}>
         <style>{KEYFRAMES}</style>
         {brackets}

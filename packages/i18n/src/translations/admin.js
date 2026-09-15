@@ -441,10 +441,12 @@ export default {
         windowClosed: { nl: 'termijn verlopen', en: 'window closed' },
         notRefundable: { nl: 'geen garantie', en: 'not covered' },
         refund: { nl: 'TERUGBETALEN', en: 'REFUND' },
-        confirmRefund: {
-          nl: (ref) => `Rapport ${ref} terugbetalen?\n\nDe kristal-code wordt geblokkeerd. Is hij aan een account gekoppeld, dan vervallen die lezing en de toegang die hij gaf. Dit kan niet ongedaan worden.`,
-          en: (ref) => `Refund report ${ref}?\n\nThe crystal code is blocked. If it is linked to an account, that reading and the access it gave lapse. This cannot be undone.`,
+        confirmTitle: { nl: 'Terugbetaling bevestigen', en: 'Confirm refund' },
+        confirmBody: {
+          nl: 'Stripe betaalt het volledige bedrag terug en de kristal-code wordt geblokkeerd. Is hij aan een account gekoppeld, dan vervallen die lezing en de toegang die hij gaf. Dit kan niet ongedaan worden.',
+          en: 'Stripe refunds the full amount and the crystal code is blocked. If it is linked to an account, that reading and the access it gave lapse. This cannot be undone.',
         },
+        confirmTypeLabel: { nl: (word) => `Typ ${word} om te bevestigen`, en: (word) => `Type ${word} to confirm` },
         refundedResult: {
           nl: (until) => `Terugbetaald. Code geblokkeerd. E-mailadres op de grijze lijst.${until ? ` Toegang van het account loopt nu tot ${until}.` : ''}`,
           en: (until) => `Refunded. Code blocked. Email address on the grey list.${until ? ` The account's access now runs until ${until}.` : ''}`,

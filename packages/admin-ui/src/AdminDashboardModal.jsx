@@ -3140,6 +3140,44 @@ const UNLOCK_BADGE = { display: 'inline-block', padding: '0.05rem 0.35rem', bord
 const fmtEuro = (cents, currency = 'EUR') => new Intl.NumberFormat('nl-NL', { style: 'currency', currency }).format((cents || 0) / 100);
 const fmtDay = (d) => (d ? new Date(d).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
 
+// A refund cannot be undone (Stripe pays out, the code is blocked), so the admin types this word first.
+const REFUND_CONFIRM_WORD = 'Terugbetalen';
+
+function RefundConfirm({ label, amount, email, busy, onCancel, onConfirm }) {
+  const { t, tFunc } = useLanguage();
+  const [typed, setTyped] = useState('');
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+  const matches = typed.trim().toLowerCase() === REFUND_CONFIRM_WORD.toLowerCase();
+
+  return (
+    <div role="alertdialog" aria-labelledby="gfl-refund-confirm-title" style={{
+      display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.7rem 0.8rem',
+      borderLeft: '2px solid rgba(248, 113, 113, 0.7)', background: 'rgba(248, 113, 113, 0.06)', borderRadius: '0 0.15rem 0.15rem 0',
+    }}>
+      <div id="gfl-refund-confirm-title" style={{ fontSize: 'max(9px, 0.45vw)', fontWeight: 'bold', color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        {t('admin.dashboard.reportUnlocks.confirmTitle')}
+      </div>
+      <div style={{ fontSize: 'max(10px, 0.5vw)', color: '#FFFEF0', overflowWrap: 'anywhere' }}>
+        <span style={{ fontFamily: 'monospace' }}>{label}</span>{amount ? ` · ${amount}` : ''}{email ? ` · ${email}` : ''}
+      </div>
+      <div style={{ fontSize: 'max(10px, 0.5vw)', color: '#cbd5e1', lineHeight: 1.6 }}>{t('admin.dashboard.reportUnlocks.confirmBody')}</div>
+      <form
+        onSubmit={(e) => { e.preventDefault(); if (matches && !busy) onConfirm(); }}
+        style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', flexWrap: 'wrap', margin: 0 }}
+      >
+        <label style={{ display: 'flex', flexDirection: 'column', flex: '1 1 12rem' }}>
+          <span style={FIELD_LABEL}>{tFunc('admin.dashboard.reportUnlocks.confirmTypeLabel')(REFUND_CONFIRM_WORD)}</span>
+          <input ref={inputRef} value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={REFUND_CONFIRM_WORD}
+            autoComplete="off" spellCheck={false} disabled={busy} style={INPUT_SM} />
+        </label>
+        <SciFiButton type="button" size="sm" variant="white" onClick={onCancel} disabled={busy}>{t('admin.dashboard.reportUnlocks.cancel')}</SciFiButton>
+        <SciFiButton type="submit" size="sm" variant="danger" disabled={!matches || busy}>{t('admin.dashboard.reportUnlocks.refund')}</SciFiButton>
+      </form>
+    </div>
+  );
+}
+
 const ReportUnlocksTab = memo(() => {
   const { t, tFunc } = useLanguage();
   const [unlocks, setUnlocks] = useState([]);
@@ -3151,6 +3189,8 @@ const ReportUnlocksTab = memo(() => {
   const [busyId, setBusyId] = useState(null);
   // Moderator review for a grey-listed email: { unlock, answers: {reason, readFully, expected}, notes }
   const [review, setReview] = useState(null);
+  // Typed confirmation before any refund: { unlock, reviewPayload? }
+  const [confirming, setConfirming] = useState(null);
   const tc = CARD_COLORS.gold;
 
   const fetchData = useCallback(async () => {
@@ -3174,12 +3214,20 @@ const ReportUnlocksTab = memo(() => {
 
   const REVIEW_KEYS = [['reason', 'qReason'], ['readFully', 'qReadFully'], ['expected', 'qExpected']];
 
-  const handleRefund = async (u, reviewPayload) => {
+  // Grey-listed email → moderator review first; every refund then waits for the typed confirmation.
+  const handleRefund = (u, reviewPayload) => {
     if (u.greylisted && !reviewPayload) {
+      setConfirming(null);
       setReview({ unlock: u, answers: { reason: '', readFully: '', expected: '' }, notes: '' });
       return;
     }
-    if (!window.confirm(tFunc('admin.dashboard.reportUnlocks.confirmRefund')(refLabel(u)))) return;
+    setError(null);
+    setConfirming({ unlock: u, reviewPayload });
+  };
+
+  const confirmRefund = async () => {
+    if (!confirming) return;
+    const { unlock: u, reviewPayload } = confirming;
     setBusyId(u._id);
     setError(null);
     setNotice('');
@@ -3197,9 +3245,22 @@ const ReportUnlocksTab = memo(() => {
     } catch (err) {
       setError(err.message);
     } finally {
+      setConfirming(null);
       setBusyId(null);
     }
   };
+
+  const confirmBox = (u) => (
+    <RefundConfirm
+      key={`confirm-${u._id}`}
+      label={refLabel(u)}
+      amount={u.method === 'payment' ? fmtEuro(u.amountCents, u.currency) : ''}
+      email={u.email || ''}
+      busy={busyId === u._id}
+      onCancel={() => setConfirming(null)}
+      onConfirm={confirmRefund}
+    />
+  );
 
   const reviewComplete = () => {
     const complete = REVIEW_KEYS.every(([k]) => review.answers[k].trim());
@@ -3284,15 +3345,17 @@ const ReportUnlocksTab = memo(() => {
                 onChange={e => setReview(r => ({ ...r, notes: e.target.value }))}
                 style={{ ...TEXTAREA, minHeight: '3.2rem', fontFamily: 'inherit' }} />
             </label>
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <SciFiButton size="sm" variant="white" onClick={() => setReview(null)}>{t('admin.dashboard.reportUnlocks.cancel')}</SciFiButton>
-              <SciFiButton size="sm" variant="purple" disabled={busyId === review.unlock._id} onClick={submitDecline}>
-                {t('admin.dashboard.reportUnlocks.declineAfterReview')}
-              </SciFiButton>
-              <SciFiButton size="sm" variant="danger" disabled={busyId === review.unlock._id} onClick={submitReview}>
-                {t('admin.dashboard.reportUnlocks.refundAfterReview')}
-              </SciFiButton>
-            </div>
+            {confirming?.reviewPayload && confirming.unlock._id === review.unlock._id ? confirmBox(review.unlock) : (
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <SciFiButton size="sm" variant="white" onClick={() => setReview(null)}>{t('admin.dashboard.reportUnlocks.cancel')}</SciFiButton>
+                <SciFiButton size="sm" variant="purple" disabled={busyId === review.unlock._id} onClick={submitDecline}>
+                  {t('admin.dashboard.reportUnlocks.declineAfterReview')}
+                </SciFiButton>
+                <SciFiButton size="sm" variant="danger" disabled={busyId === review.unlock._id} onClick={submitReview}>
+                  {t('admin.dashboard.reportUnlocks.refundAfterReview')}
+                </SciFiButton>
+              </div>
+            )}
           </div>
         </DashboardCard>
       )}
@@ -3327,7 +3390,8 @@ const ReportUnlocksTab = memo(() => {
                 const isPayment = u.method === 'payment';
                 const inWindow = isPayment && u.refundableUntil && new Date(u.refundableUntil).getTime() > now;
                 return (
-                  <div key={u._id} style={{
+                  <React.Fragment key={u._id}>
+                  <div style={{
                     display: 'grid', gridTemplateColumns: UNLOCK_GRID, gap: '0.3rem', padding: '0.4rem 0.5rem', alignItems: 'center',
                     backgroundColor: i % 2 === 0 ? 'rgba(255,174,0,0.02)' : 'transparent',
                     borderLeft: `2px solid ${refunded ? '#f87171' : isPayment ? '#4ade80' : '#60a5fa'}`,
@@ -3401,6 +3465,8 @@ const ReportUnlocksTab = memo(() => {
                       )}
                     </div>
                   </div>
+                  {confirming && !confirming.reviewPayload && confirming.unlock._id === u._id && confirmBox(u)}
+                  </React.Fragment>
                 );
               })}
             </div>

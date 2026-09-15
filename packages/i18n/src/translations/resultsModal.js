@@ -200,6 +200,9 @@ export default {
         nl: 'Niet tevreden? Vraag binnen 14 dagen via het contactformulier je volledige bedrag terug. Je kristal-code wordt dan geblokkeerd. Opende je met deze code je account, dan wordt dat account verwijderd; had je al een account met andere lezingen, dan blijft het bestaan en wordt alleen deze lezing verwijderd.',
         en: 'Not satisfied? Ask for a full refund through the contact form within 14 days. Your crystal code is then blocked. If you opened your account with this code, that account is deleted; if you already had an account with other readings, it stays and only this reading is deleted.',
       },
+      continueToPayment: { nl: 'Verder naar betalen', en: 'Continue to payment' },
+      paymentTitle: { nl: 'Betalen', en: 'Payment' },
+      back: { nl: 'Terug', en: 'Back' },
       pay: { nl: 'Betaal', en: 'Pay' },
 
       awaitingTitle: { nl: 'Wacht op betaling', en: 'Waiting for payment' },
@@ -235,16 +238,14 @@ export default {
         nl: 'Dit rapport is verlopen en kan niet meer worden vrijgegeven.',
         en: 'This report has expired and can no longer be unlocked.',
       },
+      methodNotAllowed: {
+        nl: 'Deze betaalmethode is niet beschikbaar. Betaal met iDEAL of een creditcard.',
+        en: 'This payment method is not available. Pay with iDEAL or a credit card.',
+      },
       consentRequired: {
         nl: 'Vink de voorwaarden aan en probeer het opnieuw (herlaad de pagina als dit blijft gebeuren).',
         en: 'Tick the terms and try again (reload the page if this keeps happening).',
       },
-      returnTitle: { nl: 'Betaling afgerond', en: 'Payment completed' },
-      returnBody: {
-        nl: 'Ga terug naar het tabblad met je rapport — daar wordt je betaling bevestigd en start je download. Dit venster sluit vanzelf.',
-        en: 'Go back to the tab with your report — your payment is confirmed there and your download starts. This window closes by itself.',
-      },
-      returnClose: { nl: 'Venster sluiten', en: 'Close window' },
       rejectedTitle: { nl: 'Betaling teruggestort', en: 'Payment refunded' },
       rejectedBody: {
         nl: 'Deze betaling kwam van buiten {countries}. Het volledige rapport is daar nog niet beschikbaar; het bedrag is automatisch teruggestort.',

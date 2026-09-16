@@ -99,6 +99,7 @@ function registerIpc() {
       root: workspaceRoot,
       schemaVersion: manifest?.schemaVersion ?? null,
       folderId: manifest?.folderId ?? null,
+      accountId: manifest?.accountId ?? null,
     };
   });
 
@@ -140,12 +141,16 @@ function registerIpc() {
   // ── Named operations. None of these takes a path from the renderer. ──
   ipcMain.handle('workspace:backup', () => workspace.backupFolder(requireRoot()));
 
+  // Bind the folder to the logged-in account (manifest.accountId). First link sets it; another
+  // account is refused, so a shared computer cannot mix two people's data in one folder.
+  ipcMain.handle('workspace:link-account', (_e, accountId) => workspace.linkAccount(requireRoot(), accountId));
+
   ipcMain.handle('profile:read-partial', () => workspace.readPartial(requireRoot()));
   ipcMain.handle('profile:write-partial', (_e, data) => workspace.writePartial(requireRoot(), data));
   ipcMain.handle('profile:read-full', () => workspace.readFullProfile(requireRoot()));
   ipcMain.handle('profile:write-full', (_e, data) => workspace.writeFullProfile(requireRoot(), data));
 
-  ipcMain.handle('reports:save', (_e, pdfBase64) => workspace.saveReport(requireRoot(), pdfBase64));
+  ipcMain.handle('reports:save', (_e, pdfBase64, label) => workspace.saveReport(requireRoot(), pdfBase64, label));
   ipcMain.handle('reports:list', () => workspace.listReports(requireRoot()));
   ipcMain.handle('reports:read', (_e, name) => workspace.readReport(requireRoot(), name));
 

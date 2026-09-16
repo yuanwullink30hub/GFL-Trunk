@@ -455,23 +455,36 @@ const AssessmentResultsModal = ({
       // Convert any uploaded OCEAN profile files to the format the AI API expects
       const uploadedFileContents = [];
       for (const file of uploadedFiles || []) {
+        // The user's own file name ("Jan_Jansen_BigFive.pdf") never leaves the browser; the server
+        // also scrubs names from the content before anything reads it.
+        const ext = (file.name.match(/.([a-z0-9]{1,5})$/i) || [])[1];
+        const name = `upload-${uploadedFileContents.length + 1}${ext ? `.${ext.toLowerCase()}` : ''}`;
         try {
-          if (file.type === 'application/pdf') {
+          const kind = (ext || '').toLowerCase();
+          if (kind === 'pdf') {
             const base64 = await new Promise((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = (e) => resolve(e.target.result.split(',')[1]);
               reader.onerror = reject;
               reader.readAsDataURL(file);
             });
-            uploadedFileContents.push({ name: file.name, pdfBase64: base64 });
-          } else if (file.type === 'text/plain' || file.type === 'application/json') {
+            uploadedFileContents.push({ name, pdfBase64: base64 });
+          } else if (kind === 'docx') {
+            const base64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+            uploadedFileContents.push({ name, docxBase64: base64 });
+          } else if (kind === 'txt') {
             const text = await new Promise((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = (e) => resolve(e.target.result);
               reader.onerror = reject;
               reader.readAsText(file);
             });
-            uploadedFileContents.push({ name: file.name, text });
+            uploadedFileContents.push({ name, text });
           } else if (file.type.startsWith('image/')) {
             const base64 = await new Promise((resolve, reject) => {
               const reader = new FileReader();
@@ -479,7 +492,7 @@ const AssessmentResultsModal = ({
               reader.onerror = reject;
               reader.readAsDataURL(file);
             });
-            uploadedFileContents.push({ name: file.name, imageBase64: base64, mimeType: file.type });
+            uploadedFileContents.push({ name, imageBase64: base64, mimeType: file.type });
           }
         } catch { /* skip unreadable files */ }
       }

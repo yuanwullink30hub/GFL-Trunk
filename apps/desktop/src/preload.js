@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld('gfl', {
 
     /** Open the folder in Explorer/Finder so the user can see what they own. */
     reveal: () => ipcRenderer.invoke('workspace:reveal'),
+
+    /** Bind the folder to this account. Refused if it already belongs to another one. */
+    linkAccount: (accountId) => ipcRenderer.invoke('workspace:link-account', accountId),
   },
 
   profile: {
@@ -44,8 +47,11 @@ contextBridge.exposeInMainWorld('gfl', {
   },
 
   reports: {
-    /** Save a report PDF. The filename comes from the clock, not the caller. */
-    save: (pdfBase64) => ipcRenderer.invoke('reports:save', pdfBase64),
+    /**
+     * Save a report PDF as <date>-<slug>.pdf. The label (e.g. the archetype name) only feeds
+     * the slug, which the app derives; the date comes from the clock. Returns { saved, name }.
+     */
+    save: (pdfBase64, label) => ipcRenderer.invoke('reports:save', pdfBase64, label),
 
     /** [{ name, path }], newest first. */
     list: () => ipcRenderer.invoke('reports:list'),

@@ -82,6 +82,31 @@ export default {
       back: { nl: '← Terug', en: '← Back' },
       creating: { nl: 'Aanmaken…', en: 'Creating…' },
       enter: { nl: 'Betreed platform', en: 'Enter platform' },
+
+      // ── First step after the account exists: the local workstation (the desktop app +
+      //    one folder of their own). The explanation itself reuses clientOrb.workspace.*, which
+      //    tracks Terms art. 5a/5b and privacy art. 6. ──
+      workspaceTitle: { nl: 'Je eigen werkmap', en: 'Your own folder' },
+      workspaceIntro: {
+        nl: 'Je account staat. Eén ding vragen we je als eerste — en we leggen uit waarom.',
+        en: 'Your account is ready. There is one thing we ask you first — and we explain why.',
+      },
+      workspaceLocked: {
+        nl: 'Tot je werkmap gekoppeld is, blijven de hulpmiddelen die met je persoonlijke gegevens werken vergrendeld. Je account, je openbare kaart en Verbonden werken meteen.',
+        en: 'Until your folder is connected, the tools that work with your personal data stay locked. Your account, your public card and Verbonden work straight away.',
+      },
+      workspaceInApp: {
+        nl: 'Kies nu je werkmap. Het rapport dat je net hebt geüpload zetten we er meteen in, samen met een kopie van je gedeeltelijke profiel.',
+        en: 'Choose your folder now. The report you just uploaded goes straight into it, together with a copy of your partial profile.',
+      },
+      workspaceChoose: { nl: 'Werkmap kiezen', en: 'Choose folder' },
+      workspaceChoosing: { nl: 'Bezig…', en: 'Working…' },
+      workspaceDone: {
+        nl: (name) => (name ? `Werkmap gekoppeld — je rapport staat erin als ${name}.` : 'Werkmap gekoppeld.'),
+        en: (name) => (name ? `Folder connected — your report is in it as ${name}.` : 'Folder connected.'),
+      },
+      workspaceLater: { nl: 'Later', en: 'Later' },
+      workspaceContinue: { nl: 'Verder naar het platform', en: 'Continue to the platform' },
     },
 
     // ── LoginPage: login card ──

@@ -190,6 +190,10 @@ async function purgeProfiles() {
       const { stripExpiredUnlockEmails } = require('./services/reportAccess');
       const stripped = await stripExpiredUnlockEmails();
       if (stripped) console.log(`[GFL-API] 🧹 Payer emails removed after the refund window: ${stripped}`);
+      // After the refund window the Stripe payment is unlinked from the report (no PDF → person path).
+      const { unlinkExpiredPayments } = require('./services/reportAccess');
+      const unlinked = await unlinkExpiredPayments();
+      if (unlinked) console.log(`[GFL-API] 🧹 Payments unlinked from their reports after the refund window: ${unlinked}`);
     } catch (e) {
       console.error('[GFL-API] ❌ Unlock cleanup failed:', e.message);
     }

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@gfl/i18n';
-import { getToken } from '@gfl/api-client';
 import { isIntegratedGPU } from '@gfl/utils';
 const archetypeHeader = '/images/Import ready/Archetype header.png';
 const analyseIcon = '/images/Import ready/analyseicon.PNG';
@@ -256,11 +255,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   // Log consent to audit trail (fire-and-forget)
   const logConsent = (levelId) => {
     try {
-      const token = getToken();
-      let userId = null;
-      if (token) {
-        try { userId = JSON.parse(atob(token.split('.')[1])).sub; } catch {}
-      }
+      // No account id: the test is anonymous even for a logged-in client — a consent record carrying
+      // the account id would pair that person with the test's start time.
       const API_BASE = import.meta.env.VITE_API_URL ||
         (window.location.hostname === 'localhost' ? 'http://localhost:8080/api' : 'https://api.gardenforlife.nl/api');
       fetch(`${API_BASE}/admin/sessions/activity`, {
@@ -268,7 +264,6 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'consent_given',
-          userId,
           consentType: 'art9_assessment',
           level: levelId,
           message: 'User accepted both consent checkboxes (terms + Art.9 psychological data)',
@@ -785,7 +780,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp"
+                    accept=".pdf,.docx,.txt"
                     style={{ display: 'none' }}
                     onChange={(e) => {
                       const file = e.target.files?.[0];

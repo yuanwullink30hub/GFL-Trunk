@@ -1,6 +1,6 @@
 # Local Workstation Contract
 
-**Status:** draft v0.1 — 2026-09-09
+**Status:** draft v0.2 — 2026-09-16 (v0.1 2026-09-09)
 **Scope:** the boundary between the Garden For Life platform and the client's own machine.
 
 The platform owns the model. The client owns their data. This document is the seam:
@@ -37,7 +37,7 @@ Garden For Life/
 │  ├─ partial.json            # mirror of the server-side account profile
 │  ├─ full.json               # the complete computed profile (server never keeps this)
 │  └─ reports/
-│     └─ 2026-09-27-usurper.pdf
+│     └─ 2026-09-27-usurper.pdf  # <date>-<slug>.pdf; same name again → -2, -3 …
 ├─ tools/
 │  └─ <tool-id>/              # one directory per tool, owned by that tool
 │     ├─ state.json
@@ -56,6 +56,9 @@ Garden For Life/
   directory. It never writes another tool's directory.
 - No file is required for the app to boot. A missing or corrupt file degrades that one
   feature; it never blocks the workstation.
+- Report files are named by the app, never by the page: the date from the clock, a slug derived
+  from an optional label (the archetype name, article dropped, ASCII only, ≤ 40 characters), and
+  a numeric suffix when the name is taken. Only PDF bytes are accepted.
 
 ---
 
@@ -65,7 +68,7 @@ Garden For Life/
 {
   "schemaVersion": 1,          // integer, incremented on breaking layout change
   "folderId": "uuid",          // generated once, identifies this folder
-  "accountId": "…",            // the account this folder belongs to
+  "accountId": "…",            // the account this folder belongs to — bound at the first grant
   "createdAt": "2026-09-27T…",
   "updatedAt": "2026-09-27T…",
   "appVersion": "0.1.0",       // last app version that wrote here
@@ -77,6 +80,11 @@ Garden For Life/
 
 `schemaVersion` is checked on every open. Newer folder than the app → refuse to write and
 tell the user to update. Older folder → migrate (§4).
+
+**One folder, one account.** `accountId` is set when the logged-in user chooses the folder. The
+same account again is a no-op; a different account is refused, and the platform forgets that
+folder again rather than read or write someone else's data (shared computers). A folder counts as
+*ready* only when it is connected AND bound to the account that is logged in.
 
 ---
 
@@ -101,13 +109,29 @@ One directory handle, granted once.
 
 - **In the app (Electron):** native filesystem access. The user picks the folder at
   first run; the path is stored in app config. No re-prompt, no expiry.
-- **In the browser (if ever shipped):** `showDirectoryPicker()`, handle persisted in
-  IndexedDB, `requestPermission({mode:'readwrite'})` on every load, re-pick flow treated
-  as a normal state rather than an error. Chromium only.
+- **In the browser:** not shipped (decision 2026-09-16). A browser has no folder access; the
+  personal-data tools stay locked there and the page offers the desktop app instead. (A browser
+  path would have been `showDirectoryPicker()` — Chromium only, re-permission on every visit.)
 
 At the grant moment the user is told, in plain language: what gets written there, that
 Garden For Life cannot see it, that it is not backed up anywhere, and that keeping it
 safe is theirs to do.
+
+### 5a. First run (decided 2026-09-16)
+
+1. The report PDF is uploaded → the orb is activated → the account card (name, email, password,
+   consents) → email verification when it is on.
+2. **The first thing asked after that is the workstation**, with the reason: the same
+   explanation as the Werkruimte tab (Terms 5a/5b, privacy 6), the responsibility warning, then
+   - in a browser: the desktop app download for their OS (installers on Cloudflare R2,
+     `downloads.gardenforlife.nl` — Pages caps files at 25 MB);
+   - in the app: the folder picker. On a grant the uploaded report goes straight into
+     `profile/reports/` and a copy of the partial profile into `profile/partial.json`.
+3. They may continue without a folder. The account, public card and Verbonden work at once;
+   **every tool that works with personal data stays locked** until this account's folder is
+   ready, and a reminder explains why once per session.
+
+Later report uploads (Privé) are saved into the folder too when it is ready.
 
 ---
 

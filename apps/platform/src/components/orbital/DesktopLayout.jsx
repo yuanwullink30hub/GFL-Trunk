@@ -6,7 +6,9 @@ import { Database, Lock, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-r
 import { useLanguage } from '@gfl/i18n';
 import { liveExtendedName } from '@gfl/assessment-core/data';
 import { SciFiButton } from '@gfl/ui';
-import { getInbox, sendUserMessage, markMessageRead, getMe, getVerbondPending, respondVerbond, getVerbondContacts } from '@gfl/api-client';
+import { getInbox, sendUserMessage, markMessageRead, getMe, getVerbondPending, respondVerbond, getVerbondContacts, backgroundAccountCallsAllowed } from '@gfl/api-client';
+import useWorkspaceStatus from '../../workspace/useWorkspaceStatus';
+import { requestWorkspaceTab, requestDashboardTab } from '../../workspace/localWorkspace';
 
 import OrbSphere3D from '../../orb/OrbSphere3D';
 import { ORB3D_PRESETS } from '../../orb/orb3d';
@@ -55,7 +57,7 @@ function ContactenOverlay({ title, onClose, width, height, closeLabel, dim = tru
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ position: 'relative', width, height, maxWidth: '96vw', maxHeight: '92vh', display: 'flex', flexDirection: 'column', background: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)', border: '1px solid rgba(168, 85, 247, 0.45)', boxShadow: '0 0 40px rgba(168, 85, 247, 0.25)', borderRadius: '0.5rem', overflow: 'hidden' }}
+        style={{ position: 'relative', width, height, maxWidth: '96vw', maxHeight: '92vh', display: 'flex', flexDirection: 'column', background: 'rgba(2, 0, 3, 0.55)', backdropFilter: 'blur(44px) saturate(0.8)', WebkitBackdropFilter: 'blur(44px) saturate(0.8)', border: '1px solid rgba(168, 85, 247, 0.45)', boxShadow: '0 0 40px rgba(168, 85, 247, 0.25)', borderRadius: '0.5rem', overflow: 'hidden' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '1.4vh 1.4vw', borderBottom: '1px solid rgba(168, 85, 247, 0.25)' }}>
           <span style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, color: 'rgb(216, 190, 254)', fontSize: 'max(11px, 0.7vw)' }}>{title}</span>
@@ -109,10 +111,24 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   useEffect(() => {
     if (!clientMode) return undefined;
     refreshInbox();
-    const timer = setInterval(refreshInbox, 60000);
+    // Timer polls pause while a test/report is open and for a random while after (api-client).
+    const timer = setInterval(() => { if (backgroundAccountCallsAllowed()) refreshInbox(); }, 60000);
     return () => clearInterval(timer);
   }, [clientMode, refreshInbox]);
-  const messages = clientMode ? inbox : messagesProp;
+  // System messages (from Garden for Life) are worded from i18n by kind, in the reader's language;
+  // the stored Dutch text is only the fallback for kinds this client does not know yet.
+  const messages = (clientMode ? inbox : messagesProp).map((m) => {
+    if (!m || !m.system || !m.kind) return m;
+    const base = `shell.desktop.systemMessages.${m.kind}`;
+    const title = t(`${base}.title`);
+    const body = t(`${base}.body`);
+    return {
+      ...m,
+      from: 'Garden for Life',
+      title: title && title !== `${base}.title` ? title : m.title,
+      body: body && body !== `${base}.body` ? body : m.body,
+    };
+  });
 
   // ── Verbonden: incoming pending requests (shown at Berichten, accept/decline) +
   // accepted verbonden (merged into Contacten). Same 60s cadence as the inbox.
@@ -125,7 +141,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   useEffect(() => {
     if (!clientMode) return undefined;
     refreshVerbond();
-    const timer = setInterval(refreshVerbond, 60000);
+    const timer = setInterval(() => { if (backgroundAccountCallsAllowed()) refreshVerbond(); }, 60000);
     return () => clearInterval(timer);
   }, [clientMode, refreshVerbond]);
   // Decline flow: a decline is IMPOSSIBLE without a message — the textarea gates the button.
@@ -223,13 +239,33 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   const [wheelBaskets, setWheelBaskets] = useState(null);
   // Access model: expired clients stay logged in but the visitor-locked containers re-lock.
   const [accessExpired, setAccessExpired] = useState(false);
+  const [accountId, setAccountId] = useState(null);
   useEffect(() => {
     if (!clientMode) return;
     getMe().then((u) => {
       if (Array.isArray(u.readingBaskets) && u.readingBaskets.length === 12) setWheelBaskets(u.readingBaskets);
       setAccessExpired(!!(u.accessUntil && new Date(u.accessUntil) < new Date()));
+      if (u.id != null) setAccountId(String(u.id));
     }).catch(() => {});
   }, [clientMode]);
+
+  // Local workstation: tools that work with personal data run from this account's own folder
+  // (desktop app). Until that folder is connected they stay locked, and once per session a
+  // reminder explains why. `workspace` is null while unknown.
+  const workspace = useWorkspaceStatus(accountId, clientMode && !!accountId);
+  const workspaceReady = !!(workspace && workspace.ready);
+  const openWorkspaceExplainer = useCallback(() => {
+    requestWorkspaceTab();
+    setActiveSection('login');
+  }, [setActiveSection]);
+  const REMINDER_KEY = 'gfl_workspace_reminder_seen';
+  const [reminderSeen, setReminderSeen] = useState(() => {
+    try { return sessionStorage.getItem(REMINDER_KEY) === '1'; } catch { return false; }
+  });
+  const markReminderSeen = useCallback(() => {
+    setReminderSeen(true);
+    try { sessionStorage.setItem(REMINDER_KEY, '1'); } catch { /* ignore */ }
+  }, []);
   const renderLoginIcon = (size) => {
     if (clientMode && wheelBaskets) {
       return (
@@ -253,16 +289,56 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
   // Compact per-section action button (Contacten columns). Pinned to the bottom via marginTop:auto.
   // isLocked → visitor state: a small lock icon prefixes the label and the button does nothing.
-  const renderSectionBtn = (label, onClick, isLocked = false) => (
+  // Message text; a {faq} marker (system messages) becomes a link that pans to Profiel →
+  // Instellingen, where the policies (and later the FAQ) live for a logged-in user.
+  const openFaq = () => { setContactenOverlay(null); requestDashboardTab('instellingen'); setActiveSection('login'); };
+  const renderMessageBody = (text) => {
+    const parts = String(text).split('{faq}');
+    if (parts.length === 1) return text;
+    return parts.map((part, i) => (
+      <React.Fragment key={i}>
+        {part}
+        {i < parts.length - 1 && (
+          <button type="button" onClick={openFaq}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'rgb(216, 190, 254)', textDecoration: 'underline', textUnderlineOffset: '0.18em', textDecorationColor: 'rgba(168, 85, 247, 0.6)' }}>
+            {t('shell.desktop.faqLink')}
+          </button>
+        )}
+      </React.Fragment>
+    ));
+  };
+
+  // Attention badge — a bright red dot with "!" on the Berichten button while anything is unread
+  // (messages or open Verbond requests). Danger red from the design tokens, with its glow.
+  const needsAttention = clientMode && (messages.some((m) => m && !m.read) || verbondPending.length > 0);
+  const renderAlertDot = (style = {}) => (
+    <span
+      role="img"
+      aria-label={t('shell.desktop.unreadAlert')}
+      title={t('shell.desktop.unreadAlert')}
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        width: 'max(18px, 1.02vw)', height: 'max(18px, 1.02vw)', borderRadius: '50%',
+        background: '#ef4444', color: '#FFFEF0', border: '1px solid rgba(255, 254, 240, 0.35)',
+        boxShadow: '0 0 10px rgba(239, 68, 68, 0.9), 0 0 20px rgba(239, 68, 68, 0.45)',
+        fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontWeight: 900,
+        fontSize: 'max(12px, 0.67vw)', lineHeight: 1, pointerEvents: 'none',
+        ...style,
+      }}
+    >!</span>
+  );
+
+  const renderSectionBtn = (label, onClick, isLocked = false, alert = false) => (
     <button
       onClick={isLocked ? undefined : onClick}
       disabled={isLocked}
-      style={{ marginTop: 'auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35vw', background: isLocked ? 'rgba(245, 158, 11, 0.08)' : 'rgba(168, 85, 247, 0.12)', border: `1px solid ${isLocked ? 'rgba(245, 158, 11, 0.4)' : 'rgba(168, 85, 247, 0.45)'}`, borderRadius: '0.3rem', color: isLocked ? 'rgba(245, 158, 11, 0.85)' : 'rgb(216, 190, 254)', fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px, 0.5vw)', padding: '0.5vh 0.4vw', cursor: isLocked ? 'default' : 'pointer', transition: 'background 0.2s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+      style={{ position: 'relative', overflow: 'visible', marginTop: 'auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35vw', background: isLocked ? 'rgba(245, 158, 11, 0.08)' : 'rgba(168, 85, 247, 0.12)', border: `1px solid ${isLocked ? 'rgba(245, 158, 11, 0.4)' : 'rgba(168, 85, 247, 0.45)'}`, borderRadius: '0.3rem', color: isLocked ? 'rgba(245, 158, 11, 0.85)' : 'rgb(216, 190, 254)', fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px, 0.5vw)', padding: '0.5vh 0.4vw', cursor: isLocked ? 'default' : 'pointer', transition: 'background 0.2s ease', whiteSpace: 'nowrap' }}
       onMouseEnter={isLocked ? undefined : (e) => { e.currentTarget.style.background = 'rgba(168, 85, 247, 0.25)'; }}
       onMouseLeave={isLocked ? undefined : (e) => { e.currentTarget.style.background = 'rgba(168, 85, 247, 0.12)'; }}
     >
       {isLocked && <Lock style={{ width: 'max(9px, 0.5vw)', height: 'max(9px, 0.5vw)', flexShrink: 0, color: '#f59e0b' }} strokeWidth={2} />}
-      {label}
+      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+      {alert && !isLocked && renderAlertDot({ position: 'absolute', top: 'calc(max(18px, 1.02vw) / -2)', right: 'calc(max(18px, 1.02vw) / -2)' })}
     </button>
   );
 
@@ -273,6 +349,17 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   // `locked` stays purely visitor-mode (drives cosmetic bits like the filosofie subtext/position);
   // `restricted` is the actual gate — visitor OR expired client — on Winkel/Contacten/Kook-eiland.
   const restricted = locked || accessExpired;
+  // Personal-data tools additionally need this account's folder (see useWorkspaceStatus above).
+  const workspaceLocked = !restricted && !workspaceReady;
+  const renderWorkspaceLock = () => (
+    <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm" style={{ zIndex: 6, borderRadius: '0.5rem', background: 'rgba(1, 0, 2, 0.15)', pointerEvents: 'auto', cursor: 'default' }}>
+      <div className="flex flex-col items-center" style={{ gap: '0.5vw' }}>
+        <Lock style={{ width: '2.25vw', height: '2.25vw', color: '#f59e0b' }} strokeWidth={1.5} />
+        <span style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 400, lineHeight: 1.5, color: 'rgba(245, 158, 11, 0.8)', fontSize: 'max(9px, 0.5vw)', letterSpacing: '0.05em' }}>{t('desktopLayout.workspaceLocked')}</span>
+        <SciFiButton variant="purple" size="xs" onClick={openWorkspaceExplainer}>{t('desktopLayout.workspaceWhy')}</SciFiButton>
+      </div>
+    </div>
+  );
   const renderLock = () => (
     <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm" style={{ zIndex: 6, borderRadius: '0.5rem', background: 'rgba(1, 0, 2, 0.15)', pointerEvents: 'auto', cursor: 'default' }}>
       <div className="flex flex-col items-center" style={{ gap: '0.5vw' }}>
@@ -540,7 +627,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         }}
       >
         <TechContainer title={t('desktopLayout.kitchen')} variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
-          {restricted ? renderLock() : (
+          {restricted ? renderLock() : workspaceLocked ? renderWorkspaceLock() : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-0 relative overflow-visible">
             {/* Client: unlocked — opens the Kook-eiland map section (far top-right) */}
             <SciFiButton
@@ -579,7 +666,9 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
               {/* Left — Berichten: message headers, each with a slow green-flashing icon */}
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', padding: '0 0.6vw', overflow: 'hidden' }}>
-                <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)', marginBottom: '0.5vh' }}>{t('shell.desktop.messages')}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4vw', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)', marginBottom: '0.5vh' }}>
+                  {t('shell.desktop.messages')}
+                </div>
                 {(messages.length > 0 || verbondPending.length > 0) ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4vh', overflowY: 'auto', minHeight: 0 }}>
                     {/* Verbond requests first — amber pulse; answered in the Berichten overlay */}
@@ -687,7 +776,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
 
             {/* Button row — Berichten/Openen open a full panel; Versturen sends the inline draft */}
             <div style={{ display: 'flex', marginTop: '0.6vh' }}>
-              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn(t('shell.desktop.messages'), () => setContactenOverlay('berichten'), restricted)}</div>
+              <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn(t('shell.desktop.messages'), () => setContactenOverlay('berichten'), restricted, needsAttention)}</div>
               <div style={{ width: '1px' }} />
               <div style={{ flex: 1, minWidth: 0, padding: '0 0.6vw' }}>{renderSectionBtn(t('shell.desktop.open'), () => setContactenOverlay('contactlijst'), restricted)}</div>
               <div style={{ width: '1px' }} />
@@ -774,7 +863,14 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                 <>
                   <div style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(12px, 0.8vw)', letterSpacing: '0.08em', color: 'rgb(216, 190, 254)', marginBottom: '0.6vh' }}>{messages[openMsgIdx].header || messages[openMsgIdx].title || messages[openMsgIdx].subject || t('shell.desktop.noSubject')}</div>
                   <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(9px, 0.52vw)', color: 'rgba(255, 254, 240, 0.5)', marginBottom: '1.6vh' }}>{messages[openMsgIdx].from || messages[openMsgIdx].sender || t('shell.desktop.unknownSender')}</div>
-                  <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.62vw)', color: '#FFFEF0', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{messages[openMsgIdx].body || messages[openMsgIdx].text || messages[openMsgIdx].content || ''}</div>
+                  <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.62vw)', color: '#FFFEF0', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{renderMessageBody(messages[openMsgIdx].body || messages[openMsgIdx].text || messages[openMsgIdx].content || '')}</div>
+                  {messages[openMsgIdx].action && messages[openMsgIdx].action.type === 'workspace' && (
+                    <div style={{ marginTop: '2.4vh' }}>
+                      <SciFiButton variant="purple" size="md" onClick={() => { setContactenOverlay(null); openWorkspaceExplainer(); }}>
+                        {t('shell.desktop.messageAction.workspace')}
+                      </SciFiButton>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Figtree', sans-serif", color: 'rgba(255, 254, 240, 0.35)', fontSize: 'max(11px, 0.62vw)' }}>{t('shell.desktop.selectMessage')}</div>
@@ -1308,6 +1404,21 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           </div>
         )}
       </div>
+
+      {/* Login reminder — once per session while this account's folder is not connected. Glass
+          panel (tokens: rgba(2,0,3,0.3) + blur 20px + sector shadow), purple client accent. */}
+      {clientMode && !restricted && workspace && !workspaceReady && !reminderSeen && (
+        <div className="absolute pointer-events-auto" role="status"
+          style={{ left: '50%', bottom: '5vh', transform: 'translateX(-50%)', zIndex: 40, width: 'min(34rem, 80vw)', opacity: mounted ? 1 : 0, transition: 'opacity 0.6s ease' }}>
+          <div style={{ position: 'relative', background: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(168, 85, 247, 0.45)', borderRadius: '0.5rem', boxShadow: '0 0 30px -10px rgba(168, 85, 247, 0.55), 0 10px 40px rgba(0, 0, 0, 0.55)', padding: '0.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+            <Lock style={{ width: 'max(16px, 1vw)', height: 'max(16px, 1vw)', color: '#f59e0b', flexShrink: 0 }} strokeWidth={1.5} />
+            <span style={{ flex: 1, fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.58vw)', lineHeight: 1.5, color: '#FFFEF0' }}>{t('desktopLayout.workspaceReminder')}</span>
+            <SciFiButton variant="purple" size="sm" onClick={() => { markReminderSeen(); openWorkspaceExplainer(); }}>{t('desktopLayout.workspaceReminderAction')}</SciFiButton>
+            <button type="button" onClick={markReminderSeen} aria-label={t('desktopLayout.workspaceReminderClose')} title={t('desktopLayout.workspaceReminderClose')}
+              style={{ background: 'none', border: 'none', color: 'rgba(255, 254, 240, 0.45)', cursor: 'pointer', fontSize: 'max(14px, 0.8vw)', lineHeight: 1, padding: '0 0.1rem' }}>×</button>
+          </div>
+        </div>
+      )}
 
     </>
   );

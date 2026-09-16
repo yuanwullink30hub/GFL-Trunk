@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@gfl/i18n';
 import { getPublicProfiles, getCard } from '@gfl/api-client';
-import { EXTENDED_ARCHETYPES, EXTENDED_ARCHETYPES_NL, liveExtendedName } from '@gfl/assessment-core/data';
+import { EXTENDED_ARCHETYPES, EXTENDED_ARCHETYPES_NL } from '@gfl/assessment-core/data';
+import { readingExtendedName } from './readingName';
 import ProfileCard from './ProfileCard';
 
 /**
@@ -322,8 +323,8 @@ export default function PublicProfilesDirectory() {
                 </div>
                 <div style={{ minWidth: 0, flex: '1 1 auto' }}>
                   <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: 'max(12px, 0.65vw)', color: PURPLE }}>{p.name}</span>
-                  {liveExtendedName(p.archetypeName, language) && (
-                    <span style={{ fontFamily: FONT, fontSize: 'max(8px, 0.45vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: AMBER, opacity: 0.8, marginLeft: '0.7rem' }}>{liveExtendedName(p.archetypeName, language)}</span>
+                  {readingExtendedName({ archetypeName: p.archetypeName, archetypeMainId: p.mainId, archetypeSupportId: p.supportId }, language) && (
+                    <span style={{ fontFamily: FONT, fontSize: 'max(8px, 0.45vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: AMBER, opacity: 0.8, marginLeft: '0.7rem' }}>{readingExtendedName({ archetypeName: p.archetypeName, archetypeMainId: p.mainId, archetypeSupportId: p.supportId }, language)}</span>
                   )}
                   {p.hardwareGroup && (
                     <span style={{ fontFamily: FONT, fontSize: 'max(8px, 0.42vw)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(165,243,252,0.7)', marginLeft: '0.7rem' }}>{p.hardwareGroup}</span>

@@ -41,6 +41,10 @@ const REFUND_WINDOW_DAYS = 14;
 const GREYLIST_YEARS = 2;
 const ACCESS_MONTHS = 3; // must match routes/orb.js and the register path in routes/auth.js
 const DAY_MS = 24 * 60 * 60 * 1000;
+// The payment ↔ report link outlives the refund window by one day (unlink on day 15), and a hold
+// keeps it while a refund is still being processed (human ruling 2026-09-16).
+const UNLINK_GRACE_DAYS = 1;
+const LINK_HOLD_DAYS = 30;
 
 const ORB_CODE_RE = /^LC_ORB[23]?_/;
 const addMonths = (date, n) => { const d = new Date(date); d.setMonth(d.getMonth() + n); return d; };
@@ -260,7 +264,9 @@ async function refundUnlock({ id, by, review, channel = 'manual', external = fal
   const claimed = await collections.reportUnlocks().findOneAndUpdate(
     { _id, status: 'active' },
     {
-      $set: { status: 'refunded', refundedAt: now, refundedBy: by, refundChannel: channel },
+      // The refund still has to be processed (Stripe, bank): hold the payment ↔ report link so the
+      // day-15 unlink cannot cut it mid-way. The admin can release or renew the hold.
+      $set: { status: 'refunded', refundedAt: now, refundedBy: by, refundChannel: channel, linkHeldUntil: new Date(now.getTime() + LINK_HOLD_DAYS * DAY_MS), linkHeldBy: by },
       ...(moderatorReview ? { $push: { moderatorReviews: moderatorReview } } : {}),
     },
     { returnDocument: 'after' },
@@ -324,14 +330,109 @@ async function stripExpiredUnlockEmails(now = new Date()) {
   return r.modifiedCount || 0;
 }
 
+/** The first day of the month, UTC — the only date an unlinked unlock keeps. */
+const monthOf = (d) => {
+  const x = new Date(d || Date.now());
+  return new Date(Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), 1));
+};
+
+/**
+ * Unlink the payment from the report, run nightly (human ruling 2026-09-16: "unlink the Stripe
+ * payment from the orb after the 14 days").
+ *
+ * During the refund window a paid unlock has to connect money and report: a refund blocks the
+ * report's code. Once the window has closed that connection is no longer needed, and it is the one
+ * path from a PDF to a real person — the Stripe payment id (card holder's name and email at Stripe)
+ * sat next to the code's hash. After unlinking:
+ *
+ *   report side  (reportUnlocks)   keeps unlockId, method, codeHash, status, testmode, refund effect,
+ *                                  and a date rounded to the month — enough for "may this code open an
+ *                                  account" and "is it blocked", nothing that points at a payment.
+ *   payment side (paymentRecords)  keeps the bookkeeping: number, Stripe id, amount, VAT, date, and the
+ *                                  paywall consent evidence (moved here, for disputes) — under a new,
+ *                                  opaque unlockRef, so the record can no longer be joined to the report.
+ *   payments                       the working document (Stripe id + code hash + email) is deleted.
+ *
+ * Exact timestamps go too: a payment record's issue time equal to an unlock time would re-link them.
+ * Consequence, by design: a chargeback or a Stripe-Dashboard refund AFTER the window can no longer be
+ * traced to a report, so it no longer blocks that report's code.
+ */
+async function unlinkExpiredPayments(now = new Date()) {
+  const due = await collections.reportUnlocks().find({
+    method: 'payment',
+    // The window is 14 days; the link goes on day 15, not the moment the window closes.
+    refundableUntil: { $lt: new Date(now.getTime() - UNLINK_GRACE_DAYS * DAY_MS) },
+    paymentUnlinked: { $ne: true },
+    // A held link stays until the hold runs out (a refund still being processed).
+    $or: [{ linkHeldUntil: { $exists: false } }, { linkHeldUntil: null }, { linkHeldUntil: { $lt: now } }],
+  }).toArray();
+
+  let unlinked = 0;
+  for (const u of due) {
+    // Make sure the bookkeeping exists before the link that re-issues it disappears.
+    await issuePaymentRecord(u);
+    if (u.status === 'refunded') await issueRefundRecord(u);
+
+    const opaqueRef = new ObjectId();
+    await collections.paymentRecords().updateMany(
+      { unlockRef: u._id },
+      { $set: { unlockRef: opaqueRef, ...(u.consent ? { consent: u.consent } : {}) } },
+    );
+    if (u.reference) await collections.payments().deleteMany({ paymentIntentId: u.reference });
+
+    await collections.reportUnlocks().updateOne(
+      { _id: u._id, paymentUnlinked: { $ne: true } },
+      {
+        $set: {
+          paymentUnlinked: true,
+          // A random placeholder, not an empty field: the unique payment-reference index
+          // (db/index.js, partial on method 'payment') would reject a second row without one.
+          reference: `unlinked:${crypto.randomBytes(8).toString('hex')}`,
+          unlockedAt: monthOf(u.unlockedAt),
+          ...(u.refundedAt ? { refundedAt: monthOf(u.refundedAt) } : {}),
+        },
+        $unset: {
+          referenceHint: '', amountCents: '', currency: '', taxCents: '', vatRate: '',
+          consent: '', refundableUntil: '', deliveredAt: '', email: '', emailHash: '',
+          disputedAt: '', disputeStatus: '', disputeReason: '', moderatorReviews: '', refundedBy: '',
+          linkHeldUntil: '', linkHeldBy: '',
+        },
+      },
+    );
+    unlinked += 1;
+  }
+  return unlinked;
+}
+
+/**
+ * Keep (or stop keeping) the payment ↔ report link past day 15 — for a refund made late in the
+ * window that is still being processed. A hold lasts LINK_HOLD_DAYS from now and can be renewed;
+ * releasing it lets the next nightly run unlink as usual. An already-unlinked payment cannot be held.
+ * Returns the new linkHeldUntil (null when released), or throws 'not_found' / 'already_unlinked'.
+ */
+async function holdPaymentLink({ id, hold = true, by = null, now = new Date() }) {
+  let _id;
+  try { _id = new ObjectId(String(id)); } catch { throw new RefundError('not_found', 'Unlock not found'); }
+  const current = await collections.reportUnlocks().findOne({ _id }, { projection: { method: 1, paymentUnlinked: 1 } });
+  if (!current || current.method !== 'payment') throw new RefundError('not_found', 'Unlock not found');
+  if (current.paymentUnlinked) throw new RefundError('already_unlinked', 'This payment is already unlinked from its report');
+  const until = hold ? new Date(now.getTime() + LINK_HOLD_DAYS * DAY_MS) : null;
+  await collections.reportUnlocks().updateOne(
+    { _id, paymentUnlinked: { $ne: true } },
+    hold ? { $set: { linkHeldUntil: until, linkHeldBy: by } } : { $unset: { linkHeldUntil: '', linkHeldBy: '' } },
+  );
+  return until;
+}
+
 /**
  * The download log: when the unlocked PDF was saved (first time only). A timestamp, nothing of the
- * report. The admin uses it to spot paid reports that never reached the client.
+ * report. The admin uses it to spot paid reports that never reached the client. Never written on an
+ * unlinked unlock — an exact time there would point back at the payment.
  */
 async function markUnlockDelivered(unlockId, at = new Date()) {
   if (!unlockId) return false;
   const r = await collections.reportUnlocks().updateOne(
-    { unlockId, deliveredAt: { $exists: false } },
+    { unlockId, deliveredAt: { $exists: false }, paymentUnlinked: { $ne: true } },
     { $set: { deliveredAt: at } },
   );
   return r.modifiedCount > 0;
@@ -368,6 +469,10 @@ module.exports = {
   refundUnlock,
   declineRefund,
   stripExpiredUnlockEmails,
+  unlinkExpiredPayments,
+  holdPaymentLink,
+  UNLINK_GRACE_DAYS,
+  LINK_HOLD_DAYS,
   markUnlockDelivered,
   readEmail,
   newUnlockId,

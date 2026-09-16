@@ -256,7 +256,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
   const latest = derived.latest || null;
   const readings = Array.isArray(derived.readings) ? derived.readings : [];
   const readingCount = derived.readingCount || readings.length;
-  const micro = getCardMicrocopy(latest?.archetypePrimaryId, language);
+  const micro = getCardMicrocopy(latest, language);
 
   // Orb: owner's live client-mode config wins (freshest), else the payload's render ref.
   const orbConfig = orbConfigOverride || latest?.orbRenderRef?.orb || null;
@@ -362,7 +362,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
               its orb still, configuration name, date, and tendens. */}
           {(() => {
             const hoverThumb = hoverReading ? getReadingThumb(hoverReading) : null;
-            const hoverMicro = hoverReading ? getCardMicrocopy(hoverReading.archetypePrimaryId, language) : null;
+            const hoverMicro = hoverReading ? getCardMicrocopy(hoverReading, language) : null;
             if (hoverReading) {
               return (
                 <div style={{ flex: '1 1 auto', minHeight: 0, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.7rem' }}>
@@ -487,7 +487,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
               readings render the shape-only radar from their own shapeVector12. */}
           {(() => {
             const expr = hoverReading || latest;
-            const exprMicro = hoverReading ? getCardMicrocopy(hoverReading.archetypePrimaryId, language) : micro;
+            const exprMicro = hoverReading ? getCardMicrocopy(hoverReading, language) : micro;
             // DYNAMIC block (rule 2026-07-08): natural height always — the full radar wheel
             // always shows and the geometry text renders in full (no inner scroll, no cap).
             // Longer text simply extends the block and pushes the declared row down; the

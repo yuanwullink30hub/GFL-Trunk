@@ -10,7 +10,7 @@
     "dist": "pnpm run sync-ui && electron-builder",
     "dist:win": "pnpm run sync-ui && electron-builder --win",
     "dist:mac": "pnpm run sync-ui && electron-builder --mac",
-    "test": "node test/workspace.test.js"
+    "test": "node test/workspace.test.js && node test/account-and-report.test.js"
   },
   "devDependencies": {
     "electron": "^33.2.0",

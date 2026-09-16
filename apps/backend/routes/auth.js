@@ -5,7 +5,8 @@
  * POST /api/auth/login     — Login, returns JWT
  * GET  /api/auth/me        — Get current user (auth required)
  */
-const { Router } = require('express');
+const { Router } = require('express');
+const { sendSystemMessage } = require('../services/systemMessages');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -367,6 +368,9 @@ router.post('/register', async (req, res) => {
           .catch((e) => console.warn('[Auth] kaart-draft cleanup failed:', e.message));
       }
     }
+
+    // First inbox message: guides the new user to Profiel → Werkruimte (private folder set-up).
+    await sendSystemMessage(result.insertedId, 'welcome-workspace');
 
     // Verification path: no session is issued until the email is confirmed. Send the mail and tell
     // the client to wait. The client polls /login (which stays blocked until verified).

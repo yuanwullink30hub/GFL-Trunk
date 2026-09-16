@@ -211,17 +211,75 @@ const writePartial = (root, data) =>
 const writeFullProfile = (root, data) =>
   serialise(root, () => writeJson(at(root, 'full'), data)).then(() => ({ saved: PATHS.full }));
 
+// ── Account link (§3 manifest.accountId) ───────────────────────────────────────
+
+/** Account ids are server-issued (Mongo ObjectId hex); anything else is refused, not cleaned. */
+const ACCOUNT_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
 /**
- * Save the report. The filename is derived from the clock, never from the caller, so
- * there is nothing to validate and nothing to escape with.
+ * Bind this folder to one account. A folder belongs to exactly one person: the first link
+ * sets manifest.accountId, the same account again is a no-op, and a different account is
+ * refused — on a shared computer the second person must choose their own folder rather
+ * than write into (and read) someone else's.
  */
-function saveReport(root, pdfBase64) {
+function linkAccount(root, accountId) {
+  return serialise(root, async () => {
+    const id = typeof accountId === 'string' ? accountId.trim() : '';
+    if (!ACCOUNT_ID.test(id)) throw new Error('A valid account id is required');
+    const manifest = await readJson(at(root, 'manifest'));
+    if (!manifest) throw new Error('This folder has no manifest; choose it again');
+    if (manifest.accountId && manifest.accountId !== id) {
+      throw new Error('This folder belongs to another account');
+    }
+    if (manifest.accountId === id) return { linked: true, accountId: id, changed: false };
+    manifest.accountId = id;
+    manifest.updatedAt = new Date().toISOString();
+    await writeJson(at(root, 'manifest'), manifest);
+    return { linked: true, accountId: id, changed: true };
+  });
+}
+
+// ── Reports ────────────────────────────────────────────────────────────────────
+
+/**
+ * A label becomes a filename fragment only through this: lowercase ASCII letters, digits
+ * and single hyphens, at most 40 characters. Accents are folded ("Hervormer", "Élève" →
+ * "hervormer", "eleve"); everything else is dropped. An empty result falls back to "report".
+ */
+function reportSlug(label) {
+  const folded = String(label || '')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/^(the|de|het|een|a|an)\s+/, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+    .replace(/-+$/g, '');
+  return folded || 'report';
+}
+
+/**
+ * Save the report as `<YYYY-MM-DD>-<slug>.pdf` (contract §2: "2026-09-27-usurper.pdf"). The
+ * caller may give a label (the archetype name); the module derives the slug, the date comes
+ * from the clock, and a name already taken gets -2, -3 … — so the caller still cannot name
+ * a path, and saving the same day twice never overwrites the first report. The bytes must
+ * be a PDF; anything else is refused before it reaches the folder.
+ */
+function saveReport(root, pdfBase64, label) {
   return serialise(root, async () => {
     if (typeof pdfBase64 !== 'string' || !pdfBase64.length) throw new Error('A report is required');
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const name = `report-${stamp}.pdf`;
+    const head = Buffer.from(pdfBase64.slice(0, 16), 'base64').toString('latin1');
+    if (!head.startsWith('%PDF-')) throw new Error('A report must be a PDF');
+    const date = new Date().toISOString().slice(0, 10);
+    const stem = `${date}-${reportSlug(label)}`;
+    const dir = at(root, 'reports');
+    await fsp.mkdir(dir, { recursive: true });
+    const taken = new Set((await fsp.readdir(dir)).map((n) => n.toLowerCase()));
+    let name = `${stem}.pdf`;
+    for (let n = 2; taken.has(name.toLowerCase()); n += 1) name = `${stem}-${n}.pdf`;
     await writeAtomic(safePath(root, `${PATHS.reports}/${name}`, 'report path'), pdfBase64, 'base64');
-    return { saved: `${PATHS.reports}/${name}` };
+    return { saved: `${PATHS.reports}/${name}`, name };
   });
 }
 
@@ -348,6 +406,8 @@ module.exports = {
   writePartial,
   readFullProfile,
   writeFullProfile,
+  linkAccount,
+  reportSlug,
   saveReport,
   listReports,
   readReport,

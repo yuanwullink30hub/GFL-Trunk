@@ -42,6 +42,7 @@ import {
   getReportUnlocks,
   refundReportUnlock,
   declineReportRefund,
+  holdReportPaymentLink,
   getPaymentRecords,
   downloadPaymentRecord,
   downloadPaymentRecordsArchive,
@@ -3209,7 +3210,8 @@ const ReportUnlocksTab = memo(() => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const refLabel = (u) => (u.method === 'payment' ? (u.reference || '—') : `····-····-${u.referenceHint || '····'}`);
+  // An unlinked payment (refund window closed) carries no Stripe id any more — shown as a dash.
+  const refLabel = (u) => (u.method === 'payment' ? (u.paymentUnlinked ? '—' : (u.reference || '—')) : `····-····-${u.referenceHint || '····'}`);
   const searchText = (u) => `${refLabel(u)} ${u.email || ''}`;
 
   const REVIEW_KEYS = [['reason', 'qReason'], ['readFully', 'qReadFully'], ['expected', 'qExpected']];
@@ -3223,6 +3225,21 @@ const ReportUnlocksTab = memo(() => {
     }
     setError(null);
     setConfirming({ unlock: u, reviewPayload });
+  };
+
+  const toggleHold = async (u, hold) => {
+    setBusyId(u._id);
+    setError(null);
+    setNotice('');
+    try {
+      const res = await holdReportPaymentLink(u._id, hold);
+      setNotice(hold ? tFunc('admin.dashboard.reportUnlocks.heldResult')(fmtDay(res.linkHeldUntil)) : t('admin.dashboard.reportUnlocks.releasedResult'));
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const confirmRefund = async () => {
@@ -3387,6 +3404,7 @@ const ReportUnlocksTab = memo(() => {
               </div>
               {shown.map((u, i) => {
                 const refunded = u.status === 'refunded';
+                const linkHeld = !!u.linkHeldUntil && new Date(u.linkHeldUntil) > new Date();
                 const isPayment = u.method === 'payment';
                 const inWindow = isPayment && u.refundableUntil && new Date(u.refundableUntil).getTime() > now;
                 return (
@@ -3431,6 +3449,16 @@ const ReportUnlocksTab = memo(() => {
                             {tFunc('admin.dashboard.reportUnlocks.disputed')(u.disputeReason || '')}
                           </span>
                         )}
+                        {isPayment && u.paymentUnlinked && (
+                          <span title={t('admin.dashboard.reportUnlocks.unlinkedTitle')} style={{ ...UNLOCK_BADGE, borderColor: 'rgba(148, 163, 184, 0.5)', background: 'rgba(148, 163, 184, 0.1)', color: '#cbd5e1' }}>
+                            {t('admin.dashboard.reportUnlocks.unlinked')}
+                          </span>
+                        )}
+                        {isPayment && !u.paymentUnlinked && linkHeld && (
+                          <span title={t('admin.dashboard.reportUnlocks.heldTitle')} style={{ ...UNLOCK_BADGE, borderColor: 'rgba(255, 174, 0, 0.6)', background: 'rgba(255, 174, 0, 0.1)', color: '#ffae00' }}>
+                            {tFunc('admin.dashboard.reportUnlocks.heldUntil')(fmtDay(u.linkHeldUntil))}
+                          </span>
+                        )}
                         {u.testmode && (
                           <span style={{ ...UNLOCK_BADGE, borderColor: 'rgba(34, 211, 238, 0.5)', background: 'rgba(34, 211, 238, 0.1)', color: '#67e8f9' }}>
                             {t('admin.dashboard.reportUnlocks.testmode')}
@@ -3461,6 +3489,13 @@ const ReportUnlocksTab = memo(() => {
                       {!refunded && inWindow && (
                         <SciFiButton size="xs" variant="danger" disabled={busyId === u._id} onClick={() => handleRefund(u)}>
                           {t('admin.dashboard.reportUnlocks.refund')}
+                        </SciFiButton>
+                      )}
+                      {isPayment && !u.paymentUnlinked && (
+                        <SciFiButton size="xs" disabled={busyId === u._id} onClick={() => toggleHold(u, !linkHeld)}
+                          title={t(linkHeld ? 'admin.dashboard.reportUnlocks.releaseTitle' : 'admin.dashboard.reportUnlocks.holdTitle')}
+                          style={{ marginTop: '0.25rem' }}>
+                          {t(linkHeld ? 'admin.dashboard.reportUnlocks.release' : 'admin.dashboard.reportUnlocks.hold')}
                         </SciFiButton>
                       )}
                     </div>

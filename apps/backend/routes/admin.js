@@ -20,7 +20,7 @@ const { collections, getDB } = require('../db');
 const { authRequired, adminRequired } = require('../middleware/auth');
 const { decryptUser, decryptUsers } = require('../services/encryption');
 const { generateCode, hashCode, formatCode } = require('../services/activationCodes');
-const { declineRefund, RefundError, REFUND_WINDOW_DAYS, readEmail } = require('../services/reportAccess');
+const { declineRefund, holdPaymentLink, RefundError, REFUND_WINDOW_DAYS, UNLINK_GRACE_DAYS, LINK_HOLD_DAYS, readEmail } = require('../services/reportAccess');
 const { adminRefund, PaymentError } = require('../services/payments');
 const { loadSettings, updateSettings, resolvePaymentConfig, paymentDiagnostics } = require('../services/paymentConfig');
 const { ensureRecords, buildZip, archivePath, yearOf } = require('../services/paymentRecords');
@@ -1211,6 +1211,8 @@ router.get('/report-unlocks', async (_req, res) => {
     const hashById = new Map(withHash.map((x) => [String(x._id), x.codeHash]));
     res.json({
       refundWindowDays: REFUND_WINDOW_DAYS,
+      unlinkAfterDays: REFUND_WINDOW_DAYS + UNLINK_GRACE_DAYS,
+      linkHoldDays: LINK_HOLD_DAYS,
       unlocks: unlocks.map((x) => {
         const h = hashById.get(String(x._id));
         const g = x.emailHash ? grey.get(x.emailHash) : null;
@@ -1305,6 +1307,21 @@ router.post('/report-unlocks/:id/decline', async (req, res) => {
     }
     console.error('[Admin] Decline refund error:', err.message);
     res.status(500).json({ error: 'Decline failed' });
+  }
+});
+
+// POST /api/admin/report-unlocks/:id/hold — keep the payment ↔ report link past day 15 while a
+// refund is being processed ({ hold: true } renews for LINK_HOLD_DAYS), or release it ({ hold: false })
+router.post('/report-unlocks/:id/hold', async (req, res) => {
+  try {
+    const until = await holdPaymentLink({ id: req.params.id, hold: req.body?.hold !== false, by: req.user.userId });
+    res.json({ success: true, linkHeldUntil: until });
+  } catch (err) {
+    if (err instanceof RefundError) {
+      return res.status(err.code === 'not_found' ? 404 : 409).json({ error: err.message, code: err.code });
+    }
+    console.error('[Admin] Hold payment link error:', err.message);
+    res.status(500).json({ error: 'Hold failed' });
   }
 });
 

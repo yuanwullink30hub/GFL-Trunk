@@ -32,6 +32,11 @@ const isPdfPreview = import.meta.env.DEV &&
 const isReportPreview = import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has('reportpreview');
 
+// Dev-only workspace preview: ?workspacepreview=1 shows the first-run workspace step, the login
+// reminder and the tool lock, with an in-memory desktop bridge. See src/dev/WorkspacePreviewHarness.jsx.
+const isWorkspacePreview = import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).has('workspacepreview');
+
 // Password- or email-change confirmation landing (?pwverify / ?emailverify token from the email
 // link). Mounts a tiny standalone page that applies the change and shows the result — no heavy
 // 3D app, any device.
@@ -66,6 +71,15 @@ if (isPaymentReturn) {
     <LanguageProvider>
       <React.Suspense fallback={null}>
         <PdfPreviewHarness />
+      </React.Suspense>
+    </LanguageProvider>
+  );
+} else if (isWorkspacePreview) {
+  const WorkspacePreviewHarness = React.lazy(() => import('./dev/WorkspacePreviewHarness'));
+  root.render(
+    <LanguageProvider>
+      <React.Suspense fallback={null}>
+        <WorkspacePreviewHarness />
       </React.Suspense>
     </LanguageProvider>
   );

@@ -192,7 +192,9 @@ router.get('/history', authRequired, async (req, res) => {
 // POST /api/assessment/review — Save assessment feedback (optional auth)
 // ─────────────────────────────────────────────────────────────
 
-router.post('/review', authOptional, async (req, res) => {
+// Anonymous by design: no auth middleware and no account id. A review is written right after a test;
+// linking it to an account would tie that person to the report's archetype and timestamp.
+router.post('/review', async (req, res) => {
   console.log('[Assessment] POST /review received');
   try {
     const {
@@ -207,7 +209,8 @@ router.post('/review', authOptional, async (req, res) => {
       timestamp,
     } = req.body;
 
-    console.log('[Assessment] Review data:', { assessmentId, email: email?.slice(0, 30), archetypeKey });
+    // No email and no archetype in the log: together they would tie a person to a profile outcome.
+    console.log('[Assessment] Review received');
 
     // Validate: email is required
     if (!email?.trim()) {
@@ -217,11 +220,10 @@ router.post('/review', authOptional, async (req, res) => {
 
     // Create review document
     const review = {
-      userId: req.user?.userId || null,
       email: email?.trim() || null,
       assessmentId: assessmentId || 'anonymous',
-      archetypeKey: archetypeKey || null,
-      extendedArchetypeName: extendedArchetypeName?.trim() || null,
+      // The archetype is NOT stored next to the email (that pairing would tie a person to a profile
+      // outcome). It is used below only to word the outgoing emails, then dropped.
       whatWorked: whatWorked?.trim() || '',
       whatDidntWork: whatDidntWork?.trim() || '',
       suggestions: suggestions?.trim() || '',
@@ -249,8 +251,10 @@ router.post('/review', authOptional, async (req, res) => {
             .findOne({ _id: 'feedback-email' }).catch(() => null) || {};
 
           const ratingLine = review.starRating ? `\n⭐ Beoordeling: ${review.starRating}/9` : '';
-          const displayName = (review.extendedArchetypeName || review.archetypeKey || '—').replace(/^(De|Het)\s+/i, '');
-          const adminBody = `Nieuw assessment-feedback ontvangen.${ratingLine}\n\n📌 Archetype: ${displayName}\n📧 E-mail: ${review.email || 'anoniem'}\n\n✅ Accuraatheid:\n${review.whatWorked || '—'}\n\n❌ Niet overeenkomend:\n${review.whatDidntWork || '—'}\n\n💡 Suggesties:\n${review.suggestions || '—'}\n\nTijdstip: ${review.timestamp.toLocaleString('nl-NL')}\nAssessment-ID: ${review.assessmentId}`;
+          const displayName = (extendedArchetypeName?.trim() || archetypeKey || '—').replace(/^(De|Het)\s+/i, '');
+          // The admin copy carries the archetype but not the sender's address — our own mailbox must
+          // not become a list of people paired with their profile outcome.
+          const adminBody = `Nieuw assessment-feedback ontvangen.${ratingLine}\n\n📌 Archetype: ${displayName}\n\n✅ Accuraatheid:\n${review.whatWorked || '—'}\n\n❌ Niet overeenkomend:\n${review.whatDidntWork || '—'}\n\n💡 Suggesties:\n${review.suggestions || '—'}\n\nTijdstip: ${review.timestamp.toLocaleString('nl-NL')}\nAssessment-ID: ${review.assessmentId}`;
 
           // Notify admin (plain text)
           await transporter.sendMail({
@@ -266,7 +270,7 @@ router.post('/review', authOptional, async (req, res) => {
           // button decides which mail goes out (POST /report-email below).
           const hasFeedback = !!(review.whatWorked || review.whatDidntWork || review.suggestions || review.starRating);
           if (review.email && hasFeedback) {
-            const { html: confirmHtml, attachments: confirmAttachments } = buildFeedbackEmail(emailSettings, review);
+            const { html: confirmHtml, attachments: confirmAttachments } = buildFeedbackEmail(emailSettings, { ...review, archetypeKey, extendedArchetypeName });
             await transporter.sendMail({
               from: `"Garden For Life" <${config.email.from}>`,
               to: review.email,
@@ -339,7 +343,7 @@ router.post('/report-email', authOptional, async (req, res) => {
           html,
           attachments,
         });
-        console.log(`[Assessment] ✅ Report email (${pdfKind}) sent to ${normalized.slice(0, 30)}`);
+        console.log(`[Assessment] ✅ Report email (${pdfKind}) sent`); // no address in the log
       } catch (err) {
         console.error('[Assessment] Report email send error:', err.message);
       }

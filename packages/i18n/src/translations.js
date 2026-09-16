@@ -115,8 +115,8 @@ const translations = {
       en: "Upload OCEAN"
     },
     footerUploadHint: {
-      nl: "PDF, DOC, TXT, Afbeelding",
-      en: "PDF, DOC, TXT, Image"
+      nl: "PDF, DOCX, TXT",
+      en: "PDF, DOCX, TXT"
     },
     footerUploadCount: {
       nl: "bestand",
@@ -240,7 +240,7 @@ const translations = {
     optionalUpload: { nl: "Optioneel: Upload Ondersteunende Bestanden", en: "Optional: Upload Supporting Files" },
     dropFiles: { nl: "Sleep bestanden hierheen", en: "Drop files here" },
     dragDrop: { nl: "Sleep bestanden hierheen", en: "Drag & drop files here" },
-    orClickBrowse: { nl: "of klik om te bladeren • PDF, DOC, TXT, Afbeeldingen", en: "or click to browse • PDF, DOC, TXT, Images" },
+    orClickBrowse: { nl: "of klik om te bladeren • PDF, DOCX, TXT", en: "or click to browse • PDF, DOCX, TXT" },
     filesProcessed: { nl: "Let op: de inhoud van dit bestand wordt verwerkt door het Claude AI-model (Anthropic, VS). Upload geen bestanden met gevoelige persoonsgegevens van anderen. Garden For Life is niet verantwoordelijk voor de informatie die u in geüploade bestanden opneemt.", en: "Note: the contents of this file will be processed by the Claude AI model (Anthropic, US). Do not upload files containing sensitive personal data of others. Garden For Life is not responsible for the information you include in uploaded files." },
     generateProfile: { nl: "Genereer Je Profiel", en: "Generate Your Profile" },
     skipUpload: { nl: "Upload overslaan en doorgaan →", en: "Skip upload and continue →" }
@@ -655,11 +655,11 @@ const translations = {
     layer: { nl: "LAAG", en: "LAYER" },
     enhanceProfile: { nl: "VERBETER JE PROFIEL", en: "ENHANCE YOUR PROFILE" },
     uploadDescription: {
-      nl: "Upload persoonlijkheidstestresultaten of abstracte afbeeldingen om je analyse te verrijken.",
-      en: "Upload personality test results or abstract images to enrich your assessment."
+      nl: "Upload je persoonlijkheidstestresultaten om je analyse te verrijken.",
+      en: "Upload your personality test results to enrich your assessment."
     },
     clickToUpload: { nl: "Klik om bestanden te uploaden", en: "Click to upload files" },
-    fileTypes: { nl: "PDF, TXT, JSON of afbeeldingen tot 5MB", en: "PDF, TXT, JSON, or images up to 5MB" },
+    fileTypes: { nl: "PDF, DOCX of TXT tot 5MB", en: "PDF, DOCX or TXT up to 5MB" },
     uploadedFiles: {
       nl: (count) => `Geüploade Bestanden (${count})`,
       en: (count) => `Uploaded Files (${count})`
@@ -838,6 +838,15 @@ const translations = {
   // --- Desktop Layout ---
   desktopLayout: {
     locked: { nl: "VERGRENDELD", en: "LOCKED" },
+    // Tools that work with personal data run from the user's own folder (desktop app).
+    workspaceLocked: { nl: "Werkt vanuit je werkmap", en: "Works from your folder" },
+    workspaceWhy: { nl: "Waarom?", en: "Why?" },
+    workspaceReminder: {
+      nl: "Je werkmap is nog niet gekoppeld. De hulpmiddelen die met je persoonlijke gegevens werken blijven vergrendeld tot je dat doet.",
+      en: "Your folder is not connected yet. The tools that work with your personal data stay locked until it is."
+    },
+    workspaceReminderAction: { nl: "Bekijk hoe", en: "See how" },
+    workspaceReminderClose: { nl: "Sluiten", en: "Close" },
     liveFeed: { nl: "LIVE FEED", en: "LIVE FEED" },
     dataStreamDescription: {
       nl: "Real-time systeemstatistieken <br /> en live datastromen",

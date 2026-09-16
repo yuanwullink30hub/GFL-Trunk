@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLanguage } from '@gfl/i18n';
 import { C, FONT, SciFiButton } from '@gfl/ui';
+import DesktopDownloadButton from '../../workspace/DesktopDownloadButton';
+import {
+  connectWorkspace, desktopDownload, getWorkspaceStatus, isDesktopApp, linkWorkspace, onWorkspaceChange, announceWorkspaceChange,
+} from '../../workspace/localWorkspace';
 
 /**
  * Werkruimte — the account page that explains the local workstation and hands out the app.
@@ -9,6 +13,10 @@ import { C, FONT, SciFiButton } from '@gfl/ui';
  *   - in a browser, there is no window.gfl, so it explains the idea and offers the download
  *   - inside the desktop app, window.gfl exists, so it offers the folder grant and status
  *
+ * A folder belongs to one account (manifest.accountId). Choosing a folder here binds it to the
+ * logged-in account; a connected folder that is unbound can be linked; one bound to someone else
+ * is shown as such and never used.
+ *
  * The prose here has to agree with Terms art. 5a/5b and privacy art. 6 — this is the screen
  * where someone decides whether to trust the arrangement, and a promise made here that the
  * policy does not make (or vice versa) is the kind of gap that matters.
@@ -16,38 +24,6 @@ import { C, FONT, SciFiButton } from '@gfl/ui';
 
 /** Body copy is Figtree per the design tokens; Lexend Mega is chrome only. */
 const BODY = "'Figtree', sans-serif";
-
-/**
- * Release artefacts. The filenames must match electron-builder.yml's artifactName, and
- * `available` stays false until the installers are actually published — a download button
- * that 404s is worse than one that says "not yet".
- */
-const RELEASE = {
-  available: false,
-  version: '0.1.0',
-  base: 'https://gardenforlife.nl/downloads',
-  file: {
-    win: (v) => `GardenForLife-Setup-${v}.exe`,
-    macArm: (v) => `GardenForLife-${v}-arm64.dmg`,
-    macIntel: (v) => `GardenForLife-${v}-x64.dmg`,
-    linux: (v) => `GardenForLife-${v}.AppImage`,
-  },
-};
-
-/** Best guess at which build this visitor wants. Wrong guesses cost only a second click. */
-function detectPlatform() {
-  if (typeof navigator === 'undefined') return 'win';
-  const ua = navigator.userAgent || '';
-  const platform = navigator.platform || '';
-  if (/Mac/i.test(platform) || /Mac OS X/i.test(ua)) {
-    // Apple Silicon reports as Intel in the UA string; the core count is the usual tell.
-    return (navigator.hardwareConcurrency || 0) >= 8 ? 'macArm' : 'macIntel';
-  }
-  if (/Linux/i.test(platform) && !/Android/i.test(ua)) return 'linux';
-  return 'win';
-}
-
-const isDesktopApp = () => typeof window !== 'undefined' && !!window.gfl;
 
 // ── Small presentational pieces, matching the dashboard surface ────────────────
 
@@ -109,7 +85,7 @@ const Notice = ({ tone = 'amber', children }) => {
 // The tab
 // ═══════════════════════════════════════════════════════════
 
-export default function WorkspaceTab({ DashboardCard }) {
+export default function WorkspaceTab({ DashboardCard, accountId = null }) {
   const { t } = useLanguage();
   const inApp = isDesktopApp();
 
@@ -120,13 +96,14 @@ export default function WorkspaceTab({ DashboardCard }) {
   const refresh = useCallback(async () => {
     if (!isDesktopApp()) return;
     try {
-      setStatus(await window.gfl.workspace.status());
+      setStatus(await getWorkspaceStatus(accountId));
     } catch (e) {
       setError(e.message || String(e));
     }
-  }, []);
+  }, [accountId]);
 
   useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => onWorkspaceChange(refresh), [refresh]);
 
   const run = useCallback(async (key, fn) => {
     setBusy(key); setError('');
@@ -140,112 +117,134 @@ export default function WorkspaceTab({ DashboardCard }) {
     }
   }, [refresh]);
 
-  const platform = detectPlatform();
-  const fileName = RELEASE.file[platform] ? RELEASE.file[platform](RELEASE.version) : null;
-  const downloadHref = fileName ? `${RELEASE.base}/${fileName}` : null;
+  const download = desktopDownload();
+  const choose = () => run('choose', () => connectWorkspace({ accountId }));
+
+  // Laptop tier and up (design tokens: ≥ 1079px): the explanation takes two thirds of the width,
+  // the app box the remaining third, so nothing is pushed below the fold. Narrower: stacked.
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1079);
+  useEffect(() => {
+    const on = () => setWide(window.innerWidth >= 1079);
+    window.addEventListener('resize', on);
+    return () => window.removeEventListener('resize', on);
+  }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: wide ? 'minmax(0, 2fr) minmax(0, 1fr)' : 'minmax(0, 1fr)', gap: '1.5rem 2.5rem', alignItems: 'start' }}>
 
-      {/* ── Why this exists ── */}
-      <DashboardCard title={t('clientOrb.workspace.whyTitle')}>
-        <Para>{t('clientOrb.workspace.whyLead')}</Para>
-        <ul style={{ margin: '0 0 0.5rem', paddingLeft: '1.1rem' }}>
-          <Point>{t('clientOrb.workspace.why1')}</Point>
-          <Point>{t('clientOrb.workspace.why2')}</Point>
-          <Point>{t('clientOrb.workspace.why3')}</Point>
+      {/* ── Why this exists + what the permission covers — one box, one heading ── */}
+      <DashboardCard title={t('clientOrb.modal.workspace.whyTitle')}>
+        <Para>{t('clientOrb.modal.workspace.whyLead')}</Para>
+        <ul style={{ margin: '0 0 0.9rem', paddingLeft: '1.1rem' }}>
+          <Point>{t('clientOrb.modal.workspace.why1')}</Point>
+          <Point>{t('clientOrb.modal.workspace.why2')}</Point>
+          <Point>{t('clientOrb.modal.workspace.why3')}</Point>
         </ul>
-        <Para dim>{t('clientOrb.workspace.whyTail')}</Para>
-      </DashboardCard>
-
-      {/* ── What the permission actually grants ── */}
-      <DashboardCard title={t('clientOrb.workspace.grantTitle')}>
-        <Para>{t('clientOrb.workspace.grantLead')}</Para>
-        <ul style={{ margin: '0 0 0.5rem', paddingLeft: '1.1rem' }}>
-          <Point>{t('clientOrb.workspace.grant1')}</Point>
-          <Point>{t('clientOrb.workspace.grant2')}</Point>
-          <Point>{t('clientOrb.workspace.grant3')}</Point>
+        <Para>{t('clientOrb.modal.workspace.grantLead')}</Para>
+        <ul style={{ margin: '0 0 0.9rem', paddingLeft: '1.1rem' }}>
+          <Point>{t('clientOrb.modal.workspace.grant1')}</Point>
+          <Point>{t('clientOrb.modal.workspace.grant2')}</Point>
+          <Point>{t('clientOrb.modal.workspace.grant3')}</Point>
         </ul>
-        <Notice tone="amber">{t('clientOrb.workspace.grantWarning')}</Notice>
+        <Para dim>{t('clientOrb.modal.workspace.whyTail')}</Para>
       </DashboardCard>
 
       {/* ── In the browser: get the app ── */}
       {!inApp && (
-        <DashboardCard title={t('clientOrb.workspace.getTitle')}>
-          <Para>{t('clientOrb.workspace.getLead')}</Para>
+        <DashboardCard title={t('clientOrb.modal.workspace.getTitle')}>
+          <Para>{t('clientOrb.modal.workspace.getLead')}</Para>
 
-          {RELEASE.available && downloadHref ? (
-            <>
-              <div style={{ marginTop: '0.9rem' }}>
-                <SciFiButton
-                  variant="orange"
-                  onClick={() => { window.location.href = downloadHref; }}
-                  title={fileName}
-                >
-                  {t(`clientOrb.workspace.download.${platform}`)}
-                </SciFiButton>
-              </div>
-              <p style={{
-                fontFamily: BODY, fontSize: 'max(10px, 0.5vw)',
-                color: 'rgba(255, 254, 240, 0.4)', marginTop: '0.6rem',
-              }}>
-                {fileName} · v{RELEASE.version}
-              </p>
-            </>
-          ) : (
-            <Notice tone="orange">{t('clientOrb.workspace.notYet')}</Notice>
-          )}
-
-          <Notice tone="amber">{t('clientOrb.workspace.unsigned')}</Notice>
+          <DesktopDownloadButton />
+          {download.available && <Notice tone="amber">{t('clientOrb.modal.workspace.unsigned')}</Notice>}
         </DashboardCard>
       )}
 
       {/* ── In the app, no folder yet: the grant ── */}
       {inApp && status && !status.connected && (
-        <DashboardCard title={t('clientOrb.workspace.chooseTitle')}>
-          <Para>{t('clientOrb.workspace.chooseLead')}</Para>
+        <div style={{ gridColumn: '1 / -1' }}>
+        <DashboardCard title={t('clientOrb.modal.workspace.chooseTitle')}>
+          <Para>{t('clientOrb.modal.workspace.chooseLead')}</Para>
           <div style={{ marginTop: '0.9rem' }}>
-            <SciFiButton
-              variant="orange"
-              onClick={() => run('choose', () => window.gfl.workspace.choose())}
-              disabled={busy === 'choose'}
-            >
-              {busy === 'choose' ? t('clientOrb.workspace.choosing') : t('clientOrb.workspace.chooseButton')}
+            <SciFiButton variant="orange" onClick={choose} disabled={busy === 'choose' || !accountId}>
+              {busy === 'choose' ? t('clientOrb.modal.workspace.choosing') : t('clientOrb.modal.workspace.chooseButton')}
             </SciFiButton>
           </div>
           {status.error && <Notice tone="orange">{status.error}</Notice>}
         </DashboardCard>
+        </div>
       )}
 
-      {/* ── In the app, folder connected: status and controls ── */}
-      {inApp && status && status.connected && (
-        <DashboardCard title={t('clientOrb.workspace.connectedTitle')}>
-          <Row label={t('clientOrb.workspace.rowFolder')} value={status.root} />
-          <Row label={t('clientOrb.workspace.rowLayout')} value={`v${status.schemaVersion}`} />
-          <Row label={t('clientOrb.workspace.rowId')} value={status.folderId || '—'} />
+      {/* ── In the app, a folder not bound to any account yet ── */}
+      {inApp && status && status.connected && status.unlinked && (
+        <div style={{ gridColumn: '1 / -1' }}>
+        <DashboardCard title={t('clientOrb.modal.workspace.linkTitle')}>
+          <Para>{t('clientOrb.modal.workspace.linkLead')}</Para>
+          <Row label={t('clientOrb.modal.workspace.rowFolder')} value={status.root} />
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+            <SciFiButton variant="orange" size="sm" onClick={() => run('link', () => linkWorkspace(accountId))} disabled={busy === 'link' || !accountId}>
+              {busy === 'link' ? t('clientOrb.modal.workspace.choosing') : t('clientOrb.modal.workspace.linkButton')}
+            </SciFiButton>
+            <SciFiButton size="sm" onClick={choose} disabled={busy === 'choose' || !accountId}>
+              {t('clientOrb.modal.workspace.chooseOwn')}
+            </SciFiButton>
+          </div>
+        </DashboardCard>
+        </div>
+      )}
+
+      {/* ── In the app, a folder that belongs to another account: never used ── */}
+      {inApp && status && status.connected && status.foreign && (
+        <div style={{ gridColumn: '1 / -1' }}>
+        <DashboardCard title={t('clientOrb.modal.workspace.foreignTitle')}>
+          <Para>{t('clientOrb.modal.workspace.foreignLead')}</Para>
+          <div style={{ marginTop: '0.9rem' }}>
+            <SciFiButton variant="orange" size="sm" onClick={choose} disabled={busy === 'choose' || !accountId}>
+              {busy === 'choose' ? t('clientOrb.modal.workspace.choosing') : t('clientOrb.modal.workspace.chooseOwn')}
+            </SciFiButton>
+          </div>
+        </DashboardCard>
+        </div>
+      )}
+
+      {/* ── In the app, this account's folder: status and controls ── */}
+      {inApp && status && status.ready && (
+        <div style={{ gridColumn: '1 / -1' }}>
+        <DashboardCard title={t('clientOrb.modal.workspace.connectedTitle')}>
+          <Row label={t('clientOrb.modal.workspace.rowFolder')} value={status.root} />
+          <Row label={t('clientOrb.modal.workspace.rowAccount')} value={t('clientOrb.modal.workspace.rowAccountLinked')} />
+          <Row label={t('clientOrb.modal.workspace.rowLayout')} value={`v${status.schemaVersion}`} />
+          <Row label={t('clientOrb.modal.workspace.rowId')} value={status.folderId || '—'} />
 
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
             <SciFiButton size="sm" onClick={() => run('reveal', () => window.gfl.workspace.reveal())}>
-              {t('clientOrb.workspace.openFolder')}
+              {t('clientOrb.modal.workspace.openFolder')}
             </SciFiButton>
             <SciFiButton size="sm" onClick={() => run('backup', () => window.gfl.workspace.backup())} disabled={busy === 'backup'}>
-              {busy === 'backup' ? t('clientOrb.workspace.backingUp') : t('clientOrb.workspace.backup')}
+              {busy === 'backup' ? t('clientOrb.modal.workspace.backingUp') : t('clientOrb.modal.workspace.backup')}
             </SciFiButton>
-            <SciFiButton size="sm" variant="danger" onClick={() => run('forget', () => window.gfl.workspace.forget())}>
-              {t('clientOrb.workspace.disconnect')}
+            <SciFiButton size="sm" variant="danger" onClick={() => run('forget', async () => { await window.gfl.workspace.forget(); announceWorkspaceChange(); })}>
+              {t('clientOrb.modal.workspace.disconnect')}
             </SciFiButton>
           </div>
-          <Para dim>{t('clientOrb.workspace.disconnectNote')}</Para>
+          <Para dim>{t('clientOrb.modal.workspace.disconnectNote')}</Para>
         </DashboardCard>
+        </div>
       )}
 
+      {/* ── The responsibility warning — last, across the full width ── */}
+      <div style={{ gridColumn: '1 / -1' }}>
+        <Notice tone="amber">{t('clientOrb.modal.workspace.grantWarning')}</Notice>
+      </div>
+
       {error && (
+        <div style={{ gridColumn: '1 / -1' }}>
         <div style={{
           background: 'rgba(239, 68, 68, 0.06)',
           border: '1px solid rgba(239, 68, 68, 0.3)',
           borderRadius: '0.5rem', padding: '0.85rem 1rem',
           fontFamily: BODY, fontSize: 'max(11px, 0.56vw)', color: '#fca5a5',
         }}>⚠ {error}</div>
+        </div>
       )}
     </div>
   );

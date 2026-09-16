@@ -26,7 +26,7 @@ const PLACEHOLDER_EXPRESSION = {
   en: 'PLACEHOLDER — this expression profile will soon describe, in *likely tendencies*, how this configuration usually expresses itself. The definitive twelve texts are written separately and loaded in here.',
 };
 
-import { liveExtendedName } from '@gfl/assessment-core/data';
+import { readingExtendedName } from './readingName';
 
 // Default entry: used whenever the archetype id has no dedicated copy yet.
 const DEFAULT_ENTRY = {
@@ -46,11 +46,15 @@ const pick = (v, language) => {
   return v;
 };
 
-// The id is a stored extended-archetype name; it is keyed and captioned through the live
-// roster, so a retired name finds no copy and shows no caption.
-export function getCardMicrocopy(archetypePrimaryId, language = 'nl') {
-  const entry = MICROCOPY[liveExtendedName(archetypePrimaryId, 'nl')] || DEFAULT_ENTRY;
-  const name = pick(entry.configurationName, language) || liveExtendedName(archetypePrimaryId, language);
+// `reading` is a card reading ({ archetypePrimaryId, archetypeMainId, archetypeSupportId }) or,
+// for back-compat, a stored extended-archetype name. The name is resolved through the live
+// roster — main × support first, so a renamed name still finds its copy (readingName.js).
+export function getCardMicrocopy(reading, language = 'nl') {
+  const r = typeof reading === 'string' ? { archetypeName: reading } : (reading || {});
+  const liveNl = readingExtendedName({ ...r, archetypeName: r.archetypeName || r.archetypePrimaryId }, 'nl');
+  const entry = MICROCOPY[liveNl] || DEFAULT_ENTRY;
+  const name = pick(entry.configurationName, language)
+    || readingExtendedName({ ...r, archetypeName: r.archetypeName || r.archetypePrimaryId }, language);
   return {
     configurationName: (name || '—').toUpperCase(),
     tendency: pick(entry.tendency, language),

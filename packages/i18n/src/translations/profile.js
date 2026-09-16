@@ -66,6 +66,7 @@ export default {
       tabs: {
         openbaar: { nl: 'Openbaar', en: 'Public' },
         prive: { nl: 'Privé', en: 'Private' },
+        werkruimte: { nl: 'Werkruimte', en: 'Workspace' },
         instellingen: { nl: 'Instellingen', en: 'Settings' },
       },
 

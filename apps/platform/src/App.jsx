@@ -8,7 +8,7 @@ import ClientSubnav from './components/ClientNav';
 const NebulaBackground = lazy(() => import('./components/NebulaBackground'));
 const PublicProfile = lazy(() => import('./components/assessment/PublicProfile'));
 
-import { getQuestions, getMe, getHistory, getToken } from '@gfl/api-client';
+import { getQuestions, getMe, getHistory, getToken, openPrivateWindow } from '@gfl/api-client';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
@@ -294,6 +294,13 @@ const App = () => {
   // post-journey state; while this is true the assessment overlays counter-pan so they render
   // on-screen at the kook position (the map itself never moves).
   const [clientAssessment, setClientAssessment] = useState(false);
+
+  // Private report window: from the first answer until the report is closed, no request carries the
+  // login token (api-client refuses them), so a logged-in account can't be paired with the anonymous
+  // report request by timing. The intro card is outside the window — nothing has been answered yet.
+  const privateReportWindow = ['layers', 'convergence', 'upload', 'results'].includes(assessmentPhase);
+  useEffect(() => (privateReportWindow ? openPrivateWindow() : undefined), [privateReportWindow]);
+
   const kookExplosionRef = useRef(1); // kook HoloEarth is permanently past the explosion
   // TRUE pre-mount of the kook assessment scene: the HoloEarth instance is far too heavy
   // to mount on-request (canvas + scene build + shader compile landed inside the pan
@@ -1313,7 +1320,10 @@ const App = () => {
   }, [currentQuestionIndex, currentSubjectIndex, assessmentLevel, liveSubjects]);
   
   // File upload handlers
+  // OCEAN uploads: PDF, Word (.docx) and plain text only — no images (a screenshot can show the
+  // person's name, and names cannot be scrubbed from a picture). Drag & drop bypasses `accept`.
   const handleAddFile = useCallback((file) => {
+    if (!file || !/.(pdf|docx|txt)$/i.test(file.name || '')) return;
     setUploadedFiles(prev => [...prev, file]);
   }, []);
   

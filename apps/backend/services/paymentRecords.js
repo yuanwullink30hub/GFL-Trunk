@@ -214,7 +214,9 @@ async function issueRefundRecord(unlock) {
 
 /** Issue any records that are missing (e.g. after a failed write). Returns how many were issued. */
 async function ensureRecords() {
-  const unlocks = await collections.reportUnlocks().find({ method: 'payment' }).toArray();
+  // Unlinked unlocks are skipped: their records were issued before the link was cut, under an
+  // opaque unlockRef that deliberately no longer matches (reportAccess.unlinkExpiredPayments).
+  const unlocks = await collections.reportUnlocks().find({ method: 'payment', paymentUnlinked: { $ne: true } }).toArray();
   if (!unlocks.length) return 0;
   const have = await collections.paymentRecords()
     .find({ unlockRef: { $in: unlocks.map((u) => u._id) } }, { projection: { unlockRef: 1, kind: 1 } }).toArray();

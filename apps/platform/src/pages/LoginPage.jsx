@@ -14,6 +14,7 @@ import { OrbSphere3D, LeverDashboard, PaletteDashboard, decodeDNA, decodeOrb3, d
 import { getArchetypeKeyByName } from '@gfl/assessment-core/data/archetypeImages';
 import { extendedNameFor } from '@gfl/assessment-core/data';
 import { getArchetypeQuoteByKey } from '@gfl/assessment-core/data/archetypeQuotes';
+import OnboardingWorkspaceStep from '../workspace/OnboardingWorkspaceStep';
 
 // localStorage key the reload's loading screen (index.html) reads to show the archetype
 // Levensles while the app boots — see index.html's gate script.
@@ -235,6 +236,11 @@ const LoginPage = memo(({ isVisible, onBack }) => {
   const [obBusy, setObBusy] = useState(false);
   const [verifyPending, setVerifyPending] = useState(false); // waiting for the email link to be clicked
   const verifyPollRef = useRef(null);
+  // First step after the account exists: the local workstation (desktop app + own folder).
+  // The uploaded PDF is kept so the app can drop it straight into the chosen folder.
+  const [workspaceStep, setWorkspaceStep] = useState(false);
+  const [obAccount, setObAccount] = useState(null);   // { id, … } from /auth/me — binds the folder
+  const obPdfFileRef = useRef(null);
   const [absorbing, setAbsorbing] = useState(false);   // panels + login card floating INTO the orb
   const [emerged, setEmerged] = useState(false);       // account card flowing OUT of the orb
   const [playCfg, setPlayCfg] = useState(() => ({ ...TEMPLATE_ORB, palette: 'Agency' })); // lever-lab orb
@@ -281,6 +287,8 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       }
       // First-time (unlinked) code → the account-creation card flows OUT of the orb.
       if (!acceptOrbCode(res.code)) throw new Error(t('auth.errors.codeUndecipherable'));
+      obPdfFileRef.current = file; // in the desktop app this report goes into the new folder
+      setWorkspaceStep(false); setObAccount(null);
       setObEmail(''); setObPassword(''); setObUsername(''); setObAge(''); setObCountry('');
       setObArchetype(res.archetypeName || '');
       setObReading(res.reading || null);
@@ -312,6 +320,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
     clearFlowTimers();
     if (verifyPollRef.current) { clearTimeout(verifyPollRef.current); verifyPollRef.current = null; }
     setAbsorbing(false); setOnboarding(false); setEmerged(false); setVerifyPending(false); setObBusy(false);
+    setWorkspaceStep(false); setObAccount(null); obPdfFileRef.current = null;
     setOrbCodeStr(''); setUploadErr('');
     setObUsername(''); setObEmail(''); setObPassword(''); setObAge(''); setObCountry(''); setObConsent(false); setObErr('');
   }, [isVisible, clearFlowTimers]);
@@ -322,21 +331,35 @@ const LoginPage = memo(({ isVisible, onBack }) => {
     if (verifyPollRef.current) clearTimeout(verifyPollRef.current);
   }, [clearFlowTimers]);
 
-  // Link the crystal-code + stash identity, then hard-refresh into client mode. Called once the
-  // account is usable (register-without-verification, or after the email link is confirmed).
+  // Link the crystal-code + stash identity, then hard-refresh into client mode. Called when the
+  // user continues past the workspace step (with or without a folder).
   const proceedIntoClient = useCallback(() => {
+    obPdfFileRef.current = null;
     setClientOrbCode(orbCodeStr);
     setClientProfile({ displayName: obUsername, archetypeName: obArchetype, country: obCountry, age: obAge });
     bootIntoClient(obArchetype);
   }, [orbCodeStr, obUsername, obArchetype, obCountry, obAge, bootIntoClient]);
 
+  // The account is usable (register-without-verification, or the email link was clicked): the
+  // FIRST thing asked is the local workstation — explained, then the app download (browser) or
+  // the folder grant (desktop app). `accountId` comes from the register/login response; /auth/me
+  // supplies the partial profile the app mirrors into the folder.
+  const openWorkspaceStep = useCallback(async (accountId) => {
+    let me = null;
+    try { me = await getMe(); } catch (_) { /* the step still works with the id alone */ }
+    setObAccount(me ? { ...me, id: me.id ?? accountId } : (accountId ? { id: accountId } : null));
+    setVerifyPending(false);
+    setObBusy(false);
+    setWorkspaceStep(true);
+  }, []);
+
   // Poll /login until the emailed verification link is clicked (login stays 403 needsVerification
-  // until then). The moment it succeeds, the gate is passed → boot into the client interface.
+  // until then). The moment it succeeds, the gate is passed → the workspace step.
   const pollVerification = useCallback(() => {
     const tryOnce = async () => {
       try {
-        await login({ email: obEmail, password: obPassword });
-        proceedIntoClient();
+        const data = await login({ email: obEmail, password: obPassword });
+        openWorkspaceStep(data && data.user ? data.user.id : null);
       } catch (e) {
         if (e.needsVerification) {
           verifyPollRef.current = setTimeout(tryOnce, 3500); // still unverified — keep waiting
@@ -347,7 +370,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       }
     };
     tryOnce();
-  }, [obEmail, obPassword, proceedIntoClient, t]);
+  }, [obEmail, obPassword, openWorkspaceStep, t]);
 
   // Create the account. With email verification on, register does NOT return a session — it sends a
   // confirmation link and we wait (polling /login) until the user clicks it, THEN boot into client.
@@ -365,12 +388,12 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         pollVerification();
         return;
       }
-      proceedIntoClient();        // dev / no-SMTP: already logged in
+      openWorkspaceStep(data && data.user ? data.user.id : null); // dev / no-SMTP: already logged in
     } catch (e) {
       setObErr(e.message || t('auth.errors.createAccountFailed'));
       setObBusy(false);
     }
-  }, [obUsername, obEmail, obPassword, obAge, obCountry, obArchetype, obConsent, obConsentArt9, obReading, orbCodeStr, pollVerification, proceedIntoClient, t]);
+  }, [obUsername, obEmail, obPassword, obAge, obCountry, obArchetype, obConsent, obConsentArt9, obReading, orbCodeStr, pollVerification, openWorkspaceStep, t]);
 
   // Responsive size for the template orb on the logged-out screen.
   const [vp, setVp] = useState(() => ({
@@ -678,9 +701,17 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         {onboarding && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
             <div style={{ width: 'min(440px, 72vw)', maxHeight: '68vh', overflowY: 'auto', background: 'rgba(2,0,3,0.66)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: `1px solid ${C.purple}`, borderRadius: '0.7rem', boxShadow: `0 0 46px -12px ${C.purple}, 0 12px 50px rgba(0,0,0,0.6)`, fontFamily: FONT, color: C.text, padding: '1.4rem 1.5rem', transformOrigin: 'center center', transform: emerged ? 'scale(1.3)' : 'scale(0.25)', opacity: emerged ? 1 : 0, transition: FLOW_TRANSITION }}>
-              <div style={{ fontSize: 'max(15px,0.85vw)', fontWeight: 700, letterSpacing: '0.1em', color: C.gold }}>{verifyPending ? t('auth.onboarding.verifyTitle') : t('auth.onboarding.createTitle')}</div>
+              <div style={{ fontSize: 'max(15px,0.85vw)', fontWeight: 700, letterSpacing: '0.1em', color: C.gold }}>{workspaceStep ? t('auth.onboarding.workspaceTitle') : verifyPending ? t('auth.onboarding.verifyTitle') : t('auth.onboarding.createTitle')}</div>
               {obErr && <div style={{ ...ERROR_STYLE, margin: '0.6rem 0' }}><span style={{ fontSize: '0.8rem' }}>⚠</span> {obErr}</div>}
-              {verifyPending ? (
+              {workspaceStep ? (
+                <OnboardingWorkspaceStep
+                  accountId={obAccount ? obAccount.id : null}
+                  account={obAccount}
+                  reportFile={obPdfFileRef.current}
+                  reportLabel={obArchetype}
+                  onContinue={proceedIntoClient}
+                />
+              ) : verifyPending ? (
                 <div style={{ textAlign: 'center', padding: '0.4rem 0 0.2rem' }}>
                   <div className="animate-spin" style={{ width: '2.4rem', height: '2.4rem', margin: '0.8rem auto 1rem', borderRadius: '50%', border: '2px solid #a855f7', borderTopColor: 'transparent' }} />
                   <div style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>

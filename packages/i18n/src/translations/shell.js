@@ -67,6 +67,22 @@ export default {
       unknownSender:     { nl: 'Onbekend', en: 'Unknown' },
       noSubject:         { nl: '(geen onderwerp)', en: '(no subject)' },
       selectMessage:     { nl: 'Selecteer een bericht', en: 'Select a message' },
+      unreadAlert:       { nl: 'Ongelezen bericht', en: 'Unread message' },
+      // System messages (from Garden for Life), worded here by kind
+      systemMessages: {
+        'welcome-workspace': {
+          title: { nl: 'Welkom — richt eerst je privé-map in', en: 'Welcome — set up your private folder first' },
+          body: {
+            // {faq} renders as a link that pans to Profiel → Instellingen (policies, later the FAQ).
+            nl: "Welkom Tuinierder,\n\nZoals eerder vermeld slaan wij zo min mogelijk privé-data van jou op, om gebruik te maken van het volledige platform en al haar programma's moet je eerst een werkmap downloaden.\nZonder deze map werken de meeste modellen niet — het is heel simpel, klik de knop onderaan het bericht, lees de instructies in de werkruimte en download de software.\n\nWij hebben het volste vertrouwen dat je de weg tussen de sterren snel hebt gevonden, is de nebulae te dik? raadpleeg dan de {faq} of reik uit naar een moderator in het netwerk.\n\n\n— Voluntas Amor, Elefthéros Fati",
+            en: "Welcome Gardener,\n\nAs mentioned before, we store as little of your private data as possible. To use the full platform and all of its programs, you first need to download a workspace folder.\nWithout this folder most models do not work — it is very simple: click the button at the bottom of this message, read the instructions in the workspace and download the software.\n\nWe have every confidence that you will quickly find your way between the stars. Is the nebula too thick? Then consult the {faq} or reach out to a moderator in the network.\n\n\n— Voluntas Amor, Elefthéros Fati",
+          },
+        },
+      },
+      faqLink: { nl: 'FAQ', en: 'FAQ' },
+      messageAction: {
+        workspace: { nl: 'Naar je werkruimte →', en: 'Go to your workspace →' },
+      },
 
       // Verbond (alliance) requests
       verbondRequest:    { nl: (from) => `Verbond-verzoek — ${from}`, en: (from) => `Alliance request — ${from}` },

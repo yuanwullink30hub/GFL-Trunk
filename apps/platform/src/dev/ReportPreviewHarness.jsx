@@ -34,7 +34,7 @@ const PREVIEW_PORTRAIT = portraitParam
   ? { url: encodeURI(`/images/Import ready/${portraitParam}`), fullUrl: encodeURI(`/images/Import ready/${portraitParam}`) }
   : resolvePortrait('RULER', 'SAGE', 'male');
 
-const STUBBED = /\/(ai\/(send-results|send-access-email|discard)|assessment\/(review|report-email)|admin\/sessions\/activity)\b/;
+const STUBBED = /\/(ai\/(send-access-email|discard)|assessment\/(review|report-email)|admin\/sessions\/activity)\b/;
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 if (!window.__GFL_REPORT_PREVIEW_FETCH) {

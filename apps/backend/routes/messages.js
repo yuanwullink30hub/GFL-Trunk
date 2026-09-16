@@ -14,6 +14,7 @@ const { ObjectId } = require('mongodb');
 const { collections, getDB, nameKey } = require('../db');
 const { authRequired } = require('../middleware/auth');
 const { encrypt, decrypt, hash } = require('../services/encryption');
+const { SYSTEM_SENDER } = require('../services/systemMessages');
 
 const messagesCol = () => getDB().collection('messages');
 
@@ -69,7 +70,7 @@ router.get('/inbox', authRequired, async (req, res) => {
     const docs = await messagesCol().find({ toUserId: me }).sort({ at: -1 }).limit(100).toArray();
 
     // Resolve sender display names in one batch (names are encrypted — no join possible).
-    const senderIds = [...new Set(docs.map((d) => d.fromUserId))];
+    const senderIds = [...new Set(docs.map((d) => d.fromUserId).filter((id) => id !== SYSTEM_SENDER && ObjectId.isValid(id)))];
     const senders = senderIds.length
       ? await collections.users().find(
           { _id: { $in: senderIds.map((id) => new ObjectId(id)) } },
@@ -82,7 +83,8 @@ router.get('/inbox', authRequired, async (req, res) => {
     return res.json({
       messages: docs.map((d) => ({
         id: String(d._id),
-        from: nameById[d.fromUserId] || 'Onbekend',
+        from: d.fromUserId === SYSTEM_SENDER ? 'Garden for Life' : (nameById[d.fromUserId] || 'Onbekend'),
+        ...(d.fromUserId === SYSTEM_SENDER ? { system: true, kind: d.kind || null, action: d.action || null } : {}),
         title: (() => { try { return decrypt(d.title) || ''; } catch { return ''; } })(),
         body: (() => { try { return decrypt(d.body) || ''; } catch { return ''; } })(),
         at: d.at,

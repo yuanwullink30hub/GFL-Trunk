@@ -393,6 +393,28 @@ export default {
         greylisted: { nl: (n) => `GRIJZE LIJST ×${n}`, en: (n) => `GREY LIST ×${n}` },
         declined: { nl: (n) => `${n}× geweigerd`, en: (n) => `declined ${n}×` },
         declineAfterReview: { nl: 'WEIGEREN', en: 'DECLINE' },
+        hold: { nl: 'BEWAREN', en: 'KEEP' },
+        release: { nl: 'VRIJGEVEN', en: 'RELEASE' },
+        holdTitle: {
+          nl: 'Bewaar de koppeling tussen deze betaling en het rapport 30 dagen langer — bijvoorbeeld zolang een terugbetaling nog verwerkt wordt. Zonder bewaren wordt hij op dag 15 ontkoppeld.',
+          en: 'Keep the link between this payment and the report for 30 more days — for example while a refund is still being processed. Without a hold it is unlinked on day 15.',
+        },
+        releaseTitle: {
+          nl: 'Stop met bewaren. Is dag 15 al voorbij, dan wordt de betaling vannacht ontkoppeld.',
+          en: 'Stop keeping it. If day 15 has passed, the payment is unlinked tonight.',
+        },
+        heldUntil: { nl: (d) => `BEWAARD TOT ${d}`, en: (d) => `KEPT UNTIL ${d}` },
+        heldTitle: {
+          nl: 'Deze betaling blijft aan het rapport gekoppeld tot die datum. Een terugbetaling bewaart automatisch.',
+          en: 'This payment stays linked to the report until that date. A refund keeps it automatically.',
+        },
+        heldResult: { nl: (d) => `Koppeling bewaard tot ${d}.`, en: (d) => `Link kept until ${d}.` },
+        releasedResult: { nl: 'Bewaren gestopt.', en: 'Hold released.' },
+        unlinked: { nl: 'ONTKOPPELD', en: 'UNLINKED' },
+        unlinkedTitle: {
+          nl: 'Na dag 15 losgemaakt: de Stripe-betaling is niet meer naar dit rapport te herleiden. De boekhouding staat in Betaalbewijzen.',
+          en: 'Released after day 15: the Stripe payment can no longer be traced to this report. The bookkeeping is under payment records.',
+        },
         declinedResult: { nl: 'Verzoek geweigerd. De antwoorden zijn bij deze betaling bewaard.', en: 'Request declined. The answers are stored with this payment.' },
         greylistedTitle: {
           nl: (dates) => `Dit e-mailadres kreeg eerder een terugbetaling (${dates}).`,

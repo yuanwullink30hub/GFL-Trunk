@@ -26,8 +26,50 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+// ── Private report window ──
+//
+// While a test is being taken or its report is open, NO request may carry the login token. The
+// report request itself is anonymous; an account call from the same browser in the same minutes
+// (an inbox poll, a profile fetch) would let the server pair "this account" with "that report" by
+// time and network address. So every token-bearing call is refused while the window is open, and
+// background polls stay quiet for a random while after it closes (see backgroundAccountCallsAllowed).
+
+export class PrivateWindowError extends Error {
+  constructor() {
+    super('Account requests are paused while a test or report is open');
+    this.name = 'PrivateWindowError';
+    this.privateWindow = true;
+  }
+}
+
+let privateWindowDepth = 0;
+let backgroundResumeAt = 0;
+
+/**
+ * Open the private window. Returns the release function (idempotent). Nested opens are counted,
+ * so the window only closes when every opener has released.
+ */
+export function openPrivateWindow() {
+  privateWindowDepth += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    privateWindowDepth = Math.max(0, privateWindowDepth - 1);
+    // Random 1.5–4 minutes before background polls resume, so the first account call after the
+    // report closes does not mark its end time.
+    if (privateWindowDepth === 0) backgroundResumeAt = Date.now() + 90000 + Math.floor(Math.random() * 150000);
+  };
+}
+
+export const isPrivateWindowOpen = () => privateWindowDepth > 0;
+
+/** Background (timer-driven) account calls: only outside the window and after its cool-down. */
+export const backgroundAccountCallsAllowed = () => privateWindowDepth === 0 && Date.now() >= backgroundResumeAt;
+
 function authHeaders() {
   const token = getToken();
+  if (token && privateWindowDepth > 0) throw new PrivateWindowError();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -569,30 +611,6 @@ export async function analyzeAssessment(params, onProgress) {
 }
 
 /**
- * Send assessment results PDF via email.
- * @param {{ recipientName: string, recipientEmail: string, result: Object }} data
- */
-export async function sendResultsEmail({ recipientEmail, result }) {
-  // Serialize the result for the backend — convert Date to ISO string
-  const serialized = {
-    ...result,
-    timestamp: result.timestamp instanceof Date ? result.timestamp.toISOString() : result.timestamp,
-  };
-
-  const response = await fetch(`${API_BASE}/ai/send-results`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ recipientEmail, result: serialized }),
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Email failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/**
  * Fire-and-forget keepalive ping — keeps Render backend awake during assessment.
  */
 export function pingBackend() {
@@ -799,13 +817,11 @@ export async function deleteAssessment(id) {
  * Submit a user review/feedback for an assessment.
  */
 export async function submitAssessmentReview(data) {
-  const token = getToken();
+  // Never sends the login token: a review is written right after a test, and a token here would
+  // tie the account to that test's outcome and moment — the report must stay unlinkable.
   const response = await fetch(`${API_BASE}/assessment/review`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!response.ok) throw new Error(`Server error: ${response.status}`);
@@ -1314,6 +1330,20 @@ export async function refundReportUnlock(id, review) {
 }
 
 /** Moderator declines a refund request after the review. */
+/** Keep (hold=true) or release (hold=false) a payment's link to its report past the day-15 unlink. */
+export async function holdReportPaymentLink(id, hold = true) {
+  const response = await fetch(`${API_BASE}/admin/report-unlocks/${id}/hold`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ hold }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || `Hold failed (${response.status})`);
+  }
+  return response.json();
+}
+
 export async function declineReportRefund(id, review) {
   const response = await fetch(`${API_BASE}/admin/report-unlocks/${id}/decline`, {
     method: 'POST',

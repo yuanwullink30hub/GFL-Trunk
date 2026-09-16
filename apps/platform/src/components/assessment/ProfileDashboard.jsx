@@ -6,9 +6,11 @@ import { OrbSphere3D } from '../../orb';
 import ProfileCard from './ProfileCard';
 import { getClientOrbConfig, getClientProfile, setClientOrbCode, setClientOrbConfig, setClientProfile, clearClientOrbCode } from '../../clientMode';
 import { resolvePortraitByName } from '@gfl/assessment-core/data/archetypeImages';
-import { liveExtendedName } from '@gfl/assessment-core/data';
+import { readingExtendedName } from './readingName';
 import { PRESET_KERNELS } from './presetKernels';
 import { getPolicyContent } from '../../data/policyIndex';
+import WorkspaceTab from './WorkspaceTab';
+import { onDashboardTabRequest, takePendingDashboardTab, saveReportIfReady } from '../../workspace/localWorkspace';
 
 // Policy/terms pages — for CLIENTS these live here under Instellingen (the left
 // verbindingsmenu shows the public-profiles directory instead; visitors still get
@@ -208,6 +210,15 @@ const PresetQuestions = ({ block, values, onChange }) => {
 const LABEL = { fontSize: 'max(9px,0.48vw)', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f59e0b', marginBottom: '0.28rem' };
 const SECTION_TITLE = { fontSize: 'max(13px,0.75vw)', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#f59e0b' };
 
+// Section block for the Werkruimte tab — the card shell is ProfileCard's, so each block is just a
+// titled section with the same divider the Privé/Instellingen sections use.
+const PanelCard = ({ title, children }) => (
+  <div style={{ paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+    {title && <div style={{ ...SECTION_TITLE, marginBottom: '0.8rem' }}>{title}</div>}
+    {children}
+  </div>
+);
+
 const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
   const { language, t, tFunc } = useLanguage();
   const locale = language === 'en' ? 'en-GB' : 'nl-NL';
@@ -289,8 +300,12 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
   const [busy, setBusy] = useState(false);
   const [showCode, setShowCode] = useState(false);
 
-  // Which tab is open: 'openbaar' (read-only public preview) | 'prive' | 'instellingen'.
-  const [tab, setTab] = useState('openbaar');
+  // Which tab is open: 'openbaar' (read-only public preview) | 'prive' | 'werkruimte' | 'instellingen'.
+  // Elsewhere can ask for a tab (requestDashboardTab): a lock, the login reminder or the welcome
+  // message → Werkruimte; the FAQ link in a message → Instellingen, where the policies live.
+  const DASHBOARD_TABS = ['openbaar', 'prive', 'werkruimte', 'instellingen'];
+  const [tab, setTab] = useState(() => { const p = takePendingDashboardTab(); return DASHBOARD_TABS.includes(p) ? p : 'openbaar'; });
+  useEffect(() => onDashboardTabRequest((p) => { if (DASHBOARD_TABS.includes(p)) { setTab(p); setPolicyOpen(null); } }), []);
   const [linkCopied, setLinkCopied] = useState(false);
   // Shareable public-profile URL (PublicProfile resolves ?u=<visible name handle>).
   const publicUrl = (typeof window !== 'undefined' && name) ? `${window.location.origin}/?u=${encodeURIComponent(name)}` : '';
@@ -466,9 +481,12 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
       const r = await orbLoginFromPdf(file);
       if (!r || !r.code) throw new Error(t('profile.dashboard.msg.noCodeInPdf'));
       await finishSync(r.code, r.archetypeName || '', r.reading || null);
+      // In the desktop app with this account's folder connected, the new report goes into it.
+      saveReportIfReady({ accountId: user.id, file, label: r.archetypeName || '' })
+        .catch((err) => console.warn('[GFL] report not saved to the folder:', err && err.message));
     } catch (e) { setSyncMsg(e.message || t('profile.dashboard.msg.syncFailed')); }
     finally { setSyncBusy(false); if (syncFileRef.current) syncFileRef.current.value = ''; }
-  }, [finishSync, t]);
+  }, [finishSync, t, user.id]);
 
   // ── Download the orb in FHD: a still PNG + a 12-second 60fps loop (WebM). ──
   // Captured from a HIDDEN 1080px capture orb (not the small on-screen one), composited into a
@@ -576,7 +594,9 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
 
   // Archetype portrait — the full-resolution original, handed out as-is (transparent PNG). The
   // results card and the PDF render the web copy; this download is where the original lives.
-  const archetypeName = liveExtendedName(user.archetypeName || profile.archetypeName, language);
+  // Resolved through the latest reading's main × support (a stored name may be a retired one).
+  const latestReading = (Array.isArray(user.orbHistory) ? user.orbHistory : []).filter((h) => h && !h.refundedAt).slice(-1)[0] || null;
+  const archetypeName = readingExtendedName(latestReading ? { ...latestReading, archetypeName: latestReading.archetypeName || user.archetypeName } : (user.archetypeName || profile.archetypeName), language);
   const archetypeFullImg = resolvePortraitByName(archetypeName).fullUrl;
   const downloadArchetypePhoto = useCallback(async () => {
     if (!archetypeFullImg) { setDlMsg(t('profile.dashboard.msg.noArchetypeImage')); return; }
@@ -690,12 +710,12 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
 
   // Tab switcher — rendered above the orb (two-column tabs) OR as row 1 of the Openbaar card.
   const tabsRow = (
-    <div style={{ display: 'flex', gap: '0.35rem', width: '100%', alignSelf: 'stretch', position: 'relative', zIndex: 2, maxWidth: '26rem' }}>
-      {[{ key: 'openbaar', label: t('profile.dashboard.tabs.openbaar') }, { key: 'prive', label: t('profile.dashboard.tabs.prive') }, { key: 'instellingen', label: t('profile.dashboard.tabs.instellingen') }].map((tb) => {
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', width: 'fit-content', maxWidth: '100%', alignSelf: 'flex-start', position: 'relative', zIndex: 2 }}>
+      {[{ key: 'openbaar', label: t('profile.dashboard.tabs.openbaar') }, { key: 'prive', label: t('profile.dashboard.tabs.prive') }, { key: 'werkruimte', label: t('profile.dashboard.tabs.werkruimte') }, { key: 'instellingen', label: t('profile.dashboard.tabs.instellingen') }].map((tb) => {
         const on = tab === tb.key;
         return (
           <button key={tb.key} type="button" onClick={() => { setTab(tb.key); setPolicyOpen(null); setMsg(''); setPwMsg(''); setDelErr(''); setStoryMsg(''); }}
-            style={{ flex: 1, minWidth: 0, cursor: 'pointer', background: on ? 'rgba(168,85,247,0.22)' : 'transparent', border: `1px solid ${on ? C.purple : 'rgba(168,85,247,0.28)'}`, color: on ? C.gold : 'rgba(255,255,255,0.55)', borderRadius: '0.4rem', padding: '0.42rem 0.3rem', fontFamily: FONT, fontSize: 'max(8px,0.46vw)', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transition: 'all 0.15s' }}>
+            style={{ flex: '0 0 auto', cursor: 'pointer', background: on ? 'rgba(168,85,247,0.22)' : 'transparent', border: `1px solid ${on ? C.purple : 'rgba(168,85,247,0.28)'}`, color: on ? C.gold : 'rgba(255,255,255,0.55)', borderRadius: '0.4rem', padding: '0.42rem 0.85rem', fontFamily: FONT, fontSize: 'max(8px,0.46vw)', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap', transition: 'all 0.15s' }}>
             {tb.label}
           </button>
         );
@@ -928,6 +948,9 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
             )}
 
             {/* ── INSTELLINGEN — account name, password, delete, logout ── */}
+            {/* ── WERKRUIMTE — the local workstation: why, the app, the folder ── */}
+            {tab === 'werkruimte' && <WorkspaceTab DashboardCard={PanelCard} accountId={user.id} />}
+
             {tab === 'instellingen' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.2rem', marginBottom: '1.1rem' }}>

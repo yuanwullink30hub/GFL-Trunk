@@ -135,7 +135,7 @@ const AssessmentUpload = ({
             multiple
             onChange={handleFileInput}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+            accept=".pdf,.docx,.txt"
           />
           
           <div className="pointer-events-none">

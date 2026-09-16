@@ -1,31 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Mail, RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle, Check, Shield, Target, Activity } from 'lucide-react';
+import { RotateCcw, Sparkles, Brain, Eye, Heart, Bot, AlertTriangle, Check, Shield, Target, Activity } from 'lucide-react';
 import { ARCHETYPES } from '@gfl/assessment-core/data/archetypes';
-import { sendResultsEmail } from '@gfl/api-client';
 import { GROUP_NEURAL_FOCUS } from '@gfl/assessment-core/data/scoring';
 import { SciFiButton } from '@gfl/ui';
 
 function ResultsView({ result, onReset, aiError }) {
-  const [recipientEmail, setRecipientEmail] = useState('');
-  const [sendState, setSendState] = useState('idle'); // idle | sending | sent | error
-  const [sendError, setSendError] = useState(null);
-
-  const handleSendEmail = async () => {
-    if (!recipientEmail.trim()) return;
-    setSendState('sending');
-    setSendError(null);
-    try {
-      await sendResultsEmail({
-        recipientEmail: recipientEmail.trim(),
-        result,
-      });
-      setSendState('sent');
-    } catch (err) {
-      setSendError(err.message);
-      setSendState('error');
-    }
-  };
-
   const archetypeInfo = ARCHETYPES[result.overallArchetype];
   const mainGroup = result.mainGroup;
   const supportGroup = result.supportGroup;
@@ -281,53 +260,6 @@ function ResultsView({ result, onReset, aiError }) {
                 <span key={index} className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-400">{file.name}</span>
               ))}
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Email delivery form */}
-      <div className="rounded-xl p-6 md:p-8 border border-emerald-500/30 backdrop-blur-xl mt-8" style={{ backgroundColor: 'rgba(2, 0, 3, 0.3)', boxShadow: '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(16, 185, 129, 0.06), inset 0 0 30px rgba(16, 185, 129, 0.03)' }}>
-        <h3 className="text-lg font-light text-emerald-300 mb-2 flex items-center gap-2">
-          <Mail className="w-5 h-5" />
-          Ontvang je resultaten per e-mail
-        </h3>
-        <p className="text-xs text-slate-500 mb-4">Je profiel wordt als PDF-rapport naar je inbox gestuurd.</p>
-
-        {sendState === 'sent' ? (
-          <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-            <Check className="w-5 h-5 text-emerald-400" />
-            <div>
-              <p className="text-sm text-emerald-300 font-medium">Verstuurd!</p>
-              <p className="text-xs text-slate-400">Je rapport is verzonden naar {recipientEmail}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-slate-400 mb-1 uppercase tracking-wider">E-mailadres</label>
-              <input
-                type="email"
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
-                placeholder="naam@voorbeeld.nl"
-                className="w-full px-4 py-2.5 rounded-lg text-sm text-white outline-none transition-colors"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(16,185,129,0.3)' }}
-                onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(16,185,129,0.3)'}
-              />
-            </div>
-            {sendError && (
-              <p className="text-xs text-red-400">{sendError}</p>
-            )}
-            <SciFiButton
-              onClick={handleSendEmail}
-              disabled={sendState === 'sending' || !recipientEmail.trim()}
-              variant="purple"
-              size="md"
-              fullWidth
-            >
-              {sendState === 'sending' ? 'Verzenden...' : 'Verstuur PDF Rapport'}
-            </SciFiButton>
           </div>
         )}
       </div>

@@ -28,6 +28,7 @@ export default function PdfPreviewHarness() {
     window.__GFL_PDF_REPLAY = {
       analysis: data.analysis,
       cRuntime: data.cRuntime,
+      enginePayload: data.enginePayload,
       uploadedOceanScores: data.uploadedOceanScores,
     };
   }

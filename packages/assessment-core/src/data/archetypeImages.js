@@ -15,11 +15,13 @@ import { resolveExtendedKey, extendedKeyForName } from './scoring/index.js';
  * The keys are kept deliberately: this table is the manifest of exactly which
  * combination needs which two portraits. When the art lands, replace a slot's null
  * with art(...) - nothing else has to change. Filling only one of the two is
- * fine: resolvePortrait() falls back to the variant that exists, and the results-card
- * toggle only offers a choice once both are present.
+ * fine: resolvePortrait() falls back to the variant that exists, unless the caller asks
+ * for the exact variant ({ fallback: false }).
  *
- * The user picks the variant on the results card before downloading; the PDF is built
- * from the same resolvePortrait() result, so card and PDF always show the same image.
+ * The user picks Masculine / Feminine on the results card before downloading (the toggle is
+ * always shown); the card and the PDF resolve the EXACT chosen variant, so they always show
+ * the same image and never a portrait under the other label - a variant whose art has not
+ * landed yet simply shows no portrait.
  */
 
 const PORTRAIT_DIR = '/images/Import ready/';
@@ -210,16 +212,18 @@ const normVariant = (v) => (PORTRAIT_VARIANTS.includes(v) ? v : DEFAULT_PORTRAIT
  * @param {string} mainKey   - e.g. 'SAGE'
  * @param {string} support   - support ARCHETYPE key, e.g. 'OUTLAW'
  * @param {string} [preferred] - 'male' | 'female'
+ * @param {{ fallback?: boolean }} [options] - fallback: false returns only the preferred variant (null while
+ *   its art is missing) - the results card and PDF use this so the image always matches the toggle
  * @returns {{ url: string|null, fullUrl: string|null, variant: string|null, available: { male: boolean, female: boolean } }}
  *   url = the web copy to render; fullUrl = the full-resolution original (for download links)
  */
-export function resolvePortrait(mainKey, support, preferred = DEFAULT_PORTRAIT_VARIANT) {
+export function resolvePortrait(mainKey, support, preferred = DEFAULT_PORTRAIT_VARIANT, { fallback = true } = {}) {
   const key = resolveExtendedKey(mainKey, support);
   const slot = (key && ARCHETYPE_IMAGES[key]) || {};
   const available = { male: !!slot.male, female: !!slot.female };
   const want = normVariant(preferred);
   const other = want === 'male' ? 'female' : 'male';
-  const variant = slot[want] ? want : slot[other] ? other : null;
+  const variant = slot[want] ? want : fallback && slot[other] ? other : null;
   if (!variant) return { url: null, fullUrl: null, variant: null, available };
   return { url: slot[variant].web, fullUrl: slot[variant].full, variant, available };
 }

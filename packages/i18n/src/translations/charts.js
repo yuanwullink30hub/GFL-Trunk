@@ -43,6 +43,9 @@ export default {
     // ── MorphologyChart (D-curve) ──
     morphology: {
       composed: { nl: 'Samengesteld', en: 'Composed' },
+      // Spec A1 (report pipeline v5.0): both curves are the Main's
+      baseline: { nl: 'basislijn (τ)', en: 'baseline (τ)' },
+      transform: { nl: 'transform (τ′)', en: 'transform (τ′)' },
     },
   },
 };

@@ -19,46 +19,59 @@
 // ── §2a Narrative tag registry: tag-stem -> { slot, renderer } ────────────────
 // Matched case-insensitively, trimmed, on a startswith/stem basis (the model may
 // append a subtitle after an em-dash, e.g. "PLASTISCHE MORFOLOGIE — DE VORM …").
-// Master Prompt v4.1 §5 — the locked section list, EXACT titles as parser-tags, in order.
+// Master Prompt v4.1–v5.2 §5 — the locked section list, EXACT titles as parser-tags, in order.
 // (Longest stem wins on overlap; see matchNarrativeTag.)
+//
+// Two report languages. `stem` is the Dutch tag (the canonical routing key); `en` lists the
+// English tag an English report emits — a pure translation of the Dutch title — plus, where an
+// English display label already existed with other wording (v4Labels), that wording as an alias.
+// An English title is canonicalised to its Dutch stem (canonicalTitle), so every page collector
+// keys on one vocabulary; the emitted title is kept for display.
 export const NARRATIVE_TAGS = [
   // p1 — Identiteit + Verklaring
-  { stem: 'DE IDENTITEIT', slot: 'identity', renderer: 'prose' },
-  { stem: 'DE VERKLARING', slot: 'verklaring', renderer: 'prose' },
+  { stem: 'DE IDENTITEIT', en: ['THE IDENTITY'], slot: 'identity', renderer: 'prose' },
+  { stem: 'DE VERKLARING', en: ['THE EXPLANATION'], slot: 'verklaring', renderer: 'prose' },
   // p2 — Essentie + Vermenigvuldiging
-  { stem: 'DE ESSENTIE', slot: 'main_essence', renderer: 'prose' },
-  { stem: 'DE VERMENIGVULDIGING', slot: 'support_mult', renderer: 'prose' },
+  { stem: 'DE ESSENTIE', en: ['THE ESSENCE'], slot: 'main_essence', renderer: 'prose' },
+  { stem: 'DE VERMENIGVULDIGING', en: ['THE MULTIPLICATION'], slot: 'support_mult', renderer: 'prose' },
   // p3 — Radar (render-side) + Schaduw + Blindspot
-  { stem: 'DE SCHADUW', slot: 'shadow', renderer: 'prose' },
-  { stem: 'DE BLINDSPOT', slot: 'blindspot', renderer: 'prose' },
-  // p4 — OCEAN comparison (upload only): 5 per-trait sections
-  { stem: 'TRAIT O', slot: 'ocean_o', renderer: 'prose' },
-  { stem: 'TRAIT C', slot: 'ocean_c', renderer: 'prose' },
-  { stem: 'TRAIT E', slot: 'ocean_e', renderer: 'prose' },
-  { stem: 'TRAIT A', slot: 'ocean_a', renderer: 'prose' },
-  { stem: 'TRAIT N', slot: 'ocean_n', renderer: 'prose' },
+  { stem: 'DE SCHADUW', en: ['THE SHADOW'], slot: 'shadow', renderer: 'prose' },
+  { stem: 'DE BLINDSPOT', en: ['THE BLINDSPOT'], slot: 'blindspot', renderer: 'prose' },
+  // p4 — OCEAN comparison (upload only): 5 per-trait sections (same tag in both languages)
+  { stem: 'TRAIT O', en: [], slot: 'ocean_o', renderer: 'prose' },
+  { stem: 'TRAIT C', en: [], slot: 'ocean_c', renderer: 'prose' },
+  { stem: 'TRAIT E', en: [], slot: 'ocean_e', renderer: 'prose' },
+  { stem: 'TRAIT A', en: [], slot: 'ocean_a', renderer: 'prose' },
+  { stem: 'TRAIT N', en: [], slot: 'ocean_n', renderer: 'prose' },
   // p5 — Plastische Morfologie (render-side D-curve chart) + 3 reads
-  { stem: 'DE VORM', slot: 'morph_vorm', renderer: 'prose' },
-  { stem: 'DE HARDWARE ONDER DRUK', slot: 'morph_hardware', renderer: 'prose' },
-  { stem: 'DE OVERGANG NAAR DE STILLE STEM', slot: 'morph_overgang', renderer: 'prose' },
+  { stem: 'DE VORM', en: ['THE SHAPE', 'THE FORM'], slot: 'morph_vorm', renderer: 'prose' },
+  { stem: 'DE HARDWARE ONDER DRUK', en: ['THE HARDWARE UNDER PRESSURE'], slot: 'morph_hardware', renderer: 'prose' },
+  { stem: 'DE OVERGANG NAAR DE STILLE STEM', en: ['THE TRANSITION TO THE QUIET VOICE', 'THE BRIDGE TO THE QUIET VOICE'], slot: 'morph_overgang', renderer: 'prose' },
   // p6 — De Stille Stem
-  { stem: 'REFLECTIE', slot: 'stille_reflectie', renderer: 'prose' },
-  { stem: 'MOTIVATIE', slot: 'stille_motivatie', renderer: 'prose' },
-  { stem: 'BEWEGING', slot: 'stille_beweging', renderer: 'prose' },
-  // p7 — Archetype images (render-side) + Resonantie
-  { stem: 'PROFESSIONELE RESONANTIE', slot: 'prof_resonance', renderer: 'prose' },
-  { stem: 'CREATIEVE RESONANTIE', slot: 'creative_resonance', renderer: 'prose' },
+  { stem: 'REFLECTIE', en: ['REFLECTION'], slot: 'stille_reflectie', renderer: 'prose' },
+  { stem: 'MOTIVATIE', en: ['MOTIVATION'], slot: 'stille_motivatie', renderer: 'prose' },
+  { stem: 'BEWEGING', en: ['MOVEMENT'], slot: 'stille_beweging', renderer: 'prose' },
+  // p7 — Archetype images (render-side) + De Extensie (v5.2 §5.7) + Resonantie
+  { stem: 'DE EXTENSIE', en: ['THE EXTENSION'], slot: 'extension', renderer: 'prose' },
+  { stem: 'PROFESSIONELE RESONANTIE', en: ['PROFESSIONAL RESONANCE'], slot: 'prof_resonance', renderer: 'prose' },
+  { stem: 'CREATIEVE RESONANTIE', en: ['CREATIVE RESONANCE'], slot: 'creative_resonance', renderer: 'prose' },
   // p8 — Dual-Core chart (render-side) + Alchemie + Schakelbord + Evolutie
-  { stem: 'DE ALCHEMIE VAN INDIVIDUATIE', slot: 'alchemy', renderer: 'prose' },
-  { stem: 'HET NEURALE SCHAKELBORD', slot: 'neural_board', renderer: 'prose' },
-  { stem: 'ONTOLOGISCHE EVOLUTIE', slot: 'ontological', renderer: 'prose' },
+  { stem: 'DE ALCHEMIE VAN INDIVIDUATIE', en: ['THE ALCHEMY OF INDIVIDUATION'], slot: 'alchemy', renderer: 'prose' },
+  { stem: 'HET NEURALE SCHAKELBORD', en: ['THE NEURAL SWITCHBOARD'], slot: 'neural_board', renderer: 'prose' },
+  { stem: 'ONTOLOGISCHE EVOLUTIE', en: ['ONTOLOGICAL EVOLUTION'], slot: 'ontological', renderer: 'prose' },
   // p9 — AI prompt
-  { stem: 'DE VOLLEDIGE AI PROMPT', slot: 'ai_prompt', renderer: 'monospace' },
+  { stem: 'DE VOLLEDIGE AI PROMPT', en: ['THE FULL AI PROMPT', 'THE COMPLETE AI PROMPT'], slot: 'ai_prompt', renderer: 'monospace' },
 ];
+
+// In-body labels that begin like a tag but are NOT titles: the three Neurale Schakelbord
+// experiments (§5.8) — "De Focus-hendel:", "De Schaduw-injectie:", "De Blindspot-check:" and their
+// English translations. Matched on the normalised line, hyphen or space.
+const NOT_TAGS = /^(?:DE FOCUS[- ]HENDEL|DE SCHADUW[- ]INJECTIE|DE BLINDSPOT[- ]CHECK|THE FOCUS[- ]LEVER|THE SHADOW[- ]INJECTION|THE BLINDSPOT[- ]CHECK)\b/;
 
 // ── §2b Machine-block tags (the `-- TAG --` data block) → numeric source of truth.
 // Master Prompt v4.1 §5.10 — machine block fields, in order. Model-derived OCEAN
-// removed (D-10); dead v3 fields removed; 5-mandje decompositie added.
+// removed (D-10); dead v3 fields removed; 5-mandje decompositie added. English tags are the
+// translations the PDF's own data page already prints (i18n resultsModal.pdf.data.*).
 export const MACHINE_TAGS = {
   'IDENTITEIT': 'identity_fields',
   'SCORES (12-PUNTS WIEL)': 'scores',            // 12 rows: archetype → {total, core, bleed}
@@ -71,6 +84,17 @@ export const MACHINE_TAGS = {
   'EXTENDED ARCHETYPE PROFIEL': 'extended_profile', // gift, curse, levensles
   'SHADOW INTEGRATIE': 'shadow_integration',
   'BLINDSPOT': 'blindspot_fields',
+  // English report
+  'IDENTITY': 'identity_fields',
+  'SCORES (12-POINT WHEEL)': 'scores',
+  '5-BASKET DECOMPOSITION': 'five_mandje',
+  'NATURE / CULTURE DISTRIBUTION PER GROUP': 'nat_cult',
+  'DERIVED INDICES': 'indices',
+  'OCEAN PROFILE (EXTERNALLY UPLOADED)': 'ocean_uploaded',
+  'COGNITIVE TRIANGLE (YELLOW)': 'yellow_triangle',
+  'HARDWARE SIGNALS': 'hardware_signals',
+  'EXTENDED ARCHETYPE PROFILE': 'extended_profile',
+  'SHADOW INTEGRATION': 'shadow_integration',
 };
 
 // ── §3 Page-map: the locked v4 page order (slot_ids), assembled regardless of
@@ -85,7 +109,7 @@ export const PAGE_ORDER = [
   ['ocean_o', 'ocean_c', 'ocean_e', 'ocean_a', 'ocean_n'],     // p4 (upload-only; IF-state)
   ['morph_vorm', 'morph_hardware', 'morph_overgang'],          // p5 + D-curve chart
   ['stille_reflectie', 'stille_motivatie', 'stille_beweging'], // p6
-  ['prof_resonance', 'creative_resonance'],                    // p7 + archetype images
+  ['extension', 'prof_resonance', 'creative_resonance'],       // p7 + archetype images
   ['alchemy', 'neural_board', 'ontological'],                  // p8 + dual-core chart
   ['ai_prompt'],                                               // p9
   // machine block rendered verbatim on the last page (handled separately)
@@ -94,31 +118,53 @@ export const PAGE_ORDER = [
 // ── Tag matching: stem startswith on a normalised (upper, em-dash-stripped) line ──
 function normalizeTagLine(line) {
   return line
-    // strip a leading PDF page-annotation like "(–5). " (digits/dashes/parens/dot)
+    .replace(/^\s*#+\s*/, '')           // strip markdown heading hashes (first, so "## 2. …" loses its number below)
+    .replace(/\*+/g, '')                // strip markdown bold
+    // strip a leading PDF page-annotation like "(–5). " or a section number "2. " (digits/dashes/parens/dot)
     .replace(/^[\s(]*[–—\d][–—\d\s).]*\.?\s*(?=[A-Za-z])/, '')
     // drop a subtitle after " — " / " – " (em/EN dash with spaces) — NOT the hyphen
     // inside a tag like "DUAL-CORE DYNAMICS".
     .replace(/\s[—–]\s.*$/, '')
-    .replace(/\*+/g, '')                // strip markdown bold
-    .replace(/^#+\s*/, '')              // strip markdown heading hashes
     .trim()
     .toUpperCase();
 }
 
-/** Is this non-empty line a narrative section tag? Returns the registry entry or null. */
+// Every (stem, entry, language) pair, longest stem first so "DE ESSENTIE (MAIN ARCHETYPE)"
+// matches before "DE …" and "THE SHADOW" never shadows a longer English tag.
+const STEMS = NARRATIVE_TAGS
+  .flatMap((t) => [{ text: t.stem, lang: 'nl', entry: t }, ...t.en.map((e) => ({ text: e, lang: 'en', entry: t }))])
+  .sort((a, b) => b.text.length - a.text.length);
+
+/**
+ * Is this non-empty line a narrative section tag? Returns the registry entry plus `matched`
+ * (the stem as found) and `lang` ('nl' | 'en'), or null.
+ */
 export function matchNarrativeTag(line) {
   const norm = normalizeTagLine(line);
-  if (!norm) return null;
-  // longest stem first so "DE ESSENTIE (MAIN ARCHETYPE)" matches before "DE …".
-  const sorted = [...NARRATIVE_TAGS].sort((a, b) => b.stem.length - a.stem.length);
+  if (!norm || NOT_TAGS.test(norm)) return null;
   // The stem must be followed by end-of-string, a space, or "(" — NOT a hyphen/letter.
-  // This stops in-body labels like "DE SCHADUW-INJECTIE:" / "DE BLINDSPOT-CHECK:" (the
-  // Neurale Schakelbord experiments, §5.8) from being mistaken for the SCHADUW/BLINDSPOT tags.
-  return sorted.find((t) => {
-    if (!norm.startsWith(t.stem)) return false;
-    const after = norm.charAt(t.stem.length);
+  // With NOT_TAGS this keeps in-body labels like "DE SCHADUW-INJECTIE:" / "THE SHADOW INJECTION:"
+  // (the Neurale Schakelbord experiments, §5.8) from being mistaken for the SCHADUW/SHADOW tags.
+  const hit = STEMS.find((s) => {
+    if (!norm.startsWith(s.text)) return false;
+    const after = norm.charAt(s.text.length);
     return after === '' || after === ' ' || after === '(';
-  }) || null;
+  });
+  return hit ? { ...hit.entry, matched: hit.text, lang: hit.lang } : null;
+}
+
+/**
+ * Routing form of a section title: an English tag's stem is swapped for its Dutch stem, the rest
+ * of the title (numbering, parenthetical, names after the dash) kept as emitted. Dutch and
+ * unrecognised titles come back unchanged. "THE EXTENSION — The Usurper · De Troonrover" →
+ * "DE EXTENSIE — The Usurper · De Troonrover".
+ */
+export function canonicalTitle(title) {
+  const raw = String(title || '');
+  const hit = matchNarrativeTag(raw);
+  if (!hit || hit.lang !== 'en') return raw;
+  const at = raw.toUpperCase().indexOf(hit.matched);
+  return at < 0 ? raw : raw.slice(0, at) + hit.stem + raw.slice(at + hit.matched.length);
 }
 
 // ── §1/§7.1 Splitter: raw model output → { narrative[], machine[] } ────────────
@@ -223,7 +269,7 @@ export function parseMorphologyChart(morphologyBody) {
   if (!morphologyBody) return null;
   // Sub-blocks delimited by their "Main -" / "Support -" headers and the composed line.
   const mainBlock = (morphologyBody.match(/Main\s*[-–—][^]*?(?=Support\s*[-–—])/i) || [])[0] || '';
-  const supportBlock = (morphologyBody.match(/Support\s*[-–—][^]*?(?=Samengesteld|$)/i) || [])[0] || '';
+  const supportBlock = (morphologyBody.match(/Support\s*[-–—][^]*?(?=Samengesteld|Composed|$)/i) || [])[0] || '';
   const main = extractDSeries(mainBlock);
   const support = extractDSeries(supportBlock);
   // Composed: the dash-separated line is unambiguous; match it anywhere in the body.
@@ -283,19 +329,23 @@ function parseIndices(body) {
     out.authenticity = { nature: +m[1], total: +m[2], pct: +m[3] };
   if ((m = body.match(/Polarization Index:\s*(\d+)\s*\(Main\)\s*[-–—]\s*(\d+)\s*\(Shadow\)\s*=\s*gap\s*(\d+)%?\s*(?:->|→)?\s*(.+)?/i)))
     out.polarization = { main: +m[1], shadow: +m[2], gapPct: +m[3], band: (m[4] || '').trim() };
-  if ((m = body.match(/Datapunten:\s*(\d+)\s*\/\s*(\d+)/i)))
+  if ((m = body.match(/(?:Datapunten|Data\s*points):\s*(\d+)\s*\/\s*(\d+)/i)))
     out.datapoints = { value: +m[1], max: +m[2] };
   return out;
 }
 
-// OCEAN bars: "Openheid: 72/100" etc. NB the machine block uses short Dutch labels.
-const DUTCH_OCEAN = { openheid: 'O', ordelijkheid: 'C', extraversie: 'E', meegaandheid: 'A', neuroticisme: 'N' };
+// OCEAN bars: "Openheid: 72/100" / "Openness: 72/100". Short Dutch labels, or the English trait
+// names (the translation and the conventional Big Five name are both accepted).
+const OCEAN_LABELS = {
+  openheid: 'O', ordelijkheid: 'C', extraversie: 'E', meegaandheid: 'A', neuroticisme: 'N',
+  openness: 'O', orderliness: 'C', conscientiousness: 'C', extraversion: 'E', agreeableness: 'A', neuroticism: 'N',
+};
 function parseOceanBlock(body) {
   const out = {};
   const re = /^\s*([A-Za-zëïéè]+)\s*:\s*(\d+)\s*\/\s*100/gim;
   let m;
   while ((m = re.exec(body)) !== null) {
-    const letter = DUTCH_OCEAN[m[1].toLowerCase()];
+    const letter = OCEAN_LABELS[m[1].toLowerCase()];
     if (letter) out[letter] = +m[2];
   }
   return Object.keys(out).length ? out : null;

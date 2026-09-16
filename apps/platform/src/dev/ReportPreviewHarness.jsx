@@ -136,7 +136,7 @@ export default function ReportPreviewHarness() {
   // The replay's own sealedOrbCode is left out on purpose (a stale seal would fire a real discard on
   // unmount); the throwaway dev seal is used instead when the backend provides one.
   if (data) {
-    window.__GFL_PDF_REPLAY = { analysis: data.analysis, cRuntime: data.cRuntime, uploadedOceanScores: data.uploadedOceanScores, ...(devSeal ? { sealedOrbCode: devSeal } : {}) };
+    window.__GFL_PDF_REPLAY = { analysis: data.analysis, cRuntime: data.cRuntime, enginePayload: data.enginePayload, uploadedOceanScores: data.uploadedOceanScores, ...(devSeal ? { sealedOrbCode: devSeal } : {}) };
   }
 
   const reset = useCallback(() => { setCardReady(false); setMountKey((k) => k + 1); }, []);

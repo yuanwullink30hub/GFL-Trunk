@@ -998,7 +998,7 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
     scores[key] = {
       nature_core:   0,  // Mandje 1a: Directe Nature picks (+9 of +6)
       green_hw:      0,  // Mandje 1b: Green hardware bleed ontvangen (+3 of +1)
-      culture_core:  0,  // Mandje 2:  Directe Culture picks (+8 of +4)
+      culture_core:  0,  // Mandje 2:  Directe Culture picks (+7 of +4)
       blue_fb:       0,  // Mandje 3:  Blue feedback bleed ontvangen (+2 of +1)
       yellow_cog:    0,  // Mandje 4:  Yellow cognitieve bleed ontvangen (+2 of +1)
       purple_shadow: 0,  // Mandje 5:  Purple schaduw drip ontvangen (+1)

@@ -88,8 +88,8 @@ export default {
       // Portrait variant toggle under the results-card portrait (also decides the PDF portrait)
       portraitToggle: {
         label: { nl: 'Portret', en: 'Portrait' },
-        female: { nl: 'Vrouw', en: 'Female' },
-        male: { nl: 'Man', en: 'Male' },
+        female: { nl: 'Vrouwelijk', en: 'Feminine' },
+        male: { nl: 'Mannelijk', en: 'Masculine' },
       },
 
       // Email gate validation
@@ -122,6 +122,11 @@ export default {
       morphCaption: {
         nl: 'Hoofd en Support tonen elk de absolute kostencurve van het archetype (0–100). Samengesteld is de gecombineerde belasting, genormaliseerd op zijn eigen piek (=100%) — het toont de vorm binnen jouw configuratie, geen absolute vergelijking, en kan daarom boven de losse lijnen liggen.',
         en: 'Main and Support each show the archetype’s absolute cost-curve (0–100). Samengesteld (composed) is the blended load normalised to its own peak (=100%) — it shows the shape within your configuration, not an absolute comparison, so it can sit above the individual lines.',
+      },
+      // Spec A1 caption (report pipeline v5.0: two curves, both the Main's, register layer)
+      morphCaptionRegister: {
+        nl: 'Beide curven zijn van je Hoofdarchetype. De basislijn is zijn kostencurve op τ; de transform is dezelfde curve gelezen door τ′, getrokken door de archetypen die met je Hoofd meewegen. Eén gedeeld kader: de piek van jouw configuratie = 100%. Onder nul keert de conversie om — dat is een richting, geen negatieve hoeveelheid. Relatief binnen jouw configuratie, geen meting van jou als persoon.',
+        en: 'Both curves are your Main archetype’s. The baseline is its cost-curve at τ; the transform is the same curve read through τ′, pulled by the archetypes that weigh in with your Main. One shared frame: your configuration’s peak = 100%. Below zero the conversion inverts — a direction, not a negative amount. Relative within your configuration, not a measurement of you as a person.',
       },
 
       // Download teaser
@@ -715,6 +720,10 @@ export default {
         caption: {
           nl: 'Hoofd en Support tonen elk de absolute kostencurve van het archetype (0–100). Samengesteld is de gecombineerde belasting, genormaliseerd op zijn eigen piek (=100%) — het toont de VORM binnen jouw configuratie, geen absolute vergelijking, en kan daarom boven de losse lijnen liggen.',
           en: 'Main and Support show each archetype’s absolute cost-curve (0–100). Samengesteld (composed) is the blended load normalised to its own peak (=100%) — it shows the SHAPE within your configuration, not an absolute comparison, so it can sit above the individual lines.',
+        },
+        captionRegister: {
+          nl: 'Beide curven zijn van je Hoofdarchetype: de basislijn (τ) en de transform (τ′), getrokken door de archetypen die met je Hoofd meewegen. Eén gedeeld kader — de piek van jouw configuratie = 100%; onder nul keert de conversie om. Het toont de VORM binnen jouw configuratie, geen meting.',
+          en: 'Both curves are your Main archetype’s: the baseline (τ) and the transform (τ′), pulled by the archetypes that weigh in with your Main. One shared frame — your configuration’s peak = 100%; below zero the conversion inverts. It shows the SHAPE within your configuration, not a measurement.',
         },
       },
 

@@ -32,7 +32,7 @@ import { SciFiButton } from '@gfl/ui';
 import { registerLeaveHandler } from '../../reportDownloadGuard';
 import { formatCents, formatPrice } from '../../config/pricing';
 import { getPaymentConfig, markPaymentDelivered } from '../../services/paymentService';
-import { assembleV4, NARRATIVE_TAGS, matchNarrativeTag } from './v4Parser';
+import { assembleV4, NARRATIVE_TAGS, matchNarrativeTag, canonicalTitle } from './v4Parser';
 import MorphologyChart from './MorphologyChart';
 import { sectionTitle, relabelProse } from './v4Labels';
 
@@ -91,6 +91,26 @@ const cleanTitle = (title) => {
   return t;
 };
 
+// ── Report language. Section TITLES that are parser tags need nothing here: parseAiSections
+//    canonicalises an English tag ("THE SHADOW …") to its Dutch stem ("DE SCHADUW …") in
+//    `title`, so every collector below keys on the Dutch words, and keeps the emitted title in
+//    `displayTitle` for display. What follows are the non-tag titles the renderer filters on,
+//    in both report languages. ──
+const COMPARISON_TITLE = /persoonlijkheidsrapport.*vergelijk|ocean.*vergelijk|vergelijk.*profiel|personality\s*report.*comparison|ocean.*comparison|comparison.*profile/i;
+const COMPARISON_SUBSECTION = /^(spanningsvelden|vergelijkingsrapport|vergelijkings\s*rapport|conclusie|convergente|divergente|stap\s+\d|tension\s*fields|comparison\s*report|conclusion|convergent|divergent|step\s+\d)/i;
+/** "Radar-lezing" / "Radar reading" — the radar chart covers it; never rendered. */
+const RADAR_READING_TITLE = /radar.?(?:lezing|reading)/i;
+/** Stray AI-emitted sections outside the page-map. */
+const STRAY_TITLE = /(?:samenvattende\s+)?kernlezing|centrale\s+spanning|(?:summary\s+)?core\s+reading|central\s+tension/i;
+/** The model's machine block and the render-side OCEAN titles — the renderer draws its own. */
+const RENDER_SIDE_TITLE = /profiel\s*data|ai[\s-]*verwerking|ocean.?gereedschap|ocean.?profiel|profile\s*data|ai[\s-]*processing|ocean.?(?:tool|instrument)|ocean.?profile/i;
+/** v3 "5 geometrische elementen" leftover — not a v4.1+ section. */
+const V3_ELEMENTS_TITLE = /geometrische\s+element|vijf\s+(?:geometrische\s+)?element|geometric\s+element|five\s+(?:geometric\s+)?element/i;
+/** v5.2 §5.7 "DE EXTENSIE — [naam EN] · [naam NL]" (canonical form of "THE EXTENSION — …"). */
+const isExtensionTitle = (title) => /^de\s+extensie\b/i.test(cleanTitle(title || ''));
+/** The title as the model emitted it — what the card and the PDF show. Routing uses `title`. */
+const shownTitle = (s) => (s && (s.displayTitle || s.title)) || '';
+
 // Master Prompt v4.1 §5.2 — De Essentie & De Vermenigvuldiging each have an intro followed
 // by three aspects: cognitive disposition, orientation (intern/extern), gift & curse. The
 // model writes them as prose; this promotes the FIRST paragraph that discusses each aspect to
@@ -140,13 +160,13 @@ const getSectionAccent = (title) => {
   if (t.includes('alchemie') || t.includes('schakelbord') || t.includes('evolutie') || t.includes('ontologi')) return { color: '#fbbf24', rgb: '251, 191, 36' };
   if (t.includes('groep dynamiek') || t.includes('neurobiologisch')) return { color: '#22d3ee', rgb: '34, 211, 238' };
   if (t.includes('cognitieve driehoek') || t.includes('aangeleerde lens')) return { color: '#fbbf24', rgb: '251, 191, 36' };
-  if (t.includes('introductie')) return { color: '#d1d5db', rgb: '209, 213, 219' };
+  if (t.includes('introductie') || t.includes('introduction')) return { color: '#d1d5db', rgb: '209, 213, 219' };
   if (t.includes('prompt') || t.includes('agent')) return { color: '#f97316', rgb: '249, 115, 22' };
   return null; // fallback to cycle
 };
 
 /**
- * PortraitVariantToggle — male/female switch under the results-card portrait.
+ * PortraitVariantToggle — Masculine/Feminine switch directly under the results-card portrait.
  * Styled to the `components.tab` spec in gfl-design-tokens.json: amber tab gradients at
  * 135deg, 0.15rem radius, Lexend Mega uppercase tracked chrome, solid-accent flip on
  * hover (text -> #000, 20px glow) and the amber focus treatment for keyboard users.
@@ -155,7 +175,7 @@ const TOGGLE_AMBER = '255, 174, 0';
 const PortraitVariantToggle = ({ value, onChange, labels }) => {
   const [hovered, setHovered] = useState(null);
   const [focused, setFocused] = useState(null);
-  const options = [['female', labels.female], ['male', labels.male]];
+  const options = [['male', labels.male], ['female', labels.female]];
   return (
     <div role="radiogroup" aria-label={labels.label} style={{ display: 'flex', gap: '0.35rem' }}>
       {options.map(([v, text]) => {
@@ -307,20 +327,38 @@ const AssessmentResultsModal = ({
       ? (result?.extendedName || result?.extendedNameNl || '')
       : (result?.extendedNameNl || result?.extendedName || '')
   ), [language, result]);
-  // Portrait variant picked on the results card (male/female). The card and BOTH PDF
-  // portrait placements read `portrait`, so the download always matches what was shown.
+  // Portrait variant picked on the results card (Masculine/Feminine toggle, always shown). The card
+  // and BOTH PDF portrait placements resolve the EXACT chosen variant, so the download always matches
+  // what was shown and a portrait never sits under the other label (missing art → no portrait).
   const [portraitVariant, setPortraitVariant] = useState(DEFAULT_PORTRAIT_VARIANT);
+  const portraitMain = result?.mainArchetype;
+  const portraitSupport = result?.secondaryArchetype || result?._secondaryKey;
   const portrait = useMemo(
     () => (portraitOverride
       ? { ...portraitOverride, variant: portraitVariant, available: { male: false, female: false } }
-      : resolvePortrait(result?.mainArchetype, result?.secondaryArchetype || result?._secondaryKey, portraitVariant)),
-    [result, portraitVariant, portraitOverride]
+      : resolvePortrait(portraitMain, portraitSupport, portraitVariant, { fallback: false })),
+    [portraitMain, portraitSupport, portraitVariant, portraitOverride]
   );
+  // Starting choice for a new result: the default, unless only the other variant's art exists yet.
+  // Nothing is inferred about the user; the toggle swaps freely.
+  useEffect(() => {
+    const { available } = resolvePortrait(portraitMain, portraitSupport);
+    const other = DEFAULT_PORTRAIT_VARIANT === 'male' ? 'female' : 'male';
+    setPortraitVariant(!available[DEFAULT_PORTRAIT_VARIANT] && available[other] ? other : DEFAULT_PORTRAIT_VARIANT);
+  }, [portraitMain, portraitSupport]);
   const [aiSections, setAiSections] = useState(null);
   const [aiProfileData, setAiProfileData] = useState(null);
   // v4: structured parse of the model output (assembleV4) + the engine C-runtime.
   const [v4Data, setV4Data] = useState(null);
   const [cRuntime, setCRuntime] = useState(null);
+  // Report pipeline v5.0: the runtime engine's role-tagged payload. When present, the morphology
+  // chart follows Spec A1 — two curves, both the Main's, register layer (main.register) — instead
+  // of the v4.3 three-line cRuntime.d_curve.
+  const [enginePayload, setEnginePayload] = useState(null);
+  const morphChart = enginePayload?.main?.register
+    ? { baseline: enginePayload.main.register.register_baseline_pct, transform: enginePayload.main.register.register_transform_pct }
+    : (cRuntime?.d_curve || null);
+  const morphIsRegister = !!enginePayload?.main?.register;
   // The crystal code (the account key) is NOT known here until the full report is unlocked:
   // the analysis only carries a SEALED copy the browser cannot read. The pay component sends
   // the seal back and receives the real code on payment / activation. Refs, so the PDF
@@ -459,7 +497,7 @@ const AssessmentResultsModal = ({
         const __replay = (typeof window !== 'undefined' && window.__GFL_PDF_REPLAY) || null;
         let aiResult;
         if (__replay) {
-          aiResult = { analysis: __replay.analysis, cRuntime: __replay.cRuntime, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode };
+          aiResult = { analysis: __replay.analysis, cRuntime: __replay.cRuntime, enginePayload: __replay.enginePayload, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode };
         } else {
         aiResult = await analyzeAssessment({
           archetypeKey: result.mainArchetype,
@@ -510,6 +548,7 @@ const AssessmentResultsModal = ({
         // v4 structured parse (title-lines-as-tags) + the engine's C-runtime.
         try { setV4Data(assembleV4(cleanedAnalysis)); } catch (e) { console.warn('[GFL] v4 parse failed:', e.message); }
         if (aiResult.cRuntime) setCRuntime(aiResult.cRuntime);
+        setEnginePayload(aiResult.enginePayload || null);
         sealedOrbCodeRef.current = aiResult.sealedOrbCode || ''; // opaque until unlock
         orbCodeRef.current = '';
         const sections = parseAiSections(cleanedAnalysis);
@@ -520,8 +559,8 @@ const AssessmentResultsModal = ({
           const raw = aiResult.analysis || '';
           console.log('%c[GFL] AI OUTPUT DIAGNOSTIC', 'font-weight:bold;color:#22d3ee');
           console.log('[GFL] analysis length:', raw.length, 'chars; completionTokens:', aiResult.completionTokens ?? '(n/a)');
-          console.log('[GFL] section titles emitted by the model:', (sections || []).map(s => s.title));
-          console.log('[GFL] machine block present (— PROFIEL DATA —):', /PROFIEL\s*DATA\s*VOOR\s*AI/i.test(raw), '| last 300 chars:', JSON.stringify(raw.slice(-300)));
+          console.log('[GFL] section titles emitted by the model:', (sections || []).map(shownTitle));
+          console.log('[GFL] machine block present (— PROFIEL DATA —):', /PROFIEL\s*DATA\s*VOOR\s*AI|PROFILE\s*DATA\s*FOR\s*AI/i.test(raw), '| last 300 chars:', JSON.stringify(raw.slice(-300)));
           // D-curve provenance: these come from the ENGINE (cRuntime.d_curve), not the model.
           // If main === support it's because the corpus stores the D-curve PER GROUP — same-group
           // Main+Support share it. Different-group pairs differ.
@@ -529,6 +568,10 @@ const AssessmentResultsModal = ({
           console.log('[GFL] D-curve (engine):', dc ? `main=${JSON.stringify(dc.main)} support=${JSON.stringify(dc.support)} composed=${JSON.stringify(dc.composed)}` : '(none)',
             '| Main:', result?.mainArchetype, '/ Support:', result?.secondaryArchetype || result?._secondaryKey,
             '| main===support:', dc ? JSON.stringify(dc.main) === JSON.stringify(dc.support) : '(n/a)');
+          const reg = aiResult.enginePayload?.main?.register;
+          console.log('[GFL] report pipeline:', aiResult.pipeline || 'v4.3', reg
+            ? `| Spec A1 register (engine): baseline=${JSON.stringify(reg.register_baseline_pct)} transform=${JSON.stringify(reg.register_transform_pct)} stamps=${JSON.stringify(aiResult.enginePayload.stamps)}`
+            : '');
         } catch (_) {}
         const profileElements = sections.filter(s => s.isProfileElement);
         if (profileElements.length > 0) {
@@ -544,7 +587,7 @@ const AssessmentResultsModal = ({
           if (import.meta.env.DEV && !__replay) {
             localStorage.setItem('gfl_pdf_replay', JSON.stringify({
               layerAnswers, liveSubjects,
-              analysis: aiResult.analysis, cRuntime: aiResult.cRuntime,
+              analysis: aiResult.analysis, cRuntime: aiResult.cRuntime, enginePayload: aiResult.enginePayload,
               uploadedOceanScores: aiResult.uploadedOceanScores, sealedOrbCode: aiResult.sealedOrbCode,
               savedAt: Date.now(),
             }));
@@ -582,15 +625,15 @@ const AssessmentResultsModal = ({
       if (s.isResonantie) return false;
       const t = (s.title || '').trim();
       // "Radar-lezing": never render anywhere — the radar chart covers it.
-      if (/radar.?lezing/i.test(t)) return false;
+      if (RADAR_READING_TITLE.test(t)) return false;
       // Stray AI-emitted sections that aren't part of the page-map.
-      if (/(samenvattende\s+)?kernlezing|centrale\s+spanning/i.test(t)) return false;
+      if (STRAY_TITLE.test(t)) return false;
       // Machine block + OCEAN render-side titles (gereedschap / profiel intro) — drop.
-      if (/profiel\s*data|ai[\s-]*verwerking|ocean.?gereedschap|ocean.?profiel/i.test(t)) return false;
+      if (RENDER_SIDE_TITLE.test(t)) return false;
       // v3 "5 geometrische elementen" leftover — not a v4.1 section.
-      if (/geometrische\s+element|vijf\s+(geometrische\s+)?element/i.test(t)) return false;
-      if (/persoonlijkheidsrapport.*vergelijk|ocean.*vergelijk|vergelijk.*profiel/i.test(t)) return false;
-      if (/^(spanningsvelden|vergelijkingsrapport|vergelijkings\s*rapport|conclusie)$/i.test(t)) return false;
+      if (V3_ELEMENTS_TITLE.test(t)) return false;
+      if (COMPARISON_TITLE.test(t)) return false;
+      if (/^(spanningsvelden|vergelijkingsrapport|vergelijkings\s*rapport|conclusie|tension\s*fields|comparison\s*report|conclusion)$/i.test(t)) return false;
       return true;
     }),
   [displaySections]);
@@ -696,7 +739,7 @@ const AssessmentResultsModal = ({
     /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie/i.test(s.title);
 
   const aiIntroSection = useMemo(() => visibleSections.filter(s =>
-    (s.title || '').toLowerCase().includes('introductie')
+    /introductie|introduction/i.test(s.title || '')
   ), [visibleSections]);
 
   // Remaining AI sections not in any named group
@@ -776,7 +819,7 @@ const AssessmentResultsModal = ({
           letterSpacing: '0.15em',
           marginBottom: '0.75rem',
         }}>
-          {cleanTitle(section.title)}
+          {cleanTitle(shownTitle(section))}
         </h3>
         <div style={{
           color: 'rgba(209, 213, 219, 1)',
@@ -1362,7 +1405,7 @@ const AssessmentResultsModal = ({
             gap();
 
             idSecs.forEach((section, i) => {
-              renderSection(section.title, section.content, green);
+              renderSection(shownTitle(section),section.content, green);
               if (i < idSecs.length - 1) { hr(); gap(); }
             });
             noPageBreak = savedNPB;
@@ -1425,7 +1468,7 @@ const AssessmentResultsModal = ({
           }
 
           // D-curve below.
-          if (cRuntime?.d_curve && morphologyRef.current) {
+          if (morphChart && morphologyRef.current) {
             try {
               const mc = await html2canvas(morphologyRef.current, { backgroundColor: '#060612', scale: 2, useCORS: true, logging: false });
               const mImg = mc.toDataURL('image/jpeg', 0.85);
@@ -1448,7 +1491,7 @@ const AssessmentResultsModal = ({
           await justifiedPage(async (gap) => {
             const savedNPB = noPageBreak; noPageBreak = true;
             stilleSecs.forEach((section, i) => {
-              renderSection(t('resultsModal.labels.stilleStemPrefix') + cleanTitle(section.title), section.content, purple);
+              renderSection(t('resultsModal.labels.stilleStemPrefix') + cleanTitle(shownTitle(section)),section.content, purple);
               if (i < stilleSecs.length - 1) { hr(); gap(); }
             });
             noPageBreak = savedNPB;
@@ -2228,14 +2271,14 @@ const AssessmentResultsModal = ({
             gap();
             const p1 = [oceanTraitOf('O'), oceanTraitOf('C')].filter(Boolean);
             p1.forEach((s, i) => {
-              renderSection(s.title, s.content, cyan, { small: true }); // 50% trait subtitle
+              renderSection(shownTitle(s),s.content, cyan, { small: true }); // 50% trait subtitle
               if (i < p1.length - 1) { gap(); } // no hr — headings separate the traits, saves height
             });
           } else {
             oceanDisclaimer(true);    // up top, before the tendency reads (no table in this path)
             gap();
             oceanTraitSections.forEach((s, i) => {
-              renderSection(s.title, s.content, cyan, { small: true }); // 50% trait subtitle
+              renderSection(shownTitle(s),s.content, cyan, { small: true }); // 50% trait subtitle
               if (i < oceanTraitSections.length - 1) { hr(); gap(); }
             });
           }
@@ -2253,7 +2296,7 @@ const AssessmentResultsModal = ({
           const savedNPB = noPageBreak;
           noPageBreak = true;
           oceanP2.forEach((s, i) => {
-            renderSection(s.title, s.content, cyan, { small: true }); // 50% trait subtitle
+            renderSection(shownTitle(s),s.content, cyan, { small: true }); // 50% trait subtitle
             if (i < oceanP2.length - 1) { gap(); } // no hr — headings separate the traits, saves height
           });
           noPageBreak = savedNPB;
@@ -2278,7 +2321,7 @@ const AssessmentResultsModal = ({
       const morphPage = (displaySections || [])
         .filter(s => morphRank(s) >= 0)
         .sort((a, b) => morphRank(a) - morphRank(b));
-      const hasMorphChart = !!(cRuntime?.d_curve && morphologyRef.current);
+      const hasMorphChart = !!(morphChart && morphologyRef.current);
       if (hasMorphChart || morphPage.length > 0) {
         pdf.addPage(); paintBg(); markPage(); y = margin;
         sectionHeading(sectionTitle('morphology_page', language), cyan);
@@ -2290,7 +2333,7 @@ const AssessmentResultsModal = ({
               backgroundColor: '#060612', scale: 2, useCORS: true, logging: false,
             });
             const morphImg = morphCanvas.toDataURL('image/jpeg', 0.85);
-            const capTxt = t('resultsModal.pdf.morph.caption');
+            const capTxt = t(morphIsRegister ? 'resultsModal.pdf.morph.captionRegister' : 'resultsModal.pdf.morph.caption');
 
             const innerPad = 3;
             const MORPH_SCALE = 0.75;                         // 25% smaller than full width
@@ -2323,7 +2366,7 @@ const AssessmentResultsModal = ({
         // down to the page edge instead of breaking early.
         const savedNPBmorph = noPageBreak; noPageBreak = true;
         pageAReads.forEach((section, i) => {
-          renderSection(section.title, relabelProse(section.content, language), cyan);
+          renderSection(shownTitle(section),relabelProse(section.content, language), cyan);
           if (i < pageAReads.length - 1) hr();
         });
         noPageBreak = savedNPBmorph;
@@ -2332,7 +2375,7 @@ const AssessmentResultsModal = ({
           pdf.addPage(); paintBg(); markPage(); y = margin;
           // (no page-level "— vervolg" heading; the section headings below carry the page)
           pageBReads.forEach((section, i) => {
-            renderSection(section.title, relabelProse(section.content, language), cyan);
+            renderSection(shownTitle(section),relabelProse(section.content, language), cyan);
             if (i < pageBReads.length - 1) hr();
           });
         }
@@ -2491,7 +2534,7 @@ const AssessmentResultsModal = ({
           });
         yellowOnPage.forEach((section, i) => {
           gap();
-          renderSection(section.title, section.content, amber);
+          renderSection(shownTitle(section),section.content, amber);
           if (i < yellowOnPage.length - 1) hr();
         });
       }
@@ -2556,25 +2599,26 @@ const AssessmentResultsModal = ({
           !s.title?.toLowerCase().includes('groep dynamiek') &&
           !s.title?.toLowerCase().includes('neurobiologische interpretatie') &&
           !/cognitieve\s*driehoek|aangeleerde\s*lens/i.test(s.title || '') &&
-          !/persoonlijkheidsrapport.*vergelijk/i.test(s.title) &&
+          !COMPARISON_TITLE.test(s.title || '') &&
           !/^1[23]\s*[ab][\s.:]/i.test(s.title || '') &&
           !/professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '') &&
+          // De Extensie renders on the resonance page (v5.2 §5.7).
+          !isExtensionTitle(s.title) &&
           // OCEAN per-trait sections render on the OCEAN page — drop from prose catch-all.
           !/^\**\s*trait\s+[ocean]\b/i.test(cleanTitle(s.title || '')) &&
           // Het OCEAN-profiel narrative / OCEAN-gereedschap subtitle / OCEAN intro — these are
           // render-side titles, not narrative sections. When an upload is present the AI may also
           // emit an OCEAN profile introduction; never render it (the OCEAN page is render-driven).
-          !/het\s+ocean.?profiel|ocean.?profiel|ocean.?gereedschap/i.test(cleanTitle(s.title || '')) &&
-          // The machine block (PROFIEL DATA VOOR AI VERWERKING) is the model's, but the renderer
-          // draws its own authoritative `data` page — drop the AI's copy to avoid a duplicate.
-          !/profiel\s*data|ai[\s-]*verwerking/i.test(cleanTitle(s.title || '')) &&
+          // Likewise the machine block (PROFIEL DATA VOOR AI VERWERKING): the renderer draws its
+          // own authoritative `data` page — drop the AI's copy to avoid a duplicate.
+          !RENDER_SIDE_TITLE.test(cleanTitle(s.title || '')) &&
           // "Radar-lezing": never render — the radar chart covers it.
-          !/radar.?lezing/i.test(s.title || '') &&
+          !RADAR_READING_TITLE.test(s.title || '') &&
           // Stray AI-emitted sections that aren't part of the page-map — never render.
-          !/(samenvattende\s+)?kernlezing|centrale\s+spanning/i.test(s.title || '') &&
+          !STRAY_TITLE.test(s.title || '') &&
           // v3 leftover the model sometimes reverts to (Aarde/Water/Lucht/Vuur/Ether) — not a
           // v4.1 section; §5.8 is Alchemie/Schakelbord/Ontologie. Never render.
-          !/geometrische\s+element|vijf\s+(geometrische\s+)?element|\bvijf\s+element/i.test(cleanTitle(s.title || '')) &&
+          !V3_ELEMENTS_TITLE.test(cleanTitle(s.title || '')) &&
           // Drop empty/ghost sections (a header the AI emitted with no real body) so they
           // never render a content-less page — e.g. a stray "Profiel Elementen" umbrella.
           (s.content || '').replace(/[\s*#>_~`+.-]/g, '').length > 0
@@ -2597,9 +2641,9 @@ const AssessmentResultsModal = ({
           const regularSections = mainSections.filter(s =>
             !s.isAgentPrompt &&
             !/ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie/i.test(s.title) &&
-            !s.title?.toLowerCase().includes('introductie')
+            !/introductie|introduction/i.test(s.title || '')
           );
-          const disclaimerSection = mainSections.find(s => s.title?.toLowerCase().includes('introductie'));
+          const disclaimerSection = mainSections.find(s => /introductie|introduction/i.test(s.title || ''));
           const agentSection = mainSections.find(s =>
             s.isAgentPrompt || /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie/i.test(s.title)
           );
@@ -2692,7 +2736,7 @@ const AssessmentResultsModal = ({
             gap();
 
             identityPage.forEach((section, i) => {
-              renderSection(section.title, section.content, getPdfSectionColor(section.title));
+              renderSection(shownTitle(section),section.content, getPdfSectionColor(section.title));
               if (i < identityPage.length - 1) { hr(); gap(); }
             });
             noPageBreak = savedNPB;
@@ -2702,7 +2746,7 @@ const AssessmentResultsModal = ({
           if (essencePage.length > 0) {
             await justifiedPage(async (gap) => {
             essencePage.forEach((section, i) => {
-              renderSection(section.title, injectAspectSubtitles(section.content, language), getPdfSectionColor(section.title));
+              renderSection(shownTitle(section),injectAspectSubtitles(section.content, language), getPdfSectionColor(section.title));
               if (i < essencePage.length - 1) { hr(); gap(); }
             });
             });
@@ -2743,7 +2787,7 @@ const AssessmentResultsModal = ({
             // Schaduw + Blindspot below the radar
             for (let gi = 0; gi < shadowBlindspotSections.length; gi++) {
               const section = shadowBlindspotSections[gi];
-              renderSection(section.title, section.content, getPdfSectionColor(section.title));
+              renderSection(shownTitle(section),section.content, getPdfSectionColor(section.title));
               if (gi < shadowBlindspotSections.length - 1) { hr(); gap(); }
             }
             // ── TNM WHEEL — the static model image (same asset/size as page 5) placed in the
@@ -2780,7 +2824,7 @@ const AssessmentResultsModal = ({
             noPageBreak = true; // no bottom padding — let the text flow down to the page edge
             // No page title — each read gets its own "De Stille Stem — <read>" header instead.
             stillePage.forEach((section, i) => {
-              renderSection(t('resultsModal.labels.stilleStemPrefix') + cleanTitle(section.title), section.content, purple);
+              renderSection(t('resultsModal.labels.stilleStemPrefix') + cleanTitle(shownTitle(section)),section.content, purple);
               if (i < stillePage.length - 1) { hr(); gap(); }
             });
             noPageBreak = savedNPB;
@@ -2788,12 +2832,12 @@ const AssessmentResultsModal = ({
           }
           endStille();
 
-          // ── Resonantie page: Main + Support archetype images, then Professionele &
-          //    Creatieve Resonantie (pulled directly from displaySections). ──
+          // ── Resonantie page: Main + Support archetype images, then De Extensie (v5.2 §5.7),
+          //    Professionele & Creatieve Resonantie (pulled directly from displaySections). ──
+          const resonanceRank = (s) => (isExtensionTitle(s.title) ? 0 : /professionele/i.test(s.title || '') ? 1 : 2);
           const resonanceSections = (displaySections || []).filter(s =>
-            /professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '')
-          ).sort((a, b) =>
-            (/professionele/i.test(a.title) ? 0 : 1) - (/professionele/i.test(b.title) ? 0 : 1));
+            /professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '') || isExtensionTitle(s.title)
+          ).sort((a, b) => resonanceRank(a) - resonanceRank(b));
           const endResonance = trackBlock('nb_resonance');
           if (resonanceSections.length > 0 || (result.mainArchetype && result.secondaryArchetype)) {
             await justifiedPage(async (gap) => {
@@ -2808,7 +2852,7 @@ const AssessmentResultsModal = ({
               const tmpPg = pdf.internal.getNumberOfPages();
               y = margin; noPageBreak = true;
               resonanceSections.forEach((section, i) => {
-                renderSection(section.title, section.content, green);
+                renderSection(shownTitle(section),section.content, green);
                 if (i < resonanceSections.length - 1) hr();
               });
               resoTextH = y - margin;
@@ -2828,8 +2872,9 @@ const AssessmentResultsModal = ({
                   const key = String(k || '').toUpperCase();
                   return (GROUP_TO_ARCHETYPES[ARCHETYPE_TO_GROUP[key]] || []).find((m) => m !== key);
                 };
-                const mainImgSrc = getArchetypeImage(result.mainArchetype, greenPartner(result.mainArchetype), portraitVariant);
-                const supImgSrc = getArchetypeImage(supportKey, greenPartner(supportKey), portraitVariant);
+                // Same exact-variant rule as the cover: the toggle's choice, never the other variant.
+                const mainImgSrc = resolvePortrait(result.mainArchetype, greenPartner(result.mainArchetype), portraitVariant, { fallback: false }).url;
+                const supImgSrc = resolvePortrait(supportKey, greenPartner(supportKey), portraitVariant, { fallback: false }).url;
                 if (mainImgSrc && supImgSrc) {
                   const [mainEl, supEl] = await Promise.all([
                     new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = mainImgSrc; }),
@@ -2875,7 +2920,7 @@ const AssessmentResultsModal = ({
 
             // Text below the images.
             resonanceSections.forEach((section, i) => {
-              renderSection(section.title, section.content, green);
+              renderSection(shownTitle(section),section.content, green);
               if (i < resonanceSections.length - 1) { hr(); gap(); }
             });
             });
@@ -2931,8 +2976,8 @@ const AssessmentResultsModal = ({
               let promptContent = (agentSection.content || '').trim();
               // If the model appended its machine block after the prompt (plain text, no ##),
               // cut it off here — the render-side `data` page is the authoritative copy.
-              promptContent = promptContent.replace(/\n[^\n]*PROFIEL\s*DATA\s*VOOR\s*AI[\s\S]*$/i, '')
-                                           .replace(/\n\s*--\s*IDENTITEIT\s*--[\s\S]*$/i, '').trim();
+              promptContent = promptContent.replace(/\n[^\n]*(?:PROFIEL\s*DATA\s*VOOR\s*AI|PROFILE\s*DATA\s*FOR\s*AI)[\s\S]*$/i, '')
+                                           .replace(/\n\s*--\s*(?:IDENTITEIT|IDENTITY)\s*--[\s\S]*$/i, '').trim();
               // Strip markdown code fences the AI may wrap the prompt in
               promptContent = promptContent.replace(/^```[^\n]*\n?/gm, '').replace(/^~~~[^\n]*\n?/gm, '');
               // Remove everything before the first ## sub-heading
@@ -3336,7 +3381,7 @@ const AssessmentResultsModal = ({
       setIsGeneratingPdf(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, displaySections, uploadedFiles, v4Data, language, cRuntime, t, tArray, tFunc, portrait, portraitVariant, paidPaymentId]);
+  }, [result, displaySections, uploadedFiles, v4Data, language, cRuntime, enginePayload, t, tArray, tFunc, portrait, portraitVariant, paidPaymentId]);
 
   // Dev PDF live-preview: once the (replayed) analysis is ready, auto-build the PDF
   // and hand the blob URL back to the harness instead of downloading.
@@ -3612,8 +3657,8 @@ const AssessmentResultsModal = ({
                   paddingBottom: '1.5rem',
                   borderBottom: '1px solid rgba(29, 153, 4, 0.2)',
                 }}>
-                  {/* Portrait column: the archetype image + the male/female toggle */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem', flexShrink: 0 }}>
+                  {/* Portrait column: the archetype image with the Masculine/Feminine toggle right under it */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
                   {/* Archetype portrait — responsive square box. The art is transparent PNG, shown whole:
                       no frame, no crop (contain, not cover). */}
                   <div style={{ position: 'relative', width: rs.profileImgSize, height: rs.profileImgSize, flexShrink: 0 }}>
@@ -3634,18 +3679,16 @@ const AssessmentResultsModal = ({
                     />
                     )}
                   </div>
-                  {/* Offered only when both portraits exist — the PDF follows this choice. */}
-                  {portrait.available.male && portrait.available.female && (
-                    <PortraitVariantToggle
-                      value={portrait.variant}
-                      onChange={setPortraitVariant}
-                      labels={{
-                        label: t('resultsModal.ui.portraitToggle.label'),
-                        female: t('resultsModal.ui.portraitToggle.female'),
-                        male: t('resultsModal.ui.portraitToggle.male'),
-                      }}
-                    />
-                  )}
+                  {/* Always shown; shows the CHOICE (not whichever art exists) — the card image and the PDF follow it. */}
+                  <PortraitVariantToggle
+                    value={portraitVariant}
+                    onChange={setPortraitVariant}
+                    labels={{
+                      label: t('resultsModal.ui.portraitToggle.label'),
+                      female: t('resultsModal.ui.portraitToggle.female'),
+                      male: t('resultsModal.ui.portraitToggle.male'),
+                    }}
+                  />
                   </div>
 
                   <div style={{ maxWidth: rs.profileTextMaxW }}>
@@ -3792,10 +3835,10 @@ const AssessmentResultsModal = ({
                 {/* De Stille Stem — Reflectie */}
                 {cardStille
                   .filter((s) => /reflectie/.test(cleanTitle(s.title || '').toLowerCase()))
-                  .map((s, i) => renderAiSectionCard({ ...s, title: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(s.title) }, 6000 + i))}
+                  .map((s, i) => renderAiSectionCard({ ...s, title: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(s.title), displayTitle: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(shownTitle(s)) },6000 + i))}
 
                 {/* D-curve chart (visible) — between Reflectie and Motivatie. Same ref the PDF rasterises. */}
-                {cRuntime?.d_curve && (
+                {morphChart && (
                   <div style={{
                     position: 'relative',
                     background: 'rgba(0, 0, 0, 0.6)',
@@ -3815,7 +3858,7 @@ const AssessmentResultsModal = ({
                     </div>
                     <div ref={morphologyRef} style={{ width: '100%', height: '512px', background: '#060612', borderRadius: '0.5rem', paddingTop: '1.5rem' }}>
                       <MorphologyChart
-                        chart={cRuntime.d_curve}
+                        chart={morphChart}
                         mainName={result.mainName || 'Main'}
                         supportName={result.secondaryName || 'Support'}
                         height={474}
@@ -3826,7 +3869,7 @@ const AssessmentResultsModal = ({
                       margin: '0.5rem 0.25rem 0.1rem', fontSize: '0.72rem', lineHeight: 1.45,
                       color: 'rgba(156, 163, 175, 0.9)', fontFamily: "'Figtree', sans-serif", fontStyle: 'italic',
                     }}>
-                      {t('resultsModal.ui.morphCaption')}
+                      {t(morphIsRegister ? 'resultsModal.ui.morphCaptionRegister' : 'resultsModal.ui.morphCaption')}
                     </p>
                   </div>
                 )}
@@ -3834,7 +3877,7 @@ const AssessmentResultsModal = ({
                 {/* De Stille Stem — Motivatie */}
                 {cardStille
                   .filter((s) => /motivatie/.test(cleanTitle(s.title || '').toLowerCase()))
-                  .map((s, i) => renderAiSectionCard({ ...s, title: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(s.title) }, 6100 + i))}
+                  .map((s, i) => renderAiSectionCard({ ...s, title: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(s.title), displayTitle: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(shownTitle(s)) },6100 + i))}
 
                 {/* Essentie/Vermenigvuldiging/Schaduw/Blindspot/Morfologie-reads/Beweging/Resonantie/
                     Alchemie etc. are PDF-only now — pulled off the teaser card. */}
@@ -4313,11 +4356,13 @@ function preinsertTagHeadings(text) {
 // Remove the Kaart Microcopy material from the analysis BEFORE any rendering path sees it —
 // guarantees the card fields never appear on a report page/PDF section, even when the model
 // drops the section heading and appends the labels to a previous section's body.
+// Both report languages: "Kaart Microcopy" / KAART_GIFT / KAART_GEOMETRIE and the English
+// "Card Microcopy" / CARD_GIFT / CARD_GEOMETRY.
 function stripKaartFields(text) {
   let t = String(text || '');
-  t = t.replace(/^#{2,3}\s*(?:\d+[A-Za-z]?\.\s*)?kaart\s*microcopy\s*$[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
-  t = t.replace(/^\s*KAART_GIFT:\s*[\s\S]*?(?=\n\s*KAART_GEOMETRIE:|\n#{2,3}\s|$)/gim, '');
-  t = t.replace(/^\s*KAART_GEOMETRIE:\s*[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
+  t = t.replace(/^#{2,3}\s*(?:\d+[A-Za-z]?\.\s*)?(?:kaart|card)\s*microcopy\s*$[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
+  t = t.replace(/^\s*(?:KAART|CARD)_GIFT:\s*[\s\S]*?(?=\n\s*(?:KAART_GEOMETRIE|CARD_GEOMETRY):|\n#{2,3}\s|$)/gim, '');
+  t = t.replace(/^\s*(?:KAART_GEOMETRIE|CARD_GEOMETRY):\s*[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
   return t;
 }
 
@@ -4332,8 +4377,12 @@ function parseAiSections(analysisText) {
   const matches = [];
   let match;
 
+  // `title` is the ROUTING form: an English report's tag is canonicalised to its Dutch stem, so
+  // every page collector below and in the renderer keys on one vocabulary. `displayTitle` is the
+  // title exactly as the model emitted it — what the card and the PDF show (shownTitle).
   while ((match = sectionRegex.exec(analysisText)) !== null) {
-    matches.push({ title: match[1].trim(), start: match.index, headerEnd: match.index + match[0].length });
+    const emitted = match[1].trim();
+    matches.push({ title: canonicalTitle(emitted), displayTitle: emitted, start: match.index, headerEnd: match.index + match[0].length });
   }
 
   if (matches.length === 0) {
@@ -4355,6 +4404,17 @@ function parseAiSections(analysisText) {
     /^>?\s*Dit is een zelfreflectie-instrument[^\n]*\n?/gm,
     /^>?\s*Dit rapport is geen in beton gegoten diagnose[^\n]*\n?/gm,
     /^>?\s*\**Disclaimer\**:?\s*Dit rapport[^\n]*\n?/gim,
+    // English report
+    /^>?\s*\**Shadow[- ]?archetype\**:?[^\n]*\n?/gim,
+    /^>?\s*\**Archetype:?\**:?\s+\w+.*Position\s+\d+[^\n]*\n?/gim,
+    /^>?\s*\**Archetype:?\**:?\s+\w+.*180.*opposite[^\n]*\n?/gim,
+    /^>?\s*\**Archetype:?\**:?\s+\w+.*[Rr]ed\s+[Ll]ine[^\n]*\n?/gim,
+    /^>?\s*This report (?:was|is) generated by (?:the )?Garden [Ff]or Life[^\n]*\n?/gm,
+    /^>?\s*The neurobiological terms used are metaphors[^\n]*\n?/gm,
+    /^>?\s*Consult a professional for medical[^\n]*\n?/gm,
+    /^>?\s*This is a self-reflection (?:tool|instrument)[^\n]*\n?/gm,
+    /^>?\s*This report is not a[^\n]*diagnosis[^\n]*\n?/gm,
+    /^>?\s*\**Disclaimer\**:?\s*This report[^\n]*\n?/gim,
   ];
 
   const stripDisclaimer = (text) => {
@@ -4376,19 +4436,20 @@ function parseAiSections(analysisText) {
 
   // Identify the comparison section and the AI-Agent-Prompt section so we can
   // (a) absorb all comparison sub-sections into one block, and (b) tag it as PDF-only.
-  const reportMatchIdx = matches.findIndex(m => /persoonlijkheidsrapport.*vergelijk|ocean.*vergelijk|vergelijk.*profiel/i.test(m.title));
+  const reportMatchIdx = matches.findIndex(m => COMPARISON_TITLE.test(m.title));
   const agentPromptIdx = matches.findIndex(m =>
     /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie|^11[^\d]/i.test(m.title)
   );
-  // 12A/12B resonantie sections (placed below radar chart in PDF) — also match legacy 13A/13B
-  const resonantieTest = (t) => /^1[23]\s*[ab][\s.:]/i.test(t) || /professionele\s+resonantie/i.test(t) || /creatieve\s+resonantie/i.test(t);
+  // 12A/12B resonantie sections (placed below radar chart in PDF) — also match legacy 13A/13B.
+  // De Extensie (v5.2 §5.7) shares their page: flagged the same way, placed first by the renderer.
+  const resonantieTest = (t) => /^1[23]\s*[ab][\s.:]/i.test(t) || /professionele\s+resonantie/i.test(t) || /creatieve\s+resonantie/i.test(t) || isExtensionTitle(t);
 
   // Find the first section after comparison that is NOT a comparison sub-section
   // (comparison sub-sections get absorbed into the parent comparison block)
   const firstAfterComp = reportMatchIdx >= 0
     ? matches.findIndex((m, idx) =>
         idx > reportMatchIdx &&
-        !(/^(spanningsvelden|vergelijkingsrapport|vergelijkings\s*rapport|conclusie|convergente|divergente|stap\s+\d)/i.test(m.title.trim()))
+        !COMPARISON_SUBSECTION.test(m.title.trim())
       )
     : -1;
 
@@ -4403,14 +4464,14 @@ function parseAiSections(analysisText) {
   };
 
   for (let i = 0; i < matches.length; i++) {
-    const title = matches[i].title;
+    const { title, displayTitle } = matches[i];
     // Skip any "Leerling Ontologisch Rapport" preamble the AI may inject
     if (/leerling\s+ontologisch/i.test(title)) continue;
-    // Skip any standalone "Introductie" / "Inleiding" the AI may generate
-    if (/^(introductie|inleiding)$/i.test(title)) continue;
-    // Skip "Kaart Microcopy" — machine-consumed profile-card fields (KAART_GIFT/KAART_GEOMETRIE),
+    // Skip any standalone "Introductie" / "Inleiding" / "Introduction" the AI may generate
+    if (/^(introductie|inleiding|introduction)$/i.test(title)) continue;
+    // Skip "Kaart Microcopy" / "Card Microcopy" — machine-consumed profile-card fields,
     // held server-side in kaartDrafts by the backend; never rendered as a report page.
-    if (/kaart\s*microcopy/i.test(title)) continue;
+    if (/(?:kaart|card)\s*microcopy/i.test(title)) continue;
     // Skip umbrella "Profiel Dynamiek" / "Profiel Elementen" / "5 Elementen" / "De 5 Elementen"
     // headers — the individual elements are parsed by profileKeyFromTitle below. When the AI
     // bundles them under one heading, extract sub-elements from the body. (Without "element"
@@ -4448,7 +4509,7 @@ function parseAiSections(analysisText) {
       reportMatchIdx >= 0 && i > reportMatchIdx &&
       i !== reportMatchIdx &&
       (firstAfterComp < 0 || i < firstAfterComp) &&
-      /^(spanningsvelden|vergelijkingsrapport|vergelijkings\s*rapport|conclusie|convergente|divergente|stap\s+\d)/i.test(title.trim())
+      COMPARISON_SUBSECTION.test(title.trim())
     ) continue;
 
     const isAgentPrompt = (agentPromptIdx >= 0 && i === agentPromptIdx);
@@ -4463,6 +4524,7 @@ function parseAiSections(analysisText) {
       const rawContent = analysisText.slice(contentStart2, contentEnd2).trim();
       parts.push({
         title,
+        displayTitle,
         content: stripDisclaimer(rawContent),
         isProfileElement: true,
         profileKey,
@@ -4490,7 +4552,7 @@ function parseAiSections(analysisText) {
     // or "(Dual-Core grafiek - render-side - draagt de Nature/Culture-data per zuil.)". Real
     // sections are long prose (>300 chars); these stubs are tiny and mention render-side artefacts.
     const bare = content.replace(/[*#>_`~]/g, '').trim();
-    if (bare.length < 200 && /render.?side|pagina\s+[ab]\b|d-?curve.?grafiek|grafiek\s*[-–)]|dual.?core\s+grafiek|6-?groeps|nature\s*\/\s*culture/i.test(bare)) {
+    if (bare.length < 200 && /render.?side|(?:pagina|page)\s+[ab]\b|d-?curve.?(?:grafiek|chart|graph)|(?:grafiek|chart|graph)\s*[-–)]|dual.?core\s+(?:grafiek|chart|graph)|6-?(?:groeps|group)|nature\s*\/\s*culture/i.test(bare)) {
       continue;
     }
 
@@ -4503,6 +4565,7 @@ function parseAiSections(analysisText) {
 
     parts.push({
       title,
+      displayTitle,
       content,
       isAgentPrompt,
       isComparison,

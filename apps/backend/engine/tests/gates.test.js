@@ -581,6 +581,110 @@ test('R8 — a Support outside the pull set still ships (C-modulation + support_
   assert.equal(corpusName('nope'), null);
 });
 
+test('Request — the derived indices and the uploaded OCEAN values reach the model in the prompt\'s own terms (L4, R-c, D-10)', () => {
+  const { buildUserMessage } = require('../../prompts/advanced');
+  const details = [{ key: 'HERO', position: 11, group: 'Agency', total: 120 }, { key: 'EXPLORER', position: 5, group: 'Seeker', total: 40 }];
+  const base = {
+    archetypeKey: 'HERO', supportArchetype: 'MAGICIAN', shadowArchetype: 'EXPLORER', blindspotArchetype: 'SAGE',
+    archetypeDetails: details, responses: [], sliceScoped: true, language: 'nl',
+    polarizationIndex: 80, polarizationPct: 67, polarizationLevel: 'HIGH_POLARIZATION',
+    authenticityIndex: 71, authenticityLevel: 'BALANCED', totalNaturePoints: 300, totalCulturePoints: 120,
+  };
+  const msg = buildUserMessage(base);
+  assert.ok(msg.includes('Polarization Index: 80 punten (Main 120 − Shadow 40) = 67% van Main → band: gap > 60% van Main — schaduw onderdrukt'), msg);
+  assert.ok(msg.includes('Authenticity Index: 71% Nature (over 72 picks) — Nature punten: 300 / Culture punten: 120'));
+  assert.ok(!/Gat [<>] \d+ punten/.test(msg), 'the old point-threshold notes never reach the engine pipeline');
+  // one line type, from the line-type block: the older three-colour "Verbinding" line (no red) is gone
+  assert.ok(!msg.includes('Main-Support Verbinding'), 'no second line-type statement');
+  assert.ok(buildUserMessage({ ...base, sliceScoped: false }).includes('Main-Support Verbinding:'), 'v4.3 path keeps it');
+  // the band follows the level the engine banded (R-c: > 60 · 30–60 · < 30), and the pct falls back to the totals
+  assert.match(buildUserMessage({ ...base, polarizationPct: undefined, polarizationLevel: 'MODERATE' }), /= 67% van Main → band: gap 30–60% — gezonde spanning/);
+  assert.match(buildUserMessage({ ...base, polarizationLevel: 'HIGH_INDIVIDUATION' }), /band: gap < 30% — actieve integratie/);
+  // no upload → no OCEAN line at all (D-10: never geometry-derived values)
+  assert.ok(!/OCEAN \(/.test(msg));
+  assert.ok(!msg.includes('OCEAN Scores:'), 'the v4.3 derived-OCEAN line stays out of the engine pipeline');
+  const up = { O: 72, C: 55, E: 61, A: 80, N: 23 };
+  assert.ok(buildUserMessage({ ...base, uploadedOceanScores: up })
+    .includes('OCEAN (geüpload door de gebruiker): Openheid: 72/100 | Ordelijkheid: 55/100 | Extraversie: 61/100 | Meegaandheid: 80/100 | Neuroticisme: 23/100'));
+  assert.ok(buildUserMessage({ ...base, language: 'en', uploadedOceanScores: { O: 72, N: 23 } })
+    .includes('OCEAN (uploaded by the user): Openness: 72/100 | Neuroticism: 23/100'));
+  // the v4.3 path is untouched
+  const v43 = buildUserMessage({ ...base, sliceScoped: false });
+  assert.ok(v43.includes('Polarization Index: 80 (HIGH_POLARIZATION)') && v43.includes('Gat > 222 punten'));
+});
+
+test('Request — the yellow-triangle activation numbers ship, the backend\'s own lens prose does not (W6: content = the slice)', () => {
+  const { buildUserMessage } = require('../../prompts/advanced');
+  const details = ['JUDGE', 'EXPLORER', 'ARTIST', 'LOVER', 'OUTLAW', 'MAGICIAN', 'CAREGIVER', 'TRICKSTER', 'HERO', 'INNOCENT', 'SAGE', 'RULER']
+    .map((key, i) => ({ key, position: i + 1, group: 'x', total: 50, nature_core: 20, yellow_cog: i < 3 ? 40 : 0 }));
+  const base = { archetypeKey: 'JUDGE', supportArchetype: 'RULER', shadowArchetype: 'TRICKSTER', blindspotArchetype: 'OUTLAW', archetypeDetails: details, responses: [], language: 'nl' };
+  const v5 = buildUserMessage({ ...base, sliceScoped: true });
+  assert.ok(v5.includes('── GELE DRIEHOEKEN — CULTUREFORCE ACTIVATIE ──') && /DOMINANT COGNITIEF NETWERK: .* \(Driehoek 1\)/.test(v5), 'activation table + dominant triangle stay');
+  for (const label of ['Superkracht:', 'Cognitieve Valkuilen:', 'Culturele Context:']) assert.ok(!v5.includes(label), `${label} not in the engine-pipeline request`);
+  const v43 = buildUserMessage({ ...base, sliceScoped: false });
+  for (const label of ['Superkracht:', 'Cognitieve Valkuilen:', 'Culturele Context:']) assert.ok(v43.includes(label), `${label} still on the v4.3 path`);
+  // the triangle names the request uses are the corpus's own (TNM overview "Naam" row, NL twin), in order
+  const { YELLOW_TRIANGLE_PROFILES } = require('../../prompts/advanced');
+  const overview = R.registry('nl').docs.get('tnm/preamble').text;
+  const naam = overview.split('\n').find((l) => /^\|\s*Naam\s*\|/.test(l));
+  const corpusNames = naam.split('|').map((c) => c.trim()).filter(Boolean).slice(1);
+  assert.deepEqual(YELLOW_TRIANGLE_PROFILES.map((t) => t.name), corpusNames);
+  for (const t of YELLOW_TRIANGLE_PROFILES) {
+    const row = overview.split('\n').find((l) => /^\|\s*Leden\s*\|/.test(l)).split('|').map((c) => c.trim()).filter(Boolean)[t.id];
+    assert.equal((row.match(/\((\d+)\)/g) || []).length, 3, `Driehoek ${t.id} has three members in the corpus`);
+  }
+});
+
+test('Request — the English title set handed to the model is exactly what the platform parser routes (W8)', async () => {
+  const { buildUserMessage, EN_SECTION_TITLES } = require('../../prompts/advanced');
+  const hooks = require('node:module').registerHooks({
+    resolve(specifier, context, next) {
+      try { return next(specifier, context); } catch (e) {
+        if (e.code === 'ERR_MODULE_NOT_FOUND' && specifier.startsWith('.')) return next(`${specifier}.js`, context);
+        throw e;
+      }
+    },
+  });
+  let P;
+  try { P = await import('../../../platform/src/components/assessment/v4Parser.js'); } finally { hooks.deregister(); }
+  const titles = EN_SECTION_TITLES.narrative.filter((x) => !x.startsWith('  '));
+  // every narrative title routes to a slot, as an English tag; the OCEAN page title is the comparison heading
+  const slots = [];
+  for (const title of titles) {
+    const line = title.replace('[name] · [name in the second language]', 'The Usurper · De Troonrover');
+    if (title.startsWith('PERSONALITY REPORT COMPARISON')) { assert.match(line, /personality\s*report.*comparison/i); continue; }
+    const hit = P.matchNarrativeTag(line);
+    assert.ok(hit && hit.lang === 'en', `parser routes "${line}"`);
+    slots.push(hit.slot);
+  }
+  for (const trait of EN_SECTION_TITLES.traitTitles) {
+    const hit = P.matchNarrativeTag(trait);
+    assert.ok(hit && hit.slot === `ocean_${trait.charAt(6).toLowerCase()}`, `parser routes "${trait}"`);
+    slots.push(hit.slot);
+  }
+  assert.equal(new Set(slots).size, slots.length, 'no two titles land in one slot');
+  // every DEEL 5 slot the prompt names is covered (professional resonance left the prompt in v6.1)
+  const expected = P.PAGE_ORDER.flat().filter((s) => s !== 'prof_resonance');
+  assert.deepEqual([...new Set(slots)].sort(), expected.sort());
+  // machine block: every tag is a known parser tag
+  for (const tag of EN_SECTION_TITLES.machineTags) {
+    assert.ok(Object.keys(P.MACHINE_TAGS).some((k) => k.toUpperCase() === tag), `machine tag "${tag}"`);
+  }
+  // experiment labels are excluded from tag matching (NOT_TAGS), so they never split a section
+  for (const label of EN_SECTION_TITLES.experimentLabels) assert.equal(P.matchNarrativeTag(label), null, label);
+  // the block ships only for an English engine-pipeline report
+  const base = { archetypeKey: 'HERO', supportArchetype: 'MAGICIAN', shadowArchetype: 'EXPLORER', blindspotArchetype: 'SAGE', archetypeDetails: [], responses: [], sliceScoped: true };
+  assert.ok(buildUserMessage({ ...base, language: 'en' }).includes('═══ SECTION TITLES — ENGLISH REPORT'));
+  assert.ok(!buildUserMessage({ ...base, language: 'nl' }).includes('SECTION TITLES'));
+  assert.ok(!buildUserMessage({ ...base, language: 'en', sliceScoped: false }).includes('SECTION TITLES'));
+});
+
+test('Report pipeline — decided in the repo (the engine pipeline), never by a host environment variable', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', 'config', 'index.js'), 'utf8');
+  assert.ok(!/REPORT_PIPELINE/.test(src), 'config/index.js reads no REPORT_PIPELINE');
+  assert.equal(require('../../config').reportPipeline, 'v5.2');
+});
+
 test('Deploy absent-check — no superseded artifact in the tree; canon stamps current', () => {
   const root = path.resolve(__dirname, '..', '..', '..', '..');
   const KILL = [

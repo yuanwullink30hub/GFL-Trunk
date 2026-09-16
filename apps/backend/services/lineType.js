@@ -3,13 +3,13 @@
  * ==================================================
  * The colour of the line between Main and Support (Groen/Paars/Blauw/Rood) is a pure
  * function of the two wheel positions. The model kept mis-deriving it (Green vs Blue),
- * so the backend resolves it deterministically here and ships the AI:
- *   1. the resolved tag, pre-computed, inside the user payload (`formatLineTypeBlock`), and
- *   2. the full lookup table as a separate reference document (`LINE_TYPE_LOOKUP_DOC`),
- * so the model reads the answer instead of guessing the links.
+ * so the backend resolves it deterministically here and ships the AI the resolved tag,
+ * pre-computed, inside the user payload (`formatLineTypeBlock`), plus the Main's own links
+ * (`mainLinks`, payload.links) — so the model reads the answers instead of guessing the links.
+ * The whole wheel (`wheelLinks`) is stored here and never sent (human ruling, 2026-09-16: the
+ * former full-table reference document is retired).
  *
- * This module is the single source of truth: the resolver and the reference doc
- * (LINE_TYPE_LOOKUP_DOC, shipped to the model) are kept in lockstep here.
+ * This module is the single source of truth for the wheel's line geometry.
  */
 
 // Wheel positions 1..12 (clockwise), six biological pillars of two.
@@ -113,48 +113,4 @@ function formatLineTypeBlock({ mainKey, supportKey, shadowKey, blindspotKey }) {
   ].join('\n');
 }
 
-// ── Reference document shipped alongside the payload (the lookup table, verbatim) ──
-const LINE_TYPE_LOOKUP_DOC = `# Backend Line-Type Lookup Table — exact pairs
-
-The colour of the line between Main and Support is resolved by the backend from these static
-tables and sent with its tag already resolved. The model never derives the colour — it reads
-the tag the backend supplies.
-
-## Wheel reference (position | archetype | group)
-\`\`\`
- 1 Judge      Ruling        7 Trickster  Chaos
- 2 Lover      Relational    8 Sage       Abstract
- 3 Caregiver  Relational    9 Artist     Abstract
- 4 Innocent   Seeker       10 Magician   Agency
- 5 Explorer   Seeker       11 Hero       Agency
- 6 Outlaw     Chaos        12 Ruler      Ruling
-\`\`\`
-
-## Resolution order (apply top-down; first match wins)
-1. GROENE LIJN — same group
-2. PAARSE LIJN — 180° shadow (positions 6 apart)
-3. BLAUWE LIJN — sum-13 cross-group feedback
-4. RODE LIJN — friction / blindspot axis
-5. (geen kanonieke lijn) — none of the above
-
-Order matters: Judge+Ruler and Outlaw+Trickster are BOTH same-group AND sum-13 → same-group (GREEN) wins.
-
-## GROENE LIJN — gedeelde hardware (same biological group)
-Judge (1)–Ruler (12) | Lover (2)–Caregiver (3) | Innocent (4)–Explorer (5)
-Outlaw (6)–Trickster (7) | Sage (8)–Artist (9) | Magician (10)–Hero (11)
-
-## PAARSE LIJN — 180° schaduw-as (unordered)
-Judge (1)–Trickster (7) | Lover (2)–Sage (8) | Caregiver (3)–Artist (9)
-Innocent (4)–Magician (10) | Explorer (5)–Hero (11) | Outlaw (6)–Ruler (12)
-
-## BLAUWE LIJN — sum-13 feedback-brug (cross-group ONLY)
-Lover (2)–Hero (11) | Caregiver (3)–Magician (10) | Innocent (4)–Artist (9) | Explorer (5)–Sage (8)
-(Judge (1)+Ruler (12)=13 → GROEN | Outlaw (6)+Trickster (7)=13 → GROEN)
-
-## RODE LIJN — frictie / blindspot-as (hardware seam)
-Rule: positions sum to 7 (mod 12) — the red-line/blindspot of a Main is its seam partner.
-Judge (1)–Outlaw (6) | Lover (2)–Explorer (5) | Caregiver (3)–Innocent (4)
-Ruler (12)–Trickster (7) | Hero (11)–Sage (8) | Magician (10)–Artist (9)
-`;
-
-module.exports = { resolveLineType, formatLineTypeBlock, redLinePartner, wheelLinks, mainLinks, LINE_TYPE_LOOKUP_DOC, ARCHETYPE_POSITIONS: POSITIONS };
+module.exports = { resolveLineType, formatLineTypeBlock, redLinePartner, wheelLinks, mainLinks, ARCHETYPE_POSITIONS: POSITIONS };

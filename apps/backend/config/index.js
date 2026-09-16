@@ -54,10 +54,11 @@ module.exports = {
     },
   },
 
-  // Report pipeline: 'v4.3' (live — Mongo system prompt, full corpus, cRuntime three-line chart) or
-  // 'v5.2' (engine/reportV5.js — the same Mongo Master Prompt, runtime-engine payload, sliced corpus,
-  // Spec A1 two-curve chart). REPORT_PIPELINE=v5 or v5.2 selects it; anything else keeps v4.3.
-  reportPipeline: ['v5', 'v5.2'].includes(process.env.REPORT_PIPELINE) ? 'v5.2' : 'v4.3',
+  // Report pipeline — decided here in the repo, never by a host environment variable (Render runs what
+  // this file says). 'v5.2' = the Deltawerken engine pipeline (engine/reportV5.js: the Mongo Master Prompt,
+  // runtime-engine payload, Corpus Manifest slice, Spec A1 two-curve chart); live since 2026-09-16.
+  // 'v4.3' = the previous path (Mongo prompt, full corpus, cRuntime chart); free-form questions always use it.
+  reportPipeline: 'v5.2',
 
   // Email (SMTP)
   email: {

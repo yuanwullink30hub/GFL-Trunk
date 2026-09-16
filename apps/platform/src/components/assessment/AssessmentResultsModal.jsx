@@ -503,12 +503,22 @@ const AssessmentResultsModal = ({
           archetypeKey: result.mainArchetype,
           supportArchetype: result.secondaryArchetype || result._secondaryKey,
           supportGroup: result.supportGroup,
+          mainGroup: result.group,
           extendedArchetypeName: extName || result.extendedName || result.name,
           shadowArchetype: result.shadowPartner,
           blindspotArchetype: result.blindspotPartner,
           isIndividuated: result.shadowBonusActive,
           hasHarmonyBonus: false,
           harmonyBonusApplied: 0,
+          // Derived indices + nature/culture totals (Master Prompt L4): the model reads the
+          // Main–Shadow gap and the nature/culture balance from these, banded per R-c.
+          polarizationIndex: result.polarizationIndex,
+          polarizationPct: result.polarizationPct,
+          polarizationLevel: result.polarizationLevel,
+          authenticityIndex: result.authenticityIndex,
+          authenticityLevel: result.authenticityLevel,
+          totalNaturePoints: result.totalNaturePoints,
+          totalCulturePoints: result.totalCulturePoints,
           oceanScores,
           scores: result._archetypeScores,
           // Per-archetype 5-mandje + totals — the geometry the backend feeds the
@@ -2754,37 +2764,39 @@ const AssessmentResultsModal = ({
           endGroup1a();
 
           // ── Page 3: Schaduw + Blindspot, then the TNM wheel in the leftover space ──
-          // Master Prompt v4.1 §5.3: radar = visual only, no caption. The wheel is bottom-
-          // anchored and drawn at an absolute position (no ensureSpace) so it sits in the
-          // space below the text and may bleed into the bottom spacer — never page-breaks.
+          // Master Prompt v6.1 §5.3: no radar on this page (the wheel lives on the resonance page,
+          // §5.7) — a full text page. The TNM wheel is bottom-anchored and drawn at an absolute
+          // position (no ensureSpace) so it sits in the space below the text and may bleed into the
+          // bottom spacer — never page-breaks.
           const endGroup1b = trackBlock('group1b');
           // Order: Schaduw before Blindspot.
           const shadowBlindspotSections = group1bSections.sort((a, b) =>
             (cleanTitle(a.title || '').toLowerCase().includes('schaduw') ? 0 : 1) -
             (cleanTitle(b.title || '').toLowerCase().includes('schaduw') ? 0 : 1));
+          // The radar element, rasterised on the resonance page (§5.7) at the size it had here.
           const radarEl = pdfRadarRef.current || radarRef.current;
-          if (group1bSections.length > 0 || radarEl) {
+          const drawRadar = async () => {
+            if (!radarEl) return;
+            try {
+              const canvas = await html2canvas(radarEl, {
+                backgroundColor: '#060612', scale: 2, useCORS: true, logging: false,
+              });
+              const img = canvas.toDataURL('image/jpeg', 0.85);
+              const maxH = 76.5;                             // the size it had on the Schaduw/Blindspot page (kept)
+              let drawH = (canvas.height / canvas.width) * contentW;
+              let drawW = contentW;
+              if (drawH > maxH) { drawH = maxH; drawW = (canvas.width / canvas.height) * drawH; }
+              const offsetX = margin + (contentW - drawW) / 2;
+              pdf.setDrawColor(...green);
+              pdf.setLineWidth(0.5);
+              pdf.rect(offsetX, y, drawW, drawH);
+              pdf.addImage(img, 'JPEG', offsetX, y, drawW, drawH);
+              y += drawH + 8;
+            } catch { y += 4; }
+          };
+          if (group1bSections.length > 0) {
             await justifiedPage(async (gap) => {
-            // Radar chart (Visuele Analyse) ABOVE the content — height-capped, no caption (§5.3).
-            if (radarEl) {
-              try {
-                const canvas = await html2canvas(radarEl, {
-                  backgroundColor: '#060612', scale: 2, useCORS: true, logging: false,
-                });
-                const img = canvas.toDataURL('image/jpeg', 0.85);
-                const maxH = 76.5;                             // 15% smaller; leaves room for 2 sections + TNM wheel
-                let drawH = (canvas.height / canvas.width) * contentW;
-                let drawW = contentW;
-                if (drawH > maxH) { drawH = maxH; drawW = (canvas.width / canvas.height) * drawH; }
-                const offsetX = margin + (contentW - drawW) / 2;
-                pdf.setDrawColor(...green);
-                pdf.setLineWidth(0.5);
-                pdf.rect(offsetX, y, drawW, drawH);
-                pdf.addImage(img, 'JPEG', offsetX, y, drawW, drawH);
-                y += drawH + 8;
-              } catch { y += 4; }
-            }
-            // Schaduw + Blindspot below the radar
+            // Schaduw + Blindspot — full text page, no radar (§5.3)
             for (let gi = 0; gi < shadowBlindspotSections.length; gi++) {
               const section = shadowBlindspotSections[gi];
               renderSection(shownTitle(section),section.content, getPdfSectionColor(section.title));
@@ -2798,7 +2810,7 @@ const AssessmentResultsModal = ({
               });
               const availH = (H - 6) - (y + 1);                  // room down to ~6mm from page edge
               if (availH > 18) {
-                const FIXED_TNM_H = 50;                           // fixed height (predictable size)
+                const FIXED_TNM_H = 65;                           // fixed height: 50 × 1.3 — the radar left this page, the wheel takes the room
                 const finalH = Math.min(FIXED_TNM_H, availH);    // fixed, only shrinks if the page is full (never clips)
                 const finalW = (tnmEl.naturalWidth / tnmEl.naturalHeight) * finalH;
                 const offsetX = margin + (contentW - finalW) / 2;
@@ -2832,19 +2844,23 @@ const AssessmentResultsModal = ({
           }
           endStille();
 
-          // ── Resonantie page: Main + Support archetype images, then De Extensie (v5.2 §5.7),
-          //    Professionele & Creatieve Resonantie (pulled directly from displaySections). ──
+          // ── Resonantie page (§5.7): the radar wheel at the top (moved here from the
+          //    Schaduw/Blindspot page, same size), then De Extensie + Creatieve Resonantie. The
+          //    Main/Support portrait circles below only draw when room is left above the text —
+          //    with the radar there, at budget, there is none. ──
           const resonanceRank = (s) => (isExtensionTitle(s.title) ? 0 : /professionele/i.test(s.title || '') ? 1 : 2);
           const resonanceSections = (displaySections || []).filter(s =>
             /professionele\s+resonantie|creatieve\s+resonantie/i.test(s.title || '') || isExtensionTitle(s.title)
           ).sort((a, b) => resonanceRank(a) - resonanceRank(b));
           const endResonance = trackBlock('nb_resonance');
-          if (resonanceSections.length > 0 || (result.mainArchetype && result.secondaryArchetype)) {
+          if (resonanceSections.length > 0 || (result.mainArchetype && result.secondaryArchetype) || radarEl) {
             await justifiedPage(async (gap) => {
-            // Master Prompt v4.1 §5.7: the two archetype images (NO header, name under each) sit
-            // ABOVE the text, sized to fill the space the text won't use. The text height is
-            // measured EXACTLY by rendering it on a throwaway page first (the real render, not a
-            // word estimate), so the fit is reliable regardless of the model's length.
+            // Radar wheel first — render-side, no caption, no "radar-lezing" section (§5.7).
+            await drawRadar();
+            // The two archetype images (NO header, name under each) sit ABOVE the text, sized to
+            // fill the space the text won't use. The text height is measured EXACTLY by rendering
+            // it on a throwaway page first (the real render, not a word estimate), so the fit is
+            // reliable regardless of the model's length.
             let resoTextH = 0;
             if (resonanceSections.length > 0) {
               const savedY = y, savedNPB = noPageBreak, savedPWC = new Set(pagesWithContent);
@@ -5132,6 +5148,15 @@ function computeResultFromAnswers(layerAnswers, liveSubjects, lang = 'nl') {
     oceanLabels: OCEAN_LABELS,                         // Dimension label map (short/full/dutch)
     oceanColors: OCEAN_COLORS,                         // Dimension color map for UI
     oceanImported: false,                              // Flag: only true if user explicitly imported OCEAN report
+    // Derived indices (Master Prompt L4 / R-c): the model reads these for the gap and the
+    // nature/culture balance — it never computes them itself.
+    polarizationIndex: advanced.polarizationIndex ?? null,
+    polarizationPct: advanced.polarizationPct ?? null,
+    polarizationLevel: advanced.polarizationLevel ?? null,
+    authenticityIndex: advanced.authenticityIndex ?? null,
+    authenticityLevel: advanced.authenticityLevel ?? null,
+    totalNaturePoints: advanced.totalNaturePoints ?? null,
+    totalCulturePoints: advanced.totalCulturePoints ?? null,
     // Raw data for future API agent
     _archetypeScores: archetypeScores,
     archetypeDetails: advanced.archetypeDetails || null,

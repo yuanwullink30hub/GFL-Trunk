@@ -5,7 +5,7 @@
  *   user content  = the per-user geometry blocks + the engine payload
  *   corpus        = the Corpus Manifest slice (the model's WHOLE corpus for the request, rule 10)
  *
- * Selected by REPORT_PIPELINE=v5.2 (config.reportPipeline); the default stays v4.3. Shared by
+ * Selected by config.reportPipeline (set in the repo, live since 2026-09-16). Shared by
  * routes/ai.js and scripts/engine-dry-run.js so the dry-run exercises the exact request the route
  * would send.
  */
@@ -57,7 +57,7 @@ function geometryPassthrough(b) {
     main: b.archetypeKey, support: b.supportArchetype, shadow: b.shadowArchetype ?? null,
     blindspot: b.blindspotArchetype ?? null, mainGroup: b.mainGroup ?? null, supportGroup: b.supportGroup ?? null,
     isIndividuated: b.isIndividuated ?? null,
-    polarizationIndex: b.polarizationIndex ?? null, polarizationLevel: b.polarizationLevel ?? null,
+    polarizationIndex: b.polarizationIndex ?? null, polarizationPct: b.polarizationPct ?? null, polarizationLevel: b.polarizationLevel ?? null,
     authenticityIndex: b.authenticityIndex ?? null, authenticityLevel: b.authenticityLevel ?? null,
     totalNaturePoints: b.totalNaturePoints ?? null, totalCulturePoints: b.totalCulturePoints ?? null,
     archetypes: (b.archetypeDetails || []).map((a) => ({

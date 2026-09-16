@@ -2,7 +2,7 @@
 
 The AI Master Prompt has **one home: MongoDB `promptConfigs/default.systemPromptTemplate`**, edited in the admin
 dashboard. There is no prompt file in the repo. Both report pipelines read that field per request: v4.3 (default) and
-the engine pipeline (`REPORT_PIPELINE=v5` or `v5.2`, `engine/reportV5.js`), which refuses to run when it is empty.
+the engine pipeline (`engine/reportV5.js`, selected by `config.reportPipeline` in the repo), which refuses to run when it is empty.
 Live since 2026-09-16: **v6.1.2** (v4.3 → v6.1 → v6.1.1 → v6.1.2). The v5.2 staged file is retired.
 
 - **Format:** plain text, `●<TAB>` bullets, `N.<TAB>` numbered items, TAB-separated table rows, code fences verbatim.
@@ -12,9 +12,11 @@ Live since 2026-09-16: **v6.1.2** (v4.3 → v6.1 → v6.1.1 → v6.1.2). The v5.
   the live text so a dashboard edit made in between is never overwritten.
 - **Trap flag (W7):** "72 picks" = 36 questions × dual-pick and is correct. It is not the retired 72-extension
   set — never "fix" it to 132.
-- **Activation** (engine pipeline live, v4.3 pipeline retirement, corpus deploy) is the human's word, after the gates:
-  `npm run test:gates` (gates 1–4, 6a, deploy absent-check) and `node scripts/engine-dry-run.js --live` (gates 5, 6b;
-  reads the prompt from Mongo, never writes).
+- **Activation:** the engine pipeline is live since 2026-09-16 (human word: production runs what the repo says —
+  nothing assessment-related is configured on Render). The switch is `config.reportPipeline` in
+  `config/index.js`, not a host environment variable. Gates before any pipeline change: `npm run test:gates`
+  (gates 1–4, 6a, deploy absent-check) and `node scripts/engine-dry-run.js --live` (gates 5, 6b; reads the
+  prompt from Mongo, never writes).
 
 ## What the backend pairs with the Master Prompt
 

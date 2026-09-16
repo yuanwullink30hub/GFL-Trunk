@@ -438,7 +438,7 @@ const YELLOW_TRIANGLE_PROFILES = [
     growth: 'Aangeleerd in kenniswerkers, academici, ontwerpers — voelt als tweede natuur maar is geconditioneerd.',
   },
   {
-    id: 2, name: 'De Passionele Alchemist', members: ['LOVER', 'OUTLAW', 'MAGICIAN'],
+    id: 2, name: 'De Gepassioneerde Alchemist', members: ['LOVER', 'OUTLAW', 'MAGICIAN'],
     networks: 'Limbisch (emotionele fusie) + Salience (disruptie) + Agency (transformatie)',
     superpower: 'Emotionele alchemie — voelen wat niet klopt (Lover), breken (Outlaw), herbouwen met intentie (Magician).',
     fallacies: 'Messias-Complex, Emotionele Reactiviteit als Strategie, Burn-and-Build Cyclus.',
@@ -452,7 +452,7 @@ const YELLOW_TRIANGLE_PROFILES = [
     growth: 'NL verzorgingscultuur, teamgerichte settings — oxytocine + dopamine + testosteron combinatie.',
   },
   {
-    id: 4, name: 'De Wijze Bouwmeester', members: ['INNOCENT', 'SAGE', 'RULER'],
+    id: 4, name: 'De Wijze Meester-Bouwer', members: ['INNOCENT', 'SAGE', 'RULER'],
     networks: 'Openness (vertrouwen) + DMN (inzicht) + CEN (structurele controle)',
     superpower: 'Institutionele intelligentie — vertrouwen (Innocent), begrijpen (Sage), structureren (Ruler) voor duurzaam bestuur.',
     fallacies: 'Systeemblindheid (kan systeem niet deconstrueren), Conservatieve Bias, Paternalistische Val.',
@@ -1260,9 +1260,9 @@ function buildSystemPrompt({
       // Cross-triangle dynamics
       const [t1, t2] = triangleActivations;
       if (t1.id === 1 && t2.id === 2 || t1.id === 2 && t2.id === 1) {
-        parts.push(`\nCROSS-DRIEHOEK: Analytische Estheet ↔ Passionele Alchemist (Denken vs. Voelen). Integreer beide polen — briljant én emotioneel verbonden.`);
+        parts.push(`\nCROSS-DRIEHOEK: Analytische Estheet ↔ Gepassioneerde Alchemist (Denken vs. Voelen). Integreer beide polen — briljant én emotioneel verbonden.`);
       } else if (t1.id === 3 && t2.id === 4 || t1.id === 4 && t2.id === 3) {
-        parts.push(`\nCROSS-DRIEHOEK: Strategische Bewaker ↔ Wijze Bouwmeester (Bewegen vs. Bewaken). Tactische actie én institutionele structuur.`);
+        parts.push(`\nCROSS-DRIEHOEK: Strategische Bewaker ↔ Wijze Meester-Bouwer (Bewegen vs. Bewaken). Tactische actie én institutionele structuur.`);
       }
 
       parts.push(`\nINSTRUCTIE GELE DRIEHOEKEN (Secties 7, 8 & 9):`);
@@ -1562,6 +1562,44 @@ function buildSystemPrompt({
 
 
 // ═══════════════════════════════════════════════════════════════
+// English title set (Master Prompt W8 "aangeleverde koppenset") — one-to-one with the Dutch
+// TITEL (exact) lines of DEEL 5 / the tags of DEEL 6, and one-to-one with what the platform
+// parser (apps/platform/src/components/assessment/v4Parser.js) routes. Gate-tested against it.
+// ═══════════════════════════════════════════════════════════════
+const EN_SECTION_TITLES = Object.freeze({
+  narrative: [
+    'THE IDENTITY',
+    'THE EXPLANATION',
+    'THE ESSENCE (MAIN ARCHETYPE)',
+    'THE MULTIPLICATION (SUPPORT ARCHETYPE)',
+    'THE SHADOW (180° OPPOSITE OF MAIN)',
+    'THE BLINDSPOT (RED-LINE MATCH)',
+    'PERSONALITY REPORT COMPARISON — OCEAN',
+    '  then one block per trait, titled: TRAIT O — Openness · TRAIT C — Conscientiousness · TRAIT E — Extraversion · TRAIT A — Agreeableness · TRAIT N — Neuroticism',
+    'THE SHAPE',
+    'THE HARDWARE UNDER PRESSURE',
+    'THE TRANSITION TO THE QUIET VOICE',
+    'REFLECTION',
+    'MOTIVATION',
+    'MOVEMENT',
+    'THE EXTENSION — [name] · [name in the second language]',
+    'CREATIVE RESONANCE',
+    'THE ALCHEMY OF INDIVIDUATION',
+    'THE NEURAL SWITCHBOARD',
+    'ONTOLOGICAL EVOLUTION',
+    'THE FULL AI PROMPT',
+  ],
+  traitTitles: ['TRAIT O — Openness', 'TRAIT C — Conscientiousness', 'TRAIT E — Extraversion', 'TRAIT A — Agreeableness', 'TRAIT N — Neuroticism'],
+  machineHeader: 'PROFILE DATA FOR AI PROCESSING',
+  machineTags: [
+    'IDENTITY', 'SCORES (12-POINT WHEEL)', '5-BASKET DECOMPOSITION', 'NATURE / CULTURE DISTRIBUTION PER GROUP',
+    'DERIVED INDICES', 'OCEAN PROFILE (EXTERNALLY UPLOADED)', 'COGNITIVE TRIANGLE (YELLOW)', 'HARDWARE SIGNALS',
+    'EXTENDED ARCHETYPE PROFILE', 'SHADOW INTEGRATION', 'BLINDSPOT',
+  ],
+  experimentLabels: ['The Focus Lever:', 'The Shadow Injection:', 'The Blindspot Check:'],
+});
+
+// ═══════════════════════════════════════════════════════════════
 // buildUserMessage — full personalized assessment data for this user
 // ═══════════════════════════════════════════════════════════════
 
@@ -1569,13 +1607,14 @@ function buildUserMessage({
   archetypeKey, supportArchetype, supportGroup, mainGroup,
   extendedArchetypeName, contextDocs,
   shadowArchetype, blindspotArchetype, isIndividuated,
-  polarizationIndex, polarizationLevel,
+  polarizationIndex, polarizationPct, polarizationLevel,
   authenticityIndex, authenticityLevel,
   totalNaturePoints, totalCulturePoints,
   archetypeDetails,
   subjectResults, harmonyScore, consciousnessLevel,
   overallShadow, uploadedFileContents,
   oceanScores, subgroups, responses,
+  uploadedOceanScores,
   language,
   // v5 pipeline (engine/reportV5.js): the corpus arrives sliced per the Corpus Manifest, which
   // ships exactly one 132-name, so the 11-row matrix is omitted; the v5.2 system prompt owns the
@@ -1598,6 +1637,7 @@ function buildUserMessage({
   const hasReport = uploadedFileContents && uploadedFileContents.length > 0;
   const parts = [];
 
+  const en = String(language || 'nl').toLowerCase() === 'en';
   parts.push(sliceScoped
     ? `Genereer het volledige rapport voor deze gebruiker volgens de systeeminstructies.\n`
     : `Genereer een volledig Leerling Ontologisch Rapport ` +
@@ -1607,6 +1647,19 @@ function buildUserMessage({
     `Schrijf GEEN overkoepelende titel zoals "Leerling Ontologisch Rapport" of een inleiding vóór sectie 1. ` +
     `De eerste regel van je output moet "## 1. De Identiteit" zijn.\n`
   );
+
+  // Master Prompt W8: the section titles are language-invariant and come "per de aangeleverde
+  // koppenset". The Dutch set is the prompt's own TITEL (exact) lines; the English set is this
+  // block — the exact titles the report parser routes on (platform v4Parser.js), nothing else.
+  if (sliceScoped && en) {
+    parts.push(`\n═══ SECTION TITLES — ENGLISH REPORT (the delivered title set, W8) ═══`);
+    parts.push(`Emit each title LITERALLY as its own line, in this order, uppercase as written — these are the parser tags.`);
+    parts.push(`The word budgets and every HARD LIMIT of DEEL 5 apply unchanged.`);
+    parts.push(...EN_SECTION_TITLES.narrative.map((x) => (x.startsWith('  ') ? x : `- ${x}`)));
+    parts.push(`Machine block (DEEL 6): the header line "${EN_SECTION_TITLES.machineHeader}", then exactly these tags:`);
+    parts.push(EN_SECTION_TITLES.machineTags.map((x) => `-- ${x} --`).join(' | '));
+    parts.push(`Neural switchboard experiment labels (line starts): ${EN_SECTION_TITLES.experimentLabels.join(' · ')}`);
+  }
 
   // ═══ ARCHETYPE PROFIEL ═══
   parts.push(`\n═══════════════════════════════════════`);
@@ -1651,30 +1704,64 @@ function buildUserMessage({
     parts.push(`⚡ INDIVIDUATIE: Main (${archetypeKey}) en Support (${supportArchetype}) zijn 180° tegenpolen — Meesterschap over de Paradox!`);
   }
 
-  parts.push(`\nMain-Support Verbinding: ${
-    isPurpleBonded ? 'PAARSE LIJN (180° tegenpolen — paradoxale integratie)' :
-    isGreenBonded  ? 'GROENE LIJN (zelfde biologische zuil — hardware resonantie)' :
-    isBlueBonded   ? 'BLAUWE LIJN (symbiotische feedback-brug)' :
-    'GEEN directe lijn-relatie'
-  }`);
+  // Engine pipeline: the resolved line type ships once, in the line-type block (services/lineType.js,
+  // "Main-Support lijntype: … Lijn", incl. the red line); this older three-colour line said "GEEN
+  // directe lijn-relatie" for red pairs and is retired there (human ruling 2026-09-16).
+  if (!sliceScoped) {
+    parts.push(`\nMain-Support Verbinding: ${
+      isPurpleBonded ? 'PAARSE LIJN (180° tegenpolen — paradoxale integratie)' :
+      isGreenBonded  ? 'GROENE LIJN (zelfde biologische zuil — hardware resonantie)' :
+      isBlueBonded   ? 'BLAUWE LIJN (symbiotische feedback-brug)' :
+      'GEEN directe lijn-relatie'
+    }`);
+  }
 
   // ═══ GEAVANCEERDE METRICS ═══
   parts.push(`\n── GEAVANCEERDE METRICS ──`);
-  if (polarizationIndex != null) {
-    parts.push(`Polarization Index: ${polarizationIndex} (${polarizationLevel})`);
-    if (polarizationLevel === 'HIGH_POLARIZATION') {
-      parts.push(`  → Gat > 222 punten. Schaduw wordt agressief onderdrukt.`);
-    } else if (polarizationLevel === 'HIGH_INDIVIDUATION') {
-      parts.push(`  → Gat < 123 punten. Paradox verenigd.`);
+  if (sliceScoped) {
+    // Engine pipeline: the indices in the Master Prompt's own terms (L4 — read, never computed;
+    // R-c 3.2 bands the Main–Shadow gap as a percentage of Main: > 60 · 30–60 · < 30).
+    if (polarizationIndex != null) {
+      const mainTot = mainDetails ? Number(mainDetails.total) || 0 : null;
+      const shadowTot = shadowDetails ? Number(shadowDetails.total) || 0 : null;
+      const pct = polarizationPct != null ? polarizationPct
+        : mainTot ? Math.round(((mainTot - (shadowTot || 0)) / mainTot) * 100) : null;
+      const band = polarizationLevel === 'HIGH_POLARIZATION' ? 'gap > 60% van Main — schaduw onderdrukt'
+        : polarizationLevel === 'HIGH_INDIVIDUATION' ? 'gap < 30% — actieve integratie'
+        : 'gap 30–60% — gezonde spanning';
+      const scores = mainTot != null && shadowTot != null ? ` (Main ${mainTot} − Shadow ${shadowTot})` : '';
+      parts.push(`Polarization Index: ${polarizationIndex} punten${scores}${pct != null ? ` = ${pct}% van Main` : ''} → band: ${band}`);
     }
-  }
-  if (authenticityIndex != null) {
-    parts.push(`Authenticity Index: ${authenticityIndex}% Nature (${authenticityLevel})`);
-    parts.push(`  Nature punten: ${totalNaturePoints || 0} / Culture punten: ${totalCulturePoints || 0}`);
-    if (authenticityLevel === 'NATURE_DOMINANT') {
-      parts.push(`  → >75% Nature. Biologische flow dominant.`);
-    } else if (authenticityLevel === 'CULTURE_DOMINANT') {
-      parts.push(`  → >65% Culture/Force. "Overlevingsmodus".`);
+    if (authenticityIndex != null) {
+      parts.push(`Authenticity Index: ${authenticityIndex}% Nature (over 72 picks) — Nature punten: ${totalNaturePoints || 0} / Culture punten: ${totalCulturePoints || 0}`);
+    }
+    // D-10: OCEAN reaches the model only as the user's upload — the values the backend parsed from
+    // it, in the labels the machine block uses; never geometry-derived values.
+    if (uploadedOceanScores && Object.keys(uploadedOceanScores).length) {
+      const labels = en
+        ? { O: 'Openness', C: 'Conscientiousness', E: 'Extraversion', A: 'Agreeableness', N: 'Neuroticism' }
+        : { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
+      const cells = ['O', 'C', 'E', 'A', 'N'].filter((d) => uploadedOceanScores[d] != null)
+        .map((d) => `${labels[d]}: ${uploadedOceanScores[d]}/100`);
+      parts.push(`${en ? 'OCEAN (uploaded by the user)' : 'OCEAN (geüpload door de gebruiker)'}: ${cells.join(' | ')}`);
+    }
+  } else {
+    if (polarizationIndex != null) {
+      parts.push(`Polarization Index: ${polarizationIndex} (${polarizationLevel})`);
+      if (polarizationLevel === 'HIGH_POLARIZATION') {
+        parts.push(`  → Gat > 222 punten. Schaduw wordt agressief onderdrukt.`);
+      } else if (polarizationLevel === 'HIGH_INDIVIDUATION') {
+        parts.push(`  → Gat < 123 punten. Paradox verenigd.`);
+      }
+    }
+    if (authenticityIndex != null) {
+      parts.push(`Authenticity Index: ${authenticityIndex}% Nature (${authenticityLevel})`);
+      parts.push(`  Nature punten: ${totalNaturePoints || 0} / Culture punten: ${totalCulturePoints || 0}`);
+      if (authenticityLevel === 'NATURE_DOMINANT') {
+        parts.push(`  → >75% Nature. Biologische flow dominant.`);
+      } else if (authenticityLevel === 'CULTURE_DOMINANT') {
+        parts.push(`  → >65% Culture/Force. "Overlevingsmodus".`);
+      }
     }
   }
   if (harmonyScore != null) parts.push(`Engagement Score: ${harmonyScore}%`);
@@ -1758,9 +1845,14 @@ function buildUserMessage({
 
     parts.push(`\nDOMINANT COGNITIEF NETWERK: ${dominant.name} (Driehoek ${dominant.id})`);
     parts.push(`  Netwerken: ${dominant.networks}`);
-    parts.push(`  Superkracht: ${dominant.superpower}`);
-    parts.push(`  Cognitieve Valkuilen: ${dominant.fallacies}`);
-    parts.push(`  Culturele Context: ${dominant.growth}`);
+    // Engine pipeline (human ruling 2026-09-16): the lens CONTENT — superpower, fallacies, cultural
+    // context — comes from the corpus slice only (TNM chapter, ratified wording, on culture picks);
+    // this table's older prose is not sent. The activation numbers above are assessment data and stay.
+    if (!sliceScoped) {
+      parts.push(`  Superkracht: ${dominant.superpower}`);
+      parts.push(`  Cognitieve Valkuilen: ${dominant.fallacies}`);
+      parts.push(`  Culturele Context: ${dominant.growth}`);
+    }
     if (dominant.totalYellow > 0) {
       for (const ms of dominant.memberScores) {
         const d  = archetypeDetails.find(a => a.key === ms.key);
@@ -1780,9 +1872,9 @@ function buildUserMessage({
 
     const [t1, t2] = triangleActivations;
     if ((t1.id === 1 && t2.id === 2) || (t1.id === 2 && t2.id === 1)) {
-      parts.push(`\nCROSS-DRIEHOEK: Analytische Estheet ↔ Passionele Alchemist (Denken vs. Voelen).`);
+      parts.push(`\nCROSS-DRIEHOEK: Analytische Estheet ↔ Gepassioneerde Alchemist (Denken vs. Voelen).`);
     } else if ((t1.id === 3 && t2.id === 4) || (t1.id === 4 && t2.id === 3)) {
-      parts.push(`\nCROSS-DRIEHOEK: Strategische Bewaker ↔ Wijze Bouwmeester (Bewegen vs. Bewaken).`);
+      parts.push(`\nCROSS-DRIEHOEK: Strategische Bewaker ↔ Wijze Meester-Bouwer (Bewegen vs. Bewaken).`);
     }
   }
 
@@ -1844,4 +1936,4 @@ function buildUserMessage({
   return parts.join('\n');
 }
 
-module.exports = { buildSystemPrompt, buildUserMessage };
+module.exports = { buildSystemPrompt, buildUserMessage, EN_SECTION_TITLES, YELLOW_TRIANGLE_PROFILES };

@@ -9,7 +9,7 @@
  *   options: --case <fixture> (hero_hole) · --withhold <manifest id> (group/ruling) · --out <dir> · --model <id>
  *
  * The request is assembled by engine/reportV5.js, the same code the /api/ai/analyze route runs
- * under REPORT_PIPELINE=v5.2, with the Master Prompt read from MongoDB promptConfigs/default exactly
+ * (config.reportPipeline 'v5.2'), with the Master Prompt read from MongoDB promptConfigs/default exactly
  * as the route reads it. The engine fixture carries the twelve totals only (no 5-basket
  * decomposition), so the geometry block states exactly that instead of printing zero baskets.
  *
@@ -26,7 +26,7 @@ const path = require('path');
 const E = require('../engine/runtimeEngine');
 const reportV5 = require('../engine/reportV5');
 const { registry } = require('../engine/corpusResolver');
-const { formatLineTypeBlock, LINE_TYPE_LOOKUP_DOC } = require('../services/lineType');
+const { formatLineTypeBlock } = require('../services/lineType');
 const { loadCorpus } = require('../services/corpusData');
 const fixtures = require('../engine/tests/backend_test_fixtures_v1.json');
 
@@ -154,7 +154,7 @@ function screen(r, analysis) {
 
   // Hardware-group docs that did not ship: their distinctive vocabulary (long words used ≥2× in the
   // doc and nowhere in anything the model received).
-  const shipped = [r.req.system, r.req.user, r.req.cachedContext, LINE_TYPE_LOOKUP_DOC].join('\n').toLowerCase();
+  const shipped = [r.req.system, r.req.user, r.req.cachedContext].join('\n').toLowerCase();
   const { docs } = registry(LANGUAGE);
   const shippedIds = new Set(r.req.manifest.documents.map((d) => d.id));
   const foreign = [];
@@ -279,7 +279,7 @@ async function run() {
       provider: 'claude', model: MODEL, maxTokens: 30000,
       messages: [{ role: 'system', content: r.req.system }, { role: 'user', content: r.req.user }],
       cachedContext: r.req.cachedContext,
-      referenceDocs: [{ name: 'Backend_LineType_Lookup_Table.md', text: LINE_TYPE_LOOKUP_DOC }],
+      referenceDocs: [],   // as the route sends it: no lookup-table document
     });
     fs.writeFileSync(path.join(OUT, `${r.key}_analysis.md`), res.analysis);
     return { r, res, secs: ((Date.now() - t0) / 1000).toFixed(0) };

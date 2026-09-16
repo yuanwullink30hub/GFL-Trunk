@@ -72,6 +72,7 @@ app.get('/api/status', (_req, res) => {
   res.json({
     status: 'ready',
     providers,
+    reportPipeline: config.reportPipeline,
     encryption: encryptionEnabled() ? 'AES-256-GCM' : 'disabled',
   });
 });

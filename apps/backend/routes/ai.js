@@ -9,7 +9,7 @@ const { Router } = require('express');
 const { callAI, getAvailableProviders } = require('../services/aiProviders');
 const { computeCRuntime } = require('../services/cRuntime');
 const { orb3FromGeometry } = require('@gfl/orb-engine');
-const { formatLineTypeBlock, LINE_TYPE_LOOKUP_DOC } = require('../services/lineType');
+const { formatLineTypeBlock } = require('../services/lineType');
 const { getCorpusText } = require('../services/corpusData');
 const reportV5 = require('../engine/reportV5');
 const { getDB } = require('../db');
@@ -132,6 +132,7 @@ router.post('/analyze', async (req, res) => {
       hasHarmonyBonus,
       harmonyBonusApplied,
       polarizationIndex,
+      polarizationPct,
       polarizationLevel,
       authenticityIndex,
       authenticityLevel,
@@ -335,7 +336,7 @@ router.post('/analyze', async (req, res) => {
       }
     }
 
-    // Report pipeline (config.reportPipeline, env REPORT_PIPELINE; default v4.3). Free-form
+    // Report pipeline (config.reportPipeline, set in the repo: the engine pipeline). Free-form
     // userQuestion calls always stay on the v4.3 path.
     const pipeline = !userQuestion && config.reportPipeline === 'v5.2' ? 'v5.2' : 'v4.3';
     const isV5 = pipeline === 'v5.2';
@@ -351,13 +352,16 @@ router.post('/analyze', async (req, res) => {
       extendedArchetypeName, oceanScores, contextDocs,
       shadowArchetype, blindspotArchetype, isIndividuated,
       hasHarmonyBonus, harmonyBonusApplied,
-      polarizationIndex, polarizationLevel,
+      polarizationIndex, polarizationPct, polarizationLevel,
       authenticityIndex, authenticityLevel,
       totalNaturePoints, totalCulturePoints,
       archetypeDetails, scores,
       responses, subjectResults, harmonyScore,
       consciousnessLevel, overallShadow, uploadedFileContents,
       subgroups,
+      // The OCEAN values parsed from the user's upload (above) — the engine pipeline ships them as
+      // one structured line so the model reads them instead of digging through the PDF text.
+      uploadedOceanScores,
       // Report language — picks the Dutch or English 132-roster for the extension
       // name + matrix table, matching the corpus selected above.
       language,
@@ -507,11 +511,10 @@ router.post('/analyze', async (req, res) => {
         temperature: finalTemperature,
         uploadedImages,
         cachedContext,
-        // Static reference docs shipped as separate documents (not merged into the corpus),
-        // so the model can verify the resolved links rather than guess them.
-        referenceDocs: userQuestion ? [] : [
-          { name: 'Backend_LineType_Lookup_Table.md', text: LINE_TYPE_LOOKUP_DOC },
-        ],
+        // No reference documents (human ruling 2026-09-16): the full-wheel lookup table is not
+        // sent. The model reads the resolved Main–Support line type (the line-type block, which
+        // also names the shadow and blindspot) and the Main's own links (payload.links) — literally.
+        referenceDocs: [],
       });
     } finally {
       clearInterval(heartbeat);

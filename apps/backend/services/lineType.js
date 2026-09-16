@@ -51,6 +51,49 @@ function resolveLineType(mainKey, supportKey) {
   return '(geen kanonieke lijn)';
 }
 
+const NAME = Object.fromEntries(Object.entries(POSITIONS).map(([k, p]) => [p, k.charAt(0) + k.slice(1).toLowerCase()]));
+const wrap = (p) => ((((p - 1) % 12) + 12) % 12) + 1;
+
+/**
+ * The Main's Red Line partner (hardware seam / blindspot): the position that sums with it to 7 (mod 12).
+ * Returns the TitleCase archetype name (the corpus key form), or null for an unknown Main.
+ */
+function redLinePartner(mainKey) {
+  const p = posOf(mainKey);
+  return p ? NAME[wrap(7 - p)] : null;
+}
+
+/**
+ * The resolved connection links of the whole wheel, stored here — one row per position, TitleCase names. Only
+ * the Main's own row ships (mainLinks; Corpus Lookup Table v1.1 §8, human ruling 2026-09-16):
+ *   green  = the other member of the hardware group      blue   = positions summing to 13
+ *   purple = 180° across (the shadow, 6 apart)            red    = positions summing to 7 (mod 12) (blindspot)
+ *   yellow = the two positions 4 apart; triangle 1 = 1·5·9, 2 = 2·6·10, 3 = 3·7·11, 4 = 4·8·12
+ * For Ruling and Chaos the blue partner is also the green partner.
+ */
+function wheelLinks() {
+  return Object.keys(NAME).map(Number).sort((a, b) => a - b).map((p) => ({
+    archetype: NAME[p],
+    position: p,
+    green: NAME[Number(Object.keys(PILLAR).find((q) => Number(q) !== p && PILLAR[q] === PILLAR[p]))],
+    blue: NAME[13 - p],
+    purple: NAME[wrap(p + 6)],
+    red: NAME[wrap(7 - p)],
+    yellow: [wrap(p + 4), wrap(p + 8)].sort((a, b) => a - b).map((q) => NAME[q]),
+    triangle: ((p - 1) % 4) + 1,
+  }));
+}
+
+/**
+ * The Main's links as the payload ships them, read from the stored wheel and never derived by the model: one green,
+ * one blue, one purple and one red partner, and the two yellow partners. Null for an unknown Main.
+ */
+function mainLinks(mainKey) {
+  const p = posOf(mainKey);
+  const row = p ? wheelLinks().find((r) => r.position === p) : null;
+  return row ? { main: row.archetype, green: row.green, blue: row.blue, purple: row.purple, red: row.red, yellow: row.yellow } : null;
+}
+
 /**
  * Pre-computed line-type block injected into the per-user AI payload. The model must READ
  * this tag and never compute the colour itself.
@@ -114,4 +157,4 @@ Judge (1)–Outlaw (6) | Lover (2)–Explorer (5) | Caregiver (3)–Innocent (4)
 Ruler (12)–Trickster (7) | Hero (11)–Sage (8) | Magician (10)–Artist (9)
 `;
 
-module.exports = { resolveLineType, formatLineTypeBlock, LINE_TYPE_LOOKUP_DOC, ARCHETYPE_POSITIONS: POSITIONS };
+module.exports = { resolveLineType, formatLineTypeBlock, redLinePartner, wheelLinks, mainLinks, LINE_TYPE_LOOKUP_DOC, ARCHETYPE_POSITIONS: POSITIONS };

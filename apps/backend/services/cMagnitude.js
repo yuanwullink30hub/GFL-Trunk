@@ -30,9 +30,21 @@
  * Source of all data: Matrix_360 v4.3 (now canon/deltawerken_corpus.json) +
  * Rosetta v1.4.5 + Connection Matrix v2.1. This path reads those; it stores
  * nothing and calibrates nothing.
+ *
+ * PARITY (verified 2026-09-16 against c_magnitude_precompute_v2_2.py, 700 geometries — 300 real,
+ * 400 synthetic edge cases; fixture engine/tests/c_magnitude_parity_v2_2.json, run in the gates):
+ * every field is identical, unresolved_edges included (v2.2 dedupes the refusal list across the five
+ * per-state passes and sorts it). Rounding is Python's round() (half-to-even on the exact binary value,
+ * via engine/py.js). One deliberate addition: d_curve, a Node-only render-side series for the v4.3
+ * three-line chart.
  */
 
 'use strict';
+
+const { pyRound } = require('../engine/py');
+
+/** Python str ordering for the ASCII archetype and edge names (sorted() on tuples). */
+const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROVISIONAL SCALARS — D-3, DEFERRED. NOT FITTED. NOT FINAL. (v1.0 §7)
@@ -207,15 +219,15 @@ function composeDState(geo, storedD) {
   const peak = Object.keys(raw).length ? Math.max(...Object.values(raw)) : 0.0;
   const composed = {};
   if (peak > 0) {
-    for (const [k, v] of Object.entries(raw)) composed[k] = Math.round((v / peak) * 100.0 * 10) / 10;
+    for (const [k, v] of Object.entries(raw)) composed[k] = pyRound((v / peak) * 100.0, 1); // round(v / peak * 100.0, 1)
   } else {
     for (const k of Object.keys(raw)) composed[k] = 0.0;
   }
 
   // Render-side chart series (Master Prompt v4.1 §5.5): Main + Support stored curves
   // (absolute, on-scale) + the composed curve (dynamic-ceiling normalised) as [D1..D5].
-  const main_curve = (storedD[geo.main] || []).map((v) => Math.round(v * 10) / 10);
-  const support_curve = (geo.support && storedD[geo.support] ? storedD[geo.support] : []).map((v) => Math.round(v * 10) / 10);
+  const main_curve = (storedD[geo.main] || []).map((v) => pyRound(v, 1));
+  const support_curve = (geo.support && storedD[geo.support] ? storedD[geo.support] : []).map((v) => pyRound(v, 1));
   const composed_curve = classes.map((k) => composed[k]);
 
   return { composed_D: composed, raw_composed_D: raw, dynamic_ceiling: peak, refusals, main_curve, support_curve, composed_curve };
@@ -268,7 +280,8 @@ function precompute(geo, storedD, supportEffectDirection) {
     c_runtime_values: step2,
     polar_norm: polarNorm(geo),
     support_weight_norm: supportWeightNorm(geo),
-    unresolved_edges: step1.refusals, // surfaced, never silently zeroed
+    // surfaced ONCE per edge, sorted by (archetype, edge) like v2.2's sorted(set(...)); never silently zeroed
+    unresolved_edges: [...step1.refusals].sort((a, b) => (a[0] === b[0] ? cmp(a[1], b[1]) : cmp(a[0], b[0]))),
     provisional_scalars_in_use: { ...PROVISIONAL_SCALARS },
     WARNING:
       'EXPLORATORY SKETCH. Provisional D-3 scalars in use (polar_norm denominator, ' +

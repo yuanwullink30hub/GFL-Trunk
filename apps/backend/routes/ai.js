@@ -11,6 +11,7 @@ const { computeCRuntime } = require('../services/cRuntime');
 const { orb3FromGeometry } = require('@gfl/orb-engine');
 const { formatLineTypeBlock, LINE_TYPE_LOOKUP_DOC } = require('../services/lineType');
 const { getCorpusText } = require('../services/corpusData');
+const reportV5 = require('../engine/reportV5');
 const { getDB } = require('../db');
 const config = require('../config');
 const nodemailer = require('nodemailer');
@@ -334,8 +335,14 @@ router.post('/analyze', async (req, res) => {
       }
     }
 
-    // Build messages — include uploaded context documents
-    const contextDocs = await getContextDocuments();
+    // Report pipeline (config.reportPipeline, env REPORT_PIPELINE; default v4.3). Free-form
+    // userQuestion calls always stay on the v4.3 path.
+    const pipeline = !userQuestion && config.reportPipeline === 'v5.2' ? 'v5.2' : 'v4.3';
+    const isV5 = pipeline === 'v5.2';
+
+    // Build messages — include uploaded context documents. v5.2: the Corpus Manifest slice is the
+    // model's whole corpus (Backend Instruction v1 rule 10), so the admin knowledge-base docs stay out.
+    const contextDocs = isV5 ? [] : await getContextDocuments();
     const promptLevel = level || 'advanced';
     const builder = promptBuilders[promptLevel] || promptBuilders.advanced;
 
@@ -354,10 +361,12 @@ router.post('/analyze', async (req, res) => {
       // Report language — picks the Dutch or English 132-roster for the extension
       // name + matrix table, matching the corpus selected above.
       language,
+      sliceScoped: isV5,
     };
 
-    // System prompt = the AI Master Prompt (v4), stored in the MongoDB admin config
-    // (editable in the dashboard). Together with the cached corpus it is the cached prefix.
+    // System prompt = the AI Master Prompt, stored in the MongoDB admin config (editable in the
+    // dashboard) — the only copy, for both pipelines. Together with the cached corpus it is the
+    // cached prefix. v5.2 refuses to run without it (buildV5Request).
     const adminMeta = adminConfig.systemPromptTemplate || '';
     const system = systemPrompt || adminMeta || '';
 
@@ -407,17 +416,34 @@ router.post('/analyze', async (req, res) => {
     // ── User payload: per-user geometry (buildUserMessage) + the line-type tag + the
     //    C-runtime block + the relevant Levensles. Corpus rides separately as cached context. ──
     const geometryMsg = userQuestion || builder.buildUserMessage(promptData);
-    const user = userQuestion ? geometryMsg : [
+
+    // ── v5.2: runtime engine (D-path) → Corpus Manifest slice → role-tagged payload. An engine
+    //    error (RoleError, a Support outside the active set, incomplete geometry) is fatal for the
+    //    request — surfaced, never patched and never silently downgraded to v4.3. ──
+    const v5 = isV5
+      ? reportV5.buildV5Request({
+          system, bleed: req.body, geometryMsg, lineTypeBlock, cRuntime, language,
+        })
+      : null;
+    if (v5) {
+      console.log(`[AI] v5.2 pipeline: active set ${[v5.payload.main.name, ...v5.payload.codrivers.map(c => c.name)].join(', ')}; ` +
+        `corpus ${v5.manifest.corpus_manifest_version} ${v5.manifest.documents.length} docs ≈${v5.manifest.token_estimate} tokens; ` +
+        `schaduw-pakket (shadow ${v5.manifest.shadow_pack.shadow}, blindspot ${v5.manifest.shadow_pack.blindspot}) → ${v5.manifest.shadow_pack.objects.join(', ') || 'carried by the group blocks'}; ` +
+        `stamps ${JSON.stringify(v5.payload.stamps)}`);
+    }
+
+    const user = userQuestion ? geometryMsg : v5 ? v5.user : [
       geometryMsg,
       lineTypeBlock,
       cRuntime ? formatCRuntimeBlock(cRuntime) : '',
       levensles ? `═══ LEVENSLES (extended archetype) ═══\n${levensles}` : '',
     ].filter(Boolean).join('\n\n');
 
-    // Full corpus as the cached static-prefix context (single source of truth; v4 §1.1
-    // — read it fully before translating). Skipped for free-form userQuestion calls.
+    // Cached static-prefix context. v4.3: the full corpus (single source of truth; v4 §1.1 — read
+    // it fully before translating). v5.2: the manifest slice. Skipped for free-form userQuestion calls.
     const cachedContext = userQuestion
       ? null
+      : v5 ? v5.cachedContext
       : `═══ DELTAWERKEN VOLLEDIG CORPUS (single source of truth — Matrix 360, Rosetta, de vier geometrische bronmodellen) ═══\n${getCorpusText(language)}`;
 
     console.log('[AI] ═══════════════════════════════════════════════════════════');
@@ -531,6 +557,12 @@ router.post('/analyze', async (req, res) => {
       // frontend can render the Plastische Morfologie / De Stille Stem visuals
       // without recomputing. null when the geometry was incomplete.
       cRuntime: cRuntime || null,
+      // Which report pipeline produced this analysis. v5.2 adds the role-tagged engine payload
+      // (the Spec A1 chart reads enginePayload.main.register — two curves, both the Main's) and the
+      // corpus manifest the model received. The geometry passthrough is the client's own data, left out.
+      pipeline,
+      enginePayload: v5 ? reportV5.clientPayload(v5.payload) : null,
+      corpusManifest: v5 ? v5.manifest : null,
       // Authoritative orb profile code (LC_ORB3_…), radial+purple-gated with the real polar_gap —
       // SEALED (services/sealedCode.js): the browser cannot read it. The raw code is handed over
       // only when the full report is unlocked (payment or activation code). '' when geometry incomplete.

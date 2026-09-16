@@ -47,9 +47,17 @@ module.exports = {
     },
     claude: {
       apiKey: process.env.ANTHROPIC_API_KEY || '',
-      defaultModel: 'claude-opus-4-8',
+      // Claude Fable 5.1: thinking is always on; depth is set by effort (low | medium | high | xhigh | max).
+      // Requires 30-day data retention on the Anthropic org (not available under zero data retention).
+      defaultModel: 'claude-fable-5-1',
+      effort: 'high',
     },
   },
+
+  // Report pipeline: 'v4.3' (live — Mongo system prompt, full corpus, cRuntime three-line chart) or
+  // 'v5.2' (engine/reportV5.js — the same Mongo Master Prompt, runtime-engine payload, sliced corpus,
+  // Spec A1 two-curve chart). REPORT_PIPELINE=v5 or v5.2 selects it; anything else keeps v4.3.
+  reportPipeline: ['v5', 'v5.2'].includes(process.env.REPORT_PIPELINE) ? 'v5.2' : 'v4.3',
 
   // Email (SMTP)
   email: {

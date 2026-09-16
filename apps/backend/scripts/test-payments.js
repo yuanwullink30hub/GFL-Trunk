@@ -470,6 +470,47 @@ function makeStripeStub() {
     paymentConfig.clearPaymentConfigCache();
 
     // ───────────────────────────────────────────────────────────
+    section('M. Edge cases (Backend Session Opener §2.E)');
+    // Flip boundary: the comparison is strict (launch = now < flipAt), so the instant itself is normal.
+    const atFlip = await paymentConfig.resolvePaymentConfig(new Date(flip.getTime()));
+    const justBefore = await paymentConfig.resolvePaymentConfig(new Date(flip.getTime() - 1));
+    check('flip instant exactly → normal price (strict <)', !atFlip.launch && atFlip.grossCents === 3630, { launch: atFlip.launch, grossCents: atFlip.grossCents });
+    check('1 ms before the flip → launch price', justBefore.launch && justBefore.grossCents === 1452);
+    paymentConfig.clearPaymentConfigCache();
+
+    // Consent refusal variants
+    const cons = newReport();
+    const piBeforeConsent = stub.calls.piCreate;
+    r = await api('/api/payments/full-report', payBody(cons, token(), { consent: 'true' }));
+    check('consent sent as the string "true" → 400 consent_required', r.status === 400 && r.body.error === 'consent_required', r);
+    r = await api('/api/payments/full-report', payBody(cons, token(), { consentText: 'x'.repeat(4001) }));
+    check('consent text over 4000 chars → 400 consent_required', r.status === 400 && r.body.error === 'consent_required', r);
+    check('no PaymentIntent from the consent refusals', stub.calls.piCreate === piBeforeConsent);
+
+    // Seal with a broken GCM auth tag (valid shape, one tag byte flipped)
+    const tagged = newReport();
+    const [sv, sp] = tagged.seal.split('.');
+    const raw = Buffer.from(sp, 'base64url');
+    raw[12] ^= 0x01;
+    r = await api('/api/payments/full-report', payBody({ seal: `${sv}.${raw.toString('base64url')}` }, token()));
+    check('seal with a broken auth tag → 400 malformed, nothing charged', r.status === 400 && r.body.error === 'malformed', r);
+
+    // Concurrent double-fire: two pay requests for the SAME report at the same moment, different cards.
+    // The report must be charged at most once.
+    const twin = newReport();
+    const piBeforeTwin = stub.calls.piCreate;
+    const [t1, t2] = await Promise.all([
+      api('/api/payments/full-report', payBody(twin, token())),
+      api('/api/payments/full-report', payBody(twin, token())),
+    ]);
+    const twinPayments = await collections.payments().find({ codeHash: twin.hash }).toArray();
+    const twinIntents = stub.calls.piCreate - piBeforeTwin;
+    const twinUnlocks = await collections.reportUnlocks().find({ codeHash: twin.hash }).toArray();
+    check('concurrent pay for one report → at most one PaymentIntent (no double charge)', twinIntents <= 1,
+      { intents: twinIntents, payments: twinPayments.length, statuses: [t1.status, t2.status], refs: [t1.body.ref, t2.body.ref] });
+    check('concurrent pay for one report → at most one ledger unlock', twinUnlocks.length <= 1, { unlocks: twinUnlocks.length });
+
+    // ───────────────────────────────────────────────────────────
     section('J. Stripe not configured');
     stripeSvc.setStripeForTests(null);
     paymentConfig.clearPaymentConfigCache();

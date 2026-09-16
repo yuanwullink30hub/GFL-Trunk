@@ -18,7 +18,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 // ─────────────────────────────────────────────────────────────
 
 const IMAGE_DIR = path.join(__dirname, '..', 'prompts', 'images');
-const MODEL_IMAGES = ['Cells within Cells png.png', 'Deltawerken png.png', 'TNM wheel PNG.png']
+const MODEL_IMAGES = require('../engine/geometryReference')
   .reduce((acc, name) => {
     try {
       const filePath = path.join(IMAGE_DIR, name);
@@ -222,35 +222,62 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
   // ~156k-token corpus this is worth the 25% write cost: repeat assessments inside
   // the cache window read the prefix ~90% cheaper. Without cachedContext, no cache.
 
-  console.log(`[Claude] Calling model=${model}, maxTokens=${maxTokens}, promptChars=${(systemMsg?.content?.length || 0) + (userMsgs[0]?.content?.length || 0)}`);
-  const startTime = Date.now();
+  // Sampling parameters return a 400 on the current models (Fable 5/5.1, Mythos, Opus 5, Sonnet 5,
+  // Opus 4.7/4.8 — they manage sampling internally), so `temperature` only goes to older models.
+  const currentGen = /^claude-(fable|mythos|opus-5|sonnet-5|opus-4-[78])/.test(model);
+  const supportsTemperature = typeof temperature === 'number' && !currentGen;
+  // Effort (output_config.effort) sets thinking depth and overall token spend; sent where supported.
+  const supportsEffort = currentGen || /^claude-(opus-4-[56]|sonnet-4-6)/.test(model);
+  // Fable models think on every request and the thinking counts against max_tokens, so a report
+  // budget sized for visible text alone (the platform asks 30k) would truncate. Output is billed
+  // only for tokens actually generated, so the higher ceiling costs nothing by itself.
+  const alwaysThinks = /^claude-(fable|mythos)/.test(model);
+  const maxOutput = alwaysThinks ? Math.max(maxTokens, 64000) : maxTokens;
+  // Fable 5.1 / Opus 5 run safety classifiers that can decline a request (HTTP 200, stop_reason
+  // "refusal"). Server-side fallbacks re-run a declined request on Anthropic's recommended fallback
+  // model inside the same call ("default" routes by refusal category).
+  const useFallbacks = /^claude-(fable-5-1|opus-5)$/.test(model);
 
-  // `temperature` is deprecated on newer Claude models (claude-opus-4-8 returns a 400
-  // "temperature is deprecated for this model"), so only pass it for models that still
-  // accept it. Opus/Sonnet 4.x manage sampling internally.
-  const supportsTemperature = typeof temperature === 'number' && !/-(opus|sonnet)-4-\d/.test(model);
+  console.log(`[Claude] Calling model=${model}, maxTokens=${maxOutput}, promptChars=${(systemMsg?.content?.length || 0) + (userMsgs[0]?.content?.length || 0)}`);
+  const startTime = Date.now();
 
   // Stream via the SDK helper and collect the full message with .finalMessage(). Streaming
   // sidesteps the SDK's non-streaming 10-minute guard (max_tokens > ~21,333 would otherwise
-  // throw "Streaming is required…"), so we can use a higher max_tokens for the full v4.3 report.
-  // Same Message shape as create().
-  const stream = client.messages.stream({
+  // throw "Streaming is required…"), so the full report can have a large max_tokens.
+  // The beta namespace carries the fallbacks header; same Message shape as create().
+  const stream = client.beta.messages.stream({
     model,
-    max_tokens: maxTokens,
+    max_tokens: maxOutput,
     ...(supportsTemperature ? { temperature } : {}),
+    ...(supportsEffort && providerConfig.effort ? { output_config: { effort: providerConfig.effort } } : {}),
+    ...(useFallbacks ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' } : {}),
     ...(systemMsg ? { system: systemMsg.content } : {}),
     messages: anthropicMessages,
   });
   const response = await stream.finalMessage();
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  const servedBy = response.model || model;
+  const fellBack = (response.usage?.iterations || []).some(i => i.type === 'fallback_message');
+
+  // A refusal arrives as a normal response: check stop_reason before reading content. A mid-stream
+  // refusal carries partial output, which must not be treated as a report.
+  if (response.stop_reason === 'refusal') {
+    const category = response.stop_details?.category ?? 'unspecified';
+    console.warn(`[Claude] ${model} request declined after ${elapsed}s (category ${category}${fellBack ? `, fallback ${servedBy} declined too` : ''})`);
+    throw new Error(`The AI model declined this request (refusal category: ${category}).`);
+  }
+
   const text = response.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
 
-  console.log(`[Claude] Response in ${elapsed}s, stop_reason=${response.stop_reason}, textLen=${text.length}`);
+  console.log(`[Claude] Response in ${elapsed}s, model=${servedBy}${fellBack ? ` (fallback after ${model} declined)` : ''}, effort=${supportsEffort ? providerConfig.effort || 'default' : 'n/a'}, stop_reason=${response.stop_reason}, textLen=${text.length}`);
+  if (response.stop_reason === 'max_tokens') {
+    console.warn(`[Claude] ⚠ output hit max_tokens=${maxOutput} — the report is truncated`);
+  }
 
   return {
     analysis: text,
-    model,
+    model: servedBy,
     provider: 'claude',
     promptTokens: response.usage?.input_tokens || 0,
     completionTokens: response.usage?.output_tokens || 0,

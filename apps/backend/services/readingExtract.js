@@ -58,9 +58,10 @@ function extractReading(text) {
   // NOTE: curse/trigger is extracted but kept OFF the public card (§3 denies triggers);
   // it's stored for owner-side surfaces only.
   const cleanText = (s, max) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, max);
+  // The English PDF prints the same block with "Life lesson" for Levensles.
   const gift = t.match(/Gift:\s*([^\n]+)/);
   const curse = t.match(/Curse\s*\/\s*Trigger:\s*([^\n]+)/);
-  const levensles = t.match(/Levensles:\s*"([^"]+)"/);
+  const levensles = t.match(/(?:Levensles|Life\s+lesson):\s*"([^"]+)"/);
 
   // AI-authored card fields (KAART MICROCOPY block) — base64-marked like ORB::/ARCH::
   // so they survive PDF text-layer line wrapping. giftMicro = in-depth gift description;
@@ -122,13 +123,16 @@ function extractKaartSection(text) {
   // Label delimiter is tolerant ( : or — / – / - ): the master prompt itself writes
   // "KAART_GEOMETRIE — [...]" and the model follows it literally — a colon-only match
   // let the gift capture swallow the geometry label + a truncated tail.
-  const gift = t.match(/KAART_GIFT\s*[:—–-]\s*([\s\S]*?)(?=\s*KAART_GEOMETRIE\s*[:—–-]|\n#{2,3}\s|$)/);
-  const geo = t.match(/KAART_GEOMETRIE\s*[:—–-]\s*([\s\S]*?)(?=\n#{2,3}\s|$)/);
+  // An English report carries the translated labels: "Card Microcopy", CARD_GIFT, CARD_GEOMETRY.
+  const GIFT = '(?:KAART|CARD)_GIFT';
+  const GEO = '(?:KAART_GEOMETRIE|CARD_GEOMETRY)';
+  const gift = t.match(new RegExp(`${GIFT}\\s*[:—–-]\\s*([\\s\\S]*?)(?=\\s*${GEO}\\s*[:—–-]|\\n#{2,3}\\s|$)`));
+  const geo = t.match(new RegExp(`${GEO}\\s*[:—–-]\\s*([\\s\\S]*?)(?=\\n#{2,3}\\s|$)`));
   const clean = (m, max) => (m ? m[1].replace(/\s+/g, ' ').replace(/^\[|\]$/g, '').trim().slice(0, max) : '');
   const cleaned = t
-    .replace(/^#{2,3}\s*(?:\d+[A-Za-z]?\.\s*)?kaart\s*microcopy\s*$[\s\S]*?(?=\n#{2,3}\s|$)/gim, '')
-    .replace(/^\s*KAART_GIFT\s*[:—–-]\s*[\s\S]*?(?=\s*KAART_GEOMETRIE\s*[:—–-]|\n#{2,3}\s|$)/gim, '')
-    .replace(/^\s*KAART_GEOMETRIE\s*[:—–-]\s*[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
+    .replace(/^#{2,3}\s*(?:\d+[A-Za-z]?\.\s*)?(?:kaart|card)\s*microcopy\s*$[\s\S]*?(?=\n#{2,3}\s|$)/gim, '')
+    .replace(new RegExp(`^\\s*${GIFT}\\s*[:—–-]\\s*[\\s\\S]*?(?=\\s*${GEO}\\s*[:—–-]|\\n#{2,3}\\s|$)`, 'gim'), '')
+    .replace(new RegExp(`^\\s*${GEO}\\s*[:—–-]\\s*[\\s\\S]*?(?=\\n#{2,3}\\s|$)`, 'gim'), '');
   return { giftMicro: clean(gift, 800), geomSummary: clean(geo, 1500), cleaned };
 }
 

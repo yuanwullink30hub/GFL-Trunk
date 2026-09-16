@@ -1,0 +1,288 @@
+{
+  "source": "Matrix_360_v4_3 + Tau_Calibration_v0 (in-sheet)",
+  "loader_expectations": {
+    "articulations": 660,
+    "locus_census": {
+      "value": 437,
+      "shape:tracking": 64,
+      "shape:operational": 56,
+      "entry": 30,
+      "\u2014": 73
+    },
+    "hero_arc": [
+      86.0,
+      90.3,
+      87.7,
+      30.0,
+      18.9
+    ],
+    "tau_values": 60
+  },
+  "cases": {
+    "stacked_pull": {
+      "input_scores": {
+        "Judge": 90,
+        "Lover": 31.7795,
+        "Caregiver": 31.1102,
+        "Innocent": 27.0406,
+        "Explorer": 28.9635,
+        "Outlaw": 28.5959,
+        "Trickster": 30.2127,
+        "Sage": 85,
+        "Artist": 25.7509,
+        "Magician": 80,
+        "Hero": 78,
+        "Ruler": 95.0
+      },
+      "main": "Ruler",
+      "expected": {
+        "codrivers": [
+          "Judge",
+          "Sage",
+          "Magician",
+          "Hero"
+        ],
+        "active_set_size": 5,
+        "baseline_arc": [
+          88.0,
+          66.0,
+          82.0,
+          34.0,
+          18.0
+        ],
+        "transform_arc_compute": [
+          -148.2,
+          75.9,
+          -172.6,
+          -91.6,
+          -36.4
+        ],
+        "register_transform_pct": [
+          -85.9,
+          44.0,
+          -100.0,
+          -53.1,
+          -21.1
+        ],
+        "dynamic_ceiling_compute": 172.6,
+        "inverted_states": [
+          "D1",
+          "D3",
+          "D4",
+          "D5"
+        ],
+        "tracking_pulls": 3,
+        "operational_ledger": 0,
+        "orth_ledger": 5,
+        "entry_reads": 0
+      }
+    },
+    "agency_entry": {
+      "input_scores": {
+        "Judge": 32.6483,
+        "Lover": 32.5826,
+        "Caregiver": 25.4524,
+        "Innocent": 25.679,
+        "Explorer": 31.684,
+        "Outlaw": 75,
+        "Trickster": 30.3578,
+        "Sage": 27.4651,
+        "Artist": 29.8476,
+        "Magician": 95.0,
+        "Hero": 88,
+        "Ruler": 80
+      },
+      "main": "Magician",
+      "expected": {
+        "codrivers": [
+          "Hero",
+          "Ruler",
+          "Outlaw"
+        ],
+        "active_set_size": 4,
+        "baseline_arc": [
+          86.0,
+          90.3,
+          87.7,
+          40.0,
+          18.9
+        ],
+        "transform_arc_compute": [
+          51.6,
+          54.2,
+          61.4,
+          256.2,
+          94.1
+        ],
+        "register_transform_pct": [
+          20.1,
+          21.2,
+          24.0,
+          100.0,
+          36.7
+        ],
+        "dynamic_ceiling_compute": 256.2,
+        "inverted_states": [],
+        "tracking_pulls": 0,
+        "operational_ledger": 0,
+        "orth_ledger": 0,
+        "entry_reads": 9
+      }
+    },
+    "heavy_orth": {
+      "input_scores": {
+        "Judge": 26.9037,
+        "Lover": 76,
+        "Caregiver": 27.9596,
+        "Innocent": 90,
+        "Explorer": 82,
+        "Outlaw": 25.5242,
+        "Trickster": 25.1053,
+        "Sage": 95.0,
+        "Artist": 27.0748,
+        "Magician": 26.8746,
+        "Hero": 32.9652,
+        "Ruler": 28.7621
+      },
+      "main": "Sage",
+      "expected": {
+        "codrivers": [
+          "Innocent",
+          "Explorer",
+          "Lover"
+        ],
+        "active_set_size": 4,
+        "baseline_arc": [
+          80.0,
+          84.8,
+          90.4,
+          52.8,
+          28.0
+        ],
+        "transform_arc_compute": [
+          16.0,
+          20.4,
+          24.4,
+          13.7,
+          6.2
+        ],
+        "register_transform_pct": [
+          17.7,
+          22.6,
+          27.0,
+          15.2,
+          6.9
+        ],
+        "dynamic_ceiling_compute": 90.4,
+        "inverted_states": [],
+        "tracking_pulls": 0,
+        "operational_ledger": 5,
+        "orth_ledger": 5,
+        "entry_reads": 0
+      }
+    },
+    "hero_hole": {
+      "input_scores": {
+        "Judge": 72,
+        "Lover": 25.8253,
+        "Caregiver": 28.1685,
+        "Innocent": 26.2398,
+        "Explorer": 25.5321,
+        "Outlaw": 28.2127,
+        "Trickster": 32.3436,
+        "Sage": 31.4036,
+        "Artist": 31.1213,
+        "Magician": 85,
+        "Hero": 95.0,
+        "Ruler": 80
+      },
+      "main": "Hero",
+      "expected": {
+        "codrivers": [
+          "Magician",
+          "Ruler",
+          "Judge"
+        ],
+        "active_set_size": 4,
+        "baseline_arc": [
+          86.0,
+          90.3,
+          87.7,
+          30.0,
+          18.9
+        ],
+        "transform_arc_compute": [
+          51.6,
+          54.2,
+          61.4,
+          147.8,
+          72.4
+        ],
+        "register_transform_pct": [
+          34.9,
+          36.7,
+          41.5,
+          100.0,
+          49.0
+        ],
+        "dynamic_ceiling_compute": 147.8,
+        "inverted_states": [],
+        "tracking_pulls": 0,
+        "operational_ledger": 0,
+        "orth_ledger": 2,
+        "entry_reads": 9
+      }
+    },
+    "threshold_edge": {
+      "input_scores": {
+        "Judge": 29.9832,
+        "Lover": 95.0,
+        "Caregiver": 66.6,
+        "Innocent": 32.5396,
+        "Explorer": 30.9192,
+        "Outlaw": 32.3786,
+        "Trickster": 25.232,
+        "Sage": 67.0,
+        "Artist": 66.4,
+        "Magician": 30.1918,
+        "Hero": 32.2072,
+        "Ruler": 25.9056
+      },
+      "main": "Lover",
+      "expected": {
+        "codrivers": [
+          "Sage",
+          "Caregiver"
+        ],
+        "active_set_size": 3,
+        "baseline_arc": [
+          76.0,
+          80.6,
+          85.1,
+          46.0,
+          22.0
+        ],
+        "transform_arc_compute": [
+          75.7,
+          100.3,
+          122.9,
+          68.7,
+          26.3
+        ],
+        "register_transform_pct": [
+          61.6,
+          81.6,
+          100.0,
+          55.9,
+          21.4
+        ],
+        "dynamic_ceiling_compute": 122.9,
+        "inverted_states": [],
+        "tracking_pulls": 0,
+        "operational_ledger": 0,
+        "orth_ledger": 0,
+        "entry_reads": 0
+      }
+    }
+  }
+}

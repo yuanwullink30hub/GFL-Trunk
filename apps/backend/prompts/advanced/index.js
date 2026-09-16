@@ -1577,6 +1577,10 @@ function buildUserMessage({
   overallShadow, uploadedFileContents,
   oceanScores, subgroups, responses,
   language,
+  // v5 pipeline (engine/reportV5.js): the corpus arrives sliced per the Corpus Manifest, which
+  // ships exactly one 132-name, so the 11-row matrix is omitted; the v5.2 system prompt owns the
+  // section layout, so the v4 section-number instructions are omitted too.
+  sliceScoped = false,
 }) {
   const mainPos      = ARCHETYPE_POSITIONS[archetypeKey] || '?';
   const supportPos   = ARCHETYPE_POSITIONS[supportArchetype] || '?';
@@ -1594,8 +1598,9 @@ function buildUserMessage({
   const hasReport = uploadedFileContents && uploadedFileContents.length > 0;
   const parts = [];
 
-  parts.push(
-    `Genereer een volledig Leerling Ontologisch Rapport ` +
+  parts.push(sliceScoped
+    ? `Genereer het volledige rapport voor deze gebruiker volgens de systeeminstructies.\n`
+    : `Genereer een volledig Leerling Ontologisch Rapport ` +
     `(secties 1-4, 4B (5 elementen), 5-12 + 13A + 13B${hasReport ? ' + Persoonlijkheidsrapport Vergelijking' : ''}) ` +
     `voor deze gebruiker.\n` +
     `BELANGRIJK: Begin je output DIRECT met "## 1. De Identiteit". ` +
@@ -1615,19 +1620,21 @@ function buildUserMessage({
   parts.push(`Extended Archetype (132-matrix): ${extendedArchetypeName || matrixFor(language)[matrixKey] || '?'}${isHarmonic ? ' (Harmonic Match ✦)' : ''}`);
 
   // ─── Section 5: Full 132-matrix row for Main (all 11 possible extended archetypes) ───
-  const extendedRow = buildExtendedRow(archetypeKey, language);
-  parts.push(`\n── DE 132 MATRIX — 11 MOGELIJKE PROFIELEN VOOR ${archetypeKey} ──`);
-  parts.push(`Support              | Groep        | Extended Archetype      | Harmonic`);
-  parts.push(`---------------------|--------------|-------------------------|----------`);
-  for (const row of extendedRow) {
-    const support = row.support.padEnd(20);
-    const group   = String(row.group || '').padEnd(12);
-    const name    = row.name.padEnd(24);
-    const harmStr = row.harmonic ? '✦ (H)' : '';
-    const marker  = row.support === supportArchetype ? ' ← UITSLAG' : '';
-    parts.push(`${support} | ${group} | ${name} | ${harmStr}${marker}`);
+  if (!sliceScoped) {
+    const extendedRow = buildExtendedRow(archetypeKey, language);
+    parts.push(`\n── DE 132 MATRIX — 11 MOGELIJKE PROFIELEN VOOR ${archetypeKey} ──`);
+    parts.push(`Support              | Groep        | Extended Archetype      | Harmonic`);
+    parts.push(`---------------------|--------------|-------------------------|----------`);
+    for (const row of extendedRow) {
+      const support = row.support.padEnd(20);
+      const group   = String(row.group || '').padEnd(12);
+      const name    = row.name.padEnd(24);
+      const harmStr = row.harmonic ? '✦ (H)' : '';
+      const marker  = row.support === supportArchetype ? ' ← UITSLAG' : '';
+      parts.push(`${support} | ${group} | ${name} | ${harmStr}${marker}`);
+    }
+    parts.push(`Huidige uitslag: ${extendedArchetypeName || matrixFor(language)[matrixKey] || '?'} (Main=${archetypeKey} × Support=${supportArchetype}, Groep=${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]})`);
   }
-  parts.push(`Huidige uitslag: ${extendedArchetypeName || matrixFor(language)[matrixKey] || '?'} (Main=${archetypeKey} × Support=${supportArchetype}, Groep=${supportGroup || GROUP_FOR_ARCHETYPE[supportArchetype]})`);
 
   const mainDetails   = archetypeDetails && archetypeDetails.find(a => a.key === archetypeKey);
   const shadowDetails = archetypeDetails && archetypeDetails.find(a => a.key === shadowArchetype);
@@ -1673,7 +1680,8 @@ function buildUserMessage({
   if (harmonyScore != null) parts.push(`Engagement Score: ${harmonyScore}%`);
   if (consciousnessLevel) parts.push(`Bewustzijnsniveau: ${consciousnessLevel}`);
   if (overallShadow) parts.push(`Dominante Schaduw: ${overallShadow}`);
-  if (oceanScores) parts.push(`OCEAN Scores: ${JSON.stringify(oceanScores)}`);
+  // v5 (D-10): OCEAN reaches the model only as the user's upload, never as geometry-derived values.
+  if (oceanScores && !sliceScoped) parts.push(`OCEAN Scores: ${JSON.stringify(oceanScores)}`);
 
   // ═══ DUAL-CORE DYNAMICS ═══
   if (subgroups && subgroups.length > 0) {
@@ -1824,10 +1832,12 @@ function buildUserMessage({
   }
 
   // ═══ UPLOADED RAPPORT ═══
-  if (hasReport) {
+  if (hasReport && sliceScoped) {
+    parts.push(`\n⚠️ EXTERN RAPPORT GEÜPLOAD: ${uploadedFileContents.map(f => f.name).join(', ')}`);
+  } else if (hasReport) {
     const fileNames = uploadedFileContents.map(f => f.name).join(', ');
     parts.push(`\n⚠️ EXTERN RAPPORT GEÜPLOAD: ${fileNames}\nGenereer alle secties 1-4, 4B (5 elementen), 5-12 + 13A + 13B. Genereer NA sectie 13B de sectie '## Persoonlijkheidsrapport Vergelijking' exact zoals gespecificeerd in de systeeminstructies. Dit is verplicht — sla geen secties over.`);
-  } else {
+  } else if (!sliceScoped) {
     parts.push(`\nVolg het exacte sectie-format (1-12 + 13A + 13B) uit je systeeminstructies. Respecteer de woordlimieten per sectie exact zoals aangegeven.`);
   }
 

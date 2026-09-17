@@ -567,7 +567,7 @@ const SectorFrame = ({ children, className = '', style = {}, ...props }) => (
     }} />
 
     {/* Noise texture overlay */}
-    <div className="absolute inset-0 rounded-lg pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
+    <div className="absolute inset-0 rounded-lg pointer-events-none bg-[url('/images/noise.svg')] opacity-[0.03] mix-blend-overlay" />
 
     <div className="relative z-10 h-full w-full">{children}</div>
   </div>

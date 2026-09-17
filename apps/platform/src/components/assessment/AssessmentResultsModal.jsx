@@ -3493,7 +3493,7 @@ const AssessmentResultsModal = ({
           {/* Noise texture overlay */}
           <div style={{
             position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: '0.5rem',
-            backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')",
+            backgroundImage: "url('/images/noise.svg')",
             opacity: 0.03, mixBlendMode: 'overlay',
           }} />
 

@@ -190,6 +190,7 @@ export const SciFiButton = ({
   active = false, fullWidth = false,
   brackets = true, // false = no corner-bracket frame (text/icon only)
   style = {}, type = 'button', title,
+  form, // id of the <form> this button submits when it sits outside it (type="submit")
 }) => {
   const [hov, setHov] = React.useState(false);
   const base = BTN_COLORS[variant] || BTN_COLORS.orange;
@@ -205,7 +206,7 @@ export const SciFiButton = ({
   return (
     <div style={{ position: 'relative', display: fullWidth ? 'flex' : 'inline-flex', flexDirection: 'column', margin: fullWidth ? 0 : '0 0.25rem', ...style }}>
       <button
-        type={type} onClick={onClick} disabled={disabled} title={title}
+        type={type} form={form} onClick={onClick} disabled={disabled} title={title}
         onMouseEnter={() => !disabled && setHov(true)}
         onMouseLeave={() => setHov(false)}
         style={{

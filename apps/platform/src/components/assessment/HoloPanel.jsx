@@ -124,7 +124,7 @@ export const HoloPanel = ({
       <div style={{
         position: 'absolute', inset: 0, borderRadius: '0.5rem',
         pointerEvents: 'none', zIndex: 1,
-        backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')",
+        backgroundImage: "url('/images/noise.svg')",
         opacity: 0.03,
         mixBlendMode: 'overlay',
       }} />

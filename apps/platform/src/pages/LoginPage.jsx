@@ -355,10 +355,10 @@ const LoginPage = memo(({ isVisible, onBack }) => {
 
   // Poll /login until the emailed verification link is clicked (login stays 403 needsVerification
   // until then). The moment it succeeds, the gate is passed → the workspace step.
-  const pollVerification = useCallback(() => {
+  const pollVerification = useCallback((pollEmail, pollPassword) => {
     const tryOnce = async () => {
       try {
-        const data = await login({ email: obEmail, password: obPassword });
+        const data = await login({ email: pollEmail, password: pollPassword });
         openWorkspaceStep(data && data.user ? data.user.id : null);
       } catch (e) {
         if (e.needsVerification) {
@@ -370,7 +370,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       }
     };
     tryOnce();
-  }, [obEmail, obPassword, openWorkspaceStep, t]);
+  }, [openWorkspaceStep, t]);
 
   // Create the account. With email verification on, register does NOT return a session — it sends a
   // confirmation link and we wait (polling /login) until the user clicks it, THEN boot into client.
@@ -442,13 +442,19 @@ const LoginPage = memo(({ isVisible, onBack }) => {
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     setError('');
+    // Read the values off the form, not state: Chrome's on-load autofill (and some password
+    // managers) fill the fields without firing the input events React listens to.
+    const fd = new FormData(e.currentTarget);
+    const formEmail = String(fd.get('email') || '').trim();
+    const formPassword = String(fd.get('password') || '');
+    setEmail(formEmail); setPassword(formPassword);
     if (mode === 'register') {
       setShowConsent(true);
       return;
     }
     setLoading(true);
     try {
-      const data = await login({ email, password });
+      const data = await login({ email: formEmail, password: formPassword });
       stampSession();
       // Claim a crystal-code the user uploaded this session to their account (adds to the timeline).
       if (orbCodeStr) orbLinkCode(orbCodeStr, data.archetypeName, obReading).catch(() => {});
@@ -483,7 +489,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       if (!entered) { setEntering(false); setUser(data.user); }
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
-  }, [mode, email, password, orbCodeStr, language, bootIntoClient]);
+  }, [mode, orbCodeStr, obReading, language, bootIntoClient]);
 
   const handleConsentConfirm = useCallback(async () => {
     setLoading(true);
@@ -553,7 +559,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         )}
 
         {/* Noise overlay */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: '0.5rem', backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')", opacity: 0.05, mixBlendMode: 'overlay' }} />
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: '0.5rem', backgroundImage: "url('/images/noise.svg')", opacity: 0.05, mixBlendMode: 'overlay' }} />
       </div>
     </div>,
     document.body
@@ -840,6 +846,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                   {/* name/id + autocomplete="username": password managers key on these to
                       recognize the login form (and to offer saving in the first place). */}
                   <input type="email" name="email" id="login-email" {...(process.env.NODE_ENV === 'production' && { required: true })} autoComplete="username"
+                    inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false}
                     placeholder={t('pages.loginPage.email')}
                     value={email} onChange={(e) => setEmail(e.target.value)}
                     style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
@@ -867,7 +874,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         </div>
 
         {/* Clamped bottom */}
-        <div style={{ display: 'flex', justifyContent: !usePassword ? 'center' : 'space-between', alignItems: 'flex-end', marginBottom: '0.4rem', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: !usePassword ? 'center' : 'space-between', alignItems: 'flex-end', marginTop: usePassword ? '0.85rem' : 0, marginBottom: '0.4rem', gap: '0.5rem' }}>
           {!usePassword ? (
             <button type="button" onClick={() => { setUsePassword(true); setUploadErr(''); }}
               style={{ background: 'none', border: 'none', color: 'rgba(255,174,0,0.6)', cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}
@@ -883,7 +890,9 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                 onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.4)'}>
                 {t('auth.login.back')}
               </button>
-              <SciFiButton onClick={() => { const f = document.getElementById('loginForm'); if (f) f.requestSubmit(); }} disabled={loading} size="md">
+              {/* A real submit button bound to the form (it sits outside it for layout) — password
+                  managers look for one to recognise the sign-in and offer to save it. */}
+              <SciFiButton type="submit" form="loginForm" disabled={loading} size="md">
                 {loading ? t('pages.loginPage.loading') : t('auth.login.submit')}
               </SciFiButton>
             </>

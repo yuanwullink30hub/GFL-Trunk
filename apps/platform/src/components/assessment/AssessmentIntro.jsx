@@ -696,7 +696,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             </div>
 
             <p className="mx-auto leading-relaxed" style={{ fontSize: s.pyramidLabelFont, marginTop: s.descMt, whiteSpace: isMobile ? 'normal' : 'nowrap', textAlign: 'center', color: '#FFFEF0' }}>
-              {t('assessmentIntroExtra.headline')}
+              {renderCopy(t('assessmentIntroExtra.headline'))}
             </p>
           </div>
 

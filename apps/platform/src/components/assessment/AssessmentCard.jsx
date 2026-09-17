@@ -738,7 +738,7 @@ const AssessmentCard = ({
         }} />
 
         {/* Noise texture overlay */}
-        <div className="absolute inset-0 rounded-lg pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
+        <div className="absolute inset-0 rounded-lg pointer-events-none bg-[url('/images/noise.svg')] opacity-[0.03] mix-blend-overlay" />
 
         {/* --- Header Section --- */}
         <header 

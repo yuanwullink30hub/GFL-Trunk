@@ -19,7 +19,7 @@
  */
 export const DESKTOP_RELEASE = {
   // Per platform: flip each one only once its installer is actually on R2.
-  available: { win: false, macArm: false, macIntel: false, linux: false },
+  available: { win: true, macArm: false, macIntel: false, linux: false },
   version: '0.1.0',
   base: 'https://downloads.gardenforlife.nl',
   file: {

@@ -11,6 +11,7 @@
     "dist": "node scripts/sync-ui.js && electron-builder",
     "dist:win": "node scripts/sync-ui.js && electron-builder --win",
     "dist:mac": "node scripts/sync-ui.js && electron-builder --mac",
+    "release": "node scripts/publish.js",
     "test": "node test/workspace.test.js && node test/account-and-report.test.js"
   },
   "devDependencies": {

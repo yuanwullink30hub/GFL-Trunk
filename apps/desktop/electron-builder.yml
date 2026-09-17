@@ -4,6 +4,9 @@ copyright: © Garden For Life
 
 directories:
   output: release
+  # build/icon.png is the app icon (exe, installer, dock, taskbar) — electron-builder derives the
+  # .ico/.icns from it. Source: apps/platform/public/images/Import ready/App logo.png, padded
+  # 500→512 px (the macOS minimum) rather than resampled.
   buildResources: build
 
 # Only what the app actually runs. The platform source, the corpus and everything else
@@ -12,6 +15,8 @@ files:
   - src/**/*
   - ui/**/*
   - package.json
+  # Build resources are not packed by default; the window icon (Linux, dev) reads this one.
+  - build/icon.png
 
 # ── In-app updates ──
 # The installers and the update feed (latest.yml, latest-mac.yml, latest-linux.yml, plus the

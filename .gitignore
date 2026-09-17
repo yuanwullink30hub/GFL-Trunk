@@ -39,3 +39,5 @@ exports/
 # Desktop app: synced UI copy and packaged installers
 apps/desktop/ui/
 apps/desktop/release/
+# …but its build resources (the app icon) are source, not output
+!apps/desktop/build/

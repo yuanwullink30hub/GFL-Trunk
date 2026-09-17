@@ -28,6 +28,9 @@ const isDev = !app.isPackaged;
 // Live development: load the Vite dev server instead of the bundled UI. Never in a packaged build.
 const DEV_URL = isDev && (process.env.GFL_DEV_URL || (process.argv.includes('--dev') ? 'http://localhost:3000' : ''));
 const UI_ORIGIN = DEV_URL ? new URL(DEV_URL).origin : APP_ORIGIN;
+// The app logo. Packaged Windows/macOS builds take their icon from the executable / bundle
+// (electron-builder, build/icon.png); the window icon covers Linux and unpackaged runs.
+const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
 
 registerAppScheme(); // before 'ready'
 
@@ -69,6 +72,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 700,
     backgroundColor: '#0a0510', // matches the platform ground so there is no white flash
+    icon: APP_ICON,
     show: false,
     // The platform is the whole interface: full screen, no native menu bar. Maximize returns to full
     // screen, F11 toggles it, Esc leaves full screen, Esc twice quits.
@@ -285,6 +289,9 @@ app.whenReady().then(async () => {
       startupWorkspaceError = err.message;
     }
   }
+
+  // macOS ignores the window icon; an unpackaged run would otherwise show Electron's in the dock.
+  if (isDev && process.platform === 'darwin' && app.dock) app.dock.setIcon(APP_ICON);
 
   registerIpc();
   setupUpdater();

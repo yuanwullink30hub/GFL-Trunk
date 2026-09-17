@@ -2142,7 +2142,7 @@ const App = () => {
             onMouseLeave={() => setNavHovered(false)}
             style={{
               top: 'clamp(1.5rem, 2vw, 2rem)',
-              left: 'clamp(1rem, 3vw, 2rem)',
+              left: 'calc(clamp(1rem, 3vw, 2rem) + 1.5rem)', // logo only; the header keeps its own margin
               // Header animation during scroll — delayed 1 frame. Always counter-pan (+map cancels
               // the container's −map) so the logo stays fixed on screen during map navigation.
               transform: `translate(calc(var(--map-x, 0) * 100vw), calc(var(--map-y, 0) * 100vh)) translateX(${logoY * 2.5}px) translateY(${logoY * 2.5}px) scale(${logoScale})`,

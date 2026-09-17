@@ -12,6 +12,28 @@
  */
 const { contextBridge, ipcRenderer } = require('electron');
 
+// "Press Esc again to quit" — a small glass hint drawn by the preload (the DOM is shared with the page;
+// nothing is exposed to it). Removed after 1.5 s, the window in which a second Esc quits.
+ipcRenderer.on('app:esc-hint', () => {
+  try {
+    const nl = (localStorage.getItem('gfl_language_choice') || document.documentElement.lang || 'nl').startsWith('nl');
+    document.getElementById('gfl-esc-hint')?.remove();
+    const el = document.createElement('div');
+    el.id = 'gfl-esc-hint';
+    el.textContent = nl ? 'Druk nogmaals op Esc om af te sluiten' : 'Press Esc again to quit';
+    el.style.cssText = [
+      'position:fixed', 'left:50%', 'bottom:6vh', 'transform:translateX(-50%)', 'z-index:2147483647',
+      'padding:0.7rem 1.2rem', 'border-radius:0.5rem', 'pointer-events:none',
+      'background:rgba(2,0,3,0.55)', 'backdrop-filter:blur(20px)', '-webkit-backdrop-filter:blur(20px)',
+      'border:1px solid rgba(255,174,0,0.45)', 'box-shadow:0 0 20px rgba(255,174,0,0.15)',
+      "font-family:'Lexend Mega',Arial,sans-serif", 'font-size:max(10px,0.5vw)', 'font-weight:700',
+      'letter-spacing:0.12em', 'text-transform:uppercase', 'color:#ffae00',
+    ].join(';');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1500);
+  } catch { /* hint is cosmetic */ }
+});
+
 contextBridge.exposeInMainWorld('gfl', {
   /** { version, platform, apiOrigin } */
   info: () => ipcRenderer.invoke('app:info'),

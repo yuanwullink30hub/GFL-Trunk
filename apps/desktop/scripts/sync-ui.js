@@ -40,10 +40,24 @@ stripMaps(TARGET);
 
 // The CSP (src/csp.js) is sent as a header by the app:// handler; it is also written into the
 // copied index.html as a meta tag so the policy holds even if the page is ever opened another way.
-const { CSP } = require('../src/csp');
+const crypto = require('crypto');
+const { buildCsp, HASHES_FILE } = require('../src/csp');
 
 const indexPath = path.join(TARGET, 'index.html');
 let html = fs.readFileSync(indexPath, 'utf8');
+
+// Allow exactly the inline scripts of this build (boot overlay, GPU tier), by hash. The HTML parser
+// turns CRLF into LF before the browser hashes a script, so hash the normalised text.
+const inlineHashes = [];
+const inlineRe = /<script(?![^>]*\bsrc=)([^>]*)>([\s\S]*?)<\/script>/gi;
+const normalised = html.replace(/\r\n?/g, '\n');
+for (let m; (m = inlineRe.exec(normalised));) {
+  if (/type="(?!text\/javascript|module)[^"]+"/i.test(m[1])) continue; // data blocks do not run
+  inlineHashes.push('sha256-' + crypto.createHash('sha256').update(m[2], 'utf8').digest('base64'));
+}
+fs.writeFileSync(HASHES_FILE, JSON.stringify({ scripts: inlineHashes }, null, 2));
+console.log(`✓ ${inlineHashes.length} inline script hash(es) → ui/csp-hashes.json`);
+const CSP = buildCsp({ inlineHashes, forMeta: true });
 if (html.includes('http-equiv="Content-Security-Policy"')) {
   html = html.replace(
     /<meta[^>]+http-equiv="Content-Security-Policy"[^>]*>/i,

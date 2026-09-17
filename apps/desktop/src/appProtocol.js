@@ -13,7 +13,7 @@ const { protocol, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
-const { CSP } = require('./csp');
+const { buildCsp } = require('./csp');
 
 const SCHEME = 'app';
 const HOST = 'gardenforlife';
@@ -43,7 +43,7 @@ function handleAppScheme() {
     const res = await net.fetch(pathToFileURL(file).toString());
     const headers = new Headers(res.headers);
     if (file.endsWith('.html')) {
-      headers.set('Content-Security-Policy', CSP);
+      headers.set('Content-Security-Policy', buildCsp());
       headers.set('Cache-Control', 'no-cache');
     }
     headers.set('X-Content-Type-Options', 'nosniff');

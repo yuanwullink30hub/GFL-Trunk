@@ -70,8 +70,8 @@ function createWindow() {
     minHeight: 700,
     backgroundColor: '#0a0510', // matches the platform ground so there is no white flash
     show: false,
-    // The platform is the whole interface: full screen, no native menu bar. Esc leaves full screen,
-    // F11 toggles it.
+    // The platform is the whole interface: full screen, no native menu bar. Maximize returns to full
+    // screen, F11 toggles it, Esc pressed twice quits.
     fullscreen: true,
     autoHideMenuBar: true,
     webPreferences: {
@@ -85,14 +85,23 @@ function createWindow() {
 
   win.once('ready-to-show', () => win.show());
 
+  // Maximize = full screen (the maximized window with a title bar is never the resting state).
+  win.on('maximize', () => { win.unmaximize(); win.setFullScreen(true); });
+
+  // Esc is the quick way out: the first press shows "press Esc again to quit", a second press within
+  // 1.5 s closes the app. A single press still reaches the page, so closing a menu or overlay with Esc
+  // never quits by accident.
+  let lastEsc = 0;
   win.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
     if (input.key === 'F11') {
       event.preventDefault();
       win.setFullScreen(!win.isFullScreen());
-    } else if (input.key === 'Escape' && win.isFullScreen()) {
-      // Not prevented: the page still sees Esc (closing a menu or overlay keeps working).
-      win.setFullScreen(false);
+    } else if (input.key === 'Escape' && !input.isAutoRepeat) {
+      const now = Date.now();
+      if (now - lastEsc < 1500) { event.preventDefault(); app.quit(); return; }
+      lastEsc = now;
+      win.webContents.send('app:esc-hint');
     } else if (isDev && input.key === 'F12') {
       win.webContents.toggleDevTools();
     }

@@ -1,5 +1,6 @@
 appId: nl.gardenforlife.beheer
-productName: Garden For Life Beheer
+# "Admin GFL": next to "Garden For Life" on the same home screen, the two apps must be told apart at a glance.
+productName: Admin GFL
 copyright: © Garden For Life
 
 directories:
@@ -29,7 +30,7 @@ win:
   target:
     - target: nsis
       arch: [x64]
-  artifactName: GardenForLifeBeheer-Setup-${version}.${ext}
+  artifactName: AdminGFL-Setup-${version}.${ext}
 
 nsis:
   oneClick: false

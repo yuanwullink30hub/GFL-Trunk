@@ -1,5 +1,5 @@
 /**
- * Garden For Life Beheer — main process.
+ * Admin GFL — main process.
  *
  * A window around the bundled management UI (apps/admin build, served from app://gflbeheer). It runs
  * only on the management computer: the installer is never public (the backend hands it out to a
@@ -13,7 +13,7 @@ const { setupUpdater } = require('./updater');
 const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
 
 registerAppScheme(); // before 'ready'
-app.setName('Garden For Life Beheer');
+app.setName('Admin GFL');
 
 // No remote debugging of the installed app: --remote-debugging-port/--remote-debugging-pipe would let
 // any local program drive the page (and its session). The fuses already block --inspect and run-as-Node.

@@ -24,7 +24,7 @@ function UpdateBar() {
 }
 
 /**
- * The management app. Runs ONLY on the management computer — installed as Garden For Life Beheer
+ * The management app. Runs ONLY on the management computer — installed as Admin GFL
  * (apps/admin-desktop) or from the repo with `pnpm --filter @gfl/admin live` — never deployed: the
  * website and the desktop app ship no management UI at all. It logs in like any account; the server's
  * management API answers only a valid management token and looks nonexistent to anything else

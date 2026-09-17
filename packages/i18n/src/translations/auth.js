@@ -118,12 +118,12 @@ export default {
     staff: {
       title: { nl: 'Beheer', en: 'Management' },
       body: {
-        nl: 'Beheer gebeurt uitsluitend in de beheer-app op de beheercomputer.',
-        en: 'Management happens only in the management app on the management computer.',
+        nl: 'Beheer gebeurt uitsluitend in Admin GFL op de beheercomputer.',
+        en: 'Management happens only in Admin GFL on the management computer.',
       },
       logout: { nl: 'Uitloggen', en: 'Log out' },
       downloads: { nl: 'Downloads', en: 'Downloads' },
-      appWindows: { nl: 'Beheer-app · Windows', en: 'Management app · Windows' },
+      appWindows: { nl: 'Admin GFL · Windows', en: 'Admin GFL · Windows' },
       preparing: { nl: 'Link aanvragen…', en: 'Requesting link…' },
       started: { nl: (v) => `Download gestart${v ? ` (versie ${v})` : ''}.`, en: (v) => `Download started${v ? ` (version ${v})` : ''}.` },
       noRelease: { nl: 'Er is nog geen versie gepubliceerd.', en: 'No version has been published yet.' },

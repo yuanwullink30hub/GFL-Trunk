@@ -1,8 +1,8 @@
 {
   "name": "@gfl/admin-desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
-  "description": "Garden For Life Beheer — the management app (apps/admin) as a locked desktop app, installed only on the management computer",
+  "description": "Admin GFL — the management app (apps/admin) as a locked desktop app, installed only on the management computer",
   "main": "src/main.js",
   "scripts": {
     "sync-ui": "node scripts/sync-ui.js",

@@ -1,0 +1,43 @@
+# Line endings — git decides, not whichever tool last wrote the file.
+#
+# Every text file is stored with LF (what the repo already holds) and checked out with the platform's
+# own endings. Without a rule here the stored form is whatever the writer produced, and an editor that
+# rewrote one file the other way turned a 20-line change into a 4128-line diff (2026-09-17) that had to
+# be rebuilt by hand before it could be reviewed. This commit changes no file content: with everything
+# already LF, `git add --renormalize .` staged nothing but this file.
+* text=auto
+
+# Run by a POSIX shell or by NSIS/Windows — these keep the endings their interpreter expects,
+# whatever the platform.
+*.sh text eol=lf
+*.nsh text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary: never converted, never diffed as text.
+*.png binary
+*.PNG binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.svg text
+*.ico binary
+*.icns binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.otf binary
+*.pdf binary
+*.xlsx binary
+*.sqlite binary
+*.mp4 binary
+*.webm binary
+*.hdr binary
+*.exe binary
+*.dll binary
+*.node binary
+*.zip binary
+*.blockmap binary
+*.dmg binary
+*.AppImage binary

@@ -27,15 +27,11 @@ import {
   sendFormDirect,
   getSessions,
   getAdminReviews,
-  logActivity,
+  logReportView,
   getAccessLog,
   clearSessions,
   getFeedbackEmailSettings,
   updateFeedbackEmailSettings,
-  getPasskeys,
-  deletePasskey,
-  togglePasskey,
-  toggleAdminPasskey,
   getActivationCodes,
   createActivationCodes,
   revokeActivationCode,
@@ -395,7 +391,6 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
           { key: 'activationCodes', label: t('admin.dashboard.tabs.activationCodes') },
           { key: 'reportUnlocks', label: t('admin.dashboard.tabs.reportUnlocks') },
           { key: 'paymentRecords', label: t('admin.dashboard.tabs.paymentRecords') },
-          { key: 'passkeys', label: t('admin.dashboard.tabs.passkeys') },
           { key: 'audit', label: t('admin.dashboard.tabs.audit') },
           { key: 'feedback', label: t('admin.dashboard.tabs.feedback') },
           { key: 'contact', label: t('admin.dashboard.tabs.contact') },
@@ -462,7 +457,6 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
             { key: 'activationCodes', label: t('admin.dashboard.tabs.activationCodes') },
             { key: 'reportUnlocks', label: t('admin.dashboard.tabs.reportUnlocks') },
             { key: 'paymentRecords', label: t('admin.dashboard.tabs.paymentRecords') },
-            { key: 'passkeys', label: t('admin.dashboard.tabs.passkeys') },
             { key: 'audit', label: t('admin.dashboard.tabs.audit') },
             { key: 'contact', label: t('admin.dashboard.tabs.contact') },
           ].map(({ key, label, disabled }) => (
@@ -483,7 +477,6 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
       {tab === 'activationCodes' && <ActivationCodesTab />}
       {tab === 'reportUnlocks' && <ReportUnlocksTab />}
       {tab === 'paymentRecords' && <PaymentRecordsTab />}
-      {tab === 'passkeys' && <PasskeysTab />}
       {tab === 'audit' && <AuditLogTab />}
       {tab === 'contact' && <ContactTab />}
         </div>
@@ -1046,13 +1039,8 @@ const AssessmentsTab = memo(({ adminEmail }) => {
       setDetail(d);
 
       // Audit log: record which assessment report was viewed
-      logActivity({
-        type: 'report_view',
-        reportId: String(id),
-        reportType: 'assessment',
-        message: d?.archetypeKey || '',
-        email: adminEmail || '',
-      }).catch((e) => console.warn('[GFL] logActivity failed:', e));
+      logReportView({ reportId: String(id), reportType: 'assessment' })
+        .catch((e) => console.warn('[GFL] report-view log failed:', e));
       
       // Fetch reviews for this assessment
       try {
@@ -3724,164 +3712,6 @@ const PaymentRecordsTab = memo(() => {
           </div>
         )}
       </DashboardCard>
-    </div>
-  );
-});
-
-// ═══════════════════════════════════════════════════════════
-// Passkeys Tab
-// ═══════════════════════════════════════════════════════════
-
-// The beta access gate is gone, so passkeys are no longer issued and nothing here
-// creates one. What remains is the ADMIN passkey — the only way into the mobile
-// admin portal — which this tab can still list, toggle, revoke and audit.
-const PasskeysTab = memo(() => {
-  const { t, tFunc } = useLanguage();
-  const [passkeys, setPasskeys] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const tc = CARD_COLORS.gold;
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const pkRes = await getPasskeys().catch(() => ({ passkeys: [] }));
-      setPasskeys(pkRes.passkeys || []);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  const handleDelete = async (id, code) => {
-    if (!window.confirm(tFunc('admin.dashboard.passkeys.confirmDelete')(code))) return;
-    try {
-      await deletePasskey(id);
-      await fetchData();
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleToggle = async (id) => {
-    try {
-      await togglePasskey(id);
-      await fetchData();
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleToggleAdmin = async (id) => {
-    try {
-      await toggleAdminPasskey(id);
-      await fetchData();
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const activeCount = passkeys.filter(p => p.isActive).length;
-  const totalUses = passkeys.reduce((a, p) => a + (p.usageCount || 0), 0);
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-      {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.6rem' }}>
-        {[
-          { label: t('admin.dashboard.passkeys.statTotal'), value: passkeys.length, color: C.gold },
-          { label: t('admin.dashboard.passkeys.statActive'), value: activeCount, color: '#4ade80' },
-          { label: t('admin.dashboard.passkeys.statInactive'), value: passkeys.length - activeCount, color: '#f87171' },
-          { label: t('admin.dashboard.passkeys.statUsage'), value: totalUses, color: '#60a5fa' },
-        ].map((stat, i) => (
-          <div key={i} style={{
-            padding: '0.6rem 0.8rem',
-            backgroundColor: 'rgba(255, 174, 0, 0.04)',
-            borderRadius: '0.3rem',
-            borderLeft: `2px solid ${stat.color}`,
-          }}>
-            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{stat.label}</div>
-            <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <SciFiButton onClick={fetchData} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)">{t('admin.dashboard.passkeys.refresh')}</SciFiButton>
-      </div>
-
-      {error && <ErrorBox msg={error} />}
-
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: tc.dimText, fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.passkeys.loading')}</div>
-      ) : (
-        <DashboardCard title={tFunc('admin.dashboard.passkeys.manageTitle')(passkeys.length)} color="gold">
-          {/* Passkeys list */}
-          {passkeys.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '1.5rem', color: '#ffffff40', fontSize: 'max(10px, 0.5vw)' }}>
-              {t('admin.dashboard.passkeys.empty')}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '55vh', overflowY: 'auto' }}>
-              {/* Header */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 0.6fr 1fr 1fr 1fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
-                {[t('admin.dashboard.passkeys.colCode'), t('admin.dashboard.passkeys.colLabel'), t('admin.dashboard.passkeys.colStatus'), t('admin.dashboard.passkeys.colUsage'), t('admin.dashboard.passkeys.colCreated'), t('admin.dashboard.passkeys.colActions')].map(h => (
-                  <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
-                ))}
-              </div>
-              {/* Rows */}
-              {passkeys.map((pk, i) => (
-                <div key={pk._id} style={{
-                  display: 'grid', gridTemplateColumns: '1fr 1.5fr 0.6fr 1fr 1fr 1fr',
-                  gap: '0.3rem', padding: '0.4rem 0.5rem', alignItems: 'center',
-                  backgroundColor: i % 2 === 0 ? 'rgba(255,174,0,0.02)' : 'transparent',
-                  borderLeft: `2px solid ${pk.isAdminPasskey ? '#f97316' : pk.isActive ? '#4ade80' : '#f87171'}`,
-                  borderRadius: '0 0.15rem 0.15rem 0',
-                }}>
-                  <div style={{ fontSize: 'max(12px, 0.6vw)', fontFamily: 'monospace', color: '#fff', fontWeight: 'bold', letterSpacing: '0.15em' }}>
-                    {pk.code}
-                  </div>
-                  <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {pk.label || <span style={{ color: '#64748b', fontStyle: 'italic' }}>—</span>}
-                  </div>
-                  <div style={{ fontSize: 'max(8px, 0.42vw)', fontWeight: 'bold', color: pk.isActive ? '#4ade80' : '#f87171' }}>
-                    {pk.isActive ? t('admin.dashboard.passkeys.active') : t('admin.dashboard.passkeys.inactive')}
-                  </div>
-                  <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#60a5fa' }}>
-                    {tFunc('admin.dashboard.passkeys.usedTimes')(pk.usageCount || 0)}
-                    {pk.lastUsedAt && (
-                      <span style={{ color: '#64748b', marginLeft: '0.3rem' }}>
-                        · {new Date(pk.lastUsedAt).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 'max(8px, 0.42vw)', color: '#cbd5e1' }}>
-                    {new Date(pk.createdAt).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.3rem' }}>
-                    <button onClick={() => handleToggle(pk._id)} title={pk.isActive ? t('admin.dashboard.passkeys.deactivate') : t('admin.dashboard.passkeys.activate')}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem' }}>
-                      {pk.isActive ? '⏸️' : '▶️'}
-                    </button>
-                    <button onClick={() => handleToggleAdmin(pk._id)} title={pk.isAdminPasskey ? t('admin.dashboard.passkeys.removeAdmin') : t('admin.dashboard.passkeys.makeAdmin')}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem', opacity: pk.isAdminPasskey ? 1 : 0.3 }}>
-                      👑
-                    </button>
-                    <button onClick={() => handleDelete(pk._id, pk.code)} title={t('admin.dashboard.passkeys.delete')}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 'max(12px, 0.6vw)', padding: '0.15rem' }}>
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DashboardCard>
-      )}
     </div>
   );
 });

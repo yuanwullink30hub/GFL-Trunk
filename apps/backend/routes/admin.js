@@ -18,6 +18,9 @@ const { Router } = require('express');
 const { ObjectId } = require('mongodb');
 const { collections, getDB } = require('../db');
 const { authRequired, adminRequired } = require('../middleware/auth');
+const jwt = require('jsonwebtoken');
+const { activityCollection, activityDoc } = require('../services/activityLog');
+const { findFile, sendFile } = require('../services/adminAppReleases');
 const { decryptUser, decryptUsers } = require('../services/encryption');
 const { generateCode, hashCode, formatCode } = require('../services/activationCodes');
 const { declineRefund, holdPaymentLink, RefundError, REFUND_WINDOW_DAYS, UNLINK_GRACE_DAYS, LINK_HOLD_DAYS, readEmail } = require('../services/reportAccess');
@@ -145,91 +148,48 @@ const docUpload = multer({
 const router = Router();
 
 // ═════════════════════════════════════════════════════════════
-// UNPROTECTED: Dev activity logging endpoint (called from git hooks / dev-watcher)
-// Must be registered BEFORE the global auth middleware below.
+// NOT FOUND FOR EVERYONE BUT AN ADMIN
+// This router answers only a valid admin token. Anything else — no token, a client token, a bad
+// token — leaves the router (next('router')) and gets the server's ordinary 404, exactly like a
+// path that does not exist. The admin API cannot be discovered by probing it. (The public
+// activity log that used to sit here moved to routes/activity.js → POST /api/activity.)
 // ═════════════════════════════════════════════════════════════
 
-const RETENTION_DAYS = 90;
-
-/**
- * devActivity holds two different things with two different lifetimes: operational audit
- * entries, which expire after 90 days, and consent records, which are the Art. 7(1) proof
- * that processing was lawful and must last as long as the account they belong to.
- *
- * A blanket TTL on `timestamp` deleted both. The index now keys on `expiresAt` with
- * expireAfterSeconds 0, so a document expires at the moment named in that field and a
- * document WITHOUT the field never expires at all. Consent records simply omit it.
- * Index management lives in db/index.js; this accessor no longer creates one.
- */
-function activityCollection() {
-  return getDB().collection('devActivity');
-}
-
-/**
- * Consent records are the Art. 7(1) proof that processing was lawful, so they must outlive
- * the 90-day operational sweep. They cannot be exempt from expiry ALTOGETHER, though: the
- * endpoint below is deliberately unauthenticated (git hooks and the pre-account consent
- * screen both post to it), so "never expires" turns it into unbounded permanent storage
- * anyone can write to. Seven years bounds that while comfortably outlasting any account —
- * and the published retention page says exactly this.
- */
-const CONSENT_RETENTION_YEARS = 7;
-
-function activityExpiry(type) {
-  const days = type === 'consent_given' ? CONSENT_RETENTION_YEARS * 365 : RETENTION_DAYS;
-  return new Date(Date.now() + days * 86400 * 1000);
-}
-
-/**
- * Truncate to a string of at most `max` characters.
- *
- * `(value || '').slice(max)` looks like it does this and does not: when the caller sends
- * a JSON array, Array.prototype.slice returns ELEMENTS, so a single anonymous request
- * could store megabytes in a field nominally capped at 512 characters. Coercing first is
- * the whole fix.
- */
-function cap(value, max) {
-  if (value === undefined || value === null) return '';
-  return String(value).slice(0, max);
-}
-
-// POST /api/admin/sessions/activity — log a dev or admin activity event (no auth — called from git hooks and frontend)
-router.post('/sessions/activity', async (req, res) => {
+router.use((req, res, next) => {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) return next('router');
   try {
-    const { type, message, branch, hash, userId, email, reportId, reportType, consentType, level } = req.body;
-    const allowed = ['edit', 'commit', 'push', 'admin_login', 'report_view', 'consent_given'];
-    if (!type || !allowed.includes(type)) {
-      return res.status(400).json({ error: `type must be one of: ${allowed.join(', ')}` });
-    }
+    const payload = jwt.verify(header.slice(7), config.jwtSecret);
+    if (payload.role !== 'admin') return next('router');
+    req.user = { userId: payload.sub, email: payload.email, role: payload.role };
+    return next();
+  } catch {
+    return next('router');
+  }
+});
 
-    // Every field is coerced before truncation — see cap(). This endpoint takes
-    // unauthenticated input, so a field that only looks capped is a storage exhaustion bug.
-    const doc = {
-      type,
-      timestamp: new Date(),
-      expiresAt: activityExpiry(type),
-      // dev fields
-      message: cap(message, 512),
-      branch: cap(branch, 256),
-      hash: cap(hash, 64),
-      // admin fields
-      userId: userId == null ? null : cap(userId, 64),
-      email: cap(email, 256),
-      reportId: reportId == null ? null : cap(reportId, 64),
-      reportType: cap(reportType, 64),
-      // consent fields
-      ...(type === 'consent_given' && {
-        consentType: cap(consentType || 'art9_assessment', 64),
-        level: cap(level, 32),
-        userAgent: cap(req.get('user-agent'), 512),
-      }),
-    };
-
-    await activityCollection().insertOne(doc);
+// POST /api/admin/sessions/report-view — the admin opened a stored report (access log)
+router.post('/sessions/report-view', async (req, res) => {
+  try {
+    const { reportId, reportType } = req.body || {};
+    await activityCollection().insertOne(activityDoc('report_view', { userId: req.user.userId, email: req.user.email, reportId, reportType }, req));
     res.json({ success: true });
   } catch (err) {
-    console.error('[Admin] Activity log error:', err.message);
+    console.error('[Admin] report-view log error:', err.message);
     res.status(500).json({ error: 'Failed to log activity' });
+  }
+});
+
+// GET /api/admin/app/update/:file — the management app's PRIVATE update feed (latest.yml + installer).
+// The app sends its session token with every request (apps/admin-desktop/src/updater.js).
+router.get('/app/update/:file', async (req, res) => {
+  try {
+    const file = await findFile(req.params.file);
+    if (!file) return res.status(404).json({ error: 'not_found' });
+    return sendFile(req, res, file);
+  } catch (err) {
+    console.error('[Admin] app update feed error:', err.message);
+    return res.status(500).json({ error: 'feed_failed' });
   }
 });
 
@@ -1023,85 +983,6 @@ router.put('/settings/feedback-email', async (req, res) => {
   } catch (err) {
     console.error('[Admin] Update feedback-email settings error:', err.message);
     res.status(500).json({ error: 'Failed to save settings' });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────
-// Passkey Management (admin only — already behind authRequired + adminRequired)
-// ─────────────────────────────────────────────────────────────
-
-function passkeysCollection() {
-  return getDB().collection('passkeys');
-}
-
-// GET /api/admin/passkeys — list all passkeys
-router.get('/passkeys', async (_req, res) => {
-  try {
-    const passkeys = await passkeysCollection()
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray();
-    res.json({ passkeys });
-  } catch (err) {
-    console.error('[Admin] List passkeys error:', err.message);
-    res.status(500).json({ error: 'Failed to load passkeys' });
-  }
-});
-
-// DELETE /api/admin/passkeys/:id — delete a passkey
-router.delete('/passkeys/:id', async (req, res) => {
-  try {
-    if (!ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ error: 'Invalid passkey ID' });
-    }
-    const result = await passkeysCollection().deleteOne({ _id: new ObjectId(req.params.id) });
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'Passkey not found' });
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[Admin] Delete passkey error:', err.message);
-    res.status(500).json({ error: 'Failed to delete passkey' });
-  }
-});
-
-// PATCH /api/admin/passkeys/:id/toggle — activate/deactivate a passkey
-router.patch('/passkeys/:id/toggle', async (req, res) => {
-  try {
-    if (!ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ error: 'Invalid passkey ID' });
-    }
-    const pk = await passkeysCollection().findOne({ _id: new ObjectId(req.params.id) });
-    if (!pk) return res.status(404).json({ error: 'Passkey not found' });
-
-    await passkeysCollection().updateOne(
-      { _id: pk._id },
-      { $set: { isActive: !pk.isActive } }
-    );
-    res.json({ success: true, isActive: !pk.isActive });
-  } catch (err) {
-    console.error('[Admin] Toggle passkey error:', err.message);
-    res.status(500).json({ error: 'Failed to toggle passkey' });
-  }
-});
-
-// PATCH /api/admin/passkeys/:id/toggle-admin — toggle isAdminPasskey flag
-router.patch('/passkeys/:id/toggle-admin', async (req, res) => {
-  try {
-    if (!ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ error: 'Invalid passkey ID' });
-    }
-    const pk = await passkeysCollection().findOne({ _id: new ObjectId(req.params.id) });
-    if (!pk) return res.status(404).json({ error: 'Passkey not found' });
-
-    await passkeysCollection().updateOne(
-      { _id: pk._id },
-      { $set: { isAdminPasskey: !pk.isAdminPasskey } }
-    );
-    res.json({ success: true, isAdminPasskey: !pk.isAdminPasskey });
-  } catch (err) {
-    console.error('[Admin] Toggle admin passkey error:', err.message);
-    res.status(500).json({ error: 'Failed to toggle admin passkey' });
   }
 });
 

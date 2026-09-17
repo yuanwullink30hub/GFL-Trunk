@@ -1,0 +1,21 @@
+{
+  "name": "@gfl/admin-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Garden For Life Beheer — the management app (apps/admin) as a locked desktop app, installed only on the management computer",
+  "main": "src/main.js",
+  "scripts": {
+    "sync-ui": "node scripts/sync-ui.js",
+    "start": "node scripts/sync-ui.js && electron .",
+    "dist:win": "node scripts/sync-ui.js && electron-builder --win",
+    "publish:win": "node scripts/publish.js"
+  },
+  "devDependencies": {
+    "@electron/fuses": "2.1.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}

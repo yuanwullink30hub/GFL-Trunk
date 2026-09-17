@@ -19,7 +19,6 @@ import filosofie from './filosofie.js';
 import shell from './shell.js';
 import charts from './charts.js';
 import resultsModal from './resultsModal.js';
-import admin from './admin.js';
 
 export default {
   ...ocean,
@@ -36,5 +35,4 @@ export default {
   ...shell,
   ...charts,
   ...resultsModal,
-  ...admin,
 };

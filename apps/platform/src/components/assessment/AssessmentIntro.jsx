@@ -259,7 +259,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
       // the account id would pair that person with the test's start time.
       const API_BASE = import.meta.env.VITE_API_URL ||
         (window.location.hostname === 'localhost' ? 'http://localhost:8080/api' : 'https://api.gardenforlife.nl/api');
-      fetch(`${API_BASE}/admin/sessions/activity`, {
+      fetch(`${API_BASE}/activity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

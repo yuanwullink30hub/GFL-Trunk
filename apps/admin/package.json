@@ -7,11 +7,14 @@
     "dev": "vite --port 3002",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "live": "vite --port 3002 --mode live"
   },
   "dependencies": {
     "@gfl/admin-ui": "workspace:*",
+    "@gfl/api-client": "workspace:*",
     "@gfl/i18n": "workspace:*",
+    "@gfl/ui": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

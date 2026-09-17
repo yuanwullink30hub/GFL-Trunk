@@ -1,4 +1,5 @@
-/** admin translations — see translations/index.js */
+/** Management-app translations (the `admin` namespace). Registered by ./index.jsx via extendTranslations —
+ *  deliberately not in @gfl/i18n, so none of this copy ships with the website or the desktop app. */
 
 /* Shared across the invoice and credit-note documents (identical wording). */
 const SPELL_LINE_1 = { nl: 'De luide stilte en de intense kalmte', en: 'The loud silence and the intense calm' };
@@ -50,6 +51,23 @@ const PASSKEYS_WORD = { nl: 'Passkeys', en: 'Passkeys' };
 
 export default {
   admin: {
+    /* ═══════════ Management app (apps/admin + apps/admin-desktop) ═══════════ */
+    app: {
+      updateReady: { nl: 'Nieuwe versie klaar:', en: 'New version ready:' },
+      restart: { nl: 'Herstarten', en: 'Restart' },
+    },
+
+    /* ═══════════ Management app login (apps/admin) ═══════════ */
+    login: {
+      title: { nl: 'Beheer', en: 'Management' },
+      email: { nl: 'E-mailadres', en: 'Email address' },
+      password: { nl: 'Wachtwoord', en: 'Password' },
+      submit: { nl: 'Inloggen', en: 'Log in' },
+      busy: { nl: 'Bezig…', en: 'Working…' },
+      failed: { nl: 'Inloggen mislukt', en: 'Login failed' },
+      notAllowed: { nl: 'Dit account heeft geen beheerrechten.', en: 'This account has no management rights.' },
+    },
+
     /* ═══════════ Dashboard shell + tabs ═══════════ */
     dashboard: {
       logout: { nl: 'Uitloggen', en: 'Log out' },

@@ -10,3 +10,5 @@ packages:
   # UI as built output (scripts/sync-ui.js), so it needs no workspace links either.
   # Install it on its own:  cd apps/desktop && pnpm install
   - '!apps/desktop'
+  # Same for the management app (apps/admin-desktop): Electron shell around the apps/admin build.
+  - '!apps/admin-desktop'

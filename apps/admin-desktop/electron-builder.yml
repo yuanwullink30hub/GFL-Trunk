@@ -1,0 +1,37 @@
+appId: nl.gardenforlife.beheer
+productName: Garden For Life Beheer
+copyright: © Garden For Life
+
+directories:
+  output: release
+  # icon.png: copy of the desktop app icon. installer.nsh: same finish-page fix as apps/desktop.
+  buildResources: build
+
+files:
+  - src/**/*
+  - ui/**/*
+  - package.json
+  - build/icon.png
+
+# Electron fuses (scripts/after-pack.js): no run-as-Node, no debugger/NODE_OPTIONS, asar integrity
+# enforced, app only from asar.
+afterPack: scripts/after-pack.js
+
+# ── Private updates ──
+# The feed is the backend's management API: it answers only a logged-in management account (the app
+# sends the session token, src/updater.js) and looks nonexistent to everyone else. Releases are put
+# there with scripts/publish.js — never on the public downloads server.
+publish:
+  provider: generic
+  url: https://api.gardenforlife.nl/api/admin/app/update
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: GardenForLifeBeheer-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true

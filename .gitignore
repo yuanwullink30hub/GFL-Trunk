@@ -41,3 +41,7 @@ apps/desktop/ui/
 apps/desktop/release/
 # …but its build resources (the app icon) are source, not output
 !apps/desktop/build/
+# Management app: same layout
+apps/admin-desktop/ui/
+apps/admin-desktop/release/
+!apps/admin-desktop/build/

@@ -1042,4 +1042,12 @@ const translations = {
 // their namespaces resolve through the same t('namespace.key') lookup.
 Object.assign(translations, domainModules);
 
+/**
+ * Add translation namespaces that are not part of the public bundle (the management app registers its
+ * own `admin` namespace from @gfl/admin-ui, so that copy never ships with the website or the app).
+ */
+export function extendTranslations(extra) {
+  Object.assign(translations, extra);
+}
+
 export default translations;

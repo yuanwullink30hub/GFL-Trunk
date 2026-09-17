@@ -3,14 +3,15 @@
  */
 const express = require('express');
 const cors = require('cors');
-const jwt = require('jsonwebtoken');
 const config = require('./config');
 const { connectDB, closeDB } = require('./db');
-const { isEnabled: encryptionEnabled, decryptUser } = require('./services/encryption');
+const { isEnabled: encryptionEnabled } = require('./services/encryption');
 const aiRoutes = require('./routes/ai');
 const authRoutes = require('./routes/auth');
 const assessmentRoutes = require('./routes/assessment');
 const adminRoutes = require('./routes/admin');
+const activityRoutes = require('./routes/activity');
+const filesRoutes = require('./routes/files');
 const pdfRoutes = require('./routes/pdf');
 const questionsRoutes = require('./routes/questions');
 const contactRoutes = require('./routes/contact');
@@ -30,13 +31,15 @@ const PRIVATE_DEV_ORIGIN_RE = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,
 // Scoped to this project's subdomains only — Cloudflare will not serve another account there.
 // The desktop app serves its UI from this fixed origin (apps/desktop/src/appProtocol.js).
 const DESKTOP_APP_ORIGIN = 'app://gardenforlife';
+// The management app (apps/admin-desktop), installed only on the management computer.
+const MANAGEMENT_APP_ORIGIN = 'app://gflbeheer';
 const PAGES_PREVIEW_ORIGIN_RE = /^https:\/\/[a-z0-9][a-z0-9-]*\.gfl-trunk\.pages\.dev$/;
 
 // ── Middleware ──
 app.use(cors({
   origin: (origin, cb) => {
     // Allow same-machine and LAN dev origins without forcing .env edits.
-    if (!origin || origin === DESKTOP_APP_ORIGIN || config.corsOrigins.includes(origin)
+    if (!origin || origin === DESKTOP_APP_ORIGIN || origin === MANAGEMENT_APP_ORIGIN || config.corsOrigins.includes(origin)
         || PRIVATE_DEV_ORIGIN_RE.test(origin) || PAGES_PREVIEW_ORIGIN_RE.test(origin)) {
       return cb(null, true);
     }
@@ -52,6 +55,8 @@ app.use(express.json({ limit: '25mb' }));
 app.use('/api/ai', aiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/assessment', assessmentRoutes);
+app.use('/api/activity', activityRoutes);
+app.use('/api/files', filesRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/questions', questionsRoutes);
@@ -82,64 +87,8 @@ app.get('/api/status', (_req, res) => {
   });
 });
 
-// Beta passkey verification (checks DB, logs usage)
-app.post('/api/beta/verify', async (req, res) => {
-  const { passkey } = req.body;
-  if (!passkey || typeof passkey !== 'string') {
-    return res.status(400).json({ valid: false, error: 'Passkey is required' });
-  }
-  const trimmed = passkey.trim();
-  try {
-    const { collections, getDB } = require('./db');
-    // ADMIN ONLY. The beta access gate is gone; the sole surviving use of a passkey is
-    // the mobile admin portal, so a non-admin code is treated exactly like a wrong one.
-    const pk = await collections.passkeys().findOne({ code: trimmed, isActive: true, isAdminPasskey: true });
-    const valid = !!pk;
-
-    // Attempts are deliberately NOT logged: the beta gate is gone, this endpoint only
-    // serves the mobile admin passkey, and passkey telemetry has no consumer.
-
-    if (valid) {
-      // Bump usage counter
-      await collections.passkeys().updateOne(
-        { _id: pk._id },
-        { $inc: { usageCount: 1 }, $set: { lastUsedAt: new Date() } }
-      );
-    }
-
-    const result = { valid, adminMode: valid };
-
-    // Auto-login: issue JWT for the admin passkey
-    if (valid) {
-      try {
-        const adminUser = await collections.users().findOne({ role: 'admin' });
-        if (adminUser) {
-          const decrypted = decryptUser(adminUser);
-          result.token = jwt.sign(
-            { sub: adminUser._id.toString(), email: decrypted.email, role: adminUser.role },
-            config.jwtSecret,
-            { expiresIn: config.jwtExpiresIn }
-          );
-          result.user = {
-            id: adminUser._id.toString(),
-            email: decrypted.email,
-            displayName: decrypted.displayName,
-            role: adminUser.role,
-          };
-        } else {
-          console.warn('[Beta] Admin passkey used but no admin user found in DB');
-        }
-      } catch (adminErr) {
-        console.error('[Beta] Admin auto-login failed:', adminErr.message);
-      }
-    }
-
-    res.json(result);
-  } catch (err) {
-    console.error('[Beta] Verify error:', err.message);
-    res.status(500).json({ valid: false, error: 'Server error' });
-  }
-});
+// (The mobile admin passkey route, /api/beta/verify, is gone: it issued an admin token for a single
+// code. Admin work happens only in the local admin app, which logs in like any account.)
 
 // ── Nightly profile purge — 00:00 Europe/Amsterdam ──
 // A computed profile is a working cache, not a record. The account keeps only the partial

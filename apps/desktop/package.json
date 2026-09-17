@@ -1,6 +1,6 @@
 {
   "name": "@gfl/desktop",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "private": true,
   "description": "Garden For Life desktop app — the platform UI plus the local workstation folder",
   "main": "src/main.js",

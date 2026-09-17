@@ -37,11 +37,12 @@ const WEB = {
 
 const APP = {
   nebulaFps: 0,
-  // 60%: the nebula is a full-screen shader, and at native resolution on a fast screen it was the whole
-  // frame budget — on a 2560×1440 180 Hz machine the app idled at 82 fps and pans ran at 83. At 0.6 it
-  // idles at the display's 180 and pans at 162, with the soft clouds and stars pixel-identical in a
-  // brightened side-by-side (benchmark runs 2026-09-17). Motion stays every frame (nebulaFps 0).
-  nebulaRenderScale: 0.6,
+  // 90%: the nebula is a full-screen shader, and at native resolution on a fast screen it was the whole
+  // frame budget — on a 2560×1440 180 Hz machine the app idled at 82 fps and pans ran at 83, against
+  // ~140 at 0.75. Lower measured better still and looked identical in a brightened side-by-side, but the
+  // owner could see 0.6 on the real screen and picked 0.9 (2026-09-17): quality wins, since the freezes
+  // were cured by the swap-chain fix, not by this, and 120 fps is all they asked for. Motion every frame.
+  nebulaRenderScale: 0.9,
   globeFps: 0,
   keep3dAlive: true,
   // 125%: the globe and pyramid fit well inside their cell; 39% of the pixels of the website's 200%.

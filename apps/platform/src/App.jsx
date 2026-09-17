@@ -325,13 +325,38 @@ const App = () => {
 
   // Same reason, the other heavy page: the gardens brand page builds its entire DOM the moment it turns
   // visible — which is the start of the pan towards it (~35 ms of React + layout inside the pan frames).
-  // Built at idle instead, off-viewport with paint skipped by the pane's content-visibility.
+  // Built at idle instead, off-viewport.
   const [gardensWarm, setGardensWarm] = useState(false);
   useEffect(() => {
     const ric = window.requestIdleCallback ? (fn) => window.requestIdleCallback(fn, { timeout: 6000 }) : (fn) => setTimeout(fn, 1500);
     const t = setTimeout(() => ric(() => setGardensWarm(true)), 5000); // after the kook scene, so they never land together
     return () => clearTimeout(t);
   }, []);
+  // …and the warm only counts once the page has REAL boxes. While the pane is content-visibility:auto its
+  // whole subtree is skipped: no layout, so the brand page's recharts radar measures its container as 0×0
+  // and draws nothing. It built the SVG the moment the pane entered the viewport instead — mid-pan, the
+  // 94 ms hitch in the first pan to gardens (every later pan: <20 ms). Same trap as the hypercube pre-warm
+  // (a warm that renders nothing warms nothing), so the pane is unskipped from the warm on — laid out at
+  // idle, off-viewport, and it stays laid out — and the chart is polled for rather than assumed. One
+  // section held live after the landing settles is not the six-at-once layout storm sectionLive() prevents.
+  const gardensPaneRef = useRef(null);
+  useEffect(() => {
+    if (!gardensWarm || !graphicsProfile.perfLog) return undefined;
+    const t0 = performance.now();
+    let raf = 0;
+    const check = () => {
+      const chart = gardensPaneRef.current && gardensPaneRef.current.querySelector('.recharts-surface');
+      if (chart && chart.getBoundingClientRect().width > 0) {
+        console.warn(`[perf] gardens warm: laid out + radar drawn in ${Math.round(performance.now() - t0)} ms`);
+      } else if (performance.now() - t0 < 8000) {
+        raf = requestAnimationFrame(check);
+      } else {
+        console.warn('[perf] gardens warm: radar still not drawn after 8 s — first pan will pay for it');
+      }
+    };
+    raf = requestAnimationFrame(check);
+    return () => cancelAnimationFrame(raf);
+  }, [gardensWarm, graphicsProfile.perfLog]);
   
   // Assessment data: live from MongoDB, falling back to static data if fetch fails
   const [liveSubjects, setLiveSubjects] = useState([]);
@@ -2839,10 +2864,11 @@ const App = () => {
           transform: `translate(calc(${GRID_POSITIONS.gardens.x} * 100vw), calc(${GRID_POSITIONS.gardens.y} * 100vh))`,
           transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
           pointerEvents: activeSection === 'gardens' ? 'auto' : 'none',
-          contentVisibility: sectionLive('gardens') ? 'visible' : 'auto',
+          // unskipped from the warm on, so the page is laid out (and its radar drawn) at idle — see gardensWarm
+          contentVisibility: (sectionLive('gardens') || gardensWarm) ? 'visible' : 'auto',
           containIntrinsicSize: '100vw 100vh',
           willChange: activeSection === 'gardens' ? 'transform' : 'auto',
-        }}>
+        }} ref={gardensPaneRef}>
           <GardensPage
             isVisible={sectionLive('gardens')}
             warm={gardensWarm}

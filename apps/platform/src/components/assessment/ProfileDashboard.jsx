@@ -975,11 +975,16 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                     address; the current email stays active until then. Requires the current password. */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={LABEL}>{t('profile.dashboard.settings.emailLabel')}</div>
-                  <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.6rem' }}>
-                    <input type="email" value={emailInput} onChange={(e) => { setEmailInput(e.target.value); setEmailMsg(''); }} autoComplete="email" placeholder={t('profile.dashboard.settings.emailPlaceholder')} style={{ ...FIELD, flex: 2 }} />
-                    <input type={showPw ? 'text' : 'password'} value={emailPw} onChange={(e) => { setEmailPw(e.target.value); setEmailMsg(''); }} placeholder={t('profile.dashboard.settings.currentPassword')} autoComplete="current-password" style={{ ...FIELD, flex: 1 }} />
-                  </div>
-                  <SciFiButton onClick={saveEmail} disabled={busy || !emailInput.trim() || emailInput.trim().toLowerCase() === (user.email || '').toLowerCase() || !emailPw} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.changeEmail')}</SciFiButton>
+                  {/* Real <form> + hidden account username: password managers only fill the
+                      current password (and know which saved login it is) inside one. */}
+                  <form id="settingsEmailForm" onSubmit={(e) => { e.preventDefault(); saveEmail(); }}>
+                    <input type="email" name="username" autoComplete="username" value={user.email || ''} readOnly hidden />
+                    <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.6rem' }}>
+                      <input type="email" name="email" value={emailInput} onChange={(e) => { setEmailInput(e.target.value); setEmailMsg(''); }} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} placeholder={t('profile.dashboard.settings.emailPlaceholder')} style={{ ...FIELD, flex: 2 }} />
+                      <input type={showPw ? 'text' : 'password'} name="current-password" value={emailPw} onChange={(e) => { setEmailPw(e.target.value); setEmailMsg(''); }} placeholder={t('profile.dashboard.settings.currentPassword')} autoComplete="current-password" style={{ ...FIELD, flex: 1 }} />
+                    </div>
+                    <SciFiButton type="submit" disabled={busy || !emailInput.trim() || emailInput.trim().toLowerCase() === (user.email || '').toLowerCase() || !emailPw} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.changeEmail')}</SciFiButton>
+                  </form>
                   {pendingEmail && pendingEmail.toLowerCase() !== (user.email || '').toLowerCase() && (
                     <div style={{ marginTop: '0.6rem', fontSize: 'max(9px,0.5vw)', color: 'rgba(251,191,36,0.9)', lineHeight: 1.5 }}>
                       {t('profile.dashboard.settings.pending1')} <b>{pendingEmail}</b>{tFunc('profile.dashboard.settings.pending2')(user.email)}
@@ -994,11 +999,16 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                     <div style={{ ...LABEL, marginBottom: 0 }}>{t('profile.dashboard.settings.passwordLabel')}</div>
                     <button type="button" onClick={() => setShowPw((v) => !v)} style={{ background: 'none', border: 'none', color: 'rgba(196,181,253,0.75)', cursor: 'pointer', fontSize: 'max(9px,0.48vw)', textDecoration: 'underline', padding: 0 }}>{showPw ? t('profile.dashboard.settings.hide') : t('profile.dashboard.settings.show')}</button>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.9rem', marginBottom: '0.6rem' }}>
-                    <input type={showPw ? 'text' : 'password'} value={curPw} onChange={(e) => { setCurPw(e.target.value); setPwMsg(''); }} placeholder={t('profile.dashboard.settings.currentPassword')} autoComplete="current-password" style={{ ...FIELD, flex: 1 }} />
-                    <input type={showPw ? 'text' : 'password'} value={newPw} onChange={(e) => { setNewPw(e.target.value); setPwMsg(''); }} placeholder={t('profile.dashboard.settings.newPassword')} autoComplete="new-password" style={{ ...FIELD, flex: 1 }} />
-                  </div>
-                  <SciFiButton onClick={savePassword} disabled={busy || !curPw || !newPw} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.changePassword')}</SciFiButton>
+                  {/* Real <form> + hidden account username so a password manager can fill the
+                      current password and update the saved login with the new one. */}
+                  <form id="settingsPasswordForm" onSubmit={(e) => { e.preventDefault(); savePassword(); }}>
+                    <input type="email" name="username" autoComplete="username" value={user.email || ''} readOnly hidden />
+                    <div style={{ display: 'flex', gap: '0.9rem', marginBottom: '0.6rem' }}>
+                      <input type={showPw ? 'text' : 'password'} name="current-password" value={curPw} onChange={(e) => { setCurPw(e.target.value); setPwMsg(''); }} placeholder={t('profile.dashboard.settings.currentPassword')} autoComplete="current-password" style={{ ...FIELD, flex: 1 }} />
+                      <input type={showPw ? 'text' : 'password'} name="new-password" value={newPw} onChange={(e) => { setNewPw(e.target.value); setPwMsg(''); }} placeholder={t('profile.dashboard.settings.newPassword')} autoComplete="new-password" style={{ ...FIELD, flex: 1 }} />
+                    </div>
+                    <SciFiButton type="submit" disabled={busy || !curPw || !newPw} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.changePassword')}</SciFiButton>
+                  </form>
                   {pwMsg && <div style={{ marginTop: '0.6rem', fontSize: 'max(9px,0.5vw)', color: pwMsg.includes('✓') ? '#4ade80' : '#f87171' }}>{pwMsg}</div>}
                 </div>
 

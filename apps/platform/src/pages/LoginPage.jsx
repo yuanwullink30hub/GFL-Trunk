@@ -374,18 +374,27 @@ const LoginPage = memo(({ isVisible, onBack }) => {
 
   // Create the account. With email verification on, register does NOT return a session — it sends a
   // confirmation link and we wait (polling /login) until the user clicks it, THEN boot into client.
-  const handleCreateAccount = useCallback(async () => {
-    if (!obUsername || !obEmail || !obPassword) { setObErr(t('auth.errors.fillFields')); return; }
+  const handleCreateAccount = useCallback(async (form) => {
+    // Read the values off the form, not state: a password manager can fill the fields without
+    // firing React's input events. State is synced so the later steps see the same values.
+    const fd = new FormData(form);
+    const username = String(fd.get('nickname') || '');
+    const email = String(fd.get('email') || '').trim();
+    const password = String(fd.get('new-password') || '');
+    const age = String(fd.get('age') || '');
+    const country = String(fd.get('country') || '');
+    setObUsername(username); setObEmail(email); setObPassword(password); setObAge(age); setObCountry(country);
+    if (!username || !email || !password) { setObErr(t('auth.errors.fillFields')); return; }
     if (!obConsent || !obConsentArt9) { setObErr(t('auth.errors.confirmTerms')); return; }
     setObErr(''); setObBusy(true);
     try {
-      const data = await register({ email: obEmail, password: obPassword, displayName: obUsername, age: obAge, country: obCountry, orbCode: orbCodeStr, archetypeName: obArchetype, reading: obReading });
+      const data = await register({ email, password, displayName: username, age, country, orbCode: orbCodeStr, archetypeName: obArchetype, reading: obReading });
       // Consent must be demonstrable (Art. 7(1)) — and eraseAccountData() deletes these
       // records on erasure, so this route has to write one like the other one does.
-      logActivity({ type: 'consent_given', consentType: 'registration_onboarding', email: obEmail, message: 'User accepted terms + Art.9 partial-profile consent at account creation' }).catch(() => {});
+      logActivity({ type: 'consent_given', consentType: 'registration_onboarding', email, message: 'User accepted terms + Art.9 partial-profile consent at account creation' }).catch(() => {});
       if (data && data.needsVerification) {
         setVerifyPending(true);   // show "check your inbox" and start polling; keep obBusy
-        pollVerification();
+        pollVerification(email, password);
         return;
       }
       openWorkspaceStep(data && data.user ? data.user.id : null); // dev / no-SMTP: already logged in
@@ -393,7 +402,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       setObErr(e.message || t('auth.errors.createAccountFailed'));
       setObBusy(false);
     }
-  }, [obUsername, obEmail, obPassword, obAge, obCountry, obArchetype, obConsent, obConsentArt9, obReading, orbCodeStr, pollVerification, openWorkspaceStep, t]);
+  }, [obArchetype, obConsent, obConsentArt9, obReading, orbCodeStr, pollVerification, openWorkspaceStep, t]);
 
   // Responsive size for the template orb on the logged-out screen.
   const [vp, setVp] = useState(() => ({
@@ -731,9 +740,9 @@ const LoginPage = memo(({ isVisible, onBack }) => {
               <div style={{ fontSize: 'max(9px,0.5vw)', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, margin: '0.35rem 0 1rem' }}>
                 {t('auth.onboarding.intro')}
               </div>
-              {/* Real <form> — password managers skip fields that live outside one. Enter
-                  submits; the SciFiButton below stays type=button and calls the handler itself. */}
-              <form id="onboardForm" onSubmit={(e) => { e.preventDefault(); handleCreateAccount(); }} style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+              {/* Real <form> — password managers skip fields that live outside one. Enter and the
+                  SciFiButton below (a submit button bound via form="onboardForm") both submit it. */}
+              <form id="onboardForm" onSubmit={(e) => { e.preventDefault(); handleCreateAccount(e.currentTarget); }} style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                 <div>
                   <div style={FIELD_LABEL}><span>👤</span> {t('auth.onboarding.username')}</div>
                   {/* nickname, NOT username: login is by email — managers must not save this as the identifier */}
@@ -741,7 +750,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                 </div>
                 <div>
                   <div style={FIELD_LABEL}><span>✉</span> {t('pages.loginPage.email')}</div>
-                  <input type="email" name="email" id="onboard-email" autoComplete="username" value={obEmail} onChange={(e) => setObEmail(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
+                  <input type="email" name="email" id="onboard-email" autoComplete="username" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={obEmail} onChange={(e) => setObEmail(e.target.value)} style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
                 <div>
                   <div style={FIELD_LABEL}><span>🔑</span> {t('pages.loginPage.password')}</div>
@@ -799,7 +808,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
               </form>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.1rem' }}>
                 <button type="button" onClick={handleOnboardingBack} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 'max(9px,0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}>{t('auth.onboarding.back')}</button>
-                <SciFiButton onClick={handleCreateAccount} disabled={obBusy} size="md">{obBusy ? t('auth.onboarding.creating') : t('auth.onboarding.enter')}</SciFiButton>
+                <SciFiButton type="submit" form="onboardForm" disabled={obBusy} size="md">{obBusy ? t('auth.onboarding.creating') : t('auth.onboarding.enter')}</SciFiButton>
               </div>
               </>
               )}

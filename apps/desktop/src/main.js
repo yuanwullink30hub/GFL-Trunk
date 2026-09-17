@@ -16,7 +16,7 @@
  *   - `pnpm run dev`: the live Vite dev server (GFL_DEV_URL, default http://localhost:3000), so the
  *     platform hot-reloads inside the real app with the real folder bridge. Development builds only.
  */
-const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const workspace = require('./workspace');
@@ -70,6 +70,10 @@ function createWindow() {
     minHeight: 700,
     backgroundColor: '#0a0510', // matches the platform ground so there is no white flash
     show: false,
+    // The platform is the whole interface: full screen, no native menu bar. Esc leaves full screen,
+    // F11 toggles it.
+    fullscreen: true,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -80,6 +84,21 @@ function createWindow() {
   });
 
   win.once('ready-to-show', () => win.show());
+
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return;
+    if (input.key === 'F11') {
+      event.preventDefault();
+      win.setFullScreen(!win.isFullScreen());
+    } else if (input.key === 'Escape' && win.isFullScreen()) {
+      // Not prevented: the page still sees Esc (closing a menu or overlay keeps working).
+      win.setFullScreen(false);
+    } else if (isDev && input.key === 'F12') {
+      win.webContents.toggleDevTools();
+    }
+  });
+
+  attachRendererLog(win);
 
   // Anything that isn't our own UI opens in the user's browser, never in a window that
   // has the preload bridge attached.
@@ -104,6 +123,34 @@ function createWindow() {
     win.loadURL(`${APP_ORIGIN}/index.html`);
   }
   return win;
+}
+
+/**
+ * Renderer warnings and errors go to a local log file (…/Garden For Life/logs/renderer.log), so a
+ * problem in the installed app can be diagnosed without DevTools. Stays on this device; capped at
+ * about 1 MB (older half dropped). Info lines only when they concern rendering (GPU, WebGL, workers).
+ */
+function attachRendererLog(win) {
+  const file = path.join(app.getPath('logs'), 'renderer.log');
+  const write = (line) => {
+    try {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      if (fs.existsSync(file) && fs.statSync(file).size > 1024 * 1024) {
+        const keep = fs.readFileSync(file, 'utf8');
+        fs.writeFileSync(file, keep.slice(Math.floor(keep.length / 2)));
+      }
+      fs.appendFileSync(file, `${new Date().toISOString()} ${line}
+`);
+    } catch { /* logging must never break the app */ }
+  };
+  write(`— start v${app.getVersion()} ${process.platform} electron ${process.versions.electron} UI ${DEV_URL || APP_ORIGIN}`);
+  win.webContents.on('console-message', (_e, level, message, line, sourceId) => {
+    const relevant = level >= 2 || /nebula|webgl|gpu|worker|offscreen|shader/i.test(String(message));
+    if (relevant) write(`[${['log', 'info', 'warn', 'error'][level] || level}] ${String(message).slice(0, 2000)} (${String(sourceId || '').split('/').pop()}:${line})`);
+  });
+  win.webContents.on('did-fail-load', (_e, code, desc, url) => write(`[load-failed] ${code} ${desc} ${url}`));
+  win.webContents.on('render-process-gone', (_e, details) => write(`[renderer-gone] ${details.reason} ${details.exitCode}`));
+  app.on('child-process-gone', (_e, details) => write(`[child-gone] ${details.type} ${details.reason} ${details.exitCode}`));
 }
 
 // ── IPC: the entire surface the renderer can reach ─────────────────────────────
@@ -202,6 +249,7 @@ app.whenReady().then(async () => {
   // The bundled UI is served from app://gardenforlife with the CSP as a response header
   // (appProtocol.js); sync-ui.js also writes it into index.html as a meta tag.
   handleAppScheme();
+  Menu.setApplicationMenu(null); // no native menu bar — the platform is the interface
 
   // Restore the previously chosen folder, but only if it still exists — a moved or
   // deleted folder drops us back to "not connected" rather than erroring on every call.

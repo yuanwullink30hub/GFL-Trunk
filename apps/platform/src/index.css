@@ -15,6 +15,18 @@ body {
   color: #FFFEF0;
 }
 
+/* Autofill (password managers, saved logins) — browsers repaint a filled field with their own
+   !important background + text colour, which breaks the glass inputs. A transition outranks
+   those in the cascade, so the huge delay holds the field's own translucent fill; text-fill
+   keeps the cream text. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #FFFEF0;
+  caret-color: #FFFEF0;
+  transition: background-color 600000s 0s, color 600000s 0s !important;
+}
+
 /* Prevent window scroll on desktop - map navigation uses transforms not scroll */
 @media (min-width: 768px) {
   html, body {

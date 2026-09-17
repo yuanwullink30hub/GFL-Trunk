@@ -1016,7 +1016,10 @@ const HoloEarth = ({
           style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}
           gl={{ 
             alpha: true, 
-            premultipliedAlpha: false,
+            // Premultiplied (the WebGL default): a full-screen canvas with straight alpha loses its
+            // transparency when Chromium on Windows hands it to the display directly (full-screen app,
+            // Chrome/Edge) — everything behind it, the nebula, then shows as black.
+            premultipliedAlpha: true,
             antialias: false,
             powerPreference: 'high-performance',
             preserveDrawingBuffer: false,

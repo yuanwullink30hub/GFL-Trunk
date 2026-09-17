@@ -102,7 +102,7 @@ export default function HypercubeScene({ isVisible, isInside, paused, onEnter, o
         antialias: true,
         powerPreference: 'high-performance',
         alpha: true,
-        premultipliedAlpha: false,
+        premultipliedAlpha: true, // see HoloEarth.jsx: straight alpha turns the full-screen canvas black in Chromium
       }}
       onCreated={({ gl }) => {
         glRef.current = gl;

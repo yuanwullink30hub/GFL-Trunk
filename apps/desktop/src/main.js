@@ -71,7 +71,7 @@ function createWindow() {
     backgroundColor: '#0a0510', // matches the platform ground so there is no white flash
     show: false,
     // The platform is the whole interface: full screen, no native menu bar. Maximize returns to full
-    // screen, F11 toggles it, Esc minimizes, Esc twice quits.
+    // screen, F11 toggles it, Esc leaves full screen, Esc twice quits.
     fullscreen: true,
     autoHideMenuBar: true,
     webPreferences: {
@@ -88,18 +88,19 @@ function createWindow() {
   // Maximize = full screen (the maximized window with a title bar is never the resting state).
   win.on('maximize', () => { win.unmaximize(); win.setFullScreen(true); });
 
-  // Esc: once = minimize, twice quickly = quit. The minimize waits a moment so a second press can
-  // still arrive (a minimized window receives no keys).
-  let escTimer = null;
+  // Esc once = leave full screen (a normal window with minimize / maximize / close); Esc twice quickly
+  // = quit. The page still sees a single Esc, so closing a menu or overlay keeps working.
+  let lastEsc = 0;
   win.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
     if (input.key === 'F11') {
       event.preventDefault();
       win.setFullScreen(!win.isFullScreen());
     } else if (input.key === 'Escape' && !input.isAutoRepeat) {
-      event.preventDefault();
-      if (escTimer) { clearTimeout(escTimer); escTimer = null; app.quit(); return; }
-      escTimer = setTimeout(() => { escTimer = null; if (!win.isDestroyed()) win.minimize(); }, 350);
+      const now = Date.now();
+      if (now - lastEsc < 600) { event.preventDefault(); app.quit(); return; }
+      lastEsc = now;
+      if (win.isFullScreen()) win.setFullScreen(false);
     } else if (input.key === 'F9') {
       // Diagnosis: the preload writes the stack of layers under a few screen points to the log.
       event.preventDefault();

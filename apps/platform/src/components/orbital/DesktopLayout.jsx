@@ -11,6 +11,7 @@ import useWorkspaceStatus from '../../workspace/useWorkspaceStatus';
 import useAppUpdate from '../../workspace/useAppUpdate';
 import { requestWorkspaceTab, requestDashboardTab } from '../../workspace/localWorkspace';
 import { graphicsProfile } from '../../workspace/appProfile';
+import CredoTitle from './CredoTitle';
 
 import OrbSphere3D from '../../orb/OrbSphere3D';
 import { ORB3D_PRESETS } from '../../orb/orb3d';
@@ -562,7 +563,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         <div style={{ width: '37.8vw', maxWidth: '960px', pointerEvents: 'auto' }}>
           {/* The QUOTE is the container header now (was the "Filosofie" label); the subtext
               moves up and the Leer-meer button sits centered below it — brackets restored. */}
-          <TechContainer title="Voluntas Amor, Elefthéros Fati" titleSize="max(16px, 0.9vw)" variant="purple" className="w-full" style={{ minHeight: '9.9vh', backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
+          <TechContainer title={<CredoTitle />} titleSize="max(16px, 0.9vw)" variant="purple" className="w-full" style={{ minHeight: '9.9vh', backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
             <div className="w-full h-full flex flex-col items-center justify-center" style={{ padding: '0.9vh 1.5vw', gap: '0.9vh', position: 'relative' }}>
               {/* The smaller white subtext from the old Filosofie box — BOTH modes (visitor and client). */}
               <div style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 400, lineHeight: 1.5, color: '#FFFEF0', fontSize: 'max(13px, 0.7vw)', textAlign: 'center', maxWidth: '90%' }}

@@ -1,5 +1,6 @@
 import React from 'react';
 import TechContainer from './TechContainer';
+import CredoTitle from './CredoTitle';
 import { Activity, Lock } from 'lucide-react';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
@@ -91,7 +92,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
           {/* 1. Filosofie — same structure as the desktop bar: the QUOTE is the container
               header, subtext directly below, Leer-meer button centered (SciFi brackets). */}
           <div style={{minHeight: 'clamp(12rem, 30vh, 18rem)'}}>
-            <TechContainer title="Voluntas Amor, Elefthéros Fati" titleSize="max(16px, 0.9vw)" variant="purple" className="w-full h-full">
+            <TechContainer title={<CredoTitle />} titleSize="max(16px, 0.9vw)" variant="purple" className="w-full h-full">
               <div className="w-full h-full flex flex-col items-center justify-center p-4 overflow-visible" style={{ gap: 'clamp(0.8rem, 2.5vw, 1.2rem)' }}>
                 <div style={{
                   fontFamily: "'Figtree', sans-serif",

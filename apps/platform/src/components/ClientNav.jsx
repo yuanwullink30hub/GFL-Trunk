@@ -13,6 +13,14 @@ import { logoutAndReload } from '../clientMode';
 
 const GOLD = '#f59e0b';
 
+// The whole subnav (dot, label, chevron, divider, P.O.V., dropdown) at 1.3× its original size. Sizes are
+// written as the original values through these helpers, so every clamp keeps resizing with the viewport.
+const SCALE = 1.3;
+const rem = (v) => `${+(v * SCALE).toFixed(3)}rem`;
+const vw = (v) => `${+(v * SCALE).toFixed(3)}vw`;
+const clampSize = (min, fluid, max) => `clamp(${rem(min)}, ${vw(fluid)}, ${rem(max)})`;
+const ITEM_FONT = clampSize(0.82, 1, 0.98);
+
 export default function ClientSubnav({ activeSection, items = [], onNavigate, onBack, canBack, open, onToggle, onClose, hovered, showLogout = false }) {
   const { t } = useLanguage();
   // Logout (client mode only) — last dropdown item. Paints the overlay first (two rAFs) so the
@@ -40,28 +48,28 @@ export default function ClientSubnav({ activeSection, items = [], onNavigate, on
   const go = (key) => { onClose?.(); onNavigate(key); };
 
   return (
-    <div ref={rootRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: 'clamp(0.25rem, 0.5vw, 0.5rem)', fontFamily: "'Figtree', sans-serif" }}>
+    <div ref={rootRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: rem(0.75), marginTop: clampSize(0.25, 0.5, 0.5), fontFamily: "'Figtree', sans-serif" }}>
       {/* Toggle — opens on CLICK. Text highlights when the logo/header is hovered (or open). */}
       <div
         onClick={onToggle}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', cursor: 'pointer', color: lit ? '#fff' : 'rgb(156,163,175)', fontSize: 'clamp(0.5rem, 0.53vw, 0.85rem)', letterSpacing: '0.1em', transition: 'color 0.15s' }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: rem(0.45), cursor: 'pointer', color: lit ? '#fff' : 'rgb(156,163,175)', fontSize: clampSize(0.5, 0.53, 0.85), letterSpacing: '0.1em', transition: 'color 0.15s' }}
       >
-        <span className="rounded-full bg-green-500" style={{ width: 'clamp(0.35rem,0.5vw,0.5rem)', height: 'clamp(0.35rem,0.5vw,0.5rem)', animation: 'dotBreathe 4s ease-in-out infinite', flexShrink: 0 }} />
+        <span className="rounded-full bg-green-500" style={{ width: clampSize(0.35, 0.5, 0.5), height: clampSize(0.35, 0.5, 0.5), animation: 'dotBreathe 4s ease-in-out infinite', flexShrink: 0 }} />
         <span style={{ textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{currentLabel} {'//'} V.4.9</span>
         <svg
           viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-          style={{ width: 'clamp(0.95rem, 1.3vw, 1.15rem)', height: 'clamp(0.95rem, 1.3vw, 1.15rem)', filter: `drop-shadow(0 0 4px ${GOLD}88)`, transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none', flexShrink: 0 }}
+          style={{ width: clampSize(0.95, 1.3, 1.15), height: clampSize(0.95, 1.3, 1.15), filter: `drop-shadow(0 0 ${4 * SCALE}px ${GOLD}88)`, transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none', flexShrink: 0 }}
         >
           <path d="M6 9l6 6 6-6" />
         </svg>
       </div>
 
-      <span style={{ width: 1, height: '0.9rem', background: 'rgba(255,255,255,0.15)' }} />
+      <span style={{ width: SCALE, height: rem(0.9), background: 'rgba(255,255,255,0.15)' }} />
 
       <button
         type="button"
         onClick={() => { onClose?.(); onNavigate('main'); }}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgb(156,163,175)', fontFamily: 'inherit', fontSize: 'clamp(0.6rem, 0.63vw, 1rem)', letterSpacing: '0.08em', transition: 'color 0.15s' }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: rem(0.25), background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'rgb(156,163,175)', fontFamily: 'inherit', fontSize: clampSize(0.6, 0.63, 1), letterSpacing: '0.08em', transition: 'color 0.15s' }}
         onMouseEnter={(e) => { e.currentTarget.style.color = GOLD; }}
         onMouseLeave={(e) => { e.currentTarget.style.color = 'rgb(156,163,175)'; }}
       >
@@ -70,7 +78,7 @@ export default function ClientSubnav({ activeSection, items = [], onNavigate, on
 
       {/* Dropdown — a plain COLUMN of pages (no per-item boxes). */}
       {open && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.6rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.15rem', background: '#000', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', boxShadow: '0 12px 40px rgba(0,0,0,0.6)', zIndex: 2147483647 }}>
+        <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: rem(0.6), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: rem(0.15), background: '#000', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '0.5rem', padding: `${rem(0.5)} ${rem(0.75)}`, boxShadow: '0 12px 40px rgba(0,0,0,0.6)', zIndex: 2147483647 }}>
           {items.map((item) => {
             const active = item.key === activeKey;
             return (
@@ -78,7 +86,7 @@ export default function ClientSubnav({ activeSection, items = [], onNavigate, on
                 key={item.key}
                 type="button"
                 onClick={() => go(item.key)}
-                style={{ textAlign: 'left', background: 'none', border: 'none', padding: '0.25rem 0', cursor: 'pointer', color: active ? GOLD : 'rgba(255,255,255,0.72)', fontFamily: 'inherit', fontSize: 'clamp(0.82rem, 1vw, 0.98rem)', letterSpacing: '0.04em', textShadow: '0 1px 8px rgba(0,0,0,0.85)', whiteSpace: 'nowrap', transition: 'color 0.12s' }}
+                style={{ textAlign: 'left', background: 'none', border: 'none', padding: `${rem(0.25)} 0`, cursor: 'pointer', color: active ? GOLD : 'rgba(255,255,255,0.72)', fontFamily: 'inherit', fontSize: ITEM_FONT, letterSpacing: '0.04em', textShadow: '0 1px 8px rgba(0,0,0,0.85)', whiteSpace: 'nowrap', transition: 'color 0.12s' }}
                 onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = '#fff'; }}
                 onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = 'rgba(255,255,255,0.72)'; }}
               >
@@ -88,11 +96,11 @@ export default function ClientSubnav({ activeSection, items = [], onNavigate, on
           })}
           {showLogout && (
             <>
-              <span style={{ alignSelf: 'stretch', height: 1, margin: '0.3rem 0', background: 'rgba(255,255,255,0.1)' }} />
+              <span style={{ alignSelf: 'stretch', height: 1, margin: `${rem(0.3)} 0`, background: 'rgba(255,255,255,0.1)' }} />
               <button
                 type="button"
                 onClick={handleLogout}
-                style={{ textAlign: 'left', background: 'none', border: 'none', padding: '0.25rem 0', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontFamily: 'inherit', fontSize: 'clamp(0.82rem, 1vw, 0.98rem)', letterSpacing: '0.04em', textShadow: '0 1px 8px rgba(0,0,0,0.85)', whiteSpace: 'nowrap', transition: 'color 0.12s' }}
+                style={{ textAlign: 'left', background: 'none', border: 'none', padding: `${rem(0.25)} 0`, cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontFamily: 'inherit', fontSize: ITEM_FONT, letterSpacing: '0.04em', textShadow: '0 1px 8px rgba(0,0,0,0.85)', whiteSpace: 'nowrap', transition: 'color 0.12s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = '#f87171'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
               >

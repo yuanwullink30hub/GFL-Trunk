@@ -1,4 +1,5 @@
 import React from 'react';
+import HoloWord from '../HoloWord';
 
 const TechContainer = ({
   children,
@@ -10,7 +11,6 @@ const TechContainer = ({
   headerRight = null
 }) => {
   const accentColor = variant === 'orange' ? '#f59e0b' : '#a855f7';
-  const textColor = variant === 'orange' ? 'text-[#f59e0b]' : 'text-purple-400';
   const edgeGlow = variant === 'orange' 
     ? 'inset 0 0 12px rgba(245, 158, 11, 0.06), inset 0 0 30px rgba(245, 158, 11, 0.03)'
     : 'inset 0 0 12px rgba(168, 85, 247, 0.06), inset 0 0 30px rgba(168, 85, 247, 0.03)';
@@ -84,15 +84,15 @@ const TechContainer = ({
 
       {/* --- Content Area --- */}
       <div className="flex-1 flex flex-col h-full relative z-0 overflow-visible pointer-events-auto" style={{ padding: '0.8vw' }}>
-        {/* Title Tag */}
+        {/* Title Tag — the same still hologram as DELTAWERKEN in the header, in this frame's accent */}
         <div className={`
-          absolute 
-          tracking-[0.2em] font-bold 
-          ${textColor} opacity-80 select-none
+          absolute
+          tracking-[0.2em] font-bold
+          select-none
           left-0 right-0
           flex items-center justify-center
         `} style={{fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", top: '0.4vw', fontSize: titleSize}}>
-          <span>{title}</span>
+          <HoloWord tone={variant === 'orange' ? 'orange' : 'purple'}>{title}</HoloWord>
           {headerRight && (
             <div style={{ position: 'absolute', right: '0.6vw', top: '50%', transform: 'translateY(-50%)' }}>
               {headerRight}

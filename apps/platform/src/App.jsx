@@ -14,6 +14,7 @@ import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
 import { isIntegratedGPU, getGPURenderer } from '@gfl/utils';
 import { frameRecorder, startPerfLog, graphicsProfile } from './workspace/appProfile';
+import HoloWord from './components/HoloWord';
 
 // Retry wrapper: if a chunk fails (stale deploy), reload the page once.
 const lazyRetry = (fn) => lazy(() =>
@@ -123,7 +124,8 @@ const useDeviceFlags = () => {
   return { isLaptop, isLowGpu };
 };
 
-const TIMESYNC_STYLE = { color: 'rgba(21, 179, 21, 0.8)', fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(13px, 0.7vw)' };
+// Bold like the container headers, drawn as the same still hologram (HoloWord, sync green).
+const TIMESYNC_STYLE = { fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(13px, 0.7vw)', fontWeight: 700 };
 const TIMESYNC_TIME_OPTS = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
 const TIMESYNC_DATE_OPTS = { month: '2-digit', day: '2-digit', year: 'numeric' };
 
@@ -142,7 +144,7 @@ const TimeSync = ({ isMobile }) => {
 
   return (
     <div className="text-center whitespace-nowrap">
-      <div className="tracking-widest" style={TIMESYNC_STYLE}>TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</div>
+      <div className="tracking-widest" style={TIMESYNC_STYLE}><HoloWord tone="green">TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</HoloWord></div>
     </div>
   );
 };
@@ -1864,7 +1866,7 @@ const App = () => {
                   letterSpacing: '0.1em',
                   animation: 'headerBreathe 6s ease-in-out infinite',
                 }}>
-                  DELTA<span style={{color: '#f97316'}}>WERKEN</span>
+                  <HoloWord tone="cream">DELTA</HoloWord><HoloWord>WERKEN</HoloWord>
                 </h1>
                 {/* Gradient underline */}
                 <div style={{
@@ -2216,7 +2218,7 @@ const App = () => {
                     letterSpacing: 'clamp(0.1em, 0.15vw, 0.2em)',
                     animation: 'headerBreathe 6s ease-in-out infinite',
                   }}>
-                    DELTA<span style={{color: '#f97316'}}>WERKEN</span>
+                    <HoloWord tone="cream">DELTA</HoloWord><HoloWord>WERKEN</HoloWord>
                   </h1>
                   {/* Gradient underline */}
                   <div style={{
@@ -2285,7 +2287,7 @@ const App = () => {
               ) : (
                 /* NORMAL: Scroll prompt for high/medium-end devices */
                 <div className="relative flex flex-col items-center pointer-events-none" style={{
-                  transform: window.innerWidth >= 1325 ? 'scale(1)' : window.innerWidth >= 1100 ? 'scale(0.85) translateY(-0.7rem)' : window.innerWidth >= 768 ? 'scale(0.7)' : 'scale(1)',
+                  transform: window.innerWidth >= 1325 ? 'scale(1.1)' : window.innerWidth >= 1100 ? 'scale(0.935) translateY(-0.7rem)' : window.innerWidth >= 768 ? 'scale(0.77)' : 'scale(1.1)', // 10% larger than 1 / 0.85 / 0.7 / 1; still per breakpoint, and the wrapper still applies landingScale
                   transformOrigin: 'center bottom'
                 }}>
                   {/* Text with scanline + data lines */}
@@ -2554,8 +2556,8 @@ const App = () => {
       {/* Debug: Map position indicator - Desktop only */}
       {!isMobile && (
         <div 
-          className="fixed top-4 right-4 z-50 text-xs font-mono pointer-events-none"
-          style={{ color: 'rgba(147, 51, 234, 0.6)' }}
+          className="fixed top-4 right-4 z-50 font-mono pointer-events-none"
+          style={{ color: 'rgba(147, 51, 234, 0.6)', fontSize: '0.875rem' /* same size as COORD, bottom left */ }}
         >
           Map: ({(72 + mapPosition.x * 100).toFixed(2)}, {(43200 + mapPosition.y * 100).toFixed(2)}) {isMapAnimating ? '⟳' : '●'}
         </div>
@@ -2564,7 +2566,8 @@ const App = () => {
       {/* Frame counter - Desktop only - Bottom right */}
       {!isMobile && (
         <div 
-          className="fixed bottom-4 right-4 z-50 text-xs font-mono pointer-events-none text-right"
+          className="fixed bottom-4 right-4 z-50 font-mono pointer-events-none text-right"
+          style={{ fontSize: '0.875rem' /* same size as COORD, bottom left */ }}
         >
           <div style={{ color: 'rgba(245, 158, 11, 0.6)' }}>
             Frame: {Math.round(currentFrame)}/{TOTAL_ANIMATION_FRAMES}

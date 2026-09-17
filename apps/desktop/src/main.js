@@ -84,6 +84,12 @@ for (const sw of Array.isArray(graphicsFlags.switches) ? graphicsFlags.switches 
   const [name, value] = String(sw).replace(/^--/, '').split('=');
   if (/^[a-z0-9-]+$/.test(name)) { if (value !== undefined) app.commandLine.appendSwitch(name, value); else app.commandLine.appendSwitch(name); }
 }
+// Render in sRGB (SDR) on every display. With Windows HDR on, Chromium otherwise composites the page in
+// HDR, where the orb's soft glow and the pyramid's additive colours come out differently from what the
+// design (and every screenshot, and every non-HDR screen) shows. graphics-flags.json
+// { "colorProfile": "system" } turns this off for diagnosis.
+if (graphicsFlags.colorProfile !== 'system') app.commandLine.appendSwitch('force-color-profile', 'srgb');
+
 if (Array.isArray(graphicsFlags.disableFeatures) && graphicsFlags.disableFeatures.length) {
   app.commandLine.appendSwitch('disable-features', graphicsFlags.disableFeatures.filter((f) => /^[A-Za-z0-9]+$/.test(f)).join(','));
 }

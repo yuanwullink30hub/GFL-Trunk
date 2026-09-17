@@ -43,7 +43,8 @@ const APP = {
   // 125%: the globe and pyramid fit well inside their cell; 39% of the pixels of the website's 200%.
   globeCanvasScale: 1.25,
   perfLog: true,
-  landingRendersDuringPan: false,
+  // The landing orb/globe keeps moving through a pan (owner, 2026-09-17: "let it keep moving at all times").
+  landingRendersDuringPan: true,
   panRendersAll3d: false,
 };
 

@@ -185,7 +185,7 @@ const ClientOrbExperience = memo(({ user, active = true, onLogout, onClose, onNa
       {/* ── the orb (centre) ── */}
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
         {config3
-          ? <OrbSphere3D config={config3} active={active} size={orbSize} style={{ filter: 'drop-shadow(0 0 90px rgba(120,80,200,0.18))' }} />
+          ? <OrbSphere3D config={config3} active={active} size={orbSize} />
           : (
             <div style={{ width: orbSize, height: orbSize, borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
               <div>

@@ -2596,7 +2596,6 @@ const App = () => {
                 config={clientOrbConfig}
                 active={landing3dLive}
                 size={clientOrbSize}
-                style={{ filter: 'drop-shadow(0 0 90px rgba(120,80,200,0.18))' }}
               />
             ) : (
               <HoloEarth

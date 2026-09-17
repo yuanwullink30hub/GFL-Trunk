@@ -90,6 +90,7 @@ export default function HypercubeScene({ isVisible, isInside, paused, onEnter, o
 
   return (
     <Canvas
+      data-gfl-layer="hypercube"
       frameloop={(isVisible || (warming && !warmed)) ? 'always' : 'never'}
       /* No shadows + dpr capped at 1: the hypercube shares the GPU with the always-on
          Nebula + HoloEarth contexts, and its render targets were tipping the GPU into a

@@ -30,8 +30,22 @@ ipcRenderer.on('app:diagnose-layers', () => {
       const stack = document.elementsFromPoint(x, y).slice(0, 14).map(describe);
       console.warn(`[layers] ${name}:\n  ${stack.join('\n  ')}`);
     }
-    const canvases = [...document.querySelectorAll('canvas')].map(describe);
+    const canvases = [...document.querySelectorAll('canvas')].map((c) => {
+      const layer = c.closest('[data-gfl-layer]');
+      return `${describe(c)} buffer=${c.width}x${c.height}${layer ? ' layer=' + layer.getAttribute('data-gfl-layer') : ''}`;
+    });
     console.warn(`[layers] canvases (${canvases.length}):\n  ${canvases.join('\n  ')}`);
+    // Frame rate over 3 s: average fps, slowest frame, frames over 50 ms.
+    const times = [];
+    const t0 = performance.now();
+    const tick = (t) => {
+      times.push(t);
+      if (t - t0 < 3000) { requestAnimationFrame(tick); return; }
+      const gaps = times.slice(1).map((v, i) => v - times[i]);
+      const fps = (gaps.length / ((times[times.length - 1] - times[0]) / 1000)).toFixed(1);
+      console.warn(`[layers] fps ${fps} · slowest ${Math.round(Math.max(...gaps))} ms · frames >50 ms: ${gaps.filter((g) => g > 50).length} of ${gaps.length}`);
+    };
+    requestAnimationFrame(tick);
   } catch (e) {
     console.warn('[layers] failed', e && e.message);
   }
@@ -40,6 +54,9 @@ ipcRenderer.on('app:diagnose-layers', () => {
 contextBridge.exposeInMainWorld('gfl', {
   /** { version, platform, apiOrigin } */
   info: () => ipcRenderer.invoke('app:info'),
+
+  /** Diagnosis switches from graphics-flags.json (usually empty). Read once at start. */
+  graphicsFlags: (() => { try { return ipcRenderer.sendSync('app:graphics-flags') || {}; } catch { return {}; } })(),
 
   update: {
     /** { state: dev|idle|checking|current|downloading|ready|error, version, current, percent? } */

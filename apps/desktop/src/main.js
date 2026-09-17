@@ -137,6 +137,11 @@ function createWindow() {
   });
 
   attachRendererLog(win);
+  win.webContents.once('did-finish-load', () => {
+    try { console.log('[GFL Desktop] gpu', JSON.stringify(app.getGPUFeatureStatus())); } catch { /* ignore */ }
+    try { require('fs').appendFileSync(path.join(app.getPath('logs'), 'renderer.log'), `${new Date().toISOString()} [gpu] ${JSON.stringify(app.getGPUFeatureStatus())}
+`); } catch { /* ignore */ }
+  });
   if (typeof graphicsFlags.css === 'string' && graphicsFlags.css) {
     win.webContents.on('did-finish-load', () => { win.webContents.insertCSS(graphicsFlags.css).catch(() => {}); });
   }
@@ -276,6 +281,9 @@ function registerIpc() {
     await shell.openPath(requireRoot());
     return { revealed: true };
   });
+
+  // The diagnosis flags the page may read (layer / nebula mode switches). Data only.
+  ipcMain.on('app:graphics-flags', (event) => { event.returnValue = graphicsFlags; });
 
   ipcMain.handle('app:info', () => ({
     version: app.getVersion(),

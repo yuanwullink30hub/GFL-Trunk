@@ -995,7 +995,7 @@ const HoloEarth = ({
       }} />}
 
       {/* Canvas wrapper - Mobile uses simple 100% fill, Desktop uses 200% for map navigation */}
-      <div style={isMobile ? {
+      <div data-gfl-layer="globe" style={isMobile ? {
         // Mobile: Simple full-size canvas
         position: 'absolute',
         inset: 0,

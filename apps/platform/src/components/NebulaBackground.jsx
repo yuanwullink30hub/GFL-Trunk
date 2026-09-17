@@ -126,7 +126,9 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     // reach the page but not the screen there ("invalid mailbox name" in Electron's GPU process), which
     // left a black background. Shader compile is fast on the app's GPU tier and cached between runs.
     const inDesktopApp = typeof window !== 'undefined' && !!window.gfl;
-    if (!inDesktopApp && typeof canvas.transferControlToOffscreen === 'function' && typeof Worker !== 'undefined') {
+    // graphics-flags.json { "nebula": "worker" } re-enables the worker in the app, for diagnosis.
+    const forceWorker = inDesktopApp && window.gfl.graphicsFlags && window.gfl.graphicsFlags.nebula === 'worker';
+    if ((!inDesktopApp || forceWorker) && typeof canvas.transferControlToOffscreen === 'function' && typeof Worker !== 'undefined') {
       try {
         // Worker FIRST, transfer SECOND: if the Worker constructor throws, the canvas
         // is still untransferred and the inline fallback below can use it.
@@ -270,6 +272,7 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
   return (
     <div
       ref={wrapperRef}
+      data-gfl-layer="nebula"
       style={{
         position: 'fixed',
         inset: 0,

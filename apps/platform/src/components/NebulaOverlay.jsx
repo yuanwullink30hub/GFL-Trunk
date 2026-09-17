@@ -656,6 +656,7 @@ const NebulaOverlay = ({ mapPositionRef, opacity = 0.55, isVisible = true, isZoo
   return (
     <div
       ref={wrapperRef}
+      data-gfl-layer="nebula-overlay"
       style={{
         position: 'fixed',
         inset: 0,

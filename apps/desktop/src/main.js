@@ -40,6 +40,23 @@ registerAppScheme(); // before 'ready'
 // any getPath('userData') call.
 app.setName('Garden For Life');
 
+/**
+ * Optional graphics overrides for diagnosing rendering problems on a specific machine, without a new
+ * build: <userData>/graphics-flags.json, e.g.
+ *   { "switches": ["disable-direct-composition"], "disableFeatures": ["…"], "css": "canvas{opacity:.999}" }
+ * Absent file = defaults. Chromium switches must be set before 'ready'.
+ */
+const graphicsFlags = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'graphics-flags.json'), 'utf8')) || {}; } catch { return {}; }
+})();
+for (const sw of Array.isArray(graphicsFlags.switches) ? graphicsFlags.switches : []) {
+  const [name, value] = String(sw).replace(/^--/, '').split('=');
+  if (/^[a-z0-9-]+$/.test(name)) { if (value !== undefined) app.commandLine.appendSwitch(name, value); else app.commandLine.appendSwitch(name); }
+}
+if (Array.isArray(graphicsFlags.disableFeatures) && graphicsFlags.disableFeatures.length) {
+  app.commandLine.appendSwitch('disable-features', graphicsFlags.disableFeatures.filter((f) => /^[A-Za-z0-9]+$/.test(f)).join(','));
+}
+
 /** Where the app remembers which folder the user picked. Not the data — just the path. */
 const configFile = () => path.join(app.getPath('userData'), 'config.json');
 
@@ -120,6 +137,9 @@ function createWindow() {
   });
 
   attachRendererLog(win);
+  if (typeof graphicsFlags.css === 'string' && graphicsFlags.css) {
+    win.webContents.on('did-finish-load', () => { win.webContents.insertCSS(graphicsFlags.css).catch(() => {}); });
+  }
 
   // Anything that isn't our own UI opens in the user's browser, never in a window that
   // has the preload bridge attached.
@@ -164,7 +184,7 @@ function attachRendererLog(win) {
 `);
     } catch { /* logging must never break the app */ }
   };
-  write(`— start v${app.getVersion()} ${process.platform} electron ${process.versions.electron} UI ${DEV_URL || APP_ORIGIN}`);
+  write(`— start v${app.getVersion()} ${process.platform} electron ${process.versions.electron} UI ${DEV_URL || APP_ORIGIN} flags ${JSON.stringify(graphicsFlags)}`);
   win.webContents.on('console-message', (_e, level, message, line, sourceId) => {
     const relevant = level >= 2 || /nebula|webgl|gpu|worker|offscreen|shader/i.test(String(message));
     if (relevant) write(`[${['log', 'info', 'warn', 'error'][level] || level}] ${String(message).slice(0, 2000)} (${String(sourceId || '').split('/').pop()}:${line})`);

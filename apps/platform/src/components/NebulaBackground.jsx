@@ -122,7 +122,11 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     let worker = null;
     let engine = null;
 
-    if (typeof canvas.transferControlToOffscreen === 'function' && typeof Worker !== 'undefined') {
+    // In the desktop app (window.gfl) the nebula renders inline: frames from the OffscreenCanvas worker
+    // reach the page but not the screen there ("invalid mailbox name" in Electron's GPU process), which
+    // left a black background. Shader compile is fast on the app's GPU tier and cached between runs.
+    const inDesktopApp = typeof window !== 'undefined' && !!window.gfl;
+    if (!inDesktopApp && typeof canvas.transferControlToOffscreen === 'function' && typeof Worker !== 'undefined') {
       try {
         // Worker FIRST, transfer SECOND: if the Worker constructor throws, the canvas
         // is still untransferred and the inline fallback below can use it.

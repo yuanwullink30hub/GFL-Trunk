@@ -27,13 +27,12 @@ export default {
 
     // ── MobileApp.jsx: passkey gate ──
     mobile: {
-      brand:            { nl: 'Garden For Life', en: 'Garden For Life' },
-      passkeyPrompt:    { nl: 'Voer je passkey in om toegang te krijgen.', en: 'Enter your passkey to get access.' },
-      passkeyPlaceholder: { nl: 'Passkey...', en: 'Passkey...' },
-      unlock:           { nl: 'Unlock', en: 'Unlock' },
-      invalidPasskey:   { nl: 'Ongeldige passkey', en: 'Invalid passkey' },
-      adminNotFound:    { nl: 'Admin account niet gevonden — neem contact op', en: 'Admin account not found — please get in touch' },
-      connectionError:  { nl: 'Verbindingsfout — probeer opnieuw', en: 'Connection error — please try again' },
+      brand: { nl: 'Garden For Life', en: 'Garden For Life' },
+      title: { nl: 'Open op een computer', en: 'Open on a computer' },
+      body: {
+        nl: 'Het platform werkt op een computer, via de website en onze app. Open gardenforlife.nl op je computer om te beginnen.',
+        en: 'The platform works on a computer, through the website and our app. Open gardenforlife.nl on your computer to begin.',
+      },
     },
 
     // ── DesktopLayout.jsx ──
@@ -103,6 +102,26 @@ export default {
       // Gardens slideshow arrows
       previousSlide:     { nl: 'Previous slide', en: 'Previous slide' },
       nextSlide:         { nl: 'Next slide', en: 'Next slide' },
+    },
+
+    // ── Desktop app: refresh-rate confirmation (workspace/DisplayRateConfirm.jsx) ──
+    displayConfirm: {
+      title: { nl: 'Beeldfrequentie', en: 'Refresh rate' },
+      firstRun: {
+        nl: (to, from) => `We hebben je scherm op ${to} Hz gezet — de hoogste stand die het ondersteunt (was ${from} Hz). Beweegt alles soepel en ziet het beeld er goed uit?`,
+        en: (to, from) => `We set your screen to ${to} Hz — the highest rate it supports (was ${from} Hz). Does everything move smoothly and look right?`,
+      },
+      changed: {
+        nl: (to, from) => `Je scherm staat nu op ${to} Hz (was ${from} Hz). Ziet het beeld er goed uit?`,
+        en: (to, from) => `Your screen now runs at ${to} Hz (was ${from} Hz). Does it look right?`,
+      },
+      countdown: {
+        nl: (from, s) => `Zonder antwoord gaat je scherm over ${s} s terug naar ${from} Hz.`,
+        en: (from, s) => `Without an answer your screen returns to ${from} Hz in ${s} s.`,
+      },
+      where: { nl: 'Je kunt dit altijd wijzigen in Profiel → Instellingen → App.', en: 'You can change this any time in Profile → Settings → App.' },
+      keep: { nl: 'Houden', en: 'Keep' },
+      revert: { nl: 'Terugzetten', en: 'Revert' },
     },
   },
 };

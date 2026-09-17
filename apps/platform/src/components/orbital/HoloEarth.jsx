@@ -6,6 +6,13 @@ import { MotionPredictor } from '@gfl/utils';
 import PyramidInner from '../holoearth/PyramidInner';
 import EarthParticleWaves from './EarthParticleWaves';
 import { isIntegratedGPU } from '@gfl/utils';
+import { graphicsProfile } from '../../workspace/appProfile';
+
+// Desktop canvas size relative to the page cell (website: 2 = 200%, room for the globe to overhang
+// its cell during a map pan). The scene stays framed for 200%; a smaller canvas renders the centre of
+// that frame through a camera view offset, so the picture is identical and only overhang is trimmed.
+// Tunable per machine in the desktop app.
+const GLOBE_CANVAS_SCALE = graphicsProfile.globeCanvasScale;
 
 // ─── Global cursor helpers (updates the !important style tag set by App.js) ──
 const CURSOR_CROSSHAIR = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="3" fill="none" stroke="%2315b315" stroke-width="1"/><line x1="16" y1="4" x2="16" y2="12" stroke="%2315b315" stroke-width="1.5"/><line x1="16" y1="20" x2="16" y2="28" stroke="%2315b315" stroke-width="1.5"/><line x1="4" y1="16" x2="12" y2="16" stroke="%2315b315" stroke-width="1.5"/><line x1="20" y1="16" x2="28" y2="16" stroke="%2315b315" stroke-width="1.5"/></svg>') 16 16, crosshair`;
@@ -680,7 +687,7 @@ const HoloEarthSphere = ({
   // ≥ REF px → factor 1 (unchanged); narrower → shrinks (power = steepness).
   const EARTH_FALLOFF_REF = 1600;   // px screen width at/above which it's full size
   const EARTH_FALLOFF_POWER = 1.1;  // >1 = shrinks faster on smaller screens
-  const screenPx = isMobile ? size.width : size.width / 2; // desktop canvas is drawn 200%
+  const screenPx = isMobile ? size.width : size.width / GLOBE_CANVAS_SCALE; // desktop canvas is oversized
   const earthFalloff = isMobile ? 1 : Math.min(1, Math.pow(screenPx / EARTH_FALLOFF_REF, EARTH_FALLOFF_POWER));
 
   // Earth texture + sphere/chunk materials live in <EarthLayers> (skipped when skipEarth).
@@ -738,11 +745,14 @@ const HoloEarthSphere = ({
 
   useFrame((state, delta) => {
     const time = state.clock.getElapsedTime();
+    // Motion below was tuned as steps per 60 Hz frame; f scales it to the real frame time so the globe
+    // spins at the same speed on a 144/180 Hz display. Clamped: the first frame after a pause is long.
+    const f = Math.min(delta * 60, 4);
 
     const momentumMagnitude = Math.abs(rotationVelocity.current.x) + Math.abs(rotationVelocity.current.y);
     
     if (coreRef.current) {
-        coreRef.current.rotation.y += 0.0014;
+        coreRef.current.rotation.y += 0.0014 * f;
         coreRef.current.rotation.x = Math.sin(time * 0.35) * 0.1;
         
         // Read from ref, then glide toward it: frames arrive as discrete steps (and the eased
@@ -762,7 +772,9 @@ const HoloEarthSphere = ({
         const dropPx = (!isMobile && !isActive) ? Math.round(0.063 * window.innerHeight * (1 - ep) * 10) / 10 : 0;
         const vo = cam.userData.dropView;
         if (!vo || vo.px !== dropPx || vo.w !== cw || vo.h !== ch) {
-          if (dropPx) cam.setViewOffset(cw, ch, 0, -dropPx, cw, ch);
+          // k > 1 when the canvas is smaller than 200%: show the centre of the 200% frame.
+          const k = isMobile ? 1 : 2 / GLOBE_CANVAS_SCALE;
+          if (dropPx || k !== 1) cam.setViewOffset(cw * k, ch * k, (cw * k - cw) / 2, (ch * k - ch) / 2 - dropPx, cw, ch);
           else cam.clearViewOffset();
           cam.userData.dropView = { px: dropPx, w: cw, h: ch };
         }
@@ -780,17 +792,18 @@ const HoloEarthSphere = ({
     if (groupRef.current) {
         if (!exploding) {
             if (!isDragging.current) {
-                rotationVelocity.current.x *= 0.95;
-                rotationVelocity.current.y *= 0.95;
-                groupRef.current.rotation.x += rotationVelocity.current.y;
-                groupRef.current.rotation.y += rotationVelocity.current.x;
+                const damping = Math.pow(0.95, f);
+                rotationVelocity.current.x *= damping;
+                rotationVelocity.current.y *= damping;
+                groupRef.current.rotation.x += rotationVelocity.current.y * f;
+                groupRef.current.rotation.y += rotationVelocity.current.x * f;
                 if (momentumMagnitude < 0.0001) {
-                    groupRef.current.rotation.y += 0.0014;
+                    groupRef.current.rotation.y += 0.0014 * f;
                 }
             }
             groupRef.current.rotation.x = Math.max(-0.5, Math.min(0.5, groupRef.current.rotation.x));
         } else {
-            groupRef.current.rotation.y += 0.00035; 
+            groupRef.current.rotation.y += 0.00035 * f;
         }
         orbitalRotationY.current = groupRef.current.rotation.y;
     }
@@ -892,16 +905,23 @@ const HoloEarthSphere = ({
 // On-demand rendering controller for laptop — keeps the render loop alive
 // only while the 3D scene is actively animating. When inactive (e.g. during
 // assessment), no frames are requested and the GPU goes fully idle.
-function LaptopRenderController({ active }) {
+function LaptopRenderController({ active, fps = 0 }) {
   const invalidate = useThree((state) => state.invalidate);
+  const timer = useRef(null);
   // Kick-start the loop when `active` flips to true (prop change alone
   // doesn't auto-invalidate because this component has no 3D children).
   useEffect(() => {
     if (active) invalidate();
+    return () => clearTimeout(timer.current);
   }, [active, invalidate]);
-  // While active, request the next frame at the end of every render.
+  // While active, request the next frame at the end of every render — or, with a frame cap (desktop app
+  // graphics preset), after the cap's interval; invalidate() then renders on the next vsync. The 4 ms
+  // margin keeps a 60 cap on a 60 Hz screen from slipping to every other frame.
   useFrame(() => {
-    if (active) invalidate();
+    if (!active) return;
+    if (!fps) { invalidate(); return; }
+    clearTimeout(timer.current);
+    timer.current = setTimeout(invalidate, Math.max(0, 1000 / fps - 4));
   });
   return null;
 }
@@ -1001,12 +1021,12 @@ const HoloEarth = ({
         inset: 0,
         overflow: 'visible',
       } : {
-        // Desktop: 200% size for extra rendering area to prevent clipping during map navigation
+        // Desktop: oversized (200% on the website) for extra rendering area to prevent clipping during map navigation
         position: 'absolute',
-        width: '200%',
-        height: '200%',
-        left: '-50%',
-        top: '-50%',
+        width: `${GLOBE_CANVAS_SCALE * 100}%`,
+        height: `${GLOBE_CANVAS_SCALE * 100}%`,
+        left: `${-(GLOBE_CANVAS_SCALE - 1) * 50}%`,
+        top: `${-(GLOBE_CANVAS_SCALE - 1) * 50}%`,
         overflow: 'visible',
       }}
       >
@@ -1039,12 +1059,12 @@ const HoloEarth = ({
             ctx.getShaderInfoLog = (shader) => origGetShaderInfoLog(shader) || '';
           }}
         >
-          <LaptopRenderController active={renderActive} />
+          <LaptopRenderController active={renderActive} fps={graphicsProfile.globeFps} />
           <Suspense fallback={null}>
             <ambientLight intensity={0.2} />
             <pointLight position={[10, 10, 10]} intensity={1.5} color="#FFD700" />
             {!isLowGpu && <pointLight position={[-10, -10, -10]} intensity={1} color="#360642" />}
-            {/* Scale group - Mobile uses 1.3x for larger display, Desktop uses 0.5 to compensate for 200% canvas */}
+            {/* Scale group - Mobile uses 1.3x for larger display, Desktop uses 0.5 to compensate for the 200% frame */}
             <group scale={isMobile ? 1.3 : 0.5}>
               <HoloEarthSphere
                 isLowGpu={isLowGpu} 

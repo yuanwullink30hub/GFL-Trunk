@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLanguage } from '@gfl/i18n';
 import { FONT, SciFiButton } from '@gfl/ui';
 import { connectWorkspace, desktopDownload, isDesktopApp } from './localWorkspace';
@@ -10,8 +10,9 @@ import DesktopDownloadButton from './DesktopDownloadButton';
  * is on) — before the Levensles and the boot into the platform.
  *
  *   browser → why the folder exists, what it means for them, and the desktop app download
- *   app     → the same why, then the folder picker; the report they just uploaded and a copy of
- *             their partial profile go straight into the chosen folder
+ *   app     → the same why; the app's own folder (created on first start, <home>/Garden For Life)
+ *             is bound to the account and the report they just uploaded plus a copy of their
+ *             partial profile go straight into it — automatically, nothing to choose
  *
  * Either way they can continue: the account, public card and Verbonden work without a folder,
  * the personal-data tools stay locked until one is connected (and a reminder shows on login).
@@ -36,19 +37,27 @@ export default function OnboardingWorkspaceStep({ accountId, account, reportFile
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const [done, setDone] = useState(null); // { reportName }
+  const [done, setDone] = useState(null); // { reportName, root }
 
-  const choose = useCallback(async () => {
+  const connect = useCallback(async () => {
     setBusy(true); setErr('');
     try {
       const r = await connectWorkspace({ accountId, reportFile, reportLabel, account });
-      if (r.connected) setDone({ reportName: r.report && r.report.name ? r.report.name : '' });
+      if (r.connected) setDone({ reportName: r.report && r.report.name ? r.report.name : '', root: r.root || '' });
     } catch (e) {
       setErr(e.message || String(e));
     } finally {
       setBusy(false);
     }
   }, [accountId, reportFile, reportLabel, account]);
+
+  // In the app this runs by itself once: the folder is already there, nothing to decide.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!inApp || !accountId || started.current) return;
+    started.current = true;
+    connect();
+  }, [inApp, accountId, connect]);
 
   return (
     <div>
@@ -66,13 +75,19 @@ export default function OnboardingWorkspaceStep({ accountId, account, reportFile
       {inApp ? (
         <div style={{ marginTop: '1rem' }}>
           {done ? (
-            <p style={{ ...para, color: '#4ade80', margin: 0 }}>✓ {tFunc('auth.onboarding.workspaceDone')(done.reportName)}</p>
+            <>
+              <p style={{ ...para, color: '#4ade80', margin: '0 0 0.35rem' }}>✓ {tFunc('auth.onboarding.workspaceDone')(done.reportName)}</p>
+              {done.root && <p style={{ ...dim, margin: 0 }}>{tFunc('auth.onboarding.workspaceWhere')(done.root)}</p>}
+            </>
           ) : (
             <>
               <p style={para}>{t('auth.onboarding.workspaceInApp')}</p>
-              <SciFiButton onClick={choose} disabled={busy} variant="orange" size="sm">
-                {busy ? t('auth.onboarding.workspaceChoosing') : t('auth.onboarding.workspaceChoose')}
-              </SciFiButton>
+              {err && (
+                <SciFiButton onClick={connect} disabled={busy} variant="orange" size="sm">
+                  {busy ? t('auth.onboarding.workspaceChoosing') : t('auth.onboarding.workspaceRetry')}
+                </SciFiButton>
+              )}
+              {busy && !err && <p style={{ ...dim, margin: 0 }}>{t('auth.onboarding.workspaceChoosing')}</p>}
             </>
           )}
         </div>

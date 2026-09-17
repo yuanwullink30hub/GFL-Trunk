@@ -1,11 +1,10 @@
 import React, { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '@gfl/i18n';
-import { login, register, getMe, getToken, setToken, logActivity, orbLoginFromPdf, orbLinkCode, getHistory, getAssessment } from '@gfl/api-client';
+import { login, register, getMe, getToken, setToken, logActivity, orbLoginFromPdf, orbLinkCode, getHistory, getAssessment, requestDownloadLink, getRememberLogin, setRememberLogin } from '@gfl/api-client';
 import { setClientOrbCode, setClientOrbConfig, setClientProfile, getClientOrbCode, getClientOrbConfig, logoutAndReload } from '../clientMode';
 import ClientOrbExperience from '../components/assessment/ClientOrbExperience';
 import ProfileDashboard from '../components/assessment/ProfileDashboard';
-import AdminDashboardModal from '@gfl/admin-ui';
 import {
   C, INPUT, FIELD_LABEL, ERROR_STYLE, SciFiButton,
   PAGE_WRAPPER, SEPARATOR, inputFocus, inputBlur, FONT,
@@ -15,6 +14,7 @@ import { getArchetypeKeyByName } from '@gfl/assessment-core/data/archetypeImages
 import { extendedNameFor } from '@gfl/assessment-core/data';
 import { getArchetypeQuoteByKey } from '@gfl/assessment-core/data/archetypeQuotes';
 import OnboardingWorkspaceStep from '../workspace/OnboardingWorkspaceStep';
+import { isDesktopApp } from '../workspace/localWorkspace';
 
 // localStorage key the reload's loading screen (index.html) reads to show the archetype
 // Levensles while the app boots — see index.html's gate script.
@@ -69,7 +69,11 @@ async function enterClientModeFromAccount(user, lang = 'nl') {
 // icon). The palette panel morphs it to any of the six group templates (ORB3D_PRESETS).
 const TEMPLATE_ORB = ORB3D_PRESETS.Agency;
 const SESSION_TS_KEY = 'gfl_session_ts';
-const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
+// Browser: 24h (password managers do the remembering). Desktop application with "Onthoudt mijn
+// wachtwoord" ticked: a saved login that lasts 30 days from the last successful login — the lifetime of
+// the token the backend then issues (apps/backend/config jwtRememberExpiresIn). Unticked, the login
+// ends when the app closes (clientMode.js).
+const sessionMaxAge = () => (getRememberLogin() ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000);
 
 /* ═══════════════════════════════════════════════════════════════════════
    LoginFrame — bespoke translucent container for the login modal.
@@ -111,6 +115,29 @@ const CORNER = (pos) => ({
   ...(pos === 'bl' && { bottom: '-0.125rem', left: '-0.125rem', borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }),
   ...(pos === 'br' && { bottom: '-0.125rem', right: '-0.125rem', borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }),
 });
+
+/** Management login on the website: one download folder. The installer is requested from the server per click. */
+const StaffDownloads = () => {
+  const { t, tFunc } = useLanguage();
+  const [state, setState] = useState({ busy: false, msg: '' });
+  const download = async () => {
+    setState({ busy: true, msg: t('auth.staff.preparing') });
+    try {
+      const link = await requestDownloadLink();
+      window.location.assign(link.url);
+      setState({ busy: false, msg: tFunc('auth.staff.started')(link.version) });
+    } catch (err) {
+      setState({ busy: false, msg: err.message === 'no_release' ? t('auth.staff.noRelease') : t('auth.staff.failed') });
+    }
+  };
+  return (
+    <div>
+      <div style={{ ...FIELD_LABEL, marginBottom: '0.5rem' }}>{t('auth.staff.downloads')}</div>
+      <SciFiButton onClick={download} disabled={state.busy} size="sm">{t('auth.staff.appWindows')}</SciFiButton>
+      {state.msg && <div style={{ marginTop: '0.5rem', fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.58vw)', color: 'rgba(255, 254, 240, 0.7)' }}>{state.msg}</div>}
+    </div>
+  );
+};
 
 const LoginFrame = ({ title, children, topRight, topLeft, style }) => {
   const mob = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -208,6 +235,10 @@ const LoginPage = memo(({ isVisible, onBack }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+
+  // Desktop app only: "Onthoudt mijn wachtwoord" — ticked keeps the login for 30 days, unticked ends it
+  // when the app closes. The choice itself is kept (api-client), so the box shows it next time.
+  const [rememberLogin, setRememberLoginChoice] = useState(() => getRememberLogin());
 
   const [showConsent, setShowConsent] = useState(false);
   const [consentA, setConsentA] = useState(false);
@@ -426,7 +457,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
   useEffect(() => {
     const inClient = !!getClientOrbConfig();
     let ts = 0; try { ts = parseInt(localStorage.getItem(SESSION_TS_KEY) || '0', 10); } catch (_) {}
-    const fresh = getToken() && (inClient || (ts && Date.now() - ts < SESSION_MAX_AGE));
+    const fresh = getToken() && (inClient || (ts && Date.now() - ts < sessionMaxAge()));
     if (!fresh) { setLoading(false); return; }
     getMe().then(async (u) => {
       // A logged-in client whose orb isn't stored locally (e.g. email/password login on a new
@@ -462,17 +493,14 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       return;
     }
     setLoading(true);
+    setRememberLogin(rememberLogin); // before login(): it decides the session lifetime the app asks for
     try {
       const data = await login({ email: formEmail, password: formPassword });
       stampSession();
       // Claim a crystal-code the user uploaded this session to their account (adds to the timeline).
       if (orbCodeStr) orbLinkCode(orbCodeStr, data.archetypeName, obReading).catch(() => {});
       if (data.user?.role === 'admin') {
-        logActivity({
-          type: 'admin_login',
-          userId: data.user.id,
-          email: data.user.email,
-        }).catch(() => {});
+        // The login itself is recorded server-side (routes/auth.js). No management UI ships here.
         setUser(data.user);
         setEmail(''); setPassword('');
         return;
@@ -498,7 +526,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       if (!entered) { setEntering(false); setUser(data.user); }
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
-  }, [mode, orbCodeStr, obReading, language, bootIntoClient]);
+  }, [mode, orbCodeStr, obReading, language, bootIntoClient, rememberLogin]);
 
   const handleConsentConfirm = useCallback(async () => {
     setLoading(true);
@@ -586,7 +614,16 @@ const LoginPage = memo(({ isVisible, onBack }) => {
         ...PAGE_WRAPPER(isVisible),
       }}>
         {isAdmin
-          ? <AdminDashboardModal user={user} onLogout={handleLogout} onClose={onBack} />
+          ? (
+            // Management runs only in the local management app; the website shows nothing beyond this.
+            <LoginFrame title={t('auth.staff.title')}>
+              <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <p style={{ margin: 0, fontFamily: "'Figtree', sans-serif", fontSize: 'max(12px, 0.65vw)', lineHeight: 1.55, color: '#FFFEF0' }}>{t('auth.staff.body')}</p>
+                <StaffDownloads />
+                <div><SciFiButton onClick={handleLogout} variant="purple" size="sm">{t('auth.staff.logout')}</SciFiButton></div>
+              </div>
+            </LoginFrame>
+          )
           : inClient
             ? <ProfileDashboard user={user} active={isVisible} onLogout={handleLogout} onClose={onBack} />
             : <ClientOrbExperience user={user} active={isVisible} onLogout={handleLogout} onClose={onBack} />}
@@ -868,6 +905,16 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                     value={password} onChange={(e) => setPassword(e.target.value)}
                     style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
+                {/* Saved login — the desktop app only; browsers leave this to password managers. */}
+                {isDesktopApp() && (
+                  <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.15rem', cursor: 'pointer', alignSelf: 'flex-start' }}>
+                    <input type="checkbox" name="remember" checked={rememberLogin} onChange={(e) => setRememberLoginChoice(e.target.checked)}
+                      style={{ accentColor: C.gold, flexShrink: 0, margin: 0 }} />
+                    <span style={{ fontSize: 'max(10px, 0.5vw)', color: C.textDim, lineHeight: 1.4 }}>
+                      {t('auth.login.rememberLogin')}
+                    </span>
+                  </label>
+                )}
                 {mode === 'register' && (
                   <div>
                     <div style={FIELD_LABEL}><span>👤</span> {t('pages.loginPage.displayName') || 'Naam'}</div>

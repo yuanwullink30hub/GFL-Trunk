@@ -22,9 +22,10 @@ import { VERT, DISP_FRAG, BLEND_FRAG, NEBULA_FRAG } from './nebulaShaders';
  * @param opts.inputs mutable { mouseX, mouseY, mapX, mapY, frame, visible } — read each frame
  * @param opts.onReady called once, after the first frame has been submitted
  * @param opts.onFail called when WebGL is unavailable or shaders fail (host shows gradient)
+ * @param opts.fps frame cap (default 49); 0 renders every display frame (desktop app)
  * @returns { resize(w, h), destroy() }
  */
-export function createNebulaEngine(canvas, { width, height, inputs, onReady, onFail }) {
+export function createNebulaEngine(canvas, { width, height, inputs, onReady, onFail, fps = 49 }) {
   let destroyed = false;
   let readyFired = false;
   let cleanupFn = null;
@@ -271,14 +272,18 @@ export function createNebulaEngine(canvas, { width, height, inputs, onReady, onF
       let lastFrame = 0;
       let shaderTime = 0;
       let lastRealTime = null;
-      const INTERVAL = 1000 / 49;
+      // A 49 fps cap on a 60 Hz display lands on every OTHER vsync (16.7 ms < 20.4 ms), i.e. 30 fps —
+      // fine at rest, but the background visibly steps behind a 60 fps pan. fps 0 = every vsync.
+      const INTERVAL = fps > 0 ? 1000 / fps : 0;
 
       function render(timestamp) {
         if (destroyed) { raf = null; return; }
         raf = requestAnimationFrame(render);
         if (!inputs.visible) { lastRealTime = null; return; }
         if (gl.isContextLost()) return; // skip until restored
-        if (timestamp - lastFrame < INTERVAL) return;
+        // 2 ms slack: vsync timestamps jitter, and a cap that divides the refresh rate (90 on 180 Hz)
+        // must land on every Nth vsync instead of randomly skipping one more.
+        if (INTERVAL && timestamp - lastFrame < INTERVAL - 2) return;
         lastFrame = timestamp;
 
         const now = Date.now() / 1000;
@@ -345,7 +350,9 @@ export function createNebulaEngine(canvas, { width, height, inputs, onReady, onF
         mousePrev.y = my;
 
         // Smoothly lerp map offset toward the pumped target
-        const lerpFactor = 0.04;
+        // Per rendered frame when capped (the tuned look); per second when uncapped, matched to the
+        // 30 frames/s the cap actually delivers on a 60 Hz display.
+        const lerpFactor = INTERVAL ? 0.04 : 1 - Math.pow(0.96, Math.min(Math.max(delta, 0) * 30, 4));
         mapPos.x += (inputs.mapX - mapPos.x) * lerpFactor;
         mapPos.y += (inputs.mapY - mapPos.y) * lerpFactor;
 

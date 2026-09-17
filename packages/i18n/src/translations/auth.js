@@ -96,9 +96,14 @@ export default {
         en: 'The tools that work with your personal data are used in our application, with your own folder. Your account, your public card and Verbonden work straight away — here on the website too.',
       },
       workspaceInApp: {
-        nl: 'Kies nu je werkmap. Het rapport dat je net hebt geüpload zetten we er meteen in, samen met een kopie van je gedeeltelijke profiel.',
-        en: 'Choose your folder now. The report you just uploaded goes straight into it, together with a copy of your partial profile.',
+        nl: 'Je werkmap wordt klaargezet in je gebruikersmap. Het rapport dat je net hebt geüpload zetten we er meteen in, samen met een kopie van je gedeeltelijke profiel.',
+        en: 'Your folder is being set up in your user folder. The report you just uploaded goes straight into it, together with a copy of your partial profile.',
       },
+      workspaceWhere: {
+        nl: (root) => `Je werkmap staat in ${root}. Verplaatsen kan later via Profiel → Werkruimte.`,
+        en: (root) => `Your folder is at ${root}. You can move it later via Profile → Workspace.`,
+      },
+      workspaceRetry: { nl: 'Opnieuw proberen', en: 'Try again' },
       workspaceChoose: { nl: 'Werkmap kiezen', en: 'Choose folder' },
       workspaceChoosing: { nl: 'Bezig…', en: 'Working…' },
       workspaceDone: {
@@ -107,6 +112,22 @@ export default {
       },
       workspaceLater: { nl: 'Later', en: 'Later' },
       workspaceContinue: { nl: 'Verder naar het platform', en: 'Continue to the platform' },
+    },
+
+    // ── LoginPage: a management account logged in on the website (no management UI ships here) ──
+    staff: {
+      title: { nl: 'Beheer', en: 'Management' },
+      body: {
+        nl: 'Beheer gebeurt uitsluitend in de beheer-app op de beheercomputer.',
+        en: 'Management happens only in the management app on the management computer.',
+      },
+      logout: { nl: 'Uitloggen', en: 'Log out' },
+      downloads: { nl: 'Downloads', en: 'Downloads' },
+      appWindows: { nl: 'Beheer-app · Windows', en: 'Management app · Windows' },
+      preparing: { nl: 'Link aanvragen…', en: 'Requesting link…' },
+      started: { nl: (v) => `Download gestart${v ? ` (versie ${v})` : ''}.`, en: (v) => `Download started${v ? ` (version ${v})` : ''}.` },
+      noRelease: { nl: 'Er is nog geen versie gepubliceerd.', en: 'No version has been published yet.' },
+      failed: { nl: 'Download aanvragen mislukt.', en: 'Requesting the download failed.' },
     },
 
     // ── LoginPage: login card ──
@@ -121,6 +142,8 @@ export default {
       submit: { nl: 'IDENTIFICEER', en: 'IDENTIFY' },
       hidePassword: { nl: 'Verberg wachtwoord', en: 'Hide password' },
       showPassword: { nl: 'Toon wachtwoord', en: 'Show password' },
+      // Desktop app only — keeps the login for 30 days (the password itself is never stored).
+      rememberLogin: { nl: 'Onthoudt mijn wachtwoord', en: 'Remember my password' },
     },
 
     // ── PasswordVerify (standalone ?pwverify / ?emailverify landing page) ──

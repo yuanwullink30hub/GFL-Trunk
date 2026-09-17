@@ -41,6 +41,11 @@ const isWorkspacePreview = import.meta.env.DEV &&
 const isWerkruimtePreview = import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has('werkruimtepreview');
 
+// Dev-only Instellingen → App preview with an in-memory app bridge: ?appsettingspreview=1 (or =firstrun
+// for the first-start refresh-rate dialog). See src/dev/AppSettingsPreviewHarness.jsx.
+const isAppSettingsPreview = import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).has('appsettingspreview');
+
 // Password- or email-change confirmation landing (?pwverify / ?emailverify token from the email
 // link). Mounts a tiny standalone page that applies the change and shows the result — no heavy
 // 3D app, any device.
@@ -87,6 +92,15 @@ if (isPaymentReturn) {
       </React.Suspense>
     </LanguageProvider>
   );
+} else if (isAppSettingsPreview) {
+  const AppSettingsPreviewHarness = React.lazy(() => import('./dev/AppSettingsPreviewHarness'));
+  root.render(
+    <LanguageProvider>
+      <React.Suspense fallback={null}>
+        <AppSettingsPreviewHarness />
+      </React.Suspense>
+    </LanguageProvider>
+  );
 } else if (isWerkruimtePreview) {
   const WerkruimtePreviewHarness = React.lazy(() => import('./dev/WerkruimtePreviewHarness'));
   root.render(
@@ -116,11 +130,18 @@ if (isPaymentReturn) {
   );
 } else {
   const App = React.lazy(() => import('./App'));
+  // Desktop app only: the refresh-rate "keep?" dialog (first start + Instellingen → App).
+  const DisplayRateConfirm = window.gfl ? React.lazy(() => import('./workspace/DisplayRateConfirm')) : null;
   root.render(
     <LanguageProvider>
       <React.Suspense fallback={null}>
         <App />
       </React.Suspense>
+      {DisplayRateConfirm && (
+        <React.Suspense fallback={null}>
+          <DisplayRateConfirm />
+        </React.Suspense>
+      )}
     </LanguageProvider>
   );
 }

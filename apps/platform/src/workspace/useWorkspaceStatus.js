@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getWorkspaceStatus, onWorkspaceChange } from './localWorkspace';
+import { ensureWorkspace, onWorkspaceChange } from './localWorkspace';
 
 /**
  * Live folder status for an account (see getWorkspaceStatus). `null` until the first read —
  * callers must treat null as "unknown", not as "locked" or "ready", so nothing flashes.
  * Re-reads whenever any part of the platform announces a folder change, and on window focus
- * (the user may have moved or deleted the folder outside the app).
+ * (the user may have moved or deleted the folder outside the app). In the app it also binds the
+ * account's folder on the way (ensureWorkspace), so a logged-in account never has to link it by hand.
  */
 export default function useWorkspaceStatus(accountId, enabled = true) {
   const [status, setStatus] = useState(null);
@@ -13,7 +14,7 @@ export default function useWorkspaceStatus(accountId, enabled = true) {
   const refresh = useCallback(async () => {
     if (!enabled) return;
     try {
-      setStatus(await getWorkspaceStatus(accountId));
+      setStatus(await ensureWorkspace(accountId));
     } catch {
       setStatus({ inApp: true, connected: false, ready: false, error: 'status unavailable' });
     }

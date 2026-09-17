@@ -1,6 +1,6 @@
 # Local Workstation Contract
 
-**Status:** draft v0.3 — 2026-09-17 (v0.2 2026-09-16, v0.1 2026-09-09) · §7a anonymous tool calls is binding
+**Status:** draft v0.4 — 2026-09-17 (v0.3 and v0.2 2026-09-16/17, v0.1 2026-09-09) · §7a anonymous tool calls is binding · §5 folder created by the app · §7b goal planner (parked design)
 **Scope:** the boundary between the Garden For Life platform and the client's own machine.
 
 The platform owns the model. The client owns their data. This document is the seam:
@@ -27,8 +27,9 @@ Two rules follow, and every tool is held to them:
 
 ## 2. Folder layout
 
-The user picks (or the app creates) one directory. Everything lives under it. Flat and
-readable — a person must be able to open this folder and understand what they own.
+The app creates one directory — `<home>/Garden For Life` — and everything lives under it. Flat and
+readable — a person must be able to open this folder and understand what they own. The user can
+move it; the folder keeps its name at the new location.
 
 ```
 Garden For Life/
@@ -81,9 +82,10 @@ Garden For Life/
 `schemaVersion` is checked on every open. Newer folder than the app → refuse to write and
 tell the user to update. Older folder → migrate (§4).
 
-**One folder, one account.** `accountId` is set when the logged-in user chooses the folder. The
-same account again is a no-op; a different account is refused, and the platform forgets that
-folder again rather than read or write someone else's data (shared computers). A folder counts as
+**One folder, one account.** `accountId` is set automatically at the first login in the app. The
+same account again is a no-op; a different account is refused — on a shared computer the second
+account gets its own `<home>/Garden For Life 2` (created and bound automatically), so nobody reads
+or writes someone else's data. A folder counts as
 *ready* only when it is connected AND bound to the account that is logged in.
 
 ---
@@ -107,8 +109,18 @@ The folder is the only copy. There is no server-side backup and there never will
 
 One directory handle, granted once.
 
-- **In the app (Electron):** native filesystem access. The user picks the folder at
-  first run; the path is stored in app config. No re-prompt, no expiry.
+- **In the app (Electron):** native filesystem access. **The app creates the folder itself on first
+  start** (decided 2026-09-17: no choice to make, no confusion about where the data went), at
+  `<home>/Garden For Life` — the user folder, deliberately NOT Documents or Desktop, which Windows 11
+  moves into OneDrive by default. Never inside the install directory: updates replace it, uninstalling
+  deletes it, and on macOS/Program Files it is not writable. The path is stored in app config; no
+  re-prompt, no expiry.
+- **Moving:** Werkruimte → Verplaatsen copies the folder to `<picked>/Garden For Life`, verifies every
+  file (same size), switches, and only then deletes the original; a failed copy is removed and the
+  original is untouched. A destination synchronised by OneDrive/iCloud/Dropbox/Google Drive asks for
+  confirmation first (the data would leave the device).
+- **Missing folder** (moved outside the app, external drive unplugged): the app does not silently start
+  over; Werkruimte offers "reconnect an existing folder" or "create a new one".
 - **In the browser:** not shipped (decision 2026-09-16). A browser has no folder access; the
   personal-data tools stay locked there and the page offers the desktop app instead. (A browser
   path would have been `showDirectoryPicker()` — Chromium only, re-permission on every visit.)
@@ -125,8 +137,9 @@ safe is theirs to do.
    explanation as the Werkruimte tab (Terms 5a/5b, privacy 6), the responsibility warning, then
    - in a browser: the desktop app download for their OS (installers on Cloudflare R2,
      `downloads.gardenforlife.nl` — Pages caps files at 25 MB);
-   - in the app: the folder picker. On a grant the uploaded report goes straight into
-     `profile/reports/` and a copy of the partial profile into `profile/partial.json`.
+   - in the app: nothing to choose — the app's folder is bound to the new account and the uploaded
+     report goes straight into `profile/reports/`, a copy of the partial profile into
+     `profile/partial.json`, with the folder location shown.
 3. They may continue without a folder. The account, public card and Verbonden work at once;
    **every tool that works with personal data stays locked** until this account's folder is
    ready, and a reminder explains why once per session.
@@ -236,6 +249,43 @@ account, the device and the folder.** A tool that cannot follow this rule does n
   Gateway). Planned, not built.
 - **Content fingerprinting.** Unusual input can itself be recognisable. Tools send the smallest
   input that does the job.
+
+---
+
+## 7b. Worked example — a 3-month goal planner (parked design, 2026-09-17)
+
+Not built. Recorded so that the first real tool follows the intended split. **Personal data stays on the
+user's disk, the method stays on our server, and the only crossing is a minimal, anonymous, one-off
+request (§7a).**
+
+1. **Upload is local.** The user adds their report PDF in the app; it goes into the folder. The PDF itself
+   is never sent.
+2. **The app extracts only what the tool needs:** the reading as codes (archetype ids, shape vector,
+   gift/curse ids — not the report prose) plus the goal the user types and constraints (time per week,
+   focus). No name, email or account id (`callTool` refuses identifying keys).
+3. **Anonymous request:** a blind-signed ticket, no account token, no cookies.
+4. **Server (`registerTool` handler):** loads the planner method from the database (framework, corpus
+   mappings, prompt), rebuilds the corpus context from the codes itself, calls the model, returns the plan
+   as **structured JSON** (schema-validated; output checked for overlap with the prompt text so a crafted
+   goal cannot extract the method). Stores nothing, logs only counts.
+5. **Local result:** `tools/goal-planner/plan.json` + progress state in the folder.
+6. **Check-ins** repeat step 3 with the current plan and notes; the server stays stateless, history lives
+   only on the user's disk.
+
+| | User's device | Our server | Model provider |
+|---|---|---|---|
+| PDF, full profile | ✔ | – | – |
+| Goal, notes, plan, progress | ✔ | during the request only | during the request only |
+| Method, prompt, corpus, engine | – | ✔ | as part of a request only |
+| Who the user is | ✔ | – (anonymous ticket) | – |
+
+Protection of the method: outputs reveal a little of it (unavoidable) — keep outputs structured rather than
+explanatory, and the per-account ticket quota makes mass harvesting expensive. Protection of the user:
+nothing stored on our side, per-tool consent in the local ledger before first use.
+
+Prerequisites before building it: scoring server-side (so inputs cannot be faked), the download key /
+device activation (tickets only for activated installs), `profile/full.json` written from the PDF,
+optionally the folder encrypted with the OS key store, and the Oblivious HTTP relay for the IP address.
 
 ---
 

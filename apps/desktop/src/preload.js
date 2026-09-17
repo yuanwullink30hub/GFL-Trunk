@@ -58,6 +58,44 @@ contextBridge.exposeInMainWorld('gfl', {
   /** Diagnosis switches from graphics-flags.json (usually empty). Read once at start. */
   graphicsFlags: (() => { try { return ipcRenderer.sendSync('app:graphics-flags') || {}; } catch { return {}; } })(),
 
+  /** App settings for this machine: { graphics: 'high'|'balanced'|'saver', startFullscreen }. */
+  settings: {
+    /** As they were when the page started (the graphics profile is built from this). */
+    initial: (() => { try { return ipcRenderer.sendSync('app:settings') || {}; } catch { return {}; } })(),
+    /** The stored settings now (may differ from `initial` until reload). */
+    get: () => ipcRenderer.invoke('settings:get'),
+    /** Save a change; returns the stored settings. Graphics apply after reload(). */
+    set: (patch) => ipcRenderer.invoke('settings:set', patch),
+  },
+
+  /** Reload the interface (applies graphics settings). */
+  reload: () => ipcRenderer.invoke('app:reload'),
+
+  /**
+   * The screen the window is on. Every rate change waits 15 s for keep(), then reverts by itself.
+   * describe() → { canChange, label, width, height, hz, rates[] }
+   */
+  display: {
+    describe: () => ipcRenderer.invoke('display:describe'),
+    setRate: (hz) => ipcRenderer.invoke('display:set-rate', hz),
+    keep: () => ipcRenderer.invoke('display:keep'),
+    revert: () => ipcRenderer.invoke('display:revert'),
+    /** { from, to, deadline, reason } while a change waits for keep(), else null. */
+    pending: () => ipcRenderer.invoke('display:pending'),
+    /** One time per machine: switch to the highest rate. Returns { ok, skipped? , pending? }. */
+    firstRunCheck: () => ipcRenderer.invoke('display:first-run'),
+    onPending: (fn) => {
+      const handler = (_e, p) => fn(p);
+      ipcRenderer.on('display:pending', handler);
+      return () => ipcRenderer.removeListener('display:pending', handler);
+    },
+    onSettled: (fn) => {
+      const handler = (_e, r) => fn(r);
+      ipcRenderer.on('display:settled', handler);
+      return () => ipcRenderer.removeListener('display:settled', handler);
+    },
+  },
+
   update: {
     /** { state: dev|idle|checking|current|downloading|ready|error, version, current, percent? } */
     status: () => ipcRenderer.invoke('update:status'),
@@ -77,8 +115,14 @@ contextBridge.exposeInMainWorld('gfl', {
     /** Is a folder connected, which layout version, and did startup refuse it? */
     status: () => ipcRenderer.invoke('workspace:status'),
 
-    /** Native folder picker. This is the user's grant; it cannot be widened afterwards. */
+    /** Connect an existing folder (native picker). The picked folder is the grant; it cannot be widened. */
     choose: () => ipcRenderer.invoke('workspace:choose'),
+
+    /** The app's own folder for this account (<home>/Garden For Life, or "… 2" on a shared computer), bound to it. */
+    create: (accountId) => ipcRenderer.invoke('workspace:create', accountId),
+
+    /** Move the connected folder to a location the user picks. Verified copy, then the original is removed. */
+    move: () => ipcRenderer.invoke('workspace:move'),
 
     /** Forgets the path only. The folder and its contents stay on disk. */
     forget: () => ipcRenderer.invoke('workspace:forget'),

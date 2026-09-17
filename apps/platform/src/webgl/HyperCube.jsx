@@ -46,6 +46,7 @@ const _dir = new THREE.Vector3();
 const _mid = new THREE.Vector3();
 const _boost = new THREE.Color();
 const _scratch = new THREE.Color();
+const IDENTITY_QUAT = new THREE.Quaternion(); // camera-rig slerp target (level view), read-only
 
 const updateMesh = (
   ref, indices, projected, vertices4D, baseColor,
@@ -224,10 +225,12 @@ export function HyperCube({ isInside, paused }) {
     return () => bridgeGeometry.dispose();
   }, [bridgeGeometry]);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     if (!edgesPurpleRef.current || !edgesGreenRef.current || !edgesBridgeRef.current) return;
     // Domain overlay open: freeze the tesseract where it is (task 4b).
     if (paused) return;
+    // Steps below are per 60 Hz frame; f keeps their speed on high-refresh displays.
+    const f = Math.min(delta * 60, 4);
 
     // -- State machine: settle -> expand (inside) / shrink -> resume (outside)
     if (isInside) {
@@ -236,19 +239,19 @@ export function HyperCube({ isInside, paused }) {
         const target = Math.ceil(rotationRef.current / snapPoint) * snapPoint;
         const remaining = target - rotationRef.current;
         if (remaining > 0.005) {
-          rotationRef.current += Math.min(0.015, remaining);
+          rotationRef.current += Math.min(0.015 * f, remaining);
         } else {
           rotationRef.current = target;
           isSettled.current = true;
         }
       } else if (expansionRef.current < 1) {
-        expansionRef.current = Math.min(1, expansionRef.current + 0.01);
+        expansionRef.current = Math.min(1, expansionRef.current + 0.01 * f);
       }
     } else {
       if (expansionRef.current > 0) {
-        expansionRef.current = Math.max(0, expansionRef.current - 0.02);
+        expansionRef.current = Math.max(0, expansionRef.current - 0.02 * f);
       } else {
-        rotationRef.current += 0.01;
+        rotationRef.current += 0.01 * f;
         isSettled.current = false;
       }
     }
@@ -378,20 +381,20 @@ export function CameraRig({ isInside, paused }) {
     }
   }, [isInside]);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     // Frozen while a domain overlay is open (task 4b).
     if (paused) return;
+    const f = Math.min(delta * 60, 4); // per-60 Hz-frame easing → same speed at any refresh rate
     if (transitionActive.current) {
       if (isInside) targetPos.set(0, 0, 0.01);
       else targetPos.set(5, 5, 8);
 
-      camera.position.lerp(targetPos, 0.08);
+      camera.position.lerp(targetPos, 1 - Math.pow(0.92, f));
 
       if (!isInside) {
         camera.lookAt(0, 0, 0);
       } else {
-        const targetQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0));
-        camera.quaternion.slerp(targetQuat, 0.1);
+        camera.quaternion.slerp(IDENTITY_QUAT, 1 - Math.pow(0.9, f));
       }
 
       if (camera.position.distanceTo(targetPos) < 0.01) {

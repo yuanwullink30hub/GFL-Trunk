@@ -147,28 +147,62 @@ export async function linkWorkspace(accountId) {
 }
 
 /**
- * The first-run grant, in one call: native folder picker → bind to the account → drop the
- * report the user just uploaded into profile/reports → write the partial profile mirror.
- * Returns { connected:false } when the user cancels the picker.
+ * Make sure a logged-in account in the app has ITS folder, without asking anything. The app creates
+ * <home>/Garden For Life on first start (apps/desktop/src/main.js); here it gets bound to the account:
+ *   unlinked → bind it to this account
+ *   foreign  → the folder belongs to someone else on this computer: switch to (or create) this
+ *              account's own folder, "Garden For Life 2" and so on
+ * A folder that is missing (moved outside the app, a drive not plugged in) is left alone — the
+ * Werkruimte tab offers to reconnect it or make a new one, so nothing silently starts over.
+ * Returns the status after the fix-up.
+ */
+export async function ensureWorkspace(accountId) {
+  const status = await getWorkspaceStatus(accountId);
+  if (!status.inApp || !accountId || !status.connected) return status;
+  if (status.unlinked) {
+    await window.gfl.workspace.linkAccount(String(accountId));
+  } else if (status.foreign) {
+    await window.gfl.workspace.create(String(accountId));
+  } else {
+    return status;
+  }
+  announceWorkspaceChange();
+  return getWorkspaceStatus(accountId);
+}
+
+/** A new folder of this account's own, in the home folder (connected and bound). */
+export async function createWorkspace(accountId) {
+  if (!isDesktopApp()) throw new Error('The folder is only reachable from the desktop app');
+  const result = await window.gfl.workspace.create(String(accountId));
+  announceWorkspaceChange();
+  return result;
+}
+
+/** Move the folder to a location the user picks (the app verifies the copy before removing the original). */
+export async function moveWorkspace() {
+  if (!isDesktopApp()) throw new Error('The folder is only reachable from the desktop app');
+  const result = await window.gfl.workspace.move();
+  announceWorkspaceChange();
+  return result;
+}
+
+/**
+ * Right after the account exists, in the app: its folder (created by the app, bound here), the report
+ * the user just uploaded into profile/reports, and the partial profile mirror — no questions asked.
  */
 export async function connectWorkspace({ accountId, reportFile = null, reportLabel = '', account = null }) {
   if (!isDesktopApp()) throw new Error('The folder is only reachable from the desktop app');
-  const chosen = await window.gfl.workspace.choose();
-  if (!chosen || !chosen.connected) return { connected: false };
-  try {
-    await window.gfl.workspace.linkAccount(String(accountId));
-  } catch (e) {
-    // A folder that already belongs to another account: forget it again, so this account's
-    // tools never read or write into someone else's data.
-    await window.gfl.workspace.forget().catch(() => {});
-    announceWorkspaceChange();
-    throw e;
+  let status = await ensureWorkspace(accountId);
+  if (!status.connected) {
+    await window.gfl.workspace.create(String(accountId));
+    status = await getWorkspaceStatus(accountId);
   }
+  if (!status.ready) throw new Error('The folder could not be prepared');
   let report = null;
   if (reportFile) report = await window.gfl.reports.save(await fileToBase64(reportFile), reportLabel);
   if (account) await window.gfl.profile.write(partialFromAccount(account));
   announceWorkspaceChange();
-  return { connected: true, root: chosen.root, report };
+  return { connected: true, root: status.root, report };
 }
 
 /** Save a report PDF into this account's folder, if it is ready. Resolves null when it is not. */

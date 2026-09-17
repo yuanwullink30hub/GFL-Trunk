@@ -24,6 +24,8 @@ function installFakeBridge() {
       status: async () => (root ? { connected: true, root, schemaVersion: 1, folderId: 'preview', accountId } : { connected: false }),
       choose: async () => { await new Promise((r) => setTimeout(r, 600)); root = 'C:\\Users\\you\\Documents\\Garden For Life'; return { connected: true, root }; },
       forget: async () => { root = null; accountId = null; return { connected: false }; },
+      create: async (id) => { await new Promise((r) => setTimeout(r, 400)); root = 'C:\\Users\\you\\Garden For Life'; accountId = id; return { connected: true, root }; },
+      move: async () => { await new Promise((r) => setTimeout(r, 600)); root = 'D:\\Garden For Life'; return { moved: true, root }; },
       linkAccount: async (id) => { accountId = id; return { linked: true, accountId: id, changed: true }; },
     },
     reports: { save: async () => ({ saved: `profile/reports/${today}-troonrover.pdf`, name: `${today}-troonrover.pdf` }) },

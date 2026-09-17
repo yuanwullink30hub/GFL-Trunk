@@ -13,6 +13,7 @@ import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
 import { isIntegratedGPU, getGPURenderer } from '@gfl/utils';
+import { frameRecorder, startPerfLog, graphicsProfile } from './workspace/appProfile';
 
 // Retry wrapper: if a chunk fails (stale deploy), reload the page once.
 const lazyRetry = (fn) => lazy(() =>
@@ -42,6 +43,9 @@ const FilosofiePage = lazyRetry(() => import('./pages/FilosofiePage'));
 const GardensPage = lazyRetry(() => import('./pages/GardensPage'));
 const DataPage = lazyRetry(() => import('./pages/DataPage'));
 import { useCelestialState, CelestialBehindLayer } from './pages/DataPage.shared';
+
+startPerfLog(); // desktop app only: long main-thread tasks → renderer log
+
 const LoginPage = lazyRetry(() => import('./pages/LoginPage'));
 const EyedentityPage = lazyRetry(() => import('./pages/EyedentityPage'));
 const WinkelPage = lazyRetry(() => import('./pages/WinkelPage'));
@@ -156,9 +160,6 @@ const SECTION_2_FRAMES = 47;    // Chunks and particles explosion - maximized fo
 const HEADER_START_FRAME = 12;  // Header/containers start vanishing mid-explosion
 const SECTION_3_FRAMES = 1;     // Pyramid snaps down — sharp ending (frame 48)
 
-// Static SVG cross patterns — hoisted to module level to avoid re-creating on every render
-const CROSS_PATTERN_DESKTOP = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.045)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.035)' stroke-width='1'/%3E%3C/svg%3E")`;
-const CROSS_PATTERN_MOBILE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0.5' x2='6' y2='0.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='94' y1='0.5' x2='100' y2='0.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='0.5' y1='0' x2='0.5' y2='6' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='0.5' y1='94' x2='0.5' y2='100' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='44' y1='50.5' x2='56' y2='50.5' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='50.5' y1='44' x2='50.5' y2='56' stroke='rgba(201,160,240,0.05)' stroke-width='1'/%3E%3Cline x1='46' y1='4' x2='54' y2='-4' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='54' y1='4' x2='46' y2='-4' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='46' y1='96' x2='54' y2='104' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='54' y1='96' x2='46' y2='104' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='-4' y1='46' x2='4' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='4' y1='46' x2='-4' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='96' y1='46' x2='104' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3Cline x1='104' y1='46' x2='96' y2='54' stroke='rgba(201,160,240,0.04)' stroke-width='1'/%3E%3C/svg%3E")`;
 // ============================================
 
 // Small assessment icons (intro/info card + results diagrams). Held in a module-level
@@ -359,6 +360,7 @@ const App = () => {
   const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 }); // Current grid position
   const nebulaMapRef = useRef({ x: 0, y: 0 }); // Stable ref for NebulaBackground — avoids per-frame React re-renders
   const [isMapAnimating, setIsMapAnimating] = useState(false);
+  const panRecorderRef = useRef(null); // desktop app: frame timings per pan → renderer log
   const [panSource, setPanSource] = useState(null); // the section we're panning AWAY from
   const activeSectionRef = useRef(null);            // current active section, readable in callbacks
   // A section's heavy DOM (and 3D scenes) should only go live when it's the pan
@@ -370,6 +372,15 @@ const App = () => {
     (id) => activeSection === id || (isMapAnimating && panSource === id),
     [activeSection, isMapAnimating, panSource]
   );
+  // 3D scenes during a pan. Website: every scene renders through every pan. Desktop app: the landing
+  // globe/orb holds its last frame while the compositor slides it (no full re-render per pan frame),
+  // and other map scenes render only as the pan's source or destination.
+  const landing3dLive = graphicsProfile.landingRendersDuringPan
+    ? (!activeSection || isMapAnimating)
+    : (!activeSection && !isMapAnimating);
+  const map3dLive = (id) => (graphicsProfile.panRendersAll3d
+    ? (activeSection === id || isMapAnimating)
+    : sectionLive(id));
   const mapAnimationRef = useRef(null);
   const mapStartPosRef = useRef({ x: 0, y: 0 });
   const mapTargetPosRef = useRef({ x: 0, y: 0 });
@@ -440,6 +451,9 @@ const App = () => {
     mapTargetPosRef.current = target;
     mapCurveOffsetRef.current = curve;
     mapStartTimeRef.current = performance.now();
+    // Starts at the click, so the React commit before the first pan frame counts as a frame.
+    panRecorderRef.current = frameRecorder(`pan ${activeSectionRef.current || 'main'} → ${section}`);
+    panRecorderRef.current.frame(mapStartTimeRef.current);
     setPanSource(activeSectionRef.current); // keep the section we're leaving painted during the pan
     setIsMapAnimating(true);
     setActiveSection(section === 'main' ? null : section);
@@ -450,6 +464,7 @@ const App = () => {
     if (!isMapAnimating) return;
 
     const animate = (currentTime) => {
+      if (panRecorderRef.current) panRecorderRef.current.frame(currentTime);
       const elapsed = currentTime - mapStartTimeRef.current;
       const progress = Math.min(elapsed / MAP_TRANSITION_DURATION, 1);
       
@@ -487,6 +502,10 @@ const App = () => {
         }
         setMapPosition(target);     // single React re-render at animation end
         setIsMapAnimating(false);
+        // One frame later, so the end-of-pan re-render is measured too.
+        const rec = panRecorderRef.current;
+        panRecorderRef.current = null;
+        if (rec) requestAnimationFrame((t) => { rec.frame(t); rec.end(); });
       }
     };
 
@@ -1621,9 +1640,6 @@ const App = () => {
   const langY = langProgress * -150;
   const langOpacity = Math.max(0, 1 - langProgress * 1.5);
   
-  // Grid background: fades out with header
-  const gridOpacity = Math.max(0, 0.3 * (1 - headerProgress));
-
   // Containers: fly away with header
   const containerProgress = headerProgress;
   
@@ -1813,17 +1829,6 @@ const App = () => {
       )}
 
 
-      {/* Grid Background - spans entire page on mobile */}
-      {isMobile && (
-        <div 
-          className="fixed inset-0 z-0 pointer-events-none"
-          style={{
-            backgroundImage: CROSS_PATTERN_MOBILE,
-            backgroundSize: '100px 100px'
-          }}
-        />
-      )}
-
       {/* =========================== */}
       {/* MOBILE LAYOUT - Login + Dashboard only */}
       {/* =========================== */}
@@ -1831,14 +1836,6 @@ const App = () => {
         <>
           {/* --- Background/Grid (Mobile) --- */}
           <div className="fixed inset-0 z-0" style={{background: 'transparent'}} />
-          <div 
-            className="fixed inset-0 z-0 pointer-events-none"
-            style={{
-              opacity: 0.4,
-              backgroundImage: CROSS_PATTERN_MOBILE,
-              backgroundSize: '100px 100px'
-            }}
-          />
 
           {/* HoloEarth background - centered */}
           <div 
@@ -1929,7 +1926,7 @@ const App = () => {
                     explosionProgressRef={explosionProgressRef}
                     isMobile={isMobile}
                     isActive={isSystem}
-                    isVisible={!activeSection || isMapAnimating}
+                    isVisible={landing3dLive}
                     pyramidScrollProgress={pyramidScrollProgress}
                     showPyramidLabels={isSystem}
                     coreScaleMultiplier={coreScaleMultiplier}
@@ -2108,25 +2105,6 @@ const App = () => {
         <>
           {/* --- Background Elements --- */}
           <div className="absolute inset-0 z-0" style={{background: 'transparent'}} />
-      
-          {/* --- Grid Background - Moves with map for floating illusion --- */}
-          <div 
-            className="fixed z-0 pointer-events-none"
-            style={{
-              // Extend grid far beyond viewport (5x5 viewport area)
-              width: '500vw',
-              height: '500vh',
-              left: '-200vw',
-              top: '-200vh',
-              opacity: gridOpacity,
-              backgroundImage: CROSS_PATTERN_DESKTOP,
-              backgroundSize: '100px 100px',
-              // Move grid with map position - creates floating illusion
-              transform: 'translate(calc(var(--map-x, 0) * -100vw), calc(var(--map-y, 0) * -100vh))',
-              transition: isMapAnimating ? 'none' : 'transform 0.1s ease-out',
-              willChange: 'transform',
-            }}
-          />
         </>
       )}
 
@@ -2616,7 +2594,7 @@ const App = () => {
             {clientMode ? (
               <OrbSphere3D
                 config={clientOrbConfig}
-                active={!activeSection || isMapAnimating}
+                active={landing3dLive}
                 size={clientOrbSize}
                 style={{ filter: 'drop-shadow(0 0 90px rgba(120,80,200,0.18))' }}
               />
@@ -2628,7 +2606,7 @@ const App = () => {
                 explosionProgressRef={explosionProgressRef}
                 isMobile={isMobile}
                 isActive={isSystem}
-                isVisible={!activeSection || isMapAnimating}
+                isVisible={landing3dLive}
                 pyramidScrollProgress={pyramidScrollProgress}
                 showPyramidLabels={isSystem}
                 coreScaleMultiplier={coreScaleMultiplier}
@@ -2756,7 +2734,7 @@ const App = () => {
                 explosionProgressRef={kookExplosionRef}
                 isMobile={isMobile}
                 isActive={true}
-                isVisible={activeSection === 'kook' || isMapAnimating}
+                isVisible={map3dLive('kook')}
                 pyramidScrollProgress={pyramidScrollProgress}
                 showPyramidLabels={true}
                 coreScaleMultiplier={coreScaleMultiplier}

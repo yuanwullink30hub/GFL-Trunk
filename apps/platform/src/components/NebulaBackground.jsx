@@ -25,6 +25,7 @@ import { isIntegratedGPU } from '@gfl/utils';
 export { VERT, DISP_FRAG, BLEND_FRAG, makeNebulaFrag, NEBULA_FRAG } from './nebulaShaders';
 
 import { createNebulaEngine } from './nebulaEngine';
+import { graphicsProfile } from '../workspace/appProfile';
 
 // ─── React Component ────────────────────────────────────────────────────
 const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible = true }) => {
@@ -85,7 +86,7 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const dpr = Math.min(window.devicePixelRatio, 1.25);
+    const dpr = Math.min(window.devicePixelRatio, 1.25) * graphicsProfile.nebulaRenderScale;
     const sizeOf = () => {
       const w = wrapperRef.current;
       return {
@@ -159,7 +160,7 @@ const NebulaBackground = ({ mapPositionRef, onReady, currentFrame = 0, isVisible
     if (!worker) {
       const s = sizeOf();
       engine = createNebulaEngine(canvas, {
-        width: s.width, height: s.height, inputs, onReady: fireReady, onFail,
+        width: s.width, height: s.height, inputs, onReady: fireReady, onFail, fps: graphicsProfile.nebulaFps,
       });
     }
 

@@ -1,0 +1,29 @@
+﻿LICENTIE — GARDEN FOR LIFE APPLICATIE
+
+Door verder te gaan met de installatie ga je akkoord met deze licentie en met de Algemene Voorwaarden van Garden For Life (te vinden op gardenforlife.nl), in het bijzonder artikel 5b.
+
+1. De applicatie en alle onderdelen daarvan zijn eigendom van Garden For Life en worden beschermd door de Auteurswet en de intellectuele-eigendomsverklaring van Garden For Life. Je krijgt een persoonlijke, niet-exclusieve en niet-overdraagbare licentie om de applicatie te gebruiken met je eigen account.
+
+2. Het is niet toegestaan de applicatie of onderdelen daarvan te kopiëren, te verspreiden, te verhuren, aan te passen, te decompileren of te ontleden (reverse engineering), behalve voor zover de wet dat dwingend toestaat.
+
+3. De modellen en programma's van Garden For Life draaien op de servers van Garden For Life; de applicatie geeft daar toegang toe. Je persoonlijke gegevens staan in de werkmap die je zelf kiest, op je eigen apparaat.
+
+4. Installeer de applicatie uitsluitend via de officiële downloadlink van Garden For Life. Het verwijderen van de applicatie verwijdert je werkmap niet.
+
+5. Op deze licentie is Nederlands recht van toepassing.
+
+----------------------------------------------------------------------
+
+LICENCE — GARDEN FOR LIFE APPLICATION
+
+By continuing the installation you accept this licence and the Garden For Life Terms and Conditions (available at gardenforlife.nl), in particular article 5b.
+
+1. The application and all its parts are the property of Garden For Life and are protected by copyright law and the intellectual property statement. You receive a personal, non-exclusive and non-transferable licence to use the application with your own account.
+
+2. You may not copy, distribute, rent out, modify, decompile or reverse engineer the application or any part of it, except where the law expressly permits this.
+
+3. Garden For Life's models and programs run on Garden For Life's servers; the application gives access to them. Your personal data lives in the folder you choose, on your own device.
+
+4. Install the application only through the official Garden For Life download link. Removing the application does not remove your folder.
+
+5. This licence is governed by Dutch law.

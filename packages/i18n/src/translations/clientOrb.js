@@ -88,8 +88,8 @@ export default {
           en: 'We are very data-conscious and operate through an application to provide a shielded environment.\nThe only time a full profile of you is online is without name, address or face (PDF generation) — by the time this data is needed, you are already disconnected from the cloud.',
         },
         why1: {
-          nl: 'Wij hebben geen toegang tot die map en bewaren er geen kopie van. (Je geeft eenmalig toegang tot één map die je zelf aanwijst. Die toestemming geldt alleen voor die map.)',
-          en: 'We have no access to that folder and keep no copy of it. (You grant access once, to one folder that you choose yourself. That permission applies to that folder alone.)',
+          nl: 'Wij hebben geen toegang tot die map en bewaren er geen kopie van. (De applicatie maakt één eigen werkmap aan in je gebruikersmap en werkt alleen in die map. Je kunt hem verplaatsen.)',
+          en: 'We have no access to that folder and keep no copy of it. (The application creates one folder of its own in your user folder and works only in that folder. You can move it.)',
         },
         why2: {
           nl: 'Op onze servers blijft alleen wat je account nodig heeft om te bestaan: je archetype-naam, de vorm van je orb en de teksten op je kaart.',
@@ -174,12 +174,15 @@ export default {
           en: 'During the testing phase we release the application without a publisher certificate, so Windows and macOS will warn that the publisher cannot be verified. That is expected and does not mean anything is wrong — but install it only via the button above, never from a copy obtained elsewhere.',
         },
 
-        chooseTitle: { nl: 'Kies je werkmap', en: 'Choose your folder' },
+        // No folder connected: the saved one is missing (moved outside the app, a drive not plugged in)
+        // or it was disconnected.
+        chooseTitle: { nl: 'Geen werkmap gevonden', en: 'No folder found' },
         chooseLead: {
-          nl: 'Kies een map waarin je gegevens komen te staan. Een lege map op een plek die je zelf terugvindt werkt het prettigst — bijvoorbeeld in je documentenmap.',
-          en: 'Pick a folder for your data to live in. An empty folder somewhere you will find it again works best — inside your documents folder, for instance.',
+          nl: 'De applicatie vindt je werkmap niet. Heb je hem zelf verplaatst of staat hij op een externe schijf, koppel hem dan opnieuw. Anders maken we een nieuwe aan in je gebruikersmap.',
+          en: 'The application cannot find your folder. If you moved it yourself or it is on an external drive, reconnect it. Otherwise we create a new one in your user folder.',
         },
-        chooseButton: { nl: 'Map kiezen', en: 'Choose folder' },
+        createButton: { nl: 'Nieuwe werkmap aanmaken', en: 'Create a new folder' },
+        chooseButton: { nl: 'Bestaande werkmap koppelen', en: 'Reconnect an existing folder' },
         choosing: { nl: 'Bezig...', en: 'Working...' },
 
         // A connected folder that is not (yet) this account's.
@@ -191,10 +194,11 @@ export default {
         linkButton: { nl: 'Koppelen', en: 'Link' },
         foreignTitle: { nl: 'Deze map hoort bij een ander account', en: 'This folder belongs to another account' },
         foreignLead: {
-          nl: 'Een werkmap hoort bij één account, zodat gegevens van twee mensen nooit door elkaar raken. Kies een eigen map voor dit account.',
-          en: 'A folder belongs to one account, so two people’s data never mix. Choose a folder of your own for this account.',
+          nl: 'Een werkmap hoort bij één account, zodat gegevens van twee mensen nooit door elkaar raken. Dit account krijgt een eigen werkmap.',
+          en: 'A folder belongs to one account, so two people’s data never mix. This account gets a folder of its own.',
         },
         chooseOwn: { nl: 'Eigen map kiezen', en: 'Choose my own folder' },
+        createOwn: { nl: 'Eigen werkmap aanmaken', en: 'Create my own folder' },
         rowAccount: { nl: 'Account', en: 'Account' },
         rowAccountLinked: { nl: 'Gekoppeld aan dit account', en: 'Linked to this account' },
 
@@ -205,6 +209,12 @@ export default {
         openFolder: { nl: 'Map openen', en: 'Open folder' },
         backup: { nl: 'Reservekopie maken', en: 'Make a backup' },
         backingUp: { nl: 'Bezig...', en: 'Working...' },
+        move: { nl: 'Verplaatsen', en: 'Move' },
+        moving: { nl: 'Bezig met verplaatsen...', en: 'Moving...' },
+        moveNote: {
+          nl: 'Je werkmap staat standaard in je gebruikersmap. Verplaatsen zet alles op de plek die je kiest en verwijdert de oude map pas als alles is overgekomen. Kies liever geen map die met OneDrive, iCloud of een andere cloud wordt gesynchroniseerd.',
+          en: 'Your folder lives in your user folder by default. Moving puts everything at the location you pick and removes the old folder only once everything has arrived. Preferably avoid a folder synchronised with OneDrive, iCloud or another cloud.',
+        },
         disconnect: { nl: 'Loskoppelen', en: 'Disconnect' },
         disconnectNote: {
           nl: 'Loskoppelen vergeet alleen waar de map staat. De map zelf en alles erin blijven op je apparaat staan.',

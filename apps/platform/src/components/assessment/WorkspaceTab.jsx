@@ -5,7 +5,7 @@ import { HardDrive } from 'lucide-react';
 import DownloadGate from '../../workspace/DownloadGate';
 import useAppUpdate from '../../workspace/useAppUpdate';
 import {
-  connectWorkspace, desktopDownload, detectPlatform, getWorkspaceStatus, isDesktopApp, linkWorkspace, onWorkspaceChange, announceWorkspaceChange,
+  createWorkspace, desktopDownload, detectPlatform, ensureWorkspace, isDesktopApp, linkWorkspace, moveWorkspace, onWorkspaceChange, announceWorkspaceChange,
 } from '../../workspace/localWorkspace';
 
 /**
@@ -15,9 +15,10 @@ import {
  *   - in a browser, there is no window.gfl, so it explains the idea and offers the download
  *   - inside the desktop app, window.gfl exists, so it offers the folder grant and status
  *
- * A folder belongs to one account (manifest.accountId). Choosing a folder here binds it to the
- * logged-in account; a connected folder that is unbound can be linked; one bound to someone else
- * is shown as such and never used.
+ * A folder belongs to one account (manifest.accountId). The app creates it on first start in the home
+ * folder and binds it to the logged-in account automatically (ensureWorkspace); a second account on the
+ * same computer gets its own "Garden For Life 2". Here the user can open, move or back it up, and —
+ * when the folder is missing — make a new one or reconnect an existing one.
  *
  * The prose here has to agree with Terms art. 5a/5b and privacy art. 6 — this is the screen
  * where someone decides whether to trust the arrangement, and a promise made here that the
@@ -119,7 +120,7 @@ export default function WorkspaceTab({ DashboardCard, accountId = null }) {
   const refresh = useCallback(async () => {
     if (!isDesktopApp()) return;
     try {
-      setStatus(await getWorkspaceStatus(accountId));
+      setStatus(await ensureWorkspace(accountId));
     } catch (e) {
       setError(e.message || String(e));
     }
@@ -142,7 +143,14 @@ export default function WorkspaceTab({ DashboardCard, accountId = null }) {
 
   const download = desktopDownload();
   const update = useAppUpdate();
-  const choose = () => run('choose', () => connectWorkspace({ accountId }));
+  // Reconnect an existing folder (e.g. one moved outside the app, or on an external drive): the picked
+  // folder is bound to this account right away.
+  const choose = () => run('choose', async () => {
+    const chosen = await window.gfl.workspace.choose();
+    if (chosen && chosen.connected) await ensureWorkspace(accountId);
+  });
+  const create = () => run('create', () => createWorkspace(accountId));
+  const move = () => run('move', () => moveWorkspace());
 
   // Laptop tier and up (design tokens: ≥ 1079px): the explanation takes two thirds of the width,
   // the app box the remaining third, so nothing is pushed below the fold. Narrower: stacked.
@@ -214,8 +222,11 @@ export default function WorkspaceTab({ DashboardCard, accountId = null }) {
         <div style={{ gridColumn: '1 / -1' }}>
         <DashboardCard title={t('clientOrb.modal.workspace.chooseTitle')}>
           <Para>{t('clientOrb.modal.workspace.chooseLead')}</Para>
-          <div style={{ marginTop: '0.9rem' }}>
-            <SciFiButton variant="orange" onClick={choose} disabled={busy === 'choose' || !accountId}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.9rem' }}>
+            <SciFiButton variant="orange" onClick={create} disabled={!!busy || !accountId}>
+              {busy === 'create' ? t('clientOrb.modal.workspace.choosing') : t('clientOrb.modal.workspace.createButton')}
+            </SciFiButton>
+            <SciFiButton onClick={choose} disabled={!!busy || !accountId}>
               {busy === 'choose' ? t('clientOrb.modal.workspace.choosing') : t('clientOrb.modal.workspace.chooseButton')}
             </SciFiButton>
           </div>
@@ -248,8 +259,8 @@ export default function WorkspaceTab({ DashboardCard, accountId = null }) {
         <DashboardCard title={t('clientOrb.modal.workspace.foreignTitle')}>
           <Para>{t('clientOrb.modal.workspace.foreignLead')}</Para>
           <div style={{ marginTop: '0.9rem' }}>
-            <SciFiButton variant="orange" size="sm" onClick={choose} disabled={busy === 'choose' || !accountId}>
-              {busy === 'choose' ? t('clientOrb.modal.workspace.choosing') : t('clientOrb.modal.workspace.chooseOwn')}
+            <SciFiButton variant="orange" size="sm" onClick={create} disabled={!!busy || !accountId}>
+              {busy === 'create' ? t('clientOrb.modal.workspace.choosing') : t('clientOrb.modal.workspace.createOwn')}
             </SciFiButton>
           </div>
         </DashboardCard>
@@ -269,6 +280,9 @@ export default function WorkspaceTab({ DashboardCard, accountId = null }) {
             <SciFiButton size="sm" onClick={() => run('reveal', () => window.gfl.workspace.reveal())}>
               {t('clientOrb.modal.workspace.openFolder')}
             </SciFiButton>
+            <SciFiButton size="sm" onClick={move} disabled={!!busy}>
+              {busy === 'move' ? t('clientOrb.modal.workspace.moving') : t('clientOrb.modal.workspace.move')}
+            </SciFiButton>
             <SciFiButton size="sm" onClick={() => run('backup', () => window.gfl.workspace.backup())} disabled={busy === 'backup'}>
               {busy === 'backup' ? t('clientOrb.modal.workspace.backingUp') : t('clientOrb.modal.workspace.backup')}
             </SciFiButton>
@@ -276,6 +290,7 @@ export default function WorkspaceTab({ DashboardCard, accountId = null }) {
               {t('clientOrb.modal.workspace.disconnect')}
             </SciFiButton>
           </div>
+          <Para dim>{t('clientOrb.modal.workspace.moveNote')}</Para>
           <Para dim>{t('clientOrb.modal.workspace.disconnectNote')}</Para>
         </DashboardCard>
         </div>

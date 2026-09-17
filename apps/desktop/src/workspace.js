@@ -1,8 +1,9 @@
 /**
  * The local workstation — implementation of docs/LOCAL_WORKSTATION_CONTRACT.md.
  *
- * One directory, chosen by the user, holding everything that is theirs: the report, the
- * full profile, and whatever tools produce. Garden For Life keeps no copy.
+ * One directory holding everything that is theirs: the report, the full profile, and whatever
+ * tools produce. The app creates it on first start in the user's home folder (DEFAULT_FOLDER_NAME);
+ * the user can move it, or connect an existing one. Garden For Life keeps no copy.
  *
  * ── Why this module has no read(path)/write(path) ─────────────────────────────
  * An earlier version exposed a general-purpose filesystem API to the renderer. An
@@ -29,6 +30,9 @@ const { assertPlainSegment, safePath, realRoot, assertNotRoot, samePath } = requ
 
 /** Bumped only when the folder LAYOUT changes in a way old apps can't read. */
 const SCHEMA_VERSION = 1;
+
+/** The folder the app creates, and the name a moved folder keeps at its new location. */
+const DEFAULT_FOLDER_NAME = 'Garden For Life';
 
 const SUBDIRS = ['profile', 'profile/reports', 'tools', 'consent', '.backups'];
 
@@ -199,6 +203,75 @@ async function pruneUnsafe(root, keep = 3) {
 }
 
 const pruneBackups = (root, keep = 3) => serialise(root, () => pruneUnsafe(root, keep));
+
+// ── Default location and moving ────────────────────────────────────────────────
+
+/**
+ * The folder the app creates for an account: <home>/Garden For Life, or — when that one already
+ * belongs to another account on this computer — <home>/Garden For Life 2, 3, … The first candidate
+ * that does not exist, or exists without a manifest, or is this very account's folder, is used.
+ */
+async function defaultFolderFor(home, accountId = null) {
+  for (let n = 1; n < 100; n += 1) {
+    const candidate = path.join(home, n === 1 ? DEFAULT_FOLDER_NAME : `${DEFAULT_FOLDER_NAME} ${n}`);
+    if (!fs.existsSync(candidate)) return candidate;
+    const manifest = await readJson(path.join(candidate, PATHS.manifest)).catch(() => null);
+    if (!manifest || !manifest.accountId || (accountId && manifest.accountId === accountId)) return candidate;
+  }
+  throw new Error('No free folder name in the home folder');
+}
+
+/** relative path → size, for every regular file under dir (links are not followed). */
+async function inventory(dir, base = dir, out = new Map()) {
+  for (const entry of await fsp.readdir(dir, { withFileTypes: true })) {
+    if (entry.isSymbolicLink()) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) await inventory(full, base, out);
+    else if (entry.isFile()) out.set(path.relative(base, full), (await fsp.stat(full)).size);
+  }
+  return out;
+}
+
+/**
+ * Move the whole folder to <destParent>/Garden For Life. Copy first, then verify that every file
+ * arrived with the same size, and only then delete the original — an interrupted or failed move
+ * leaves the original exactly as it was (and removes the partial copy).
+ */
+function moveFolder(root, destParent) {
+  return serialise(root, async () => {
+    const source = realRoot(root);
+    const target = path.join(path.resolve(destParent), DEFAULT_FOLDER_NAME);
+    if (samePath(target, source)) return { root: source, moved: false };
+    const rel = path.relative(source, target);
+    if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) throw new Error('The new location is inside the current folder');
+    if (fs.existsSync(target)) {
+      if ((await fsp.readdir(target)).length) {
+        throw new Error(`There is already a "${DEFAULT_FOLDER_NAME}" folder with content at that location`);
+      }
+      await fsp.rmdir(target); // empty: let the copy create it
+    }
+
+    try {
+      await fsp.cp(source, target, {
+        recursive: true,
+        errorOnExist: true,
+        force: false,
+        verbatimSymlinks: true,
+        filter: (src) => !fs.lstatSync(src).isSymbolicLink(),
+      });
+      const before = await inventory(source);
+      const after = await inventory(target);
+      for (const [file, size] of before) {
+        if (after.get(file) !== size) throw new Error(`Copy check failed for ${file}`);
+      }
+    } catch (err) {
+      await fsp.rm(target, { recursive: true, force: true }).catch(() => {});
+      throw err;
+    }
+    await fsp.rm(source, { recursive: true, force: true });
+    return { root: target, moved: true };
+  });
+}
 
 // ── Named operations — the entire surface the renderer can reach ───────────────
 
@@ -396,6 +469,9 @@ function revokeConsent(root, toolId) {
 
 module.exports = {
   SCHEMA_VERSION,
+  DEFAULT_FOLDER_NAME,
+  defaultFolderFor,
+  moveFolder,
   PATHS,
   ensureScaffold,
   readManifest,

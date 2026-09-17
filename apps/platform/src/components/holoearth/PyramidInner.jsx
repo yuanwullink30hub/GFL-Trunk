@@ -12,6 +12,12 @@ const smoothstep = (edge0, edge1, x) => {
 
 // Pyramid constants - scaled down to fit inside earth
 const TOTAL_LAYERS = 5;
+// Per-frame lerp targets, allocated once (a new THREE.Color per frame is garbage-collector churn).
+// Read-only: materials copy from them, never hold them.
+const ORANGE_COLOR = new THREE.Color('#ff6600');
+const GOLD_COLOR = new THREE.Color('#fbbf24');
+const DARK_GOLD_COLOR = new THREE.Color('#b45309');
+const NEON_SHADOW_COLOR = new THREE.Color('#fb923c');
 const PYRAMID_HEIGHT = 2.5; // Smaller to fit in earth core
 const BASE_RADIUS = 1.6;    // Match the cone radius
 const LAYER_THICKNESS = PYRAMID_HEIGHT / TOTAL_LAYERS;
@@ -124,10 +130,10 @@ const InnerHoloEffect = ({ radiusTop, radiusBottom, height, isGoldMode, explosio
   const materialRef = useRef(null);
   const color = useMemo(() => new THREE.Color(isGoldMode ? '#fbbf24' : '#d8b4fe'), [isGoldMode]);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
-      materialRef.current.uniforms.uColor.value.lerp(color, 0.1);
+      materialRef.current.uniforms.uColor.value.lerp(color, 1 - Math.pow(0.9, Math.min(delta * 60, 4)));
       materialRef.current.uniforms.uExplosionProgress.value = explosionProgress;
     }
   });
@@ -169,10 +175,10 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
   const wire2MatRef = useRef(null);
 
   useFrame((state, delta) => {
-    const orangeColor = new THREE.Color("#ff6600");
-    const goldColor = new THREE.Color("#fbbf24");
-    const darkGoldColor = new THREE.Color("#b45309");
-    const neonShadowColor = new THREE.Color("#fb923c");
+    const orangeColor = ORANGE_COLOR;
+    const goldColor = GOLD_COLOR;
+    const darkGoldColor = DARK_GOLD_COLOR;
+    const neonShadowColor = NEON_SHADOW_COLOR;
 
     // Chunk glow fade: pyramid starts at 10% opacity when chunks appear,
     // then gradually returns to 100% over 9 frames
@@ -224,7 +230,7 @@ const TechLayer = ({ radiusTop, radiusBottom, height, isGoldMode, showBottomCap,
     if (shadowHardRef.current && shadowHardRef.current.material) {
       const mat = shadowHardRef.current.material;
       mat.opacity = THREE.MathUtils.lerp(mat.opacity, targetShadowOpacity, delta * 2);
-      mat.color = darkGoldColor;
+      mat.color.copy(darkGoldColor);
       mat.transparent = true;
     }
 
@@ -544,8 +550,8 @@ const PyramidInner = ({
     }
 
     // Container animation
-    const orangeColor = new THREE.Color("#ff6600");
-    const goldColor = new THREE.Color("#fbbf24");
+    const orangeColor = ORANGE_COLOR;
+    const goldColor = GOLD_COLOR;
     const contentOpacity = showContent ? entityOpacity : 0;
 
     if (containerBoxMatRef.current) containerBoxMatRef.current.opacity = 0.05 * contentOpacity;
@@ -564,14 +570,14 @@ const PyramidInner = ({
       const mat = containerShadowHardRef.current.material;
       mat.opacity = THREE.MathUtils.lerp(mat.opacity, targetShadowOp * contentOpacity, delta * 2);
       mat.transparent = true;
-      mat.color = new THREE.Color("#b45309");
+      mat.color.copy(DARK_GOLD_COLOR);
     }
 
     if (containerShadowSoftRef.current && containerShadowSoftRef.current.material) {
       const mat = containerShadowSoftRef.current.material;
       mat.opacity = THREE.MathUtils.lerp(mat.opacity, targetGlowOp * contentOpacity, delta * 2);
       mat.transparent = true;
-      mat.color = new THREE.Color("#fb923c");
+      mat.color.copy(NEON_SHADOW_COLOR);
     }
 
     // Scroll logic - each layer animates over one scroll segment

@@ -10,6 +10,7 @@ import { getInbox, sendUserMessage, markMessageRead, getMe, getVerbondPending, r
 import useWorkspaceStatus from '../../workspace/useWorkspaceStatus';
 import useAppUpdate from '../../workspace/useAppUpdate';
 import { requestWorkspaceTab, requestDashboardTab } from '../../workspace/localWorkspace';
+import { graphicsProfile } from '../../workspace/appProfile';
 
 import OrbSphere3D from '../../orb/OrbSphere3D';
 import { ORB3D_PRESETS } from '../../orb/orb3d';
@@ -23,6 +24,8 @@ const TEMPLATE_ORB_CFG = { ...ORB3D_PRESETS.Agency, palette: 'Agency' };
 // off-screen, where a mounted-but-hidden WebGL canvas would keep its render loop burning.
 // An IntersectionObserver (200px margin past the viewport) unmounts the canvas entirely once
 // the button leaves view and remounts it on return; the sized placeholder keeps the footprint.
+// Desktop app (graphicsProfile.keep3dAlive): the canvas stays mounted and only pauses — rebuilding its
+// WebGL context and shaders on every return was a visible hitch in the pan back to the landing page.
 function VisitorLoginOrb({ size }) {
   const boxRef = useRef(null);
   const [inView, setInView] = useState(true);
@@ -35,7 +38,9 @@ function VisitorLoginOrb({ size }) {
   }, []);
   return (
     <div ref={boxRef} style={{ width: size, height: size, pointerEvents: 'none' }}>
-      {inView && <OrbSphere3D config={TEMPLATE_ORB_CFG} active size={size} />}
+      {graphicsProfile.keep3dAlive
+        ? <OrbSphere3D config={TEMPLATE_ORB_CFG} active={inView} size={size} />
+        : inView && <OrbSphere3D config={TEMPLATE_ORB_CFG} active size={size} />}
     </div>
   );
 }

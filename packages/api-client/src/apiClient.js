@@ -20,10 +20,38 @@ export function getToken() {
 
 export function setToken(token) {
   localStorage.setItem(TOKEN_KEY, token);
+  // Marks a login made during this launch of the desktop app (sessionStorage dies with the app).
+  if (inDesktopApp()) { try { sessionStorage.setItem(LOGIN_ALIVE_KEY, '1'); } catch { /* ignore */ } }
 }
 
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+}
+
+// ── Saved login (desktop application only) ──
+// Browsers leave remembering to password managers. In the desktop app (its preload exposes
+// window.gfl) the login form offers "Onthoudt mijn wachtwoord": ticked, the backend issues a 30-day
+// session; unticked, the login ends when the app closes (clientMode.js expires it on the next launch).
+// Nothing here stores the password — only the choice and the session token.
+const REMEMBER_KEY = 'gfl_remember_login';
+const LOGIN_ALIVE_KEY = 'gfl_login_alive';
+const inDesktopApp = () => typeof window !== 'undefined' && !!window.gfl;
+
+/** The app's "Onthoudt mijn wachtwoord" choice: ticked unless the user unticked it. Always false in a browser. */
+export function getRememberLogin() {
+  if (!inDesktopApp()) return false;
+  try { return localStorage.getItem(REMEMBER_KEY) !== '0'; } catch { return true; }
+}
+
+export function setRememberLogin(remember) {
+  if (!inDesktopApp()) return;
+  try { localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0'); } catch { /* ignore */ }
+}
+
+/** True when a desktop login was not remembered and was made in an earlier launch — it has to end now. */
+export function unrememberedLoginExpired() {
+  if (!inDesktopApp() || getRememberLogin() || !getToken()) return false;
+  try { return sessionStorage.getItem(LOGIN_ALIVE_KEY) !== '1'; } catch { return false; }
 }
 
 // ── Private report window ──
@@ -87,7 +115,7 @@ export async function register({ email, password, displayName, age, country, orb
   const response = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, displayName, age, country, orbCode, archetypeName, reading }),
+    body: JSON.stringify({ email, password, displayName, age, country, orbCode, archetypeName, reading, remember: getRememberLogin() }),
   });
 
   if (!response.ok) {
@@ -110,7 +138,7 @@ export async function login({ email, password }) {
   const response = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, remember: getRememberLogin() }),
   });
 
   if (!response.ok) {
@@ -681,7 +709,7 @@ export async function orbLoginFromPdf(file) {
   const response = await fetch(`${API_BASE}/orb/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pdfBase64 }),
+    body: JSON.stringify({ pdfBase64, remember: getRememberLogin() }),
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
@@ -1164,12 +1192,35 @@ export async function getEmailStatus() {
 
 // ── Dev Activity Audit Log ──
 
-/** Log a dev activity event (no auth — called from git hooks or frontend) */
+/** Log a consent (or dev) event to the public activity log (no auth — consent comes before any account) */
 export async function logActivity(data) {
-  const response = await fetch(`${API_BASE}/admin/sessions/activity`, {
+  const response = await fetch(`${API_BASE}/activity`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
+  });
+  if (!response.ok) return null;
+  return response.json();
+}
+
+/**
+ * Management accounts: a single-use link (5 minutes) to the newest management-app installer, which the
+ * server keeps out of the web code. Returns { url (absolute), name, version }; throws 'no_release' when
+ * nothing has been published yet.
+ */
+export async function requestDownloadLink() {
+  const response = await fetch(`${API_BASE}/files/link`, { method: 'POST', headers: authHeaders() });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `error_${response.status}`);
+  return { ...data, url: new URL(data.url, API_BASE).toString() };
+}
+
+/** Admin only: record that a stored report was opened (access log) */
+export async function logReportView({ reportId, reportType }) {
+  const response = await fetch(`${API_BASE}/admin/sessions/report-view`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ reportId, reportType }),
   });
   if (!response.ok) return null;
   return response.json();

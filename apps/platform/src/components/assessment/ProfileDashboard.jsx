@@ -10,7 +10,8 @@ import { readingExtendedName } from './readingName';
 import { PRESET_KERNELS } from './presetKernels';
 import { getPolicyContent } from '../../data/policyIndex';
 import WorkspaceTab from './WorkspaceTab';
-import { onDashboardTabRequest, takePendingDashboardTab, saveReportIfReady } from '../../workspace/localWorkspace';
+import AppSettingsSection from './AppSettingsSection';
+import { onDashboardTabRequest, takePendingDashboardTab, saveReportIfReady, isDesktopApp } from '../../workspace/localWorkspace';
 
 // Policy/terms pages — for CLIENTS these live here under Instellingen (the left
 // verbindingsmenu shows the public-profiles directory instead; visitors still get
@@ -1022,6 +1023,9 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                     {dlMsg && <span style={{ fontSize: 'max(9px,0.48vw)', color: dlMsg.includes('✓') ? '#4ade80' : dlMsg.includes('…') ? 'rgba(196,181,253,0.85)' : '#f87171' }}>{dlMsg}</span>}
                   </div>
                 </div>
+
+                {/* App — settings of this computer (refresh rate, graphics, startup). Desktop app only. */}
+                {isDesktopApp() && <AppSettingsSection labelStyle={LABEL} />}
 
                 {/* Toegang — unlocks after 3 linked kristal-codes (access model): the user has
                     proven commitment; offer subscription (cheaper than a new test), a year, or

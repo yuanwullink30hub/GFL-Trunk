@@ -219,6 +219,45 @@ export default {
         deleteWarnPre: { nl: '⚠ Verwijdert je account permanent (AVG/GDPR). Typ', en: '⚠ Permanently deletes your account (GDPR). Type' },
         deleteWarnPost: { nl: ':', en: ':' },
         deleteButton: { nl: 'Verwijderen', en: 'Delete' },
+
+        // Desktop app only (AppSettingsSection.jsx) — settings of this machine, not of the account.
+        app: {
+          title: { nl: 'App', en: 'App' },
+          intro: {
+            nl: 'Deze instellingen gelden voor deze computer en worden alleen hier bewaard.',
+            en: 'These settings apply to this computer and are only stored here.',
+          },
+          display: { nl: 'Beeldscherm', en: 'Display' },
+          displayHint: {
+            nl: 'Hoger is vloeiender. Na een wijziging heb je 15 seconden om te bevestigen, anders gaat hij terug.',
+            en: 'Higher is smoother. After a change you have 15 seconds to confirm, otherwise it reverts.',
+          },
+          displaySystem: { nl: 'Je systeem regelt de beeldfrequentie zelf.', en: 'Your system manages the refresh rate itself.' },
+          displayFailed: { nl: 'Deze stand werd door je scherm geweigerd.', en: 'Your screen refused this rate.' },
+          graphics: { nl: 'Grafische kwaliteit', en: 'Graphics quality' },
+          presets: {
+            high: { nl: 'Hoog', en: 'High' },
+            balanced: { nl: 'Gebalanceerd', en: 'Balanced' },
+            saver: { nl: 'Zuinig', en: 'Power saver' },
+          },
+          presetInfo: {
+            high: { nl: 'Alles beweegt op de volle snelheid van je scherm.', en: 'Everything moves at the full speed of your screen.' },
+            balanced: {
+              nl: 'Achtergrond en globe maximaal 60 beelden per seconde — minder werk voor je videokaart op schermen boven 60 Hz.',
+              en: 'Background and globe at most 60 frames per second — less work for your graphics card on screens above 60 Hz.',
+            },
+            saver: {
+              nl: 'Achtergrond en globe op 30 beelden per seconde, achtergrond in lagere resolutie. Voor laptops en oudere videokaarten.',
+              en: 'Background and globe at 30 frames per second, background at a lower resolution. For laptops and older graphics cards.',
+            },
+          },
+          reloadNote: { nl: 'Wordt toegepast na opnieuw laden.', en: 'Applies after reloading.' },
+          reload: { nl: 'Opnieuw laden', en: 'Reload' },
+          startup: { nl: 'Opstarten', en: 'Startup' },
+          fullscreen: { nl: 'Volledig scherm', en: 'Full screen' },
+          windowed: { nl: 'Venster', en: 'Window' },
+          startupHint: { nl: 'Geldt vanaf de volgende keer dat je de app opent.', en: 'Applies the next time you open the app.' },
+        },
       },
 
       msg: {

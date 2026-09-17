@@ -2153,8 +2153,8 @@ const App = () => {
               src="images/landingpage/logo.webp" 
               alt="Delta" 
               style={{
-                width: 'clamp(4rem, 7vw, 12.5rem)', 
-                height: 'clamp(4rem, 7vw, 12.5rem)',
+                width: 'clamp(3.4rem, 5.95vw, 10.625rem)', // 85% of the previous clamp(4rem, 7vw, 12.5rem)
+                height: 'clamp(3.4rem, 5.95vw, 10.625rem)',
                 flexShrink: 0,
                 cursor: activeSection ? 'pointer' : 'default',
                 transition: 'transform 0.2s ease',

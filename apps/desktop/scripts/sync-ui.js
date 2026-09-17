@@ -86,3 +86,7 @@ const size = (() => {
 })();
 
 console.log(`✓ UI synced → apps/desktop/ui (${size} MB, ${removed} source maps stripped)`);
+
+// The app icon is the platform's logo too: rebuild build/icon.png so a replaced logo ships with this
+// build instead of the last copy. A failure stops start/dist rather than packaging a stale icon.
+require('./sync-icon').syncIcon().catch((err) => { console.error(`\n✘ ${err.message}\n`); process.exit(1); });

@@ -15,6 +15,10 @@ module.exports = {
   // JWT
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-me',
   jwtExpiresIn: '7d',
+  // Saved login in the desktop application ("Onthoudt mijn wachtwoord" ticked → `remember: true` on
+  // login, registration or PDF-code login): the session stays valid for 30 days from that login. The
+  // platform keeps its session stamp in step — LoginPage.jsx sessionMaxAge(). Browsers never send it.
+  jwtRememberExpiresIn: '30d',
 
   // Field-Level Encryption
   encryptionKey: process.env.ENCRYPTION_KEY || '',

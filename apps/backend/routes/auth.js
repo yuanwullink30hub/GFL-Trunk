@@ -5,7 +5,7 @@
  * POST /api/auth/login     — Login, returns JWT
  * GET  /api/auth/me        — Get current user (auth required)
  */
-const { Router } = require('express');
+const { Router } = require('express');
 const { sendSystemMessage } = require('../services/systemMessages');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -252,7 +252,7 @@ function buildCardPayload(u) {
 
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, displayName, age, country, orbCode, archetypeName, reading } = req.body;
+    const { email, password, displayName, age, country, orbCode, archetypeName, reading, remember } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
@@ -381,7 +381,7 @@ router.post('/register', async (req, res) => {
     }
 
     // No SMTP (dev): account is pre-verified — behave as before and log straight in.
-    const token = signToken(result.insertedId, normalizedEmail, role);
+    const token = signToken(result.insertedId, normalizedEmail, role, { remember: remember === true });
     res.status(201).json({
       token,
       needsVerification: false,
@@ -551,7 +551,7 @@ router.get('/profiles', async (_req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, remember } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
@@ -580,7 +580,7 @@ router.post('/login', async (req, res) => {
     // Decrypt PII for the response
     const decryptedEmail = decrypt(user.email);
     const decryptedDisplayName = decrypt(user.displayName);
-    const token = signToken(user._id, decryptedEmail, user.role || 'client');
+    const token = signToken(user._id, decryptedEmail, user.role || 'client', { remember: remember === true });
 
     // Update lastLogin timestamp for all users (fire-and-forget)
     collections.users().updateOne(
@@ -1115,10 +1115,15 @@ module.exports.eraseAccountData = eraseAccountData;
 // Helper
 // ─────────────────────────────────────────────────────────────
 
-function signToken(userId, email, role) {
+/**
+ * `remember`: the desktop application's "Onthoudt mijn wachtwoord" was ticked (request body
+ * `remember: true`) — the session gets the saved login's 30-day lifetime. Not a security boundary:
+ * the credentials are required either way.
+ */
+function signToken(userId, email, role, { remember = false } = {}) {
   return jwt.sign(
     { sub: userId.toString(), email, role },
     config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn }
+    { expiresIn: remember ? config.jwtRememberExpiresIn : config.jwtExpiresIn }
   );
 }

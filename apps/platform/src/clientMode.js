@@ -6,7 +6,7 @@
  * (location.reload) — App.jsx then boots in client mode: HoloEarth → the user's orb, sections
  * unlocked, the login slot becomes the account view. Clearing it (logout) returns to visitor mode.
  */
-import { logout } from '@gfl/api-client';
+import { logout, unrememberedLoginExpired } from '@gfl/api-client';
 import { decodeOrb3 } from './orb';
 
 const ORB_CODE_KEY = 'gfl_orb_code';
@@ -64,7 +64,6 @@ export function logoutAndReload() {
   clearClientMode();
   try {
     localStorage.removeItem('gfl_session_ts');
-    localStorage.removeItem('gfl_admin_mode');
   } catch { /* ignore */ }
   window.location.reload();
 }
@@ -83,4 +82,12 @@ export function getClientOrbConfig() {
     const raw = localStorage.getItem(ORB_CONFIG_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
+}
+
+// Desktop app with "Onthoudt mijn wachtwoord" unticked: that login ends when the app closes. Runs once
+// as this module loads — before App reads client mode — so a new launch starts logged out.
+if (unrememberedLoginExpired()) {
+  logout();
+  clearClientMode();
+  try { localStorage.removeItem('gfl_session_ts'); } catch { /* ignore */ }
 }

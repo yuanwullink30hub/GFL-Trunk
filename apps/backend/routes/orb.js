@@ -83,7 +83,7 @@ router.post('/login', async (req, res) => {
         if (u) {
           const email = decrypt(u.email);
           const displayName = decrypt(u.displayName);
-          const token = signToken(u._id, email, u.role || 'client');
+          const token = signToken(u._id, email, u.role || 'client', { remember: req.body.remember === true });
           return res.json({ code, archetypeName, reading, linked: true, token, user: { id: u._id, email, displayName, role: u.role || 'client', country: u.country || '', age: (u.age != null ? u.age : '') } });
         }
         // linked record but the user is gone → treat as unlinked (allow re-onboarding).

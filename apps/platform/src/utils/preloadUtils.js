@@ -186,7 +186,7 @@ export const preloadComponents = () => {
 export const preloadImages = () => {
   // Critical images that need to be ready immediately
   const criticalImages = [
-    'images/landingpage/logo.png',
+    'images/landingpage/logo.webp',
   ];
   
   // UI images
@@ -298,7 +298,7 @@ export const preloadAll = async (onProgress, options = {}) => {
 
   // ── Background: images + fonts (fire-and-forget) ──
   const bgImages = [
-    'images/landingpage/logo.png',
+    'images/landingpage/logo.webp',
     'images/Eyedentity.png',
     'images/illustrativesun.png',
   ];

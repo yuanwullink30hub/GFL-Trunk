@@ -2150,7 +2150,7 @@ const App = () => {
             }}
           >
             <img 
-              src="images/landingpage/logo.png" 
+              src="images/landingpage/logo.webp" 
               alt="Delta" 
               style={{
                 width: 'clamp(4rem, 7vw, 12.5rem)', 

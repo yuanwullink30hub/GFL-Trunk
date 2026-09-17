@@ -44,7 +44,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
           }}
         >
           <img 
-            src="images/landingpage/logo.png" 
+            src="images/landingpage/logo.webp" 
             alt="Delta" 
             style={{
               width: 'clamp(4.55rem, 27.3vw, 7.28rem)', 

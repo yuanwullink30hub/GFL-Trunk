@@ -18,7 +18,8 @@
  * 404s is worse than one that says "not yet".
  */
 export const DESKTOP_RELEASE = {
-  available: false,
+  // Per platform: flip each one only once its installer is actually on R2.
+  available: { win: false, macArm: false, macIntel: false, linux: false },
   version: '0.1.0',
   base: 'https://downloads.gardenforlife.nl',
   file: {
@@ -55,7 +56,7 @@ export function desktopDownload(chosen) {
     platform,
     fileName,
     href: fileName ? `${DESKTOP_RELEASE.base}/${fileName}` : null,
-    available: DESKTOP_RELEASE.available && !!fileName,
+    available: !!(DESKTOP_RELEASE.available && DESKTOP_RELEASE.available[platform]) && !!fileName,
     version: DESKTOP_RELEASE.version,
   };
 }

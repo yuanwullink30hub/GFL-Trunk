@@ -3,6 +3,7 @@ import { loadStripe } from '@stripe/stripe-js/pure';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { SciFiButton } from '@gfl/ui';
 import { TERMS_VERSION } from '../../config/pricing';
+import { isDesktopApp } from '../../workspace/localWorkspace';
 import { payFullReport } from '../../services/paymentService';
 
 /**
@@ -76,7 +77,11 @@ function CheckoutForm({
     if (!canPay) return;
     // Opened inside the click so no popup blocker stops it; only for methods that need it.
     let win = null;
-    if (REDIRECT_METHODS.has(methodType)) {
+    // In the desktop app every new window opens in the user's own browser (main.js), so there is no
+    // popup blocker to beat and a blank pre-opened window would just be refused: open the bank page
+    // there once the server returns it. This window keeps the report and polls, as in a browser.
+    const inApp = isDesktopApp();
+    if (REDIRECT_METHODS.has(methodType) && !inApp) {
       win = window.open('', '_blank');
       try {
         if (win) {
@@ -112,6 +117,11 @@ function CheckoutForm({
     if (res.error) return fail(errorMessageFor(res));
 
     if (res.status === 'requires_action' && res.redirectUrl) {
+      if (inApp) {
+        window.open(res.redirectUrl, '_blank');
+        setBusy(false);
+        return onStarted({ ref: res.ref, redirectUrl: res.redirectUrl, popupBlocked: false });
+      }
       const blocked = !win || win.closed;
       if (!blocked) {
         try { win.opener = null; } catch { /* ignore */ }

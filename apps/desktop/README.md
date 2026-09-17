@@ -106,7 +106,7 @@ Terms art. 5b rather than hidden. To sign, add credentials to `electron-builder.
 Apple needs a Developer ID and notarisation; Windows needs an OV certificate or Azure
 Trusted Signing.
 
-`DESKTOP_RELEASE.available` in
+`DESKTOP_RELEASE.available.<platform>` (win, macArm, macIntel, linux) in
 [localWorkspace.js](../platform/src/workspace/localWorkspace.js) stays `false`
 until the installers are actually published — flip it, and check the filenames still match
 `artifactName` in `electron-builder.yml` (and bump `DESKTOP_RELEASE.version` with each release).
@@ -128,7 +128,7 @@ To release a new version:
    the mac `.zip` files, the `.blockmap` files and `latest.yml` / `latest-mac.yml`
    / `latest-linux.yml`. Upload the installers first and the `latest*.yml` files last, so no
    app sees a feed pointing at a file that isn't there yet.
-4. Bump `DESKTOP_RELEASE.version` so the website's download button fetches the new installer.
+4. Bump `DESKTOP_RELEASE.version` (and set `available.<platform>` for every installer you uploaded) so the website's download button fetches the new installer.
 
 **macOS only installs updates into a signed app.** Until we sign, the updater on a Mac reports
 an error and Werkruimte says it could not check; Mac users update by downloading the new dmg.

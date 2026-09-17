@@ -172,6 +172,7 @@ export default function DesktopDownloadButton({ fullWidth = true, accent = 'oran
             {DESKTOP_PLATFORMS.map((p) => {
               const selected = p === download.platform;
               const hov = hovItem === p;
+              const ready = desktopDownload(p).available;
               return (
                 <button
                   key={p}
@@ -188,6 +189,7 @@ export default function DesktopDownloadButton({ fullWidth = true, accent = 'oran
                     textTransform: 'uppercase', letterSpacing: '0.12em', textAlign: 'left',
                     background: hov ? ACCENT : 'transparent',
                     color: hov ? '#000' : selected ? ACCENT : 'rgba(255, 254, 240, 0.75)',
+                    opacity: ready || hov ? 1 : 0.45,
                     boxShadow: hov ? `0 0 20px rgba(${RGB}, 0.6)` : 'none',
                     transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
                   }}

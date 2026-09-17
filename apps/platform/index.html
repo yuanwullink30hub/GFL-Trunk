@@ -128,9 +128,7 @@
               min-height: 3.6rem;
               overflow: hidden;
             ">
-              <p class="gfl-slide keep-spinning" style="animation-delay: 0s"><span class="gfl-nl">Omgeving initialiseren</span><span class="gfl-en">Initializing environment</span></p>
-              <p class="gfl-slide keep-spinning" style="animation-delay: 2.8s"><span class="gfl-nl">Exclusieve toegang<br>tot Beta V4.9</span><span class="gfl-en">Exclusive access<br>to Beta V4.9</span></p>
-              <p class="gfl-slide keep-spinning" style="animation-delay: 5.6s">Six Seven</p>
+              <p class="gfl-slide"><span class="gfl-nl">Omgeving initialiseren</span><span class="gfl-en">Initializing environment</span></p>
             </div>
           </div>
         </div>
@@ -148,14 +146,7 @@
       /* Bilingual loading copy — <html lang> is set by the head script */
       html[lang="nl"] .gfl-en, html:not([lang="nl"]) .gfl-nl { display: none; }
 
-      /* Text slideshow: 3 cards, 8.4s total cycle, each visible 2.8s */
-      @keyframes gfl-slide-cycle {
-        0%      { opacity: 0; transform: translateY(6px); }
-        3%      { opacity: 1; transform: translateY(0); }
-        30%     { opacity: 1; transform: translateY(0); }
-        35%     { opacity: 0; transform: translateY(-6px); }
-        100%    { opacity: 0; transform: translateY(-6px); }
-      }
+      /* Opening line: shown for two seconds, then a Levensles takes its place (script below). */
       .gfl-slide {
         position: absolute;
         inset: 0;
@@ -170,9 +161,10 @@
         font-size: 1rem;
         line-height: 1.4;
         opacity: 0;
-        animation: gfl-slide-cycle 8.4s ease-in-out infinite;
+        animation: gfl-fade-in 0.6s ease-out both;
       }
-      /* Post-login Levensles — static (no rotation), wraps a full paragraph. */
+      /* The Levensles — static, wraps a full paragraph. Post-login it is the client's own; otherwise
+         the one of the day (script below). */
       .gfl-lesson-label {
         margin: 0 0 0.9rem;
         text-align: center;
@@ -253,6 +245,43 @@
           ss.innerHTML = '';
           ss.appendChild(label);
           ss.appendChild(body);
+        })();
+
+        // Every other boot: the opening line runs for two seconds, then one of the ratified
+        // Levenslessen takes over until the app is ready. The same lesson all day and a different one
+        // tomorrow (day of the year over the list), so coming back reads differently. The texts are
+        // written to lessons.json at build time (scripts/sync-lessons.mjs) — the overlay runs before
+        // the bundle, so it cannot import the corpus itself.
+        (function lessonOfTheDay() {
+          var ss = document.getElementById('gfl-loading-slideshow');
+          if (!ss || ss.querySelector('.gfl-lesson-slide')) return; // the client's own Levensles wins
+          var startedAt = Date.now();
+          var render = function (text) {
+            if (!text || ss.querySelector('.gfl-lesson-slide')) return;
+            ss.style.minHeight = 'auto';
+            ss.style.overflow = 'visible';
+            ss.style.maxWidth = '440px';
+            var label = document.createElement('p');
+            label.className = 'gfl-lesson-label';
+            label.textContent = document.documentElement.lang === 'nl' ? 'Levensles' : 'Life lesson';
+            var body = document.createElement('p');
+            body.className = 'gfl-lesson-slide';
+            body.textContent = text;           // textContent — safe, no HTML injection
+            ss.innerHTML = '';
+            ss.appendChild(label);
+            ss.appendChild(body);
+          };
+          fetch('lessons.json', { cache: 'force-cache' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+              var lang = document.documentElement.lang === 'nl' ? 'nl' : 'en';
+              var list = (data && data[lang] && data[lang].length ? data[lang] : (data && data.nl)) || [];
+              if (!list.length) return;
+              var day = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+              var text = list[((day % list.length) + list.length) % list.length];
+              setTimeout(function () { render(text); }, Math.max(0, 2000 - (Date.now() - startedAt)));
+            })
+            .catch(function () { /* no lesson: the opening line simply stays */ });
         })();
 
         // ── iDEAL bank window returning (?betaling=terug): a result card, then close ──

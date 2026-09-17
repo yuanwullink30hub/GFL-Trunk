@@ -1214,8 +1214,10 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
               }}
             >
               {/* Title */}
+              {/* Header size: it sat at the body step, which read as smaller than the bold uppercase
+                  "Het belangrijkste" label below it. */}
               <h2 className="text-center font-mono uppercase tracking-wider" style={{
-                fontSize: s.levelTitleFont, color: '#a855f7', marginBottom: '0.2rem',
+                fontSize: 'max(18px, 1vw)', fontWeight: 700, color: '#a855f7', marginBottom: '0.35rem',
                 textShadow: '0 0 10px rgba(168,85,247,0.35)',
               }}>
                 {t('assessmentIntroExtra.consent.title')}

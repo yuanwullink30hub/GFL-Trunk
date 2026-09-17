@@ -21,6 +21,8 @@ import {
   isComplementaryPair,
   computeAdvancedScores,
   getArchetypeQuote,
+  getExtensionGift,
+  getExtensionCurse,
   archetypeField,
 } from '@gfl/assessment-core';
 import { isNatureSlot } from '@gfl/assessment-core/assessmentData';
@@ -3119,11 +3121,6 @@ const AssessmentResultsModal = ({
         const cogTri = COG_TRIANGLES[mk];
         const counterTriId = cogTri ? ({ 1:3, 2:4, 3:1, 4:2 })[cogTri.id] : null;
         const counterTri = counterTriId ? ALL_COG_TRIANGLES.find(t => t.id === counterTriId) : null;
-        const currentExt = (result.allSupportArchetypes || []).find(
-          sa => sa.support
-            ? (sa.support || '').toUpperCase() === sk
-            : (sa.group || '').toUpperCase() === (result.supportGroup || '').toUpperCase()
-        );
         const cp = aiProfileData || {};
         const eo = result.extendedOcean || {};
 
@@ -3265,9 +3262,12 @@ const AssessmentResultsModal = ({
           mLine(tFunc('resultsModal.pdf.data.activeTriangle')(cogTri.mode, cogTri.id));
           mLine(`${t('resultsModal.pdf.data.partners')}: ${triMembers}`);
           mLine(`${t('resultsModal.pdf.data.networks')}: ${cogTri.networks || ''}`);
-          mLine(`${t('resultsModal.pdf.data.superpower')}: ${cogTri.tagline || ''}`);
+          // Both lines only when the triangle actually carries the text: an empty value or a
+          // "see the analysis" placeholder is not a fact and does not belong in the machine block.
+          if (cogTri.tagline) mLine(`${t('resultsModal.pdf.data.superpower')}: ${cogTri.tagline}`);
           const weakParts = (cogTri.high || '').split(/maar kan ook\s*/i);
-          mLine(`${t('resultsModal.pdf.data.cognitiveTrap')}: ${weakParts.length > 1 ? weakParts[1].replace(/^leiden tot\s*/i, '').trim() : t('resultsModal.pdf.data.seeAnalysis')}`);
+          const trap = weakParts.length > 1 ? weakParts[1].replace(/^leiden tot\s*/i, '').trim() : '';
+          if (trap) mLine(`${t('resultsModal.pdf.data.cognitiveTrap')}: ${trap}`);
           if (counterTri) mLine(tFunc('resultsModal.pdf.data.growthDirection')(counterTri.mode, counterTri.id));
         } else {
           mLine(t('resultsModal.pdf.data.triangleUnavailable'), dimWhite);
@@ -3281,8 +3281,8 @@ const AssessmentResultsModal = ({
         mGap();
 
         mBold(dash(t('resultsModal.pdf.data.extendedSection')), green);
-        mLine(`${t('resultsModal.pdf.data.gift')}: ${currentExt?.gift || result.mainPositive || t('resultsModal.pdf.data.notAvailable')}`);
-        mLine(`${t('resultsModal.pdf.data.curse')}: ${currentExt?.shadow || result.mainShadowTrait || t('resultsModal.pdf.data.notAvailable')}`);
+        mLine(`${t('resultsModal.pdf.data.gift')}: ${result.extensionGift || t('resultsModal.pdf.data.notAvailable')}`);
+        mLine(`${t('resultsModal.pdf.data.curse')}: ${result.extensionCurse || t('resultsModal.pdf.data.notAvailable')}`);
         mLine(`${t('resultsModal.pdf.data.levensles')}: "${result.levensles || t('resultsModal.pdf.data.notAvailable')}"`);
         mGap();
 
@@ -3295,15 +3295,22 @@ const AssessmentResultsModal = ({
         // a legacy fallback, and the server-held draft wins whenever both exist.
 
         // Master Prompt v4.1 §5.10: dead v3 fields removed (MAIN ARCHETYPE DIEPTE block).
+        // Facts only, per the machine-block template: the archetype and where it sits on the wheel.
+        // The prose that used to stand here was the 12-archetype description of the shadow (and of the
+        // blindspot) — generic to that archetype, written in the first person, and about this profile
+        // only by accident. What these two mean for this configuration is written in DE SCHADUW and
+        // DE BLINDSPOT, from the corpus.
+        const wheelPos = (key) => {
+          const p = key ? ARCHETYPES[key]?.position : null;
+          return p ? ` (${t('resultsModal.pdf.data.position')} ${p})` : '';
+        };
+
         mBold(dash(t('resultsModal.pdf.data.shadowSection')), green);
-        mLine(`${t('resultsModal.pdf.data.shadowArchetype')}: ${result.shadowName || t('resultsModal.pdf.data.notAvailable')}`);
-        mLine(`${t('resultsModal.pdf.data.integrationPath')}: ${result.shadowDescription || t('resultsModal.pdf.data.seeAiSection')}`);
+        mLine(`${t('resultsModal.pdf.data.shadowArchetype')}: ${result.shadowName ? result.shadowName + wheelPos(shk) : t('resultsModal.pdf.data.notAvailable')}`);
         mGap();
 
         mBold(dash(t('resultsModal.pdf.data.blindspotSection')), green);
-        mLine(`${t('resultsModal.pdf.data.blindspotArchetype')}: ${result.blindspotName || t('resultsModal.pdf.data.notAvailable')}`);
-        mLine(`${t('resultsModal.pdf.data.coreBehaviour')}: ${result.blindspotDescription || t('resultsModal.pdf.data.seeAiSection')}`);
-        mLine(`${t('resultsModal.pdf.data.integrationPath')}: ${result.blindspotTension || t('resultsModal.pdf.data.seeAiSection')}`);
+        mLine(`${t('resultsModal.pdf.data.blindspotArchetype')}: ${result.blindspotName ? result.blindspotName + wheelPos(bk) : t('resultsModal.pdf.data.notAvailable')}`);
         mGap();
 
         mBold(SEP, green);
@@ -5104,7 +5111,11 @@ function computeResultFromAnswers(layerAnswers, liveSubjects, lang = 'nl') {
     mainName: primaryArchetype.name,                  // e.g. "De Wijze"
     mainNameEn: primaryArchetype.nameEn || mainKey,
     description: archetypeField(primaryArchetype, 'description', lang),
+    // The three fields of this extension's cell, all from the ratified 132 table — never from the
+    // 12-archetype singles, which describe the Main alone and are not this configuration.
     levensles: getArchetypeQuote(mainKey, supportKey, lang) || null,
+    extensionGift: getExtensionGift(mainKey, supportKey, lang) || null,
+    extensionCurse: getExtensionCurse(mainKey, supportKey, lang) || null,
     mainMotivation: archetypeField(primaryArchetype, 'motivation', lang) || null,
     mainPositive: archetypeField(primaryArchetype, 'positive', lang) || null,
     mainShadowTrait: archetypeField(primaryArchetype, 'shadow', lang) || null,

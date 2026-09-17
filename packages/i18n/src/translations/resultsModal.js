@@ -88,8 +88,8 @@ export default {
       // Portrait variant toggle under the results-card portrait (also decides the PDF portrait)
       portraitToggle: {
         label: { nl: 'Portret', en: 'Portrait' },
-        female: { nl: 'Vrouwelijk', en: 'Feminine' },
-        male: { nl: 'Mannelijk', en: 'Masculine' },
+        female: { nl: 'Feminien', en: 'Feminine' },
+        male: { nl: 'Masculien', en: 'Masculine' },
       },
 
       // Email gate validation
@@ -922,6 +922,8 @@ export default {
 
         shadowSection: { nl: 'SHADOW INTEGRATIE', en: 'SHADOW INTEGRATION' },
         shadowArchetype: { nl: 'Shadow Archetype', en: 'Shadow Archetype' },
+        // Wheel position of the shadow / blindspot archetype in the machine block.
+        position: { nl: 'Positie', en: 'Position' },
         integrationPath: { nl: 'Integration Path', en: 'Integration Path' },
         blindspotSection: { nl: 'BLINDSPOT', en: 'BLINDSPOT' },
         blindspotArchetype: { nl: 'Blindspot Archetype', en: 'Blindspot Archetype' },

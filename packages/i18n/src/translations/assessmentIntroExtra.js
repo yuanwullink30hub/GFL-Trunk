@@ -56,8 +56,8 @@ export default {
       en: 'Manual',
     },
     levelInfo: {
-      nl: 'Level keuze is irrelevant voor jouw account.\nDeze keuze helpt ons gepaste vragen te stellen naar jouw verhouding.',
-      en: 'Your level choice is irrelevant to your account.\nIt only helps us ask questions that suit your relationship to the material.',
+      nl: 'Level keuze is irrelevant voor vergelijking en wordt niet opgeslagen, deze keuze stemt de vragen af naar jouw verhouding.',
+      en: 'Your level choice is irrelevant for comparison and is not stored; it only tunes the questions to your relationship to the material.',
     },
 
     // ── Leave-the-test confirmation ──
@@ -388,7 +388,7 @@ export default {
           en: 'This is not a loose statistic: it follows from the way the model reads. Every choice flows not into one ocean, but spreads across five separate geometric channels — shared hardware, bridges, shadow, learned triangles, friction. \nNot a label — a fingerprint.',
         },
         p4: {
-          nl: '\nToch zit de diepte niet eens in hoeveel vormen er mogelijk zijn. Ze zit in wat we eruit lezen. Dit model reikt tot het oog van de storm: hoe jouw specifieke configuratie zich houdt wanneer de druk oploopt, waar ze het langst standhoudt — waar en op welk punt ze breekt. Niet om je een diagnose te geven, maar om je de vorm van je eigen veerkracht te tonen: waar je rust, waar je rekt, en wat je het kost om overeind te blijven.',
+          nl: '\nToch zit de diepte niet eens in hoeveel vormen er mogelijk zijn. Ze zit in wat we eruit lezen. Dit model reikt tot het oog van de storm: hoe jouw specifieke configuratie zich houdt wanneer de druk oploopt, waar ze het langst standhoudt — waar en op welk punt ze breekt. Niet om je een diagnose te geven, maar om je de vorm van je eigen veerkracht te tonen: waar je rust, waar je rekt, en wat het je kost om overeind te blijven.',
           en: '\nAnd yet the depth does not even lie in how many shapes are possible. It lies in what we read from them. This model reaches all the way into the eye of the storm: how your specific configuration holds when the pressure rises, where it holds out longest — where and at what point it breaks. Not to give you a diagnosis, but to show you the shape of your own resilience: where you rest, where you stretch, and what it costs you to stay standing.',
         },
         p5: {

@@ -69,6 +69,9 @@ export {
 // Archetype Levensles — the 132 extended-archetype life-lessons (Main × Support). Kept standalone
 // (fetched and sent to the AI directly so it needn't search the corpus for them).
 export { getArchetypeQuote, getArchetypeQuoteByKey } from './archetypeQuotes';
+// Gift + curse of the same 132 cells (generated from the canon by scripts/sync-extensions.mjs), so a
+// report renders all three fields of an extension from the ratified table and nowhere else.
+export { getExtensionGift, getExtensionCurse } from './archetypeExtensions';
 export { getArchetypeKeyByName } from './archetypeImages';
 
 // ── Restructure part 1 ──────────────────────────────────────────────────────

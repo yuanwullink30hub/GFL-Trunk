@@ -130,6 +130,9 @@ const ORB_GLOW = { filter: 'drop-shadow(0 0 90px rgba(120,80,200,0.18))' };
 
 // Bold like the container headers, drawn as the same still hologram (HoloWord, sync green).
 const TIMESYNC_STYLE = { fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(13px, 0.7vw)', fontWeight: 700 };
+// A softer hologram than the big header: at this size HoloWord's rim + purple halo lit the panel
+// behind the clock, so its container edge showed through (owner, 2026-09-17). Rim only, dimmer.
+const TIMESYNC_GLOW = { filter: 'drop-shadow(0 0 0.05em rgba(21, 179, 21, 0.35))' };
 const TIMESYNC_TIME_OPTS = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
 const TIMESYNC_DATE_OPTS = { month: '2-digit', day: '2-digit', year: 'numeric' };
 
@@ -148,7 +151,7 @@ const TimeSync = ({ isMobile }) => {
 
   return (
     <div className="text-center whitespace-nowrap">
-      <div className="tracking-widest" style={TIMESYNC_STYLE}><HoloWord tone="green">TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</HoloWord></div>
+      <div className="tracking-widest" style={TIMESYNC_STYLE}><HoloWord tone="green" style={TIMESYNC_GLOW}>TIME SYNC {'/'}{'/'}  {dateString} {'/'}{'/'}  {timeString}</HoloWord></div>
     </div>
   );
 };

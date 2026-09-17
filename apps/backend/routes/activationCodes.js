@@ -24,6 +24,7 @@ const { collections } = require('../db');
 const { normalizeCode, isWellFormed, hashCode, newUnlockId } = require('../services/activationCodes');
 const { recordUnlock, codeHashFor } = require('../services/reportAccess');
 const { unsealCode, SealError } = require('../services/sealedCode');
+const { visitorKey } = require('../middleware/rateLimit');
 
 const router = Router();
 
@@ -55,7 +56,7 @@ setInterval(() => {
 }, WINDOW_MS).unref();
 
 router.post('/redeem', async (req, res) => {
-  const ip = req.ip || 'unknown';
+  const ip = visitorKey(req); // per visitor, not the proxy's address
   if (isLimited(ip)) return res.status(429).json({ error: 'rate_limited' });
 
   const normalized = normalizeCode(req.body?.code);

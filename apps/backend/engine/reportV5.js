@@ -136,9 +136,15 @@ function buildV5Request({ system, bleed, geometryMsg, lineTypeBlock = '', cRunti
 }
 
 /** What the client needs to draw the Spec A1 chart and label it — no geometry echo. */
+/**
+ * What the browser receives from the engine payload: only the Main's two register curves the report
+ * chart draws. Everything else (register band cutpoints, corpus enrichment, per-state values, ledgers,
+ * links, stamps) is engine internals and stays on the server.
+ */
 function clientPayload(payload) {
-  const { geometry, ...rest } = payload;
-  return rest;
+  const reg = payload && payload.main && payload.main.register;
+  if (!reg) return null;
+  return { main: { register: { register_baseline_pct: reg.register_baseline_pct, register_transform_pct: reg.register_transform_pct } } };
 }
 
 module.exports = { buildV5Request, clientPayload, engineInputs, geometryPassthrough, loadMasterPrompt };

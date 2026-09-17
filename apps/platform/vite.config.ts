@@ -22,7 +22,9 @@ export default defineConfig({
   },
   build: {
     target: 'es2020',
-    sourcemap: true,
+    // No source maps in the build: they would publish the original, commented source of everything
+    // that runs in the browser (scoring, orb engine, report texts) next to the minified files.
+    sourcemap: false,
     commonjsOptions: {
       include: [/node_modules/, /orb-engine/],
       transformMixedEsModules: true,

@@ -17,6 +17,7 @@ const config = require('../config');
 const nodemailer = require('nodemailer');
 const { buildAccessEmail } = require('../services/accessEmail');
 const { redactUploadText, neutralFileName } = require('../services/uploadRedaction');
+const { rateLimit, createCounter } = require('../middleware/rateLimit');
 
 // Level-specific prompt builders
 const promptBuilders = {
@@ -57,18 +58,14 @@ const router = Router();
 /**
  * Body:
  * {
- *   provider: "openai" | "claude" | "grok",   // optional, defaults to claude
- *   model: "gpt-4o",                           // optional, uses provider default
  *   archetypeKey: "JUDGE",                      // required
  *   supportArchetype: "RULER",                  // optional
  *   supportGroup: "RULING",                     // optional
  *   mainGroup: "RULING",                        // optional
  *   extendedArchetypeName: "The Arbiter",       // optional
- *   userQuestion: "...",                         // optional
  *   oceanScores: { O:4, C:9, E:4, A:3, N:3 },  // optional
- *   systemPrompt: "...",                         // optional full override
- *   maxTokens: 2048,                             // optional
- *   temperature: 0.7,                            // optional
+ *   (provider, model, systemPrompt, userQuestion, maxTokens and temperature are NOT accepted:
+ *    they come from the server config only — see "Who may run an analysis" below.)
  *
  *   // ── Advanced Ontology fields ──
  *   shadowArchetype: "TRICKSTER",               // 180° shadow of Main
@@ -98,7 +95,22 @@ const router = Router();
  * is provided via admin-uploaded documents stored in MongoDB
  * (collection: promptDocuments). These are automatically included in every analysis.
  */
-router.post('/analyze', async (req, res) => {
+// ── Who may run an analysis ──
+// This endpoint needs no login (the report is decoupled from any account), and every call is a long,
+// paid model call. So: the prompt, question, model and token budget are the server's alone — nothing
+// in the request can change them — and calls are limited per visitor and in total per hour.
+const REPORT_MAX_TOKENS = 30000; // headroom for the full report (was sent by the client; now fixed here)
+const ANALYZE_PER_VISITOR = Number(process.env.AI_ANALYZE_PER_VISITOR_PER_HOUR) || 6;
+const ANALYZE_TOTAL = Number(process.env.AI_ANALYZE_TOTAL_PER_HOUR) || 300;
+const analyzePerVisitor = rateLimit({ max: ANALYZE_PER_VISITOR, windowMs: 60 * 60 * 1000 });
+const analyzeTotal = createCounter({ max: ANALYZE_TOTAL, windowMs: 60 * 60 * 1000 });
+function analyzeBudget(req, res, next) {
+  if (analyzeTotal.hit('all')) return next();
+  console.warn(`[AI] hourly analysis budget (${ANALYZE_TOTAL}) reached — refusing until the window resets`);
+  return res.status(429).json({ error: 'busy' });
+}
+
+router.post('/analyze', analyzePerVisitor, analyzeBudget, async (req, res) => {
   // Set SSE headers — use res.set() so CORS middleware headers are preserved
   res.set({
     'Content-Type': 'text/event-stream',
@@ -114,18 +126,12 @@ router.post('/analyze', async (req, res) => {
 
   try {
     const {
-      provider,
-      model,
       archetypeKey,
       supportArchetype,
       supportGroup,
       mainGroup,
       extendedArchetypeName,
-      userQuestion,
       oceanScores,
-      systemPrompt,
-      maxTokens,
-      temperature,
       // Advanced Ontology fields
       shadowArchetype,
       blindspotArchetype,
@@ -152,7 +158,6 @@ router.post('/analyze', async (req, res) => {
       level,
       // Group dynamics (Dual-Core)
       subgroups,
-      radarData,
       // The relevant Levensles (Main×SupportGroup), sent by the frontend so the AI
       // gets it directly without searching the corpus.
       levensles,
@@ -164,12 +169,6 @@ router.post('/analyze', async (req, res) => {
     if (!archetypeKey) {
       sendEvent('error', { error: 'archetypeKey is required' });
       return res.end();
-    }
-
-    // Log radarData for debugging
-    if (radarData) {
-      console.log('[AI] radarData received:');
-      console.log(JSON.stringify(radarData, null, 2));
     }
 
     // Fetch admin prompt config from MongoDB for defaults
@@ -367,9 +366,8 @@ router.post('/analyze', async (req, res) => {
       }
     }
 
-    // Report pipeline (config.reportPipeline, set in the repo: the engine pipeline). Free-form
-    // userQuestion calls always stay on the v4.3 path.
-    const pipeline = !userQuestion && config.reportPipeline === 'v5.2' ? 'v5.2' : 'v4.3';
+    // Report pipeline (config.reportPipeline, set in the repo: the engine pipeline).
+    const pipeline = config.reportPipeline === 'v5.2' ? 'v5.2' : 'v4.3';
     const isV5 = pipeline === 'v5.2';
 
     // Build messages — include uploaded context documents. v5.2: the Corpus Manifest slice is the
@@ -403,7 +401,7 @@ router.post('/analyze', async (req, res) => {
     // dashboard) — the only copy, for both pipelines. Together with the cached corpus it is the
     // cached prefix. v5.2 refuses to run without it (buildV5Request).
     const adminMeta = adminConfig.systemPromptTemplate || '';
-    const system = systemPrompt || adminMeta || '';
+    const system = adminMeta;
 
     // ── C-runtime: engine pre-computes the composed D-state + C-magnitude (the model
     //    reads these; it does not recompute). Non-fatal if the geometry is incomplete. ──
@@ -441,7 +439,7 @@ router.post('/analyze', async (req, res) => {
     // ── Main↔Support line-type: resolved deterministically from the static lookup table
     //    so the model never re-derives the colour (the recurring Green/Blue mistake). The
     //    resolved tag rides in the payload; the full table rides as a separate reference doc. ──
-    const lineTypeBlock = (!userQuestion && archetypeKey && supportArchetype)
+    const lineTypeBlock = (archetypeKey && supportArchetype)
       ? formatLineTypeBlock({
           mainKey: archetypeKey, supportKey: supportArchetype,
           shadowKey: shadowArchetype, blindspotKey: blindspotArchetype,
@@ -450,7 +448,7 @@ router.post('/analyze', async (req, res) => {
 
     // ── User payload: per-user geometry (buildUserMessage) + the line-type tag + the
     //    C-runtime block + the relevant Levensles. Corpus rides separately as cached context. ──
-    const geometryMsg = userQuestion || builder.buildUserMessage(promptData);
+    const geometryMsg = builder.buildUserMessage(promptData);
 
     // ── v5.2: runtime engine (D-path) → Corpus Manifest slice → role-tagged payload. An engine
     //    error (RoleError, a Support outside the active set, incomplete geometry) is fatal for the
@@ -467,7 +465,7 @@ router.post('/analyze', async (req, res) => {
         `stamps ${JSON.stringify(v5.payload.stamps)}`);
     }
 
-    const user = userQuestion ? geometryMsg : v5 ? v5.user : [
+    const user = v5 ? v5.user : [
       geometryMsg,
       lineTypeBlock,
       cRuntime ? formatCRuntimeBlock(cRuntime) : '',
@@ -475,10 +473,8 @@ router.post('/analyze', async (req, res) => {
     ].filter(Boolean).join('\n\n');
 
     // Cached static-prefix context. v4.3: the full corpus (single source of truth; v4 §1.1 — read
-    // it fully before translating). v5.2: the manifest slice. Skipped for free-form userQuestion calls.
-    const cachedContext = userQuestion
-      ? null
-      : v5 ? v5.cachedContext
+    // it fully before translating). v5.2: the manifest slice.
+    const cachedContext = v5 ? v5.cachedContext
       : `═══ DELTAWERKEN VOLLEDIG CORPUS (single source of truth — Matrix 360, Rosetta, de vier geometrische bronmodellen) ═══\n${getCorpusText(language)}`;
 
     console.log('[AI] ═══════════════════════════════════════════════════════════');
@@ -501,11 +497,11 @@ router.post('/analyze', async (req, res) => {
     // ── Stage 1: Data compiled, prompt built ──
     sendEvent('progress', { stage: 1, message: 'Data verwerkt — AI analyse gestart...' });
 
-    // Request body overrides defaults; ignore admin model/provider (no UI selector)
-    const finalProvider = provider || undefined;
-    const finalModel = model || undefined;
-    const finalMaxTokens = maxTokens || adminConfig.maxTokens || 16000;
-    const finalTemperature = temperature ?? adminConfig.temperature ?? 0.7;
+    // Server config only (see "Who may run an analysis"): default provider + model, fixed token budget.
+    const finalProvider = undefined;
+    const finalModel = undefined;
+    const finalMaxTokens = REPORT_MAX_TOKENS;
+    const finalTemperature = adminConfig.temperature ?? 0.7;
 
     console.log('[AI] Calling AI with config:');
     console.log('[AI]   Provider:', finalProvider || '(default)');
@@ -557,7 +553,7 @@ router.post('/analyze', async (req, res) => {
     // them. Stored as a draft keyed by the orb code's hash; register / orb-link merge it
     // into the reading's orbHistory entry when the code is claimed. ──
     try {
-      if (!userQuestion && result && typeof result.analysis === 'string') {
+      if (result && typeof result.analysis === 'string') {
         const { extractKaartSection } = require('../services/readingExtract');
         const kaart = extractKaartSection(result.analysis);
         result.analysis = kaart.cleaned;
@@ -581,26 +577,23 @@ router.post('/analyze', async (req, res) => {
     sendEvent('progress', { stage: 2, message: 'AI analyse compleet — resultaten verwerken...' });
 
     // ── Send final result ──
+    // Only what the report page draws. The engine's internals (band cutpoint tables, corpus fields,
+    // C-runtime values, ledgers, the corpus manifest) and the provider/model/token counts stay here.
     sendEvent('result', {
       archetypeKey,
       supportGroup: supportGroup || null,
       extendedArchetypeName: extendedArchetypeName || null,
       uploadedOceanScores: uploadedOceanScores || null,
-      // The engine's pre-computed C-runtime (composed D-state + C-magnitude) so the
-      // frontend can render the Plastische Morfologie / De Stille Stem visuals
-      // without recomputing. null when the geometry was incomplete.
-      cRuntime: cRuntime || null,
-      // Which report pipeline produced this analysis. v5.2 adds the role-tagged engine payload
-      // (the Spec A1 chart reads enginePayload.main.register — two curves, both the Main's) and the
-      // corpus manifest the model received. The geometry passthrough is the client's own data, left out.
+      // v4.3 morphology chart: the three D-curves only.
+      cRuntime: cRuntime && cRuntime.d_curve ? { d_curve: cRuntime.d_curve } : null,
       pipeline,
+      // v5.2 morphology chart (Spec A1): the Main's two register curves only.
       enginePayload: v5 ? reportV5.clientPayload(v5.payload) : null,
-      corpusManifest: v5 ? v5.manifest : null,
       // Authoritative orb profile code (LC_ORB3_…), radial+purple-gated with the real polar_gap —
       // SEALED (services/sealedCode.js): the browser cannot read it. The raw code is handed over
       // only when the full report is unlocked (payment or activation code). '' when geometry incomplete.
       sealedOrbCode: orbCode ? sealCode(orbCode) : '',
-      ...result,
+      analysis: result.analysis,
     });
 
     res.end();

@@ -549,11 +549,7 @@ const AssessmentResultsModal = ({
           // UI language → backend picks the matching corpus (nl → Dutch, else English).
           language,
           level: 'advanced',
-          // v4.3's bigger budgets pushed the report past the old 18k cap, truncating the tail
-          // sections (Resonantie, Alchemie/Schakelbord/Ontologie). The backend now streams the
-          // Claude call (SDK .finalMessage()), which sidesteps the non-streaming 10-min guard
-          // (max_tokens > ~21,333), so we can give comfortable headroom. Overrides the admin maxTokens.
-          maxTokens: 30000,
+          // The token budget (30000) is fixed server-side; the endpoint ignores model settings sent here.
           uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
         }, (stage, message) => {
           setAiStage(stage);

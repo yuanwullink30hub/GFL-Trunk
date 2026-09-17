@@ -26,6 +26,8 @@ const { resolvePaymentConfig, hasTestAccess } = require('../services/paymentConf
 const testAccessOf = (req) => hasTestAccess(req.get('x-gfl-payments-test'));
 const { PaymentError, payFullReport, statusForClient, markDelivered } = require('../services/payments');
 
+const { visitorKey } = require('../middleware/rateLimit');
+
 const router = Router();
 
 // ── In-memory limiters (per IP) ──
@@ -38,7 +40,7 @@ function limiter(max) {
     for (const [ip, e] of hits) if (now > e.resetAt) hits.delete(ip);
   }, WINDOW_MS).unref();
   return (req, res, next) => {
-    const ip = req.ip || 'unknown';
+    const ip = visitorKey(req); // per visitor, not the proxy's address
     const now = Date.now();
     const e = hits.get(ip);
     if (!e || now > e.resetAt) hits.set(ip, { count: 1, resetAt: now + WINDOW_MS });

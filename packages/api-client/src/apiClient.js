@@ -73,6 +73,10 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/** For sibling modules (toolTickets.js): the API base and the account headers (private-window aware). */
+export const apiBaseUrl = () => API_BASE;
+export const accountAuthHeaders = () => authHeaders();
+
 // ── Auth ──
 
 /**

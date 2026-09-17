@@ -92,6 +92,15 @@ async function connectDB() {
   // Invoices — indexed by userId for fast lookup across viewports/devices
   await db.collection('invoices').createIndex({ userId: 1, savedAt: -1 });
 
+  // Anonymous tool tickets (docs/LOCAL_WORKSTATION_CONTRACT.md §7a). One signing key per month; a
+  // per-account COUNT of issued tickets (never which tickets); spent tickets by hash only, expiring
+  // with their epoch. No timestamps that could be lined up with an account's activity.
+  await db.collection('toolTicketKeys').createIndex({ epoch: 1 }, { unique: true });
+  await db.collection('toolTicketIssuance').createIndex({ userId: 1, epoch: 1 }, { unique: true });
+  await db.collection('toolTicketIssuance').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  await db.collection('toolTicketsSpent').createIndex({ hash: 1 }, { unique: true });
+  await db.collection('toolTicketsSpent').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
   // Internal messages — inbox query (recipient, newest first)
   await db.collection('messages').createIndex({ toUserId: 1, at: -1 });
 
@@ -285,6 +294,9 @@ const collections = {
   stripeEvents: () => getDB().collection('stripeEvents'),
   paymentSettings: () => getDB().collection('paymentSettings'),
   messages: () => getDB().collection('messages'),
+  toolTicketKeys: () => getDB().collection('toolTicketKeys'),
+  toolTicketIssuance: () => getDB().collection('toolTicketIssuance'),
+  toolTicketsSpent: () => getDB().collection('toolTicketsSpent'),
   kaartDrafts: () => getDB().collection('kaartDrafts'),
 };
 

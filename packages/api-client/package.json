@@ -4,7 +4,16 @@
   "private": true,
   "type": "module",
   "main": "./src/index.js",
-  "exports": { ".": "./src/index.js" },
-  "scripts": { "typecheck": "tsc --noEmit" },
-  "devDependencies": { "typescript": "^5.5.0" }
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@cloudflare/blindrsa-ts": "^0.4.6"
+  }
 }

@@ -770,11 +770,13 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
             holo, footprint) — it's ONE card; only the inner body content swaps with the tab.
             Tabs are Row 1 of the card; this is just the body. */}
         {tab !== 'openbaar' && (
-        <ProfileCard payload={card || {}} tabsRow={tabsRow}>
+        // Werkruimte mirrors the tab row with an invisible filler at the bottom, so its content sits
+        // exactly as far from the bottom edge as from the top edge.
+        <ProfileCard payload={card || {}} tabsRow={tabsRow} mirrorTabs={tab === 'werkruimte'}>
 
           {/* content — full width, left-aligned; account/data only (no orb: the crystal identity
               lives on the Openbaar card). */}
-          <div style={{ width: '100%', minWidth: 0 }}>
+          <div style={{ width: '100%', minWidth: 0, flex: '1 0 auto', display: 'flex', flexDirection: 'column' }}>
 
             {/* ── POLICY VIEW — a terms/policy page swaps the card body IN PLACE (same shell,
                 same footprint — the intro card's "Lees mij" pattern). Close button top-left. */}

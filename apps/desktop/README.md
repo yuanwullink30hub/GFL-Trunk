@@ -77,7 +77,31 @@ Terms art. 5b rather than hidden. To sign, add credentials to `electron-builder.
 Apple needs a Developer ID and notarisation; Windows needs an OV certificate or Azure
 Trusted Signing.
 
-`RELEASE.available` in
-[WorkspaceTab.jsx](../platform/src/components/assessment/WorkspaceTab.jsx) stays `false`
+`DESKTOP_RELEASE.available` in
+[localWorkspace.js](../platform/src/workspace/localWorkspace.js) stays `false`
 until the installers are actually published — flip it, and check the filenames still match
-`artifactName` in `electron-builder.yml`.
+`artifactName` in `electron-builder.yml` (and bump `DESKTOP_RELEASE.version` with each release).
+
+## Updates
+
+The app is the platform, so every platform release is an app release. The app updates itself
+([src/updater.js](src/updater.js), electron-updater): it checks the feed on start and every
+4 hours, downloads a new version in the background, and the page shows **Nu herstarten**
+(also in Profiel → Werkruimte). An update left waiting installs when the app quits. The
+workspace folder is outside the install directory and is never touched.
+
+To release a new version:
+
+1. Bump `version` in `package.json` (the feed compares versions — same number = no update).
+2. Build the platform, then `pnpm run dist:win` / `dist:mac`.
+3. Upload **everything** from `release/` that belongs to the version to the R2 bucket behind
+   `https://downloads.gardenforlife.nl` (`publish` in `electron-builder.yml`): the installers,
+   the mac `.zip` files, the `.blockmap` files and `latest.yml` / `latest-mac.yml`
+   / `latest-linux.yml`. Upload the installers first and the `latest*.yml` files last, so no
+   app sees a feed pointing at a file that isn't there yet.
+4. Bump `DESKTOP_RELEASE.version` so the website's download button fetches the new installer.
+
+**macOS only installs updates into a signed app.** Until we sign, the updater on a Mac reports
+an error and Werkruimte says it could not check; Mac users update by downloading the new dmg.
+Windows (unsigned NSIS) and Linux (AppImage) update in-app today. Development runs
+(`pnpm run start`) never check.

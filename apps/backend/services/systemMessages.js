@@ -15,11 +15,11 @@ const KINDS = {
   // First message of every new account: guides the user to Profiel → Werkruimte, where the private
   // folder (desktop app) is set up — the tools stay locked until it is.
   'welcome-workspace': {
-    title: 'Welkom — richt eerst je privé-map in',
+    title: 'Welkom — Download eerst onze software',
     // Same text as i18n shell.desktop.systemMessages['welcome-workspace'] (the client words it from there).
     body: 'Welkom Tuinierder,\n\n'
-      + "Zoals eerder vermeld slaan wij zo min mogelijk privé-data van jou op, om gebruik te maken van het volledige platform en al haar programma's moet je eerst een werkmap downloaden.\n"
-      + 'Zonder deze map werken de meeste modellen niet — het is heel simpel, klik de knop onderaan het bericht, lees de instructies in de werkruimte en download de software.\n\n'
+      + 'Hieronder vind je de sleutel tot de software van ons platform.\n'
+      + 'De applicatie gebruikt precies dezelfde interface als de website, maar dan zonder het gevaar van een grootschalig data-lek.\n\n'
       + 'Wij hebben het volste vertrouwen dat je de weg tussen de sterren snel hebt gevonden, is de nebulae te dik? raadpleeg dan de FAQ of reik uit naar een moderator in het netwerk.\n\n\n'
       + "— Voluntas Amor, Elefthéros Fati",
     action: { type: 'workspace' },

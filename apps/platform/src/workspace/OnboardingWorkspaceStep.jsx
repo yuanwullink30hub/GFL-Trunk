@@ -20,7 +20,7 @@ import DesktopDownloadButton from './DesktopDownloadButton';
 /** Body copy is Figtree per the design tokens; Lexend Mega (FONT) is chrome only. */
 const BODY = "'Figtree', sans-serif";
 
-const para = { fontFamily: BODY, fontSize: 'max(11px, 0.56vw)', lineHeight: 1.6, color: '#FFFEF0', margin: '0 0 0.6rem' };
+const para = { fontFamily: BODY, fontSize: 'max(11px, 0.56vw)', lineHeight: 1.6, whiteSpace: 'pre-line', color: '#FFFEF0', margin: '0 0 0.6rem' };
 const dim = { ...para, color: 'rgba(255, 254, 240, 0.55)' };
 
 const Notice = ({ rgb, children }) => (

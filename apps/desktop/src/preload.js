@@ -16,6 +16,21 @@ contextBridge.exposeInMainWorld('gfl', {
   /** { version, platform, apiOrigin } */
   info: () => ipcRenderer.invoke('app:info'),
 
+  update: {
+    /** { state: dev|idle|checking|current|downloading|ready|error, version, current, percent? } */
+    status: () => ipcRenderer.invoke('update:status'),
+    /** Look for a new version now. */
+    check: () => ipcRenderer.invoke('update:check'),
+    /** Restart into the downloaded version. Only does something when state is 'ready'. */
+    install: () => ipcRenderer.invoke('update:install'),
+    /** Subscribe to status changes. Returns the unsubscribe function. */
+    onStatus: (fn) => {
+      const handler = (_e, s) => fn(s);
+      ipcRenderer.on('update:status', handler);
+      return () => ipcRenderer.removeListener('update:status', handler);
+    },
+  },
+
   workspace: {
     /** Is a folder connected, which layout version, and did startup refuse it? */
     status: () => ipcRenderer.invoke('workspace:status'),

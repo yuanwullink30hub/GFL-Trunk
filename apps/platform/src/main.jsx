@@ -37,6 +37,10 @@ const isReportPreview = import.meta.env.DEV &&
 const isWorkspacePreview = import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has('workspacepreview');
 
+// Dev-only Werkruimte tab preview (browser view → download gate): ?werkruimtepreview=1.
+const isWerkruimtePreview = import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).has('werkruimtepreview');
+
 // Password- or email-change confirmation landing (?pwverify / ?emailverify token from the email
 // link). Mounts a tiny standalone page that applies the change and shows the result — no heavy
 // 3D app, any device.
@@ -80,6 +84,15 @@ if (isPaymentReturn) {
     <LanguageProvider>
       <React.Suspense fallback={null}>
         <WorkspacePreviewHarness />
+      </React.Suspense>
+    </LanguageProvider>
+  );
+} else if (isWerkruimtePreview) {
+  const WerkruimtePreviewHarness = React.lazy(() => import('./dev/WerkruimtePreviewHarness'));
+  root.render(
+    <LanguageProvider>
+      <React.Suspense fallback={null}>
+        <WerkruimtePreviewHarness />
       </React.Suspense>
     </LanguageProvider>
   );

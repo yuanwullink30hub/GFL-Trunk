@@ -23,3 +23,4 @@ Known contradiction (see `meta.knownContradiction`): `C.gold` is `#f97316` but f
 
 - Raw `LC_ORB` codes are login credentials: never store or return them from the backend (SHA-256 hash only); `publicOrb` is render-only.
 - Nebula palette stays purple/orange/amber/violet with curvy cloud formations.
+- **Tools are anonymous by contract** ([docs/LOCAL_WORKSTATION_CONTRACT.md](docs/LOCAL_WORKSTATION_CONTRACT.md) §7a): every tool reaches the server only via `callTool()` (`packages/api-client/src/toolTickets.js`) — no account token, no cookies, a blind-signed ticket, no identifiers in the input — and registers a pure `handler(input)` in `apps/backend/services/toolRegistry.js` that logs and stores nothing. A tool that can't follow this doesn't ship.

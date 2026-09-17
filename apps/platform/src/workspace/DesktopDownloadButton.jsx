@@ -5,14 +5,18 @@ import { FONT } from '@gfl/ui';
 import { DESKTOP_PLATFORMS, desktopDownload } from './localWorkspace';
 
 const BODY = "'Figtree', sans-serif";
-// Dashboard surface → orange accent (design tokens: pick ONE per surface).
-const ACCENT = '#f97316';
-const RGB = '249, 115, 22';
+// Arrow icons use the platform's provenance green — the same as the sync/date footer on the profile card.
+const MINT = '#15b315';
+// Accent per surface (design tokens: pick ONE per surface). Orange = dashboard/form, amber = brand.
+export const ACCENTS = {
+  orange: { hex: '#f97316', rgb: '249, 115, 22' },
+  amber: { hex: '#ffae00', rgb: '255, 174, 0' },
+};
 
-/** Tray-arrow download glyph, drawn in the current text colour. */
+/** Tray-arrow download glyph, provenance green. */
 const DownloadIcon = () => (
-  <svg width="1.15em" height="1.15em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+  <svg width="1.15em" height="1.15em" viewBox="0 0 24 24" fill="none" stroke={MINT} strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, filter: 'drop-shadow(0 0 4px rgba(21, 179, 21, 0.5))' }}>
     <path d="M12 3v12" />
     <path d="M7 10l5 5 5-5" />
     <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
@@ -20,41 +24,33 @@ const DownloadIcon = () => (
 );
 
 const Chevron = ({ open }) => (
-  <svg width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"
+  <svg width="1.15em" height="1.15em" viewBox="0 0 24 24" fill="none" stroke={MINT} strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-    style={{ transition: 'transform 0.25s', transform: open ? 'rotate(180deg)' : 'none' }}>
-    <path d="M6 9l6 6 6-6" />
+    style={{ transition: 'transform 0.25s', transform: open ? 'rotate(180deg)' : 'none', filter: 'drop-shadow(0 0 4px rgba(21, 179, 21, 0.5))' }}>
+    <path d="M3.5 7.5l8.5 8.5 8.5-8.5" />
   </svg>
 );
 
-const CORNER = '0.65rem';
-const corners = (col) => [
-  { top: -2, left: -4, borderTop: `1px solid ${col}`, borderLeft: `1px solid ${col}`, borderTopLeftRadius: 2 },
-  { top: -2, right: -4, borderTop: `1px solid ${col}`, borderRight: `1px solid ${col}`, borderTopRightRadius: 2 },
-  { bottom: -2, left: -4, borderBottom: `1px solid ${col}`, borderLeft: `1px solid ${col}`, borderBottomLeftRadius: 2 },
-  { bottom: -2, right: -4, borderBottom: `1px solid ${col}`, borderRight: `1px solid ${col}`, borderBottomRightRadius: 2 },
-];
-
-const segment = (lit) => ({
-  background: 'transparent', border: 'none', outline: 'none', cursor: 'pointer',
-  fontFamily: FONT, fontSize: 'max(11px, 0.55vw)', fontWeight: 'bold',
-  textTransform: 'uppercase', letterSpacing: '0.12em',
-  color: lit ? ACCENT : `rgba(${RGB}, 0.7)`,
-  textShadow: lit ? `0 0 8px rgba(${RGB}, 0.4)` : 'none',
-  transition: 'color 0.25s, text-shadow 0.25s',
-  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-});
+const corners = (col, size, w) => [
+  { top: -3, left: -5, borderTop: `${w} solid ${col}`, borderLeft: `${w} solid ${col}`, borderTopLeftRadius: 3 },
+  { top: -3, right: -5, borderTop: `${w} solid ${col}`, borderRight: `${w} solid ${col}`, borderTopRightRadius: 3 },
+  { bottom: -3, left: -5, borderBottom: `${w} solid ${col}`, borderLeft: `${w} solid ${col}`, borderBottomLeftRadius: 3 },
+  { bottom: -3, right: -5, borderBottom: `${w} solid ${col}`, borderRight: `${w} solid ${col}`, borderBottomRightRadius: 3 },
+].map((s) => ({ ...s, width: size, height: size }));
 
 /**
- * The desktop-app download as one house button (SciFiButton look: transparent body, corner
- * brackets, orange glow on hover), split by a clear divider:
- *   [ ⤓ DOWNLOAD VOOR ┃ WINDOWS ˅ ]
- * the left part starts the download, the right part IS the choice — it shows the system (guessed
- * from the browser) and opens a menu that swaps it for Windows, Mac (Apple Silicon / Intel) or Linux.
+ * The desktop-app download as one house button (SciFiButton look: corner brackets, accent glow),
+ * split by a clear divider:
+ *   [ ˅ WINDOWS ┃ APP DOWNLOADEN ⤓ ]
+ * the left part IS the choice — it shows the system (guessed from the browser) and opens a menu that
+ * swaps it for Windows, Mac (Apple Silicon / Intel) or Linux; the right part starts the download.
+ * `prominent` = the call-to-action version: larger, a tinted 135° fill and a slow breathing glow
+ * (decorative; frozen on low-gpu, still reads as a lit button).
  * Until the installers are on R2 (DESKTOP_RELEASE.available) a click downloads nothing.
  */
-export default function DesktopDownloadButton({ fullWidth = true }) {
+export default function DesktopDownloadButton({ fullWidth = true, accent = 'orange', prominent = false, showMeta = true }) {
   const { t } = useLanguage();
+  const { hex: ACCENT, rgb: RGB } = ACCENTS[accent] || ACCENTS.orange;
   const [chosen, setChosen] = useState(null);
   const [open, setOpen] = useState(false);
   const [hovMain, setHovMain] = useState(false);
@@ -62,12 +58,12 @@ export default function DesktopDownloadButton({ fullWidth = true }) {
   const [hovItem, setHovItem] = useState(null);
   const rootRef = useRef(null);
   const menuRef = useRef(null);
-  const [menuPos, setMenuPos] = useState(null); // { top, right, width } in viewport px
+  const [menuPos, setMenuPos] = useState(null); // { top, left, width } in viewport px
 
   const download = desktopDownload(chosen);
   const ext = download.fileName ? download.fileName.split('.').pop() : '';
   const lit = hovMain || hovMenu || open;
-  const bracket = lit ? ACCENT : `rgba(${RGB}, 0.45)`;
+  const bracket = lit ? ACCENT : `rgba(${RGB}, ${prominent ? 0.75 : 0.45})`;
 
   // The menu is portalled to <body>: the card around this button is itself a backdrop-filter glass
   // panel, and a nested backdrop-filter only blurs inside that panel — so in place the menu would
@@ -76,7 +72,7 @@ export default function DesktopDownloadButton({ fullWidth = true }) {
     if (!open) return undefined;
     const place = () => {
       const r = rootRef.current && rootRef.current.getBoundingClientRect();
-      if (r) setMenuPos({ top: r.bottom + 7, right: window.innerWidth - r.right, width: r.width });
+      if (r) setMenuPos({ top: r.bottom + 7, left: r.left, width: r.width });
     };
     place();
     window.addEventListener('resize', place);
@@ -99,32 +95,34 @@ export default function DesktopDownloadButton({ fullWidth = true }) {
 
   const start = () => { if (download.available) window.location.href = download.href; };
 
+  const pad = prominent ? '0.95rem 0.8rem' : '0.6rem 1.2rem';
+  const fontSize = prominent ? 'max(11px, 0.6vw)' : 'max(11px, 0.55vw)';
+  const segment = (hot) => ({
+    background: hot ? `rgba(${RGB}, 0.14)` : 'transparent', border: 'none', outline: 'none', cursor: 'pointer',
+    fontFamily: FONT, fontSize, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: prominent ? '0.12em' : '0.14em', whiteSpace: 'nowrap',
+    color: hot ? ACCENT : prominent ? `rgba(${RGB}, 0.92)` : `rgba(${RGB}, 0.7)`,
+    textShadow: hot || prominent ? `0 0 10px rgba(${RGB}, ${hot ? 0.55 : 0.3})` : 'none',
+    transition: 'color 0.25s, text-shadow 0.25s, background 0.25s',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: pad, minWidth: 0,
+  });
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: fullWidth ? 'stretch' : 'flex-start', gap: '0.6rem', margin: '1rem 0.25rem 0.4rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: fullWidth ? 'stretch' : 'flex-start', gap: '0.6rem', margin: prominent ? '0.4rem 0.35rem 0' : '1rem 0.25rem 0.4rem' }}>
+      {prominent && (
+        <style>{`@keyframes gflGateBreathe { 0%, 100% { box-shadow: 0 0 18px rgba(${RGB}, 0.18), inset 0 0 18px rgba(${RGB}, 0.06); } 50% { box-shadow: 0 0 34px rgba(${RGB}, 0.42), inset 0 0 22px rgba(${RGB}, 0.12); } }`}</style>
+      )}
       <div ref={rootRef} style={{ position: 'relative', display: fullWidth ? 'flex' : 'inline-flex' }}>
-        {/* Button body: main segment + divider + chevron segment, one bracket frame around both */}
+        {/* Button body: main segment + divider + OS segment, one bracket frame around both */}
         <div style={{
-          position: 'relative', display: 'flex', alignItems: 'stretch', width: '100%',
-          borderRadius: '0.15rem', background: lit ? `rgba(${RGB}, 0.06)` : 'transparent',
-          boxShadow: lit ? `0 0 20px rgba(${RGB}, 0.12)` : 'none', transition: 'background 0.25s, box-shadow 0.25s',
+          position: 'relative', display: 'flex', alignItems: 'stretch', width: '100%', borderRadius: '0.15rem',
+          background: prominent
+            ? `linear-gradient(135deg, rgba(${RGB}, ${lit ? 0.2 : 0.13}) 0%, rgba(${RGB}, 0.04) 55%, rgba(168, 85, 247, ${lit ? 0.12 : 0.07}) 100%)`
+            : (lit ? `rgba(${RGB}, 0.06)` : 'transparent'),
+          border: prominent ? `1px solid rgba(${RGB}, ${lit ? 0.7 : 0.4})` : 'none',
+          boxShadow: prominent ? (lit ? `0 0 34px rgba(${RGB}, 0.5)` : undefined) : (lit ? `0 0 20px rgba(${RGB}, 0.12)` : 'none'),
+          animation: prominent && !lit ? 'gflGateBreathe 3.6s ease-in-out infinite' : 'none',
+          transition: 'background 0.25s, box-shadow 0.25s, border-color 0.25s',
         }}>
-          <button
-            type="button"
-            onClick={start}
-            onMouseEnter={() => setHovMain(true)}
-            onMouseLeave={() => setHovMain(false)}
-            title={download.available ? download.fileName : undefined}
-            style={{ ...segment(hovMain), flex: 1, gap: '0.6rem', padding: '0.6rem 1.2rem', minWidth: 0 }}
-          >
-            <DownloadIcon />
-            <span style={{ minWidth: 0 }}>{t('clientOrb.modal.workspace.download.for')}</span>
-          </button>
-          <span aria-hidden="true" style={{
-            width: 3, flexShrink: 0, margin: '0.3rem 0', borderRadius: 2,
-            background: `rgba(${RGB}, ${lit ? 0.85 : 0.55})`,
-            boxShadow: lit ? `0 0 8px rgba(${RGB}, 0.5)` : 'none',
-            transition: 'background 0.25s, box-shadow 0.25s',
-          }} />
           <button
             type="button"
             aria-haspopup="menu"
@@ -134,20 +132,37 @@ export default function DesktopDownloadButton({ fullWidth = true }) {
             onClick={() => setOpen((o) => !o)}
             onMouseEnter={() => setHovMenu(true)}
             onMouseLeave={() => setHovMenu(false)}
-            style={{ ...segment(hovMenu || open), flex: 1, gap: '0.55rem', padding: '0.6rem 1.2rem', minWidth: 0 }}
+            style={{ ...segment(hovMenu || open), flex: '1 1 auto', gap: '0.45rem' }}
           >
-            <span style={{ minWidth: 0 }}>{t(`clientOrb.modal.workspace.download.short.${download.platform}`)}</span>
-            <Chevron open={open} />
+            <span style={{ display: 'inline-flex', flexShrink: 0 }}><Chevron open={open} /></span>
+            <span style={{ minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t(`clientOrb.modal.workspace.download.short.${download.platform}`)}</span>
           </button>
-          {corners(bracket).map((s, i) => (
-            <div key={i} style={{ position: 'absolute', width: CORNER, height: CORNER, pointerEvents: 'none', transition: 'border-color 0.25s', ...s }} />
+          <span aria-hidden="true" style={{
+            width: 3, flexShrink: 0, margin: prominent ? '0.45rem 0' : '0.3rem 0', borderRadius: 2,
+            background: `rgba(${RGB}, ${lit ? 0.9 : 0.6})`,
+            boxShadow: `0 0 ${lit ? 10 : 6}px rgba(${RGB}, ${lit ? 0.6 : 0.35})`,
+            transition: 'background 0.25s, box-shadow 0.25s',
+          }} />
+          <button
+            type="button"
+            onClick={start}
+            onMouseEnter={() => setHovMain(true)}
+            onMouseLeave={() => setHovMain(false)}
+            title={download.available ? download.fileName : undefined}
+            style={{ ...segment(hovMain), flex: prominent ? '0 0 auto' : 1, gap: '0.55rem', padding: prominent ? '0.95rem 1.2rem' : pad }}
+          >
+            <span style={{ minWidth: 0 }}>{t('clientOrb.modal.workspace.download.cta')}</span>
+            <DownloadIcon />
+          </button>
+          {corners(bracket, prominent ? '0.85rem' : '0.65rem', prominent ? '1.5px' : '1px').map((s, i) => (
+            <div key={i} style={{ position: 'absolute', pointerEvents: 'none', transition: 'border-color 0.25s', ...s }} />
           ))}
         </div>
 
         {/* Platform menu */}
         {open && menuPos && createPortal(
           <div ref={menuRef} role="menu" style={{
-            position: 'fixed', top: menuPos.top, right: menuPos.right, zIndex: 2147483000,
+            position: 'fixed', top: menuPos.top, left: menuPos.left, zIndex: 2147483000,
             width: Math.min(Math.max(menuPos.width / 2, 224), menuPos.width), padding: '0.3rem',
             background: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
             border: `1px solid rgba(${RGB}, 0.3)`, borderRadius: '0.5rem',
@@ -186,9 +201,11 @@ export default function DesktopDownloadButton({ fullWidth = true }) {
         )}
       </div>
 
-      <span style={{ fontFamily: BODY, fontSize: 'max(9px, 0.48vw)', color: 'rgba(255, 254, 240, 0.4)', textAlign: fullWidth ? 'center' : 'left' }}>
-        v{download.version}{ext ? ` · .${ext}` : ''}
-      </span>
+      {showMeta && (
+        <span style={{ fontFamily: BODY, fontSize: 'max(9px, 0.48vw)', color: 'rgba(255, 254, 240, 0.4)', textAlign: fullWidth ? 'center' : 'left' }}>
+          v{download.version}{ext ? ` · .${ext}` : ''}
+        </span>
+      )}
     </div>
   );
 }

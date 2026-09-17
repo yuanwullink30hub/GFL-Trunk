@@ -60,6 +60,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.79.0
         version: 0.79.0
+      '@cloudflare/blindrsa-ts':
+        specifier: ^0.4.6
+        version: 0.4.6
       '@gfl/orb-engine':
         specifier: workspace:*
         version: link:../../packages/orb-engine
@@ -297,6 +300,10 @@ importers:
         version: 5.9.3
 
   packages/api-client:
+    dependencies:
+      '@cloudflare/blindrsa-ts':
+        specifier: ^0.4.6
+        version: 0.4.6
     devDependencies:
       typescript:
         specifier: ^5.5.0
@@ -475,6 +482,10 @@ packages:
   '@babel/types@7.29.7':
     resolution: {integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==}
     engines: {node: '>=6.9.0'}
+
+  '@cloudflare/blindrsa-ts@0.4.6':
+    resolution: {integrity: sha512-n+CAo1hM78qkiouXB0Io1pPVBFKIaJqU7FqdCDNtBAB7q2bBpQOifv7Om3Jln/nx+IhjQAjlDjp8la3e9Yg9Bw==}
+    engines: {node: '>=24'}
 
   '@emnapi/runtime@1.11.0':
     resolution: {integrity: sha512-55coeOFKHv1ywEcUXJtWU5f+Jr/W5tZDvZig8DLKSwUN1JpROQ4rk/SNOQiFWmaR/VKF4zuFyW1B8JduOSv6Pg==}
@@ -2692,6 +2703,9 @@ packages:
   signature_pad@2.3.2:
     resolution: {integrity: sha512-peYXLxOsIY6MES2TrRLDiNg2T++8gGbpP2yaC+6Ohtxr+a2dzoaqWosWDY9sWqTAAk6E/TyQO+LJw9zQwyu5kA==}
 
+  sjcl@1.0.9:
+    resolution: {integrity: sha512-dWM71tkSHxe7zEZj0/COjtJdmErIxp7UMp8a6D4xx8dTTtJLc4lFL+HAX8s6lvASyQQ2iYMHwa7rhhQq7MT5MA==}
+
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
@@ -3154,6 +3168,10 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
+
+  '@cloudflare/blindrsa-ts@0.4.6':
+    dependencies:
+      sjcl: 1.0.9
 
   '@emnapi/runtime@1.11.0':
     dependencies:
@@ -5316,6 +5334,8 @@ snapshots:
       side-channel-weakmap: 1.0.2
 
   signature_pad@2.3.2: {}
+
+  sjcl@1.0.9: {}
 
   source-map-js@1.2.1: {}
 

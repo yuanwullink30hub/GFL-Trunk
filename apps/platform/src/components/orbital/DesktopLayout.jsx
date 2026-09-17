@@ -6,8 +6,9 @@ import { Database, Lock, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-r
 import { useLanguage } from '@gfl/i18n';
 import { liveExtendedName } from '@gfl/assessment-core/data';
 import { SciFiButton } from '@gfl/ui';
-import { getInbox, sendUserMessage, markMessageRead, getMe, getVerbondPending, respondVerbond, getVerbondContacts, backgroundAccountCallsAllowed } from '@gfl/api-client';
+import { getInbox, sendUserMessage, markMessageRead, getMe, getVerbondPending, respondVerbond, getVerbondContacts, backgroundAccountCallsAllowed, refillToolTickets } from '@gfl/api-client';
 import useWorkspaceStatus from '../../workspace/useWorkspaceStatus';
+import useAppUpdate from '../../workspace/useAppUpdate';
 import { requestWorkspaceTab, requestDashboardTab } from '../../workspace/localWorkspace';
 
 import OrbSphere3D from '../../orb/OrbSphere3D';
@@ -253,7 +254,22 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   // (desktop app). Until that folder is connected they stay locked, and once per session a
   // reminder explains why. `workspace` is null while unknown.
   const workspace = useWorkspaceStatus(accountId, clientMode && !!accountId);
+  // Desktop app only: a downloaded update waits for the user's restart. "Later" hides the bar
+  // for this version until the next start (it also installs by itself when the app quits).
+  const appUpdate = useAppUpdate();
+  const [updateDismissed, setUpdateDismissed] = useState(null);
+  const showUpdateBar = !!(appUpdate && appUpdate.state === 'ready' && updateDismissed !== appUpdate.version);
   const workspaceReady = !!(workspace && workspace.ready);
+  // Anonymous tool tickets (contract §7a): topped up at quiet moments only — a random 20–90 s after the
+  // folder is ready, then every 30 min — never as part of a tool call, so issuing and spending cannot
+  // be lined up. refillToolTickets itself skips while a report or tool call is open.
+  useEffect(() => {
+    if (!clientMode || !workspaceReady) return undefined;
+    const top = () => { refillToolTickets().catch(() => {}); };
+    const first = setTimeout(top, 20000 + Math.floor(Math.random() * 70000));
+    const every = setInterval(top, 30 * 60 * 1000);
+    return () => { clearTimeout(first); clearInterval(every); };
+  }, [clientMode, workspaceReady]);
   const openWorkspaceExplainer = useCallback(() => {
     requestWorkspaceTab();
     setActiveSection('login');
@@ -355,7 +371,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
     <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm" style={{ zIndex: 6, borderRadius: '0.5rem', background: 'rgba(1, 0, 2, 0.15)', pointerEvents: 'auto', cursor: 'default' }}>
       <div className="flex flex-col items-center" style={{ gap: '0.5vw' }}>
         <Lock style={{ width: '2.25vw', height: '2.25vw', color: '#f59e0b' }} strokeWidth={1.5} />
-        <span style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 400, lineHeight: 1.5, color: 'rgba(245, 158, 11, 0.8)', fontSize: 'max(9px, 0.5vw)', letterSpacing: '0.05em' }}>{t('desktopLayout.workspaceLocked')}</span>
+        <span style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 400, lineHeight: 1.5, color: 'rgba(245, 158, 11, 0.8)', fontSize: 'max(9px, 0.5vw)', letterSpacing: '0.05em' }}>{t(workspace && workspace.inApp ? 'desktopLayout.workspaceLocked' : 'desktopLayout.workspaceLockedWeb')}</span>
         <SciFiButton variant="purple" size="xs" onClick={openWorkspaceExplainer}>{t('desktopLayout.workspaceWhy')}</SciFiButton>
       </div>
     </div>
@@ -1405,6 +1421,18 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
         )}
       </div>
 
+      {/* Update ready (desktop app) — same glass bar as the reminder, orange accent, sits above it. */}
+      {showUpdateBar && (
+        <div className="absolute pointer-events-auto" role="status"
+          style={{ left: '50%', bottom: clientMode && !restricted && workspace && !workspaceReady && !reminderSeen ? 'calc(5vh + 5.2rem)' : '5vh', transform: 'translateX(-50%)', zIndex: 41, width: 'min(34rem, 80vw)', opacity: mounted ? 1 : 0, transition: 'opacity 0.6s ease' }}>
+          <div style={{ position: 'relative', background: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(249, 115, 22, 0.45)', borderRadius: '0.5rem', boxShadow: '0 0 30px -10px rgba(249, 115, 22, 0.55), 0 10px 40px rgba(0, 0, 0, 0.55)', padding: '0.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+            <span style={{ flex: 1, fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.58vw)', lineHeight: 1.5, color: '#FFFEF0' }}>{tFunc('desktopLayout.updateReady')(appUpdate.version)}</span>
+            <SciFiButton variant="orange" size="sm" onClick={() => appUpdate.install()}>{t('desktopLayout.updateRestart')}</SciFiButton>
+            <SciFiButton variant="white" size="sm" brackets={false} onClick={() => setUpdateDismissed(appUpdate.version)}>{t('desktopLayout.updateLater')}</SciFiButton>
+          </div>
+        </div>
+      )}
+
       {/* Login reminder — once per session while this account's folder is not connected. Glass
           panel (tokens: rgba(2,0,3,0.3) + blur 20px + sector shadow), purple client accent. */}
       {clientMode && !restricted && workspace && !workspaceReady && !reminderSeen && (
@@ -1412,7 +1440,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           style={{ left: '50%', bottom: '5vh', transform: 'translateX(-50%)', zIndex: 40, width: 'min(34rem, 80vw)', opacity: mounted ? 1 : 0, transition: 'opacity 0.6s ease' }}>
           <div style={{ position: 'relative', background: 'rgba(2, 0, 3, 0.3)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(168, 85, 247, 0.45)', borderRadius: '0.5rem', boxShadow: '0 0 30px -10px rgba(168, 85, 247, 0.55), 0 10px 40px rgba(0, 0, 0, 0.55)', padding: '0.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
             <Lock style={{ width: 'max(16px, 1vw)', height: 'max(16px, 1vw)', color: '#f59e0b', flexShrink: 0 }} strokeWidth={1.5} />
-            <span style={{ flex: 1, fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.58vw)', lineHeight: 1.5, color: '#FFFEF0' }}>{t('desktopLayout.workspaceReminder')}</span>
+            <span style={{ flex: 1, fontFamily: "'Figtree', sans-serif", fontSize: 'max(11px, 0.58vw)', lineHeight: 1.5, color: '#FFFEF0' }}>{t(workspace && workspace.inApp ? 'desktopLayout.workspaceReminder' : 'desktopLayout.workspaceReminderWeb')}</span>
             <SciFiButton variant="purple" size="sm" onClick={() => { markReminderSeen(); openWorkspaceExplainer(); }}>{t('desktopLayout.workspaceReminderAction')}</SciFiButton>
             <button type="button" onClick={markReminderSeen} aria-label={t('desktopLayout.workspaceReminderClose')} title={t('desktopLayout.workspaceReminderClose')}
               style={{ background: 'none', border: 'none', color: 'rgba(255, 254, 240, 0.45)', cursor: 'pointer', fontSize: 'max(14px, 0.8vw)', lineHeight: 1, padding: '0 0.1rem' }}>×</button>

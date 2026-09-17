@@ -17,6 +17,7 @@ const contactRoutes = require('./routes/contact');
 const orbRoutes = require('./routes/orb');
 const socialRoutes = require('./routes/social');
 const messagesRoutes = require('./routes/messages');
+const toolsRoutes = require('./routes/tools');
 const verbondRoutes = require('./routes/verbond');
 const activationCodeRoutes = require('./routes/activationCodes');
 const paymentRoutes = require('./routes/payments');
@@ -56,6 +57,8 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/orb', orbRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/messages', messagesRoutes);
+// Anonymous tool gateway — docs/LOCAL_WORKSTATION_CONTRACT.md §7a.
+app.use('/api/tools', toolsRoutes);
 app.use('/api/verbond', verbondRoutes);
 app.use('/api/activation-codes', activationCodeRoutes);
 app.use('/api/payments', paymentRoutes);

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
+    "@cloudflare/blindrsa-ts": "^0.4.6",
     "@gfl/orb-engine": "workspace:*",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

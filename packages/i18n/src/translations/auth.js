@@ -92,8 +92,8 @@ export default {
         en: 'Your account is ready. There is one thing we ask you first — and we explain why.',
       },
       workspaceLocked: {
-        nl: 'Tot je werkmap gekoppeld is, blijven de hulpmiddelen die met je persoonlijke gegevens werken vergrendeld. Je account, je openbare kaart en Verbonden werken meteen.',
-        en: 'Until your folder is connected, the tools that work with your personal data stay locked. Your account, your public card and Verbonden work straight away.',
+        nl: 'De hulpmiddelen die met je persoonlijke gegevens werken gebruik je in onze applicatie, met je eigen werkmap. Je account, je openbare kaart en Verbonden werken meteen — ook hier op de website.',
+        en: 'The tools that work with your personal data are used in our application, with your own folder. Your account, your public card and Verbonden work straight away — here on the website too.',
       },
       workspaceInApp: {
         nl: 'Kies nu je werkmap. Het rapport dat je net hebt geüpload zetten we er meteen in, samen met een kopie van je gedeeltelijke profiel.',

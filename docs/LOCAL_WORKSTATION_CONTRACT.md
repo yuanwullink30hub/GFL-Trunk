@@ -1,6 +1,6 @@
 # Local Workstation Contract
 
-**Status:** draft v0.2 — 2026-09-16 (v0.1 2026-09-09)
+**Status:** draft v0.3 — 2026-09-17 (v0.2 2026-09-16, v0.1 2026-09-09) · §7a anonymous tool calls is binding
 **Scope:** the boundary between the Garden For Life platform and the client's own machine.
 
 The platform owns the model. The client owns their data. This document is the seam:
@@ -172,6 +172,70 @@ The partial profile is the sole exception to "nothing is stored". It stays serve
 permanently because other people read it: the public card, the Verbonden directory, the
 connection layer. It is render data — shape geometry, archetype name, display name — and
 carries no answers, no scores, no analysis.
+
+---
+
+## 7a. Anonymous tool calls — binding for every tool (decided 2026-09-17)
+
+The report is decoupled from the account; tool use is decoupled the same way. **Every request a
+tool sends to the platform — a model call, an engine run, anything — must be untraceable to the
+account, the device and the folder.** A tool that cannot follow this rule does not ship.
+
+### The rules
+
+1. **One road.** A tool reaches the server only through `callTool(toolId, input)`
+   (`packages/api-client/src/toolTickets.js`). No tool code calls `fetch` to the API itself, and no
+   tool adds an endpoint outside the gateway.
+2. **No account on the wire.** Tool requests carry no account token and no cookies
+   (`credentials: 'omit'`). The gateway (`POST /api/tools/run/:toolId`, `apps/backend/routes/tools.js`)
+   refuses any request that has either.
+3. **Access is proven with anonymous tickets.** The app holds blind-signed one-use tickets
+   (RFC 9474, RSABSSA-SHA384-PSS-Randomized). Tickets are signed without the server seeing them, so a
+   spent ticket cannot be linked to the account that fetched it. Fetching tickets
+   (`POST /api/tools/tickets`) is the only account-bound step; it records a monthly **count** per
+   account, never the tickets.
+4. **No identifiers in the input.** Input is what the tool computes on — never an account id,
+   folder id, device id, e-mail, token, crystal code or the person's name. `callTool` refuses such
+   fields before anything is sent; free text is scrubbed of names the same way uploads are
+   (`apps/backend/services/uploadRedaction.js`) when a tool accepts free text.
+5. **Timing is decoupled.** Tickets are fetched in batches at quiet moments (a random delay after
+   the folder is ready, then on an idle timer) — never as part of a tool call. While a tool call
+   runs, the private window is open: no account request goes out, and background account calls
+   resume only after a random delay.
+6. **The server keeps nothing that points back.** Tool handlers are pure — `handler(input)` gets
+   the JSON input and nothing else (no request, headers, IP, user; `apps/backend/services/toolRegistry.js`).
+   They do not log or store input or output. Model calls carry no user metadata. The gateway keeps
+   only SHA-256 hashes of spent tickets (against replay), expiring with their month. No request
+   logging with IP addresses on the tool routes.
+7. **Results come back to the folder.** Output is written to `tools/<id>/` by the app. Nothing is
+   stored server-side.
+8. **Sharing is the exception, and it is visible.** Anything a user deliberately publishes to the
+   network (Verbonden, the public card) is account-bound by nature. A tool that offers sharing
+   makes it a separate, clearly labelled step through the normal account API — never a side effect
+   of a tool call.
+
+### How it works
+
+| Step | Who | Account-bound? | Stored server-side |
+|---|---|---|---|
+| `GET /api/tools/key` | app | no | the month's key pair (private key encrypted) |
+| `POST /api/tools/tickets` — blinded values | app, logged in | **yes** | `{ userId, epoch, count }`, expires with the month |
+| unblind, keep tickets locally | app | — | — |
+| `POST /api/tools/run/:toolId` + `X-GFL-Ticket` | app, anonymous | no | `{ hash }` of the spent ticket, expires |
+
+- Keys rotate monthly (`epoch` = `YYYY-MM`); tickets of the current and previous month redeem.
+- Limit: 300 tickets per account per month (`TICKETS_PER_EPOCH`), max 50 per request. Accounts
+  whose access has expired get no tickets.
+- A new tool registers with `registerTool({ id, handler, maxInputBytes })` and calls
+  `callTool(id, input)` from the app. `ping` is the built-in end-to-end check.
+
+### Not yet covered
+
+- **IP address.** The host still sees the connecting IP. Tool routes log none; the stronger step
+  is Oblivious HTTP (a relay that sees the IP but not the content, e.g. Cloudflare Privacy
+  Gateway). Planned, not built.
+- **Content fingerprinting.** Unusual input can itself be recognisable. Tools send the smallest
+  input that does the job.
 
 ---
 

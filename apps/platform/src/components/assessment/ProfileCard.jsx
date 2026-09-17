@@ -234,7 +234,7 @@ function SocialRow({ socials }) {
   );
 }
 
-const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, active = true, orbBoxRef = null, children = null, wheelBaskets = null, wheelBasketsHistory = null, verbondHandle = null }) => {
+const ProfileCard = memo(({ payload, tabsRow = null, mirrorTabs = false, orbConfigOverride = null, active = true, orbBoxRef = null, children = null, wheelBaskets = null, wheelBasketsHistory = null, verbondHandle = null }) => {
   const { language, t, tFunc } = useLanguage();
   const locale = language === 'en' ? 'en-GB' : 'nl-NL';
   const { width: vpW, height: vpH } = useViewport();
@@ -340,9 +340,17 @@ const ProfileCard = memo(({ payload, tabsRow = null, orbConfigOverride = null, a
       {/* Body: when `children` is provided (owner Privé/Instellingen), it swaps in HERE — same shell,
           same footprint, only the inner content changes. Otherwise the Openbaar/public layout renders. */}
       {children ? (
-        <div className="purple-scrollbar" style={{ position: 'relative', zIndex: 1, flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '1.5rem 1.75rem', boxSizing: 'border-box' }}>
+        <>
+        <div className="purple-scrollbar" style={{ position: 'relative', zIndex: 1, flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: '1.5rem 1.75rem', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
+          {/* flex column: a body that wants the full inner height (Werkruimte) can grow into it */}
           {children}
         </div>
+        {/* mirrorTabs: an invisible copy of the tab row (same padding, mirrored) under the body, so
+            the content sits exactly as far from the bottom edge as from the top edge. */}
+        {mirrorTabs && tabsRow && (
+          <div aria-hidden="true" style={{ position: 'relative', padding: '0 1.25rem 1rem', visibility: 'hidden', pointerEvents: 'none', flexShrink: 0 }}>{tabsRow}</div>
+        )}
+        </>
       ) : (
       <>
       {/* Row 2: rail | main — on laptop-and-below this row is the SCROLL SECTION.

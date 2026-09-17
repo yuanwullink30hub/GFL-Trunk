@@ -13,6 +13,14 @@ files:
   - ui/**/*
   - package.json
 
+# ── In-app updates ──
+# The installers and the update feed (latest.yml, latest-mac.yml, latest-linux.yml, plus the
+# .blockmap files) are uploaded together to the R2 downloads bucket. The app checks this URL
+# (src/updater.js). Upload the new files BEFORE the old ones are removed.
+publish:
+  provider: generic
+  url: https://downloads.gardenforlife.nl
+
 # ── Windows ──
 # Unsigned during the beta: SmartScreen will warn that the publisher is unverified.
 # That is stated in the Terms (article 5b) rather than hidden. To sign later, add a
@@ -39,6 +47,11 @@ mac:
   category: public.app-category.productivity
   target:
     - target: dmg
+      arch: [arm64, x64]
+    # The update feed on macOS installs from the zip (the dmg is for first installs only).
+    # NOTE: macOS only applies updates to a signed app — until we sign, Mac users update by
+    # downloading the new dmg; the page offers that when the updater reports an error.
+    - target: zip
       arch: [arm64, x64]
   artifactName: GardenForLife-${version}-${arch}.${ext}
   hardenedRuntime: true

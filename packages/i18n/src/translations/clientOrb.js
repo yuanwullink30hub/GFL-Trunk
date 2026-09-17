@@ -82,22 +82,22 @@ export default {
       // ═══ Werkruimte tab — the local workstation ═══
       // Wording tracks Terms art. 5a/5b and privacy art. 6. If those change, change these.
       workspace: {
-        whyTitle: { nl: 'Private data als Anti-diefstal', en: 'Private data as anti-theft' },
+        whyTitle: { nl: 'Archetypische Applicatie', en: 'Archetypal Application' },
         whyLead: {
-          nl: 'Wij geven om jouw data-privacy en gebruiken daarom een lokale applicatie zodat je veilig gebruik kan maken van ons platform. De enige keer dat er een volledig profiel van jou online komt is zonder naam, adres en identiteit (PDF-generatie) — zodra je ermee aan de slag gaat gebeurt dit binnen je eigen afgeschermde systeem.',
-          en: 'We care about your data privacy, which is why we use a local application so you can use our platform safely. The only time a full profile of you is online is without name, address or identity (PDF generation) — as soon as you start working with it, that happens inside your own shielded system.',
+          nl: 'Wij zijn zeer data-bewust en opereren middels een applicatie om een afgeschermde omgeving te faciliteren.\nDe enkele keer dat er een volledig profiel van jou online komt is zonder naam, adres en gezicht (PDF-generatie) — zodra deze gegevens nodig zijn ben je al ontkoppeld van de cloud.',
+          en: 'We are very data-conscious and operate through an application to provide a shielded environment.\nThe only time a full profile of you is online is without name, address or face (PDF generation) — by the time this data is needed, you are already disconnected from the cloud.',
         },
         why1: {
-          nl: 'Wij hebben geen toegang tot die map en bewaren er geen kopie van.',
-          en: 'We have no access to that folder and keep no copy of it.',
+          nl: 'Wij hebben geen toegang tot die map en bewaren er geen kopie van. (Je geeft eenmalig toegang tot één map die je zelf aanwijst. Die toestemming geldt alleen voor die map.)',
+          en: 'We have no access to that folder and keep no copy of it. (You grant access once, to one folder that you choose yourself. That permission applies to that folder alone.)',
         },
         why2: {
           nl: 'Op onze servers blijft alleen wat je account nodig heeft om te bestaan: je archetype-naam, de vorm van je orb en de teksten op je kaart.',
           en: 'What stays on our servers is only what your account needs in order to exist: your archetype name, the shape of your orb and the texts on your card.',
         },
         why3: {
-          nl: 'Het model en de hulpmiddelen blijven bij ons draaien — alleen de gegevens waarmee ze rekenen staan bij jou.',
-          en: 'The model and the tools keep running on our side — only the data they work with lives with you.',
+          nl: "Alle modellen en programma's blijven op onze servers — alleen de gegevens waarmee ze rekenen staan bij jou.",
+          en: 'All models and programs stay on our servers — only the data they work with lives with you.',
         },
         whyTail: {
           nl: 'Dit is dezelfde afspraak als in artikel 5a van de voorwaarden en artikel 6 van het privacybeleid.',
@@ -105,17 +105,13 @@ export default {
         },
 
         grantTitle: { nl: 'Wat je toestemming precies inhoudt', en: 'What your permission actually covers' },
-        grantLead: {
-          nl: 'Je geeft eenmalig toegang tot één map die je zelf aanwijst. Die toestemming geldt alleen voor die map.',
-          en: 'You grant access once, to one folder that you choose yourself. That permission applies to that folder alone.',
-        },
         grant1: {
           nl: 'De applicatie doorzoekt je apparaat niet en opent geen andere mappen.',
           en: 'The application does not scan your device and opens no other folder.',
         },
         grant2: {
-          nl: 'Elk hulpmiddel kun je daarna apart toestemming geven, eenmalig of zolang jij toezegt — met vooraf de vermelding welke gegevens het gebruikt en wat er naar ons wordt verstuurd.',
-          en: 'You can then give each tool its own permission, once or for as long as you agree — with a note in advance of which data it uses and what is sent to us.',
+          nl: 'Elk component kun je daarna apart toestemming geven, eenmalig of zolang jij toezegt — met vooraf de vermelding welke gegevens het gebruikt en wat er naar ons wordt verstuurd.',
+          en: 'You can then give each component its own permission, once or for as long as you agree — with a note in advance of which data it uses and what is sent to us.',
         },
         grant3: {
           nl: 'Je kunt de toestemming op elk moment intrekken; de map en de inhoud blijven van jou.',
@@ -127,16 +123,44 @@ export default {
         },
 
         getTitle: { nl: 'De applicatie ophalen', en: 'Get the application' },
+        gate: {
+          chip: { nl: 'Desktop-applicatie', en: 'Desktop application' },
+          sameInterface: { nl: 'Zelfde interface', en: 'Same interface' },
+          ownFolder: { nl: 'Lokale werkmap', en: 'Local folder' },
+          autoUpdate: { nl: 'Automatische updates', en: 'Automatic updates' },
+        },
+        appTitle: { nl: 'De applicatie', en: 'The application' },
+        appVersion: { nl: 'Versie', en: 'Version' },
+        appUpdate: { nl: 'Updates', en: 'Updates' },
+        updateChecking: { nl: 'Zoeken naar een nieuwe versie…', en: 'Looking for a new version…' },
+        updateCurrent: { nl: 'Je hebt de nieuwste versie', en: 'You have the latest version' },
+        updateDownloading: {
+          nl: (v, p) => `Versie ${v} wordt gedownload${p ? ` (${p}%)` : ''}…`,
+          en: (v, p) => `Downloading version ${v}${p ? ` (${p}%)` : ''}…`,
+        },
+        updateReady: { nl: (v) => `Versie ${v} staat klaar`, en: (v) => `Version ${v} is ready` },
+        updateError: { nl: 'Kon niet op updates controleren — ben je online?', en: 'Could not check for updates — are you online?' },
+        updateErrorMac: {
+          nl: 'Op de Mac installeert de applicatie updates voorlopig niet zelf. Download de nieuwste versie via gardenforlife.nl en installeer hem over deze heen — je werkmap blijft staan.',
+          en: 'On a Mac the application cannot install updates by itself yet. Download the latest version from gardenforlife.nl and install it over this one — your folder stays where it is.',
+        },
+        updateDev: { nl: 'Ontwikkelversie — updates staan uit', en: 'Development build — updates are off' },
+        updateCheck: { nl: 'Controleren op updates', en: 'Check for updates' },
+        updateRestart: { nl: 'Herstarten en bijwerken', en: 'Restart and update' },
+        updateNote: {
+          nl: 'Nieuwe versies worden vanzelf op de achtergrond gedownload. Jij kiest wanneer je herstart; sluit je de applicatie eerder, dan wordt de update bij het afsluiten geïnstalleerd. Je werkmap blijft daarbij onaangeroerd.',
+          en: 'New versions download by themselves in the background. You choose when to restart; if you close the application first, the update installs when it quits. Your folder is left untouched.',
+        },
         getLead: {
-          nl: 'Het platform blijft DE plek voor al jouw schaduwwerk — het programma heb je alleen nodig voor de privé-map zodat onze modellen jouw veilige service kunnen bieden.',
-          en: 'The platform remains THE place for all your shadow work — you only need the program for the private folder, so our models can offer you a safe service.',
+          nl: 'De app ontkoppelt de privé-data van de cloud en laat apparaten met elkaar verbinden.',
+          en: 'The app decouples your private data from the cloud and lets your devices connect to each other.',
         },
         download: {
           win: { nl: 'Download voor Windows', en: 'Download for Windows' },
           macArm: { nl: 'Download voor Mac (Apple Silicon)', en: 'Download for Mac (Apple Silicon)' },
           macIntel: { nl: 'Download voor Mac (Intel)', en: 'Download for Mac (Intel)' },
           linux: { nl: 'Download voor Linux', en: 'Download for Linux' },
-          for: { nl: 'Download voor', en: 'Download for' },
+          cta: { nl: 'App downloaden', en: 'Download app' },
           other: { nl: 'Ander systeem', en: 'Other system' },
           short: {
             win: { nl: 'Windows', en: 'Windows' },

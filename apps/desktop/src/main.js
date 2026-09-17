@@ -15,6 +15,7 @@ const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const workspace = require('./workspace');
+const { setupUpdater } = require('./updater');
 
 const API_ORIGIN = 'https://api.gardenforlife.nl';
 const isDev = !app.isPackaged;
@@ -204,6 +205,7 @@ app.whenReady().then(async () => {
   }
 
   registerIpc();
+  setupUpdater();
   createWindow();
 
   app.on('activate', () => {

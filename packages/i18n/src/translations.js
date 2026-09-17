@@ -840,12 +840,20 @@ const translations = {
     locked: { nl: "VERGRENDELD", en: "LOCKED" },
     // Tools that work with personal data run from the user's own folder (desktop app).
     workspaceLocked: { nl: "Werkt vanuit je werkmap", en: "Works from your folder" },
+    workspaceLockedWeb: { nl: "Werkt in de applicatie", en: "Works in the application" },
     workspaceWhy: { nl: "Waarom?", en: "Why?" },
     workspaceReminder: {
       nl: "Je werkmap is nog niet gekoppeld. De hulpmiddelen die met je persoonlijke gegevens werken blijven vergrendeld tot je dat doet.",
       en: "Your folder is not connected yet. The tools that work with your personal data stay locked until it is."
     },
+    workspaceReminderWeb: {
+      nl: "Je bent op de website. De hulpmiddelen die met je persoonlijke gegevens werken gebruik je in onze applicatie, met je eigen werkmap.",
+      en: "You are on the website. The tools that work with your personal data are used in our application, with your own folder."
+    },
     workspaceReminderAction: { nl: "Bekijk hoe", en: "See how" },
+    updateReady: { nl: (v) => `Versie ${v} van Garden for Life staat klaar.`, en: (v) => `Version ${v} of Garden for Life is ready.` },
+    updateRestart: { nl: "Nu herstarten", en: "Restart now" },
+    updateLater: { nl: "Later", en: "Later" },
     workspaceReminderClose: { nl: "Sluiten", en: "Close" },
     liveFeed: { nl: "LIVE FEED", en: "LIVE FEED" },
     dataStreamDescription: {

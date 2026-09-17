@@ -114,6 +114,8 @@ export function EnterButton({ onEnter, isInside, paused }) {
   return (
     <group position={[0, 0, 0]}>
       <Text
+        // A local font: without one, troika fetches fallback font data from cdn.jsdelivr.net for every visitor.
+        font="/fonts/LexendMega-Variable.ttf"
         fontSize={hovered ? 0.275 : 0.255}
         color="#39FF14"
         anchorX="center"

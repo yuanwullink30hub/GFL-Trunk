@@ -12,26 +12,29 @@
  */
 const { contextBridge, ipcRenderer } = require('electron');
 
-// "Press Esc again to quit" — a small glass hint drawn by the preload (the DOM is shared with the page;
-// nothing is exposed to it). Removed after 1.5 s, the window in which a second Esc quits.
-ipcRenderer.on('app:esc-hint', () => {
+// F9 (diagnosis): log which elements are stacked under a few points of the screen, with the style
+// properties that decide whether they cover what is behind them. Goes to the local renderer log.
+ipcRenderer.on('app:diagnose-layers', () => {
   try {
-    const nl = (localStorage.getItem('gfl_language_choice') || document.documentElement.lang || 'nl').startsWith('nl');
-    document.getElementById('gfl-esc-hint')?.remove();
-    const el = document.createElement('div');
-    el.id = 'gfl-esc-hint';
-    el.textContent = nl ? 'Druk nogmaals op Esc om af te sluiten' : 'Press Esc again to quit';
-    el.style.cssText = [
-      'position:fixed', 'left:50%', 'bottom:6vh', 'transform:translateX(-50%)', 'z-index:2147483647',
-      'padding:0.7rem 1.2rem', 'border-radius:0.5rem', 'pointer-events:none',
-      'background:rgba(2,0,3,0.55)', 'backdrop-filter:blur(20px)', '-webkit-backdrop-filter:blur(20px)',
-      'border:1px solid rgba(255,174,0,0.45)', 'box-shadow:0 0 20px rgba(255,174,0,0.15)',
-      "font-family:'Lexend Mega',Arial,sans-serif", 'font-size:max(10px,0.5vw)', 'font-weight:700',
-      'letter-spacing:0.12em', 'text-transform:uppercase', 'color:#ffae00',
-    ].join(';');
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 1500);
-  } catch { /* hint is cosmetic */ }
+    const describe = (el) => {
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      const cls = typeof el.className === 'string' ? el.className.trim().split(/\s+/).slice(0, 4).join('.') : '';
+      const backdrop = cs.backdropFilter && cs.backdropFilter !== 'none' ? ` backdrop=${cs.backdropFilter}` : '';
+      return `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${cls ? '.' + cls : ''} z=${cs.zIndex} pos=${cs.position} op=${cs.opacity} vis=${cs.visibility} bg=${cs.backgroundColor}${cs.backgroundImage !== 'none' ? ' bgimg' : ''}${backdrop} mix=${cs.mixBlendMode} ${Math.round(r.width)}x${Math.round(r.height)}`;
+    };
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const points = [['center', w / 2, h / 2], ['left', w * 0.25, h * 0.5], ['top', w / 2, h * 0.15], ['bottom-right', w * 0.85, h * 0.85]];
+    for (const [name, x, y] of points) {
+      const stack = document.elementsFromPoint(x, y).slice(0, 14).map(describe);
+      console.warn(`[layers] ${name}:\n  ${stack.join('\n  ')}`);
+    }
+    const canvases = [...document.querySelectorAll('canvas')].map(describe);
+    console.warn(`[layers] canvases (${canvases.length}):\n  ${canvases.join('\n  ')}`);
+  } catch (e) {
+    console.warn('[layers] failed', e && e.message);
+  }
 });
 
 contextBridge.exposeInMainWorld('gfl', {

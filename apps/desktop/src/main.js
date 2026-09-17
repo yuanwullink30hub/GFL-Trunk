@@ -71,7 +71,7 @@ function createWindow() {
     backgroundColor: '#0a0510', // matches the platform ground so there is no white flash
     show: false,
     // The platform is the whole interface: full screen, no native menu bar. Maximize returns to full
-    // screen, F11 toggles it, Esc pressed twice quits.
+    // screen, F11 toggles it, Esc minimizes, Esc twice quits.
     fullscreen: true,
     autoHideMenuBar: true,
     webPreferences: {
@@ -88,20 +88,27 @@ function createWindow() {
   // Maximize = full screen (the maximized window with a title bar is never the resting state).
   win.on('maximize', () => { win.unmaximize(); win.setFullScreen(true); });
 
-  // Esc is the quick way out: the first press shows "press Esc again to quit", a second press within
-  // 1.5 s closes the app. A single press still reaches the page, so closing a menu or overlay with Esc
-  // never quits by accident.
-  let lastEsc = 0;
+  // Esc: once = minimize, twice quickly = quit. The minimize waits a moment so a second press can
+  // still arrive (a minimized window receives no keys).
+  let escTimer = null;
   win.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
     if (input.key === 'F11') {
       event.preventDefault();
       win.setFullScreen(!win.isFullScreen());
     } else if (input.key === 'Escape' && !input.isAutoRepeat) {
-      const now = Date.now();
-      if (now - lastEsc < 1500) { event.preventDefault(); app.quit(); return; }
-      lastEsc = now;
-      win.webContents.send('app:esc-hint');
+      event.preventDefault();
+      if (escTimer) { clearTimeout(escTimer); escTimer = null; app.quit(); return; }
+      escTimer = setTimeout(() => { escTimer = null; if (!win.isDestroyed()) win.minimize(); }, 350);
+    } else if (input.key === 'F9') {
+      // Diagnosis: the preload writes the stack of layers under a few screen points to the log.
+      event.preventDefault();
+      win.webContents.send('app:diagnose-layers');
+      // …and what the page itself renders, to compare with what is on screen.
+      win.webContents.capturePage().then((img) => {
+        const out = path.join(app.getPath('logs'), `diagnose-${Date.now()}.png`);
+        fs.writeFileSync(out, img.toPNG());
+      }).catch(() => {});
     } else if (isDev && input.key === 'F12') {
       win.webContents.toggleDevTools();
     }

@@ -24,7 +24,7 @@ const { collections } = require('../db');
 const config = require('../config');
 const { getStripe } = require('./stripe');
 
-const TERMS_VERSION = 'av-2.1-2026-09-27';
+const TERMS_VERSION = 'av-2.2-2026-09-27';
 const EU_26 = ['AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK'];
 const DEFAULTS = {
   flipAt: '2027-03-20T20:25:00.000Z',

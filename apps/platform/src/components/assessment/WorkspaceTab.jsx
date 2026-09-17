@@ -77,7 +77,7 @@ const Notice = ({ tone = 'amber', children }) => {
       margin: '0.75rem 0 0',
     }}>
       <p style={{
-        fontFamily: BODY, fontSize: 'max(11px, 0.56vw)', lineHeight: 1.6,
+        fontFamily: BODY, fontSize: 'max(11px, 0.56vw)', lineHeight: 1.6, whiteSpace: 'pre-line',
         color: 'rgba(255, 254, 240, 0.8)', margin: 0,
       }}>{children}</p>
     </div>
@@ -100,7 +100,7 @@ const WarningPanel = ({ children }) => (
     }}>
       <HardDrive style={{ width: 'max(18px, 1.05vw)', height: 'max(18px, 1.05vw)', color: '#15b315', filter: 'drop-shadow(0 0 4px rgba(21, 179, 21, 0.5))' }} strokeWidth={1.5} />
     </span>
-    <p style={{ fontFamily: BODY, fontSize: 'max(12px, 0.62vw)', lineHeight: 1.7, color: 'rgba(255, 254, 240, 0.85)', margin: 0 }}>{children}</p>
+    <p style={{ fontFamily: BODY, fontSize: 'max(12px, 0.62vw)', lineHeight: 1.7, color: 'rgba(255, 254, 240, 0.85)', margin: 0, whiteSpace: 'pre-line' }}>{children}</p>
   </div>
 );
 

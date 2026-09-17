@@ -21,6 +21,26 @@ platform first if you haven't:
 corepack pnpm@9.0.0 --filter @gfl/platform build
 ```
 
+## Live development — the platform hot-reloading inside the real app
+
+```bash
+# terminal 1 — repo root: the platform dev server (http://localhost:3000)
+corepack pnpm@9.0.0 --filter @gfl/platform dev
+# terminal 2 — apps/desktop: the app window, loading that dev server
+corepack pnpm@9.0.0 run dev          # = electron . --dev   (GFL_DEV_URL overrides the URL)
+```
+
+The window loads the Vite server instead of the bundled UI, so every save hot-reloads while
+`window.gfl` (the folder bridge, updates) is the real one. It talks to the backend the same way the
+browser does on localhost (`http://localhost:8080`). DevTools open detached. Dev mode exists only in
+unpackaged runs; an installed app always loads its own bundle.
+
+`pnpm run start` is the other check: the BUILT platform (`ui/`) served from `app://gardenforlife`
+with the real CSP — what users get, against the production API. Run it before building installers.
+
+The app's origin is `app://gardenforlife` (src/appProtocol.js). The backend allowlists exactly that
+origin (apps/backend/server.js). localStorage — login, tool tickets — lives under it.
+
 ## Two things that will waste your time if nobody tells you
 
 **`pnpm install` alone does nothing here.** This package is deliberately excluded from the
@@ -67,8 +87,17 @@ If you add an operation, add it as a **named** one. Do not reintroduce a path pa
 ## Packaging
 
 ```bash
-pnpm run dist:win     # NSIS installer
+pnpm run dist:win     # NSIS installer (Windows: deps install flat via .npmrc — NSIS cannot read pnpm's long nested paths)
 pnpm run dist:mac     # dmg, arm64 + x64
+```
+
+First Windows build on a machine without Developer Mode: electron-builder unpacks its `winCodeSign`
+tools archive, which contains macOS symlinks Windows refuses to create, and retries forever. Unpack
+it once without the darwin folder, then build again:
+
+```bash
+C="$LOCALAPPDATA/electron-builder/Cache/winCodeSign"
+node_modules/7zip-bin/win/x64/7za.exe x -bd "$(ls $C/*.7z | head -1)" "-o$C/winCodeSign-2.6.0" -xr!darwin
 ```
 
 Both are **unsigned** during the beta, so Windows shows a SmartScreen warning and macOS

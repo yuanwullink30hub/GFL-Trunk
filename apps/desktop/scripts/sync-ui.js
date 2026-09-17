@@ -38,27 +38,9 @@ const stripMaps = (dir) => {
 };
 stripMaps(TARGET);
 
-// The app loads its UI from file://, where response-header CSP never applies — Electron's
-// webRequest hooks simply do not fire for that scheme. A <meta http-equiv> policy is the
-// only form the renderer will honour here, so it is injected into the copied index.html
-// rather than left to the main process.
-const API_ORIGIN = 'https://api.gardenforlife.nl';
-const CSP = [
-  "default-src 'self'",
-  // The platform bundle is built by Vite and includes inline style attributes; scripts
-  // stay strictly self-hosted, which is the part that matters next to a filesystem bridge.
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob:",
-  "media-src 'self' blob:",
-  "worker-src 'self' blob:",
-  `connect-src 'self' ${API_ORIGIN}`,
-  "object-src 'none'",
-  "base-uri 'none'",
-  "form-action 'none'",
-  "frame-ancestors 'none'",
-].join('; ');
+// The CSP (src/csp.js) is sent as a header by the app:// handler; it is also written into the
+// copied index.html as a meta tag so the policy holds even if the page is ever opened another way.
+const { CSP } = require('../src/csp');
 
 const indexPath = path.join(TARGET, 'index.html');
 let html = fs.readFileSync(indexPath, 'utf8');

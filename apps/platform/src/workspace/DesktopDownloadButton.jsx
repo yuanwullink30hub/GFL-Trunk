@@ -44,8 +44,8 @@ const corners = (col, size, w) => [
  *   [ ˅ WINDOWS ┃ APP DOWNLOADEN ⤓ ]
  * the left part IS the choice — it shows the system (guessed from the browser) and opens a menu that
  * swaps it for Windows, Mac (Apple Silicon / Intel) or Linux; the right part starts the download.
- * `prominent` = the call-to-action version: larger, a tinted 135° fill and a slow breathing glow
- * (decorative; frozen on low-gpu, still reads as a lit button).
+ * `prominent` = the call-to-action version: larger, a full 1px border instead of corner brackets,
+ * a tinted 135° fill and a slow breathing glow (decorative; frozen on low-gpu, still reads as a lit button).
  * Until the installers are on R2 (DESKTOP_RELEASE.available) a click downloads nothing.
  */
 export default function DesktopDownloadButton({ fullWidth = true, accent = 'orange', prominent = false, showMeta = true }) {
@@ -63,7 +63,7 @@ export default function DesktopDownloadButton({ fullWidth = true, accent = 'oran
   const download = desktopDownload(chosen);
   const ext = download.fileName ? download.fileName.split('.').pop() : '';
   const lit = hovMain || hovMenu || open;
-  const bracket = lit ? ACCENT : `rgba(${RGB}, ${prominent ? 0.75 : 0.45})`;
+  const bracket = lit ? ACCENT : `rgba(${RGB}, 0.45)`;
 
   // The menu is portalled to <body>: the card around this button is itself a backdrop-filter glass
   // panel, and a nested backdrop-filter only blurs inside that panel — so in place the menu would
@@ -154,7 +154,8 @@ export default function DesktopDownloadButton({ fullWidth = true, accent = 'oran
             <span style={{ minWidth: 0 }}>{t('clientOrb.modal.workspace.download.cta')}</span>
             <DownloadIcon />
           </button>
-          {corners(bracket, prominent ? '0.85rem' : '0.65rem', prominent ? '1.5px' : '1px').map((s, i) => (
+          {/* Brackets only on the plain variant: prominent has its own full border. */}
+          {!prominent && corners(bracket, '0.65rem', '1px').map((s, i) => (
             <div key={i} style={{ position: 'absolute', pointerEvents: 'none', transition: 'border-color 0.25s', ...s }} />
           ))}
         </div>

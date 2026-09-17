@@ -28,13 +28,15 @@ const PRIVATE_DEV_ORIGIN_RE = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,
 // Cloudflare Pages preview deployments: every non-production branch is served from its own
 // <branch|hash>.gfl-trunk.pages.dev subdomain, which an exact-match allowlist can never cover.
 // Scoped to this project's subdomains only — Cloudflare will not serve another account there.
+// The desktop app serves its UI from this fixed origin (apps/desktop/src/appProtocol.js).
+const DESKTOP_APP_ORIGIN = 'app://gardenforlife';
 const PAGES_PREVIEW_ORIGIN_RE = /^https:\/\/[a-z0-9][a-z0-9-]*\.gfl-trunk\.pages\.dev$/;
 
 // ── Middleware ──
 app.use(cors({
   origin: (origin, cb) => {
     // Allow same-machine and LAN dev origins without forcing .env edits.
-    if (!origin || config.corsOrigins.includes(origin)
+    if (!origin || origin === DESKTOP_APP_ORIGIN || config.corsOrigins.includes(origin)
         || PRIVATE_DEV_ORIGIN_RE.test(origin) || PAGES_PREVIEW_ORIGIN_RE.test(origin)) {
       return cb(null, true);
     }

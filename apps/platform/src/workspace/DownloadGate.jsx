@@ -12,23 +12,12 @@ const PURPLE_RGB = '168, 85, 247';
 
 /**
  * The final gate before the download — the one place on the Werkruimte tab that should feel like
- * a threshold rather than a settings row. A SectorFrame-style panel (amber brand accent, 1.5px
- * corner brackets with the 10px outer radius, sector shadow with an amber inset), a slowly turning
+ * a threshold rather than a settings row. A glass panel (amber brand accent, plain 1px amber border
+ * without corner brackets, amber inset glow), a slowly turning
  * crystal emblem, the title as display chrome, three short promises, and the prominent split
  * download button. Decorative motion (ring spin, sheen, scanline, button breathe) all tolerates the
  * low-gpu freeze: frozen, the panel still reads complete.
  */
-
-const Bracket = ({ pos }) => {
-  const s = { position: 'absolute', width: '1rem', height: '1rem', pointerEvents: 'none', borderColor: AMBER, borderStyle: 'solid', borderWidth: 0 };
-  const v = {
-    tl: { top: '-0.125rem', left: '-0.125rem', borderTopWidth: '1.5px', borderLeftWidth: '1.5px', borderTopLeftRadius: '10px' },
-    tr: { top: '-0.125rem', right: '-0.125rem', borderTopWidth: '1.5px', borderRightWidth: '1.5px', borderTopRightRadius: '10px' },
-    bl: { bottom: '-0.125rem', left: '-0.125rem', borderBottomWidth: '1.5px', borderLeftWidth: '1.5px', borderBottomLeftRadius: '10px' },
-    br: { bottom: '-0.125rem', right: '-0.125rem', borderBottomWidth: '1.5px', borderRightWidth: '1.5px', borderBottomRightRadius: '10px' },
-  }[pos];
-  return <div aria-hidden="true" style={{ ...s, ...v }} />;
-};
 
 /** Liquid-crystal emblem: a purple faceted hexagon inside two slowly turning dashed rings (outer purple,
  *  inner amber), with a download mark. */
@@ -95,7 +84,6 @@ export default function DownloadGate({ notice = null, stretch = false }) {
       <div aria-hidden="true" style={{ position: 'absolute', inset: 0, borderRadius: '0.5rem', overflow: 'hidden', pointerEvents: 'none' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.012) 48%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.012) 52%, transparent 100%)', backgroundSize: '100% 300%', animation: 'gflGateScan 14s linear infinite' }} />
       </div>
-      {['tl', 'tr', 'bl', 'br'].map((p) => <Bracket key={p} pos={p} />)}
 
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '1.05rem', ...(stretch ? { flex: 1, justifyContent: 'space-evenly' } : {}) }}>
         {/* Status chip */}

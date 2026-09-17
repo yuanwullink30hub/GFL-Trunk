@@ -5,11 +5,12 @@
   "description": "Garden For Life desktop app — the platform UI plus the local workstation folder",
   "main": "src/main.js",
   "scripts": {
+    "dev": "electron . --dev",
     "sync-ui": "node scripts/sync-ui.js",
-    "start": "pnpm run sync-ui && electron .",
-    "dist": "pnpm run sync-ui && electron-builder",
-    "dist:win": "pnpm run sync-ui && electron-builder --win",
-    "dist:mac": "pnpm run sync-ui && electron-builder --mac",
+    "start": "node scripts/sync-ui.js && electron .",
+    "dist": "node scripts/sync-ui.js && electron-builder",
+    "dist:win": "node scripts/sync-ui.js && electron-builder --win",
+    "dist:mac": "node scripts/sync-ui.js && electron-builder --mac",
     "test": "node test/workspace.test.js && node test/account-and-report.test.js"
   },
   "devDependencies": {

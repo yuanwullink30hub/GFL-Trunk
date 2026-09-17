@@ -41,7 +41,7 @@ const RETENTION_COPY = {
   subjectPlaceholder: { nl: '[uw e-mailadres]', en: '[your email address]' },
   title: { nl: 'Garden For Life — Uw data, uw rechten', en: 'Garden For Life — Your data, your rights' },
   version: { nl: 'Versiedatum: 27 september 2026', en: 'Version date: 27 September 2026' },
-  versionNo: { nl: 'Versie 1.0', en: 'Version 1.0' },
+  versionNo: { nl: 'Versie 1.1', en: 'Version 1.1' },
   langLabel: { nl: 'Taal: Nederlands', en: 'Language: English' },
   intro: {
     nl: 'U heeft het recht uw gegevens in te zien, te corrigeren of te laten verwijderen. Op deze pagina vindt u een volledig overzicht van wat wij bewaren, hoe lang, en hoe u een verwijderingsverzoek kunt indienen. Wij verwerken uw verzoek binnen 30 dagen.',
@@ -71,8 +71,8 @@ const RETENTION_COPY = {
 
   h2What: { nl: '1. Wat Bewaren Wij en Hoe Lang?', en: '1. What Do We Retain and For How Long?' },
   whatLead: {
-    nl: 'Garden For Life maakt onderscheid tussen twee typen opslag: gegevens op onze servers en gegevens in uw eigen browser.',
-    en: 'Garden For Life distinguishes between two types of storage: data on our servers and data in your own browser.',
+    nl: 'Garden For Life maakt onderscheid tussen drie typen opslag: gegevens op onze servers, gegevens in uw eigen browser of in de desktopapplicatie, en de werkmap op uw eigen apparaat.',
+    en: 'Garden For Life distinguishes between three types of storage: data on our servers, data in your own browser or in the desktop application, and the working folder on your own device.',
   },
   h3Server: { nl: '1.1 Serveropslag — Gegevens bij Garden For Life', en: '1.1 Server Storage — Data Held by Garden For Life' },
   thCategory: { nl: 'Categorie', en: 'Category' },
@@ -87,15 +87,24 @@ const RETENTION_COPY = {
   srvRow3a: { nl: 'Kaarttekst bij een kristal-code — alleen gekoppeld aan de hash van de code', en: 'Card text for a crystal code — linked only to the hash of the code' },
   srvRow3b: { nl: 'Niet vrijgegeven: tot u de rapportpagina verlaat (uiterlijk de nachtelijke opruiming na 24 uur). Vrijgegeven: tot de code wordt ingewisseld', en: 'Not unlocked: until you leave the report page (at the latest the nightly sweep after 24 hours). Unlocked: until the code is redeemed' },
   srvRow3c: { nl: 'Bij inwisselen opgenomen in uw gedeeltelijke profiel en de losse kopie verwijderd', en: 'On redemption merged into your partial profile and the separate copy deleted' },
-  srvRow4a: { nl: 'Gedeeltelijk profiel — archetype-naam, orb-geometrie, vormvector, kaartteksten', en: 'Partial profile — archetype name, orb geometry, shape vector, card texts' },
+  srvRow4a: { nl: 'Gedeeltelijk profiel — archetype-namen, orb-geometrie, vormvector, samenvatting van de mandjesverdeling, kaartteksten', en: 'Partial profile — archetype names, orb geometry, shape vector, summary of the basket distribution, card texts' },
   srvRow4b: { nl: 'Zolang het account actief is', en: 'For as long as the account is active' },
   srvRow4c: { nl: 'Permanent verwijderd binnen 30 dagen na verzoek', en: 'Permanently erased within 30 days of the request' },
   srvRow5a: { nl: 'Toestemmingsregistratie', en: 'Consent record' },
-  srvRow5b: { nl: 'Zolang het account bestaat', en: 'For as long as the account exists' },
-  srvRow5c: { nl: 'Verwijderd bij accountverwijdering', en: 'Deleted when the account is deleted' },
-  srvRow6a: { nl: 'Betaalregistratie — betaalreferentie, bedrag, datum, status, hash van de kristal-code', en: 'Payment record — payment reference, amount, date, status, hash of the crystal code' },
-  srvRow6b: { nl: 'Minimaal 7 jaar (fiscale bewaarplicht) en zolang de code geldig is; het e-mailadres erbij alleen tot de 14-dagen termijn voorbij is', en: 'At least 7 years (tax retention) and for as long as the code is valid; the email address with it only until the 14-day period has passed' },
-  srvRow6c: { nl: 'Blijft bestaan zolang de wet dat verplicht', en: 'Kept for as long as the law requires' },
+  srvRow5b: { nl: '7 jaar, als bewijs van rechtmatige verwerking', en: '7 years, as proof that processing was lawful' },
+  srvRow5c: { nl: 'De toestemming bij het opslaan van uw PDF (met het e-mailadres dat u daar invulde) wordt verwijderd als dat e-mailadres bij uw account hoort; de toestemming aan het begin van de test bevat geen account of e-mailadres en is niet aan u te koppelen', en: 'The consent given when saving your PDF (with the email address you entered there) is deleted if that address belongs to your account; the consent at the start of the test holds no account or email address and cannot be linked to you' },
+  srvRow6a: { nl: 'Vrijgaveregistratie — hash van de kristal-code, met tot dag 15 ook betaalreferentie, bedrag, akkoordbewijs en e-mailadres', en: 'Unlock record — hash of the crystal code, and until day 15 also the payment reference, amount, consent evidence and email address' },
+  srvRow6b: { nl: 'Betaalgegevens tot dag 15 na betaling (bij een lopende terugbetaling ten hoogste 30 dagen langer); daarna ontkoppeld. Het vrijgavebewijs zelf zolang de code geldig is', en: 'Payment details until day 15 after payment (up to 30 days longer while a refund is being processed); unlinked afterwards. The unlock itself for as long as the code is valid' },
+  srvRow6c: { nl: 'Verwijderd met de code-hash; na de ontkoppeling is de betaling niet meer aan uw rapport of code te koppelen', en: 'Deleted with the code hash; after unlinking, the payment can no longer be linked to your report or code' },
+  srvRow10a: { nl: 'Betaalbewijzen (boekhouding) — per betaling en terugbetaling: betaalreferentie, bedrag, btw, akkoordbewijs; zonder naam of e-mailadres', en: 'Payment receipts (bookkeeping) — per payment and refund: payment reference, amount, VAT, consent evidence; no name or email address' },
+  srvRow10b: { nl: '7 jaar (fiscale bewaarplicht)', en: '7 years (tax retention)' },
+  srvRow10c: { nl: 'Blijft bestaan zolang de wet dat verplicht; na dag 15 niet meer aan uw rapport of code te koppelen', en: 'Kept for as long as the law requires; after day 15 no longer linkable to your report or code' },
+  srvRow8a: { nl: 'Feedback (reviewformulier) — met het e-mailadres dat u opgaf; niet aan uw account gekoppeld', en: 'Feedback (review form) — with the email address you entered; not linked to your account' },
+  srvRow8b: { nl: '90 dagen', en: '90 days' },
+  srvRow8c: { nl: 'Automatisch na 90 dagen; bij accountverwijdering direct, als het e-mailadres bij uw account hoort', en: 'Automatically after 90 days; immediately on account deletion if the email address belongs to your account' },
+  srvRow9a: { nl: 'Anonieme toegangsbewijzen voor hulpmiddelen — per account alleen het aantal per maand; van gebruikte bewijzen alleen een hash, zonder account', en: 'Anonymous access tickets for tools — per account only the number per month; for spent tickets only a hash, without any account' },
+  srvRow9b: { nl: 'Tot het einde van de volgende maand', en: 'Until the end of the following month' },
+  srvRow9c: { nl: 'Verloopt vanzelf; de hashes zijn niet aan u te koppelen', en: 'Expires on its own; the hashes cannot be linked to you' },
   srvRow7a: { nl: 'Grijze lijst na een terugbetaling — e-mailadres (versleuteld), datum en referentie per terugbetaling', en: 'Grey list after a refund — email address (encrypted), date and reference per refund' },
   srvRow7b: { nl: '2 jaar na de laatste terugbetaling', en: '2 years after the latest refund' },
   srvRow7c: { nl: 'Automatisch verwijderd na 2 jaar; bezwaar mogelijk via e-mail', en: 'Deleted automatically after 2 years; you can object by email' },
@@ -114,9 +123,12 @@ const RETENTION_COPY = {
   locRow2a: { nl: 'Uw profiel, antwoorden en rapport', en: 'Your profile, answers and report' },
   locRow2b: { nl: 'Nooit lokaal opgeslagen', en: 'Never stored locally' },
   locRow2c: { nl: 'Niet nodig — restanten uit eerdere versies worden automatisch gewist', en: 'Not needed — leftovers from earlier versions are erased automatically' },
-  locRow4a: { nl: 'Werkruimtedata (notities, contacten, agenda)', en: 'Workspace data (notes, contacts, calendar)' },
-  locRow4b: { nl: 'Lokaal permanent', en: 'Permanent locally' },
-  locRow4c: { nl: 'Zelf wissen via browserinstellingen', en: 'Erase yourself via your browser settings' },
+  locRow4a: { nl: 'Werkmap (desktopapplicatie) — uw rapporten en een kopie van uw gedeeltelijke profiel, in een map die u zelf koos', en: 'Working folder (desktop application) — your reports and a copy of your partial profile, in a folder you chose yourself' },
+  locRow4b: { nl: 'Tot u de map zelf wist — ook na het verwijderen van de applicatie', en: 'Until you erase the folder yourself — also after uninstalling the application' },
+  locRow4c: { nl: 'De map wissen op uw apparaat', en: 'Erase the folder on your device' },
+  locRow5a: { nl: 'gfl_tool_tickets (desktopapplicatie) — anonieme toegangsbewijzen voor hulpmiddelen', en: 'gfl_tool_tickets (desktop application) — anonymous access tickets for tools' },
+  locRow5b: { nl: 'Tot gebruik; hooguit tot het einde van de volgende maand', en: 'Until used; at most until the end of the following month' },
+  locRow5c: { nl: 'Automatisch; of via de lokale opslag van de applicatie', en: 'Automatically; or via the application\'s local storage' },
   clearLead: { nl: 'Lokale opslag wissen via uw browser:', en: 'Clearing local storage via your browser:' },
   chrome: {
     nl: 'Instellingen → Privacy en beveiliging → Browsegegevens verwijderen → Cookies en andere sitegegevens → gardenforlife.nl',
@@ -136,8 +148,8 @@ const RETENTION_COPY = {
   },
   warnLabel: { nl: 'Let op:', en: 'Please note:' },
   warnBody: {
-    nl: ' het wissen van lokale opslag verwijdert ook uw inlogstatus en werkruimtedata. Deze gegevens zijn daarna niet herstelbaar — ook niet door Garden For Life.',
-    en: ' clearing local storage also removes your login status and workspace data. This data cannot be recovered afterwards — not even by Garden For Life.',
+    nl: ' het wissen van lokale opslag verwijdert ook uw inlogstatus en, in de applicatie, uw ongebruikte toegangsbewijzen. Uw werkmap blijft staan. Gewiste lokale gegevens zijn niet herstelbaar — ook niet door Garden For Life.',
+    en: ' clearing local storage also removes your login status and, in the application, your unused access tickets. Your working folder stays where it is. Erased local data cannot be recovered — not even by Garden For Life.',
   },
 
   h2Rights: { nl: '2. Al Uw Rechten op een Rij', en: '2. All Your Rights at a Glance' },
@@ -176,9 +188,9 @@ const RETENTION_COPY = {
     en: 'On a full account deletion request, Garden For Life deletes the following from our servers:',
   },
   del1: { nl: 'Uw e-mailadres en accountgegevens', en: 'Your email address and account data' },
-  del2: { nl: 'Uw gedeeltelijke profiel — archetype-naam, orb-geometrie, vormvector en kaartteksten', en: 'Your partial profile — archetype name, orb geometry, shape vector and card texts' },
+  del2: { nl: 'Uw gedeeltelijke profiel — archetype-namen, orb-geometrie, vormvector, mandjesverdeling en kaartteksten', en: 'Your partial profile — archetype names, orb geometry, shape vector, basket distribution and card texts' },
   del3: { nl: 'De hash van elke aan uw account gekoppelde kristal-code, waarna de code van uw PDF weer inwisselbaar wordt', en: 'The hash of every crystal code linked to your account, after which the code in your PDF becomes redeemable again' },
-  del4: { nl: 'Uw openbare kaart en verbindingen, uw verzonden en ontvangen berichten, uw feedbackinzendingen en alle gekoppelde toestemmingsregistraties (die anders maximaal 7 jaar bewaard blijven als bewijs van rechtmatige verwerking)', en: 'Your public card and connections, the messages you sent and received, your feedback submissions and all linked consent records (otherwise kept for at most 7 years as proof that processing was lawful)' },
+  del4: { nl: 'Uw openbare kaart en verbindingen, uw verzonden en ontvangen berichten, feedbackinzendingen en toestemmingsregistraties met het e-mailadres van uw account (die anders maximaal 7 jaar bewaard blijven als bewijs van rechtmatige verwerking)', en: 'Your public card and connections, the messages you sent and received, and feedback submissions and consent records made with your account\'s email address (otherwise kept for at most 7 years as proof that processing was lawful)' },
   notAuto: { nl: 'Wat niet automatisch wordt verwijderd bij accountverwijdering:', en: 'What is not automatically deleted on account deletion:' },
   notAutoItem: {
     nl: 'Uw lokale browseropslag (localStorage) — dit staat op uw eigen apparaat en kunt u zelf wissen zoals beschreven in Artikel 1.2',
@@ -189,8 +201,8 @@ const RETENTION_COPY = {
     en: 'Your local working folder and the report you downloaded — these are on your own device. We have no access to them and therefore cannot delete them; you remove them yourself by erasing the folder.',
   },
   notAutoItem3: {
-    nl: 'Betaalregistraties en een eventuele plaatsing op de grijze lijst — die bewaren wij voor de wettelijke bewaarplicht en om misbruik van de geld-terug-garantie te voorkomen (zie Privacybeleid, artikel 6).',
-    en: 'Payment records and any placement on the grey list — we keep these for the legal retention obligation and to prevent misuse of the money-back guarantee (see Privacy Policy, article 6).',
+    nl: 'Betaalbewijzen en een eventuele plaatsing op de grijze lijst — die bewaren wij voor de wettelijke bewaarplicht en om misbruik van de geld-terug-garantie te voorkomen (zie Privacybeleid, artikel 6). Het maandelijkse aantal toegangsbewijzen voor hulpmiddelen verloopt vanzelf; de toestemming aan het begin van de test is niet aan u te koppelen.',
+    en: 'Payment receipts and any placement on the grey list — we keep these for the legal retention obligation and to prevent misuse of the money-back guarantee (see Privacy Policy, article 6). The monthly number of tool access tickets expires on its own; the consent given at the start of the test cannot be linked to you.',
   },
   afterDeletion: {
     nl: 'Na volledige verwijdering ontvangt u een bevestigingse-mail. Uw account kan daarna niet worden hersteld.',
@@ -259,7 +271,10 @@ const RetentionForm = ({ language = 'nl' }) => {
           <tr><td style={S.td}>{t('srvRow4a')}</td><td style={S.td}>{t('srvRow4b')}</td><td style={S.td}>{t('srvRow4c')}</td></tr>
           <tr><td style={S.td}>{t('srvRow5a')}</td><td style={S.td}>{t('srvRow5b')}</td><td style={S.td}>{t('srvRow5c')}</td></tr>
           <tr><td style={S.td}>{t('srvRow6a')}</td><td style={S.td}>{t('srvRow6b')}</td><td style={S.td}>{t('srvRow6c')}</td></tr>
+          <tr><td style={S.td}>{t('srvRow10a')}</td><td style={S.td}>{t('srvRow10b')}</td><td style={S.td}>{t('srvRow10c')}</td></tr>
           <tr><td style={S.td}>{t('srvRow7a')}</td><td style={S.td}>{t('srvRow7b')}</td><td style={S.td}>{t('srvRow7c')}</td></tr>
+          <tr><td style={S.td}>{t('srvRow8a')}</td><td style={S.td}>{t('srvRow8b')}</td><td style={S.td}>{t('srvRow8c')}</td></tr>
+          <tr><td style={S.td}>{t('srvRow9a')}</td><td style={S.td}>{t('srvRow9b')}</td><td style={S.td}>{t('srvRow9c')}</td></tr>
         </tbody>
       </table>
 
@@ -270,6 +285,7 @@ const RetentionForm = ({ language = 'nl' }) => {
         <tbody>
           <tr><td style={S.td}>{t('locRow1a')}</td><td style={S.td}>{t('locRow1b')}</td><td style={S.td}>{t('locRow1c')}</td></tr>
           <tr><td style={S.td}>{t('locRow2a')}</td><td style={S.td}>{t('locRow2b')}</td><td style={S.td}>{t('locRow2c')}</td></tr>
+          <tr><td style={S.td}>{t('locRow5a')}</td><td style={S.td}>{t('locRow5b')}</td><td style={S.td}>{t('locRow5c')}</td></tr>
           <tr><td style={S.td}>{t('locRow4a')}</td><td style={S.td}>{t('locRow4b')}</td><td style={S.td}>{t('locRow4c')}</td></tr>
         </tbody>
       </table>

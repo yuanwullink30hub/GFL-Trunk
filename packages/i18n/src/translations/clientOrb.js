@@ -118,8 +118,8 @@ export default {
           en: 'You can withdraw the permission at any time; the folder and its contents remain yours.',
         },
         grantWarning: {
-          nl: 'Omdat wij geen kopie bewaren, ben jij verantwoordelijk voor het veiligstellen van die map. Raakt hij kwijt — door gewiste gegevens, een kapot apparaat of verplaatste bestanden — dan is de inhoud onherstelbaar weg. Zorg dus dat je regelmatig je eigen data als kopie ergens bewaart! (Wij verkopen data-sticks die hier perfect voor zijn.)',
-          en: 'Because we keep no copy, safeguarding that folder is your responsibility. If it is lost — through erased data, a failed device or moved files — its contents are gone for good. So make sure you regularly keep a copy of your own data somewhere! (We sell data sticks that are perfect for this.)',
+          nl: 'Jij draagt volledige verantwoordelijkheid voor het veiligstellen van die map. Raakt hij kwijt — dan is de inhoud onherstelbaar weg.\nWij raden aan een externe geheugen als backup te gebruiken — laten wij die nou net toevallig verkopen!',
+          en: 'You carry full responsibility for safeguarding that folder. If it is lost — its contents are gone for good.\nWe recommend using external storage as a backup — and as it happens, we sell exactly that!',
         },
 
         getTitle: { nl: 'De applicatie ophalen', en: 'Get the application' },

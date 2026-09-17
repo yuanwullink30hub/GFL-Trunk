@@ -44,7 +44,7 @@ export function currentPrice(now = new Date()) {
  * The terms version the paywall's consent refers to. Sent with every payment and checked by the
  * backend (apps/backend/services/paymentConfig.js TERMS_VERSION) — bump BOTH when the terms change.
  */
-export const TERMS_VERSION = 'av-2.1-2026-09-27';
+export const TERMS_VERSION = 'av-2.2-2026-09-27';
 
 /** Money from cents in a given currency, in the page language: "€ 14,52" / "€14.52". */
 export function formatCents(language = 'nl', cents, currency = 'EUR') {

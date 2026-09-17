@@ -10,15 +10,26 @@
  *   - every path is contained inside the chosen workspace root (see workspace.js)
  *   - navigation away from the bundled UI is blocked, and new windows open in the
  *     system browser rather than in a window that can see the bridge
+ *
+ * Where the UI comes from:
+ *   - packaged / `pnpm run start`: the bundled ui/ served from app://gardenforlife (appProtocol.js)
+ *   - `pnpm run dev`: the live Vite dev server (GFL_DEV_URL, default http://localhost:3000), so the
+ *     platform hot-reloads inside the real app with the real folder bridge. Development builds only.
  */
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const workspace = require('./workspace');
 const { setupUpdater } = require('./updater');
+const { registerAppScheme, handleAppScheme, APP_ORIGIN } = require('./appProtocol');
+const { API_ORIGIN } = require('./csp');
 
-const API_ORIGIN = 'https://api.gardenforlife.nl';
 const isDev = !app.isPackaged;
+// Live development: load the Vite dev server instead of the bundled UI. Never in a packaged build.
+const DEV_URL = isDev && (process.env.GFL_DEV_URL || (process.argv.includes('--dev') ? 'http://localhost:3000' : ''));
+const UI_ORIGIN = DEV_URL ? new URL(DEV_URL).origin : APP_ORIGIN;
+
+registerAppScheme(); // before 'ready'
 
 // Without this, dev takes its userData path from the scoped package name and lands in
 // AppData/Roaming/@gfl/desktop while the packaged build uses productName — so a folder
@@ -78,13 +89,20 @@ function createWindow() {
   });
 
   win.webContents.on('will-navigate', (event, url) => {
-    if (!url.startsWith('file://')) {
+    let origin = '';
+    try { origin = new URL(url).origin; } catch { /* not a URL */ }
+    if (origin !== UI_ORIGIN) {
       event.preventDefault();
       shell.openExternal(url).catch(() => {});
     }
   });
 
-  win.loadFile(path.join(__dirname, '..', 'ui', 'index.html'));
+  if (DEV_URL) {
+    win.loadURL(DEV_URL);
+    win.webContents.openDevTools({ mode: 'detach' });
+  } else {
+    win.loadURL(`${APP_ORIGIN}/index.html`);
+  }
   return win;
 }
 
@@ -181,10 +199,9 @@ function registerIpc() {
 // ── Boot ───────────────────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
-  // NOTE: the CSP is delivered as a <meta> tag injected into the bundled index.html by
-  // scripts/sync-ui.js, NOT as a response header. Header interception via
-  // webRequest.onHeadersReceived does not fire for file:// loads, which is the only kind
-  // this app performs — so a header-based policy silently did nothing at all.
+  // The bundled UI is served from app://gardenforlife with the CSP as a response header
+  // (appProtocol.js); sync-ui.js also writes it into index.html as a meta tag.
+  handleAppScheme();
 
   // Restore the previously chosen folder, but only if it still exists — a moved or
   // deleted folder drops us back to "not connected" rather than erroring on every call.
@@ -228,5 +245,5 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 if (isDev) {
-  app.on('ready', () => console.log('[GFL Desktop] dev mode — userData:', app.getPath('userData')));
+  app.on('ready', () => console.log('[GFL Desktop] dev — UI:', DEV_URL || APP_ORIGIN, '· userData:', app.getPath('userData')));
 }

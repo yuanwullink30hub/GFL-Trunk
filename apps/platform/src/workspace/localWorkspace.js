@@ -20,7 +20,7 @@
 export const DESKTOP_RELEASE = {
   // Per platform: flip each one only once its installer is actually on R2.
   available: { win: true, macArm: false, macIntel: false, linux: false },
-  version: '0.1.1',
+  version: '0.1.2',
   base: 'https://downloads.gardenforlife.nl',
   file: {
     win: (v) => `GardenForLife-Setup-${v}.exe`,

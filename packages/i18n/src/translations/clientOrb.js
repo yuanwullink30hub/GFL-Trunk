@@ -170,8 +170,8 @@ export default {
           },
         },
         unsigned: {
-          nl: 'Tijdens de testfase brengen wij de applicatie uit zonder uitgeverscertificaat. Windows en macOS waarschuwen dan dat de uitgever niet geverifieerd is. Dat hoort erbij en betekent niet dat er iets mis is — maar installeer hem uitsluitend via de knop hierboven en nooit via een kopie van iemand anders.',
-          en: 'During the testing phase we release the application without a publisher certificate, so Windows and macOS will warn that the publisher cannot be verified. That is expected and does not mean anything is wrong — but install it only via the button above, never from a copy obtained elsewhere.',
+          nl: 'Testversie zonder uitgeverscertificaat: Windows en macOS melden een onbekende uitgever. Dat is normaal. Installeer alleen via de knop hierboven, nooit via een kopie.',
+          en: 'Test version without a publisher certificate: Windows and macOS will report an unknown publisher. That is normal. Install only via the button above, never from a copy.',
         },
 
         // No folder connected: the saved one is missing (moved outside the app, a drive not plugged in)

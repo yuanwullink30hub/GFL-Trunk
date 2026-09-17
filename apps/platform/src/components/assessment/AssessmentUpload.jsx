@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useLanguage } from '@gfl/i18n';
+import HoloOverlays from '../HoloOverlays';
 
 /**
  * AssessmentUpload - File upload screen shown after all questions
@@ -81,21 +82,8 @@ const AssessmentUpload = ({
         borderLeft: 'none'
       }}></div>
       
-      {/* Holographic sheen */}
-      <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
-        background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
-        backgroundSize: '400% 400%',
-        backgroundRepeat: 'no-repeat',
-        animation: 'holoSheen 45s ease-in-out infinite',
-        mixBlendMode: 'screen',
-      }} />
-
-      {/* Scanline sweep */}
-      <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
-        background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
-        backgroundSize: '100% 300%',
-        animation: 'holoScanline 14s linear infinite',
-      }} />
+      {/* Holographic sheen + scanline sweep (compositor-only) */}
+      <HoloOverlays />
 
       {/* Noise texture overlay */}
       <div className="absolute inset-0 rounded-lg pointer-events-none bg-[url('/images/noise.svg')] opacity-[0.03] mix-blend-overlay" />

@@ -54,6 +54,7 @@ const LEGACY_PROFILE_KEYS = ['gfl_assessment_session', 'gfl_assessment_history',
 import { analyzeAssessment, discardUnpaidReport, submitAssessmentReview, sendAccessEmail, sendReportEmail, logActivity } from '@gfl/api-client';
 import { isIntegratedGPU } from '@gfl/utils';
 import { useLanguage } from '@gfl/i18n';
+import HoloOverlays from '../HoloOverlays';
 const tnmWheelImg = '/images/Model imports/TNM wheel PNG.png';
 const deltawerkenImg = '/images/Model imports/Deltawerken png.png';
 const cellsImg = '/images/Model imports/Cells within Cells png.png';
@@ -3631,11 +3632,8 @@ const AssessmentResultsModal = ({
             overflow: 'hidden',
           }}>
 
-            {/* Holographic sheen */}
-            <div style={{ position: 'absolute', inset: 0, borderRadius: '0.75rem', pointerEvents: 'none', background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)', backgroundSize: '400% 400%', backgroundRepeat: 'no-repeat', animation: 'holoSheen 45s ease-in-out infinite', mixBlendMode: 'screen' }} />
-
-            {/* Scanline sweep */}
-            <div style={{ position: 'absolute', inset: 0, borderRadius: '0.75rem', pointerEvents: 'none', background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)', backgroundSize: '100% 300%', animation: 'holoScanline 14s linear infinite' }} />
+            {/* Holographic sheen + scanline sweep (compositor-only) */}
+            <HoloOverlays radius="0.75rem" />
             
             {/* Noise overlay */}
             <div style={{

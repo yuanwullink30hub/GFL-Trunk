@@ -37,7 +37,11 @@ const WEB = {
 
 const APP = {
   nebulaFps: 0,
-  nebulaRenderScale: 1,
+  // 60%: the nebula is a full-screen shader, and at native resolution on a fast screen it was the whole
+  // frame budget — on a 2560×1440 180 Hz machine the app idled at 82 fps and pans ran at 83. At 0.6 it
+  // idles at the display's 180 and pans at 162, with the soft clouds and stars pixel-identical in a
+  // brightened side-by-side (benchmark runs 2026-09-17). Motion stays every frame (nebulaFps 0).
+  nebulaRenderScale: 0.6,
   globeFps: 0,
   keep3dAlive: true,
   // 125%: the globe and pyramid fit well inside their cell; 39% of the pixels of the website's 200%.
@@ -55,7 +59,7 @@ const APP = {
 export const GRAPHICS_PRESETS = {
   high: {},
   balanced: { nebulaFps: 60, globeFps: 60 },
-  saver: { nebulaFps: 30, globeFps: 30, nebulaRenderScale: 0.75 },
+  saver: { nebulaFps: 30, globeFps: 30, nebulaRenderScale: 0.5 },
 };
 
 /** The preset this page started with ('high' outside the app). */
@@ -106,14 +110,18 @@ export function startPerfLog() {
 
 /**
  * App-only frame recorder for one animation (a map pan). Call frame(t) from its rAF callback and
- * end() when it finishes; the summary goes to the renderer log.
+ * end() when it finishes; the summary goes to the renderer log. The animation is also marked as a
+ * User Timing measure, so it can be found in an F10 performance trace.
  */
 export function frameRecorder(label) {
   if (!graphicsProfile.perfLog) return { frame() {}, end() {} };
   const times = [];
+  const startMark = `${label} · start`;
+  try { performance.mark(startMark); } catch { /* ignore */ }
   return {
     frame(t) { times.push(t); },
     end() {
+      try { performance.measure(label, startMark); performance.clearMarks(startMark); } catch { /* ignore */ }
       if (times.length < 3) return;
       const gaps = times.slice(1).map((v, i) => v - times[i]);
       const span = (times[times.length - 1] - times[0]) / 1000;

@@ -54,7 +54,7 @@ export default function ClientSubnav({ activeSection, items = [], onNavigate, on
         onClick={onToggle}
         style={{ display: 'inline-flex', alignItems: 'center', gap: rem(0.45), cursor: 'pointer', color: lit ? '#fff' : 'rgb(156,163,175)', fontSize: clampSize(0.5, 0.53, 0.85), letterSpacing: '0.1em', transition: 'color 0.15s' }}
       >
-        <span className="rounded-full bg-green-500" style={{ width: clampSize(0.35, 0.5, 0.5), height: clampSize(0.35, 0.5, 0.5), animation: 'dotBreathe 4s ease-in-out infinite', flexShrink: 0 }} />
+        <span className="rounded-full bg-green-500" style={{ width: clampSize(0.35, 0.5, 0.5), height: clampSize(0.35, 0.5, 0.5), boxShadow: '0 0 6px rgba(34, 197, 94, 0.6)', animation: 'dotBreathe 4s ease-in-out infinite', flexShrink: 0 }} />
         <span style={{ textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{currentLabel} {'//'} V.4.9</span>
         <svg
           viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"

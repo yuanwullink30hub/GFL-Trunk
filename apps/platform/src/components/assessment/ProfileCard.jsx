@@ -7,6 +7,9 @@ import { getReadingThumb } from './getReadingThumb';
 import { leadFor } from './presetKernels';
 import WheelGlyph from '../WheelGlyph';
 import VerbondButton from './VerbondButton';
+import { OrbGlowDither, orbGlowDiameter } from '../Dither';
+
+import HoloOverlays from '../HoloOverlays';
 
 /* ════════════════════════════════════════════════════════════════════════
    ProfileCard — the public profile card (Openbaar render).
@@ -331,8 +334,7 @@ const ProfileCard = memo(({ payload, tabsRow = null, mirrorTabs = false, orbConf
       <ShellBrackets />
 
       {/* holo overlays (house panel decor — freeze-tolerant under the low-gpu contract) */}
-      <div style={{ position: 'absolute', inset: 0, borderRadius: '0.5rem', pointerEvents: 'none', background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)', backgroundSize: '400% 400%', animation: 'holoSheen 45s ease-in-out infinite', mixBlendMode: 'screen' }} />
-      <div style={{ position: 'absolute', inset: 0, borderRadius: '0.5rem', pointerEvents: 'none', background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)', backgroundSize: '100% 300%', animation: 'holoScanline 14s linear infinite' }} />
+      <HoloOverlays />
 
       {/* Row 1: tabs (owner view) */}
       {tabsRow && <div style={{ position: 'relative', zIndex: 3, padding: '1rem 1.25rem 0' }}>{tabsRow}</div>}
@@ -436,7 +438,13 @@ const ProfileCard = memo(({ payload, tabsRow = null, mirrorTabs = false, orbConf
                     dead zone) — the orb is never pushed down. */}
                 <div ref={orbBoxRef || undefined} style={{ position: 'relative', zIndex: 1, width: orbSize, height: orbSize, flexShrink: 0, overflow: 'visible', marginTop: 'auto' }}>
                   {orbConfig
-                    ? <OrbSphere3D config={orbConfig} active={active} size={orbSize} capturable style={{ filter: 'drop-shadow(0 0 60px rgba(120,80,200,0.2))', pointerEvents: 'none' }} />
+                    ? (
+                      <>
+                        <OrbSphere3D config={orbConfig} active={active} size={orbSize} capturable style={{ filter: 'drop-shadow(0 0 60px rgba(120,80,200,0.2))', pointerEvents: 'none' }} />
+                        {/* grain over the glow so it can't band into rings on an HDR display */}
+                        <OrbGlowDither diameter={orbGlowDiameter(orbSize, 60)} />
+                      </>
+                    )
                     : orbImage
                       ? <img src={orbImage} alt="" style={{ width: orbSize, height: orbSize, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
                       : <div style={{ width: orbSize, height: orbSize, borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.12)' }} />}

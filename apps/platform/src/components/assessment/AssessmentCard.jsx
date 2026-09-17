@@ -7,6 +7,8 @@ import { pingBackend } from '@gfl/api-client';
 import { getCardSizes } from './assessmentSizes';
 import { isIntegratedGPU } from '@gfl/utils';
 
+import HoloOverlays from '../HoloOverlays';
+
 /** Strip admin metadata tags [xxx] and (xxx) from display text */
 function stripMeta(text) {
   if (!text) return '';
@@ -721,21 +723,8 @@ const AssessmentCard = ({
           borderLeft: 'none'
         }} />
 
-        {/* Holographic sheen */}
-        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
-          background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
-          backgroundSize: '400% 400%',
-          backgroundRepeat: 'no-repeat',
-          animation: 'holoSheen 45s ease-in-out infinite',
-          mixBlendMode: 'screen',
-        }} />
-
-        {/* Scanline sweep */}
-        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
-          background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
-          backgroundSize: '100% 300%',
-          animation: 'holoScanline 14s linear infinite',
-        }} />
+        {/* Holographic sheen + scanline sweep (compositor-only) */}
+        <HoloOverlays />
 
         {/* Noise texture overlay */}
         <div className="absolute inset-0 rounded-lg pointer-events-none bg-[url('/images/noise.svg')] opacity-[0.03] mix-blend-overlay" />

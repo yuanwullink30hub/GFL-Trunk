@@ -60,11 +60,15 @@ export function createNebulaEngine(canvas, { width, height, inputs, onReady, onF
   canvas.addEventListener('webglcontextrestored', onContextRestored);
 
   function init() {
+    // No `desynchronized`: on Windows that low-latency mode presents the canvas through its own
+    // DirectComposition swap chain on the GPU process's main thread, and each present blocked that thread
+    // ~10 ms. Drawing every frame of a 180 Hz screen it held the thread ~85% of the time — panel raster
+    // and the other 3D canvases queued behind it, and single presents stalled pans for up to 220 ms
+    // (desktop app trace, 2026-09-17). The normal compositor path costs nothing extra for a background.
     const gl = canvas.getContext('webgl', {
       alpha: false,
       antialias: false,
       preserveDrawingBuffer: false,
-      desynchronized: true,
       failIfMajorPerformanceCaveat: false,
       powerPreference: 'high-performance',
     });

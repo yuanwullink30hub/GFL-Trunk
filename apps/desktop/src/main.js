@@ -25,6 +25,7 @@ const { registerAppScheme, handleAppScheme, APP_ORIGIN } = require('./appProtoco
 const { API_ORIGIN } = require('./csp');
 const display = require('./display');
 const { readSettings, writeSettings } = require('./settings');
+const { optOutOfAutoHdr } = require('./autoHdr');
 
 const isDev = !app.isPackaged;
 // Live development: load the Vite dev server instead of the bundled UI. Never in a packaged build.
@@ -105,6 +106,10 @@ function writeConfig(cfg) {
   fs.writeFileSync(configFile(), JSON.stringify(cfg, null, 2), 'utf8');
 }
 
+// Keep Windows Auto HDR off this app (it turns soft glows into rings); once per install, before 'ready'.
+// Only the installed app: a dev run would register electron.exe instead.
+const autoHdrResult = isDev ? 'skipped (dev)' : optOutOfAutoHdr({ exePath: process.execPath, readConfig, writeConfig });
+
 /**
  * Folders that a cloud service synchronises (Windows 11 moves Documents/Desktop into OneDrive by
  * default). Personal data placed there leaves the device, so a move into one asks first.
@@ -181,6 +186,10 @@ function createWindow() {
         const out = path.join(app.getPath('logs'), `diagnose-${Date.now()}.png`);
         fs.writeFileSync(out, img.toPNG());
       }).catch(() => {});
+    } else if (input.key === 'F10' && !input.isAutoRepeat) {
+      // Diagnosis: F10 starts a Chromium performance trace, F10 again saves it to the logs folder.
+      event.preventDefault();
+      togglePerformanceTrace(win);
     } else if (isDev && input.key === 'F12') {
       win.webContents.toggleDevTools();
     }
@@ -194,6 +203,22 @@ function createWindow() {
   });
   if (typeof graphicsFlags.css === 'string' && graphicsFlags.css) {
     win.webContents.on('did-finish-load', () => { win.webContents.insertCSS(graphicsFlags.css).catch(() => {}); });
+  }
+  // Diagnosis: { "benchShot": "<name>" } saves one screenshot of the landing and quits — the same view
+  // under different graphics settings, to judge quality next to the numbers.
+  if (typeof graphicsFlags.benchShot === 'string' && graphicsFlags.benchShot) {
+    setTimeout(() => {
+      win.webContents.capturePage().then((img) => {
+        const safe = graphicsFlags.benchShot.replace(/[^a-z0-9_.-]/gi, '_');
+        fs.writeFileSync(path.join(app.getPath('logs'), `shot-${safe}.png`), img.toPNG());
+      }).catch(() => {}).then(() => app.quit());
+    }, Number(graphicsFlags.benchShotMs) || 14000);
+  }
+  // Benchmark run ({ "bench": true }, see App.jsx): quit once the page reports the sequence finished.
+  if (graphicsFlags.bench) {
+    win.webContents.on('console-message', (_e, _level, message) => {
+      if (String(message).startsWith('[bench] done')) setTimeout(() => app.quit(), 1000);
+    });
   }
 
   // Anything that isn't our own UI opens in the user's browser, never in a window that
@@ -221,6 +246,76 @@ function createWindow() {
 }
 
 /**
+ * F10: a Chromium performance trace of what every frame costs — main-thread script, style, layout and
+ * paint, the compositor's per-frame pipeline (presented or dropped) and the GPU process — for jank that
+ * the per-pan fps line in renderer.log can only count. Saved as logs/trace-<time>.json (opens in Chrome
+ * DevTools → Performance, or ui.perfetto.dev). Stays on this device, like the log.
+ */
+// Kept lean: the viz pipeline events, the V8 sampling profiler and every thread's generic task events
+// ('toplevel') made a 30-second trace too big to save (the app closed without writing it). Main-thread
+// tasks still come from devtools.timeline, presented/dropped frames from PipelineReporter (timeline.frame).
+const TRACE_CATEGORIES = [
+  'cc', 'gpu', 'blink.user_timing', 'v8.execute',
+  'devtools.timeline', 'disabled-by-default-devtools.timeline', 'disabled-by-default-devtools.timeline.frame',
+];
+let traceState = 'idle'; // idle → recording → saving → idle
+
+/** A short message on screen, so the user knows the key did something (the trace itself is invisible). */
+function traceToast(win, text) {
+  if (!win || win.isDestroyed()) return;
+  const js = `(() => {
+    const id = 'gfl-trace-toast';
+    let el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = id;
+      Object.assign(el.style, { position: 'fixed', top: '1rem', left: '50%', transform: 'translateX(-50%)', zIndex: 2147483647,
+        padding: '0.5rem 1rem', borderRadius: '0.15rem', background: 'rgba(2,0,3,0.85)', border: '1px solid rgba(255,174,0,0.5)',
+        color: '#ffae00', font: "700 max(10px,0.5vw) 'Lexend Mega', Arial, sans-serif", letterSpacing: '0.12em',
+        textTransform: 'uppercase', pointerEvents: 'none' });
+      document.body.appendChild(el);
+    }
+    el.textContent = ${JSON.stringify(text)};
+    clearTimeout(el._hide);
+    el._hide = setTimeout(() => el.remove(), 6000);
+  })()`;
+  win.webContents.executeJavaScript(js).catch(() => {});
+}
+
+async function togglePerformanceTrace(win) {
+  const { contentTracing } = require('electron');
+  const note = (line) => {
+    try { fs.appendFileSync(path.join(app.getPath('logs'), 'renderer.log'), `${new Date().toISOString()} [trace] ${line}\n`); } catch { /* ignore */ }
+  };
+  try {
+    if (traceState === 'idle') {
+      await contentTracing.startRecording({
+        included_categories: TRACE_CATEGORIES,
+        excluded_categories: ['*'],
+        record_mode: 'record-until-full',
+        trace_buffer_size_in_kb: 200 * 1024,
+      });
+      traceState = 'recording';
+      note('recording — press F10 again to save');
+      traceToast(win, 'Trace recording — F10 to save');
+    } else if (traceState === 'recording') {
+      traceState = 'saving';
+      note('saving…');
+      traceToast(win, 'Saving trace…');
+      const out = await contentTracing.stopRecording(path.join(app.getPath('logs'), `trace-${Date.now()}.json`));
+      const mb = (() => { try { return (fs.statSync(out).size / 1e6).toFixed(1); } catch { return '?'; } })();
+      note(`saved ${out} (${mb} MB)`);
+      traceToast(win, `Trace saved (${mb} MB)`);
+      traceState = 'idle';
+    }
+  } catch (err) {
+    note(`failed: ${err && err.message}`);
+    traceToast(win, 'Trace failed — see renderer.log');
+    traceState = 'idle';
+  }
+}
+
+/**
  * Renderer warnings and errors go to a local log file (…/Garden For Life/logs/renderer.log), so a
  * problem in the installed app can be diagnosed without DevTools. Stays on this device; capped at
  * about 1 MB (older half dropped). Info lines only when they concern rendering (GPU, WebGL, workers).
@@ -241,6 +336,7 @@ function attachRendererLog(win) {
   write(`— start v${app.getVersion()} ${process.platform} electron ${process.versions.electron} UI ${DEV_URL || APP_ORIGIN} flags ${JSON.stringify(graphicsFlags)}`);
   // Refresh rate per display: the app renders at the rate of the display its window is on.
   const { screen } = require('electron'); // only usable after 'ready'
+  write(`[auto-hdr] ${autoHdrResult}`);
   write(`[display] ${screen.getAllDisplays().map((d) => `${d.size.width}x${d.size.height} @ ${d.displayFrequency} Hz${d.id === screen.getPrimaryDisplay().id ? ' (primary)' : ''}`).join(' · ')}`);
   win.webContents.on('console-message', (_e, level, message, line, sourceId) => {
     const relevant = level >= 2 || /nebula|webgl|gpu|worker|offscreen|shader/i.test(String(message));

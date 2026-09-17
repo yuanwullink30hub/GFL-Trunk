@@ -15,6 +15,7 @@ import { SciFiButton } from '@gfl/ui';
 import { isIntegratedGPU, getGPURenderer } from '@gfl/utils';
 import { frameRecorder, startPerfLog, graphicsProfile } from './workspace/appProfile';
 import HoloWord from './components/HoloWord';
+import { OrbGlowDither, orbGlowDiameter } from './components/Dither';
 
 // Retry wrapper: if a chunk fails (stale deploy), reload the page once.
 const lazyRetry = (fn) => lazy(() =>
@@ -123,6 +124,9 @@ const useDeviceFlags = () => {
 
   return { isLaptop, isLowGpu };
 };
+
+// Soft purple glow traced from the landing orb's outline (dithered by OrbGlowDither next to it).
+const ORB_GLOW = { filter: 'drop-shadow(0 0 90px rgba(120,80,200,0.18))' };
 
 // Bold like the container headers, drawn as the same still hologram (HoloWord, sync green).
 const TIMESYNC_STYLE = { fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(13px, 0.7vw)', fontWeight: 700 };
@@ -318,6 +322,16 @@ const App = () => {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Same reason, the other heavy page: the gardens brand page builds its entire DOM the moment it turns
+  // visible — which is the start of the pan towards it (~35 ms of React + layout inside the pan frames).
+  // Built at idle instead, off-viewport with paint skipped by the pane's content-visibility.
+  const [gardensWarm, setGardensWarm] = useState(false);
+  useEffect(() => {
+    const ric = window.requestIdleCallback ? (fn) => window.requestIdleCallback(fn, { timeout: 6000 }) : (fn) => setTimeout(fn, 1500);
+    const t = setTimeout(() => ric(() => setGardensWarm(true)), 5000); // after the kook scene, so they never land together
+    return () => clearTimeout(t);
+  }, []);
   
   // Assessment data: live from MongoDB, falling back to static data if fetch fails
   const [liveSubjects, setLiveSubjects] = useState([]);
@@ -383,6 +397,33 @@ const App = () => {
   const map3dLive = (id) => (graphicsProfile.panRendersAll3d
     ? (activeSection === id || isMapAnimating)
     : sectionLive(id));
+  // The elements that read --map-x / --map-y: the panes that move with the map, and the logo, header and
+  // assessment wrapper that counter-pan against it. The properties are registered non-inherited
+  // (index.css @property), so the value is written to each of them — writing it once on a shared ancestor
+  // made Chromium re-check the styles of that entire subtree every pan frame.
+  const panVarRefs = [
+    useRef(null), // desktop map container
+    useRef(null), // logo (counter-pan)
+    useRef(null), // header (counter-pan)
+    useRef(null), // assessment wrapper (counter-pan)
+    useRef(null), // HoloEarth wrapper
+    useRef(null), // data-stream celestial pane
+    useRef(null), // section pages wrapper
+  ];
+  const [panDesktopRef, panLogoRef, panHeaderRef, panAssessmentRef, panHoloRef, panMonitorRef, panPagesRef] = panVarRefs;
+  const setMapVars = useCallback((x, y) => {
+    if (containerRef.current) {
+      containerRef.current.style.setProperty('--map-x', x);
+      containerRef.current.style.setProperty('--map-y', y);
+    }
+    for (const r of panVarRefs) {
+      const el = r.current;
+      if (!el) continue;
+      el.style.setProperty('--map-x', x);
+      el.style.setProperty('--map-y', y);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const mapAnimationRef = useRef(null);
   const mapStartPosRef = useRef({ x: 0, y: 0 });
   const mapTargetPosRef = useRef({ x: 0, y: 0 });
@@ -461,6 +502,35 @@ const App = () => {
     setActiveSection(section === 'main' ? null : section);
   }, [calculateCurveOffset]);
 
+  // Desktop app benchmark — <userData>/graphics-flags.json { "bench": true }: idle frame rate, then a fixed
+  // pan sequence (each pan's timings via frameRecorder), all in renderer.log; the app quits when done
+  // (apps/desktop/src/main.js). Identical runs, so graphics settings can be compared against each other.
+  useEffect(() => {
+    const flags = typeof window !== 'undefined' && window.gfl && window.gfl.graphicsFlags;
+    if (!flags || !flags.bench) return undefined;
+    let cancelled = false;
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const frames = (ms) => new Promise((resolve) => {
+      const t = [];
+      const tick = (now) => { t.push(now); if (now - t[0] < ms) requestAnimationFrame(tick); else resolve(t); };
+      requestAnimationFrame(tick);
+    });
+    (async () => {
+      await wait(Number(flags.benchWarmupMs) || 15000);
+      if (cancelled) return;
+      const t = await frames(3000);
+      const gaps = t.slice(1).map((v, i) => v - t[i]);
+      console.warn(`[bench] idle: ${(gaps.length / ((t[t.length - 1] - t[0]) / 1000)).toFixed(1)} fps · slowest ${Math.round(Math.max(...gaps))} ms · frames >25 ms: ${gaps.filter((g) => g > 25).length}`);
+      for (const section of ['login', 'main', 'winkel', 'main', 'gardens', 'main', 'kook', 'main', 'filosofie', 'main']) {
+        if (cancelled) return;
+        navigateToSection(section);
+        await wait(MAP_TRANSITION_DURATION + 1500);
+      }
+      console.warn('[bench] done');
+    })();
+    return () => { cancelled = true; };
+  }, [navigateToSection]);
+
   // Map animation loop
   useEffect(() => {
     if (!isMapAnimating) return;
@@ -487,21 +557,15 @@ const App = () => {
 
       nebulaMapRef.current.x = newX;
       nebulaMapRef.current.y = newY;
-      // Update CSS custom properties directly — no React re-render per frame
-      if (containerRef.current) {
-        containerRef.current.style.setProperty('--map-x', newX);
-        containerRef.current.style.setProperty('--map-y', newY);
-      }
+      // Update the map position directly on the elements that read it — no React re-render per frame
+      setMapVars(newX, newY);
 
       if (progress < 1) {
         mapAnimationRef.current = requestAnimationFrame(animate);
       } else {
         nebulaMapRef.current.x = target.x;
         nebulaMapRef.current.y = target.y;
-        if (containerRef.current) {
-          containerRef.current.style.setProperty('--map-x', target.x);
-          containerRef.current.style.setProperty('--map-y', target.y);
-        }
+        setMapVars(target.x, target.y);
         setMapPosition(target);     // single React re-render at animation end
         setIsMapAnimating(false);
         // One frame later, so the end-of-pan re-render is measured too.
@@ -520,13 +584,11 @@ const App = () => {
     };
   }, [isMapAnimating]);
 
-  // Keep CSS custom properties in sync with React state (initial mount + animation end)
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.style.setProperty('--map-x', mapPosition.x);
-      containerRef.current.style.setProperty('--map-y', mapPosition.y);
-    }
-  }, [mapPosition]);
+  // Keep the map position in sync with React state (initial mount, animation end, and after any render
+  // that mounts one of these elements — a freshly warmed pane must start at the current position).
+  // Never while a pan runs: mapPosition still holds the pan's starting point, and writing it back
+  // mid-pan would snap the map. The animation loop writes every frame anyway.
+  useEffect(() => { if (!isMapAnimating) setMapVars(mapPosition.x, mapPosition.y); });
 
   // Section lock: on deployed (non-localhost) sites, sections stay locked regardless of passkey.
   // The passkey gate in index.html controls initial site access, but content sections remain disabled.
@@ -1879,6 +1941,7 @@ const App = () => {
                   <span className="rounded-full bg-green-500" style={{
                     width: '0.5rem',
                     height: '0.5rem',
+                    boxShadow: '0 0 6px rgba(34, 197, 94, 0.6)', // fixed glow; dotBreathe animates opacity only
                     animation: 'dotBreathe 4s ease-in-out infinite',
                   }}></span>
                   <span className="text-gray-400 tracking-wider" style={{
@@ -1977,10 +2040,10 @@ const App = () => {
                   animation: 'scrollPromptTextFlicker 8s linear infinite',
                 }}>{t('scrollPrompt.swipe')}</span>
               </div>
-              <div style={{ position: 'absolute', top: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderTopLeftRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite' }} />
-              <div style={{ position: 'absolute', top: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderTopRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 0.5s' }} />
-              <div style={{ position: 'absolute', bottom: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderBottomLeftRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1s' }} />
-              <div style={{ position: 'absolute', bottom: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderBottomRightRadius: '2px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1.5s' }} />
+              <div style={{ position: 'absolute', top: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.6)', borderLeft: '1px solid rgba(21,179,21,0.6)', borderTopLeftRadius: '2px', animation: 'scrollPromptCornerPulse 2s ease-in-out infinite' }} />
+              <div style={{ position: 'absolute', top: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.6)', borderRight: '1px solid rgba(21,179,21,0.6)', borderTopRightRadius: '2px', animation: 'scrollPromptCornerPulse 2s ease-in-out infinite 0.5s' }} />
+              <div style={{ position: 'absolute', bottom: -2, left: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.6)', borderLeft: '1px solid rgba(21,179,21,0.6)', borderBottomLeftRadius: '2px', animation: 'scrollPromptCornerPulse 2s ease-in-out infinite 1s' }} />
+              <div style={{ position: 'absolute', bottom: -2, right: -4, width: '0.6rem', height: '0.6rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.6)', borderRight: '1px solid rgba(21,179,21,0.6)', borderBottomRightRadius: '2px', animation: 'scrollPromptCornerPulse 2s ease-in-out infinite 1.5s' }} />
             </div>
           </div>
           )}
@@ -2115,6 +2178,7 @@ const App = () => {
       {/* =========================== */}
       {!isMobile && (
         <div
+          ref={panDesktopRef}
           style={{
             transform: 'translate(calc(var(--map-x, 0) * -100vw), calc(var(--map-y, 0) * -100vh))',
             transformOrigin: 'center center',
@@ -2139,6 +2203,7 @@ const App = () => {
         >
           {/* --- Logo (top-left) - Inside moving container --- */}
           <div
+            ref={panLogoRef}
             className="absolute pointer-events-auto z-10"
             onMouseEnter={() => setNavHovered(true)}
             onMouseLeave={() => setNavHovered(false)}
@@ -2176,6 +2241,7 @@ const App = () => {
           <div className={`absolute inset-0 ${isSystem ? 'z-30' : 'z-10'} pointer-events-none`}>
             {/* Header HUD - Flies up based on scroll progress — delayed 2 frames */}
             <header
+              ref={panHeaderRef}
               className="absolute top-0 left-0 w-full flex justify-between items-center pointer-events-none"
               style={{
                 // Always counter-pan (+map cancels the moving container's −map) so the header stays
@@ -2319,10 +2385,10 @@ const App = () => {
                     }}>{window.innerWidth >= 1100 ? t('scrollPrompt.scroll') : t('scrollPrompt.swipe')}</span>
                   </div>
                   {/* Corner bracket accents — curved, offset outward */}
-                  <div style={{ position: 'absolute', top: -3, left: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderTopLeftRadius: '3px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite' }} />
-                  <div style={{ position: 'absolute', top: -3, right: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderTopRightRadius: '3px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 0.5s' }} />
-                  <div style={{ position: 'absolute', bottom: -3, left: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderLeft: '1px solid rgba(21,179,21,0.5)', borderBottomLeftRadius: '3px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1s' }} />
-                  <div style={{ position: 'absolute', bottom: -3, right: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.5)', borderRight: '1px solid rgba(21,179,21,0.5)', borderBottomRightRadius: '3px', animation: 'scrollPromptGlow 3s ease-in-out infinite, scrollPromptCornerPulse 2s ease-in-out infinite 1.5s' }} />
+                  <div style={{ position: 'absolute', top: -3, left: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.6)', borderLeft: '1px solid rgba(21,179,21,0.6)', borderTopLeftRadius: '3px', animation: 'scrollPromptCornerPulse 2s ease-in-out infinite' }} />
+                  <div style={{ position: 'absolute', top: -3, right: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderTop: '1px solid rgba(21,179,21,0.6)', borderRight: '1px solid rgba(21,179,21,0.6)', borderTopRightRadius: '3px', animation: 'scrollPromptCornerPulse 2s ease-in-out infinite 0.5s' }} />
+                  <div style={{ position: 'absolute', bottom: -3, left: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.6)', borderLeft: '1px solid rgba(21,179,21,0.6)', borderBottomLeftRadius: '3px', animation: 'scrollPromptCornerPulse 2s ease-in-out infinite 1s' }} />
+                  <div style={{ position: 'absolute', bottom: -3, right: -5, width: '0.8rem', height: '0.8rem', background: 'transparent', pointerEvents: 'none', borderBottom: '1px solid rgba(21,179,21,0.6)', borderRight: '1px solid rgba(21,179,21,0.6)', borderBottomRightRadius: '3px', animation: 'scrollPromptCornerPulse 2s ease-in-out infinite 1.5s' }} />
                 </div>
               )}
             </div>
@@ -2348,7 +2414,7 @@ const App = () => {
                 position — this wrapper counter-pans the ENTIRE assessment system (+map cancels
                 the moving container's −map, same trick as the header/logo) so the exact same
                 flow renders on-screen at that map spot. Identity (no transform) otherwise. */}
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', transform: clientAssessment ? 'translate(calc(var(--map-x, 0) * 100vw), calc(var(--map-y, 0) * 100vh))' : undefined }}>
+            <div ref={panAssessmentRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', transform: clientAssessment ? 'translate(calc(var(--map-x, 0) * 100vw), calc(var(--map-y, 0) * 100vh))' : undefined }}>
 
             {/* --- SYSTEM INNER CONTENT (Shown after Zoom) --- */}
             <div
@@ -2582,6 +2648,7 @@ const App = () => {
         {/* z:8 normally (behind desktop UI z:10 and overlay z:15), z:20 at frame 10+ (above overlay) */}
         {/* ========================= */}
         <div
+          ref={panHoloRef}
           style={{
             transform: 'translate(calc(var(--map-x, 0) * -100vw), calc(var(--map-y, 0) * -100vh))',
             transformOrigin: 'center center',
@@ -2595,11 +2662,16 @@ const App = () => {
         >
           <div className="absolute inset-0 flex items-center justify-center" style={{ overflow: 'visible' }}>
             {clientMode ? (
-              <OrbSphere3D
-                config={clientOrbConfig}
-                active={landing3dLive}
-                size={clientOrbSize}
-              />
+              <>
+                <OrbSphere3D
+                  config={clientOrbConfig}
+                  active={landing3dLive}
+                  size={clientOrbSize}
+                  style={ORB_GLOW}
+                />
+                {/* grain over the glow so it can't band into rings on an HDR display */}
+                <OrbGlowDither diameter={orbGlowDiameter(clientOrbSize, 90)} />
+              </>
             ) : (
               <HoloEarth
                 className="w-full h-full"
@@ -2633,7 +2705,7 @@ const App = () => {
           overflow: 'hidden',
         }}
       >
-        <div style={{
+        <div ref={panMonitorRef} style={{
           position: 'absolute',
           width: '100vw',
           height: '100vh',
@@ -2656,6 +2728,7 @@ const App = () => {
       {/* Uses CSS content-visibility: auto to skip rendering off-screen content */}
       {/* ========================= */}
       <div
+        ref={panPagesRef}
         style={{
           position: 'fixed',
           inset: 0,
@@ -2772,6 +2845,7 @@ const App = () => {
         }}>
           <GardensPage
             isVisible={sectionLive('gardens')}
+            warm={gardensWarm}
             onBack={handleCloseSection}
             initialBrandIndex={gardensBrandIndex}
           />

@@ -3,6 +3,8 @@ import { Download, RotateCcw, Copy, Brain, Eye, Heart, Sparkles, FileText, Chevr
 import { ARCHETYPES } from '@gfl/assessment-core/assessmentTypes';
 import { useLanguage } from '@gfl/i18n';
 
+import HoloOverlays from '../HoloOverlays';
+
 /**
  * AssessmentResults - Results panel that appears after all layers complete
  * Displays archetype, scores, layer analysis, AI prompt, and PDF download
@@ -77,21 +79,8 @@ const AssessmentResults = ({
         <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4" style={{ border: '1.5px solid rgba(251, 191, 36, 0.6)', borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }} />
         <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4" style={{ border: '1.5px solid rgba(251, 191, 36, 0.6)', borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }} />
 
-        {/* Holographic sheen */}
-        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
-          background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
-          backgroundSize: '400% 400%',
-          backgroundRepeat: 'no-repeat',
-          animation: 'holoSheen 45s ease-in-out infinite',
-          mixBlendMode: 'screen',
-        }} />
-
-        {/* Scanline sweep */}
-        <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
-          background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
-          backgroundSize: '100% 300%',
-          animation: 'holoScanline 14s linear infinite',
-        }} />
+        {/* Holographic sheen + scanline sweep (compositor-only) */}
+        <HoloOverlays />
 
         {/* Noise texture overlay */}
         <div className="absolute inset-0 rounded-lg pointer-events-none bg-[url('/images/noise.svg')] opacity-[0.03] mix-blend-overlay" />

@@ -490,7 +490,13 @@ const GeneralBrandPage = React.memo(({
   onBack, 
   initialBrandIndex = 0,
   brandSlug = null, // Optional: can specify brand by slug instead
-  hideNavWheel = false // When true, hides the rotating brand selection wheel
+  hideNavWheel = false, // When true, hides the rotating brand selection wheel
+  // Build the page while it is still off-screen. Its content is only created when it becomes visible,
+  // and on the platform map that moment is the start of the pan towards it — a ~35 ms React mount and
+  // its layout landed inside the pan frames (measured: that pan ran at 101 fps against 175 elsewhere).
+  // The caller sets this once the app is idle, so arriving is pure movement (same trick as the
+  // pre-mounted kook scene in apps/platform/src/App.jsx).
+  warm = false
 }) => {
   const { t } = useLanguage();
   // Use a virtual index for infinite scrolling
@@ -549,7 +555,7 @@ const GeneralBrandPage = React.memo(({
         opacity: 1, // Always in DOM for pre-load
       }}
     >
-      {isVisible ? (
+      {(isVisible || warm) ? (
       <>
       {/* Main Content Area - No back button, logo.png is used as return */}
       <main className="fixed top-[12%] left-[5%] w-[90%] h-[75%] z-10 pointer-events-none">

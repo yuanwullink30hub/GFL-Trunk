@@ -72,6 +72,7 @@ const MobileLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, ani
                 height: 'clamp(0.3rem, 0.8vw, 0.5rem)',
                 minWidth: 'clamp(0.3rem, 0.8vw, 0.5rem)',
                 minHeight: 'clamp(0.3rem, 0.8vw, 0.5rem)',
+                boxShadow: '0 0 6px rgba(34, 197, 94, 0.6)', // fixed glow; dotBreathe animates opacity only
                 animation: 'dotBreathe 4s ease-in-out infinite',
               }}></span>
               <span className="text-gray-400 tracking-widest" style={{

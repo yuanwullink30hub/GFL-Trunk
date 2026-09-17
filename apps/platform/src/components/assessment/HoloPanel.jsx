@@ -20,6 +20,7 @@
  */
 import React from 'react';
 import { C, FONT } from '@gfl/ui';
+import HoloOverlays from '../HoloOverlays';
 
 /* SectorFrame exact box-shadow (6 layers) */
 const SF_SHADOW =
@@ -100,25 +101,8 @@ export const HoloPanel = ({
       fontSize: 'max(12px, 0.65vw)',
     }}>
 
-      {/* Holographic sheen — diagonal sweep */}
-      <div style={{
-        position: 'absolute', inset: 0, borderRadius: '0.5rem',
-        pointerEvents: 'none', zIndex: 1,
-        background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
-        backgroundSize: '400% 400%',
-        backgroundRepeat: 'no-repeat',
-        animation: 'holoSheen 45s ease-in-out infinite',
-        mixBlendMode: 'screen',
-      }} />
-
-      {/* Scanline sweep */}
-      <div style={{
-        position: 'absolute', inset: 0, borderRadius: '0.5rem',
-        pointerEvents: 'none', zIndex: 1,
-        background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
-        backgroundSize: '100% 300%',
-        animation: 'holoScanline 14s linear infinite',
-      }} />
+      {/* Holographic sheen + scanline sweep (compositor-only) */}
+      <HoloOverlays zIndex={1} />
 
       {/* Noise texture overlay (SectorFrame exact) */}
       <div style={{

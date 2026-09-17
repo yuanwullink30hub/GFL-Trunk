@@ -58,10 +58,36 @@ const LEAD_INS = [
 ];
 const RESULT_WORDS = String.raw`big[ \t]+five|personality|results?|report|profile|scores?|resultaten|rapport|profiel|persoonlijkheid`;
 
-// Labels, lead-ins and result words match in any case ((?i:…)); the name itself must be capitalised.
-const LABEL_RE = new RegExp(String.raw`(^|\n)([ \t]*(?i:${LABELS.join('|')})[ \t]*[:：\-–—][ \t]*)(${NAME})`, 'gu');
-const LEAD_IN_RE = new RegExp(String.raw`(?<!\p{L})((?i:${LEAD_INS.join('|')}))([ \t,:]+)(${NAME})`, 'gu');
-const POSSESSIVE_RE = new RegExp(String.raw`(${NAME})['’]s?(?=[ \t]+(?i:${RESULT_WORDS}))`, 'gu');
+/**
+ * Case-insensitive version of a regex source, without the `i` flag and without inline modifiers
+ * ((?i:…) needs Node 23+; production runs Node 22). Every letter outside an escape becomes a class
+ * of both cases; letters inside an existing class get their other case added.
+ */
+function anyCase(src) {
+  let out = '';
+  for (let i = 0; i < src.length; i += 1) {
+    const ch = src[i];
+    if (ch === '\\') { out += ch + (src[i + 1] || ''); i += 1; continue; }
+    if (ch === '[') {
+      let j = i + 1; let cls = '';
+      while (j < src.length && src[j] !== ']') {
+        if (src[j] === '\\') { cls += src[j] + (src[j + 1] || ''); j += 2; continue; }
+        const c = src[j]; const u = c.toUpperCase(); const l = c.toLowerCase();
+        cls += c + (u !== c ? u : l !== c ? l : '');
+        j += 1;
+      }
+      out += `[${cls}]`; i = j; continue;
+    }
+    const u = ch.toUpperCase(); const l = ch.toLowerCase();
+    out += u !== l ? `[${l}${u}]` : ch;
+  }
+  return out;
+}
+
+// Labels, lead-ins and result words match in any case; the name itself must be capitalised.
+const LABEL_RE = new RegExp(String.raw`(^|\n)([ \t]*(?:${anyCase(LABELS.join('|'))})[ \t]*[:：\-–—][ \t]*)(${NAME})`, 'gu');
+const LEAD_IN_RE = new RegExp(String.raw`(?<!\p{L})((?:${anyCase(LEAD_INS.join('|'))}))([ \t,:]+)(${NAME})`, 'gu');
+const POSSESSIVE_RE = new RegExp(String.raw`(${NAME})['’]s?(?=[ \t]+(?:${anyCase(RESULT_WORDS)}))`, 'gu');
 const LEAD_WORD_RE = new RegExp(String.raw`^(?:${LEAD_INS.join('|')})$`, 'iu');
 
 const EMAIL_RE = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.\p{L}{2,}/gu;

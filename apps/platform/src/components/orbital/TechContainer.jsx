@@ -87,8 +87,10 @@ const TechContainer = ({
           )}
         </div>
         
-        {/* Inner Content Placeholder */}
-        <div className="flex-1 w-full h-full border border-dashed border-white/5 rounded-sm flex items-center justify-center pointer-events-auto overflow-visible" style={{ marginTop: '1.2vw' }}>
+        {/* Inner Content Placeholder — minHeight 0: as a flex item it defaults to min-height auto, which
+            pins it at its h-full (100%) as soon as the content is taller than the space; 100% plus the
+            1.2vw marginTop then ran 0.4vw past the frame, taking the bottom row (a card's button) with it. */}
+        <div className="flex-1 w-full h-full border border-dashed border-white/5 rounded-sm flex items-center justify-center pointer-events-auto overflow-visible" style={{ marginTop: '1.2vw', minHeight: 0 }}>
             {children || (
                 <div className="flex flex-col items-center" style={{ gap: '0.4vw' }}>
                     <div className="rounded-full border border-t-transparent animate-spin" style={{ borderColor: accentColor, width: '1.5vw', height: '1.5vw' }} />

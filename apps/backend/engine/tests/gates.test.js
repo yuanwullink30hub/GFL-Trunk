@@ -613,6 +613,60 @@ test('Request — the derived indices and the uploaded OCEAN values reach the mo
   assert.ok(v43.includes('Polarization Index: 80 (HIGH_POLARIZATION)') && v43.includes('Gat > 222 punten'));
 });
 
+test('Request — an OCEAN upload reaches the model as numbers under our names, never as its text (Addendum A §5c)', () => {
+  const { buildUserMessage } = require('../../prompts/advanced');
+  const { parseOceanAspects } = require('../../services/oceanUpload');
+  // The layout of a real Dutch Big Five report (synthetic name, no source prose): a name-only cover and
+  // a greeting the scrubber does not know, an overview printing a column of labels and THEN a column of
+  // numbers, a sixth HEXACO scale, and a score page — one trait split over two lines.
+  const upload = [
+    'Persoonlijkheid', 'Jan Jansen', 'Hé Jan,',
+    'Je overzicht', 'Meegaandheid', 'Compassie', 'Beleefdheid', 'Consciëntieusheid', 'IJver', 'Ordelijkheid',
+    'Extraversie', 'Enthousiasme', 'Assertiviteit', 'Neuroticisme', 'Terughoudendheid', 'Volatiliteit',
+    'Openheid voor Ervaringen', 'Intellect', 'Esthetiek', 'Eerlijkheid - Nederigheid',
+    '39', '76', '9', '96', '99', '81', '88', '69', '92', '2', '2', '7', '72', '75', '64', '66',
+    'Even spieken ?',
+    'Meegaandheid: 39', '- Beleefdheid: 9', '- Compassie: 76',
+    'Consciëntieusheid: 96', '- IJver: 99', '- Ordelijkheid: 81',
+    'Extraversie: 88', '- Enthousiasme: 69', '- Assertiviteit: 92',
+    'Neuroticisme: 2', '- Terughoudendheid: 2', '- Volatiliteit: 7',
+    'Openheid voor', 'Ervaringen: 72', '- Intellect: 75', '- Esthetiek: 64',
+    'Beschrijft hoe graag je bezig bent met intellectuele interesses.', 'Goed bezig Jan!',
+  ].join('\n');
+
+  const aspects = parseOceanAspects(upload);
+  assert.deepEqual(aspects, {
+    intellect: 75, aesthetics: 64, industriousness: 99, orderliness: 81, enthusiasm: 69,
+    assertiveness: 92, compassion: 76, politeness: 9, volatility: 7, withdrawal: 2,
+  });
+  // the overview's label column is never paired with its number column
+  assert.equal(parseOceanAspects('Esthetiek\n39\n76'), null);
+  // "intellectuele" is not "Intellect"
+  assert.equal(parseOceanAspects('intellectuele interesses 12'), null);
+
+  const base = {
+    archetypeKey: 'HERO', supportArchetype: 'MAGICIAN', shadowArchetype: 'EXPLORER', blindspotArchetype: 'SAGE',
+    archetypeDetails: [], responses: [], sliceScoped: true,
+    uploadedFileContents: [{ name: 'upload-1.pdf', text: upload }],
+    uploadedOceanScores: { O: 72, C: 96, E: 88, A: 39, N: 2 },
+    uploadedOceanAspects: aspects,
+  };
+  const msg = buildUserMessage(base);
+  assert.ok(msg.includes('OCEAN-aspecten (geüpload door de gebruiker): Openheid — Intellect: 75/100 · Esthetiek: 64/100 | '
+    + 'Consciëntieusheid — IJver: 99/100 · Ordelijkheid: 81/100 | Extraversie — Enthousiasme: 69/100 · Assertiviteit: 92/100 | '
+    + 'Meegaandheid — Compassie: 76/100 · Beleefdheid: 9/100 | Neuroticisme — Volatiliteit: 7/100 · Terugtrekking: 2/100'), msg);
+  // nothing of the report's text: not its sixth scale, not its own label for Withdrawal, not the person, not the file
+  for (const leak of ['Nederigheid', 'Terughoudendheid', 'Jansen', 'Hé Jan', 'GEBRUIKER-GEÜPLOADE DOCUMENTEN', 'upload-1.pdf']) {
+    assert.ok(!msg.includes(leak), `"${leak}" must not reach the model`);
+  }
+  assert.ok(buildUserMessage({ ...base, language: 'en' })
+    .includes('OCEAN aspects (uploaded by the user): Openness — Intellect: 75/100 · Aesthetics: 64/100 | '));
+  // an unreadable upload claims nothing
+  assert.ok(!/OCEAN \(|OCEAN-aspecten|OCEAN-RAPPORT/.test(buildUserMessage({ ...base, uploadedOceanScores: null, uploadedOceanAspects: null })));
+  // the v4.3 path keeps pasting the (scrubbed) text, as before
+  assert.ok(buildUserMessage({ ...base, sliceScoped: false }).includes('GEBRUIKER-GEÜPLOADE DOCUMENTEN'));
+});
+
 test('Request — the yellow-triangle activation numbers ship, the backend\'s own lens prose does not (W6: content = the slice)', () => {
   const { buildUserMessage } = require('../../prompts/advanced');
   const details = ['JUDGE', 'EXPLORER', 'ARTIST', 'LOVER', 'OUTLAW', 'MAGICIAN', 'CAREGIVER', 'TRICKSTER', 'HERO', 'INNOCENT', 'SAGE', 'RULER']

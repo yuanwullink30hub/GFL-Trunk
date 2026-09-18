@@ -10,6 +10,8 @@
  * NOT the full 12-archetype dataset.
  */
 
+const { formatAspectLine } = require('../../services/oceanUpload');
+
 // ═══════════════════════════════════════════════════════════════
 // STATIC REFERENCE DATA (never sent to AI — used to assemble)
 // ═══════════════════════════════════════════════════════════════
@@ -1617,6 +1619,7 @@ function buildUserMessage({
   overallShadow, uploadedFileContents,
   oceanScores, subgroups, responses,
   uploadedOceanScores,
+  uploadedOceanAspects,
   language,
   // v5 pipeline (engine/reportV5.js): the corpus arrives sliced per the Corpus Manifest, which
   // ships exactly one 132-name, so the 11-row matrix is omitted; the v5.2 system prompt owns the
@@ -1747,6 +1750,9 @@ function buildUserMessage({
       const cells = ['O', 'C', 'E', 'A', 'N'].filter((d) => uploadedOceanScores[d] != null)
         .map((d) => `${labels[d]}: ${uploadedOceanScores[d]}/100`);
       parts.push(`${en ? 'OCEAN (uploaded by the user)' : 'OCEAN (geüpload door de gebruiker)'}: ${cells.join(' | ')}`);
+      // The two aspects per trait, numbers under our names — the same upload, never its text (§5c).
+      const aspectLine = formatAspectLine(uploadedOceanAspects, en ? 'en' : 'nl');
+      if (aspectLine) parts.push(`${en ? 'OCEAN aspects (uploaded by the user)' : 'OCEAN-aspecten (geüpload door de gebruiker)'}: ${aspectLine}`);
     }
   } else {
     if (polarizationIndex != null) {
@@ -1915,7 +1921,11 @@ function buildUserMessage({
   }
 
   // ═══ GEBRUIKER-GEÜPLOADE DOCUMENTEN (PDFs) ═══
-  if (uploadedFileContents && uploadedFileContents.length > 0) {
+  // Engine pipeline: NEVER the report's text. Only its numbers travel — the two OCEAN lines above,
+  // under our names (Addendum A §5c). The text carried the source's own labels and extra scales
+  // (a HEXACO "Eerlijkheid-Nederigheid" the model then wrote about) and whatever personal details the
+  // scrubber did not recognise. The v4.3 path below keeps its old behaviour.
+  if (uploadedFileContents && uploadedFileContents.length > 0 && !sliceScoped) {
     parts.push(`\n═══════════════════════════════════════`);
     parts.push(`GEBRUIKER-GEÜPLOADE DOCUMENTEN`);
     parts.push(`═══════════════════════════════════════`);
@@ -1928,7 +1938,12 @@ function buildUserMessage({
 
   // ═══ UPLOADED RAPPORT ═══
   if (hasReport && sliceScoped) {
-    parts.push(`\n⚠️ EXTERN RAPPORT GEÜPLOAD: ${uploadedFileContents.map(f => f.name).join(', ')}`);
+    // No file names: the OCEAN lines above are the upload, and only when its numbers could be read.
+    if (uploadedOceanScores && Object.keys(uploadedOceanScores).length) {
+      parts.push(en
+        ? '\n⚠️ EXTERNAL OCEAN REPORT UPLOADED — only the numbers above travel; no labels, categories or extra scales from the source.'
+        : '\n⚠️ EXTERN OCEAN-RAPPORT GEÜPLOAD — alleen de getallen hierboven reizen mee; geen labels, categorieën of extra schalen uit de bron.');
+    }
   } else if (hasReport) {
     const fileNames = uploadedFileContents.map(f => f.name).join(', ');
     parts.push(`\n⚠️ EXTERN RAPPORT GEÜPLOAD: ${fileNames}\nGenereer alle secties 1-4, 4B (5 elementen), 5-12 + 13A + 13B. Genereer NA sectie 13B de sectie '## Persoonlijkheidsrapport Vergelijking' exact zoals gespecificeerd in de systeeminstructies. Dit is verplicht — sla geen secties over.`);

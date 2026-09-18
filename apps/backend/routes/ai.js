@@ -17,6 +17,7 @@ const config = require('../config');
 const nodemailer = require('nodemailer');
 const { buildAccessEmail } = require('../services/accessEmail');
 const { redactUploadText, neutralFileName } = require('../services/uploadRedaction');
+const { parseOceanAspects } = require('../services/oceanUpload');
 const { rateLimit, createCounter } = require('../middleware/rateLimit');
 
 // Level-specific prompt builders
@@ -245,11 +246,13 @@ router.post('/analyze', analyzePerVisitor, analyzeBudget, async (req, res) => {
     // This is done here (before the AI runs) so we can send authoritative
     // structured scores back to the client — no regex parsing of AI text needed.
     let uploadedOceanScores = null;
+    let uploadedOceanAspects = null;   // the two aspects per trait, numbers only (services/oceanUpload)
     if (uploadedFileContents && uploadedFileContents.length > 0) {
       // Keywords that map to each OCEAN dimension (order: longest match first to avoid substring collisions)
       const DIM_KEYWORDS = {
         O: ['openheid voor ervaringen', 'openheid voor ervaring', 'openheid', 'openness to experience', 'openness', 'open to experience', 'open voor ervaring'],
-        C: ['ordelijkheid', 'conscientiousness', 'consciëntieusheid', 'conscientieusheid', 'gewetensvolheid', 'zorgvuldigheid', 'nauwgezetheid'],
+        // Not 'ordelijkheid': that is an ASPECT of C (Addendum A §5b) — see the legacy fallback below.
+        C: ['conscientiousness', 'consciëntieusheid', 'conscientieusheid', 'gewetensvolheid', 'zorgvuldigheid', 'nauwgezetheid'],
         E: ['extraversie', 'extraversion', 'extroversie', 'extraverted', 'extravert'],
         A: ['meegaandheid', 'agreeableness', 'inschikkelijkheid', 'vriendelijkheid', 'verdraagzaamheid'],
         N: ['neuroticisme', 'neuroticism', 'emotionele stabiliteit', 'emotional stability', 'emotionaliteit'],
@@ -358,6 +361,23 @@ router.post('/analyze', analyzePerVisitor, analyzeBudget, async (req, res) => {
         if (Object.keys(parsed).length >= 5) break; // all found, stop checking files
       }
 
+      // The ten aspect scores (two per trait), from the first file that carries any.
+      for (const file of uploadedFileContents) {
+        const found = parseOceanAspects(file.text);
+        if (found) { uploadedOceanAspects = found; break; }
+      }
+      if (uploadedOceanAspects) console.log('[AI] Parsed uploaded OCEAN aspects:', uploadedOceanAspects);
+
+      // Older reports — our own v4 PDFs among them — named C itself "Ordelijkheid". Read it as C only
+      // when no trait-named C was found AND the report has no aspect split (no IJver), because in a
+      // report with the split, Ordelijkheid is an aspect and C is printed separately.
+      if (parsed.C == null && !(uploadedOceanAspects && uploadedOceanAspects.industriousness != null)) {
+        for (const file of uploadedFileContents) {
+          const m = String(file.text || '').match(/ordelijkheid[^\n\d]{0,40}?(\d{1,3})\b/i);
+          if (m && +m[1] <= 100) { parsed.C = +m[1]; break; }
+        }
+      }
+
       if (Object.keys(parsed).length >= 3) {
         uploadedOceanScores = parsed;
         console.log('[AI] Parsed uploaded OCEAN scores:', uploadedOceanScores);
@@ -391,6 +411,9 @@ router.post('/analyze', analyzePerVisitor, analyzeBudget, async (req, res) => {
       // The OCEAN values parsed from the user's upload (above) — the engine pipeline ships them as
       // one structured line so the model reads them instead of digging through the PDF text.
       uploadedOceanScores,
+      // …and its aspects, numbers under our names. On the engine pipeline these two lines are ALL the
+      // model gets from an upload — never the report's text (Addendum A §5c).
+      uploadedOceanAspects,
       // Report language — picks the Dutch or English 132-roster for the extension
       // name + matrix table, matching the corpus selected above.
       language,

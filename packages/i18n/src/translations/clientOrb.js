@@ -122,7 +122,6 @@ export default {
           en: 'You carry full responsibility for safeguarding that folder. If it is lost — its contents are gone for good.\nWe recommend using external storage as a backup — and as it happens, we sell exactly that!',
         },
 
-        getTitle: { nl: 'De applicatie ophalen', en: 'Get the application' },
         gate: {
           chip: { nl: 'Desktop-applicatie', en: 'Desktop application' },
           sameInterface: { nl: 'Zelfde interface', en: 'Same interface' },

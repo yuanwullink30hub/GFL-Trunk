@@ -14,7 +14,7 @@ const PURPLE_RGB = '168, 85, 247';
  * The final gate before the download — the one place on the Werkruimte tab that should feel like
  * a threshold rather than a settings row. A glass panel (amber brand accent, plain 1px amber border
  * without corner brackets, amber inset glow), a slowly turning
- * crystal emblem, the title as display chrome, three short promises, and the prominent split
+ * crystal emblem, the lead, three short promises, and the prominent split
  * download button. Decorative motion (ring spin, sheen, scanline, button breathe) all tolerates the
  * low-gpu freeze: frozen, the panel still reads complete.
  */
@@ -89,29 +89,16 @@ export default function DownloadGate({ notice = null, stretch = false }) {
         {/* Status chip */}
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.22rem 0.6rem', borderRadius: '0.15rem',
+            display: 'inline-flex', alignItems: 'center', gap: '0.7rem', padding: '0.4rem 0.9rem', borderRadius: '0.15rem',
             border: `1px solid rgba(${AMBER_RGB}, 0.3)`, background: `rgba(${AMBER_RGB}, 0.06)`,
-            fontFamily: FONT, fontSize: 'max(8px, 0.4vw)', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: `rgba(${AMBER_RGB}, 0.9)`,
+            fontFamily: FONT, fontSize: 'max(14px, 0.85vw)', fontWeight: 700, letterSpacing: '0.16em', lineHeight: 1.35, textAlign: 'center', textTransform: 'uppercase', color: `rgba(${AMBER_RGB}, 0.9)`,
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: AMBER, boxShadow: `0 0 8px rgba(${AMBER_RGB}, 0.9)`, animation: 'gflGateDot 2.4s ease-in-out infinite' }} />
+            <span style={{ width: 9, height: 9, flexShrink: 0, borderRadius: '50%', background: AMBER, boxShadow: `0 0 8px rgba(${AMBER_RGB}, 0.9)`, animation: 'gflGateDot 2.4s ease-in-out infinite' }} />
             {t('clientOrb.modal.workspace.gate.chip')} · v{download.version}
           </span>
         </div>
 
         <CrystalEmblem />
-
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontFamily: FONT, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.16em',
-            fontSize: 'max(14px, 0.85vw)', lineHeight: 1.35,
-            background: `linear-gradient(135deg, #FFFEF0 0%, ${AMBER} 55%, #f59e0b 100%)`,
-            WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
-            filter: `drop-shadow(0 0 12px rgba(${AMBER_RGB}, 0.25))`,
-          }}>
-            {t('clientOrb.modal.workspace.getTitle')}
-          </div>
-          <div aria-hidden="true" style={{ width: '3.5rem', height: 1, margin: '0.7rem auto 0', background: `linear-gradient(90deg, transparent, rgba(${AMBER_RGB}, 0.8), transparent)` }} />
-        </div>
 
         <p style={{ margin: 0, fontFamily: BODY, fontSize: 'max(12px, 0.62vw)', lineHeight: 1.7, color: 'rgba(255, 254, 240, 0.85)', whiteSpace: 'pre-line', textAlign: 'center' }}>
           {t('clientOrb.modal.workspace.getLead')}

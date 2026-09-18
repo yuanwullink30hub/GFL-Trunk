@@ -1388,19 +1388,6 @@ const AssessmentResultsModal = ({
         y += 6;
       }
 
-      // Score — large, placed directly below the archetype quote
-      y += 4;
-      pdf.setFontSize(22);
-      pdf.setTextColor(...green);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`${result.totalScore} / ${result.maxScore}`, W / 2, y, { align: 'center' });
-      y += 9;
-      pdf.setFontSize(8.5);
-      pdf.setTextColor(...white);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(t('resultsModal.pdf.cover.datapoints'), W / 2, y, { align: 'center' });
-      y += 10;
-
       // ═══════════════════════════════════════════════════
       // SHORT (free) VERSION — follows the result-card flow, 1 page per component:
       //   p1 cover (identical to full, above) · p2 Identiteit + Verklaring (identical
@@ -3209,7 +3196,6 @@ const AssessmentResultsModal = ({
         mBold(dash(t('resultsModal.pdf.data.indicesSection')), green);
         mLine(tFunc('resultsModal.pdf.data.authenticityIndex')(natTotal, authPct));
         mLine(tFunc('resultsModal.pdf.data.polarizationIndex')(mainTot, shadTot, polGap, polCat));
-        mLine(tFunc('resultsModal.pdf.data.totalDatapoints')(result.totalScore || 0));
         mGap();
 
         // Master Prompt v4.1 §5.10 / D-10: model-derived OCEAN scalars are NEVER emitted.

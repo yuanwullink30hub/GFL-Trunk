@@ -337,7 +337,6 @@ export default {
       // ── Cover ──
       cover: {
         brandLine: { nl: 'GARDEN FOR LIFE: Archetype Analyse', en: 'GARDEN FOR LIFE: Archetype Analysis' },
-        datapoints: { nl: 'DELTAWERKEN DATAPUNTEN', en: 'DELTAWERKEN DATA POINTS' },
       },
 
       // ── Meta-disclaimer block (identity page, full + short report) ──
@@ -833,10 +832,6 @@ export default {
         polarizationIndex: {
           nl: (mainTot, shadTot, gap, cat) => `Polarization Index: ${mainTot} (Main) - ${shadTot} (Shadow) = gap ${gap}% -> ${cat}`,
           en: (mainTot, shadTot, gap, cat) => `Polarization Index: ${mainTot} (Main) - ${shadTot} (Shadow) = gap ${gap}% -> ${cat}`,
-        },
-        totalDatapoints: {
-          nl: (total) => `Totaal Deltawerken Datapunten: ${total} / 792`,
-          en: (total) => `Total Deltawerken Data Points: ${total} / 792`,
         },
         polHigh: { nl: 'Hoge Polarisatie', en: 'High Polarisation' },
         polMid: { nl: 'Matig', en: 'Moderate' },

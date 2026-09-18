@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import TechContainer from './TechContainer';
 import WheelGlyph from '../WheelGlyph';
-import { Database, Lock, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Database, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@gfl/i18n';
 import { liveExtendedName } from '@gfl/assessment-core/data';
 import { SciFiButton } from '@gfl/ui';
@@ -601,8 +601,9 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
           opacity: mounted ? containerOpacity : 0,
         }}
       >
-        {/* Winkel — an empty product template (image + description + price). Height +50% (grows on
-            the bottom, since it's top-anchored by the transform); the image flexes to fill it. */}
+        {/* Winkel — the shop's product in brief: the same image, name, copy and price as the shop page
+            (WinkelPage — keep the two in sync, owner 2026-09-18). Height +50% (grows on the bottom,
+            since it's top-anchored by the transform); the image flexes to fill it. */}
         <div style={{ width: '85%', height: '22.28vh', flexShrink: 0, pointerEvents: 'auto', transform: 'translate(1vw, 4.56vh)' /* was calc(9vh - 4rem) — 4rem=4.44vh @1440 */ }}>
           <TechContainer title={t('shell.desktop.winkelTitle')} variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.3)' }}>
             {/* No frosted lock overlay here: the product template (image/description, filled
@@ -610,18 +611,20 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
             <div className="w-full h-full flex flex-col" style={{ gap: '0.5vw', padding: '0.6vw' }}>
               {/* Image (left) + text (right) — fills the space above the price/action row */}
               <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', gap: '0.6vw' }}>
-                {/* Product image placeholder — left, forced square (height fills the row, width = height) */}
-                <div style={{ flexShrink: 0, alignSelf: 'stretch', aspectRatio: '1 / 1', borderRadius: '0.4rem', border: '1px dashed rgba(192,132,252,0.4)', background: 'rgba(192,132,252,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ShoppingBag style={{ width: '2.2vw', height: '2.2vw', color: 'rgba(192,132,252,0.5)' }} strokeWidth={1.5} />
+                {/* Product image — left, forced square (height fills the row, width = height) */}
+                <div style={{ flexShrink: 0, alignSelf: 'stretch', aspectRatio: '1 / 1', borderRadius: '0.4rem', border: '1px solid rgba(192,132,252,0.25)', background: '#000', overflow: 'hidden' }}>
+                  <img src="/images/winkel/t3-archetype-kaarten.webp" alt={t('misc.winkel.productName')} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 </div>
-                {/* Description — right */}
-                <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
-                  <div style={{ fontFamily: "'Figtree', sans-serif", color: '#FFFEF0', fontSize: 'max(13px, 0.7vw)', lineHeight: 1.4 }}>{t('shell.desktop.productPlaceholder')}</div>
+                {/* Category, name and copy — right; the copy clamps to what the card has room for */}
+                <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.3vh', overflow: 'hidden' }}>
+                  <span style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(8px, 0.45vw)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(192, 132, 252, 0.7)' }}>{t('misc.winkel.category')}</span>
+                  <div style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 600, color: '#FFFEF0', fontSize: 'max(13px, 0.8vw)', lineHeight: 1.15 }}>{t('misc.winkel.productName')}</div>
+                  <div style={{ fontFamily: "'Figtree', sans-serif", color: 'rgba(255, 254, 240, 0.7)', fontSize: 'max(11px, 0.58vw)', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t('misc.winkel.productDesc')}</div>
                 </div>
               </div>
-              {/* Price + action (stays) */}
+              {/* Price + action */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5vw' }}>
-                <span style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", color: '#22c55e', fontSize: 'max(11px, 0.62vw)', fontWeight: 700 }}>€ 0,00</span>
+                <span style={{ fontFamily: "'Figtree', sans-serif", color: 'rgb(192, 132, 252)', fontSize: 'max(12px, 0.7vw)', fontWeight: 700 }}>€ 00,00</span>
                 <SciFiButton variant="purple" size="sm" disabled={restricted} onClick={() => setActiveSection('winkel')}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
                     {restricted && <Lock style={{ width: 'max(9px, 0.5vw)', height: 'max(9px, 0.5vw)', flexShrink: 0, color: '#f59e0b' }} strokeWidth={2} />}

@@ -202,6 +202,8 @@ function Orb({ cfgRef, activeRef }) {
   );
 }
 
+const LAYOUT_SIZE = { offsetSize: true };   // react-use-measure: measure the canvas box untransformed
+
 export default function OrbSphere3D({ config, active = true, size = 540, style, className, capturable = false, dprOverride }) {
   const cfgRef = useRef(config); cfgRef.current = config;
   const activeRef = useRef(active); activeRef.current = active;
@@ -213,6 +215,10 @@ export default function OrbSphere3D({ config, active = true, size = 540, style, 
   // the SH displacement can bulge without the canvas edge clipping it. Fixed camera → consistent
   // base-orb size across presets; frame half-height ≈ 1.9 at z=4.95 fits the tallest bumps.
   const CANVAS_SCALE = 1.35;
+  // The canvas takes its LAYOUT size (offsetWidth/Height), never the on-screen one: R3F measures with
+  // getBoundingClientRect by default, which includes an ancestor's CSS scale — the login page grows the
+  // orb with transform: scale(), so the canvas was sized to the scaled box and then scaled again, a
+  // sphere far too big, clipped square by R3F's overflow:hidden wrapper (owner, 2026-09-18).
   return (
     <div className={className} style={{ width: size, height: size, position: 'relative', overflow: 'visible', flexShrink: 0, ...style }}>
       <div style={{ position: 'absolute', left: '50%', top: '50%', width: size * CANVAS_SCALE, height: size * CANVAS_SCALE, transform: 'translate(-50%, -50%)' }}>
@@ -220,6 +226,7 @@ export default function OrbSphere3D({ config, active = true, size = 540, style, 
           frameloop={active ? 'always' : 'demand'}
           camera={{ position: [0, 0, 4.95], fov: 42 }}
           dpr={dpr}
+          resize={LAYOUT_SIZE}
           gl={{ alpha: true, antialias: true, premultipliedAlpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: capturable }}
           style={{ width: '100%', height: '100%', display: 'block' }}
         >

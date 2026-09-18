@@ -3868,12 +3868,7 @@ const AssessmentResultsModal = ({
                   </div>
                 </div>
 
-                {/* De Stille Stem — Reflectie */}
-                {cardStille
-                  .filter((s) => /reflectie/.test(cleanTitle(s.title || '').toLowerCase()))
-                  .map((s, i) => renderAiSectionCard({ ...s, title: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(s.title), displayTitle: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(shownTitle(s)) },6000 + i))}
-
-                {/* D-curve chart (visible) — between Reflectie and Motivatie. Same ref the PDF rasterises. */}
+                {/* D-curve chart (visible). Same ref the PDF rasterises. */}
                 {morphChart && (
                   <div style={{
                     position: 'relative',
@@ -3910,6 +3905,12 @@ const AssessmentResultsModal = ({
                     </p>
                   </div>
                 )}
+
+                {/* De Stille Stem — Reflectie, then Motivatie: both under the D-curve, as the short PDF
+                    follows its D-curve page with them (owner, 2026-09-18). */}
+                {cardStille
+                  .filter((s) => /reflectie/.test(cleanTitle(s.title || '').toLowerCase()))
+                  .map((s, i) => renderAiSectionCard({ ...s, title: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(s.title), displayTitle: t('resultsModal.labels.stilleStemPrefix') + cleanTitle(shownTitle(s)) },6000 + i))}
 
                 {/* De Stille Stem — Motivatie */}
                 {cardStille

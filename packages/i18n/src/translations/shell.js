@@ -39,7 +39,6 @@ export default {
     desktop: {
       // Winkel container
       winkelTitle:       { nl: 'WINKEL', en: 'SHOP' },
-      productPlaceholder: { nl: 'Productnaam — korte beschrijving…', en: 'Product name — short description…' },
       viewShop:          { nl: 'Bekijk winkel', en: 'View shop' },
 
       // Kook-eiland container

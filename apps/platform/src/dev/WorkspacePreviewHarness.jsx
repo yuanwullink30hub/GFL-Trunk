@@ -57,7 +57,7 @@ export default function WorkspacePreviewHarness() {
 
       <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
         {/* Same shell as LoginPage's onboarding card (scale 1.3 in the real flow). */}
-        <div style={{ width: 'min(440px, 72vw)', maxHeight: '80vh', overflowY: 'auto', background: 'rgba(2,0,3,0.66)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: `1px solid ${C.purple}`, borderRadius: '0.7rem', boxShadow: `0 0 46px -12px ${C.purple}, 0 12px 50px rgba(0,0,0,0.6)`, padding: '1.4rem 1.5rem' }}>
+        <div style={{ width: 'min(620px, 72vw, 68vh)', height: 'min(620px, 72vw, 68vh)', overflowY: 'auto', background: 'rgba(2,0,3,0.66)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: `1px solid ${C.purple}`, borderRadius: '0.5rem', boxShadow: `0 0 46px -12px ${C.purple}, 0 12px 50px rgba(0,0,0,0.6)`, padding: '1.4rem 1.5rem' }}>
           <div style={{ fontSize: 'max(15px,0.85vw)', fontWeight: 700, letterSpacing: '0.1em', color: C.gold }}>{t('auth.onboarding.workspaceTitle')}</div>
           <OnboardingWorkspaceStep key={key} accountId={FAKE_ACCOUNT.id} account={FAKE_ACCOUNT} reportFile={fakePdf} reportLabel="De Troonrover" onContinue={() => setContinued((n) => n + 1)} />
         </div>

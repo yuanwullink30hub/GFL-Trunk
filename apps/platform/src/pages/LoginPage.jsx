@@ -745,14 +745,17 @@ const LoginPage = memo(({ isVisible, onBack }) => {
           </>
         )}
         <div style={{ transition: FLOW_TRANSITION, transformOrigin: 'center', transform: onboarding ? `scale(${orbGrow})` : 'scale(1)', pointerEvents: onboarding ? 'none' : 'auto' }}>
-          <OrbSphere3D config={playCfg} active={isVisible} size={templateOrbSize} style={{ opacity: 0.95, filter: 'drop-shadow(0 0 64px rgba(120,80,200,0.16))' }} />
+          {/* Grown by CSS scale during onboarding: render it at the grown resolution so it stays sharp. */}
+          <OrbSphere3D config={playCfg} active={isVisible} size={templateOrbSize} dprOverride={onboarding ? Math.min(3, (window.devicePixelRatio || 1) * orbGrow) : undefined} style={{ opacity: 0.95, filter: 'drop-shadow(0 0 64px rgba(120,80,200,0.16))' }} />
         </div>
 
         {/* First-time onboarding — one continuous orb: panels/card absorb → the SAME orb grows to
             full size → the account card flows OUT of the enlarged orb (no remount, no size pop). */}
         {onboarding && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-            <div style={{ width: 'min(440px, 72vw)', maxHeight: '68vh', overflowY: 'auto', background: 'rgba(2,0,3,0.66)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: `1px solid ${C.purple}`, borderRadius: '0.7rem', boxShadow: `0 0 46px -12px ${C.purple}, 0 12px 50px rgba(0,0,0,0.6)`, fontFamily: FONT, color: C.text, padding: '1.4rem 1.5rem', transformOrigin: 'center center', transform: emerged ? 'scale(1.3)' : 'scale(0.25)', opacity: emerged ? 1 : 0, transition: FLOW_TRANSITION }}>
+            {/* The workspace step is a square (owner, 2026-09-18) — 620px, shrinking with the viewport
+                and scrolling inside when its text runs longer; the account form keeps its tall card. */}
+            <div style={{ ...(workspaceStep ? { width: 'min(620px, 72vw, 68vh)', height: 'min(620px, 72vw, 68vh)' } : { width: 'min(440px, 72vw)', maxHeight: '68vh' }), overflowY: 'auto', background: 'rgba(2,0,3,0.66)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: `1px solid ${C.purple}`, borderRadius: '0.5rem', boxShadow: `0 0 46px -12px ${C.purple}, 0 12px 50px rgba(0,0,0,0.6)`, fontFamily: FONT, color: C.text, padding: '1.4rem 1.5rem', transformOrigin: 'center center', transform: emerged ? 'scale(1.3)' : 'scale(0.25)', opacity: emerged ? 1 : 0, transition: FLOW_TRANSITION }}>
               <div style={{ fontSize: 'max(15px,0.85vw)', fontWeight: 700, letterSpacing: '0.1em', color: C.gold }}>{workspaceStep ? t('auth.onboarding.workspaceTitle') : verifyPending ? t('auth.onboarding.verifyTitle') : t('auth.onboarding.createTitle')}</div>
               {obErr && <div style={{ ...ERROR_STYLE, margin: '0.6rem 0' }}><span style={{ fontSize: '0.8rem' }}>⚠</span> {obErr}</div>}
               {workspaceStep ? (

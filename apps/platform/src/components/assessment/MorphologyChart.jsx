@@ -48,9 +48,11 @@ function registerDomain(values) {
 
 /**
  * @param {{ chart: {main?:number[], support?:number[], composed?:number[]} | {baseline:(number|null)[], transform:(number|null)[]},
- *           mainName?: string, supportName?: string, height?: number, language?: string }} props
+ *           mainName?: string, supportName?: string, configName?: string, height?: number, language?: string }} props
+ *   configName — the configuration (extension) name, e.g. "De Ronin": the transform curve is the Main
+ *   as the configuration pulls it, so it carries that name; the baseline keeps the Main's.
  */
-export default function MorphologyChart({ chart, mainName = 'Main', supportName = 'Support', height = 280, language = 'nl' }) {
+export default function MorphologyChart({ chart, mainName = 'Main', supportName = 'Support', configName, height = 280, language = 'nl' }) {
   const { t } = useLanguage();
   const register = isRegisterChart(chart);
   if (!chart || (!register && !chart.main && !chart.support && !chart.composed)) return null;
@@ -95,7 +97,7 @@ export default function MorphologyChart({ chart, mainName = 'Main', supportName 
             {/* Baseline (reference) underneath, transform on top. connectNulls={false}: a hole is absence. */}
             <Line type="monotone" dataKey="baseline" name={`${mainName} — ${t('charts.morphology.baseline')}`} stroke={COLORS.baseline}
               strokeWidth={2} strokeDasharray="6 4" dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls={false} />
-            <Line type="monotone" dataKey="transform" name={`${mainName} — ${t('charts.morphology.transform')}`} stroke={COLORS.main}
+            <Line type="monotone" dataKey="transform" name={`${configName || mainName} — ${t('charts.morphology.transform')}`} stroke={COLORS.main}
               strokeWidth={2.75} dot={{ r: 3.5 }} activeDot={{ r: 5 }} connectNulls={false} />
           </>
         ) : (

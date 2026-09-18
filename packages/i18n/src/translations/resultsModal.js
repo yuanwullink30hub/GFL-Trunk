@@ -103,7 +103,14 @@ export default {
         nl: 'We berekenen de fysiologische prijs van wie je probeert te zijn.',
         en: 'We are calculating the physiological price of who you are trying to be.',
       },
-      timeEstimate: { nl: 'ca. 9 min', en: 'approx. 9 min' },
+      // Measured 2026-09-18 on Master Prompt v6.2.7 at effort "high": two reports at 14.6 min; one that
+      // uses the whole 75k output ceiling lands near 18 min (REPORT_ESTIMATE_MAX_MS in the modal).
+      timeEstimate: { nl: 'ca. 15–18 min', en: 'approx. 15–18 min' },
+      // Shown instead of the estimate once its upper bound has passed.
+      timeOverdue: {
+        nl: 'Je rapport is bijna klaar — uitgebreide rapporten hebben soms iets langer nodig.',
+        en: 'Your report is almost ready — in-depth reports sometimes take a little longer.',
+      },
       aiUnavailable: {
         nl: 'AI analyse niet beschikbaar — basisresultaten beschikbaar.',
         en: 'AI analysis unavailable — basic results are available.',

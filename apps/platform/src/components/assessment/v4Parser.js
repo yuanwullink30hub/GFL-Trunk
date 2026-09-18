@@ -116,12 +116,29 @@ export const PAGE_ORDER = [
 ];
 
 // ── Tag matching: stem startswith on a normalised (upper, em-dash-stripped) line ──
+// Master Prompt v6.2.x: the DEEL 5 checklist names the Stille Stem sections "DE STILLE STEM — REFLECTIE"
+// (… MOTIVATIE, … BEWEGING) while their TITEL (exact) lines are plain REFLECTIE / MOTIVATIE / BEWEGING.
+// The page label in front is not part of the tag: it is dropped for matching, and from the title the
+// card and PDF show (they add their own "De Stille Stem — " prefix). Only this label is stripped, and
+// only when a known tag follows — "DE STILLE STEM — DE SUPPORT DIE DE KERN BEWERKT" stays untagged.
+const PAGE_LABEL_BARE = /^(?:DE STILLE STEM|THE QUIET VOICE)\s+[—–]\s+(?=\S)/i;
+const PAGE_LABEL = /^(\s*(?:#+\s*)?\**\s*(?:\d+[A-Za-z]?\.\s+)?)(?:DE STILLE STEM|THE QUIET VOICE)\s+[—–]\s+(?=\S)/i;
+
+/** A section title without the Stille Stem page label, when a known tag follows it; else unchanged. */
+export function stripPageLabel(title) {
+  const s = String(title || '');
+  const out = s.replace(PAGE_LABEL, '$1');
+  return out !== s && matchNarrativeTag(s) ? out : s;
+}
+
 function normalizeTagLine(line) {
   return line
     .replace(/^\s*#+\s*/, '')           // strip markdown heading hashes (first, so "## 2. …" loses its number below)
     .replace(/\*+/g, '')                // strip markdown bold
     // strip a leading PDF page-annotation like "(–5). " or a section number "2. " (digits/dashes/parens/dot)
     .replace(/^[\s(]*[–—\d][–—\d\s).]*\.?\s*(?=[A-Za-z])/, '')
+    // drop the page label in front of a Stille Stem title (see PAGE_LABEL) before the subtitle cut
+    .replace(PAGE_LABEL_BARE, '')
     // drop a subtitle after " — " / " – " (em/EN dash with spaces) — NOT the hyphen
     // inside a tag like "DUAL-CORE DYNAMICS".
     .replace(/\s[—–]\s.*$/, '')
@@ -142,13 +159,16 @@ const STEMS = NARRATIVE_TAGS
 export function matchNarrativeTag(line) {
   const norm = normalizeTagLine(line);
   if (!norm || NOT_TAGS.test(norm)) return null;
+  // Behind the Stille Stem page label the title must be the tag and nothing else, so a sentence
+  // like "De Stille Stem — motivatie is wat je voelt…" never becomes a section.
+  const labelled = PAGE_LABEL.test(String(line));
   // The stem must be followed by end-of-string, a space, or "(" — NOT a hyphen/letter.
   // With NOT_TAGS this keeps in-body labels like "DE SCHADUW-INJECTIE:" / "THE SHADOW INJECTION:"
   // (the Neurale Schakelbord experiments, §5.8) from being mistaken for the SCHADUW/SHADOW tags.
   const hit = STEMS.find((s) => {
     if (!norm.startsWith(s.text)) return false;
     const after = norm.charAt(s.text.length);
-    return after === '' || after === ' ' || after === '(';
+    return labelled ? after === '' : after === '' || after === ' ' || after === '(';
   });
   return hit ? { ...hit.entry, matched: hit.text, lang: hit.lang } : null;
 }
@@ -199,7 +219,7 @@ export function splitV4Output(raw) {
     const hit = line.trim() ? matchNarrativeTag(line) : null;
     if (hit) {
       if (cur) narrative.push(cur);
-      cur = { tag: hit.stem, slot: hit.slot, renderer: hit.renderer, title: line.trim(), body: [] };
+      cur = { tag: hit.stem, slot: hit.slot, renderer: hit.renderer, title: stripPageLabel(line.trim()), body: [] };
     } else if (cur) {
       cur.body.push(line);
     }

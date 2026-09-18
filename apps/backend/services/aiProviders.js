@@ -230,9 +230,10 @@ async function callClaudeSDK({ messages, model, maxTokens, temperature, provider
   const supportsEffort = currentGen || /^claude-(opus-4-[56]|sonnet-4-6)/.test(model);
   // Fable models think on every request and the thinking counts against max_tokens, so a report
   // budget sized for visible text alone (the platform asks 30k) would truncate. Output is billed
-  // only for tokens actually generated, so the higher ceiling costs nothing by itself.
+  // only for tokens actually generated, so the higher ceiling costs nothing by itself. 75k: at 64k a
+  // v6.2.7 report on high effort hit the ceiling and was truncated (2026-09-18); the model allows 128k.
   const alwaysThinks = /^claude-(fable|mythos)/.test(model);
-  const maxOutput = alwaysThinks ? Math.max(maxTokens, 64000) : maxTokens;
+  const maxOutput = alwaysThinks ? Math.max(maxTokens, 75000) : maxTokens;
   // Fable 5.1 / Opus 5 run safety classifiers that can decline a request (HTTP 200, stop_reason
   // "refusal"). Server-side fallbacks re-run a declined request on Anthropic's recommended fallback
   // model inside the same call ("default" routes by refusal category).

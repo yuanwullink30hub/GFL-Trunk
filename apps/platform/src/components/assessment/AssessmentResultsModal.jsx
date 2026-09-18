@@ -34,7 +34,7 @@ import { SciFiButton } from '@gfl/ui';
 import { registerLeaveHandler } from '../../reportDownloadGuard';
 import { formatCents, formatPrice } from '../../config/pricing';
 import { getPaymentConfig, markPaymentDelivered } from '../../services/paymentService';
-import { assembleV4, NARRATIVE_TAGS, matchNarrativeTag, canonicalTitle } from './v4Parser';
+import { assembleV4, NARRATIVE_TAGS, matchNarrativeTag, canonicalTitle, stripPageLabel } from './v4Parser';
 import MorphologyChart from './MorphologyChart';
 import { sectionTitle, relabelProse } from './v4Labels';
 
@@ -79,6 +79,11 @@ const c12Img = '/images/Model imports/C12.png';
  *   t: (key: string) => string
  * }} props
  */
+// Upper bound of the loading screen's time estimate (resultsModal.ui.timeEstimate). Measured
+// 2026-09-18 on Master Prompt v6.2.7, Fable 5.1 effort high: two reports at 14.6 min; a report that
+// uses the whole 75k output ceiling lands near 18 min. After this the overtime line shows.
+const REPORT_ESTIMATE_MAX_MS = 18 * 60 * 1000;
+
 // ── Utility: strip "SECTIE N:" / "**SECTIE N**" prefix + surrounding ** bold markers ──
 const cleanTitle = (title) => {
   if (!title) return title;
@@ -372,6 +377,15 @@ const AssessmentResultsModal = ({
   const [aiReady, setAiReady] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
   const [aiRetryCount, setAiRetryCount] = useState(0);
+  // Past the upper bound of the time estimate the loading screen says so, instead of leaving an
+  // expired promise on screen. Restarts with every attempt (retry bumps aiRetryCount).
+  const [aiOverdue, setAiOverdue] = useState(false);
+  useEffect(() => {
+    setAiOverdue(false);
+    if (aiReady || aiFailed) return undefined;
+    const id = setTimeout(() => setAiOverdue(true), REPORT_ESTIMATE_MAX_MS);
+    return () => clearTimeout(id);
+  }, [aiReady, aiFailed, aiRetryCount]);
   const [, setAiStage] = useState(0); // 0=waiting, 1=data sent, 2=AI done, 3=integrated
   const aiCalledRef = useRef(false);
   const onAiReadyRef = useRef(onAiReady);
@@ -3538,7 +3552,7 @@ const AssessmentResultsModal = ({
               margin: 0,
               letterSpacing: '0.05em',
             }}>
-              {t('resultsModal.ui.timeEstimate')}
+              {t(aiOverdue ? 'resultsModal.ui.timeOverdue' : 'resultsModal.ui.timeEstimate')}
             </p>
 
             {/* Persistent preload: load + decode the archetype portrait during the wait so it's
@@ -3895,6 +3909,7 @@ const AssessmentResultsModal = ({
                         chart={morphChart}
                         mainName={result.mainName || 'Main'}
                         supportName={result.secondaryName || 'Support'}
+                        configName={extName || undefined}
                         height={474}
                         language={language}
                       />
@@ -4415,7 +4430,8 @@ function parseAiSections(analysisText) {
   // every page collector below and in the renderer keys on one vocabulary. `displayTitle` is the
   // title exactly as the model emitted it — what the card and the PDF show (shownTitle).
   while ((match = sectionRegex.exec(analysisText)) !== null) {
-    const emitted = match[1].trim();
+    // "DE STILLE STEM — MOTIVATIE" → "MOTIVATIE": the card and PDF add their own Stille Stem prefix.
+    const emitted = stripPageLabel(match[1].trim());
     matches.push({ title: canonicalTitle(emitted), displayTitle: emitted, start: match.index, headerEnd: match.index + match[0].length });
   }
 

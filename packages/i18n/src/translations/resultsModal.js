@@ -793,38 +793,6 @@ export default {
         },
       },
 
-      // ── Footer + closing letter ──
-      footer: {
-        brand: { nl: 'Garden for Life  •  Archetype Analyse', en: 'Garden for Life  •  Archetype Analysis' },
-        score: {
-          nl: (total, max) => `Score: ${total} / ${max}`,
-          en: (total, max) => `Score: ${total} / ${max}`,
-        },
-        generatedOn: {
-          nl: (date) => `Gegenereerd op ${date}`,
-          en: (date) => `Generated on ${date}`,
-        },
-      },
-      closing: {
-        l1: { nl: 'Hoogachtende Leerling,', en: 'Esteemed Student,' },
-        l2: {
-          nl: 'Jouw feedback is uiterst waardevol en in principe is dit jouw gift aan ons project, toch kan ik mijn gretigheid niet bedwingen en reik ik nog één laatste keer uit voor jouw hulp.',
-          en: 'Your feedback is extremely valuable and is in principle your gift to our project; even so I cannot contain my eagerness, and I reach out one last time for your help.',
-        },
-        l3: {
-          nl: 'Nodig iedereen uit waarvan je denkt dat ze in staat zijn om het onderzoek volledig te doorlopen, hoe meer data hoe beter wij kunnen optimaliseren.',
-          en: 'Invite everyone you believe is able to complete the whole survey; the more data we have, the better we can optimise.',
-        },
-        l4: {
-          nl: 'Zolang de beta-fase loopt is alleen het leerling niveau toegankelijk.',
-          en: 'While the beta phase is running, only the student level is accessible.',
-        },
-        l5: {
-          nl: 'Anyway- pionier, hartelijk dank voor de tijd en attentie!',
-          en: 'Anyway- pioneer, many thanks for your time and attention!',
-        },
-      },
-
       // ── Machine-readable PROFIEL DATA block ──
       data: {
         title: { nl: 'PROFIEL DATA VOOR AI VERWERKING', en: 'PROFILE DATA FOR AI PROCESSING' },

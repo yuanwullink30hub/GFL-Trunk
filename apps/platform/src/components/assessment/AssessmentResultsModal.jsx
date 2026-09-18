@@ -952,9 +952,7 @@ const AssessmentResultsModal = ({
         };
       };
       // A block records only the pages it CREATES, so a block may continue on the previous
-      // block's last page without that page being claimed twice. The machine block does exactly
-      // that behind the AI prompt — they must stay adjacent in desiredBlockOrder.
-      let aiPromptRendered = false;
+      // block's last page without that page being claimed twice.
 
       // ── Helper: paint page background ──
       const paintBg = () => {
@@ -3005,12 +3003,11 @@ const AssessmentResultsModal = ({
             ].join('\n');
           };
 
-          // AI Prompt: its own page — ALWAYS rendered (the model's prompt or the fallback above).
-          // It carries the heading, the short usage intro, the prompt and then the machine block,
-          // nothing else (Brief v2 Addendum A §3): the footer and the closing letter moved to a
-          // closing page of their own, since the reader copies this page to an external AI in one go.
+          // AI Prompt: a page of its own — ALWAYS rendered (the model's prompt or the fallback above).
+          // It carries the heading, the short usage intro and the prompt, nothing else: the reader
+          // copies it to an external AI in one go. The machine block opens the next page; the old
+          // footer and closing letter are gone from the PDF (owner, 2026-09-18).
           const endAiPrompt = trackBlock('ai_prompt');
-          aiPromptRendered = true;
           void disclaimerSection;
           {
             pdf.addPage();
@@ -3059,18 +3056,11 @@ const AssessmentResultsModal = ({
       // The user doesn't read this; external AI models do when the
       // PDF is uploaded as attachment.
       // ══════════════════════════════════════════════════════════════
-      // Behind the AI prompt the machine block follows straight on, on the same page when there is
-      // room — the prompt page carries the prompt and the PROFIEL DATA block, nothing between them
-      // (Brief v2 Addendum A §3). Without a prompt it opens its own page, as before.
+      // Always on a page of its own, straight after the AI prompt's page.
       const endData = trackBlock('data');
       {
-        if (aiPromptRendered) {
-          ensureSpace(24); markPage();
-          y += 6;
-        } else {
-          pdf.addPage(); paintBg(); markPage();
-          y = margin;
-        }
+        pdf.addPage(); paintBg(); markPage();
+        y = margin;
 
         const mono = 7;
         const monoH = 3.5;
@@ -3297,36 +3287,6 @@ const AssessmentResultsModal = ({
       }
       endData();
 
-      // ── Closing page: the closing letter and the brand / score / date footer, on a page of their
-      //    own — never on or under the AI prompt (Brief v2 Addendum A §3). ──
-      const endClosing = trackBlock('closing');
-      {
-        pdf.addPage(); paintBg(); markPage();
-        const lineH = 4.0;
-        pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
-        const paras = ['l1', 'l2', 'l3', 'l4', 'l5'].map((k) => pdf.splitTextToSize(t(`resultsModal.pdf.closing.${k}`), contentW - 4));
-        const gapAfter = [lineH * 2, 0, lineH, lineH * 2, 0];   // the letter's own spacing, unchanged
-        const letterH = paras.reduce((h, p, i) => h + p.length * lineH + gapAfter[i], 0);
-        let yMsg = (H - letterH) / 2;                            // the letter centred on its page
-        pdf.setTextColor(...white);
-        paras.forEach((p, i) => {
-          for (const l of p) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-          yMsg += gapAfter[i];
-        });
-
-        let fy = H - margin - 12;                                // the footer at the foot of the page
-        pdf.setDrawColor(...purple); pdf.setLineWidth(0.3);
-        pdf.line(margin, fy, W - margin, fy);
-        fy += 5;
-        pdf.setFontSize(7); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
-        pdf.text(t('resultsModal.pdf.footer.brand'), W / 2, fy, { align: 'center' });
-        fy += 3.5;
-        pdf.text(tFunc('resultsModal.pdf.footer.score')(result.totalScore, result.maxScore), W / 2, fy, { align: 'center' });
-        fy += 3.5;
-        pdf.text(tFunc('resultsModal.pdf.footer.generatedOn')(new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL')), W / 2, fy, { align: 'center' });
-      }
-      endClosing();
-
       // ── Reorder PDF pages to configured sequence ──
       // Desired order (content stays untouched, only page sequence changes):
       // 1-6 (pre-context) → group1a (identity) → group1b (archetype images) →
@@ -3348,10 +3308,9 @@ const AssessmentResultsModal = ({
           'dual_core',     // 16-18: Dual-Core chart + Alchemie/Schakelbord/Ontologie
           'others',        // any remaining ungrouped AI sections (safety net)
           'groep_radar',   // (legacy) usually empty in v4.1
-          'ai_prompt',     // 19: the AI prompt …
-          'data',          // … and the machine block straight behind it (shares the prompt's last page)
-          'wet_context',   // Wetenschappelijke Context — still after the prompt, no longer between it and the data
-          'closing',       // the closing letter + footer, a page of their own
+          'ai_prompt',     // 19: the AI prompt, a page of its own …
+          'data',          // … and the machine block from the next page on
+          'wet_context',   // Wetenschappelijke Context — after the prompt, never between it and the data
         ];
         const blockMap = {};
         blockRanges.forEach(b => { blockMap[b.name] = b; });

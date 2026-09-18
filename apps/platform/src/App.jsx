@@ -8,7 +8,7 @@ import ClientSubnav from './components/ClientNav';
 const NebulaBackground = lazy(() => import('./components/NebulaBackground'));
 const PublicProfile = lazy(() => import('./components/assessment/PublicProfile'));
 
-import { getQuestions, getMe, getHistory, getToken, openPrivateWindow } from '@gfl/api-client';
+import { getQuestions, getMe, getHistory, getToken, openPrivateWindow, pingBackend } from '@gfl/api-client';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
@@ -310,6 +310,13 @@ const App = () => {
   // report request by timing. The intro card is outside the window — nothing has been answered yet.
   const privateReportWindow = ['layers', 'convergence', 'upload', 'results'].includes(assessmentPhase);
   useEffect(() => (privateReportWindow ? openPrivateWindow() : undefined), [privateReportWindow]);
+
+  // Wake the backend when the last subject opens: a sleeping host (Render spins down after 15 idle
+  // minutes) then has the whole last subject to boot, so the report request lands on first try.
+  // The save ping in AssessmentCard stays as the second nudge, right before the report.
+  useEffect(() => {
+    if (currentSubjectIndex === 4) pingBackend(); // the fifth and last subject (see onNext)
+  }, [currentSubjectIndex]);
 
   const kookExplosionRef = useRef(1); // kook HoloEarth is permanently past the explosion
   // TRUE pre-mount of the kook assessment scene: the HoloEarth instance is far too heavy

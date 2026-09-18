@@ -21,6 +21,7 @@ const ANCHOR_STEP = 4;       // mm between the candidate starting points the sea
 const FLOW_MIN_LEN = 40;     // mm: an element at least this long, and 6× longer than wide, can carry the lesson
 const FLOW_MAX_TILT = 40;    // degrees: steeper elements are left alone
 const FLOW_GAP = 1.45;       // flow line pitch: its sizes vary and its edged words need the air
+const MIN_LAST = 3;          // words on the last line, at least (owner, 2026-09-18)
 
 /**
  * Read the portrait's scene from its transparency and depth map, both sampled onto one grid over the page.
@@ -232,6 +233,14 @@ export function layoutLesson({ text, scene, sizes, measure1, mode = 'auto' }) {
     return acc;
   }, []);
   if (!words.length) return null;
+  // The last line keeps at least MIN_LAST words: a line that would leave fewer behind hands words down
+  // to it, as long as it keeps two of its own. How many a line from `start` to `k` hands down:
+  const lastMin = Math.min(MIN_LAST, words.length);
+  const handDown = (start, k) => {
+    const rest = words.length - k;
+    const need = rest > 0 && rest < lastMin ? lastMin - rest : 0;
+    return need && k - start - need >= 2 ? need : 0;
+  };
   const wordW = words.map(measure1);
   const spaceW = measure1(' ');
   const { cols, rows, cell, x0, y0, blocked, axis } = scene;
@@ -288,8 +297,9 @@ export function layoutLesson({ text, scene, sizes, measure1, mode = 'auto' }) {
         if ((w + add) * pt > R - L) break;
         w += add; k++;
       }
+      for (let m = handDown(start, k); m > 0; m--) { k--; w -= wordW[k] + (k > start ? spaceW : 0); }
       if (k === start) return null;
-      lines.push({ text: words.slice(start, k).join(' '), pt, cx, cy, L, R, w: w * pt, left: run.left, right: run.right });
+      lines.push({ text: words.slice(start, k).join(' '), n: k - start, pt, cx, cy, L, R, w: w * pt, left: run.left, right: run.right });
       prev = pt;
       cx += wx * pt * PT * LINE_GAP; cy += wy * pt * PT * LINE_GAP;
     }
@@ -325,6 +335,7 @@ export function layoutLesson({ text, scene, sizes, measure1, mode = 'auto' }) {
       - 8 * Math.max(0, 1 - aspect)                        // wider than tall
       - 0.6 * loose                                        // lines that fill their stretch
       - 0.2 * lines.length
+      - (lines.length > 1 && lines[lines.length - 1].n < lastMin ? 20 : 0)   // a last line too short
       - 1.5 * ((by0 - y0) / (y1 - y0));                    // among equals, higher up
   };
 
@@ -380,7 +391,7 @@ export function layoutLesson({ text, scene, sizes, measure1, mode = 'auto' }) {
     const base = (j, t) => [el.cx + el.ux * t + nx * off(j, t), el.cy + el.uy * t + ny * off(j, t)];
     const tEnd = el.t1 + 0.25 * el.len;
     const runs = [];
-    let k = 0, j = 0, samples = 0, over = 0, chars = 0, ptSum = 0;
+    let k = 0, j = 0, samples = 0, over = 0, chars = 0, ptSum = 0, lastN = 0;
     while (k < words.length) {
       if (side < 0 && j >= lines) return null;
       const first = k;
@@ -408,11 +419,14 @@ export function layoutLesson({ text, scene, sizes, measure1, mode = 'auto' }) {
         k++;
         t += (w + spaceW * pt) / dl;
       }
+      for (let m = handDown(first, k); m > 0; m--) { k--; const r = runs.pop(); chars -= r.text.length; ptSum -= r.pt * r.text.length; }
       if (k === first) return null;                                     // not one word fits on this line
+      lastN = k - first;
       j++;
     }
     if (side < 0 && j !== lines) return null;
-    return { runs, score: ptSum / chars - 3 * (over / Math.max(1, samples)) - 0.2 * j };
+    const shortLast = j > 1 && lastN < lastMin ? 20 : 0;
+    return { runs, score: ptSum / chars - 3 * (over / Math.max(1, samples)) - 0.2 * j - shortLast };
   };
 
   let flow = null, flowScore = -Infinity;

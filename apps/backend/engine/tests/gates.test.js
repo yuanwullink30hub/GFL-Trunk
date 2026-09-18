@@ -689,6 +689,65 @@ test('Request — the yellow-triangle activation numbers ship, the backend\'s ow
   }
 });
 
+test('Report reader — heading drift never loses or misplaces a section, and every line is accounted for', async () => {
+  const R = await import('../../../platform/src/components/assessment/reportReader.js');
+  const P = await import('../../../platform/src/components/assessment/v4Parser.js');
+  // A synthetic report in the emit order of Master Prompt DEEL 5, each body unique to its section.
+  const TITLES = [
+    'DE IDENTITEIT', 'DE VERKLARING', 'DE ESSENTIE (MAIN ARCHETYPE)', 'DE VERMENIGVULDIGING (SUPPORT ARCHETYPE)',
+    'DE SCHADUW (180° TEGENPOOL VAN MAIN)', 'DE BLINDSPOT (RODE-LIJN MATCH)', 'DE EXTENSIE — De Ronin', 'CREATIEVE RESONANTIE',
+    'PERSOONLIJKHEIDSRAPPORT VERGELIJKING — OCEAN', 'DE VORM', 'DE HARDWARE ONDER DRUK', 'DE OVERGANG NAAR DE STILLE STEM',
+    'REFLECTIE', 'MOTIVATIE', 'BEWEGING', 'DE ALCHEMIE VAN INDIVIDUATIE', 'HET NEURALE SCHAKELBORD', 'ONTOLOGISCHE EVOLUTIE',
+    'DE VOLLEDIGE AI PROMPT',
+  ];
+  const body = (i) => `Dit is de eigen tekst van sectie nummer ${i}, lang genoeg om als echte sectie te tellen, met inhoud die nergens anders staat.`;
+  const build = (edit) => {
+    const lines = TITLES.flatMap((t, i) => [t, body(i), '']);
+    edit(lines);
+    return lines.join('\n');
+  };
+  const slotOf = (title) => (P.matchNarrativeTag(R.cleanTitle(title || '')) || {}).slot;
+  const landsIn = (sections, i) => {
+    const want = P.matchNarrativeTag(TITLES[i]).slot;
+    return sections.some((s) => slotOf(s.title) === want && s.content.includes(body(i)));
+  };
+  const at = (t) => TITLES.indexOf(t) * 3;
+
+  // the untouched report: 19 sections, every body home, nothing unaccounted
+  const clean = R.readReport(build(() => {}));
+  assert.equal(clean.sections.length, 19);
+  TITLES.forEach((_, i) => assert.ok(landsIn(clean.sections, i), `clean: ${TITLES[i]}`));
+  assert.deepEqual(clean.ledger.unaccounted, []);
+
+  const drift = [
+    ['a typo', 'DE VERMENIGVULDIGING (SUPPORT ARCHETYPE)', (L, j) => { L[j] = 'DE VERMENIGVULDINGING (SUPPORT ARCHETYPE)'; }],
+    ['a dropped article', 'DE HARDWARE ONDER DRUK', (L, j) => { L[j] = 'HARDWARE ONDER DRUK'; }],
+    ['a dropped article (HET)', 'HET NEURALE SCHAKELBORD', (L, j) => { L[j] = 'NEURALE SCHAKELBORD'; }],
+    ['a title cut short, as ##', 'DE ALCHEMIE VAN INDIVIDUATIE', (L, j) => { L[j] = '## De Alchemie'; }],
+    ['a trailing colon', 'DE VORM', (L, j) => { L[j] = 'DE VORM:'; }],
+    ['a number and a raw dash', 'DE SCHADUW (180° TEGENPOOL VAN MAIN)', (L, j) => { L[j] = '5. DE SCHADUW --- 180° TEGENPOOL'; }],
+    ['the page label, in lower case', 'MOTIVATIE', (L, j) => { L[j] = 'De Stille Stem — Motivatie'; }],
+    ['the first heading lost', 'DE IDENTITEIT', (L, j) => { L[j] = ''; L[j + 1] = `${body(0)} ${body(0)} ${body(0)}`; }],
+    ['an invented ## subheading', 'DE ESSENTIE (MAIN ARCHETYPE)', (L, j) => { L.splice(j + 2, 0, '## Wat dit voor jou betekent', 'Een alinea van het model zelf die niet verloren mag gaan, ook al staat ze onder een eigen kop.'); }],
+    ['a body line opening with a section name', 'DE SCHADUW (180° TEGENPOOL VAN MAIN)', (L, j) => { L.splice(j + 2, 0, 'DE BLINDSPOT VAN JE SCHADUW'); }],
+  ];
+  for (const [name, title, edit] of drift) {
+    const { sections, ledger } = R.readReport(build((L) => edit(L, at(title))));
+    TITLES.forEach((_, i) => assert.ok(landsIn(sections, i), `${name}: "${TITLES[i]}" not in its own section`));
+    assert.deepEqual(ledger.unaccounted, [], `${name}: unaccounted text`);
+    if (name.startsWith('an invented')) {
+      assert.ok(sections.some((s) => slotOf(s.title) === 'main_essence' && s.content.includes('niet verloren mag gaan')), 'the invented heading stays with De Essentie');
+    }
+    if (name.startsWith('a body line')) {
+      assert.equal(sections.filter((s) => slotOf(s.title) === 'blindspot').length, 1, 'no second Blindspot split off');
+    }
+  }
+  // what a real run leaves out is named, never silent: the model's own machine block after the prompt
+  const withBlock = R.readReport(build((L) => { L.push('PROFIEL DATA VOOR AI VERWERKING', '-- IDENTITEIT --', 'Main: Outlaw'); }));
+  assert.ok(withBlock.ledger.discarded.some((d) => d.byRenderer && /machine block/.test(d.rule)));
+  assert.deepEqual(withBlock.ledger.unaccounted, []);
+});
+
 test('Request — the English title set handed to the model is exactly what the platform parser routes (W8)', async () => {
   const { buildUserMessage, EN_SECTION_TITLES } = require('../../prompts/advanced');
   const hooks = require('node:module').registerHooks({

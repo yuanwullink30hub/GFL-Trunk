@@ -214,7 +214,7 @@ export function stripPageLabel(title) {
   return out !== s && matchNarrativeTag(s) ? out : s;
 }
 
-function normalizeTagLine(line) {
+export function normalizeTagLine(line) {
   return line
     .replace(/^\s*#+\s*/, '')           // strip markdown heading hashes (first, so "## 2. …" loses its number below)
     .replace(/\*+/g, '')                // strip markdown bold

@@ -35,9 +35,12 @@ import { registerLeaveHandler } from '../../reportDownloadGuard';
 import { formatCents, formatPrice } from '../../config/pricing';
 import { getPaymentConfig, markPaymentDelivered } from '../../services/paymentService';
 import {
-  assembleV4, NARRATIVE_TAGS, matchNarrativeTag, canonicalTitle, stripPageLabel,
-  bareHeading, isContractSubheading, isOceanMemberHeading, splitGluedHeading,
+  assembleV4, bareHeading, isContractSubheading, isOceanMemberHeading, splitGluedHeading,
 } from './v4Parser';
+import {
+  readReport, logReaderLedger, stripKaartFields, cleanTitle, shownTitle, isExtensionTitle,
+  COMPARISON_TITLE, RADAR_READING_TITLE, STRAY_TITLE, RENDER_SIDE_TITLE, V3_ELEMENTS_TITLE,
+} from './reportReader';
 import MorphologyChart from './MorphologyChart';
 import { sectionTitle, relabelProse } from './v4Labels';
 
@@ -87,42 +90,8 @@ const c12Img = '/images/Model imports/C12.png';
 // uses the whole 75k output ceiling lands near 18 min. After this the overtime line shows.
 const REPORT_ESTIMATE_MAX_MS = 18 * 60 * 1000;
 
-// ── Utility: strip "SECTIE N:" / "**SECTIE N**" prefix + surrounding ** bold markers ──
-const cleanTitle = (title) => {
-  if (!title) return title;
-  let t = title.trim();
-  // Strip outer ** bold markers wrapping the whole string (e.g. "**De Identiteit**")
-  t = t.replace(/^\*\*(.+)\*\*$/, '$1').trim();
-  // Strip "SECTIE N" prefix in all forms: "SECTIE 1:", "SECTIE 1.", "**SECTIE 1**:", "**SECTIE 1**"
-  t = t.replace(/^\*?\*?SECTIE\s+\d+\*?\*?[\s:.—-]*\s*/i, '').trim();
-  // Strip bare numeric prefixes like "12. " or "12: " or "13A. " that the AI may include
-  t = t.replace(/^\d+[a-zA-Z]?[\s.:—-]+\s*/i, '').trim();
-  // Strip any remaining stray ** at start or end
-  t = t.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
-  // A raw prompt dash the model copied ("DE EXTENSIE --- De Ronin") shows as a plain " - "
-  t = t.replace(/\s-{2,3}\s/g, ' - ');
-  return t;
-};
-
-// ── Report language. Section TITLES that are parser tags need nothing here: parseAiSections
-//    canonicalises an English tag ("THE SHADOW …") to its Dutch stem ("DE SCHADUW …") in
-//    `title`, so every collector below keys on the Dutch words, and keeps the emitted title in
-//    `displayTitle` for display. What follows are the non-tag titles the renderer filters on,
-//    in both report languages. ──
-const COMPARISON_TITLE = /persoonlijkheidsrapport.*vergelijk|ocean.*vergelijk|vergelijk.*profiel|personality\s*report.*comparison|ocean.*comparison|comparison.*profile/i;
-const COMPARISON_SUBSECTION = /^(spanningsvelden|vergelijkingsrapport|vergelijkings\s*rapport|conclusie|convergente|divergente|stap\s+\d|tension\s*fields|comparison\s*report|conclusion|convergent|divergent|step\s+\d)/i;
-/** "Radar-lezing" / "Radar reading" — the radar chart covers it; never rendered. */
-const RADAR_READING_TITLE = /radar.?(?:lezing|reading)/i;
-/** Stray AI-emitted sections outside the page-map. */
-const STRAY_TITLE = /(?:samenvattende\s+)?kernlezing|centrale\s+spanning|(?:summary\s+)?core\s+reading|central\s+tension/i;
-/** The model's machine block and the render-side OCEAN titles — the renderer draws its own. */
-const RENDER_SIDE_TITLE = /profiel\s*data|ai[\s-]*verwerking|ocean.?gereedschap|ocean.?profiel|profile\s*data|ai[\s-]*processing|ocean.?(?:tool|instrument)|ocean.?profile/i;
-/** v3 "5 geometrische elementen" leftover — not a v4.1+ section. */
-const V3_ELEMENTS_TITLE = /geometrische\s+element|vijf\s+(?:geometrische\s+)?element|geometric\s+element|five\s+(?:geometric\s+)?element/i;
-/** v5.2 §5.7 "DE EXTENSIE — [naam EN] · [naam NL]" (canonical form of "THE EXTENSION — …"). */
-const isExtensionTitle = (title) => /^de\s+extensie\b/i.test(cleanTitle(title || ''));
-/** The title as the model emitted it — what the card and the PDF show. Routing uses `title`. */
-const shownTitle = (s) => (s && (s.displayTitle || s.title)) || '';
+// The title helpers (cleanTitle, shownTitle, isExtensionTitle and the title patterns the renderer
+// filters on) live in reportReader.js, with the report reader, so both read a title the same way.
 
 // De Essentie / De Vermenigvuldiging subheadings are written by the model (Master Prompt v6.2.9;
 // Brief v2 Addendum A §1) and recognised by v4Parser's isContractSubheading. The v4.1 renderer
@@ -562,7 +531,11 @@ const AssessmentResultsModal = ({
         setEnginePayload(aiResult.enginePayload || null);
         sealedOrbCodeRef.current = aiResult.sealedOrbCode || ''; // opaque until unlock
         orbCodeRef.current = '';
-        const sections = parseAiSections(cleanedAnalysis);
+        // The report reader: sections for the card and the PDF, plus a ledger that accounts for every
+        // line of the model's text (placed, or discarded by a named rule) — logged, so nothing is
+        // lost or moved without a trace. It strips the Kaart microcopy itself, onto that ledger.
+        const { sections, ledger: readerLedger } = readReport(aiResult.analysis || '');
+        logReaderLedger(readerLedger);
         // ── DIAGNOSTIC: shows whether a section was "never sent" (not in this list) vs "not
         //    rendered" (in the list but missing from the PDF). Also flags truncation: if the
         //    tail (machine block / last sections) is missing, the analysis was cut short. ──
@@ -4314,311 +4287,8 @@ const AssessmentResultsModal = ({
   );
 }
 
-/**
- * Parse the AI analysis response (markdown with ## headings) into display sections.
- * Returns ALL sections found in the AI response for full dynamic rendering.
- */
-// Master Prompt v4.1: "titles are the parser-tags". The model may emit each title as a
-// `## ` heading OR as a bare title-line. Normalise bare tag-lines into `## ` headings so the
-// existing heading-splitter routes them. Conservative: a line is only promoted when it
-// matches a known NARRATIVE_TAGS stem AND is short enough to be a title (not prose).
-function preinsertTagHeadings(text) {
-  if (!text) return text;
-  const KNOWN = NARRATIVE_TAGS; // stems matched via matchNarrativeTag (em-dash/subtitle aware)
-  return text.split('\n').map((line) => {
-    const trimmed = line.trim();
-    if (!trimmed) return line;
-    if (/^#{1,6}\s/.test(trimmed)) return line;          // already a heading
-    if (trimmed.startsWith('|') || trimmed.startsWith('-- ')) return line; // table / machine block
-    if (trimmed.length > 70) return line;                // too long to be a title-line
-    if (/[.!?]$/.test(trimmed)) return line;             // sentence punctuation → prose, not a title
-    if (trimmed.split(/\s+/).length > 10) return line;   // too many words to be a title
-    if (KNOWN.length && matchNarrativeTag(trimmed)) return '## ' + trimmed;
-    return line;
-  }).join('\n');
-}
-
-// ── Subsections stay inside their section (Brief v2 Addendum A §1–§3) ──
-// parseAiSections splits on every ##/### heading, so a subheading the model writes as a heading
-// ("### Cognitieve aanleg", "### Meegaandheid", the eight AI-prompt blocks) became a top-level
-// section and fell out of its parent — the trait blocks away from their OCEAN page, the prompt
-// blocks away from the prompt. Such headings are demoted to bold lines, which writePdfMarkdown
-// renders at the subheading level:
-//   • the fixed subheadings of De Essentie / De Vermenigvuldiging, wherever they appear;
-//   • everything inside PERSOONLIJKHEIDSRAPPORT VERGELIJKING — ONE section, value block and five
-//     trait blocks together; an OCEAN trait heading with no comparison title in front opens it;
-//   • everything inside DE VOLLEDIGE AI PROMPT, up to the machine block.
-// A narrative tag always splits and closes the container.
-const PROFILE_DATA_HEADER = /^(?:profiel\s*data\s*voor\s*ai|profile\s*data\s*for\s*ai)\b/i;
-function groupSubsections(text) {
-  if (!text) return text;
-  let container = null; // 'ocean' | 'prompt' | null
-  const out = [];
-  for (const line of text.split('\n')) {
-    const m = line.match(/^\s*#{2,3}\s+(.+)$/);
-    if (!m) { out.push(line); continue; }
-    const title = bareHeading(m[1]);
-    if (isOceanMemberHeading(title)) {
-      if (container !== 'ocean') { out.push('## PERSOONLIJKHEIDSRAPPORT VERGELIJKING'); container = 'ocean'; }
-      out.push(`**${title}**`);
-      continue;
-    }
-    const tag = matchNarrativeTag(m[1]);
-    if (tag) {
-      container = tag.slot === 'ocean' ? 'ocean' : tag.slot === 'ai_prompt' ? 'prompt' : null;
-      out.push(line);
-      continue;
-    }
-    if (PROFILE_DATA_HEADER.test(title)) { container = null; out.push(line); continue; }
-    if (container || isContractSubheading(title)) { out.push(`**${title}**`); continue; }
-    out.push(line);
-  }
-  return out.join('\n');
-}
-
-// ── Kaart Microcopy (## Kaart Microcopy): AI-authored profile-card fields.
-// KAART_GIFT / KAART_GEOMETRIE never reach this client: routes/ai.js strips them from
-// the analysis and parks them in kaartDrafts, keyed by the orb code's hash, so the card
-// copy provably came from our model. Only the stripper below remains, as a safety net.
-// Remove the Kaart Microcopy material from the analysis BEFORE any rendering path sees it —
-// guarantees the card fields never appear on a report page/PDF section, even when the model
-// drops the section heading and appends the labels to a previous section's body.
-// Both report languages: "Kaart Microcopy" / KAART_GIFT / KAART_GEOMETRIE and the English
-// "Card Microcopy" / CARD_GIFT / CARD_GEOMETRY.
-function stripKaartFields(text) {
-  let t = String(text || '');
-  t = t.replace(/^#{2,3}\s*(?:\d+[A-Za-z]?\.\s*)?(?:kaart|card)\s*microcopy\s*$[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
-  t = t.replace(/^\s*(?:KAART|CARD)_GIFT:\s*[\s\S]*?(?=\n\s*(?:KAART_GEOMETRIE|CARD_GEOMETRY):|\n#{2,3}\s|$)/gim, '');
-  t = t.replace(/^\s*(?:KAART_GEOMETRIE|CARD_GEOMETRY):\s*[\s\S]*?(?=\n#{2,3}\s|$)/gim, '');
-  return t;
-}
-
-function parseAiSections(analysisText) {
-  if (!analysisText || typeof analysisText !== 'string') return null;
-  analysisText = groupSubsections(preinsertTagHeadings(analysisText));
-
-  // Split on ## or ### top-level headings (with or without numbering).
-  // The AI prompt requests `## N.` but models sometimes return `### N.` instead.
-  // The `[A-Za-z]?` handles alphanumeric section numbers like `4B.`
-  const sectionRegex = /^#{2,3}\s+(?:\d+[A-Za-z]?\.\s+)?(.+)/gm;
-  const matches = [];
-  let match;
-
-  // `title` is the ROUTING form: an English report's tag is canonicalised to its Dutch stem, so
-  // every page collector below and in the renderer keys on one vocabulary. `displayTitle` is the
-  // title exactly as the model emitted it — what the card and the PDF show (shownTitle).
-  while ((match = sectionRegex.exec(analysisText)) !== null) {
-    // "DE STILLE STEM — MOTIVATIE" → "MOTIVATIE": the card and PDF add their own Stille Stem prefix.
-    const emitted = stripPageLabel(match[1].trim());
-    matches.push({ title: canonicalTitle(emitted), displayTitle: emitted, start: match.index, headerEnd: match.index + match[0].length });
-  }
-
-  if (matches.length === 0) {
-    // No section headers found — return full text as single section
-    return [{ title: 'AI Analyse', content: analysisText.trim() }];
-  }
-
-  // Patterns to strip disclaimer-like text the AI may inject into any section
-  const disclaimerPatterns = [
-    /^>?\s*\**Meta[- ]?Disclaimer\**:?[^\n]*\n?/gim,
-    /^>?\s*\**Schaduw[- ]?archetype\**:?[^\n]*\n?/gim,
-    /^>?\s*\**Blindspot[- ]?archetype\**:?[^\n]*\n?/gim,
-    /^>?\s*\**Archetype:?\**:?\s+\w+.*Positie\s+\d+[^\n]*\n?/gim,
-    /^>?\s*\**Archetype:?\**:?\s+\w+.*180.*tegenpool[^\n]*\n?/gim,
-    /^>?\s*\**Archetype:?\**:?\s+\w+.*[Rr]ode\s+[Ll]ijn[^\n]*\n?/gim,
-    /^>?\s*Dit rapport is gegenereerd door het Garden [Ff]or Life[^\n]*\n?/gm,
-    /^>?\s*De gebruikte neurobiologische termen zijn metaforen[^\n]*\n?/gm,
-    /^>?\s*Raadpleeg een professional voor medisch[^\n]*\n?/gm,
-    /^>?\s*Dit is een zelfreflectie-instrument[^\n]*\n?/gm,
-    /^>?\s*Dit rapport is geen in beton gegoten diagnose[^\n]*\n?/gm,
-    /^>?\s*\**Disclaimer\**:?\s*Dit rapport[^\n]*\n?/gim,
-    // English report
-    /^>?\s*\**Shadow[- ]?archetype\**:?[^\n]*\n?/gim,
-    /^>?\s*\**Archetype:?\**:?\s+\w+.*Position\s+\d+[^\n]*\n?/gim,
-    /^>?\s*\**Archetype:?\**:?\s+\w+.*180.*opposite[^\n]*\n?/gim,
-    /^>?\s*\**Archetype:?\**:?\s+\w+.*[Rr]ed\s+[Ll]ine[^\n]*\n?/gim,
-    /^>?\s*This report (?:was|is) generated by (?:the )?Garden [Ff]or Life[^\n]*\n?/gm,
-    /^>?\s*The neurobiological terms used are metaphors[^\n]*\n?/gm,
-    /^>?\s*Consult a professional for medical[^\n]*\n?/gm,
-    /^>?\s*This is a self-reflection (?:tool|instrument)[^\n]*\n?/gm,
-    /^>?\s*This report is not a[^\n]*diagnosis[^\n]*\n?/gm,
-    /^>?\s*\**Disclaimer\**:?\s*This report[^\n]*\n?/gim,
-  ];
-
-  const stripDisclaimer = (text) => {
-    let cleaned = text;
-    for (const pat of disclaimerPatterns) {
-      cleaned = cleaned.replace(pat, '');
-    }
-    // Remove orphaned blockquote-only lines (> followed by empty or near-empty content)
-    cleaned = cleaned.replace(/^>\s*$/gm, '');
-    // Strip horizontal rules (---, ***, ===)
-    cleaned = cleaned.replace(/^[-*=]{3,}\s*$/gm, '');
-    // Collapse excessive blank lines
-    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-    return cleaned.trim();
-  };
-
-  const parts = [];
-  const seenContent = new Set();
-
-  // Identify the comparison section and the AI-Agent-Prompt section so we can
-  // (a) absorb all comparison sub-sections into one block, and (b) tag it as PDF-only.
-  const reportMatchIdx = matches.findIndex(m => COMPARISON_TITLE.test(m.title));
-  const agentPromptIdx = matches.findIndex(m =>
-    /ai.?agent|persoonlijke.*agent|agent.*prompt|genereer.*prompt|volledige.*prompt|ai.?prompt|reflectie.*prompt|ai.*reflectie|^11[^\d]/i.test(m.title)
-  );
-  // 12A/12B resonantie sections (placed below radar chart in PDF) — also match legacy 13A/13B.
-  // De Extensie (v5.2 §5.7) shares their page: flagged the same way, placed first by the renderer.
-  const resonantieTest = (t) => /^1[23]\s*[ab][\s.:]/i.test(t) || /professionele\s+resonantie/i.test(t) || /creatieve\s+resonantie/i.test(t) || isExtensionTitle(t);
-
-  // Find the first section after comparison that is NOT a comparison sub-section
-  // (comparison sub-sections get absorbed into the parent comparison block)
-  const firstAfterComp = reportMatchIdx >= 0
-    ? matches.findIndex((m, idx) =>
-        idx > reportMatchIdx &&
-        !COMPARISON_SUBSECTION.test(m.title.trim())
-      )
-    : -1;
-
-  // Profiel Dynamiek element detection (Sectie 4B) — match by title keyword
-  const profileKeyFromTitle = (t) => {
-    if (/neuroticisme\s*trigger/i.test(t)) return 'neuroticismTrigger';
-    if (/superkracht/i.test(t)) return 'workplaceSuperpower';
-    if (/conflictstijl/i.test(t)) return 'conflictStyle';
-    if (/relatiepatroon/i.test(t)) return 'relationshipPattern';
-    if (/individuatiepad/i.test(t)) return 'individuationPath';
-    return null;
-  };
-
-  for (let i = 0; i < matches.length; i++) {
-    const { title, displayTitle } = matches[i];
-    // Skip any "Leerling Ontologisch Rapport" preamble the AI may inject
-    if (/leerling\s+ontologisch/i.test(title)) continue;
-    // Skip any standalone "Introductie" / "Inleiding" / "Introduction" the AI may generate
-    if (/^(introductie|inleiding|introduction)$/i.test(title)) continue;
-    // Skip "Kaart Microcopy" / "Card Microcopy" — machine-consumed profile-card fields,
-    // held server-side in kaartDrafts by the backend; never rendered as a report page.
-    if (/(?:kaart|card)\s*microcopy/i.test(title)) continue;
-    // Skip umbrella "Profiel Dynamiek" / "Profiel Elementen" / "5 Elementen" / "De 5 Elementen"
-    // headers — the individual elements are parsed by profileKeyFromTitle below. When the AI
-    // bundles them under one heading, extract sub-elements from the body. (Without "element"
-    // here, a bare "Profiel Elementen" umbrella leaks through as an empty-body ghost page.)
-    if (/profiel\s*(?:dynamiek|element)|(?:5|vijf)\s*element/i.test(title)) {
-      let contentStart4b = matches[i].headerEnd;
-      let contentEnd4b = (i + 1 < matches.length ? matches[i + 1].start : analysisText.length);
-      const rawBody = analysisText.slice(contentStart4b, contentEnd4b).trim();
-      // Try to split on bold sub-headings like **NEUROTICISME TRIGGER** or **Superkracht**
-      const subParts = rawBody.split(/\*\*([^*]+)\*\*/g);
-      // subParts: [textBefore, heading1, textAfter1, heading2, textAfter2, ...]
-      for (let sp = 1; sp < subParts.length; sp += 2) {
-        const subTitle = subParts[sp].trim();
-        const subContent = (subParts[sp + 1] || '').trim();
-        const pk = profileKeyFromTitle(subTitle);
-        if (pk && subContent) {
-          parts.push({
-            title: subTitle,
-            content: stripDisclaimer(subContent),
-            isProfileElement: true,
-            profileKey: pk,
-            isAgentPrompt: false,
-            isComparison: false,
-            isResonantie: false,
-          });
-        }
-      }
-      continue;
-    }
-
-    // Comparison sub-sections (Spanningsvelden, Vergelijkingsrapport, Conclusie, etc.)
-    // that the AI hallucinated as separate ## headers after the main comparison header:
-    // skip them — their content is absorbed into the parent comparison section below.
-    if (
-      reportMatchIdx >= 0 && i > reportMatchIdx &&
-      i !== reportMatchIdx &&
-      (firstAfterComp < 0 || i < firstAfterComp) &&
-      COMPARISON_SUBSECTION.test(title.trim())
-    ) continue;
-
-    const isAgentPrompt = (agentPromptIdx >= 0 && i === agentPromptIdx);
-    const isComparison  = (reportMatchIdx >= 0 && i === reportMatchIdx);
-    const isResonantie  = resonantieTest(title);
-
-    // Profiel Dynamiek elements (4B) — detect by title keyword, extract as prose sections
-    const profileKey = profileKeyFromTitle(title);
-    if (profileKey) {
-      let contentStart2 = matches[i].headerEnd;
-      let contentEnd2 = (i + 1 < matches.length ? matches[i + 1].start : analysisText.length);
-      const rawContent = analysisText.slice(contentStart2, contentEnd2).trim();
-      parts.push({
-        title,
-        displayTitle,
-        content: stripDisclaimer(rawContent),
-        isProfileElement: true,
-        profileKey,
-        isAgentPrompt: false,
-        isComparison: false,
-        isResonantie: false,
-      });
-      continue;
-    }
-
-    // Content range: comparison section absorbs everything up to the next real section,
-    // other sections take content until the next header.
-    let contentStart = matches[i].headerEnd;
-    let contentEnd;
-    if (isComparison) {
-      // Absorb all sub-sections until the first non-comparison section after it
-      contentEnd = firstAfterComp >= 0 ? matches[firstAfterComp].start : analysisText.length;
-    } else {
-      contentEnd = (i + 1 < matches.length ? matches[i + 1].start : analysisText.length);
-    }
-    let content = stripDisclaimer(analysisText.slice(contentStart, contentEnd).trim());
-
-    // STRICT: drop render-side note echoes. The model sometimes parrots the spec's parenthetical
-    // render-side / page labels as a fake section body — e.g. "(Pagina A - met D-curvegrafiek)"
-    // or "(Dual-Core grafiek - render-side - draagt de Nature/Culture-data per zuil.)". Real
-    // sections are long prose (>300 chars); these stubs are tiny and mention render-side artefacts.
-    const bare = content.replace(/[*#>_`~]/g, '').trim();
-    if (bare.length < 200 && /render.?side|(?:pagina|page)\s+[ab]\b|d-?curve.?(?:grafiek|chart|graph)|(?:grafiek|chart|graph)\s*[-–)]|dual.?core\s+(?:grafiek|chart|graph)|6-?(?:groeps|group)|nature\s*\/\s*culture/i.test(bare)) {
-      continue;
-    }
-
-    // Deduplicate exact content repeats (keys on title + opening so distinct sections that share
-    // a structural lead aren't wrongly dropped). Per-title "keep the longest" + the min-word drop
-    // happen in a post-pass below.
-    const contentKey = cleanTitle(title).toLowerCase() + '::' + content.slice(0, 120).toLowerCase().replace(/\s+/g, ' ');
-    if (seenContent.has(contentKey)) continue;
-    seenContent.add(contentKey);
-
-    parts.push({
-      title,
-      displayTitle,
-      content,
-      isAgentPrompt,
-      isComparison,
-      isResonantie,
-    });
-  }
-
-  // ── Min-word catcher + keep-longest-per-title ──
-  // When the model emits a title twice (a real paragraph + a short "echo"), keep ONLY the longest
-  // instance — that's always the real read. Also drop any narrative section whose body is too
-  // short to be a real read (a few-word echo/stub). Profile elements (4B) are exempt.
-  const wordCount = (s) => (s.content || '').trim().split(/\s+/).filter(Boolean).length;
-  const MIN_WORDS = 8;
-  const longestByTitle = {};
-  for (const p of parts) {
-    if (p.isProfileElement) continue;
-    const k = cleanTitle(p.title || '').toLowerCase();
-    if (!longestByTitle[k] || wordCount(p) > wordCount(longestByTitle[k])) longestByTitle[k] = p;
-  }
-  return parts.filter((p) => {
-    if (p.isProfileElement) return true;
-    if (wordCount(p) < MIN_WORDS) return false;                       // drop short echoes/stubs
-    return longestByTitle[cleanTitle(p.title || '').toLowerCase()] === p; // keep only the longest per title
-  });
-}
+// The report reader — heading detection, subsections, Kaart stripping, sections and the ledger that
+// accounts for every line of the model's text — lives in reportReader.js.
 
 /**
  * Render markdown-ish content as React elements.

@@ -10,14 +10,31 @@ import AssessmentResultsModal from '../components/assessment/AssessmentResultsMo
 // Editing the PDF code hot-reloads the modal module → we remount + rebuild.
 //
 // Open with:  http://localhost:3000/?pdfpreview=1   (dev build only)
-// First populate the replay cache by generating one full report in the app.
+// First populate the replay cache by generating one full report in the app, or load a saved replay
+// with &replay=<name> (public/dev-replay/<name>.json); &variant=male|female picks the portrait,
+// &lesson=open|flow forces the cover lesson's layout.
 // ──────────────────────────────────────────────────────────────────────────
 export default function PdfPreviewHarness() {
   const { t } = useLanguage();
-  const [data] = useState(() => {
+  // ?replay=<name> loads public/dev-replay/<name>.json (git-excluded) and keeps it as the replay.
+  const replayName = new URLSearchParams(window.location.search).get('replay');
+  const [loadingReplay, setLoadingReplay] = useState(!!replayName);
+  const [data, setData] = useState(() => {
+    if (replayName) return null;
     try { return JSON.parse(localStorage.getItem('gfl_pdf_replay') || 'null'); }
     catch { return null; }
   });
+  useEffect(() => {
+    if (!replayName) return;
+    fetch(`/dev-replay/${encodeURIComponent(replayName)}.json`)
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+      .then((text) => {
+        try { localStorage.setItem('gfl_pdf_replay', text); } catch (_) {}
+        setData(JSON.parse(text));
+      })
+      .catch(() => setData(null))
+      .finally(() => setLoadingReplay(false));
+  }, [replayName]);
   const [url, setUrl] = useState(null);
   const [genKey, setGenKey] = useState(0);
   const [building, setBuilding] = useState(true);
@@ -30,6 +47,10 @@ export default function PdfPreviewHarness() {
       cRuntime: data.cRuntime,
       enginePayload: data.enginePayload,
       uploadedOceanScores: data.uploadedOceanScores,
+      // ?variant=male|female — which portrait the cover uses (default: the modal's own choice).
+      portraitVariant: new URLSearchParams(window.location.search).get('variant') || undefined,
+      // ?lesson=open|flow — force the cover lesson's layout (default: auto, whichever lays out better).
+      lessonMode: new URLSearchParams(window.location.search).get('lesson') || undefined,
     };
   }
 
@@ -51,6 +72,9 @@ export default function PdfPreviewHarness() {
   const bar = { flex: '0 0 auto', padding: '6px 12px', background: '#11111c', color: '#c4b5fd', fontFamily: 'monospace', fontSize: 12, display: 'flex', gap: 14, alignItems: 'center', borderBottom: '1px solid #2a2a3a' };
   const btn = { background: 'rgba(168,85,247,0.16)', border: '1px solid rgba(168,85,247,0.45)', color: '#c4b5fd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 };
 
+  if (loadingReplay) {
+    return <div style={{ position: 'fixed', inset: 0, background: '#0a0a14', color: '#64748b', fontFamily: 'monospace', padding: 40 }}>loading replay {replayName}…</div>;
+  }
   if (!data) {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#0a0a14', color: '#e2e8f0', fontFamily: 'monospace', fontSize: 13, padding: 40, lineHeight: 1.6 }}>

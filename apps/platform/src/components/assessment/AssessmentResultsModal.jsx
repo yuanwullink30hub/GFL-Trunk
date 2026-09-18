@@ -42,6 +42,7 @@ import {
   COMPARISON_TITLE, RADAR_READING_TITLE, STRAY_TITLE, RENDER_SIDE_TITLE, V3_ELEMENTS_TITLE,
 } from './reportReader';
 import MorphologyChart from './MorphologyChart';
+import { readScene, layoutLesson, drawLesson } from './coverLesson';
 import { sectionTitle, relabelProse } from './v4Labels';
 
 // ── Restructure part 2.3 ──────────────────────────────────────────────────────
@@ -294,6 +295,9 @@ const AssessmentResultsModal = ({
   // Starting choice for a new result: the default, unless only the other variant's art exists yet.
   // Nothing is inferred about the user; the toggle swaps freely.
   useEffect(() => {
+    // Dev PDF preview only: ?variant=male|female rides in with the replay (PdfPreviewHarness).
+    const asked = typeof window !== 'undefined' ? window.__GFL_PDF_REPLAY?.portraitVariant : null;
+    if (asked === 'male' || asked === 'female') { setPortraitVariant(asked); return; }
     const { available } = resolvePortrait(portraitMain, portraitSupport);
     const other = DEFAULT_PORTRAIT_VARIANT === 'male' ? 'female' : 'male';
     setPortraitVariant(!available[DEFAULT_PORTRAIT_VARIANT] && available[other] ? other : DEFAULT_PORTRAIT_VARIANT);
@@ -999,7 +1003,9 @@ const AssessmentResultsModal = ({
       // ── Helper: estimate rendered height of a markdown section (heading + content) ──
       // Used to decide whether to start a new page before rendering.
       const estimateSectionHeight = (title, content, maxW) => {
-        let h = 14 + 4 + 8; // sectionHeading: ensureSpace(14) + y+=4 + y+=8
+        // sectionHeading moves y down 4 + 8 mm; its ensureSpace(14) only checks for room and adds nothing.
+        // Counting the 14 as height moved sections that fit to a fresh page (owner, 2026-09-18).
+        let h = 4 + 8;
         if (!content) return h;
         const lines = content.split('\n');
         for (const raw of lines) {
@@ -1293,49 +1299,20 @@ const AssessmentResultsModal = ({
       pdf.setDrawColor(...purple);
       pdf.setLineWidth(0.4);
       pdf.line(margin, y, W - margin, y);
-      y += 16;
+      y += 19;
 
-      // Large profile image (centered, ~90mm) - skipped while artwork is unavailable.
-      if (portrait.url) try {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-          img.src = portrait.url;
-        });
-        const imgCanvas = document.createElement('canvas');
-        const imgSize = 600;
-        imgCanvas.width = imgSize;
-        imgCanvas.height = imgSize;
-        const ctx = imgCanvas.getContext('2d');
-        ctx.fillStyle = '#060612'; ctx.fillRect(0, 0, imgSize, imgSize); // opaque bg so JPEG corners blend with the page
-        // Circular mask
-        ctx.beginPath();
-        ctx.arc(imgSize / 2, imgSize / 2, imgSize / 2, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        ctx.drawImage(img, 0, 0, imgSize, imgSize);
-        const imgData = imgCanvas.toDataURL('image/jpeg', 0.85);
-        const pdfImgSize = 90;
-        const imgX = W / 2 - pdfImgSize / 2;
-        pdf.addImage(imgData, 'JPEG', imgX, y, pdfImgSize, pdfImgSize);
-        // No link to the original here: the full-resolution portrait download lives in the account dashboard.
-        // Purple border ring around circular image
-        pdf.setDrawColor(...purple);
-        pdf.setLineWidth(1.5);
-        pdf.circle(W / 2, y + pdfImgSize / 2, pdfImgSize / 2, 'S');
-        y += pdfImgSize + 12;
-      } catch {
-        y += 8;
-      }
+      // Cover, top to bottom: the extended archetype's name, then the portrait in full view with the
+      // levensles set into its scene. The portrait takes every millimetre the name leaves.
 
-      // Extended Archetype Name — large, centered (1 of 132)
-      pdf.setFontSize(26);
-      pdf.setTextColor(...purple);
+      // Extended Archetype Name — large, centered (1 of 132): 26 pt × 1.4 (owner, 2026-09-18), smaller only
+      // when a long name would not fit between the margins.
+      const coverName = extName || result.name || '';
       pdf.setFont('helvetica', 'bold');
-      pdf.text(extName || result.name || '', W / 2, y, { align: 'center' });
-      y += 10;
+      const coverNameUnits = pdf.getStringUnitWidth(coverName);
+      pdf.setFontSize(Math.min(36.4, coverNameUnits ? (contentW * pdf.internal.scaleFactor) / coverNameUnits : 36.4));
+      pdf.setTextColor(...purple);
+      pdf.text(coverName, W / 2, y, { align: 'center' });
+      y += 14;
 
       // Subtitle (extendedSubtitle)
       if (result.extendedSubtitle) {
@@ -1346,17 +1323,103 @@ const AssessmentResultsModal = ({
         y += 8;
       }
 
-      // Quote — levensles for this extended archetype
-      if (result.levensles) {
+      // The levensles is set into the portrait's scene (coverLesson.js; owner rulings 2026-09-18): drawn over
+      // the portrait so nothing ever covers a word, shaped by the portrait's depth map (taper, convergence,
+      // occlusion), its sizes between the smallest text in this PDF (the radar's 5 pt unit captions) and 1.3×
+      // the largest subheading (sectionHeading, 12 pt). No portrait, or no room in its scene → the levensles
+      // goes under the portrait, wide and short.
+      const lessonText = result.levensles ? `“${result.levensles}”` : '';
+      const LESSON_SIZES = { min: 5, max: 12 * 1.3 };
+      const LESSON_PT = 10.5, LESSON_LH = 5.5;                  // under the portrait
+      const lessonLines = (w) => { pdf.setFontSize(LESSON_PT); pdf.setFont('helvetica', 'italic'); return pdf.splitTextToSize(lessonText, w); };
+      const loadImage = (src) => new Promise((resolve, reject) => {
+        const im = new Image();
+        im.crossOrigin = 'anonymous';
+        im.onload = () => resolve(im);
+        im.onerror = reject;
+        im.src = src;
+      });
+
+      // The portrait's transparency and depth map, sampled onto one 2 mm grid over the page: between the
+      // margins, the height of the portrait (the cells beside it are open page).
+      const sampleScene = (img, depthImg, { imgX, imgY, drawW, drawH }) => {
+        const cell = 2;
+        const cols = Math.floor(contentW / cell), rows = Math.floor(drawH / cell);
+        const gw = Math.max(1, Math.round(drawW / cell));
+        const off = Math.round((imgX - margin) / cell);
+        const channel = (source, rgba) => {
+          const c = document.createElement('canvas');
+          c.width = gw; c.height = rows;
+          const g = c.getContext('2d', { willReadFrequently: true });
+          g.drawImage(source, 0, 0, gw, rows);
+          const px = g.getImageData(0, 0, gw, rows).data;
+          const out = new Uint8ClampedArray(cols * rows);
+          for (let r = 0; r < rows; r++) {
+            for (let ic = 0; ic < gw; ic++) {
+              const q = ic + off;
+              if (q >= 0 && q < cols) out[r * cols + q] = px[(r * gw + ic) * 4 + rgba];
+            }
+          }
+          return out;
+        };
+        return readScene({ cols, rows, cell, x0: margin, y0: imgY, alpha: channel(img, 3), depth: depthImg ? channel(depthImg, 0) : null });
+      };
+
+      let lessonInScene = false;
+      if (portrait.url) try {
+        const img = await loadImage(portrait.url);
+        // Without its depth map the lesson still finds room in the scene, only level and at one size.
+        const depthImg = portrait.depthUrl ? await loadImage(portrait.depthUrl).catch(() => null) : null;
+        const gap = 6;
+        const aspect = img.naturalWidth / img.naturalHeight;
+        // The portrait in full view: the whole image, uncropped, in its own proportions, no frame, placed as
+        // a true PNG so its transparency (the figure's glow) sits straight on the page.
+        // 10% larger than the room between the name and the bottom margin, and lifted 10 mm toward the name
+        // (owner, 2026-09-18): a figure can run to the image's lower edge, so the air belongs under it.
+        const lift = 10;
+        const fit = (reserve) => {
+          const room = H - margin - y - reserve - 2 * gap;
+          let h = Math.max(60, Math.min(room * 1.1, H - 3 - y - gap - reserve));
+          let w = h * aspect;
+          if (w > contentW) { w = contentW; h = w / aspect; }
+          return { imgX: (W - w) / 2, imgY: y + gap - lift, drawW: w, drawH: h };
+        };
+        let place = fit(0);
+        let lesson = null;
+        if (lessonText) {
+          pdf.setFont('helvetica', 'italic');
+          const measure1 = (s) => pdf.getStringUnitWidth(s) / pdf.internal.scaleFactor;   // mm at 1 pt
+          // Beside the figure or flowing along a pole, whichever lays out better (dev preview: &lesson=open|flow).
+          const mode = (typeof window !== 'undefined' && window.__GFL_PDF_REPLAY?.lessonMode) || 'auto';
+          lesson = layoutLesson({ text: lessonText, scene: sampleScene(img, depthImg, place), sizes: LESSON_SIZES, measure1, mode });
+          if (!lesson) place = fit(2 + lessonLines(contentW - 10).length * LESSON_LH + 6);
+        }
+        // Rasterised at ~300 dpi for its printed size.
+        const pxH = Math.min(img.naturalHeight, Math.round((place.drawH / 25.4) * 300));
+        const imgCanvas = document.createElement('canvas');
+        imgCanvas.height = pxH;
+        imgCanvas.width = Math.round(pxH * aspect);
+        imgCanvas.getContext('2d').drawImage(img, 0, 0, imgCanvas.width, imgCanvas.height);
+        pdf.addImage(imgCanvas.toDataURL('image/png'), 'PNG', place.imgX, place.imgY, place.drawW, place.drawH, undefined, 'FAST');
+        // No link to the original here: the full-resolution portrait download lives in the account dashboard.
+        // The lesson goes over the portrait, never under it: nothing may cover a word.
+        if (lesson) {
+          drawLesson(pdf, lesson, { ink: white, halo: bg });
+          lessonInScene = true;
+        }
+        y = place.imgY + place.drawH + gap;
+      } catch {
+        y += 8;
+      }
+
+      // No portrait, or no room in its scene: the levensles under it, wide and short.
+      if (lessonText && !lessonInScene) {
         y += 2;
-        const quoteText = `\u201C${result.levensles}\u201D`;
-        const quoteLines = pdf.splitTextToSize(quoteText, contentW - 30);
-        pdf.setFontSize(10);
+        const lines = lessonLines(contentW - 10);
         pdf.setTextColor(...white);
-        pdf.setFont('helvetica', 'italic');
-        quoteLines.forEach(line => {
+        lines.forEach(line => {
           pdf.text(line, W / 2, y, { align: 'center' });
-          y += 5.5;
+          y += LESSON_LH;
         });
         y += 6;
       }
@@ -2261,7 +2324,8 @@ const AssessmentResultsModal = ({
       //    hard-coded blocks — O+C, then a forced new page for E+A+N — that only found the model's
       //    text when each trait came as its own "TRAIT X" section. Dutch reports never did that,
       //    so the traits glued onto CREATIEVE RESONANTIE and the value table stood here alone.
-      //    Now the section breaks wherever its text runs out, like every other section. ──
+      //    Now the section breaks wherever its text runs out, like every other section, with one fixed
+      //    break the owner asked for (2026-09-18): E, A and N start on a fresh page. ──
       const oceanSection = (displaySections || []).find(s =>
         s.isComparison || COMPARISON_TITLE.test(cleanTitle(s.title || '')));
       // The model's own copy of the uploaded values duplicates the render-side table: drop those
@@ -2290,7 +2354,18 @@ const AssessmentResultsModal = ({
           }
           gap();
           if (oceanBody) {
-            writePdfMarkdown(oceanBody, margin + 2, contentW - 4, cyan);
+            // O and C on the page with the values, E, A and N from a fresh page (owner, 2026-09-18): the
+            // one fixed break in this flow, at the Extraversie heading. Without that heading it flows whole.
+            const oceanLines = oceanBody.split('\n');
+            const headOf = (l) => splitGluedHeading(l)?.heading ?? l;
+            const eAt = oceanLines.findIndex((l) => isOceanMemberHeading(headOf(l)) && /extravers/i.test(bareHeading(headOf(l))));
+            if (eAt > 0) {
+              writePdfMarkdown(oceanLines.slice(0, eAt).join('\n'), margin + 2, contentW - 4, cyan);
+              if (y > margin) { pdf.addPage(); paintBg(); markPage(); y = margin; }
+              writePdfMarkdown(oceanLines.slice(eAt).join('\n'), margin + 2, contentW - 4, cyan);
+            } else {
+              writePdfMarkdown(oceanBody, margin + 2, contentW - 4, cyan);
+            }
           } else {
             // Legacy form: the traits as five separate "TRAIT X" sections.
             oceanTraitSections.forEach((s, i) => {

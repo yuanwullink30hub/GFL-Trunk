@@ -29,6 +29,20 @@ const PORTRAIT_DIR = '/images/Import ready/';
 /** A portrait: web copy (rendered) + full-resolution original (downloaded). */
 const art = (web, full) => ({ web: `${PORTRAIT_DIR}web/${web}`, full: `${PORTRAIT_DIR}${full}` });
 
+// The portraits' new home (owner, 2026-09-18): every archetype image sits in, and is pulled from,
+// public/images/Archetype imags/. The PNG originals stay out of git (they pass Cloudflare Pages'
+// 25 MiB per-file limit); what ships, per portrait <name>:
+//   web/<name>.webp    1650 px tall, alpha kept — the card, and the PDF cover (full page, ~180 dpi)
+//   full/<name>.webp   full resolution, alpha kept — the download
+//   depth/<name>.png   its depth map: small greyscale, brighter = nearer (Depth Anything V2, made
+//                      offline) — the PDF cover shapes the levensles to it (coverLesson.js)
+const ARCHETYPE_IMAGE_DIR = '/images/Archetype imags/';
+const portraitArt = (name) => ({
+  web: `${ARCHETYPE_IMAGE_DIR}web/${name}.webp`,
+  full: `${ARCHETYPE_IMAGE_DIR}full/${name}.webp`,
+  depth: `${ARCHETYPE_IMAGE_DIR}depth/${name}.png`,
+});
+
 /**
  * Lookup table: 132-matrix key (`${MAIN}_${SUPPORT}`) -> { male, female } portraits (art()).
  * null = artwork not available yet.
@@ -149,7 +163,7 @@ const ARCHETYPE_IMAGES = {
   OUTLAW_EXPLORER:   { male: null, female: null },  // #96  The Renegade
   OUTLAW_INNOCENT:   { male: null, female: null },  // #97  The Idealist
   OUTLAW_MAGICIAN:   { male: null, female: null },  // #98  The Revolutionary
-  OUTLAW_HERO:       { male: null, female: null },  // #99  The Ronin
+  OUTLAW_HERO:       { male: portraitArt('ronin male'), female: portraitArt('Ronin female') },  // #99  The Ronin
 
   // TRICKSTER (Positie 7) - #100-110
   TRICKSTER_OUTLAW:     { male: null, female: null },  // #100 The Fool
@@ -214,8 +228,9 @@ const normVariant = (v) => (PORTRAIT_VARIANTS.includes(v) ? v : DEFAULT_PORTRAIT
  * @param {string} [preferred] - 'male' | 'female'
  * @param {{ fallback?: boolean }} [options] - fallback: false returns only the preferred variant (null while
  *   its art is missing) - the results card and PDF use this so the image always matches the toggle
- * @returns {{ url: string|null, fullUrl: string|null, variant: string|null, available: { male: boolean, female: boolean } }}
- *   url = the web copy to render; fullUrl = the full-resolution original (for download links)
+ * @returns {{ url: string|null, fullUrl: string|null, depthUrl: string|null, variant: string|null, available: { male: boolean, female: boolean } }}
+ *   url = the web copy to render; fullUrl = the full-resolution original (for download links);
+ *   depthUrl = the portrait's depth map, when it has one
  */
 export function resolvePortrait(mainKey, support, preferred = DEFAULT_PORTRAIT_VARIANT, { fallback = true } = {}) {
   const key = resolveExtendedKey(mainKey, support);
@@ -224,8 +239,8 @@ export function resolvePortrait(mainKey, support, preferred = DEFAULT_PORTRAIT_V
   const want = normVariant(preferred);
   const other = want === 'male' ? 'female' : 'male';
   const variant = slot[want] ? want : fallback && slot[other] ? other : null;
-  if (!variant) return { url: null, fullUrl: null, variant: null, available };
-  return { url: slot[variant].web, fullUrl: slot[variant].full, variant, available };
+  if (!variant) return { url: null, fullUrl: null, depthUrl: null, variant: null, available };
+  return { url: slot[variant].web, fullUrl: slot[variant].full, depthUrl: slot[variant].depth || null, variant, available };
 }
 
 /**

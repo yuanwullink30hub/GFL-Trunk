@@ -37,7 +37,12 @@ export const NARRATIVE_TAGS = [
   // p3 — Radar (render-side) + Schaduw + Blindspot
   { stem: 'DE SCHADUW', en: ['THE SHADOW'], slot: 'shadow', renderer: 'prose' },
   { stem: 'DE BLINDSPOT', en: ['THE BLINDSPOT'], slot: 'blindspot', renderer: 'prose' },
-  // p4 — OCEAN comparison (upload only): 5 per-trait sections (same tag in both languages)
+  // p4 — OCEAN comparison. PERSOONLIJKHEIDSRAPPORT VERGELIJKING is ONE section: the value block and
+  // the five trait blocks travel together (Brief v2 Addendum A §2). It is a tag so a bare title line is
+  // promoted to a heading — otherwise the whole OCEAN text glues onto CREATIEVE RESONANTIE. Deliberately
+  // NOT in PAGE_ORDER: the renderer places it, and gate 32 pins the tag slots to PAGE_ORDER.
+  { stem: 'PERSOONLIJKHEIDSRAPPORT VERGELIJKING', en: ['PERSONALITY REPORT COMPARISON'], slot: 'ocean', renderer: 'prose' },
+  // The five per-trait tags (same tag in both languages); inside the comparison they are subheadings.
   { stem: 'TRAIT O', en: [], slot: 'ocean_o', renderer: 'prose' },
   { stem: 'TRAIT C', en: [], slot: 'ocean_c', renderer: 'prose' },
   { stem: 'TRAIT E', en: [], slot: 'ocean_e', renderer: 'prose' },
@@ -121,8 +126,73 @@ export const PAGE_ORDER = [
 // The page label in front is not part of the tag: it is dropped for matching, and from the title the
 // card and PDF show (they add their own "De Stille Stem — " prefix). Only this label is stripped, and
 // only when a known tag follows — "DE STILLE STEM — DE SUPPORT DIE DE KERN BEWERKT" stays untagged.
-const PAGE_LABEL_BARE = /^(?:DE STILLE STEM|THE QUIET VOICE)\s+[—–]\s+(?=\S)/i;
-const PAGE_LABEL = /^(\s*(?:#+\s*)?\**\s*(?:\d+[A-Za-z]?\.\s+)?)(?:DE STILLE STEM|THE QUIET VOICE)\s+[—–]\s+(?=\S)/i;
+// A title dash is an em/en dash or one to three hyphens, always with spaces around it: a prompt pasted
+// without pandoc conversion writes "---", and the model copies what it reads. The spaces keep a
+// hyphenated tag like "DUAL-CORE DYNAMICS" whole.
+const TITLE_DASH = String.raw`(?:[—–]|-{1,3})`;
+const PAGE_LABEL_BARE = new RegExp(String.raw`^(?:DE STILLE STEM|THE QUIET VOICE)\s+${TITLE_DASH}\s+(?=\S)`, 'i');
+const PAGE_LABEL = new RegExp(String.raw`^(\s*(?:#+\s*)?\**\s*(?:\d+[A-Za-z]?\.\s+)?)(?:DE STILLE STEM|THE QUIET VOICE)\s+${TITLE_DASH}\s+(?=\S)`, 'i');
+const SUBTITLE_CUT = new RegExp(String.raw`\s${TITLE_DASH}\s.*$`);
+
+// ── Subheadings — a third heading level inside a section, never a section of their own ──
+// Master Prompt v6.2.9 fixes them per section (Brief v2 Addendum A §1): DE ESSENTIE carries
+// "Cognitieve aanleg" then "Oriëntatie (intern/extern)"; DE VERMENIGVULDIGING carries
+// "Oriëntatie (intern/extern)". Inside PERSOONLIJKHEIDSRAPPORT VERGELIJKING the five trait names
+// (and a TRAIT X tag) head the trait blocks. Matched on the exact string, case-insensitive, with
+// markdown markers and a trailing colon ignored.
+export const CONTRACT_SUBHEADINGS = [
+  'Cognitieve aanleg', 'Oriëntatie (intern/extern)',
+  'Cognitive disposition', 'Orientation (internal/external)',
+];
+const OCEAN_TRAIT_NAMES = [
+  'Openheid', 'Consciëntieusheid', 'Conscientieusheid', 'Ordelijkheid', 'Extraversie', 'Meegaandheid', 'Neuroticisme',
+  'Openness', 'Conscientiousness', 'Extraversion', 'Agreeableness', 'Neuroticism',
+];
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const CONTRACT_RE = new RegExp(`^(?:${CONTRACT_SUBHEADINGS.map(esc).join('|')})$`, 'i');
+// "Openheid", "Openheid (O)", "TRAIT O — Openheid", "TRAIT O" — never a value line like "Openheid: 72/100".
+const TRAIT_RE = new RegExp(String.raw`^(?:TRAIT\s+[OCEAN]\b(?:\s*${TITLE_DASH}\s*(?:${OCEAN_TRAIT_NAMES.map(esc).join('|')}))?|(?:${OCEAN_TRAIT_NAMES.map(esc).join('|')}))(?:\s*\([^)]*\))?$`, 'i');
+// The render-side OCEAN value table's title — if the model writes its own, it stays inside the section.
+const OCEAN_TOOL_RE = /^ocean[\s-]*(?:gereedschap|tool|instrument)\b/i;
+
+/** Text of a heading line with markdown markers, a leading number and a trailing colon removed. */
+export function bareHeading(line) {
+  return String(line || '')
+    .replace(/^\s*#+\s*/, '')
+    .replace(/^\s*(?:\d+[A-Za-z]?\.\s+)/, '')
+    .replace(/\*+/g, '')
+    .replace(/\s*:\s*$/, '')
+    .trim();
+}
+
+/** Is this heading one of the fixed section subheadings (Essentie / Vermenigvuldiging)? */
+export function isContractSubheading(line) {
+  return CONTRACT_RE.test(bareHeading(line));
+}
+
+/** Does this heading belong inside the OCEAN comparison (a trait block or the value table)? */
+export function isOceanMemberHeading(line) {
+  const t = bareHeading(line);
+  return TRAIT_RE.test(t) || OCEAN_TOOL_RE.test(t);
+}
+
+/**
+ * A subheading found glued to its body on one line — "**Meegaandheid**Dit blok…" or
+ * "MeegaandheidDit blok…" — split into { heading, rest }; null when the line is not glued.
+ * A bold run ending in ":" is an inline label ("**De Focus-hendel:**Probeer…"), not a heading.
+ */
+export function splitGluedHeading(line) {
+  const s = String(line || '').trim();
+  const bold = s.match(/^\*\*([^*]+?)\*\*(?=\S)(.+)$/);
+  if (bold && !/:\s*$/.test(bold[1])) return { heading: bold[1].trim(), rest: bold[2].trim() };
+  const names = [...CONTRACT_SUBHEADINGS, ...OCEAN_TRAIT_NAMES].sort((a, b) => b.length - a.length);
+  for (const n of names) {
+    if (s.length > n.length && s.slice(0, n.length).toLowerCase() === n.toLowerCase() && /[A-ZÀ-Þ]/.test(s.charAt(n.length))) {
+      return { heading: s.slice(0, n.length), rest: s.slice(n.length).trim() };
+    }
+  }
+  return null;
+}
 
 /** A section title without the Stille Stem page label, when a known tag follows it; else unchanged. */
 export function stripPageLabel(title) {
@@ -139,9 +209,9 @@ function normalizeTagLine(line) {
     .replace(/^[\s(]*[–—\d][–—\d\s).]*\.?\s*(?=[A-Za-z])/, '')
     // drop the page label in front of a Stille Stem title (see PAGE_LABEL) before the subtitle cut
     .replace(PAGE_LABEL_BARE, '')
-    // drop a subtitle after " — " / " – " (em/EN dash with spaces) — NOT the hyphen
-    // inside a tag like "DUAL-CORE DYNAMICS".
-    .replace(/\s[—–]\s.*$/, '')
+    // drop a subtitle after a spaced title dash (" — ", " – ", " - ", " -- ", " --- ") — NOT the
+    // hyphen inside a tag like "DUAL-CORE DYNAMICS".
+    .replace(SUBTITLE_CUT, '')
     .trim()
     .toUpperCase();
 }

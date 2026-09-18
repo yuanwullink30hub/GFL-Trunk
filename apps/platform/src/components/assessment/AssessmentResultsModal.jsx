@@ -34,7 +34,10 @@ import { SciFiButton } from '@gfl/ui';
 import { registerLeaveHandler } from '../../reportDownloadGuard';
 import { formatCents, formatPrice } from '../../config/pricing';
 import { getPaymentConfig, markPaymentDelivered } from '../../services/paymentService';
-import { assembleV4, NARRATIVE_TAGS, matchNarrativeTag, canonicalTitle, stripPageLabel } from './v4Parser';
+import {
+  assembleV4, NARRATIVE_TAGS, matchNarrativeTag, canonicalTitle, stripPageLabel,
+  bareHeading, isContractSubheading, isOceanMemberHeading, splitGluedHeading,
+} from './v4Parser';
 import MorphologyChart from './MorphologyChart';
 import { sectionTitle, relabelProse } from './v4Labels';
 
@@ -119,40 +122,10 @@ const isExtensionTitle = (title) => /^de\s+extensie\b/i.test(cleanTitle(title ||
 /** The title as the model emitted it — what the card and the PDF show. Routing uses `title`. */
 const shownTitle = (s) => (s && (s.displayTitle || s.title)) || '';
 
-// Master Prompt v4.1 §5.2 — De Essentie & De Vermenigvuldiging each have an intro followed
-// by three aspects: cognitive disposition, orientation (intern/extern), gift & curse. The
-// model writes them as prose; this promotes the FIRST paragraph that discusses each aspect to
-// a bold subtitle so both sections read as labeled sub-blocks. Each aspect is detected
-// INDEPENDENTLY (one subtitle each, max), so a paragraph that doesn't match still passes the
-// later aspects through. Best-effort on free prose; paragraphs already starting with a bold
-// heading (e.g. the model emitted its own) are left untouched.
-function injectAspectSubtitles(content, language) {
-  if (!content) return content;
-  const en = String(language || 'nl').toLowerCase() === 'en';
-  // Checked in this order per paragraph; first matching, not-yet-used aspect wins the line.
-  const ASPECTS = [
-    { key: 'gift', label: en ? 'Gift & Curse' : 'Gift & Vloek',
-      re: /\b(de\s+)?(gift|vloek|curse)\b|kracht\s+en\s+schaduw/i },
-    { key: 'orient', label: en ? 'Orientation (internal/external)' : 'Oriëntatie (intern/extern)',
-      re: /\b(intern|extern|naar\s+binnen|naar\s+buiten|ori[eë]ntat|internal|external|inward|outward)\b/i },
-    { key: 'cognit', label: en ? 'Cognitive disposition' : 'Cognitieve aanleg',
-      re: /\b(cognitiev|denkstijl|aanleg|kernfunctie|interpretatie|integratie|differentiatie|cognitive|disposition)\b/i },
-  ];
-  // Split on blank lines; if the model used single newlines (one block), fall back to per-line.
-  let paras = content.split(/\n{2,}/);
-  if (paras.length < 3) paras = content.split(/\n+/);
-  const used = {};
-  const out = paras.map((p, idx) => {
-    const t = p.trim();
-    if (!t || idx === 0) return p;                 // keep the intro paragraph untouched
-    if (/^(\*\*|#{1,6}\s)/.test(t)) return p;      // already a subtitle/heading
-    for (const a of ASPECTS) {
-      if (!used[a.key] && a.re.test(t)) { used[a.key] = true; return `**${a.label}**\n${t}`; }
-    }
-    return p;
-  });
-  return out.join('\n\n');
-}
+// De Essentie / De Vermenigvuldiging subheadings are written by the model (Master Prompt v6.2.9;
+// Brief v2 Addendum A §1) and recognised by v4Parser's isContractSubheading. The v4.1 renderer
+// used to GUESS them from keywords in the prose — which is why a report carried anywhere from zero
+// to three, and could insert a "Gift & Vloek" that no longer belongs in these sections.
 
 // ── Utility: map cleaned section title to accent color for JSX card (returns {color, rgb} or null) ──
 const getSectionAccent = (title) => {
@@ -978,6 +951,10 @@ const AssessmentResultsModal = ({
           }
         };
       };
+      // A block records only the pages it CREATES, so a block may continue on the previous
+      // block's last page without that page being claimed twice. The machine block does exactly
+      // that behind the AI prompt — they must stay adjacent in desiredBlockOrder.
+      let aiPromptRendered = false;
 
       // ── Helper: paint page background ──
       const paintBg = () => {
@@ -1054,7 +1031,9 @@ const AssessmentResultsModal = ({
         for (const raw of lines) {
           const trimmed = raw.trim();
           if (!trimmed) { h += 2; continue; }
-          if (/^#{2,}\s/.test(trimmed)) { h += 3 + 5; continue; }
+          // every subheading form writePdfMarkdown renders at the subheading level
+          if (/^#{2,}\s/.test(trimmed) || /^\*\*[^*]+\*\*$/.test(trimmed) ||
+              isContractSubheading(trimmed) || isOceanMemberHeading(trimmed)) { h += 3 + 5 + 0.5; continue; }
           if (/^\|[\s-:]+\|/.test(trimmed)) continue;
           if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
             const cells = trimmed.slice(1, -1).split('|').map(c => c.trim()).filter(Boolean);
@@ -1085,6 +1064,16 @@ const AssessmentResultsModal = ({
         }
         sectionHeading(cleanTitle(title), color, opts);
         // Theme in-body sub-headers to the section's accent (Schaduw=purple, Blindspot=red, …).
+        writePdfMarkdown(content, margin + 2, contentW - 4, color);
+      };
+
+      // ── Helper: a section that FLOWS — no whole-section jump to a fresh page. Its heading keeps
+      //    three body lines with it (never alone at the foot of a page); the body breaks wherever
+      //    the page runs out. renderSection moves a section that won't fit entirely, which left
+      //    DE HARDWARE ONDER DRUK alone on a half-empty page (Brief v2 Addendum A §4). ──
+      const renderSectionFlow = (title, content, color, opts = {}) => {
+        ensureSpace(12 + 3 * 4.3 + 2);
+        sectionHeading(cleanTitle(title), color, opts);
         writePdfMarkdown(content, margin + 2, contentW - 4, color);
       };
 
@@ -1130,9 +1119,29 @@ const AssessmentResultsModal = ({
       const writePdfMarkdown = (mdText, x, maxW, accent) => {
         if (!mdText) return;
         const headColor = accent || orange;
-        const boldColor = accent || [251, 191, 36];
+        // One subheading level (Brief v2 Addendum A §1): smaller than the section bar, clearly
+        // heavier than the body, no bar, and never the last thing on a page — it only renders
+        // where its own height plus three body lines still fit, else it moves to the next page.
+        const SUB_LINE = 5, BODY_LINE = 4.3;
+        const subHeading = (text) => {
+          const hLines = pdf.splitTextToSize(sanitizePdf(text), maxW);
+          ensureSpace(3 + hLines.length * SUB_LINE + 3 * BODY_LINE);
+          y += 3;
+          pdf.setFontSize(10);
+          pdf.setTextColor(...headColor);
+          pdf.setFont('helvetica', 'bold');
+          for (const hl of hLines) { pdf.text(hl, x, y); y += SUB_LINE; }
+          y += 0.5;
+        };
         // Unicode sanitization handled by the hoisted sanitizePdf() (defined above).
-        const lines = mdText.split('\n');
+        // A heading the model ran into its body ("**Meegaandheid**Dit blok…") is split onto its own
+        // line first; a run-in bold LABEL ("**De Focus-hendel:**Probeer…") only gets its space back.
+        const lines = [];
+        for (const raw of mdText.split('\n')) {
+          const glued = splitGluedHeading(raw);
+          if (glued) { lines.push(`**${glued.heading}**`, glued.rest); continue; }
+          lines.push(raw.replace(/\*\*([^*\n]+?:)\*\*(?=\S)/g, '**$1** '));
+        }
         for (const raw of lines) {
           let trimmed = sanitizePdf(raw.trim());
           // Collapse spaced-out characters (same as formatInline)
@@ -1153,16 +1162,9 @@ const AssessmentResultsModal = ({
           // lines. The renderer draws the real archetype circles itself, so drop these.
           if (/\[\s*afbeelding\b/i.test(trimmed)) continue;
           if (/^#{0,3}\s*\**\s*archetype[-\s]?afbeeldingen\s*\**\s*:?\s*$/i.test(trimmed)) continue;
-          // ## / ### heading
+          // ## / ### heading → the subheading level
           if (/^#{2,}\s/.test(trimmed)) {
-            const headText = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim();
-            ensureSpace(10);
-            y += 3;
-            pdf.setFontSize(10);
-            pdf.setTextColor(...headColor);
-            pdf.setFont('helvetica', 'bold');
-            const hLines = pdf.splitTextToSize(headText, maxW);
-            for (const hl of hLines) { ensureSpace(5); pdf.text(hl, x, y); y += 5; }
+            subHeading(trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim());
             continue;
           }
           // Table separator — skip
@@ -1212,18 +1214,16 @@ const AssessmentResultsModal = ({
             }
             continue;
           }
-          // Standalone bold line = styled subheader in PDF (e.g. **Wat jouw lens doorlaat**)
+          // Standalone bold line (e.g. **Wat jouw lens doorlaat**) → the same subheading level
           const pdfBoldMatch = trimmed.match(/^\*\*(.+?)\*\*$/);
           if (pdfBoldMatch) {
-            const subhead = sanitizePdf(pdfBoldMatch[1]);
-            ensureSpace(7);
-            y += 2;
-            pdf.setFontSize(9);
-            pdf.setTextColor(...boldColor);
-            pdf.setFont('helvetica', 'bold');
-            const shLines = pdf.splitTextToSize(subhead, maxW);
-            for (const sl of shLines) { ensureSpace(4.5); pdf.text(sl, x, y); y += 4.5; }
-            y += 1;
+            subHeading(pdfBoldMatch[1]);
+            continue;
+          }
+          // A contract subheading or OCEAN trait heading written as a bare line
+          // ("Cognitieve aanleg", "Oriëntatie (intern/extern)", "Meegaandheid")
+          if (isContractSubheading(trimmed) || isOceanMemberHeading(trimmed)) {
+            subHeading(bareHeading(trimmed));
             continue;
           }
           // ALL-CAPS section header (e.g. "KERNPROFIEL:", "COMMUNICATIESTIJL:")
@@ -2294,9 +2294,29 @@ const AssessmentResultsModal = ({
         y += 2;
       };
 
-      // ── OCEAN page 1: title + subtitle + (upload: table + Trait O/C  |  no-upload: all reads) ──
+      // ── PERSOONLIJKHEIDSRAPPORT VERGELIJKING — ONE section on ONE flow (Brief v2 Addendum A §2):
+      //    title → subtitle → the render-side value table (upload only) → instrument disclaimer →
+      //    the model's section, its trait blocks under their subheadings. This used to be two
+      //    hard-coded blocks — O+C, then a forced new page for E+A+N — that only found the model's
+      //    text when each trait came as its own "TRAIT X" section. Dutch reports never did that,
+      //    so the traits glued onto CREATIEVE RESONANTIE and the value table stood here alone.
+      //    Now the section breaks wherever its text runs out, like every other section. ──
+      const oceanSection = (displaySections || []).find(s =>
+        s.isComparison || COMPARISON_TITLE.test(cleanTitle(s.title || '')));
+      // The model's own copy of the uploaded values duplicates the render-side table: drop those
+      // value lines and its value-block heading; the trait prose stays.
+      const OCEAN_NAME = '(?:openheid|ordelijkheid|consci[eë]ntieusheid|extraversie|meegaandheid|neuroticisme|openness|conscientiousness|extraversion|agreeableness|neuroticism)';
+      const OCEAN_PAIR = new RegExp(`\\W*(?:[OCEAN]\\W+)?${OCEAN_NAME}\\W*\\s*[:=]\\s*\\d{1,3}\\s*(?:\\/\\s*100)?`, 'gi');
+      const isOceanValueLine = (t) => { const s = t.replace(OCEAN_PAIR, ''); return s !== t && s.replace(/[\s|,;·*()-]/g, '') === ''; };
+      const oceanBody = oceanSection
+        ? oceanSection.content.split('\n').filter((l) => {
+            const t = l.trim();
+            if (hasOceanUpload && isOceanValueLine(t)) return false;
+            return !/^ocean[\s-]*(?:gereedschap|tool|instrument)\b/i.test(bareHeading(t));
+          }).join('\n').trim()
+        : '';
       const endOceanCore = trackBlock('ocean_core');
-      if (oceanTraitSections.length > 0 || hasOceanUpload) {
+      if (oceanBody || oceanTraitSections.length > 0 || hasOceanUpload) {
         await justifiedPage(async (gap) => {
           sectionHeading(sectionTitle('ocean_page', language), blue);
           oceanSubtitle();
@@ -2304,41 +2324,22 @@ const AssessmentResultsModal = ({
             drawUploadedOceanTable();
             gap();
             oceanDisclaimer(false);   // between the values table and the first trait
-            gap();
-            const p1 = [oceanTraitOf('O'), oceanTraitOf('C')].filter(Boolean);
-            p1.forEach((s, i) => {
-              renderSection(shownTitle(s),s.content, cyan, { small: true }); // 50% trait subtitle
-              if (i < p1.length - 1) { gap(); } // no hr — headings separate the traits, saves height
-            });
           } else {
-            oceanDisclaimer(true);    // up top, before the tendency reads (no table in this path)
-            gap();
+            oceanDisclaimer(true);    // up top, before the tendency read (no table in this path)
+          }
+          gap();
+          if (oceanBody) {
+            writePdfMarkdown(oceanBody, margin + 2, contentW - 4, cyan);
+          } else {
+            // Legacy form: the traits as five separate "TRAIT X" sections.
             oceanTraitSections.forEach((s, i) => {
-              renderSection(shownTitle(s),s.content, cyan, { small: true }); // 50% trait subtitle
-              if (i < oceanTraitSections.length - 1) { hr(); gap(); }
+              renderSection(shownTitle(s), s.content, cyan, { small: true });
+              if (i < oceanTraitSections.length - 1) gap();
             });
           }
         });
       }
       endOceanCore();
-
-      // ── OCEAN page 2 (upload only): Trait E + Trait A + Trait N (disclaimer now on page 1) ──
-      const endOceanComp = trackBlock('ocean_comp');
-      const oceanP2 = hasOceanUpload ? [oceanTraitOf('E'), oceanTraitOf('A'), oceanTraitOf('N')].filter(Boolean) : [];
-      if (oceanP2.length > 0) {
-        await justifiedPage(async (gap) => {
-          // No bottom padding on this page: let the text flow all the way down to the page edge
-          // (the extra ~18mm of room keeps the 3 traits from being pushed to a third page).
-          const savedNPB = noPageBreak;
-          noPageBreak = true;
-          oceanP2.forEach((s, i) => {
-            renderSection(shownTitle(s),s.content, cyan, { small: true }); // 50% trait subtitle
-            if (i < oceanP2.length - 1) { gap(); } // no hr — headings separate the traits, saves height
-          });
-          noPageBreak = savedNPB;
-        });
-      }
-      endOceanComp();
 
       // ── Page 5: PLASTISCHE MORFOLOGIE — engine D-curve chart + 3 reads ──
       // Master Prompt v4.1 §5.5: chart is render-side (engine cRuntime, ~30% page height),
@@ -2406,12 +2407,14 @@ const AssessmentResultsModal = ({
           if (i < pageAReads.length - 1) hr();
         });
         noPageBreak = savedNPBmorph;
-        // Page B: the deeper mechanism reads on a fresh page (no chart)
+        // Page B: the deeper mechanism reads on a fresh page (no chart). DE HARDWARE ONDER DRUK and
+        // DE OVERGANG flow together — the Overgang is the hinge of the pressure read and follows
+        // straight on; an exceptionally long one may run over, never jump (Addendum A §4).
         if (pageBReads.length > 0) {
           pdf.addPage(); paintBg(); markPage(); y = margin;
           // (no page-level "— vervolg" heading; the section headings below carry the page)
           pageBReads.forEach((section, i) => {
-            renderSection(shownTitle(section),relabelProse(section.content, language), cyan);
+            renderSectionFlow(shownTitle(section), relabelProse(section.content, language), cyan);
             if (i < pageBReads.length - 1) hr();
           });
         }
@@ -2782,7 +2785,7 @@ const AssessmentResultsModal = ({
           if (essencePage.length > 0) {
             await justifiedPage(async (gap) => {
             essencePage.forEach((section, i) => {
-              renderSection(shownTitle(section),injectAspectSubtitles(section.content, language), getPdfSectionColor(section.title));
+              renderSection(shownTitle(section), section.content, getPdfSectionColor(section.title));
               if (i < essencePage.length - 1) { hr(); gap(); }
             });
             });
@@ -2856,6 +2859,9 @@ const AssessmentResultsModal = ({
             const ix = (s) => stilleOrder.findIndex(k => cleanTitle(s.title || '').toLowerCase().includes(k));
             return ix(a) - ix(b);
           });
+          // A page break before REFLECTIE, then REFLECTIE, MOTIVATIE and BEWEGING together on that one
+          // page — the three voices are never split over two pages (Brief v2 Addendum A §4; at budget
+          // they are 790 words, the densest measured page carried 852).
           if (stillePage.length > 0) {
             await justifiedPage(async (gap) => {
             const savedNPB = noPageBreak;
@@ -2999,9 +3005,12 @@ const AssessmentResultsModal = ({
             ].join('\n');
           };
 
-          // AI Prompt: dedicated final page — ALWAYS rendered (model prompt or the fallback
-          // above), so the footer + closing letter never disappear when the model omits it.
+          // AI Prompt: its own page — ALWAYS rendered (the model's prompt or the fallback above).
+          // It carries the heading, the short usage intro, the prompt and then the machine block,
+          // nothing else (Brief v2 Addendum A §3): the footer and the closing letter moved to a
+          // closing page of their own, since the reader copies this page to an external AI in one go.
           const endAiPrompt = trackBlock('ai_prompt');
+          aiPromptRendered = true;
           void disclaimerSection;
           {
             pdf.addPage();
@@ -3016,19 +3025,19 @@ const AssessmentResultsModal = ({
             // Agent prompt: strip intro text + first ## heading (KERN DISCLAIMER), show its body, then rest with headings
             if (agentSection) {
               let promptContent = (agentSection.content || '').trim();
-              // If the model appended its machine block after the prompt (plain text, no ##),
-              // cut it off here — the render-side `data` page is the authoritative copy.
-              promptContent = promptContent.replace(/\n[^\n]*(?:PROFIEL\s*DATA\s*VOOR\s*AI|PROFILE\s*DATA\s*FOR\s*AI)[\s\S]*$/i, '')
-                                           .replace(/\n\s*--\s*(?:IDENTITEIT|IDENTITY)\s*--[\s\S]*$/i, '').trim();
+              // If the model appended its machine block after the prompt, cut it off — the render-side
+              // `data` block is the authoritative copy. Cut only at a line that IS the block's header
+              // (or its first `-- IDENTITEIT --` tag). This used to cut at the first line that merely
+              // MENTIONED "PROFIEL DATA VOOR AI" — and v6.2.x's own usage intro tells the reader to
+              // give that block to their AI, so the eight prompt blocks after it were all cut away.
+              promptContent = promptContent
+                .replace(/\n[ \t]*[#*>\-─═ \t]*(?:PROFIEL\s*DATA\s*VOOR\s*AI(?:[ \t-]*VERWERKING)?|PROFILE\s*DATA\s*FOR\s*AI(?:[ \t-]*PROCESSING)?)[ \t*:.—–\-─═]*(?:\n[\s\S]*)?$/i, '')
+                .replace(/\n\s*--\s*(?:IDENTITEIT|IDENTITY)\s*--[\s\S]*$/i, '').trim();
               // Strip markdown code fences the AI may wrap the prompt in
               promptContent = promptContent.replace(/^```[^\n]*\n?/gm, '').replace(/^~~~[^\n]*\n?/gm, '');
-              // Remove everything before the first ## sub-heading
-              const firstSubIdx = promptContent.search(/(^|\n)##[ \t]/m);
-              if (firstSubIdx >= 0) {
-                promptContent = promptContent.slice(firstSubIdx).replace(/^\n/, '').trim();
-              }
-              // Strip the first ## heading line itself (KERN DISCLAIMER), keep its body
-              promptContent = promptContent.replace(/^##[^\n]*\n+/, '').trim();
+              // (The v4 "drop everything before the first ##, then that ## line" slicing is gone: it
+              // existed to remove a KERN DISCLAIMER preamble, and under v6.2.x it removed the usage
+              // intro instead. The prompt's block titles arrive as subheadings — groupSubsections.)
               // Collapse 3+ consecutive blank lines down to one blank line
               promptContent = promptContent.replace(/\n{3,}/g, '\n\n');
               writePdfMarkdown(promptContent, margin + 2, contentW - 4);
@@ -3037,61 +3046,6 @@ const AssessmentResultsModal = ({
               writePdfMarkdown(buildFallbackAgentPrompt(), margin + 2, contentW - 4);
             }
           }
-
-          // ═══════════════════════════════════════════════════
-          // FOOTER — on the same page as the AI prompt
-          // ═══════════════════════════════════════════════════
-          ensureSpace(14);
-          markPage();
-          y += 4;
-          pdf.setDrawColor(...purple);
-          pdf.setLineWidth(0.3);
-          pdf.line(margin, y, W - margin, y);
-          y += 5;
-          pdf.setFontSize(7);
-          pdf.setTextColor(...white);
-          pdf.setFont('helvetica', 'normal');
-          pdf.text(t('resultsModal.pdf.footer.brand'), W / 2, y, { align: 'center' });
-          y += 3.5;
-          pdf.text(tFunc('resultsModal.pdf.footer.score')(result.totalScore, result.maxScore), W / 2, y, { align: 'center' });
-          y += 3.5;
-          pdf.text(tFunc('resultsModal.pdf.footer.generatedOn')(new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL')), W / 2, y, { align: 'center' });
-          y += 6;
-
-          // ── Closing message: pinned to the bottom of the last page ──
-          // Absolutely positioned (anchored upward from the bottom margin) and never calls
-          // ensureSpace/addPage, so it cannot change the page count or page distribution.
-          const closingBottomY = H - margin;
-
-          const lineH = 4.0;
-          const closingTextW = contentW - 4;
-          pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
-          const line1 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l1'), closingTextW);
-          const line2 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l2'), closingTextW);
-          const line3 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l3'), closingTextW);
-          const line4 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l4'), closingTextW);
-          const line5 = pdf.splitTextToSize(t('resultsModal.pdf.closing.l5'), closingTextW);
-          const gapSingle = lineH;
-          const gapDouble = lineH * 2;
-          const totalTextH =
-            line1.length * lineH + gapDouble +
-            line2.length * lineH +
-            line3.length * lineH + gapSingle +
-            line4.length * lineH + gapDouble +
-            line5.length * lineH;
-          let yMsg = closingBottomY - totalTextH;
-
-          pdf.setFontSize(7.5);
-          pdf.setTextColor(...white);
-          pdf.setFont('helvetica', 'italic');
-          for (const l of line1) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-          yMsg += gapDouble;
-          for (const l of line2) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-          for (const l of line3) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-          yMsg += gapSingle;
-          for (const l of line4) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
-          yMsg += gapDouble;
-          for (const l of line5) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
 
           endAiPrompt();
         }
@@ -3105,10 +3059,18 @@ const AssessmentResultsModal = ({
       // The user doesn't read this; external AI models do when the
       // PDF is uploaded as attachment.
       // ══════════════════════════════════════════════════════════════
+      // Behind the AI prompt the machine block follows straight on, on the same page when there is
+      // room — the prompt page carries the prompt and the PROFIEL DATA block, nothing between them
+      // (Brief v2 Addendum A §3). Without a prompt it opens its own page, as before.
       const endData = trackBlock('data');
       {
-        pdf.addPage(); paintBg(); markPage();
-        y = margin;
+        if (aiPromptRendered) {
+          ensureSpace(24); markPage();
+          y += 6;
+        } else {
+          pdf.addPage(); paintBg(); markPage();
+          y = margin;
+        }
 
         const mono = 7;
         const monoH = 3.5;
@@ -3335,6 +3297,36 @@ const AssessmentResultsModal = ({
       }
       endData();
 
+      // ── Closing page: the closing letter and the brand / score / date footer, on a page of their
+      //    own — never on or under the AI prompt (Brief v2 Addendum A §3). ──
+      const endClosing = trackBlock('closing');
+      {
+        pdf.addPage(); paintBg(); markPage();
+        const lineH = 4.0;
+        pdf.setFontSize(7.5); pdf.setFont('helvetica', 'italic');
+        const paras = ['l1', 'l2', 'l3', 'l4', 'l5'].map((k) => pdf.splitTextToSize(t(`resultsModal.pdf.closing.${k}`), contentW - 4));
+        const gapAfter = [lineH * 2, 0, lineH, lineH * 2, 0];   // the letter's own spacing, unchanged
+        const letterH = paras.reduce((h, p, i) => h + p.length * lineH + gapAfter[i], 0);
+        let yMsg = (H - letterH) / 2;                            // the letter centred on its page
+        pdf.setTextColor(...white);
+        paras.forEach((p, i) => {
+          for (const l of p) { pdf.text(l, margin + 2, yMsg); yMsg += lineH; }
+          yMsg += gapAfter[i];
+        });
+
+        let fy = H - margin - 12;                                // the footer at the foot of the page
+        pdf.setDrawColor(...purple); pdf.setLineWidth(0.3);
+        pdf.line(margin, fy, W - margin, fy);
+        fy += 5;
+        pdf.setFontSize(7); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...white);
+        pdf.text(t('resultsModal.pdf.footer.brand'), W / 2, fy, { align: 'center' });
+        fy += 3.5;
+        pdf.text(tFunc('resultsModal.pdf.footer.score')(result.totalScore, result.maxScore), W / 2, fy, { align: 'center' });
+        fy += 3.5;
+        pdf.text(tFunc('resultsModal.pdf.footer.generatedOn')(new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL')), W / 2, fy, { align: 'center' });
+      }
+      endClosing();
+
       // ── Reorder PDF pages to configured sequence ──
       // Desired order (content stays untouched, only page sequence changes):
       // 1-6 (pre-context) → group1a (identity) → group1b (archetype images) →
@@ -3350,16 +3342,16 @@ const AssessmentResultsModal = ({
           'group1a',       // 1-4: Identiteit/Verklaring + Essentie/Vermenigvuldiging
           'group1b',       // 5-6: Schaduw + Blindspot
           'nb_resonance',  // 7-8: radar + DE EXTENSIE + Creatieve Resonantie (§5.4, before OCEAN)
-          'ocean_core',    // 9:   OCEAN page 1 (O + C)
-          'ocean_comp',    // 9:   OCEAN page 2 (Trait E/A/N, upload only)
+          'ocean_core',    // 9:   PERSOONLIJKHEIDSRAPPORT VERGELIJKING — one section, one flow
           'nb_morphology', // 10-12: D-curve chart + Vorm / Hardware / Overgang
           'nb_stille',     // 13-15: De Stille Stem (Reflectie/Motivatie/Beweging)
           'dual_core',     // 16-18: Dual-Core chart + Alchemie/Schakelbord/Ontologie
           'others',        // any remaining ungrouped AI sections (safety net)
           'groep_radar',   // (legacy) usually empty in v4.1
-          'ai_prompt',     // p9: AI Prompt + footer + closing
-          'wet_context',   // Wetenschappelijke Context — moved after the AI prompt, before the data block
-          'data',          // machine block: Profiel data voor AI-bijlage
+          'ai_prompt',     // 19: the AI prompt …
+          'data',          // … and the machine block straight behind it (shares the prompt's last page)
+          'wet_context',   // Wetenschappelijke Context — still after the prompt, no longer between it and the data
+          'closing',       // the closing letter + footer, a page of their own
         ];
         const blockMap = {};
         blockRanges.forEach(b => { blockMap[b.name] = b; });
@@ -4398,6 +4390,44 @@ function preinsertTagHeadings(text) {
   }).join('\n');
 }
 
+// ── Subsections stay inside their section (Brief v2 Addendum A §1–§3) ──
+// parseAiSections splits on every ##/### heading, so a subheading the model writes as a heading
+// ("### Cognitieve aanleg", "### Meegaandheid", the eight AI-prompt blocks) became a top-level
+// section and fell out of its parent — the trait blocks away from their OCEAN page, the prompt
+// blocks away from the prompt. Such headings are demoted to bold lines, which writePdfMarkdown
+// renders at the subheading level:
+//   • the fixed subheadings of De Essentie / De Vermenigvuldiging, wherever they appear;
+//   • everything inside PERSOONLIJKHEIDSRAPPORT VERGELIJKING — ONE section, value block and five
+//     trait blocks together; an OCEAN trait heading with no comparison title in front opens it;
+//   • everything inside DE VOLLEDIGE AI PROMPT, up to the machine block.
+// A narrative tag always splits and closes the container.
+const PROFILE_DATA_HEADER = /^(?:profiel\s*data\s*voor\s*ai|profile\s*data\s*for\s*ai)\b/i;
+function groupSubsections(text) {
+  if (!text) return text;
+  let container = null; // 'ocean' | 'prompt' | null
+  const out = [];
+  for (const line of text.split('\n')) {
+    const m = line.match(/^\s*#{2,3}\s+(.+)$/);
+    if (!m) { out.push(line); continue; }
+    const title = bareHeading(m[1]);
+    if (isOceanMemberHeading(title)) {
+      if (container !== 'ocean') { out.push('## PERSOONLIJKHEIDSRAPPORT VERGELIJKING'); container = 'ocean'; }
+      out.push(`**${title}**`);
+      continue;
+    }
+    const tag = matchNarrativeTag(m[1]);
+    if (tag) {
+      container = tag.slot === 'ocean' ? 'ocean' : tag.slot === 'ai_prompt' ? 'prompt' : null;
+      out.push(line);
+      continue;
+    }
+    if (PROFILE_DATA_HEADER.test(title)) { container = null; out.push(line); continue; }
+    if (container || isContractSubheading(title)) { out.push(`**${title}**`); continue; }
+    out.push(line);
+  }
+  return out.join('\n');
+}
+
 // ── Kaart Microcopy (## Kaart Microcopy): AI-authored profile-card fields.
 // KAART_GIFT / KAART_GEOMETRIE never reach this client: routes/ai.js strips them from
 // the analysis and parks them in kaartDrafts, keyed by the orb code's hash, so the card
@@ -4417,7 +4447,7 @@ function stripKaartFields(text) {
 
 function parseAiSections(analysisText) {
   if (!analysisText || typeof analysisText !== 'string') return null;
-  analysisText = preinsertTagHeadings(analysisText);
+  analysisText = groupSubsections(preinsertTagHeadings(analysisText));
 
   // Split on ## or ### top-level headings (with or without numbering).
   // The AI prompt requests `## N.` but models sometimes return `### N.` instead.

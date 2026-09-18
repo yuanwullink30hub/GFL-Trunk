@@ -3328,15 +3328,19 @@ const AssessmentResultsModal = ({
       // ocean_comp (comparison) → ocean_core (OCEAN score) → ai_prompt → data
       {
         // Master Prompt v4.1 §5 page order (render-side visuals added in-block).
+        // The Master Prompt's emit order (v6.2.x DEEL 5, the numbered checklist) is the page order:
+        // 1-4 Identiteit/Verklaring/Essentie/Vermenigvuldiging · 5-6 Schaduw/Blindspot · 7-8 Extensie +
+        // Creatieve Resonantie (the radar page, §5.4) · 9 OCEAN · 10-12 Vorm/Hardware/Overgang ·
+        // 13-15 De Stille Stem · 16-18 Alchemie/Schakelbord/Evolutie · 19 AI-prompt + machineblok.
         const desiredBlockOrder = [
-          'group1a',       // p1+p2: Identiteit/Verklaring + Essentie/Vermenigvuldiging
-          'group1b',       // p3: Radar (no caption) + Schaduw + Blindspot
-          'ocean_core',    // p4: OCEAN page 1 (title + table/traits or tendency)
-          'ocean_comp',    // p4: OCEAN page 2 (Trait E/A/N, upload only)
-          'nb_morphology', // p5: D-curve chart + Vorm/Hardware/Overgang
-          'nb_stille',     // p6: De Stille Stem (Reflectie/Motivatie/Beweging)
-          'nb_resonance',  // p7: archetype images + Professionele/Creatieve Resonantie
-          'dual_core',     // p8: Dual-Core chart + Alchemie/Schakelbord/Ontologie
+          'group1a',       // 1-4: Identiteit/Verklaring + Essentie/Vermenigvuldiging
+          'group1b',       // 5-6: Schaduw + Blindspot
+          'nb_resonance',  // 7-8: radar + DE EXTENSIE + Creatieve Resonantie (§5.4, before OCEAN)
+          'ocean_core',    // 9:   OCEAN page 1 (O + C)
+          'ocean_comp',    // 9:   OCEAN page 2 (Trait E/A/N, upload only)
+          'nb_morphology', // 10-12: D-curve chart + Vorm / Hardware / Overgang
+          'nb_stille',     // 13-15: De Stille Stem (Reflectie/Motivatie/Beweging)
+          'dual_core',     // 16-18: Dual-Core chart + Alchemie/Schakelbord/Ontologie
           'others',        // any remaining ungrouped AI sections (safety net)
           'groep_radar',   // (legacy) usually empty in v4.1
           'ai_prompt',     // p9: AI Prompt + footer + closing

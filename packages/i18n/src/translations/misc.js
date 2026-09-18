@@ -36,9 +36,8 @@ export default {
     // ── WinkelPage ──
     winkel: {
       panelTitle: { nl: 'PRODUCT', en: 'PRODUCT' },
-      imagePlaceholder: { nl: 'PRODUCTAFBEELDING', en: 'PRODUCT IMAGE' },
       category: { nl: 'Categorie', en: 'Category' },
-      productName: { nl: 'Productnaam', en: 'Product name' },
+      productName: { nl: 'T³ Archetype kaarten', en: 'T³ Archetype cards' },
       productDesc: {
         nl: 'Korte productomschrijving — een paar regels sjabloontekst die later wordt vervangen door de echte copy van dit product.',
         en: 'Short product description — a few lines of template text that will later be replaced by the real copy for this product.',

@@ -1,5 +1,4 @@
 import React, { memo } from 'react';
-import { ShoppingBag } from 'lucide-react';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
 import TechContainer from '../components/orbital/TechContainer';
@@ -8,8 +7,9 @@ import TechContainer from '../components/orbital/TechContainer';
  * WinkelPage — the map destination reached from the Winkel container's button.
  *
  * Its own empty map location (above the orb); shows no other HUD content. For now
- * it holds a SINGLE product template — a placeholder image + template copy inside
- * the parent TechContainer — so the shop layout can be built out from here later.
+ * it holds a SINGLE product — the T³ Archetype kaarten image and name, with template
+ * copy and price still to come — inside the parent TechContainer, so the shop layout
+ * can be built out from here later.
  */
 const WinkelPage = memo(({ isVisible }) => {
   const { t } = useLanguage();
@@ -25,22 +25,24 @@ const WinkelPage = memo(({ isVisible }) => {
         <TechContainer title={t('misc.winkel.panelTitle')} variant="purple" className="w-full h-full" style={{ backgroundColor: 'rgba(1, 0, 2, 0.35)' }}>
           <div className="w-full h-full flex flex-col" style={{ gap: '1.4vh', padding: '1vw', minHeight: 0 }}>
 
-            {/* Template image — placeholder box; flexes to fill the fixed container */}
+            {/* Product image — flexes to fill the fixed container. Lazy: the page stays mounted
+                off-screen from boot, so the image loads only when the shop comes into view. */}
             <div style={{
               width: '100%',
               flex: 1,
               minHeight: 0,
               borderRadius: '0.4rem',
-              border: '1px dashed rgba(192, 132, 252, 0.35)',
-              background: 'linear-gradient(135deg, rgba(88,28,135,0.35), rgba(1,0,2,0.5))',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.8vh',
+              border: '1px solid rgba(192, 132, 252, 0.25)',
+              background: '#000',
+              overflow: 'hidden',
             }}>
-              <ShoppingBag style={{ width: '3vw', height: '3vw', color: PURPLE }} strokeWidth={1.2} />
-              <span style={{ fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif", fontSize: 'max(9px, 0.55vw)', letterSpacing: '0.15em', color: 'rgba(192, 132, 252, 0.6)' }}>{t('misc.winkel.imagePlaceholder')}</span>
+              <img
+                src="/images/winkel/t3-archetype-kaarten.webp"
+                alt={t('misc.winkel.productName')}
+                loading="lazy"
+                decoding="async"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
             </div>
 
             {/* Template copy */}

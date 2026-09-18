@@ -1538,11 +1538,11 @@ function buildSystemPrompt({
       `"In deze specifieke sectie gebruiken we ons model als leidende standaard en relativeren we de door jouw gestuurde score. Het extern persoonlijkheidsrapport (${fileNames}) is contextuele input — geen validatie of weerlegging van onze uitkomsten. GardenForLife aanvaardt geen verantwoordelijkheid voor externe rapportinhoud."\n\n` +
       `⚠️ VERPLICHT SCOREOVERZICHT — Direct na de openingszin MOET je de 5 OCEAN-dimensiescores uit het geüploade rapport vermelden in EXACT dit format, één per regel:\n` +
       `Openheid (Niveau - XX)\n` +
-      `Ordelijkheid (Niveau - XX)\n` +
+      `Consciëntieusheid (Niveau - XX)\n` +
       `Extraversie (Niveau - XX)\n` +
       `Meegaandheid (Niveau - XX)\n` +
       `Neuroticisme (Niveau - XX)\n` +
-      `GEBRUIK UITSLUITEND DEZE 5 NAMEN: Openheid, Ordelijkheid, Extraversie, Meegaandheid, Neuroticisme.\n\n` +
+      `GEBRUIK UITSLUITEND DEZE 5 NAMEN: Openheid, Consciëntieusheid, Extraversie, Meegaandheid, Neuroticisme.\n\n` +
       `VERPLICHTE STRUCTUUR — gebruik UITSLUITEND vetgedrukte tekst (bold) voor subsectietitels, GEEN markdown headers (## of ###).\n` +
       `De sectie bevat EXACT 4 subsecties, elk met hun eigen vetgedrukte titel gevolgd door precies één alinea (max 175 woorden per alinea).\n\n` +
       `**Overeenkomsten**\n` +
@@ -1742,7 +1742,8 @@ function buildUserMessage({
     if (uploadedOceanScores && Object.keys(uploadedOceanScores).length) {
       const labels = en
         ? { O: 'Openness', C: 'Conscientiousness', E: 'Extraversion', A: 'Agreeableness', N: 'Neuroticism' }
-        : { O: 'Openheid', C: 'Ordelijkheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
+        // OUR names, never the source file's: C is Consciëntieusheid (Ordelijkheid is an aspect of it).
+        : { O: 'Openheid', C: 'Consciëntieusheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' };
       const cells = ['O', 'C', 'E', 'A', 'N'].filter((d) => uploadedOceanScores[d] != null)
         .map((d) => `${labels[d]}: ${uploadedOceanScores[d]}/100`);
       parts.push(`${en ? 'OCEAN (uploaded by the user)' : 'OCEAN (geüpload door de gebruiker)'}: ${cells.join(' | ')}`);

@@ -99,6 +99,8 @@ const cleanTitle = (title) => {
   t = t.replace(/^\d+[a-zA-Z]?[\s.:—-]+\s*/i, '').trim();
   // Strip any remaining stray ** at start or end
   t = t.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
+  // A raw prompt dash the model copied ("DE EXTENSIE --- De Ronin") shows as a plain " - "
+  t = t.replace(/\s-{2,3}\s/g, ' - ');
   return t;
 };
 
@@ -981,6 +983,7 @@ const AssessmentResultsModal = ({
       const sanitizePdf = (str) => String(str ?? '')
         .replace(/—/g, ' - ')   // em-dash
         .replace(/–/g, ' - ')   // en-dash
+        .replace(/\s-{2,3}\s/g, ' - ') // a raw prompt dash (" -- " / " --- ") the model copied
         .replace(/‘|’/g, "'") // curly single quotes
         .replace(/“|”/g, '"') // curly double quotes
         .replace(/…/g, '...')   // ellipsis

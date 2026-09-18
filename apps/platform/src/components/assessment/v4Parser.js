@@ -144,24 +144,35 @@ export const CONTRACT_SUBHEADINGS = [
   'Cognitieve aanleg', 'Oriëntatie (intern/extern)',
   'Cognitive disposition', 'Orientation (internal/external)',
 ];
+// The five TRAITS only — Ordelijkheid is an aspect of Consciëntieusheid, never a trait heading (§5b).
 const OCEAN_TRAIT_NAMES = [
-  'Openheid', 'Consciëntieusheid', 'Conscientieusheid', 'Ordelijkheid', 'Extraversie', 'Meegaandheid', 'Neuroticisme',
+  'Openheid', 'Consciëntieusheid', 'Conscientieusheid', 'Extraversie', 'Meegaandheid', 'Neuroticisme',
   'Openness', 'Conscientiousness', 'Extraversion', 'Agreeableness', 'Neuroticism',
 ];
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const CONTRACT_RE = new RegExp(`^(?:${CONTRACT_SUBHEADINGS.map(esc).join('|')})$`, 'i');
-// "Openheid", "Openheid (O)", "TRAIT O — Openheid", "TRAIT O" — never a value line like "Openheid: 72/100".
-const TRAIT_RE = new RegExp(String.raw`^(?:TRAIT\s+[OCEAN]\b(?:\s*${TITLE_DASH}\s*(?:${OCEAN_TRAIT_NAMES.map(esc).join('|')}))?|(?:${OCEAN_TRAIT_NAMES.map(esc).join('|')}))(?:\s*\([^)]*\))?$`, 'i');
+// v6.3.0 contracts the trait subheading as "[trait] --- [score]" ("Openheid --- 72"). Also accepted:
+// "Openheid", "Openheid (O)", "Openheid voor ervaringen - 72", "TRAIT O — Openheid" — never a value
+// line like "Openheid: 72/100" (a colon is data, a title dash is a heading).
+const TRAIT_NAMES_RE = OCEAN_TRAIT_NAMES.map(esc).join('|');
+const TRAIT_SCORE = String.raw`\s*${TITLE_DASH}\s*\d{1,3}(?:\s*\/\s*100)?`;
+const TRAIT_RE = new RegExp(String.raw`^(?:TRAIT\s+[OCEAN]\b(?:\s*${TITLE_DASH}\s*(?:${TRAIT_NAMES_RE}))?|(?:${TRAIT_NAMES_RE})(?:\s+voor\s+ervaring(?:en)?)?)(?:\s*\([^)]*\))?(?:${TRAIT_SCORE})?$`, 'i');
+// The same heading run into its body on one line: "Meegaandheid --- 39 Dit getal verbergt…".
+const TRAIT_SCORED_LEAD = new RegExp(String.raw`^((?:${TRAIT_NAMES_RE})(?:\s+voor\s+ervaring(?:en)?)?${TRAIT_SCORE})\s*(.+)$`, 'i');
 // The render-side OCEAN value table's title — if the model writes its own, it stays inside the section.
 const OCEAN_TOOL_RE = /^ocean[\s-]*(?:gereedschap|tool|instrument)\b/i;
 
-/** Text of a heading line with markdown markers, a leading number and a trailing colon removed. */
+/**
+ * Text of a heading line with markdown markers, a leading number and a trailing colon removed, and a
+ * raw prompt dash (" -- " / " --- ", copied from an unconverted prompt) shown as a plain " - ".
+ */
 export function bareHeading(line) {
   return String(line || '')
     .replace(/^\s*#+\s*/, '')
     .replace(/^\s*(?:\d+[A-Za-z]?\.\s+)/, '')
     .replace(/\*+/g, '')
     .replace(/\s*:\s*$/, '')
+    .replace(/\s-{2,3}\s/g, ' - ')
     .trim();
 }
 
@@ -185,6 +196,8 @@ export function splitGluedHeading(line) {
   const s = String(line || '').trim();
   const bold = s.match(/^\*\*([^*]+?)\*\*(?=\S)(.+)$/);
   if (bold && !/:\s*$/.test(bold[1])) return { heading: bold[1].trim(), rest: bold[2].trim() };
+  const scored = s.match(TRAIT_SCORED_LEAD);
+  if (scored && /^[A-ZÀ-Þ]/.test(scored[2])) return { heading: scored[1].trim(), rest: scored[2].trim() };
   const names = [...CONTRACT_SUBHEADINGS, ...OCEAN_TRAIT_NAMES].sort((a, b) => b.length - a.length);
   for (const n of names) {
     if (s.length > n.length && s.slice(0, n.length).toLowerCase() === n.toLowerCase() && /[A-ZÀ-Þ]/.test(s.charAt(n.length))) {
@@ -427,17 +440,25 @@ function parseIndices(body) {
 // OCEAN bars: "Openheid: 72/100" / "Openness: 72/100". Short Dutch labels, or the English trait
 // names (the translation and the conventional Big Five name are both accepted).
 const OCEAN_LABELS = {
-  openheid: 'O', ordelijkheid: 'C', extraversie: 'E', meegaandheid: 'A', neuroticisme: 'N',
-  openness: 'O', orderliness: 'C', conscientiousness: 'C', extraversion: 'E', agreeableness: 'A', neuroticism: 'N',
+  openheid: 'O', 'consciëntieusheid': 'C', conscientieusheid: 'C', extraversie: 'E', meegaandheid: 'A', neuroticisme: 'N',
+  openness: 'O', conscientiousness: 'C', extraversion: 'E', agreeableness: 'A', neuroticism: 'N',
 };
+// Ordelijkheid / Orderliness is an ASPECT of C (Brief v2 Addendum A §5b); older reports used it as the
+// name of C itself. Read it for C only when no trait-named C is present, so an aspect line that travels
+// with its trait never overwrites the trait's own value.
+const OCEAN_LEGACY_C = new Set(['ordelijkheid', 'orderliness']);
 function parseOceanBlock(body) {
   const out = {};
+  let legacyC = null;
   const re = /^\s*([A-Za-zëïéè]+)\s*:\s*(\d+)\s*\/\s*100/gim;
   let m;
   while ((m = re.exec(body)) !== null) {
-    const letter = OCEAN_LABELS[m[1].toLowerCase()];
+    const key = m[1].toLowerCase();
+    const letter = OCEAN_LABELS[key];
     if (letter) out[letter] = +m[2];
+    else if (OCEAN_LEGACY_C.has(key) && legacyC == null) legacyC = +m[2];
   }
+  if (out.C == null && legacyC != null) out.C = legacyC;
   return Object.keys(out).length ? out : null;
 }
 

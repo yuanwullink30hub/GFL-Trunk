@@ -605,7 +605,7 @@ test('Request — the derived indices and the uploaded OCEAN values reach the mo
   assert.ok(!msg.includes('OCEAN Scores:'), 'the v4.3 derived-OCEAN line stays out of the engine pipeline');
   const up = { O: 72, C: 55, E: 61, A: 80, N: 23 };
   assert.ok(buildUserMessage({ ...base, uploadedOceanScores: up })
-    .includes('OCEAN (geüpload door de gebruiker): Openheid: 72/100 | Ordelijkheid: 55/100 | Extraversie: 61/100 | Meegaandheid: 80/100 | Neuroticisme: 23/100'));
+    .includes('OCEAN (geüpload door de gebruiker): Openheid: 72/100 | Consciëntieusheid: 55/100 | Extraversie: 61/100 | Meegaandheid: 80/100 | Neuroticisme: 23/100'));
   assert.ok(buildUserMessage({ ...base, language: 'en', uploadedOceanScores: { O: 72, N: 23 } })
     .includes('OCEAN (uploaded by the user): Openness: 72/100 | Neuroticism: 23/100'));
   // the v4.3 path is untouched

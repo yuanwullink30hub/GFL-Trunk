@@ -45,7 +45,8 @@ export default {
     // ── OCEAN trait names as used in the PDF ──
     ocean: {
       O: { nl: 'Openheid', en: 'Openness' },
-      C: { nl: 'Ordelijkheid', en: 'Conscientiousness' },
+      // C is Consciëntieusheid — Ordelijkheid is one of its two ASPECTS (Brief v2 Addendum A §5b).
+      C: { nl: 'Consciëntieusheid', en: 'Conscientiousness' },
       E: { nl: 'Extraversie', en: 'Extraversion' },
       A: { nl: 'Meegaandheid', en: 'Agreeableness' },
       N: { nl: 'Neuroticisme', en: 'Neuroticism' },
@@ -843,7 +844,7 @@ export default {
 
         oceanSection: { nl: 'OCEAN PROFIEL (EXTERN GEUPLOAD)', en: 'OCEAN PROFILE (EXTERNALLY UPLOADED)' },
         oceanO: { nl: 'Openheid:', en: 'Openness:' },
-        oceanC: { nl: 'Ordelijkheid:', en: 'Conscientiousness:' },
+        oceanC: { nl: 'Consciëntieusheid:', en: 'Conscientiousness:' },
         oceanE: { nl: 'Extraversie:', en: 'Extraversion:' },
         oceanA: { nl: 'Meegaandheid:', en: 'Agreeableness:' },
         oceanN: { nl: 'Neuroticisme:', en: 'Neuroticism:' },

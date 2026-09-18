@@ -3,7 +3,7 @@
 The AI Master Prompt has **one home: MongoDB `promptConfigs/default.systemPromptTemplate`**, edited in the admin
 dashboard. There is no prompt file in the repo. Both report pipelines read that field per request: v4.3 (default) and
 the engine pipeline (`engine/reportV5.js`, selected by `config.reportPipeline` in the repo), which refuses to run when it is empty.
-Live since 2026-09-16: **v6.1.2** (v4.3 → v6.1 → v6.1.1 → v6.1.2). The v5.2 staged file is retired.
+Live since 2026-09-18: **v6.2.1** (v4.3 → v6.1 → v6.1.1 → v6.1.2 → v6.2.1). The v5.2 staged file is retired.
 
 - **Format:** plain text, `●<TAB>` bullets, `N.<TAB>` numbered items, TAB-separated table rows, code fences verbatim.
   A new version handed over as pandoc-exported markdown is converted to that format: escapes and emphasis stripped,

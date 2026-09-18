@@ -195,7 +195,7 @@ function screen(r, analysis) {
 
 /**
  * Gate-5 screens for the Master Prompt's laws (Session Opener §2.D; v6.1.x numbering): W2 SJABLOONWET,
- * W3 NAAMWET, W4 STILTEWET, W5 BANDENWET, §5.7 DE EXTENSIE.
+ * W3 NAAMWET, W4 STILTEWET, W5 BANDENWET, §5.4 DE EXTENSIE.
  */
 function v52Checks(r, analysis) {
   const norm = (s) => String(s).replace(/[“”„"'‘’]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -205,7 +205,7 @@ function v52Checks(r, analysis) {
   const ext = r.req.payload.extension;
   const recNl = loadCorpus('nl').archetypes[ext.main].extensions.find((x) => x.support === ext.support);
 
-  // DE EXTENSIE section: from its title to the next section title (v6.1.x: CREATIEVE RESONANTIE)
+  // DE EXTENSIE section: from its title to the next section title (v6.2.x: CREATIEVE RESONANTIE)
   const exAt = analysis.search(/DE EXTENSIE\s*[—–-]/);
   const exEnd = exAt >= 0 ? analysis.slice(exAt).search(/CREATIEVE RESONANTIE|PROFESSIONELE RESONANTIE/) : -1;
   const section = exAt >= 0 ? analysis.slice(exAt, exEnd > 0 ? exAt + exEnd : undefined) : '';
@@ -232,10 +232,12 @@ function v52Checks(r, analysis) {
     ['W4 · output opens on the first report section (no process narration)', /^\s*(#+\s*)?(1\.\s*)?DE IDENTITEIT/.test(analysis) && !/interne stem-commit|ik lees eerst|structurele lezing:/i.test(analysis), [JSON.stringify(analysis.slice(0, 140))]],
     ['W3 · no schema field names in the narrative', !new RegExp(FIELDS).test(narrative), hits(narrative, new RegExp(FIELDS, 'g'), 8)],
     ['W5 · band language from register_bands in the narrative', new RegExp(BANDS, 'i').test(narrative), hits(narrative, new RegExp(BANDS, 'gi'), 6)],
-    ['§5.7 · DE EXTENSIE title carries the v1.3 identity from the payload', new RegExp(`DE EXTENSIE\\s*[—–-]\\s*${ext.name_en}\\s*·\\s*${ext.name_nl}`).test(titleLine), [titleLine]],
-    ['§5.7 · levensles quoted verbatim (ratified NL text)', section !== '' && norm(section).includes(norm(recNl.levensles)), [`levensles: ${recNl.levensles}`]],
-    ['§5.7 · gift anchored to the ratified text (longest shared run ≥ 4 words)', longestRun(section, recNl.gift) >= 4, [`longest run ${longestRun(section, recNl.gift)} words`]],
-    ['§5.7 · curse anchored to the ratified text (longest shared run ≥ 4 words)', longestRun(section, recNl.curse) >= 4, [`longest run ${longestRun(section, recNl.curse)} words`]],
+    // v6.2.1 §5.4: the title carries the report-language name ALONE — no number, no second language.
+    ['§5.4 · DE EXTENSIE title = the payload name in the report language, nothing else',
+      new RegExp(`DE EXTENSIE\\s*[—–-]\\s*${ext.name_nl}\\s*$`).test(titleLine.trim()), [titleLine, `payload: ${ext.name_nl} (nr ${ext.n} and ${ext.name_en} must NOT appear here)`]],
+    ['§5.4 · levensles quoted verbatim (ratified NL text)', section !== '' && norm(section).includes(norm(recNl.levensles)), [`levensles: ${recNl.levensles}`]],
+    ['§5.4 · gift anchored to the ratified text (longest shared run ≥ 4 words)', longestRun(section, recNl.gift) >= 4, [`longest run ${longestRun(section, recNl.gift)} words`]],
+    ['§5.4 · curse anchored to the ratified text (longest shared run ≥ 4 words)', longestRun(section, recNl.curse) >= 4, [`longest run ${longestRun(section, recNl.curse)} words`]],
     ['W2 · machine block carries the four stamps', stampNames.every((s) => machine.includes(s)), stampNames.filter((s) => !machine.includes(s)).map((s) => `missing ${s}`)],
     (() => {
       // W2 / DEEL 6: HARDWARE SIGNALEN holds ONLY register curves (baseline + transform), the inversion list, band

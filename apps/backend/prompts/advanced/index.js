@@ -1574,6 +1574,10 @@ const EN_SECTION_TITLES = Object.freeze({
     'THE MULTIPLICATION (SUPPORT ARCHETYPE)',
     'THE SHADOW (180° OPPOSITE OF MAIN)',
     'THE BLINDSPOT (RED-LINE MATCH)',
+    // v6.2.1 order: the extension and its resonance sit on the radar page, before OCEAN. The title
+    // carries the name alone — no number, no second language (§5.4).
+    'THE EXTENSION — [name]',
+    'CREATIVE RESONANCE',
     'PERSONALITY REPORT COMPARISON — OCEAN',
     '  then one block per trait, titled: TRAIT O — Openness · TRAIT C — Conscientiousness · TRAIT E — Extraversion · TRAIT A — Agreeableness · TRAIT N — Neuroticism',
     'THE SHAPE',
@@ -1582,8 +1586,6 @@ const EN_SECTION_TITLES = Object.freeze({
     'REFLECTION',
     'MOTIVATION',
     'MOVEMENT',
-    'THE EXTENSION — [name] · [name in the second language]',
-    'CREATIVE RESONANCE',
     'THE ALCHEMY OF INDIVIDUATION',
     'THE NEURAL SWITCHBOARD',
     'ONTOLOGICAL EVOLUTION',

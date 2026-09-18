@@ -689,6 +689,27 @@ test('Request — the yellow-triangle activation numbers ship, the backend\'s ow
   }
 });
 
+test('Reading extract — a gift or curse that wraps in the PDF comes back whole', () => {
+  const { extractReading } = require('../../services/readingExtract');
+  // the PDF data page's monospace block wraps a long gift over two lines in the text layer
+  const page = [
+    'Gift: Gedisciplineerde kracht zonder meester: handelt vanuit pure overtuiging; de ronin wiens code de',
+    'dood overleefde van elke instelling die haar ooit onderdak bood.',
+    'Curse / Trigger: Moreel verraad → losgeslagen, en een tweede regel',
+    'die ook bij de vloek hoort.',
+    'Levensles: "Ik heb elk gezag getart dat mijn code niet haalde,',
+    'maar echt bestuur is nooit smetteloos."',
+  ].join('\n');
+  const r = extractReading(page);
+  assert.equal(r.gift, 'Gedisciplineerde kracht zonder meester: handelt vanuit pure overtuiging; de ronin wiens code de dood overleefde van elke instelling die haar ooit onderdak bood.');
+  assert.equal(r.curse, 'Moreel verraad → losgeslagen, en een tweede regel die ook bij de vloek hoort.');
+  assert.equal(r.levensles, 'Ik heb elk gezag getart dat mijn code niet haalde, maar echt bestuur is nooit smetteloos.');
+  // one-line fields and the English labels read as before
+  const one = extractReading('Gift: kort\nCurse / Trigger: ook kort\nLife lesson: "x"');
+  assert.equal(one.gift, 'kort');
+  assert.equal(one.curse, 'ook kort');
+});
+
 test('Report reader — heading drift never loses or misplaces a section, and every line is accounted for', async () => {
   const R = await import('../../../platform/src/components/assessment/reportReader.js');
   const P = await import('../../../platform/src/components/assessment/v4Parser.js');

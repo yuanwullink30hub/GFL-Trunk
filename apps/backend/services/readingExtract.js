@@ -59,8 +59,12 @@ function extractReading(text) {
   // it's stored for owner-side surfaces only.
   const cleanText = (s, max) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, max);
   // The English PDF prints the same block with "Life lesson" for Levensles.
-  const gift = t.match(/Gift:\s*([^\n]+)/);
-  const curse = t.match(/Curse\s*\/\s*Trigger:\s*([^\n]+)/);
+  // Gift and curse run up to the NEXT label, across line breaks: the data page prints them in a
+  // monospace block that wraps a long gift over two lines, and reading to the first newline cut the
+  // Ronin's gift at "…de ronin wiens code de" (the rest: "dood overleefde van elke instelling…").
+  const NEXT = String.raw`(?=\s*(?:Curse\s*\/\s*Trigger|Levensles|Life\s+lesson)\s*:|\n\s*\n|\n\s*--|$)`;
+  const gift = t.match(new RegExp(String.raw`Gift:\s*([\s\S]*?)${NEXT}`));
+  const curse = t.match(new RegExp(String.raw`Curse\s*\/\s*Trigger:\s*([\s\S]*?)${NEXT}`));
   const levensles = t.match(/(?:Levensles|Life\s+lesson):\s*"([^"]+)"/);
 
   // AI-authored card fields (KAART MICROCOPY block) — base64-marked like ORB::/ARCH::

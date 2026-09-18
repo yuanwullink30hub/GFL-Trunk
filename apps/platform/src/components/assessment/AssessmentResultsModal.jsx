@@ -1285,7 +1285,7 @@ const AssessmentResultsModal = ({
       // Top brand line — "GARDEN FOR LIFE: Archetype Analyse" left, date right
       const coverDate = new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL');
       pdf.setFontSize(8.5);
-      pdf.setTextColor(...white);
+      pdf.setTextColor(...orange);   // brand line + date above the purple divider (owner, 2026-09-18)
       pdf.setFont('helvetica', 'normal');
       pdf.text(t('resultsModal.pdf.cover.brandLine'), margin, y);
       pdf.text(coverDate, W - margin, y, { align: 'right' });
@@ -3270,9 +3270,9 @@ const AssessmentResultsModal = ({
           'dual_core',     // 16-18: Dual-Core chart + Alchemie/Schakelbord/Ontologie
           'others',        // any remaining ungrouped AI sections (safety net)
           'groep_radar',   // (legacy) usually empty in v4.1
-          'ai_prompt',     // 19: the AI prompt, a page of its own …
-          'data',          // … and the machine block from the next page on
-          'wet_context',   // Wetenschappelijke Context — after the prompt, never between it and the data
+          'ai_prompt',     // 19: the AI prompt, a page of its own
+          'wet_context',   // Wetenschappelijke Context, a page of its own: after the AI prompt, before the data (owner, 2026-09-18)
+          'data',          // the machine block, from its own page on
         ];
         const blockMap = {};
         blockRanges.forEach(b => { blockMap[b.name] = b; });

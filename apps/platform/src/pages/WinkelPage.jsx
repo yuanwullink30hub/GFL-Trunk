@@ -33,7 +33,7 @@ const WinkelPage = memo(({ isVisible }) => {
               minHeight: 0,
               borderRadius: '0.4rem',
               border: '1px solid rgba(192, 132, 252, 0.25)',
-              background: '#000',
+              // No fill: the product shot has its own transparency, and the container's glass shows through.
               overflow: 'hidden',
             }}>
               <img
@@ -41,7 +41,7 @@ const WinkelPage = memo(({ isVisible }) => {
                 alt={t('misc.winkel.productName')}
                 loading="lazy"
                 decoding="async"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               />
             </div>
 

@@ -612,8 +612,8 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
               {/* Image (left) + text (right) — fills the space above the price/action row */}
               <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', gap: '0.6vw' }}>
                 {/* Product image — left, forced square (height fills the row, width = height) */}
-                <div style={{ flexShrink: 0, alignSelf: 'stretch', aspectRatio: '1 / 1', borderRadius: '0.4rem', border: '1px solid rgba(192,132,252,0.25)', background: '#000', overflow: 'hidden' }}>
-                  <img src="/images/winkel/t3-archetype-kaarten.webp" alt={t('misc.winkel.productName')} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <div style={{ flexShrink: 0, alignSelf: 'stretch', aspectRatio: '1 / 1', borderRadius: '0.4rem', border: '1px solid rgba(192,132,252,0.25)', overflow: 'hidden' }}>
+                  <img src="/images/winkel/t3-archetype-kaarten.webp" alt={t('misc.winkel.productName')} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
                 </div>
                 {/* Category, name and copy — right; the copy clamps to what the card has room for */}
                 <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.3vh', overflow: 'hidden' }}>

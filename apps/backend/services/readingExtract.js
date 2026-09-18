@@ -130,8 +130,12 @@ function extractKaartSection(text) {
   // An English report carries the translated labels: "Card Microcopy", CARD_GIFT, CARD_GEOMETRY.
   const GIFT = '(?:KAART|CARD)_GIFT';
   const GEO = '(?:KAART_GEOMETRIE|CARD_GEOMETRY)';
-  const gift = t.match(new RegExp(`${GIFT}\\s*[:—–-]\\s*([\\s\\S]*?)(?=\\s*${GEO}\\s*[:—–-]|\\n#{2,3}\\s|$)`));
-  const geo = t.match(new RegExp(`${GEO}\\s*[:—–-]\\s*([\\s\\S]*?)(?=\\n#{2,3}\\s|$)`));
+  // A field also ends where the machine block begins — its header or a "-- TAG --" line — so a block
+  // written BEFORE the machine block (the request asks for it last) can't pull machine data onto the
+  // public card.
+  const STOP = String.raw`\n[ \t]*(?:#{1,3}[ \t]*)?\**[ \t]*(?:PROFIEL\s*DATA\s*VOOR\s*AI|PROFILE\s*DATA\s*FOR\s*AI)|\n[ \t]*--[ \t]*[A-Z][^\n]*?--[ \t]*(?=\n|$)`;
+  const gift = t.match(new RegExp(`${GIFT}\\s*[:—–-]\\s*([\\s\\S]*?)(?=\\s*${GEO}\\s*[:—–-]|\\n#{2,3}\\s|${STOP}|$)`));
+  const geo = t.match(new RegExp(`${GEO}\\s*[:—–-]\\s*([\\s\\S]*?)(?=\\n#{2,3}\\s|${STOP}|$)`));
   const clean = (m, max) => (m ? m[1].replace(/\s+/g, ' ').replace(/^\[|\]$/g, '').trim().slice(0, max) : '');
   const cleaned = t
     .replace(/^#{2,3}\s*(?:\d+[A-Za-z]?\.\s*)?(?:kaart|card)\s*microcopy\s*$[\s\S]*?(?=\n#{2,3}\s|$)/gim, '')

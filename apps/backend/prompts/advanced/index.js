@@ -1951,7 +1951,42 @@ function buildUserMessage({
     parts.push(`\nVolg het exacte sectie-format (1-12 + 13A + 13B) uit je systeeminstructies. Respecteer de woordlimieten per sectie exact zoals aangegeven.`);
   }
 
+  // ═══ KAART MICROCOPY — the public profile card's two texts (engine pipeline) ═══
+  // A hook from the repo, not a Master Prompt section (owner, 2026-09-18): the report follows the
+  // Master Prompt alone; this asks for the card's two fields on top. routes/ai.js lifts the block out
+  // of the output before anyone reads the report and stores it for the card (kaartDrafts).
+  if (sliceScoped) parts.push(kaartMicrocopyRequest({ en, archetypeKey, supportArchetype }));
+
   return parts.join('\n');
+}
+
+/**
+ * The request for the public profile card's two texts: the gave in plain words, and the shape of
+ * the profile. The wording is the owner-approved v4.3 "Kaart Microcopy" section, adapted to the v6
+ * laws. It comes LAST, after the machine block, and is explicitly outside the report — so it touches
+ * neither the voltooiingspoort nor W2's template.
+ */
+function kaartMicrocopyRequest({ en, archetypeKey, supportArchetype }) {
+  if (en) {
+    return [
+      '',
+      '═══ CARD MICROCOPY — the two texts of the public profile card ═══',
+      'After the complete report, as the VERY LAST thing — after the machine block — write this one block. It is not a report section: the backend lifts it out of your output before anyone reads the report and places it on the public profile card. It therefore sits outside the completion gate and outside W2\'s template (W1, W3, W7 and W9 do apply).',
+      'Exactly this format — the heading on its own line, then the two labelled fields, nothing else:',
+      '## CARD MICROCOPY',
+      'CARD_GIFT: [2–3 sentences in plain, clear language: a deeper description of THIS person\'s gift. The starting point is the gift in the extension cell in your slice (this configuration\'s ratified text), deepened in your own words for this profile — NO copy or paraphrase of that gift text or of the life lesson, and NEVER the curse (a trigger does not belong on a public card). No jargon and no network names — concretely what this gift is in practice, how it shows and what it yields. Address the reader directly ("your gift…").]',
+      `CARD_GEOMETRY: [4–6 sentences. Work in TWO steps: STEP 1 (internal, not in the output): read this profile's shape from what you are given — the active set with their roles (Main ${archetypeKey}, Support ${supportArchetype}, the co-drivers); the Main's resolved links in the payload (green, blue, purple, red, yellow) and so where the friction axis lies; the spread of the twelve wheel scores and their nature_core (concentrated or spread, identity or echo); the Nature/Culture balance and the polarisation band; and the register curve — baseline against transform, inversions — in band language, never in numbers (W1). STEP 2 (the output): TRANSLATE that reading into text that is clear and easy to read for someone with no knowledge of the model. NO network names, NO line types, NO model jargon in the final text — the canon carries the meaning, the words are everyday. Describe the SHAPE: where the strength lies and how the two main energies relate. This is a PUBLIC SHOWCASE CARD, not a reflection journal: NO growth points, attention points, reflection tasks or advice — only who this is and what this profile carries. FRAMING RULE: every configuration is a full way of navigating — describe middle positions and even distributions as a quality too (suppleness, access to both sides, moving with), NEVER as a lack, shortfall, weakness or "low". Not one deficit word. Probabilistic language; no determinism; no closing disclaimer (the card already carries one).]`,
+    ].join('\n');
+  }
+  return [
+    '',
+    '═══ KAART MICROCOPY — de twee teksten van de openbare profielkaart ═══',
+    'Na het volledige rapport, ALS ALLERLAATSTE — ná het machineblok — schrijf je dit ene blok. Het is geen rapportsectie: de backend haalt het uit je output voordat iemand het rapport leest en zet het op de openbare profielkaart. Het staat daarom buiten de voltooiingspoort en buiten het sjabloon van W2 (W1, W3, W7 en W9 gelden wél).',
+    'Exact dit formaat — de kop op een eigen regel, dan de twee gelabelde velden, niets anders:',
+    '## KAART MICROCOPY',
+    'KAART_GIFT: [2–3 zinnen in eenvoudige, heldere taal: een verdiepende beschrijving van de gave van déze gebruiker. Vertrekpunt is de gave uit de extensie-cel in je slice (de geratificeerde tekst van deze configuratie), in eigen woorden verdiept voor dit profiel — GEEN kopie of parafrase van die gave-tekst of van de levensles, en NOOIT de vloek (een trigger hoort niet op een openbare kaart). Geen jargon en geen netwerknamen — concreet wat deze gave in de praktijk is, hoe ze zich toont en wat ze oplevert. Schrijf direct aan de gebruiker ("jouw gave…").]',
+    `KAART_GEOMETRIE: [4–6 zinnen. Werk in TWEE stappen: STAP 1 (intern, niet in de output): lees de vorm van dit profiel uit wat je geleverd krijgt — de actieve set met hun rollen (Main ${archetypeKey}, Support ${supportArchetype}, de co-drivers); de opgeloste links van de Main in de payload (groen, blauw, paars, rood, geel) en dus waar de frictie-as ligt; de spreiding van de twaalf wielscores en hun nature_core (geconcentreerd of verspreid, identiteit of echo); de Nature/Culture-verhouding en de polarisatieband; en de registercurve — basislijn tegenover transform, inversies — in bandtaal, nooit in getallen (W1). STAP 2 (de output): VERTAAL die lezing naar tekst die helder en makkelijk leesbaar is voor iemand zonder enige modelkennis. GEEN netwerknamen, GEEN lijntypes, GEEN modeljargon in de eindtekst — de betekenis draagt de canon, de woorden zijn alledaags. Beschrijf de VORM: waar de kracht zit en hoe de twee hoofdenergieën zich tot elkaar verhouden. Dit is een PUBLIEKE SHOWKAART, geen reflectiedagboek: GEEN groeipunten, aandachtspunten, reflectie-opdrachten of adviezen — alleen wie dit is en wat dit profiel draagt. FRAMING-REGEL: elke configuratie is een volwaardige manier van navigeren — beschrijf óók middenposities en gelijke verdelingen als kwaliteit (souplesse, toegang tot beide kanten, meebewegen), NOOIT als tekort, gemis, zwakte of "laag". Geen enkel deficit-woord. Probabilistische taal; geen determinisme; geen afsluitende disclaimer (die staat al op de kaart).]`,
+  ].join('\n');
 }
 
 module.exports = { buildSystemPrompt, buildUserMessage, EN_SECTION_TITLES, YELLOW_TRIANGLE_PROFILES };

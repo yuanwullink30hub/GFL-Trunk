@@ -710,6 +710,43 @@ test('Reading extract — a gift or curse that wraps in the PDF comes back whole
   assert.equal(one.curse, 'ook kort');
 });
 
+test('Kaart microcopy — requested by a hook on the engine pipeline, lifted out cleanly wherever the model puts it', () => {
+  const { buildUserMessage } = require('../../prompts/advanced');
+  const { extractKaartSection } = require('../../services/readingExtract');
+  const base = { archetypeKey: 'OUTLAW', supportArchetype: 'HERO', shadowArchetype: 'SAGE', blindspotArchetype: 'LOVER', archetypeDetails: [], responses: [], sliceScoped: true };
+
+  // the request: last in the user message, outside the report, in the report's language; v4.3 untouched
+  const nl = buildUserMessage(base);
+  assert.ok(nl.includes('═══ KAART MICROCOPY') && nl.includes('## KAART MICROCOPY') && nl.includes('KAART_GIFT:') && nl.includes('KAART_GEOMETRIE:'));
+  assert.ok(nl.includes('ná het machineblok') && nl.includes('Main OUTLAW, Support HERO') && nl.includes('NOOIT de vloek'));
+  assert.ok(nl.trimEnd().endsWith(']'), 'the card request is the last thing in the message');
+  const en = buildUserMessage({ ...base, language: 'en' });
+  assert.ok(en.includes('## CARD MICROCOPY') && en.includes('CARD_GIFT:') && en.includes('CARD_GEOMETRY:') && !en.includes('KAART_GIFT'));
+  assert.ok(!buildUserMessage({ ...base, sliceScoped: false }).includes('═══ KAART MICROCOPY'), 'v4.3 carries it in its own system prompt');
+
+  const machine = ['PROFIEL DATA VOOR AI VERWERKING', '-- IDENTITEIT --', 'Main: Outlaw (6)', '-- HARDWARE SIGNALEN --', 'actieve_set: Outlaw (main)'].join('\n');
+  const gave = 'Jouw gave is dat je doet wat klopt, ook als niemand het vraagt.';
+  const vorm = 'Je kracht zit in je eigen koers, en je tweede energie geeft die koers een lichaam.';
+  const card = `## KAART MICROCOPY\nKAART_GIFT: ${gave}\nKAART_GEOMETRIE: ${vorm}`;
+
+  // as asked: after the machine block — both fields read, the block gone, the machine block intact
+  const after = extractKaartSection(`## DE VOLLEDIGE AI PROMPT\nprompt\n${machine}\n${card}`);
+  assert.equal(after.giftMicro, gave);
+  assert.equal(after.geomSummary, vorm);
+  assert.ok(!/KAART_|KAART MICROCOPY/.test(after.cleaned) && after.cleaned.includes('-- HARDWARE SIGNALEN --'));
+
+  // written before the machine block: the geometry stops at it — no machine data on the public card
+  const before = extractKaartSection(`## DE VOLLEDIGE AI PROMPT\nprompt\n${card}\n${machine}`);
+  assert.equal(before.giftMicro, gave);
+  assert.equal(before.geomSummary, vorm);
+  assert.ok(before.cleaned.includes('-- IDENTITEIT --'), 'the machine block stays in the report');
+
+  // English labels
+  const eng = extractKaartSection(`## CARD MICROCOPY\nCARD_GIFT: g.\nCARD_GEOMETRY: v.`);
+  assert.equal(eng.giftMicro, 'g.');
+  assert.equal(eng.geomSummary, 'v.');
+});
+
 test('Report reader — heading drift never loses or misplaces a section, and every line is accounted for', async () => {
   const R = await import('../../../platform/src/components/assessment/reportReader.js');
   const P = await import('../../../platform/src/components/assessment/v4Parser.js');

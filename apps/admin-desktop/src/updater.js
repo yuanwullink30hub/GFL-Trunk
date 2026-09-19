@@ -26,6 +26,7 @@ function setupUpdater() {
 
   if (!app.isPackaged) {
     ipcMain.handle('session:set', () => false);
+    ipcMain.handle('update:check', () => status);
     ipcMain.handle('update:install', () => false);
     return;
   }
@@ -57,6 +58,13 @@ function setupUpdater() {
       publish({ state: 'idle' });
     }
     return true;
+  });
+
+  // The "check for updates" button (dashboard header). Needs the session: the feed answers nothing else.
+  ipcMain.handle('update:check', async () => {
+    if (!token) return status;
+    await autoUpdater.checkForUpdates().catch(() => { /* reported via 'error' */ });
+    return status;
   });
 
   ipcMain.handle('update:install', () => {

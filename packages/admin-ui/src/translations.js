@@ -55,6 +55,18 @@ export default {
     app: {
       updateReady: { nl: 'Nieuwe versie klaar:', en: 'New version ready:' },
       restart: { nl: 'Herstarten', en: 'Restart' },
+      // The dashboard header's update control (AppUpdate.jsx) — same wording as the client app.
+      statusChecking: { nl: 'Zoeken naar een nieuwe versie…', en: 'Looking for a new version…' },
+      statusCurrent: { nl: 'Je hebt de nieuwste versie', en: 'You have the latest version' },
+      statusDownloading: {
+        nl: (v, p) => `Versie ${v} wordt gedownload${p ? ` (${p}%)` : ''}…`,
+        en: (v, p) => `Downloading version ${v}${p ? ` (${p}%)` : ''}…`,
+      },
+      statusReady: { nl: (v) => `Versie ${v} staat klaar`, en: (v) => `Version ${v} is ready` },
+      statusError: { nl: 'Kon niet op updates controleren — ben je online?', en: 'Could not check for updates — are you online?' },
+      statusDev: { nl: 'Ontwikkelversie — updates staan uit', en: 'Development build — updates are off' },
+      check: { nl: 'Controleren op updates', en: 'Check for updates' },
+      restartUpdate: { nl: 'Herstarten en bijwerken', en: 'Restart and update' },
     },
 
     /* ═══════════ Management app login (apps/admin) ═══════════ */

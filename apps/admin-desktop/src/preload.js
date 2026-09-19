@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('gflAdmin', {
   setSession: (token) => ipcRenderer.invoke('session:set', token || null),
   update: {
     status: () => ipcRenderer.invoke('update:status'),
+    /** Check the feed now (the header button); resolves with the status after the check. */
+    check: () => ipcRenderer.invoke('update:check'),
     install: () => ipcRenderer.invoke('update:install'),
     onStatus: (fn) => {
       const handler = (_e, s) => fn(s);

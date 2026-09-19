@@ -57,6 +57,7 @@ import {
   HoloKeyframes, HoloCorners, HoloTab, HoloClock, BrandMark, StatusDot, KpiTile, holoCardStyle,
   HOLO_PAGE_BG, HOLO_PAGE_BG_SIZE, HOLO_BAR, HOLO_PANEL, HOLO_TABLE_HEAD, CHROME, gradientText, TITLE_GRADIENT, PURPLE,
 } from './holo';
+import { AppUpdateControl } from './AppUpdate';
 
 // ── Responsive context ──
 const MobileCtx = React.createContext(false);
@@ -344,7 +345,11 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
               <span style={{ color: 'rgba(168, 85, 247, 0.4)' }}>|</span>
               <span style={{ color: '#c084fc', textTransform: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</span>
             </div>
-            <HoloClock />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+              {/* Installed app only: its version, update status and the check / restart button */}
+              <AppUpdateControl />
+              <HoloClock />
+            </div>
           </div>
         )}
 

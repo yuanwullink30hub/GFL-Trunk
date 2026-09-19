@@ -4,6 +4,7 @@
  *
  *   node scripts/publish.js            → shows what would be uploaded, changes nothing
  *   node scripts/publish.js --confirm  → uploads latest.yml + the installer, keeps the previous version
+ *   node scripts/publish.js --confirm --keep=1  → same, and removes every older installer
  *
  * Reads MONGODB_URI from apps/backend/.env. The backend (routes/admin.js, routes/files.js) always
  * serves the newest upload of each file name; the website's management download and the app's update
@@ -15,7 +16,9 @@ const path = require('path');
 const HERE = path.resolve(__dirname, '..');
 const RELEASE = path.join(HERE, 'release');
 const BUCKET = 'adminAppReleases';
-const KEEP_INSTALLERS = 2;
+// Installers kept in the bucket after an upload (newest first). `--keep=1` keeps only the new one.
+const keepArg = process.argv.find((a) => a.startsWith('--keep='));
+const KEEP_INSTALLERS = keepArg ? Math.max(1, parseInt(keepArg.slice('--keep='.length), 10) || 2) : 2;
 
 function readEnvUri() {
   const envFile = path.resolve(HERE, '..', 'backend', '.env');

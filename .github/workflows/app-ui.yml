@@ -1,0 +1,48 @@
+# The desktop app follows the website: every push to main that changes the platform publishes a signed
+# app build of the UI to R2 (apps/desktop/scripts/publish-ui.js). Installed apps (shell 0.1.7+) download it
+# in the background and run it from their next start (apps/desktop/src/uiBundle.js).
+#
+# Repository secrets (Settings → Secrets and variables → Actions). Without them the job says so and stops:
+#   GFL_UI_SIGNING_KEY     the Ed25519 private key (the text of ~/.gfl/ui-signing-key.pem, scripts/ui-keygen.js)
+#   CLOUDFLARE_API_TOKEN   R2 edit on the account that holds the gfl-downloads bucket
+#   CLOUDFLARE_ACCOUNT_ID  that account's id
+name: App UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/platform/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'apps/desktop/scripts/sync-ui.js'
+      - 'apps/desktop/scripts/publish-ui.js'
+      - 'apps/desktop/src/csp.js'
+      - 'apps/desktop/src/shellApi.js'
+      - 'apps/desktop/src/uiBundle.js'
+      - '.github/workflows/app-ui.yml'
+  workflow_dispatch:
+
+# One publish at a time; a newer push supersedes one still running (latest.json is uploaded last, so a
+# cancelled run leaves at most unused files behind).
+concurrency:
+  group: app-ui
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the platform's dependencies
+        run: corepack pnpm@9.0.0 install --frozen-lockfile --filter "@gfl/platform..."
+      - name: Build, sign and publish the app UI
+        env:
+          GFL_UI_SIGNING_KEY: ${{ secrets.GFL_UI_SIGNING_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node apps/desktop/scripts/publish-ui.js --confirm --ci

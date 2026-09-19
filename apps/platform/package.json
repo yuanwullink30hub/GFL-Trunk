@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/sync-logo.mjs && vite",
     "build": "node scripts/sync-logo.mjs && node scripts/sync-lessons.mjs && vite build",
+    "build:app": "node scripts/sync-logo.mjs && node scripts/sync-lessons.mjs && vite build --mode app --outDir dist-app --emptyOutDir",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },

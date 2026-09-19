@@ -21,7 +21,10 @@ const path = require('path');
 const fs = require('fs');
 const workspace = require('./workspace');
 const { setupUpdater } = require('./updater');
-const { registerAppScheme, handleAppScheme, APP_ORIGIN } = require('./appProtocol');
+const { registerAppScheme, handleAppScheme, setActiveUi, APP_ORIGIN, BUNDLED_UI_ROOT } = require('./appProtocol');
+const uiBundle = require('./uiBundle');
+const { UI_PUBLIC_KEY_PEM } = require('./uiKey');
+const { SHELL_API_LEVEL } = require('./shellApi');
 const { API_ORIGIN } = require('./csp');
 const display = require('./display');
 const { readSettings, writeSettings } = require('./settings');
@@ -47,6 +50,41 @@ function openOutside(url) {
 }
 
 const UI_ORIGIN = DEV_URL ? originOf(DEV_URL) : APP_ORIGIN;
+
+// Live UI updates (uiBundle.js): newer signed UI builds from the download server, run from the next start.
+// Only an unpackaged run may point at a test feed/key (GFL_UI_FEED, GFL_UI_PUBKEY_FILE) — a packaged app
+// always uses the real server and the pinned key.
+const UI_FEED = (isDev && process.env.GFL_UI_FEED) || 'https://downloads.gardenforlife.nl/ui';
+const UI_KEY = isDev && process.env.GFL_UI_PUBKEY_FILE ? fs.readFileSync(process.env.GFL_UI_PUBKEY_FILE, 'utf8') : UI_PUBLIC_KEY_PEM;
+const UI_CHECK_EVERY_MS = 4 * 60 * 60 * 1000;
+const uiStoreDir = () => path.join(app.getPath('userData'), 'ui-builds');
+function uiLog(message) {
+  try { fs.appendFileSync(path.join(app.getPath('logs'), 'ui-updates.log'), `${new Date().toISOString()} ${message}\n`); } catch { /* ignore */ }
+  if (isDev) console.log('[GFL Desktop]', message);
+}
+
+/** Look for a newer UI build now and then; one found is downloaded and staged for the next start. */
+function scheduleUiUpdates(current) {
+  const { net } = require('electron');
+  let busy = false;
+  const check = async () => {
+    if (busy) return;
+    busy = true;
+    try {
+      const r = await uiBundle.checkForUiUpdate({
+        baseUrl: UI_FEED, storeDir: uiStoreDir(), current, publicKeyPem: UI_KEY, shellApiLevel: SHELL_API_LEVEL,
+        fetchImpl: (url, opts) => net.fetch(url, opts), log: uiLog,
+      });
+      if (r.state === 'needs-app-update') uiLog(`UI build ${r.buildId} needs a newer app (shell API ${SHELL_API_LEVEL})`);
+    } catch (err) {
+      uiLog(`UI update check failed: ${err.message}`);
+    } finally {
+      busy = false;
+    }
+  };
+  setTimeout(check, 20 * 1000);
+  setInterval(check, UI_CHECK_EVERY_MS);
+}
 // The app logo. Packaged Windows/macOS builds take their icon from the executable / bundle
 // (electron-builder, build/icon.png); the window icon covers Linux and unpackaged runs.
 const APP_ICON = path.join(__dirname, '..', 'build', 'icon.png');
@@ -514,8 +552,14 @@ function registerIpc() {
 // ── Boot ───────────────────────────────────────────────────────────────────────
 
 if (isPrimaryInstance) app.whenReady().then(async () => {
-  // The bundled UI is served from app://gardenforlife with the CSP as a response header
-  // (appProtocol.js); sync-ui.js also writes it into index.html as a meta tag.
+  // The UI is served from app://gardenforlife with the CSP as a response header (appProtocol.js); sync-ui.js
+  // also writes it into index.html as a meta tag. Which UI: the newest verified downloaded build, else the
+  // installer's copy — decided once, before the first window loads.
+  const currentUi = uiBundle.resolveActiveUi({
+    bundledRoot: BUNDLED_UI_ROOT, storeDir: uiStoreDir(), publicKeyPem: UI_KEY, shellApiLevel: SHELL_API_LEVEL, log: uiLog,
+  });
+  setActiveUi(currentUi);
+  uiLog(`UI: ${currentUi.source} build ${currentUi.buildId}`);
   handleAppScheme();
   Menu.setApplicationMenu(null); // no native menu bar — the platform is the interface
 
@@ -557,6 +601,7 @@ if (isPrimaryInstance) app.whenReady().then(async () => {
   registerIpc();
   setupUpdater();
   createWindow();
+  if (!DEV_URL && (app.isPackaged || process.env.GFL_UI_FEED)) scheduleUiUpdates(currentUi);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

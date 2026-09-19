@@ -15,6 +15,14 @@ body {
   color: #FFFEF0;
 }
 
+/* Form controls size border-box, as on the website (Tailwind's preflight, which this app doesn't load).
+   The shared @gfl/ui inputs are width:100% + padding: in content-box they ran past their containers —
+   the activation-code "Aantal" box slid under the name box, so the two read as one field and a click on
+   its left part landed in the number field (letters never appeared). */
+input, textarea, select {
+  box-sizing: border-box;
+}
+
 /* Prevent window scroll on desktop - map navigation uses transforms not scroll */
 @media (min-width: 768px) {
   html, body {

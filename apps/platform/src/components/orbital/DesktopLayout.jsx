@@ -10,41 +10,13 @@ import { getInbox, sendUserMessage, markMessageRead, getMe, getVerbondPending, r
 import useWorkspaceStatus from '../../workspace/useWorkspaceStatus';
 import useAppUpdate from '../../workspace/useAppUpdate';
 import { requestWorkspaceTab, requestDashboardTab } from '../../workspace/localWorkspace';
-import { graphicsProfile } from '../../workspace/appProfile';
 import CredoTitle from './CredoTitle';
 
-import OrbSphere3D from '../../orb/OrbSphere3D';
-import { ORB3D_PRESETS } from '../../orb/orb3d';
-
 const eyeLogo = '/images/Eyedentity.png';
-// Visitor login icon: the animated TEMPLATE orb (Agency preset) — replaced the static
-// Blackhole.png. Module-level const → stable ref for the memo.
-const TEMPLATE_ORB_CFG = { ...ORB3D_PRESETS.Agency, palette: 'Agency' };
-
-// Self-unmounting wrapper: the HoloEarth journey pushes the whole verbindingsmenu container
-// off-screen, where a mounted-but-hidden WebGL canvas would keep its render loop burning.
-// An IntersectionObserver (200px margin past the viewport) unmounts the canvas entirely once
-// the button leaves view and remounts it on return; the sized placeholder keeps the footprint.
-// Desktop app (graphicsProfile.keep3dAlive): the canvas stays mounted and only pauses — rebuilding its
-// WebGL context and shaders on every return was a visible hitch in the pan back to the landing page.
-function VisitorLoginOrb({ size }) {
-  const boxRef = useRef(null);
-  const [inView, setInView] = useState(true);
-  useEffect(() => {
-    const el = boxRef.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return undefined;
-    const obs = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { rootMargin: '200px' });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-  return (
-    <div ref={boxRef} style={{ width: size, height: size, pointerEvents: 'none' }}>
-      {graphicsProfile.keep3dAlive
-        ? <OrbSphere3D config={TEMPLATE_ORB_CFG} active={inView} size={size} />
-        : inView && <OrbSphere3D config={TEMPLATE_ORB_CFG} active size={size} />}
-    </div>
-  );
-}
+// Account icon while no profile is logged in (visitor, or an account without a reading wheel): the TNM
+// wheel. It replaced the animated template orb, whose WebGL canvas stayed empty in the desktop app
+// (owner, 2026-09-19). Same path as the assessment intro, so it shares that cache entry.
+const TNM_WHEEL_IMG = '/images/TNM wheel PNG.png';
 
 // ── Contacten overlay chrome ─────────────────────────────────────────────────
 // A glass panel that opens OVER the page. Portalled to <body> because the Contacten
@@ -241,19 +213,20 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
   };
 
   // Right button icon. Client mode → the reading's full-colour radar WHEEL (5-mandje split,
-  // owner-only via /me); EMPTY until the wheel data arrives (no archetype-portrait fallback).
-  // Visitors get the blackhole login icon.
-  const [wheelBaskets, setWheelBaskets] = useState(null);
+  // owner-only via /me); EMPTY while /me is in flight (no archetype-portrait fallback). No profile —
+  // a visitor, or an account without a reading wheel — gets the TNM wheel.
+  // undefined = /me not answered yet, null = no reading wheel on this account.
+  const [wheelBaskets, setWheelBaskets] = useState(undefined);
   // Access model: expired clients stay logged in but the visitor-locked containers re-lock.
   const [accessExpired, setAccessExpired] = useState(false);
   const [accountId, setAccountId] = useState(null);
   useEffect(() => {
     if (!clientMode) return;
     getMe().then((u) => {
-      if (Array.isArray(u.readingBaskets) && u.readingBaskets.length === 12) setWheelBaskets(u.readingBaskets);
+      setWheelBaskets(Array.isArray(u.readingBaskets) && u.readingBaskets.length === 12 ? u.readingBaskets : null);
       setAccessExpired(!!(u.accessUntil && new Date(u.accessUntil) < new Date()));
       if (u.id != null) setAccountId(String(u.id));
-    }).catch(() => {});
+    }).catch(() => setWheelBaskets(null));
   }, [clientMode]);
 
   // Local workstation: tools that work with personal data run from this account's own folder
@@ -289,24 +262,22 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
     try { sessionStorage.setItem(REMINDER_KEY, '1'); } catch { /* ignore */ }
   }, []);
   const renderLoginIcon = (size) => {
-    if (clientMode && wheelBaskets) {
-      return (
-        <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid rgba(168, 85, 247, 0.55)', boxShadow: '0 0 10px rgba(168, 85, 247, 0.25)', background: '#0a0510' }}>
-          <WheelGlyph baskets={wheelBaskets} />
-        </div>
-      );
-    }
-    if (clientMode) {
-      // Wheel not loaded (fetch in flight or no extracted baskets): stay EMPTY — no archetype
-      // portrait fallback. Same-size placeholder keeps the button footprint stable, so the
-      // wheel pops in without layout shift.
+    const frame = (content) => (
+      <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid rgba(168, 85, 247, 0.55)', boxShadow: '0 0 10px rgba(168, 85, 247, 0.25)', background: '#0a0510' }}>
+        {content}
+      </div>
+    );
+    if (clientMode && wheelBaskets) return frame(<WheelGlyph baskets={wheelBaskets} />);
+    if (clientMode && wheelBaskets === undefined) {
+      // /me in flight: stay EMPTY, so the reading's own wheel doesn't swap in over the TNM wheel.
+      // Same-size placeholder keeps the button footprint stable — no layout shift.
       return <div style={{ width: size, height: size }} />;
     }
-    // Visitor: the animated template orb, same footprint as the old blackhole image.
-    // OrbSphere3D needs a NUMERIC size (its canvas is drawn at size×1.35) — mirror the
-    // CSS max(px, vw) strings the buttons pass in ('max(70px, 4.1vw)' / 'max(55px, 3.2vw)').
-    const orbPx = Math.round(0.9 * (windowWidth < 1100 ? Math.max(55, windowWidth * 0.032) : Math.max(70, windowWidth * 0.041)));
-    return <VisitorLoginOrb size={orbPx} />;
+    // No profile: the TNM wheel, inset so its outer names clear the round frame.
+    return frame(
+      <img src={TNM_WHEEL_IMG} alt="" draggable={false}
+        style={{ display: 'block', width: '100%', height: '100%', padding: '9%', boxSizing: 'border-box', objectFit: 'contain', pointerEvents: 'none' }} />
+    );
   };
 
   // Compact per-section action button (Contacten columns). Pinned to the bottom via marginTop:auto.

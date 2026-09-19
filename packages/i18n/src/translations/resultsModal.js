@@ -140,8 +140,8 @@ export default {
       // Download teaser
       teaserTitle: { nl: 'Volledig Rapport (3× zoveel data)', en: 'Full Report (3× the data)' },
       teaserBody: {
-        nl: 'Dit is een korte samenvatting. Je volledige rapport bevat ongeveer 3× zoveel data — alle secties, de grafieken, de D-curve, het OCEAN-profiel, de complete AI-prompt en de machine-leesbare profieldata. Download de PDF om alles te lezen, wanneer je maar wilt.',
-        en: 'This is a short summary. Your full report holds roughly 3× the data — every section, the charts, the D-curve, the OCEAN profile, the complete AI prompt and the machine-readable profile data. Download the PDF to read it all, whenever you like.',
+        nl: 'Dit is een korte samenvatting. Je volledige rapport bevat ongeveer 3× zoveel data — alle secties, de grafieken, de neuro-biologische uitleg, het OCEAN-profiel, de complete AI-prompt en de machine-leesbare profieldata. Download de PDF om alles te lezen en te gebruiken voor je individuatie.',
+        en: 'This is a short summary. Your full report holds roughly 3× the data — every section, the charts, the neurobiological explanation, the OCEAN profile, the complete AI prompt and the machine-readable profile data. Download the PDF to read it all and use it for your individuation.',
       },
 
       // Email gate

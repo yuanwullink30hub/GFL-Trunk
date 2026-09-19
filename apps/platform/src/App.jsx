@@ -1811,7 +1811,16 @@ const App = () => {
   // Leaving an open report drops it for good (single instance) — the results modal shows the
   // final warning first; without a mounted report this runs straight through.
   const handleReset = () => requestLeaveReport(doReset);
-  const doReset = () => {
+  // `leave.toAccount` (from the results modal's Doorgaan once the paid PDF is downloaded): after the
+  // rewind has closed and reset the assessment, the map pans straight on to the account page.
+  const doReset = (leave) => {
+    const panToAccount = () => {
+      if (!leave?.toAccount) return;
+      // Two frames on, so the results modal's unmount commit lands before the pan's first frame.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (clientMode) handleClientNav('login'); else handleOpenSection('login');
+      }));
+    };
     // Client-mode (kook-eiland) assessment: there is no earth journey to rewind through —
     // snap straight back to the static orbital landing (frame 0, orb restored).
     if (clientMode) {
@@ -1820,6 +1829,7 @@ const App = () => {
       setClientAssessment(false);
       setCurrentFrame(0);
       explosionProgressRef.current = 0;
+      panToAccount();
       return;
     }
     // Hide the (heavy) results card cheaply via its CSS collapse, and DEFER the expensive
@@ -1828,7 +1838,7 @@ const App = () => {
     // freeze). We run the rewind smoothly first, then unmount at the end.
     setResultsModalProgress(0);
     const startFrame = currentFrame;
-    if (startFrame <= 0) { resetAssessmentState(); return; }
+    if (startFrame <= 0) { resetAssessmentState(); panToAccount(); return; }
     const startTime = performance.now();
     const duration = startFrame * 30; // ~30ms per frame, similar total time to before
     let lastStateTime = 0;
@@ -1860,6 +1870,7 @@ const App = () => {
         // Heavy state reset + ResultsModal unmount happens now — after the rewind has
         // played — so its one-frame hitch lands on the settled landing, not mid-animation.
         resetAssessmentState();
+        panToAccount();
       }
     };
     requestAnimationFrame(animate);

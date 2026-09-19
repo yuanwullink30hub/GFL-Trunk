@@ -16,7 +16,10 @@ export function registerLeaveHandler(fn) {
   return () => { if (handler === fn) handler = null; };
 }
 
-/** Ask to leave the report; `proceed` runs now (no report) or after the user chooses Doorgaan. */
+/**
+ * Ask to leave the report; `proceed` runs now (no report) or after the user chooses Doorgaan. On
+ * Doorgaan it gets `{ toAccount }` — true once the paid PDF is downloaded (then leave to the account page).
+ */
 export function requestLeaveReport(proceed) {
   if (handler) handler(proceed);
   else proceed();

@@ -2822,12 +2822,18 @@ const AssessmentResultsModal = ({
             });
           }
           // ── Page 2: Essentie + Vermenigvuldiging (intro + 3 labeled aspects each) ──
+          // Vermenigvuldiging always stays on Essentie's page, however far it runs past the bottom
+          // margin — the model sometimes writes a line or two more than the page holds, and the
+          // margin takes them (owner, 2026-09-19).
           if (essencePage.length > 0) {
             await justifiedPage(async (gap) => {
+            const savedNPB = noPageBreak;
+            noPageBreak = true; // no bottom padding — let the text flow down to the page edge
             essencePage.forEach((section, i) => {
               renderSection(shownTitle(section), section.content, getPdfSectionColor(section.title));
               if (i < essencePage.length - 1) { hr(); gap(); }
             });
+            noPageBreak = savedNPB;
             });
           }
           endGroup1a();
@@ -4333,7 +4339,8 @@ const AssessmentResultsModal = ({
                 if (paidPaymentId && !leaveSavedChecked) return;
                 const go = leaveProceed;
                 closeLeave();
-                go();
+                // With the paid PDF downloaded, leaving goes on to the account page (App's doReset).
+                go({ toAccount: fullDownloaded });
               }}
             >
               {t('resultsModal.paywall.leaveContinue')}

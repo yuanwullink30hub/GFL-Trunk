@@ -1,10 +1,13 @@
-﻿import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
+﻿import React, { memo, useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import { useLanguage } from '@gfl/i18n';
 import { getPolicyContent } from '../data/policyIndex';
 import { submitAssessmentReview, getToken } from '@gfl/api-client';
 import { getClientOrbConfig } from '../clientMode';
 import { SciFiButton } from '@gfl/ui';
 import PublicProfilesDirectory from '../components/assessment/PublicProfilesDirectory';
+
+// The owner's own profile (Profiel tab). Lazy: it brings the chart library, which must not load at boot.
+const OwnerProfile = lazy(() => import('./OwnerProfile'));
 
 const CornerStone = ({ variant = 'purple' }) => {
   const accentColor = variant === 'orange' ? '#f59e0b' : '#a855f7';
@@ -110,10 +113,10 @@ const FeedbackStandaloneForm = () => {
     return (
       <div style={{ textAlign: 'center', padding: '2rem' }}>
         <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{'\u2705'}</div>
-        <p style={{ color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: '1rem', marginBottom: '0.5rem', margin: '0 0 0.5rem' }}>
+        <p style={{ color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: 'max(18px, 0.84vw)', marginBottom: '0.5rem', margin: '0 0 0.5rem' }}>
           {t('eyedentityReport.feedback.thanksTitle')}
         </p>
-        <p style={{ color: 'rgba(209,213,219,0.6)', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', margin: 0 }}>
+        <p style={{ color: 'rgba(209,213,219,0.6)', fontFamily: "'Figtree', sans-serif", fontSize: 'max(15px, 0.72vw)', margin: 0 }}>
           {t('eyedentityReport.feedback.thanksBody')}
         </p>
       </div>
@@ -123,19 +126,19 @@ const FeedbackStandaloneForm = () => {
   const baseField = {
     width: '100%', padding: '0.6rem 0.75rem', background: 'rgba(0,0,0,0.8)',
     border: '1px solid rgba(168,85,247,0.2)', borderRadius: '0.5rem',
-    color: '#fff', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', boxSizing: 'border-box',
+    color: '#fff', fontFamily: "'Figtree', sans-serif", fontSize: 'max(15px, 0.72vw)', boxSizing: 'border-box',
   };
 
   return (
     <div style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', paddingBottom: '2rem' }}>
-      <p style={{ color: 'rgba(209,213,219,0.7)', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', marginTop: 0, marginBottom: '1rem' }}>
+      <p style={{ color: 'rgba(209,213,219,0.7)', fontFamily: "'Figtree', sans-serif", fontSize: 'max(15px, 0.72vw)', marginTop: 0, marginBottom: '1rem' }}>
         {t('eyedentity.feedback.intro')}
       </p>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 
         {/* Star Rating 1-9 */}
         <div>
-          <label style={{ display: 'block', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>{t('eyedentity.feedback.score')} *</label>
+          <label style={{ display: 'block', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: 'max(15px, 0.72vw)', fontWeight: 'bold', marginBottom: '0.35rem' }}>{t('eyedentity.feedback.score')} *</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
             {[...Array(9)].map((_, i) => (
               <button key={i} type="button" onClick={() => setFormData({ ...formData, starRating: i + 1 })} style={{
@@ -146,20 +149,20 @@ const FeedbackStandaloneForm = () => {
               }}>{'\u2605'}</button>
             ))}
             {formData.starRating > 0 && (
-              <span style={{ marginLeft: '0.5rem', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold' }}>{formData.starRating}/9</span>
+              <span style={{ marginLeft: '0.5rem', color: '#f59e0b', fontFamily: "'Figtree', sans-serif", fontSize: 'max(15px, 0.72vw)', fontWeight: 'bold' }}>{formData.starRating}/9</span>
             )}
           </div>
         </div>
 
         {/* Email */}
         <div>
-          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>{t('eyedentity.feedback.email')} *</label>
+          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: 'max(15px, 0.72vw)', fontWeight: 'bold', marginBottom: '0.35rem' }}>{t('eyedentity.feedback.email')} *</label>
           <input type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder={t('eyedentity.feedback.emailPlaceholder')} style={baseField} />
         </div>
 
         {/* Accuraatheid */}
         <div>
-          <label style={{ display: 'block', color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>
+          <label style={{ display: 'block', color: '#22c55e', fontFamily: "'Figtree', sans-serif", fontSize: 'max(15px, 0.72vw)', fontWeight: 'bold', marginBottom: '0.35rem' }}>
             {t('eyedentity.feedback.accuracyLabel')}
           </label>
           <textarea value={formData.whatWorked} onChange={(e) => setFormData({ ...formData, whatWorked: e.target.value })}
@@ -169,7 +172,7 @@ const FeedbackStandaloneForm = () => {
 
         {/* Niet overeenkomend */}
         <div>
-          <label style={{ display: 'block', color: '#ef4444', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>
+          <label style={{ display: 'block', color: '#ef4444', fontFamily: "'Figtree', sans-serif", fontSize: 'max(15px, 0.72vw)', fontWeight: 'bold', marginBottom: '0.35rem' }}>
             {t('eyedentity.feedback.mismatchLabel')}
           </label>
           <textarea value={formData.whatDidntWork} onChange={(e) => setFormData({ ...formData, whatDidntWork: e.target.value })}
@@ -179,7 +182,7 @@ const FeedbackStandaloneForm = () => {
 
         {/* Suggesties */}
         <div>
-          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.35rem' }}>
+          <label style={{ display: 'block', color: '#a855f7', fontFamily: "'Figtree', sans-serif", fontSize: 'max(15px, 0.72vw)', fontWeight: 'bold', marginBottom: '0.35rem' }}>
             {t('eyedentity.feedback.suggestionsLabel')}
           </label>
           <textarea value={formData.suggestions} onChange={(e) => setFormData({ ...formData, suggestions: e.target.value })}
@@ -188,7 +191,7 @@ const FeedbackStandaloneForm = () => {
         </div>
 
         {error && (
-          <div style={{ color: '#ef4444', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', padding: '0.75rem', background: 'rgba(239,68,68,0.1)', borderRadius: '0.5rem', border: '1px solid rgba(239,68,68,0.3)' }}>
+          <div style={{ color: '#ef4444', fontFamily: "'Figtree', sans-serif", fontSize: 'max(15px, 0.72vw)', padding: '0.75rem', background: 'rgba(239,68,68,0.1)', borderRadius: '0.5rem', border: '1px solid rgba(239,68,68,0.3)' }}>
             {error}
           </div>
         )}
@@ -354,7 +357,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
               <div style={{ width: '6px', height: '6px', backgroundColor: accentColor, borderRadius: '1px' }} />
               <span style={{
                 fontFamily: "'Rajdhani', sans-serif",
-                fontSize: '10px',
+                fontSize: 'max(11px, 0.52vw)',
                 letterSpacing: '0.3em',
                 color: 'rgba(168,85,247,0.7)',
                 textTransform: 'uppercase',
@@ -439,7 +442,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
                   <div>
                     <div style={{
                       fontFamily: "'Rajdhani', sans-serif",
-                      fontSize: '9px',
+                      fontSize: 'max(9px, 0.4vw)',
                       fontWeight: 600,
                       color: isActive ? 'rgba(168,85,247,0.6)' : 'rgba(255,255,255,0.2)',
                       letterSpacing: '0.1em',
@@ -450,7 +453,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
                     </div>
                     <div style={{
                       fontFamily: "'Lexend Mega', sans-serif",
-                      fontSize: '10px',
+                      fontSize: 'max(11px, 0.52vw)',
                       letterSpacing: '0.04em',
                       color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)',
                       transition: 'color 0.3s',
@@ -517,7 +520,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
               <div>
                 <h2 style={{
                   fontFamily: "'Lexend Mega', sans-serif",
-                  fontSize: 'clamp(0.75rem, 1.1vw, 1.2rem)',
+                  fontSize: 'max(23px, 1vw)',
                   fontWeight: 'bold',
                   letterSpacing: '0.02em',
                   color: '#ffffff',
@@ -527,7 +530,7 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
                 </h2>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.2rem' }}>
                   <span style={{
-                    fontSize: '10px',
+                    fontSize: 'max(11px, 0.52vw)',
                     fontFamily: "'Rajdhani', sans-serif",
                     color: 'rgba(168,85,247,0.6)',
                     textTransform: 'uppercase',
@@ -557,9 +560,8 @@ const EyedentityPage = memo(({ isVisible, onBack }) => {
               paddingTop: '1.25rem',
             }}>
               {selectedId === 'profile' ? (
-                // Emptied 2026-09-14: the Eyedentity profile was built on the 72-era model and is
-                // outdated in every section. Left blank until it is rebuilt on the 132 roster.
-                null
+                // The owner's own profile on the 132 roster — De Ronin, in the first person (2026-09-19).
+                isVisible && <Suspense fallback={null}><OwnerProfile /></Suspense>
               ) : selectedId === 'feedback' ? (
                 <FeedbackStandaloneForm />
               ) : (

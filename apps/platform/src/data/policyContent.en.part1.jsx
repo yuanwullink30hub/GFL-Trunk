@@ -149,7 +149,7 @@ export const POLICY_EN_PART1 = {
         <li style={S.li}><strong style={S.strong}>Chamber of Commerce number:</strong> 85125245</li>
         <li style={S.li}><strong style={S.strong}>VAT number:</strong> NL004054423B17</li>
       </ul>
-      <p style={{...S.p, marginTop: '2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem', opacity: 0.5, fontSize: 'max(9px, 0.4vw)'}}>
+      <p style={{...S.p, marginTop: '2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem', opacity: 0.5, fontSize: 'max(11px, 0.52vw)'}}>
         Garden For Life — General Terms and Conditions 2.2 — 27 September 2026
       </p>
     </>
@@ -415,7 +415,7 @@ export const POLICY_EN_PART1 = {
       <p style={S.p}>For questions about this policy:</p>
       <p style={S.p}><strong style={S.strong}>Email:</strong> yuanwullink30@gfl.community<br/><strong style={S.strong}>Address:</strong> De Taxushaag 2, Zutphen, 7207MB</p>
       <p style={S.p}>This policy forms part of the broader privacy policy of Garden For Life, which can be consulted via <PolicyLink to="/privacybeleid">Privacy Policy</PolicyLink>.</p>
-      <p style={{...S.p, textAlign: 'center', color: '#64748b', fontSize: '0.75rem', marginTop: '2rem', borderTop: '1px solid rgba(168,85,247,0.2)', paddingTop: '1rem'}}>Garden For Life — Cookie Policy & Local Storage | Version 2.1 | 27 September 2026</p>
+      <p style={{...S.p, textAlign: 'center', color: '#64748b', fontSize: 'max(13px, 0.6vw)', marginTop: '2rem', borderTop: '1px solid rgba(168,85,247,0.2)', paddingTop: '1rem'}}>Garden For Life — Cookie Policy & Local Storage | Version 2.1 | 27 September 2026</p>
     </>
   ),
 

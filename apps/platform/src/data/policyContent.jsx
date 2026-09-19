@@ -154,7 +154,7 @@ export const POLICY_CONTENT_NL = {
         <li style={S.li}><strong style={S.strong}>KVK-nummer:</strong> 85125245</li>
         <li style={S.li}><strong style={S.strong}>BTW-nummer:</strong> NL004054423B17</li>
       </ul>
-      <p style={{...S.p, marginTop: '2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem', opacity: 0.5, fontSize: 'max(9px, 0.4vw)'}}>
+      <p style={{...S.p, marginTop: '2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem', opacity: 0.5, fontSize: 'max(11px, 0.52vw)'}}>
         Garden For Life — Algemene Voorwaarden 2.2 — 27 september 2026
       </p>
     </>
@@ -421,7 +421,7 @@ export const POLICY_CONTENT_NL = {
       <p style={S.p}>Voor vragen over dit beleid:</p>
       <p style={S.p}><strong style={S.strong}>E-mail:</strong> yuanwullink30@gfl.community<br/><strong style={S.strong}>Adres:</strong> De Taxushaag 2, Zutphen, 7207MB</p>
       <p style={S.p}>Dit beleid maakt onderdeel uit van het bredere privacybeleid van Garden For Life, te raadplegen via <PolicyLink to="/privacybeleid">Privacybeleid</PolicyLink>.</p>
-      <p style={{...S.p, textAlign: 'center', color: '#64748b', fontSize: '0.75rem', marginTop: '2rem', borderTop: '1px solid rgba(168,85,247,0.2)', paddingTop: '1rem'}}>Garden For Life — Cookiebeleid & Lokale Opslag | Versie 2.1 | 27 september 2026</p>
+      <p style={{...S.p, textAlign: 'center', color: '#64748b', fontSize: 'max(13px, 0.6vw)', marginTop: '2rem', borderTop: '1px solid rgba(168,85,247,0.2)', paddingTop: '1rem'}}>Garden For Life — Cookiebeleid & Lokale Opslag | Versie 2.1 | 27 september 2026</p>
     </>
   ),
 
@@ -768,7 +768,7 @@ export const POLICY_CONTENT_NL = {
         <li style={S.li}><strong style={S.strong}>Adres:</strong> De Taxushaag 2, Zutphen, 7207MB</li>
         <li style={S.li}><strong style={S.strong}>KVK-nummer:</strong> 85125245</li>
       </ul>
-      <p style={{...S.p, marginTop: '2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem', opacity: 0.5, fontSize: 'max(9px, 0.4vw)'}}>
+      <p style={{...S.p, marginTop: '2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem', opacity: 0.5, fontSize: 'max(11px, 0.52vw)'}}>
         Garden For Life — Intellectueel Eigendom | Versie 2.0 | 16 maart 2026
       </p>
     </>
@@ -886,7 +886,7 @@ export const POLICY_CONTENT_NL = {
         <li style={S.li}><strong style={S.strong}>Adres:</strong> De Taxushaag 2, Zutphen, 7207MB</li>
         <li style={S.li}><strong style={S.strong}>KVK-nummer:</strong> 85125245</li>
       </ul>
-      <p style={{...S.p, marginTop: '2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem', opacity: 0.5, fontSize: 'max(9px, 0.4vw)'}}>
+      <p style={{...S.p, marginTop: '2rem', borderTop: '1px solid rgba(255,174,0,0.15)', paddingTop: '1rem', opacity: 0.5, fontSize: 'max(11px, 0.52vw)'}}>
         Garden For Life — Gebruiksvoorwaarden & Misbruikbeleid | Versie 2.1 | 16 maart 2026
       </p>
     </>
@@ -1071,7 +1071,7 @@ export const POLICY_CONTENT_NL = {
         <p style={{ ...S.p, margin: 0 }}><strong style={{ color: '#fb923c' }}>Opmerking:</strong> Dit register is opgesteld als werkinstrument en basis voor juridische toetsing. Aanbevolen wordt dit document te laten reviewen door een in AVG gespecialiseerde Nederlandse jurist, in het bijzonder de verwerkingen onder Art. 9 AVG en de AI Act classificatie. Dit document vervangt geen formeel privacybeleid of verwerkersovereenkomsten.</p>
       </div>
 
-      <p style={{...S.p, textAlign: 'center', color: '#64748b', fontSize: '0.75rem', marginTop: '2rem', borderTop: '1px solid rgba(168,85,247,0.2)', paddingTop: '1rem'}}>Garden For Life — Verwerkingsregister | Versie 3.1 | 27 september 2026</p>
+      <p style={{...S.p, textAlign: 'center', color: '#64748b', fontSize: 'max(13px, 0.6vw)', marginTop: '2rem', borderTop: '1px solid rgba(168,85,247,0.2)', paddingTop: '1rem'}}>Garden For Life — Verwerkingsregister | Versie 3.1 | 27 september 2026</p>
     </>
   ),
 };

@@ -5,20 +5,32 @@ import React from 'react';
  * Both the Dutch (policyContent.jsx) and English (policyContent.en.jsx)
  * document sets render through these, so the two stay visually identical.
  */
+// Reading sizes of the policy pages, fluid (max(px floor, vw)) so the text scales with the screen. Owner,
+// 2026-09-19: the old fixed ~13 px was "way too small", the tokens' 2xl/3xl/4xl steps "too big" — these sit
+// at the midpoint of the two (so between the named steps, on purpose).
+const FS = {
+  sm: 'max(9px, 0.4vw)',      // version tags
+  base: 'max(11px, 0.52vw)',  // labels, footer credits
+  xl: 'max(13px, 0.6vw)',     // small print, tables, hints
+  body: 'max(15px, 0.72vw)',  // body copy, sub-headings
+  h2: 'max(18px, 0.84vw)',    // section headings
+  title: 'max(23px, 1vw)',    // the page title in the panel header
+};
+
 const S = {
-  h2: { color: '#a855f7', fontSize: '1.1rem', marginTop: '1.75rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold' },
-  h3: { color: '#c4b5fd', fontSize: '0.9rem', marginTop: '1.25rem', marginBottom: '0.5rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold' },
-  p: { marginBottom: '0.75rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', lineHeight: 1.8 },
+  h2: { color: '#a855f7', fontSize: FS.h2, marginTop: '1.75rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold' },
+  h3: { color: '#c4b5fd', fontSize: FS.body, marginTop: '1.25rem', marginBottom: '0.5rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold' },
+  p: { marginBottom: '0.75rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: FS.body, lineHeight: 1.8 },
   ul: { marginLeft: '1.5rem', marginBottom: '0.75rem', listStyleType: 'disc' },
   ol: { marginLeft: '1.5rem', marginBottom: '0.75rem' },
-  li: { marginBottom: '0.35rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: '0.85rem', lineHeight: 1.6 },
+  li: { marginBottom: '0.35rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: FS.body, lineHeight: 1.6 },
   strong: { color: '#c4b5fd' },
-  updated: { color: '#94a3b8', fontSize: '0.75rem', marginBottom: '1.5rem', fontStyle: 'italic', fontFamily: "'Figtree', sans-serif" },
+  updated: { color: '#94a3b8', fontSize: FS.xl, marginBottom: '1.5rem', fontStyle: 'italic', fontFamily: "'Figtree', sans-serif" },
   box: { background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '0.35rem', padding: '1rem', margin: '1rem 0' },
   warn: { background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '0.35rem', padding: '1rem', margin: '1rem 0' },
-  table: { width: '100%', borderCollapse: 'collapse', margin: '1rem 0', fontSize: '0.8rem' },
-  th: { border: '1px solid rgba(168,85,247,0.2)', padding: '0.5rem', textAlign: 'left', color: '#c4b5fd', fontWeight: 'bold', background: 'rgba(168,85,247,0.1)', fontFamily: "'Figtree', sans-serif", fontSize: '0.8rem' },
-  td: { border: '1px solid rgba(168,85,247,0.2)', padding: '0.5rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: '0.8rem' },
+  table: { width: '100%', borderCollapse: 'collapse', margin: '1rem 0', fontSize: FS.xl },
+  th: { border: '1px solid rgba(168,85,247,0.2)', padding: '0.5rem', textAlign: 'left', color: '#c4b5fd', fontWeight: 'bold', background: 'rgba(168,85,247,0.1)', fontFamily: "'Figtree', sans-serif", fontSize: FS.xl },
+  td: { border: '1px solid rgba(168,85,247,0.2)', padding: '0.5rem', color: '#cbd5e1', fontFamily: "'Figtree', sans-serif", fontSize: FS.xl, lineHeight: 1.55 },
 };
 
 const PolicyLink = ({ to, children }) => (
@@ -224,7 +236,7 @@ const RetentionForm = ({ language = 'nl' }) => {
   const cyanBox = { background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '0.5rem', padding: '1.25rem', margin: '1rem 0' };
   return (
     <>
-      <h2 style={{ color: '#e2e8f0', fontSize: '1.05rem', marginBottom: '0.3rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold', textTransform: 'none', letterSpacing: '0.01em' }}>{t('title')}</h2>
+      <h2 style={{ color: '#e2e8f0', fontSize: FS.h2, marginBottom: '0.3rem', fontFamily: "'Lexend Mega', sans-serif", fontWeight: 'bold', textTransform: 'none', letterSpacing: '0.01em' }}>{t('title')}</h2>
       <p style={S.updated}>{t('version')}&nbsp;&nbsp;|&nbsp;&nbsp;{t('versionNo')}&nbsp;&nbsp;|&nbsp;&nbsp;{t('langLabel')}</p>
       <p style={S.p}>{t('intro')}</p>
 
@@ -239,16 +251,16 @@ const RetentionForm = ({ language = 'nl' }) => {
             placeholder={t('emailPlaceholder')}
             value={email}
             onChange={e => setEmail(e.target.value)}
-            style={{ flex: 1, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,212,255,0.35)', borderRadius: '0.35rem', padding: '0.5rem 0.75rem', color: '#e2e8f0', fontFamily: "'Figtree', sans-serif", fontSize: '0.82rem', outline: 'none' }}
+            style={{ flex: 1, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,212,255,0.35)', borderRadius: '0.35rem', padding: '0.5rem 0.75rem', color: '#e2e8f0', fontFamily: "'Figtree', sans-serif", fontSize: FS.body, outline: 'none' }}
           />
           <a
             href={mailtoHref}
-            style={{ display: 'inline-block', background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.4)', borderRadius: '0.35rem', padding: '0.5rem 1rem', color: '#00d4ff', fontFamily: "'Lexend Mega', sans-serif", fontSize: '0.72rem', textDecoration: 'none', whiteSpace: 'nowrap' }}
+            style={{ display: 'inline-block', background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.4)', borderRadius: '0.35rem', padding: '0.5rem 1rem', color: '#00d4ff', fontFamily: "'Lexend Mega', sans-serif", fontSize: FS.xl, textDecoration: 'none', whiteSpace: 'nowrap' }}
           >
             {t('openEmail')}
           </a>
         </div>
-        <p style={{ ...S.p, margin: 0, fontSize: '0.76rem', color: '#94a3b8' }}>{t('hint')}</p>
+        <p style={{ ...S.p, margin: 0, fontSize: FS.xl, color: '#94a3b8' }}>{t('hint')}</p>
       </div>
       <p style={S.p}>{t('stateInEmail')}</p>
       <ul style={S.ul}>
@@ -338,4 +350,4 @@ const RetentionForm = ({ language = 'nl' }) => {
   );
 };
 
-export { S, PolicyLink, RetentionForm };
+export { S, FS, PolicyLink, RetentionForm };

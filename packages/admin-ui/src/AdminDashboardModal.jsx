@@ -53,6 +53,10 @@ import { BRANDS } from '@gfl/brands';
 import InvoiceTemplate from './InvoiceTemplate';
 import CreditNoteTemplate from './CreditNoteTemplate';
 import EmailTemplate from './EmailTemplate';
+import {
+  HoloKeyframes, HoloCorners, HoloTab, HoloClock, BrandMark, StatusDot, KpiTile, holoCardStyle,
+  HOLO_PAGE_BG, HOLO_PAGE_BG_SIZE, HOLO_BAR, HOLO_TABLE_HEAD, CHROME, gradientText, TITLE_GRADIENT, PURPLE,
+} from './holo';
 
 // ── Responsive context ──
 const MobileCtx = React.createContext(false);
@@ -127,46 +131,47 @@ const CARD_COLORS = {
   },
 };
 
+// HoloPro skin (holo.jsx): glass card, purple/orange HUD corners, border flips to orange on hover.
+// The card's `color` tints its idle border and the title's accent bar.
+const CARD_RGB = { gold: '249, 115, 22', purple: '168, 85, 247', green: '74, 222, 128', cyan: '6, 182, 212' };
+
 function DashboardCard({ children, title, color = 'gold', className, style = {} }) {
   const isMobile = React.useContext(MobileCtx);
   const cc = CARD_COLORS[color] || CARD_COLORS.gold;
+  const [hov, setHov] = useState(false);
   return (
-    <div style={{
-      position: 'relative',
-      backgroundColor: 'rgba(1, 0, 2, 0.3)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      border: `1px solid ${cc.border}`,
-      boxShadow: cc.shadow,
-      borderRadius: '0.5rem',
-      padding: '1.25rem',
-      fontFamily: FONT,
-      color: C.text,
-      fontSize: 'max(12px, 0.65vw)',
-      ...(isMobile
-        ? { overflow: 'hidden', maxWidth: '100%', boxSizing: 'border-box' }
-        : { overflow: 'hidden' }
-      ),
-      ...style,
-    }}>
+    <div
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        ...holoCardStyle(hov, CARD_RGB[color] || CARD_RGB.gold),
+        padding: '1.25rem',
+        fontFamily: FONT,
+        color: C.text,
+        fontSize: 'max(12px, 0.65vw)',
+        ...(isMobile ? { maxWidth: '100%', boxSizing: 'border-box' } : {}),
+        ...style,
+      }}
+    >
+      <HoloCorners />
       {!isMobile && title && (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: '0.4rem',
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
           marginBottom: '0.8rem',
           paddingBottom: '0.6rem',
-          borderBottom: `1px solid ${cc.border}`,
+          borderBottom: '1px solid rgba(168, 85, 247, 0.1)',
         }}>
           <div style={{
             width: '3px', height: '1rem',
             backgroundColor: cc.border,
+            boxShadow: `0 0 8px ${cc.border}`,
             borderRadius: '1px',
           }} />
           <span style={{
             fontSize: 'max(10px, 0.5vw)',
             fontWeight: 'bold',
-            color: cc.titleColor,
+            color: C.text,
             textTransform: 'uppercase',
-            letterSpacing: '0.1em',
+            letterSpacing: '0.2em',
           }}>{title}</span>
         </div>
       )}
@@ -178,31 +183,16 @@ function DashboardCard({ children, title, color = 'gold', className, style = {} 
 
 
 /**
- * Admin Dashboard — HoloAuth Dashboard layout
+ * Admin Dashboard — HoloPro skin (holo.jsx), in our tokens
  *
- * Layout:
- *   Fixed modal frame (same translucent style as LoginFrame)
- *   header  →  Commandocentrum title + user info + buttons
- *   3-col grid  →  DashboardCards (overview) or full-width tab content
- *   4-col stats footer
+ * Layout (full window):
+ *   HUD header  →  telemetry strip (status, signed-in account, Amsterdam time) + brand row + filter-style tabs
+ *   main        →  the active tab, scrolling, max 1600px wide
+ *   footer      →  telemetry line
  */
 
-const CORNER = (pos, mobile) => {
-  const off = mobile ? '0.475rem' : '-0.125rem';
-  return {
-    position: 'absolute',
-    width: 'max(0.7rem, 1vw)', height: 'max(0.7rem, 1vw)',
-    border: '1.5px solid #a855f7',
-    pointerEvents: 'none', zIndex: 3,
-    ...(pos === 'tl' && { top: off, left: off, borderRadius: '10px 0 0 0', borderBottom: 'none', borderRight: 'none' }),
-    ...(pos === 'tr' && { top: off, right: off, borderRadius: '0 10px 0 0', borderBottom: 'none', borderLeft: 'none' }),
-    ...(pos === 'bl' && { bottom: off, left: off, borderRadius: '0 0 0 10px', borderTop: 'none', borderRight: 'none' }),
-    ...(pos === 'br' && { bottom: off, right: off, borderRadius: '0 0 10px 0', borderTop: 'none', borderLeft: 'none' }),
-  };
-};
-
-const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false }) => {
-  const { t } = useLanguage();
+const AdminDashboardModal = memo(({ user, onLogout }) => {
+  const { t, language } = useLanguage();
   const [tab, setTab] = useState('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -213,7 +203,6 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
     return () => window.removeEventListener('resize', h);
   }, []);
   const isMobile = windowWidth < 768;
-  const isEmbeddedMobile = embedded && isMobile;
 
   // Breakpoint-based sizing — Desktop(≥1800) / Laptop(≥1079) / Tablet(≥768) / Mobile(<768)
   const ds = windowWidth >= 1800 ? {
@@ -267,221 +256,187 @@ const AdminDashboardModal = memo(({ user, onLogout, onClose, embedded = false })
   };
 
 
+  const desktopTabs = [
+    { key: 'overview', label: t('admin.dashboard.tabs.overview') },
+    { key: 'users', label: t('admin.dashboard.tabs.users') },
+    { key: 'assessments', label: t('admin.dashboard.tabs.assessments') },
+    { key: 'questions', label: t('admin.dashboard.tabs.questions') },
+    { key: 'prompts', label: t('admin.dashboard.tabs.prompts') },
+    { key: 'formulieren', label: t('admin.dashboard.tabs.formulieren') },
+    { key: 'activationCodes', label: t('admin.dashboard.tabs.activationCodes') },
+    { key: 'reportUnlocks', label: t('admin.dashboard.tabs.reportUnlocks') },
+    { key: 'paymentRecords', label: t('admin.dashboard.tabs.paymentRecords') },
+    { key: 'audit', label: t('admin.dashboard.tabs.audit') },
+    { key: 'contact', label: t('admin.dashboard.tabs.contact') },
+  ];
+  const mobileTabs = [
+    ...desktopTabs.slice(0, 10),
+    { key: 'feedback', label: t('admin.dashboard.tabs.feedback') },
+    desktopTabs[10],
+  ];
+  const activeMobileTab = mobileTabs.find(mt => mt.key === tab) || mobileTabs[0];
+  // Header and footer line up with the content column (max 1600px, centred, ds.contentPad inside it).
+  const gutter = `calc(max(0px, (100% - 1600px) / 2) + ${ds.contentPad})`;
+  const today = new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
   return (
     <MobileCtx.Provider value={isMobile}>
     <DashSizeCtx.Provider value={ds}>
-    <style>{`
-      @keyframes dashHoloSheen {
-        0%   { background-position: 200% 200%; }
-        50%  { background-position: 0% 0%; }
-        100% { background-position: 200% 200%; }
-      }
-      @keyframes dashHoloScanline {
-        0%   { background-position: 0 -200%; }
-        100% { background-position: 0 200%; }
-      }
-    `}</style>
-    {/* Outer shell — vw-based, positioning context for corners */}
-    <div style={isEmbeddedMobile
-      ? { position: 'fixed', inset: 0, width: '100vw', maxWidth: 'none', height: '100vh', padding: 0 }
-      : { position: 'relative', width: ds.shellWidth, maxWidth: ds.shellMaxWidth, height: ds.shellHeight, padding: ds.shellPad }
-    }>
-      {/* Corner brackets — positioned on the inner panel edge */}
-      {!isEmbeddedMobile && <div style={CORNER('tl', isMobile)} />}
-      {!isEmbeddedMobile && <div style={CORNER('tr', isMobile)} />}
-      {!isEmbeddedMobile && <div style={CORNER('bl', isMobile)} />}
-      {!isEmbeddedMobile && <div style={CORNER('br', isMobile)} />}
-
-      {/* Inner panel — fills fixed outer shell */}
-      <div style={{
-        position: 'relative',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: 'rgba(1, 0, 2, 0.3)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: isEmbeddedMobile ? 0 : ds.borderRadius,
-        boxShadow: isEmbeddedMobile ? 'none' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
-        color: C.text,
-        fontFamily: FONT,
-        fontSize: 'max(12px, 0.65vw)',
-        ...(isMobile ? {} : { overflow: 'hidden' }),
+    <HoloKeyframes />
+    {/* The page — void, cyber grid and ambient glows; header and footer fixed, the middle scrolls */}
+    <div style={{
+      position: 'fixed', inset: 0,
+      display: 'flex', flexDirection: 'column',
+      backgroundColor: '#0a0510',
+      backgroundImage: HOLO_PAGE_BG,
+      backgroundSize: HOLO_PAGE_BG_SIZE,
+      color: C.text,
+      fontFamily: FONT,
+      fontSize: 'max(12px, 0.65vw)',
+    }}>
+      {/* ── HUD header ── */}
+      <header style={{
+        ...HOLO_BAR,
+        position: 'relative', zIndex: 30, flexShrink: 0,
+        borderBottom: '1px solid rgba(168, 85, 247, 0.2)',
+        padding: isMobile ? '0.7rem 1rem' : `0.7rem ${gutter} 0.8rem`,
       }}>
-        {/* Holographic sheen — Eyedentity glass skin */}
-        <div style={{
-          position: 'absolute', inset: 0, borderRadius: 'max(4px, 0.5vw)', pointerEvents: 'none', zIndex: 1,
-          background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.015) 30%, transparent 50%, rgba(255,255,255,0.01) 70%, transparent 100%)',
-          backgroundSize: '400% 400%',
-          animation: 'dashHoloSheen 45s ease-in-out infinite',
-          mixBlendMode: 'screen',
-        }} />
-        {/* Scanline sweep */}
-        <div style={{
-          position: 'absolute', inset: 0, borderRadius: 'max(4px, 0.5vw)', pointerEvents: 'none', zIndex: 1,
-          background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.008) 48%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0.008) 52%, transparent 100%)',
-          backgroundSize: '100% 300%',
-          animation: 'dashHoloScanline 12s linear infinite',
-        }} />
-
-        {/* Title bar */}
-        {!isEmbeddedMobile && <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: ds.titleBarPad,
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
-          backgroundColor: 'rgba(42, 10, 56, 0.35)',
-          position: 'relative', zIndex: 2,
-        }}>
-          {isMobile ? (
-            <>
-              <div />
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">{t('admin.dashboard.logout')}</SciFiButton>
-              </div>
-            </>
-          ) : (
-            <>
-              <div />
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">{t('admin.dashboard.logout')}</SciFiButton>
-              </div>
-            </>
-          )}
-        </div>}
-
-        {/* Scrollable content area — fills remaining space */}
-        <div style={{
-          position: 'relative', zIndex: 10,
-          padding: ds.contentPad,
-          flex: 1,
-          minHeight: 0,
-          overflowY: 'auto',
-          ...(isMobile ? { overflowX: 'hidden', maxWidth: '100%', wordBreak: 'break-word' } : {}),
-          display: 'flex',
-          flexDirection: 'column',
-          gap: ds.contentGap,
-        }}>
-      {/* ── Koptekst — HoloAuth Dashboard structuur ── */}
-      {!isEmbeddedMobile && <header style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        borderBottom: '1px solid rgba(168, 85, 247, 0.15)',
-        paddingBottom: ds.headerPb,
-      }}>
-        <div>
-          <h1 style={{
-            fontSize: ds.headerFont, fontWeight: 'bold',
-            color: C.gold, textTransform: 'uppercase',
-            letterSpacing: '0.2em', fontFamily: FONT, margin: 0,
-            textShadow: '0 0 5px #f97316, 0 0 10px #f97316',
-          }}>
-            {t('admin.dashboard.title')}
-          </h1>
-        </div>
-      </header>}
-
-      {/* ── Tab Navigatie ── */}
-      {isMobile ? (() => {
-        const mobileTabs = [
-          { key: 'overview', label: t('admin.dashboard.tabs.overview') },
-          { key: 'users', label: t('admin.dashboard.tabs.users') },
-          { key: 'assessments', label: t('admin.dashboard.tabs.assessments') },
-          { key: 'questions', label: t('admin.dashboard.tabs.questions') },
-          { key: 'prompts', label: t('admin.dashboard.tabs.prompts') },
-          { key: 'formulieren', label: t('admin.dashboard.tabs.formulieren') },
-          { key: 'activationCodes', label: t('admin.dashboard.tabs.activationCodes') },
-          { key: 'reportUnlocks', label: t('admin.dashboard.tabs.reportUnlocks') },
-          { key: 'paymentRecords', label: t('admin.dashboard.tabs.paymentRecords') },
-          { key: 'audit', label: t('admin.dashboard.tabs.audit') },
-          { key: 'feedback', label: t('admin.dashboard.tabs.feedback') },
-          { key: 'contact', label: t('admin.dashboard.tabs.contact') },
-        ];
-        const mobileTabPadding = '0.52rem 0.9rem'; // +30% from default 0.4rem vertical
-        const mobileTabFontSize = 'max(12.5px, 0.625vw)'; // +25% from default max(10px, 0.5vw)
-        const mobileTabWeight = 900; // thicker than default bold
-        const activeTab = mobileTabs.find(mt => mt.key === tab) || mobileTabs[0];
-        return (
+        {/* Telemetry strip — live status, who is signed in, Amsterdam time */}
+        {!isMobile && (
           <div style={{
-            width: '100%',
-            paddingTop: '20px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap',
+            paddingBottom: '0.5rem', marginBottom: '0.7rem',
+            borderBottom: '1px solid rgba(168, 85, 247, 0.1)',
+            ...CHROME(),
           }}>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.7rem',
-            }}>
-              <SciFiButton
-                onClick={() => setMobileMenuOpen(v => !v)}
-                active={mobileMenuOpen}
-                fullWidth
-                padding={mobileTabPadding}
-                fontSize={mobileTabFontSize}
-                textWeight={mobileTabWeight}
-              >
-                {`${activeTab.label.toUpperCase()} ${mobileMenuOpen ? '▲' : '▼'}`}
-              </SciFiButton>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+              <StatusDot />
+              <span style={{ color: C.text, fontWeight: 'bold' }}>{t('admin.dashboard.overview.operational')}</span>
+              <span style={{ color: 'rgba(168, 85, 247, 0.4)' }}>|</span>
+              <span style={{ color: '#c084fc', textTransform: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</span>
+            </div>
+            <HoloClock />
+          </div>
+        )}
 
-              {mobileMenuOpen && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                  {mobileTabs.map(({ key, label, disabled }) => (
-                    <SciFiButton
-                      key={key}
-                      onClick={() => {
-                        if (disabled) return;
-                        setTab(key);
-                        setMobileMenuOpen(false);
-                      }}
-                      disabled={disabled}
-                      active={tab === key}
-                      fullWidth
-                      padding={mobileTabPadding}
-                      fontSize={mobileTabFontSize}
-                      textWeight={mobileTabWeight}
-                    >
-                      {label.toUpperCase()}
-                    </SciFiButton>
-                  ))}
+        {/* Brand row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', minWidth: 0 }}>
+            {!isMobile && <BrandMark />}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <h1 style={{
+                  margin: 0, fontFamily: FONT, fontWeight: 'bold',
+                  fontSize: isMobile ? 'max(13px, 0.7vw)' : ds.headerFont,
+                  textTransform: 'uppercase', letterSpacing: isMobile ? '0.12em' : '0.2em',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0,
+                  ...gradientText(TITLE_GRADIENT),
+                }}>
+                  {t('admin.dashboard.title')}
+                </h1>
+                {!isMobile && (
+                  <span style={{
+                    ...CHROME('max(7px, 0.35vw)', '#c084fc'), fontWeight: 'bold',
+                    padding: '0.15rem 0.45rem', borderRadius: '0.15rem',
+                    background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)',
+                  }}>
+                    {(user?.role || 'admin').toUpperCase()}
+                  </span>
+                )}
+              </div>
+              {!isMobile && (
+                <div style={{ ...CHROME('max(8px, 0.4vw)'), marginTop: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <span>{user?.displayName || '—'}</span>
+                  <span style={{ color: 'rgba(168, 85, 247, 0.6)' }}>•</span>
+                  <span style={{ color: 'rgba(249, 115, 22, 0.5)' }}>{today}</span>
                 </div>
               )}
             </div>
           </div>
-        );
-      })() : (
-        <div style={{ display: 'flex', gap: ds.tabGap, flexWrap: 'wrap' }}>
-          {[
-            { key: 'overview', label: t('admin.dashboard.tabs.overview') },
-            { key: 'users', label: t('admin.dashboard.tabs.users') },
-            { key: 'assessments', label: t('admin.dashboard.tabs.assessments') },
-            { key: 'questions', label: t('admin.dashboard.tabs.questions') },
-            { key: 'prompts', label: t('admin.dashboard.tabs.prompts') },
-            { key: 'formulieren', label: t('admin.dashboard.tabs.formulieren') },
-            { key: 'activationCodes', label: t('admin.dashboard.tabs.activationCodes') },
-            { key: 'reportUnlocks', label: t('admin.dashboard.tabs.reportUnlocks') },
-            { key: 'paymentRecords', label: t('admin.dashboard.tabs.paymentRecords') },
-            { key: 'audit', label: t('admin.dashboard.tabs.audit') },
-            { key: 'contact', label: t('admin.dashboard.tabs.contact') },
-          ].map(({ key, label, disabled }) => (
-            <SciFiButton key={key} onClick={() => !disabled && setTab(key)} disabled={disabled} active={tab === key}>
-              {label.toUpperCase()}
-            </SciFiButton>
-          ))}
-        </div>
-      )}
-
-      {/* ── Tab Inhoud ── */}
-      {tab === 'overview' && <OverviewTab user={user} />}
-      {tab === 'users' && <UsersTab currentUserId={user.id} />}
-      {tab === 'assessments' && <AssessmentsTab adminEmail={user?.email} />}
-      {tab === 'questions' && <QuestionsTab />}
-      {tab === 'prompts' && <PromptsTab />}
-      {tab === 'formulieren' && <FormulierenTab />}
-      {tab === 'activationCodes' && <ActivationCodesTab />}
-      {tab === 'reportUnlocks' && <ReportUnlocksTab />}
-      {tab === 'paymentRecords' && <PaymentRecordsTab />}
-      {tab === 'audit' && <AuditLogTab />}
-      {tab === 'contact' && <ContactTab />}
+          <SciFiButton onClick={onLogout} variant="danger" size="sm" padding="0.35rem 1rem" fontSize="max(9px, 0.48vw)">{t('admin.dashboard.logout')}</SciFiButton>
         </div>
 
-      </div>
+        {/* Navigation — filter-style tabs */}
+        {!isMobile && (
+          <nav style={{ display: 'flex', gap: ds.tabGap, flexWrap: 'wrap', marginTop: '0.8rem' }}>
+            {desktopTabs.map(({ key, label, disabled }) => (
+              <HoloTab key={key} onClick={() => !disabled && setTab(key)} disabled={disabled} active={tab === key}>
+                {label}
+              </HoloTab>
+            ))}
+          </nav>
+        )}
+      </header>
+
+      {/* ── Scrollable content ── */}
+      <main className="holo-scroll" style={{
+        position: 'relative', zIndex: 1,
+        flex: 1, minHeight: 0,
+        overflowY: 'auto',
+        ...(isMobile ? { overflowX: 'hidden' } : {}),
+      }}>
+        <div style={{
+          maxWidth: '1600px', margin: '0 auto',
+          padding: ds.contentPad,
+          display: 'flex', flexDirection: 'column', gap: ds.contentGap,
+          ...(isMobile ? { maxWidth: '100%', wordBreak: 'break-word' } : {}),
+        }}>
+          {/* Mobile navigation — the active tab opens the list */}
+          {isMobile && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+              <HoloTab onClick={() => setMobileMenuOpen(v => !v)} active={mobileMenuOpen} fullWidth>
+                {`${activeMobileTab.label} ${mobileMenuOpen ? '▲' : '▼'}`}
+              </HoloTab>
+              {mobileMenuOpen && mobileTabs.map(({ key, label, disabled }) => (
+                <HoloTab
+                  key={key}
+                  onClick={() => {
+                    if (disabled) return;
+                    setTab(key);
+                    setMobileMenuOpen(false);
+                  }}
+                  disabled={disabled}
+                  active={tab === key}
+                  fullWidth
+                >
+                  {label}
+                </HoloTab>
+              ))}
+            </div>
+          )}
+
+          {/* ── Tab content ── */}
+          {tab === 'overview' && <OverviewTab user={user} />}
+          {tab === 'users' && <UsersTab currentUserId={user.id} />}
+          {tab === 'assessments' && <AssessmentsTab adminEmail={user?.email} />}
+          {tab === 'questions' && <QuestionsTab />}
+          {tab === 'prompts' && <PromptsTab />}
+          {tab === 'formulieren' && <FormulierenTab />}
+          {tab === 'activationCodes' && <ActivationCodesTab />}
+          {tab === 'reportUnlocks' && <ReportUnlocksTab />}
+          {tab === 'paymentRecords' && <PaymentRecordsTab />}
+          {tab === 'audit' && <AuditLogTab />}
+          {tab === 'contact' && <ContactTab />}
+        </div>
+      </main>
+
+      {/* ── Footer telemetry ── */}
+      <footer style={{
+        ...HOLO_BAR,
+        position: 'relative', zIndex: 30, flexShrink: 0,
+        borderTop: '1px solid rgba(168, 85, 247, 0.2)',
+        padding: isMobile ? '0.5rem 1rem' : `0.55rem ${gutter}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap',
+        ...CHROME('max(7px, 0.38vw)'),
+      }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <StatusDot color={PURPLE} breathe={false} size="0.4rem" />
+          GARDEN FOR LIFE // ADMIN GFL
+        </span>
+        <span>
+          {t('admin.dashboard.overview.rowSession')}: <span style={{ color: '#4ade80' }}>{t('admin.dashboard.overview.sessionActive')}</span>
+        </span>
+      </footer>
     </div>
     </DashSizeCtx.Provider>
     </MobileCtx.Provider>
@@ -841,12 +796,7 @@ const OverviewTab = memo(({ user }) => {
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '0.6rem',
               }}>
-                <div style={{
-                  width: '0.5rem', height: '0.5rem', borderRadius: '50%',
-                  backgroundColor: apiHealth[key].color,
-                  boxShadow: `0 0 6px ${apiHealth[key].color}`,
-                  flexShrink: 0,
-                }} />
+                <StatusDot color={apiHealth[key].color} breathe={apiHealth[key].color === '#4ade80'} />
                 <div>
                   <div style={{ fontSize: 'max(9px, 0.45vw)', fontWeight: 'bold', textTransform: 'uppercase' }}>{label}</div>
                   <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText }}>{desc}</div>
@@ -870,17 +820,12 @@ const OverviewTab = memo(({ user }) => {
               { label: t('admin.dashboard.overview.apiPdf'), key: 'pdf', desc: t('admin.dashboard.overview.apiPdfDesc') },
               { label: t('admin.dashboard.overview.apiEncryption'), key: 'encryption', desc: t('admin.dashboard.overview.apiEncryptionDesc') },
             ].map(({ label, key, desc }) => (
-              <div key={key} style={{
+              <div key={key} className="holo-row" style={{
                 display: 'flex', alignItems: 'center', gap: '0.6rem',
-                padding: '0.6rem 0.8rem', borderRadius: '0.3rem',
-                backgroundColor: 'rgba(0,0,0,0.3)', border: `1px solid ${tc.rowBorder}`,
+                padding: '0.6rem 0.8rem', borderRadius: '0.35rem',
+                backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(168, 85, 247, 0.2)',
               }}>
-                <div style={{
-                  width: '0.5rem', height: '0.5rem', borderRadius: '50%',
-                  backgroundColor: apiHealth[key].color,
-                  boxShadow: `0 0 6px ${apiHealth[key].color}`,
-                  flexShrink: 0,
-                }} />
+                <StatusDot color={apiHealth[key].color} breathe={apiHealth[key].color === '#4ade80'} />
                 <div>
                   <div style={{ fontSize: 'max(9px, 0.45vw)', fontWeight: 'bold', textTransform: 'uppercase' }}>{label}</div>
                   <div style={{ fontSize: 'max(7px, 0.38vw)', color: tc.dimText }}>{desc}</div>
@@ -903,17 +848,12 @@ const OverviewTab = memo(({ user }) => {
         : { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: ds.infoGap }
       }>
         {[
-          { label: t('admin.dashboard.overview.statUsers'), value: stats.userCount },
-          { label: t('admin.dashboard.overview.statAssessments'), value: stats.assessmentCount },
-          { label: t('admin.dashboard.overview.statErrors'), value: errorLog.length, color: errorLog.length > 0 ? '#fca5a5' : '#4ade80' },
-          { label: t('admin.dashboard.overview.statContactRequests'), value: stats.contactCount ?? 0 },
+          { label: t('admin.dashboard.overview.statUsers'), value: stats.userCount, color: '#c084fc', glyph: '◆' },
+          { label: t('admin.dashboard.overview.statAssessments'), value: stats.assessmentCount, color: '#fb923c', glyph: '◈' },
+          { label: t('admin.dashboard.overview.statErrors'), value: errorLog.length, color: errorLog.length > 0 ? '#fca5a5' : '#4ade80', glyph: '!' },
+          { label: t('admin.dashboard.overview.statContactRequests'), value: stats.contactCount ?? 0, color: '#c084fc', glyph: '✉' },
         ].map((stat, i) => (
-          <DashboardCard key={i} color="gold" style={{ padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontSize: 'max(8px, 0.4vw)', color: CARD_COLORS.gold.dimText, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{stat.label}</div>
-              <div style={{ fontSize: 'max(18px, 1vw)', fontWeight: 'bold', fontFamily: FONT, color: stat.color || C.text }}>{stat.value}</div>
-            </div>
-          </DashboardCard>
+          <KpiTile key={i} label={stat.label} value={stat.value} color={stat.color} glyph={stat.glyph} />
         ))}
       </div>
     </>
@@ -2949,7 +2889,7 @@ const ActivationCodesTab = memo(() => {
 
   const usedCount = logbook.filter(c => c.status === 'used').length;
   const headerRow = (cols) => (
-    <div style={{ display: 'grid', gridTemplateColumns: CODE_GRID, gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
+    <div style={{ display: 'grid', gridTemplateColumns: CODE_GRID, gap: '0.3rem', padding: '0.4rem 0.5rem', ...HOLO_TABLE_HEAD }}>
       {cols.map(h => (
         <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
       ))}
@@ -2957,7 +2897,7 @@ const ActivationCodesTab = memo(() => {
   );
   const rowStyle = (i, accent) => ({
     display: 'grid', gridTemplateColumns: CODE_GRID, gap: '0.3rem', padding: '0.4rem 0.5rem', alignItems: 'center',
-    backgroundColor: i % 2 === 0 ? 'rgba(255,174,0,0.02)' : 'transparent',
+    backgroundColor: i % 2 === 0 ? 'rgba(168, 85, 247, 0.03)' : 'transparent',
     borderLeft: `2px solid ${accent}`, borderRadius: '0 0.15rem 0.15rem 0',
   });
   const hintCell = (hint) => (
@@ -2983,15 +2923,7 @@ const ActivationCodesTab = memo(() => {
           { label: t('admin.dashboard.activationCodes.statUsed'), value: usedCount, color: '#60a5fa' },
           { label: t('admin.dashboard.activationCodes.statRevoked'), value: logbook.length - usedCount, color: '#f87171' },
         ].map((stat, i) => (
-          <div key={i} style={{
-            padding: '0.6rem 0.8rem',
-            backgroundColor: 'rgba(255, 174, 0, 0.04)',
-            borderRadius: '0.3rem',
-            borderLeft: `2px solid ${stat.color}`,
-          }}>
-            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{stat.label}</div>
-            <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
-          </div>
+          <KpiTile key={i} label={stat.label} value={stat.value} color={stat.color} />
         ))}
       </div>
 
@@ -3070,7 +3002,7 @@ const ActivationCodesTab = memo(() => {
                   t('admin.dashboard.activationCodes.colCreated'), t('admin.dashboard.activationCodes.colActions'),
                 ])}
                 {active.map((c, i) => (
-                  <div key={c._id} style={rowStyle(i, '#4ade80')}>
+                  <div key={c._id} className="holo-row" style={rowStyle(i, '#4ade80')}>
                     {hintCell(c.hint)}
                     {labelCell(c.label)}
                     {smallCell(fmtDateTime(c.createdAt))}
@@ -3100,7 +3032,7 @@ const ActivationCodesTab = memo(() => {
                 {logbook.map((c, i) => {
                   const used = c.status === 'used';
                   return (
-                    <div key={c._id} style={{ ...rowStyle(i, used ? '#60a5fa' : '#f87171'), opacity: 0.85 }}>
+                    <div key={c._id} className="holo-row" style={{ ...rowStyle(i, used ? '#60a5fa' : '#f87171'), opacity: 0.85 }}>
                       {hintCell(c.hint)}
                       {labelCell(c.label)}
                       {smallCell(fmtDateTime(used ? c.usedAt : c.revokedAt))}
@@ -3309,15 +3241,7 @@ const ReportUnlocksTab = memo(() => {
           { label: t('admin.dashboard.reportUnlocks.statCode'), value: unlocks.length - paid.length, color: '#60a5fa' },
           { label: t('admin.dashboard.reportUnlocks.statRefunded'), value: unlocks.filter(u => u.status === 'refunded').length, color: '#f87171' },
         ].map((stat, i) => (
-          <div key={i} style={{
-            padding: '0.6rem 0.8rem',
-            backgroundColor: 'rgba(255, 174, 0, 0.04)',
-            borderRadius: '0.3rem',
-            borderLeft: `2px solid ${stat.color}`,
-          }}>
-            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{stat.label}</div>
-            <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
-          </div>
+          <KpiTile key={i} label={stat.label} value={stat.value} color={stat.color} />
         ))}
       </div>
 
@@ -3385,7 +3309,7 @@ const ReportUnlocksTab = memo(() => {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: '36rem', maxHeight: '60vh', overflowY: 'auto' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: UNLOCK_GRID, gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
+              <div style={{ display: 'grid', gridTemplateColumns: UNLOCK_GRID, gap: '0.3rem', padding: '0.4rem 0.5rem', ...HOLO_TABLE_HEAD }}>
                 {['colWhen', 'colMethod', 'colAccount', 'colStatus', 'colActions'].map(k => (
                   <div key={k} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{t(`admin.dashboard.reportUnlocks.${k}`)}</div>
                 ))}
@@ -3397,9 +3321,9 @@ const ReportUnlocksTab = memo(() => {
                 const inWindow = isPayment && u.refundableUntil && new Date(u.refundableUntil).getTime() > now;
                 return (
                   <React.Fragment key={u._id}>
-                  <div style={{
+                  <div className="holo-row" style={{
                     display: 'grid', gridTemplateColumns: UNLOCK_GRID, gap: '0.3rem', padding: '0.4rem 0.5rem', alignItems: 'center',
-                    backgroundColor: i % 2 === 0 ? 'rgba(255,174,0,0.02)' : 'transparent',
+                    backgroundColor: i % 2 === 0 ? 'rgba(168, 85, 247, 0.03)' : 'transparent',
                     borderLeft: `2px solid ${refunded ? '#f87171' : isPayment ? '#4ade80' : '#60a5fa'}`,
                     borderRadius: '0 0.15rem 0.15rem 0', opacity: refunded ? 0.75 : 1,
                   }}>
@@ -3642,10 +3566,7 @@ const PaymentRecordsTab = memo(() => {
           { label: t('admin.dashboard.paymentRecords.net'), value: fmtEuro(received + refunded), color: C.gold },
           { label: t('admin.dashboard.paymentRecords.count'), value: shown.length, color: '#60a5fa' },
         ].map((stat, i) => (
-          <div key={i} style={{ padding: '0.6rem 0.8rem', backgroundColor: 'rgba(255, 174, 0, 0.04)', borderRadius: '0.3rem', borderLeft: `2px solid ${stat.color}` }}>
-            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{stat.label}</div>
-            <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
-          </div>
+          <KpiTile key={i} label={stat.label} value={stat.value} color={stat.color} />
         ))}
       </div>
 
@@ -3679,7 +3600,7 @@ const PaymentRecordsTab = memo(() => {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: '38rem', maxHeight: '60vh', overflowY: 'auto' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: RECORD_GRID, gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: `1px solid ${tc.border}` }}>
+              <div style={{ display: 'grid', gridTemplateColumns: RECORD_GRID, gap: '0.3rem', padding: '0.4rem 0.5rem', ...HOLO_TABLE_HEAD }}>
                 {['colNumber', 'colDate', 'colKind', 'colReference', 'colAmount', 'colFile'].map(k => (
                   <div key={k} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{t(`admin.dashboard.paymentRecords.${k}`)}</div>
                 ))}
@@ -3687,9 +3608,9 @@ const PaymentRecordsTab = memo(() => {
               {shown.map((r, i) => {
                 const refund = r.kind === 'refund';
                 return (
-                  <div key={r._id} style={{
+                  <div key={r._id} className="holo-row" style={{
                     display: 'grid', gridTemplateColumns: RECORD_GRID, gap: '0.3rem', padding: '0.4rem 0.5rem', alignItems: 'center',
-                    backgroundColor: i % 2 === 0 ? 'rgba(255,174,0,0.02)' : 'transparent',
+                    backgroundColor: i % 2 === 0 ? 'rgba(168, 85, 247, 0.03)' : 'transparent',
                     borderLeft: `2px solid ${refund ? '#f87171' : '#4ade80'}`, borderRadius: '0 0.15rem 0.15rem 0',
                   }}>
                     <div style={{ fontSize: 'max(9px, 0.45vw)', fontFamily: 'monospace', color: '#FFFEF0', fontWeight: 'bold' }}>{r.number}</div>
@@ -3785,45 +3706,18 @@ const AuditLogTab = memo(() => {
           { label: t('admin.dashboard.audit.statTotal'), value: totalEvents, color: '#60a5fa' },
           { label: t('admin.dashboard.audit.statAvgDuration'), value: formatDuration(avgDuration, t('admin.dashboard.audit.hourUnit')), color: '#4ade80' },
         ].map((stat, i) => (
-          <div key={i} style={{
-            padding: '0.6rem 0.8rem',
-            backgroundColor: 'rgba(255, 174, 0, 0.04)',
-            borderRadius: '0.3rem',
-            borderLeft: `2px solid ${stat.color}`,
-          }}>
-            <div style={{ fontSize: 'max(8px, 0.4vw)', color: tc.dimText, textTransform: 'uppercase', marginBottom: '0.2rem' }}>{stat.label}</div>
-            <div style={{ fontSize: 'max(16px, 0.9vw)', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
-          </div>
+          <KpiTile key={i} label={stat.label} value={stat.value} color={stat.color} />
         ))}
       </div>
 
       {/* Folder tabs */}
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        {AUDIT_FOLDERS.map(f => {
-          const active = folder === f.key;
-          return (
-            <button key={f.key} onClick={() => { setFolder(f.key); setExpandedIdx(null); }}
-              style={{
-                padding: '0.35rem 0.7rem', fontSize: 'max(9px, 0.45vw)',
-                backgroundColor: active ? `${f.color}18` : 'rgba(255,255,255,0.03)',
-                color: active ? f.color : '#888',
-                border: `1px solid ${active ? `${f.color}40` : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: '0.2rem', cursor: 'pointer',
-                fontWeight: active ? 'bold' : 'normal',
-                textTransform: 'uppercase', letterSpacing: '0.03em',
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { if (!active) e.target.style.backgroundColor = `${f.color}10`; }}
-              onMouseLeave={e => { if (!active) e.target.style.backgroundColor = 'rgba(255,255,255,0.03)'; }}>
-              {t(f.labelKey)}
-              <span style={{
-                marginLeft: '0.4rem', padding: '0.05rem 0.3rem',
-                backgroundColor: `${f.color}25`, borderRadius: '0.1rem',
-                fontSize: 'max(7px, 0.35vw)', fontWeight: 'bold',
-              }}>{folderCounts[f.key]}</span>
-            </button>
-          );
-        })}
+        {AUDIT_FOLDERS.map(f => (
+          <HoloTab key={f.key} active={folder === f.key} count={folderCounts[f.key]}
+            onClick={() => { setFolder(f.key); setExpandedIdx(null); }}>
+            {t(f.labelKey)}
+          </HoloTab>
+        ))}
 
         <SciFiButton onClick={fetchAll} size="xs" padding="0.25rem 0.6rem" fontSize="max(8px, 0.4vw)" style={{ marginLeft: 'auto' }}>{t('admin.dashboard.audit.refresh')}</SciFiButton>
       </div>
@@ -3846,7 +3740,7 @@ const AuditLogTab = memo(() => {
                 <div style={{ textAlign: 'center', padding: '1rem', color: '#4ade8060', fontSize: 'max(10px, 0.5vw)' }}>{t('admin.dashboard.audit.adminEmpty')}</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '55vh', overflowY: 'auto' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.5fr 1fr 1.6fr', gap: '0.3rem', padding: '0.3rem 0.5rem', borderBottom: '1px solid rgba(74,222,128,0.15)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.5fr 1fr 1.6fr', gap: '0.3rem', padding: '0.4rem 0.5rem', ...HOLO_TABLE_HEAD }}>
                     {[t('admin.dashboard.audit.colTimestamp'), t('admin.dashboard.audit.colType'), t('admin.dashboard.audit.colReportId'), t('admin.dashboard.audit.colAdminDetail')].map(h => (
                       <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: '#4ade8080', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
                     ))}
@@ -3891,8 +3785,8 @@ const AuditLogTab = memo(() => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '55vh', overflowY: 'auto' }}>
                   <div style={{
                     display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 1.2fr',
-                    gap: '0.3rem', padding: '0.35rem 0.5rem',
-                    borderBottom: `1px solid ${tc.border}`,
+                    gap: '0.3rem', padding: '0.4rem 0.5rem',
+                    ...HOLO_TABLE_HEAD,
                   }}>
                     {[t('admin.dashboard.audit.colDate'), t('admin.dashboard.audit.colDuration'), t('admin.dashboard.audit.colEvents'), t('admin.dashboard.audit.colTypes')].map(h => (
                       <div key={h} style={{ fontSize: 'max(7px, 0.35vw)', color: tc.dimText, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>{h}</div>
@@ -3909,6 +3803,7 @@ const AuditLogTab = memo(() => {
                     return (
                       <div key={idx}>
                         <div
+                          className="holo-row"
                           onClick={() => setExpandedIdx(isExpanded ? null : idx)}
                           style={{
                             display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.5fr 1.2fr',

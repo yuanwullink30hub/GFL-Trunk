@@ -249,7 +249,8 @@
 
         // Every other boot: the opening line runs for two seconds, then one of the ratified
         // Levenslessen takes over until the app is ready. The same lesson all day and a different one
-        // tomorrow (day of the year over the list), so coming back reads differently. The texts are
+        // tomorrow (the local day count over the list, which sync-lessons.mjs orders so that consecutive days
+        // never share an archetype), so coming back reads differently. The texts are
         // written to lessons.json at build time (scripts/sync-lessons.mjs) — the overlay runs before
         // the bundle, so it cannot import the corpus itself.
         (function lessonOfTheDay() {
@@ -271,13 +272,17 @@
             ss.appendChild(label);
             ss.appendChild(body);
           };
-          fetch('lessons.json', { cache: 'force-cache' })
+          // no-cache = revalidate (a 304 when unchanged): a re-ordered or corrected list reaches returning
+          // visitors instead of the copy their browser kept.
+          fetch('lessons.json', { cache: 'no-cache' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (data) {
               var lang = document.documentElement.lang === 'nl' ? 'nl' : 'en';
               var list = (data && data[lang] && data[lang].length ? data[lang] : (data && data.nl)) || [];
               if (!list.length) return;
-              var day = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+              // Local calendar days since 1970 — continuous, so New Year doesn't jump to an unrelated spot.
+              var now = new Date();
+              var day = Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
               var text = list[((day % list.length) + list.length) % list.length];
               setTimeout(function () { render(text); }, Math.max(0, 2000 - (Date.now() - startedAt)));
             })

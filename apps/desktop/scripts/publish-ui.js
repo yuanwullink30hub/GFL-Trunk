@@ -64,6 +64,19 @@ async function exists(url) {
   try { return (await fetch(`${url}?check=${Date.now()}`, { method: 'HEAD', cache: 'no-store' })).ok; } catch { return false; }
 }
 
+// The published manifest, read through the R2 API rather than the public domain: CI runners are datacenter
+// IPs, and the domain's bot protection answers them with 403. Verified against the pinned key; null when
+// there is none (or, unless `strict`, when it cannot be read).
+function publishedManifest({ strict = false } = {}) {
+  try {
+    const text = wrangler(['r2', 'object', 'get', `${bucket}/ui/latest.json`, '--pipe', '--jurisdiction', jurisdiction, '--remote']);
+    return verifySignedManifest(JSON.parse(text), UI_PUBLIC_KEY_PEM);
+  } catch (err) {
+    if (strict) throw err;
+    return null;
+  }
+}
+
 async function main() {
   const key = signingKey();
   if (!key) {
@@ -91,11 +104,16 @@ async function main() {
   const latestPath = path.join(STAGE, '..', 'ui-latest.json');
   fs.writeFileSync(latestPath, JSON.stringify(signed));
 
-  // What the server does not have yet (content-addressed: a known hash is the same file).
+  // What the server does not have yet (content-addressed: a known hash is the same file). Every file the
+  // published build names is on R2 (its manifest went up after them); anything else is asked of the domain.
   const byHash = new Map();
   for (const [rel, f] of Object.entries(manifest.files)) if (!byHash.has(f.sha256)) byHash.set(f.sha256, { rel, size: f.size });
+  const current = publishedManifest();
+  const stored = new Set(current ? Object.values(current.files).map((f) => f.sha256) : []);
   const missing = [];
-  for (const [hash, f] of byHash) if (!(await exists(`${PUBLIC_BASE}/files/${hash}`))) missing.push({ hash, ...f });
+  for (const [hash, f] of byHash) {
+    if (!stored.has(hash) && !(await exists(`${PUBLIC_BASE}/files/${hash}`))) missing.push({ hash, ...f });
+  }
   const bytes = missing.reduce((n, f) => n + f.size, 0);
   console.log(`UI build ${manifest.buildId} (commit ${manifest.commit}, shell API ${manifest.requiresApi}): ${byHash.size} files, ${missing.length} new (${(bytes / 1e6).toFixed(1)} MB) → R2 "${bucket}" (${jurisdiction}) ui/`);
   if (!confirm) { console.log('Dry run — signed and verified, nothing uploaded. Add --confirm to publish.'); return; }
@@ -110,12 +128,18 @@ async function main() {
   wrangler(['r2', 'object', 'put', `${bucket}/ui/latest.json`, '--file', latestPath,
     '--content-type', 'application/json', '--cache-control', 'no-cache', '--jurisdiction', jurisdiction, '--remote']);
 
-  // Check what an app actually gets.
-  const res = await fetch(`${PUBLIC_BASE}/latest.json`, { cache: 'no-store' });
-  const live = res.ok ? await res.json() : null;
-  const served = live ? verifySignedManifest(live, UI_PUBLIC_KEY_PEM) : null;
-  if (!served || served.buildId !== manifest.buildId) throw new Error(`latest.json on the server is not this build (${served ? served.buildId : `HTTP ${res.status}`})`);
-  for (const f of missing) if (!(await exists(`${PUBLIC_BASE}/files/${f.hash}`))) throw new Error(`${f.rel} is not served`);
+  // Check what R2 holds, then what an app actually gets — the latter only where the domain answers us
+  // (from CI it refuses the runner, so there R2 is the check).
+  const held = publishedManifest({ strict: true });
+  if (held.buildId !== manifest.buildId) throw new Error(`latest.json on R2 is not this build (${held.buildId})`);
+  const res = await fetch(`${PUBLIC_BASE}/latest.json?check=${Date.now()}`, { cache: 'no-store' });
+  if (res.status === 403 && ci) {
+    console.log('(the download domain refuses CI runners with 403 — checked on R2 instead)');
+  } else {
+    const served = res.ok ? verifySignedManifest(await res.json(), UI_PUBLIC_KEY_PEM) : null;
+    if (!served || served.buildId !== manifest.buildId) throw new Error(`latest.json on the server is not this build (${served ? served.buildId : `HTTP ${res.status}`})`);
+    for (const f of missing) if (!(await exists(`${PUBLIC_BASE}/files/${f.hash}`))) throw new Error(`${f.rel} is not served`);
+  }
   console.log(`✓ published — installed apps pick up ${manifest.buildId} at their next start`);
 }
 

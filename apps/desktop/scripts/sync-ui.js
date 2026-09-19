@@ -34,7 +34,10 @@ function gitCommit() {
   try {
     const opts = { cwd: DESKTOP, stdio: ['ignore', 'pipe', 'ignore'] };
     const sha = execSync('git rev-parse --short HEAD', opts).toString().trim() || 'unknown';
-    const dirty = execSync('git status --porcelain --untracked-files=no', opts).toString().trim() !== '';
+    // Content-based: `git status` also flags files that only differ in line endings (a CRLF Windows
+    // checkout after a build step rewrote them as LF), which would label a clean build dirty.
+    let dirty = false;
+    try { execSync('git diff --quiet HEAD --', opts); } catch { dirty = true; }
     return dirty ? `${sha}-dirty` : sha;
   } catch { return 'unknown'; }
 }

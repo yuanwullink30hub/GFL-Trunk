@@ -321,6 +321,9 @@ const AssessmentResultsModal = ({
   // generator reads them synchronously without a re-render race.
   const sealedOrbCodeRef = useRef('');
   const orbCodeRef = useRef('');
+  // The profile card's copy, signed by the server for this report's code ({ giftMicro, geomSummary, sig }):
+  // the unlocked PDF prints it in its data block, and the claim reads it back from the upload.
+  const kaartRef = useRef(null);
   const [uploadedOceanScores, setUploadedOceanScores] = useState(null);
   const [aiReady, setAiReady] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
@@ -475,7 +478,7 @@ const AssessmentResultsModal = ({
         const __replay = (typeof window !== 'undefined' && window.__GFL_PDF_REPLAY) || null;
         let aiResult;
         if (__replay) {
-          aiResult = { analysis: __replay.analysis, cRuntime: __replay.cRuntime, enginePayload: __replay.enginePayload, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode };
+          aiResult = { analysis: __replay.analysis, cRuntime: __replay.cRuntime, enginePayload: __replay.enginePayload, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode, kaart: __replay.kaart };
         } else {
         aiResult = await analyzeAssessment({
           archetypeKey: result.mainArchetype,
@@ -534,6 +537,7 @@ const AssessmentResultsModal = ({
         if (aiResult.cRuntime) setCRuntime(aiResult.cRuntime);
         setEnginePayload(aiResult.enginePayload || null);
         sealedOrbCodeRef.current = aiResult.sealedOrbCode || ''; // opaque until unlock
+        kaartRef.current = aiResult.kaart || null;
         orbCodeRef.current = '';
         // The report reader: sections for the card and the PDF, plus a ledger that accounts for every
         // line of the model's text (placed, or discarded by a named rule) — logged, so nothing is
@@ -576,7 +580,7 @@ const AssessmentResultsModal = ({
             localStorage.setItem('gfl_pdf_replay', JSON.stringify({
               layerAnswers, liveSubjects,
               analysis: aiResult.analysis, cRuntime: aiResult.cRuntime, enginePayload: aiResult.enginePayload,
-              uploadedOceanScores: aiResult.uploadedOceanScores, sealedOrbCode: aiResult.sealedOrbCode,
+              uploadedOceanScores: aiResult.uploadedOceanScores, sealedOrbCode: aiResult.sealedOrbCode, kaart: aiResult.kaart,
               savedAt: Date.now(),
             }));
           }
@@ -3289,13 +3293,26 @@ const AssessmentResultsModal = ({
         mLine(`${t('resultsModal.pdf.data.levensles')}: "${result.levensles || t('resultsModal.pdf.data.notAvailable')}"`);
         mGap();
 
-        // Kaart Microcopy is deliberately NOT written into the PDF. The backend strips
-        // KAART_GIFT / KAART_GEOMETRIE out of the analysis before it reaches this client
-        // (routes/ai.js) and parks them server-side in kaartDrafts, keyed by the code's
-        // hash, so the card copy provably came from our model and cannot be forged by
-        // editing the report. It is merged into the account when the code is claimed.
-        // Older PDFs still carry CGIFT::/CGEO:: markers; readingExtract.js reads those as
-        // a legacy fallback, and the server-held draft wins whenever both exist.
+        // The profile card's copy — it travels to the account in this PDF (owner, 2026-09-19). Readable,
+        // then base64-marked like ORB::/ARCH:: so the upload recovers it through line wraps, with the
+        // server's signature: a claim keeps the copy only when that holds (backend cardSignature.js).
+        // Printed AFTER the extended block: the upload takes the first "Gift:" / "Levensles:" in the text,
+        // so card copy that happens to contain those words can never take over the reading's own fields.
+        const kaart = kaartRef.current;
+        if (orbCodeRef.current && kaart && kaart.sig && (kaart.giftMicro || kaart.geomSummary)) {
+          const cardLines = (text, color) => {
+            pdf.setFontSize(mono); pdf.setFont('courier', 'normal'); pdf.setTextColor(...color);
+            pdf.splitTextToSize(String(text), contentW).forEach((l) => { ensureSpace(monoH); pdf.text(l, margin, y); y += monoH; });
+          };
+          const b64 = (s) => { try { return btoa(unescape(encodeURIComponent(s))); } catch (_) { return ''; } };
+          mBold(dash(t('resultsModal.pdf.data.cardSection')), green);
+          if (kaart.giftMicro) cardLines(`${t('resultsModal.pdf.data.cardGift')}: ${kaart.giftMicro}`, white);
+          if (kaart.geomSummary) cardLines(`${t('resultsModal.pdf.data.cardGeometry')}: ${kaart.geomSummary}`, white);
+          if (kaart.giftMicro) cardLines(`CGIFT::${b64(kaart.giftMicro)}::CGIFT`, dimWhite);
+          if (kaart.geomSummary) cardLines(`CGEO::${b64(kaart.geomSummary)}::CGEO`, dimWhite);
+          cardLines(`CSIG::${kaart.sig}::CSIG`, dimWhite);
+          mGap();
+        }
 
         // Master Prompt v4.1 §5.10: dead v3 fields removed (MAIN ARCHETYPE DIEPTE block).
         // Facts only, per the machine-block template: the archetype and where it sits on the wheel.

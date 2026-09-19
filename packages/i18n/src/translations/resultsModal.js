@@ -805,6 +805,9 @@ export default {
           en: 'for external AI agents. Upload the full report as an attachment.',
         },
         orbSection: { nl: 'ORB-SIGNATUUR (LOGIN-CODE)', en: 'ORB SIGNATURE (LOGIN CODE)' },
+        cardSection: { nl: 'PROFIELKAART (TEKST, ONDERTEKEND)', en: 'PROFILE CARD (TEXT, SIGNED)' },
+        cardGift: { nl: 'Gave in de diepte', en: 'The gift, in depth' },
+        cardGeometry: { nl: 'Geometrie', en: 'Geometry' },
 
         identitySection: { nl: 'IDENTITEIT', en: 'IDENTITY' },
         extendedArchetype: { nl: 'Extended Archetype', en: 'Extended Archetype' },

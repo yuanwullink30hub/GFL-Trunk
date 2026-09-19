@@ -747,6 +747,58 @@ test('Kaart microcopy — requested by a hook on the engine pipeline, lifted out
   assert.equal(eng.geomSummary, 'v.');
 });
 
+test('Kaart microcopy — travels in the PDF, signed; edited or unsigned copy never reaches the card', () => {
+  const config = require('../../config');
+  if (!config.jwtSecret) config.jwtSecret = 'gate-test-secret';
+  const { signCard, readingForClaim } = require('../../services/cardSignature');
+  const { extractReading } = require('../../services/readingExtract');
+  const { hash } = require('../../services/encryption');
+  const codeHash = hash('LC_ORB3_gateTestCodeAAAAAAAAAAAAAAAAAAAAAA');
+  const gave = 'Jouw gave is dat je doet wat klopt — ook als niemand het vraagt, en ook als het schuurt.';
+  const vorm = 'Je kracht zit in je eigen koers; je tweede energie geeft die koers een lichaam.';
+  const sig = signCard(codeHash, { giftMicro: gave, geomSummary: vorm });
+  const b64 = (s) => Buffer.from(s, 'utf8').toString('base64');
+
+  // the data page as the upload's text layer delivers it: the markers wrapped at arbitrary points
+  const wrap = (s) => s.match(/.{1,37}/g).join('\n');
+  const page = [
+    '-- PROFIELKAART (TEKST, ONDERTEKEND) --', `Gave in de diepte: ${gave}`, `Geometrie: ${vorm}`,
+    wrap(`CGIFT::${b64(gave)}::CGIFT`), wrap(`CGEO::${b64(vorm)}::CGEO`), wrap(`CSIG::${sig}::CSIG`),
+  ].join('\n');
+  const reading = extractReading(page);
+  assert.equal(reading.giftMicro, gave);
+  assert.equal(reading.geomSummary, vorm);
+  assert.equal(reading.cardSig, sig);
+  assert.ok(!('gift' in reading), 'the card labels are not read as the extended block\'s Gift:');
+
+  // the claim keeps the copy — and never stores the signature
+  const kept = readingForClaim(codeHash, reading);
+  assert.equal(kept.giftMicro, gave);
+  assert.equal(kept.geomSummary, vorm);
+  assert.ok(!('cardSig' in kept));
+
+  // edited copy, another code, a missing or malformed signature: the copy is dropped, the rest stays
+  const withLesson = { ...reading, levensles: 'x' };
+  assert.deepEqual(readingForClaim(codeHash, { ...withLesson, giftMicro: `${gave} Bezoek mijn site.` }), { levensles: 'x' });
+  assert.deepEqual(readingForClaim(hash('LC_ORB3_anotherCodeBBBBBBBBBBBBBBBBBBBBBB'), withLesson), { levensles: 'x' });
+  assert.deepEqual(readingForClaim(codeHash, { ...withLesson, cardSig: undefined }), { levensles: 'x' });
+  assert.deepEqual(readingForClaim(codeHash, { ...withLesson, cardSig: 'f'.repeat(63) }), { levensles: 'x' });
+  assert.equal(readingForClaim('', reading), null, 'no code, no card copy');
+
+  // a server-held draft — reports generated before the copy moved into the PDF — still wins
+  assert.equal(readingForClaim(codeHash, { levensles: 'x' }, { giftMicro: 'uit de draft' }).giftMicro, 'uit de draft');
+
+  // the card block prints after the extended block: card copy that contains "Gift:" can't take over the gift
+  const tricky = 'Gift: an eye for what holds.';
+  const full = extractReading([
+    'Gift: Gedisciplineerde kracht zonder meester.', 'Curse / Trigger: Moreel verraad.', 'Levensles: "Echt bestuur is nooit smetteloos."', '',
+    '-- PROFILE CARD (TEXT, SIGNED) --', `The gift, in depth: ${tricky}`, `CGIFT::${b64(tricky)}::CGIFT`,
+  ].join('\n'));
+  assert.equal(full.gift, 'Gedisciplineerde kracht zonder meester.');
+  assert.equal(full.levensles, 'Echt bestuur is nooit smetteloos.');
+  assert.equal(full.giftMicro, tricky);
+});
+
 test('Report reader — heading drift never loses or misplaces a section, and every line is accounted for', async () => {
   const R = await import('../../../platform/src/components/assessment/reportReader.js');
   const P = await import('../../../platform/src/components/assessment/v4Parser.js');

@@ -114,6 +114,8 @@ async function connectDB() {
   // a report claimed a year later must still be able to fill its card. The draft is
   // pseudonymous until claimed (a hash plus two paragraphs, no user reference), which
   // is what makes indefinite retention proportionate here.
+  // No new drafts since 2026-09-19: the card copy now travels in the report PDF, signed
+  // (services/cardSignature.js). This collection only holds drafts of older reports.
   await db.collection('kaartDrafts').createIndex({ codeHash: 1 }, { unique: true });
   await dropIndexes('kaartDrafts', ['kaartDrafts_ttl_90d'], { key: 'at' });
 

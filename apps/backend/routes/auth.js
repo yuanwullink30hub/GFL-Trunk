@@ -17,7 +17,7 @@ const { collections, getDB, nameKey } = require('../db');
 const { authRequired } = require('../middleware/auth');
 const { encrypt, decrypt, hash, decryptUser } = require('../services/encryption');
 const { decodeOrb3 } = require('@gfl/orb-engine');
-const { sanitizeReading } = require('../services/readingExtract');
+const { readingForClaim } = require('../services/cardSignature');
 const { isCodeBlocked, isCodeActivatable, visibleHistory, BLOCKED_MESSAGE, NOT_UNLOCKED_MESSAGE } = require('../services/reportAccess');
 
 // Email verification is ENFORCED only when SMTP is configured (so local dev without mail still
@@ -310,15 +310,12 @@ router.post('/register', async (req, res) => {
     const publicOrb = publicOrbFromCode(orbCode);
     // First crystal-timeline entry (the account's initial code). Later codes are appended via /link.
     // Extraction fields (main/support archetype + shape vector) ride along, allowlist-sanitized.
-    // The server-authored kaart-microcopy draft (stored at generation, keyed by code hash) is
-    // merged in — those fields never travel through the client.
+    // The card copy comes from the report PDF too, signed by the server at generation: it is kept
+    // only when the signature holds for this code (services/cardSignature.js). A server-held draft
+    // — reports generated before the copy moved into the PDF — still wins.
     let kaartDraft = null;
     if (hasOrbCode) { try { kaartDraft = await collections.kaartDrafts().findOne({ codeHash: orbCodeHash }); } catch { /* ignore */ } }
-    const registerReading = sanitizeReading({
-      ...(reading || {}),
-      ...(kaartDraft && kaartDraft.giftMicro ? { giftMicro: kaartDraft.giftMicro } : {}),
-      ...(kaartDraft && kaartDraft.geomSummary ? { geomSummary: kaartDraft.geomSummary } : {}),
-    });
+    const registerReading = readingForClaim(hasOrbCode ? orbCodeHash : '', reading, kaartDraft);
     const historyEntry = hasOrbCode ? { codeHash: orbCodeHash, orb: publicOrb, archetypeName: archetypeName ? String(archetypeName) : '', at: now, ...(registerReading || {}) } : null;
     // Email verification: when SMTP is configured the account starts UNVERIFIED (login blocked
     // until the emailed link is clicked); without SMTP it's created pre-verified so dev still works.

@@ -69,11 +69,13 @@ function extractReading(text) {
 
   // AI-authored card fields (KAART MICROCOPY block) — base64-marked like ORB::/ARCH::
   // so they survive PDF text-layer line wrapping. giftMicro = in-depth gift description;
-  // geomSummary = geometry summary in canon language.
+  // geomSummary = geometry summary in canon language. CSIG = the server's signature over both
+  // (services/cardSignature.js): a claim keeps the copy only when it holds.
   const strippedT = t.replace(/\s+/g, '');
   const b64utf8 = (b) => { try { return Buffer.from(b, 'base64').toString('utf8'); } catch { return ''; } };
   const giftMicroM = strippedT.match(/CGIFT::([A-Za-z0-9+/=]+)::CGIFT/);
   const geomM = strippedT.match(/CGEO::([A-Za-z0-9+/=]+)::CGEO/);
+  const sigM = strippedT.match(/CSIG::([0-9a-f]{64})::CSIG/);
 
   const out = {};
   if (main) out.archetypeMainId = cleanName(main[1]);
@@ -85,6 +87,7 @@ function extractReading(text) {
   if (curse) out.curse = cleanText(curse[1], 300);
   if (giftMicroM) { const v = cleanText(b64utf8(giftMicroM[1]), 800); if (v) out.giftMicro = v; }
   if (geomM) { const v = cleanText(b64utf8(geomM[1]), 1500); if (v) out.geomSummary = v; }
+  if (sigM) out.cardSig = sigM[1];
   return Object.keys(out).length ? out : null;
 }
 
@@ -112,15 +115,17 @@ function sanitizeReading(r) {
   if (r.curse) out.curse = cleanText(r.curse, 300);
   if (r.giftMicro) out.giftMicro = cleanText(r.giftMicro, 800);
   if (r.geomSummary) out.geomSummary = cleanText(r.geomSummary, 1500);
+  if (typeof r.cardSig === 'string' && /^[0-9a-f]{64}$/.test(r.cardSig)) out.cardSig = r.cardSig;
   return Object.keys(out).length ? out : null;
 }
 
 /**
  * Kaart Microcopy — server-side extraction at GENERATION time (ai.js).
  * Pulls KAART_GIFT / KAART_GEOMETRIE out of the model's analysis and returns the
- * analysis with the section REMOVED, so the result card / report PDF never see it.
- * The fields are stashed keyed by the orb code's hash and merged into the reading's
- * orbHistory entry when the code is claimed (register / orb-link).
+ * analysis with the section REMOVED, so the report text never shows it. ai.js signs the
+ * fields (services/cardSignature.js) and hands them to the client beside the analysis; the
+ * report PDF prints them in its data block (CGIFT::/CGEO::/CSIG::) and a claim reads them
+ * back from the uploaded PDF (extractReading above).
  */
 function extractKaartSection(text) {
   const t = String(text || '');

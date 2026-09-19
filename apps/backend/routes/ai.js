@@ -571,10 +571,12 @@ router.post('/analyze', analyzePerVisitor, analyzeBudget, async (req, res) => {
 
     console.log(`[AI] ✅ Analysis complete: provider=${result.provider}, model=${result.model}, tokens=${result.completionTokens}`);
 
-    // ── Kaart Microcopy: extract the profile-card fields SERVER-SIDE and DISCARD them from
-    // the analysis before it reaches the client — the result card / report PDF never see
-    // them. Stored as a draft keyed by the orb code's hash; register / orb-link merge it
-    // into the reading's orbHistory entry when the code is claimed. ──
+    // ── Kaart Microcopy: lift the profile-card fields out of the analysis (the report text never
+    // shows them), SIGN them for this code and hand them to the client beside the analysis. The
+    // report PDF prints them in its data block; a claim reads them back from the uploaded PDF and
+    // keeps them only when the signature holds (services/cardSignature.js). Nothing of them is
+    // stored here (owner, 2026-09-19). ──
+    let kaartCard = null;
     try {
       if (result && typeof result.analysis === 'string') {
         const { extractKaartSection } = require('../services/readingExtract');
@@ -582,14 +584,10 @@ router.post('/analyze', analyzePerVisitor, analyzeBudget, async (req, res) => {
         result.analysis = kaart.cleaned;
         if (orbCode && (kaart.giftMicro || kaart.geomSummary)) {
           const { hash } = require('../services/encryption');
-          await getDB().collection('kaartDrafts').updateOne(
-            { codeHash: hash(orbCode) },
-            // sealed: true — authored under the sealed-code model, so the nightly sweep may delete
-            // it when the report is never unlocked (server.js). Beta drafts lack the flag and stay.
-            { $set: { ...(kaart.giftMicro ? { giftMicro: kaart.giftMicro } : {}), ...(kaart.geomSummary ? { geomSummary: kaart.geomSummary } : {}), at: new Date(), sealed: true } },
-            { upsert: true }
-          );
-          console.log('[AI] kaart-microcopy extracted → draft stored (gift:', !!kaart.giftMicro, '| geometrie:', !!kaart.geomSummary, ')');
+          const { signCard } = require('../services/cardSignature');
+          const fields = { giftMicro: kaart.giftMicro || '', geomSummary: kaart.geomSummary || '' };
+          kaartCard = { ...fields, sig: signCard(hash(orbCode), fields) };
+          console.log('[AI] kaart-microcopy extracted → signed, travels in the PDF (gift:', !!kaart.giftMicro, '| geometrie:', !!kaart.geomSummary, ')');
         } else if (!kaart.giftMicro && !kaart.geomSummary) {
           console.warn('[AI] ⚠ kaart-microcopy MISSING from model output (card falls back to levensles/placeholder)');
         }
@@ -616,6 +614,8 @@ router.post('/analyze', analyzePerVisitor, analyzeBudget, async (req, res) => {
       // SEALED (services/sealedCode.js): the browser cannot read it. The raw code is handed over
       // only when the full report is unlocked (payment or activation code). '' when geometry incomplete.
       sealedOrbCode: orbCode ? sealCode(orbCode) : '',
+      // The profile card's copy, signed for this code — printed in the unlocked PDF's data block.
+      kaart: kaartCard,
       analysis: result.analysis,
     });
 

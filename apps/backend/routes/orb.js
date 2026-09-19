@@ -6,7 +6,8 @@ const { authRequired } = require('../middleware/auth');
 const { hash, decrypt } = require('../services/encryption');
 const { signToken } = require('./auth');
 const { decodeOrb3 } = require('@gfl/orb-engine');
-const { extractReading, sanitizeReading } = require('../services/readingExtract');
+const { extractReading } = require('../services/readingExtract');
+const { readingForClaim } = require('../services/cardSignature');
 const { isCodeBlocked, isCodeActivatable, visibleHistory, BLOCKED_MESSAGE, NOT_UNLOCKED_MESSAGE } = require('../services/reportAccess');
 
 // ── Access model (spec 2026-07-07): every code grants ACCESS_MONTHS of platform access,
@@ -123,15 +124,12 @@ router.post('/link', authRequired, async (req, res) => {
     if (await isCodeBlocked(codeHash)) {
       return res.status(403).json({ error: BLOCKED_MESSAGE, refunded: true });
     }
-    // Server-authored kaart-microcopy draft (stored at generation, keyed by code hash) rides
-    // along with whatever the PDF extraction delivered — the draft wins (it never left the server).
+    // The reading the PDF extraction delivered, allowlist-sanitized. Its card copy is kept only when
+    // the server's signature holds for this code (services/cardSignature.js); a server-held draft —
+    // reports generated before the copy moved into the PDF — still wins.
     let kaartDraft = null;
     try { kaartDraft = await collections.kaartDrafts().findOne({ codeHash }); } catch { /* ignore */ }
-    const cleanReading = sanitizeReading({
-      ...(reading || {}),
-      ...(kaartDraft && kaartDraft.giftMicro ? { giftMicro: kaartDraft.giftMicro } : {}),
-      ...(kaartDraft && kaartDraft.geomSummary ? { geomSummary: kaartDraft.geomSummary } : {}),
-    });
+    const cleanReading = readingForClaim(codeHash, reading, kaartDraft);
 
     // ── Upload gate: a NEW code can only be attached UPLOAD_GATE_MONTHS after the previous
     // one (idempotent re-links of an owned code bypass this — handled below). Server-side

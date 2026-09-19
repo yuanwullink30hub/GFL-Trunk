@@ -87,16 +87,31 @@ export function HoloKeyframes() {
   );
 }
 
-/** HUD corner pair: purple top-left, orange bottom-right (tokens cornerAccents: 10px, -1px, 2px). */
-export function HoloCorners() {
-  const base = { position: 'absolute', width: '10px', height: '10px', pointerEvents: 'none', zIndex: 3 };
+/** HUD corner pair: purple top-left, orange bottom-right. Cards use tokens cornerAccents (10px, -1px, 2px);
+ *  `frame` uses cornerBrackets.sectorFrame (1rem, -0.125rem, 1.5px, 10px on the outer corner) for the shell. */
+export function HoloCorners({ frame = false }) {
+  const size = frame ? '1rem' : '10px';
+  const off = frame ? '-0.125rem' : '-1px';
+  const w = frame ? '1.5px' : '2px';
+  const base = { position: 'absolute', width: size, height: size, pointerEvents: 'none', zIndex: 3 };
   return (
     <>
-      <div style={{ ...base, top: -1, left: -1, borderTop: `2px solid ${PURPLE}`, borderLeft: `2px solid ${PURPLE}` }} />
-      <div style={{ ...base, bottom: -1, right: -1, borderBottom: `2px solid ${ORANGE}`, borderRight: `2px solid ${ORANGE}` }} />
+      <div style={{ ...base, top: off, left: off, borderTop: `${w} solid ${PURPLE}`, borderLeft: `${w} solid ${PURPLE}`, ...(frame ? { borderTopLeftRadius: '10px' } : {}) }} />
+      <div style={{ ...base, bottom: off, right: off, borderBottom: `${w} solid ${ORANGE}`, borderRight: `${w} solid ${ORANGE}`, ...(frame ? { borderBottomRightRadius: '10px' } : {}) }} />
     </>
   );
 }
+
+/** The dashboard shell: glass panel with the sector shadow and a purple interior tint (tokens components.panel). */
+export const HOLO_PANEL = {
+  backgroundColor: 'rgba(2, 0, 3, 0.3)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  border: `1px solid rgba(${P}, 0.2)`,
+  borderRadius: '0.5rem',
+  boxShadow: `0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(${P}, 0.06), inset 0 0 30px rgba(${P}, 0.03)`,
+  overflow: 'hidden',
+};
 
 /** The holographic sweep across a KPI tile. The parent needs position:relative + overflow:hidden. */
 export function HoloSheen() {

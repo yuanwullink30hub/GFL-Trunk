@@ -55,7 +55,7 @@ import CreditNoteTemplate from './CreditNoteTemplate';
 import EmailTemplate from './EmailTemplate';
 import {
   HoloKeyframes, HoloCorners, HoloTab, HoloClock, BrandMark, StatusDot, KpiTile, holoCardStyle,
-  HOLO_PAGE_BG, HOLO_PAGE_BG_SIZE, HOLO_BAR, HOLO_TABLE_HEAD, CHROME, gradientText, TITLE_GRADIENT, PURPLE,
+  HOLO_PAGE_BG, HOLO_PAGE_BG_SIZE, HOLO_BAR, HOLO_PANEL, HOLO_TABLE_HEAD, CHROME, gradientText, TITLE_GRADIENT, PURPLE,
 } from './holo';
 
 // ── Responsive context ──
@@ -182,6 +182,25 @@ function DashboardCard({ children, title, color = 'gold', className, style = {} 
 }
 
 
+/** A tab that throws while rendering shows its error in place instead of unmounting the whole dashboard.
+ *  Keyed by the tab, so switching tabs starts clean. */
+class TabBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  componentDidCatch(error) {
+    console.error('[admin] tab crashed:', error);
+  }
+  render() {
+    if (this.state.error) return <ErrorBox msg={String(this.state.error?.message || this.state.error)} />;
+    return this.props.children;
+  }
+}
+
 /**
  * Admin Dashboard — HoloPro skin (holo.jsx), in our tokens
  *
@@ -275,21 +294,31 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
     desktopTabs[10],
   ];
   const activeMobileTab = mobileTabs.find(mt => mt.key === tab) || mobileTabs[0];
-  // Header and footer line up with the content column (max 1600px, centred, ds.contentPad inside it).
-  const gutter = `calc(max(0px, (100% - 1600px) / 2) + ${ds.contentPad})`;
+  // Header, content and footer share one side gutter; the shell itself caps the width (75% of the window).
+  const gutter = ds.contentPad;
   const today = new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <MobileCtx.Provider value={isMobile}>
     <DashSizeCtx.Provider value={ds}>
     <HoloKeyframes />
-    {/* The page — void, cyber grid and ambient glows; header and footer fixed, the middle scrolls */}
+    {/* The page — void, cyber grid and ambient glows — with the shell centred on it: 75% of the window
+        from tablet up (owner, 2026-09-19), the whole screen on a phone. Inside the shell the header and
+        footer stay put and the middle scrolls. */}
     <div style={{
       position: 'fixed', inset: 0,
-      display: 'flex', flexDirection: 'column',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
       backgroundColor: '#0a0510',
       backgroundImage: HOLO_PAGE_BG,
       backgroundSize: HOLO_PAGE_BG_SIZE,
+    }}>
+    <div style={{ position: 'relative', width: isMobile ? '100%' : '75vw', height: isMobile ? '100%' : '75vh' }}>
+    {!isMobile && <HoloCorners frame />}
+    <div style={{
+      ...HOLO_PANEL,
+      ...(isMobile ? { border: 'none', borderRadius: 0 } : {}),
+      height: '100%',
+      display: 'flex', flexDirection: 'column',
       color: C.text,
       fontFamily: FONT,
       fontSize: 'max(12px, 0.65vw)',
@@ -376,7 +405,6 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
         ...(isMobile ? { overflowX: 'hidden' } : {}),
       }}>
         <div style={{
-          maxWidth: '1600px', margin: '0 auto',
           padding: ds.contentPad,
           display: 'flex', flexDirection: 'column', gap: ds.contentGap,
           ...(isMobile ? { maxWidth: '100%', wordBreak: 'break-word' } : {}),
@@ -405,7 +433,8 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
             </div>
           )}
 
-          {/* ── Tab content ── */}
+          {/* ── Tab content — a tab that throws shows its error here; header and tabs stay usable ── */}
+          <TabBoundary key={tab}>
           {tab === 'overview' && <OverviewTab user={user} />}
           {tab === 'users' && <UsersTab currentUserId={user.id} />}
           {tab === 'assessments' && <AssessmentsTab adminEmail={user?.email} />}
@@ -417,6 +446,7 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
           {tab === 'paymentRecords' && <PaymentRecordsTab />}
           {tab === 'audit' && <AuditLogTab />}
           {tab === 'contact' && <ContactTab />}
+          </TabBoundary>
         </div>
       </main>
 
@@ -437,6 +467,8 @@ const AdminDashboardModal = memo(({ user, onLogout }) => {
           {t('admin.dashboard.overview.rowSession')}: <span style={{ color: '#4ade80' }}>{t('admin.dashboard.overview.sessionActive')}</span>
         </span>
       </footer>
+    </div>
+    </div>
     </div>
     </DashSizeCtx.Provider>
     </MobileCtx.Provider>
@@ -2521,7 +2553,7 @@ const FeedbackEmailSettingsCard = memo(() => {
 FeedbackEmailSettingsCard.displayName = 'FeedbackEmailSettingsCard';
 
 const ContactTab = memo(() => {
-  const { t, tFunc } = useLanguage();
+  const { t, tFunc, language } = useLanguage();
   const [requests, setRequests] = useState(() => {
     try { return JSON.parse(localStorage.getItem(CONTACT_REQUESTS_KEY) || '[]'); } catch { return []; }
   });
@@ -2535,10 +2567,20 @@ const ContactTab = memo(() => {
 
   const tc = CARD_COLORS.gold;
 
-  /* Load brand with any saved edits */
+  /* Load brand with any saved edits. The brand copy is bilingual ({ nl, en }, packages/brands) — rendering
+     the object itself crashed the whole dashboard — so each text field resolves to the active language;
+     saved edits are plain strings and pass through. */
+  const inLang = (v) => (v && typeof v === 'object' ? (v[language] ?? v.en ?? v.nl ?? '') : v);
   const getBrand = (brand) => {
     const saved = edits[brand.id];
-    return saved ? { ...brand, ...saved } : brand;
+    const b = saved ? { ...brand, ...saved } : brand;
+    return {
+      ...b,
+      name: inLang(b.name),
+      tagline: inLang(b.tagline),
+      description: inLang(b.description),
+      tags: Array.isArray(b.tags) ? b.tags.map(inLang) : b.tags,
+    };
   };
 
   /* Start editing a brand */
@@ -2668,7 +2710,7 @@ const ContactTab = memo(() => {
                     /* Edit mode */
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <div style={{ fontSize: 'max(9px, 0.45vw)', color: C.gold, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                        {tFunc('admin.dashboard.contact.editHeading')(brand.name)}
+                        {tFunc('admin.dashboard.contact.editHeading')(b.name)}
                       </div>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         <div style={{ flex: 1 }}>

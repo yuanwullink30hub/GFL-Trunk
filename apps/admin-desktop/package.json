@@ -1,6 +1,6 @@
 {
   "name": "@gfl/admin-desktop",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "Admin GFL — the management app (apps/admin) as a locked desktop app, installed only on the management computer",
   "main": "src/main.js",

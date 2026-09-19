@@ -132,7 +132,9 @@ export default function DesktopDownloadButton({ fullWidth = true, accent = 'oran
             onClick={() => setOpen((o) => !o)}
             onMouseEnter={() => setHovMenu(true)}
             onMouseLeave={() => setHovMenu(false)}
-            style={{ ...segment(hovMenu || open), flex: '1 1 auto', gap: '0.45rem' }}
+            // Plain: the two halves share the row evenly (same 0 basis); the platform half may give way
+            // (its label ellipsizes), the download half never shrinks below its own text.
+            style={{ ...segment(hovMenu || open), flex: prominent ? '1 1 auto' : '1 1 0', gap: '0.45rem' }}
           >
             <span style={{ display: 'inline-flex', flexShrink: 0 }}><Chevron open={open} /></span>
             <span style={{ minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t(`clientOrb.modal.workspace.download.short.${download.platform}`)}</span>
@@ -149,7 +151,9 @@ export default function DesktopDownloadButton({ fullWidth = true, accent = 'oran
             onMouseEnter={() => setHovMain(true)}
             onMouseLeave={() => setHovMain(false)}
             title={download.available ? download.fileName : undefined}
-            style={{ ...segment(hovMain), flex: prominent ? '0 0 auto' : 1, gap: '0.55rem', padding: prominent ? '0.95rem 1.2rem' : pad }}
+            // flex 1 alone gave this half a 0 basis against the platform half's full text width: squeezed
+            // below its own text, "APP DOWNLOADEN" ran under the icon and into the bracket.
+            style={{ ...segment(hovMain), flex: prominent ? '0 0 auto' : '1 1 0', minWidth: 'max-content', gap: '0.55rem', padding: prominent ? '0.95rem 1.2rem' : pad }}
           >
             <span style={{ minWidth: 0 }}>{t('clientOrb.modal.workspace.download.cta')}</span>
             <DownloadIcon />

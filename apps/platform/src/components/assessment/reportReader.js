@@ -552,6 +552,23 @@ function unaccountedLines(raw, sections, ledger) {
 }
 
 /**
+ * De Stille Stem's reads open their parts with run-in labels — "Hoe dat voelt: …", and in Motivatie
+ * "Werk: …", "Vrienden: …", "Intiem: …" (English: How that feels / Work / Friends / Intimate). Each
+ * becomes a subheading line (`### Label`) with its text as the paragraph below it, so the card and both
+ * PDFs draw it at the subheading level, in the section's colour, like every other subheading. A bold
+ * label ("**Werk:**") and the older full-stop form ("Vrienden. Zij zien…") are read the same way.
+ */
+const STILLE_LEAD_LABEL = /^\s*(?:\*\*)?\s*(Hoe dat voelt|Werk|Vrienden|Intiem|How (?:that|it) feels|Work|Friends|Intima(?:te|cy))\s*(?:\*\*)?\s*[:.]\s*(?:\*\*)?\s*(.*)$/i;
+export function liftStilleLabels(content) {
+  return String(content || '').split('\n').map((line) => {
+    const m = line.match(STILLE_LEAD_LABEL);
+    if (!m) return line;
+    const rest = m[2].trim();
+    return rest ? `### ${m[1]}\n\n${rest}` : `### ${m[1]}`;
+  }).join('\n');
+}
+
+/**
  * Read a whole report: sections for the card and the PDF, and the ledger that accounts for every
  * line — `recovered` (a lost first heading), `fuzzy` (a heading read through drift), `demoted` (a
  * heading kept as a subheading), `discarded` ({ rule, title, text }), `unaccounted` (should be empty).
@@ -561,6 +578,12 @@ export function readReport(analysisText) {
   const raw = String(analysisText || '');
   const sections = parseAiSections(stripKaartFields(raw, ledger), ledger) || [];
   ledger.unaccounted = unaccountedLines(raw, sections, ledger);
+  // After the accounting (which compares against the model's own lines): the Stille Stem run-in labels
+  // become subheadings.
+  for (const s of sections) {
+    const tag = matchNarrativeTag(s.title || '');
+    if (tag && /^stille_/.test(tag.slot)) s.content = liftStilleLabels(s.content);
+  }
   // What the renderer leaves out on purpose, on the ledger too (`byRenderer`), so the log shows the
   // whole story: the model's own machine block (the renderer prints its own), and the sections it
   // filters by title.

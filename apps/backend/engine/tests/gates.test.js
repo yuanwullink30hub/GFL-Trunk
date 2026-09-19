@@ -858,6 +858,26 @@ test('Report reader — heading drift never loses or misplaces a section, and ev
   assert.deepEqual(withBlock.ledger.unaccounted, []);
 });
 
+test('Report reader — De Stille Stem run-in labels become subheadings, and only there', async () => {
+  const R = await import('../../../platform/src/components/assessment/reportReader.js');
+  const text = [
+    '## DE STILLE STEM — REFLECTIE', 'Intro.', '', 'Hoe dat voelt: Je merkt het eerst in je lijf.', '',
+    '## DE STILLE STEM — MOTIVATIE', 'Intro.', '', 'Werk: In fase twee duw je harder.', '',
+    '**Vrienden:** Zij zien de eerste scheuren.', '', 'Intiem. Hier landt het oordeel.', '', 'Werkgevers zien het niet.', '',
+    '## DE IDENTITEIT', 'Werk: in een ander blok blijft dit gewone tekst.',
+  ].join('\n');
+  const { sections, ledger } = R.readReport(text);
+  const body = (re) => (sections.find((s) => re.test(s.title || '')) || {}).content || '';
+  assert.match(body(/REFLECTIE/), /^### Hoe dat voelt\n\nJe merkt het eerst in je lijf\.$/m);
+  const mot = body(/MOTIVATIE/);
+  for (const l of ['Werk', 'Vrienden', 'Intiem']) assert.match(mot, new RegExp(`^### ${l}$`, 'm'), `${l} is a subheading`);
+  assert.ok(mot.includes('Zij zien de eerste scheuren.') && mot.includes('Hier landt het oordeel.'), 'the text stays, below its label');
+  assert.ok(mot.includes('Werkgevers zien het niet.') && !/### Werkgevers/.test(mot), 'a word that only starts like a label stays text');
+  assert.ok(!/^###/m.test(body(/IDENTITEIT/)), 'outside De Stille Stem nothing is lifted');
+  assert.equal(ledger.unaccounted.length, 0, 'every line still accounted for');
+  assert.equal(R.liftStilleLabels('How that feels: tight.'), '### How that feels\n\ntight.', 'English label');
+});
+
 test('Request — the English title set handed to the model is exactly what the platform parser routes (W8)', async () => {
   const { buildUserMessage, EN_SECTION_TITLES } = require('../../prompts/advanced');
   const hooks = require('node:module').registerHooks({

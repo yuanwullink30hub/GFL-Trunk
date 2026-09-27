@@ -3,8 +3,7 @@ const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { collections } = require('../db');
 const { authRequired } = require('../middleware/auth');
-const { hash, decrypt } = require('../services/encryption');
-const { signToken } = require('./auth');
+const { hash } = require('../services/encryption');
 const { decodeOrb3 } = require('@gfl/orb-engine');
 const { extractReading } = require('../services/readingExtract');
 const { readingForClaim } = require('../services/cardSignature');
@@ -74,18 +73,24 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ error: BLOCKED_MESSAGE, refunded: true });
     }
 
-    // The code IS the login (product decision). A code already LINKED to an account →
-    // recognise it and issue a session (skip onboarding). An UNLINKED code (first-time) →
-    // { linked:false } so the client runs the account-creation onboarding.
+    // GATE (design intent, see this file's header): once a code is LINKED to an account, the account
+    // (email + password) is the credential — the raw code no longer opens a session here. The code is
+    // printed in the report PDF and is derivable from the public profile, so issuing a session from it
+    // would make it a PERMANENT bearer credential (account takeover). A linked code returns NO token;
+    // the client sends the user to email + password login (useLogin).
     try {
       const linked = await collections.orbCodes().findOne({ codeHash: hash(code) });
       if (linked) {
-        const u = await collections.users().findOne({ _id: new ObjectId(String(linked.userId)) });
+        const u = await collections.users().findOne(
+          { _id: new ObjectId(String(linked.userId)) },
+          { projection: { _id: 1 } }
+        );
         if (u) {
-          const email = decrypt(u.email);
-          const displayName = decrypt(u.displayName);
-          const token = signToken(u._id, email, u.role || 'client', { remember: req.body.remember === true });
-          return res.json({ code, archetypeName, reading, linked: true, token, user: { id: u._id, email, displayName, role: u.role || 'client', country: u.country || '', age: (u.age != null ? u.age : '') } });
+          return res.status(403).json({
+            error: 'Deze kristal-code is al aan een account gekoppeld. Log in met je e-mailadres en wachtwoord.',
+            linked: true,
+            useLogin: true,
+          });
         }
         // linked record but the user is gone → treat as unlinked (allow re-onboarding).
       }

@@ -69,6 +69,8 @@ export const OWNER_PROFILE = {
     ],
     oceanTitle: 'Mijn Big Five',
     oceanIntro: 'Ik heb mijn eigen Big Five-rapport meegegeven. Het model meet die traits niet; het vertaalt hoe mijn configuratie ze uitdrukt en legt de twee instrumenten naast elkaar — waar zeggen ze hetzelfde over mij, en waar niet.',
+    // Named so the numbers below are verifiable: they come from an outside instrument, not from us.
+    oceanSource: { text: 'De cijfers hieronder komen uit dat externe rapport, afgenomen en gerapporteerd door', name: 'persoonlijkheid.nl', url: 'https://www.persoonlijkheid.nl' },
     oceanNames: { O: 'Openheid', C: 'Consciëntieusheid', E: 'Extraversie', A: 'Meegaandheid', N: 'Neuroticisme' },
     aspectNames: {
       intellect: 'Intellect', aesthetic: 'Esthetische openheid', industriousness: 'IJver', orderliness: 'Ordelijkheid',
@@ -127,6 +129,7 @@ export const OWNER_PROFILE = {
     ],
     oceanTitle: 'My Big Five',
     oceanIntro: 'I added my own Big Five report. The model does not measure those traits; it translates how my configuration expresses them and sets the two instruments side by side — where do they say the same about me, and where not.',
+    oceanSource: { text: 'The figures below come from that outside report, administered and reported by', name: 'persoonlijkheid.nl', url: 'https://www.persoonlijkheid.nl' },
     oceanNames: { O: 'Openness', C: 'Conscientiousness', E: 'Extraversion', A: 'Agreeableness', N: 'Neuroticism' },
     aspectNames: {
       intellect: 'Intellect', aesthetic: 'Aesthetic openness', industriousness: 'Industriousness', orderliness: 'Orderliness',

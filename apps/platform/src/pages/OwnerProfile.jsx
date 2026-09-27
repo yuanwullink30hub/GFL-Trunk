@@ -69,6 +69,17 @@ export default function OwnerProfile() {
       {/* The Big Five, read through the configuration */}
       <h2 style={T.h2}>{P.oceanTitle}</h2>
       <p style={T.p}>{P.oceanIntro}</p>
+      {/* The instrument behind the numbers, named and linked: the Big Five values are an outside
+          measurement, and saying whose keeps them checkable rather than taken on trust. */}
+      {P.oceanSource && (
+        <p style={{ ...T.p, fontSize: SIZE.label, fontFamily: LEXEND, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255, 254, 240, 0.5)', marginTop: '-0.4rem', marginBottom: '1.2rem' }}>
+          {P.oceanSource.text}{' '}
+          <a href={P.oceanSource.url} target="_blank" rel="noopener noreferrer"
+            style={{ color: ORANGE, textDecoration: 'none', borderBottom: `1px solid ${ORANGE}66` }}>
+            {P.oceanSource.name}
+          </a>
+        </p>
+      )}
       {OWNER_OCEAN.map((trait) => (
         <div key={trait.key} style={{ marginBottom: '1.1rem' }}>
           <h3 style={T.h3}>{P.oceanNames[trait.key]} — {trait.value}</h3>

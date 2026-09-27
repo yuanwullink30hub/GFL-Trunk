@@ -114,7 +114,9 @@ test('size and count caps', () => {
   assert.equal(checkUploads([{ pdfBase64: b64(1000) }]), null);
   assert.equal(checkUploads(Array.from({ length: MAX_FILES + 1 }, () => ({ text: 'x' }))), 'too_many_files');
   assert.equal(checkUploads([{ pdfBase64: b64(MAX_FILE_BYTES + 10) }]), 'file_too_large');
-  assert.equal(checkUploads([{ pdfBase64: b64(3.5 * 1024 * 1024) }, { docxBase64: b64(3.5 * 1024 * 1024) }, { pdfBase64: b64(3.5 * 1024 * 1024) }]), 'uploads_too_large');
+  assert.equal(checkUploads([{ pdfBase64: b64(6 * 1024 * 1024) }, { docxBase64: b64(6 * 1024 * 1024) }, { pdfBase64: b64(6 * 1024 * 1024) }]), 'uploads_too_large');
+  // persoonlijkheid.nl's report (4.4 MB) is what most users upload. A 4 MB cap once refused it.
+  assert.equal(checkUploads([{ pdfBase64: b64(4637229) }]), null);
 });
 
 test('the parser child starts without a single secret', () => {
@@ -140,12 +142,12 @@ test('a flood of uploads is refused beyond the queue instead of spawning a proce
 
 test('/api/ai/analyze refuses oversized uploads with 413 before opening the stream', async () => {
   // The production limit for this route (server.js), so it is the route's own caps that answer.
-  const base = await h.serve([['/api/ai', require('../routes/ai')]], { jsonLimit: '12mb' });
+  const base = await h.serve([['/api/ai', require('../routes/ai')]], { jsonLimit: '22mb' });
   const url = `${base}/api/ai/analyze`;
   const tooMany = await h.post(url, { archetypeKey: 'OUTLAW', uploadedFileContents: [{ text: 'a' }, { text: 'b' }, { text: 'c' }, { text: 'd' }] });
   assert.equal(tooMany.status, 413);
   assert.equal(tooMany.body.error, 'too_many_files');
-  const big = Buffer.alloc(5 * 1024 * 1024).toString('base64');
+  const big = Buffer.alloc(11 * 1024 * 1024).toString('base64');
   const tooBig = await h.post(url, { archetypeKey: 'OUTLAW', uploadedFileContents: [{ name: 'r.pdf', pdfBase64: big }] });
   assert.equal(tooBig.status, 413);
   assert.equal(tooBig.body.error, 'file_too_large');

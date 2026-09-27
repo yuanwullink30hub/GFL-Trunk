@@ -610,7 +610,7 @@ export async function analyzeAssessment(params, onProgress) {
     const limited = limitedError(response, 'Er zijn het afgelopen uur al meerdere rapporten vanaf deze verbinding gemaakt. Probeer het over een uur opnieuw.');
     if (limited) throw limited;
     // 413: the upload caps (apps/backend/services/uploadParser.js) — the picker checks them too.
-    if (response.status === 413) throw new Error('Het geüploade bestand is te groot: maximaal 3 bestanden, samen 8 MB. Verwijder het of kies een kleiner bestand.');
+    if (response.status === 413) throw new Error('Het geüploade bestand is te groot: maximaal 3 bestanden van 10 MB, samen 15 MB. Verwijder het of kies een kleiner bestand.');
     const err = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(err.error || `API error ${response.status}`);
   }

@@ -5,8 +5,8 @@ import HoloOverlays from '../HoloOverlays';
 // The server's caps (apps/backend/services/uploadParser.js). It enforces them regardless; checking here
 // only means the person hears about it now, while they choose the file, rather than when the report fails.
 const MAX_FILES = 3;
-const MAX_FILE_BYTES = 4 * 1024 * 1024;
-const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 15 * 1024 * 1024;
 
 /**
  * AssessmentUpload - File upload screen shown after all questions

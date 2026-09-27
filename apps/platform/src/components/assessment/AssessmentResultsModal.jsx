@@ -348,6 +348,24 @@ const AssessmentResultsModal = ({
     const id = setTimeout(() => setAiOverdue(true), REPORT_ESTIMATE_MAX_MS);
     return () => clearTimeout(id);
   }, [aiReady, aiFailed, aiRetryCount]);
+
+  // Warm the PDF's print copy (~2.4 MB) while the report is being written (owner, 2026-09-27). It is
+  // fetched nowhere until the cover draws it, so without this the first thing "Download PDF" does is
+  // stall on it. Here the reader is already waiting minutes and the network is idle.
+  //
+  // rel=prefetch, not a hidden <img>: it warms the HTTP cache without decoding a 1854x2764 bitmap into
+  // memory, and the browser gives it the lowest priority, so it cannot compete with the card's own
+  // portrait. If the reader never downloads a PDF the fetch is wasted, which is why it is tied to the
+  // generation wait — only someone getting a report reaches it.
+  useEffect(() => {
+    if (aiReady || aiFailed || !portrait.printUrl) return undefined;
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.as = 'image';
+    link.href = portrait.printUrl;
+    document.head.appendChild(link);
+    return () => link.remove();
+  }, [aiReady, aiFailed, portrait.printUrl]);
   const [, setAiStage] = useState(0); // 0=waiting, 1=data sent, 2=AI done, 3=integrated
   const aiCalledRef = useRef(false);
   const onAiReadyRef = useRef(onAiReady);

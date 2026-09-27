@@ -8,8 +8,7 @@
 #                    Each runs against its own in-memory MongoDB with the real .env switched off; there are no
 #                    secrets here and none are needed. Node 22, as on Render.
 #
-# Moderate advisories do not fail the build. At the time of writing two remain, both in the Anthropic SDK's
-# Memory Tool, which the backend does not use (it calls messages.stream only).
+# Moderate advisories do not fail the build. At the time of writing there are none.
 name: Security
 
 on:

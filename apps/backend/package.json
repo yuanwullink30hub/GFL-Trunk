@@ -11,7 +11,7 @@
     "test:security": "node --test \"tests/*.test.js\""
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.79.0",
+    "@anthropic-ai/sdk": "^0.128.0",
     "@cloudflare/blindrsa-ts": "^0.4.6",
     "@gfl/orb-engine": "workspace:*",
     "@zxcvbn-ts/core": "^4.2.0",

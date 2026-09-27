@@ -209,7 +209,10 @@ const LoginFrame = ({ title, children, topRight, topLeft, style }) => {
 
 /* ═══════════════════════════════════════════════════ */
 
-const LoginPage = memo(({ isVisible, onBack }) => {
+// `backButton`: only the mobile full-screen overlay shows its own "← DELTAWERKEN" — there it is the
+// only way out. On the map the page has none (owner, 2026-09-28): it rode along with the pan to the
+// account page after the report, and the header already leads back.
+const LoginPage = memo(({ isVisible, onBack, backButton = false }) => {
   const { t, language } = useLanguage();
   const [mode, setMode] = useState('login');
   const [user, setUser] = useState(null);
@@ -695,8 +698,8 @@ const LoginPage = memo(({ isVisible, onBack }) => {
   return (
     <>
       {enterOverlay}
-      {/* Back to Deltawerken — top-center of the screen (login sits directly below the main page) */}
-      <div style={{ position: 'absolute', top: '6rem', left: '50%', transform: 'translateX(-50%)', zIndex: 200, pointerEvents: isVisible ? 'auto' : 'none' }}>
+      {/* Back to Deltawerken — top-center of the screen, mobile overlay only (see backButton) */}
+      {backButton && <div style={{ position: 'absolute', top: '6rem', left: '50%', transform: 'translateX(-50%)', zIndex: 200, pointerEvents: isVisible ? 'auto' : 'none' }}>
         <SciFiButton onClick={onBack} variant="purple" size="sm">
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.875rem', height: '0.875rem' }}>
@@ -705,7 +708,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
             DELTAWERKEN
           </span>
         </SciFiButton>
-      </div>
+      </div>}
     <div style={{ ...PAGE_WRAPPER(isVisible), flexDirection: 'column', gap: 'clamp(8px, 2vh, 26px)', overflow: 'visible' }}>
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 2vh, 26px)', overflow: 'visible' }}>
         {/* Crystal lab — symmetric panels flanking the centered orb/card column,

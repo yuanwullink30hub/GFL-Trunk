@@ -2153,6 +2153,7 @@ const App = () => {
                 <LoginPage 
                   isVisible={true}
                   onBack={() => setShowMobileLogin(false)}
+                  backButton
                 />
               </Suspense>
             </div>

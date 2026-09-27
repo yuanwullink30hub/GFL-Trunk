@@ -11,16 +11,16 @@
 // are small enough to ship are kept under public/; everything heavy lives at the repo root in
 // portraits/, which no build ever walks:
 //
-//   apps/platform/public/images/Archetype imags/
-//     web/<slot>.webp     1100 px — the results card. In git, served by the platform (~31 MB total).
-//     depth/<slot>.png    the depth map. In git, and same-origin on purpose: the PDF cover reads its
-//                         pixels, and a tainted canvas would take the whole cover down.
-//   portraits/                                  (gitignored, never built, never deployed)
-//     _incoming/<delivery name>                 what the delivery handed over — the input to this script
-//     _masters/<delivery name>.png              the ~23 MB PNG originals: archival, and the source for
-//                                               the offline depth-map pass. Nothing serves these.
-//     print/<slot>.webp   2764 px — the PDF cover at 300 dpi over 234 mm.  } published to R2 by
-//     full/<slot>.webp    the delivered resolution — the dashboard download. } scripts/publish-portraits.mjs
+//   apps/platform/public/images/Archetype imags/   (all four ship with the site, same-origin)
+//     web/<slot>.webp     1100 px — the results card.            ~45 MB
+//     print/<slot>.webp   2764 px — the PDF cover at 300 dpi.   ~764 MB
+//     full/<slot>.webp    the delivered resolution — the download. ~756 MB
+//     depth/<slot>.png    the depth map.                           ~6 MB
+//   portraits/                                  (gitignored: inputs only, never built, never deployed)
+//     _incoming/<delivery name>                 what the delivery handed over
+//     _masters/<delivery name>.png              the ~23 MB PNG originals: archival, and the source
+//                                               every tier is cut from
+//     _depth/<delivery name>                    the depth batch (see its README)
 //
 // Then it regenerates the ARCHETYPE_IMAGES table in packages/assessment-core/src/data/archetypeImages.js.
 //
@@ -50,7 +50,10 @@ const DEPTH_INCOMING = join(HEAVY_DIR, '_depth');
 // established Ronin pair (172x256, 1 channel, ~12 KB). The cover samples them onto a ~78x117 grid, so
 // 256 tall is already oversampled; bigger only costs git.
 const DEPTH_H = 256;
-const TIER_DIR = { web: join(SHIPPED_DIR, 'web'), depth: join(SHIPPED_DIR, 'depth'), print: join(HEAVY_DIR, 'print'), full: join(HEAVY_DIR, 'full') };
+// All four tiers ship with the site (owner, 2026-09-27): same-origin, so the cover can read the
+// portrait's and the depth map's pixels without a CORS rule to forget, at ~1.5 GB in the repo and in
+// every Pages deploy. portraits/ keeps only the inputs — _masters/, _incoming/, _depth/.
+const TIER_DIR = { web: join(SHIPPED_DIR, 'web'), depth: join(SHIPPED_DIR, 'depth'), print: join(SHIPPED_DIR, 'print'), full: join(SHIPPED_DIR, 'full') };
 const TABLE_FILE = 'packages/assessment-core/src/data/archetypeImages.js';
 const SCORING_FILE = 'packages/assessment-core/src/data/scoring/index.js';
 

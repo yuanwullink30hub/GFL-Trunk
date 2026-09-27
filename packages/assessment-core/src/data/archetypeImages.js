@@ -29,20 +29,27 @@ import { resolveExtendedKey, extendedKeyForName } from './scoring/index.js';
 // Matriarch) can't become a path.
 //
 //   web/<slot>.webp     1100 px tall, alpha kept — the results card (a 25rem box, sharp to 3x DPR).
-//                       In git and served by the platform, ~120 KB each.
+//                       ~170 KB each.
 //   print/<slot>.webp   2764 px tall, alpha kept — the PDF cover. That is 234 mm (the cover's height
 //                       on A4) at 300 dpi, exactly the ceiling AssessmentResultsModal clamps the
-//                       raster to; taller buys the PDF nothing and costs the reader bytes.
+//                       raster to; taller buys the PDF nothing and costs the reader bytes. Encoded
+//                       nearLossless: measured at the cover's own size it reaches 49.3 dB where q90
+//                       reaches 34.5, because the loss is webp's 4:2:0 chroma subsampling rather than
+//                       quantisation, and this art is saturated neon on near-black. Cutting this tier
+//                       and downsampling full/ instead measures WORSE at the same bytes (36.0 dB) —
+//                       the chroma damage happens at 5056 px and survives the downsample.
 //   full/<slot>.webp    the delivered resolution, alpha kept — the dashboard download.
 //   depth/<slot>.png    its depth map: small greyscale, brighter = nearer (Depth Anything V2, made
 //                       offline) — the PDF cover shapes the levensles to it (coverLesson.js).
 //
-// print/ and full/ are ~660 MB over 263 slots, so they are not in git and not on Pages: they sit in the
-// same R2 bucket as the installers (owner, 2026-09-27) and are published with
-// scripts/publish-portraits.mjs. web/ and depth/ are small and stay local, which also keeps the depth map
-// same-origin — the cover reads its pixels, and a tainted canvas would kill the whole page.
+// All four tiers ship with the site and are served same-origin (owner, 2026-09-27). They were briefly
+// routed to the R2 bucket that carries the installers; serving them here instead costs ~1.5 GB in the
+// repo and in every Pages deploy, and buys back three things: the download and the cover cannot 404
+// while the bucket is behind, there is no CORS rule to forget, and — the one that is not merely
+// convenience — the cover READS the pixels of both the portrait and its depth map, so same-origin means
+// the canvas can never taint. Cross-origin, a missing header fails the load silently and the cover drops
+// to the card copy with nothing in the console.
 const ARCHETYPE_IMAGE_DIR = '/images/Archetype imags/';
-const PORTRAIT_CDN = 'https://downloads.gardenforlife.nl/portraits/';
 
 const slotName = (key, variant) => `${String(key).toLowerCase().replace(/_/g, '-')}-${variant}`;
 
@@ -51,8 +58,8 @@ const art = (key, variant) => {
   const slot = slotName(key, variant);
   return {
     web: `${ARCHETYPE_IMAGE_DIR}web/${slot}.webp`,
-    print: `${PORTRAIT_CDN}print/${slot}.webp`,
-    full: `${PORTRAIT_CDN}full/${slot}.webp`,
+    print: `${ARCHETYPE_IMAGE_DIR}print/${slot}.webp`,
+    full: `${ARCHETYPE_IMAGE_DIR}full/${slot}.webp`,
     depth: `${ARCHETYPE_IMAGE_DIR}depth/${slot}.png`,
   };
 };

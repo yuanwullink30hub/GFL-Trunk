@@ -47,14 +47,12 @@ apps/admin-desktop/ui/
 apps/admin-desktop/release/
 !apps/admin-desktop/build/
 
-# Everything about the archetype portraits that must NOT be deployed. Vite copies apps/platform/public/
-# into the build straight off the disk and .gitignore has no say in it, so the heavy tiers live at the
-# repo root in portraits/ instead — see scripts/ingest-archetype-portraits.mjs for the full layout:
-#   portraits/_incoming/  what a delivery handed over (the ingest's input)
-#   portraits/_masters/   the ~23 MB PNG originals: archival + the source for the depth-map pass
-#   portraits/print/      2764 px, the PDF cover      } published to R2, ~660 MB together
-#   portraits/full/       the delivered resolution     } (scripts/publish-portraits.mjs)
-# Only web/ (~31 MB) and depth/ live under public/ and ship with the site.
+# The portrait INPUTS. All four served tiers live under apps/platform/public/images/Archetype imags/
+# and ship with the site (owner, 2026-09-27); what stays out of git is only what feeds the ingest —
+# see scripts/ingest-archetype-portraits.mjs:
+#   portraits/_masters/   the ~23 MB PNG originals every tier is cut from
+#   portraits/_incoming/  a delivery's own compressed copies
+#   portraits/_depth/     the depth batch (see its README)
 /portraits/
 # A master dropped at the top of the shipped folder would deploy; keep the guard even though
 # portraits/_masters/ is now its home. depth/*.png is a level deeper and stays tracked.

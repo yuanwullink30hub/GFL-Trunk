@@ -93,15 +93,11 @@ export default function CoverPreviewHarness() {
     return [key.slice(0, s), key.slice(s + 1)];
   }, [key]);
 
-  // The print copy comes from R2 in production. Locally nothing is uploaded yet, so point it at the
-  // dev middleware over portraits/print/ (vite.config.ts) — otherwise the cover silently falls back to
-  // the 1100 px card copy and the preview shows a softer cover than the one that ships.
-  const portrait = useMemo(() => {
-    const p = resolvePortrait(mainKey, support, variant, { fallback: false });
-    if (!p.printUrl) return p;
-    const slot = p.printUrl.slice(p.printUrl.lastIndexOf('/') + 1);
-    return { ...p, printUrl: `/dev-portraits/print/${slot}` };
-  }, [mainKey, support, variant]);
+  // Every tier is served from public/ now, so the preview loads exactly what production does.
+  const portrait = useMemo(
+    () => resolvePortrait(mainKey, support, variant, { fallback: false }),
+    [mainKey, support, variant],
+  );
   const name = EXTENDED_ARCHETYPES[key];
   const lesson = useMemo(() => getArchetypeQuote(mainKey, support, language), [mainKey, support, language]);
 

@@ -73,7 +73,7 @@ export async function payFullReport(params) {
 export async function getPaymentStatus(ref, sealedOrbCode) {
   const { ok, data } = await postJson(`/payments/${encodeURIComponent(ref)}/status`, { sealedOrbCode });
   if (!ok) throw new Error(data?.error || 'status failed');
-  return { status: data.status, orbCode: data.orbCode || '' };
+  return { status: data.status, orbCode: data.orbCode || '', orbKey: data.orbKey || '' };
 }
 
 /** Download log: the unlocked PDF was saved. Fire-and-forget. */
@@ -100,7 +100,7 @@ export async function redeemActivationCode(code, sealedOrbCode = '') {
     return { error: 'network' };
   }
   const data = await res.json().catch(() => ({}));
-  if (res.ok && data.unlockId) return { unlockId: data.unlockId, orbCode: data.orbCode || '' };
+  if (res.ok && data.unlockId) return { unlockId: data.unlockId, orbCode: data.orbCode || '', orbKey: data.orbKey || '' };
   const known = ['malformed', 'invalid', 'used', 'rate_limited', 'report_expired'];
   return { error: known.includes(data.error) ? data.error : 'server' };
 }

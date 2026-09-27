@@ -332,6 +332,9 @@ const AssessmentResultsModal = ({
   // generator reads them synchronously without a re-render race.
   const sealedOrbCodeRef = useRef('');
   const orbCodeRef = useRef('');
+  // The code's key (apps/backend/services/orbKey.js), handed over with the code on unlock and printed
+  // beside it. Once a code has been redeemed, its render data is public — only the key proves the PDF.
+  const orbKeyRef = useRef('');
   // The profile card's copy, signed by the server for this report's code ({ giftMicro, geomSummary, sig }):
   // the unlocked PDF prints it in its data block, and the claim reads it back from the upload.
   const kaartRef = useRef(null);
@@ -3094,6 +3097,7 @@ const AssessmentResultsModal = ({
         if (orbCode) {
           mBold(dash(t('resultsModal.pdf.data.orbSection')), green);
           mLine(`ORB::${orbCode}::ORB`, dimWhite);
+          if (orbKeyRef.current) mLine(`KEY::${orbKeyRef.current}::KEY`, dimWhite);
           // Extended archetype name, wrapped like the orb code so PDF-login can recover it even
           // after whitespace-stripping. Base64 (UTF-8) keeps spaces/diacritics intact as one token.
           const archName = result.extendedName || result.extendedNameNl || '';
@@ -4173,8 +4177,9 @@ const AssessmentResultsModal = ({
             onConsent={() => {
               logActivity({ type: 'consent_given', email: reviewFormData.email.trim(), consentType: 'pdf_download', level: 'pdf', message: 'User confirmed PDF download consent' }).catch(() => {});
             }}
-            onPaid={(paymentId, orbCode) => {
+            onPaid={(paymentId, orbCode, orbKey) => {
               orbCodeRef.current = orbCode || '';
+              orbKeyRef.current = orbKey || '';
               paidRef.current = true;
               paymentRefRef.current = paymentId;
               setPaidPaymentId(paymentId);

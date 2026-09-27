@@ -83,6 +83,16 @@ test('a sound production configuration starts, and /api/status still reports enc
     }
     assert.ok(status, 'the server should be listening');
     assert.equal(status.encryption, 'AES-256-GCM');
+
+    // Body limits per route (server.js): a real report PDF must get through to /api/orb/login, while
+    // an ordinary public route refuses anything over 1 MB. (Regression: R4 first set 1 MB everywhere.)
+    const post = (path, mb) => fetch(`http://127.0.0.1:${port}${path}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pdfBase64: 'A'.repeat(mb * 1024 * 1024) }),
+    }).then((r) => r.status);
+    assert.notEqual(await post('/api/orb/login', 8), 413, 'an 8 MB report PDF must reach /api/orb/login');
+    assert.equal(await post('/api/orb/login', 26), 413);
+    assert.equal(await post('/api/contact', 2), 413);
   } finally {
     child.kill();
   }

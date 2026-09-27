@@ -453,10 +453,10 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
   const [syncBusy, setSyncBusy] = useState(false);
   const syncFileRef = useRef(null);
 
-  const finishSync = useCallback(async (newCode, archetypeName, reading) => {
+  const finishSync = useCallback(async (newCode, archetypeName, reading, orbKey) => {
     // reading = extracted §2.1 fields (main/support + shape vector) from the PDF parse;
     // /orb/link stores them on the new orbHistory entry (or backfills an already-owned code).
-    await orbLinkCode(newCode, archetypeName, reading);
+    await orbLinkCode(newCode, archetypeName, reading, orbKey);
     setClientOrbCode(newCode);
     try {
       const fresh = await getCard();
@@ -489,7 +489,7 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
     try {
       const r = await orbLoginFromPdf(file);
       if (!r || !r.code) throw new Error(t('profile.dashboard.msg.noCodeInPdf'));
-      await finishSync(r.code, r.archetypeName || '', r.reading || null);
+      await finishSync(r.code, r.archetypeName || '', r.reading || null, r.orbKey || '');
       // In the desktop app with this account's folder connected, the new report goes into it.
       saveReportIfReady({ accountId: user.id, file, label: r.archetypeName || '' })
         .catch((err) => console.warn('[GFL] report not saved to the folder:', err && err.message));

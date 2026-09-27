@@ -55,12 +55,16 @@ app.use('/api/payments/webhook', stripeWebhookRoutes);
 //   /api/ai/analyze  carries the OCEAN upload as base64 — capped at 8 MB decoded
 //                    (services/uploadParser.js), which is ~10.7 MB encoded plus the answers.
 //   /api/admin/*     the master prompt and documents, admin-only (the router 404s everyone else).
+//   /api/orb/login   a whole report PDF, as base64 — its cover alone embeds a ~5.6 MB image. It keeps
+//                    the old 25 MB allowance; the PDF is parsed in a sandboxed child (routes/orb.js).
 // Everything else — the orb snapshot (≤500 KB), tool inputs (64 KB), forms — fits in 1 MB.
 const jsonBody = express.json({ limit: '1mb' });
 const jsonAnalyze = express.json({ limit: '12mb' });
 const jsonAdmin = express.json({ limit: '10mb' });
+const jsonReportPdf = express.json({ limit: '25mb' });
 app.use((req, res, next) => {
   if (req.path === '/api/ai/analyze') return jsonAnalyze(req, res, next);
+  if (req.path === '/api/orb/login') return jsonReportPdf(req, res, next);
   if (req.path.startsWith('/api/admin/')) return jsonAdmin(req, res, next);
   return jsonBody(req, res, next);
 });

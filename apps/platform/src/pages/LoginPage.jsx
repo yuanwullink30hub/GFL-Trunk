@@ -248,6 +248,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadErr, setUploadErr] = useState('');
   const [orbCodeStr, setOrbCodeStr] = useState('');
+  const [orbKeyStr, setOrbKeyStr] = useState(''); // the code's key, read from the same PDF
   // First-time PDF onboarding: the account-creation card that emerges from the orb.
   const [onboarding, setOnboarding] = useState(false);
   const [obUsername, setObUsername] = useState('');
@@ -314,6 +315,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       }
       // First-time (unlinked) code → the account-creation card flows OUT of the orb.
       if (!acceptOrbCode(res.code)) throw new Error(t('auth.errors.codeUndecipherable'));
+      setOrbKeyStr(res.orbKey || '');
       setObEmail(''); setObPassword(''); setObUsername(''); setObAge(''); setObCountry('');
       setObArchetype(res.archetypeName || '');
       setObReading(res.reading || null);
@@ -323,6 +325,8 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       scheduleFlow(820, () => setEmerged(true));       // card flows out as the grow finishes
     } catch (err) {
       setUploadErr(err.message || t('auth.errors.uploadFailed'));
+      // The report's code already belongs to an account: that account's email + password is the way in.
+      if (err.useLogin) setMode('login');
       setAbsorbing(false);   // return the panels/card on failure
     } finally {
       setUploadBusy(false);
@@ -345,7 +349,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
     clearFlowTimers();
     if (verifyPollRef.current) { clearTimeout(verifyPollRef.current); verifyPollRef.current = null; }
     setAbsorbing(false); setOnboarding(false); setEmerged(false); setVerifyPending(false); setObBusy(false);
-    setOrbCodeStr(''); setUploadErr('');
+    setOrbCodeStr(''); setOrbKeyStr(''); setUploadErr('');
     setObUsername(''); setObEmail(''); setObPassword(''); setObAge(''); setObCountry(''); setObConsent(false); setObErr('');
   }, [isVisible, clearFlowTimers]);
 
@@ -400,7 +404,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
     if (!obConsent || !obConsentArt9) { setObErr(t('auth.errors.confirmTerms')); return; }
     setObErr(''); setObBusy(true);
     try {
-      const data = await register({ email, password, displayName: username, age, country, orbCode: orbCodeStr, archetypeName: obArchetype, reading: obReading });
+      const data = await register({ email, password, displayName: username, age, country, orbCode: orbCodeStr, orbKey: orbKeyStr, archetypeName: obArchetype, reading: obReading });
       // Consent must be demonstrable (Art. 7(1)) — and eraseAccountData() deletes these
       // records on erasure, so this route has to write one like the other one does.
       logActivity({ type: 'consent_given', consentType: 'registration_onboarding', email, message: 'User accepted terms + Art.9 partial-profile consent at account creation' }).catch(() => {});
@@ -414,7 +418,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       setObErr(e.message || t('auth.errors.createAccountFailed'));
       setObBusy(false);
     }
-  }, [obArchetype, obConsent, obConsentArt9, obReading, orbCodeStr, pollVerification, proceedIntoClient, t]);
+  }, [obArchetype, obConsent, obConsentArt9, obReading, orbCodeStr, orbKeyStr, pollVerification, proceedIntoClient, t]);
 
   // Responsive size for the template orb on the logged-out screen.
   const [vp, setVp] = useState(() => ({
@@ -479,7 +483,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       const data = await login({ email: formEmail, password: formPassword });
       stampSession();
       // Claim a crystal-code the user uploaded this session to their account (adds to the timeline).
-      if (orbCodeStr) orbLinkCode(orbCodeStr, data.archetypeName, obReading).catch(() => {});
+      if (orbCodeStr) orbLinkCode(orbCodeStr, data.archetypeName, obReading, orbKeyStr).catch(() => {});
       if (data.user?.role === 'admin') {
         // The login itself is recorded server-side (routes/auth.js). No management UI ships here.
         setUser(data.user);
@@ -507,7 +511,7 @@ const LoginPage = memo(({ isVisible, onBack }) => {
       if (!entered) { setEntering(false); setUser(data.user); }
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
-  }, [mode, orbCodeStr, obReading, language, bootIntoClient, rememberLogin]);
+  }, [mode, orbCodeStr, orbKeyStr, obReading, language, bootIntoClient, rememberLogin]);
 
   const handleConsentConfirm = useCallback(async () => {
     setLoading(true);

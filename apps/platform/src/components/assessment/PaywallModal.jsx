@@ -159,11 +159,11 @@ const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrb
     const ref = paymentRefRef.current;
     if (!ref) return;
     try {
-      const { status, orbCode } = await getPaymentStatus(ref, sealedOrbCode);
+      const { status, orbCode, orbKey } = await getPaymentStatus(ref, sealedOrbCode);
       if (status === 'paid') {
         stopPolling();
         setStep('paid');
-        setTimeout(() => onPaid(ref, orbCode), 900);
+        setTimeout(() => onPaid(ref, orbCode, orbKey), 900);
       } else if (status === 'rejected_country') {
         stopPolling();
         setStep('rejected');
@@ -221,7 +221,7 @@ const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrb
     const res = await redeemActivationCode(code, sealedOrbCode);
     if (res.unlockId) {
       setStep('codeAccepted');
-      setTimeout(() => onPaid(res.unlockId, res.orbCode), 900);
+      setTimeout(() => onPaid(res.unlockId, res.orbCode, res.orbKey), 900);
       return;
     }
     const key = {

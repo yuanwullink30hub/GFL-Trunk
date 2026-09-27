@@ -123,11 +123,11 @@ function limitedError(response, message) {
  * Register a new account.
  * @returns {Promise<{ token: string, user: { id, email, displayName } }>}
  */
-export async function register({ email, password, displayName, age, country, orbCode, archetypeName, reading }) {
+export async function register({ email, password, displayName, age, country, orbCode, orbKey, archetypeName, reading }) {
   const response = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, displayName, age, country, orbCode, archetypeName, reading, remember: getRememberLogin() }),
+    body: JSON.stringify({ email, password, displayName, age, country, orbCode, orbKey, archetypeName, reading, remember: getRememberLogin() }),
   });
 
   if (!response.ok) {
@@ -745,14 +745,21 @@ export async function orbLoginFromPdf(file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+  // Signed in, the account goes along: re-uploading a report you already own then reads it back
+  // (to add or refresh it) instead of being refused as "already linked".
+  let auth = {};
+  try { auth = authHeaders(); } catch { auth = {}; }
   const response = await fetch(`${API_BASE}/orb/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...auth },
     body: JSON.stringify({ pdfBase64, remember: getRememberLogin() }),
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.error || `Kon de code niet uit de PDF lezen (${response.status})`);
+    const e = new Error(err.error || `Kon de code niet uit de PDF lezen (${response.status})`);
+    if (err.useLogin) e.useLogin = true; // the code belongs to an account: sign in with email + password
+    if (err.code) e.code = err.code;
+    throw e;
   }
   return response.json();
 }
@@ -762,11 +769,11 @@ export async function orbLoginFromPdf(file) {
  * PDF-upload login is denied — the account becomes the credential. Auth required.
  * @returns {Promise<{ linked: boolean, alreadyOwned?: boolean }>}
  */
-export async function orbLinkCode(code, archetypeName, reading) {
+export async function orbLinkCode(code, archetypeName, reading, orbKey) {
   const response = await fetch(`${API_BASE}/orb/link`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ code, archetypeName, reading }),
+    body: JSON.stringify({ code, archetypeName, reading, ...(orbKey ? { orbKey } : {}) }),
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));

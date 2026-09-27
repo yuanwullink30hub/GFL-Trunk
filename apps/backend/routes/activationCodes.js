@@ -25,6 +25,7 @@ const { normalizeCode, isWellFormed, hashCode, newUnlockId } = require('../servi
 const { recordUnlock, codeHashFor } = require('../services/reportAccess');
 const { unsealCode, SealError } = require('../services/sealedCode');
 const { visitorKey } = require('../middleware/rateLimit');
+const { orbKeyFor } = require('../services/orbKey');
 
 const router = Router();
 
@@ -90,8 +91,9 @@ router.post('/redeem', async (req, res) => {
         unlockId, method: 'activation_code', reference: claimed._id, referenceHint: claimed.hint || '',
         codeHash: codeHashFor(orbCode),
       }).catch((e) => console.error('[ActivationCodes] ledger write failed:', e.message));
-      // The one moment the raw code leaves the server: it goes into the unlocked PDF.
-      return res.json({ unlockId, orbCode });
+      // The one moment the raw code leaves the server: it goes into the unlocked PDF, with its key
+      // (services/orbKey.js), which is what lets the code be redeemed once its render data is public.
+      return res.json({ unlockId, orbCode, orbKey: orbCode ? orbKeyFor(orbCode) : '' });
     }
 
     recordFailure(ip);

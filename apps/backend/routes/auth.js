@@ -16,6 +16,7 @@ const config = require('../config');
 const { collections, getDB, nameKey } = require('../db');
 const { authRequired, forgetAccount } = require('../middleware/auth');
 const { checkPassword, needsRehash, BCRYPT_COST } = require('../services/passwordPolicy');
+const { claimCheck, markRedeemed, verifyOrbKey } = require('../services/orbKey');
 const { rateLimit, createFailureCounter } = require('../middleware/rateLimit');
 const { encrypt, decrypt, hash, decryptUser } = require('../services/encryption');
 const { decodeOrb3 } = require('@gfl/orb-engine');
@@ -256,7 +257,7 @@ function buildCardPayload(u) {
 const registerLimit = rateLimit({ name: 'register', max: 10, windowMs: 60 * 60 * 1000, global: { max: 500, persistent: true } });
 router.post('/register', registerLimit, async (req, res) => {
   try {
-    const { email, password, displayName, age, country, orbCode, archetypeName, reading, remember } = req.body;
+    const { email, password, displayName, age, country, orbCode, orbKey, archetypeName, reading, remember } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
@@ -300,10 +301,21 @@ router.post('/register', registerLimit, async (req, res) => {
       return res.status(403).json({ error: BLOCKED_MESSAGE, refunded: true });
     }
     if (hasOrbCode) {
+      if (orbKey && !verifyOrbKey(String(orbCode), orbKey)) {
+        return res.status(403).json({ error: 'De sleutel in dit rapport hoort niet bij deze kristal-code.', code: 'bad_key' });
+      }
       const alreadyLinked = await collections.orbCodes().findOne({ codeHash: orbCodeHash });
       if (alreadyLinked) {
-        return res.status(409).json({ error: 'Deze kristal-code is al aan een ander account gekoppeld.' });
+        // Held by an account that no longer exists: only the report's key can take it over.
+        const holder = await collections.users().findOne({ _id: new ObjectId(String(alreadyLinked.userId)) }, { projection: { _id: 1 } }).catch(() => null);
+        if (holder || !orbKey) {
+          return res.status(409).json({ error: 'Deze kristal-code is al aan een ander account gekoppeld.' });
+        }
+        await collections.orbCodes().deleteOne({ _id: alreadyLinked._id, userId: alreadyLinked.userId });
       }
+      // A code that has ever been redeemed can only be claimed with its key (services/orbKey.js).
+      const refusal = await claimCheck(orbCodeHash, String(orbCode), orbKey);
+      if (refusal) return res.status(refusal.status).json({ error: refusal.error, code: refusal.code });
       if (!(await isCodeActivatable(orbCodeHash))) {
         return res.status(403).json({ error: NOT_UNLOCKED_MESSAGE, notUnlocked: true });
       }
@@ -362,6 +374,7 @@ router.post('/register', registerLimit, async (req, res) => {
         await collections.users().deleteOne({ _id: result.insertedId }); // roll back the orphan account
         return res.status(409).json({ error: 'Deze kristal-code is al aan een ander account gekoppeld.' });
       }
+      await markRedeemed(orbCodeHash).catch((e) => console.warn('[Auth] redeemed flag failed:', e.message));
       // The draft has been folded into the account's orbHistory entry above, so the
       // pre-account copy is now redundant profile text. Privacy policy art. 6 tier 3:
       // nothing about the report survives the claim.
@@ -1062,6 +1075,12 @@ async function eraseAccountData(userId, user) {
   const ownedCodes = await collections.orbCodes().find({ userId }).project({ codeHash: 1 }).toArray();
   for (const c of ownedCodes) if (c.codeHash) codeHashes.push(c.codeHash);
   const uniqueHashes = [...new Set(codeHashes)];
+
+  // The account's code links go (the policy keeps a code's hash only as long as its account exists),
+  // but the report's release registration keeps that these codes HAVE been redeemed — so each can still
+  // be redeemed only once, as the policy also promises. Without this, deleting an account made its
+  // codes claimable again by anyone who rebuilt them from the account's public profile.
+  await markRedeemed(uniqueHashes);
 
   const [assessments, reviews, orbCodes, messages, verbonden, kaartDrafts, consentRecords] =
     await Promise.all([

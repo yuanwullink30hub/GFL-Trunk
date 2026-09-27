@@ -2,12 +2,18 @@ const express = require('express');
 const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { collections } = require('../db');
-const { authRequired } = require('../middleware/auth');
+const { authRequired, authOptional } = require('../middleware/auth');
 const { hash } = require('../services/encryption');
 const { decodeOrb3 } = require('@gfl/orb-engine');
 const { extractReading } = require('../services/readingExtract');
 const { readingForClaim } = require('../services/cardSignature');
 const { isCodeBlocked, isCodeActivatable, visibleHistory, BLOCKED_MESSAGE, NOT_UNLOCKED_MESSAGE } = require('../services/reportAccess');
+const { parseUpload } = require('../services/uploadParser');
+const { claimCheck, keyFromText, markRedeemed, verifyOrbKey } = require('../services/orbKey');
+const { rateLimit } = require('../middleware/rateLimit');
+
+// Public, and each call parses an uploaded PDF: per visitor, under a persisted global ceiling.
+const loginLimit = rateLimit({ name: 'orb-login', max: 20, windowMs: 15 * 60 * 1000, global: { max: 1000, persistent: true } });
 
 // ── Access model (spec 2026-07-07): every code grants ACCESS_MONTHS of platform access,
 // cumulative on the current expiry (3→6, 6→9 — never "3 from redemption"). A new code can
@@ -28,23 +34,20 @@ const addMonths = (date, n) => { const d = new Date(date); d.setMonth(d.getMonth
  * GATE: a code that has already been LINKED to an account (see POST /link) is DENIED
  * here — once claimed, the account is the credential, so the raw PDF no longer opens it.
  */
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimit, authOptional, async (req, res) => {
   try {
     const { pdfBase64 } = req.body || {};
     if (!pdfBase64) return res.status(400).json({ error: 'Geen PDF ontvangen.' });
 
     let text = '';
     try {
-      const { PDFParse } = require('pdf-parse');
+      // In a sandboxed child process with a timeout and a memory cap (services/uploadParser.js): this
+      // is an unauthenticated upload, and pdf-parse used to run it on the main thread, where a crafted
+      // file could stall every request. The PDF is never persisted.
       const raw = String(pdfBase64).replace(/^data:[^;]+;[^,]*,/, '');
-      const buffer = Buffer.from(raw, 'base64');
-      const parser = new PDFParse({ data: buffer });
-      const parsed = await parser.getText();
-      text = parsed.text || '';
-      await parser.destroy();
-      // buffer + parser go out of scope here — the PDF is never persisted.
+      text = await parseUpload('pdf', Buffer.from(raw, 'base64'));
     } catch (err) {
-      console.error('[orb/login] PDF parse error:', err.message);
+      console.error('[orb/login] PDF parse refused:', err.code || err.message);
       return res.status(422).json({ error: 'PDF kon niet gelezen worden.' });
     }
 
@@ -55,6 +58,8 @@ router.post('/login', async (req, res) => {
     const bare = stripped.match(/LC_ORB[23]?_[A-Za-z0-9+/=]{24,}/);
     const code = marked ? marked[1] : (bare ? bare[0] : null);
     if (!code) return res.status(404).json({ error: 'Geen kristal-code gevonden in deze PDF.' });
+    // The code's key (services/orbKey.js). Reports printed before the key existed carry none.
+    const orbKey = keyFromText(stripped);
 
     // Extended archetype name — wrapped as ARCH::<base64(UTF-8)>::ARCH on the report so it
     // survives whitespace-stripping. Optional (older reports won't carry it).
@@ -85,6 +90,11 @@ router.post('/login', async (req, res) => {
           { _id: new ObjectId(String(linked.userId)) },
           { projection: { _id: 1 } }
         );
+        // The signed-in owner re-uploading their own report (the dashboard adds or refreshes a reading
+        // this way) gets the code read back — never a session: they already have one.
+        if (u && req.user && String(req.user.userId) === String(linked.userId)) {
+          return res.json({ code, archetypeName, reading, linked: true, owned: true, ...(orbKey && verifyOrbKey(code, orbKey) ? { orbKey } : {}) });
+        }
         if (u) {
           return res.status(403).json({
             error: 'Deze kristal-code is al aan een account gekoppeld. Log in met je e-mailadres en wachtwoord.',
@@ -98,12 +108,18 @@ router.post('/login', async (req, res) => {
       console.warn('[orb/login] link-check failed (treating as unlinked):', e.message);
     }
 
+    // A code that has ever been redeemed can only be claimed with its key: its render data may be
+    // public, so the code alone proves nothing (services/orbKey.js).
+    const refusal = await claimCheck(hash(code), code, orbKey);
+    if (refusal) return res.status(refusal.status).json({ error: refusal.error, code: refusal.code });
+
     // An unlinked code can only start onboarding when its report was unlocked (paid or code).
     if (!(await isCodeActivatable(hash(code)))) {
       return res.status(403).json({ error: NOT_UNLOCKED_MESSAGE, notUnlocked: true });
     }
 
-    return res.json({ code, archetypeName, reading, linked: false });
+    // The key goes back so onboarding can present it at registration; only a verified one.
+    return res.json({ code, archetypeName, reading, linked: false, ...(orbKey ? { orbKey } : {}) });
   } catch (e) {
     console.error('[orb/login] error:', e.message);
     return res.status(500).json({ error: 'Serverfout bij het lezen van de PDF.' });
@@ -120,9 +136,12 @@ router.post('/login', async (req, res) => {
  */
 router.post('/link', authRequired, async (req, res) => {
   try {
-    const { code, archetypeName, reading } = req.body || {};
+    const { code, archetypeName, reading, orbKey } = req.body || {};
     if (!code || !/^LC_ORB[23]?_/.test(String(code))) {
       return res.status(400).json({ error: 'Geen geldige kristal-code.' });
+    }
+    if (orbKey && !verifyOrbKey(String(code), orbKey)) {
+      return res.status(403).json({ error: 'De sleutel in dit rapport hoort niet bij deze kristal-code.', code: 'bad_key' });
     }
     const userId = String(req.user.userId);
     const codeHash = hash(String(code));
@@ -164,8 +183,17 @@ router.post('/link', authRequired, async (req, res) => {
         }
         return res.json({ linked: true, alreadyOwned: true, backfilled: !!cleanReading });
       }
-      return res.status(409).json({ error: 'Deze kristal-code is al aan een ander account gekoppeld.' });
+      // Held by an account that no longer exists: only the report's key can take it over.
+      const holder = await collections.users().findOne({ _id: new ObjectId(String(existing.userId)) }, { projection: { _id: 1 } }).catch(() => null);
+      if (holder || !orbKey) {
+        return res.status(409).json({ error: 'Deze kristal-code is al aan een ander account gekoppeld.' });
+      }
+      await collections.orbCodes().deleteOne({ _id: existing._id, userId: existing.userId });
     }
+
+    // Never linked, or its link is gone: a code that has ever been redeemed needs its key.
+    const refusal = await claimCheck(codeHash, String(code), orbKey);
+    if (refusal) return res.status(refusal.status).json({ error: refusal.error, code: refusal.code });
 
     if (!(await isCodeActivatable(codeHash))) {
       return res.status(403).json({ error: NOT_UNLOCKED_MESSAGE, notUnlocked: true });
@@ -181,6 +209,8 @@ router.post('/link', authRequired, async (req, res) => {
     const at = new Date();
     try {
       await collections.orbCodes().insertOne({ codeHash, userId, linkedAt: at });
+      // From now on the code needs its key to be claimed again (services/orbKey.js).
+      await markRedeemed(codeHash).catch((e) => console.warn('[orb/link] redeemed flag failed:', e.message));
     } catch (e) {
       // Unique-index race: someone linked it between the check and the insert.
       if (e && e.code === 11000) {

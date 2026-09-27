@@ -27,6 +27,7 @@ const { getStripe, webhooks } = require('./stripe');
 const { resolvePaymentConfig, priceInfo, normCountry, TERMS_VERSION } = require('./paymentConfig');
 const paymentEvents = require('./paymentEvents');
 const { unsealCode, SealError } = require('./sealedCode');
+const { orbKeyFor } = require('./orbKey');
 const { encrypt, hash } = require('./encryption');
 const {
   REFUND_WINDOW_DAYS, RefundError, codeHashFor, isCodeActivatable, recordUnlock, precheckRefund,
@@ -456,7 +457,7 @@ async function statusForClient(ref, sealedOrbCode) {
   const current = await payments.findOne({ _id: doc._id });
   // The raw code leaves the server here, once the unlock is on the ledger — exactly like a
   // redeemed activation code.
-  if (current.status === 'paid' && current.confirmState === 'done') return { status: 'paid', orbCode };
+  if (current.status === 'paid' && current.confirmState === 'done') return { status: 'paid', orbCode, orbKey: orbKeyFor(orbCode) };
   if (current.status === 'paid' || current.status === 'creating') return { status: 'processing' };
   return { status: current.status };
 }

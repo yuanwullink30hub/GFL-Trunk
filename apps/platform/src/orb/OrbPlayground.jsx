@@ -73,7 +73,9 @@ const PALETTE_ORDER = ['Agency', 'Ruling', 'Seeker', 'Relational', 'Chaos', 'Abs
 export function PaletteDashboard({ cfg, onChange, fullHeight = false, mobile = false }) {
   return (
     <div style={shell(fullHeight, mobile)}>
-      <Header title="Hardwaregroep" subtitle="Ontdek de kleurtypes voor elke groep." />
+      {/* Broken across two lines on purpose (owner, 2026-09-27): at 0.22em tracking "Hardwaregroep"
+          crowds the panel, and the compound splits where Dutch would hyphenate it. */}
+      <Header title={<>Hardware<br />groep</>} subtitle="Ontdek de kleurtypes voor elke groep." />
 
       <div style={fillCol(fullHeight)}>
         {PALETTE_ORDER.filter((n) => PALETTES[n]).map((name) => {

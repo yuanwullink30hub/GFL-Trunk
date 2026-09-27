@@ -763,6 +763,52 @@ export const EXTENDED_ARCHETYPES_NL = {
 };
 
 /**
+ * The four extensions whose NAME is gendered, per variant (owner, 2026-09-27).
+ *
+ * For these the Masculine/Feminine toggle on the results card picks the name as well as the portrait,
+ * on the card and in the PDF — the art was delivered as a named pair (Sorcerer/Sorceress,
+ * Wingman/Wingwoman, seducer/seductress, patriarch/matriarch), so a portrait under the other form's
+ * name would read as a mistake. #35 carries both forms in the roster itself
+ * ('The Patriarch / Matriarch'); the other three list the masculine form as the canon entry.
+ *
+ * DISPLAY ONLY. The canonical roster name is what identifies the extension everywhere else — what is
+ * sent to the model (it has to agree with the corpus), what is persisted, and what
+ * extendedKeyForName() resolves — so nothing here may leak into those.
+ */
+export const GENDERED_EXTENDED_NAMES = {
+  CAREGIVER_RULER: { male: 'The Patriarch', female: 'The Matriarch' },   // #35
+  LOVER_TRICKSTER: { male: 'The Wingman',   female: 'The Wingwoman' },   // #26
+  MAGICIAN_SAGE:   { male: 'The Sorcerer',  female: 'The Sorceress' },   // #83
+  TRICKSTER_LOVER: { male: 'The Seducer',   female: 'The Seductress' },  // #103
+};
+
+export const GENDERED_EXTENDED_NAMES_NL = {
+  CAREGIVER_RULER: { male: 'De Patriarch', female: 'De Matriarch' },
+  LOVER_TRICKSTER: { male: 'De Wingman',   female: 'De Wingwoman' },
+  MAGICIAN_SAGE:   { male: 'De Tovenaar',  female: 'De Tovenares' },
+  TRICKSTER_LOVER: { male: 'De Verleider', female: 'De Verleidster' },
+};
+
+/**
+ * The name to SHOW for an extension, given the portrait variant the reader picked.
+ *
+ * Falls straight back to the roster name: for the 128 extensions whose name is not gendered, and for
+ * any variant that is not 'male'/'female', this returns exactly what extendedNameForKey() returns.
+ *
+ * @param {string} key - 132-matrix key, e.g. 'MAGICIAN_SAGE'
+ * @param {string} [language] - 'nl' | 'en'
+ * @param {string} [variant] - 'male' | 'female'
+ * @returns {string} the display name, or '' for an unknown key
+ */
+export function displayExtendedName(key, language = 'nl', variant = null) {
+  const k = key && String(key).toUpperCase();
+  // Same language test as extendedNameForKey, so the two can never disagree on 'EN' or 'en-GB'.
+  const en = String(language || '').toLowerCase().startsWith('en');
+  const table = en ? GENDERED_EXTENDED_NAMES : GENDERED_EXTENDED_NAMES_NL;
+  return (k && table[k] && table[k][variant]) || extendedNameForKey(k, language);
+}
+
+/**
  * Map from hardware group → its two archetype keys (wheel order).
  */
 export const GROUP_TO_ARCHETYPES = {

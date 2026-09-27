@@ -32,6 +32,12 @@ const isPdfPreview = import.meta.env.DEV &&
 const isReportPreview = import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has('reportpreview');
 
+// Dev-only cover preview: ?coverpreview=1 draws page 1 of the report PDF (and only that) through
+// the same drawCoverPage() the report uses, with a picker for all 132 archetypes — for judging where
+// the levensles lands on the art. See src/dev/CoverPreviewHarness.jsx.
+const isCoverPreview = import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).has('coverpreview');
+
 // Dev-only workspace preview: ?workspacepreview=1 shows the first-run workspace step, the login
 // reminder and the tool lock, with an in-memory desktop bridge. See src/dev/WorkspacePreviewHarness.jsx.
 const isWorkspacePreview = import.meta.env.DEV &&
@@ -107,6 +113,15 @@ if (isPaymentReturn) {
     <LanguageProvider>
       <React.Suspense fallback={null}>
         <WerkruimtePreviewHarness />
+      </React.Suspense>
+    </LanguageProvider>
+  );
+} else if (isCoverPreview) {
+  const CoverPreviewHarness = React.lazy(() => import('./dev/CoverPreviewHarness'));
+  root.render(
+    <LanguageProvider>
+      <React.Suspense fallback={null}>
+        <CoverPreviewHarness />
       </React.Suspense>
     </LanguageProvider>
   );

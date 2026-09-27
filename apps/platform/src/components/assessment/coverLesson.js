@@ -307,12 +307,23 @@ export function layoutLesson({ text, scene, sizes, measure1, mode = 'auto' }) {
   };
 
   // One alignment for the whole block: against the figure where it holds the lines, else centred.
+  //
+  // Centred means centred on ONE axis for the block, not each line on the middle of its own stretch.
+  // [L, R] is recomputed per line from the open space at that height, so where the figure eats into one
+  // side the stretch shifts — and centring per line would carry the line along with it, leaving the
+  // block's centre wobbling from line to line (owner spotted it on the last line, 2026-09-27).
+  // The axis is the MEDIAN of the stretch centres, so one odd stretch cannot drag the block; each line
+  // is then clamped back inside its own stretch, which keeps the figure clearance exact.
   const place = (lines) => {
     const holdR = lines.filter((l) => l.right === 'figure').length;
     const holdL = lines.filter((l) => l.left === 'figure').length;
     const side = holdR > lines.length / 2 && holdR > holdL ? 'right' : holdL > lines.length / 2 ? 'left' : 'centre';
+    const mids = lines.map((l) => (l.L + l.R) / 2).sort((a, b) => a - b);
+    const axis = mids.length % 2 ? mids[(mids.length - 1) / 2] : (mids[mids.length / 2 - 1] + mids[mids.length / 2]) / 2;
     return lines.map((l) => {
-      const s0 = side === 'right' ? l.R - l.w : side === 'left' ? l.L : (l.L + l.R) / 2 - l.w / 2;
+      const s0 = side === 'right' ? l.R - l.w
+        : side === 'left' ? l.L
+        : Math.min(Math.max(axis - l.w / 2, l.L), Math.max(l.L, l.R - l.w));
       return { ...l, x: l.cx + ux * s0, y: l.cy + uy * s0 };
     });
   };

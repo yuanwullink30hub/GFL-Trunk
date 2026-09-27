@@ -16,6 +16,8 @@ import {
   GROUP_TO_ARCHETYPES,
   EXTENDED_ARCHETYPES,
   EXTENDED_ARCHETYPES_NL,
+  resolveExtendedKey,
+  displayExtendedName,
   getExtendedArchetype,
   getExtendedArchetypeNl,
   isComplementaryPair,
@@ -42,7 +44,7 @@ import {
   COMPARISON_TITLE, RADAR_READING_TITLE, STRAY_TITLE, RENDER_SIDE_TITLE, V3_ELEMENTS_TITLE,
 } from './reportReader';
 import MorphologyChart from './MorphologyChart';
-import { readScene, layoutLesson, drawLesson } from './coverLesson';
+import { drawCoverPage } from './coverPage';
 import { sectionTitle, relabelProse } from './v4Labels';
 
 // ── Restructure part 2.3 ──────────────────────────────────────────────────────
@@ -286,6 +288,15 @@ const AssessmentResultsModal = ({
   const [portraitVariant, setPortraitVariant] = useState(DEFAULT_PORTRAIT_VARIANT);
   const portraitMain = result?.mainArchetype;
   const portraitSupport = result?.secondaryArchetype || result?._secondaryKey;
+  // Four extensions carry a gendered NAME (Sorcerer/Sorceress, Wingman/Wingwoman, Seducer/Seductress,
+  // Patriarch/Matriarch), and their art was delivered as a named pair — so the same toggle picks the
+  // name, on the card and in the PDF (owner, 2026-09-27). For the other 128 this is extName unchanged.
+  // Display only: `extName` stays the canonical roster name for the model (it has to agree with the
+  // corpus) and for anything persisted.
+  const extNameShown = useMemo(() => {
+    const key = resolveExtendedKey(portraitMain, portraitSupport);
+    return (key && displayExtendedName(key, language, portraitVariant)) || extName;
+  }, [portraitMain, portraitSupport, language, portraitVariant, extName]);
   const portrait = useMemo(
     () => (portraitOverride
       ? { ...portraitOverride, variant: portraitVariant, available: { male: false, female: false } }
@@ -894,7 +905,7 @@ const AssessmentResultsModal = ({
       pdf.setFontSize = (size) => _origSetFontSize(Math.max(size, PDF_MIN_FONT));
 
       // ── Color palette — exact match to website CSS values ──
-      // bg     = #060612  modal/page background
+      // bg     = #030012  page background (also the halo behind a levensles word that sits on the art)
       // green  = #00ff9d  primary accent (borders, headings, combinationText)
       // purple = #a855f7  archetype name, support, OCEAN header
       // orange = #f97316  main archetype, shadow headers, brand labels
@@ -906,7 +917,7 @@ const AssessmentResultsModal = ({
       // dimWhite = rgba(156,163,175) secondary body text
       // mutedGray = #64748b  metadata, labels, footers
       // cardBg = #0c0c1d  card backgrounds
-      const bg        = [6, 6, 18];
+      const bg        = [3, 0, 18];   // #030012 — the PDF's page colour (owner, 2026-09-27)
       const orange    = [249, 115, 22];
       const purple    = [168, 85, 247];
       const green     = [29, 153, 4];
@@ -1289,144 +1300,14 @@ const AssessmentResultsModal = ({
       };
 
       // ═══════════════════════════════════════════════════
-      // PAGE 1: COVER — Large profile + extended archetype
+      // PAGE 1: COVER — drawn by coverPage.js. The dev cover preview (?coverpreview=1) calls it with
+      // the same arguments, so the levensles placement judged there is the one that ships.
       // ═══════════════════════════════════════════════════
-
-      // Top brand line — "GARDEN FOR LIFE: Archetype Analyse" left, date right
-      const coverDate = new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'nl-NL');
-      pdf.setFontSize(8.5);
-      pdf.setTextColor(...orange);   // brand line + date above the purple divider (owner, 2026-09-18)
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(t('resultsModal.pdf.cover.brandLine'), margin, y);
-      pdf.text(coverDate, W - margin, y, { align: 'right' });
-      y += 3;
-      pdf.setDrawColor(...purple);
-      pdf.setLineWidth(0.4);
-      pdf.line(margin, y, W - margin, y);
-      y += 19;
-
-      // Cover, top to bottom: the extended archetype's name, then the portrait in full view with the
-      // levensles set into its scene. The portrait takes every millimetre the name leaves.
-
-      // Extended Archetype Name — large, centered (1 of 132): 26 pt × 1.4 (owner, 2026-09-18), smaller only
-      // when a long name would not fit between the margins.
-      const coverName = extName || result.name || '';
-      pdf.setFont('helvetica', 'bold');
-      const coverNameUnits = pdf.getStringUnitWidth(coverName);
-      pdf.setFontSize(Math.min(36.4, coverNameUnits ? (contentW * pdf.internal.scaleFactor) / coverNameUnits : 36.4));
-      pdf.setTextColor(...purple);
-      pdf.text(coverName, W / 2, y, { align: 'center' });
-      y += 14;
-
-      // Subtitle (extendedSubtitle)
-      if (result.extendedSubtitle) {
-        pdf.setFontSize(12);
-        pdf.setTextColor(...orange);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(result.extendedSubtitle, W / 2, y, { align: 'center' });
-        y += 8;
-      }
-
-      // The levensles is set into the portrait's scene (coverLesson.js; owner rulings 2026-09-18): drawn over
-      // the portrait so nothing ever covers a word, shaped by the portrait's depth map (taper, convergence,
-      // occlusion), its sizes between the smallest text in this PDF (the radar's 5 pt unit captions) and 1.3×
-      // the largest subheading (sectionHeading, 12 pt). No portrait, or no room in its scene → the levensles
-      // goes under the portrait, wide and short.
-      const lessonText = result.levensles ? `“${result.levensles}”` : '';
-      const LESSON_SIZES = { min: 5, max: 12 * 1.3 };
-      const LESSON_PT = 10.5, LESSON_LH = 5.5;                  // under the portrait
-      const lessonLines = (w) => { pdf.setFontSize(LESSON_PT); pdf.setFont('helvetica', 'italic'); return pdf.splitTextToSize(lessonText, w); };
-      const loadImage = (src) => new Promise((resolve, reject) => {
-        const im = new Image();
-        im.crossOrigin = 'anonymous';
-        im.onload = () => resolve(im);
-        im.onerror = reject;
-        im.src = src;
+      y = await drawCoverPage(pdf, {
+        y, W, H, margin, contentW,
+        colors: { orange, purple, white, bg },
+        t, language, extName: extNameShown, result, portrait,
       });
-
-      // The portrait's transparency and depth map, sampled onto one 2 mm grid over the page: between the
-      // margins, the height of the portrait (the cells beside it are open page).
-      const sampleScene = (img, depthImg, { imgX, imgY, drawW, drawH }) => {
-        const cell = 2;
-        const cols = Math.floor(contentW / cell), rows = Math.floor(drawH / cell);
-        const gw = Math.max(1, Math.round(drawW / cell));
-        const off = Math.round((imgX - margin) / cell);
-        const channel = (source, rgba) => {
-          const c = document.createElement('canvas');
-          c.width = gw; c.height = rows;
-          const g = c.getContext('2d', { willReadFrequently: true });
-          g.drawImage(source, 0, 0, gw, rows);
-          const px = g.getImageData(0, 0, gw, rows).data;
-          const out = new Uint8ClampedArray(cols * rows);
-          for (let r = 0; r < rows; r++) {
-            for (let ic = 0; ic < gw; ic++) {
-              const q = ic + off;
-              if (q >= 0 && q < cols) out[r * cols + q] = px[(r * gw + ic) * 4 + rgba];
-            }
-          }
-          return out;
-        };
-        return readScene({ cols, rows, cell, x0: margin, y0: imgY, alpha: channel(img, 3), depth: depthImg ? channel(depthImg, 0) : null });
-      };
-
-      let lessonInScene = false;
-      if (portrait.url) try {
-        const img = await loadImage(portrait.url);
-        // Without its depth map the lesson still finds room in the scene, only level and at one size.
-        const depthImg = portrait.depthUrl ? await loadImage(portrait.depthUrl).catch(() => null) : null;
-        const gap = 6;
-        const aspect = img.naturalWidth / img.naturalHeight;
-        // The portrait in full view: the whole image, uncropped, in its own proportions, no frame, placed as
-        // a true PNG so its transparency (the figure's glow) sits straight on the page.
-        // 10% larger than the room between the name and the bottom margin, and lifted 10 mm toward the name
-        // (owner, 2026-09-18): a figure can run to the image's lower edge, so the air belongs under it.
-        const lift = 10;
-        const fit = (reserve) => {
-          const room = H - margin - y - reserve - 2 * gap;
-          let h = Math.max(60, Math.min(room * 1.1, H - 3 - y - gap - reserve));
-          let w = h * aspect;
-          if (w > contentW) { w = contentW; h = w / aspect; }
-          return { imgX: (W - w) / 2, imgY: y + gap - lift, drawW: w, drawH: h };
-        };
-        let place = fit(0);
-        let lesson = null;
-        if (lessonText) {
-          pdf.setFont('helvetica', 'italic');
-          const measure1 = (s) => pdf.getStringUnitWidth(s) / pdf.internal.scaleFactor;   // mm at 1 pt
-          // Beside the figure or flowing along a pole, whichever lays out better (dev preview: &lesson=open|flow).
-          const mode = (typeof window !== 'undefined' && window.__GFL_PDF_REPLAY?.lessonMode) || 'auto';
-          lesson = layoutLesson({ text: lessonText, scene: sampleScene(img, depthImg, place), sizes: LESSON_SIZES, measure1, mode });
-          if (!lesson) place = fit(2 + lessonLines(contentW - 10).length * LESSON_LH + 6);
-        }
-        // Rasterised at ~300 dpi for its printed size.
-        const pxH = Math.min(img.naturalHeight, Math.round((place.drawH / 25.4) * 300));
-        const imgCanvas = document.createElement('canvas');
-        imgCanvas.height = pxH;
-        imgCanvas.width = Math.round(pxH * aspect);
-        imgCanvas.getContext('2d').drawImage(img, 0, 0, imgCanvas.width, imgCanvas.height);
-        pdf.addImage(imgCanvas.toDataURL('image/png'), 'PNG', place.imgX, place.imgY, place.drawW, place.drawH, undefined, 'FAST');
-        // No link to the original here: the full-resolution portrait download lives in the account dashboard.
-        // The lesson goes over the portrait, never under it: nothing may cover a word.
-        if (lesson) {
-          drawLesson(pdf, lesson, { ink: white, halo: bg });
-          lessonInScene = true;
-        }
-        y = place.imgY + place.drawH + gap;
-      } catch {
-        y += 8;
-      }
-
-      // No portrait, or no room in its scene: the levensles under it, wide and short.
-      if (lessonText && !lessonInScene) {
-        y += 2;
-        const lines = lessonLines(contentW - 10);
-        pdf.setTextColor(...white);
-        lines.forEach(line => {
-          pdf.text(line, W / 2, y, { align: 'center' });
-          y += LESSON_LH;
-        });
-        y += 6;
-      }
 
       // ═══════════════════════════════════════════════════
       // SHORT (free) VERSION — follows the result-card flow, 1 page per component:
@@ -2110,7 +1991,7 @@ const AssessmentResultsModal = ({
 
       // ── WHY THIS COMBINATION ──
       if (result.combinationText) {
-        sectionHeading(`Waarom jij ${extName || result.name} bent`, green);
+        sectionHeading(`Waarom jij ${extNameShown || result.name} bent`, green);
         writeWrapped(result.combinationText, margin + 2, y, contentW - 4, 8.5, white);
         y += 4;
         hr();
@@ -3724,7 +3605,7 @@ const AssessmentResultsModal = ({
                     {portrait.url && (
                     <img
                       src={portrait.url}
-                      alt={extName || result.name}
+                      alt={extNameShown || result.name}
                       loading="eager"
                       fetchpriority="high"
                       decoding="async"
@@ -3762,7 +3643,7 @@ const AssessmentResultsModal = ({
                       filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))',
                       marginBottom: '0.5rem',
                     }}>
-                      {extName || result.name}
+                      {extNameShown || result.name}
                     </h1>
                     {result.mainName && result.secondaryName && (
                       <p style={{
@@ -3915,7 +3796,7 @@ const AssessmentResultsModal = ({
                         chart={morphChart}
                         mainName={result.mainName || 'Main'}
                         supportName={result.secondaryName || 'Support'}
-                        configName={extName || undefined}
+                        configName={extNameShown || undefined}
                         height={474}
                         language={language}
                       />

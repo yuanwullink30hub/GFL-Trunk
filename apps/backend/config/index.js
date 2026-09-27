@@ -87,4 +87,13 @@ module.exports = {
   // request host (which would be localhost in dev / the API host in prod).
   siteUrl: (process.env.SITE_URL || 'https://www.gardenforlife.nl').replace(/\/+$/, ''),
 
+  // Public base URL of THIS API — for links the API sends out that point back at itself (the account
+  // verification mail, OAuth redirect URIs). Always configured, never read from the request: the Host
+  // header is the client's to set, so a link built from it could send a person's verification token to
+  // a host of the requester's choosing. Production defaults to the live API host, the way siteUrl
+  // defaults to the live site; API_PUBLIC_URL overrides it.
+  apiPublicUrl: (process.env.API_PUBLIC_URL
+    || (process.env.NODE_ENV === 'production' ? 'https://api.gardenforlife.nl' : `http://localhost:${parseInt(process.env.PORT, 10) || 8080}`)
+  ).replace(/\/+$/, ''),
+
 };

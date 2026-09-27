@@ -26,8 +26,8 @@ const SOCIAL_KEYS = ['instagram', 'youtube', 'tiktok', 'x', 'linkedin'];
 // Where providers redirect back to. Must match the redirect URI registered in each
 // platform's developer app (production: the deployed API host via API_PUBLIC_URL).
 function callbackUrl(req, platform) {
-  const base = process.env.API_PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
-  return `${base}/api/social/callback/${platform}`;
+  // config.apiPublicUrl, never the request's Host header (see config/index.js).
+  return `${config.apiPublicUrl}/api/social/callback/${platform}`;
 }
 
 // ── Provider registry — a platform is LIVE when its env keys are set AND it has a

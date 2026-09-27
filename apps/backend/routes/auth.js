@@ -28,8 +28,8 @@ const EMAIL_CONFIGURED = !!(config.email && config.email.user && config.email.pa
 const VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 
 async function sendVerificationEmail(toEmail, token, req) {
-  const base = process.env.API_PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
-  const link = `${base}/api/auth/verify?token=${encodeURIComponent(token)}`;
+  // config.apiPublicUrl, never the request's Host header (see config/index.js).
+  const link = `${config.apiPublicUrl}/api/auth/verify?token=${encodeURIComponent(token)}`;
   const transporter = nodemailer.createTransport({
     host: config.email.host, port: config.email.port, secure: config.email.secure,
     auth: { user: config.email.user, pass: config.email.pass },

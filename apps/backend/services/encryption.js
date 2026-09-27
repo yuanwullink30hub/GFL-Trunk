@@ -32,8 +32,14 @@ function getKey() {
   if (KEY_BUFFER) return KEY_BUFFER;
 
   if (!config.encryptionKey) {
+    // Never in production: writing personal data in the clear is not a fallback, it is a breach. The
+    // boot check in server.js (config/secure.js) already refuses to start; this holds if anything ever
+    // reaches here some other way.
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[Encryption] ENCRYPTION_KEY is not set — refusing to handle personal data unencrypted');
+    }
     if (!_warned) {
-      console.warn('[Encryption] ⚠  ENCRYPTION_KEY not set — field encryption DISABLED (plaintext fallback)');
+      console.warn('[Encryption] ⚠  ENCRYPTION_KEY not set — field encryption DISABLED (plaintext fallback, development only)');
       _warned = true;
     }
     return null;
@@ -134,7 +140,7 @@ function hash(value) {
  * Check if the encryption service is active (key is configured).
  */
 function isEnabled() {
-  return !!getKey();
+  try { return !!getKey(); } catch { return false; } // a status query answers, it does not throw
 }
 
 /**

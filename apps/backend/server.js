@@ -247,6 +247,19 @@ async function executeBetaWipe() {
 
 // ── Start ──
 async function start() {
+  // Fail closed: in production an insecure configuration refuses to start (config/secure.js). Only which
+  // setting is wrong is logged — never a value.
+  if (process.env.NODE_ENV === 'production') {
+    const { productionConfigProblems } = require('./config/secure');
+    const { fatal, warnings } = productionConfigProblems(config);
+    for (const w of warnings) console.warn(`[GFL-API] ⚠ Config: ${w}`);
+    if (fatal.length) {
+      for (const f of fatal) console.error(`[GFL-API] ✗ Config: ${f}`);
+      console.error('[GFL-API] Refusing to start in production with an insecure configuration. Fix the settings above.');
+      process.exit(1);
+    }
+  }
+
   // Connect to MongoDB (skips gracefully if MONGODB_URI not set)
   if (config.mongoUri) {
     await connectDB();

@@ -873,7 +873,9 @@ const LoginPage = memo(({ isVisible, onBack }) => {
                 </div>
                 <div>
                   <div style={FIELD_LABEL}><span>🔑</span> {t('pages.loginPage.password') || 'Wachtwoord'}</div>
-                  <input type="password" name="password" id="login-password" {...(process.env.NODE_ENV === 'production' && { required: true, minLength: 6 })}
+                  {/* The 10-character floor applies to CREATING a password only. Existing accounts keep the
+                      passwords they chose under the old 6-character rule, so the login form must accept those. */}
+                  <input type="password" name="password" id="login-password" {...(process.env.NODE_ENV === 'production' && { required: true, ...(mode === 'register' ? { minLength: 10 } : {}) })}
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     placeholder={t('pages.loginPage.password')}
                     value={password} onChange={(e) => setPassword(e.target.value)}

@@ -14,7 +14,8 @@ const nodemailer = require('nodemailer');
 const { ObjectId } = require('mongodb');
 const config = require('../config');
 const { collections, getDB, nameKey } = require('../db');
-const { authRequired } = require('../middleware/auth');
+const { authRequired, forgetAccount } = require('../middleware/auth');
+const { checkPassword, needsRehash, BCRYPT_COST } = require('../services/passwordPolicy');
 const { rateLimit, createFailureCounter } = require('../middleware/rateLimit');
 const { encrypt, decrypt, hash, decryptUser } = require('../services/encryption');
 const { decodeOrb3 } = require('@gfl/orb-engine');
@@ -260,9 +261,8 @@ router.post('/register', registerLimit, async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
+    const weak = checkPassword(password, [email, displayName]);
+    if (weak) return res.status(400).json({ error: weak.message, code: weak.code });
 
     const normalizedEmail = email.toLowerCase();
     const emailHash = hash(normalizedEmail);
@@ -273,12 +273,14 @@ router.post('/register', registerLimit, async (req, res) => {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
     const now = new Date();
 
-    // First user ever gets admin role; all others are clients
-    const userCount = await collections.users().countDocuments();
-    const role = userCount === 0 ? 'admin' : 'client';
+    // Registration never grants admin. It used to make the first-ever account an admin, which silently
+    // depended on the database being empty at that moment — a wiped or new database would hand admin to
+    // whoever registered first. Admin is granted only by the explicit seeding step
+    // (scripts/seed-admin.js) or by an existing admin.
+    const role = 'client';
 
     const resolvedDisplayName = displayName || normalizedEmail.split('@')[0];
 
@@ -560,6 +562,9 @@ router.get('/profiles', async (_req, res) => {
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const loginLimit = rateLimit({ name: 'login', max: 30, windowMs: LOGIN_WINDOW_MS, global: { max: 3000, persistent: true } });
 const accountFailures = createFailureCounter({ max: 10, windowMs: LOGIN_WINDOW_MS });
+// A real hash at today's cost, of a random value nobody knows: comparing against it costs exactly what a
+// genuine check costs, and can never succeed.
+const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(24).toString('base64'), BCRYPT_COST);
 
 router.post('/login', loginLimit, async (req, res) => {
   try {
@@ -580,6 +585,9 @@ router.post('/login', loginLimit, async (req, res) => {
     // Lookup by deterministic hash (encrypted email can't be searched)
     const user = await collections.users().findOne({ emailHash });
     if (!user) {
+      // Spend the same bcrypt time as a real check. Answering an unknown address instantly and a known
+      // one only after bcrypt told anyone with a stopwatch which addresses have accounts.
+      await bcrypt.compare(String(password), DUMMY_HASH);
       accountFailures.fail(emailHash);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -590,6 +598,13 @@ router.post('/login', loginLimit, async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
     accountFailures.clear(emailHash);
+
+    // An older, cheaper hash is upgraded to today's cost while the password is at hand.
+    if (needsRehash(user.passwordHash)) {
+      bcrypt.hash(String(password), BCRYPT_COST)
+        .then((passwordHash) => collections.users().updateOne({ _id: user._id, passwordHash: user.passwordHash }, { $set: { passwordHash } }))
+        .catch((e) => console.warn('[Auth] Password rehash skipped:', e.message));
+    }
 
     // Gate: an unverified account (emailVerified === false) cannot log in until the emailed link is
     // clicked. Legacy accounts (field absent) are treated as verified.
@@ -862,20 +877,21 @@ router.post('/orb-snapshot', authRequired, async (req, res) => {
 router.patch('/password', authRequired, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body || {};
-    if (!newPassword || String(newPassword).length < 6) {
-      return res.status(400).json({ error: 'Nieuw wachtwoord moet minstens 6 tekens zijn.' });
-    }
     const user = await collections.users().findOne({ _id: new ObjectId(req.user.userId) });
     if (!user) return res.status(404).json({ error: 'Account niet gevonden.' });
+    const weak = checkPassword(newPassword, [decrypt(user.email), decrypt(user.displayName)]);
+    if (weak) return res.status(400).json({ error: weak.message, code: weak.code });
     const ok = await bcrypt.compare(String(currentPassword || ''), user.passwordHash || '');
     if (!ok) return res.status(401).json({ error: 'Huidig wachtwoord is onjuist.' });
 
-    const passwordHash = await bcrypt.hash(String(newPassword), 10);
+    const passwordHash = await bcrypt.hash(String(newPassword), BCRYPT_COST);
 
     // No SMTP (local dev): apply immediately, same fallback as pre-verified account creation.
+    // Every other session ends with the old password; this device gets a fresh token to stay signed in.
     if (!EMAIL_CONFIGURED) {
-      await collections.users().updateOne({ _id: user._id }, { $set: { passwordHash, updatedAt: new Date() } });
-      return res.json({ ok: true, pending: false });
+      await revokeSessions(user._id, { passwordHash });
+      const token = signToken(user._id, decrypt(user.email), user.role || 'client');
+      return res.json({ ok: true, pending: false, token });
     }
 
     // Gated: stash the NEW hash + a single-use token and email a confirmation link. The change is
@@ -915,10 +931,8 @@ router.get('/password/verify', async (req, res) => {
       await collections.users().updateOne({ _id: user._id }, { $unset: { pwChangeToken: '', pwChangeHash: '', pwChangeExpires: '' } });
       return res.status(410).json({ error: 'Deze wijzigingslink is verlopen. Vraag de wachtwoordwijziging opnieuw aan.' });
     }
-    await collections.users().updateOne(
-      { _id: user._id },
-      { $set: { passwordHash: user.pwChangeHash, updatedAt: new Date() }, $unset: { pwChangeToken: '', pwChangeHash: '', pwChangeExpires: '' } }
-    );
+    // The new password holds from here, and every session opened with the old one ends.
+    await revokeSessions(user._id, { passwordHash: user.pwChangeHash }, { pwChangeToken: '', pwChangeHash: '', pwChangeExpires: '' });
     return res.json({ ok: true });
   } catch (e) {
     console.error('[Auth] password verify error:', e.message);
@@ -998,8 +1012,10 @@ router.get('/email/verify', async (req, res) => {
     }
     await collections.users().updateOne(
       { _id: user._id },
-      { $set: { email: user.pendingEmail, emailHash: user.pendingEmailHash, emailVerified: true, updatedAt: new Date() }, $unset: { emailChangeToken: '', pendingEmail: '', pendingEmailHash: '', emailChangeExpires: '' } }
+      { $set: { email: user.pendingEmail, emailHash: user.pendingEmailHash, emailVerified: true, updatedAt: new Date(), tokensValidAfter: new Date() }, $unset: { emailChangeToken: '', pendingEmail: '', pendingEmailHash: '', emailChangeExpires: '' } }
     );
+    // A new login address is a credential change: sessions opened under the old one end.
+    forgetAccount(user._id);
     return res.json({ ok: true });
   } catch (e) {
     console.error('[Auth] email verify error:', e.message);
@@ -1140,9 +1156,42 @@ module.exports.eraseAccountData = eraseAccountData;
  * `remember: true`) — the session gets the saved login's 30-day lifetime. Not a security boundary:
  * the credentials are required either way.
  */
+/**
+ * End every session of an account: tokens issued before now are refused (middleware/auth.js). Optional
+ * extra $set / $unset go in the same write, so a password change and the revocation cannot come apart.
+ */
+async function revokeSessions(userId, set = {}, unset = null) {
+  const now = new Date();
+  await collections.users().updateOne(
+    { _id: new ObjectId(String(userId)) },
+    { $set: { ...set, tokensValidAfter: now, updatedAt: now }, ...(unset ? { $unset: unset } : {}) },
+  );
+  forgetAccount(userId);
+}
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/logout-all  (auth required) — "log out everywhere": every session of this account ends,
+// including the one making the request. For a lost device or a password that may have leaked.
+// ─────────────────────────────────────────────────────────────
+router.post('/logout-all', authRequired, async (req, res) => {
+  try {
+    await revokeSessions(req.user.userId);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[Auth] logout-all failed:', err.message);
+    return res.status(500).json({ error: 'Uitloggen op alle apparaten mislukt.' });
+  }
+});
+
+/**
+ * iatMs: the issue time in milliseconds. The standard `iat` is whole seconds, too coarse to compare with
+ * users.tokensValidAfter — a token minted in the same second as a revocation could not be told apart from
+ * one minted just before it (middleware/auth.js verifySession). `role` stays in the token for the client's
+ * convenience only; the server always reads the role from the database.
+ */
 function signToken(userId, email, role, { remember = false } = {}) {
   return jwt.sign(
-    { sub: userId.toString(), email, role },
+    { sub: userId.toString(), email, role, iatMs: Date.now() },
     config.jwtSecret,
     { expiresIn: remember ? config.jwtRememberExpiresIn : config.jwtExpiresIn }
   );

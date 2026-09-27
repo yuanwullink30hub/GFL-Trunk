@@ -405,10 +405,12 @@ export async function saveOrbSnapshot(image, readingIndex, force) {
 }
 
 /**
- * Change password (auth required). Requires current password; new min 6 chars.
+ * Change password (auth required). Requires the current password; the new one must pass the server's
+ * policy (apps/backend/services/passwordPolicy.js: at least 10 characters and not easy to guess).
  * When SMTP is configured the change is gated behind an email confirmation link and is only
  * applied when that link is clicked — the response is { ok: true, pending: true } in that case,
- * or { ok: true, pending: false } when applied immediately (no SMTP / local dev).
+ * or { ok: true, pending: false, token } when applied immediately (no SMTP / local dev). A change of
+ * password ends every session; the fresh token keeps THIS device signed in, and is stored here.
  * @returns {Promise<{ ok: true, pending?: boolean }>}
  */
 export async function updatePassword({ currentPassword, newPassword }) {
@@ -421,7 +423,9 @@ export async function updatePassword({ currentPassword, newPassword }) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.error || `Wachtwoord bijwerken mislukt (${response.status})`);
   }
-  return response.json();
+  const data = await response.json();
+  if (data && data.token) setToken(data.token);
+  return data;
 }
 
 /**
@@ -476,6 +480,20 @@ export async function verifyEmailChange(token) {
  */
 export function logout() {
   clearToken();
+}
+
+/**
+ * Log out everywhere: every session of this account ends on the server — other browsers, the desktop
+ * app, a lost phone — including this one, whose token is cleared as well.
+ */
+export async function logoutAll() {
+  const response = await fetch(`${API_BASE}/auth/logout-all`, { method: 'POST', headers: authHeaders() });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Uitloggen op alle apparaten mislukt (${response.status})`);
+  }
+  clearToken();
+  return response.json();
 }
 
 /**

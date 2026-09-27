@@ -1,5 +1,5 @@
 import React, { memo, useState, useCallback, useRef, useEffect } from 'react';
-import { updateDisplayName, updateProfile, updatePassword, updateEmail, deleteOwnAccount, saveOrbSnapshot, getCard, orbLinkCode, orbLoginFromPdf, startSocialVerify } from '@gfl/api-client';
+import { updateDisplayName, updateProfile, updatePassword, updateEmail, deleteOwnAccount, logoutAll, saveOrbSnapshot, getCard, orbLinkCode, orbLoginFromPdf, startSocialVerify } from '@gfl/api-client';
 import { C, FONT, SciFiButton } from '@gfl/ui';
 import { useLanguage } from '@gfl/i18n';
 import { OrbSphere3D } from '../../orb';
@@ -368,7 +368,8 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
   const hrefFor = (u) => (/^https?:\/\//i.test(u) ? u : `https://${u}`);
 
   const savePassword = useCallback(async () => {
-    if (!newPw || newPw.length < 6) { setPwMsg(t('profile.dashboard.msg.pwTooShort')); return; }
+    // Only the length is checked here; the server's policy (strength) answers with its own message.
+    if (!newPw || [...newPw].length < 10) { setPwMsg(t('profile.dashboard.msg.pwTooShort')); return; }
     setBusy(true); setPwMsg('');
     try {
       const r = await updatePassword({ currentPassword: curPw, newPassword: newPw });
@@ -402,6 +403,13 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
     }
     catch (e) { setEmailMsg(e.message || t('profile.dashboard.msg.emailFailed')); } finally { setBusy(false); }
   }, [emailInput, emailPw, user.email, t, tFunc]);
+
+  // "Log out everywhere": the server ends every session of the account, this one included.
+  const handleLogoutAll = useCallback(async () => {
+    setBusy(true); setPwMsg('');
+    try { await logoutAll(); onLogout(); }
+    catch (e) { setPwMsg(e.message || t('profile.dashboard.msg.logoutAllFailed')); setBusy(false); }
+  }, [onLogout, t]);
 
   const handleDelete = useCallback(async () => {
     const word = t('profile.dashboard.settings.deleteWord');
@@ -1011,6 +1019,10 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                     <SciFiButton type="submit" disabled={busy || !curPw || !newPw} variant="purple" size="sm" padding="0.4rem 1.35rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.changePassword')}</SciFiButton>
                   </form>
                   {pwMsg && <div style={{ marginTop: '0.6rem', fontSize: 'max(9px,0.5vw)', color: pwMsg.includes('✓') ? '#4ade80' : '#f87171' }}>{pwMsg}</div>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', marginTop: '0.9rem', flexWrap: 'wrap' }}>
+                    <SciFiButton onClick={handleLogoutAll} disabled={busy} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.logoutAll')}</SciFiButton>
+                    <span style={{ fontSize: 'max(9px,0.48vw)', color: 'rgba(255,254,240,0.5)', flex: '1 1 14rem' }}>{t('profile.dashboard.settings.logoutAllHint')}</span>
+                  </div>
                 </div>
 
                 {/* downloads — archetype portrait + orb still + 12s rotation loop */}

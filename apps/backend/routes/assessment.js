@@ -9,9 +9,9 @@
 const { Router } = require('express');
 const { ObjectId } = require('mongodb');
 const { collections, getDB } = require('../db');
-const { authRequired } = require('../middleware/auth');
+// authOptional: the shared one, which checks revocation and takes the role from the database.
+const { authRequired, authOptional } = require('../middleware/auth');
 const { rateLimit } = require('../middleware/rateLimit');
-const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const config = require('../config');
 
@@ -115,29 +115,6 @@ function buildFeedbackEmail(settings, review) {
 }
 const router = Router();
 
-/**
- * Optional auth middleware — attaches req.user if token is provided,
- * but doesn't fail if token is missing. Allows anonymous submissions.
- */
-function authOptional(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
-    // No token provided — continue as anonymous
-    req.user = null;
-    return next();
-  }
-
-  try {
-    const token = header.slice(7);
-    const payload = jwt.verify(token, config.jwtSecret);
-    req.user = { userId: payload.sub, email: payload.email, role: payload.role || 'client' };
-  } catch (err) {
-    // Invalid token — still continue as anonymous
-    console.warn('[Assessment] Invalid token in review submission, continuing as anonymous');
-    req.user = null;
-  }
-  next();
-}
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/assessment — RETIRED: assessments are never stored

@@ -184,6 +184,8 @@ export default {
       settings: {
         title: { nl: 'Instellingen', en: 'Settings' },
         logout: { nl: 'Uitloggen', en: 'Log out' },
+        logoutAll: { nl: 'Uitloggen op alle apparaten', en: 'Log out on all devices' },
+        logoutAllHint: { nl: 'Beëindigt elke sessie van dit account: andere browsers, de app, een kwijtgeraakte telefoon — en deze.', en: 'Ends every session of this account: other browsers, the app, a lost phone — and this one.' },
         loginName: { nl: 'Inlognaam — uniek', en: 'Login name — unique' },
         emailLabel: { nl: 'E-mailadres', en: 'Email address' },
         emailPlaceholder: { nl: 'jij@voorbeeld.nl', en: 'you@example.com' },
@@ -265,7 +267,8 @@ export default {
         nameFailed: { nl: 'Naam bijwerken mislukt', en: 'Updating your name failed' },
         profileSaved: { nl: 'Profiel opgeslagen ✓', en: 'Profile saved ✓' },
         saveFailed: { nl: 'Opslaan mislukt', en: 'Saving failed' },
-        pwTooShort: { nl: 'Nieuw wachtwoord: minstens 6 tekens.', en: 'New password: at least 6 characters.' },
+        pwTooShort: { nl: 'Nieuw wachtwoord: minstens 10 tekens.', en: 'New password: at least 10 characters.' },
+        logoutAllFailed: { nl: 'Uitloggen op alle apparaten mislukt.', en: 'Logging out on all devices failed.' },
         pwChanged: { nl: 'Wachtwoord gewijzigd ✓', en: 'Password changed ✓' },
         pwPending: {
           nl: 'Bevestigingsmail verzonden — activeer je nieuwe wachtwoord via je inbox ✓',

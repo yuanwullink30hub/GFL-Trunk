@@ -10,7 +10,7 @@
  */
 const crypto = require('crypto');
 const { Router } = require('express');
-const jwt = require('jsonwebtoken');
+const { verifySession } = require('../middleware/auth');
 const config = require('../config');
 const { latestInstaller, sendFile } = require('../services/adminAppReleases');
 const { getDB } = require('../db');
@@ -24,15 +24,17 @@ setInterval(() => {
   for (const [t, l] of links) if (now > l.expiresAt) links.delete(t);
 }, LINK_TTL_MS).unref();
 
-function isManagement(req) {
+/** An admin session, checked against the database (middleware/auth.js verifySession), not the token's claim. */
+async function isManagement(req) {
   const header = req.headers.authorization || '';
   if (!header.startsWith('Bearer ')) return false;
-  try { return jwt.verify(header.slice(7), config.jwtSecret).role === 'admin'; } catch { return false; }
+  const user = await verifySession(header.slice(7));
+  return !!user && user.role === 'admin';
 }
 
 // POST /api/files/link → { url, name, version } (single use, 5 minutes)
 router.post('/link', async (req, res, next) => {
-  if (!isManagement(req)) return next();
+  if (!(await isManagement(req))) return next();
   try {
     const file = await latestInstaller();
     if (!file) return res.status(404).json({ error: 'no_release' });

@@ -17,8 +17,7 @@
 const { Router } = require('express');
 const { ObjectId } = require('mongodb');
 const { collections, getDB } = require('../db');
-const { authRequired, adminRequired } = require('../middleware/auth');
-const jwt = require('jsonwebtoken');
+const { authRequired, adminRequired, verifySession, forgetAccount } = require('../middleware/auth');
 const { activityCollection, activityDoc } = require('../services/activityLog');
 const { findFile, sendFile } = require('../services/adminAppReleases');
 const { decryptUser, decryptUsers } = require('../services/encryption');
@@ -155,17 +154,15 @@ const router = Router();
 // activity log that used to sit here moved to routes/activity.js → POST /api/activity.)
 // ═════════════════════════════════════════════════════════════
 
-router.use((req, res, next) => {
+// verifySession (middleware/auth.js) takes the role from the DATABASE: a token claiming role:admin is
+// no longer enough, and a revoked or demoted admin is out at once.
+router.use(async (req, res, next) => {
   const header = req.headers.authorization || '';
   if (!header.startsWith('Bearer ')) return next('router');
-  try {
-    const payload = jwt.verify(header.slice(7), config.jwtSecret);
-    if (payload.role !== 'admin') return next('router');
-    req.user = { userId: payload.sub, email: payload.email, role: payload.role };
-    return next();
-  } catch {
-    return next('router');
-  }
+  const user = await verifySession(header.slice(7));
+  if (!user || user.role !== 'admin') return next('router');
+  req.user = user;
+  return next();
 });
 
 // POST /api/admin/sessions/report-view — the admin opened a stored report (access log)
@@ -310,6 +307,7 @@ router.patch('/users/:id/role', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    forgetAccount(req.params.id); // the new role applies to that account's very next request
     res.json({ success: true, userId: req.params.id, role });
   } catch (err) {
     console.error('[Admin] Role change error:', err.message);
@@ -349,6 +347,7 @@ router.delete('/users/:id', async (req, res) => {
       `${counts.orbCodes} orb-codes, ${counts.messages} messages, ${counts.verbonden} verbonden, ` +
       `${counts.kaartDrafts} kaart-drafts, ${counts.consentRecords} consent records`
     );
+    forgetAccount(userId); // its tokens stop working at once
     res.json({ success: true, deletedUserId: userId, ...counts });
   } catch (err) {
     console.error('[Admin] Delete user error:', err.message);

@@ -46,10 +46,10 @@ async function stop() {
 }
 
 /** Mount routers on a fresh express app and listen on an ephemeral port. Returns the base URL. */
-async function serve(mounts) {
+async function serve(mounts, { jsonLimit = '1mb' } = {}) {
   const express = require('express');
   const app = express();
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: jsonLimit }));
   for (const [at, router] of mounts) app.use(at, router);
   const server = await new Promise((resolve) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
   servers.push(server);

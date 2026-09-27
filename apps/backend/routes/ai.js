@@ -19,6 +19,7 @@ const { buildAccessEmail } = require('../services/accessEmail');
 const { redactUploadText, neutralFileName } = require('../services/uploadRedaction');
 const { parseOceanAspects } = require('../services/oceanUpload');
 const { rateLimit } = require('../middleware/rateLimit');
+const { parseUpload, checkUploads, UploadError } = require('../services/uploadParser');
 
 // Level-specific prompt builders
 const promptBuilders = {
@@ -112,7 +113,17 @@ const analyzeLimit = rateLimit({
   global: { max: ANALYZE_TOTAL, persistent: true },
 });
 
-router.post('/analyze', analyzeLimit, async (req, res) => {
+// Upload caps, checked BEFORE the handler: it opens the SSE stream on its first line, after which a
+// proper 413 can no longer be sent. Count and size only — the parsing itself runs in a worker
+// (services/uploadParser.js) with a timeout and a memory bound.
+function uploadCaps(req, res, next) {
+  const raw = req.body && req.body.uploadedFileContents;
+  const problem = checkUploads(Array.isArray(raw) ? raw.filter(Boolean) : []);
+  if (problem) return res.status(413).json({ error: problem });
+  return next();
+}
+
+router.post('/analyze', analyzeLimit, uploadCaps, async (req, res) => {
   // Set SSE headers — use res.set() so CORS middleware headers are preserved
   res.set({
     'Content-Type': 'text/event-stream',
@@ -188,25 +199,19 @@ router.post('/analyze', analyzeLimit, async (req, res) => {
       ? rawUploads.filter((item) => item && (item.pdfBase64 || item.docxBase64 || typeof item.text === 'string'))
       : undefined;
     if (uploadedFileContents && uploadedFileContents.length > 0) {
-      const { PDFParse } = require('pdf-parse');
       for (let i = uploadedFileContents.length - 1; i >= 0; i--) {
         const item = uploadedFileContents[i];
         if ((item.pdfBase64 || item.docxBase64) && !item.text) {
           let extracted = null;
           try {
-            if (item.docxBase64) {
-              const mammoth = require('mammoth');
-              const parsed = await mammoth.extractRawText({ buffer: Buffer.from(item.docxBase64, 'base64') });
-              extracted = parsed.value?.trim();
-            } else {
-              const buffer = Buffer.from(item.pdfBase64, 'base64');
-              const parser = new PDFParse({ data: buffer });
-              const parsed = await parser.getText();
-              extracted = parsed.text?.trim();
-              await parser.destroy();
-            }
+            // In a worker thread with a hard timeout and a memory bound: a crafted file can only cost
+            // its own upload, never the rest of the server (services/uploadParser.js).
+            const kind = item.docxBase64 ? 'docx' : 'pdf';
+            const text = await parseUpload(kind, Buffer.from(item.docxBase64 || item.pdfBase64, 'base64'));
+            extracted = text.trim();
           } catch (err) {
-            console.error(`Upload parse error for ${neutralFileName(item.name, i)}:`, err.message);
+            const why = err instanceof UploadError ? err.code : err.message;
+            console.error(`Upload parse refused for ${neutralFileName(item.name, i)}: ${why}`);
           }
           if (extracted && extracted.length >= 30) {
             uploadedFileContents[i] = { name: item.name, text: extracted };

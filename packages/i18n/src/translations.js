@@ -240,7 +240,11 @@ const translations = {
     optionalUpload: { nl: "Optioneel: Upload Ondersteunende Bestanden", en: "Optional: Upload Supporting Files" },
     dropFiles: { nl: "Sleep bestanden hierheen", en: "Drop files here" },
     dragDrop: { nl: "Sleep bestanden hierheen", en: "Drag & drop files here" },
-    orClickBrowse: { nl: "of klik om te bladeren • PDF, DOCX, TXT", en: "or click to browse • PDF, DOCX, TXT" },
+    orClickBrowse: { nl: "of klik om te bladeren • PDF, DOCX, TXT • max. 3 bestanden, samen 8 MB", en: "or click to browse • PDF, DOCX, TXT • up to 3 files, 8 MB together" },
+    // The same caps the server enforces (apps/backend/services/uploadParser.js); here only to say so early.
+    fileTooLarge: { nl: "{name} is groter dan 4 MB en is niet toegevoegd.", en: "{name} is larger than 4 MB and was not added." },
+    tooManyFiles: { nl: "Je kunt maximaal 3 bestanden toevoegen.", en: "You can add at most 3 files." },
+    filesTooLarge: { nl: "{name} is niet toegevoegd: samen mogen de bestanden niet groter zijn dan 8 MB.", en: "{name} was not added: together the files may not exceed 8 MB." },
     filesProcessed: { nl: "Let op: de inhoud van dit bestand wordt verwerkt door het Claude AI-model (Anthropic, VS), nadat namen, e-mailadressen, telefoonnummers, postcodes en geboortedata er automatisch uit zijn verwijderd. Die verwijdering herkent niet alles. Upload geen bestanden met gevoelige persoonsgegevens van anderen. Garden For Life is niet verantwoordelijk voor de informatie die u in geüploade bestanden opneemt.", en: "Note: the contents of this file will be processed by the Claude AI model (Anthropic, US), after names, email addresses, phone numbers, postcodes and dates of birth have been removed automatically. That removal does not recognise everything. Do not upload files containing sensitive personal data of others. Garden For Life is not responsible for the information you include in uploaded files." },
     generateProfile: { nl: "Genereer Je Profiel", en: "Generate Your Profile" },
     skipUpload: { nl: "Upload overslaan en doorgaan →", en: "Skip upload and continue →" }

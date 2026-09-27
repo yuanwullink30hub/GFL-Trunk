@@ -2,6 +2,12 @@ import React, { useCallback, useState } from 'react';
 import { useLanguage } from '@gfl/i18n';
 import HoloOverlays from '../HoloOverlays';
 
+// The server's caps (apps/backend/services/uploadParser.js). It enforces them regardless; checking here
+// only means the person hears about it now, while they choose the file, rather than when the report fails.
+const MAX_FILES = 3;
+const MAX_FILE_BYTES = 4 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
+
 /**
  * AssessmentUpload - File upload screen shown after all questions
  */
@@ -13,6 +19,7 @@ const AssessmentUpload = ({
   onSkip 
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [notice, setNotice] = useState('');
   const { t } = useLanguage();
 
   const handleDragOver = useCallback((e) => {
@@ -25,19 +32,32 @@ const AssessmentUpload = ({
     setIsDragging(false);
   }, []);
 
+  // Add what fits: drop anything over the size cap, and stop at the file cap.
+  const addFiles = useCallback((incoming) => {
+    let room = MAX_FILES - files.length;
+    let total = files.reduce((n, f) => n + (f.size || 0), 0);
+    let message = '';
+    for (const file of incoming) {
+      if (file.size > MAX_FILE_BYTES) { message = t('assessmentUpload.fileTooLarge').replace('{name}', file.name); continue; }
+      if (room <= 0) { message = t('assessmentUpload.tooManyFiles'); break; }
+      if (total + file.size > MAX_TOTAL_BYTES) { message = t('assessmentUpload.filesTooLarge').replace('{name}', file.name); continue; }
+      onAddFile(file);
+      room -= 1;
+      total += file.size;
+    }
+    setNotice(message);
+  }, [files, onAddFile, t]);
+
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setIsDragging(false);
-    
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    droppedFiles.forEach(file => onAddFile(file));
-  }, [onAddFile]);
+    addFiles(Array.from(e.dataTransfer.files));
+  }, [addFiles]);
 
   const handleFileInput = useCallback((e) => {
-    const selectedFiles = Array.from(e.target.files || []);
-    selectedFiles.forEach(file => onAddFile(file));
+    addFiles(Array.from(e.target.files || []));
     e.target.value = ''; // Reset input
-  }, [onAddFile]);
+  }, [addFiles]);
 
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -144,6 +164,10 @@ const AssessmentUpload = ({
             </p>
           </div>
         </div>
+
+        {notice && (
+          <p role="status" className="mt-3 text-xs text-center" style={{ color: '#ffae00' }}>{notice}</p>
+        )}
 
         {/* File List */}
         {files.length > 0 && (

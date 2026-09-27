@@ -45,11 +45,12 @@ function childEnv() {
   return env;
 }
 
-// What one analysis may carry. A real OCEAN report is a text PDF of well under a megabyte; the caps leave
-// room for image-heavy exports without letting one request queue up tens of megabytes of parsing.
+// What one analysis may carry. OCEAN reports are image-heavy exports: persoonlijkheid.nl's is 4.4 MB and
+// parses in well under a second (an earlier 4 MB cap refused it). The caps leave room for that without
+// letting one request queue up tens of megabytes of parsing; the timeout and heap cap bound each parse.
 const MAX_FILES = 3;
-const MAX_FILE_BYTES = 4 * 1024 * 1024;
-const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 15 * 1024 * 1024;
 
 class UploadError extends Error {
   constructor(code) { super(code); this.code = code; }

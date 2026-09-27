@@ -26,6 +26,10 @@ const TARGET = path.join(DESKTOP, 'ui');
 
 // Website-host files and local data that must not be in the app — top-level names in the build output.
 const EXCLUDE_TOP = new Set(['_headers', '_redirects', '_routes.json', 'dev-replay']);
+// The archetype portraits' print and full tiers (~1.5 GB) stay on the website: with them the bundle is
+// four times what an app build may be (uiBundle.js MAX_TOTAL_BYTES) and every user would download them.
+// In the app the PDF cover falls back to the web copy, and the full-size download opens on the website.
+const EXCLUDE_NESTED = ['images/Archetype imags/print', 'images/Archetype imags/full'];
 
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 
@@ -61,7 +65,11 @@ function stageUi({ source = PLATFORM_APP_DIST, target = TARGET, log = console.lo
     if (EXCLUDE_TOP.has(entry.name)) { left += 1; continue; }
     fs.cpSync(path.join(source, entry.name), path.join(target, entry.name), {
       recursive: true,
-      filter: (src) => { if (src.endsWith('.map')) { left += 1; return false; } return true; },
+      filter: (src) => {
+        const rel = path.relative(source, src).split(path.sep).join('/');
+        if (src.endsWith('.map') || EXCLUDE_NESTED.includes(rel)) { left += 1; return false; }
+        return true;
+      },
     });
   }
 
@@ -122,7 +130,7 @@ function stageUi({ source = PLATFORM_APP_DIST, target = TARGET, log = console.lo
   return manifest;
 }
 
-module.exports = { stageUi, PLATFORM_APP_DIST, EXCLUDE_TOP };
+module.exports = { stageUi, PLATFORM_APP_DIST, EXCLUDE_TOP, EXCLUDE_NESTED };
 
 if (require.main === module) {
   try {

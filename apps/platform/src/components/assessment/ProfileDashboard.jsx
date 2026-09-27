@@ -609,6 +609,9 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
   const archetypeFullImg = resolvePortraitByName(archetypeName).fullUrl;
   const downloadArchetypePhoto = useCallback(async () => {
     if (!archetypeFullImg) { setDlMsg(t('profile.dashboard.msg.noArchetypeImage')); return; }
+    // The app does not carry the full-size tier (apps/desktop/scripts/sync-ui.js EXCLUDE_NESTED): the
+    // website's copy opens in the user's browser, where it can be saved.
+    if (isDesktopApp()) { window.open(`https://gardenforlife.nl${encodeURI(archetypeFullImg)}`, '_blank', 'noopener'); return; }
     setDlMsg(t('profile.dashboard.msg.photoDownloading')); // "…" keeps it on screen while the large file loads
     try {
       const res = await fetch(archetypeFullImg);

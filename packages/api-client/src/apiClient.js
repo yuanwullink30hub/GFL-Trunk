@@ -108,6 +108,18 @@ export const accountAuthHeaders = () => authHeaders();
 // ── Auth ──
 
 /**
+ * A refusal from the rate limiter (429) as something a person can read. The server answers
+ * { error: 'rate_limited' } — fine for code, not for a login form. The error carries
+ * `.rateLimited = true` for callers that want to branch on it.
+ */
+function limitedError(response, message) {
+  if (response.status !== 429) return null;
+  const e = new Error(message);
+  e.rateLimited = true;
+  return e;
+}
+
+/**
  * Register a new account.
  * @returns {Promise<{ token: string, user: { id, email, displayName } }>}
  */
@@ -119,6 +131,8 @@ export async function register({ email, password, displayName, age, country, orb
   });
 
   if (!response.ok) {
+    const limited = limitedError(response, 'Te veel registraties vanaf deze verbinding. Probeer het over een uur opnieuw.');
+    if (limited) throw limited;
     const err = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(err.error || `Registration failed (${response.status})`);
   }
@@ -142,6 +156,9 @@ export async function login({ email, password }) {
   });
 
   if (!response.ok) {
+    // After too many wrong passwords the account is held for 15 minutes, whichever connection tries.
+    const limited = limitedError(response, 'Te veel inlogpogingen. Probeer het over een kwartier opnieuw.');
+    if (limited) throw limited;
     const err = await response.json().catch(() => ({ error: response.statusText }));
     const e = new Error(err.error || `Login failed (${response.status})`);
     if (err.needsVerification) e.needsVerification = true;
@@ -1172,6 +1189,8 @@ export async function sendContactForm(data) {
     body: JSON.stringify(data),
   });
   if (!response.ok) {
+    const limited = limitedError(response, 'Je hebt het formulier net een paar keer verstuurd. Probeer het over een uur opnieuw.');
+    if (limited) throw limited;
     const err = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(err.error || `Verzenden mislukt (${response.status})`);
   }

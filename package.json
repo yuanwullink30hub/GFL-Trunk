@@ -19,7 +19,11 @@
   },
   "pnpm": {
     "overrides": {
-      "@xmldom/xmldom": "^0.8.15"
+      "@xmldom/xmldom": "^0.8.15",
+      "qs": "^6.16.0",
+      "body-parser@<1.20.6": "^1.20.8",
+      "dompurify": "^3.4.16",
+      "fflate@<0.6.11": "0.6.11"
     }
   }
 }

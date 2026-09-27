@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test:gates": "node --test \"engine/tests/*.test.js\""
+    "test:gates": "node --test \"engine/tests/*.test.js\"",
+    "test:security": "node --test \"tests/*.test.js\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",

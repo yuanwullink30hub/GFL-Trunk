@@ -116,6 +116,11 @@ async function connectDB() {
   // is what makes indefinite retention proportionate here.
   // No new drafts since 2026-09-19: the card copy now travels in the report PDF, signed
   // (services/cardSignature.js). This collection only holds drafts of older reports.
+  // Global rate-limit ceilings (middleware/rateLimit.js createPersistentCounter). One document per limit
+  // per window, keyed by the limit's name — never by anything about a visitor — and gone when the window
+  // closes. Per-visitor counts are deliberately NOT here: that would mean storing an address.
+  await ensureTtlIndex('rateLimits', { expiresAt: 1 }, 0, 'rateLimits_ttl');
+
   await db.collection('kaartDrafts').createIndex({ codeHash: 1 }, { unique: true });
   await dropIndexes('kaartDrafts', ['kaartDrafts_ttl_90d'], { key: 'at' });
 

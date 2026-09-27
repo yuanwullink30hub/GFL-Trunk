@@ -18,7 +18,7 @@ const nodemailer = require('nodemailer');
 const { buildAccessEmail } = require('../services/accessEmail');
 const { redactUploadText, neutralFileName } = require('../services/uploadRedaction');
 const { parseOceanAspects } = require('../services/oceanUpload');
-const { rateLimit, createCounter } = require('../middleware/rateLimit');
+const { rateLimit } = require('../middleware/rateLimit');
 
 // Level-specific prompt builders
 const promptBuilders = {
@@ -103,15 +103,16 @@ const router = Router();
 const REPORT_MAX_TOKENS = 30000; // headroom for the full report (was sent by the client; now fixed here)
 const ANALYZE_PER_VISITOR = Number(process.env.AI_ANALYZE_PER_VISITOR_PER_HOUR) || 6;
 const ANALYZE_TOTAL = Number(process.env.AI_ANALYZE_TOTAL_PER_HOUR) || 300;
-const analyzePerVisitor = rateLimit({ max: ANALYZE_PER_VISITOR, windowMs: 60 * 60 * 1000 });
-const analyzeTotal = createCounter({ max: ANALYZE_TOTAL, windowMs: 60 * 60 * 1000 });
-function analyzeBudget(req, res, next) {
-  if (analyzeTotal.hit('all')) return next();
-  console.warn(`[AI] hourly analysis budget (${ANALYZE_TOTAL}) reached — refusing until the window resets`);
-  return res.status(429).json({ error: 'busy' });
-}
+// One visitor gets ANALYZE_PER_VISITOR an hour. The global ceiling is a cost circuit-breaker, not a
+// budget one caller can drain: with EDGE_SECRET set, a caller rotating a forged CF-Connecting-IP lands in
+// the single untrusted bucket and still gets only ANALYZE_PER_VISITOR in total, so reaching the ceiling
+// takes ~50 genuinely distinct visitors. Persisted, so a deploy or a Render restart does not reset it.
+const analyzeLimit = rateLimit({
+  name: 'ai-analyze', max: ANALYZE_PER_VISITOR, windowMs: 60 * 60 * 1000,
+  global: { max: ANALYZE_TOTAL, persistent: true },
+});
 
-router.post('/analyze', analyzePerVisitor, analyzeBudget, async (req, res) => {
+router.post('/analyze', analyzeLimit, async (req, res) => {
   // Set SSE headers — use res.set() so CORS middleware headers are preserved
   res.set({
     'Content-Type': 'text/event-stream',
@@ -669,7 +670,12 @@ router.get('/providers', (_req, res) => {
 // language of the taken test ('nl' | 'en').
 // ─────────────────────────────────────────────────────────────
 
-router.post('/send-access-email', async (req, res) => {
+// Unauthenticated, and sends branded mail to any address it is given: per visitor, under a persisted
+// global ceiling, so it cannot be turned into a mail relay by spreading requests across addresses.
+const sendAccessEmailLimiter = rateLimit({
+  name: 'access-email', max: 5, windowMs: 60 * 60 * 1000, global: { max: 200, persistent: true },
+});
+router.post('/send-access-email', sendAccessEmailLimiter, async (req, res) => {
   try {
     const { recipientEmail, archetypeName, lang } = req.body || {};
     const to = String(recipientEmail || '').trim();

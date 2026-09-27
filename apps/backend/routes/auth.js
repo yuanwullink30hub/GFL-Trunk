@@ -15,6 +15,7 @@ const { ObjectId } = require('mongodb');
 const config = require('../config');
 const { collections, getDB, nameKey } = require('../db');
 const { authRequired } = require('../middleware/auth');
+const { rateLimit, createFailureCounter } = require('../middleware/rateLimit');
 const { encrypt, decrypt, hash, decryptUser } = require('../services/encryption');
 const { decodeOrb3 } = require('@gfl/orb-engine');
 const { readingForClaim } = require('../services/cardSignature');
@@ -250,7 +251,9 @@ function buildCardPayload(u) {
 // POST /api/auth/register
 // ─────────────────────────────────────────────────────────────
 
-router.post('/register', async (req, res) => {
+// Every registration sends a verification mail: per visitor, under a persisted global ceiling.
+const registerLimit = rateLimit({ name: 'register', max: 10, windowMs: 60 * 60 * 1000, global: { max: 500, persistent: true } });
+router.post('/register', registerLimit, async (req, res) => {
   try {
     const { email, password, displayName, age, country, orbCode, archetypeName, reading, remember } = req.body;
 
@@ -546,7 +549,19 @@ router.get('/profiles', async (_req, res) => {
 // POST /api/auth/login
 // ─────────────────────────────────────────────────────────────
 
-router.post('/login', async (req, res) => {
+// Two limits, because password guessing comes in two shapes:
+//   loginLimit       one network address trying many accounts — every attempt counts.
+//   accountFailures  many addresses trying ONE account, which no per-address limit can see — only
+//                    failures count, keyed by the account, so a person who logs in is never slowed.
+// A blocked account answers exactly like any other refusal, whether or not the address exists, so the
+// lock itself cannot be used to find out which emails have accounts. It is a 15-minute soft lock: an
+// attacker can hold a known address locked by repeatedly failing, which is the standard trade for
+// making guessing impossible, and the address-level limit caps how cheaply they can do it.
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const loginLimit = rateLimit({ name: 'login', max: 30, windowMs: LOGIN_WINDOW_MS, global: { max: 3000, persistent: true } });
+const accountFailures = createFailureCounter({ max: 10, windowMs: LOGIN_WINDOW_MS });
+
+router.post('/login', loginLimit, async (req, res) => {
   try {
     const { email, password, remember } = req.body;
 
@@ -557,16 +572,24 @@ router.post('/login', async (req, res) => {
     const normalizedEmail = email.toLowerCase();
     const emailHash = hash(normalizedEmail);
 
+    if (accountFailures.blocked(emailHash)) {
+      res.set('Retry-After', String(LOGIN_WINDOW_MS / 1000));
+      return res.status(429).json({ error: 'rate_limited' });
+    }
+
     // Lookup by deterministic hash (encrypted email can't be searched)
     const user = await collections.users().findOne({ emailHash });
     if (!user) {
+      accountFailures.fail(emailHash);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
+      accountFailures.fail(emailHash);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+    accountFailures.clear(emailHash);
 
     // Gate: an unverified account (emailVerified === false) cannot log in until the emailed link is
     // clicked. Legacy accounts (field absent) are treated as verified.

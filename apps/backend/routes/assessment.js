@@ -10,6 +10,7 @@ const { Router } = require('express');
 const { ObjectId } = require('mongodb');
 const { collections, getDB } = require('../db');
 const { authRequired } = require('../middleware/auth');
+const { rateLimit } = require('../middleware/rateLimit');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const config = require('../config');
@@ -194,7 +195,9 @@ router.get('/history', authRequired, async (req, res) => {
 
 // Anonymous by design: no auth middleware and no account id. A review is written right after a test;
 // linking it to an account would tie that person to the report's archetype and timestamp.
-router.post('/review', async (req, res) => {
+// Unauthenticated DB write: a write cap per visitor, under a persisted global ceiling.
+const reviewLimit = rateLimit({ name: 'review', max: 5, windowMs: 60 * 60 * 1000, global: { max: 300, persistent: true } });
+router.post('/review', reviewLimit, async (req, res) => {
   console.log('[Assessment] POST /review received');
   try {
     const {
@@ -304,7 +307,9 @@ router.post('/review', async (req, res) => {
 // ('report-email-short' / 'report-email-full'), falling back to 'feedback-email'.
 // ─────────────────────────────────────────────────────────────
 
-router.post('/report-email', authOptional, async (req, res) => {
+// Sends mail to any address it is given: per visitor, under a persisted global ceiling (not a relay).
+const reportEmailLimit = rateLimit({ name: 'report-email', max: 5, windowMs: 60 * 60 * 1000, global: { max: 200, persistent: true } });
+router.post('/report-email', reportEmailLimit, authOptional, async (req, res) => {
   try {
     const { email, kind, archetypeKey, extendedArchetypeName } = req.body || {};
     const normalized = String(email || '').trim();

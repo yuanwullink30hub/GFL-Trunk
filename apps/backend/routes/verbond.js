@@ -15,6 +15,7 @@ const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { collections, getDB, nameKey } = require('../db');
 const { authRequired } = require('../middleware/auth');
+const { rateLimit, byUser } = require('../middleware/rateLimit');
 const { encrypt, decrypt, hash } = require('../services/encryption');
 
 const verbondenCol = () => getDB().collection('verbonden');
@@ -48,7 +49,10 @@ async function activePair(a, b) {
 // ─────────────────────────────────────────────────────────────
 // POST /api/verbond/request  (auth) { to }
 // ─────────────────────────────────────────────────────────────
-router.post('/request', authRequired, async (req, res) => {
+// Behind a login, so the account is the identity — a network address would let one person on many
+// addresses, or many people behind one, get the wrong allowance. Each request notifies another user.
+const verbondRequestLimit = rateLimit({ name: 'verbond-request', max: 20, windowMs: 60 * 60 * 1000, key: byUser, global: { max: 1000, persistent: true } });
+router.post('/request', authRequired, verbondRequestLimit, async (req, res) => {
   try {
     const me = String(req.user.userId);
     const recipient = await resolveRecipient(req.body && req.body.to);

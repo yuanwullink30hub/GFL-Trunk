@@ -8,6 +8,7 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const config = require('../config');
+const { rateLimit } = require('../middleware/rateLimit');
 
 const router = express.Router();
 
@@ -18,7 +19,9 @@ const row = (label, value) => value
   ? `<tr><td style="padding:4px 10px 4px 0;color:#888;vertical-align:top;white-space:nowrap"><strong>${esc(label)}</strong></td><td style="padding:4px 0">${esc(value)}</td></tr>`
   : '';
 
-router.post('/', async (req, res) => {
+// Public, and every accepted post is a mail to our inbox: per visitor, under a persisted global ceiling.
+const contactLimit = rateLimit({ name: 'contact', max: 5, windowMs: 60 * 60 * 1000, global: { max: 100, persistent: true } });
+router.post('/', contactLimit, async (req, res) => {
   try {
     const b = req.body || {};
     const type = b.type === 'bron' ? 'bron' : 'dialoog';

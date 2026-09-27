@@ -40,7 +40,7 @@ export const OWNER_RADAR = BASKETS.map(([subject, nat, green, cult, blue, yellow
   };
 });
 
-export const OWNER_ARCHETYPES = { main: 'OUTLAW', support: 'HERO', shadow: 'Ruler', blindspot: 'Judge' };
+export const OWNER_ARCHETYPES = { main: 'OUTLAW', support: 'HERO', shadow: 'Ruler', blindspot: 'Judge', portraitVariant: 'male' };
 
 /** The uploaded Big Five values, with their aspects. */
 export const OWNER_OCEAN = [

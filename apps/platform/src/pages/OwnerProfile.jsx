@@ -23,7 +23,9 @@ const T = { p: { ...S.p, fontSize: SIZE.body }, h2: { ...S.h2, fontSize: SIZE.h2
 export default function OwnerProfile() {
   const { language } = useLanguage();
   const P = OWNER_PROFILE[language === 'en' ? 'en' : 'nl'];
-  const portrait = getArchetypeImage(OWNER_ARCHETYPES.main, OWNER_ARCHETYPES.support);
+  // This page is one real person's profile, not a reader's, so the variant is fixed rather than left to
+  // DEFAULT_PORTRAIT_VARIANT ('female' — the neutral default for a reader who has not chosen yet).
+  const portrait = getArchetypeImage(OWNER_ARCHETYPES.main, OWNER_ARCHETYPES.support, OWNER_ARCHETYPES.portraitVariant);
   const para = (text, i) => <p key={i} style={T.p}>{text}</p>;
 
   return (

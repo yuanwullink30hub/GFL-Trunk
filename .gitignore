@@ -47,6 +47,15 @@ apps/admin-desktop/ui/
 apps/admin-desktop/release/
 !apps/admin-desktop/build/
 
-# Archetype portrait originals (20-30 MB PNG, over Cloudflare Pages' 25 MiB per-file limit): only their
-# web/, full/ and depth/ copies ship (packages/assessment-core/src/data/archetypeImages.js).
+# Everything about the archetype portraits that must NOT be deployed. Vite copies apps/platform/public/
+# into the build straight off the disk and .gitignore has no say in it, so the heavy tiers live at the
+# repo root in portraits/ instead — see scripts/ingest-archetype-portraits.mjs for the full layout:
+#   portraits/_incoming/  what a delivery handed over (the ingest's input)
+#   portraits/_masters/   the ~23 MB PNG originals: archival + the source for the depth-map pass
+#   portraits/print/      2764 px, the PDF cover      } published to R2, ~660 MB together
+#   portraits/full/       the delivered resolution     } (scripts/publish-portraits.mjs)
+# Only web/ (~31 MB) and depth/ live under public/ and ship with the site.
+/portraits/
+# A master dropped at the top of the shipped folder would deploy; keep the guard even though
+# portraits/_masters/ is now its home. depth/*.png is a level deeper and stays tracked.
 apps/platform/public/images/Archetype imags/*.png

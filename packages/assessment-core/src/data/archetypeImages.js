@@ -7,14 +7,12 @@ import { resolveExtendedKey, extendedKeyForName } from './scoring/index.js';
  * The artwork is still in production: a slot stays null until its portrait lands. The 72-era
  * portraits were deleted with the 72-matrix.
  *
- * Every portrait has two files in apps/platform/public/images/Import ready/:
- *   - web/<name>.webp  the web copy (max 1100px tall, alpha kept) - what the card and the PDF draw
- *   - <name>.png       the full-resolution original - what the PDF's image link opens
- * Declare a slot with art('<name>.webp', '<name>.png').
+ * Declare a slot with pair('<KEY>') for a landed male + female pair, art('<KEY>', 'male'|'female')
+ * for a single variant, or pair('<KEY>', { shared: true }) where one image serves both.
  *
  * The keys are kept deliberately: this table is the manifest of exactly which
  * combination needs which two portraits. When the art lands, replace a slot's null
- * with art(...) - nothing else has to change. Filling only one of the two is
+ * with pair(...) - nothing else has to change. Filling only one of the two is
  * fine: resolvePortrait() falls back to the variant that exists, unless the caller asks
  * for the exact variant ({ fallback: false }).
  *
@@ -24,185 +22,191 @@ import { resolveExtendedKey, extendedKeyForName } from './scoring/index.js';
  * landed yet simply shows no portrait.
  */
 
-const PORTRAIT_DIR = '/images/Import ready/';
-
-/** A portrait: web copy (rendered) + full-resolution original (downloaded). */
-const art = (web, full) => ({ web: `${PORTRAIT_DIR}web/${web}`, full: `${PORTRAIT_DIR}${full}` });
-
-// The portraits' new home (owner, 2026-09-18): every archetype image sits in, and is pulled from,
-// public/images/Archetype imags/. The PNG originals stay out of git (they pass Cloudflare Pages'
-// 25 MiB per-file limit); what ships, per portrait <name>:
-//   web/<name>.webp    1650 px tall, alpha kept — the card, and the PDF cover (full page, ~180 dpi)
-//   full/<name>.webp   full resolution, alpha kept — the download
-//   depth/<name>.png   its depth map: small greyscale, brighter = nearer (Depth Anything V2, made
-//                      offline) — the PDF cover shapes the levensles to it (coverLesson.js)
+// Where a portrait's four files live, per slot. A slot is named by its 132-matrix key, lowercased with
+// the underscore as a dash, plus the variant: OUTLAW_HERO + female -> "outlaw-hero-female". The delivery
+// names ("The Ronin female - kopie.webp") never reach a URL; scripts/ingest-archetype-portraits.mjs
+// renames as it writes, so an apostrophe or a slash in a name (The Devil's Advocate, The Patriarch /
+// Matriarch) can't become a path.
+//
+//   web/<slot>.webp     1100 px tall, alpha kept — the results card (a 25rem box, sharp to 3x DPR).
+//                       In git and served by the platform, ~120 KB each.
+//   print/<slot>.webp   2764 px tall, alpha kept — the PDF cover. That is 234 mm (the cover's height
+//                       on A4) at 300 dpi, exactly the ceiling AssessmentResultsModal clamps the
+//                       raster to; taller buys the PDF nothing and costs the reader bytes.
+//   full/<slot>.webp    the delivered resolution, alpha kept — the dashboard download.
+//   depth/<slot>.png    its depth map: small greyscale, brighter = nearer (Depth Anything V2, made
+//                       offline) — the PDF cover shapes the levensles to it (coverLesson.js).
+//
+// print/ and full/ are ~660 MB over 263 slots, so they are not in git and not on Pages: they sit in the
+// same R2 bucket as the installers (owner, 2026-09-27) and are published with
+// scripts/publish-portraits.mjs. web/ and depth/ are small and stay local, which also keeps the depth map
+// same-origin — the cover reads its pixels, and a tainted canvas would kill the whole page.
 const ARCHETYPE_IMAGE_DIR = '/images/Archetype imags/';
-const portraitArt = (name) => ({
-  web: `${ARCHETYPE_IMAGE_DIR}web/${name}.webp`,
-  full: `${ARCHETYPE_IMAGE_DIR}full/${name}.webp`,
-  depth: `${ARCHETYPE_IMAGE_DIR}depth/${name}.png`,
-});
+const PORTRAIT_CDN = 'https://downloads.gardenforlife.nl/portraits/';
+
+const slotName = (key, variant) => `${String(key).toLowerCase().replace(/_/g, '-')}-${variant}`;
+
+/** One portrait's four files. `variant` is 'male', 'female', or 'shared' where one image serves both. */
+const art = (key, variant) => {
+  const slot = slotName(key, variant);
+  return {
+    web: `${ARCHETYPE_IMAGE_DIR}web/${slot}.webp`,
+    print: `${PORTRAIT_CDN}print/${slot}.webp`,
+    full: `${PORTRAIT_CDN}full/${slot}.webp`,
+    depth: `${ARCHETYPE_IMAGE_DIR}depth/${slot}.png`,
+  };
+};
+
+/**
+ * Both variants of one archetype.
+ *
+ * `shared: true` for an archetype delivered as a single image that serves both variants (#118 The
+ * Enlightened): both slots point at the one file. Nothing else changes — `available` stays
+ * { male: true, female: true }, so the results-card toggle behaves exactly as it does for a real pair
+ * and resolvePortrait() still answers with the variant the caller asked for.
+ */
+const pair = (key, { shared = false } = {}) =>
+  shared
+    ? { male: art(key, 'shared'), female: art(key, 'shared') }
+    : { male: art(key, 'male'), female: art(key, 'female') };
 
 /**
  * Lookup table: 132-matrix key (`${MAIN}_${SUPPORT}`) -> { male, female } portraits (art()).
- * null = artwork not available yet.
+ * null = artwork not available yet. Regenerated by scripts/ingest-archetype-portraits.mjs.
  */
 const ARCHETYPE_IMAGES = {
-  // RULER (Positie 12) - #1-11
-  RULER_JUDGE:      { male: null, female: null },  // #1   The Emperor
-  RULER_SAGE:       { male: art('sovereign male.webp', 'sovereign male.png'), female: null },  // #2   The Sovereign
-  RULER_ARTIST:     { male: null, female: null },  // #3   The Designer
-  RULER_EXPLORER:   { male: null, female: null },  // #4   The Entrepreneur
-  RULER_INNOCENT:   { male: null, female: null },  // #5   The Founder
-  RULER_OUTLAW:     { male: null, female: null },  // #6   The Reformer
-  RULER_TRICKSTER:  { male: null, female: null },  // #7   The Puppeteer
-  RULER_HERO:       { male: null, female: null },  // #8   The Commander
-  RULER_MAGICIAN:   { male: null, female: null },  // #9   The Overlord
-  RULER_CAREGIVER:  { male: null, female: null },  // #10  The Advocate
-  RULER_LOVER:      { male: null, female: null },  // #11  The Patron
-
-  // JUDGE (Positie 1) - #12-22
-  JUDGE_RULER:      { male: null, female: null },  // #12  The Arbiter
-  JUDGE_OUTLAW:     { male: null, female: null },  // #13  The Whistleblower
-  JUDGE_TRICKSTER:  { male: null, female: null },  // #14  The Inquisitor
-  JUDGE_SAGE:       { male: null, female: null },  // #15  The Critic
-  JUDGE_ARTIST:     { male: null, female: null },  // #16  The Appraiser
-  JUDGE_INNOCENT:   { male: null, female: null },  // #17  The Examiner
-  JUDGE_EXPLORER:   { male: null, female: null },  // #18  The Auditor
-  JUDGE_HERO:       { male: null, female: null },  // #19  The Avenger
-  JUDGE_MAGICIAN:   { male: null, female: null },  // #20  The Enforcer
-  JUDGE_CAREGIVER:  { male: null, female: null },  // #21  The Mediator
-  JUDGE_LOVER:      { male: null, female: null },  // #22  The Reconciler
-
-  // LOVER (Positie 2) - #23-33
-  LOVER_CAREGIVER:  { male: null, female: null },  // #23  The Soulmate
-  LOVER_RULER:      { male: null, female: null },  // #24  The Companion
-  LOVER_JUDGE:      { male: null, female: null },  // #25  The Betrothed
-  LOVER_TRICKSTER:  { male: null, female: null },  // #26  The Wingman
-  LOVER_OUTLAW:     { male: null, female: null },  // #27  The Libertine
-  LOVER_SAGE:       { male: null, female: null },  // #28  The Poet
-  LOVER_ARTIST:     { male: null, female: null },  // #29  The Muse
-  LOVER_INNOCENT:   { male: null, female: null },  // #30  The Votary
-  LOVER_EXPLORER:   { male: null, female: null },  // #31  The Moth
-  LOVER_HERO:       { male: null, female: null },  // #32  The Romantic
-  LOVER_MAGICIAN:   { male: null, female: null },  // #33  The Spellbinder
-
-  // CAREGIVER (Positie 3) - #34-44
-  CAREGIVER_LOVER:      { male: null, female: null },  // #34  The Healer
-  CAREGIVER_RULER:      { male: null, female: null },  // #35  The Patriarch / Matriarch
-  CAREGIVER_JUDGE:      { male: null, female: null },  // #36  The Defender
-  CAREGIVER_OUTLAW:     { male: null, female: null },  // #37  The Cultivator
-  CAREGIVER_TRICKSTER:  { male: null, female: null },  // #38  The Empath
-  CAREGIVER_SAGE:       { male: null, female: null },  // #39  The Therapist
-  CAREGIVER_ARTIST:     { male: null, female: null },  // #40  The Restorer
-  CAREGIVER_EXPLORER:   { male: null, female: null },  // #41  The Pilgrim
-  CAREGIVER_INNOCENT:   { male: null, female: null },  // #42  The Devotee
-  CAREGIVER_HERO:       { male: null, female: null },  // #43  The Guardian
-  CAREGIVER_MAGICIAN:   { male: null, female: null },  // #44  The Warden
-
-  // INNOCENT (Positie 4) - #45-55
-  INNOCENT_EXPLORER:   { male: null, female: null },  // #45  The Saint
-  INNOCENT_RULER:      { male: null, female: null },  // #46  The Shepherd
-  INNOCENT_JUDGE:      { male: null, female: null },  // #47  The Traditionalist
-  INNOCENT_TRICKSTER:  { male: null, female: null },  // #48  The Free Spirit
-  INNOCENT_OUTLAW:     { male: null, female: null },  // #49  The Torchbearer
-  INNOCENT_SAGE:       { male: null, female: null },  // #50  The Disciple
-  INNOCENT_ARTIST:     { male: null, female: null },  // #51  The Utopian
-  INNOCENT_HERO:       { male: null, female: null },  // #52  The Pioneer
-  INNOCENT_MAGICIAN:   { male: null, female: null },  // #53  The Illuminator
-  INNOCENT_CAREGIVER:  { male: null, female: null },  // #54  The Samaritan
-  INNOCENT_LOVER:      { male: null, female: null },  // #55  The Sweetheart
-
-  // EXPLORER (Positie 5) - #56-66
-  EXPLORER_INNOCENT:   { male: null, female: null },  // #56  The Navigator
-  EXPLORER_RULER:      { male: null, female: null },  // #57  The Networker
-  EXPLORER_JUDGE:      { male: null, female: null },  // #58  The Surveyor
-  EXPLORER_OUTLAW:     { male: null, female: null },  // #59  The Innovator
-  EXPLORER_TRICKSTER:  { male: null, female: null },  // #60  The Scout
-  EXPLORER_SAGE:       { male: null, female: null },  // #61  The Philosopher
-  EXPLORER_ARTIST:     { male: null, female: null },  // #62  The Bard
-  EXPLORER_HERO:       { male: null, female: null },  // #63  The Sailor
-  EXPLORER_MAGICIAN:   { male: null, female: null },  // #64  The Nomad
-  EXPLORER_LOVER:      { male: null, female: null },  // #65  The Stargazer
-  EXPLORER_CAREGIVER:  { male: null, female: null },  // #66  The Pathfinder
-
-  // HERO (Positie 11) - #67-77
-  HERO_MAGICIAN:   { male: null, female: null },  // #67  The Legend
-  HERO_RULER:      { male: null, female: null },  // #68  The Conqueror
-  HERO_JUDGE:      { male: null, female: null },  // #69  The Templar
-  HERO_OUTLAW:     { male: null, female: null },  // #70  The Raider
-  HERO_TRICKSTER:  { male: null, female: null },  // #71  The Agent
-  HERO_SAGE:       { male: null, female: null },  // #72  The Strategist
-  HERO_ARTIST:     { male: null, female: null },  // #73  The Duelist
-  HERO_EXPLORER:   { male: null, female: null },  // #74  The Astronaut
-  HERO_INNOCENT:   { male: null, female: null },  // #75  The Crusader
-  HERO_CAREGIVER:  { male: null, female: null },  // #76  The Protector
-  HERO_LOVER:      { male: null, female: null },  // #77  The Chevalier
-
-  // MAGICIAN (Positie 10) - #78-88
-  MAGICIAN_HERO:       { male: null, female: null },  // #78  The Alchemist
-  MAGICIAN_RULER:      { male: null, female: null },  // #79  The Engineer
-  MAGICIAN_JUDGE:      { male: null, female: null },  // #80  The Reckoner
-  MAGICIAN_OUTLAW:     { male: null, female: null },  // #81  The Protagonist
-  MAGICIAN_TRICKSTER:  { male: null, female: null },  // #82  The Enchanter
-  MAGICIAN_SAGE:       { male: null, female: null },  // #83  The Sorcerer
-  MAGICIAN_ARTIST:     { male: null, female: null },  // #84  The Performer
-  MAGICIAN_INNOCENT:   { male: null, female: null },  // #85  The Catalyst
-  MAGICIAN_EXPLORER:   { male: null, female: null },  // #86  The Trailblazer
-  MAGICIAN_LOVER:      { male: null, female: null },  // #87  The Shaman
-  MAGICIAN_CAREGIVER:  { male: null, female: null },  // #88  The Redeemer
-
-  // OUTLAW (Positie 6) - #89-99
-  OUTLAW_TRICKSTER:  { male: null, female: null },  // #89  The Anarchist
-  OUTLAW_RULER:      { male: null, female: null },  // #90  The Usurper
-  OUTLAW_JUDGE:      { male: null, female: null },  // #91  The Contrarian
-  OUTLAW_CAREGIVER:  { male: null, female: null },  // #92  The Liberator
-  OUTLAW_LOVER:      { male: null, female: null },  // #93  The Instigator
-  OUTLAW_SAGE:       { male: null, female: null },  // #94  The Iconoclast
-  OUTLAW_ARTIST:     { male: null, female: null },  // #95  The Punk
-  OUTLAW_EXPLORER:   { male: null, female: null },  // #96  The Renegade
-  OUTLAW_INNOCENT:   { male: null, female: null },  // #97  The Idealist
-  OUTLAW_MAGICIAN:   { male: null, female: null },  // #98  The Revolutionary
-  OUTLAW_HERO:       { male: portraitArt('ronin male'), female: portraitArt('Ronin female') },  // #99  The Ronin
-
-  // TRICKSTER (Positie 7) - #100-110
-  TRICKSTER_OUTLAW:     { male: null, female: null },  // #100 The Fool
-  TRICKSTER_RULER:      { male: null, female: null },  // #101 The Gatecrasher
-  TRICKSTER_JUDGE:      { male: null, female: null },  // #102 The Devil's Advocate
-  TRICKSTER_LOVER:      { male: null, female: null },  // #103 The Seducer
-  TRICKSTER_CAREGIVER:  { male: null, female: null },  // #104 The Chameleon
-  TRICKSTER_SAGE:       { male: null, female: null },  // #105 The Riddler
-  TRICKSTER_ARTIST:     { male: null, female: null },  // #106 The Impressionist
-  TRICKSTER_EXPLORER:   { male: null, female: null },  // #107 The Free-runner
-  TRICKSTER_INNOCENT:   { male: null, female: null },  // #108 The Joyrider
-  TRICKSTER_MAGICIAN:   { male: null, female: null },  // #109 The Shapeshifter
-  TRICKSTER_HERO:       { male: null, female: null },  // #110 The Ace
-
-  // SAGE (Positie 8) - #111-121
-  SAGE_ARTIST:     { male: null, female: null },  // #111 The Developer
-  SAGE_RULER:      { male: null, female: null },  // #112 The Analyst
-  SAGE_JUDGE:      { male: null, female: null },  // #113 The Skeptic
-  SAGE_CAREGIVER:  { male: null, female: null },  // #114 The Mentor
-  SAGE_LOVER:      { male: null, female: null },  // #115 The Guru
-  SAGE_OUTLAW:     { male: null, female: null },  // #116 The Hermit
-  SAGE_TRICKSTER:  { male: null, female: null },  // #117 The Theorist
-  SAGE_INNOCENT:   { male: null, female: null },  // #118 The Enlightened
-  SAGE_EXPLORER:   { male: null, female: null },  // #119 The Scholar
-  SAGE_HERO:       { male: null, female: null },  // #120 The Detective
-  SAGE_MAGICIAN:   { male: null, female: null },  // #121 The Freemason
-
-  // ARTIST (Positie 9) - #122-132
-  ARTIST_SAGE:       { male: null, female: null },  // #122 The Demiurge
-  ARTIST_RULER:      { male: null, female: null },  // #123 The Architect
-  ARTIST_JUDGE:      { male: null, female: null },  // #124 The Editor
-  ARTIST_LOVER:      { male: null, female: null },  // #125 The Troubadour
-  ARTIST_CAREGIVER:  { male: null, female: null },  // #126 The Storyteller
-  ARTIST_TRICKSTER:  { male: null, female: null },  // #127 The Oracle
-  ARTIST_OUTLAW:     { male: null, female: null },  // #128 The Provocateur
-  ARTIST_EXPLORER:   { male: null, female: null },  // #129 The Visionary
-  ARTIST_INNOCENT:   { male: null, female: null },  // #130 The Source
-  ARTIST_MAGICIAN:   { male: null, female: null },  // #131 The Craftsman
-  ARTIST_HERO:       { male: null, female: null },  // #132 The Forgemaster
+  RULER_JUDGE:         pair('RULER_JUDGE'),  // #1   The Emperor
+  RULER_SAGE:          pair('RULER_SAGE'),  // #2   The Sovereign
+  RULER_ARTIST:        pair('RULER_ARTIST'),  // #3   The Designer
+  RULER_EXPLORER:      pair('RULER_EXPLORER'),  // #4   The Entrepreneur
+  RULER_INNOCENT:      pair('RULER_INNOCENT'),  // #5   The Founder
+  RULER_OUTLAW:        pair('RULER_OUTLAW'),  // #6   The Reformer
+  RULER_TRICKSTER:     pair('RULER_TRICKSTER'),  // #7   The Puppeteer
+  RULER_HERO:          pair('RULER_HERO'),  // #8   The Commander
+  RULER_MAGICIAN:      pair('RULER_MAGICIAN'),  // #9   The Overlord
+  RULER_CAREGIVER:     pair('RULER_CAREGIVER'),  // #10  The Advocate
+  RULER_LOVER:         pair('RULER_LOVER'),  // #11  The Patron
+  JUDGE_RULER:         pair('JUDGE_RULER'),  // #12  The Arbiter
+  JUDGE_OUTLAW:        pair('JUDGE_OUTLAW'),  // #13  The Whistleblower
+  JUDGE_TRICKSTER:     pair('JUDGE_TRICKSTER'),  // #14  The Inquisitor
+  JUDGE_SAGE:          pair('JUDGE_SAGE'),  // #15  The Critic
+  JUDGE_ARTIST:        pair('JUDGE_ARTIST'),  // #16  The Appraiser
+  JUDGE_INNOCENT:      pair('JUDGE_INNOCENT'),  // #17  The Examiner
+  JUDGE_EXPLORER:      pair('JUDGE_EXPLORER'),  // #18  The Auditor
+  JUDGE_HERO:          pair('JUDGE_HERO'),  // #19  The Avenger
+  JUDGE_MAGICIAN:      pair('JUDGE_MAGICIAN'),  // #20  The Enforcer
+  JUDGE_CAREGIVER:     pair('JUDGE_CAREGIVER'),  // #21  The Mediator
+  JUDGE_LOVER:         pair('JUDGE_LOVER'),  // #22  The Reconciler
+  LOVER_CAREGIVER:     pair('LOVER_CAREGIVER'),  // #23  The Soulmate
+  LOVER_RULER:         pair('LOVER_RULER'),  // #24  The Companion
+  LOVER_JUDGE:         pair('LOVER_JUDGE'),  // #25  The Betrothed
+  LOVER_TRICKSTER:     pair('LOVER_TRICKSTER'),  // #26  The Wingman
+  LOVER_OUTLAW:        pair('LOVER_OUTLAW'),  // #27  The Libertine
+  LOVER_SAGE:          pair('LOVER_SAGE'),  // #28  The Poet
+  LOVER_ARTIST:        pair('LOVER_ARTIST'),  // #29  The Muse
+  LOVER_INNOCENT:      pair('LOVER_INNOCENT'),  // #30  The Votary
+  LOVER_EXPLORER:      pair('LOVER_EXPLORER'),  // #31  The Moth
+  LOVER_HERO:          pair('LOVER_HERO'),  // #32  The Romantic
+  LOVER_MAGICIAN:      pair('LOVER_MAGICIAN'),  // #33  The Spellbinder
+  CAREGIVER_LOVER:     pair('CAREGIVER_LOVER'),  // #34  The Healer
+  CAREGIVER_RULER:     pair('CAREGIVER_RULER'),  // #35  The Patriarch / Matriarch
+  CAREGIVER_JUDGE:     pair('CAREGIVER_JUDGE'),  // #36  The Defender
+  CAREGIVER_OUTLAW:    pair('CAREGIVER_OUTLAW'),  // #37  The Cultivator
+  CAREGIVER_TRICKSTER: pair('CAREGIVER_TRICKSTER'),  // #38  The Empath
+  CAREGIVER_SAGE:      pair('CAREGIVER_SAGE'),  // #39  The Therapist
+  CAREGIVER_ARTIST:    pair('CAREGIVER_ARTIST'),  // #40  The Restorer
+  CAREGIVER_EXPLORER:  pair('CAREGIVER_EXPLORER'),  // #41  The Pilgrim
+  CAREGIVER_INNOCENT:  pair('CAREGIVER_INNOCENT'),  // #42  The Devotee
+  CAREGIVER_HERO:      pair('CAREGIVER_HERO'),  // #43  The Guardian
+  CAREGIVER_MAGICIAN:  pair('CAREGIVER_MAGICIAN'),  // #44  The Warden
+  INNOCENT_EXPLORER:   pair('INNOCENT_EXPLORER'),  // #45  The Saint
+  INNOCENT_RULER:      pair('INNOCENT_RULER'),  // #46  The Shepherd
+  INNOCENT_JUDGE:      pair('INNOCENT_JUDGE'),  // #47  The Traditionalist
+  INNOCENT_TRICKSTER:  pair('INNOCENT_TRICKSTER'),  // #48  The Free Spirit
+  INNOCENT_OUTLAW:     pair('INNOCENT_OUTLAW'),  // #49  The Torchbearer
+  INNOCENT_SAGE:       pair('INNOCENT_SAGE'),  // #50  The Disciple
+  INNOCENT_ARTIST:     pair('INNOCENT_ARTIST'),  // #51  The Utopian
+  INNOCENT_HERO:       pair('INNOCENT_HERO'),  // #52  The Pioneer
+  INNOCENT_MAGICIAN:   pair('INNOCENT_MAGICIAN'),  // #53  The Illuminator
+  INNOCENT_CAREGIVER:  pair('INNOCENT_CAREGIVER'),  // #54  The Samaritan
+  INNOCENT_LOVER:      pair('INNOCENT_LOVER'),  // #55  The Sweetheart
+  EXPLORER_INNOCENT:   pair('EXPLORER_INNOCENT'),  // #56  The Navigator
+  EXPLORER_RULER:      pair('EXPLORER_RULER'),  // #57  The Networker
+  EXPLORER_JUDGE:      pair('EXPLORER_JUDGE'),  // #58  The Surveyor
+  EXPLORER_OUTLAW:     pair('EXPLORER_OUTLAW'),  // #59  The Innovator
+  EXPLORER_TRICKSTER:  pair('EXPLORER_TRICKSTER'),  // #60  The Scout
+  EXPLORER_SAGE:       pair('EXPLORER_SAGE'),  // #61  The Philosopher
+  EXPLORER_ARTIST:     pair('EXPLORER_ARTIST'),  // #62  The Bard
+  EXPLORER_HERO:       pair('EXPLORER_HERO'),  // #63  The Sailor
+  EXPLORER_MAGICIAN:   pair('EXPLORER_MAGICIAN'),  // #64  The Nomad
+  EXPLORER_LOVER:      pair('EXPLORER_LOVER'),  // #65  The Stargazer
+  EXPLORER_CAREGIVER:  pair('EXPLORER_CAREGIVER'),  // #66  The Pathfinder
+  HERO_MAGICIAN:       pair('HERO_MAGICIAN'),  // #67  The Legend
+  HERO_RULER:          pair('HERO_RULER'),  // #68  The Conqueror
+  HERO_JUDGE:          pair('HERO_JUDGE'),  // #69  The Templar
+  HERO_OUTLAW:         pair('HERO_OUTLAW'),  // #70  The Raider
+  HERO_TRICKSTER:      pair('HERO_TRICKSTER'),  // #71  The Agent
+  HERO_SAGE:           pair('HERO_SAGE'),  // #72  The Strategist
+  HERO_ARTIST:         pair('HERO_ARTIST'),  // #73  The Duelist
+  HERO_EXPLORER:       pair('HERO_EXPLORER'),  // #74  The Astronaut
+  HERO_INNOCENT:       pair('HERO_INNOCENT'),  // #75  The Crusader
+  HERO_CAREGIVER:      pair('HERO_CAREGIVER'),  // #76  The Protector
+  HERO_LOVER:          pair('HERO_LOVER'),  // #77  The Chevalier
+  MAGICIAN_HERO:       pair('MAGICIAN_HERO'),  // #78  The Alchemist
+  MAGICIAN_RULER:      pair('MAGICIAN_RULER'),  // #79  The Engineer
+  MAGICIAN_JUDGE:      pair('MAGICIAN_JUDGE'),  // #80  The Reckoner
+  MAGICIAN_OUTLAW:     pair('MAGICIAN_OUTLAW'),  // #81  The Protagonist
+  MAGICIAN_TRICKSTER:  pair('MAGICIAN_TRICKSTER'),  // #82  The Enchanter
+  MAGICIAN_SAGE:       pair('MAGICIAN_SAGE'),  // #83  The Sorcerer
+  MAGICIAN_ARTIST:     pair('MAGICIAN_ARTIST'),  // #84  The Performer
+  MAGICIAN_INNOCENT:   pair('MAGICIAN_INNOCENT'),  // #85  The Catalyst
+  MAGICIAN_EXPLORER:   pair('MAGICIAN_EXPLORER'),  // #86  The Trailblazer
+  MAGICIAN_LOVER:      pair('MAGICIAN_LOVER'),  // #87  The Shaman
+  MAGICIAN_CAREGIVER:  pair('MAGICIAN_CAREGIVER'),  // #88  The Redeemer
+  OUTLAW_TRICKSTER:    pair('OUTLAW_TRICKSTER'),  // #89  The Anarchist
+  OUTLAW_RULER:        pair('OUTLAW_RULER'),  // #90  The Usurper
+  OUTLAW_JUDGE:        pair('OUTLAW_JUDGE'),  // #91  The Contrarian
+  OUTLAW_CAREGIVER:    pair('OUTLAW_CAREGIVER'),  // #92  The Liberator
+  OUTLAW_LOVER:        pair('OUTLAW_LOVER'),  // #93  The Instigator
+  OUTLAW_SAGE:         pair('OUTLAW_SAGE'),  // #94  The Iconoclast
+  OUTLAW_ARTIST:       pair('OUTLAW_ARTIST'),  // #95  The Punk
+  OUTLAW_EXPLORER:     pair('OUTLAW_EXPLORER'),  // #96  The Renegade
+  OUTLAW_INNOCENT:     pair('OUTLAW_INNOCENT'),  // #97  The Idealist
+  OUTLAW_MAGICIAN:     pair('OUTLAW_MAGICIAN'),  // #98  The Revolutionary
+  OUTLAW_HERO:         pair('OUTLAW_HERO'),  // #99  The Ronin
+  TRICKSTER_OUTLAW:    pair('TRICKSTER_OUTLAW'),  // #100 The Fool
+  TRICKSTER_RULER:     pair('TRICKSTER_RULER'),  // #101 The Gatecrasher
+  TRICKSTER_JUDGE:     pair('TRICKSTER_JUDGE'),  // #102 The Devil's Advocate
+  TRICKSTER_LOVER:     pair('TRICKSTER_LOVER'),  // #103 The Seducer
+  TRICKSTER_CAREGIVER: pair('TRICKSTER_CAREGIVER'),  // #104 The Chameleon
+  TRICKSTER_SAGE:      pair('TRICKSTER_SAGE'),  // #105 The Riddler
+  TRICKSTER_ARTIST:    pair('TRICKSTER_ARTIST'),  // #106 The Impressionist
+  TRICKSTER_EXPLORER:  pair('TRICKSTER_EXPLORER'),  // #107 The Free-runner
+  TRICKSTER_INNOCENT:  pair('TRICKSTER_INNOCENT'),  // #108 The Joyrider
+  TRICKSTER_MAGICIAN:  pair('TRICKSTER_MAGICIAN'),  // #109 The Shapeshifter
+  TRICKSTER_HERO:      pair('TRICKSTER_HERO'),  // #110 The Ace
+  SAGE_ARTIST:         pair('SAGE_ARTIST'),  // #111 The Developer
+  SAGE_RULER:          pair('SAGE_RULER'),  // #112 The Analyst
+  SAGE_JUDGE:          pair('SAGE_JUDGE'),  // #113 The Skeptic
+  SAGE_CAREGIVER:      pair('SAGE_CAREGIVER'),  // #114 The Mentor
+  SAGE_LOVER:          pair('SAGE_LOVER'),  // #115 The Guru
+  SAGE_OUTLAW:         pair('SAGE_OUTLAW'),  // #116 The Hermit
+  SAGE_TRICKSTER:      pair('SAGE_TRICKSTER'),  // #117 The Theorist
+  SAGE_INNOCENT:       pair('SAGE_INNOCENT', { shared: true }),  // #118 The Enlightened
+  SAGE_EXPLORER:       pair('SAGE_EXPLORER'),  // #119 The Scholar
+  SAGE_HERO:           pair('SAGE_HERO'),  // #120 The Detective
+  SAGE_MAGICIAN:       pair('SAGE_MAGICIAN'),  // #121 The Freemason
+  ARTIST_SAGE:         pair('ARTIST_SAGE'),  // #122 The Demiurge
+  ARTIST_RULER:        pair('ARTIST_RULER'),  // #123 The Architect
+  ARTIST_JUDGE:        pair('ARTIST_JUDGE'),  // #124 The Editor
+  ARTIST_LOVER:        pair('ARTIST_LOVER'),  // #125 The Troubadour
+  ARTIST_CAREGIVER:    pair('ARTIST_CAREGIVER'),  // #126 The Storyteller
+  ARTIST_TRICKSTER:    pair('ARTIST_TRICKSTER'),  // #127 The Oracle
+  ARTIST_OUTLAW:       pair('ARTIST_OUTLAW'),  // #128 The Provocateur
+  ARTIST_EXPLORER:     pair('ARTIST_EXPLORER'),  // #129 The Visionary
+  ARTIST_INNOCENT:     pair('ARTIST_INNOCENT'),  // #130 The Source
+  ARTIST_MAGICIAN:     pair('ARTIST_MAGICIAN'),  // #131 The Craftsman
+  ARTIST_HERO:         pair('ARTIST_HERO'),  // #132 The Forgemaster
 };
 
 /** The two portrait variants every archetype has. */
@@ -228,9 +232,9 @@ const normVariant = (v) => (PORTRAIT_VARIANTS.includes(v) ? v : DEFAULT_PORTRAIT
  * @param {string} [preferred] - 'male' | 'female'
  * @param {{ fallback?: boolean }} [options] - fallback: false returns only the preferred variant (null while
  *   its art is missing) - the results card and PDF use this so the image always matches the toggle
- * @returns {{ url: string|null, fullUrl: string|null, depthUrl: string|null, variant: string|null, available: { male: boolean, female: boolean } }}
- *   url = the web copy to render; fullUrl = the full-resolution original (for download links);
- *   depthUrl = the portrait's depth map, when it has one
+ * @returns {{ url: string|null, printUrl: string|null, fullUrl: string|null, depthUrl: string|null, variant: string|null, available: { male: boolean, female: boolean } }}
+ *   url = the web copy to render on the card; printUrl = the 300 dpi copy the PDF cover draws;
+ *   fullUrl = the delivered resolution (for download links); depthUrl = the depth map, when it has one
  */
 export function resolvePortrait(mainKey, support, preferred = DEFAULT_PORTRAIT_VARIANT, { fallback = true } = {}) {
   const key = resolveExtendedKey(mainKey, support);
@@ -239,8 +243,9 @@ export function resolvePortrait(mainKey, support, preferred = DEFAULT_PORTRAIT_V
   const want = normVariant(preferred);
   const other = want === 'male' ? 'female' : 'male';
   const variant = slot[want] ? want : fallback && slot[other] ? other : null;
-  if (!variant) return { url: null, fullUrl: null, depthUrl: null, variant: null, available };
-  return { url: slot[variant].web, fullUrl: slot[variant].full, depthUrl: slot[variant].depth || null, variant, available };
+  if (!variant) return { url: null, printUrl: null, fullUrl: null, depthUrl: null, variant: null, available };
+  const p = slot[variant];
+  return { url: p.web, printUrl: p.print || null, fullUrl: p.full, depthUrl: p.depth || null, variant, available };
 }
 
 /**
@@ -290,7 +295,7 @@ export function resolvePortraitByName(name, variant = DEFAULT_PORTRAIT_VARIANT) 
   const sep = key ? key.lastIndexOf('_') : -1;
   return sep > 0
     ? resolvePortrait(key.slice(0, sep), key.slice(sep + 1), variant)
-    : { url: null, fullUrl: null, variant: null, available: { male: false, female: false } };
+    : { url: null, printUrl: null, fullUrl: null, depthUrl: null, variant: null, available: { male: false, female: false } };
 }
 
 /**

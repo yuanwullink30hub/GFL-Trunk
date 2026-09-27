@@ -247,6 +247,9 @@ export default {
         en: 'The payment could not be started. Check your connection and try again.',
       },
       alreadyUnlocked: { nl: 'Dit rapport is al vrijgegeven.', en: 'This report has already been unlocked.' },
+      // A second payment for the same report while the first is still live (a double click, a second
+      // tab). The server refuses it before anything is charged, so this must reassure, not alarm.
+      paymentInProgress: { nl: 'Je betaling voor dit rapport wordt al verwerkt. Wacht even — je hoeft niet opnieuw te betalen.', en: 'A payment for this report is already being processed. Please wait — there is no need to pay again.' },
       reportExpired: {
         nl: 'Dit rapport is verlopen en kan niet meer worden vrijgegeven.',
         en: 'This report has expired and can no longer be unlocked.',

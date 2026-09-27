@@ -77,6 +77,14 @@ async function connectDB() {
   await db.collection('payments').createIndex({ ref: 1 }, { unique: true });
   await db.collection('payments').createIndex({ paymentIntentId: 1 }, { unique: true, sparse: true });
   await db.collection('payments').createIndex({ codeHash: 1, status: 1 });
+  // Single-flight: at most one LIVE payment per report (services/payments.js toStatus). Only docs that
+  // carry liveCodeHash take part, and a payment drops it the moment it leaves the live states. Existing
+  // docs predate the field and are not backfilled on purpose: two live docs left behind by an old race
+  // would make the build fail and the server refuse to start. The step-5 lookup still covers those.
+  await db.collection('payments').createIndex(
+    { liveCodeHash: 1 },
+    { unique: true, partialFilterExpression: { liveCodeHash: { $exists: true } }, name: 'payments_single_flight' },
+  );
   await ensureTtlIndex('payments', { expiresAt: 1 }, 0, 'payments_ttl_expiresAt');
   // Double-fire proof, layer 1: one row per Stripe event id (webhook dedupe). 30 days covers
   // Stripe's retry horizon (3 days) with room to spare.

@@ -200,6 +200,7 @@ const PaywallModal = ({ open, onClose, onPaid, onConsent, language, t, sealedOrb
       case 'method_not_allowed': return t('resultsModal.paywall.methodNotAllowed');
       case 'payment_failed': return t('resultsModal.paywall.paymentDeclined');
       case 'already_unlocked': return t('resultsModal.paywall.alreadyUnlocked');
+      case 'in_progress': return t('resultsModal.paywall.paymentInProgress');
       case 'report_expired': return t('resultsModal.paywall.reportExpired');
       case 'consent_required': return t('resultsModal.paywall.consentRequired');
       case 'unavailable': return t('resultsModal.paywall.unavailableBody');

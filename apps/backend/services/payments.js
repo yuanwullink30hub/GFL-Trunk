@@ -53,6 +53,26 @@ const ALLOWED_METHOD_TYPES = new Set(['card', 'ideal']);
 const LIVE = ['creating', 'requires_action', 'processing', 'paid'];
 const FINAL = ['paid', 'failed', 'canceled', 'rejected_country', 'refunded'];
 
+/**
+ * Single-flight: at most one LIVE payment per report, enforced by the database.
+ *
+ * A live payment carries `liveCodeHash` (= its codeHash), and a unique index on that field — partial,
+ * {liveCodeHash: {$exists: true}}, so only live docs take part — makes a second live payment for the
+ * same report impossible to insert. The window it closes is wide: payFullReport checks for a payment in
+ * flight (step 5), then makes several Stripe calls (confirmation token, price, tax) before inserting
+ * (step 8), and two requests that both clear step 5 used to both reach Stripe and both charge.
+ *
+ * Every status change goes through toStatus(), which drops the field the moment a payment leaves the
+ * live states, so the slot is released in exactly one place. The field is used rather than a partial
+ * index filtered on `status: {$in: LIVE}`, which would need no bookkeeping at all but depends on $in
+ * support in partial filters (MongoDB 7.0+); $exists works on every version we could be running.
+ */
+function toStatus(status, extra = {}) {
+  const update = { $set: { status, ...extra } };
+  if (!LIVE.includes(status)) update.$unset = { liveCodeHash: '' };
+  return update;
+}
+
 const PRIVATE_ORIGIN_RE = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?$/;
 const PAGES_PREVIEW_RE = /^https:\/\/[a-z0-9][a-z0-9-]*\.gfl-trunk\.pages\.dev$/;
 
@@ -122,6 +142,29 @@ async function clientResponse(ref, pi) {
  * Preconditions, in order: report (seal) → not already unlocked → declared country → consent →
  * no payment in flight → payment-method country (pre-charge) → tax → charge.
  */
+/**
+ * Insert a new live payment, or refuse because the report already has one.
+ *
+ * A duplicate on liveCodeHash means another live payment holds the slot. If that holder has in fact left
+ * the live states — a status write that bypassed toStatus() — its field is stale: release it and try once
+ * more. So a missed release can cost one extra query, but never makes a report unpayable.
+ */
+async function claimPaymentSlot(codeHash, doc) {
+  const payments = collections.payments();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await payments.insertOne(doc);
+      return;
+    } catch (e) {
+      if (e?.code !== 11000 || !e.keyPattern?.liveCodeHash) throw e;
+      const holder = await payments.findOne({ liveCodeHash: codeHash }, { projection: { status: 1 } });
+      if (holder && LIVE.includes(holder.status)) throw new PaymentError('in_progress', 409);
+      if (holder) await payments.updateOne({ _id: holder._id, status: holder.status }, { $unset: { liveCodeHash: '' } });
+    }
+  }
+  throw new PaymentError('in_progress', 409);
+}
+
 async function payFullReport({ confirmationTokenId, sealedOrbCode, email, country, consent, consentText, termsVersion, language, origin, testAccess = false }) {
   const cfg = await resolvePaymentConfig(new Date(), { testAccess });
   const stripe = getStripe();
@@ -165,7 +208,7 @@ async function payFullReport({ confirmationTokenId, sealedOrbCode, email, countr
     if (inflight.status === 'paid') return clientResponse(inflight.ref, null);
     if (inflight.status === 'creating') {
       if (Date.now() - new Date(inflight.createdAt).getTime() < CREATING_STALE_MS) throw new PaymentError('in_progress', 409);
-      await collections.payments().updateOne({ _id: inflight._id, status: 'creating' }, { $set: { status: 'failed', lastError: 'stale_creating', updatedAt: new Date() } });
+      await collections.payments().updateOne({ _id: inflight._id, status: 'creating' }, toStatus('failed', { lastError: 'stale_creating', updatedAt: new Date() }));
     } else if (inflight.paymentIntentId) {
       const pi = await stripe.paymentIntents.retrieve(inflight.paymentIntentId);
       if (pi.status === 'succeeded' || pi.status === 'processing') {
@@ -178,7 +221,7 @@ async function payFullReport({ confirmationTokenId, sealedOrbCode, email, countr
         // existing payment wins.
         try {
           await stripe.paymentIntents.cancel(pi.id, {}, { idempotencyKey: `cancel-${inflight.ref}` });
-          await collections.payments().updateOne({ _id: inflight._id }, { $set: { status: 'canceled', updatedAt: new Date() } });
+          await collections.payments().updateOne({ _id: inflight._id }, toStatus('canceled', { updatedAt: new Date() }));
         } catch (e) {
           const fresh = await stripe.paymentIntents.retrieve(pi.id);
           await confirmFromIntent(fresh, 'pay-inflight');
@@ -227,13 +270,16 @@ async function payFullReport({ confirmationTokenId, sealedOrbCode, email, countr
     taxSource = 'fallback_nl_21';
   }
 
-  // 8. The payments doc exists BEFORE the charge, so a webhook can always find it.
+  // 8. The payments doc exists BEFORE the charge, so a webhook can always find it. Inserting it also
+  //    claims the report's single-flight slot (liveCodeHash, see toStatus): a concurrent request for the
+  //    same report that also got past step 5 fails here, before any PaymentIntent exists.
   const now = new Date();
   const ref = newRef();
   const cleanEmail = String(email || '').trim().toLowerCase();
-  await collections.payments().insertOne({
+  await claimPaymentSlot(codeHash, {
     ref,
     codeHash,
+    liveCodeHash: codeHash,
     status: 'creating',
     priceKey: cfg.priceKey,
     priceId: cfg.priceId,
@@ -269,12 +315,11 @@ async function payFullReport({ confirmationTokenId, sealedOrbCode, email, countr
     }, { idempotencyKey: `pi-create-${ref}` });
   } catch (e) {
     const failedPi = e?.raw?.payment_intent;
-    await collections.payments().updateOne({ ref }, { $set: {
-      status: 'failed',
+    await collections.payments().updateOne({ ref }, toStatus('failed', {
       ...(failedPi?.id ? { paymentIntentId: failedPi.id } : {}),
       lastError: e?.code || e?.type || 'error',
       updatedAt: new Date(),
-    } });
+    }));
     if (e?.type === 'StripeCardError' || failedPi) {
       throw new PaymentError('payment_failed', 402, { declineCode: e?.decline_code || e?.code || null });
     }
@@ -282,12 +327,11 @@ async function payFullReport({ confirmationTokenId, sealedOrbCode, email, countr
     throw new PaymentError('provider_error', 502);
   }
 
-  await collections.payments().updateOne({ ref }, { $set: {
+  await collections.payments().updateOne({ ref }, toStatus(statusFromIntent(pi) === 'paid' ? 'processing' : statusFromIntent(pi), {
     paymentIntentId: pi.id,
-    status: statusFromIntent(pi) === 'paid' ? 'processing' : statusFromIntent(pi),
     ...(typeof pi.livemode === 'boolean' ? { livemode: pi.livemode } : {}),
     updatedAt: new Date(),
-  } });
+  }));
   if (pi.status === 'succeeded') await confirmFromIntent(pi, 'pay');
   return clientResponse(ref, pi);
 }
@@ -302,7 +346,7 @@ async function syncStatus(doc, pi) {
   if (status === 'paid') return doc; // only confirmFromIntent may set paid
   const r = await collections.payments().findOneAndUpdate(
     { _id: doc._id, status: { $nin: FINAL } },
-    { $set: { status, ...(pi?.id && !doc.paymentIntentId ? { paymentIntentId: pi.id } : {}), updatedAt: new Date() } },
+    toStatus(status, { ...(pi?.id && !doc.paymentIntentId ? { paymentIntentId: pi.id } : {}), updatedAt: new Date() }),
     { returnDocument: 'after' },
   );
   return r || doc;
@@ -322,7 +366,7 @@ async function rejectForCountry(doc, pi, countries) {
   const payments = collections.payments();
   const claimed = await payments.findOneAndUpdate(
     { _id: doc._id, rejectState: { $nin: ['refunding', 'refunded'] } },
-    { $set: { status: 'rejected_country', rejectState: 'refunding', rejectedCountries: countries, updatedAt: new Date() } },
+    toStatus('rejected_country', { rejectState: 'refunding', rejectedCountries: countries, updatedAt: new Date() }),
     { returnDocument: 'after' },
   );
   if (!claimed) return payments.findOne({ _id: doc._id });
@@ -553,7 +597,7 @@ async function adminRefund({ id, by, review }) {
   }
   try {
     const result = await refundUnlock({ id, by, review, channel: viaStripe ? 'stripe' : 'manual' });
-    if (viaStripe) await collections.payments().updateOne({ paymentIntentId: current.reference }, { $set: { status: 'refunded', refundedAt: new Date(), updatedAt: new Date() } });
+    if (viaStripe) await collections.payments().updateOne({ paymentIntentId: current.reference }, toStatus('refunded', { refundedAt: new Date(), updatedAt: new Date() }));
     return result;
   } catch (e) {
     // The webhook echo beat us to the ledger: the refund is recorded either way.
@@ -601,7 +645,7 @@ async function onPaymentRevoked({ paymentIntentId, by }) {
     if (e instanceof RefundError && e.code === 'already_refunded') return;
     throw e;
   }
-  await collections.payments().updateOne({ paymentIntentId }, { $set: { status: 'refunded', refundedAt: new Date(), updatedAt: new Date() } });
+  await collections.payments().updateOne({ paymentIntentId }, toStatus('refunded', { refundedAt: new Date(), updatedAt: new Date() }));
 }
 
 paymentEvents.on('payment.confirmed', onPaymentConfirmed);

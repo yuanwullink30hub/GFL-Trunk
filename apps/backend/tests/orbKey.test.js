@@ -10,6 +10,7 @@
 const h = require('./helpers');
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('crypto');
 const orb3 = require('@gfl/orb-engine/orb3');
 
 let base;
@@ -40,12 +41,21 @@ async function call(method, path, { token, body } = {}) {
   return { status: res.status, body: json };
 }
 
-/** A real crystal code, as report generation mints it. */
+/**
+ * A real crystal code, as report generation mints it — a different one on every call. Each test needs a
+ * code no other test has touched: it used to be derived from a counter modulo 37 and 12, so two tests
+ * could draw the same code and one found it already linked (a flaky 403 in CI, 2026-09-28).
+ */
+const minted = new Set();
 function mintCode() {
   const KEYS = ['JUDGE', 'LOVER', 'CAREGIVER', 'INNOCENT', 'EXPLORER', 'OUTLAW', 'TRICKSTER', 'SAGE', 'ARTIST', 'MAGICIAN', 'HERO', 'RULER'];
-  const s = ++seq + Date.now() % 1000;
-  const details = KEYS.map((k, i) => ({ key: k, total: 5 + ((s * 13 + i * 7) % 37) }));
-  return orb3.orb3FromGeometry({ archetypeDetails: details, mainKey: KEYS[(s * 5) % 12], shadowKey: KEYS[(s * 7 + 3) % 12] });
+  for (;;) {
+    const details = KEYS.map((k) => ({ key: k, total: crypto.randomInt(5, 60) }));
+    const main = crypto.randomInt(12);
+    const shadow = (main + 1 + crypto.randomInt(11)) % 12; // never the main itself
+    const code = orb3.orb3FromGeometry({ archetypeDetails: details, mainKey: KEYS[main], shadowKey: KEYS[shadow] });
+    if (!minted.has(code)) { minted.add(code); return code; }
+  }
 }
 
 /** The attacker's function: rebuild the code from what /public/:handle publishes as `orb`. */
@@ -212,7 +222,7 @@ test('a real-sized report PDF is accepted (several MB, parsed off the main threa
   await unlock(code);
   const sharp = require('sharp');
   const noise = Buffer.alloc(1400 * 1400 * 3);
-  require('crypto').randomFillSync(noise);
+  crypto.randomFillSync(noise);
   const png = await sharp(noise, { raw: { width: 1400, height: 1400, channels: 3 } }).png({ compressionLevel: 0 }).toBuffer();
   const PDFDocument = require('pdfkit');
   const big = await new Promise((resolve) => {

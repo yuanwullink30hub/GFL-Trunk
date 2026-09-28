@@ -51,10 +51,12 @@ export default {
     onboarding: {
       verifyTitle: { nl: 'Bevestig je e-mail', en: 'Confirm your email' },
       createTitle: { nl: 'Maak je account', en: 'Create your account' },
-      verifySentTo: { nl: 'We hebben een bevestigingslink gestuurd naar', en: 'We sent a confirmation link to' },
+      // Also shown when the address already had an account (register answers the same); its owner then
+      // gets a mail saying so instead of a link — so this must stay true for both.
+      verifySentTo: { nl: 'We hebben een e-mail gestuurd naar', en: 'We sent an email to' },
       verifyClick: {
-        nl: 'Klik erop om je account te activeren — dit venster gaat daarna automatisch verder.',
-        en: 'Click it to activate your account — this window continues automatically afterwards.',
+        nl: 'Klik op de bevestigingslink erin om je account te activeren — dit venster gaat daarna automatisch verder.',
+        en: 'Click the confirmation link in it to activate your account — this window continues automatically afterwards.',
       },
       cancel: { nl: '← Annuleren', en: '← Cancel' },
       intro: {

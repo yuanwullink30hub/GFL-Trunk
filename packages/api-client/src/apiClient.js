@@ -121,7 +121,9 @@ function limitedError(response, message) {
 
 /**
  * Register a new account.
- * @returns {Promise<{ token: string, user: { id, email, displayName } }>}
+ * With email verification on (production) there is no token: `{ needsVerification: true, email, pollId }`
+ * — the same answer whether or not the address already had an account. Poll verificationStatus(pollId).
+ * @returns {Promise<{ token?: string, user?: { id, email, displayName }, needsVerification?: boolean, pollId?: string }>}
  */
 export async function register({ email, password, displayName, age, country, orbCode, orbKey, archetypeName, reading }) {
   const response = await fetch(`${API_BASE}/auth/register`, {
@@ -143,9 +145,20 @@ export async function register({ email, password, displayName, age, country, orb
 }
 
 /**
+ * Whether the account a registration's pollId was issued for has confirmed its email yet. False for an
+ * id that belongs to no account (the address already had one) — indistinguishable by design.
+ * @returns {Promise<boolean>}
+ */
+export async function verificationStatus(pollId) {
+  const response = await fetch(`${API_BASE}/auth/verify-status?id=${encodeURIComponent(pollId || '')}`);
+  if (!response.ok) throw new Error(`Status check failed (${response.status})`);
+  return (await response.json()).verified === true;
+}
+
+/**
  * Login with email + password.
- * Throws on failure; the error carries `.needsVerification = true` when the account exists but its
- * email isn't confirmed yet (so callers can poll instead of treating it as a hard error).
+ * Throws on failure. Every credential problem (unknown address, wrong password, email not confirmed
+ * yet) is one and the same answer, so the error cannot say which.
  * @returns {Promise<{ token: string, user: { id, email, displayName } }>}
  */
 export async function login({ email, password }) {
@@ -160,9 +173,7 @@ export async function login({ email, password }) {
     const limited = limitedError(response, 'Te veel inlogpogingen. Probeer het over een kwartier opnieuw.');
     if (limited) throw limited;
     const err = await response.json().catch(() => ({ error: response.statusText }));
-    const e = new Error(err.error || `Login failed (${response.status})`);
-    if (err.needsVerification) e.needsVerification = true;
-    throw e;
+    throw new Error(err.error || `Login failed (${response.status})`);
   }
 
   const data = await response.json();

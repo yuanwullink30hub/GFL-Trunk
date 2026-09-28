@@ -38,6 +38,8 @@ async function connectDB() {
   await db.collection('users').createIndex({ nameHash: 1 }, { unique: true, sparse: true });
   // GET /api/auth/verify-status is polled every few seconds while a new account waits for its email link.
   await db.collection('users').createIndex({ verifyPollHash: 1 }, { sparse: true });
+  // POST /api/auth/password/reset looks the account up by the hash of the emailed link's token.
+  await db.collection('users').createIndex({ pwResetHash: 1 }, { sparse: true });
   await db.collection('assessments').createIndex({ userId: 1, createdAt: -1 });
   await db.collection('assessmentReviews').createIndex({ timestamp: -1 });
   await db.collection('assessmentReviews').createIndex({ userId: 1 }, { sparse: true });

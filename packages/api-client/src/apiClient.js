@@ -454,6 +454,48 @@ export async function verifyPasswordChange(token) {
 }
 
 /**
+ * "Forgot password": ask for a reset link. Resolves the same way whether or not the address has an
+ * account — only the owner of the inbox learns which (the mail arrives or it does not).
+ * @returns {Promise<{ ok: true }>}
+ */
+export async function requestPasswordReset(email) {
+  const response = await fetch(`${API_BASE}/auth/password/forgot`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!response.ok) {
+    const limited = limitedError(response, 'Te veel aanvragen vanaf deze verbinding. Probeer het over een uur opnieuw.');
+    if (limited) throw limited;
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Aanvraag mislukt (${response.status})`);
+  }
+  return response.json();
+}
+
+/**
+ * Set a new password with the one-time token from the reset email (the site lands on /?pwreset=<token>).
+ * No auth. Every session of the account ends; log in again with the new password.
+ * @returns {Promise<{ ok: true }>}
+ */
+export async function resetPassword(token, password) {
+  const response = await fetch(`${API_BASE}/auth/password/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  });
+  if (!response.ok) {
+    const limited = limitedError(response, 'Te veel pogingen. Probeer het over een kwartier opnieuw.');
+    if (limited) throw limited;
+    const err = await response.json().catch(() => ({}));
+    const e = new Error(err.error || `Wachtwoord instellen mislukt (${response.status})`);
+    if (err.code) e.code = err.code;
+    throw e;
+  }
+  return response.json();
+}
+
+/**
  * Request an email-address change. Requires the current password. When SMTP is on the server
  * emails a confirmation link to the NEW address and returns { ok, pending:true } — the account
  * email is NOT changed until that link is clicked. Without SMTP it applies immediately.

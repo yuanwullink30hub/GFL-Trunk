@@ -82,8 +82,31 @@ async function sendAccountExistsEmail(toEmail, emailHash) {
   });
 }
 
-/** The "check your inbox" poll id, as stored: only its hash, like every other bearer value. */
-const pollHash = (pollId) => crypto.createHash('sha256').update(String(pollId)).digest('hex');
+// "Forgot password": a one-hour, single-use link to the site (?pwreset=<token>), where a new password is
+// chosen. Only the token's hash is stored.
+const PW_RESET_TTL_MS = 60 * 60 * 1000;
+async function sendPasswordResetEmail(toEmail, token) {
+  const link = `${config.siteUrl}/?pwreset=${encodeURIComponent(token)}`;
+  const transporter = nodemailer.createTransport({
+    host: config.email.host, port: config.email.port, secure: config.email.secure,
+    auth: { user: config.email.user, pass: config.email.pass },
+  });
+  await transporter.sendMail({
+    from: `"Garden For Life" <${config.email.from}>`,
+    to: toEmail,
+    subject: 'Nieuw wachtwoord instellen — Garden For Life',
+    html: `<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:0 auto;color:#222">
+      <h2 style="color:#7c3aed;margin-bottom:8px">Nieuw wachtwoord instellen</h2>
+      <p style="line-height:1.6">Je vroeg om een nieuw wachtwoord voor je Garden For Life-account. Klik op de knop en kies een nieuw wachtwoord. Daarna word je overal uitgelogd waar je nog met het oude wachtwoord was ingelogd.</p>
+      <p style="margin:26px 0"><a href="${link}" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;display:inline-block">Nieuw wachtwoord kiezen</a></p>
+      <p style="color:#888;font-size:13px;line-height:1.5">Werkt de knop niet? Kopieer deze link:<br><span style="word-break:break-all">${link}</span></p>
+      <p style="color:#aaa;font-size:12px;margin-top:22px">De link werkt één keer en verloopt over een uur. Heb je dit niet aangevraagd? Negeer deze e-mail: je wachtwoord blijft zoals het is.</p>
+    </div>`,
+  });
+}
+
+/** A bearer value as stored — the "check your inbox" poll id, a reset link's token: only its SHA-256. */
+const secretHash = (value) => crypto.createHash('sha256').update(String(value)).digest('hex');
 
 /**
  * A registration for an address that already has an account. A confirmed account's owner is told
@@ -417,7 +440,7 @@ router.post('/register', registerLimit, async (req, res) => {
       passwordHash,
       role,
       emailVerified: !EMAIL_CONFIGURED,
-      ...(verifyToken ? { verifyToken, verifyExpires: new Date(now.getTime() + VERIFY_TTL_MS), verifyPollHash: pollHash(pollId) } : {}),
+      ...(verifyToken ? { verifyToken, verifyExpires: new Date(now.getTime() + VERIFY_TTL_MS), verifyPollHash: secretHash(pollId) } : {}),
       ...(Number.isFinite(ageNum) ? { age: ageNum } : {}),
       ...(country ? { country: String(country) } : {}),
       ...(archetypeName ? { archetypeName: String(archetypeName) } : {}),
@@ -530,7 +553,7 @@ router.get('/verify-status', verifyStatusLimit, async (req, res) => {
   try {
     const id = String(req.query.id || '');
     if (!/^[A-Za-z0-9_-]{32}$/.test(id)) return res.json({ verified: false });
-    const user = await collections.users().findOne({ verifyPollHash: pollHash(id) }, { projection: { emailVerified: 1 } });
+    const user = await collections.users().findOne({ verifyPollHash: secretHash(id) }, { projection: { emailVerified: 1 } });
     return res.json({ verified: !!user && user.emailVerified === true });
   } catch (e) {
     console.error('[Auth] verify-status error:', e.message);
@@ -1055,6 +1078,80 @@ router.get('/password/verify', async (req, res) => {
     return res.json({ ok: true });
   } catch (e) {
     console.error('[Auth] password verify error:', e.message);
+    return res.status(500).json({ error: 'Er ging iets mis. Probeer het later opnieuw.' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/password/forgot  (PUBLIC) { email } — "forgot password".
+// Always the same answer, whether or not the address has an account (see /register): the mail is what
+// differs, and only the owner of the inbox sees it. The link goes out in the background, at most one per
+// address per few minutes, and a new request replaces the previous link. Without SMTP (local dev) the
+// link is printed to the server log instead.
+// ─────────────────────────────────────────────────────────────
+const forgotLimit = rateLimit({ name: 'pw-forgot', max: 5, windowMs: 60 * 60 * 1000, global: { max: 500, persistent: true } });
+const RESET_MAIL_GAP_MS = 5 * 60 * 1000;
+const resetMailSent = new Map(); // emailHash -> last sent (ms)
+setInterval(() => {
+  const cutoff = Date.now() - RESET_MAIL_GAP_MS;
+  for (const [k, at] of resetMailSent) if (at < cutoff) resetMailSent.delete(k);
+}, RESET_MAIL_GAP_MS).unref();
+
+router.post('/password/forgot', forgotLimit, async (req, res) => {
+  try {
+    const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+    if (!email || email.length > 320) return res.status(400).json({ error: 'Vul je e-mailadres in.' });
+    const emailHash = hash(email);
+    const user = await collections.users().findOne({ emailHash }, { projection: { _id: 1 } });
+    const last = resetMailSent.get(emailHash);
+    if (user && !(last && Date.now() - last < RESET_MAIL_GAP_MS)) {
+      resetMailSent.set(emailHash, Date.now());
+      const token = crypto.randomBytes(32).toString('hex');
+      await collections.users().updateOne({ _id: user._id },
+        { $set: { pwResetHash: secretHash(token), pwResetExpires: new Date(Date.now() + PW_RESET_TTL_MS) } });
+      if (EMAIL_CONFIGURED) {
+        sendPasswordResetEmail(email, token).catch((e) => console.warn('[Auth] reset email send failed:', e.message));
+      } else if (process.env.NODE_ENV !== 'production') {
+        console.log(`[Auth] (dev, no SMTP) password reset link: ${config.siteUrl}/?pwreset=${token}`);
+      }
+    }
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('[Auth] forgot-password error:', e.message);
+    return res.status(500).json({ error: 'Er ging iets mis. Probeer het later opnieuw.' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/password/reset  (PUBLIC) { token, password } — the page behind the emailed link.
+// Sets the new password, ends every session (like any password change), and counts as email
+// confirmation: whoever holds the link reads that inbox. The link works once.
+// ─────────────────────────────────────────────────────────────
+const resetLimit = rateLimit({ name: 'pw-reset', max: 20, windowMs: 15 * 60 * 1000 });
+router.post('/password/reset', resetLimit, async (req, res) => {
+  try {
+    const { token, password } = req.body || {};
+    const invalid = { error: 'Deze herstellink is ongeldig, al gebruikt of verlopen. Vraag een nieuwe aan via "Wachtwoord vergeten?".', code: 'bad_link' };
+    if (!/^[0-9a-f]{64}$/.test(String(token || ''))) return res.status(400).json(invalid);
+    const user = await collections.users().findOne({ pwResetHash: secretHash(token) });
+    if (!user || !user.pwResetExpires || new Date(user.pwResetExpires) < new Date()) return res.status(400).json(invalid);
+
+    const weak = checkPassword(password, [decrypt(user.email), decrypt(user.displayName)]);
+    if (weak) return res.status(400).json({ error: weak.message, code: weak.code });
+    const passwordHash = await bcrypt.hash(String(password), BCRYPT_COST);
+
+    // Taken in the same step it is applied: a link that raced itself sets the password once.
+    const taken = await collections.users().updateOne(
+      { _id: user._id, pwResetHash: user.pwResetHash },
+      { $unset: { pwResetHash: '', pwResetExpires: '' } },
+    );
+    if (!taken.modifiedCount) return res.status(400).json(invalid);
+    await revokeSessions(user._id, { passwordHash, emailVerified: true },
+      { verifyToken: '', verifyExpires: '', pwChangeToken: '', pwChangeHash: '', pwChangeExpires: '' });
+    accountFailures.clear(user.emailHash);
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('[Auth] password reset error:', e.message);
     return res.status(500).json({ error: 'Er ging iets mis. Probeer het later opnieuw.' });
   }
 });

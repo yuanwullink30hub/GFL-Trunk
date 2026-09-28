@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '@gfl/i18n';
-import { login, register, verificationStatus, getMe, getToken, setToken, logActivity, orbLoginFromPdf, orbLinkCode, getHistory, getAssessment, requestDownloadLink, getRememberLogin, setRememberLogin } from '@gfl/api-client';
+import { login, register, verificationStatus, requestPasswordReset, getMe, getToken, setToken, logActivity, orbLoginFromPdf, orbLinkCode, getHistory, getAssessment, requestDownloadLink, getRememberLogin, setRememberLogin } from '@gfl/api-client';
 import { setClientOrbCode, setClientOrbConfig, setClientProfile, getClientOrbCode, getClientOrbConfig, logoutAndReload } from '../clientMode';
 import ClientOrbExperience from '../components/assessment/ClientOrbExperience';
 import ProfileDashboard from '../components/assessment/ProfileDashboard';
@@ -248,6 +248,10 @@ const LoginPage = memo(({ isVisible, onBack, backButton = false }) => {
 
   // PDF-code login: the report's LC_ORB_ code is the credential.
   const [usePassword, setUsePassword] = useState(false); // admin fallback to email/password
+  // "Forgot password": the login form swaps for one email field; the answer is the same for any address.
+  const [forgot, setForgot] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotBusy, setForgotBusy] = useState(false);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadErr, setUploadErr] = useState('');
   const [orbCodeStr, setOrbCodeStr] = useState('');
@@ -468,6 +472,20 @@ const LoginPage = memo(({ isVisible, onBack, backButton = false }) => {
   }, []);
 
   const stampSession = () => { try { localStorage.setItem(SESSION_TS_KEY, String(Date.now())); } catch (_) {} };
+
+  const handleForgot = useCallback(async (e) => {
+    e.preventDefault();
+    setError(''); setForgotBusy(true);
+    try {
+      await requestPasswordReset(email.trim());
+      setForgotSent(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setForgotBusy(false);
+    }
+  }, [email]);
+  const closeForgot = () => { setForgot(false); setForgotSent(false); setError(''); };
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -862,6 +880,27 @@ const LoginPage = memo(({ isVisible, onBack, backButton = false }) => {
                 {uploadBusy ? t('auth.login.decoding') : t('auth.login.upload')}
               </SciFiButton>
             </>
+          ) : forgot ? (
+            <>
+              {error && (
+                <div style={{ ...ERROR_STYLE, marginBottom: '0.8rem' }}>
+                  <span style={{ fontSize: '0.8rem' }}>⚠</span> {error}
+                </div>
+              )}
+              <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: 'max(12px, 0.65vw)', color: C.text, lineHeight: 1.55, marginBottom: '0.7rem' }}>
+                {forgotSent ? t('auth.forgot.sent') : t('auth.forgot.intro')}
+              </div>
+              {!forgotSent && (
+                <form id="forgotForm" onSubmit={handleForgot}>
+                  <div style={FIELD_LABEL}><span>✉</span> {t('pages.loginPage.email') || 'E-mail'}</div>
+                  <input type="email" name="email" autoComplete="username" required
+                    inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                    placeholder={t('pages.loginPage.email')}
+                    value={email} onChange={(e) => setEmail(e.target.value)}
+                    style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
+                </form>
+              )}
+            </>
           ) : (
             <>
               {error && (
@@ -889,6 +928,14 @@ const LoginPage = memo(({ isVisible, onBack, backButton = false }) => {
                     placeholder={t('pages.loginPage.password')}
                     value={password} onChange={(e) => setPassword(e.target.value)}
                     style={INPUT} onFocus={inputFocus} onBlur={inputBlur} />
+                  {mode === 'login' && (
+                    <button type="button" onClick={() => { setForgot(true); setError(''); }}
+                      style={{ background: 'none', border: 'none', color: 'rgba(255,174,0,0.6)', cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0, marginTop: '0.4rem' }}
+                      onMouseEnter={(e) => e.target.style.color = 'rgba(255,174,0,0.9)'}
+                      onMouseLeave={(e) => e.target.style.color = 'rgba(255,174,0,0.6)'}>
+                      {t('auth.forgot.link')}
+                    </button>
+                  )}
                 </div>
                 {/* Saved login — the desktop app only; browsers leave this to password managers. */}
                 {isDesktopApp() && (
@@ -923,6 +970,20 @@ const LoginPage = memo(({ isVisible, onBack, backButton = false }) => {
               onMouseLeave={(e) => e.target.style.color = 'rgba(255,174,0,0.6)'}>
               {t('auth.login.haveAccount')}
             </button>
+          ) : forgot ? (
+            <>
+              <button type="button" onClick={closeForgot}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 'max(9px, 0.45vw)', fontFamily: FONT, textDecoration: 'underline', textUnderlineOffset: '3px', padding: 0 }}
+                onMouseEnter={(e) => e.target.style.color = 'rgba(255,255,255,0.7)'}
+                onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.4)'}>
+                {t('auth.login.back')}
+              </button>
+              {!forgotSent && (
+                <SciFiButton type="submit" form="forgotForm" disabled={forgotBusy} size="md">
+                  {forgotBusy ? t('auth.forgot.busy') : t('auth.forgot.submit')}
+                </SciFiButton>
+              )}
+            </>
           ) : (
             <>
               <button type="button" onClick={() => { setUsePassword(false); setError(''); }}

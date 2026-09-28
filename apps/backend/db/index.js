@@ -90,6 +90,11 @@ async function connectDB() {
   // Stripe's retry horizon (3 days) with room to spare.
   await db.collection('stripeEvents').createIndex({ eventId: 1 }, { unique: true });
   await ensureTtlIndex('stripeEvents', { expiresAt: 1 }, 0, 'stripeEvents_ttl_expiresAt');
+  // Social-handle verification (routes/social.js): one row per started OAuth flow, keyed by the random
+  // `state` it sent out, holding the PKCE verifier server-side. Taken once by the callback; the TTL
+  // clears the flows nobody finished.
+  await db.collection('oauthStates').createIndex({ state: 1 }, { unique: true });
+  await ensureTtlIndex('oauthStates', { expiresAt: 1 }, 0, 'oauthStates_ttl_expiresAt');
   // Double-fire proof, layer 3: at most one ledger row per paid PaymentIntent, whatever races upstream.
   // A failure here (existing duplicates) must not take the API down; layers 1–2 still hold.
   await db.collection('reportUnlocks').createIndex(
@@ -307,6 +312,7 @@ const collections = {
   paymentRecords: () => getDB().collection('paymentRecords'),
   payments: () => getDB().collection('payments'),
   stripeEvents: () => getDB().collection('stripeEvents'),
+  oauthStates: () => getDB().collection('oauthStates'),
   paymentSettings: () => getDB().collection('paymentSettings'),
   messages: () => getDB().collection('messages'),
   toolTicketKeys: () => getDB().collection('toolTicketKeys'),

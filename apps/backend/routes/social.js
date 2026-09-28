@@ -15,13 +15,13 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
 const { ObjectId } = require('mongodb');
 const config = require('../config');
 const { collections } = require('../db');
 const { authRequired } = require('../middleware/auth');
 
 const SOCIAL_KEYS = ['instagram', 'youtube', 'tiktok', 'x', 'linkedin'];
+const STATE_TTL_MS = 10 * 60 * 1000; // a started flow must come back within 10 minutes
 
 // Where providers redirect back to. Must match the redirect URI registered in each
 // platform's developer app (production: the deployed API host via API_PUBLIC_URL).
@@ -87,10 +87,18 @@ router.post('/start', authRequired, async (req, res) => {
     const p = liveProvider(platform);
     if (!p) return res.status(501).json({ error: 'Synchronisatie voor dit platform is nog niet beschikbaar.' });
 
-    // Short-lived signed state carries the user + (for PKCE) the code verifier — the
-    // callback is an unauthenticated redirect, so the state IS the auth context.
+    // The callback is an unauthenticated redirect, so what it needs — whose flow this is and, for PKCE,
+    // the code verifier — stays HERE, in a row keyed by a random `state`. The state is all that travels
+    // (through the browser, the provider and back, in URLs that land in history and logs); it used to be
+    // a signed but readable token that carried the verifier right alongside the code, which is exactly
+    // what PKCE exists to keep apart. The row is single-use (taken by the callback) and lives 10 minutes.
     const codeVerifier = p.pkce ? crypto.randomBytes(32).toString('base64url') : null;
-    const state = jwt.sign({ uid: String(req.user.userId), platform, cv: codeVerifier, purpose: 'social-verify' }, config.jwtSecret, { expiresIn: '10m' });
+    const state = crypto.randomBytes(32).toString('base64url');
+    const now = new Date();
+    await collections.oauthStates().insertOne({
+      state, uid: String(req.user.userId), platform, codeVerifier,
+      createdAt: now, expiresAt: new Date(now.getTime() + STATE_TTL_MS),
+    });
 
     const params = new URLSearchParams({
       response_type: 'code',
@@ -134,11 +142,13 @@ router.get('/callback/:platform', async (req, res) => {
       return res.status(400).send(popupHtml(false, 'Synchronisatie geannuleerd of mislukt.'));
     }
 
-    let claims;
-    try { claims = jwt.verify(String(state), config.jwtSecret); } catch { claims = null; }
-    if (!claims || claims.purpose !== 'social-verify' || claims.platform !== platform) {
+    // Take the flow in one step: a state works once, and only for the platform it was started for.
+    // The TTL index only sweeps eventually, so the expiry is checked here as well.
+    const flow = await collections.oauthStates().findOneAndDelete({ state: String(state), platform });
+    if (!flow || new Date(flow.expiresAt).getTime() < Date.now()) {
       return res.status(400).send(popupHtml(false, 'Sessie verlopen — probeer opnieuw.'));
     }
+    const claims = { uid: flow.uid, cv: flow.codeVerifier };
 
     // Exchange the code — tokens live only inside this request.
     const body = new URLSearchParams({

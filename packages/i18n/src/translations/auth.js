@@ -166,5 +166,43 @@ export default {
       failedTitle: { nl: 'Bevestiging mislukt', en: 'Confirmation failed' },
       home: { nl: 'Naar Garden For Life', en: 'To Garden For Life' },
     },
+
+    // ── LoginPage: "forgot password" (asks for a reset link) ──
+    forgot: {
+      link: { nl: 'Wachtwoord vergeten?', en: 'Forgot your password?' },
+      intro: {
+        nl: 'Vul het e-mailadres van je account in. We sturen je een link om een nieuw wachtwoord te kiezen.',
+        en: 'Enter your account’s email address. We’ll send you a link to choose a new password.',
+      },
+      submit: { nl: 'STUUR LINK', en: 'SEND LINK' },
+      busy: { nl: 'Versturen…', en: 'Sending…' },
+      // The same whether or not the address has an account (the server answers the same too).
+      sent: {
+        nl: 'Als er een account bij dit adres hoort, is er nu een link onderweg. Hij werkt één keer en verloopt over een uur. Kijk ook in je spam.',
+        en: 'If there is an account for this address, a link is on its way. It works once and expires in an hour. Check your spam folder too.',
+      },
+    },
+
+    // ── PasswordReset (standalone ?pwreset landing page from the reset email) ──
+    reset: {
+      title: { nl: 'Nieuw wachtwoord', en: 'New password' },
+      intro: {
+        nl: 'Kies een nieuw wachtwoord van minstens 10 tekens. Daarna word je overal uitgelogd waar je nog met het oude was ingelogd.',
+        en: 'Choose a new password of at least 10 characters. You will then be logged out everywhere the old one was still in use.',
+      },
+      newPassword: { nl: 'Nieuw wachtwoord', en: 'New password' },
+      repeat: { nl: 'Herhaal wachtwoord', en: 'Repeat password' },
+      submit: { nl: 'OPSLAAN', en: 'SAVE' },
+      busy: { nl: 'Opslaan…', en: 'Saving…' },
+      tooShort: { nl: 'Gebruik minstens 10 tekens.', en: 'Use at least 10 characters.' },
+      mismatch: { nl: 'De twee wachtwoorden zijn niet gelijk.', en: 'The two passwords do not match.' },
+      invalidLink: { nl: 'Deze link is onvolledig. Open hem opnieuw vanuit de e-mail.', en: 'This link is incomplete. Open it again from the email.' },
+      doneTitle: { nl: 'Wachtwoord ingesteld ✓', en: 'Password set ✓' },
+      done: {
+        nl: 'Je nieuwe wachtwoord is actief. Log in met je e-mailadres en je nieuwe wachtwoord.',
+        en: 'Your new password is active. Log in with your email address and your new password.',
+      },
+      home: { nl: 'Naar Garden For Life', en: 'To Garden For Life' },
+    },
   },
 };

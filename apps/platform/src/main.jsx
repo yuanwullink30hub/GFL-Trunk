@@ -57,6 +57,8 @@ const isAppSettingsPreview = import.meta.env.DEV &&
 // 3D app, any device.
 const _verifySearch = new URLSearchParams(window.location.search);
 const isPwVerify = _verifySearch.has('pwverify') || _verifySearch.has('emailverify');
+// "Forgot password" landing (?pwreset token from the reset email): choose a new password, standalone too.
+const isPwReset = _verifySearch.has('pwreset');
 
 // Bank-window landing after iDEAL (Stripe return_url ?betaling=terug): index.html shows the result
 // card and closes the window, so no app is mounted here at all.
@@ -71,7 +73,20 @@ const isMobile = window.innerWidth < 768;
 const root = ReactDOM.createRoot(rootElement);
 if (isPaymentReturn) {
   // Nothing to mount: see the ?betaling=terug branch in index.html.
+} else if (isPwReset) {
+  // The standalone pages never boot the 3D app, so nothing else would lift the desktop loading screen
+  // (index.html only force-dismisses it after 30 s).
+  window.__gflDismissOverlay?.();
+  const PasswordReset = React.lazy(() => import('./pages/PasswordReset'));
+  root.render(
+    <LanguageProvider>
+      <React.Suspense fallback={null}>
+        <PasswordReset />
+      </React.Suspense>
+    </LanguageProvider>
+  );
 } else if (isPwVerify) {
+  window.__gflDismissOverlay?.(); // as for ?pwreset above
   const PasswordVerify = React.lazy(() => import('./pages/PasswordVerify'));
   root.render(
     <LanguageProvider>

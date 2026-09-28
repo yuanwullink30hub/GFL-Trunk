@@ -5,7 +5,7 @@ import { useLanguage } from '@gfl/i18n';
 import { OrbSphere3D } from '../../orb';
 import ProfileCard from './ProfileCard';
 import { getClientOrbConfig, getClientProfile, setClientOrbCode, setClientOrbConfig, setClientProfile, clearClientOrbCode } from '../../clientMode';
-import { resolvePortraitByName } from '@gfl/assessment-core/data/archetypeImages';
+import { resolvePortraitByName, DEFAULT_PORTRAIT_VARIANT } from '@gfl/assessment-core/data/archetypeImages';
 import { readingExtendedName } from './readingName';
 import { PRESET_KERNELS } from './presetKernels';
 import { getPolicyContent } from '../../data/policyIndex';
@@ -601,27 +601,28 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapIdx]);
 
-  // Archetype portrait — the full-resolution original, handed out as-is (transparent PNG). The
-  // results card and the PDF render the web copy; this download is where the original lives.
+  // Archetype portrait — the PNG master at full resolution on black, in the variant chosen here (the
+  // results card's choice is not stored). ~20 MB, so it comes from R2 as an attachment
+  // (archetypeImages.js PORTRAIT_DOWNLOAD_BASE): a plain link saves it and this page stays put; in the
+  // app it opens in the user's browser, which saves it there.
   // Resolved through the latest reading's main × support (a stored name may be a retired one).
   const latestReading = (Array.isArray(user.orbHistory) ? user.orbHistory : []).filter((h) => h && !h.refundedAt).slice(-1)[0] || null;
   const archetypeName = readingExtendedName(latestReading ? { ...latestReading, archetypeName: latestReading.archetypeName || user.archetypeName } : (user.archetypeName || profile.archetypeName), language);
-  const archetypeFullImg = resolvePortraitByName(archetypeName).fullUrl;
-  const downloadArchetypePhoto = useCallback(async () => {
-    if (!archetypeFullImg) { setDlMsg(t('profile.dashboard.msg.noArchetypeImage')); return; }
-    // The app does not carry the full-size tier (apps/desktop/scripts/sync-ui.js EXCLUDE_NESTED): the
-    // website's copy opens in the user's browser, where it can be saved.
-    if (isDesktopApp()) { window.open(`https://gardenforlife.nl${encodeURI(archetypeFullImg)}`, '_blank', 'noopener'); return; }
-    setDlMsg(t('profile.dashboard.msg.photoDownloading')); // "…" keeps it on screen while the large file loads
-    try {
-      const res = await fetch(archetypeFullImg);
-      if (!res.ok) throw new Error(`portrait ${res.status}`);
-      const blob = await res.blob();
-      const ext = (archetypeFullImg.split('.').pop() || 'png').toLowerCase();
-      triggerDownload(blob, `${(archetypeName || 'archetype').trim().replace(/\s+/g, '-')}-${t('profile.dashboard.files.photoSuffix')}.${ext}`);
-      setDlMsg(t('profile.dashboard.msg.photoSaved'));
-    } catch { setDlMsg(t('profile.dashboard.msg.downloadFailed')); }
-  }, [archetypeFullImg, archetypeName, t]);
+  const [photoVariant, setPhotoVariant] = useState(DEFAULT_PORTRAIT_VARIANT);
+  const archetypePhoto = resolvePortraitByName(archetypeName, photoVariant).pngUrl;
+  const downloadArchetypePhoto = useCallback(() => {
+    if (!archetypePhoto) { setDlMsg(t('profile.dashboard.msg.noArchetypeImage')); return; }
+    if (isDesktopApp()) window.open(archetypePhoto, '_blank', 'noopener');
+    else {
+      const a = document.createElement('a');
+      a.href = archetypePhoto;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    setDlMsg(t('profile.dashboard.msg.photoStarted'));
+  }, [archetypePhoto, t]);
 
   const startImage = useCallback(() => { if (capturePhase || !orbConfig) return; setDlMsg(''); setFrozen(false); setCapturePhase('image'); }, [capturePhase, orbConfig]);
   const startVideo = useCallback(() => {
@@ -1031,8 +1032,16 @@ const ProfileDashboard = memo(({ user, active = true, onLogout }) => {
                 {/* downloads — archetype portrait + orb still + 12s rotation loop */}
                 <div style={{ marginTop: '1.15rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ ...LABEL, marginBottom: '0.6rem' }}>{t('profile.dashboard.settings.downloads')}</div>
+                  {/* the portrait's variant — the same Masculine/Feminine choice as on the results card */}
+                  <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.7rem' }}>
+                    {['male', 'female'].map((v) => (
+                      <SciFiButton key={v} onClick={() => setPhotoVariant(v)} active={photoVariant === v} variant="purple" size="sm" padding="0.3rem 0.9rem" fontSize="max(9px,0.45vw)">
+                        {t(`resultsModal.ui.portraitToggle.${v}`)}
+                      </SciFiButton>
+                    ))}
+                  </div>
                   <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <SciFiButton onClick={downloadArchetypePhoto} disabled={!!capturePhase || !archetypeFullImg} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.archetypePhoto')}</SciFiButton>
+                    <SciFiButton onClick={downloadArchetypePhoto} disabled={!!capturePhase || !archetypePhoto} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{t('profile.dashboard.settings.archetypePhoto')}</SciFiButton>
                     <SciFiButton onClick={startImage} disabled={!!capturePhase || !orbConfig} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{capturePhase === 'image' ? t('profile.dashboard.busy') : t('profile.dashboard.settings.crystalScreenshot')}</SciFiButton>
                     <SciFiButton onClick={startVideo} disabled={!!capturePhase || !orbConfig} variant="purple" size="sm" padding="0.4rem 1.2rem" fontSize="max(9px,0.5vw)">{recording ? t('profile.dashboard.settings.recording') : t('profile.dashboard.settings.crystalLoop')}</SciFiButton>
                     {dlMsg && <span style={{ fontSize: 'max(9px,0.48vw)', color: dlMsg.includes('✓') ? '#4ade80' : dlMsg.includes('…') ? 'rgba(196,181,253,0.85)' : '#f87171' }}>{dlMsg}</span>}

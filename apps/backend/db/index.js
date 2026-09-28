@@ -36,6 +36,8 @@ async function connectDB() {
   // be searched). Sparse so legacy users without a hash (or a collided one left unset by the
   // backfill) don't block the index; they re-pick a unique name on their next edit.
   await db.collection('users').createIndex({ nameHash: 1 }, { unique: true, sparse: true });
+  // GET /api/auth/verify-status is polled every few seconds while a new account waits for its email link.
+  await db.collection('users').createIndex({ verifyPollHash: 1 }, { sparse: true });
   await db.collection('assessments').createIndex({ userId: 1, createdAt: -1 });
   await db.collection('assessmentReviews').createIndex({ timestamp: -1 });
   await db.collection('assessmentReviews').createIndex({ userId: 1 }, { sparse: true });

@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '@gfl/i18n';
-import { login, register, getMe, getToken, setToken, logActivity, orbLoginFromPdf, orbLinkCode, getHistory, getAssessment, requestDownloadLink, getRememberLogin, setRememberLogin } from '@gfl/api-client';
+import { login, register, verificationStatus, getMe, getToken, setToken, logActivity, orbLoginFromPdf, orbLinkCode, getHistory, getAssessment, requestDownloadLink, getRememberLogin, setRememberLogin } from '@gfl/api-client';
 import { setClientOrbCode, setClientOrbConfig, setClientProfile, getClientOrbCode, getClientOrbConfig, logoutAndReload } from '../clientMode';
 import ClientOrbExperience from '../components/assessment/ClientOrbExperience';
 import ProfileDashboard from '../components/assessment/ProfileDashboard';
@@ -372,20 +372,22 @@ const LoginPage = memo(({ isVisible, onBack, backButton = false }) => {
     bootIntoClient(obArchetype);
   }, [orbCodeStr, obUsername, obArchetype, obCountry, obAge, bootIntoClient]);
 
-  // Poll /login until the emailed verification link is clicked (login stays 403 needsVerification
-  // until then). The moment it succeeds, the gate is passed → into the client.
-  const pollVerification = useCallback((pollEmail, pollPassword) => {
+  // Wait for the emailed verification link: poll /verify-status with the registration's pollId, then log
+  // in once and pass the gate → into the client. (Polling /login itself ran into the login rate limit
+  // within two minutes.) A registration for an address that already had an account gets a pollId too,
+  // which never turns true — that screen just keeps saying "check your inbox", where the owner finds a
+  // mail saying they already have an account.
+  const pollVerification = useCallback((pollEmail, pollPassword, pollId) => {
     const tryOnce = async () => {
+      let verified = false;
+      try { verified = await verificationStatus(pollId); } catch { /* a network blip — keep waiting */ }
+      if (!verified) { verifyPollRef.current = setTimeout(tryOnce, 3500); return; }
       try {
         await login({ email: pollEmail, password: pollPassword });
         proceedIntoClient();
       } catch (e) {
-        if (e.needsVerification) {
-          verifyPollRef.current = setTimeout(tryOnce, 3500); // still unverified — keep waiting
-        } else {
-          setObErr(e.message || t('auth.errors.confirmFailed'));
-          setVerifyPending(false); setObBusy(false);
-        }
+        setObErr(e.message || t('auth.errors.confirmFailed'));
+        setVerifyPending(false); setObBusy(false);
       }
     };
     tryOnce();
@@ -413,7 +415,7 @@ const LoginPage = memo(({ isVisible, onBack, backButton = false }) => {
       logActivity({ type: 'consent_given', consentType: 'registration_onboarding', email, message: 'User accepted terms + Art.9 partial-profile consent at account creation' }).catch(() => {});
       if (data && data.needsVerification) {
         setVerifyPending(true);   // show "check your inbox" and start polling; keep obBusy
-        pollVerification(email, password);
+        pollVerification(email, password, data.pollId);
         return;
       }
       proceedIntoClient(); // dev / no-SMTP: already logged in

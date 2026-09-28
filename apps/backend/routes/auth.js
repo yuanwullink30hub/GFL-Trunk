@@ -49,6 +49,62 @@ async function sendVerificationEmail(toEmail, token, req) {
   });
 }
 
+// Registering with an address that already has an account answers exactly like a new registration (so
+// the form cannot be used to find out which addresses have accounts), and the address's owner gets this
+// instead. Nothing is created or changed. At most one such mail per address per hour: the form must not
+// become a way to fill someone's inbox.
+const EXISTS_MAIL_GAP_MS = 60 * 60 * 1000;
+const existsMailSent = new Map(); // emailHash -> last sent (ms); in memory, like the other per-key limits
+setInterval(() => {
+  const cutoff = Date.now() - EXISTS_MAIL_GAP_MS;
+  for (const [k, at] of existsMailSent) if (at < cutoff) existsMailSent.delete(k);
+}, EXISTS_MAIL_GAP_MS).unref();
+
+async function sendAccountExistsEmail(toEmail, emailHash) {
+  const last = existsMailSent.get(emailHash);
+  if (last && Date.now() - last < EXISTS_MAIL_GAP_MS) return;
+  existsMailSent.set(emailHash, Date.now());
+  const transporter = nodemailer.createTransport({
+    host: config.email.host, port: config.email.port, secure: config.email.secure,
+    auth: { user: config.email.user, pass: config.email.pass },
+  });
+  await transporter.sendMail({
+    from: `"Garden For Life" <${config.email.from}>`,
+    to: toEmail,
+    subject: 'Je hebt al een account — Garden For Life',
+    html: `<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:0 auto;color:#222">
+      <h2 style="color:#7c3aed;margin-bottom:8px">Je hebt al een account</h2>
+      <p style="line-height:1.6">Iemand, waarschijnlijk jij, probeerde zojuist een nieuw account aan te maken met dit e-mailadres. Op dit adres bestaat al een account, dus er is niets aangemaakt en niets gewijzigd.</p>
+      <p style="line-height:1.6">Was jij dat? Log dan in met je bestaande wachtwoord.</p>
+      <p style="margin:26px 0"><a href="${config.siteUrl}" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;display:inline-block">Naar Garden For Life</a></p>
+      <p style="color:#aaa;font-size:12px;margin-top:22px">Was jij dit niet? Dan hoef je niets te doen: je account en je wachtwoord zijn niet aangeraakt.</p>
+    </div>`,
+  });
+}
+
+/** The "check your inbox" poll id, as stored: only its hash, like every other bearer value. */
+const pollHash = (pollId) => crypto.createHash('sha256').update(String(pollId)).digest('hex');
+
+/**
+ * A registration for an address that already has an account. A confirmed account's owner is told
+ * someone tried; an unconfirmed one gets a fresh confirmation link (its password is NOT replaced — that
+ * would let anyone set the password of an account whose owner then confirms it). The mail goes out in
+ * the background, as for a new account, so the answer takes the same time either way.
+ */
+async function answerExistingAddress(existing, email, emailHash, now) {
+  if (existing.emailVerified === false) {
+    const last = existsMailSent.get(emailHash);
+    if (last && now.getTime() - last < EXISTS_MAIL_GAP_MS) return;
+    existsMailSent.set(emailHash, now.getTime());
+    const verifyToken = crypto.randomBytes(32).toString('hex');
+    await collections.users().updateOne({ _id: existing._id, emailVerified: false },
+      { $set: { verifyToken, verifyExpires: new Date(now.getTime() + VERIFY_TTL_MS) } });
+    sendVerificationEmail(email, verifyToken).catch((e) => console.warn('[Auth] verification email send failed:', e.message));
+    return;
+  }
+  sendAccountExistsEmail(email, emailHash).catch((e) => console.warn('[Auth] account-exists email send failed:', e.message));
+}
+
 // Password changes are gated behind an email confirmation: this sends the click-to-confirm link.
 // Shorter-lived than account verification (a sensitive change). Old password stays valid until confirmed.
 const PW_CHANGE_TTL_MS = 60 * 60 * 1000; // 1h
@@ -268,24 +324,18 @@ router.post('/register', registerLimit, async (req, res) => {
     const normalizedEmail = email.toLowerCase();
     const emailHash = hash(normalizedEmail);
 
-    // Check for existing user by deterministic hash (encrypted email can't be searched)
-    const existing = await collections.users().findOne({ emailHash });
-    if (existing) {
-      return res.status(409).json({ error: 'Email already registered' });
-    }
-
-    const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
-    const now = new Date();
-
     // Registration never grants admin. It used to make the first-ever account an admin, which silently
     // depended on the database being empty at that moment — a wiped or new database would hand admin to
     // whoever registered first. Admin is granted only by the explicit seeding step
     // (scripts/seed-admin.js) or by an existing admin.
     const role = 'client';
 
+    // Whether the address already has an account must not show in the answer (see below). So every check
+    // that does NOT depend on the address runs first, identically for a taken and a free one: a refusal
+    // here says something about the name or the code, never about the email.
     const resolvedDisplayName = displayName || normalizedEmail.split('@')[0];
 
-    // Visual name must be globally unique (case-insensitive, via deterministic nameHash).
+    // Visual name must be globally unique (case-insensitive, via deterministic nameHash). Names are public.
     const nameHash = hash(nameKey(resolvedDisplayName));
     const nameTaken = await collections.users().findOne({ nameHash });
     if (nameTaken) {
@@ -294,9 +344,11 @@ router.post('/register', registerLimit, async (req, res) => {
 
     // The orb-code links to at most ONE account. Reject up front if it's already linked, so we don't
     // create an orphan account whose code silently failed to bind. A concurrent race is still caught
-    // after insert below (the unique codeHash index is the real guard).
+    // after insert below (the unique codeHash index is the real guard). Read-only until the account
+    // exists: a dead holder's link is removed only once this registration really creates one.
     const hasOrbCode = orbCode && /^LC_ORB[23]?_/.test(String(orbCode));
     const orbCodeHash = hasOrbCode ? hash(String(orbCode)) : null;
+    let deadHolderLink = null;
     if (hasOrbCode && await isCodeBlocked(orbCodeHash)) {
       return res.status(403).json({ error: BLOCKED_MESSAGE, refunded: true });
     }
@@ -311,7 +363,7 @@ router.post('/register', registerLimit, async (req, res) => {
         if (holder || !orbKey) {
           return res.status(409).json({ error: 'Deze kristal-code is al aan een ander account gekoppeld.' });
         }
-        await collections.orbCodes().deleteOne({ _id: alreadyLinked._id, userId: alreadyLinked.userId });
+        deadHolderLink = alreadyLinked;
       }
       // A code that has ever been redeemed can only be claimed with its key (services/orbKey.js).
       const refusal = await claimCheck(orbCodeHash, String(orbCode), orbKey);
@@ -320,6 +372,26 @@ router.post('/register', registerLimit, async (req, res) => {
         return res.status(403).json({ error: NOT_UNLOCKED_MESSAGE, notUnlocked: true });
       }
     }
+
+    // Hashed before the address is looked up, so a taken address costs the same bcrypt time as a free one.
+    const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+    const now = new Date();
+    // The "check your inbox" screen polls GET /verify-status with this id (it used to poll /login, which
+    // both ran into the login rate limit and told a new account apart from someone else's).
+    const pollId = crypto.randomBytes(24).toString('base64url');
+
+    // An address that already has an account gets the same answer as a new one; its owner gets a mail
+    // instead of a confirmation link (an unconfirmed account gets a fresh confirmation link — asking for
+    // one this way is what the expired-link page tells people to do). Nothing about the existing account
+    // changes: not its password, not its poll id. Without SMTP (local dev) there is no inbox to point
+    // to, so dev keeps the plain 409.
+    const existing = await collections.users().findOne({ emailHash });
+    if (existing) {
+      if (!EMAIL_CONFIGURED) return res.status(409).json({ error: 'Email already registered' });
+      await answerExistingAddress(existing, normalizedEmail, emailHash, now);
+      return res.status(201).json({ needsVerification: true, email: normalizedEmail, pollId });
+    }
+    if (deadHolderLink) await collections.orbCodes().deleteOne({ _id: deadHolderLink._id, userId: deadHolderLink.userId });
 
     const ageNum = Number(age);
     // Public, render-only identity (name is chosen for public display; archetype + orb visual
@@ -345,7 +417,7 @@ router.post('/register', registerLimit, async (req, res) => {
       passwordHash,
       role,
       emailVerified: !EMAIL_CONFIGURED,
-      ...(verifyToken ? { verifyToken, verifyExpires: new Date(now.getTime() + VERIFY_TTL_MS) } : {}),
+      ...(verifyToken ? { verifyToken, verifyExpires: new Date(now.getTime() + VERIFY_TTL_MS), verifyPollHash: pollHash(pollId) } : {}),
       ...(Number.isFinite(ageNum) ? { age: ageNum } : {}),
       ...(country ? { country: String(country) } : {}),
       ...(archetypeName ? { archetypeName: String(archetypeName) } : {}),
@@ -356,7 +428,13 @@ router.post('/register', registerLimit, async (req, res) => {
       ...(hasOrbCode ? { accessUntil: (() => { const d = new Date(now); d.setMonth(d.getMonth() + 3); return d; })() } : {}),
       createdAt: now,
       updatedAt: now,
+    }).catch((e) => {
+      // Lost a race with a registration for the same address (unique emailHash index): answered below
+      // like any taken address. Anything else is a real failure.
+      if (e?.code === 11000 && e.keyPattern?.emailHash && EMAIL_CONFIGURED) return null;
+      throw e;
     });
+    if (!result) return res.status(201).json({ needsVerification: true, email: normalizedEmail, pollId });
 
     // Link the orb-code to this new account (the code = login). $setOnInsert never steals an
     // already-linked code; the unique codeHash index is the real guard. If the link didn't land on
@@ -388,11 +466,12 @@ router.post('/register', registerLimit, async (req, res) => {
     await sendSystemMessage(result.insertedId, 'welcome-workspace');
 
     // Verification path: no session is issued until the email is confirmed. Send the mail and tell
-    // the client to wait. The client polls /login (which stays blocked until verified).
+    // the client to wait. The client polls /verify-status with the pollId, then logs in once.
     if (EMAIL_CONFIGURED) {
-      try { await sendVerificationEmail(normalizedEmail, verifyToken, req); }
-      catch (e) { console.warn('[Auth] verification email send failed:', e.message); }
-      return res.status(201).json({ needsVerification: true, email: normalizedEmail });
+      // In the background, as for a taken address (answerExistingAddress): waiting on SMTP here would
+      // make a new account's answer measurably slower than a taken one's.
+      sendVerificationEmail(normalizedEmail, verifyToken).catch((e) => console.warn('[Auth] verification email send failed:', e.message));
+      return res.status(201).json({ needsVerification: true, email: normalizedEmail, pollId });
     }
 
     // No SMTP (dev): account is pre-verified — behave as before and log straight in.
@@ -415,7 +494,7 @@ router.post('/register', registerLimit, async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // GET /api/auth/verify?token=…  (PUBLIC) — click target from the verification email.
-// Flips emailVerified; the tab where the user registered polls /login and proceeds automatically.
+// Flips emailVerified; the tab where the user registered polls /verify-status and proceeds automatically.
 // ─────────────────────────────────────────────────────────────
 
 router.get('/verify', async (req, res) => {
@@ -436,6 +515,26 @@ router.get('/verify', async (req, res) => {
   } catch (e) {
     console.error('[Auth] verify error:', e.message);
     return res.status(500).send(page('Serverfout', 'Er ging iets mis. Probeer het later opnieuw.', false));
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/auth/verify-status?id=<pollId>  (PUBLIC) — what the "check your inbox" screen polls.
+// Answers only { verified }: true once the account the id was issued for has been confirmed. An id
+// issued for an address that already had an account belongs to nothing and stays false, exactly like
+// an account not confirmed yet. Its own limit, generous enough for a poll every few seconds: it used to
+// poll /login, whose limit cut the wait off after under two minutes.
+// ─────────────────────────────────────────────────────────────
+const verifyStatusLimit = rateLimit({ name: 'verify-status', max: 400, windowMs: 15 * 60 * 1000 });
+router.get('/verify-status', verifyStatusLimit, async (req, res) => {
+  try {
+    const id = String(req.query.id || '');
+    if (!/^[A-Za-z0-9_-]{32}$/.test(id)) return res.json({ verified: false });
+    const user = await collections.users().findOne({ verifyPollHash: pollHash(id) }, { projection: { emailVerified: 1 } });
+    return res.json({ verified: !!user && user.emailVerified === true });
+  } catch (e) {
+    console.error('[Auth] verify-status error:', e.message);
+    return res.status(500).json({ error: 'status_unavailable' });
   }
 });
 
@@ -578,6 +677,9 @@ const accountFailures = createFailureCounter({ max: 10, windowMs: LOGIN_WINDOW_M
 // A real hash at today's cost, of a random value nobody knows: comparing against it costs exactly what a
 // genuine check costs, and can never succeed.
 const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(24).toString('base64'), BCRYPT_COST);
+// The one refusal for every credential problem — unknown address, wrong password, not yet confirmed —
+// so the answer never says which of the three it was. Hence it names the unconfirmed case too.
+const INVALID_LOGIN = 'Onjuist e-mailadres of wachtwoord. Net een account aangemaakt? Bevestig dan eerst je e-mailadres via de link in je inbox.';
 
 router.post('/login', loginLimit, async (req, res) => {
   try {
@@ -602,13 +704,13 @@ router.post('/login', loginLimit, async (req, res) => {
       // one only after bcrypt told anyone with a stopwatch which addresses have accounts.
       await bcrypt.compare(String(password), DUMMY_HASH);
       accountFailures.fail(emailHash);
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: INVALID_LOGIN });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
       accountFailures.fail(emailHash);
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: INVALID_LOGIN });
     }
     accountFailures.clear(emailHash);
 
@@ -620,9 +722,13 @@ router.post('/login', loginLimit, async (req, res) => {
     }
 
     // Gate: an unverified account (emailVerified === false) cannot log in until the emailed link is
-    // clicked. Legacy accounts (field absent) are treated as verified.
+    // clicked. Legacy accounts (field absent) are treated as verified. It answers exactly like a wrong
+    // password: a separate "confirm your email first" told anyone who had just registered an address
+    // whether that registration had created a new account or hit someone else's (register answers the
+    // same for both). The shared message names both causes. The password WAS right, so this is not
+    // counted as a failure.
     if (user.emailVerified === false) {
-      return res.status(403).json({ error: 'Bevestig eerst je e-mailadres via de link in je inbox.', needsVerification: true });
+      return res.status(401).json({ error: INVALID_LOGIN });
     }
 
     // Decrypt PII for the response

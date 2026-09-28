@@ -30,6 +30,7 @@
 //   node scripts/ingest-archetype-portraits.mjs              # audit only
 //   node scripts/ingest-archetype-portraits.mjs --write      # audit, then write the tiers + table
 //   node scripts/ingest-archetype-portraits.mjs --selftest   # exercise the name parser, touch no files
+//   node scripts/ingest-archetype-portraits.mjs --png-manifest   # render the PNG masters on black for R2 (the download)
 //
 import sharp from 'sharp';
 import { readdir, mkdir, copyFile, readFile, writeFile, stat } from 'node:fs/promises';
@@ -528,6 +529,46 @@ if (args.includes('--depth')) {
     console.log(`\n  needs a look — ${warn.length}:`);
     for (const w of warn) console.log(`    ${w.name}: ${w.why}`);
   }
+  process.exit(0);
+}
+
+// ── PNG originals: the dashboard download (owner, 2026-09-28) ──
+// Each master at its full resolution, flattened onto black: the art is cut out on transparency, which a
+// photo viewer or a phone gallery shows as white or as a checkerboard, and the portraits are made to sit
+// on the dark of the site. Written to portraits/png/<slot>.png (gitignored, ~5 GB) and published to R2 by
+// scripts/publish-portraits.mjs, with the manifest mapping each slot to its file and to the name the
+// browser saves it under. A slot whose PNG is newer than its master is not rendered again.
+if (args.includes('--png-manifest')) {
+  const mastersDir = join(HEAVY_DIR, '_masters');
+  const pngDir = join(HEAVY_DIR, 'png');
+  const { matched, problems } = await audit(mastersDir);
+  const blocking = problems.unmatched.length + problems.noVariant.length + problems.duplicate.length;
+  if (blocking) {
+    console.error(`refusing: ${blocking} master(s) did not resolve cleanly — run the audit with --source _masters`);
+    process.exit(1);
+  }
+  await mkdir(pngDir, { recursive: true });
+  const manifest = {};
+  let rendered = 0;
+  for (const { file, key, variant } of matched.values()) {
+    const slot = `${slug(key)}-${variant}`;
+    const src = join(mastersDir, file);
+    const out = join(pngDir, `${slot}.png`);
+    const fresh = await stat(out).then((o) => o.mtimeMs > 0 && stat(src).then((s) => o.mtimeMs >= s.mtimeMs), () => false);
+    if (!fresh) {
+      await sharp(src).flatten({ background: '#000000' }).png().toFile(out);
+      if (++rendered % 25 === 0) process.stdout.write(`  …${rendered} rendered\n`);
+    }
+    // "The Patriarch / Matriarch" + female -> GardenForLife_The_Patriarch_Matriarch_female.png
+    const name = EXTENDED_ARCHETYPES[key].replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    manifest[slot] = {
+      source: out.split('\\').join('/'),
+      filename: `GardenForLife_${name}${variant === 'shared' ? '' : `_${variant}`}.png`,
+    };
+  }
+  const manifestFile = join(HEAVY_DIR, 'png-manifest.json');
+  await writeFile(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+  console.log(`${manifestFile}: ${Object.keys(manifest).length} slots (${rendered} rendered on black) → next: node scripts/publish-portraits.mjs`);
   process.exit(0);
 }
 

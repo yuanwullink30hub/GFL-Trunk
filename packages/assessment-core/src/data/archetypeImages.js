@@ -50,6 +50,11 @@ import { resolveExtendedKey, extendedKeyForName } from './scoring/index.js';
 // the canvas can never taint. Cross-origin, a missing header fails the load silently and the cover drops
 // to the card copy with nothing in the console.
 const ARCHETYPE_IMAGE_DIR = '/images/Archetype imags/';
+// The dashboard download: the PNG master at full resolution, flattened onto black (owner, 2026-09-28).
+// ~20 MB each, ~5 GB in all, so it lives on R2 with the installers, not on the site
+// (scripts/publish-portraits.mjs). It is only ever saved, never drawn, so cross-origin costs nothing,
+// and R2 sends it as an attachment under a readable name.
+const PORTRAIT_DOWNLOAD_BASE = 'https://downloads.gardenforlife.nl/portraits/png/';
 
 const slotName = (key, variant) => `${String(key).toLowerCase().replace(/_/g, '-')}-${variant}`;
 
@@ -61,6 +66,7 @@ const art = (key, variant) => {
     print: `${ARCHETYPE_IMAGE_DIR}print/${slot}.webp`,
     full: `${ARCHETYPE_IMAGE_DIR}full/${slot}.webp`,
     depth: `${ARCHETYPE_IMAGE_DIR}depth/${slot}.png`,
+    png: `${PORTRAIT_DOWNLOAD_BASE}${slot}.png`,
   };
 };
 
@@ -239,9 +245,10 @@ const normVariant = (v) => (PORTRAIT_VARIANTS.includes(v) ? v : DEFAULT_PORTRAIT
  * @param {string} [preferred] - 'male' | 'female'
  * @param {{ fallback?: boolean }} [options] - fallback: false returns only the preferred variant (null while
  *   its art is missing) - the results card and PDF use this so the image always matches the toggle
- * @returns {{ url: string|null, printUrl: string|null, fullUrl: string|null, depthUrl: string|null, variant: string|null, available: { male: boolean, female: boolean } }}
+ * @returns {{ url: string|null, printUrl: string|null, fullUrl: string|null, pngUrl: string|null, depthUrl: string|null, variant: string|null, available: { male: boolean, female: boolean } }}
  *   url = the web copy to render on the card; printUrl = the 300 dpi copy the PDF cover draws;
- *   fullUrl = the delivered resolution (for download links); depthUrl = the depth map, when it has one
+ *   fullUrl = the delivered resolution as webp; pngUrl = the PNG master on black (R2), the dashboard
+ *   download; depthUrl = the depth map, when it has one
  */
 export function resolvePortrait(mainKey, support, preferred = DEFAULT_PORTRAIT_VARIANT, { fallback = true } = {}) {
   const key = resolveExtendedKey(mainKey, support);
@@ -250,9 +257,9 @@ export function resolvePortrait(mainKey, support, preferred = DEFAULT_PORTRAIT_V
   const want = normVariant(preferred);
   const other = want === 'male' ? 'female' : 'male';
   const variant = slot[want] ? want : fallback && slot[other] ? other : null;
-  if (!variant) return { url: null, printUrl: null, fullUrl: null, depthUrl: null, variant: null, available };
+  if (!variant) return { url: null, printUrl: null, fullUrl: null, pngUrl: null, depthUrl: null, variant: null, available };
   const p = slot[variant];
-  return { url: p.web, printUrl: p.print || null, fullUrl: p.full, depthUrl: p.depth || null, variant, available };
+  return { url: p.web, printUrl: p.print || null, fullUrl: p.full, pngUrl: p.png || null, depthUrl: p.depth || null, variant, available };
 }
 
 /**
@@ -302,7 +309,7 @@ export function resolvePortraitByName(name, variant = DEFAULT_PORTRAIT_VARIANT) 
   const sep = key ? key.lastIndexOf('_') : -1;
   return sep > 0
     ? resolvePortrait(key.slice(0, sep), key.slice(sep + 1), variant)
-    : { url: null, printUrl: null, fullUrl: null, depthUrl: null, variant: null, available: { male: false, female: false } };
+    : { url: null, printUrl: null, fullUrl: null, pngUrl: null, depthUrl: null, variant: null, available: { male: false, female: false } };
 }
 
 /**

@@ -534,14 +534,14 @@ export default {
             ['1', '6 = 3 × 2', 'polariteitssplitsing', '6 biogroepen, 6 antwoorden, 6 rotatiesleutels'],
             ['2', '12 = 3 × 2²', 'Start van complexiteit', '12 archetypen op het wiel'],
             ['3', '36 = 3² × 2²', '3 in het kwadraat × 4', '36 vragen (3 per archetype)'],
-            ['4', '72 = 3² × 2³', 'binaire verdubbeling', '72 keuzes, 72 uitgebreide uitkomsten'],
+            ['4', '72 = 3² × 2³', 'binaire verdubbeling', '72 keuzes, 72 kernuitkomsten'],
           ],
           en: [
             ['0', '3', 'seed', 'Triple Network Model (DMN, SN, CEN)'],
             ['1', '6 = 3 × 2', 'polarity split', '6 biogroups, 6 answers, 6 rotation keys'],
             ['2', '12 = 3 × 2²', 'Onset of complexity', '12 archetypes on the wheel'],
             ['3', '36 = 3² × 2²', '3 squared × 4', '36 questions (3 per archetype)'],
-            ['4', '72 = 3² × 2³', 'binary doubling', '72 choices, 72 extended outcomes'],
+            ['4', '72 = 3² × 2³', 'binary doubling', '72 choices, 72 core outcomes'],
           ],
         },
         atom3Title: { nl: 'Atoom — 3', en: 'Atom — 3' },
@@ -589,8 +589,8 @@ export default {
           en: 'This mythology describes the character layer of transformation — how something moves and changes.\nTwelve core archetypes, each carried by one of six neural hardware groups, yield seventy-two patterns.',
         },
         closer1: {
-          nl: 'De traditie komt telkens op hetzelfde getal uit, maar moderne wetenschap verfijnt de resolutie; onder elke transformatie ligt een dieper biologisch detail die de mythologie niet kon meten.',
-          en: 'Tradition arrives at the same number time and again, but modern science refines the resolution; beneath every transformation lies a deeper biological detail that mythology could not measure.',
+          nl: 'De traditie komt telkens op 72 uit, maar moderne wetenschap verfijnt de resolutie tot een extensie van 132; onder elke transformatie ligt een dieper biologisch detail dat de mythologie niet kon meten.',
+          en: 'Tradition arrives at 72 time and again, but modern science refines the resolution to an extended 132; beneath every transformation lies a deeper biological detail that mythology could not measure.',
         },
         closer2: {
           nl: 'Precies die laag hebben wij voor jou in kaart gebracht.',

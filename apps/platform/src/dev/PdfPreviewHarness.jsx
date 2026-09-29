@@ -12,10 +12,10 @@ import AssessmentResultsModal from '../components/assessment/AssessmentResultsMo
 // Open with:  http://localhost:3000/?pdfpreview=1   (dev build only)
 // First populate the replay cache by generating one full report in the app, or load a saved replay
 // with &replay=<name> (public/dev-replay/<name>.json); &variant=male|female picks the portrait,
-// &lesson=open|flow forces the cover lesson's layout.
+// &lesson=open|flow forces the cover lesson's layout, &lang=en|nl the language, &pages=N keeps the first N pages.
 // ──────────────────────────────────────────────────────────────────────────
 export default function PdfPreviewHarness() {
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   // ?replay=<name> loads public/dev-replay/<name>.json (git-excluded) and keeps it as the replay.
   const replayName = new URLSearchParams(window.location.search).get('replay');
   const [loadingReplay, setLoadingReplay] = useState(!!replayName);
@@ -51,8 +51,16 @@ export default function PdfPreviewHarness() {
       portraitVariant: new URLSearchParams(window.location.search).get('variant') || undefined,
       // ?lesson=open|flow — force the cover lesson's layout (default: auto, whichever lays out better).
       lessonMode: new URLSearchParams(window.location.search).get('lesson') || undefined,
+      // ?pages=N — keep only the first N pages (e.g. the introduction and pre-text).
+      pages: new URLSearchParams(window.location.search).get('pages') || undefined,
     };
   }
+
+  // ?lang=en|nl — build the PDF in that language. This is the site's own language setting (the same as
+  // the header toggle), so it sticks on localhost until switched back.
+  const wantLang = new URLSearchParams(window.location.search).get('lang');
+  const needsLang = (wantLang === 'en' || wantLang === 'nl') && wantLang !== language;
+  useEffect(() => { if (needsLang) setLanguage(wantLang); }, [needsLang, wantLang, setLanguage]);
 
   const regenerate = useCallback(() => {
     setUrl((old) => { if (old) { try { URL.revokeObjectURL(old); } catch (_) {} } return null; });
@@ -72,7 +80,7 @@ export default function PdfPreviewHarness() {
   const bar = { flex: '0 0 auto', padding: '6px 12px', background: '#11111c', color: '#c4b5fd', fontFamily: 'monospace', fontSize: 12, display: 'flex', gap: 14, alignItems: 'center', borderBottom: '1px solid #2a2a3a' };
   const btn = { background: 'rgba(168,85,247,0.16)', border: '1px solid rgba(168,85,247,0.45)', color: '#c4b5fd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 };
 
-  if (loadingReplay) {
+  if (loadingReplay || needsLang) {
     return <div style={{ position: 'fixed', inset: 0, background: '#0a0a14', color: '#64748b', fontFamily: 'monospace', padding: 40 }}>loading replay {replayName}…</div>;
   }
   if (!data) {

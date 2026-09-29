@@ -3323,7 +3323,13 @@ const AssessmentResultsModal = ({
 
       // ── Download (or hand back a blob URL in preview mode) ──
       const archetypeName = (result?.extendedName || 'Archetype').replace(/\s+/g, '_');
-      if (pvw) { try { onPreviewReadyRef.current?.(pdf.output('bloburl')); } catch (_) {} return; }
+      if (pvw) {
+        // Dev preview only (?pdfpreview=1&pages=N, dev/PdfPreviewHarness.jsx): keep just the first N pages.
+        const keep = Number(window.__GFL_PDF_REPLAY?.pages) || 0;
+        if (keep > 0) for (let p = pdf.internal.getNumberOfPages(); p > keep; p--) pdf.deletePage(p);
+        try { onPreviewReadyRef.current?.(pdf.output('bloburl')); } catch (_) {}
+        return;
+      }
       pdf.save(`GardenForLife_${archetypeName}.pdf`);
       setFullDownloaded(true);
       // Download log for a Stripe payment (a timestamp on the ledger — nothing of the report).

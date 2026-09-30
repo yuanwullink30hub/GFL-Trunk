@@ -1951,6 +1951,13 @@ function buildUserMessage({
     parts.push(`\nVolg het exacte sectie-format (1-12 + 13A + 13B) uit je systeeminstructies. Respecteer de woordlimieten per sectie exact zoals aangegeven.`);
   }
 
+  // ═══ OCEAN WITHOUT AN UPLOAD — how to write the comparison section (engine pipeline) ═══
+  // Only when no OCEAN numbers came in (the same test the PDF uses for its no-upload page). The Master
+  // Prompt gives this case one line; this hook pins the shape the owner chose as the baseline
+  // (2026-09-30): opening, five short trait tendencies, closing — one page, never a number.
+  const hasOceanNumbers = !!(uploadedOceanScores && Object.keys(uploadedOceanScores).length);
+  if (sliceScoped && !hasOceanNumbers) parts.push(oceanWithoutUploadRequest({ en }));
+
   // ═══ KAART MICROCOPY — the public profile card's two texts (engine pipeline) ═══
   // A hook from the repo, not a Master Prompt section (owner, 2026-09-18): the report follows the
   // Master Prompt alone; this asks for the card's two fields on top. routes/ai.js lifts the block out
@@ -1958,6 +1965,36 @@ function buildUserMessage({
   if (sliceScoped) parts.push(kaartMicrocopyRequest({ en, archetypeKey, supportArchetype }));
 
   return parts.join('\n');
+}
+
+/**
+ * How to write PERSOONLIJKHEIDSRAPPORT VERGELIJKING when no OCEAN report was uploaded. The Master
+ * Prompt's §5.5 says only "one paragraph"; the owner took a real no-upload report (2026-09-30: an
+ * opening of ~85 words, five trait blocks of ~55–80, a closing of ~50) as the shape to keep, so the
+ * section is this, every time, and fits one page. Headings "TRAIT X — Name" are what the PDF reader
+ * files under the section (v4Parser isOceanMemberHeading); no score in them, because there is none.
+ */
+function oceanWithoutUploadRequest({ en }) {
+  if (en) {
+    return [
+      '',
+      '═══ OCEAN WITHOUT AN UPLOAD — PERSONALITY REPORT COMPARISON ═══',
+      'No external OCEAN report was uploaded with this profile. Write the section PERSONALITY REPORT COMPARISON in exactly this shape — for this case it replaces the one-paragraph rule at the end of §5.5; the rest of §5.5 (the fixed anchor layer, what each trait does not see, no per-trait disclaimers) still applies.',
+      '1. OPENING, 70–100 words: no external Big Five report was uploaded; this model does not measure traits and cannot infer their values from the wheel — the two instruments sit on independent axes (two configurations can share a trait level and express it in opposite behaviour). What follows is therefore not a reading of scores: it describes, in deliberately hedged tendency language, how THIS Main × Support configuration would tend to express each trait if it were present, and what a real measurement would add.',
+      '2. FIVE TRAIT BLOCKS, in this order, each under its own subheading with the name only and no score: "TRAIT O — Openness", "TRAIT C — Conscientiousness", "TRAIT E — Extraversion", "TRAIT A — Agreeableness", "TRAIT N — Neuroticism". Each 55–80 words, in three steps: (a) the hardware the trait rests on (the fixed anchor layer of §5.5); (b) how configurations like this one tend to express it, through the Main, the Support and the weightings that matter here — a tendency, never a level; (c) what a measurement would show that the wheel cannot (the "does not see" line of §5.5).',
+      '3. CLOSING, 40–60 words: an accurate trait reading requires a real Big Five instrument; this model translates how traits would be expressed through a configuration, it does not measure or certify them; taking a validated OCEAN test and uploading it turns this section into a cross-validation between two independent measurements.',
+      'Together 420–540 words, so the section fits one page. No numbers, scores, percentages or estimates anywhere (W6) — "tends to", never "you score". No disclaimer inside the blocks: the page prints the instrument disclaimer above the section itself.',
+    ].join('\n');
+  }
+  return [
+    '',
+    '═══ OCEAN ZONDER UPLOAD — PERSOONLIJKHEIDSRAPPORT VERGELIJKING ═══',
+    'Bij dit profiel is geen extern OCEAN-rapport geüpload. Schrijf de sectie PERSOONLIJKHEIDSRAPPORT VERGELIJKING precies in deze vorm — voor dit geval vervangt dit de één-alinea-regel aan het eind van §5.5; de rest van §5.5 (de vaste ankerlaag, wat elke trait niet ziet, geen disclaimers per trait) blijft gelden.',
+    '1. OPENING, 70–100 woorden: er is geen extern Big Five-rapport geüpload; dit model meet geen traits en kan hun waarden niet uit het wiel afleiden — de twee instrumenten staan op onafhankelijke assen (twee configuraties kunnen hetzelfde traitniveau delen en het tegengesteld uitdrukken). Wat volgt is dus geen lezing van scores: het beschrijft, in bewust voorzichtige tendenstaal, hoe DEZE Main × Support-configuratie elke trait zou neigen uit te drukken als die aanwezig is, en wat een echte meting zou toevoegen.',
+    '2. VIJF TRAIT-BLOKKEN, in deze volgorde, elk onder een eigen subkop met alleen de naam en geen score: "TRAIT O — Openheid", "TRAIT C — Consciëntieusheid", "TRAIT E — Extraversie", "TRAIT A — Meegaandheid", "TRAIT N — Neuroticisme". Elk 55–80 woorden, in drie stappen: (a) de hardware waarop de trait rust (de vaste ankerlaag van §5.5); (b) hoe configuraties als deze de trait neigen uit te drukken, via de Main, de Support en de wegingen die hier tellen — een tendens, nooit een niveau; (c) wat een meting zou laten zien dat het wiel niet kan zien (de "ziet niet"-regel van §5.5).',
+    '3. AFSLUITING, 40–60 woorden: een accurate traitlezing vraagt een echt Big Five-instrument; dit model vertaalt hoe traits zich door een configuratie zouden uitdrukken, het meet of certificeert ze niet; wie een gevalideerde OCEAN-test doet en die uploadt, maakt van deze sectie een kruisvalidatie tussen twee onafhankelijke metingen.',
+    'Samen 420–540 woorden, zodat de sectie op één pagina past. Nergens getallen, scores, percentages of schattingen (W6) — "neigt tot", nooit "je scoort". Geen disclaimer in de blokken: de pagina zet de instrument-disclaimer zelf boven de sectie.',
+  ].join('\n');
 }
 
 /**

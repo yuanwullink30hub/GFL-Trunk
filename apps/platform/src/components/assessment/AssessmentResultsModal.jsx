@@ -2159,7 +2159,7 @@ const AssessmentResultsModal = ({
       // ── Page 4: PERSOONLIJKHEIDSRAPPORT VERGELIJKING (OCEAN, IF-state) ──
       // Master Prompt v4.1 §5.4: NEVER model-derived OCEAN (D-10). Upload present →
       // uploaded-values table + 5 per-trait sections (O,C on p1; E,A,N on p2). No upload →
-      // 1 page tendency reads, NO numbers + explicit instrument-disclaimer.
+      // 1 page, all five together, NO numbers + explicit instrument-disclaimer.
       const hasOceanUpload = !!uploadedOceanScores;
       const OCEAN_DIMS_P = ['O', 'C', 'E', 'A', 'N'];
       const OCEAN_FULL_P = {
@@ -2231,7 +2231,7 @@ const AssessmentResultsModal = ({
       //    text when each trait came as its own "TRAIT X" section. Dutch reports never did that,
       //    so the traits glued onto CREATIEVE RESONANTIE and the value table stood here alone.
       //    Now the section breaks wherever its text runs out, like every other section, with one fixed
-      //    break the owner asked for (2026-09-18): E, A and N start on a fresh page. ──
+      //    break the owner asked for (2026-09-18): with an upload, E, A and N start on a fresh page. ──
       const oceanSection = (displaySections || []).find(s =>
         s.isComparison || COMPARISON_TITLE.test(cleanTitle(s.title || '')));
       // The model's own copy of the uploaded values duplicates the render-side table: drop those
@@ -2260,12 +2260,14 @@ const AssessmentResultsModal = ({
           }
           gap();
           if (oceanBody) {
-            // O and C on the page with the values, E, A and N from a fresh page (owner, 2026-09-18): the
-            // one fixed break in this flow, at the Extraversie heading. Without that heading it flows whole.
+            // With an upload: O and C on the page with the values, E, A and N from a fresh page (owner,
+            // 2026-09-18) — the one fixed break in this flow, at the Extraversie heading. Without an upload
+            // there is no values table and the reads are short, so all five stay on one page (owner,
+            // 2026-09-30); like any section, it only runs on if the text does not fit.
             const oceanLines = oceanBody.split('\n');
             const headOf = (l) => splitGluedHeading(l)?.heading ?? l;
             const eAt = oceanLines.findIndex((l) => isOceanMemberHeading(headOf(l)) && /extravers/i.test(bareHeading(headOf(l))));
-            if (eAt > 0) {
+            if (hasOceanUpload && eAt > 0) {
               writePdfMarkdown(oceanLines.slice(0, eAt).join('\n'), margin + 2, contentW - 4, cyan);
               if (y > margin) { pdf.addPage(); paintBg(); markPage(); y = margin; }
               writePdfMarkdown(oceanLines.slice(eAt).join('\n'), margin + 2, contentW - 4, cyan);

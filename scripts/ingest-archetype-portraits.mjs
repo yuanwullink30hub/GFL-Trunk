@@ -31,6 +31,7 @@
 //   node scripts/ingest-archetype-portraits.mjs --write      # audit, then write the tiers + table
 //   node scripts/ingest-archetype-portraits.mjs --selftest   # exercise the name parser, touch no files
 //   node scripts/ingest-archetype-portraits.mjs --png-manifest   # render the PNG masters on black for R2 (the download)
+//   … --write --only "<master>,<master>"   # redo just corrected masters (tiers; also with --depth)
 //
 import sharp from 'sharp';
 import { readdir, mkdir, copyFile, readFile, writeFile, stat } from 'node:fs/promises';
@@ -480,6 +481,17 @@ const write = args.includes('--write');
 const kb = (n) => `${(n / 1024).toFixed(0)} KB`;
 const mb = (n) => `${(n / 1048576).toFixed(1)} MB`;
 
+// --only "<master>,<master>" — redo just these slots (corrected masters, named as in portraits/_masters/),
+// leaving the other portraits and the ARCHETYPE_IMAGES table as they are. Works for the tiers and --depth.
+const ONLY = args.includes('--only') ? args[args.indexOf('--only') + 1].split(',').map((s) => s.trim()).filter(Boolean) : null;
+async function slotsOfMasters(files) {
+  const { matched } = await audit(join(HEAVY_DIR, '_masters'));
+  const hits = [...matched.values()].filter((m) => files.includes(m.file));
+  const unknown = files.filter((f) => !hits.some((m) => m.file === f));
+  if (unknown.length) { console.error(`--only: not a resolved master: ${unknown.join(', ')}`); process.exit(1); }
+  return new Set(hits.map((m) => `${slug(m.key)}-${m.variant}`));
+}
+
 // ── Depth maps: their own pass, because they are delivered per archetype, not per variant ──
 if (args.includes('--depth')) {
   const { index } = buildNameIndex();
@@ -491,6 +503,11 @@ if (args.includes('--depth')) {
     process.exit(1);
   }
   const { plan, missing: dMissing, unmatched, overwritten, borrowed, shared, specific } = matchDepth(files, index);
+  if (ONLY) {
+    const keep = await slotsOfMasters(ONLY);
+    for (const slot of [...plan.keys()]) if (!keep.has(slot)) plan.delete(slot);
+    console.log(`--only: depth maps for ${[...plan.keys()].join(', ')}`);
+  }
 
   console.log(`\n${DEPTH_INCOMING}: ${files.length} depth maps`);
   console.log(`  slots covered:  ${plan.size} of 263`);
@@ -613,8 +630,16 @@ if (blocking) {
 // The table goes first, then the pixels. It only needs the audit, and writing it up front means the
 // cover preview (?coverpreview=1) resolves portraits while the tiers are still being cut — a slot whose
 // files have not landed yet just shows no portrait, which is the same path a missing portrait takes.
-const rows = await writeTable(matched);
-console.log(`\n  ${TABLE_FILE}: ${rows} rows rewritten`);
+if (ONLY) {
+  // Corrected masters for slots that already exist: the table stays as it is (rewriting it from a
+  // filtered audit would empty every other slot).
+  const keep = await slotsOfMasters(ONLY);
+  for (const [id, m] of matched) if (!keep.has(`${slug(m.key)}-${m.variant}`)) matched.delete(id);
+  console.log(`\n  --only: ${[...keep].join(', ')} — the table is left as it is`);
+} else {
+  const rows = await writeTable(matched);
+  console.log(`\n  ${TABLE_FILE}: ${rows} rows rewritten`);
+}
 
 if (args.includes('--table-only')) {
   console.log('  --table-only: no tiers written.');
@@ -624,9 +649,9 @@ if (args.includes('--table-only')) {
 console.log(`\nwriting ${matched.size} portraits x 3 tiers…`);
 const bytes = await writeTiers(matched);
 const avg = (n) => (matched.size ? ` (${kb(n / matched.size)} avg)` : '');
-console.log(`\n  full/  ${mb(bytes.full)}${avg(bytes.full)}   → R2, not git`);
-console.log(`  print/ ${mb(bytes.print)}${avg(bytes.print)}   → R2, not git`);
-console.log(`  web/   ${mb(bytes.web)}${avg(bytes.web)}   → git`);
-if (matched.size) console.log(`\n  next: node scripts/publish-portraits.mjs   (dry run; --confirm to upload)`);
+console.log(`\n  full/  ${mb(bytes.full)}${avg(bytes.full)}`);
+console.log(`  print/ ${mb(bytes.print)}${avg(bytes.print)}`);
+console.log(`  web/   ${mb(bytes.web)}${avg(bytes.web)}   (all three ship with the site)`);
+if (matched.size) console.log(`\n  next: --png-manifest, then node scripts/publish-portraits.mjs (the PNG download on R2)`);
 console.log(`\n  depth/ is untouched — portraits without a depth map still get the cover levensles,`);
 console.log(`  level and at one size (coverLesson.js falls back on its own).`);

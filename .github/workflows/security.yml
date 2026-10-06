@@ -8,7 +8,8 @@
 #                    Each runs against its own in-memory MongoDB with the real .env switched off; there are no
 #                    secrets here and none are needed. Node 22, as on Render.
 #
-# Moderate advisories do not fail the build. At the time of writing there are none.
+# Moderate advisories do not fail the build. At the time of writing one remains: sprintf-js (via mammoth >
+# argparse), for which no fixed version exists.
 name: Security
 
 on:

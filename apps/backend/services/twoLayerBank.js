@@ -32,9 +32,8 @@ function loadBank() {
 
 const cache = new Map(); // quarter → screen payload
 
-/** The test screen's plan for the quarter `now` falls in. Throws when the sequence does not validate. */
-function twoLayerPlan(now = new Date()) {
-  const quarter = quarterOf(now);
+/** The test screen's plan for one quarter label ('2026-Q4'). Throws when the sequence does not validate. */
+function twoLayerPlanFor(quarter) {
   if (cache.has(quarter)) return cache.get(quarter);
   const b = loadBank();
   const seq = generateSequence(quarter, LEVEL, b.bySubject);
@@ -71,4 +70,13 @@ function twoLayerPlan(now = new Date()) {
   return plan;
 }
 
-module.exports = { twoLayerPlan };
+/** The plan for the quarter `now` falls in (Europe/Amsterdam). */
+const twoLayerPlan = (now = new Date()) => twoLayerPlanFor(quarterOf(now));
+
+/** `count` quarter labels from the one `now` falls in onwards: '2026-Q4', '2027-Q1', … */
+function quartersFrom(now = new Date(), count = 8) {
+  let [y, q] = quarterOf(now).split('-Q').map(Number);
+  return Array.from({ length: count }, () => { const label = `${y}-Q${q}`; q += 1; if (q > 4) { q = 1; y += 1; } return label; });
+}
+
+module.exports = { twoLayerPlan, twoLayerPlanFor, quartersFrom };

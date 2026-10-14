@@ -1009,6 +1009,60 @@ export async function getQuestions() {
   return response.json();
 }
 
+// ── The published questions file (owner, 14 Oct) ─────────────────────────────────────────────────────────────
+// The backend writes it to R2 on every admin save (apps/backend/services/questionsPublisher.js), so the question
+// cards load for every visitor whether or not the backend is up.
+const QUESTIONS_FILE_URL = import.meta.env.VITE_QUESTIONS_URL || 'https://downloads.gardenforlife.nl/questions/questions.json';
+const ON_LOCALHOST = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+
+/** The quarter label for now in Europe/Amsterdam, e.g. '2026-Q4' (as the backend's rotation sequence). */
+function quarterNow() {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Amsterdam', year: 'numeric', month: 'numeric' }).formatToParts(new Date());
+  const year = parts.find((p) => p.type === 'year').value;
+  const month = Number(parts.find((p) => p.type === 'month').value);
+  return `${year}-Q${Math.ceil(month / 3)}`;
+}
+
+let publishedFile = null; // one fetch per page load, shared by the two loaders below
+function fetchPublishedQuestions() {
+  if (!publishedFile) {
+    const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = ctl ? setTimeout(() => ctl.abort(), 10000) : null;
+    publishedFile = fetch(QUESTIONS_FILE_URL, { cache: 'no-cache', signal: ctl?.signal })
+      .then((r) => { if (!r.ok) throw new Error(`Questions file ${r.status}`); return r.json(); })
+      .finally(() => { if (timer) clearTimeout(timer); })
+      .catch((e) => { publishedFile = null; throw e; }); // a later call may try again
+  }
+  return publishedFile;
+}
+
+/**
+ * The question layers ({ layers, seeded }), as GET /api/questions returns them. On the live site from the
+ * published file first, the backend only as fallback (before the first publish); on localhost the local backend
+ * first, so local edits show while developing.
+ */
+export async function loadQuestionLayers() {
+  const fromFile = async () => { const f = await fetchPublishedQuestions(); return { layers: f.layers || [], seeded: Boolean(f.seeded) }; };
+  const order = ON_LOCALHOST ? [getQuestions, fromFile] : [fromFile, getQuestions];
+  try { return await order[0](); } catch { return order[1](); }
+}
+
+/**
+ * The two-layer Leerling plan for this quarter, as GET /api/questions/two-layer returns it ({ enabled: false } when
+ * that test is off). Same source order as loadQuestionLayers; from the file, the plan for this quarter's label.
+ */
+export async function loadTwoLayerPlan() {
+  const fromFile = async () => {
+    const f = await fetchPublishedQuestions();
+    if (!f.twoLayer?.enabled) return { enabled: false };
+    const plan = f.twoLayer.plans?.[quarterNow()];
+    if (!plan) throw new Error('No published plan for this quarter'); // file older than its quarters: ask the backend
+    return plan;
+  };
+  const order = ON_LOCALHOST ? [getTwoLayerQuestions, fromFile] : [fromFile, getTwoLayerQuestions];
+  try { return await order[0](); } catch { return order[1](); }
+}
+
 /**
  * The two-layer Leerling test: its bank in this quarter's rotation order. Public endpoint.
  * @returns {Promise<{ enabled: boolean, rotation_sequence_id?: string, placeholder?: boolean,

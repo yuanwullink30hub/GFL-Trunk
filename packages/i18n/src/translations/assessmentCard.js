@@ -66,6 +66,11 @@ export default {
         nl: 'LET OP!',
         en: 'ATTENTION!',
       },
+      // Directly under LET OP on every subject's intro card (owner, 14 Oct)
+      pickRange: {
+        nl: 'Kies tussen geen en twee antwoorden.',
+        en: 'Choose between none and two answers.',
+      },
       body: {
         nl: 'Er is geen één maat voor allen. Kies dus wat het meest synchroniseert.\n{c:accent|Gekleurde woorden} zijn een middel voor de eerste snelle scan, dit is geen waarde systeem voor de punten telling.',
         en: 'There is no one size that fits all, so choose what synchronizes most.\n{c:accent|Coloured words} are a means for the first quick scan; they are not a value system for the point count.',
@@ -115,31 +120,19 @@ export default {
         nl: (n) => `LAAG ${n}/2`,
         en: (n) => `LAYER ${n}/2`,
       },
-      l1Hint: {
-        nl: 'Kies één of twee antwoorden, of geen van deze.',
-        en: 'Choose one or two answers, or none of these.',
-      },
-      l2Hint: {
-        nl: 'Kies er hoogstens twee. Niets kiezen mag ook.',
-        en: 'Choose two at most. Choosing nothing is fine too.',
-      },
-      // The bank carries the Dutch label ("Geen van deze past"); this is its English.
+      // The Layer-1 refusal ("Geen van deze past" in the bank), as the footer button left of Doorgaan (owner, 14 Oct)
       refusal: {
-        nl: 'Geen van deze past',
-        en: 'None of these fits',
+        nl: 'Geen',
+        en: 'None',
       },
-      // Replaces intro.picks and intro.resonance on the "Voordat je begint" overlay.
-      picks: {
-        nl: 'Elke vraag heeft {c:#a855f7|twee lagen}. Eerst zie je zes antwoorden: kies er één of twee, of {c:#f97316|Geen van deze past}.\nDaarna draait de kaart om en zie je preciezere antwoorden binnen wat je koos. Kies er hoogstens twee, of geen.',
-        en: 'Every question has {c:#a855f7|two layers}. First you see six answers: choose one or two, or {c:#f97316|None of these fits}.\nThen the card turns over and you see more precise answers within what you chose. Choose two at most, or none.',
-      },
+      // Replaces intro.resonance on the "Voordat je begint" overlay (the pick rule itself is layerIntro.pickRange).
       resonance: {
         nl: 'Elke keuze resoneert door naar verbonden punten op het wiel. Het resultaat is geen plat getal maar een gelaagd profiel.',
         en: 'Every choice resonates onward to connected points on the wheel. The result is not a flat number but a layered profile.',
       },
       timerOutro: {
-        nl: '\n \nElke laag heeft zijn eigen timer. Loopt die af, dan gaat de kaart door met wat je tot dan koos. Je kunt altijd zelf doorklikken,\nniet terug, alleen voorwaartse beweging.',
-        en: '\n \nEach layer has its own timer. When it runs out, the card moves on with what you chose so far. You can always click ahead yourself,\nnot back — forward movement only.',
+        nl: '\n \nElke laag heeft zijn eigen timer. Loopt die af, dan gaat de kaart door met wat je tot dan koos.\nJe kunt altijd zelf doorklikken, niet terug,\nhier alleen voorwaartse beweging.',
+        en: '\n \nEach layer has its own timer. When it runs out, the card moves on with what you chose so far.\nYou can always click ahead yourself, not back,\nonly forward movement here.',
       },
     },
   },

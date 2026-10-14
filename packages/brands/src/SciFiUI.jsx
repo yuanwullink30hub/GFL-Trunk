@@ -62,9 +62,11 @@ export const GlowButton = ({
   children, 
   variant = 'primary', 
   icon, 
-  className = '', 
+  className = '',
   onClick,
-  ...props 
+  // Merged into the variant's own style (a caller's style replacing it whole dropped the colours until hover)
+  style,
+  ...props
 }) => {
   const baseStyles = "relative px-6 py-3 font-mono text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 group overflow-hidden border border-transparent";
   
@@ -122,7 +124,8 @@ export const GlowButton = ({
         border: variantStyles.border,
         color: variantStyles.color,
         fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
-        letterSpacing: '0.15em'
+        letterSpacing: '0.15em',
+        ...style,
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -138,15 +141,17 @@ export const GlowButton = ({
 /**
  * TechBadge - Small tag/badge component
  */
-export const TechBadge = ({ label }) => (
-  <span 
+// `compact`: the narrower body face (Figtree bold), so a row of long tags fits one line (brand page, 14 Oct).
+export const TechBadge = ({ label, fontSize = '10px', compact = false }) => (
+  <span
     className="inline-flex items-center px-2 py-1 text-xs font-mono font-bold uppercase tracking-wider bg-black border"
-    style={{ 
+    style={{
       borderColor: 'rgba(188, 19, 254, 0.4)',
       color: '#bc13fe',
       boxShadow: '0 0 5px rgba(188, 19, 254, 0.1)',
-      fontSize: '10px',
-      fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif"
+      fontSize,
+      fontFamily: compact ? "'Figtree', sans-serif" : "'Lexend Mega', Arial, Helvetica, sans-serif",
+      ...(compact ? { letterSpacing: '0.04em', padding: '0.2rem 0.45rem', whiteSpace: 'nowrap' } : {}),
     }}
   >
     {label}
@@ -257,7 +262,7 @@ export const SectorFrame = ({ children, className = '' }) => (
 /**
  * TabButton - Tab navigation button
  */
-export const TabButton = ({ active, onClick, label, icon }) => (
+export const TabButton = ({ active, onClick, label, icon, fontSize = '10px' }) => (
   <button 
     onClick={onClick}
     className={`flex items-center gap-2 px-3 py-2 text-xs font-mono uppercase tracking-wider transition-all border-b-2 flex-1 justify-center
@@ -269,7 +274,7 @@ export const TabButton = ({ active, onClick, label, icon }) => (
       borderBottomColor: active ? '#ffae00' : 'transparent',
       color: active ? '#ffae00' : 'rgba(255, 255, 255, 0.4)',
       backgroundColor: active ? 'rgba(255, 174, 0, 0.05)' : 'transparent',
-      fontSize: '10px',
+      fontSize,
       fontFamily: "'Lexend Mega', Arial, Helvetica, sans-serif",
       letterSpacing: '0.1em'
     }}

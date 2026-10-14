@@ -17,6 +17,10 @@ import {
   SectionHeader
 } from './SciFiUI';
 import { useLanguage } from '@gfl/i18n';
+
+// The smallest text on the brand page, as on the desktop layout (GeneralBrandPage FONT_MIN): the size of the
+// desktop brand description, Tailwind text-sm. Owner, 14 Oct.
+const FONT_MIN = '0.875rem';
 import BrandStats from './BrandStats';
 import { BRANDS } from './brandData';
 
@@ -89,7 +93,7 @@ const ExternalLinkModal = ({ isOpen, url, onClose, onConfirm, buttonElement }) =
             <div className="inline-flex items-center justify-center mb-3">
               <Globe size={28.8} style={{ color: '#15B315' }} />
             </div>
-            <p className="text-xs uppercase tracking-widest font-bold" style={{ color: '#FFFEF0', letterSpacing: '0.05em' }}>
+            <p className="text-sm uppercase tracking-widest font-bold" style={{ color: '#FFFEF0', letterSpacing: '0.05em' }}>
               {t({ nl: 'U staat op het punt door te stromen', en: 'You are about to move on' })}
             </p>
           </div>
@@ -98,7 +102,7 @@ const ExternalLinkModal = ({ isOpen, url, onClose, onConfirm, buttonElement }) =
             background: 'rgba(0, 0, 0, 0.3)',
             border: '1px solid rgba(168, 85, 247, 0.4)'
           }}>
-            <p className="text-xs truncate" style={{ color: '#94A3B8' }}>
+            <p className="text-sm truncate" style={{ color: '#94A3B8' }}>
               {url}
             </p>
           </div>
@@ -106,7 +110,7 @@ const ExternalLinkModal = ({ isOpen, url, onClose, onConfirm, buttonElement }) =
           <div className="flex gap-2">
             <button
               onClick={handleClose}
-              className="flex-1 py-2 rounded transition-all font-bold text-xs uppercase tracking-widest"
+              className="flex-1 py-2 rounded transition-all font-bold text-sm uppercase tracking-widest"
               style={{
                 backgroundColor: 'transparent',
                 border: '1px solid rgba(168, 85, 247, 0.4)',
@@ -117,7 +121,7 @@ const ExternalLinkModal = ({ isOpen, url, onClose, onConfirm, buttonElement }) =
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 py-2 rounded transition-all font-bold text-xs uppercase tracking-widest"
+              className="flex-1 py-2 rounded transition-all font-bold text-sm uppercase tracking-widest"
               style={{
                 backgroundColor: 'rgba(168, 85, 247, 0.3)',
                 border: '1px solid rgba(168, 85, 247, 0.6)',
@@ -223,7 +227,7 @@ const SocialShareModal = ({ isOpen, onClose, buttonElement, brandData }) => {
             <div className="inline-flex items-center justify-center mb-1">
               <Share2 size={28.8} style={{ color: '#E0E30B' }} />
             </div>
-            <p className="text-xs uppercase tracking-widest font-bold" style={{ color: '#FFFEF0', letterSpacing: '0.05em' }}>
+            <p className="text-sm uppercase tracking-widest font-bold" style={{ color: '#FFFEF0', letterSpacing: '0.05em' }}>
               {t({ nl: 'VIND VERBINDING VIA SOCIALS', en: 'FIND US ON SOCIALS' })}
             </p>
           </div>
@@ -231,7 +235,7 @@ const SocialShareModal = ({ isOpen, onClose, buttonElement, brandData }) => {
           <div className="flex flex-col gap-2 mt-2">
             <button
               onClick={() => handleSocialClick('insta')}
-              className="py-2 rounded transition-all font-bold text-xs uppercase tracking-widest"
+              className="py-2 rounded transition-all font-bold text-sm uppercase tracking-widest"
               style={{
                 backgroundColor: 'rgba(168, 85, 247, 0.3)',
                 border: '1px solid rgba(168, 85, 247, 0.6)',
@@ -242,7 +246,7 @@ const SocialShareModal = ({ isOpen, onClose, buttonElement, brandData }) => {
             </button>
             <button
               onClick={() => handleSocialClick('linkedin')}
-              className="py-2 rounded transition-all font-bold text-xs uppercase tracking-widest"
+              className="py-2 rounded transition-all font-bold text-sm uppercase tracking-widest"
               style={{
                 backgroundColor: 'rgba(168, 85, 247, 0.3)',
                 border: '1px solid rgba(168, 85, 247, 0.6)',
@@ -252,15 +256,15 @@ const SocialShareModal = ({ isOpen, onClose, buttonElement, brandData }) => {
               LinkedIn
             </button>
             <button
-              onClick={() => window.location.href = `mailto:${brandData?.email}`}
-              className="py-2 rounded transition-all font-bold text-xs uppercase tracking-widest"
+              onClick={() => window.location.href = `mailto:${brandData?.mailTo || brandData?.email}`}
+              className="py-2 rounded transition-all font-bold text-sm uppercase tracking-widest"
               style={{
                 backgroundColor: 'rgba(168, 85, 247, 0.3)',
                 border: '1px solid rgba(168, 85, 247, 0.6)',
                 color: '#f59e0b'
               }}
             >
-              Email
+              {t({ nl: 'E-mail', en: 'Email' })}
             </button>
           </div>
         </div>
@@ -508,8 +512,8 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
               border: '1px solid rgba(168, 85, 247, 0.3)',
               boxShadow: '0 0 10px rgba(168, 85, 247, 0.1)'
             }}>
-              <p className="text-slate-400 leading-relaxed text-xs font-sans">
-                <span className="block mb-2 text-xs font-bold uppercase tracking-widest" style={{
+              <p className="text-slate-400 leading-relaxed text-sm font-sans">
+                <span className="block mb-2 text-sm font-bold uppercase tracking-widest" style={{
                   color: '#f59e0b'
                 }}>{`/// ${t('brands.mission')}`}</span>
                 <span style={{ color: '#FFFEF0' }}>{t(brand.description)}</span>
@@ -520,7 +524,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
           {/* Content Actions */}
           <div className="z-40 border-white/5 shadow-lg mb-2" style={{ marginTop: '-0.5rem' }}>
             <div className="flex gap-2 p-3">
-              <button className="flex-1 !py-2.5 !text-xs !rounded-md font-bold uppercase tracking-widest transition-all" style={{
+              <button className="flex-1 !py-2.5 !text-sm !rounded-md font-bold uppercase tracking-widest transition-all" style={{
                 backgroundColor: 'transparent',
                 border: '2px solid rgba(168, 85, 247, 0.4)',
                 color: '#f59e0b',
@@ -566,7 +570,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                 <React.Fragment key={tab}>
                   <button
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest transition-all relative ${
+                    className={`flex-1 py-3 text-sm font-bold uppercase tracking-widest transition-all relative ${
                       activeTab === tab ? 'text-white bg-white/5' : 'text-slate-600 hover:text-slate-400'
                     }`}
                     style={activeTab === tab ? {
@@ -610,8 +614,8 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                     boxShadow: '0 0 8px rgba(168, 85, 247, 0.15)'
                   }}>
                     <Calendar size={12} className="mx-auto mb-1" style={{ color: '#15B315' }} />
-                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#FFFEF0', marginBottom: '0.25rem' }}>{t({ nl: 'Opgericht', en: 'Founded' })}</div>
-                    <div className="font-sans font-normal" style={{ fontSize: '0.86rem', color: '#FFFEF0' }}>{brand.foundedYear}</div>
+                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: FONT_MIN, color: '#FFFEF0', marginBottom: '0.25rem' }}>{t({ nl: 'Opgericht', en: 'Founded' })}</div>
+                    <div className="font-sans font-normal" style={{ fontSize: FONT_MIN, color: '#FFFEF0' }}>{typeof brand.foundedYear === 'object' ? '——' : brand.foundedYear}</div>
                   </div>
                   <div className="rounded border p-2 text-center" style={{
                     backgroundColor: 'rgba(168, 85, 247, 0.1)',
@@ -619,8 +623,8 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                     boxShadow: '0 0 8px rgba(168, 85, 247, 0.15)'
                   }}>
                     <MapPin size={12} className="mx-auto mb-1" style={{ color: '#E0E30B' }} />
-                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#FFFEF0', marginBottom: '0.25rem' }}>{t({ nl: 'LOCATIE', en: 'LOCATION' })}</div>
-                    <div className="font-sans font-normal" style={{ fontSize: '0.86rem', color: '#FFFEF0' }}>{brand.origin}</div>
+                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: FONT_MIN, color: '#FFFEF0', marginBottom: '0.25rem' }}>{t({ nl: 'LOCATIE', en: 'LOCATION' })}</div>
+                    <div className="font-sans font-normal" style={{ fontSize: FONT_MIN, color: '#FFFEF0' }}>{typeof brand.origin === 'object' ? '——' : brand.origin}</div>
                   </div>
                   <div className="rounded border p-2 text-center" style={{
                     backgroundColor: 'rgba(168, 85, 247, 0.1)',
@@ -628,8 +632,8 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                     boxShadow: '0 0 8px rgba(168, 85, 247, 0.15)'
                   }}>
                     <Hash size={12} className="mx-auto mb-1" style={{ color: '#f59e0b' }} />
-                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: '0.75rem', color: '#FFFEF0', marginBottom: '0.25rem' }}>Unit</div>
-                    <div className="font-sans font-normal" style={{ fontSize: '0.86rem', color: '#FFFEF0' }}>{brand.id}</div>
+                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: FONT_MIN, color: '#FFFEF0', marginBottom: '0.25rem' }}>{t({ nl: 'Eenheid', en: 'Unit' })}</div>
+                    <div className="font-sans font-normal" style={{ fontSize: FONT_MIN, color: '#FFFEF0' }}>{brand.id}</div>
                   </div>
                 </div>
 
@@ -640,7 +644,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                 </div>
 
                 {/* Tagline */}
-                <p className="text-[10px] md:text-xs max-w-md bg-black/60 backdrop-blur px-3 py-1.5 rounded-r-lg font-sans font-normal mb-2" style={{
+                <p className="text-sm md:text-sm max-w-md bg-black/60 backdrop-blur px-3 py-1.5 rounded-r-lg font-sans font-normal mb-2" style={{
                   color: '#FFFEF0',
                   borderLeft: '2px solid rgba(168, 85, 247, 0.8)'
                 }}>
@@ -649,7 +653,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
 
                 {/* Tags */}
                 <div className="flex gap-1 flex-wrap mb-4 justify-center">
-                  {brand.tags.map((tag, ti) => <TechBadge key={ti} label={t(tag)} />)}
+                  {brand.tags.map((tag, ti) => <TechBadge key={ti} label={t(tag)} fontSize={FONT_MIN} />)}
                 </div>
 
                 {/* Gallery with Slideshow */}
@@ -704,11 +708,11 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                     }}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs font-mono" style={{ color: '#15B315' }}>{t(event.date)}</span>
+                      <span className="text-sm font-mono" style={{ color: '#15B315' }}>{t(event.date)}</span>
                       <Calendar size={12} style={{ color: '#f59e0b' }} />
                     </div>
                     <div className="font-bold text-sm uppercase" style={{ color: '#FFFEF0' }}>{t(event.title)}</div>
-                    <div className="text-xs flex items-center gap-1 mt-1" style={{ color: '#E0E30B' }}>
+                    <div className="text-sm flex items-center gap-1 mt-1" style={{ color: '#E0E30B' }}>
                       <MapPin size={10} /> {t(event.location)}
                     </div>
                   </div>
@@ -716,7 +720,7 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                 {(!brand.events || brand.events.length === 0) && (
                   <div className="text-center py-8 opacity-50">
                     <Calendar size={32} className="mx-auto mb-2" style={{ color: '#f59e0b' }} />
-                    <p className="text-xs uppercase tracking-widest">{t('brands.noEventsPlanned')}</p>
+                    <p className="text-sm uppercase tracking-widest">{t('brands.noEventsPlanned')}</p>
                   </div>
                 )}
               </motion.div>
@@ -741,18 +745,18 @@ const MobileDetailPage = ({ brandIndex = 0, onBack, isVisible = true }) => {
                     }}
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-bold" style={{ color: '#f59e0b' }}>{review.user}</span>
-                      <div className="text-xs" style={{ color: '#E0E30B' }}>
+                      <span className="text-sm font-bold" style={{ color: '#f59e0b' }}>{review.user}</span>
+                      <div className="text-sm" style={{ color: '#E0E30B' }}>
                         {Array(review.rating).fill('★').join('')}
                       </div>
                     </div>
-                    <p className="text-xs italic" style={{ color: '#FFFEF0', opacity: 0.7 }}>"{t(review.comment)}"</p>
+                    <p className="text-sm italic" style={{ color: '#FFFEF0', opacity: 0.7 }}>"{t(review.comment)}"</p>
                   </div>
                 ))}
                 {(!brand.reviews || brand.reviews.length === 0) && (
                   <div className="text-center py-8 opacity-50">
                     <Share2 size={32} className="mx-auto mb-2" style={{ color: '#f59e0b' }} />
-                    <p className="text-xs uppercase tracking-widest">{t('brands.noConnectionsYet')}</p>
+                    <p className="text-sm uppercase tracking-widest">{t('brands.noConnectionsYet')}</p>
                   </div>
                 )}
               </motion.div>

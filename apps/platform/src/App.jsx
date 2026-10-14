@@ -8,7 +8,7 @@ import ClientSubnav from './components/ClientNav';
 const NebulaBackground = lazy(() => import('./components/NebulaBackground'));
 const PublicProfile = lazy(() => import('./components/assessment/PublicProfile'));
 
-import { getQuestions, getTwoLayerQuestions, getMe, getHistory, getToken, openPrivateWindow, pingBackend } from '@gfl/api-client';
+import { loadQuestionLayers, loadTwoLayerPlan as fetchTwoLayerPlan, getMe, getHistory, getToken, openPrivateWindow, pingBackend } from '@gfl/api-client';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
@@ -370,26 +370,41 @@ const App = () => {
   
   // Assessment data: live from MongoDB, falling back to static data if fetch fails
   const [liveSubjects, setLiveSubjects] = useState([]);
-  useEffect(() => {
-    getQuestions()
+  const liveSubjectsRef = useRef([]);
+  // From the published questions file (no backend needed; the backend only as fallback) — api-client.
+  const loadQuestions = useCallback(() => {
+    loadQuestionLayers()
       .then((data) => {
         if (data.seeded && data.layers && data.layers.length > 0) {
+          liveSubjectsRef.current = data.layers;
           setLiveSubjects(data.layers);
         }
       })
       .catch(() => {}); // silent fallback to static data
   }, []);
+  useEffect(() => { loadQuestions(); }, [loadQuestions]);
 
   // The two-layer Leerling test (scoring_version v2_two_layer): its bank in this quarter's rotation order,
   // when the server has it on. A Leerling test LOCKS the plan it started with (Rotation Sequence §2), so a
   // quarter switch mid-test never changes its order; the other levels keep the old test.
   const twoLayerPlanRef = useRef(null);
   const [activeTwoLayerPlan, setActiveTwoLayerPlan] = useState(null);
-  useEffect(() => {
-    getTwoLayerQuestions()
+  const loadTwoLayerPlan = useCallback(() => {
+    fetchTwoLayerPlan()
       .then((plan) => { if (plan?.enabled && plan.subjects?.length === 5) twoLayerPlanRef.current = plan; })
       .catch(() => {}); // the old test stays
   }, []);
+  useEffect(() => { loadTwoLayerPlan(); }, [loadTwoLayerPlan]);
+
+  // Opening the intro card wakes the backend (owner, 14 Oct): a sleeping host (Render spins down after 15 idle
+  // minutes) boots while the intro is read, and the question sets the page load could not fetch (host asleep or
+  // down then) are fetched again — otherwise the question cards stay empty, since nothing retried them.
+  useEffect(() => {
+    if (assessmentPhase !== 'intro') return;
+    pingBackend();
+    if (!liveSubjectsRef.current.length) loadQuestions();
+    if (!twoLayerPlanRef.current) loadTwoLayerPlan();
+  }, [assessmentPhase, loadQuestions, loadTwoLayerPlan]);
 
   // Get total questions based on level — uses actual layer counts from MongoDB
   const getTotalQuestions = (level) => {
@@ -760,6 +775,10 @@ const App = () => {
           setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 500);
         }
       }
+      // The owner's portrait on the voorwaarden page (Profiel tab): fetched and decoded right away, ahead of
+      // the idle chunk queue, so it is already painted when that page is the first pan — logged in or out
+      // (owner, 14 Oct).
+      import('./data/ownerPortrait').then((m) => m.warmOwnerPortrait()).catch(() => {});
       // Landing is ready — now gently warm the section-page chunks during idle so
       // the first navigation to a page doesn't pay a chunk eval (freeze).
       preloadInBackground();

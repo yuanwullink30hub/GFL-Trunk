@@ -2320,6 +2320,9 @@ const ContactTab = memo(() => {
       name: inLang(b.name),
       tagline: inLang(b.tagline),
       description: inLang(b.description),
+      // The template's placeholders are bilingual too (packages/brands, 14 Oct); a real brand gives plain strings.
+      origin: inLang(b.origin),
+      foundedYear: inLang(b.foundedYear),
       tags: Array.isArray(b.tags) ? b.tags.map(inLang) : b.tags,
     };
   };

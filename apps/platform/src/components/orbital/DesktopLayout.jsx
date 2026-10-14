@@ -280,6 +280,15 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
     );
   };
 
+  // The eye button (Verbonden for clients, Voorwaarden for visitors): the eye in the same round frame and at the
+  // same size and purple as the Account icon (owner, 14 Oct).
+  const renderEyeIcon = (size) => (
+    <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid rgba(168, 85, 247, 0.55)', boxShadow: '0 0 10px rgba(168, 85, 247, 0.25)', background: '#0a0510' }}>
+      <img src={eyeLogo} alt="Logo" draggable={false}
+        style={{ display: 'block', width: '100%', height: '100%', padding: '9%', boxSizing: 'border-box', objectFit: 'contain', pointerEvents: 'none' }} />
+    </div>
+  );
+
   // Compact per-section action button (Contacten columns). Pinned to the bottom via marginTop:auto.
   // isLocked → visitor state: a small lock icon prefixes the label and the button does nothing.
   // Message text; a {faq} marker (system messages) becomes a link that pans to Profiel →
@@ -1245,7 +1254,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
                 >
-                  <img src={eyeLogo} alt="Logo" style={{ width: clientMode ? 'max(70px, 4.1vw)' : 'max(55px, 3vw)', height: 'auto' }} />
+                  {renderEyeIcon('max(70px, 4.1vw)')}
                 </button>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Center: Contact Info */}
@@ -1305,7 +1314,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
                 >
-                  <img src={eyeLogo} alt="Logo" style={{ width: clientMode ? 'max(70px, 4.1vw)' : 'max(55px, 3vw)', height: 'auto' }} />
+                  {renderEyeIcon('max(70px, 4.1vw)')}
                 </button>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Center: Contact Info */}
@@ -1365,7 +1374,7 @@ const DesktopLayout = ({ isExploding, mounted, currentSlide, setCurrentSlide, an
                   onMouseEnter={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(139,90,43,0.8))'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.filter = 'drop-shadow(0 0 0px rgba(139,90,43,0))'; }}
                 >
-                  <img src={eyeLogo} alt="Logo" style={{ width: clientMode ? 'max(55px, 3.2vw)' : 'max(45px, 2.5vw)', height: 'auto' }} />
+                  {renderEyeIcon('max(55px, 3.2vw)')}
                 </button>
                 <div style={{ height: '2vw', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
                 {/* Center: Contact Info */}

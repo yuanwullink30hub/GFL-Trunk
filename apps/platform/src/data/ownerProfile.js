@@ -48,7 +48,8 @@ export const OWNER_RADAR = BASKETS.map(([subject, nat, green, cult, blue, yellow
   };
 });
 
-export const OWNER_ARCHETYPES = { main: 'OUTLAW', support: 'HERO', shadow: 'Ruler', blindspot: 'Judge', portraitVariant: 'male' };
+// The configuration and the portrait live in ownerPortrait.js, which App warms right after the landing.
+export { OWNER_ARCHETYPES } from './ownerPortrait';
 
 /** The uploaded Big Five values, with their aspects. */
 export const OWNER_OCEAN = [

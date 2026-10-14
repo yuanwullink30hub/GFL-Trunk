@@ -106,6 +106,11 @@ const translations = {
       nl: "Heb je al een OCEAN / Big Five-rapport? Upload het als externe validatie naast je assessment — het verfijnt de analyse, maar is niet verplicht.",
       en: "Already have an OCEAN / Big Five report? Upload it as external validation alongside your assessment — it refines the analysis, but is not required."
     },
+    // The line under it, followed by the persoonlijkheid.nl link (owner, 14 Oct)
+    oceanNoProfile: {
+      nl: "Nog geen profiel? Je kan deze bemachtigen bij",
+      en: "No profile yet? You can get one at"
+    },
   },
 
   // =======================================
@@ -231,8 +236,8 @@ const translations = {
     kitchen: { nl: "KOOKEILAND", en: "KITCHEN ISLAND" },
     // Gardens slideshow (business types + shared prompt)
     gardenConnectPrompt: {
-      nl: "Verbinden met ons platform? Maak de test en benader ons team.",
-      en: "Connect with our platform? Take the test and reach out to our team."
+      nl: "Verbinden met onze community? Maak de test en benader ons team.",
+      en: "Connect with our community? Take the test and reach out to our team."
     },
     businessTypes: {
       green: { nl: "ARTIEST", en: "ARTIST" },

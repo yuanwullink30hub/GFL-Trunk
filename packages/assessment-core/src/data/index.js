@@ -16,22 +16,17 @@
  */
 
 // Questions
-export { QUESTION_SCHEMA, getQuestionsForLayer, getAllQuestionsFlat } from './questions';
+export { QUESTION_SCHEMA } from './questions';
 
 // Archetypes
-export { ARCHETYPES, ARCHETYPE_KEYS, ARCHETYPE_GROUPS, ARCHETYPE_SCHEMA, getArchetype, archetypeField, archetypeGroupField } from './archetypes';
+export { ARCHETYPES, ARCHETYPE_GROUPS, ARCHETYPE_SCHEMA, archetypeField } from './archetypes';
 
 // Layers
-export { LAYERS, getLayer, subjectMetadata } from './layers';
+export { LAYERS } from './layers';
 
 // Scoring
 export {
-  RADAR_TRAITS,
   SUBGROUP_POLARITIES,
-  ARCHETYPE_TRAIT_MAP,
-  computeRadarScores,
-  computeSubgroups,
-  determineArchetype,
   // Archetype-based scoring (12-point radar)
   ARCHETYPE_RADAR_LABELS,
   ALL_ARCHETYPE_KEYS,
@@ -60,10 +55,6 @@ export {
   PURPLE_LINE,
   SCORING_TIERS,
   // Advanced Scoring Engine (Ontology)
-  GROUP_NEURAL_FOCUS,
-  getStateToggle,
-  getNatureCultureBucket,
-  getQuestionBucket,
   isHarmonyPair,
   isShadowPair,
   computeAdvancedScores,

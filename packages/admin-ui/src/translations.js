@@ -47,7 +47,6 @@ const SAVED_CHECK = { nl: '✓ Opgeslagen', en: '✓ Saved' };
 const DELETE_WORD = { nl: 'Verwijderen', en: 'Delete' };
 const REFRESH_CAPS = { nl: '↻ VERNIEUWEN', en: '↻ REFRESH' };
 const TOTAL_WORD = { nl: 'Totaal', en: 'Total' };
-const PASSKEYS_WORD = { nl: 'Passkeys', en: 'Passkeys' };
 
 export default {
   admin: {
@@ -93,7 +92,6 @@ export default {
         questions: { nl: 'Vragen', en: 'Questions' },
         prompts: { nl: 'Prompts', en: 'Prompts' },
         formulieren: { nl: 'Formulieren', en: 'Forms' },
-        passkeys: PASSKEYS_WORD,
         activationCodes: { nl: 'Activatiecodes', en: 'Activation codes' },
         reportUnlocks: { nl: 'Ontgrendelingen', en: 'Unlocks' },
         paymentRecords: { nl: 'Betalingen', en: 'Payments' },
@@ -164,52 +162,15 @@ export default {
 
       /* ── Prompts tab ── */
       prompts: {
-        levelInDevelopment: {
-          nl: 'Prompt configuratie voor dit level is nog in ontwikkeling.',
-          en: 'Prompt configuration for this level is still in development.',
+        slotHint: {
+          locked: {
+            nl: 'Dit level is op het platform nog vergrendeld. Zolang deze prompt leeg is, weigert de server elk rapport voor dit level.',
+            en: 'This level is still locked on the platform. While this prompt is empty, the server refuses every report for this level.',
+          },
         },
         systemPromptHint: {
           nl: 'Dit is de instructie die de AI ontvangt om alle assessment data te interpreteren.',
           en: 'This is the instruction the AI receives to interpret all assessment data.',
-        },
-        contextDocuments: { nl: 'CONTEXT DOCUMENTEN', en: 'CONTEXT DOCUMENTS' },
-        contextDocumentsHint: {
-          nl: 'Upload Word, PDF of tekst bestanden. De inhoud wordt automatisch meegestuurd met elk AI verzoek als kennisbank context.',
-          en: 'Upload Word, PDF or text files. Their content is automatically sent with every AI request as knowledge-base context.',
-        },
-        confirmDeleteDoc: {
-          nl: (filename) => `Document "${filename}" verwijderen? Dit kan niet ongedaan worden.`,
-          en: (filename) => `Delete document "${filename}"? This cannot be undone.`,
-        },
-        docsWithoutText: {
-          nl: (count, names) => `${count} document(en) bevatten geen leesbare tekst: ${names}`,
-          en: (count, names) => `${count} document(s) contain no readable text: ${names}`,
-        },
-        dropZone: {
-          nl: 'Sleep bestanden hierheen of klik om te uploaden',
-          en: 'Drag files here or click to upload',
-        },
-        noDocuments: {
-          nl: 'Geen documenten geüpload. Upload bestanden om de AI kennisbank te vullen.',
-          en: 'No documents uploaded. Upload files to fill the AI knowledge base.',
-        },
-        docCountTotal: {
-          nl: (n, chars) => `${n} document${n !== 1 ? 'en' : ''} · totaal ${chars} tekens`,
-          en: (n, chars) => `${n} document${n !== 1 ? 's' : ''} · ${chars} characters total`,
-        },
-        verified: { nl: '✓ DOCUMENTEN GEVERIFIEERD', en: '✓ DOCUMENTS VERIFIED' },
-        saveVerify: { nl: '💾 SAVE & VERIFY DOCUMENTEN', en: '💾 SAVE & VERIFY DOCUMENTS' },
-        allVerified: {
-          nl: (n) => `✓ Alle ${n} document${n !== 1 ? 'en' : ''} succesvol geverifieerd`,
-          en: (n) => `✓ All ${n} document${n !== 1 ? 's' : ''} verified successfully`,
-        },
-        charsSentAsContext: {
-          nl: (chars) => `${chars} tekens worden meegestuurd als AI kennisbank context`,
-          en: (chars) => `${chars} characters are sent along as AI knowledge-base context`,
-        },
-        docChars: {
-          nl: (filename, chars) => `${filename} — ${chars} tekens`,
-          en: (filename, chars) => `${filename} — ${chars} characters`,
         },
       },
 
@@ -322,7 +283,6 @@ export default {
           },
         },
 
-        editorTitle: { nl: (label) => `${label} — Template`, en: (label) => `${label} — Template` },
         editorPlaceholder: {
           nl: (label) => `Template-inhoud voor "${label}"...\n\nImporteer of bewerk hier het documentsjabloon. Dit is de template — niet de e-mailtekst.`,
           en: (label) => `Template content for "${label}"...\n\nImport or edit the document template here. This is the template — not the email body.`,
@@ -598,44 +558,6 @@ export default {
         },
       },
 
-      /* ── Passkeys tab ── */
-      passkeys: {
-        confirmDelete: {
-          nl: (code) => `Passkey ${code} verwijderen? Dit kan niet ongedaan worden.`,
-          en: (code) => `Delete passkey ${code}? This cannot be undone.`,
-        },
-        statTotal: TOTAL_WORD,
-        statActive: { nl: 'Actief', en: 'Active' },
-        statInactive: { nl: 'Inactief', en: 'Inactive' },
-        statUsage: { nl: 'Gebruik', en: 'Usage' },
-        refresh: REFRESH_CAPS,
-        loading: LOADING,
-        manageTitle: { nl: (n) => `Passkeys Beheer (${n})`, en: (n) => `Passkey Management (${n})` },
-        labelPlaceholder: { nl: 'Label (optioneel)...', en: 'Label (optional)...' },
-        generate: { nl: '+ GENEREER PASSKEY', en: '+ GENERATE PASSKEY' },
-        empty: {
-          nl: 'Geen passkeys — klik op "Genereer Passkey" om er een aan te maken',
-          en: 'No passkeys — click "Generate Passkey" to create one',
-        },
-        colCode: { nl: 'CODE', en: 'CODE' },
-        colLabel: { nl: 'LABEL', en: 'LABEL' },
-        colStatus: { nl: 'STATUS', en: 'STATUS' },
-        colUsage: { nl: 'GEBRUIK', en: 'USAGE' },
-        colCreated: { nl: 'AANGEMAAKT', en: 'CREATED' },
-        colActions: { nl: 'ACTIES', en: 'ACTIONS' },
-        active: { nl: '● ACTIEF', en: '● ACTIVE' },
-        inactive: { nl: '○ INACTIEF', en: '○ INACTIVE' },
-        usedTimes: { nl: (n) => `${n}× gebruikt`, en: (n) => `used ${n}×` },
-        deactivate: { nl: 'Deactiveer', en: 'Deactivate' },
-        activate: { nl: 'Activeer', en: 'Activate' },
-        removeAdmin: { nl: 'Verwijder admin toegang', en: 'Remove admin access' },
-        makeAdmin: {
-          nl: 'Maak admin passkey (mobiel portaal)',
-          en: 'Make admin passkey (mobile portal)',
-        },
-        delete: DELETE_WORD,
-      },
-
       /* ── Audit log tab ── */
       audit: {
         hourUnit: { nl: 'u', en: 'h' },
@@ -644,7 +566,6 @@ export default {
           en: 'Clear all dev activity? This cannot be undone.',
         },
         statAdmin: { nl: 'Admin', en: 'Admin' },
-        statPasskeys: PASSKEYS_WORD,
         statSessions: { nl: 'Sessies', en: 'Sessions' },
         statTotal: TOTAL_WORD,
         statAvgDuration: { nl: 'Gem. Duur', en: 'Avg. Duration' },
@@ -655,11 +576,6 @@ export default {
         folderAdminDesc: {
           nl: 'Admin logins & rapportraadplegingen',
           en: 'Admin logins & report views',
-        },
-        folderPasskeys: { nl: '📂 Passkeys', en: '📂 Passkeys' },
-        folderPasskeysDesc: {
-          nl: 'Passkey gebruik — alle pogingen (geldig & ongeldig)',
-          en: 'Passkey usage — all attempts (valid & invalid)',
         },
         folderSessions: { nl: '📂 Sessies', en: '📂 Sessions' },
         folderSessionsDesc: {
@@ -678,18 +594,6 @@ export default {
         colAdminDetail: { nl: 'ADMIN / DETAIL', en: 'ADMIN / DETAIL' },
         eventReport: { nl: 'rapport', en: 'report' },
         eventLogin: { nl: 'login', en: 'login' },
-
-        passkeysTitle: {
-          nl: (n) => `Passkeys — Gebruik & Pogingen (${n})`,
-          en: (n) => `Passkeys — Usage & Attempts (${n})`,
-        },
-        passkeysEmpty: {
-          nl: 'Nog geen passkey gebruik geregistreerd',
-          en: 'No passkey usage recorded yet',
-        },
-        colCode: { nl: 'CODE', en: 'CODE' },
-        colValid: { nl: 'GELDIG', en: 'VALID' },
-        colName: { nl: 'NAAM', en: 'NAME' },
 
         sessionsTitle: {
           nl: (n) => `Sessies — Alle Events Gegroepeerd (${n})`,
@@ -749,8 +653,6 @@ export default {
 
       /* Preview / PDF document copy */
       docTitle: { nl: 'FACTUUR', en: 'INVOICE' },
-      account: { nl: 'Rekening:', en: 'Account:' },
-      ref: { nl: 'Ref:', en: 'Ref:' },
       payWithin30: {
         nl: 'gelieve te betalen binnen 30 werkdagen',
         en: 'please pay within 30 working days',

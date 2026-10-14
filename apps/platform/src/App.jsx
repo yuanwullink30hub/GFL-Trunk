@@ -8,7 +8,7 @@ import ClientSubnav from './components/ClientNav';
 const NebulaBackground = lazy(() => import('./components/NebulaBackground'));
 const PublicProfile = lazy(() => import('./components/assessment/PublicProfile'));
 
-import { getQuestions, getMe, getHistory, getToken, openPrivateWindow, pingBackend } from '@gfl/api-client';
+import { getQuestions, getTwoLayerQuestions, getMe, getHistory, getToken, openPrivateWindow, pingBackend } from '@gfl/api-client';
 import { preloadAll, preloadInBackground } from './utils/preloadUtils';
 import { useLanguage } from '@gfl/i18n';
 import { SciFiButton } from '@gfl/ui';
@@ -380,6 +380,17 @@ const App = () => {
       .catch(() => {}); // silent fallback to static data
   }, []);
 
+  // The two-layer Leerling test (scoring_version v2_two_layer): its bank in this quarter's rotation order,
+  // when the server has it on. A Leerling test LOCKS the plan it started with (Rotation Sequence §2), so a
+  // quarter switch mid-test never changes its order; the other levels keep the old test.
+  const twoLayerPlanRef = useRef(null);
+  const [activeTwoLayerPlan, setActiveTwoLayerPlan] = useState(null);
+  useEffect(() => {
+    getTwoLayerQuestions()
+      .then((plan) => { if (plan?.enabled && plan.subjects?.length === 5) twoLayerPlanRef.current = plan; })
+      .catch(() => {}); // the old test stays
+  }, []);
+
   // Get total questions based on level — uses actual layer counts from MongoDB
   const getTotalQuestions = (level) => {
     if (level === 'quick') return 15; // always 3 per subject × 5
@@ -625,32 +636,14 @@ const App = () => {
   // mid-pan would snap the map. The animation loop writes every frame anyway.
   useEffect(() => { if (!isMapAnimating) setMapVars(mapPosition.x, mapPosition.y); });
 
-  // Section lock: on deployed (non-localhost) sites, sections stay locked regardless of passkey.
-  // The passkey gate in index.html controls initial site access, but content sections remain disabled.
-  const isLocalhost = typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const shouldShowLock = !isLocalhost;
-
   // Handler for opening sections - navigate on map
   const handleOpenSection = useCallback((section) => {
-    // Parked sections: content has moved into the hypercube and the map space is
-    // empty, so the navigation path is disabled everywhere (incl. localhost).
-    // (Filosofie is a nav destination again — it's being reworked into its own set.)
-    const parkedSections = [];
-    if (parkedSections.includes(section)) {
-      return;
-    }
-    // Beta lock: block locked sections on deployed (non-localhost) sites
-    const lockedSections = [];
-    if (shouldShowLock && lockedSections.includes(section)) {
-      return;
-    }
     // Capture current slide when opening gardens section
     if (section === 'gardens') {
       setGardensBrandIndex(currentSlide);
     }
     navigateToSection(section);
-  }, [navigateToSection, currentSlide, shouldShowLock]);
+  }, [navigateToSection, currentSlide]);
 
   // ── Client-mode navigation history (for the "← Terug" back-one-step) ──
   const [navStack, setNavStack] = useState([]);
@@ -1098,6 +1091,7 @@ const App = () => {
   const handleAssessmentStart = useCallback((levelId) => {
     // Reset assessment state immediately (while intro shrinks)
     setAssessmentLevel(levelId);
+    setActiveTwoLayerPlan(levelId === 'deep' ? twoLayerPlanRef.current : null);
     setCurrentSubjectIndex(0);
     setCurrentQuestionIndex(0);
     setAssessmentAnswers([]);
@@ -1143,6 +1137,7 @@ const App = () => {
   const resetAssessmentState = useCallback(() => {
     setAssessmentPhase('hidden');
     setAssessmentLevel(null);
+    setActiveTwoLayerPlan(null);
     setCurrentSubjectIndex(0);
     setCurrentQuestionIndex(0);
     setAssessmentAnswers([]);
@@ -2577,6 +2572,7 @@ const App = () => {
                 isVisible={true}
                 assessmentLevel={assessmentLevel}
                 liveSubjects={liveSubjects}
+                twoLayerPlan={activeTwoLayerPlan}
                 isLowGpu={isLowGpu}
               />
               </>
@@ -2607,7 +2603,9 @@ const App = () => {
                 resultsModalProgress={resultsModalProgress}
                 layerAnswers={layerAnswers}
                 liveSubjects={liveSubjects}
+                twoLayerPlan={activeTwoLayerPlan}
                 uploadedFiles={uploadedFiles}
+                assessmentLevel={assessmentLevel}
                 onClose={resetAssessmentState}
                 onAiReady={() => setAiAnalysisReady(true)}
                 onDownload={() => {

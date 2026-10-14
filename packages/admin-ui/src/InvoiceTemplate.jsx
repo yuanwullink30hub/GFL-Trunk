@@ -11,7 +11,6 @@ import { useLanguage } from '@gfl/i18n';
 // Left: editor  |  Right: A4-ratio preview
 // ═══════════════════════════════════════════════════════════
 
-const INVOICE_NUM_KEY = 'gfl_invoice_number';
 const getNextInvoiceNumber = () => {
   const yr = new Date().getFullYear();
   return `${yr}0001`;

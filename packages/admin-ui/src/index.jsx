@@ -7,7 +7,3 @@ import adminTranslations from './translations.js';
 extendTranslations(adminTranslations);
 
 export { default } from './AdminDashboardModal.jsx';
-export { default as AdminDashboardModal } from './AdminDashboardModal.jsx';
-export { default as InvoiceTemplate } from './InvoiceTemplate.jsx';
-export { default as CreditNoteTemplate } from './CreditNoteTemplate.jsx';
-export { default as EmailTemplate } from './EmailTemplate.jsx';

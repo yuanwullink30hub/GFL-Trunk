@@ -38,26 +38,6 @@ import {
 } from '../../assessmentData';
 
 /**
- * The 12 radar traits displayed on the result chart.
- * LEGACY — kept for backward compatibility.
- * The primary radar now uses ARCHETYPE_RADAR_LABELS (12 archetype names).
- */
-export const RADAR_TRAITS = [
-  'Bewustzijn',   // Consciousness
-  'Empathie',     // Empathy
-  'Logica',       // Logic
-  'Intuïtie',     // Intuition
-  'Actie',        // Action
-  'Geduld',       // Patience
-  'Veerkracht',   // Resilience
-  'Innovatie',    // Innovation
-  'Traditie',     // Tradition
-  'Gemeenschap',  // Community
-  'Reflectie',    // Reflection
-  'Spirit',       // Spirit
-];
-
-/**
  * The 6 subgroup polarity pairs — mapped to the 6 Neurale Zuilen (Neural Pillars).
  * Each pair shows the tension between the two archetypes in that pillar.
  */
@@ -69,161 +49,6 @@ export const SUBGROUP_POLARITIES = [
   { id: 5, leftLabel: 'Sage',      rightLabel: 'Artist',    group: 'Abstract',   axis: 'Wijsheid & Creatie' },
   { id: 6, leftLabel: 'Magician',  rightLabel: 'Hero',      group: 'Agency',     axis: 'Manifestatie & Actie' },
 ];
-
-/**
- * Map from archetype key to which radar traits it boosts.
- * LEGACY — kept for backward compatibility.
- * The primary radar now uses per-archetype scores directly.
- */
-export const ARCHETYPE_TRAIT_MAP = {
-  // Set A (Odd questions)
-  SAGE:      ['Bewustzijn', 'Logica', 'Reflectie'],
-  HERO:      ['Actie', 'Veerkracht', 'Geduld'],
-  LOVER:     ['Empathie', 'Gemeenschap', 'Geduld'],
-  ARTIST:    ['Intuïtie', 'Innovatie', 'Spirit'],
-  RULER:     ['Logica', 'Traditie', 'Geduld'],
-  INNOCENT:  ['Spirit', 'Gemeenschap', 'Reflectie'],
-  // Set B (Even questions)
-  EXPLORER:  ['Innovatie', 'Actie', 'Bewustzijn'],
-  OUTLAW:    ['Actie', 'Veerkracht', 'Innovatie'],
-  CAREGIVER: ['Empathie', 'Gemeenschap', 'Geduld'],
-  MAGICIAN:  ['Intuïtie', 'Spirit', 'Veerkracht'],
-  JUDGE:     ['Logica', 'Traditie', 'Bewustzijn'],
-  TRICKSTER: ['Innovatie', 'Bewustzijn', 'Spirit'],
-};
-
-/**
- * Compute radar chart data from raw answers.
- * Single-choice scoring: each selected answer adds 5 pts to its archetype.
- * 
- * @param {Object} layerAnswers - { layerIndex: { questionId: answerId }, ... }
- * @param {Array}  questions    - Full question definitions (from questions/index.js)
- * @returns {Array<{ subject: string, A: number, fullMark: number }>}
- */
-export function computeRadarScores(layerAnswers, questions) {
-  const archetypeScores = {};
-  ALL_ARCHETYPE_KEYS.forEach(key => { archetypeScores[key] = 0; });
-
-  if (layerAnswers && questions) {
-    Object.entries(layerAnswers).forEach(([layerIdxStr, layerData]) => {
-      if (!layerData || typeof layerData !== 'object') return;
-      const layerIdx = parseInt(layerIdxStr, 10);
-      const layer = questions.find(q => q.layerIndex === layerIdx);
-      if (!layer) return;
-      Object.entries(layerData).forEach(([questionIdStr, answerVal]) => {
-        const questionId = parseInt(questionIdStr, 10) || questionIdStr;
-        const question = layer.questions.find(q => q.id === questionId);
-        if (!question) return;
-        // Normalize to array (backward compat with single-value)
-        const selections = Array.isArray(answerVal) ? answerVal : [answerVal];
-        selections.forEach((aid) => {
-          const selectedAnswer = question.answers.find(a => a.id === aid);
-          if (!selectedAnswer) return;
-          const archetype = selectedAnswer.archetype;
-          if (archetype) {
-            archetypeScores[archetype] = (archetypeScores[archetype] || 0) + 5;
-          }
-        });
-      });
-    });
-  }
-
-  return ARCHETYPE_RADAR_LABELS.map(label => {
-    const key = label.toUpperCase();
-    return {
-      subject: label,
-      A: archetypeScores[key] || 0,
-      fullMark: 720,
-    };
-  });
-}
-
-/**
- * Compute subgroup polarity scores from archetype distribution.
- * Shows the balance between Set A and Set B archetype within each functional group.
- * 
- * @param {Object} layerAnswers - { layerIndex: { questionId: answerId }, ... }
- * @param {Array}  questions    - Full question definitions
- * @returns {Array<{ id, leftLabel, leftScore, rightLabel, rightScore, group, axis }>}
- */
-export function computeSubgroups(layerAnswers, questions) {
-  // Tally archetype hits (each selection counts as 1 hit)
-  const archetypeCounts = {};
-  if (layerAnswers && questions) {
-    Object.entries(layerAnswers).forEach(([layerIdxStr, layerData]) => {
-      if (!layerData || typeof layerData !== 'object') return;
-      const layerIdx = parseInt(layerIdxStr, 10);
-      const layer = questions.find(q => q.layerIndex === layerIdx);
-      if (!layer) return;
-      Object.entries(layerData).forEach(([questionIdStr, answerVal]) => {
-        const questionId = parseInt(questionIdStr, 10) || questionIdStr;
-        const question = layer.questions.find(q => q.id === questionId);
-        if (!question) return;
-        const selections = Array.isArray(answerVal) ? answerVal : [answerVal];
-        selections.forEach(aid => {
-          const selectedAnswer = question.answers.find(a => a.id === aid);
-          if (!selectedAnswer) return;
-          const archetype = selectedAnswer.archetype;
-          if (archetype) archetypeCounts[archetype] = (archetypeCounts[archetype] || 0) + 1;
-        });
-      });
-    });
-  }
-  
-  return SUBGROUP_POLARITIES.map(p => {
-    const leftKey = p.leftLabel.toUpperCase();
-    const rightKey = p.rightLabel.toUpperCase();
-    const leftCount = archetypeCounts[leftKey] || 0;
-    const rightCount = archetypeCounts[rightKey] || 0;
-    const total = leftCount + rightCount || 1;
-    return {
-      ...p,
-      leftScore: Math.round((leftCount / total) * 100),
-      rightScore: Math.round((rightCount / total) * 100),
-    };
-  });
-}
-
-/**
- * Determine primary archetype from answer distribution.
- * 
- * @param {Object} layerAnswers - { layerIndex: { questionId: answerId }, ... }
- * @param {Array}  questions - Full question definitions
- * @returns {{ primary: string, secondary: string, counts: Object }}
- */
-export function determineArchetype(layerAnswers, questions) {
-  const counts = {};
-  
-  if (layerAnswers && questions) {
-    Object.entries(layerAnswers).forEach(([layerIdxStr, layerData]) => {
-      if (!layerData || typeof layerData !== 'object') return;
-      const layerIdx = parseInt(layerIdxStr, 10);
-      const layer = questions.find(q => q.layerIndex === layerIdx);
-      if (!layer) return;
-      Object.entries(layerData).forEach(([questionIdStr, answerVal]) => {
-        const questionId = parseInt(questionIdStr, 10) || questionIdStr;
-        const question = layer.questions.find(q => q.id === questionId);
-        if (!question) return;
-        const selections = Array.isArray(answerVal) ? answerVal : [answerVal];
-        selections.forEach((aid, idx) => {
-          const selectedAnswer = question.answers.find(a => a.id === aid);
-          if (!selectedAnswer) return;
-          const archetype = selectedAnswer.archetype;
-          // Weight: primary choice counts more than secondary
-          const weight = idx === 0 ? 3 : 2;
-          if (archetype) counts[archetype] = (counts[archetype] || 0) + weight;
-        });
-      });
-    });
-  }
-  
-  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  return {
-    primary: sorted[0]?.[0] || 'SAGE',
-    secondary: sorted[1]?.[0] || 'EXPLORER',
-    counts,
-  };
-}
 
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -936,52 +761,6 @@ export function isComplementaryPair(key1, key2) {
  */
 
 /**
- * Neural Focus per group (for AI analysis context).
- */
-export const GROUP_NEURAL_FOCUS = {
-  RULING:     'CEN: Externe structuur & Wet',
-  RELATIONAL: 'Limbic: Emotionele fusie',
-  SEEKER:     'Openness: Pure ervaring',
-  CHAOS:      'Salience: Disruptie & Waarheid',
-  ABSTRACT:   'DMN: Interne reflectie',
-  AGENCY:     'Extraversie: Wilskracht',
-};
-
-/**
- * Determine whether a question routes to Nature or Culture.
- * Uses the 6-key rotation system: question's key + layer's Standard/Spiegel mode.
- *
- * @param {number} questionNum - 1-based question number
- * @returns {'NATURE'|'CULTURE'}
- */
-export function getQuestionBucket(questionNum) {
-  return isNatureRouting(questionNum) ? 'NATURE' : 'CULTURE';
-}
-
-/**
- * Legacy wrapper — returns 'ALPHA' or 'BETA' for backward compatibility.
- * ALPHA = Nature-favoring keys in Standard mode.
- * @param {number} questionNum
- * @returns {'ALPHA'|'BETA'}
- */
-export function getStateToggle(questionNum) {
-  return isNatureRouting(questionNum) ? 'ALPHA' : 'BETA';
-}
-
-/**
- * Determine routing bucket for an answer.
- * In the new 6-key system, routing is determined by the QUESTION (not the archetype).
- * Kept for backward compatibility but now delegates to question-based routing.
- *
- * @param {string} _archetypeKey - ignored in new system
- * @param {'ALPHA'|'BETA'} stateToggle
- * @returns {'NATURE'|'CULTURE'}
- */
-export function getNatureCultureBucket(_archetypeKey, stateToggle) {
-  return stateToggle === 'ALPHA' ? 'NATURE' : 'CULTURE';
-}
-
-/**
  * Green Line check (Neurale Snelweg / Hardware Anker).
  * Returns true if the two archetypes are Green Line partners (same biological group).
  *
@@ -1193,20 +972,9 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
   // ── Detect 180° Individuation (Main & Support are shadow opposites) ──
   const isIndividuated = isShadowPair(mainArchetype, supportArchetype);
 
-  // ── Polarization Index (Main vs Shadow gap) ──
-  const mainScore = scores[mainArchetype]?.total || 0;
+  // The Polarization Index (index, %, band) is computed once, on the server, by the one polar_norm
+  // (apps/backend/engine/polarNorm.js) and returned with the report — never derived here.
   const shadowScore = shadowArchetype ? (scores[shadowArchetype]?.total || 0) : 0;
-  const polarizationIndex = mainScore - shadowScore;
-  // Polarization as percentage of Main score for level thresholds
-  const polarizationPct = mainScore > 0 ? Math.round((polarizationIndex / mainScore) * 100) : 0;
-  let polarizationLevel;
-  if (polarizationPct > 60) {
-    polarizationLevel = 'HIGH_POLARIZATION';
-  } else if (polarizationPct < 30) {
-    polarizationLevel = 'HIGH_INDIVIDUATION';
-  } else {
-    polarizationLevel = 'MODERATE';
-  }
 
   // ── Authenticity Index (Nature pick count / total picks — pure pick counter) ──
   const authenticityIndex = totalPickCount > 0
@@ -1343,9 +1111,6 @@ export function computeAdvancedScores(responses, tier = 'ADVANCED') {
     frictieCounter: 0,
 
     // Leerling metrics
-    polarizationIndex,
-    polarizationPct,
-    polarizationLevel,
     authenticityIndex,
     authenticityLevel,
     naturePickCount,

@@ -4,7 +4,7 @@ import { getHistory, getAssessment, downloadPdf, deleteOwnAccount, updateDisplay
 import { C, FONT, SciFiButton } from '@gfl/ui';
 import { extendedNameFor } from '@gfl/assessment-core/data';
 import { OrbGlowDither, orbGlowDiameter } from '../Dither';
-import { OrbSphere, OrbSphere3D, configFromResult, orbCodeFromResult, deriveOrb3, encodeOrb3, decodeOrb3, GROUP } from '../../orb';
+import { OrbSphere3D, configFromResult, orbCodeFromResult, deriveOrb3, encodeOrb3, decodeOrb3, GROUP } from '../../orb';
 
 /* ════════════════════════════════════════════════════════════════════════
    ClientOrbExperience — the client landing.

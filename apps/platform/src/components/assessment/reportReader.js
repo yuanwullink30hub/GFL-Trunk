@@ -25,7 +25,7 @@
 
 import {
   NARRATIVE_TAGS, matchNarrativeTag, normalizeTagLine, canonicalTitle, stripPageLabel,
-  bareHeading, isOceanMemberHeading, isContractSubheading,
+  bareHeading, isOceanMemberHeading, isContractSubheading, REPORT_V7_SLOTS,
 } from './v4Parser.js';
 
 // ── Title helpers (shared with the renderer) ─────────────────────────────────────────────────────
@@ -303,6 +303,10 @@ export function stripKaartFields(text, ledger = null) {
 export function parseAiSections(analysisText, ledger = null) {
   if (!analysisText || typeof analysisText !== 'string') return null;
   const drop = (rule, title, text) => { if (ledger && String(text || '').trim()) ledger.discarded.push({ rule, title, text }); };
+  // Master Prompt v7 (W2): the model ends on the closing line [EINDE RAPPORT] instead of a machine
+  // block — a completion marker, never report text (it would otherwise trail the AI-prompt page).
+  analysisText = analysisText.replace(/^[ \t#*>]*\[\s*(?:EINDE\s+RAPPORT|END\s+OF\s+REPORT)\s*\][ \t*]*$/gim,
+    (m) => { drop('closing line (v7 completion marker)', '', m); return ''; });
   analysisText = groupSubsections(normalizeHeadings(analysisText, ledger), ledger);
 
   // Split on ## or ### top-level headings (with or without numbering).
@@ -599,6 +603,13 @@ export function readReport(analysisText) {
       if (m) ledger.discarded.push({ rule: "the model's machine block after the AI prompt — the renderer prints its own", title: s.title, text: m[0], byRenderer: true });
     }
   }
+  // Payload instruction v7 §7: a v7 report is complete when the closing line came and all 19 sections are
+  // here. Read by the renderer for v2 reports (a v1 report has no closing line by design).
+  const slots = new Set(sections.map((s) => (matchNarrativeTag(s.title || '') || {}).slot).filter(Boolean));
+  ledger.completeness = {
+    closingLine: ledger.discarded.some((d) => d.rule === 'closing line (v7 completion marker)'),
+    missing: REPORT_V7_SLOTS.filter((x) => !slots.has(x)),
+  };
   return { sections, ledger };
 }
 

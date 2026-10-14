@@ -837,6 +837,12 @@ const LoginPage = memo(({ isVisible, onBack, backButton = false }) => {
                     {t('auth.onboarding.consentSuffix')}
                   </span>
                 </label>
+                {obReading?.schemaVersion === 'v2_two_layer' && (
+                  <div style={{ marginTop: '0.45rem', fontSize: 'max(9px,0.46vw)', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45 }}>
+                    <div style={{ color: C.gold, fontWeight: 'bold', marginBottom: '0.15rem' }}>{t('auth.onboarding.v2Kept.title')}</div>
+                    {t('auth.onboarding.v2Kept.body')}
+                  </div>
+                )}
                 <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginTop: '0.35rem', cursor: 'pointer' }}>
                   <input type="checkbox" checked={obConsentArt9} onChange={(e) => setObConsentArt9(e.target.checked)} style={{ marginTop: '0.2rem', accentColor: C.gold, flexShrink: 0 }} />
                   <span style={{ fontSize: 'max(9px,0.46vw)', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45 }}>

@@ -117,25 +117,6 @@ export function fileToBase64(file) {
 }
 
 /**
- * The render-only mirror of the account (contract §2 profile/partial.json): what the server
- * keeps for the network layer, nothing more — no email, no credentials.
- */
-export function partialFromAccount(me) {
-  const hist = Array.isArray(me && me.orbHistory) ? me.orbHistory : [];
-  return {
-    schema: 'partialProfile.v1',
-    accountId: me && me.id != null ? String(me.id) : null,
-    displayName: (me && (me.visibleName || me.displayName)) || '',
-    archetypeName: (me && me.archetypeName) || '',
-    age: me && me.age != null ? me.age : null,
-    country: (me && me.country) || '',
-    orb: (me && me.orb) || null,
-    readings: hist.map((h) => ({ at: h.at || null, archetypeName: h.archetypeName || '', orb: h.orb || null, baskets12: h.baskets12 || null })),
-    syncedAt: new Date().toISOString(),
-  };
-}
-
-/**
  * Bind the connected folder to this account. Throws the app's own message when the folder
  * already belongs to someone else.
  */
@@ -184,25 +165,6 @@ export async function moveWorkspace() {
   const result = await window.gfl.workspace.move();
   announceWorkspaceChange();
   return result;
-}
-
-/**
- * Right after the account exists, in the app: its folder (created by the app, bound here), the report
- * the user just uploaded into profile/reports, and the partial profile mirror — no questions asked.
- */
-export async function connectWorkspace({ accountId, reportFile = null, reportLabel = '', account = null }) {
-  if (!isDesktopApp()) throw new Error('The folder is only reachable from the desktop app');
-  let status = await ensureWorkspace(accountId);
-  if (!status.connected) {
-    await window.gfl.workspace.create(String(accountId));
-    status = await getWorkspaceStatus(accountId);
-  }
-  if (!status.ready) throw new Error('The folder could not be prepared');
-  let report = null;
-  if (reportFile) report = await window.gfl.reports.save(await fileToBase64(reportFile), reportLabel);
-  if (account) await window.gfl.profile.write(partialFromAccount(account));
-  announceWorkspaceChange();
-  return { connected: true, root: status.root, report };
 }
 
 /** Save a report PDF into this account's folder, if it is ready. Resolves null when it is not. */

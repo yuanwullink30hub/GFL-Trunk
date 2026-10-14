@@ -350,4 +350,9 @@ const RetentionForm = ({ language = 'nl' }) => {
   );
 };
 
-export { S, FS, PolicyLink, RetentionForm };
+// The two-layer Leerling test is live (its report payload carries no answers). Flip together with the
+// backend's LEERLING_TWO_LAYER=1 at cutover: until then the privacy page must not say it, because the Leerling
+// test running in production is still the old one. Gates Privacy_Texts_v2_DRAFT_v0_1 §A (owner to ratify).
+const TWO_LAYER_TEST_LIVE = false;
+
+export { S, FS, PolicyLink, RetentionForm, TWO_LAYER_TEST_LIVE };

@@ -68,10 +68,6 @@ export function logoutAndReload() {
   window.location.reload();
 }
 
-export function isClientMode() {
-  return !!getClientOrbConfig();
-}
-
 /** Decoded 3D orb render config — from the raw code (PDF login) or a stored config (email login). */
 export function getClientOrbConfig() {
   const code = getClientOrbCode();

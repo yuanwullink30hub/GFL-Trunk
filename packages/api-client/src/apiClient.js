@@ -90,8 +90,6 @@ export function openPrivateWindow() {
   };
 }
 
-export const isPrivateWindowOpen = () => privateWindowDepth > 0;
-
 /** Background (timer-driven) account calls: only outside the window and after its cool-down. */
 export const backgroundAccountCallsAllowed = () => privateWindowDepth === 0 && Date.now() >= backgroundResumeAt;
 
@@ -384,20 +382,6 @@ export async function getCard(handle) {
 }
 
 /**
- * Fetch a PUBLIC, read-only profile by its unique visual name (handle).
- * No auth. Returns only public-safe fields (name, archetype, render-only orb, country).
- * @returns {Promise<{ displayName, archetypeName, orb, country }>}
- */
-export async function getPublicProfile(handle) {
-  const response = await fetch(`${API_BASE}/auth/public/${encodeURIComponent(handle)}`);
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error || `Profiel ophalen mislukt (${response.status})`);
-  }
-  return response.json();
-}
-
-/**
  * Store a still image of the current orb (attached to the active orbHistory entry). Auth required.
  * The image is a data-URL (png/jpeg/webp). No-op server-side if that entry already has an image.
  * @returns {Promise<{ ok: true }>}
@@ -574,9 +558,6 @@ export async function deleteOwnAccount() {
 // ── Assessment Persistence ──
 
 /**
- * Save an assessment result to the database.
- */
-/**
  * Discard an unpaid report: the server deletes the card draft keyed by the sealed crystal code
  * (only when that report was never unlocked). Fired while the page may be unloading, so it is a
  * keepalive request with a text/plain body — a CORS "simple" request that needs no preflight.
@@ -592,22 +573,6 @@ export function discardUnpaidReport(sealedOrbCode) {
       body: String(sealedOrbCode),
     }).catch(() => {});
   } catch (_) { /* ignore */ }
-}
-
-/** @deprecated The server no longer stores assessments (single-instance profile); always rejected. */
-export async function saveAssessment(data) {
-  const response = await fetch(`${API_BASE}/assessment`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Save failed (${response.status})`);
-  }
-
-  return response.json();
 }
 
 /**
@@ -1005,25 +970,11 @@ export async function getAdminReviews(opts = {}) {
 }
 
 /**
- * Get single review detail with full assessment context (admin only).
- * @param {string} id - Review ObjectId
+ * Get a Master Prompt record (admin only).
+ * @param {'beginner'|'intermediate'|'advanced'} [slot='advanced']
  */
-export async function getAdminReview(id) {
-  const response = await fetch(`${API_BASE}/admin/reviews/${id}`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Review detail failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/**
- * Get AI prompt configuration (admin only).
- */
-export async function getPromptConfig() {
-  const response = await fetch(`${API_BASE}/admin/prompts`, {
+export async function getPromptConfig(slot = 'advanced') {
+  const response = await fetch(`${API_BASE}/admin/prompts?slot=${encodeURIComponent(slot)}`, {
     headers: authHeaders(),
   });
   if (!response.ok) throw new Error(`Prompt config failed (${response.status})`);
@@ -1031,85 +982,17 @@ export async function getPromptConfig() {
 }
 
 /**
- * Update AI prompt configuration (admin only).
+ * Update a Master Prompt record (admin only).
+ * @param {{ systemPromptTemplate?: string, temperature?: number }} config
+ * @param {'beginner'|'intermediate'|'advanced'} [slot='advanced']
  */
-export async function updatePromptConfig(config) {
-
-  const response = await fetch(`${API_BASE}/admin/prompts`, {
+export async function updatePromptConfig(config, slot = 'advanced') {
+  const response = await fetch(`${API_BASE}/admin/prompts?slot=${encodeURIComponent(slot)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(config),
   });
   if (!response.ok) throw new Error(`Prompt update failed (${response.status})`);
-  return response.json();
-}
-
-// ── Context Documents (uploaded by admin, included in AI calls) ──
-
-/**
- * Upload a context document (Word/PDF/TXT) for AI system prompt inclusion.
- * @param {File} file - The file to upload
- * @returns {Promise<{ success: boolean, document: Object }>}
- */
-export async function uploadPromptDocument(file) {
-  const formData = new FormData();
-  formData.append('document', file);
-
-  const response = await fetch(`${API_BASE}/admin/prompts/documents`, {
-    method: 'POST',
-    headers: authHeaders(), // No Content-Type — browser sets multipart boundary
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Upload failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/**
- * List all uploaded context documents (metadata only, no text).
- * @returns {Promise<{ documents: Array }>}
- */
-export async function getPromptDocuments() {
-  const response = await fetch(`${API_BASE}/admin/prompts/documents`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) throw new Error(`Document list failed (${response.status})`);
-  return response.json();
-}
-
-/**
- * Delete an uploaded context document.
- * @param {string} docId - MongoDB ObjectId
- * @returns {Promise<{ success: boolean }>}
- */
-export async function deletePromptDocument(docId) {
-  const response = await fetch(`${API_BASE}/admin/prompts/documents/${docId}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Delete failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/**
- * Verify all uploaded context documents are valid and readable by the AI.
- * @returns {Promise<{ success: boolean, verified: boolean, totalDocuments: number, totalChars: number, documents: Array }>}
- */
-export async function verifyPromptDocuments() {
-  const response = await fetch(`${API_BASE}/admin/prompts/documents/verify`, {
-    method: 'POST',
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Verification failed (${response.status})`);
-  }
   return response.json();
 }
 
@@ -1124,6 +1007,55 @@ export async function getQuestions() {
   const response = await fetch(`${API_BASE}/questions`);
   if (!response.ok) throw new Error(`Questions fetch failed (${response.status})`);
   return response.json();
+}
+
+/**
+ * The two-layer Leerling test: its bank in this quarter's rotation order. Public endpoint.
+ * @returns {Promise<{ enabled: boolean, rotation_sequence_id?: string, placeholder?: boolean,
+ *   subjects?: { subject: string, questions: object[] }[] }>}  `enabled: false` while the server has it off
+ */
+export async function getTwoLayerQuestions() {
+  const response = await fetch(`${API_BASE}/questions/two-layer`);
+  if (!response.ok) throw new Error(`Two-layer questions fetch failed (${response.status})`);
+  return response.json();
+}
+
+/**
+ * N1 refusal free text (Privacy & Consent instruction §4.2): the opt-in consent text for the language.
+ * Anonymous: no Authorization header, no cookies. Resolves null when the step is not offered (503: no
+ * store configured; 404: no approved text for this language) — the caller then skips it silently.
+ * @param {'nl'|'en'} lang
+ * @returns {Promise<{version:string, title:string, body:string[], checkbox:string, skip:string, maxCards:number, retentionMonths:number}|null>}
+ */
+export async function getRefusalConsent(lang) {
+  try {
+    const response = await fetch(`${API_BASE}/refusal-text/consent?lang=${encodeURIComponent(lang)}`, { credentials: 'omit', cache: 'no-store' });
+    return response.ok ? response.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * N1: send the typed texts, with the consent version that was shown. Anonymous like the consent fetch: no
+ * token, no cookies, no session id. Each text links only to its question's bank id (owner, 13 Oct) — no
+ * position, slot or groups. Never throws; declining or a failure changes nothing for the test or the report.
+ * @param {string} consentVersion
+ * @param {{question_id:string, text:string}[]} cards  1–5, one per question, each text at most 2000 characters
+ * @returns {Promise<boolean>} true when the server took them (204)
+ */
+export async function submitRefusalTexts(consentVersion, cards) {
+  try {
+    const response = await fetch(`${API_BASE}/refusal-text`, {
+      method: 'POST',
+      credentials: 'omit',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consent: true, consentVersion, cards: cards.map(({ question_id, text }) => ({ question_id, text })) }),
+    });
+    return response.status === 204;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -1229,24 +1161,6 @@ export async function importQuestionsDocx(file) {
   return response.json();
 }
 
-/**
- * Update an entire layer (admin only).
- * @param {number} layerIndex — 0-4
- * @param {Object} data — layer fields to update
- */
-export async function updateLayer(layerIndex, data) {
-  const response = await fetch(`${API_BASE}/questions/layer/${layerIndex}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Layer update failed (${response.status})`);
-  }
-  return response.json();
-}
-
 // ── Form Email (Formulieren) — instant send only, no server storage ──
 
 /** Send a form directly via email (no DB storage) */
@@ -1275,18 +1189,6 @@ export async function sendContactForm(data) {
     if (limited) throw limited;
     const err = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(err.error || `Verzenden mislukt (${response.status})`);
-  }
-  return response.json();
-}
-
-/** Check email SMTP configuration status */
-export async function getEmailStatus() {
-  const response = await fetch(`${API_BASE}/admin/email/status`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Email status check failed (${response.status})`);
   }
   return response.json();
 }
@@ -1335,30 +1237,6 @@ export async function getAccessLog(limit = 500) {
   if (!response.ok) {
     const err = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(err.error || `Access log failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/** Get consent audit log events (admin only) */
-export async function getConsentLog(limit = 500) {
-  const response = await fetch(`${API_BASE}/admin/sessions/consent?limit=${limit}`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Consent log failed (${response.status})`);
-  }
-  return response.json();
-}
-
-/** Get dev activity log events — edits, commits, pushes (admin only) */
-export async function getDevLog(limit = 500) {
-  const response = await fetch(`${API_BASE}/admin/sessions/dev?limit=${limit}`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Dev log failed (${response.status})`);
   }
   return response.json();
 }
@@ -1415,8 +1293,6 @@ export async function updateFeedbackEmailSettings(settings) {
   }
   return response.json();
 }
-
-// ── Passkey Management (Admin) ──
 
 // ── Activation codes (admin) ──
 
@@ -1572,50 +1448,6 @@ export function downloadPaymentRecord(id) {
 /** Download the payment records folder as a ZIP — one year, or everything when year is omitted. */
 export function downloadPaymentRecordsArchive(year) {
   return downloadAuthed(`${API_BASE}/admin/payment-records/archive.zip${year ? `?year=${year}` : ''}`, 'Betaalbewijzen.zip');
-}
-
-export async function getPasskeys() {
-  const response = await fetch(`${API_BASE}/admin/passkeys`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) throw new Error(`Failed to load passkeys (${response.status})`);
-  return response.json();
-}
-
-export async function deletePasskey(id) {
-  const response = await fetch(`${API_BASE}/admin/passkeys/${id}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Failed to delete passkey (${response.status})`);
-  }
-  return response.json();
-}
-
-export async function togglePasskey(id) {
-  const response = await fetch(`${API_BASE}/admin/passkeys/${id}/toggle`, {
-    method: 'PATCH',
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Failed to toggle passkey (${response.status})`);
-  }
-  return response.json();
-}
-
-export async function toggleAdminPasskey(id) {
-  const response = await fetch(`${API_BASE}/admin/passkeys/${id}/toggle-admin`, {
-    method: 'PATCH',
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(err.error || `Failed to toggle admin passkey (${response.status})`);
-  }
-  return response.json();
 }
 
 export async function saveInvoice(invoiceData) {

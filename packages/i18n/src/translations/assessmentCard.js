@@ -108,5 +108,39 @@ export default {
         en: 'Continue',
       },
     },
+
+    // ── The two-layer test (Leerling, scoring_version v2_two_layer) — the card turns over between layers ──
+    twoLayer: {
+      layer: {
+        nl: (n) => `LAAG ${n}/2`,
+        en: (n) => `LAYER ${n}/2`,
+      },
+      l1Hint: {
+        nl: 'Kies één of twee antwoorden, of geen van deze.',
+        en: 'Choose one or two answers, or none of these.',
+      },
+      l2Hint: {
+        nl: 'Kies er hoogstens twee. Niets kiezen mag ook.',
+        en: 'Choose two at most. Choosing nothing is fine too.',
+      },
+      // The bank carries the Dutch label ("Geen van deze past"); this is its English.
+      refusal: {
+        nl: 'Geen van deze past',
+        en: 'None of these fits',
+      },
+      // Replaces intro.picks and intro.resonance on the "Voordat je begint" overlay.
+      picks: {
+        nl: 'Elke vraag heeft {c:#a855f7|twee lagen}. Eerst zie je zes antwoorden: kies er één of twee, of {c:#f97316|Geen van deze past}.\nDaarna draait de kaart om en zie je preciezere antwoorden binnen wat je koos. Kies er hoogstens twee, of geen.',
+        en: 'Every question has {c:#a855f7|two layers}. First you see six answers: choose one or two, or {c:#f97316|None of these fits}.\nThen the card turns over and you see more precise answers within what you chose. Choose two at most, or none.',
+      },
+      resonance: {
+        nl: 'Elke keuze resoneert door naar verbonden punten op het wiel. Het resultaat is geen plat getal maar een gelaagd profiel.',
+        en: 'Every choice resonates onward to connected points on the wheel. The result is not a flat number but a layered profile.',
+      },
+      timerOutro: {
+        nl: '\n \nElke laag heeft zijn eigen timer. Loopt die af, dan gaat de kaart door met wat je tot dan koos. Je kunt altijd zelf doorklikken,\nniet terug, alleen voorwaartse beweging.',
+        en: '\n \nEach layer has its own timer. When it runs out, the card moves on with what you chose so far. You can always click ahead yourself,\nnot back — forward movement only.',
+      },
+    },
   },
 };

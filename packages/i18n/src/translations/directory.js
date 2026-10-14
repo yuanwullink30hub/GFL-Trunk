@@ -96,10 +96,5 @@ export default {
       requestFailed: { nl: 'Verzoek mislukt', en: 'Request failed' },
     },
 
-    // ── Orb archive strip ──
-    orbArchive: {
-      title: { nl: 'Kristal-geschiedenis', en: 'Crystal history' },
-      crystalAlt: { nl: 'kristal', en: 'crystal' },
-    },
   },
 };

@@ -26,7 +26,9 @@ import {
   getExtensionGift,
   getExtensionCurse,
   archetypeField,
+  ARCHETYPE_RADAR_LABELS,
 } from '@gfl/assessment-core';
+import { scoreTwoLayer, toResponseRecords } from '@gfl/assessment-core/data/scoring/twoLayer.js';
 import { isNatureSlot } from '@gfl/assessment-core/assessmentData';
 import { getArchetypeImage, resolvePortrait, DEFAULT_PORTRAIT_VARIANT } from '@gfl/assessment-core/data/archetypeImages';
 import PaywallModal from './PaywallModal';
@@ -37,13 +39,14 @@ import { registerLeaveHandler } from '../../reportDownloadGuard';
 import { formatCents, formatPrice } from '../../config/pricing';
 import { getPaymentConfig, markPaymentDelivered } from '../../services/paymentService';
 import {
-  assembleV4, bareHeading, isContractSubheading, isOceanMemberHeading, splitGluedHeading,
+  bareHeading, isContractSubheading, isOceanMemberHeading, splitGluedHeading,
 } from './v4Parser';
 import {
-  readReport, logReaderLedger, stripKaartFields, cleanTitle, shownTitle, isExtensionTitle,
+  readReport, logReaderLedger, cleanTitle, shownTitle, isExtensionTitle,
   COMPARISON_TITLE, RADAR_READING_TITLE, STRAY_TITLE, RENDER_SIDE_TITLE, V3_ELEMENTS_TITLE,
 } from './reportReader';
 import MorphologyChart from './MorphologyChart';
+import RefusalCards from './RefusalCards';
 import { drawCoverPage } from './coverPage';
 import { sectionTitle, relabelProse } from './v4Labels';
 
@@ -60,6 +63,8 @@ const OCEAN_LABELS = {
   N: { short: 'N', full: 'Neuroticism', dutch: 'Neuroticisme' },
 };
 const OCEAN_COLORS = { O: '#a78bfa', C: '#22d3ee', E: '#67e8f9', A: '#818cf8', N: '#c4b5fd' };
+// UI level key → the report request's `level` (Starter / Gevorderd / Leerling).
+const REPORT_LEVEL = { quick: 'beginner', standard: 'intermediate', deep: 'advanced' };
 // Profile copies earlier builds left in localStorage; cleared whenever a result is computed.
 const LEGACY_PROFILE_KEYS = ['gfl_assessment_session', 'gfl_assessment_history', 'gfl_analysis_sections', 'gfl_pending_assessment', 'gfl_assessment_id'];
 import { analyzeAssessment, discardUnpaidReport, submitAssessmentReview, sendAccessEmail, sendReportEmail, logActivity } from '@gfl/api-client';
@@ -118,6 +123,12 @@ const getSectionAccent = (title) => {
   if (t.includes('introductie') || t.includes('introduction')) return { color: '#d1d5db', rgb: '209, 213, 219' };
   if (t.includes('prompt') || t.includes('agent')) return { color: '#f97316', rgb: '249, 115, 22' };
   return null; // fallback to cycle
+};
+
+/** Band label for the server's polarisation (> 60 % / 30–60 % / < 30 %); null until it arrives. */
+const polBandOf = (polarization, t) => {
+  const key = { HIGH_POLARIZATION: 'suppressed', MODERATE: 'healthy', HIGH_INDIVIDUATION: 'integrating' }[polarization?.polarizationLevel];
+  return key ? t(`resultsModal.bands.${key}`) : null;
 };
 
 /**
@@ -186,10 +197,15 @@ const AssessmentResultsModal = ({
   resultsModalProgress,
   layerAnswers,
   liveSubjects = [],
+  // The two-layer Leerling test's locked plan (App.jsx); null = the old test. With it, `layerAnswers` holds
+  // the two-layer records, the server scores the response records and the report reads only that scoring.
+  twoLayerPlan = null,
   uploadedFiles,
   onClose,
   onDownload,
   onAiReady,
+  // The UI level key ('quick' | 'standard' | 'deep'): picks the report's Master Prompt on the server.
+  assessmentLevel = 'deep',
   // The parent still passes `t`; this component now takes its translator from
   // useLanguage() (below) so the whole file — UI *and* PDF — can translate.
   // The prop is accepted and ignored to keep the existing call-site contract.
@@ -205,13 +221,20 @@ const AssessmentResultsModal = ({
   // Dutch or English archetype copy, so the hook must run first.
   const { language, t, tArray, tFunc } = useLanguage(); // 'nl' | 'en' — selects the corpus sent to the model + all copy
 
+  // The two-layer test's response records (Rotation Sequence v0.1.1 §2) — what the server scores.
+  const twoLayerResponses = useMemo(
+    () => (twoLayerPlan ? toResponseRecords(twoLayerPlan, layerAnswers) : null),
+    [twoLayerPlan, layerAnswers],
+  );
+
   // Compute archetype result from layer answers
   const result = useMemo(() => {
+    if (twoLayerResponses) return computeResultFromTwoLayer(twoLayerResponses, language);
     const keys = layerAnswers ? Object.keys(layerAnswers) : [];
     const totalAnswers = keys.reduce((sum, k) => sum + Object.keys(layerAnswers[k] || {}).length, 0);
     console.log('[GFL] computeResultFromAnswers — layers:', keys.length, 'totalAnswers:', totalAnswers, 'sample:', JSON.stringify(layerAnswers).slice(0, 300));
     return computeResultFromAnswers(layerAnswers, liveSubjects, language);
-  }, [layerAnswers, liveSubjects, language]);
+  }, [layerAnswers, liveSubjects, language, twoLayerResponses]);
   
   // Ref for the scroll container
   const scrollRef = useRef(null);
@@ -315,17 +338,17 @@ const AssessmentResultsModal = ({
   }, [portraitMain, portraitSupport]);
   const [aiSections, setAiSections] = useState(null);
   const [aiProfileData, setAiProfileData] = useState(null);
-  // v4: structured parse of the model output (assembleV4) + the engine C-runtime.
-  const [v4Data, setV4Data] = useState(null);
-  const [cRuntime, setCRuntime] = useState(null);
-  // Report pipeline v5.0: the runtime engine's role-tagged payload. When present, the morphology
-  // chart follows Spec A1 — two curves, both the Main's, register layer (main.register) — instead
-  // of the v4.3 three-line cRuntime.d_curve.
+  // The runtime engine's role-tagged payload. The morphology chart follows Spec A1 — two curves,
+  // both the Main's, register layer (main.register); without it there is no chart.
   const [enginePayload, setEnginePayload] = useState(null);
+  // The polarisation (index, %, band), computed once on the server by the one polar_norm and
+  // returned with the report — shown here, never derived here.
+  const [polarization, setPolarization] = useState(null);
+  // v2 sessions: the data block for the last page, built by our backend (engine/dataBlock.js) — printed as is.
+  const [dataBlock, setDataBlock] = useState(null);
   const morphChart = enginePayload?.main?.register
     ? { baseline: enginePayload.main.register.register_baseline_pct, transform: enginePayload.main.register.register_transform_pct }
-    : (cRuntime?.d_curve || null);
-  const morphIsRegister = !!enginePayload?.main?.register;
+    : null;
   // The crystal code (the account key) is NOT known here until the full report is unlocked:
   // the analysis only carries a SEALED copy the browser cannot read. The pay component sends
   // the seal back and receives the real code on payment / activation. Refs, so the PDF
@@ -450,8 +473,6 @@ const AssessmentResultsModal = ({
     aiCalledRef.current = true;
 
     const runAnalysis = async () => {
-      const oceanScores = result.extendedOcean?.ocean || null;
-
       // Convert any uploaded OCEAN profile files to the format the AI API expects
       const uploadedFileContents = [];
       for (const file of uploadedFiles || []) {
@@ -510,9 +531,18 @@ const AssessmentResultsModal = ({
         const __replay = (typeof window !== 'undefined' && window.__GFL_PDF_REPLAY) || null;
         let aiResult;
         if (__replay) {
-          aiResult = { analysis: __replay.analysis, cRuntime: __replay.cRuntime, enginePayload: __replay.enginePayload, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode, kaart: __replay.kaart };
+          aiResult = { analysis: __replay.analysis, enginePayload: __replay.enginePayload, polarization: __replay.polarization, dataBlock: __replay.dataBlock, uploadedOceanScores: __replay.uploadedOceanScores, sealedOrbCode: __replay.sealedOrbCode, kaart: __replay.kaart };
         } else {
-        aiResult = await analyzeAssessment({
+        aiResult = await analyzeAssessment(twoLayerResponses ? {
+          // The two-layer test: only the response records go up; the server scores them and the report
+          // reads that scoring alone (payload v7 P2: the model never sees the answers).
+          scoring_version: 'v2_two_layer',
+          responses: twoLayerResponses,
+          rotation_sequence_id: twoLayerPlan.rotation_sequence_id,
+          language,
+          level: 'advanced',
+          uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
+        } : {
           archetypeKey: result.mainArchetype,
           supportArchetype: result.secondaryArchetype || result._secondaryKey,
           supportGroup: result.supportGroup,
@@ -521,34 +551,22 @@ const AssessmentResultsModal = ({
           shadowArchetype: result.shadowPartner,
           blindspotArchetype: result.blindspotPartner,
           isIndividuated: result.shadowBonusActive,
-          hasHarmonyBonus: false,
-          harmonyBonusApplied: 0,
           // Derived indices + nature/culture totals (Master Prompt L4): the model reads the
-          // Main–Shadow gap and the nature/culture balance from these, banded per R-c.
-          polarizationIndex: result.polarizationIndex,
-          polarizationPct: result.polarizationPct,
-          polarizationLevel: result.polarizationLevel,
+          // nature/culture balance from these, banded per R-c. The Main–Shadow polarisation is
+          // computed on the server (engine/polarNorm.js), never sent from here.
           authenticityIndex: result.authenticityIndex,
           authenticityLevel: result.authenticityLevel,
           totalNaturePoints: result.totalNaturePoints,
           totalCulturePoints: result.totalCulturePoints,
-          oceanScores,
-          scores: result._archetypeScores,
           // Per-archetype 5-mandje + totals — the geometry the backend feeds the
           // C-runtime precompute and the model payload (was previously omitted).
           archetypeDetails: result.archetypeDetails,
           responses: result._answerLog,
           subgroups: result.subgroups,
-          // The relevant Levensles (Main×Support) — sent so the backend hands it
-          // to the AI directly (it needn't search the corpus for it).
-          levensles: getArchetypeQuote(
-            result.mainArchetype,
-            result.secondaryArchetype || result._secondaryKey,
-            language,
-          ),
           // UI language → backend picks the matching corpus (nl → Dutch, else English).
           language,
-          level: 'advanced',
+          // The level picks the Master Prompt (apps/backend/services/promptRouting.js).
+          level: REPORT_LEVEL[assessmentLevel] || 'advanced',
           // The token budget (30000) is fixed server-side; the endpoint ignores model settings sent here.
           uploadedFileContents: uploadedFileContents.length > 0 ? uploadedFileContents : undefined,
         }, (stage, message) => {
@@ -558,16 +576,14 @@ const AssessmentResultsModal = ({
         }
         // Stage 3: frontend integration
         setAiStage(3);
+        // The screen names the Main from the display mirror of the v2 scoring; the report is the server's.
+        if (twoLayerResponses && aiResult.archetypeKey && aiResult.archetypeKey !== result.mainArchetype) {
+          console.warn(`[GFL] two-layer Main differs: server ${aiResult.archetypeKey}, screen ${result.mainArchetype}`);
+        }
         if (aiResult.uploadedOceanScores) setUploadedOceanScores(aiResult.uploadedOceanScores);
-        // Card fields are authored and held server-side (kaartDrafts, keyed by the code
-        // hash) and are stripped from the analysis before it reaches us. This second strip
-        // is defence in depth: the backend strip sits inside a catch-and-continue, so if it
-        // ever fails the fields still never reach a rendering path.
-        const cleanedAnalysis = stripKaartFields(aiResult.analysis || '');
-        // v4 structured parse (title-lines-as-tags) + the engine's C-runtime.
-        try { setV4Data(assembleV4(cleanedAnalysis)); } catch (e) { console.warn('[GFL] v4 parse failed:', e.message); }
-        if (aiResult.cRuntime) setCRuntime(aiResult.cRuntime);
         setEnginePayload(aiResult.enginePayload || null);
+        setPolarization(aiResult.polarization || null);
+        setDataBlock(Array.isArray(aiResult.dataBlock) ? aiResult.dataBlock : null);
         sealedOrbCodeRef.current = aiResult.sealedOrbCode || ''; // opaque until unlock
         kaartRef.current = aiResult.kaart || null;
         orbCodeRef.current = '';
@@ -576,6 +592,13 @@ const AssessmentResultsModal = ({
         // lost or moved without a trace. It strips the Kaart microcopy itself, onto that ledger.
         const { sections, ledger: readerLedger } = readReport(aiResult.analysis || '');
         logReaderLedger(readerLedger);
+        // A v2 report (it carries the server's data block) is checked for completeness: the closing
+        // line [EINDE RAPPORT] and all 19 sections (payload instruction v7 §7). An incomplete report
+        // still renders what came, as before; the gap is logged.
+        if (Array.isArray(aiResult.dataBlock)) {
+          const c = readerLedger.completeness;
+          if (!c.closingLine || c.missing.length) console.warn('[GFL] v7 report incomplete:', { closingLine: c.closingLine, missing: c.missing });
+        }
         // ── DIAGNOSTIC: shows whether a section was "never sent" (not in this list) vs "not
         //    rendered" (in the list but missing from the PDF). Also flags truncation: if the
         //    tail (machine block / last sections) is missing, the analysis was cut short. ──
@@ -585,17 +608,10 @@ const AssessmentResultsModal = ({
           console.log('[GFL] analysis length:', raw.length, 'chars; completionTokens:', aiResult.completionTokens ?? '(n/a)');
           console.log('[GFL] section titles emitted by the model:', (sections || []).map(shownTitle));
           console.log('[GFL] machine block present (— PROFIEL DATA —):', /PROFIEL\s*DATA\s*VOOR\s*AI|PROFILE\s*DATA\s*FOR\s*AI/i.test(raw), '| last 300 chars:', JSON.stringify(raw.slice(-300)));
-          // D-curve provenance: these come from the ENGINE (cRuntime.d_curve), not the model.
-          // If main === support it's because the corpus stores the D-curve PER GROUP — same-group
-          // Main+Support share it. Different-group pairs differ.
-          const dc = aiResult.cRuntime?.d_curve;
-          console.log('[GFL] D-curve (engine):', dc ? `main=${JSON.stringify(dc.main)} support=${JSON.stringify(dc.support)} composed=${JSON.stringify(dc.composed)}` : '(none)',
-            '| Main:', result?.mainArchetype, '/ Support:', result?.secondaryArchetype || result?._secondaryKey,
-            '| main===support:', dc ? JSON.stringify(dc.main) === JSON.stringify(dc.support) : '(n/a)');
           const reg = aiResult.enginePayload?.main?.register;
-          console.log('[GFL] report pipeline:', aiResult.pipeline || 'v4.3', reg
-            ? `| Spec A1 register (engine): baseline=${JSON.stringify(reg.register_baseline_pct)} transform=${JSON.stringify(reg.register_transform_pct)} stamps=${JSON.stringify(aiResult.enginePayload.stamps)}`
-            : '');
+          console.log('[GFL] Spec A1 register (engine):', reg
+            ? `baseline=${JSON.stringify(reg.register_baseline_pct)} transform=${JSON.stringify(reg.register_transform_pct)} stamps=${JSON.stringify(aiResult.enginePayload.stamps)}`
+            : '(none)');
         } catch (_) {}
         const profileElements = sections.filter(s => s.isProfileElement);
         if (profileElements.length > 0) {
@@ -611,7 +627,8 @@ const AssessmentResultsModal = ({
           if (import.meta.env.DEV && !__replay) {
             localStorage.setItem('gfl_pdf_replay', JSON.stringify({
               layerAnswers, liveSubjects,
-              analysis: aiResult.analysis, cRuntime: aiResult.cRuntime, enginePayload: aiResult.enginePayload,
+              analysis: aiResult.analysis, enginePayload: aiResult.enginePayload,
+              polarization: aiResult.polarization, dataBlock: aiResult.dataBlock,
               uploadedOceanScores: aiResult.uploadedOceanScores, sealedOrbCode: aiResult.sealedOrbCode, kaart: aiResult.kaart,
               savedAt: Date.now(),
             }));
@@ -717,21 +734,14 @@ const AssessmentResultsModal = ({
       cul += (sg.leftCulture || 0) + (sg.rightCulture || 0);
     });
     const authPct = nat + cul > 0 ? Math.round((nat / (nat + cul)) * 100) : null;
-    const dm = {};
-    (result.archetypeDetails || []).forEach((d) => { dm[(d.key || '').toUpperCase()] = d; });
-    const mainTot = dm[(result.mainArchetype || '').toUpperCase()]?.total || 0;
-    const shadTot = dm[(result.shadowPartner || '').toUpperCase()]?.total || 0;
-    const polGap = mainTot > 0 ? Math.round((Math.abs(mainTot - shadTot) / mainTot) * 100) : null;
-    const polBand = polGap == null ? null
-      : polGap > 60 ? t('resultsModal.bands.suppressed')
-      : polGap > 30 ? t('resultsModal.bands.healthy')
-      : t('resultsModal.bands.integrating');
+    const polGap = polarization?.polarizationPct ?? null;
+    const polBand = polBandOf(polarization, t);
     return {
       main: result.mainName, support: result.secondaryName,
       shadow: result.shadowName, blindspot: result.blindspotName,
       authPct, polGap, polBand,
     };
-  }, [result, t]);
+  }, [result, polarization, t]);
 
   const aiGroup1b = useMemo(() => visibleSections.filter(s => {
     const t = cleanTitle(s.title || '').toLowerCase();
@@ -1401,15 +1411,8 @@ const AssessmentResultsModal = ({
 
           // Key-findings strip in the middle — Kern/Support/Schaduw/Blindspot + Polarisatie.
           {
-            const dm = {};
-            (result.archetypeDetails || []).forEach((d) => { dm[(d.key || '').toUpperCase()] = d; });
-            const mainTot = dm[(result.mainArchetype || '').toUpperCase()]?.total || 0;
-            const shadTot = dm[(result.shadowPartner || '').toUpperCase()]?.total || 0;
-            const polGap = mainTot > 0 ? Math.round((Math.abs(mainTot - shadTot) / mainTot) * 100) : null;
-            const polBand = polGap == null ? null
-              : polGap > 60 ? t('resultsModal.bands.suppressed')
-              : polGap > 30 ? t('resultsModal.bands.healthy')
-              : t('resultsModal.bands.integrating');
+            const polGap = polarization?.polarizationPct ?? null;
+            const polBand = polBandOf(polarization, t);
             const rows = [
               [t('resultsModal.labels.kern'), result.mainName, green],
               [t('resultsModal.labels.support'), result.secondaryName, orange],
@@ -1797,7 +1800,7 @@ const AssessmentResultsModal = ({
       drawTable(
         tArray('resultsModal.pdf.taal.depthHeaders'),
         tArray('resultsModal.pdf.taal.depthRows'),
-        [16, 42, 52, 64],
+        [14, 20, 58, 82], // sized so every row stays on one line
         { fontSize: 7, vPad: 3 }
       );
 
@@ -2286,7 +2289,7 @@ const AssessmentResultsModal = ({
       endOceanCore();
 
       // ── Page 5: PLASTISCHE MORFOLOGIE — engine D-curve chart + 3 reads ──
-      // Master Prompt v4.1 §5.5: chart is render-side (engine cRuntime, ~30% page height),
+      // Master Prompt v4.1 §5.5: chart is render-side (engine register curves, ~30% page height),
       // then DE VORM + DE HARDWARE ONDER DRUK + DE OVERGANG NAAR DE STILLE STEM.
       const endMorphology = trackBlock('nb_morphology');
       // Tolerant matcher for the 3 morphology reads (vorm / hardware|druk / overgang). NO
@@ -2314,7 +2317,7 @@ const AssessmentResultsModal = ({
               backgroundColor: '#060612', scale: 2, useCORS: true, logging: false,
             });
             const morphImg = morphCanvas.toDataURL('image/jpeg', 0.85);
-            const capTxt = t(morphIsRegister ? 'resultsModal.pdf.morph.captionRegister' : 'resultsModal.pdf.morph.caption');
+            const capTxt = t('resultsModal.pdf.morph.captionRegister');
 
             const innerPad = 3;
             const MORPH_SCALE = 0.75;                         // 25% smaller than full width
@@ -2365,11 +2368,99 @@ const AssessmentResultsModal = ({
       }
       endMorphology();
 
+      // ── Keuze/Echo graph (payload instruction v7 §1.4) — replaces Dual-Core in the same footprint ──
+      // Per hardware group two bars: Gekozen (one segment, keuze + passief — a Layer-1 recognition is a
+      // direct choice too, owner 2026-10-13) and Ontvangen (eigen echo · wiel-echo, stacked), one
+      // shared y-scale whose top is the tallest bar on the page. Neutral hues on
+      // purpose: the segments mix channels, so the line colours would mislead. No numbers in the
+      // segments, no percentages, no caption beyond the legend.
+      const KE_FOOTPRINT_H = 86.6; // the Dual-Core chart's height under its heading (legend 7 + 6 rows × 12.6 + 4)
+      const drawKeuzeEcho = (groups) => {
+        const order = ['Ruling', 'Relational', 'Seeker', 'Chaos', 'Abstract', 'Agency'];
+        const top = y;
+        const blendBg = (c, a) => c.map((v, i) => Math.round(v * a + bg[i] * (1 - a)));
+        const chosen = [255, 254, 240];   // cream — text.primary
+        const received = [148, 163, 184]; // slate — text.slate.400
+        const fill = { gekozen: chosen, eigen_echo: received, wiel_echo: blendBg(received, 0.45) };
+        const segs = ['gekozen', 'eigen_echo', 'wiel_echo'];
+
+        // Legend: one row if it fits, else Gekozen over Ontvangen.
+        const legend = tArray('resultsModal.pdf.keuzeEcho.legend');
+        pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
+        const sw = 3, swGap = 1.5, itemGap = 6;
+        const itemW = legend.map((l) => sw + swGap + pdf.getTextWidth(sanitizePdf(l)));
+        const rows = itemW.reduce((a, b) => a + b, 0) + itemGap * 2 <= contentW ? [[0, 1, 2]] : [[0], [1, 2]];
+        let ly = top + 1;
+        rows.forEach((row) => {
+          let lx = margin;
+          row.forEach((i) => {
+            pdf.setFillColor(...fill[segs[i]]);
+            pdf.rect(lx, ly - 2.4, sw, sw, 'F');
+            pdf.setTextColor(...white);
+            pdf.text(sanitizePdf(legend[i]), lx + sw + swGap, ly);
+            lx += itemW[i] + itemGap;
+          });
+          ly += 5;
+        });
+
+        // Plot area, ending where the Dual-Core chart ended.
+        const axisW = 10, labelH = 7;
+        const plotL = margin + axisW, plotR = margin + contentW;
+        const plotT = ly + 3, plotB = top + KE_FOOTPRINT_H - 4 - labelH, plotH = plotB - plotT;
+        const num = (d, k) => Math.max(0, Number(d?.[k]) || 0);
+        const val = (d, k) => (k === 'gekozen' ? num(d, 'keuze') + num(d, 'passief') : num(d, k));
+        const maxBar = Math.max(0, ...order.flatMap((g) => {
+          const d = groups[g];
+          return [val(d, 'gekozen'), val(d, 'eigen_echo') + val(d, 'wiel_echo')];
+        }));
+        const yOf = (v) => plotB - (v / maxBar) * plotH;
+
+        if (maxBar > 0) {
+          const raw = maxBar / 4, pow = 10 ** Math.floor(Math.log10(raw));
+          const step = [1, 2, 2.5, 5, 10].map((m) => m * pow).find((s) => s >= raw);
+          pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
+          for (let v = step; v <= maxBar + 1e-9; v += step) {
+            pdf.setDrawColor(40, 40, 62); pdf.setLineWidth(0.1);
+            pdf.line(plotL, yOf(v), plotR, yOf(v));
+            pdf.setTextColor(...dimWhite);
+            pdf.text(String(Math.round(v * 10) / 10), plotL - 1.5, yOf(v) + 1, { align: 'right' });
+          }
+        }
+        pdf.setDrawColor(...mutedGray); pdf.setLineWidth(0.2);
+        pdf.line(plotL, plotB, plotR, plotB);
+
+        const slotW = (plotR - plotL) / order.length;
+        const barW = Math.min(8, slotW * 0.3), pairGap = 1.2;
+        order.forEach((g, i) => {
+          const d = groups[g] || {};
+          const cx = plotL + slotW * (i + 0.5);
+          const stack = (x, keys) => {
+            let yb = plotB;
+            keys.forEach((k) => {
+              const h = maxBar > 0 ? (val(d, k) / maxBar) * plotH : 0;
+              if (h > 0) { pdf.setFillColor(...fill[k]); pdf.rect(x, yb - h, barW, h, 'F'); }
+              yb -= h;
+            });
+          };
+          stack(cx - pairGap / 2 - barW, ['gekozen']);
+          stack(cx + pairGap / 2, ['eigen_echo', 'wiel_echo']);
+          // A group with totaal 0 keeps its label and shows empty bars.
+          pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(...white);
+          pdf.text(g, cx, plotB + 5, { align: 'center' });
+        });
+        y = top + KE_FOOTPRINT_H;
+      };
+
       // ── DUAL-CORE DYNAMICS + RADAR CHART (page 5) ──
       const endDualCore = trackBlock('dual_core');
       await justifiedPage(async (gap) => {
       const savedNPBdc = noPageBreak; noPageBreak = true; // no bottom padding — let text flow to edge
-      if (result.subgroups && result.subgroups.length > 0) {
+      const keuzeEcho = enginePayload?.keuze_echo;
+      if (keuzeEcho) {
+        sectionHeading(t('resultsModal.pdf.keuzeEcho.title'), amber);
+        drawKeuzeEcho(keuzeEcho);
+        hr();
+      } else if (result.subgroups && result.subgroups.length > 0) {
         sectionHeading(t('resultsModal.pdf.dualCore.title'), amber);
 
         // Legend
@@ -2389,9 +2480,10 @@ const AssessmentResultsModal = ({
         const GROUP_META_PDF = {
           Ruling:     { network: t('resultsModal.groups.ruling.network'),     drive: t('resultsModal.groups.ruling.drive') },
           Relational: { network: t('resultsModal.groups.relational.network'), drive: t('resultsModal.groups.relational.drive') },
-          Seekr: 1, Judge: 2, Lover: 3, Caregiver: 4,
-          Innocent: 5, Explorer: 6, Outlaw: 7, Trickster: 8,
-          Sage: 9, Artist: 10, Magician: 11, Hero: 12,
+          Seeker:     { network: t('resultsModal.groups.seeker.network'),     drive: t('resultsModal.groups.seeker.drive') },
+          Chaos:      { network: t('resultsModal.groups.chaos.network'),      drive: t('resultsModal.groups.chaos.drive') },
+          Abstract:   { network: t('resultsModal.groups.abstract.network'),   drive: t('resultsModal.groups.abstract.drive') },
+          Agency:     { network: t('resultsModal.groups.agency.network'),     drive: t('resultsModal.groups.agency.drive') },
         };
 
         // Visual scale — the bar chart is drawn 10% smaller overall (shorter/thinner bars,
@@ -3050,8 +3142,9 @@ const AssessmentResultsModal = ({
         const authPct = natTotal + culTotal > 0 ? Math.round(natTotal / (natTotal + culTotal) * 100) : 50;
         const mainTot = dm[mk]?.total || 0;
         const shadTot = dm[shk]?.total || 0;
-        const polGap = mainTot > 0 ? Math.round(Math.abs(mainTot - shadTot) / mainTot * 100) : 0;
-        const polCat = polGap > 60 ? t('resultsModal.pdf.data.polHigh') : polGap > 30 ? t('resultsModal.pdf.data.polMid') : t('resultsModal.pdf.data.polLow');
+        // Polarisation % and band: the server's (engine/polarNorm.js), not derived here.
+        const polGap = polarization?.polarizationPct ?? null;
+        const polCat = { HIGH_POLARIZATION: 'polHigh', MODERATE: 'polMid', HIGH_INDIVIDUATION: 'polLow' }[polarization?.polarizationLevel];
 
         let sGroup = '', sScore = 0;
         Object.entries(GA).forEach(([gk, [a1, a2]]) => {
@@ -3111,6 +3204,38 @@ const AssessmentResultsModal = ({
           mGap();
         }
 
+        // The profile card's copy — it travels to the account in this PDF (owner, 2026-09-19). Readable,
+        // then base64-marked like ORB::/ARCH:: so the upload recovers it through line wraps, with the
+        // server's signature: a claim keeps the copy only when that holds (backend cardSignature.js).
+        // Printed AFTER the extended block on both pages: the upload takes the first "Gift:" / "Levensles:"
+        // in the text, so card copy that happens to contain those words can never take over the reading's.
+        const printCard = () => {
+          const kaart = kaartRef.current;
+          if (!(orbCodeRef.current && kaart && kaart.sig && (kaart.giftMicro || kaart.geomSummary))) return;
+          const cardLines = (text, color) => {
+            pdf.setFontSize(mono); pdf.setFont('courier', 'normal'); pdf.setTextColor(...color);
+            pdf.splitTextToSize(String(text), contentW).forEach((l) => { ensureSpace(monoH); pdf.text(l, margin, y); y += monoH; });
+          };
+          const b64 = (s) => { try { return btoa(unescape(encodeURIComponent(s))); } catch (_) { return ''; } };
+          mBold(dash(t('resultsModal.pdf.data.cardSection')), green);
+          if (kaart.giftMicro) cardLines(`${t('resultsModal.pdf.data.cardGift')}: ${kaart.giftMicro}`, white);
+          if (kaart.geomSummary) cardLines(`${t('resultsModal.pdf.data.cardGeometry')}: ${kaart.geomSummary}`, white);
+          if (kaart.giftMicro) cardLines(`CGIFT::${b64(kaart.giftMicro)}::CGIFT`, dimWhite);
+          if (kaart.geomSummary) cardLines(`CGEO::${b64(kaart.geomSummary)}::CGEO`, dimWhite);
+          cardLines(`CSIG::${kaart.sig}::CSIG`, dimWhite);
+          mGap();
+        };
+
+        if (dataBlock) {
+          // v2 sessions (Master Prompt v7 W2 / 5.10, D17): the blocks are built by OUR backend from the engine's
+          // values (apps/backend/engine/dataBlock.js) — never by the model, never re-derived here.
+          dataBlock.forEach((b) => {
+            mBold(dash(b.title), green);
+            b.lines.forEach((l) => mLine(l));
+            mGap();
+            if ((b.key || b.title) === 'EXTENDED ARCHETYPE PROFIEL') printCard(); // key = the Dutch title, stable across report languages
+          });
+        } else {
         mBold(dash(t('resultsModal.pdf.data.identitySection')), green);
         mLine(`${t('resultsModal.pdf.data.extendedArchetype')}: ${result.extendedName || t('resultsModal.pdf.data.notAvailable')}`);
         mLine(`${t('resultsModal.pdf.data.main')}: ${result.mainName || ''} (${POS[mk] || '?'}) | ${t('resultsModal.pdf.data.group')}: ${ARCHETYPE_TO_GROUP[mk] || ''} | ${t('resultsModal.pdf.data.network')}: ${NET[ARCHETYPE_TO_GROUP[mk]] || ''}`);
@@ -3158,7 +3283,7 @@ const AssessmentResultsModal = ({
 
         mBold(dash(t('resultsModal.pdf.data.indicesSection')), green);
         mLine(tFunc('resultsModal.pdf.data.authenticityIndex')(natTotal, authPct));
-        mLine(tFunc('resultsModal.pdf.data.polarizationIndex')(mainTot, shadTot, polGap, polCat));
+        if (polGap != null && polCat) mLine(tFunc('resultsModal.pdf.data.polarizationIndex')(mainTot, shadTot, polGap, t(`resultsModal.pdf.data.${polCat}`)));
         mGap();
 
         // Master Prompt v4.1 §5.10 / D-10: model-derived OCEAN scalars are NEVER emitted.
@@ -3204,26 +3329,7 @@ const AssessmentResultsModal = ({
         mLine(`${t('resultsModal.pdf.data.levensles')}: "${result.levensles || t('resultsModal.pdf.data.notAvailable')}"`);
         mGap();
 
-        // The profile card's copy — it travels to the account in this PDF (owner, 2026-09-19). Readable,
-        // then base64-marked like ORB::/ARCH:: so the upload recovers it through line wraps, with the
-        // server's signature: a claim keeps the copy only when that holds (backend cardSignature.js).
-        // Printed AFTER the extended block: the upload takes the first "Gift:" / "Levensles:" in the text,
-        // so card copy that happens to contain those words can never take over the reading's own fields.
-        const kaart = kaartRef.current;
-        if (orbCodeRef.current && kaart && kaart.sig && (kaart.giftMicro || kaart.geomSummary)) {
-          const cardLines = (text, color) => {
-            pdf.setFontSize(mono); pdf.setFont('courier', 'normal'); pdf.setTextColor(...color);
-            pdf.splitTextToSize(String(text), contentW).forEach((l) => { ensureSpace(monoH); pdf.text(l, margin, y); y += monoH; });
-          };
-          const b64 = (s) => { try { return btoa(unescape(encodeURIComponent(s))); } catch (_) { return ''; } };
-          mBold(dash(t('resultsModal.pdf.data.cardSection')), green);
-          if (kaart.giftMicro) cardLines(`${t('resultsModal.pdf.data.cardGift')}: ${kaart.giftMicro}`, white);
-          if (kaart.geomSummary) cardLines(`${t('resultsModal.pdf.data.cardGeometry')}: ${kaart.geomSummary}`, white);
-          if (kaart.giftMicro) cardLines(`CGIFT::${b64(kaart.giftMicro)}::CGIFT`, dimWhite);
-          if (kaart.geomSummary) cardLines(`CGEO::${b64(kaart.geomSummary)}::CGEO`, dimWhite);
-          cardLines(`CSIG::${kaart.sig}::CSIG`, dimWhite);
-          mGap();
-        }
+        printCard();
 
         // Master Prompt v4.1 §5.10: dead v3 fields removed (MAIN ARCHETYPE DIEPTE block).
         // Facts only, per the machine-block template: the archetype and where it sits on the wheel.
@@ -3243,6 +3349,7 @@ const AssessmentResultsModal = ({
         mBold(dash(t('resultsModal.pdf.data.blindspotSection')), green);
         mLine(`${t('resultsModal.pdf.data.blindspotArchetype')}: ${result.blindspotName ? result.blindspotName + wheelPos(bk) : t('resultsModal.pdf.data.notAvailable')}`);
         mGap();
+        }
 
         mBold(SEP, green);
         mGap();
@@ -3354,7 +3461,7 @@ const AssessmentResultsModal = ({
       setIsGeneratingPdf(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, displaySections, uploadedFiles, v4Data, language, cRuntime, enginePayload, t, tArray, tFunc, portrait, portraitVariant, paidPaymentId]);
+  }, [result, displaySections, uploadedFiles, language, enginePayload, polarization, dataBlock, t, tArray, tFunc, portrait, portraitVariant, paidPaymentId]);
 
   // Dev PDF live-preview: once the (replayed) analysis is ready, auto-build the PDF
   // and hand the blob URL back to the harness instead of downloading.
@@ -3476,6 +3583,9 @@ const AssessmentResultsModal = ({
             }}>
               {t(aiOverdue ? 'resultsModal.ui.timeOverdue' : 'resultsModal.ui.timeEstimate')}
             </p>
+
+            {/* N1 refusal cards: opt-in, only for the two-layer test, never in the report's way */}
+            {twoLayerPlan && !aiFailed && <RefusalCards plan={twoLayerPlan} layerAnswers={layerAnswers} />}
 
             {/* Persistent preload: load + decode the archetype portrait during the wait so it's
                 already cached when the result card paints (otherwise the card shows first and the
@@ -3825,7 +3935,6 @@ const AssessmentResultsModal = ({
                       <MorphologyChart
                         chart={morphChart}
                         mainName={result.mainName || 'Main'}
-                        supportName={result.secondaryName || 'Support'}
                         configName={extNameShown || undefined}
                         height={474}
                         language={language}
@@ -3835,7 +3944,7 @@ const AssessmentResultsModal = ({
                       margin: '0.5rem 0.25rem 0.1rem', fontSize: '0.72rem', lineHeight: 1.45,
                       color: 'rgba(156, 163, 175, 0.9)', fontFamily: "'Figtree', sans-serif", fontStyle: 'italic',
                     }}>
-                      {t(morphIsRegister ? 'resultsModal.ui.morphCaptionRegister' : 'resultsModal.ui.morphCaption')}
+                      {t('resultsModal.ui.morphCaptionRegister')}
                     </p>
                   </div>
                 )}
@@ -4633,6 +4742,52 @@ function computeResultFromAnswers(layerAnswers, liveSubjects, lang = 'nl') {
   const supportKey = advanced.supportArchetype;
 
   // ──────────────────────────────────────────────────────────
+  // 7. Subgroup dynamics: Set A vs Set B raw point scores per group
+  // ──────────────────────────────────────────────────────────
+  const subgroups = SUBGROUP_POLARITIES.map(p => {
+    const leftKey = p.leftLabel.toUpperCase();   // Set A archetype
+    const rightKey = p.rightLabel.toUpperCase();  // Set B archetype
+    const leftRaw = archetypeCounts[leftKey] || 0;   // raw selections (0-5)
+    const rightRaw = archetypeCounts[rightKey] || 0;
+    const leftPts = leftRaw * 5;   // points scored
+    const rightPts = rightRaw * 5;
+    
+    // Check if this group's pair is complementary or shadow
+    // eslint-disable-next-line no-unused-vars
+    const pairIsComplementary = isComplementaryPair(leftKey, rightKey);
+    // eslint-disable-next-line no-unused-vars
+    const pairIsShadow = SHADOW_PAIRS[leftKey] === rightKey;
+    // Bonus fields kept for backward compatibility but set to 0 (Geometric Bleed has no counters)
+    const pairKeys = [leftKey, rightKey];
+    // eslint-disable-next-line no-unused-vars
+    const isActivePair = pairKeys.includes(mainKey) && pairKeys.includes(supportKey);
+    const harmonyPts = 0;
+    const shadowPts = 0;
+    
+    return {
+      ...p,
+      leftScore: leftPts,
+      rightScore: rightPts,
+      leftNature: archetypeNature[leftKey] || 0,
+      leftCulture: archetypeCulture[leftKey] || 0,
+      rightNature: archetypeNature[rightKey] || 0,
+      rightCulture: archetypeCulture[rightKey] || 0,
+      harmonyPoints: harmonyPts,
+      shadowPoints: shadowPts,
+    };
+  });
+
+
+  return identityResult({ mainKey, supportKey, advanced, subgroups, archetypeScores, answerLog }, lang);
+}
+
+/**
+ * Everything the results screen derives from a Main × Support (names, extension cell, Shadow, Blindspot,
+ * the 132 matrix), plus what the scoring hands over: `advanced` (radar data, totals, derived indices),
+ * the group dynamics, the raw scores and the answer log. Shared by the old test and the two-layer test.
+ */
+function identityResult({ mainKey, supportKey, advanced, subgroups, archetypeScores, answerLog }, lang) {
+  // ──────────────────────────────────────────────────────────
   // 4. Extended Archetype Name (132-outcome matrix: main × support archetype)
   // ──────────────────────────────────────────────────────────
   const supportGroup = ARCHETYPE_TO_GROUP[supportKey] || 'RULING';
@@ -4716,42 +4871,6 @@ function computeResultFromAnswers(layerAnswers, liveSubjects, lang = 'nl') {
       }),
     };
     return row;
-  });
-
-  // ──────────────────────────────────────────────────────────
-  // 7. Subgroup dynamics: Set A vs Set B raw point scores per group
-  // ──────────────────────────────────────────────────────────
-  const subgroups = SUBGROUP_POLARITIES.map(p => {
-    const leftKey = p.leftLabel.toUpperCase();   // Set A archetype
-    const rightKey = p.rightLabel.toUpperCase();  // Set B archetype
-    const leftRaw = archetypeCounts[leftKey] || 0;   // raw selections (0-5)
-    const rightRaw = archetypeCounts[rightKey] || 0;
-    const leftPts = leftRaw * 5;   // points scored
-    const rightPts = rightRaw * 5;
-    
-    // Check if this group's pair is complementary or shadow
-    // eslint-disable-next-line no-unused-vars
-    const pairIsComplementary = isComplementaryPair(leftKey, rightKey);
-    // eslint-disable-next-line no-unused-vars
-    const pairIsShadow = SHADOW_PAIRS[leftKey] === rightKey;
-    // Bonus fields kept for backward compatibility but set to 0 (Geometric Bleed has no counters)
-    const pairKeys = [leftKey, rightKey];
-    // eslint-disable-next-line no-unused-vars
-    const isActivePair = pairKeys.includes(mainKey) && pairKeys.includes(supportKey);
-    const harmonyPts = 0;
-    const shadowPts = 0;
-    
-    return {
-      ...p,
-      leftScore: leftPts,
-      rightScore: rightPts,
-      leftNature: archetypeNature[leftKey] || 0,
-      leftCulture: archetypeCulture[leftKey] || 0,
-      rightNature: archetypeNature[rightKey] || 0,
-      rightCulture: archetypeCulture[rightKey] || 0,
-      harmonyPoints: harmonyPts,
-      shadowPoints: shadowPts,
-    };
   });
 
   // ──────────────────────────────────────────────────────────
@@ -4846,11 +4965,8 @@ function computeResultFromAnswers(layerAnswers, liveSubjects, lang = 'nl') {
     oceanLabels: OCEAN_LABELS,                         // Dimension label map (short/full/dutch)
     oceanColors: OCEAN_COLORS,                         // Dimension color map for UI
     oceanImported: false,                              // Flag: only true if user explicitly imported OCEAN report
-    // Derived indices (Master Prompt L4 / R-c): the model reads these for the gap and the
-    // nature/culture balance — it never computes them itself.
-    polarizationIndex: advanced.polarizationIndex ?? null,
-    polarizationPct: advanced.polarizationPct ?? null,
-    polarizationLevel: advanced.polarizationLevel ?? null,
+    // Derived indices (Master Prompt L4 / R-c): the model reads these for the nature/culture
+    // balance — it never computes them itself. (The polarisation comes from the server.)
     authenticityIndex: advanced.authenticityIndex ?? null,
     authenticityLevel: advanced.authenticityLevel ?? null,
     totalNaturePoints: advanced.totalNaturePoints ?? null,
@@ -4877,6 +4993,50 @@ function computeResultFromAnswers(layerAnswers, liveSubjects, lang = 'nl') {
   }
 
   return resultObj;
+}
+
+/**
+ * The two-layer test's result for the screen, from the display mirror of the server's v2 scoring
+ * (@gfl/assessment-core/data/scoring/twoLayer.js; held to engine/bleedV2.js by its backend test). The
+ * radar draws the seven mandjes as six bands (eigen echo = groen + blauw intern); the old test's
+ * nature/culture indices and its answer sheet do not exist here.
+ */
+function computeResultFromTwoLayer(responses, lang = 'nl') {
+  const s = scoreTwoLayer(responses);
+  const KEY = (name) => name.toUpperCase();
+  const round1 = (x) => Math.round(x * 10) / 10;
+  const radarData = ARCHETYPE_RADAR_LABELS.map((label) => {
+    const m = s.mandjes[label];
+    const bands = [m.keuze, m.passief, m.groen + m.blauw_intern, m.blauw, m.geel, m.paars];
+    const edges = bands.reduce((acc, b) => [...acc, (acc[acc.length - 1] || 0) + b], []).map(round1);
+    return {
+      subject: label,
+      v2: true,
+      green: edges[0], lime: edges[1], orange: edges[2], blue: edges[3], gold: edges[4], purple: edges[5],
+      keuze: round1(m.keuze), passief: round1(m.passief), eigen_echo: round1(m.groen + m.blauw_intern),
+      blauw: round1(m.blauw), geel: round1(m.geel), paars: round1(m.paars),
+      A: edges[5],
+      fullMark: 500,
+    };
+  });
+  const subgroups = SUBGROUP_POLARITIES.map((p) => ({
+    ...p,
+    leftScore: round1(s.totals[p.leftLabel]),
+    rightScore: round1(s.totals[p.rightLabel]),
+    leftNature: 0, leftCulture: 0, rightNature: 0, rightCulture: 0,
+    harmonyPoints: 0,
+    shadowPoints: 0,
+  }));
+  const advanced = {
+    radarData,
+    totalPointsAwarded: round1(Object.values(s.totals).reduce((a, b) => a + b, 0)),
+    hasHarmonyBonus: false,
+    hasShadowHarmony: false,
+    oceanScores: null,
+    archetypeDetails: null,
+  };
+  const archetypeScores = Object.fromEntries(Object.entries(s.totals).map(([n, v]) => [KEY(n), v]));
+  return identityResult({ mainKey: KEY(s.main), supportKey: KEY(s.support), advanced, subgroups, archetypeScores, answerLog: [] }, lang);
 }
 
 export default AssessmentResultsModal;

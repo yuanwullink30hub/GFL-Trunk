@@ -76,19 +76,33 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
     );
   };
 
-  // Custom tooltip showing 5-basket breakdown
+  // The six bands, innermost → outermost: the old test's baskets, or the two-layer test's mandjes
+  // (data rows flagged `v2`, built in AssessmentResultsModal's computeResultFromTwoLayer).
+  const isV2 = Boolean(data?.[0]?.v2);
+  const bands = isV2
+    ? [
+      { label: t('charts.radar.v2.keuze'),     field: 'keuze',      color: LAYER_COLORS.green, labelColor: '#4ade80' },
+      { label: t('charts.radar.v2.passief'),   field: 'passief',    color: LAYER_COLORS.lime },
+      { label: t('charts.radar.v2.eigenEcho'), field: 'eigen_echo', color: LAYER_COLORS.orange },
+      { label: t('charts.radar.v2.blauw'),     field: 'blauw',      color: LAYER_COLORS.blue },
+      { label: t('charts.radar.v2.geel'),      field: 'geel',       color: LAYER_COLORS.gold },
+      { label: t('charts.radar.v2.paars'),     field: 'paars',      color: LAYER_COLORS.purple },
+    ]
+    : [
+      { label: t('charts.radar.natureCore'),  field: 'nature_core',   color: LAYER_COLORS.green, labelColor: '#4ade80' }, // swatch = dark green, text = bright green
+      { label: t('charts.radar.hardware'),    field: 'green_hw',      color: LAYER_COLORS.lime },
+      { label: t('charts.radar.cultureCore'), field: 'culture_core',  color: LAYER_COLORS.orange },
+      { label: t('charts.radar.hwFeedback'),  field: 'blue_fb',       color: LAYER_COLORS.blue },
+      { label: t('charts.radar.cognitive'),   field: 'yellow_cog',    color: LAYER_COLORS.gold },
+      { label: t('charts.radar.shadow'),      field: 'purple_shadow', color: LAYER_COLORS.purple },
+    ];
+
+  // Custom tooltip showing the per-band breakdown
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload || !payload.length) return null;
     const d = payload[0]?.payload;
     if (!d) return null;
-    const rows = [
-      { label: t('charts.radar.natureCore'),  value: d.nature_core,    color: LAYER_COLORS.green },
-      { label: t('charts.radar.hardware'),    value: d.green_hw,       color: LAYER_COLORS.lime },
-      { label: t('charts.radar.cultureCore'), value: d.culture_core,   color: LAYER_COLORS.orange },
-      { label: t('charts.radar.hwFeedback'),  value: d.blue_fb,        color: LAYER_COLORS.blue },
-      { label: t('charts.radar.cognitive'),   value: d.yellow_cog,     color: LAYER_COLORS.gold },
-      { label: t('charts.radar.shadow'),      value: d.purple_shadow,  color: LAYER_COLORS.purple },
-    ];
+    const rows = bands.map((b) => ({ label: b.label, value: d[b.field], color: b.color }));
     return (
       <div style={{
         backgroundColor: 'rgba(5, 10, 20, 0.95)',
@@ -112,14 +126,7 @@ const SciFiRadarChart = ({ data, shadow, blindspot, mainArchetype, supportArchet
   };
 
   // Legend items (display order: innermost → outermost, matching visual layer order)
-  const legendPayload = [
-    { value: t('charts.radar.natureCore'),  type: 'square', color: LAYER_COLORS.green, labelColor: '#4ade80' },  // swatch = dark green, text = bright green
-    { value: t('charts.radar.hardware'),    type: 'square', color: LAYER_COLORS.lime },    // light green
-    { value: t('charts.radar.cultureCore'), type: 'square', color: LAYER_COLORS.orange },  // orange
-    { value: t('charts.radar.hwFeedback'),  type: 'square', color: LAYER_COLORS.blue },    // blue
-    { value: t('charts.radar.cognitive'),   type: 'square', color: LAYER_COLORS.gold },    // yellow
-    { value: t('charts.radar.shadow'),      type: 'square', color: LAYER_COLORS.purple },  // purple — outermost
-  ];
+  const legendPayload = bands.map((b) => ({ value: b.label, type: 'square', color: b.color, labelColor: b.labelColor }));
 
   return (
     <div style={{ width: '100%', height: '340px', position: 'relative', background: 'transparent' }}>

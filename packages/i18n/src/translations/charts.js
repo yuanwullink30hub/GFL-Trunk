@@ -38,11 +38,19 @@ export default {
       feedbackLoop:  { nl: 'Feedback loop',   en: 'Feedback loop' },
       bioHardware:   { nl: 'Bio Hardware',    en: 'Bio Hardware' },
       total:       { nl: 'Total', en: 'Total' },
+      // The two-layer test's seven mandjes, drawn as six bands (eigen echo = groen + blauw intern)
+      v2: {
+        keuze:     { nl: 'Directe keuze',  en: 'Direct choice' },
+        passief:   { nl: 'Hardware groep', en: 'Hardware group' },
+        eigenEcho: { nl: 'Echo eigen hardware', en: 'Echo own hardware' },
+        blauw:     { nl: 'Echo blauw',     en: 'Blue echo' },
+        geel:      { nl: 'Echo cognitieve synergie', en: 'Cognitive synergy echo' },
+        paars:     { nl: 'Echo schaduw',   en: 'Shadow echo' },
+      },
     },
 
     // ── MorphologyChart (D-curve) ──
     morphology: {
-      composed: { nl: 'Samengesteld', en: 'Composed' },
       // Spec A1 (report pipeline v5.0): both curves are the Main's
       baseline: { nl: 'basislijn (τ)', en: 'baseline (τ)' },
       transform: { nl: 'transform (τ′)', en: 'transform (τ′)' },

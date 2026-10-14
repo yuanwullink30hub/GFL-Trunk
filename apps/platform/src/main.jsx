@@ -38,11 +38,6 @@ const isReportPreview = import.meta.env.DEV &&
 const isCoverPreview = import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has('coverpreview');
 
-// Dev-only workspace preview: ?workspacepreview=1 shows the first-run workspace step, the login
-// reminder and the tool lock, with an in-memory desktop bridge. See src/dev/WorkspacePreviewHarness.jsx.
-const isWorkspacePreview = import.meta.env.DEV &&
-  new URLSearchParams(window.location.search).has('workspacepreview');
-
 // Dev-only Werkruimte tab preview (browser view → download gate): ?werkruimtepreview=1.
 const isWerkruimtePreview = import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has('werkruimtepreview');
@@ -101,15 +96,6 @@ if (isPaymentReturn) {
     <LanguageProvider>
       <React.Suspense fallback={null}>
         <PdfPreviewHarness />
-      </React.Suspense>
-    </LanguageProvider>
-  );
-} else if (isWorkspacePreview) {
-  const WorkspacePreviewHarness = React.lazy(() => import('./dev/WorkspacePreviewHarness'));
-  root.render(
-    <LanguageProvider>
-      <React.Suspense fallback={null}>
-        <WorkspacePreviewHarness />
       </React.Suspense>
     </LanguageProvider>
   );

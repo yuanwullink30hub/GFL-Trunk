@@ -12,7 +12,8 @@ import AssessmentResultsModal from '../components/assessment/AssessmentResultsMo
 // Open with:  http://localhost:3000/?pdfpreview=1   (dev build only)
 // First populate the replay cache by generating one full report in the app, or load a saved replay
 // with &replay=<name> (public/dev-replay/<name>.json); &variant=male|female picks the portrait,
-// &lesson=open|flow forces the cover lesson's layout, &lang=en|nl the language, &pages=N keeps the first N pages.
+// &lesson=open|flow forces the cover lesson's layout, &lang=en|nl the language, &pages=N keeps the first N pages,
+// &fixture=<case> draws the Keuze/Echo graph from a Bleed v2 session fixture.
 // ──────────────────────────────────────────────────────────────────────────
 export default function PdfPreviewHarness() {
   const { t, language, setLanguage } = useLanguage();
@@ -35,17 +36,32 @@ export default function PdfPreviewHarness() {
       .catch(() => setData(null))
       .finally(() => setLoadingReplay(false));
   }, [replayName]);
+  // ?fixture=<case> puts that Bleed v2 session's group view (public/dev-replay/bleed_v2_fixtures.json, a
+  // copy of the handover's session_fixtures_v0_1.json — synthetic) into the replay as enginePayload.keuze_echo,
+  // so the Keuze/Echo graph renders in place of Dual-Core.
+  const fixtureName = new URLSearchParams(window.location.search).get('fixture');
+  const [fixtureGroups, setFixtureGroups] = useState(null);
+  const [loadingFixture, setLoadingFixture] = useState(!!fixtureName);
+  useEffect(() => {
+    if (!fixtureName) return;
+    fetch('/dev-replay/bleed_v2_fixtures.json')
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then((f) => setFixtureGroups(f.cases?.[fixtureName]?.expected?.groups || null))
+      .catch(() => setFixtureGroups(null))
+      .finally(() => setLoadingFixture(false));
+  }, [fixtureName]);
   const [url, setUrl] = useState(null);
   const [genKey, setGenKey] = useState(0);
   const [building, setBuilding] = useState(true);
 
-  // Expose the captured analysis/cRuntime so the modal's generation effect
+  // Expose the captured analysis and engine payload so the modal's generation effect
   // replays it instead of hitting the API.
   if (data) {
     window.__GFL_PDF_REPLAY = {
       analysis: data.analysis,
-      cRuntime: data.cRuntime,
-      enginePayload: data.enginePayload,
+      enginePayload: fixtureGroups ? { ...(data.enginePayload || {}), keuze_echo: fixtureGroups } : data.enginePayload,
+      polarization: data.polarization,
+      dataBlock: data.dataBlock,
       uploadedOceanScores: data.uploadedOceanScores,
       // ?variant=male|female — which portrait the cover uses (default: the modal's own choice).
       portraitVariant: new URLSearchParams(window.location.search).get('variant') || undefined,
@@ -80,7 +96,7 @@ export default function PdfPreviewHarness() {
   const bar = { flex: '0 0 auto', padding: '6px 12px', background: '#11111c', color: '#c4b5fd', fontFamily: 'monospace', fontSize: 12, display: 'flex', gap: 14, alignItems: 'center', borderBottom: '1px solid #2a2a3a' };
   const btn = { background: 'rgba(168,85,247,0.16)', border: '1px solid rgba(168,85,247,0.45)', color: '#c4b5fd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontFamily: 'monospace', fontSize: 12 };
 
-  if (loadingReplay || needsLang) {
+  if (loadingReplay || loadingFixture || needsLang) {
     return <div style={{ position: 'fixed', inset: 0, background: '#0a0a14', color: '#64748b', fontFamily: 'monospace', padding: 40 }}>loading replay {replayName}…</div>;
   }
   if (!data) {
@@ -88,7 +104,7 @@ export default function PdfPreviewHarness() {
       <div style={{ position: 'fixed', inset: 0, background: '#0a0a14', color: '#e2e8f0', fontFamily: 'monospace', fontSize: 13, padding: 40, lineHeight: 1.6 }}>
         <h2 style={{ color: '#c4b5fd' }}>PDF live-preview — no replay data yet</h2>
         <p>Generate one full report in the app first (a real AI run). That captures the
-          result + AI text + cRuntime into <code>localStorage['gfl_pdf_replay']</code>.</p>
+          result + AI text + engine payload into <code>localStorage['gfl_pdf_replay']</code>.</p>
         <p>Then reload <code>?pdfpreview=1</code> and the PDF will render here, hot-reloading as you edit the builder.</p>
       </div>
     );

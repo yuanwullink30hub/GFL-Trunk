@@ -1,0 +1,3564 @@
+{
+ "ts_concentrated_and_polar": {
+  "questions": [
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   }
+  ],
+  "t_precise_fired": false,
+  "v_pos": false,
+  "expected": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 7,
+   "threshold": 6,
+   "n_eff": 3.1,
+   "polar_norm": 0.867,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": true,
+   "reason": "fires",
+   "tags": [
+    "T-SHARP"
+   ]
+  }
+ },
+ "ts_concentration_only": {
+  "questions": [
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   }
+  ],
+  "t_precise_fired": false,
+  "v_pos": false,
+  "expected": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 7,
+   "threshold": 6,
+   "n_eff": 5.08,
+   "polar_norm": 0.051,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": false
+   },
+   "fires": true,
+   "reason": "fires",
+   "tags": [
+    "T-SHARP"
+   ]
+  }
+ },
+ "ts_polar_only": {
+  "questions": [
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Caregiver"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Innocent"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Explorer"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Hero"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Magician"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Ruler"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Judge"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Caregiver"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Innocent"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Explorer"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Hero"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Magician"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Ruler"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Judge"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Caregiver"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Innocent"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Explorer"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Hero"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Magician"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Ruler"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Judge"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Chaos"
+    ],
+    "l2_picks": [
+     "Outlaw"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Chaos"
+    ],
+    "l2_picks": [
+     "Outlaw"
+    ]
+   }
+  ],
+  "t_precise_fired": false,
+  "v_pos": false,
+  "expected": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 7,
+   "threshold": 6,
+   "n_eff": 10.4,
+   "polar_norm": 0.734,
+   "routes": {
+    "t_precise": false,
+    "concentrated": false,
+    "polar_upper": true
+   },
+   "fires": true,
+   "reason": "fires",
+   "tags": [
+    "T-SHARP"
+   ]
+  }
+ },
+ "ts_t_precise_only": {
+  "questions": [
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Judge"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Ruler"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Caregiver"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Innocent"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Explorer"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Chaos"
+    ],
+    "l2_picks": [
+     "Outlaw"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Chaos"
+    ],
+    "l2_picks": [
+     "Trickster"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Artist"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Magician"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Hero"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Judge"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Ruler"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Caregiver"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Innocent"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Explorer"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Chaos"
+    ],
+    "l2_picks": [
+     "Outlaw"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Chaos"
+    ],
+    "l2_picks": [
+     "Trickster"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Artist"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Magician"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Hero"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Judge"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Ruler"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Caregiver"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Innocent"
+    ]
+   }
+  ],
+  "t_precise_fired": true,
+  "v_pos": false,
+  "expected": {
+   "main": "Ruler",
+   "opportunities": 36,
+   "refusals": 7,
+   "threshold": 6,
+   "n_eff": 11.85,
+   "polar_norm": 0.253,
+   "routes": {
+    "t_precise": true,
+    "concentrated": false,
+    "polar_upper": false
+   },
+   "fires": true,
+   "reason": "fires",
+   "tags": [
+    "T-SHARP"
+   ]
+  }
+ },
+ "ts_uncorroborated": {
+  "questions": [
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Judge"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Ruler"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Caregiver"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Innocent"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Explorer"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Chaos"
+    ],
+    "l2_picks": [
+     "Outlaw"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Chaos"
+    ],
+    "l2_picks": [
+     "Trickster"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Artist"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Magician"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Hero"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Judge"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Ruler"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Caregiver"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Innocent"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Explorer"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Chaos"
+    ],
+    "l2_picks": [
+     "Outlaw"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Chaos"
+    ],
+    "l2_picks": [
+     "Trickster"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Sage"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Abstract"
+    ],
+    "l2_picks": [
+     "Artist"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Magician"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Agency"
+    ],
+    "l2_picks": [
+     "Hero"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Judge"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Ruling"
+    ],
+    "l2_picks": [
+     "Ruler"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Caregiver"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Seeker"
+    ],
+    "l2_picks": [
+     "Innocent"
+    ]
+   }
+  ],
+  "t_precise_fired": false,
+  "v_pos": false,
+  "expected": {
+   "main": "Ruler",
+   "opportunities": 36,
+   "refusals": 7,
+   "threshold": 6,
+   "n_eff": 11.85,
+   "polar_norm": 0.253,
+   "routes": {
+    "t_precise": false,
+    "concentrated": false,
+    "polar_upper": false
+   },
+   "fires": false,
+   "reason": "uncorroborated",
+   "tags": []
+  }
+ },
+ "ts_five_below": {
+  "questions": [
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   }
+  ],
+  "t_precise_fired": false,
+  "v_pos": false,
+  "expected": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 5,
+   "threshold": 6,
+   "n_eff": 3.1,
+   "polar_norm": 0.867,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": false,
+   "reason": "below threshold",
+   "tags": []
+  }
+ },
+ "ts_six_fires": {
+  "questions": [
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   }
+  ],
+  "t_precise_fired": false,
+  "v_pos": false,
+  "expected": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 6,
+   "threshold": 6,
+   "n_eff": 3.1,
+   "polar_norm": 0.867,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": true,
+   "reason": "fires",
+   "tags": [
+    "T-SHARP"
+   ]
+  }
+ },
+ "ts_eleven_fires": {
+  "questions": [
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   }
+  ],
+  "t_precise_fired": false,
+  "v_pos": false,
+  "expected": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 11,
+   "threshold": 6,
+   "n_eff": 3.1,
+   "polar_norm": 0.867,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": true,
+   "reason": "fires",
+   "tags": [
+    "T-SHARP"
+   ]
+  }
+ },
+ "ts_twelve_silence": {
+  "questions": [
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   }
+  ],
+  "t_precise_fired": false,
+  "v_pos": false,
+  "expected": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 12,
+   "threshold": 6,
+   "n_eff": 3.1,
+   "polar_norm": 0.867,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": false,
+   "reason": "ceiling: silence",
+   "tags": []
+  }
+ },
+ "ts_v_pos": {
+  "questions": [
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   }
+  ],
+  "t_precise_fired": false,
+  "v_pos": true,
+  "expected": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 7,
+   "threshold": 6,
+   "n_eff": 3.1,
+   "polar_norm": 0.867,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": false,
+   "reason": "V-POS (hard validity) suppresses interpretive tags",
+   "tags": []
+  }
+ },
+ "ts_timeouts_not_refusals": {
+  "questions": [
+   {
+    "l1_refusal": false,
+    "timeout": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "timeout": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "timeout": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "timeout": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "timeout": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "timeout": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "timeout": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "timeout": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": true,
+    "l1_groups": [],
+    "l2_picks": []
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   },
+   {
+    "l1_refusal": false,
+    "l1_groups": [
+     "Relational"
+    ],
+    "l2_picks": [
+     "Lover"
+    ]
+   }
+  ],
+  "t_precise_fired": false,
+  "v_pos": false,
+  "expected": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 3,
+   "threshold": 6,
+   "n_eff": 3.1,
+   "polar_norm": 0.867,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": false,
+   "reason": "below threshold",
+   "tags": []
+  }
+ },
+ "_session_fixtures": {
+  "selftest_example": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 1,
+   "threshold": 6,
+   "n_eff": 6.55,
+   "polar_norm": 0.443,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": false
+   },
+   "fires": false,
+   "reason": "below threshold",
+   "tags": []
+  },
+  "concentrated_lover": {
+   "main": "Lover",
+   "opportunities": 36,
+   "refusals": 0,
+   "threshold": 6,
+   "n_eff": 3.96,
+   "polar_norm": 0.877,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": false,
+   "reason": "below threshold",
+   "tags": []
+  },
+  "ruling_tetrad": {
+   "main": "Ruler",
+   "opportunities": 36,
+   "refusals": 0,
+   "threshold": 6,
+   "n_eff": 4.37,
+   "polar_norm": 0.77,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": false,
+   "reason": "below threshold",
+   "tags": []
+  },
+  "fallback_heavy": {
+   "main": "Explorer",
+   "opportunities": 36,
+   "refusals": 0,
+   "threshold": 6,
+   "n_eff": 4.03,
+   "polar_norm": 0.939,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": false,
+   "reason": "below threshold",
+   "tags": []
+  },
+  "with_refusals": {
+   "main": "Magician",
+   "opportunities": 36,
+   "refusals": 6,
+   "threshold": 6,
+   "n_eff": 5.03,
+   "polar_norm": 0.878,
+   "routes": {
+    "t_precise": false,
+    "concentrated": true,
+    "polar_upper": true
+   },
+   "fires": true,
+   "reason": "fires",
+   "tags": [
+    "T-SHARP"
+   ]
+  }
+ }
+}

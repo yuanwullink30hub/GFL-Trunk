@@ -5,6 +5,7 @@
  * The frontend fetches questions from here instead of using hardcoded data.
  *
  * GET    /api/questions              — Get all questions (public, no auth)
+ * GET    /api/questions/two-layer    — The two-layer Leerling bank in rotation order (public)
  * GET    /api/questions/export       — Export as clean JSON (admin)
  * GET    /api/questions/export/docx  — Export as Word document (admin)
  * POST   /api/questions/seed         — Seed default questions into DB (admin only)
@@ -16,6 +17,8 @@
  */
 const { Router } = require('express');
 const { collections } = require('../db');
+const config = require('../config');
+const { twoLayerPlan } = require('../services/twoLayerBank');
 const { authRequired, adminRequired } = require('../middleware/auth');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell,
         WidthType, BorderStyle, AlignmentType, ShadingType } = require('docx');
@@ -45,6 +48,21 @@ router.get('/', async (_req, res) => {
   } catch (err) {
     console.error('[Questions] Fetch error:', err.message);
     res.status(500).json({ error: 'Failed to load questions' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /api/questions/two-layer — Public: the two-layer Leerling bank in this quarter's rotation order
+// (services/twoLayerBank.js). { enabled: false } while config.twoLayerTest is off.
+// ─────────────────────────────────────────────────────────────
+
+router.get('/two-layer', (_req, res) => {
+  if (!config.twoLayerTest) return res.json({ enabled: false });
+  try {
+    res.json(twoLayerPlan());
+  } catch (err) {
+    console.error('[Questions] Two-layer plan error:', err.message);
+    res.status(500).json({ error: 'Failed to load the two-layer test' });
   }
 });
 

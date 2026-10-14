@@ -198,6 +198,9 @@ function publicOrbHistory(u) {
   return visibleHistory(u.orbHistory).map(({ entry: h }) => ({
     orb: h.orb || null, archetypeName: h.archetypeName || '', at: h.at || null, image: h.image || null,
     baskets12: Array.isArray(h.baskets12) && h.baskets12.length === 12 ? h.baskets12 : null,
+    // v2 readings (payload instruction v7 §8): the seven mandjes instead — owner-side only, like baskets12.
+    schemaVersion: h.schemaVersion || (Array.isArray(h.baskets12) ? 'v1_nature_culture' : null),
+    mandjes12: Array.isArray(h.mandjes12) && h.mandjes12.length === 12 ? h.mandjes12 : null,
   }));
 }
 
@@ -863,6 +866,11 @@ router.get('/me', authRequired, async (req, res) => {
       readingBaskets: (() => {
         const h = visibleHistory(user.orbHistory).pop()?.entry || null;
         return h && Array.isArray(h.baskets12) ? h.baskets12 : null;
+      })(),
+      // A v2 reading's seven mandjes (§8.1) — owner-only too; never mixed with readingBaskets.
+      readingMandjes: (() => {
+        const h = visibleHistory(user.orbHistory).pop()?.entry || null;
+        return h && Array.isArray(h.mandjes12) ? h.mandjes12 : null;
       })(),
     });
   } catch (err) {

@@ -8,8 +8,8 @@
  *                                                    B  gate 6 — same request with one shipped section withheld
  *   options: --case <fixture> (hero_hole) · --withhold <manifest id> (group/ruling) · --out <dir> · --model <id>
  *
- * The request is assembled by engine/reportV5.js, the same code the /api/ai/analyze route runs
- * (config.reportPipeline 'v5.2'), with the Master Prompt read from MongoDB promptConfigs/default exactly
+ * The request is assembled by engine/reportV5.js, the same code the /api/ai/analyze route runs,
+ * with the Master Prompt read from MongoDB promptConfigs/default exactly
  * as the route reads it. The engine fixture carries the twelve totals only (no 5-basket
  * decomposition), so the geometry block states exactly that instead of printing zero baskets.
  *
@@ -281,7 +281,6 @@ async function run() {
       provider: 'claude', model: MODEL, maxTokens: 30000,
       messages: [{ role: 'system', content: r.req.system }, { role: 'user', content: r.req.user }],
       cachedContext: r.req.cachedContext,
-      referenceDocs: [],   // as the route sends it: no lookup-table document
     });
     fs.writeFileSync(path.join(OUT, `${r.key}_analysis.md`), res.analysis);
     return { r, res, secs: ((Date.now() - t0) / 1000).toFixed(0) };

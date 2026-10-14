@@ -283,6 +283,58 @@ function registry(language) {
   return _registry[lang];
 }
 
+/**
+ * P13 (payload instruction v7, owner 13 Oct): the old test's Nature/Culture readings never reach a v2
+ * slice. The Rosetta keeps them unchanged (for the future separate instrument); they are cut from the
+ * slice text only. Every target must hit exactly once per document, so a corpus edit cannot silently turn
+ * the strip off. (2) of P13 — "The AI Reading: Nature vs. Culture Decomposition" with Scenarios A/B/C — is
+ * never in a slice to begin with (it is not a Lookup Table object).
+ */
+const OLD_TEST_STRIP = {
+  en: {
+    // (3) the TNM intro on Culture-pick scoring, and "Green/Blue fire on Nature picks, Yellow on Culture picks"
+    paragraphs: [
+      'In the Deltawerken Scoring Model the Yellow Triangle partners receive bleed-points on each Culture pick',
+      '*The crucial difference: Green/Blue signals are biological hardware',
+      // the same claim in the per-archetype layer's scope note: "Green/Blue = Nature …; Yellow = Culture …"
+      '*Scope note: sec 3 (OCEAN) and the Nature-half of sec 4',
+    ],
+    sentences: [' The Culture-layer reading (Scenario A/B/C) indicates how the engine distinguishes elevation via Yellow bleed from Nature core.'],
+    row: 'Culture-layer reading', // (1) the per-archetype row in every TNM entry
+  },
+  nl: {
+    paragraphs: [
+      'In het Deltawerken Scoring-Model ontvangen de Gele Driehoek-partners bleed-punten bij elke Cultuur-keuze',
+      '*Het cruciale verschil: Groene/Blauwe signalen zijn biologische hardware',
+      '*Reikwijdte-notitie: sec 3 (OCEAN) en de Natuur-helft van sec 4',
+    ],
+    sentences: [' De Cultuur-laag lezing (Scenario A/B/C) geeft aan hoe de motor verhoging via Gele bleed onderscheidt van Natuur-kern.'],
+    row: 'Cultuur-laag lezing',
+  },
+};
+
+/** A TNM document's text with the old test's Nature/Culture readings cut (P13). Throws when a target misses. */
+function stripOldTestReadings(id, text, lang) {
+  const T = OLD_TEST_STRIP[lang];
+  const once = (n, what) => { if (n !== 1) throw new Error(`corpusResolver P13: ${id} (${lang}) — ${what} matched ${n}× (expected 1)`); };
+  if (id === 'tnm/preamble') {
+    let paras = text.split('\n\n');
+    for (const start of T.paragraphs) {
+      once(paras.filter((p) => p.startsWith(start)).length, `paragraph "${start.slice(0, 40)}…"`);
+      paras = paras.filter((p) => !p.startsWith(start));
+    }
+    let out = paras.join('\n\n');
+    for (const s of T.sentences) { once(out.split(s).length - 1, `sentence "${s.trim().slice(0, 40)}…"`); out = out.replace(s, ''); }
+    return out;
+  }
+  if (id.startsWith('tnm/entry/')) {
+    const re = new RegExp(`^\\| ${T.row} \\|[^\\n]*\\n?`, 'gm');
+    once((text.match(re) || []).length, `the "${T.row}" row`);
+    return text.replace(re, '');
+  }
+  return text;
+}
+
 /** Normalise any case-form archetype key to the corpus TitleCase name. */
 function nameOf(corpus, key) {
   const k = String(key || '');
@@ -297,7 +349,7 @@ function nameOf(corpus, key) {
  * fails loudly rather than ship another group's material. Emits a token estimate (≈ chars/4) for logging
  * per-report corpus weight.
  */
-function manifest(active_set, main, support, culture_picks = [], { language = 'nl', shadow, blindspot } = {}) {
+function manifest(active_set, main, support, culture_picks = [], { language = 'nl', shadow, blindspot, v2 = false } = {}) {
   const { lang, docs, corpus } = registry(language);
   const b = bindings();
   const mainName = nameOf(corpus, main);
@@ -333,15 +385,18 @@ function manifest(active_set, main, support, culture_picks = [], { language = 'n
   ids.push(...pack.objects);
   if (supportName && docs.has(`extension/${mainName}×${supportName}`)) ids.push(`extension/${mainName}×${supportName}`);
 
+  // v1: TNM on culture picks. v2 (P9): culture picks no longer exist and Yellow fires on every Layer-2
+  // pick, so every Leerling report carries the TNM preamble and the active set's entries.
   const picked = new Set((culture_picks || []).map((c) => nameOf(corpus, c)).filter(Boolean));
-  const tnm = active.filter((n) => picked.has(n));
+  const tnm = v2 ? active : active.filter((n) => picked.has(n));
   if (tnm.length) {
     ids.push('tnm/preamble');
     for (const n of tnm) ids.push(`tnm/entry/${n}`);
   }
 
-  const documents = ids.map((id) => ({ id, kind: docs.get(id).kind, title: docs.get(id).title, tokens: tokens(docs.get(id).text) }));
-  const text = ids.map((id) => `════ CORPUS ${id} ════\n${docs.get(id).text}`).join('\n\n');
+  const textOf = (id) => (v2 ? stripOldTestReadings(id, docs.get(id).text, lang) : docs.get(id).text);
+  const documents = ids.map((id) => ({ id, kind: docs.get(id).kind, title: docs.get(id).title, tokens: tokens(textOf(id)) }));
+  const text = ids.map((id) => `════ CORPUS ${id} ════\n${textOf(id)}`).join('\n\n');
   return {
     corpus_manifest_version: VERSIONS.corpus_manifest_version,
     language: lang,
@@ -352,4 +407,4 @@ function manifest(active_set, main, support, culture_picks = [], { language = 'n
   };
 }
 
-module.exports = { manifest, registry, bindings, GROUPS, GROUP_HEADINGS, NEVER_PATTERNS, STAGED, stripInline, stripDependent, norm };
+module.exports = { manifest, registry, bindings, GROUPS, GROUP_HEADINGS, NEVER_PATTERNS, STAGED, stripInline, stripDependent, stripOldTestReadings, norm };

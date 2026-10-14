@@ -67,15 +67,4 @@ function edgeToMain(mainKey, archetypeKey) {
   return { edge: Edge.NONE, red_sign: null };
 }
 
-/**
- * Full edge map for one Main: { ARCHETYPE_UPPER -> { edge, red_sign } } over all 12.
- */
-function edgesForMain(mainKey) {
-  const out = {};
-  for (const key of Object.keys(CONNECTION_MATRIX)) {
-    out[key] = edgeToMain(mainKey, key);
-  }
-  return out;
-}
-
-module.exports = { CONNECTION_MATRIX, edgeToMain, edgesForMain };
+module.exports = { CONNECTION_MATRIX, edgeToMain };

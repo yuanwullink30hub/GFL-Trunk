@@ -17,6 +17,32 @@
 
 // Wheel order is fixed by the model: position n = WHEEL[n-1].
 const WHEEL = ['Judge', 'Lover', 'Caregiver', 'Innocent', 'Explorer', 'Outlaw', 'Trickster', 'Sage', 'Artist', 'Magician', 'Hero', 'Ruler'];
+// The seven Bleed v2 mandjes, in the data page's order (engine/bleedV2.js BASKETS).
+const MANDJES = ['keuze', 'passief', 'groen', 'blauw', 'blauw_intern', 'paars', 'geel'];
+// Their labels as the page prints them: Dutch, or English on an English report (engine/dataBlock.js LABELS).
+const MANDJE_LABELS = {
+  keuze: '(?:keuze|chosen)', passief: '(?:passief|passive)', groen: '(?:groen|green)', blauw: '(?:blauw|blue)',
+  blauw_intern: String.raw`(?:blauw_intern|blue\s*\(\s*internal\s*\))`, paars: '(?:paars|purple)', geel: '(?:geel|yellow)',
+};
+
+/**
+ * The extension cell (corpus) with this number, in the report's language — only when it is the cell of
+ * this Main × Support (names as the data page prints them). Null otherwise.
+ */
+function extensionCell(n, lang, mainName, supportName) {
+  const num = Number(n);
+  if (!Number.isInteger(num) || num < 1 || num > 132) return null;
+  const { loadCorpus } = require('./corpusData');
+  const en = loadCorpus('en');
+  for (const [main, a] of Object.entries(en.archetypes)) {
+    const e = (a.extensions || []).find((x) => x.n === num);
+    if (!e) continue;
+    if (mainName && supportName && (main !== mainName || e.support !== supportName)) return null;
+    const local = lang === 'en' ? e : (loadCorpus('nl').archetypes[main].extensions || []).find((x) => x.n === num) || e;
+    return { n: num, gift: local.gift, curse: local.curse, levensles: local.levensles };
+  }
+  return null;
+}
 
 function cleanName(s) {
   return String(s || '').replace(/\s+/g, ' ').trim().slice(0, 60);
@@ -77,11 +103,44 @@ function extractReading(text) {
   const geomM = strippedT.match(/CGEO::([A-Za-z0-9+/=]+)::CGEO/);
   const sigM = strippedT.match(/CSIG::([0-9a-f]{64})::CSIG/);
 
+  // v2 data page (payload instruction v7 §7–8): the seven mandjes per archetype, decimal scores, and no
+  // gift / curse / levensles on the page — those come from the extension cell by its number (§8.2).
+  //   Judge: keuze 36.0 | passief 0.0 | groen 69.0 | blauw 0.0 | blauw_intern 41.4 | paars 0.0 | geel 0.0
+  //   Judge: chosen 36.0 | passive 0.0 | green 69.0 | blue 0.0 | blue (internal) 41.4 | purple 0.0 | yellow 0.0
+  const num = String.raw`(\d{1,4}(?:\.\d)?)`;
+  const mandjes = WHEEL.map((name) => {
+    const m = t.match(new RegExp(`${name}:\\s*${MANDJES.map((b) => `${MANDJE_LABELS[b]}\\s*${num}`).join('\\s*\\|\\s*')}`));
+    return m ? MANDJES.map((_, k) => Number(m[k + 1])) : null;
+  });
+  const mandjes12 = mandjes.every((b) => b != null) ? mandjes : null;
+  if (mandjes12) {
+    // the twelve scores carry one decimal on a v2 page; the shape reads them whole
+    const exact = WHEEL.map((name, i) => {
+      const m = t.match(new RegExp(`${name}\\s*\\(\\s*${i + 1}\\s*\\)\\s*:\\s*${num}`));
+      return m ? Number(m[1]) : null;
+    });
+    if (exact.every((v) => v != null)) {
+      const max = Math.max(...exact);
+      shapeVector12 = max > 0 ? exact.map((v) => Math.round((v / max) * 1000) / 1000) : null;
+    }
+  }
+  const extN = t.match(/-- EXTENDED ARCHETYPE PROFI(?:EL|LE) --\s*(?:Nummer|Number):\s*(\d{1,3})\b/);
+
   const out = {};
   if (main) out.archetypeMainId = cleanName(main[1]);
   if (support) out.archetypeSupportId = cleanName(support[1]);
   if (shapeVector12) out.shapeVector12 = shapeVector12;
-  if (baskets12) out.baskets12 = baskets12;
+  // Never mixed (§8.1): a v2 reading carries the seven mandjes, a v1 reading the five-basket decomposition.
+  if (mandjes12) {
+    out.schemaVersion = 'v2_two_layer';
+    out.mandjes12 = mandjes12;
+    if (extN) out.extensionN = Number(extN[1]);
+    // the report's language picks the extension cell's language (English reports print English titles)
+    out.lang = /\bTHE IDENTITY\b/.test(t) ? 'en' : 'nl';
+  } else if (baskets12) {
+    out.schemaVersion = 'v1_nature_culture';
+    out.baskets12 = baskets12;
+  }
   if (levensles) out.levensles = cleanText(levensles[1], 600);
   if (gift) out.gift = cleanText(gift[1], 300);
   if (curse) out.curse = cleanText(curse[1], 300);
@@ -103,16 +162,34 @@ function sanitizeReading(r) {
       out.shapeVector12 = v.map((x) => Math.round(x * 1000) / 1000);
     }
   }
-  if (Array.isArray(r.baskets12) && r.baskets12.length === 12) {
-    const b = r.baskets12.map((row) => (Array.isArray(row) && row.length === 6 ? row.map(Number) : null));
-    if (b.every((row) => row && row.every((x) => Number.isFinite(x) && x >= 0 && x <= 1000))) {
-      out.baskets12 = b;
-    }
-  }
+  const grid = (rows, width) => {
+    if (!Array.isArray(rows) || rows.length !== 12) return null;
+    const b = rows.map((row) => (Array.isArray(row) && row.length === width ? row.map(Number) : null));
+    return b.every((row) => row && row.every((x) => Number.isFinite(x) && x >= 0 && x <= 1000)) ? b : null;
+  };
   const cleanText = (s, max) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, max);
-  if (r.levensles) out.levensles = cleanText(r.levensles, 600);
-  if (r.gift) out.gift = cleanText(r.gift, 300);
-  if (r.curse) out.curse = cleanText(r.curse, 300);
+  // §8.1: one schema per reading, never both decompositions.
+  const v2 = r.schemaVersion === 'v2_two_layer';
+  if (v2) {
+    const m = grid(r.mandjes12, MANDJES.length);
+    out.schemaVersion = 'v2_two_layer';
+    if (m) out.mandjes12 = m;
+    // §8.2: gift, curse and levensles come from the extension cell by its number — the corpus, never the
+    // client's text. The cell must belong to this reading's Main and Support.
+    const cell = extensionCell(r.extensionN, r.lang, out.archetypeMainId, out.archetypeSupportId);
+    if (cell) {
+      out.extensionN = cell.n;
+      out.levensles = cleanText(cell.levensles, 600);
+      out.gift = cleanText(cell.gift, 300);
+      out.curse = cleanText(cell.curse, 300);
+    }
+  } else {
+    const b = grid(r.baskets12, 6);
+    if (b) { out.schemaVersion = 'v1_nature_culture'; out.baskets12 = b; }
+    if (r.levensles) out.levensles = cleanText(r.levensles, 600);
+    if (r.gift) out.gift = cleanText(r.gift, 300);
+    if (r.curse) out.curse = cleanText(r.curse, 300);
+  }
   if (r.giftMicro) out.giftMicro = cleanText(r.giftMicro, 800);
   if (r.geomSummary) out.geomSummary = cleanText(r.geomSummary, 1500);
   if (typeof r.cardSig === 'string' && /^[0-9a-f]{64}$/.test(r.cardSig)) out.cardSig = r.cardSig;

@@ -58,12 +58,6 @@ module.exports = {
     },
   },
 
-  // Report pipeline — decided here in the repo, never by a host environment variable (Render runs what
-  // this file says). 'v5.2' = the Deltawerken engine pipeline (engine/reportV5.js: the Mongo Master Prompt,
-  // runtime-engine payload, Corpus Manifest slice, Spec A1 two-curve chart); live since 2026-09-16.
-  // 'v4.3' = the previous path (Mongo prompt, full corpus, cRuntime chart); free-form questions always use it.
-  reportPipeline: 'v5.2',
-
   // Email (SMTP)
   email: {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -95,5 +89,12 @@ module.exports = {
   apiPublicUrl: (process.env.API_PUBLIC_URL
     || (process.env.NODE_ENV === 'production' ? 'https://api.gardenforlife.nl' : `http://localhost:${parseInt(process.env.PORT, 10) || 8080}`)
   ).replace(/\/+$/, ''),
+
+  // The two-layer Leerling test (scoring_version v2_two_layer): GET /api/questions/two-layer serves its
+  // bank in the quarter's rotation order. Off in production until the real bank replaces the placeholder
+  // (Bleed v2 gate G2); LEERLING_TWO_LAYER=1 or 0 overrides either way.
+  twoLayerTest: process.env.LEERLING_TWO_LAYER
+    ? process.env.LEERLING_TWO_LAYER === '1'
+    : process.env.NODE_ENV !== 'production',
 
 };

@@ -1,0 +1,2351 @@
+{
+ "_note": "Reference output of l1_key_generator_v0_2.py (generate_sequence) on the placeholder Leerling bank; regenerate with rotation_ref.py.",
+ "prng": {
+  "abc": {
+   "getrandbits32": [
+    152188146,
+    2281240579,
+    1699013133,
+    4221785597,
+    913483418
+   ],
+   "shuffle20": [
+    7,
+    8,
+    10,
+    14,
+    19,
+    5,
+    12,
+    3,
+    0,
+    11,
+    15,
+    16,
+    1,
+    13,
+    17,
+    18,
+    9,
+    4,
+    2,
+    6
+   ]
+  },
+  "2026-Q4": {
+   "getrandbits32": [
+    1062373824,
+    2201345850,
+    395602318,
+    2386666685,
+    1178786065
+   ],
+   "shuffle20": [
+    10,
+    7,
+    13,
+    9,
+    12,
+    2,
+    11,
+    3,
+    15,
+    17,
+    14,
+    1,
+    0,
+    5,
+    19,
+    4,
+    18,
+    16,
+    8,
+    6
+   ]
+  }
+ },
+ "keys": {
+  "2026-Q4": [
+   [
+    2,
+    4,
+    3,
+    5,
+    1,
+    6
+   ],
+   [
+    5,
+    2,
+    6,
+    3,
+    4,
+    1
+   ],
+   [
+    1,
+    5,
+    4,
+    2,
+    6,
+    3
+   ],
+   [
+    2,
+    3,
+    6,
+    4,
+    5,
+    1
+   ],
+   [
+    5,
+    1,
+    4,
+    6,
+    3,
+    2
+   ],
+   [
+    3,
+    6,
+    5,
+    1,
+    2,
+    4
+   ],
+   [
+    4,
+    1,
+    3,
+    5,
+    6,
+    2
+   ],
+   [
+    6,
+    3,
+    5,
+    2,
+    1,
+    4
+   ],
+   [
+    4,
+    6,
+    2,
+    1,
+    5,
+    3
+   ],
+   [
+    1,
+    5,
+    4,
+    3,
+    2,
+    6
+   ],
+   [
+    6,
+    4,
+    5,
+    2,
+    1,
+    3
+   ],
+   [
+    3,
+    1,
+    2,
+    4,
+    6,
+    5
+   ],
+   [
+    5,
+    2,
+    1,
+    3,
+    4,
+    6
+   ],
+   [
+    4,
+    5,
+    3,
+    6,
+    2,
+    1
+   ],
+   [
+    2,
+    6,
+    4,
+    1,
+    5,
+    3
+   ],
+   [
+    6,
+    2,
+    3,
+    4,
+    1,
+    5
+   ],
+   [
+    2,
+    1,
+    6,
+    5,
+    3,
+    4
+   ],
+   [
+    5,
+    3,
+    2,
+    6,
+    4,
+    1
+   ],
+   [
+    3,
+    1,
+    4,
+    5,
+    2,
+    6
+   ],
+   [
+    2,
+    4,
+    1,
+    6,
+    3,
+    5
+   ],
+   [
+    6,
+    5,
+    4,
+    3,
+    1,
+    2
+   ],
+   [
+    5,
+    6,
+    2,
+    1,
+    3,
+    4
+   ],
+   [
+    4,
+    2,
+    1,
+    6,
+    5,
+    3
+   ],
+   [
+    1,
+    6,
+    3,
+    2,
+    4,
+    5
+   ],
+   [
+    4,
+    1,
+    6,
+    3,
+    5,
+    2
+   ],
+   [
+    1,
+    3,
+    5,
+    2,
+    6,
+    4
+   ],
+   [
+    6,
+    2,
+    1,
+    4,
+    3,
+    5
+   ],
+   [
+    4,
+    6,
+    5,
+    1,
+    2,
+    3
+   ],
+   [
+    1,
+    4,
+    6,
+    5,
+    3,
+    2
+   ],
+   [
+    3,
+    2,
+    1,
+    6,
+    4,
+    5
+   ],
+   [
+    2,
+    4,
+    6,
+    3,
+    5,
+    1
+   ],
+   [
+    3,
+    5,
+    1,
+    2,
+    6,
+    4
+   ],
+   [
+    1,
+    3,
+    2,
+    5,
+    4,
+    6
+   ],
+   [
+    6,
+    5,
+    3,
+    4,
+    1,
+    2
+   ],
+   [
+    3,
+    4,
+    5,
+    1,
+    2,
+    6
+   ],
+   [
+    5,
+    3,
+    2,
+    4,
+    6,
+    1
+   ]
+  ],
+  "2027-Q1": [
+   [
+    6,
+    4,
+    1,
+    3,
+    5,
+    2
+   ],
+   [
+    3,
+    2,
+    4,
+    5,
+    1,
+    6
+   ],
+   [
+    4,
+    5,
+    2,
+    1,
+    6,
+    3
+   ],
+   [
+    6,
+    1,
+    3,
+    4,
+    2,
+    5
+   ],
+   [
+    2,
+    6,
+    1,
+    5,
+    4,
+    3
+   ],
+   [
+    3,
+    4,
+    6,
+    2,
+    1,
+    5
+   ],
+   [
+    5,
+    2,
+    4,
+    3,
+    6,
+    1
+   ],
+   [
+    1,
+    3,
+    2,
+    6,
+    5,
+    4
+   ],
+   [
+    2,
+    5,
+    3,
+    1,
+    4,
+    6
+   ],
+   [
+    4,
+    1,
+    6,
+    5,
+    3,
+    2
+   ],
+   [
+    2,
+    6,
+    1,
+    3,
+    5,
+    4
+   ],
+   [
+    1,
+    2,
+    6,
+    4,
+    3,
+    5
+   ],
+   [
+    4,
+    1,
+    5,
+    6,
+    2,
+    3
+   ],
+   [
+    6,
+    2,
+    4,
+    3,
+    5,
+    1
+   ],
+   [
+    3,
+    6,
+    2,
+    5,
+    1,
+    4
+   ],
+   [
+    1,
+    4,
+    3,
+    6,
+    2,
+    5
+   ],
+   [
+    6,
+    5,
+    2,
+    1,
+    4,
+    3
+   ],
+   [
+    5,
+    3,
+    4,
+    2,
+    6,
+    1
+   ],
+   [
+    4,
+    1,
+    5,
+    3,
+    2,
+    6
+   ],
+   [
+    5,
+    6,
+    1,
+    4,
+    3,
+    2
+   ],
+   [
+    6,
+    4,
+    2,
+    3,
+    5,
+    1
+   ],
+   [
+    4,
+    5,
+    6,
+    2,
+    1,
+    3
+   ],
+   [
+    3,
+    1,
+    5,
+    4,
+    6,
+    2
+   ],
+   [
+    2,
+    6,
+    1,
+    5,
+    3,
+    4
+   ],
+   [
+    4,
+    3,
+    6,
+    1,
+    2,
+    5
+   ],
+   [
+    3,
+    2,
+    5,
+    6,
+    1,
+    4
+   ],
+   [
+    1,
+    5,
+    4,
+    2,
+    3,
+    6
+   ],
+   [
+    2,
+    6,
+    5,
+    4,
+    1,
+    3
+   ],
+   [
+    5,
+    3,
+    2,
+    1,
+    4,
+    6
+   ],
+   [
+    1,
+    2,
+    3,
+    5,
+    6,
+    4
+   ],
+   [
+    5,
+    4,
+    6,
+    2,
+    3,
+    1
+   ],
+   [
+    1,
+    3,
+    5,
+    6,
+    4,
+    2
+   ],
+   [
+    6,
+    4,
+    3,
+    1,
+    2,
+    5
+   ],
+   [
+    3,
+    5,
+    1,
+    2,
+    4,
+    6
+   ],
+   [
+    2,
+    3,
+    4,
+    6,
+    5,
+    1
+   ],
+   [
+    5,
+    1,
+    3,
+    4,
+    6,
+    2
+   ]
+  ],
+  "x": [
+   [
+    2,
+    5,
+    3,
+    1,
+    4,
+    6
+   ],
+   [
+    5,
+    4,
+    1,
+    6,
+    3,
+    2
+   ],
+   [
+    4,
+    1,
+    5,
+    2,
+    6,
+    3
+   ],
+   [
+    6,
+    4,
+    2,
+    3,
+    1,
+    5
+   ],
+   [
+    5,
+    2,
+    4,
+    6,
+    3,
+    1
+   ],
+   [
+    3,
+    6,
+    1,
+    5,
+    2,
+    4
+   ],
+   [
+    4,
+    1,
+    6,
+    3,
+    5,
+    2
+   ],
+   [
+    1,
+    3,
+    2,
+    4,
+    6,
+    5
+   ],
+   [
+    3,
+    2,
+    5,
+    1,
+    4,
+    6
+   ],
+   [
+    5,
+    6,
+    4,
+    2,
+    3,
+    1
+   ],
+   [
+    4,
+    5,
+    1,
+    6,
+    2,
+    3
+   ],
+   [
+    3,
+    6,
+    2,
+    4,
+    1,
+    5
+   ],
+   [
+    4,
+    5,
+    1,
+    6,
+    3,
+    2
+   ],
+   [
+    2,
+    1,
+    6,
+    3,
+    4,
+    5
+   ],
+   [
+    6,
+    4,
+    3,
+    1,
+    5,
+    2
+   ],
+   [
+    1,
+    2,
+    4,
+    5,
+    6,
+    3
+   ],
+   [
+    2,
+    3,
+    6,
+    4,
+    5,
+    1
+   ],
+   [
+    6,
+    1,
+    3,
+    5,
+    2,
+    4
+   ],
+   [
+    3,
+    2,
+    5,
+    4,
+    1,
+    6
+   ],
+   [
+    5,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   [
+    1,
+    4,
+    3,
+    2,
+    6,
+    5
+   ],
+   [
+    2,
+    3,
+    6,
+    5,
+    1,
+    4
+   ],
+   [
+    6,
+    5,
+    4,
+    2,
+    3,
+    1
+   ],
+   [
+    2,
+    3,
+    1,
+    5,
+    4,
+    6
+   ],
+   [
+    3,
+    6,
+    5,
+    4,
+    2,
+    1
+   ],
+   [
+    5,
+    1,
+    6,
+    2,
+    3,
+    4
+   ],
+   [
+    4,
+    3,
+    1,
+    6,
+    5,
+    2
+   ],
+   [
+    5,
+    2,
+    3,
+    1,
+    4,
+    6
+   ],
+   [
+    1,
+    5,
+    4,
+    2,
+    6,
+    3
+   ],
+   [
+    6,
+    3,
+    2,
+    1,
+    5,
+    4
+   ],
+   [
+    1,
+    4,
+    3,
+    5,
+    6,
+    2
+   ],
+   [
+    3,
+    1,
+    2,
+    4,
+    5,
+    6
+   ],
+   [
+    2,
+    4,
+    5,
+    6,
+    1,
+    3
+   ],
+   [
+    1,
+    5,
+    6,
+    3,
+    2,
+    4
+   ],
+   [
+    6,
+    2,
+    5,
+    1,
+    4,
+    3
+   ],
+   [
+    4,
+    6,
+    2,
+    3,
+    1,
+    5
+   ]
+  ]
+ },
+ "sequences": {
+  "2026-Q4|leerling": [
+   {
+    "position": 1,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-05",
+    "slots": {
+     "A": 5,
+     "B": 2,
+     "C": 1,
+     "D": 6,
+     "E": 4,
+     "F": 3
+    }
+   },
+   {
+    "position": 2,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-04",
+    "slots": {
+     "A": 6,
+     "B": 4,
+     "C": 2,
+     "D": 3,
+     "E": 1,
+     "F": 5
+    }
+   },
+   {
+    "position": 3,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-09",
+    "slots": {
+     "A": 2,
+     "B": 5,
+     "C": 6,
+     "D": 1,
+     "E": 4,
+     "F": 3
+    }
+   },
+   {
+    "position": 4,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-08",
+    "slots": {
+     "A": 5,
+     "B": 2,
+     "C": 4,
+     "D": 6,
+     "E": 3,
+     "F": 1
+    }
+   },
+   {
+    "position": 5,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-06",
+    "slots": {
+     "A": 4,
+     "B": 3,
+     "C": 1,
+     "D": 2,
+     "E": 5,
+     "F": 6
+    }
+   },
+   {
+    "position": 6,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-07",
+    "slots": {
+     "A": 1,
+     "B": 6,
+     "C": 2,
+     "D": 4,
+     "E": 3,
+     "F": 5
+    }
+   },
+   {
+    "position": 7,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-03",
+    "slots": {
+     "A": 3,
+     "B": 1,
+     "C": 6,
+     "D": 2,
+     "E": 5,
+     "F": 4
+    }
+   },
+   {
+    "position": 8,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-01",
+    "slots": {
+     "A": 6,
+     "B": 5,
+     "C": 4,
+     "D": 3,
+     "E": 1,
+     "F": 2
+    }
+   },
+   {
+    "position": 9,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-02",
+    "slots": {
+     "A": 1,
+     "B": 6,
+     "C": 3,
+     "D": 5,
+     "E": 2,
+     "F": 4
+    }
+   },
+   {
+    "position": 10,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-07",
+    "slots": {
+     "A": 3,
+     "B": 1,
+     "C": 5,
+     "D": 4,
+     "E": 6,
+     "F": 2
+    }
+   },
+   {
+    "position": 11,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-02",
+    "slots": {
+     "A": 1,
+     "B": 3,
+     "C": 6,
+     "D": 2,
+     "E": 4,
+     "F": 5
+    }
+   },
+   {
+    "position": 12,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-06",
+    "slots": {
+     "A": 2,
+     "B": 5,
+     "C": 3,
+     "D": 6,
+     "E": 1,
+     "F": 4
+    }
+   },
+   {
+    "position": 13,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-01",
+    "slots": {
+     "A": 6,
+     "B": 1,
+     "C": 4,
+     "D": 5,
+     "E": 2,
+     "F": 3
+    }
+   },
+   {
+    "position": 14,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-03",
+    "slots": {
+     "A": 3,
+     "B": 5,
+     "C": 2,
+     "D": 1,
+     "E": 6,
+     "F": 4
+    }
+   },
+   {
+    "position": 15,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-08",
+    "slots": {
+     "A": 6,
+     "B": 4,
+     "C": 5,
+     "D": 2,
+     "E": 1,
+     "F": 3
+    }
+   },
+   {
+    "position": 16,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-04",
+    "slots": {
+     "A": 2,
+     "B": 6,
+     "C": 3,
+     "D": 4,
+     "E": 5,
+     "F": 1
+    }
+   },
+   {
+    "position": 17,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-09",
+    "slots": {
+     "A": 1,
+     "B": 4,
+     "C": 6,
+     "D": 5,
+     "E": 3,
+     "F": 2
+    }
+   },
+   {
+    "position": 18,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-05",
+    "slots": {
+     "A": 5,
+     "B": 3,
+     "C": 4,
+     "D": 6,
+     "E": 2,
+     "F": 1
+    }
+   },
+   {
+    "position": 19,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-04",
+    "slots": {
+     "A": 2,
+     "B": 4,
+     "C": 5,
+     "D": 1,
+     "E": 3,
+     "F": 6
+    }
+   },
+   {
+    "position": 20,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-02",
+    "slots": {
+     "A": 5,
+     "B": 1,
+     "C": 6,
+     "D": 3,
+     "E": 4,
+     "F": 2
+    }
+   },
+   {
+    "position": 21,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-06",
+    "slots": {
+     "A": 4,
+     "B": 6,
+     "C": 3,
+     "D": 5,
+     "E": 2,
+     "F": 1
+    }
+   },
+   {
+    "position": 22,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-05",
+    "slots": {
+     "A": 6,
+     "B": 3,
+     "C": 4,
+     "D": 2,
+     "E": 1,
+     "F": 5
+    }
+   },
+   {
+    "position": 23,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-03",
+    "slots": {
+     "A": 4,
+     "B": 2,
+     "C": 3,
+     "D": 1,
+     "E": 5,
+     "F": 6
+    }
+   },
+   {
+    "position": 24,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-01",
+    "slots": {
+     "A": 3,
+     "B": 1,
+     "C": 6,
+     "D": 5,
+     "E": 4,
+     "F": 2
+    }
+   },
+   {
+    "position": 25,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-03",
+    "slots": {
+     "A": 2,
+     "B": 5,
+     "C": 3,
+     "D": 4,
+     "E": 1,
+     "F": 6
+    }
+   },
+   {
+    "position": 26,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-02",
+    "slots": {
+     "A": 4,
+     "B": 6,
+     "C": 5,
+     "D": 1,
+     "E": 3,
+     "F": 2
+    }
+   },
+   {
+    "position": 27,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-01",
+    "slots": {
+     "A": 5,
+     "B": 2,
+     "C": 1,
+     "D": 3,
+     "E": 6,
+     "F": 4
+    }
+   },
+   {
+    "position": 28,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-06",
+    "slots": {
+     "A": 6,
+     "B": 1,
+     "C": 4,
+     "D": 2,
+     "E": 5,
+     "F": 3
+    }
+   },
+   {
+    "position": 29,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-05",
+    "slots": {
+     "A": 2,
+     "B": 5,
+     "C": 1,
+     "D": 3,
+     "E": 6,
+     "F": 4
+    }
+   },
+   {
+    "position": 30,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-04",
+    "slots": {
+     "A": 3,
+     "B": 4,
+     "C": 2,
+     "D": 6,
+     "E": 5,
+     "F": 1
+    }
+   },
+   {
+    "position": 31,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-06",
+    "slots": {
+     "A": 5,
+     "B": 3,
+     "C": 1,
+     "D": 4,
+     "E": 2,
+     "F": 6
+    }
+   },
+   {
+    "position": 32,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-02",
+    "slots": {
+     "A": 4,
+     "B": 2,
+     "C": 5,
+     "D": 3,
+     "E": 6,
+     "F": 1
+    }
+   },
+   {
+    "position": 33,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-01",
+    "slots": {
+     "A": 3,
+     "B": 6,
+     "C": 2,
+     "D": 1,
+     "E": 4,
+     "F": 5
+    }
+   },
+   {
+    "position": 34,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-05",
+    "slots": {
+     "A": 1,
+     "B": 4,
+     "C": 5,
+     "D": 6,
+     "E": 2,
+     "F": 3
+    }
+   },
+   {
+    "position": 35,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-04",
+    "slots": {
+     "A": 4,
+     "B": 2,
+     "C": 1,
+     "D": 5,
+     "E": 3,
+     "F": 6
+    }
+   },
+   {
+    "position": 36,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-03",
+    "slots": {
+     "A": 1,
+     "B": 3,
+     "C": 2,
+     "D": 4,
+     "E": 6,
+     "F": 5
+    }
+   }
+  ],
+  "2027-Q1|leerling": [
+   {
+    "position": 1,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-08",
+    "slots": {
+     "A": 3,
+     "B": 1,
+     "C": 6,
+     "D": 5,
+     "E": 2,
+     "F": 4
+    }
+   },
+   {
+    "position": 2,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-01",
+    "slots": {
+     "A": 4,
+     "B": 6,
+     "C": 5,
+     "D": 2,
+     "E": 3,
+     "F": 1
+    }
+   },
+   {
+    "position": 3,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-03",
+    "slots": {
+     "A": 1,
+     "B": 4,
+     "C": 3,
+     "D": 5,
+     "E": 2,
+     "F": 6
+    }
+   },
+   {
+    "position": 4,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-04",
+    "slots": {
+     "A": 3,
+     "B": 5,
+     "C": 6,
+     "D": 1,
+     "E": 4,
+     "F": 2
+    }
+   },
+   {
+    "position": 5,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-06",
+    "slots": {
+     "A": 6,
+     "B": 1,
+     "C": 4,
+     "D": 2,
+     "E": 5,
+     "F": 3
+    }
+   },
+   {
+    "position": 6,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-05",
+    "slots": {
+     "A": 4,
+     "B": 2,
+     "C": 5,
+     "D": 3,
+     "E": 1,
+     "F": 6
+    }
+   },
+   {
+    "position": 7,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-07",
+    "slots": {
+     "A": 5,
+     "B": 3,
+     "C": 2,
+     "D": 6,
+     "E": 4,
+     "F": 1
+    }
+   },
+   {
+    "position": 8,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-09",
+    "slots": {
+     "A": 2,
+     "B": 5,
+     "C": 4,
+     "D": 1,
+     "E": 6,
+     "F": 3
+    }
+   },
+   {
+    "position": 9,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-02",
+    "slots": {
+     "A": 5,
+     "B": 2,
+     "C": 3,
+     "D": 6,
+     "E": 1,
+     "F": 4
+    }
+   },
+   {
+    "position": 10,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-08",
+    "slots": {
+     "A": 6,
+     "B": 4,
+     "C": 1,
+     "D": 2,
+     "E": 3,
+     "F": 5
+    }
+   },
+   {
+    "position": 11,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-02",
+    "slots": {
+     "A": 5,
+     "B": 2,
+     "C": 4,
+     "D": 3,
+     "E": 6,
+     "F": 1
+    }
+   },
+   {
+    "position": 12,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-06",
+    "slots": {
+     "A": 1,
+     "B": 6,
+     "C": 3,
+     "D": 4,
+     "E": 5,
+     "F": 2
+    }
+   },
+   {
+    "position": 13,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-07",
+    "slots": {
+     "A": 2,
+     "B": 3,
+     "C": 1,
+     "D": 5,
+     "E": 4,
+     "F": 6
+    }
+   },
+   {
+    "position": 14,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-09",
+    "slots": {
+     "A": 6,
+     "B": 1,
+     "C": 4,
+     "D": 3,
+     "E": 5,
+     "F": 2
+    }
+   },
+   {
+    "position": 15,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-03",
+    "slots": {
+     "A": 1,
+     "B": 4,
+     "C": 5,
+     "D": 2,
+     "E": 6,
+     "F": 3
+    }
+   },
+   {
+    "position": 16,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-01",
+    "slots": {
+     "A": 4,
+     "B": 2,
+     "C": 3,
+     "D": 6,
+     "E": 1,
+     "F": 5
+    }
+   },
+   {
+    "position": 17,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-04",
+    "slots": {
+     "A": 2,
+     "B": 5,
+     "C": 6,
+     "D": 1,
+     "E": 4,
+     "F": 3
+    }
+   },
+   {
+    "position": 18,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-05",
+    "slots": {
+     "A": 5,
+     "B": 3,
+     "C": 2,
+     "D": 6,
+     "E": 1,
+     "F": 4
+    }
+   },
+   {
+    "position": 19,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-05",
+    "slots": {
+     "A": 1,
+     "B": 4,
+     "C": 6,
+     "D": 2,
+     "E": 5,
+     "F": 3
+    }
+   },
+   {
+    "position": 20,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-04",
+    "slots": {
+     "A": 3,
+     "B": 6,
+     "C": 1,
+     "D": 5,
+     "E": 2,
+     "F": 4
+    }
+   },
+   {
+    "position": 21,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-02",
+    "slots": {
+     "A": 4,
+     "B": 3,
+     "C": 5,
+     "D": 6,
+     "E": 1,
+     "F": 2
+    }
+   },
+   {
+    "position": 22,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-01",
+    "slots": {
+     "A": 6,
+     "B": 1,
+     "C": 2,
+     "D": 4,
+     "E": 3,
+     "F": 5
+    }
+   },
+   {
+    "position": 23,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-03",
+    "slots": {
+     "A": 5,
+     "B": 4,
+     "C": 1,
+     "D": 3,
+     "E": 2,
+     "F": 6
+    }
+   },
+   {
+    "position": 24,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-06",
+    "slots": {
+     "A": 3,
+     "B": 6,
+     "C": 2,
+     "D": 4,
+     "E": 5,
+     "F": 1
+    }
+   },
+   {
+    "position": 25,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-05",
+    "slots": {
+     "A": 4,
+     "B": 5,
+     "C": 6,
+     "D": 1,
+     "E": 3,
+     "F": 2
+    }
+   },
+   {
+    "position": 26,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-04",
+    "slots": {
+     "A": 1,
+     "B": 4,
+     "C": 5,
+     "D": 6,
+     "E": 2,
+     "F": 3
+    }
+   },
+   {
+    "position": 27,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-06",
+    "slots": {
+     "A": 4,
+     "B": 1,
+     "C": 6,
+     "D": 3,
+     "E": 5,
+     "F": 2
+    }
+   },
+   {
+    "position": 28,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-03",
+    "slots": {
+     "A": 2,
+     "B": 3,
+     "C": 5,
+     "D": 4,
+     "E": 6,
+     "F": 1
+    }
+   },
+   {
+    "position": 29,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-02",
+    "slots": {
+     "A": 1,
+     "B": 6,
+     "C": 2,
+     "D": 5,
+     "E": 3,
+     "F": 4
+    }
+   },
+   {
+    "position": 30,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-01",
+    "slots": {
+     "A": 6,
+     "B": 1,
+     "C": 4,
+     "D": 3,
+     "E": 2,
+     "F": 5
+    }
+   },
+   {
+    "position": 31,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-06",
+    "slots": {
+     "A": 3,
+     "B": 5,
+     "C": 2,
+     "D": 1,
+     "E": 6,
+     "F": 4
+    }
+   },
+   {
+    "position": 32,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-01",
+    "slots": {
+     "A": 5,
+     "B": 2,
+     "C": 3,
+     "D": 4,
+     "E": 1,
+     "F": 6
+    }
+   },
+   {
+    "position": 33,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-04",
+    "slots": {
+     "A": 6,
+     "B": 3,
+     "C": 1,
+     "D": 2,
+     "E": 4,
+     "F": 5
+    }
+   },
+   {
+    "position": 34,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-03",
+    "slots": {
+     "A": 2,
+     "B": 6,
+     "C": 4,
+     "D": 5,
+     "E": 3,
+     "F": 1
+    }
+   },
+   {
+    "position": 35,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-02",
+    "slots": {
+     "A": 3,
+     "B": 2,
+     "C": 1,
+     "D": 4,
+     "E": 6,
+     "F": 5
+    }
+   },
+   {
+    "position": 36,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-05",
+    "slots": {
+     "A": 2,
+     "B": 5,
+     "C": 3,
+     "D": 1,
+     "E": 4,
+     "F": 6
+    }
+   }
+  ],
+  "2026-Q4|beginner": [
+   {
+    "position": 1,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-02",
+    "slots": {
+     "A": 2,
+     "B": 5,
+     "C": 3,
+     "D": 4,
+     "E": 1,
+     "F": 6
+    }
+   },
+   {
+    "position": 2,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-05",
+    "slots": {
+     "A": 1,
+     "B": 3,
+     "C": 2,
+     "D": 6,
+     "E": 4,
+     "F": 5
+    }
+   },
+   {
+    "position": 3,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-07",
+    "slots": {
+     "A": 6,
+     "B": 5,
+     "C": 1,
+     "D": 4,
+     "E": 3,
+     "F": 2
+    }
+   },
+   {
+    "position": 4,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-08",
+    "slots": {
+     "A": 5,
+     "B": 3,
+     "C": 4,
+     "D": 2,
+     "E": 6,
+     "F": 1
+    }
+   },
+   {
+    "position": 5,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-04",
+    "slots": {
+     "A": 6,
+     "B": 4,
+     "C": 5,
+     "D": 1,
+     "E": 3,
+     "F": 2
+    }
+   },
+   {
+    "position": 6,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-03",
+    "slots": {
+     "A": 2,
+     "B": 1,
+     "C": 4,
+     "D": 5,
+     "E": 6,
+     "F": 3
+    }
+   },
+   {
+    "position": 7,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-09",
+    "slots": {
+     "A": 5,
+     "B": 2,
+     "C": 1,
+     "D": 3,
+     "E": 4,
+     "F": 6
+    }
+   },
+   {
+    "position": 8,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-06",
+    "slots": {
+     "A": 4,
+     "B": 1,
+     "C": 2,
+     "D": 6,
+     "E": 5,
+     "F": 3
+    }
+   },
+   {
+    "position": 9,
+    "subject": "zelf_zonde",
+    "question_id": "leerling-zelf_zonde-01",
+    "slots": {
+     "A": 3,
+     "B": 2,
+     "C": 6,
+     "D": 5,
+     "E": 1,
+     "F": 4
+    }
+   },
+   {
+    "position": 10,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-06",
+    "slots": {
+     "A": 2,
+     "B": 3,
+     "C": 1,
+     "D": 4,
+     "E": 5,
+     "F": 6
+    }
+   },
+   {
+    "position": 11,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-07",
+    "slots": {
+     "A": 6,
+     "B": 2,
+     "C": 4,
+     "D": 5,
+     "E": 1,
+     "F": 3
+    }
+   },
+   {
+    "position": 12,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-02",
+    "slots": {
+     "A": 1,
+     "B": 5,
+     "C": 2,
+     "D": 6,
+     "E": 3,
+     "F": 4
+    }
+   },
+   {
+    "position": 13,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-03",
+    "slots": {
+     "A": 2,
+     "B": 1,
+     "C": 4,
+     "D": 3,
+     "E": 5,
+     "F": 6
+    }
+   },
+   {
+    "position": 14,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-04",
+    "slots": {
+     "A": 5,
+     "B": 3,
+     "C": 6,
+     "D": 2,
+     "E": 4,
+     "F": 1
+    }
+   },
+   {
+    "position": 15,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-09",
+    "slots": {
+     "A": 1,
+     "B": 6,
+     "C": 2,
+     "D": 4,
+     "E": 3,
+     "F": 5
+    }
+   },
+   {
+    "position": 16,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-08",
+    "slots": {
+     "A": 3,
+     "B": 2,
+     "C": 5,
+     "D": 1,
+     "E": 6,
+     "F": 4
+    }
+   },
+   {
+    "position": 17,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-05",
+    "slots": {
+     "A": 4,
+     "B": 1,
+     "C": 6,
+     "D": 5,
+     "E": 2,
+     "F": 3
+    }
+   },
+   {
+    "position": 18,
+    "subject": "ander_attentie",
+    "question_id": "leerling-ander_attentie-01",
+    "slots": {
+     "A": 5,
+     "B": 4,
+     "C": 3,
+     "D": 2,
+     "E": 6,
+     "F": 1
+    }
+   },
+   {
+    "position": 19,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-03",
+    "slots": {
+     "A": 2,
+     "B": 3,
+     "C": 4,
+     "D": 5,
+     "E": 1,
+     "F": 6
+    }
+   },
+   {
+    "position": 20,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-04",
+    "slots": {
+     "A": 6,
+     "B": 2,
+     "C": 1,
+     "D": 3,
+     "E": 4,
+     "F": 5
+    }
+   },
+   {
+    "position": 21,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-06",
+    "slots": {
+     "A": 5,
+     "B": 4,
+     "C": 3,
+     "D": 1,
+     "E": 6,
+     "F": 2
+    }
+   },
+   {
+    "position": 22,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-01",
+    "slots": {
+     "A": 3,
+     "B": 6,
+     "C": 5,
+     "D": 4,
+     "E": 2,
+     "F": 1
+    }
+   },
+   {
+    "position": 23,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-02",
+    "slots": {
+     "A": 1,
+     "B": 5,
+     "C": 3,
+     "D": 6,
+     "E": 4,
+     "F": 2
+    }
+   },
+   {
+    "position": 24,
+    "subject": "massa_macht",
+    "question_id": "leerling-massa_macht-05",
+    "slots": {
+     "A": 3,
+     "B": 2,
+     "C": 1,
+     "D": 4,
+     "E": 5,
+     "F": 6
+    }
+   },
+   {
+    "position": 25,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-04",
+    "slots": {
+     "A": 2,
+     "B": 5,
+     "C": 3,
+     "D": 6,
+     "E": 1,
+     "F": 4
+    }
+   },
+   {
+    "position": 26,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-01",
+    "slots": {
+     "A": 1,
+     "B": 6,
+     "C": 4,
+     "D": 3,
+     "E": 2,
+     "F": 5
+    }
+   },
+   {
+    "position": 27,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-05",
+    "slots": {
+     "A": 4,
+     "B": 1,
+     "C": 6,
+     "D": 2,
+     "E": 5,
+     "F": 3
+    }
+   },
+   {
+    "position": 28,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-06",
+    "slots": {
+     "A": 3,
+     "B": 4,
+     "C": 2,
+     "D": 1,
+     "E": 6,
+     "F": 5
+    }
+   },
+   {
+    "position": 29,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-03",
+    "slots": {
+     "A": 5,
+     "B": 1,
+     "C": 6,
+     "D": 3,
+     "E": 2,
+     "F": 4
+    }
+   },
+   {
+    "position": 30,
+    "subject": "wereld_wijsheid",
+    "question_id": "leerling-wereld_wijsheid-02",
+    "slots": {
+     "A": 4,
+     "B": 6,
+     "C": 5,
+     "D": 2,
+     "E": 3,
+     "F": 1
+    }
+   },
+   {
+    "position": 31,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-02",
+    "slots": {
+     "A": 3,
+     "B": 4,
+     "C": 6,
+     "D": 1,
+     "E": 5,
+     "F": 2
+    }
+   },
+   {
+    "position": 32,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-03",
+    "slots": {
+     "A": 1,
+     "B": 6,
+     "C": 2,
+     "D": 3,
+     "E": 4,
+     "F": 5
+    }
+   },
+   {
+    "position": 33,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-05",
+    "slots": {
+     "A": 6,
+     "B": 3,
+     "C": 5,
+     "D": 2,
+     "E": 1,
+     "F": 4
+    }
+   },
+   {
+    "position": 34,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-01",
+    "slots": {
+     "A": 4,
+     "B": 5,
+     "C": 3,
+     "D": 6,
+     "E": 2,
+     "F": 1
+    }
+   },
+   {
+    "position": 35,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-06",
+    "slots": {
+     "A": 6,
+     "B": 4,
+     "C": 1,
+     "D": 5,
+     "E": 3,
+     "F": 2
+    }
+   },
+   {
+    "position": 36,
+    "subject": "mysterie_magie",
+    "question_id": "leerling-mysterie_magie-04",
+    "slots": {
+     "A": 4,
+     "B": 6,
+     "C": 5,
+     "D": 1,
+     "E": 2,
+     "F": 3
+    }
+   }
+  ]
+ }
+}

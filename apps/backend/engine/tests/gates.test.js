@@ -167,7 +167,7 @@ test('C-path parity — services/cMagnitude matches c_magnitude_precompute_v2_2.
   for (const c of fx.cases) {
     const storedD = c.storedD === 'matrix_v43' ? fx.storedD_matrix_v43 : c.storedD;
     const js = JSON.parse(JSON.stringify(precompute(c.geo, storedD, c.effect)));
-    // every Python field exactly, the deduped + sorted refusal list included (d_curve is Node-only)
+    // every Python field exactly, the deduped + sorted refusal list included
     for (const [k, v] of Object.entries(c.expected)) assert.deepEqual(js[k], v, `${c.label}: ${k}`);
   }
 });
@@ -586,7 +586,7 @@ test('Request — the derived indices and the uploaded OCEAN values reach the mo
   const details = [{ key: 'HERO', position: 11, group: 'Agency', total: 120 }, { key: 'EXPLORER', position: 5, group: 'Seeker', total: 40 }];
   const base = {
     archetypeKey: 'HERO', supportArchetype: 'MAGICIAN', shadowArchetype: 'EXPLORER', blindspotArchetype: 'SAGE',
-    archetypeDetails: details, responses: [], sliceScoped: true, language: 'nl',
+    archetypeDetails: details, responses: [], language: 'nl',
     polarizationIndex: 80, polarizationPct: 67, polarizationLevel: 'HIGH_POLARIZATION',
     authenticityIndex: 71, authenticityLevel: 'BALANCED', totalNaturePoints: 300, totalCulturePoints: 120,
   };
@@ -596,9 +596,9 @@ test('Request — the derived indices and the uploaded OCEAN values reach the mo
   assert.ok(!/Gat [<>] \d+ punten/.test(msg), 'the old point-threshold notes never reach the engine pipeline');
   // one line type, from the line-type block: the older three-colour "Verbinding" line (no red) is gone
   assert.ok(!msg.includes('Main-Support Verbinding'), 'no second line-type statement');
-  assert.ok(buildUserMessage({ ...base, sliceScoped: false }).includes('Main-Support Verbinding:'), 'v4.3 path keeps it');
-  // the band follows the level the engine banded (R-c: > 60 · 30–60 · < 30), and the pct falls back to the totals
-  assert.match(buildUserMessage({ ...base, polarizationPct: undefined, polarizationLevel: 'MODERATE' }), /= 67% van Main → band: gap 30–60% — gezonde spanning/);
+  // the band follows the level the engine banded (R-c: > 60 · 30–60 · < 30); the pct is the server's, never re-derived
+  assert.match(buildUserMessage({ ...base, polarizationLevel: 'MODERATE' }), /= 67% van Main → band: gap 30–60% — gezonde spanning/);
+  assert.ok(!buildUserMessage({ ...base, polarizationPct: undefined }).includes('% van Main →'), 'no pct unless the server sends one');
   assert.match(buildUserMessage({ ...base, polarizationLevel: 'HIGH_INDIVIDUATION' }), /band: gap < 30% — actieve integratie/);
   // no upload → no OCEAN line at all (D-10: never geometry-derived values)
   assert.ok(!/OCEAN \(/.test(msg));
@@ -608,9 +608,6 @@ test('Request — the derived indices and the uploaded OCEAN values reach the mo
     .includes('OCEAN (geüpload door de gebruiker): Openheid: 72/100 | Consciëntieusheid: 55/100 | Extraversie: 61/100 | Meegaandheid: 80/100 | Neuroticisme: 23/100'));
   assert.ok(buildUserMessage({ ...base, language: 'en', uploadedOceanScores: { O: 72, N: 23 } })
     .includes('OCEAN (uploaded by the user): Openness: 72/100 | Neuroticism: 23/100'));
-  // the v4.3 path is untouched
-  const v43 = buildUserMessage({ ...base, sliceScoped: false });
-  assert.ok(v43.includes('Polarization Index: 80 (HIGH_POLARIZATION)') && v43.includes('Gat > 222 punten'));
 });
 
 test('Request — an OCEAN upload reaches the model as numbers under our names, never as its text (Addendum A §5c)', () => {
@@ -646,7 +643,7 @@ test('Request — an OCEAN upload reaches the model as numbers under our names, 
 
   const base = {
     archetypeKey: 'HERO', supportArchetype: 'MAGICIAN', shadowArchetype: 'EXPLORER', blindspotArchetype: 'SAGE',
-    archetypeDetails: [], responses: [], sliceScoped: true,
+    archetypeDetails: [], responses: [],
     uploadedFileContents: [{ name: 'upload-1.pdf', text: upload }],
     uploadedOceanScores: { O: 72, C: 96, E: 88, A: 39, N: 2 },
     uploadedOceanAspects: aspects,
@@ -663,8 +660,6 @@ test('Request — an OCEAN upload reaches the model as numbers under our names, 
     .includes('OCEAN aspects (uploaded by the user): Openness — Intellect: 75/100 · Aesthetics: 64/100 | '));
   // an unreadable upload claims nothing
   assert.ok(!/OCEAN \(|OCEAN-aspecten|OCEAN-RAPPORT/.test(buildUserMessage({ ...base, uploadedOceanScores: null, uploadedOceanAspects: null })));
-  // the v4.3 path keeps pasting the (scrubbed) text, as before
-  assert.ok(buildUserMessage({ ...base, sliceScoped: false }).includes('GEBRUIKER-GEÜPLOADE DOCUMENTEN'));
 });
 
 test('Request — the yellow-triangle activation numbers ship, the backend\'s own lens prose does not (W6: content = the slice)', () => {
@@ -672,11 +667,9 @@ test('Request — the yellow-triangle activation numbers ship, the backend\'s ow
   const details = ['JUDGE', 'EXPLORER', 'ARTIST', 'LOVER', 'OUTLAW', 'MAGICIAN', 'CAREGIVER', 'TRICKSTER', 'HERO', 'INNOCENT', 'SAGE', 'RULER']
     .map((key, i) => ({ key, position: i + 1, group: 'x', total: 50, nature_core: 20, yellow_cog: i < 3 ? 40 : 0 }));
   const base = { archetypeKey: 'JUDGE', supportArchetype: 'RULER', shadowArchetype: 'TRICKSTER', blindspotArchetype: 'OUTLAW', archetypeDetails: details, responses: [], language: 'nl' };
-  const v5 = buildUserMessage({ ...base, sliceScoped: true });
+  const v5 = buildUserMessage(base);
   assert.ok(v5.includes('── GELE DRIEHOEKEN — CULTUREFORCE ACTIVATIE ──') && /DOMINANT COGNITIEF NETWERK: .* \(Driehoek 1\)/.test(v5), 'activation table + dominant triangle stay');
   for (const label of ['Superkracht:', 'Cognitieve Valkuilen:', 'Culturele Context:']) assert.ok(!v5.includes(label), `${label} not in the engine-pipeline request`);
-  const v43 = buildUserMessage({ ...base, sliceScoped: false });
-  for (const label of ['Superkracht:', 'Cognitieve Valkuilen:', 'Culturele Context:']) assert.ok(v43.includes(label), `${label} still on the v4.3 path`);
   // the triangle names the request uses are the corpus's own (TNM overview "Naam" row, NL twin), in order
   const { YELLOW_TRIANGLE_PROFILES } = require('../../prompts/advanced');
   const overview = R.registry('nl').docs.get('tnm/preamble').text;
@@ -713,16 +706,15 @@ test('Reading extract — a gift or curse that wraps in the PDF comes back whole
 test('Kaart microcopy — requested by a hook on the engine pipeline, lifted out cleanly wherever the model puts it', () => {
   const { buildUserMessage } = require('../../prompts/advanced');
   const { extractKaartSection } = require('../../services/readingExtract');
-  const base = { archetypeKey: 'OUTLAW', supportArchetype: 'HERO', shadowArchetype: 'SAGE', blindspotArchetype: 'LOVER', archetypeDetails: [], responses: [], sliceScoped: true };
+  const base = { archetypeKey: 'OUTLAW', supportArchetype: 'HERO', shadowArchetype: 'SAGE', blindspotArchetype: 'LOVER', archetypeDetails: [], responses: [] };
 
-  // the request: last in the user message, outside the report, in the report's language; v4.3 untouched
+  // the request: last in the user message, outside the report, in the report's language
   const nl = buildUserMessage(base);
   assert.ok(nl.includes('═══ KAART MICROCOPY') && nl.includes('## KAART MICROCOPY') && nl.includes('KAART_GIFT:') && nl.includes('KAART_GEOMETRIE:'));
   assert.ok(nl.includes('ná het machineblok') && nl.includes('Main OUTLAW, Support HERO') && nl.includes('NOOIT de vloek'));
   assert.ok(nl.trimEnd().endsWith(']'), 'the card request is the last thing in the message');
   const en = buildUserMessage({ ...base, language: 'en' });
   assert.ok(en.includes('## CARD MICROCOPY') && en.includes('CARD_GIFT:') && en.includes('CARD_GEOMETRY:') && !en.includes('KAART_GIFT'));
-  assert.ok(!buildUserMessage({ ...base, sliceScoped: false }).includes('═══ KAART MICROCOPY'), 'v4.3 carries it in its own system prompt');
 
   const machine = ['PROFIEL DATA VOOR AI VERWERKING', '-- IDENTITEIT --', 'Main: Outlaw (6)', '-- HARDWARE SIGNALEN --', 'actieve_set: Outlaw (main)'].join('\n');
   const gave = 'Jouw gave is dat je doet wat klopt, ook als niemand het vraagt.';
@@ -916,16 +908,9 @@ test('Request — the English title set handed to the model is exactly what the 
   // experiment labels are excluded from tag matching (NOT_TAGS), so they never split a section
   for (const label of EN_SECTION_TITLES.experimentLabels) assert.equal(P.matchNarrativeTag(label), null, label);
   // the block ships only for an English engine-pipeline report
-  const base = { archetypeKey: 'HERO', supportArchetype: 'MAGICIAN', shadowArchetype: 'EXPLORER', blindspotArchetype: 'SAGE', archetypeDetails: [], responses: [], sliceScoped: true };
+  const base = { archetypeKey: 'HERO', supportArchetype: 'MAGICIAN', shadowArchetype: 'EXPLORER', blindspotArchetype: 'SAGE', archetypeDetails: [], responses: [] };
   assert.ok(buildUserMessage({ ...base, language: 'en' }).includes('═══ SECTION TITLES — ENGLISH REPORT'));
   assert.ok(!buildUserMessage({ ...base, language: 'nl' }).includes('SECTION TITLES'));
-  assert.ok(!buildUserMessage({ ...base, language: 'en', sliceScoped: false }).includes('SECTION TITLES'));
-});
-
-test('Report pipeline — decided in the repo (the engine pipeline), never by a host environment variable', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', '..', 'config', 'index.js'), 'utf8');
-  assert.ok(!/REPORT_PIPELINE/.test(src), 'config/index.js reads no REPORT_PIPELINE');
-  assert.equal(require('../../config').reportPipeline, 'v5.2');
 });
 
 test('Deploy absent-check — no superseded artifact in the tree; canon stamps current', () => {

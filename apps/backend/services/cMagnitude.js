@@ -35,13 +35,14 @@
  * 400 synthetic edge cases; fixture engine/tests/c_magnitude_parity_v2_2.json, run in the gates):
  * every field is identical, unresolved_edges included (v2.2 dedupes the refusal list across the five
  * per-state passes and sorts it). Rounding is Python's round() (half-to-even on the exact binary value,
- * via engine/py.js). One deliberate addition: d_curve, a Node-only render-side series for the v4.3
- * three-line chart.
+ * via engine/py.js).
  */
 
 'use strict';
 
 const { pyRound } = require('../engine/py');
+const { polarNorm: polarNormOf, supportEditK, POLAR_NORM_SHAPE } = require('../engine/polarNorm');
+const { CHANNEL_CEILING_U } = require('../engine/bleedV2');
 
 /** Python str ordering for the ASCII archetype and edge names (sorted() on tuples). */
 const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
@@ -53,9 +54,10 @@ const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 // geometries exist. Overwriting these after engine-run is the ONLY change needed.
 // ─────────────────────────────────────────────────────────────────────────────
 const PROVISIONAL_SCALARS = {
-  // (a) polar_norm normalisation. §7(a): Main−Shadow scaled to [0,1] needs one
-  //     runtime calibration. The denominator is a PLACEHOLDER normaliser.
-  polar_norm_denominator: 100.0, // PROVISIONAL — recalibrate against real geometries
+  // (a) polar_norm normalisation. §7(a). Addendum rev 2 (13 Oct 2026): the normaliser is the
+  //     Main's own total (engine/polarNorm.js), not a free constant; only the linear SHAPE stays
+  //     open for runtime calibration.
+  polar_norm_shape: POLAR_NORM_SHAPE,
   // (c) Blue half-weight. §7(c): 0.5 is a form choice, not a fitted constant.
   blue_half_weight: 0.5, // PROVISIONAL — validate at first engine-run
   // (b) Yellow culture-ratio. §7(b): TNM-triad-dependent, rides the Four-Triangles
@@ -72,7 +74,10 @@ const PROVISIONAL_FLAGGED = true;
 // Counted basket magnitudes (~0..ceiling) are normalised against their own channel
 // ceiling BEFORE the edge-structure (gate, sign, polar-scaling) applies, returning
 // the magnitude axis to [0,1] — the scale the §3 composition form was written for.
-// Ceilings from Matrix v4.3 bleed maxima.
+// Per scoring_version (Path A v2 wiring task v0.1, rewiring 2):
+//   v1 (Nature/Culture): the v4.3 set below, unchanged.
+//   v2 (two-layer): CHANNEL_CEILING_U, derived at startup from the bleed config in integer units
+//     (engine/bleedV2.js) — 360 / 216 / 144 / 144 today; units ÷ unit ceiling is one division of integers.
 // ─────────────────────────────────────────────────────────────────────────────
 const CHANNEL_CEILING = {
   green: 144.0, // Green echo max
@@ -80,6 +85,23 @@ const CHANNEL_CEILING = {
   purple: 36.0, // Purple drip max
   yellow: 216.0, // Yellow echo max
 };
+const V2 = 'v2_two_layer';
+const ceilingOf = (geo) => (geo.scoring_version === V2 ? CHANNEL_CEILING_U : CHANNEL_CEILING);
+
+// The tetrad (Bleed spec §4): in Ruling and Chaos the sum-13 Blue partner IS the sibling, so a Ruling or
+// Chaos Main's GREEN edge is always this pair.
+const TETRAD_PAIRS = [['JUDGE', 'RULER'], ['OUTLAW', 'TRICKSTER']];
+const isTetradPair = (a, b) => {
+  const x = String(a).toUpperCase(), y = String(b).toUpperCase();
+  return TETRAD_PAIRS.some(([p, q]) => (x === p && y === q) || (x === q && y === p));
+};
+
+/** A counted channel magnitude σ() needs — missing or non-numeric raises, never defaults to 0. */
+function counted(a, field) {
+  const v = a[field];
+  if (!Number.isFinite(v)) throw new Error(`C-magnitude: ${a.name}.${field} missing`);
+  return v;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Edge types — Connection Matrix v2.1, canon (§1 line 29). TYPE/SIGN only.
@@ -99,20 +121,18 @@ const RedSign = Object.freeze({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// polar_norm — Polarization gap normalised to [0,1].
-// Form committed (§3 note + §7a). Normaliser is PROVISIONAL.
+// polar_norm — Polarization gap normalised to [0,1]: gap ÷ Main (engine/polarNorm.js, shared
+// with the live C-modulation; addendum rev 2, 13 Oct 2026).
 // geo: { main_weight, support_weight, shadow_weight, main, support, archetypes }
+// geo.scoring_version: 'v2_two_layer' for the two-layer test; absent or anything else = v1
 // archetypes: name -> {
 //   name, weight, edge_to_main, edge_to_support,
-//   nature_core, green_hw, culture_core, blue_fb, yellow_cog, purple_shadow,
-//   is_culture_pick, red_sign_to_main, d_field_traces
+//   green_hw, blue_fb, yellow_cog, purple_shadow, blauw_intern (counted channels — cRuntime maps them
+//   from v1's 5-mandje or v2's seven mandjes; v2 in integer units), red_sign_to_main, d_field_traces
 // }
 // ─────────────────────────────────────────────────────────────────────────────
 function polarNorm(geo) {
-  const gap = geo.main_weight - geo.shadow_weight;
-  const denom = PROVISIONAL_SCALARS.polar_norm_denominator;
-  const pn = denom ? gap / denom : 0.0;
-  return Math.max(0.0, Math.min(1.0, pn)); // clamp to [0,1]
+  return polarNormOf(geo.main_weight, geo.shadow_weight);
 }
 
 function gatePolar(geo) {
@@ -134,26 +154,34 @@ function gatePolar(geo) {
 // refuses to fabricate rather than guess.
 // ─────────────────────────────────────────────────────────────────────────────
 function sigma(a, geo) {
+  const CEIL = ceilingOf(geo);
   switch (a.edge_to_main) {
     case Edge.GREEN:
+      // Rewiring 3 (v2; owner, 13 Oct 2026: counted separately, no value change): for a Ruling or Chaos
+      // Main the sibling's edge carries Green and internal Blue as two channels, each on its own ceiling,
+      // and takes their mean. Pick-built internal Blue is exactly 0.6 × groen, so the mean equals the
+      // green-only value; only Layer-1 fallback Blue in the Main's group adds. σ stays in [0, 1].
+      if (geo.scoring_version === V2 && isTetradPair(geo.main, a.name)) {
+        return 0.5 * (counted(a, 'green_hw') / CEIL.green + counted(a, 'blauw_intern') / CEIL.blue);
+      }
       // Counted Green magnitude, ceiling-normalised to [0,1] (D-9); full coherent add.
-      return +1.0 * ((a.green_hw || 0) / CHANNEL_CEILING.green);
+      return +1.0 * (counted(a, 'green_hw') / CEIL.green);
 
     case Edge.BLUE:
       // Counted Blue magnitude, ceiling-normalised (D-9). The counter applies the
       // half-weight in the count; this is the value as-counted, then normalised.
-      return +1.0 * ((a.blue_fb || 0) / CHANNEL_CEILING.blue);
+      return +1.0 * (counted(a, 'blue_fb') / CEIL.blue);
 
     case Edge.PURPLE:
       // Counted Purple magnitude, ceiling-normalised (D-9), STILL gated:
       // contributes only when integrated.
-      return +1.0 * ((a.purple_shadow || 0) / CHANNEL_CEILING.purple) * gatePolar(geo);
+      return +1.0 * (counted(a, 'purple_shadow') / CEIL.purple) * gatePolar(geo);
 
     case Edge.RED: {
       // Sign VARIES — read at runtime (GANE-trap guard). Never hardcoded.
       // Red seam magnitude is the counted hardware-locus value, ceiling-normalised
       // on the green channel (seam locus); sign and polar-scaling per §3.
-      const redMag = (a.green_hw || 0) / CHANNEL_CEILING.green; // normalised
+      const redMag = counted(a, 'green_hw') / CEIL.green; // normalised
       if (a.red_sign_to_main === RedSign.OPPOSITION) {
         // − normalised · (1 − polar_norm) → partial cancel; weakens as gap narrows.
         return -redMag * (1.0 - polarNorm(geo));
@@ -168,11 +196,12 @@ function sigma(a, geo) {
     }
 
     case Edge.YELLOW:
-      // Culture-pick only; counted yellow_cog, ceiling-normalised (D-9).
-      if (!a.is_culture_pick) return 0.0;
+      // Counted yellow_cog, ceiling-normalised (D-9). v1: culture-pick only, unchanged. v2, rewiring 1: no
+      // culture-pick gate — Yellow fires on every direct Layer-2 pick, so the gate would zero every edge.
+      if (geo.scoring_version !== V2 && !a.is_culture_pick) return 0.0;
       // The Four-Triangles ratio (D-3b) governs interpretive weighting, not whether
       // the counted value exists. Counted value used normalised; ratio flagged.
-      return +1.0 * ((a.yellow_cog || 0) / CHANNEL_CEILING.yellow);
+      return +1.0 * (counted(a, 'yellow_cog') / CEIL.yellow);
 
     case Edge.NONE:
     default:
@@ -224,13 +253,7 @@ function composeDState(geo, storedD) {
     for (const k of Object.keys(raw)) composed[k] = 0.0;
   }
 
-  // Render-side chart series (Master Prompt v4.1 §5.5): Main + Support stored curves
-  // (absolute, on-scale) + the composed curve (dynamic-ceiling normalised) as [D1..D5].
-  const main_curve = (storedD[geo.main] || []).map((v) => pyRound(v, 1));
-  const support_curve = (geo.support && storedD[geo.support] ? storedD[geo.support] : []).map((v) => pyRound(v, 1));
-  const composed_curve = classes.map((k) => composed[k]);
-
-  return { composed_D: composed, raw_composed_D: raw, dynamic_ceiling: peak, refusals, main_curve, support_curve, composed_curve };
+  return { composed_D: composed, raw_composed_D: raw, dynamic_ceiling: peak, refusals };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -244,21 +267,22 @@ function composeDState(geo, storedD) {
 // storage; the SCALAR falls out of the geometry.
 // ─────────────────────────────────────────────────────────────────────────────
 function supportWeightNorm(geo) {
-  if (!geo.main_weight) return 0.0;
+  if (!(geo.main_weight > 0)) return 0.0;
   return geo.support_weight / geo.main_weight;
 }
 
 function cMagnitude(geo, baseEffectDirection) {
-  const swn = supportWeightNorm(geo);
-  const oneMinusPn = 1.0 - polarNorm(geo);
+  // C_mag = support_weight_norm · (1 − polar_norm) · direction, with that k taken as the exact pair
+  // (Support × Shadow, Main²) from engine/polarNorm — the one k the live C-modulation also uses (gate G6).
+  const { num, den } = supportEditK(geo.main_weight, geo.support_weight, geo.shadow_weight);
+  const k = num / den;
   const out = {};
   for (const [func, direction] of Object.entries(baseEffectDirection)) {
     if (direction === null || direction === undefined) {
       out[func] = null; // "no channel" → stays absent, not 0
       continue;
     }
-    // C_mag = support_weight_norm · (1 − polar_norm) · direction
-    out[func] = swn * oneMinusPn * direction;
+    out[func] = k * direction;
   }
   return out;
 }
@@ -275,8 +299,6 @@ function precompute(geo, storedD, supportEffectDirection) {
     composed_D_state: step1.composed_D,
     composed_D_raw: step1.raw_composed_D,
     dynamic_ceiling: step1.dynamic_ceiling,
-    // Render-side D-curve chart series (Main + Support + Composed), [D1..D5].
-    d_curve: { main: step1.main_curve, support: step1.support_curve, composed: step1.composed_curve },
     c_runtime_values: step2,
     polar_norm: polarNorm(geo),
     support_weight_norm: supportWeightNorm(geo),
@@ -294,6 +316,7 @@ module.exports = {
   PROVISIONAL_SCALARS,
   PROVISIONAL_FLAGGED,
   CHANNEL_CEILING,
+  CHANNEL_CEILING_U,
   Edge,
   RedSign,
   polarNorm,

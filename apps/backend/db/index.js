@@ -44,9 +44,6 @@ async function connectDB() {
   await db.collection('assessmentReviews').createIndex({ timestamp: -1 });
   await db.collection('assessmentReviews').createIndex({ userId: 1 }, { sparse: true });
 
-  // Passkeys — unique 6-digit codes
-  await db.collection('passkeys').createIndex({ code: 1 }, { unique: true });
-
   // Orb codes — an LC_ORB code links to at most ONE account (unique on the hashed code).
   // Once linked, PDF-upload login for that code is denied (the account is the credential).
   await db.collection('orbCodes').createIndex({ codeHash: 1 }, { unique: true });
@@ -308,7 +305,6 @@ const collections = {
   assessments: () => getDB().collection('assessments'),
   questions: () => getDB().collection('questions'),
   assessmentReviews: () => getDB().collection('assessmentReviews'),
-  passkeys: () => getDB().collection('passkeys'),
   orbCodes: () => getDB().collection('orbCodes'),
   activationCodes: () => getDB().collection('activationCodes'),
   reportUnlocks: () => getDB().collection('reportUnlocks'),

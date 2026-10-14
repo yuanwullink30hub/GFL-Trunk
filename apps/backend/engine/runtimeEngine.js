@@ -26,6 +26,8 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { pyRound, pyStr, pyFloat, pyFalsy, PyRandom } = require('./py');
+const { polarNorm, supportEditK } = require('./polarNorm');
+const { threshold } = require('./exact');
 const VERSIONS = require('../config/versions');
 
 const round = pyRound;
@@ -189,11 +191,9 @@ class RuntimeGeometry {
     this.scores = scores;             // archetype -> total score (counted)
     this.main = main;
     if (support) this.support = support;
-    if (!this.main) {
-      let best = null;
-      for (const [k, v] of Object.entries(this.scores)) if (best === null || v > this.scores[best]) best = k;
-      this.main = best;
-    }
+    // Main (and Support) come from the scoring with its tie chain (Bleed v2 scoring §3.4) — the engine
+    // never picks its own: a second tie-break could disagree on a tie (payload instruction test 17).
+    if (!this.main) throw new Error('RuntimeGeometry needs the scoring\'s Main — the engine never picks its own');
   }
 }
 
@@ -497,25 +497,52 @@ class RoleIndexedStore {
   }
 }
 
+/** polar_norm — Main−Shadow gap as a fraction of the Main's total (engine/polarNorm.js, the one
+ *  implementation; addendum rev 2, 13 Oct 2026 — replaces the /100 placeholder that zeroed C). */
 function polar_norm(geo) {
-  const gap = geo.scores[geo.main] - (geo.scores[OPP[geo.main]] ?? 0.0);
-  return Math.max(0.0, Math.min(1.0, gap / 100.0));            // denominator PROVISIONAL (D-3)
+  return polarNorm(geo.scores[geo.main] ?? 0.0, geo.scores[OPP[geo.main]] ?? 0.0);
 }
 
 /** support_weight_norm = s_Support / s_Main — the factor c_modulation applies (D-Rel Ops v1.0 §4). */
 function support_weight_norm(geo, support) {
-  return geo.scores[support] / geo.scores[geo.main];
+  const m = geo.scores[geo.main] ?? 0.0;
+  return m > 0 ? geo.scores[support] / m : 0.0;               // guard: 0/0 would give NaN
+}
+
+/**
+ * k = support_weight_norm × (1 − polar_norm) = (Support × Shadow) ÷ Main²: how strongly the Support edits
+ * the Main (D-Rel Ops v1.0 §4). The ONE k — c_modulation() multiplies with it and the P11
+ * Support-bewerking band reads it, so the two can never disagree (payload instruction P11). Returned as
+ * the exact pair { num, den } (gate G6): with integer totals both are exact integers. The Support is the
+ * caller's: the scoring's Support.
+ */
+function support_edit_k(geo, support) {
+  return supportEditK(geo.scores[geo.main] ?? 0.0, geo.scores[support] ?? 0.0, geo.scores[OPP[geo.main]] ?? 0.0);
+}
+
+/** P11 cut-points — SEEDS (owner, 13 Oct), exact fractions (G6), calibrated post-launch. */
+const SUPPORT_EDIT_BANDS = Object.freeze({ version: 'P11 seeds 13 Oct 2026', merkbaar: threshold('1/10'), sterk: threshold('3/10') });
+
+/** P11: the Support-bewerking band the model reads (W5) — zacht < 1/10 ≤ merkbaar < 3/10 ≤ sterk, by
+ *  integer cross-multiplication: k ≥ a/b ⇔ b × num ≥ a × den. */
+function support_edit_band(geo, support) {
+  const { num, den } = support_edit_k(geo, support);
+  const atLeast = ([a, b]) => b * num >= a * den;
+  return atLeast(SUPPORT_EDIT_BANDS.sterk) ? 'sterk' : atLeast(SUPPORT_EDIT_BANDS.merkbaar) ? 'merkbaar' : 'zacht';
 }
 
 function c_modulation(geo, support, c_cells) {
-  const swn = geo.scores[support] / geo.scores[geo.main];
-  const k = swn * (1.0 - polar_norm(geo));
+  const { num, den } = support_edit_k(geo, support);
+  const k = num / den;
   return Object.fromEntries(Object.entries(c_cells[support] || {})
     .map(([f, d]) => [f, d === null ? null : round(k * d, 4)]));
 }
 
 function emit_payload_v2(geo, result, store, c_cells, tau_version) {
-  const support = geo.support || result.codrivers[0].name;
+  // The scoring's Support (§3.4), the same one c_modulation, the P11 band and Support-herkomst read —
+  // never the first co-driver of the engine's own ranking (that would be a second tie-break).
+  if (!geo.support) throw new Error('the payload needs the scoring\'s Support — the engine never picks its own');
+  const support = geo.support;
   store.support_values(support);
   // [R8 amendment — Master Prompt v5.1/v5.2, ratified] The Support is ALWAYS present: the
   //  C-path and the D-path have different membership rules. The Python v0.2 raised
@@ -758,6 +785,7 @@ module.exports = {
   TAU_SHEET, load_tau_sheet, emit_payload,
   // v0.2
   WHEEL, OPP, RoleError, load_c_cells, RoleIndexedStore, polar_norm, c_modulation, emit_payload_v2,
+  support_edit_k, support_edit_band, SUPPORT_EDIT_BANDS,
   support_weight_norm,
   // v0.3
   STATES, REGISTER_STATEMENT, register_layer, distribution_report_register,

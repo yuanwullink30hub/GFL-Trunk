@@ -9,7 +9,7 @@ const { buildUserMessage } = require('../prompts/advanced');
 
 const KEYS = ['JUDGE', 'LOVER', 'CAREGIVER', 'INNOCENT', 'EXPLORER', 'OUTLAW', 'TRICKSTER', 'SAGE', 'ARTIST', 'MAGICIAN', 'HERO', 'RULER'];
 const base = (extra) => ({
-  archetypeKey: 'HERO', supportArchetype: 'SAGE', sliceScoped: true, language: 'nl',
+  archetypeKey: 'HERO', supportArchetype: 'SAGE', language: 'nl',
   archetypeDetails: KEYS.map((key, i) => ({ key, total: 10 + i })),
   ...extra,
 });

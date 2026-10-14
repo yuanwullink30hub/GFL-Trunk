@@ -10,8 +10,15 @@ const { callAI, getAvailableProviders } = require('../services/aiProviders');
 const { computeCRuntime } = require('../services/cRuntime');
 const { orb3FromGeometry } = require('@gfl/orb-engine');
 const { formatLineTypeBlock } = require('../services/lineType');
-const { getCorpusText } = require('../services/corpusData');
 const reportV5 = require('../engine/reportV5');
+const { promptSlotFor, loadPromptRecord, promptMismatch, DEFAULT_LEVEL } = require('../services/promptRouting');
+const reportV7 = require('../engine/reportV7');
+const { BleedInputError } = require('../engine/bleedV2');
+const { enrichmentNl } = require('../engine/index');
+const { observe: observeTetrad } = require('../engine/tetradObserver');
+const { queueTetradRow } = require('../services/statsStore');
+const { OPP } = require('../engine/runtimeEngine');
+const { polarNorm, polarization } = require('../engine/polarNorm');
 const { getDB } = require('../db');
 const config = require('../config');
 const nodemailer = require('nodemailer');
@@ -21,34 +28,31 @@ const { parseOceanAspects } = require('../services/oceanUpload');
 const { rateLimit } = require('../middleware/rateLimit');
 const { parseUpload, checkUploads, UploadError } = require('../services/uploadParser');
 
-// Level-specific prompt builders
-const promptBuilders = {
-  beginner: require('../prompts/beginner'),
-  intermediate: require('../prompts/intermediate'),
-  advanced: require('../prompts/advanced'),
-};
+// The per-user geometry message (the Leerling builder; the Master Prompt itself comes from Mongo).
+const { buildUserMessage } = require('../prompts/advanced');
 
 /**
- * Format the pre-computed C-runtime block for the model payload. The engine
- * computes this; the model must NOT recompute it (it reads these values).
+ * The Main's total and its 180° opposite's — the pair runtimeEngine.polar_norm reads — from the
+ * per-archetype totals. null when the request carries no totals.
  */
-function formatCRuntimeBlock(c) {
-  const d = c.composed_D_state || {};
-  const cv = c.c_runtime_values || {};
-  const cLines = Object.entries(cv)
-    .map(([f, v]) => `${f}=${v === null ? 'no-channel' : v.toFixed(3)}`)
-    .join(', ');
-  const refusals = (c.unresolved_edges || []).map(([n, e]) => `${n}(${e})`).join(', ') || 'none';
-  return [
-    '═══ C-RUNTIME (pre-computed by the engine — do NOT recompute) ═══',
-    'Composed D-state (dynamic-ceiling normalised, peak=100%; within-configuration relative):',
-    `  D1=${d.D1} D2=${d.D2} D3=${d.D3} D4=${d.D4} D5=${d.D5}`,
-    'C-modulation (Support [Effect] × geometry — direction stored, magnitude geometry-driven):',
-    `  ${cLines}`,
-    `polar_norm=${c.polar_norm}  support_weight_norm=${(c.support_weight_norm || 0).toFixed(3)}`,
-    `unresolved edges (refused, not guessed): ${refusals}`,
-    `[${c.WARNING}]`,
-  ].join('\n');
+function mainShadowTotals(archetypeDetails, mainKey) {
+  if (!Array.isArray(archetypeDetails) || !mainKey) return null;
+  const title = (k) => { const s = String(k || '').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); };
+  const totalOf = (name) => {
+    const a = archetypeDetails.find((d) => title(d.key) === name);
+    return a ? Number(a.total) || 0 : null;
+  };
+  const main = title(mainKey);
+  const m = totalOf(main);
+  if (m === null || !OPP[main]) return null;
+  const s = totalOf(OPP[main]) ?? 0;
+  // The exact comparisons (gate G6) need integer totals — v1 totals are whole points, v2 sends units.
+  // Anything else is skipped (no polarisation line) rather than guessed or allowed to break the report.
+  if (!Number.isSafeInteger(m) || !Number.isSafeInteger(s)) {
+    console.warn('[AI] polarisation skipped: non-integer totals');
+    return null;
+  }
+  return { main: m, shadow: s };
 }
 
 const router = Router();
@@ -65,7 +69,6 @@ const router = Router();
  *   supportGroup: "RULING",                     // optional
  *   mainGroup: "RULING",                        // optional
  *   extendedArchetypeName: "The Arbiter",       // optional
- *   oceanScores: { O:4, C:9, E:4, A:3, N:3 },  // optional
  *   (provider, model, systemPrompt, userQuestion, maxTokens and temperature are NOT accepted:
  *    they come from the server config only — see "Who may run an analysis" below.)
  *
@@ -73,29 +76,20 @@ const router = Router();
  *   shadowArchetype: "TRICKSTER",               // 180° shadow of Main
  *   blindspotArchetype: "OUTLAW",               // Red Line partner of Main
  *   isIndividuated: false,                       // Main & Support are 180° opposites
- *   hasHarmonyBonus: false,                       // deprecated (Geometric Bleed has no counters)
- *   harmonyBonusApplied: 0,                        // deprecated
- *   polarizationIndex: 25,                       // Main - Shadow score gap
- *   polarizationLevel: "MODERATE",               // HIGH_POLARIZATION | MODERATE | HIGH_INDIVIDUATION
  *   authenticityIndex: 55,                       // Nature % of total
- *   authenticityLevel: "BALANCED",               // NATURE_DOMINANT | BALANCED | CULTURE_DOMINANT
+ *   authenticityLevel: "BALANCED",               // NATURE_DOMINANT | BALANCED | CULTURE_DOMINANT (engine passthrough)
  *   totalNaturePoints: 165,                      // total Nature sub-score
  *   totalCulturePoints: 135,                     // total CultureForce sub-score
  *   archetypeDetails: [...],                     // per-archetype breakdown with core/bleed sub-scores
- *   scores: {...},                               // raw score object per archetype
- *
- *   // ── Full pipeline fields (sent after 60Q completion) ──
  *   responses: [...],                            // individual question answers
- *   subjectResults: [...],                       // per-layer scoring breakdown
- *   harmonyScore: 72,                            // overall percentage
- *   consciousnessLevel: "Transpersonal",         // derived level
- *   overallShadow: "...",                        // dominant shadow aspect
+ *   subgroups: [...],                            // Dual-Core per group
+ *   language: "nl",                              // report language
+ *   level: "advanced",                           // beginner | intermediate | advanced (absent → advanced):
+ *                                                // picks the Master Prompt (services/promptRouting.js)
  *   uploadedFileContents: [{ name, pdfBase64 | docxBase64 | text }] // OCEAN report upload (no images)
  * }
  *
- * NOTE: Knowledge context (archetype descriptions, OCEAN profiles, etc.)
- * is provided via admin-uploaded documents stored in MongoDB
- * (collection: promptDocuments). These are automatically included in every analysis.
+ * The model's corpus is the Corpus Manifest slice (engine/reportV5.js), nothing else.
  */
 // ── Who may run an analysis ──
 // This endpoint needs no login (the report is decoupled from any account), and every call is a long,
@@ -123,7 +117,58 @@ function uploadCaps(req, res, next) {
   return next();
 }
 
-router.post('/analyze', analyzeLimit, uploadCaps, async (req, res) => {
+// The session's scoring_version (Bleed v2 Scoring instruction §1), checked BEFORE the SSE stream opens.
+// 'v1_nature_culture' (or none) is the old test. 'v2_two_layer' (the Leerling two-layer test) is scored
+// HERE from its raw answers — the server's scoring is the only one read, never the client's — so malformed
+// answers get a plain 400. Which test may run is decided by the Leerling prompt's version (promptGate:
+// v2 needs Master Prompt v7+, the old test v6 or earlier); a Dutch v2 report needs the ratified Dutch
+// enrichment cells (payload instruction v7 §9).
+const SCORING_VERSIONS = ['v1_nature_culture', 'v2_two_layer'];
+function scoringVersionGate(req, res, next) {
+  const v = req.body && req.body.scoring_version;
+  if (v === undefined || v === 'v1_nature_culture') return next();
+  if (!SCORING_VERSIONS.includes(v)) return res.status(400).json({ error: `unknown scoring_version ${JSON.stringify(v)}` });
+  let session;
+  try {
+    session = reportV7.scoreV2(req.body.responses);
+  } catch (e) {
+    if (e instanceof BleedInputError) return res.status(400).json({ error: e.message });
+    throw e;
+  }
+  if (String(req.body.language || 'nl').toLowerCase() !== 'en' && !enrichmentNl()) {
+    return res.status(409).json({ error: 'Dutch v2 reports wait for the ratified Dutch enrichment cells (payload instruction v7 §9)' });
+  }
+  req.v2 = { session };
+  return next();
+}
+
+// The Master Prompt for this report (services/promptRouting.js): one record per level. Read BEFORE the stream opens, so a level without a prompt (Beginner and
+// Intermediate, until theirs are written) is refused with a plain 409 and never reaches a paid call.
+async function promptGate(req, res, next) {
+  const { level, scoring_version: scoringVersion } = req.body || {};
+  let slot;
+  try {
+    slot = promptSlotFor(level ?? DEFAULT_LEVEL, scoringVersion);
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
+  }
+  let record;
+  try {
+    record = await loadPromptRecord(getDB(), slot);
+  } catch (e) {
+    console.error('[AI] Master Prompt read failed:', e.message);
+    return res.status(503).json({ error: 'De rapportgenerator is tijdelijk niet beschikbaar. Probeer het later opnieuw.' });
+  }
+  if (!record) return res.status(409).json({ error: `no Master Prompt for level ${slot} yet` });
+  // Leerling: the test must fit the prompt (v2 → v7+, the old test → v6 and earlier); never a payload
+  // the prompt was not written for.
+  const mismatch = slot === 'advanced' ? promptMismatch(record.systemPromptTemplate, scoringVersion) : null;
+  if (mismatch) return res.status(409).json({ error: mismatch });
+  req.masterPrompt = { slot, ...record };
+  return next();
+}
+
+router.post('/analyze', analyzeLimit, uploadCaps, scoringVersionGate, promptGate, async (req, res) => {
   // Set SSE headers — use res.set() so CORS middleware headers are preserved
   res.set({
     'Content-Type': 'text/event-stream',
@@ -144,49 +189,32 @@ router.post('/analyze', analyzeLimit, uploadCaps, async (req, res) => {
       supportGroup,
       mainGroup,
       extendedArchetypeName,
-      oceanScores,
       // Advanced Ontology fields
       shadowArchetype,
       blindspotArchetype,
       isIndividuated,
-      hasHarmonyBonus,
-      harmonyBonusApplied,
-      polarizationIndex,
-      polarizationPct,
-      polarizationLevel,
       authenticityIndex,
-      authenticityLevel,
       totalNaturePoints,
       totalCulturePoints,
       archetypeDetails,
-      scores,
-      // Full pipeline fields
       responses,
-      subjectResults,
-      harmonyScore,
-      consciousnessLevel,
-      overallShadow,
       uploadedFileContents: rawUploads,
-      // Level selection
-      level,
       // Group dynamics (Dual-Core)
       subgroups,
-      // The relevant Levensles (Main×SupportGroup), sent by the frontend so the AI
-      // gets it directly without searching the corpus.
-      levensles,
       // UI language tag — selects which corpus TEXT is sent to the model
       // ('nl' → Dutch corpus, otherwise the English corpus). Engine math is EN.
       language,
     } = req.body;
 
-    if (!archetypeKey) {
+    // v2: the scoring's Main (scored by scoringVersionGate); v1: the client's.
+    if (!req.v2 && !archetypeKey) {
       sendEvent('error', { error: 'archetypeKey is required' });
       return res.end();
     }
 
-    // Fetch admin prompt config from MongoDB for defaults
-    const adminConfig = await getAdminPromptConfig();
-    console.log('[AI] Admin config retrieved from MongoDB');
+    // The Master Prompt record for this level, read by promptGate (never empty here).
+    const adminConfig = req.masterPrompt;
+    console.log(`[AI] Master Prompt: slot ${adminConfig.slot}`);
     console.log('[AI] System prompt template (first 100 chars):', adminConfig.systemPromptTemplate ? adminConfig.systemPromptTemplate.substring(0, 100) : '(empty)');
 
     // Extract text from any uploaded PDFs (sent as base64)
@@ -392,119 +420,130 @@ router.post('/analyze', analyzeLimit, uploadCaps, async (req, res) => {
       }
     }
 
-    // Report pipeline (config.reportPipeline, set in the repo: the engine pipeline).
-    const pipeline = config.reportPipeline === 'v5.2' ? 'v5.2' : 'v4.3';
-    const isV5 = pipeline === 'v5.2';
-
-    // Build messages — include uploaded context documents. v5.2: the Corpus Manifest slice is the
-    // model's whole corpus (Backend Instruction v1 rule 10), so the admin knowledge-base docs stay out.
-    const contextDocs = isV5 ? [] : await getContextDocuments();
-    const promptLevel = level || 'advanced';
-    const builder = promptBuilders[promptLevel] || promptBuilders.advanced;
-
-    const promptData = {
-      archetypeKey, supportArchetype, supportGroup, mainGroup,
-      extendedArchetypeName, oceanScores, contextDocs,
-      shadowArchetype, blindspotArchetype, isIndividuated,
-      hasHarmonyBonus, harmonyBonusApplied,
-      polarizationIndex, polarizationPct, polarizationLevel,
-      authenticityIndex, authenticityLevel,
-      totalNaturePoints, totalCulturePoints,
-      archetypeDetails, scores,
-      responses, subjectResults, harmonyScore,
-      consciousnessLevel, overallShadow, uploadedFileContents,
-      subgroups,
-      // The OCEAN values parsed from the user's upload (above) — the engine pipeline ships them as
-      // one structured line so the model reads them instead of digging through the PDF text.
-      uploadedOceanScores,
-      // …and its aspects, numbers under our names. On the engine pipeline these two lines are ALL the
-      // model gets from an upload — never the report's text (Addendum A §5c).
-      uploadedOceanAspects,
-      // Report language — picks the Dutch or English 132-roster for the extension
-      // name + matrix table, matching the corpus selected above.
-      language,
-      sliceScoped: isV5,
-    };
-
-    // System prompt = the AI Master Prompt, stored in the MongoDB admin config (editable in the
-    // dashboard) — the only copy, for both pipelines. Together with the cached corpus it is the
-    // cached prefix. v5.2 refuses to run without it (buildV5Request).
+    // System prompt = this level's Master Prompt, stored in the MongoDB admin config (editable in the
+    // dashboard) — the only copy. Together with the cached corpus slice it is the cached prefix;
+    // buildV5Request refuses to run without it.
     const adminMeta = adminConfig.systemPromptTemplate || '';
     const system = adminMeta;
 
-    // ── C-runtime: engine pre-computes the composed D-state + C-magnitude (the model
-    //    reads these; it does not recompute). Non-fatal if the geometry is incomplete. ──
-    let cRuntime = null;
-    try {
-      if (archetypeDetails && archetypeKey) {
-        cRuntime = computeCRuntime({
-          archetypeDetails,
-          mainKey: archetypeKey,
-          supportKey: supportArchetype,
-          shadowKey: shadowArchetype,
-        });
+    // The request plan. Both branches yield the model input (user, cachedContext) and what the browser
+    // draws (engine curves, polarisation, data block), plus the orb code.
+    let user, cachedContext, orbCode, clientEngine, clientPolarization, dataBlock = null;
+    // Who the report is about: v2 reads the server's own scoring, v1 the client's fields.
+    let reportMain = archetypeKey, reportSupportGroup = supportGroup, reportExtension = extendedArchetypeName;
+    if (req.v2) {
+      // ── Leerling two-layer test → Master Prompt v7 (engine/reportV7.js: payload P1–P13, the data block). ──
+      const v7 = reportV7.buildV2Request({
+        system, responses, session: req.v2.session, language,
+        ocean: uploadedOceanScores, oceanAspects: uploadedOceanAspects,
+      });
+      const s = v7.session;
+      console.log(`[AI] engine pipeline (v2): ${s.main} × ${s.support}; active set ${[v7.payload.main.name, ...v7.payload.codrivers.map(c => c.name)].join(', ')}; ` +
+        `corpus ${v7.manifest.corpus_manifest_version} ${v7.manifest.documents.length} docs ≈${v7.manifest.token_estimate} tokens; ` +
+        `style tags ${v7.styleTags.join(', ') || 'none'}; Support-bewerking ${v7.supportEdit}; Support-herkomst ${s.support_herkomst}; ` +
+        `prompt_version=${v7.promptVersion} stamps ${JSON.stringify(v7.payload.stamps)}`);
+      if (s.tie_breaks.length) console.log('[AI] v2 tie-breaks (logged, never sent):', JSON.stringify(s.tie_breaks));
+      user = v7.user;
+      cachedContext = v7.cachedContext;
+      clientEngine = v7.client.enginePayload;
+      clientPolarization = v7.client.polarization;
+      dataBlock = v7.dataBlock;
+      reportMain = s.main.toUpperCase();
+      reportSupportGroup = String(v7.payload.geometry.supportGroup).toUpperCase();
+      reportExtension = v7.payload.extension ? (String(language).toLowerCase() === 'en' ? v7.payload.extension.name_en : v7.payload.extension.name_nl) : null;
+      orbCode = '';
+      try {
+        orbCode = orb3FromGeometry({ archetypeDetails: v7.archetypeDetails, polarNorm: s.polar_norm });
+      } catch (e) {
+        console.warn('[AI] orb code-gen failed (continuing without it):', e.message);
       }
-    } catch (e) {
-      console.warn('[AI] C-runtime precompute failed (continuing without it):', e.message);
-    }
+    } else {
+      // Polarisation — computed once, here, by the same polar_norm the C-modulation uses
+      // (engine/polarNorm.js, addendum rev 2): it feeds AFGELEIDE INDICES and gates the orb.
+      const ms = mainShadowTotals(archetypeDetails, archetypeKey);
+      const polar = ms ? polarization(ms.main, ms.shadow) : {};
 
-    // ── Orb code: the engine authors the one-line LC_ORB3_ profile code (3D orb) from the same
-    //    12-arc geometry — palette/pulse/cymatic/friction/harmony/radial derived at runtime, the
-    //    composed-B-deferred levers from the §3 group priors — gating radial+purple with the REAL
-    //    polar_gap (main − shadow weight). Printed on the PDF; the component decodes + renders. ──
-    let orbCode = '';
-    try {
-      if (archetypeDetails && archetypeKey) {
-        orbCode = orb3FromGeometry({
-          archetypeDetails,
-          mainKey: archetypeKey,
-          shadowKey: shadowArchetype,
-        });
+      const promptData = {
+        archetypeKey, supportArchetype, supportGroup, mainGroup,
+        extendedArchetypeName,
+        shadowArchetype, blindspotArchetype, isIndividuated,
+        ...polar,
+        authenticityIndex,
+        totalNaturePoints, totalCulturePoints,
+        archetypeDetails, responses, uploadedFileContents, subgroups,
+        // The OCEAN values parsed from the user's upload (above), as one structured line so the model
+        // reads them instead of digging through the PDF text.
+        uploadedOceanScores,
+        // …and its aspects, numbers under our names. These two lines are ALL the model gets from an
+        // upload — never the report's text (Addendum A §5c).
+        uploadedOceanAspects,
+        // Report language — picks the Dutch or English 132-roster for the extension name.
+        language,
+      };
+
+
+      // ── C-runtime: engine pre-computes the composed D-state + C-magnitude (the model
+      //    reads these; it does not recompute). Non-fatal if the geometry is incomplete. ──
+      let cRuntime = null;
+      try {
+        if (archetypeDetails && archetypeKey) {
+          cRuntime = computeCRuntime({
+            archetypeDetails,
+            mainKey: archetypeKey,
+            supportKey: supportArchetype,
+            shadowKey: shadowArchetype,
+          });
+        }
+      } catch (e) {
+        console.warn('[AI] C-runtime precompute failed (continuing without it):', e.message);
       }
-    } catch (e) {
-      console.warn('[AI] orb code-gen failed (continuing without it):', e.message);
-    }
 
-    // ── Main↔Support line-type: resolved deterministically from the static lookup table
-    //    so the model never re-derives the colour (the recurring Green/Blue mistake). The
-    //    resolved tag rides in the payload; the full table rides as a separate reference doc. ──
-    const lineTypeBlock = (archetypeKey && supportArchetype)
-      ? formatLineTypeBlock({
-          mainKey: archetypeKey, supportKey: supportArchetype,
-          shadowKey: shadowArchetype, blindspotKey: blindspotArchetype,
-        })
-      : '';
+      // ── Orb code: the engine authors the one-line LC_ORB3_ profile code (3D orb) from the same
+      //    12-arc geometry — palette/pulse/cymatic/friction/harmony/radial derived at runtime, the
+      //    composed-B-deferred levers from the §3 group priors — gating radial+purple with the one
+      //    polar_norm (above). Printed on the PDF; the component decodes + renders. ──
+      orbCode = '';
+      try {
+        if (archetypeDetails && archetypeKey) {
+          orbCode = orb3FromGeometry({
+            archetypeDetails,
+            polarNorm: ms ? polarNorm(ms.main, ms.shadow) : undefined,
+          });
+        }
+      } catch (e) {
+        console.warn('[AI] orb code-gen failed (continuing without it):', e.message);
+      }
 
-    // ── User payload: per-user geometry (buildUserMessage) + the line-type tag + the
-    //    C-runtime block + the relevant Levensles. Corpus rides separately as cached context. ──
-    const geometryMsg = builder.buildUserMessage(promptData);
+      // ── Main↔Support line-type: resolved deterministically from the static lookup table
+      //    so the model never re-derives the colour (the recurring Green/Blue mistake). The
+      //    resolved tag rides in the payload; the full table rides as a separate reference doc. ──
+      const lineTypeBlock = (archetypeKey && supportArchetype)
+        ? formatLineTypeBlock({
+            mainKey: archetypeKey, supportKey: supportArchetype,
+            shadowKey: shadowArchetype, blindspotKey: blindspotArchetype,
+          })
+        : '';
 
-    // ── v5.2: runtime engine (D-path) → Corpus Manifest slice → role-tagged payload. An engine
-    //    error (RoleError, a Support outside the active set, incomplete geometry) is fatal for the
-    //    request — surfaced, never patched and never silently downgraded to v4.3. ──
-    const v5 = isV5
-      ? reportV5.buildV5Request({
-          system, bleed: req.body, geometryMsg, lineTypeBlock, cRuntime, language,
-        })
-      : null;
-    if (v5) {
-      console.log(`[AI] v5.2 pipeline: active set ${[v5.payload.main.name, ...v5.payload.codrivers.map(c => c.name)].join(', ')}; ` +
+      // ── User payload: per-user geometry (buildUserMessage) + the line-type tag. ──
+      const geometryMsg = buildUserMessage(promptData);
+
+      // ── Runtime engine (D-path) → Corpus Manifest slice → role-tagged payload. An engine error
+      //    (RoleError, a Support outside the active set, incomplete geometry) is fatal for the
+      //    request — surfaced, never patched. ──
+      const v5 = reportV5.buildV5Request({
+        system, bleed: { ...req.body, ...polar }, geometryMsg, lineTypeBlock, cRuntime, language,
+      });
+      console.log(`[AI] engine pipeline: active set ${[v5.payload.main.name, ...v5.payload.codrivers.map(c => c.name)].join(', ')}; ` +
         `corpus ${v5.manifest.corpus_manifest_version} ${v5.manifest.documents.length} docs ≈${v5.manifest.token_estimate} tokens; ` +
         `schaduw-pakket (shadow ${v5.manifest.shadow_pack.shadow}, blindspot ${v5.manifest.shadow_pack.blindspot}) → ${v5.manifest.shadow_pack.objects.join(', ') || 'carried by the group blocks'}; ` +
         `stamps ${JSON.stringify(v5.payload.stamps)}`);
+
+      user = v5.user;
+      // Cached static-prefix context: the manifest slice.
+      cachedContext = v5.cachedContext;
+      clientEngine = reportV5.clientPayload(v5.payload);
+      clientPolarization = ms ? polar : null;
     }
-
-    const user = v5 ? v5.user : [
-      geometryMsg,
-      lineTypeBlock,
-      cRuntime ? formatCRuntimeBlock(cRuntime) : '',
-      levensles ? `═══ LEVENSLES (extended archetype) ═══\n${levensles}` : '',
-    ].filter(Boolean).join('\n\n');
-
-    // Cached static-prefix context. v4.3: the full corpus (single source of truth; v4 §1.1 — read
-    // it fully before translating). v5.2: the manifest slice.
-    const cachedContext = v5 ? v5.cachedContext
-      : `═══ DELTAWERKEN VOLLEDIG CORPUS (single source of truth — Matrix 360, Rosetta, de vier geometrische bronmodellen) ═══\n${getCorpusText(language)}`;
 
     console.log('[AI] ═══════════════════════════════════════════════════════════');
     console.log('[AI] FINAL SYSTEM PROMPT BEING SENT TO AI:');
@@ -537,11 +576,7 @@ router.post('/analyze', analyzeLimit, uploadCaps, async (req, res) => {
     console.log('[AI]   Model:', finalModel || '(default)');
     console.log('[AI]   Max Tokens:', finalMaxTokens);
     console.log('[AI]   Temperature:', finalTemperature);
-    console.log('[AI]   Archetype:', archetypeKey);
-
-    // Extract user-uploaded images to pass directly to vision-capable models
-    // No uploaded images reach the model (they are dropped above — names cannot be scrubbed from a picture).
-    const uploadedImages = [];
+    console.log('[AI]   Archetype:', reportMain);
 
     // ── Keep the SSE connection alive during the long (~4 min) AI generation ──
     // callAI awaits the full model response, writing nothing to the stream in the
@@ -564,18 +599,21 @@ router.post('/analyze', analyzeLimit, uploadCaps, async (req, res) => {
         messages,
         maxTokens: finalMaxTokens,
         temperature: finalTemperature,
-        uploadedImages,
+        // No uploaded images reach the model (they are dropped above — names cannot be scrubbed from
+        // a picture), and no reference documents (human ruling 2026-09-16): the model reads the
+        // resolved Main–Support line type and the Main's own links (payload.links) — literally.
         cachedContext,
-        // No reference documents (human ruling 2026-09-16): the full-wheel lookup table is not
-        // sent. The model reads the resolved Main–Support line type (the line-type block, which
-        // also names the shadow and blindspot) and the Main's own links (payload.links) — literally.
-        referenceDocs: [],
       });
     } finally {
       clearInterval(heartbeat);
     }
 
     console.log(`[AI] ✅ Analysis complete: provider=${result.provider}, model=${result.model}, tokens=${result.completionTokens}`);
+    // v7 (payload instruction §7): the report ends on the closing line; without it, it is incomplete
+    // (the browser's reader checks the 19 sections and logs the gap; the report still renders).
+    if (req.v2 && !/^[ \t#*>]*\[\s*EINDE\s+RAPPORT\s*\][ \t*]*$/im.test(result.analysis || '')) {
+      console.warn('[AI] ⚠ v7 report without its closing line [EINDE RAPPORT] — incomplete');
+    }
 
     // ── Kaart Microcopy: lift the profile-card fields out of the analysis (the report text never
     // shows them), SIGN them for this code and hand them to the client beside the analysis. The
@@ -607,16 +645,17 @@ router.post('/analyze', analyzeLimit, uploadCaps, async (req, res) => {
     // Only what the report page draws. The engine's internals (band cutpoint tables, corpus fields,
     // C-runtime values, ledgers, the corpus manifest) and the provider/model/token counts stay here.
     sendEvent('result', {
-      archetypeKey,
-      supportGroup: supportGroup || null,
-      extendedArchetypeName: extendedArchetypeName || null,
+      archetypeKey: reportMain,
+      supportGroup: reportSupportGroup || null,
+      extendedArchetypeName: reportExtension || null,
       uploadedOceanScores: uploadedOceanScores || null,
-      // v4.3 morphology chart: the three D-curves only.
-      cRuntime: cRuntime && cRuntime.d_curve ? { d_curve: cRuntime.d_curve } : null,
-      pipeline,
-      // v5.2 morphology chart (Spec A1): the Main's two register curves only.
-      enginePayload: v5 ? reportV5.clientPayload(v5.payload) : null,
-      // Authoritative orb profile code (LC_ORB3_…), radial+purple-gated with the real polar_gap —
+      // Morphology chart (Spec A1): the Main's two register curves only.
+      enginePayload: clientEngine,
+      // v2: the data block for the last page, built here from the payload (never by the model).
+      dataBlock,
+      // The polarisation (index, %, band) — computed once, above; the browser shows it, never derives it.
+      polarization: clientPolarization,
+      // Authoritative orb profile code (LC_ORB3_…), radial+purple-gated with the one polar_norm —
       // SEALED (services/sealedCode.js): the browser cannot read it. The raw code is handed over
       // only when the full report is unlocked (payment or activation code). '' when geometry incomplete.
       sealedOrbCode: orbCode ? sealCode(orbCode) : '',
@@ -624,6 +663,13 @@ router.post('/analyze', analyzeLimit, uploadCaps, async (req, res) => {
       kaart: kaartCard,
       analysis: result.analysis,
     });
+
+    // Tetrad observer (Bleed v2 Scoring §5.4): one anonymous row per completed v2 session — exactly
+    // archetype, double_picks, shown — through the shuffling queue into the separate statistics store.
+    // Off (nothing stored) without STATS_MONGODB_URI. Never allowed to touch the delivered report.
+    if (req.v2) {
+      try { queueTetradRow(observeTetrad(responses)); } catch (e) { console.warn('[stats] tetrad observer skipped:', e.message); }
+    }
 
     res.end();
   } catch (err) {
@@ -715,40 +761,3 @@ router.post('/send-access-email', sendAccessEmailLimiter, async (req, res) => {
 });
 
 module.exports = router;
-
-// ─────────────────────────────────────────────────────────────
-// Prompt helpers — delegated to level-specific builders in /prompts/
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Fetch all uploaded context documents from MongoDB.
- * Returns array of { filename, extractedText }.
- */
-async function getContextDocuments() {
-  try {
-    const db = getDB();
-    const docs = await db.collection('promptDocuments')
-      .find({})
-      .sort({ uploadedAt: 1 })
-      .project({ filename: 1, extractedText: 1 })
-      .toArray();
-    return docs;
-  } catch {
-    // If DB not connected or collection doesn't exist, return empty
-    return [];
-  }
-}
-
-/**
- * Fetch admin prompt configuration from MongoDB.
- * Returns defaults if not found or DB unavailable.
- */
-async function getAdminPromptConfig() {
-  try {
-    const db = getDB();
-    const config = await db.collection('promptConfigs').findOne({ _id: 'default' });
-    return config || {};
-  } catch {
-    return {};
-  }
-}

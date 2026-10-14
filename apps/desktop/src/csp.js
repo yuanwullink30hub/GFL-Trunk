@@ -29,7 +29,8 @@ function buildCsp({ inlineHashes = readInlineHashes(), forMeta = false } = {}) {
     "img-src 'self' data: blob: https://raw.githubusercontent.com https://*.stripe.com",
     "media-src 'self' blob:",
     "worker-src 'self' blob:",
-    `connect-src 'self' ${API_ORIGIN} https://api.stripe.com https://*.stripe.com https://*.stripe.network`,
+    // downloads.gardenforlife.nl: the published questions file (apps/backend/services/questionsPublisher.js)
+    `connect-src 'self' ${API_ORIGIN} https://downloads.gardenforlife.nl https://api.stripe.com https://*.stripe.com https://*.stripe.network`,
     "frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://*.stripe.network",
     "object-src 'none'",
     "base-uri 'none'",

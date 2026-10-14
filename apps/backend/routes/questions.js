@@ -6,6 +6,7 @@
  *
  * GET    /api/questions              — Get all questions (public, no auth)
  * GET    /api/questions/two-layer    — The two-layer Leerling bank in rotation order (public)
+ * POST   /api/questions/publish      — Publish the public questions file to R2 now (admin; saves publish too)
  * GET    /api/questions/export       — Export as clean JSON (admin)
  * GET    /api/questions/export/docx  — Export as Word document (admin)
  * POST   /api/questions/seed         — Seed default questions into DB (admin only)
@@ -19,6 +20,8 @@ const { Router } = require('express');
 const { collections } = require('../db');
 const config = require('../config');
 const { twoLayerPlan } = require('../services/twoLayerBank');
+// Every save republishes the public questions file the platform loads (services/questionsPublisher.js).
+const { publishQuestions, publishAfterSave } = require('../services/questionsPublisher');
 const { authRequired, adminRequired } = require('../middleware/auth');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell,
         WidthType, BorderStyle, AlignmentType, ShadingType } = require('docx');
@@ -67,6 +70,16 @@ router.get('/two-layer', (_req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// POST /api/questions/publish — Admin: publish the public questions file now (the first time, or to retry);
+// answers { published, bytes?, url?, reason? }. Saves publish by themselves.
+// ─────────────────────────────────────────────────────────────
+
+router.post('/publish', authRequired, adminRequired, async (_req, res) => {
+  const result = await publishQuestions();
+  res.status(result.published ? 200 : 503).json(result);
+});
+
+// ─────────────────────────────────────────────────────────────
 // POST /api/questions/seed — Admin: seed default questions
 // ?force=1 → wipe existing and re-seed from backend code
 // Without force → only works if collection is empty
@@ -94,6 +107,7 @@ router.post('/seed', authRequired, adminRequired, async (req, res) => {
     await collections.questions().insertMany(layers);
     console.log(`[Questions] Seeded ${layers.length} layers with questions`);
 
+    publishAfterSave();
     res.json({ success: true, layersSeeded: layers.length, forced: force });
   } catch (err) {
     console.error('[Questions] Seed error:', err.message);
@@ -169,6 +183,7 @@ router.post('/import', authRequired, adminRequired, async (req, res) => {
     await collections.questions().insertMany(docs);
     console.log(`[Questions] Bulk imported ${docs.length} layers (${docs.reduce((s, l) => s + l.questions.length, 0)} questions)`);
 
+    publishAfterSave();
     res.json({ success: true, layersImported: docs.length });
   } catch (err) {
     console.error('[Questions] Import error:', err.message);
@@ -214,6 +229,7 @@ router.put('/layer/:layerIndex', authRequired, adminRequired, async (req, res) =
     }
 
     const layer = await collections.questions().findOne({ layerIndex });
+    publishAfterSave();
     res.json(layer);
   } catch (err) {
     console.error('[Questions] Layer update error:', err.message);
@@ -284,6 +300,7 @@ router.put('/:questionId', authRequired, adminRequired, async (req, res) => {
     const updated = await collections.questions().findOne({ layerIndex });
     const updatedQuestion = updated.questions.find(q => q.id === questionId);
 
+    publishAfterSave();
     res.json({ success: true, question: updatedQuestion });
   } catch (err) {
     console.error('[Questions] Question update error:', err.message);
@@ -674,6 +691,7 @@ router.post('/import/docx', authRequired, adminRequired, upload.single('file'), 
     await collections.questions().insertMany(docs);
 
     console.log(`[Questions] Word import: ${layers.length} layers, ${totalQuestions} questions`);
+    publishAfterSave();
     res.json({
       success: true,
       layersImported: layers.length,

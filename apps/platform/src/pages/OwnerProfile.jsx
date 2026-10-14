@@ -1,9 +1,9 @@
 import React from 'react';
 import { useLanguage } from '@gfl/i18n';
-import { getArchetypeImage } from '@gfl/assessment-core/data/archetypeImages';
 import SciFiRadarChart from '../components/assessment/SciFiRadarChart';
 import { S } from '../data/policyShared';
 import { OWNER_PROFILE, OWNER_RADAR, OWNER_OCEAN, OWNER_ARCHETYPES } from '../data/ownerProfile';
+import { OWNER_PORTRAIT } from '../data/ownerPortrait';
 
 const LEXEND = "'Lexend Mega', Arial, Helvetica, sans-serif";
 const FIGTREE = "'Figtree', sans-serif";
@@ -19,24 +19,13 @@ const T = { p: { ...S.p, fontSize: SIZE.body }, h2: { ...S.h2, fontSize: SIZE.h2
  * person: the card microcopy, the wheel + the Big Five cross-reading, the hardware under pressure, and the
  * quiet voice (reflection, motivation). Copy and numbers: data/ownerProfile.js. Loaded lazily by
  * EyedentityPage and warmed in idle time after the landing (utils/preloadUtils.js preloadInBackground), so
- * the chart library and the portrait are ready before a first pan to the page.
+ * the chart library is ready before a first pan to the page. The portrait is warmed earlier still: App
+ * fetches and decodes it the moment the landing is ready (data/ownerPortrait.js).
  */
-// This page is one real person's profile, not a reader's, so the variant is fixed rather than left to
-// DEFAULT_PORTRAIT_VARIANT ('female' — the neutral default for a reader who has not chosen yet).
-const PORTRAIT = getArchetypeImage(OWNER_ARCHETYPES.main, OWNER_ARCHETYPES.support, OWNER_ARCHETYPES.portraitVariant);
-
-/** Idle warm-up after the landing (preloadInBackground): fetch + decode the portrait so the tab opens whole. */
-export function warmOwnerProfile() {
-  if (!PORTRAIT) return;
-  const img = new Image();
-  img.decoding = 'async';
-  img.src = PORTRAIT;
-}
-
 export default function OwnerProfile() {
   const { language } = useLanguage();
   const P = OWNER_PROFILE[language === 'en' ? 'en' : 'nl'];
-  const portrait = PORTRAIT;
+  const portrait = OWNER_PORTRAIT;
   const para = (text, i) => <p key={i} style={T.p}>{text}</p>;
 
   return (
@@ -44,7 +33,7 @@ export default function OwnerProfile() {
       {/* Portrait, name, life lesson */}
       <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
         {portrait && (
-          <img src={portrait} alt={P.name} decoding="async"
+          <img src={portrait} alt={P.name}
             style={{ width: 'min(15rem, 40%)', height: 'auto', flexShrink: 0, borderRadius: '0.5rem' }} />
         )}
         <div style={{ flex: '1 1 16rem', minWidth: 0 }}>

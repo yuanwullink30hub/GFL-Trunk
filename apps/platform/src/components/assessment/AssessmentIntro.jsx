@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from '@gfl/i18n';
 import { isIntegratedGPU } from '@gfl/utils';
 const archetypeHeader = '/images/Import ready/Archetype header.png';
@@ -104,6 +104,18 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
   const [pendingPolicySlug, setPendingPolicySlug] = useState(null);
   const [showUploadWarning, setShowUploadWarning] = useState(false);
   const [showOceanInfo, setShowOceanInfo] = useState(false);
+  // The OCEAN info pop-up closes a moment after the pointer leaves, so moving from the button into the pop-up (to
+  // click its link) never closes it on the way.
+  const oceanInfoTimer = useRef(null);
+  const openOceanInfo = useCallback(() => {
+    clearTimeout(oceanInfoTimer.current);
+    setShowOceanInfo(true);
+  }, []);
+  const closeOceanInfoSoon = useCallback(() => {
+    clearTimeout(oceanInfoTimer.current);
+    oceanInfoTimer.current = setTimeout(() => setShowOceanInfo(false), 200);
+  }, []);
+  useEffect(() => () => clearTimeout(oceanInfoTimer.current), []);
   const [infoLevel, setInfoLevel] = useState(null); // which level's info pop-up is open (per card)
   const [showOceanInput, setShowOceanInput] = useState(false);
   const [oceanOrigin, setOceanOrigin] = useState('center center');
@@ -795,8 +807,8 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   />
                   <div
                     style={{ position: 'relative', width: '10rem' }}
-                    onMouseEnter={() => setShowOceanInfo(true)}
-                    onMouseLeave={() => setShowOceanInfo(false)}
+                    onMouseEnter={openOceanInfo}
+                    onMouseLeave={closeOceanInfoSoon}
                   >
                   {/* Info icon — top-right corner of the Upload button; the whole button triggers the pop-up */}
                   <span
@@ -812,9 +824,16 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   >
                     i
                     {showOceanInfo && (
+                      // A transparent strip bridges the gap to the button, so the pointer can move into the pop-up
+                      // (and click its link) without it closing on the way (owner, 14 Oct).
+                      <div
+                        onMouseEnter={openOceanInfo}
+                        onMouseLeave={closeOceanInfoSoon}
+                        style={{ position: 'absolute', bottom: '100%', right: 0, paddingBottom: '0.4rem', zIndex: 50 }}
+                      >
                       <div
                         style={{
-                          position: 'absolute', bottom: 'calc(100% + 0.4rem)', right: 0,
+                          position: 'relative',
                           width: '19.5rem', padding: '0.84rem 1.08rem', borderRadius: '0.5rem',
                           backgroundColor: isLowGpu ? 'rgba(10, 3, 18, 0.9)' : 'rgba(2, 0, 3, 0.55)',
                           backdropFilter: laptopBlur, WebkitBackdropFilter: laptopBlur,
@@ -827,6 +846,19 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       >
                         <span style={{ color: '#a78bfa', fontWeight: 600 }}>{t('assessmentIntro.oceanInfoLabel')}</span>
                         {t('assessmentIntro.oceanInfoText')}
+                        <span style={{ display: 'block', marginTop: '0.5rem' }}>
+                          {t('assessmentIntro.oceanNoProfile')}{' '}
+                          <a
+                            href="https://www.persoonlijkheid.nl"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ color: '#a78bfa', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' }}
+                          >
+                            persoonlijkheid.nl
+                          </a>
+                        </span>
+                      </div>
                       </div>
                     )}
                   </span>
@@ -926,24 +958,27 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
             <div className="flex flex-col items-center relative" style={{ gap: s.pyramidGap }}>
               {/* Holographic glow backdrop */}
               <div className="absolute inset-0 pointer-events-none" style={{
-                background: 'radial-gradient(ellipse at center, rgba(168,85,247,0.06) 0%, transparent 70%)',
+                background: 'radial-gradient(ellipse at center, rgba(51,65,85,0.08) 0%, transparent 70%)',
                 filter: isLowGpu ? 'none' : 'blur(20px)',
               }} />
               {layers.map((layer, index) => {
                 const glowIntensity = 1 - index * 0.12;
                 return (
+                  // One blue for every layer (owner, 14 Oct): the slate of the feature boxes above (bg-slate-900/30,
+                  // border-slate-700/50); only the dot keeps the subject's colour.
                   <div
                     key={layer.nameKey}
                     className="flex items-center rounded border transition-all duration-500 hover:scale-105 relative group"
                     style={{
                       width: `${s.pyramidBaseWidth + index * s.pyramidStepWidth}px`,
                       justifyContent: 'center',
-                      borderColor: `${layer.color}50`,
-                      background: `linear-gradient(135deg, ${layer.color}12 0%, ${layer.color}06 50%, ${layer.color}10 100%)`,
+                      borderColor: 'rgba(51, 65, 85, 0.5)',
+                      background: 'rgba(15, 23, 42, 0.3)',
                       padding: `${s.pyramidPadY} ${s.pyramidPadX}`,
                       gap: s.pyramidItemGap,
-                      boxShadow: isLowGpu ? 'none' : `0 0 ${12 * glowIntensity}px ${layer.color}18, inset 0 0 ${8 * glowIntensity}px ${layer.color}08`,
+                      boxShadow: isLowGpu ? 'none' : `0 0 ${12 * glowIntensity}px rgba(15, 23, 42, 0.35), inset 0 0 ${8 * glowIntensity}px rgba(51, 65, 85, 0.12)`,
                       backdropFilter: isLowGpu ? 'none' : 'blur(4px)',
+                      WebkitBackdropFilter: isLowGpu ? 'none' : 'blur(4px)',
                     }}
                   >
                     {/* Scan line overlay */}
@@ -955,7 +990,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                     </div>
                     {/* Edge highlight */}
                     <div className="absolute inset-0 pointer-events-none rounded" style={{
-                      background: `linear-gradient(90deg, ${layer.color}15, transparent 20%, transparent 80%, ${layer.color}15)`,
+                      background: 'linear-gradient(90deg, rgba(51, 65, 85, 0.15), transparent 20%, transparent 80%, rgba(51, 65, 85, 0.15))',
                     }} />
                     {/* Glowing dot */}
                     <div
@@ -976,7 +1011,6 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                       <span className="font-medium" style={{
                         color: 'rgba(255,254,240,0.72)',
                         fontSize: s.pyramidLabelFont,
-                        textShadow: `0 0 10px ${layer.color}50`,
                       }}>{t(`${layer.nameKey}.name`)}</span>
                       <span style={{
                         fontSize: s.pyramidDescFont,
@@ -1205,14 +1239,21 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 WebkitBackdropFilter: laptopBlur,
                 border: '1px solid rgba(168,85,247,0.2)',
                 padding: s.padding,
-                overflowY: 'auto',
+                // A fixed size (owner, 14 Oct): opening the details scrolls them inside the panel instead of
+                // growing it, and the buttons stay at the bottom right either way.
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
                 width: `calc(0.8 * ${s.modalMaxWidth})`,
                 maxWidth: '90vw',
-                minHeight: `calc(0.7 * ${s.modalMinHeight})`,
+                height: `calc(0.7 * ${s.modalMinHeight})`,
                 maxHeight: `calc(0.7 * ${s.modalMaxHeight})`,
                 boxShadow: isLowGpu ? '0 6px 30px rgba(0,0,0,0.7)' : '0 6px 30px rgba(0,0,0,0.7), 0 12px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,0,0,0.35), 0 0 120px rgba(0,0,0,0.15), inset 0 0 12px rgba(168,85,247,0.06), inset 0 0 30px rgba(168,85,247,0.03)',
               }}
             >
+              {/* Body: everything above the buttons. Scrolls as a whole only if even the closed content does not
+                  fit (small screens); the details below take the remaining room and scroll on their own. */}
+              <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
               {/* Title */}
               {/* Header size: it sat at the body step, which read as smaller than the bold uppercase
                   "Het belangrijkste" label below it. */}
@@ -1264,7 +1305,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                 </span>
               </label>
               {/* Foldable full disclosure — what checkbox 2's "I understand that:" refers to. */}
-              <div style={{ paddingLeft: '1.75rem', marginBottom: '1.5rem' }}>
+              <div style={{ paddingLeft: '1.75rem', marginBottom: '1rem', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                 <button
                   type="button"
                   onClick={() => setConsentDetailsOpen((v) => !v)}
@@ -1279,7 +1320,7 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   {t(consentDetailsOpen ? 'assessmentIntroExtra.consent.detailsHide' : 'assessmentIntroExtra.consent.detailsShow')}
                 </button>
                 {consentDetailsOpen && (
-                  <div style={{ marginTop: '0.6rem' }}>
+                  <div style={{ marginTop: '0.6rem', flex: '1 1 auto', minHeight: '6rem', overflowY: 'auto', paddingRight: '0.5rem' }}>
                     <p style={{ color: 'rgba(148,163,184,0.85)', fontSize: s.featureDescFont, lineHeight: 1.7, marginBottom: '0.6rem' }}>
                       {renderCopy(t('assessmentIntroExtra.consent.whatWeDoP1'))}
                     </p>
@@ -1296,9 +1337,10 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   </div>
                 )}
               </div>
+              </div>
 
-              {/* Buttons */}
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              {/* Buttons — pinned to the bottom right of the panel */}
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexShrink: 0, paddingTop: '0.75rem' }}>
                 <SciFiButton
                   onClick={() => closeConsent()}
                   variant="white"
@@ -1307,7 +1349,9 @@ const AssessmentIntro = ({ onStart, onClose, onNavigateToData, onNavigateToPolic
                   {t('assessmentIntroExtra.consent.cancel')}
                 </SciFiButton>
                 <SciFiButton
-                  onClick={() => { if (consentChecked && consentAiPromptChecked) { const lvl = consentLevelId; closeConsent(); logConsent(lvl); onStart(lvl); } }}
+                  // Proceed: no closing animation of its own — the consent sits inside the intro card, so it folds
+                  // into the entity together with it in one movement (owner, 14 Oct). The intro unmounts after.
+                  onClick={() => { if (consentChecked && consentAiPromptChecked) { const lvl = consentLevelId; logConsent(lvl); onStart(lvl); } }}
                   disabled={!consentChecked || !consentAiPromptChecked}
                   variant="purple"
                   size="sm"

@@ -16,7 +16,7 @@ export default {
   assessmentIntroExtra: {
     // ── Intro card chrome ──
     headline: {
-      nl: 'De meest complete en complexe analyse van de relatie tussen jouw essentie en intelligentie.\nMet veilige operationele controle over jouw eigen waardevolle data.',
+      nl: 'De meest complete en complexe analyse van de relatie tussen jouw essentie en intelligentie.\nMet beschermde operationele controle over jouw eigen waardevolle data.',
       en: 'The most complete and complex analysis of the relationship between your essence and intelligence.\nWith secure operational control over your own valuable data.',
     },
     readMe: {

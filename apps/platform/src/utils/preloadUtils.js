@@ -261,9 +261,9 @@ export const preloadInBackground = () => {
     () => import('../pages/GardensPage'),
     () => import('../pages/DataPage'),
     () => import('../pages/EyedentityPage'),
-    // Its default tab (Profiel) is a lazy chunk of its own, with the radar library and the portrait: warmed
-    // here, or a first pan to the page lands on an empty pane while they download.
-    () => import('../pages/OwnerProfile').then((m) => m.warmOwnerProfile?.()),
+    // Its default tab (Profiel) is a lazy chunk of its own, with the radar library: warmed here, or a first
+    // pan to the page lands on an empty pane while it downloads. (Its portrait is warmed earlier, by App.)
+    () => import('../pages/OwnerProfile'),
     () => import('../pages/WinkelPage'),
     () => import('../pages/KookPage'),
   ];
